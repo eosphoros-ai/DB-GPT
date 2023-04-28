@@ -21,7 +21,6 @@ class ModerLoader:
         self.kwargs = {
             "torch_dtype": torch.float16,
             "device_map": "auto",
-            "max_memory": get_gpu_memory(),
         }
 
     def loader(self, load_8bit=False, debug=False):
