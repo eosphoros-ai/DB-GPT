@@ -45,7 +45,7 @@ if __name__ == "__main__":
             text_button = gr.Button("提交")
         
 
-        text_button.click(generate, input=text_input, output=text_output)
+        text_button.click(generate, inputs=text_input, outputs=text_output)
 
     demo.queue(concurrency_count=3).launch() 
 
