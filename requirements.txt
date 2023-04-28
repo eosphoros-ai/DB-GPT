@@ -1,0 +1,4 @@
+accelerate==0.16.0
+torch==2.0.0
+torchvision==0.13.1
+torchaudio==0.12.1
