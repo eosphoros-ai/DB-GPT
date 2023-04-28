@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
-from pilot.model.loader import ModerLoader
-from fastchat.serve.inference import generate_stream
-from pilot.configs.model_config import *
+import torch
+from fastchat.serve.inference import generate_stream, compress_module
+
+BASE_MODE = "/home/magic/workspace/github/DB-GPT/models/vicuna-13b"
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 if __name__ == "__main__":
 
-    model_path = llm_model_config[LLM_MODEL]
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODE, use_fast=False)
+    model = AutoModelForCausalLM.from_pretrained(
+        BASE_MODE, 
+        low_cpu_mem_usage=True, 
+        torch_dtype=torch.float16,
+        device_map="auto",
+        )
 
-    ml = ModerLoader(model_path)
-    model, tokenizer = ml.loader(load_8bit=True) 
-    print(model)
-    print(tokenizer)
+    print(device)
+    #compress_module(model, device) 
+    print(model, tokenizer)
