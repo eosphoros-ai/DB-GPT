@@ -4,8 +4,7 @@
 import torch
 import os
 
-
-root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 model_path = os.path.join(root_path, "models")
 vector_storepath = os.path.join(root_path, "vector_store")
 
