@@ -1,4 +1,4 @@
-name: db-pgt 
+name: db_pgt 
 channels:
   - pytorch
   - defaults
