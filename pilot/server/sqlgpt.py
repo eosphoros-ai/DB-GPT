@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 
+
 import json
 import torch
+import gradio as gr
 from fastchat.serve.inference import generate_stream, compress_module
 
 
@@ -35,9 +37,17 @@ def generate(prompt):
     yield output
 
 if __name__ == "__main__":
-    pass
+    with gr.Blocks() as demo:
+        gr.Markdown("数据库SQL生成助手")
+        with gr.Tab("SQL生成"):
+            text_input = gr.TextArea()
+            text_output = gr.TextArea()
+            text_button = gr.Button("提交")
+        
 
+        text_button.click(generate, input=text_input, output=text_output)
 
+    demo.queue(concurrency_count=3).launch() 
 
 
 
