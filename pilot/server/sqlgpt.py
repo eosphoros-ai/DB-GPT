@@ -32,12 +32,13 @@ def generate(prompt):
         "stop": "###"
     }
     output = generate_stream(
-        model, tokenizer, params, device, context_len=2048, stream_interval=2): 
+        model, tokenizer, params, device, context_len=2048, stream_interval=2)
         
-
-    for chunk in output.iter_lines(decode_unicode=False, delimiter=b"\0"):
-        if chunk:
-            yield chunk
+    for chunk in output:
+        yield chunk
+    #for chunk in output.iter_lines(decode_unicode=False, delimiter=b"\0"):
+    #    if chunk:
+    #        yield chunk
 
 if __name__ == "__main__":
     with gr.Blocks() as demo:
@@ -50,7 +51,7 @@ if __name__ == "__main__":
 
         text_button.click(generate, inputs=text_input, outputs=text_output)
 
-    demo.queue(concurrency_count=3).launch() 
+    demo.queue(concurrency_count=3).launch(server_name="0.0.0.0") 
 
 
 
