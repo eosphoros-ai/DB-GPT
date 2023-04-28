@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import torch
-from utils import get_gpu_memory
+from pilot.utils import get_gpu_memory
 from fastchat.serve.inference import compress_module
 from transformers import (
     AutoTokenizer,
