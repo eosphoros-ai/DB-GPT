@@ -1,5 +1,6 @@
 # DB-GPT
 A Open Database-GPT Experiment
+
 ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
 
 
