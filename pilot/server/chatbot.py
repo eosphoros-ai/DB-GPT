@@ -14,7 +14,7 @@ vicuna_status_path = "worker_get_status"
 def generate(prompt):
     params = {
         "model": "vicuna-13b",
-        "prompt": "给出一个查询用户的SQL",
+        "prompt": prompt,
         "temperature": 0.7,
         "max_new_tokens": 512,
         "stop": "###"
