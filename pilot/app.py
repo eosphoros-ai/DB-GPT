@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-import streamlit as st
+import gradio as gr
 from langchain.agents import (
     load_tools,
     initialize_agent,
@@ -22,7 +22,7 @@ def agent_demo():
     )
 
 def knowledged_qa_demo(text_list):
-    llm_predictor = LLMPredictor(llm=VicunaRequestLLM)
+    llm_predictor = LLMPredictor(llm=VicunaRequestLLM())
     hfemb = VicunaEmbeddingLLM()
     embed_model = LangchainEmbedding(hfemb)
     documents = [Document(t) for t in text_list]
@@ -32,17 +32,24 @@ def knowledged_qa_demo(text_list):
     return index
 
 
+def get_answer(q):
+    base_knowledge = """ 这是一段测试文字  """
+    text_list = [base_knowledge]
+    index = knowledged_qa_demo(text_list)
+    response = index.query(q)
+    return response.response
+
 if __name__ == "__main__":
     # agent_demo()
 
-    test1 = """ 这是一段测试文字  """
-    text_list = [test1]
-    index = knowledged_qa_demo(text_list)
+    with gr.Blocks() as demo:
+        gr.Markdown("数据库智能助手")
+        with gr.Tab("知识问答"):
+            text_input = gr.TextArea()
+            text_output = gr.TextArea()
+            text_button = gr.Button()
+        
+        text_button.click(get_answer, inputs=text_input, outputs=text_output)
 
-    st.title("智能助手")
-    query = st.text_input("请提问.")
-    
-    if st.button("提交"):
-        response = index.query(query)
-        print(query, response.response)
-        st.write(response.response)
+    demo.queue(concurrency_count=3).launch(server_name="0.0.0.0")
+   

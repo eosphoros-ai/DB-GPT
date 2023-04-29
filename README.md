@@ -15,6 +15,9 @@ uvicorn vicuna_server:app --host 0.0.0.0
 ```
 
 2. Run gradio webui
+```
+python app.py 
+```
 
 # Featurs
 - SQL-Generate
