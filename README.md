@@ -11,7 +11,7 @@ Overall, it appears to be a sophisticated and innovative tool for working with d
 1. Run model server
 ```
 cd pilot/server
-uvicorn icuna_server:app --host 0.0.0.0
+uvicorn vicuna_server:app --host 0.0.0.0
 ```
 
 2. Run gradio webui
