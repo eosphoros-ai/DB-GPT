@@ -20,8 +20,8 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 
 def generate(prompt):    
-    # compress_module(model, device) 
-    # model.to(device)
+    compress_module(model, device) 
+    model.to(device)
     print(model, tokenizer)
     params = {
         "model": "vicuna-13b",
@@ -31,13 +31,8 @@ def generate(prompt):
         "stop": "###"
     }
     for output in generate_stream(
-        model, tokenizer, params, device, context_len=2048, stream_interval=2):
-        ret = {
-            "text": output,
-            "error_code": 0
-        }
-        
-        yield json.dumps(ret).decode() + b"\0"
+        model, tokenizer, params, device, context_len=2048, stream_interval=1):
+        yield output 
 
 if __name__ == "__main__":
     with gr.Blocks() as demo:
@@ -50,7 +45,4 @@ if __name__ == "__main__":
 
         text_button.click(generate, inputs=text_input, outputs=text_output)
 
-    demo.queue(concurrency_count=3).launch(host="0.0.0.0") 
-
-
-
+    demo.queue(concurrency_count=3).launch(server_name="0.0.0.0") 
