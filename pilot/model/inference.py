@@ -10,7 +10,8 @@ def generate_output(model, tokenizer, params, device, context_len=2048):
     max_new_tokens = int(params.get("max_new_tokens", 256))
     stop_parameter = params.get("stop", None)
 
-    if stop_parameter == tokenizer.eso_token:
+    print(tokenizer.__dir__())
+    if stop_parameter == tokenizer.eos_token:
         stop_parameter = None
     
     stop_strings = []

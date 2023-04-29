@@ -18,7 +18,7 @@ class PromptRequest(BaseModel):
     prompt: str
     temperature: float
     max_new_tokens: int
-    stop: Optional(List[str]) = None
+    stop: Optional[List[str]] = None
 
 
 class EmbeddingRequest(BaseModel):

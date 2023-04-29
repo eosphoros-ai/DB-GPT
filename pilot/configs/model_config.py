@@ -18,7 +18,7 @@ llm_model_config = {
 LLM_MODEL = "vicuna-13b"
 
 
-vicuna_model_server = "http://192.168.31.114:21000/"
+vicuna_model_server = "http://127.0.0.1:8000/"
 
 
 # Load model config
