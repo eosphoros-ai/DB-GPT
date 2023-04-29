@@ -3,9 +3,20 @@ A Open Database-GPT Experiment
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
 
+DB-GPT is an experimental open-source application that builds upon the fastchat model and uses vicuna as its base model. Additionally, it looks like this application incorporates langchain and llama-index embedding knowledge to improve Database-QA capabilities. 
 
-DB-GPT is an experimental open-source application, which based on the vicuna base model. 
+Overall, it appears to be a sophisticated and innovative tool for working with databases. If you have any specific questions about how to use or implement DB-GPT in your work, please let me know and I'll do my best to assist you.
 
+# Install
+1. Run model server
+```
+cd pilot/server
+uvicorn icuna_server:app --host 0.0.0.0
+```
 
-## Featurs
-Coming soon, please wait... 
+2. Run gradio webui
+
+# Featurs
+- SQL-Generate
+- Database-QA Based Knowledge 
+- SQL-diagnosis
