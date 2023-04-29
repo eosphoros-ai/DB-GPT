@@ -5,7 +5,7 @@
 import json
 import torch
 import gradio as gr
-from fastchat.serve.inference import generate_stream, compress_module
+from fastchat.serve.inference import generate_stream 
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -20,7 +20,6 @@ model = AutoModelForCausalLM.from_pretrained(
 )
 
 def generate(prompt):    
-    compress_module(model, device) 
     model.to(device)
     print(model, tokenizer)
     params = {
