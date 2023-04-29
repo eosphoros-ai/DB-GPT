@@ -29,8 +29,8 @@ class ModerLoader:
         if debug:
             print(model)
 
-        if self.device == "cuda":
-            model.to(self.device)
+        # if self.device == "cuda":
+        #     model.to(self.device)
 
         return model, tokenizer
 
