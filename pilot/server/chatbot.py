@@ -6,7 +6,7 @@ import json
 import time
 from urllib.parse import urljoin
 import gradio as gr
-from configs.model_config import *
+from pilot.configs.model_config import *
 vicuna_base_uri = "http://192.168.31.114:21002/"
 vicuna_stream_path = "worker_generate_stream"
 vicuna_status_path = "worker_get_status"
