@@ -7,6 +7,8 @@ from transformers import (
     AutoModelForCausalLM,
 )
 
+from fastchat.serve.compression import compress_module
+
 class ModerLoader:
 
     kwargs = {}
@@ -28,6 +30,9 @@ class ModerLoader:
 
         if debug:
             print(model)
+
+        if load_8bit:
+            compress_module(model, self.device) 
 
         # if self.device == "cuda":
         #     model.to(self.device)
