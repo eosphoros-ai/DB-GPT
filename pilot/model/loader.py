@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import torch
-from pilot.utils import get_gpu_memory
-from fastchat.serve.inference import compress_module
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
@@ -28,11 +26,11 @@ class ModerLoader:
         tokenizer = AutoTokenizer.from_pretrained(self.model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(self.model_path, low_cpu_mem_usage=True, **self.kwargs)
 
-        if load_8bit:
-            compress_module(model, self.device)
-
         if debug:
             print(model)
+
+        if self.device == "cuda":
+            model.to(self.device)
 
         return model, tokenizer
 
