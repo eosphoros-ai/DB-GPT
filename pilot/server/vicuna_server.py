@@ -64,14 +64,13 @@ def generate_stream_gate(params):
 
 
 @app.post("/generate_stream")
-async def api_generate_stream(request: Request):
+def api_generate_stream(request: Request):
     global model_semaphore, global_counter
     global_counter += 1
-    params = await request.json()
+    params = request.json()
     print(model, tokenizer, params, DEVICE) 
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(LIMIT_MODEL_CONCURRENCY)
-    await model_semaphore.acquire()
+    # if model_semaphore is None:
+    #     model_semaphore = asyncio.Semaphore(LIMIT_MODEL_CONCURRENCY)
     
     generator = generate_stream_gate(params)
     background_tasks = BackgroundTasks()
