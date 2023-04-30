@@ -157,7 +157,7 @@ def http_bot(state, temperature, max_new_tokens, request: gr.Request):
 
     try:
         # Stream output
-        response = requests.post(urljoin(vicuna_model_server, "worker_generate_stream"),
+        response = requests.post(urljoin(vicuna_model_server, "generate_stream"),
             headers=headers, json=payload, stream=True, timeout=20)
         for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
