@@ -10,7 +10,7 @@ Overall, it appears to be a sophisticated and innovative tool for working with d
 
 Run on an RTX 4090 GPU (not sped up!)
 - 运行演示
-![](https://github.com/csunny/DB-GPT/blob/dev/asserts/演示.git)
+![运行演示](https://github.com/csunny/DB-GPT/blob/dev/asserts/演示.gif)
 
 - SQL生成示例
 ![SQL生成示例](https://github.com/csunny/DB-GPT/blob/dev/asserts/sql_generate.png)
