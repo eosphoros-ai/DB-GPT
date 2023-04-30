@@ -16,7 +16,7 @@ python vicuna_server.py
 
 2. Run gradio webui
 ```
-python app.py 
+python webserver.py 
 ```
 
 # Featurs
