@@ -86,9 +86,9 @@ def api_generate_stream(request: StreamRequest):
     #     model_semaphore = asyncio.Semaphore(LIMIT_MODEL_CONCURRENCY)
     
     generator = generate_stream_gate(params)
-    background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_model_semaphore)
-    return StreamingResponse(generator, background=background_tasks)
+    # background_tasks = BackgroundTasks()
+    # background_tasks.add_task(release_model_semaphore)
+    return StreamingResponse(generator)
 
 @app.post("/generate")
 def generate(prompt_request: PromptRequest):
