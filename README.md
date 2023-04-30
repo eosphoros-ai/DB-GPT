@@ -10,12 +10,17 @@ Overall, it appears to be a sophisticated and innovative tool for working with d
 
 Run on an RTX 4090 GPU (The origin mov not sped up!, [YouTube地址](https://www.youtube.com/watch?v=1PWI6F89LPo))
 - 运行演示
+
 ![](https://github.com/csunny/DB-GPT/blob/dev/asserts/演示.gif)
 
 - SQL生成示例
-![SQL生成示例](https://github.com/csunny/DB-GPT/blob/dev/asserts/sql_generate.png)
+
+<img src="https://github.com/csunny/DB-GPT/blob/dev/asserts/sql_generate.png" width="600" margin-left="auto" margin-right="auto" >
+
 - 数据库QA示例 
-![数据库QA示例](https://github.com/csunny/DB-GPT/blob/dev/asserts/DB_QA.png)
+
+<img src="https://github.com/csunny/DB-GPT/blob/dev/asserts/DB_QA.png" margin-left="auto" margin-right="auto" width="600">
+
 # Install
 1. Run model server
 ```
