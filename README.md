@@ -8,9 +8,9 @@ DB-GPT is an experimental open-source application that builds upon the fastchat 
 
 Overall, it appears to be a sophisticated and innovative tool for working with databases. If you have any specific questions about how to use or implement DB-GPT in your work, please let me know and I'll do my best to assist you.
 
-Run on an RTX 4090 GPU (The origin mov not sped up!, [地址](https://github.com/csunny/DB-GPT/blob/dev/asserts/演示.mov))
+Run on an RTX 4090 GPU (The origin mov not sped up!, [YouTube地址](https://www.youtube.com/watch?v=1PWI6F89LPo))
 - 运行演示
-![运行演示](https://github.com/csunny/DB-GPT/blob/dev/asserts/演示.gif)
+![](https://github.com/csunny/DB-GPT/blob/dev/asserts/演示.gif)
 
 - SQL生成示例
 ![SQL生成示例](https://github.com/csunny/DB-GPT/blob/dev/asserts/sql_generate.png)
