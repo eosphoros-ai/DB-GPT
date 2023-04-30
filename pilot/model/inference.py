@@ -85,3 +85,4 @@ def get_embeddings(model, tokenizer, prompt):
     embeddings = input_embeddings(torch.LongTensor([input_ids]))
     mean = torch.mean(embeddings[0], 0).cpu().detach()
     return mean
+
