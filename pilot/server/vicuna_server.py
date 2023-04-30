@@ -82,6 +82,7 @@ async def api_generate_stream(request: Request):
     global_counter += 1
     params = await request.json()
     print(model, tokenizer, params, DEVICE) 
+
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(LIMIT_MODEL_CONCURRENCY)
     await model_semaphore.acquire() 
