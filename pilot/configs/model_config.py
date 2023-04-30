@@ -7,6 +7,7 @@ import os
 root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 model_path = os.path.join(root_path, "models")
 vector_storepath = os.path.join(root_path, "vector_store")
+LOGDIR = os.path.join(root_path, "logs")
 
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -16,8 +17,8 @@ llm_model_config = {
 }
 
 LLM_MODEL = "vicuna-13b"
-
-
+LIMIT_MODEL_CONCURRENCY = 5
+MAX_POSITION_EMBEDDINGS = 2048
 vicuna_model_server = "http://192.168.31.114:8000/"
 
 
