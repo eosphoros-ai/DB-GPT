@@ -13,9 +13,13 @@ Run on an RTX 4090 GPU (The origin mov not sped up!, [YouTube地址](https://www
 ![](https://github.com/csunny/DB-GPT/blob/dev/asserts/演示.gif)
 
 - SQL生成示例
-![SQL生成示例](https://github.com/csunny/DB-GPT/blob/dev/asserts/sql_generate.png =600x480)
+
+<img src="https://github.com/csunny/DB-GPT/blob/dev/asserts/sql_generate.png" width="480">
+<hr/>
 - 数据库QA示例 
-![数据库QA示例](https://github.com/csunny/DB-GPT/blob/dev/asserts/DB_QA.png =600x480)
+
+<img src="https://github.com/csunny/DB-GPT/blob/dev/asserts/DB_QA.png" width="480">
+
 # Install
 1. Run model server
 ```
