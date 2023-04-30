@@ -156,12 +156,13 @@ def http_bot(state, temperature, max_new_tokens, request: gr.Request):
     prompt = state.get_prompt()
     skip_echo_len = compute_skip_echo_len(prompt)
 
+    logger.info(f"State: {state}")
     payload = {
         "model": model_name,
         "prompt": prompt,
         "temperature": temperature,
         "max_new_tokens": max_new_tokens,
-        "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else None,
+        "stop": state.sep,
     }
 
     logger.info(f"Request: \n {payload}")
@@ -179,6 +180,7 @@ def http_bot(state, temperature, max_new_tokens, request: gr.Request):
         for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
                 data = json.loads(chunk.decode())
+                logger.info(f"Response: {data}")
                 if data["error_code"] == 0:
                     output = data["text"][skip_echo_len].strip()
                     output = post_process_code(output)

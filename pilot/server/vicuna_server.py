@@ -48,8 +48,8 @@ def generate_stream_gate(params):
             params,
             DEVICE,
             MAX_POSITION_EMBEDDINGS,
-            2,
         ):
+            print("output: ", output)
             ret = {
                 "text": output,
                 "error_code": 0,
@@ -68,7 +68,7 @@ async def api_generate_stream(request: Request):
     global model_semaphore, global_counter
     global_counter += 1
     params = await request.json()
-    
+    print(model, tokenizer, params, DEVICE) 
     if model_semaphore is None:
         model_semaphore = asyncio.Semaphore(LIMIT_MODEL_CONCURRENCY)
     await model_semaphore.acquire()
