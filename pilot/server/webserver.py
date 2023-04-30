@@ -71,6 +71,10 @@ function() {
     const params = new URLSearchParams(window.location.search);
     url_params = Object.fromEntries(params);
     console.log(url_params);
+    gradioURL = window.location.href
+    if (!gradioURL.endsWith('?__theme=dark')) {
+        window.location.replace(gradioURL + '?__theme=dark');
+    }
     return url_params;
     }
 """
@@ -248,8 +252,7 @@ def build_single_model_ui():
     notice_markdown = """
     # DB-GPT
     
-    [DB-GPT](https://github.com/csunny/DB-GPT) 是一个实验性的开源应用程序，它基于[FastChat](https://github.com/lm-sys/FastChat)，并使用vicuna作为基础模型。此外，此程序结合了langchain和llama-index 
-    ,基于现有知识库进行In-Context Learning来对其进行数据库相关知识的增强, 总的来说，它似乎是一个用于数据库的复杂且创新的AI工具。如果您对如何在工作中使用或实施 DB-GPT 有任何具体问题，请告诉我，我会尽力帮助您。 
+    [DB-GPT](https://github.com/csunny/DB-GPT) 是一个实验性的开源应用程序，它基于[FastChat](https://github.com/lm-sys/FastChat)，并使用vicuna作为基础模型。此外，此程序结合了langchain和llama-index基于现有知识库进行In-Context Learning来对其进行数据库相关知识的增强, 总的来说，它似乎是一个用于数据库的复杂且创新的AI工具。如果您对如何在工作中使用或实施 DB-GPT 有任何具体问题，请告诉我，我会尽力帮助您。 
     """
     learn_more_markdown = """ 
         ### Licence
@@ -258,23 +261,6 @@ def build_single_model_ui():
 
     state = gr.State()
     notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
-
-
-    chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
-    with gr.Row():
-        with gr.Column(scale=20):
-            textbox = gr.Textbox(
-                show_label=False,
-                placeholder="Enter text and press ENTER",
-                visible=False,
-            ).style(container=False)
-
-        with gr.Column(scale=2, min_width=50):
-            send_btn = gr.Button(value="" "发送", visible=False)
-        
-    with gr.Row(visible=False) as button_row:
-        regenerate_btn = gr.Button(value="🔄" "重新生成", interactive=False)
-        clear_btn = gr.Button(value="🗑️" "清理", interactive=False)
 
     with gr.Accordion("参数", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
@@ -295,41 +281,57 @@ def build_single_model_ui():
             label="最大输出Token数",
         )
 
-        gr.Markdown(learn_more_markdown)
+    chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
+    with gr.Row():
+        with gr.Column(scale=20):
+            textbox = gr.Textbox(
+                show_label=False,
+                placeholder="Enter text and press ENTER",
+                visible=False,
+            ).style(container=False)
 
+        with gr.Column(scale=2, min_width=50):
+            send_btn = gr.Button(value="" "发送", visible=False)
 
-        btn_list = [regenerate_btn, clear_btn]
-        regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
-            http_bot,
-            [state, temperature, max_output_tokens],
-            [state, chatbot] + btn_list,
-        )
-        clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
         
-        textbox.submit(
-            add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-        ).then(
-            http_bot,
-            [state, temperature, max_output_tokens],
-            [state, chatbot] + btn_list,
-        )
+    with gr.Row(visible=False) as button_row:
+        regenerate_btn = gr.Button(value="🔄" "重新生成", interactive=False)
+        clear_btn = gr.Button(value="🗑️" "清理", interactive=False)
 
-        send_btn.click(
-            add_text, [state, textbox], [state, chatbot, textbox] + btn_list
-        ).then(
-            http_bot,
-            [state, temperature, max_output_tokens],
-            [state, chatbot] + btn_list
-        )
+    gr.Markdown(learn_more_markdown)
 
-        return state, chatbot, textbox, send_btn, button_row, parameter_row
+    btn_list = [regenerate_btn, clear_btn]
+    regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
+        http_bot,
+        [state, temperature, max_output_tokens],
+        [state, chatbot] + btn_list,
+    )
+    clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
+    
+    textbox.submit(
+        add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+    ).then(
+        http_bot,
+        [state, temperature, max_output_tokens],
+        [state, chatbot] + btn_list,
+    )
+
+    send_btn.click(
+        add_text, [state, textbox], [state, chatbot, textbox] + btn_list
+    ).then(
+        http_bot,
+        [state, temperature, max_output_tokens],
+        [state, chatbot] + btn_list
+    )
+
+    return state, chatbot, textbox, send_btn, button_row, parameter_row
 
 
 def build_webdemo():
     with gr.Blocks(
         title="数据库智能助手",
-        theme=gr.themes.Base(),
-        # theme=gr.themes.Monochrome(),
+        # theme=gr.themes.Base(),
+        theme=gr.themes.Default(),
         css=block_css,
     ) as demo:
         url_params = gr.JSON(visible=False)
