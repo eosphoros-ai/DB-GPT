@@ -11,7 +11,7 @@ Overall, it appears to be a sophisticated and innovative tool for working with d
 1. Run model server
 ```
 cd pilot/server
-uvicorn vicuna_server:app --host 0.0.0.0
+python vicuna_server.py
 ```
 
 2. Run gradio webui
