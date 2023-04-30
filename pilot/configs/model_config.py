@@ -19,7 +19,7 @@ llm_model_config = {
 LLM_MODEL = "vicuna-13b"
 LIMIT_MODEL_CONCURRENCY = 5
 MAX_POSITION_EMBEDDINGS = 2048
-vicuna_model_server = "http://192.168.31.114:21002"
+vicuna_model_server = "http://192.168.31.114:8000"
 
 
 # Load model config
