@@ -10,6 +10,9 @@ import gradio as gr
 import datetime
 import requests
 from urllib.parse import urljoin
+from pilot.configs.model_config import DB_SETTINGS
+from pilot.connections.mysql_conn import MySQLOperator
+
 
 from pilot.configs.model_config import LOGDIR, vicuna_model_server, LLM_MODEL
 
@@ -29,7 +32,7 @@ from fastchat.utils import (
 from fastchat.serve.gradio_patch import Chatbot as grChatbot
 from fastchat.serve.gradio_css import code_highlight_css
 
-logger = build_logger("webserver", "webserver.log")
+logger = build_logger("webserver", LOGDIR + "webserver.log")
 headers = {"User-Agent": "dbgpt Client"}
 
 no_change_btn = gr.Button.update()
@@ -38,10 +41,27 @@ disable_btn = gr.Button.update(interactive=True)
 
 enable_moderation = False
 models = []
+dbs = []
 
 priority = {
     "vicuna-13b": "aaa"
 }
+
+def gen_sqlgen_conversation(dbname):
+    mo = MySQLOperator(
+        **DB_SETTINGS
+    )
+
+    message = ""
+
+    schemas = mo.get_schema(dbname)
+    for s in schemas:
+        message += s["schema_info"] + ";"
+    return f"数据库{dbname}的Schema信息如下: {message}\n"
+
+def get_database_list():
+    mo = MySQLOperator(**DB_SETTINGS)
+    return mo.get_db_list()
 
 get_window_url_params = """
 function() {
@@ -58,12 +78,10 @@ function() {
 def load_demo(url_params, request: gr.Request):
     logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
 
+    dbs = get_database_list()
     dropdown_update = gr.Dropdown.update(visible=True)
-    if "model" in url_params:
-        model = url_params["model"]
-        if model in models:
-            dropdown_update = gr.Dropdown.update(
-                value=model, visible=True)
+    if dbs:
+        gr.Dropdown.update(choices=dbs)
 
     state = default_conversation.copy()
     return (state,
@@ -120,26 +138,32 @@ def post_process_code(code):
         code = sep.join(blocks)
     return code
 
-def http_bot(state, temperature, max_new_tokens, request: gr.Request):
+def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Request):
     start_tstamp = time.time()
     model_name = LLM_MODEL
 
+    dbname = db_selector
+    # TODO 这里的请求需要拼接现有知识库, 使得其根据现有知识库作答, 所以prompt需要继续优化
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 
     if len(state.messages) == state.offset + 2:
-        # First round of conversation
+        # 第一轮对话需要加入提示Prompt 
         
         template_name = "conv_one_shot"
         new_state = conv_templates[template_name].copy()
         new_state.conv_id = uuid.uuid4().hex
-        new_state.append_message(new_state.roles[0], state.messages[-2][1])
+        
+        # prompt 中添加上下文提示
+        new_state.append_message(new_state.roles[0], gen_sqlgen_conversation(dbname) + state.messages[-2][1])
         new_state.append_message(new_state.roles[1], None)
         state = new_state
-
+    
+    
     prompt = state.get_prompt()
+    
     skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
     # Make requests
@@ -226,7 +250,7 @@ def build_single_model_ui():
     """
 
     state = gr.State()
-    notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Accordion("参数", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
@@ -247,29 +271,41 @@ def build_single_model_ui():
             label="最大输出Token数",
         )
 
-    chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
-    with gr.Row():
-        with gr.Column(scale=20):
-            textbox = gr.Textbox(
-                show_label=False,
-                placeholder="Enter text and press ENTER",
-                visible=False,
-            ).style(container=False)
+    with gr.Tabs():
+        with gr.TabItem("知识问答", elem_id="QA"):
+           pass
+        with gr.TabItem("SQL生成与诊断", elem_id="SQL"):
+            # TODO A selector to choose database
+            with gr.Row(elem_id="db_selector"):
+                db_selector = gr.Dropdown(
+                    label="请选择数据库",
+                    choices=dbs,
+                    value=dbs[0] if len(models) > 0 else "",
+                    interactive=True,
+                    show_label=True).style(container=False) 
+    
+    with gr.Blocks():
+        chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
+        with gr.Row():
+            with gr.Column(scale=20):
+                textbox = gr.Textbox(
+                    show_label=False,
+                    placeholder="Enter text and press ENTER",
+                    visible=False,
+                ).style(container=False)          
+            with gr.Column(scale=2, min_width=50):
+                send_btn = gr.Button(value="发送", visible=False) 
 
-        with gr.Column(scale=2, min_width=50):
-            send_btn = gr.Button(value="" "发送", visible=False)
-
-        
     with gr.Row(visible=False) as button_row:
-        regenerate_btn = gr.Button(value="🔄" "重新生成", interactive=False)
-        clear_btn = gr.Button(value="🗑️" "清理", interactive=False)
+        regenerate_btn = gr.Button(value="重新生成", interactive=False)
+        clear_btn = gr.Button(value="清理", interactive=False)
 
     gr.Markdown(learn_more_markdown)
 
     btn_list = [regenerate_btn, clear_btn]
     regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
         http_bot,
-        [state, temperature, max_output_tokens],
+        [state, db_selector, temperature, max_output_tokens],
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
@@ -278,7 +314,7 @@ def build_single_model_ui():
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, temperature, max_output_tokens],
+        [state, db_selector, temperature, max_output_tokens],
         [state, chatbot] + btn_list,
     )
 
@@ -286,7 +322,7 @@ def build_single_model_ui():
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, temperature, max_output_tokens],
+        [state, db_selector, temperature, max_output_tokens],
         [state, chatbot] + btn_list
     )
 
@@ -343,6 +379,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
+    dbs = get_database_list()
     logger.info(args)
     demo = build_webdemo()
     demo.queue(

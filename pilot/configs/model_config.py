@@ -25,3 +25,11 @@ vicuna_model_server = "http://192.168.31.114:8000"
 # Load model config
 isload_8bit = True
 isdebug = False
+
+
+DB_SETTINGS = {
+    "user": "root",
+    "password": "********",
+    "host": "localhost",
+    "port": 3306
+}

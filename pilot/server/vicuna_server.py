@@ -115,6 +115,5 @@ def embeddings(prompt_request: EmbeddingRequest):
     return {"response": [float(x) for x in output]}
 
 
-
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", log_level="info") 
