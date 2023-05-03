@@ -89,8 +89,8 @@ class Conversation:
 
 
 conv_one_shot = Conversation(
-    system="A chat between a curious human and an artificial intelligence assistant."
-    "The assistant gives helpful, detailed and polite answers to the human's questions. ",
+    system="A chat between a curious human and an artificial intelligence assistant, who very familiar with database related knowledge. "
+    "The assistant gives helpful, detailed, professional and polite answers to the human's questions. ",
     roles=("Human", "Assistant"),
     messages=(
         (
@@ -123,8 +123,8 @@ conv_one_shot = Conversation(
 )
 
 conv_vicuna_v1 = Conversation(
-    system = "A chat between a curious user and an artificial intelligence assistant. "
-    "The assistant gives helpful, detailed and polite answers to the user's questions. ",
+    system = "A chat between a curious user and an artificial intelligence assistant. who very familiar with database related knowledge. "
+    "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
     roles=("USER", "ASSISTANT"),
     messages=(),
     offset=0,
