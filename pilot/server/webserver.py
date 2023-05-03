@@ -227,7 +227,7 @@ def build_single_model_ui():
     """
 
     state = gr.State()
-    notice = gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Accordion("参数", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
@@ -248,22 +248,29 @@ def build_single_model_ui():
             label="最大输出Token数",
         )
 
-    chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
-    with gr.Row():
-        with gr.Column(scale=20):
-            textbox = gr.Textbox(
-                show_label=False,
-                placeholder="Enter text and press ENTER",
-                visible=False,
-            ).style(container=False)
+    with gr.Tabs():
+        with gr.TabItem("知识问答", elem_id="QA"):
+            pass
 
-        with gr.Column(scale=2, min_width=50):
-            send_btn = gr.Button(value="" "发送", visible=False)
+        with gr.TabItem("SQL生成与诊断", elem_id="SQL"):
+            # TODO A selector to choose database
+            pass 
+    
+    with gr.Blocks():
+        chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
+        with gr.Row():
+            with gr.Column(scale=20):
+                textbox = gr.Textbox(
+                    show_label=False,
+                    placeholder="Enter text and press ENTER",
+                    visible=False,
+                ).style(container=False)          
+            with gr.Column(scale=2, min_width=50):
+                send_btn = gr.Button(value="发送", visible=False) 
 
-        
     with gr.Row(visible=False) as button_row:
-        regenerate_btn = gr.Button(value="🔄" "重新生成", interactive=False)
-        clear_btn = gr.Button(value="🗑️" "清理", interactive=False)
+        regenerate_btn = gr.Button(value="重新生成", interactive=False)
+        clear_btn = gr.Button(value="清理", interactive=False)
 
     gr.Markdown(learn_more_markdown)
 
