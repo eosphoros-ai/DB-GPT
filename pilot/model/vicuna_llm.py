@@ -17,17 +17,25 @@ class VicunaRequestLLM(LLM):
         if isinstance(stop, list):
             stop = stop + ["Observation:"]
         
+        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
         params = {
             "prompt": prompt,
-            "temperature": 0,
-            "max_new_tokens": 256,
+            "temperature": 0.7,
+            "max_new_tokens": 1024,
             "stop": stop
         }
         response = requests.post(
             url=urljoin(vicuna_model_server, self.vicuna_generate_path),
-            data=json.dumps(params)
+            data=json.dumps(params),
         )
         response.raise_for_status()
+        # for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+        #     if chunk:
+        #         data = json.loads(chunk.decode())
+        #         if data["error_code"] == 0:
+        #             output = data["text"][skip_echo_len:].strip()
+        #             output = self.post_process_code(output)
+        #             yield output
         return response.json()["response"]
 
     @property
