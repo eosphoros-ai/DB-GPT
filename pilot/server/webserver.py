@@ -124,6 +124,7 @@ def http_bot(state, temperature, max_new_tokens, request: gr.Request):
     start_tstamp = time.time()
     model_name = LLM_MODEL
 
+    # TODO 这里的请求需要拼接现有知识库, 使得其根据现有知识库作答, 所以prompt需要继续优化
     if state.skip_next:
         # This generate call is skipped due to invalid inputs
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
