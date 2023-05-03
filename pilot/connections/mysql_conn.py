@@ -5,6 +5,8 @@ import pymysql
 
 class MySQLOperator:
     """Connect MySQL Database fetch MetaData For LLM Prompt """
+
+    default_db = ["information_schema", "performance_schema", "sys", "mysql"]
     def __init__(self, user, password, host="localhost", port=3306) -> None:
         
         self.conn = pymysql.connect(
@@ -25,12 +27,16 @@ class MySQLOperator:
             results = cursor.fetchall()
             return results
 
+    def get_db_list(self):
+        with self.conn.cursor() as cursor:
+            _sql = """ 
+                show databases;
+            """
+            cursor.execute(_sql)
+            results = cursor.fetchall()
 
-if __name__ == "__main__":
-    mo = MySQLOperator(
-        "root",
-        "aa123456",
-    )
+            dbs = [d["Database"] for d in results if d["Database"] not in self.default_db]
+            return dbs
 
-    schema = mo.get_schema("dbgpt")
-    print(schema)
+
+
