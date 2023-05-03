@@ -33,11 +33,21 @@ def knowledged_qa_demo(text_list):
 
 
 def get_answer(q):
-    base_knowledge = """ 这是一段测试文字  """
+    base_knowledge = """ """ 
     text_list = [base_knowledge]
     index = knowledged_qa_demo(text_list)
     response = index.query(q)
     return response.response
+
+def get_similar(q):
+    from pilot.vector_store.extract_tovec import knownledge_tovec
+    docsearch = knownledge_tovec("./datasets/plan.md")
+    docs = docsearch.similarity_search_with_score(q, k=1)
+
+    for doc in docs:
+        dc, s = doc 
+        print(dc.page_content)
+        yield dc.page_content 
 
 if __name__ == "__main__":
     # agent_demo()
@@ -49,7 +59,7 @@ if __name__ == "__main__":
             text_output = gr.TextArea()
             text_button = gr.Button()
         
-        text_button.click(get_answer, inputs=text_input, outputs=text_output)
+        text_button.click(get_similar, inputs=text_input, outputs=text_output)
 
     demo.queue(concurrency_count=3).launch(server_name="0.0.0.0")
    
