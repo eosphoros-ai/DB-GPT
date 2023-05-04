@@ -13,8 +13,10 @@ LOGDIR = os.path.join(root_path, "logs")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 llm_model_config = {
     "flan-t5-base": os.path.join(model_path, "flan-t5-base"),
-    "vicuna-13b": os.path.join(model_path, "vicuna-13b")
+    "vicuna-13b": os.path.join(model_path, "vicuna-13b"),
+    "sentence-transforms": os.path.join(model_path, "all-MiniLM-L6-v2")
 }
+
 
 LLM_MODEL = "vicuna-13b"
 LIMIT_MODEL_CONCURRENCY = 5
