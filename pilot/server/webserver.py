@@ -160,7 +160,7 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 
-    query = state.messages[-2][1]
+   
     if len(state.messages) == state.offset + 2:
         # 第一轮对话需要加入提示Prompt 
         
@@ -168,6 +168,8 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
         new_state = conv_templates[template_name].copy()
         new_state.conv_id = uuid.uuid4().hex
         
+        query = state.messages[-2][1]
+
         # prompt 中添加上下文提示
         if db_selector:
             new_state.append_message(new_state.roles[0], gen_sqlgen_conversation(dbname) + query)
@@ -178,13 +180,13 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
             new_state.append_message(new_state.roles[1], None)
             state = new_state
 
-    try: 
-        if not db_selector: 
-            sim_q = get_simlar(query)
-            print("********vector similar info*************: ", sim_q)
-            state.append_message(new_state.roles[0], sim_q + query)
-    except Exception as e:
-        print(e)
+    # try: 
+    #     if not db_selector: 
+    #         sim_q = get_simlar(query)
+    #         print("********vector similar info*************: ", sim_q)
+    #         state.append_message(new_state.roles[0], sim_q + query)
+    # except Exception as e:
+    #     print(e)
 
     prompt = state.get_prompt()
     
