@@ -14,7 +14,7 @@ from pilot.configs.model_config import DB_SETTINGS
 from pilot.connections.mysql_conn import MySQLOperator
 
 
-from pilot.configs.model_config import LOGDIR, vicuna_model_server, LLM_MODEL
+from pilot.configs.model_config import LOGDIR, VICUNA_MODEL_SERVER, LLM_MODEL
 
 from pilot.conversation import (
     default_conversation,
@@ -181,7 +181,7 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
 
     try:
         # Stream output
-        response = requests.post(urljoin(vicuna_model_server, "generate_stream"),
+        response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate_stream"),
             headers=headers, json=payload, stream=True, timeout=20)
         for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:

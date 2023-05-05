@@ -25,7 +25,7 @@ class VicunaRequestLLM(LLM):
             "stop": stop
         }
         response = requests.post(
-            url=urljoin(vicuna_model_server, self.vicuna_generate_path),
+            url=urljoin(VICUNA_MODEL_SERVER, self.vicuna_generate_path),
             data=json.dumps(params),
         )
         response.raise_for_status()
@@ -55,7 +55,7 @@ class VicunaEmbeddingLLM(BaseModel, Embeddings):
         print("Sending prompt ", p)
 
         response = requests.post(
-            url=urljoin(vicuna_model_server, self.vicuna_embedding_path),
+            url=urljoin(VICUNA_MODEL_SERVER, self.vicuna_embedding_path),
             json={
                 "prompt": p
             }
