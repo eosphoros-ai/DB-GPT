@@ -26,13 +26,14 @@ def knownledge_tovec_st(filename):
     """ Use sentence transformers to embedding the document.
         https://github.com/UKPLab/sentence-transformers
     """
-    from pilot.configs.model_config import llm_model_config
-    embeddings = HuggingFaceEmbeddings(model=llm_model_config["sentence-transforms"])
+    from pilot.configs.model_config import LLM_MODEL_CONFIG
+    embeddings = HuggingFaceEmbeddings(model_name=LLM_MODEL_CONFIG["sentence-transforms"])
 
     with open(filename, "r") as f:
         knownledge = f.read()
-    
+  
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+
     texts = text_splitter(knownledge)
     docsearch = Chroma.from_texts(texts, embeddings, metadatas=[{"source": str(i)} for i in range(len(texts))])
     return docsearch
