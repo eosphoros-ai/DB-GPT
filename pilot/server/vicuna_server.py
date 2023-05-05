@@ -14,7 +14,7 @@ from fastchat.serve.inference import load_model
 from pilot.model.loader import ModerLoader
 from pilot.configs.model_config import *
 
-model_path = llm_model_config[LLM_MODEL] 
+model_path = LLM_MODEL_CONFIG[LLM_MODEL] 
 
 
 global_counter = 0
