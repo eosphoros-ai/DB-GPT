@@ -34,7 +34,7 @@ def knownledge_tovec_st(filename):
   
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
 
-    texts = text_splitter(knownledge)
+    texts = text_splitter.split_text(knownledge)
     docsearch = Chroma.from_texts(texts, embeddings, metadatas=[{"source": str(i)} for i in range(len(texts))])
     return docsearch
 
