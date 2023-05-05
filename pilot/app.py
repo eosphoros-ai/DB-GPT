@@ -40,13 +40,13 @@ def get_answer(q):
     return response.response
 
 def get_similar(q):
-    from pilot.vector_store.extract_tovec import knownledge_tovec, load_knownledge_from_doc 
-    docsearch = load_knownledge_from_doc()
+    from pilot.vector_store.extract_tovec import knownledge_tovec, knownledge_tovec_st
+    docsearch = knownledge_tovec_st("./datasets/plan.md")
     docs = docsearch.similarity_search_with_score(q, k=1)
 
     for doc in docs:
         dc, s = doc 
-        print(dc.page_content)
+        print(s)
         yield dc.page_content 
 
 if __name__ == "__main__":
