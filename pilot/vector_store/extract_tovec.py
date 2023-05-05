@@ -50,17 +50,15 @@ def load_knownledge_from_doc():
     from pilot.configs.model_config import LLM_MODEL_CONFIG
     embeddings = HuggingFaceEmbeddings(model_name=LLM_MODEL_CONFIG["sentence-transforms"])
 
-    docs = []
     files = os.listdir(DATASETS_DIR)
     for file in files:
         if not os.path.isdir(file): 
-            with open(file, "r") as f:
-                doc = f.read()
-                docs.append(docs)    
+            filename = os.path.join(DATASETS_DIR, file)
+            with open(filename, "r") as f:
+                 knownledge = f.read()
 
-    print(doc)
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_owerlap=0)
-    texts = text_splitter.split_text("\n".join(docs))
+    texts = text_splitter.split_text(knownledge)
     docsearch = Chroma.from_texts(texts, embeddings, metadatas=[{"source": str(i)} for i in range(len(texts))],
                                 persist_directory=os.path.join(VECTORE_PATH, ".vectore"))
     return docsearch
