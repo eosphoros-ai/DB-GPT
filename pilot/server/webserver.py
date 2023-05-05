@@ -236,6 +236,12 @@ pre {
     """
 )
 
+def change_mode(mode):
+    if mode == "默认知识库对话":
+        return gr.update(visible=False)
+    else:
+        return gr.update(visible=True)
+
 
 def build_single_model_ui():
    
@@ -249,6 +255,7 @@ def build_single_model_ui():
         The service is a research preview intended for non-commercial use only. subject to the model [License](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md) of LLaMA 
     """
 
+    vs_path, file_status, vs_list = gr.State(""), gr.State(""), gr.State(vs_list)
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
@@ -270,10 +277,16 @@ def build_single_model_ui():
             interactive=True,
             label="最大输出Token数",
         )
-
-    with gr.Tabs():
+    tabs = gr.Tabs()
+    with tabs:
         with gr.TabItem("知识问答", elem_id="QA"):
-           pass
+            doc2vec = gr.Column(visible=False)
+            with doc2vec:
+                mode = gr.Radio(["默认知识库对话", "新增知识库"])
+                vs_setting = gr.Accordion("配置知识库")
+                mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
+                with vs_setting:
+                    select_vs = gr.Dropdown()
         with gr.TabItem("SQL生成与诊断", elem_id="SQL"):
             # TODO A selector to choose database
             with gr.Row(elem_id="db_selector"):
@@ -299,6 +312,10 @@ def build_single_model_ui():
     with gr.Row(visible=False) as button_row:
         regenerate_btn = gr.Button(value="重新生成", interactive=False)
         clear_btn = gr.Button(value="清理", interactive=False)
+
+    # QA 模式下清空数据库选项
+    if tabs.elem_id == "QA":
+        db_selector = ""
 
     gr.Markdown(learn_more_markdown)
 
