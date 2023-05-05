@@ -12,9 +12,9 @@ import requests
 from urllib.parse import urljoin
 from pilot.configs.model_config import DB_SETTINGS
 from pilot.connections.mysql_conn import MySQLOperator
-from pilot.vector_store.extract_tovec import get_vector_storelist, load_knownledge_from_doc
+from pilot.vector_store.extract_tovec import get_vector_storelist, load_knownledge_from_doc, knownledge_tovec_st
 
-from pilot.configs.model_config import LOGDIR, VICUNA_MODEL_SERVER, LLM_MODEL
+from pilot.configs.model_config import LOGDIR, VICUNA_MODEL_SERVER, LLM_MODEL, DATASETS_DIR
 
 from pilot.conversation import (
     default_conversation,
@@ -50,7 +50,7 @@ priority = {
 
 def get_simlar(q):
     
-    docsearch = load_knownledge_from_doc()
+    docsearch = knownledge_tovec_st(os.path.join(DATASETS_DIR, "plan.md"))
     docs = docsearch.similarity_search_with_score(q, k=1)
 
     contents = [dc.page_content for dc, _ in docs]
@@ -171,12 +171,20 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
         # prompt 中添加上下文提示
         if db_selector:
             new_state.append_message(new_state.roles[0], gen_sqlgen_conversation(dbname) + query)
+            new_state.append_message(new_state.roles[1], None)
+            state = new_state
+        else:
+            new_state.append_message(new_state.roles[0], query)
+            new_state.append_message(new_state.roles[1], None)
+            state = new_state
 
-        new_state.append_message(new_state.roles[1], None)
-        state = new_state
-    
-    if not db_selector: 
-        state.append_message(new_state.roles[0], get_simlar(query) + query)
+    try: 
+        if not db_selector: 
+            sim_q = get_simlar(query)
+            print("********vector similar info*************: ", sim_q)
+            state.append_message(new_state.roles[0], sim_q + query)
+    except Exception as e:
+        print(e)
 
     prompt = state.get_prompt()
     
