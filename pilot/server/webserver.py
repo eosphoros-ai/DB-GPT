@@ -292,8 +292,8 @@ def build_single_model_ui():
                 
         with gr.TabItem("知识问答", elem_id="QA"):
 
-            mode = gr.Radio(["默认知识库对话", "新增知识库"])
-            vs_setting = gr.Accordion("配置知识库")
+            mode = gr.Radio(["默认知识库对话", "新增知识库"], show_label=False, value="默认知识库对话")
+            vs_setting = gr.Accordion("配置知识库", open=False)
             mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
             with vs_setting:
                 vs_name = gr.Textbox(label="新知识库名称", lines=1, interactive=True)
