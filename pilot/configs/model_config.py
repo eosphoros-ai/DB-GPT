@@ -8,7 +8,7 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 MODEL_PATH = os.path.join(ROOT_PATH, "models")
 VECTORE_PATH = os.path.join(ROOT_PATH, "vector_store")
 LOGDIR = os.path.join(ROOT_PATH, "logs")
-
+DATASETS_DIR = os.path.join(ROOT_PATH, "datasets")
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 LLM_MODEL_CONFIG = {
