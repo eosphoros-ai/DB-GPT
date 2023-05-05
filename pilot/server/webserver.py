@@ -12,9 +12,9 @@ import requests
 from urllib.parse import urljoin
 from pilot.configs.model_config import DB_SETTINGS
 from pilot.connections.mysql_conn import MySQLOperator
+from pilot.vector_store.extract_tovec import get_vector_storelist, load_knownledge_from_doc, knownledge_tovec_st
 
-
-from pilot.configs.model_config import LOGDIR, vicuna_model_server, LLM_MODEL
+from pilot.configs.model_config import LOGDIR, VICUNA_MODEL_SERVER, LLM_MODEL, DATASETS_DIR
 
 from pilot.conversation import (
     default_conversation,
@@ -42,10 +42,21 @@ disable_btn = gr.Button.update(interactive=True)
 enable_moderation = False
 models = []
 dbs = []
+vs_list = ["新建知识库"] + get_vector_storelist()
 
 priority = {
     "vicuna-13b": "aaa"
 }
+
+def get_simlar(q):
+    
+    docsearch = knownledge_tovec_st(os.path.join(DATASETS_DIR, "plan.md"))
+    docs = docsearch.similarity_search_with_score(q, k=1)
+
+    contents = [dc.page_content for dc, _ in docs]
+    return "\n".join(contents)
+    
+    
 
 def gen_sqlgen_conversation(dbname):
     mo = MySQLOperator(
@@ -149,6 +160,7 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 
+    query = state.messages[-2][1]
     if len(state.messages) == state.offset + 2:
         # 第一轮对话需要加入提示Prompt 
         
@@ -157,11 +169,23 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
         new_state.conv_id = uuid.uuid4().hex
         
         # prompt 中添加上下文提示
-        new_state.append_message(new_state.roles[0], gen_sqlgen_conversation(dbname) + state.messages[-2][1])
-        new_state.append_message(new_state.roles[1], None)
-        state = new_state
-    
-    
+        if db_selector:
+            new_state.append_message(new_state.roles[0], gen_sqlgen_conversation(dbname) + query)
+            new_state.append_message(new_state.roles[1], None)
+            state = new_state
+        else:
+            new_state.append_message(new_state.roles[0], query)
+            new_state.append_message(new_state.roles[1], None)
+            state = new_state
+
+    try: 
+        if not db_selector: 
+            sim_q = get_simlar(query)
+            print("********vector similar info*************: ", sim_q)
+            state.append_message(new_state.roles[0], sim_q + query)
+    except Exception as e:
+        print(e)
+
     prompt = state.get_prompt()
     
     skip_echo_len = len(prompt.replace("</s>", " ")) + 1
@@ -181,7 +205,7 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
 
     try:
         # Stream output
-        response = requests.post(urljoin(vicuna_model_server, "generate_stream"),
+        response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate_stream"),
             headers=headers, json=payload, stream=True, timeout=20)
         for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
@@ -236,6 +260,15 @@ pre {
     """
 )
 
+def change_tab(tab):
+    pass
+
+def change_mode(mode):
+    if mode == "默认知识库对话":
+        return gr.update(visible=False)
+    else:
+        return gr.update(visible=True)
+
 
 def build_single_model_ui():
    
@@ -270,12 +303,10 @@ def build_single_model_ui():
             interactive=True,
             label="最大输出Token数",
         )
-
-    with gr.Tabs():
-        with gr.TabItem("知识问答", elem_id="QA"):
-           pass
+    tabs = gr.Tabs() 
+    with tabs:
         with gr.TabItem("SQL生成与诊断", elem_id="SQL"):
-            # TODO A selector to choose database
+        # TODO A selector to choose database
             with gr.Row(elem_id="db_selector"):
                 db_selector = gr.Dropdown(
                     label="请选择数据库",
@@ -283,6 +314,30 @@ def build_single_model_ui():
                     value=dbs[0] if len(models) > 0 else "",
                     interactive=True,
                     show_label=True).style(container=False) 
+
+        with gr.TabItem("知识问答", elem_id="QA"):
+            mode = gr.Radio(["默认知识库对话", "新增知识库"], show_label=False, value="默认知识库对话")
+            vs_setting = gr.Accordion("配置知识库", open=False)
+            mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
+            with vs_setting:
+                vs_name = gr.Textbox(label="新知识库名称", lines=1, interactive=True)
+                vs_add = gr.Button("添加为新知识库")
+                with gr.Column() as doc2vec:
+                    gr.Markdown("向知识库中添加文件")
+                    with gr.Tab("上传文件"):
+                        files = gr.File(label="添加文件", 
+                                        file_types=[".txt", ".md", ".docx", ".pdf"],
+                                        file_count="multiple",
+                                        show_label=False
+                                        )
+
+                        load_file_button = gr.Button("上传并加载到知识库")
+                    with gr.Tab("上传文件夹"):
+                        folder_files = gr.File(label="添加文件",
+                                            file_count="directory",
+                                            show_label=False)
+                        load_folder_button = gr.Button("上传并加载到知识库")
+       
     
     with gr.Blocks():
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
@@ -299,6 +354,7 @@ def build_single_model_ui():
     with gr.Row(visible=False) as button_row:
         regenerate_btn = gr.Button(value="重新生成", interactive=False)
         clear_btn = gr.Button(value="清理", interactive=False)
+
 
     gr.Markdown(learn_more_markdown)
 
