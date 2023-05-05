@@ -40,8 +40,8 @@ def get_answer(q):
     return response.response
 
 def get_similar(q):
-    from pilot.vector_store.extract_tovec import knownledge_tovec
-    docsearch = knownledge_tovec("./datasets/plan.md")
+    from pilot.vector_store.extract_tovec import knownledge_tovec, knownledge_tovec_st
+    docsearch = knownledge_tovec_st("./datasets/plan.md")
     docs = docsearch.similarity_search_with_score(q, k=1)
 
     for doc in docs:
