@@ -46,7 +46,7 @@ def get_similar(q):
 
     for doc in docs:
         dc, s = doc 
-        print(dc.page_content)
+        print(s)
         yield dc.page_content 
 
 if __name__ == "__main__":
