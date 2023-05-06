@@ -29,8 +29,8 @@ from fastchat.utils import (
     moderation_msg
 )
 
-from fastchat.serve.gradio_patch import Chatbot as grChatbot
-from fastchat.serve.gradio_css import code_highlight_css
+from pilot.server.gradio_css import code_highlight_css
+from pilot.server.gradio_patch import Chatbot as grChatbot
 
 logger = build_logger("webserver", LOGDIR + "webserver.log")
 headers = {"User-Agent": "dbgpt Client"}
