@@ -158,6 +158,12 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、详细的回
 
 default_conversation = conv_one_shot
 
+conversation_types = {
+    "native": "LLM原生对话",
+    "default_knownledge": "默认知识库对话",
+    "custome":  "新增知识库对话",
+}
+
 conv_templates = {
     "conv_one_shot": conv_one_shot,
     "vicuna_v1": conv_vicuna_v1,
