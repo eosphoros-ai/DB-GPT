@@ -170,7 +170,8 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
         
         query = state.messages[-2][1]
 
-        # prompt 中添加上下文提示
+        # prompt 中添加上下文提示, 根据已有知识对话, 上下文提示是否也应该放在第一轮, 还是每一轮都添加上下文? 
+        # 如果用户侧的问题跨度很大, 应该每一轮都加提示。
         if db_selector:
             new_state.append_message(new_state.roles[0], gen_sqlgen_conversation(dbname) + query)
             new_state.append_message(new_state.roles[1], None)
@@ -179,7 +180,7 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
             new_state.append_message(new_state.roles[0], query)
             new_state.append_message(new_state.roles[1], None)
             state = new_state
-
+    
     # try: 
     #     if not db_selector: 
     #         sim_q = get_simlar(query)
@@ -222,7 +223,7 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
                     state.messages[-1][-1] = output
                     yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
                     return
-                time.sleep(0.02)
+
     except requests.exceptions.RequestException as e:
         state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
         yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
@@ -231,6 +232,7 @@ def http_bot(state, db_selector, temperature, max_new_tokens, request: gr.Reques
     state.messages[-1][-1] = state.messages[-1][-1][:-1]
     yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
+    # 记录运行日志
     finish_tstamp = time.time()
     logger.info(f"{output}")
 
