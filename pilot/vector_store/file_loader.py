@@ -28,16 +28,18 @@ class KnownLedge2Vector:
     def init_vector_store(self):
         documents = self.load_knownlege()
         persist_dir = os.path.join(VECTORE_PATH, ".vectordb")
+        print("向量数据库持久化地址: ", persist_dir)
         if os.path.exists(persist_dir):
             # 从本地持久化文件中Load
-            pass
+            vector_store = Chroma(persist_directory=persist_dir, embedding_function=self.embeddings)
+            vector_store.add_documents(documents=documents)
         else:
             # 重新初始化
             vector_store = Chroma.from_documents(documents=documents, 
                                                  embedding=self.embeddings,
                                                  persist_directory=persist_dir)
             vector_store.persist()
-
+            vector_store = None 
         return persist_dir
 
     def load_knownlege(self):
@@ -45,7 +47,6 @@ class KnownLedge2Vector:
         for root, _, files in os.walk(DATASETS_DIR, topdown=False):
             for file in files:
                 filename = os.path.join(root, file)
-                print(filename)  
                 docs = self._load_file(filename)
                 # 更新metadata数据
                 new_docs = [] 
@@ -53,8 +54,7 @@ class KnownLedge2Vector:
                     doc.metadata = {"source": doc.metadata["source"].replace(DATASETS_DIR, "")} 
                     print("文档2向量初始化中, 请稍等...", doc.metadata)
                     new_docs.append(doc)
-                docments += docs
-
+                docments += new_docs
         return docments
 
     def _load_file(self, filename):
@@ -75,5 +75,5 @@ class KnownLedge2Vector:
 
 if __name__ == "__main__":
     k2v = KnownLedge2Vector()
-    k2v.load_knownlege()
+    k2v.init_vector_store()
             
