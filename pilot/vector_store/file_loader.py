@@ -10,9 +10,8 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.document_loaders import UnstructuredFileLoader, UnstructuredPDFLoader, TextLoader
 from langchain.chains import VectorDBQA
 from langchain.embeddings import HuggingFaceEmbeddings
-from pilot.configs.model_config import VECTORE_PATH, DATASETS_DIR, LLM_MODEL_CONFIG
+from pilot.configs.model_config import VECTORE_PATH, DATASETS_DIR, LLM_MODEL_CONFIG, VECTOR_SEARCH_TOP_K
 
-VECTOR_SEARCH_TOP_K = 5
 
 class KnownLedge2Vector:
 
@@ -26,21 +25,21 @@ class KnownLedge2Vector:
             self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name) 
         
     def init_vector_store(self):
-        documents = self.load_knownlege()
         persist_dir = os.path.join(VECTORE_PATH, ".vectordb")
         print("向量数据库持久化地址: ", persist_dir)
         if os.path.exists(persist_dir):
             # 从本地持久化文件中Load
+            print("从本地向量加载数据...")
             vector_store = Chroma(persist_directory=persist_dir, embedding_function=self.embeddings)
-            vector_store.add_documents(documents=documents)
+            # vector_store.add_documents(documents=documents)
         else:
+            documents = self.load_knownlege()
             # 重新初始化
             vector_store = Chroma.from_documents(documents=documents, 
                                                  embedding=self.embeddings,
                                                  persist_directory=persist_dir)
             vector_store.persist()
-            vector_store = None 
-        return persist_dir
+        return vector_store 
 
     def load_knownlege(self):
         docments = []
@@ -70,10 +69,23 @@ class KnownLedge2Vector:
         return docs
 
     def _load_from_url(self, url):
+        """Load data from url address"""
         pass
 
+    
+    def query(self, q):
+        """Query similar doc from Vector """
+        vector_store = self.init_vector_store()
+        docs = vector_store.similarity_search_with_score(q, k=self.top_k)
+        for doc in docs:
+            dc, s = doc
+            yield s, dc
 
 if __name__ == "__main__":
     k2v = KnownLedge2Vector()
-    k2v.init_vector_store()
+
+    persist_dir = os.path.join(VECTORE_PATH, ".vectordb") 
+    print(persist_dir)
+    for s, dc in k2v.query("什么是OceanBase"):
+        print(s, dc.page_content, dc.metadata)
             
