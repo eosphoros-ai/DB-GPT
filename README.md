@@ -32,6 +32,26 @@ Run on an RTX 4090 GPU (The origin mov not sped up!, [YouTube地址](https://www
 
 <img src="https://github.com/csunny/DB-GPT/blob/main/asserts/DB_QA.png" margin-left="auto" margin-right="auto" width="600">
 
+# Dependencies
+1. First you need to install python requirements.
+```
+python>=3.9
+pip install -r requirements
+```
+or if you use conda envirenment, you can use this command
+```
+cd DB-GPT
+conda env create -f environment.yml
+```
+
+2. MySQL Install
+
+In this project examples, we connect mysql and run SQL-Generate. so you need install mysql local for test. recommand docker
+```
+docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa123456 -dit mysql:latest
+```
+The password just for test, you can change this if necessary
+
 # Install
 1. 基础模型下载
 关于基础模型, 可以根据[vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights)合成教程进行合成。 
