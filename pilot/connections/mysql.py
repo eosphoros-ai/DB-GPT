@@ -4,7 +4,11 @@
 import pymysql
 
 class MySQLOperator:
-    """Connect MySQL Database fetch MetaData For LLM Prompt """
+    """Connect MySQL Database fetch MetaData For LLM Prompt 
+        Args:
+
+        Usage:
+    """
 
     default_db = ["information_schema", "performance_schema", "sys", "mysql"]
     def __init__(self, user, password, host="localhost", port=3306) -> None:
@@ -26,6 +30,9 @@ class MySQLOperator:
             cursor.execute(_sql)
             results = cursor.fetchall()
             return results
+    
+    def get_index(self, schema_name):
+        pass
 
     def get_db_list(self):
         with self.conn.cursor() as cursor:
@@ -38,5 +45,7 @@ class MySQLOperator:
             dbs = [d["Database"] for d in results if d["Database"] not in self.default_db]
             return dbs
 
+    def get_meta(self, schema_name):
+        pass
 
 
