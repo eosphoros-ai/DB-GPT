@@ -281,7 +281,7 @@ def build_single_model_ui():
     """
     learn_more_markdown = """ 
         ### Licence
-        The service is a research preview intended for non-commercial use only. subject to the model [License](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md) of LLaMA 
+        The service is a research preview intended for non-commercial use only. subject to the model [License](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md) of Vicuna-13B 
     """
 
     state = gr.State()
