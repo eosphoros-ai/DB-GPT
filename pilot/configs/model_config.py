@@ -7,11 +7,12 @@ import nltk
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_PATH = os.path.join(ROOT_PATH, "models")
-VECTORE_PATH = os.path.join(ROOT_PATH, "vector_store")
+PILOT_PATH = os.path.join(ROOT_PATH, "pilot")
+VECTORE_PATH = os.path.join(PILOT_PATH, "vector_store")
 LOGDIR = os.path.join(ROOT_PATH, "logs")
-DATASETS_DIR = os.path.join(ROOT_PATH, "pilot/datasets")
+DATASETS_DIR = os.path.join(PILOT_PATH, "datasets")
 
-nltk.data.path = [os.path.join(ROOT_PATH, "pilot/nltk_data")] + nltk.data.path
+nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 LLM_MODEL_CONFIG = {
