@@ -17,6 +17,7 @@ class Config(metaclass=Singleton):
         self.execute_local_commands = (
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
         )
+        self.temperature = float(os.getenv("TEMPERATURE", "0.7"))
 
         self.plugins_dir = os.getenv("PLUGINS_DIR", 'plugins')
         self.plugins:List[AutoGPTPluginTemplate] = []
@@ -28,5 +29,9 @@ class Config(metaclass=Singleton):
     def set_plugins(self,value: bool) -> None:
         """Set the plugins value."""
         self.plugins = value
+
+    def set_temperature(self, value: int) -> None:
+        """ Set the temperature value."""
+        self.temperature = value
 
   
