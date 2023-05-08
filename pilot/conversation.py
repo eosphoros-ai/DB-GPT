@@ -89,7 +89,7 @@ class Conversation:
 
 
 def gen_sqlgen_conversation(dbname):
-    from pilot.connections.mysql_conn import MySQLOperator
+    from pilot.connections.mysql import MySQLOperator
     mo = MySQLOperator(
         **DB_SETTINGS
     )
