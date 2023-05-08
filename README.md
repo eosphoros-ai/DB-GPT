@@ -28,6 +28,10 @@ Run on an RTX 4090 GPU (The origin mov not sped up!, [YouTube地址](https://www
 
 <img src="https://github.com/csunny/DB-GPT/blob/main/asserts/SQLGEN.png" width="600" margin-left="auto" margin-right="auto" >
 
+The Generated SQL is runable.
+
+<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/exeable.png" width="600" margin-left="auto" margin-right="auto" >
+
 - 数据库QA示例 
 
 <img src="https://github.com/csunny/DB-GPT/blob/main/asserts/DB_QA.png" margin-left="auto" margin-right="auto" width="600">
