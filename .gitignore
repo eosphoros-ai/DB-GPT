@@ -131,5 +131,5 @@ dmypy.json
 .pyre/
 .DS_Store
 logs
-
+nltk_data
 .vectordb
