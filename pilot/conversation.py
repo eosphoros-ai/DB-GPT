@@ -146,7 +146,23 @@ conv_vicuna_v1 = Conversation(
     sep2="</s>",
 )
 
+
+conv_qa_prompt_template = """ 基于以下已知的信息, 专业、详细的回答用户的问题。
+            如果无法从提供的恶内容中获取答案, 请说: "知识库中提供的内容不足以回答此问题", 但是你可以给出一些与问题相关答案的建议:   
+            
+            已知内容: 
+            {context}
+            问题:
+            {question}
+"""
+
 default_conversation = conv_one_shot
+
+conversation_types = {
+    "native": "LLM原生对话",
+    "default_knownledge": "默认知识库对话",
+    "custome":  "新增知识库对话",
+}
 
 conv_templates = {
     "conv_one_shot": conv_one_shot,

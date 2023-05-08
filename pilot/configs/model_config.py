@@ -11,6 +11,7 @@ PILOT_PATH = os.path.join(ROOT_PATH, "pilot")
 VECTORE_PATH = os.path.join(PILOT_PATH, "vector_store")
 LOGDIR = os.path.join(ROOT_PATH, "logs")
 DATASETS_DIR = os.path.join(PILOT_PATH, "datasets")
+DATA_DIR = os.path.join(PILOT_PATH, "data")
 
 nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
 
@@ -22,6 +23,7 @@ LLM_MODEL_CONFIG = {
 }
 
 
+VECTOR_SEARCH_TOP_K = 3
 LLM_MODEL = "vicuna-13b"
 LIMIT_MODEL_CONCURRENCY = 5
 MAX_POSITION_EMBEDDINGS = 2048
