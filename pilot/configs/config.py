@@ -10,3 +10,5 @@ class Config(metaclass=Singleton):
         """Initialize the Config class"""
         pass
 
+
+    # TODO change model_config there
