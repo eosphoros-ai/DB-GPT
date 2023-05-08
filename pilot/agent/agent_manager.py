@@ -3,6 +3,8 @@
 
 from pilot.singleton import Singleton
 from pilot.configs.config import Config
+from typing import List
+from pilot.model.base import Message
 
 class AgentManager(metaclass=Singleton):
     """Agent manager for managing DB-GPT agents
@@ -30,7 +32,16 @@ class AgentManager(metaclass=Singleton):
         Returns:
             The key of the new agent
         """
-        pass
+        messages: List[Message] = [
+            {"role": "user", "content": prompt}, 
+        ] 
+
+        for plugin in self.cfg.plugins:
+            if not plugin.can_handle_pre_instruction():
+                continue
+            if plugin_messages := plugin.pre_instruction(messages):
+                messages.extend(iter(plugin_messages))
+            # 
 
     def message_agent(self):
         pass
