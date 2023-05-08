@@ -13,7 +13,7 @@ from pilot.model.inference import generate_output, get_embeddings
 from fastchat.serve.inference import load_model
 
 
-from pilot.model.loader import ModerLoader
+from pilot.model.loader import ModelLoader
 from pilot.configs.model_config import *
 
 model_path = LLM_MODEL_CONFIG[LLM_MODEL] 
@@ -22,7 +22,7 @@ model_path = LLM_MODEL_CONFIG[LLM_MODEL]
 global_counter = 0
 model_semaphore = None
 
-ml = ModerLoader(model_path=model_path)
+ml = ModelLoader(model_path=model_path)
 model, tokenizer = ml.loader(num_gpus=1, load_8bit=ISLOAD_8BIT, debug=ISDEBUG)
 #model, tokenizer = load_model(model_path=model_path, device=DEVICE, num_gpus=1, load_8bit=True, debug=False)
 
