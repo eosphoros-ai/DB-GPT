@@ -12,7 +12,7 @@ import requests
 from urllib.parse import urljoin
 from pilot.configs.model_config import DB_SETTINGS
 from pilot.server.vectordb_qa import KnownLedgeBaseQA
-from pilot.connections.mysql_conn import MySQLOperator
+from pilot.connections.mysql import MySQLOperator
 from pilot.vector_store.extract_tovec import get_vector_storelist, load_knownledge_from_doc, knownledge_tovec_st
 
 from pilot.configs.model_config import LOGDIR, VICUNA_MODEL_SERVER, LLM_MODEL, DATASETS_DIR
