@@ -15,6 +15,20 @@ from pilot.configs.model_config import VECTORE_PATH, DATASETS_DIR, LLM_MODEL_CON
 
 class KnownLedge2Vector:
 
+    """KnownLedge2Vector class is order to load document to vector 
+    and persist to vector store.
+        
+        Args: 
+           - model_name
+
+        Usage:
+            k2v = KnownLedge2Vector()
+            persist_dir = os.path.join(VECTORE_PATH, ".vectordb") 
+            print(persist_dir)
+            for s, dc in k2v.query("what is oceanbase?"):
+                print(s, dc.page_content, dc.metadata)
+
+    """
     embeddings: object = None 
     model_name = LLM_MODEL_CONFIG["sentence-transforms"]
     top_k: int = VECTOR_SEARCH_TOP_K
@@ -81,11 +95,4 @@ class KnownLedge2Vector:
             dc, s = doc
             yield s, dc
 
-if __name__ == "__main__":
-    k2v = KnownLedge2Vector()
-
-    persist_dir = os.path.join(VECTORE_PATH, ".vectordb") 
-    print(persist_dir)
-    for s, dc in k2v.query("什么是OceanBase"):
-        print(s, dc.page_content, dc.metadata)
             
