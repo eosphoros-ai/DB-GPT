@@ -131,8 +131,4 @@ dmypy.json
 .pyre/
 .DS_Store
 logs
-<<<<<<< HEAD
-=======
-
->>>>>>> 2eeb22ccae5b2a5d695ac267044129f3b672c3dc
 .vectordb
