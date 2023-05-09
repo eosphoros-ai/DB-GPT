@@ -10,7 +10,7 @@ from transformers import (
 
 from fastchat.serve.compression import compress_module
 
-class ModelLoader:
+class ModelLoader():
     """Model loader is a class for model load
     
       Args: model_path
