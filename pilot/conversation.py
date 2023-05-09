@@ -251,8 +251,6 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、详细的回
             {question}
 """
 
-
-
 default_conversation = conv_one_shot
 
 conversation_types = {
