@@ -57,11 +57,11 @@ dependencies:
     - sentence-transformers
     - umap-learn
     - notebook
-    - gradio==3.24.1
+    - gradio==3.23
     - gradio-client==0.0.8
     - wandb
-    - fschat=0.1.10
-    - llama-index=0.5.27
+    - fschat==0.1.10
+    - llama-index==0.5.27
     - pymysql
     - unstructured==0.6.3
     - pytesseract==0.3.10
