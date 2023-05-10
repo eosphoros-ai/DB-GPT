@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import torch
+from pilot.singleton import Singleton
+
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
@@ -10,7 +12,7 @@ from transformers import (
 
 from fastchat.serve.compression import compress_module
 
-class ModelLoader():
+class ModelLoader(metaclass=Singleton):
     """Model loader is a class for model load
     
       Args: model_path
