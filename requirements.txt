@@ -55,3 +55,22 @@ llama-index==0.5.27
 pymysql
 unstructured==0.6.3
 pytesseract==0.3.10
+auto-gpt-plugin-template
+pymdown-extensions
+mkdocs
+requests
+gTTS==2.3.1
+
+# OpenAI and Generic plugins import
+openapi-python-client==0.13.4
+
+# Testing dependencies
+pytest
+asynctest
+pytest-asyncio
+pytest-benchmark
+pytest-cov
+pytest-integration
+pytest-mock
+vcrpy
+pytest-recording
