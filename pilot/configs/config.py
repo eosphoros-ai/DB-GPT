@@ -29,7 +29,14 @@ class Config(metaclass=Singleton):
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36"
             " (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36",
         )
-        
+
+        self.elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
+        self.elevenlabs_voice_1_id = os.getenv("ELEVENLABS_VOICE_1_ID")
+        self.elevenlabs_voice_2_id = os.getenv("ELEVENLABS_VOICE_2_ID")
+
+        self.use_mac_os_tts = False
+        self.use_mac_os_tts = os.getenv("USE_MAC_OS_TTS")
+
         # milvus or zilliz cloud configuration
         self.milvus_addr = os.getenv("MILVUS_ADDR", "localhost:19530")
         self.milvus_username = os.getenv("MILVUS_USERNAME")
@@ -37,14 +44,20 @@ class Config(metaclass=Singleton):
         self.milvus_collection = os.getenv("MILVUS_COLLECTION", "dbgpt")
         self.milvus_secure = os.getenv("MILVUS_SECURE") == "True"
 
+        self.plugins_dir = os.getenv("PLUGINS_DIR", "plugins")
+        self.plugins: List[AutoGPTPluginTemplate] = []
+        self.plugins_openai = []
+
         plugins_allowlist = os.getenv("ALLOWLISTED_PLUGINS")
         if plugins_allowlist:
             self.plugins_allowlist = plugins_allowlist.split(",")
         else:
-            self.plugins_allowlist = [] 
+            self.plugins_allowlist = []
 
-        plugins_denylist = os.getenv("DENYLISTED_PLUGINS") 
+        plugins_denylist = os.getenv("DENYLISTED_PLUGINS")
         if plugins_denylist:
+            self.plugins_denylist = plugins_denylist.split(",")
+        else:
             self.plugins_denylist = []
     
     def set_debug_mode(self, value: bool) -> None:
