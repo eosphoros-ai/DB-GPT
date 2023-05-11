@@ -6,8 +6,7 @@ from abc import ABC, abstractmethod
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 
-from typing import List
-
+from typing import List, Optional, Dict
 
 registered_methods = []
 
@@ -23,11 +22,12 @@ class SourceEmbedding(ABC):
     Implementations should implement the  method
     """
 
-    def __init__(self, yuque_path, model_name, vector_store_config):
+    def __init__(self, yuque_path, model_name, vector_store_config, embedding_args: Optional[Dict] = None):
         """Initialize with YuqueLoader url, model_name, vector_store_config"""
         self.yuque_path = yuque_path
         self.model_name = model_name
         self.vector_store_config = vector_store_config
+        self.embedding_args = embedding_args
 
     @abstractmethod
     @register
