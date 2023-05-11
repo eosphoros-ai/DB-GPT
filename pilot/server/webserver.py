@@ -27,8 +27,6 @@ from pilot.conversation import (
 from pilot.utils import (
     build_logger,
     server_error_msg,
-    violates_moderation,
-    moderation_msg
 )
 
 from pilot.server.gradio_css import code_highlight_css
@@ -129,14 +127,9 @@ def add_text(state, text, request: gr.Request):
     if len(text) <= 0:
         state.skip_next = True
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
-    if args.moderate:
-        flagged = violates_moderation(text)
-        if flagged:
-            state.skip_next = True
-            return (state, state.to_gradio_chatbot(), moderation_msg) + (
-                no_change_btn,) * 5
 
-    text = text[:4000]  # Hard cut-off
+    """ Default support 4000 tokens, if tokens too lang, we will cut off  """
+    text = text[:4000]  
     state.append_message(state.roles[0], text)
     state.append_message(state.roles[1], None)
     state.skip_next = False
@@ -439,9 +432,7 @@ if __name__ == "__main__":
         "--model-list-mode", type=str, default="once", choices=["once", "reload"]
     )
     parser.add_argument("--share", default=False, action="store_true")
-    parser.add_argument(
-        "--moderate", action="store_true", help="Enable content moderation"
-    )
+
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
