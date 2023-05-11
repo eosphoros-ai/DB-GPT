@@ -10,6 +10,8 @@ class SeparatorStyle(Enum):
     
     SINGLE = auto()
     TWO = auto()
+    THREE = auto()
+    FOUR = auto()
 
 @dataclasses.dataclass
 class Conversation:
@@ -146,10 +148,103 @@ conv_vicuna_v1 = Conversation(
     sep2="</s>",
 )
 
+auto_dbgpt_one_shot = Conversation(
+    system="You are DB-GPT, an AI designed to answer questions about HackerNews by query `hackerbews` database in MySQL. "
+    "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
+    roles=("USER", "ASSISTANT"),
+    messages=(
+        (
+          "USER", 
+          """ Answer how many users does hackernews have by query mysql database
+            Constraints:
+            1. ~4000 word limit for short term memory. Your short term memory is short, so immediately save important information to files.
+            2. If you are unsure how you previously did something or want to recall past events, thinking about similar events will help you remember.
+            3. No user assistance
+            4. Exclusively use the commands listed in double quotes e.g. "command name"
 
-conv_qa_prompt_template = """ 基于以下已知的信息, 专业、详细的回答用户的问题。
-            如果无法从提供的恶内容中获取答案, 请说: "知识库中提供的内容不足以回答此问题", 但是你可以给出一些与问题相关答案的建议:   
-            
+            Commands:
+            1. analyze_code: Analyze Code, args: "code": "<full_code_string>"
+            2. execute_python_file: Execute Python File, args: "filename": "<filename>"
+            3. append_to_file: Append to file, args: "filename": "<filename>", "text": "<text>"
+            4. delete_file: Delete file, args: "filename": "<filename>"
+            5. list_files: List Files in Directory, args: "directory": "<directory>"
+            6. read_file: Read file, args: "filename": "<filename>"
+            7. write_to_file: Write to file, args: "filename": "<filename>", "text": "<text>"
+            8. tidb_sql_executor: "Execute SQL in TiDB Database.", args: "sql": "<sql>"
+
+            Resources:
+            1. Internet access for searches and information gathering.
+            2. Long Term memory management.
+            3. vicuna powered Agents for delegation of simple tasks.
+            4. File output.
+
+            Performance Evaluation:
+            1. Continuously review and analyze your actions to ensure you are performing to the best of your abilities.
+            2. Constructively self-criticize your big-picture behavior constantly.
+            3. Reflect on past decisions and strategies to refine your approach.
+            4. Every command has a cost, so be smart and efficient. Aim to complete tasks in the least number of steps.
+            5. Write all code to a file.
+
+            You should only respond in JSON format as described below
+            Response Format: 
+            {
+                "thoughts": {
+                    "text": "thought",
+                    "reasoning": "reasoning",
+                    "plan": "- short bulleted\n- list that conveys\n- long-term plan",
+                    "criticism": "constructive self-criticism",
+                    "speak": "thoughts summary to say to user"
+                },
+                "command": {
+                    "name": "command name",
+                    "args": {
+                        "arg name": "value"
+                    }
+                }
+            } 
+            Ensure the response can be parsed by Python json.loads
+          """
+        ),
+        (
+            "ASSISTANT",
+            """
+            {
+                "thoughts": {
+                    "text": "thought",
+                    "reasoning": "reasoning",
+                    "plan": "- short bulleted\n- list that conveys\n- long-term plan",
+                    "criticism": "constructive self-criticism",
+                    "speak": "thoughts summary to say to user"
+                },
+                "command": {
+                    "name": "command name",
+                    "args": {
+                        "arg name": "value"
+                    }
+                }
+            } 
+            """
+        )
+    ),
+    offset=0,
+    sep_style=SeparatorStyle.THREE,
+    sep=" ",
+    sep2="</s>",
+)
+
+auto_dbgpt_without_shot = Conversation(
+    system="You are DB-GPT, an AI designed to answer questions about HackerNews by query `hackerbews` database in MySQL. "
+    "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
+    roles=("USER", "ASSISTANT"),
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.FOUR,
+    sep=" ",
+    sep2="</s>",
+)
+
+conv_qa_prompt_template = """ 基于以下已知的信息, 专业、详细的回答用户的问题,
+            如果无法从提供的恶内容中获取答案, 请说: "知识库中提供的内容不足以回答此问题", 但是你可以给出一些与问题相关答案的建议。 
             已知内容: 
             {context}
             问题:

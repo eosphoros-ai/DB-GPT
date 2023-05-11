@@ -24,7 +24,7 @@ from pilot.conversation import (
     SeparatorStyle
 )
 
-from fastchat.utils import (
+from pilot.utils import (
     build_logger,
     server_error_msg,
     violates_moderation,
@@ -45,6 +45,7 @@ enable_moderation = False
 models = []
 dbs = []
 vs_list = ["新建知识库"] + get_vector_storelist()
+autogpt = False
 
 priority = {
     "vicuna-13b": "aaa"
@@ -58,8 +59,6 @@ def get_simlar(q):
     contents = [dc.page_content for dc, _ in docs]
     return "\n".join(contents)
     
-    
-
 def gen_sqlgen_conversation(dbname):
     mo = MySQLOperator(
         **DB_SETTINGS
@@ -118,6 +117,8 @@ def regenerate(state, request: gr.Request):
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
 def clear_history(request: gr.Request):
+
+    
     logger.info(f"clear_history. ip: {request.client.host}")
     state = None
     return (state, [], "") + (disable_btn,) * 5
@@ -135,7 +136,7 @@ def add_text(state, text, request: gr.Request):
             return (state, state.to_gradio_chatbot(), moderation_msg) + (
                 no_change_btn,) * 5
 
-    text = text[:1536]  # Hard cut-off
+    text = text[:4000]  # Hard cut-off
     state.append_message(state.roles[0], text)
     state.append_message(state.roles[1], None)
     state.skip_next = False
@@ -152,6 +153,8 @@ def post_process_code(code):
     return code
 
 def http_bot(state, mode, db_selector, temperature, max_new_tokens, request: gr.Request):
+
+    print("是否是AUTO-GPT模式.", autogpt)
     start_tstamp = time.time()
     model_name = LLM_MODEL
 
@@ -162,7 +165,8 @@ def http_bot(state, mode, db_selector, temperature, max_new_tokens, request: gr.
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 
-   
+
+    # TODO when tab mode is AUTO_GPT, Prompt need to rebuild.
     if len(state.messages) == state.offset + 2:
         # 第一轮对话需要加入提示Prompt 
         
@@ -251,21 +255,18 @@ def http_bot(state, mode, db_selector, temperature, max_new_tokens, request: gr.
 block_css = (
     code_highlight_css
     + """
-pre {
-    white-space: pre-wrap;       /* Since CSS 2.1 */
-    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-    white-space: -pre-wrap;      /* Opera 4-6 */
-    white-space: -o-pre-wrap;    /* Opera 7 */
-    word-wrap: break-word;       /* Internet Explorer 5.5+ */
-}
-#notice_markdown th {
-    display: none;
-}
-    """
+        pre {
+            white-space: pre-wrap;       /* Since CSS 2.1 */
+            white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* Internet Explorer 5.5+ */
+        }
+        #notice_markdown th {
+            display: none;
+        }
+            """
 )
-
-def change_tab(tab):
-    pass
 
 def change_mode(mode):
     if mode in ["默认知识库对话", "LLM原生对话"]:
@@ -273,7 +274,9 @@ def change_mode(mode):
     else:
         return gr.update(visible=True)
 
-
+def change_tab():
+    autogpt = True 
+ 
 def build_single_model_ui():
    
     notice_markdown = """
@@ -301,16 +304,17 @@ def build_single_model_ui():
 
         max_output_tokens = gr.Slider(
             minimum=0,
-            maximum=1024,
-            value=512,
+            maximum=4096,
+            value=2048,
             step=64,
             interactive=True,
             label="最大输出Token数",
         )
-    tabs = gr.Tabs() 
+    tabs= gr.Tabs()
     with tabs:
-        with gr.TabItem("SQL生成与诊断", elem_id="SQL"):
-        # TODO A selector to choose database
+        tab_sql = gr.TabItem("SQL生成与诊断", elem_id="SQL")
+        with tab_sql:
+            # TODO A selector to choose database
             with gr.Row(elem_id="db_selector"):
                 db_selector = gr.Dropdown(
                     label="请选择数据库",
@@ -318,9 +322,12 @@ def build_single_model_ui():
                     value=dbs[0] if len(models) > 0 else "",
                     interactive=True,
                     show_label=True).style(container=False) 
+        tab_auto = gr.TabItem("AUTO-GPT", elem_id="auto")
+        with tab_auto:
+            gr.Markdown("自动执行模式下, DB-GPT可以具备执行SQL、从网络读取知识自动化存储学习的能力")
 
-        with gr.TabItem("知识问答", elem_id="QA"):
-            
+        tab_qa = gr.TabItem("知识问答", elem_id="QA")
+        with tab_qa:
             mode = gr.Radio(["LLM原生对话", "默认知识库对话", "新增知识库对话"], show_label=False, value="LLM原生对话")
             vs_setting = gr.Accordion("配置知识库", open=False)
             mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
@@ -360,9 +367,7 @@ def build_single_model_ui():
         regenerate_btn = gr.Button(value="重新生成", interactive=False)
         clear_btn = gr.Button(value="清理", interactive=False)
 
-
     gr.Markdown(learn_more_markdown)
-
     btn_list = [regenerate_btn, clear_btn]
     regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
         http_bot,
