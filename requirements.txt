@@ -53,3 +53,4 @@ pymysql
 unstructured==0.6.3
 pytesseract==0.3.10
 chromadb
+markdown2
