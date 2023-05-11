@@ -10,8 +10,6 @@ from fastapi.responses import StreamingResponse
 from pilot.model.inference import generate_stream
 from pydantic import BaseModel
 from pilot.model.inference import generate_output, get_embeddings
-from fastchat.serve.inference import load_model
-
 
 from pilot.model.loader import ModelLoader
 from pilot.configs.model_config import *
