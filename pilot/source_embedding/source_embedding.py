@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import os
 from abc import ABC, abstractmethod
 
-from pymilvus import connections, FieldSchema, DataType, CollectionSchema
-
-from pilot.source_embedding.text_to_vector import TextToVector
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.vectorstores import Chroma
 
 from typing import List
 
@@ -30,9 +29,6 @@ class SourceEmbedding(ABC):
         self.model_name = model_name
         self.vector_store_config = vector_store_config
 
-    # Sub-classes should implement this method
-    # as return list(self.lazy_load()).
-    # This method returns a List which is materialized in memory.
     @abstractmethod
     @register
     def read(self) -> List[ABC]:
@@ -49,61 +45,23 @@ class SourceEmbedding(ABC):
     @register
     def text_to_vector(self, docs):
         """transform vector"""
-        for doc in docs:
-            doc["vector"] = TextToVector.textToVector(doc["content"])[0]
-        return docs
+        pass
 
     @register
-    def index_to_store(self):
+    def index_to_store(self, docs):
         """index to vector store"""
-        milvus = connections.connect(
-            alias="default",
-            host='localhost',
-            port="19530"
-        )
-        doc_id = FieldSchema(
-            name="doc_id",
-            dtype=DataType.INT64,
-            is_primary=True,
-        )
-        doc_vector = FieldSchema(
-            name="doc_vector",
-            dtype=DataType.FLOAT_VECTOR,
-            dim=self.vector_store_config["dim"]
-        )
-        schema = CollectionSchema(
-            fields=[doc_id, doc_vector],
-            description=self.vector_store_config["description"]
-        )
+        embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
 
-    @register
-    def index_to_store(self):
-        """index to vector store"""
-        milvus = connections.connect(
-            alias="default",
-            host='localhost',
-            port="19530"
-        )
-        doc_id = FieldSchema(
-            name="doc_id",
-            dtype=DataType.INT64,
-            is_primary=True,
-        )
-        doc_vector = FieldSchema(
-            name="doc_vector",
-            dtype=DataType.FLOAT_VECTOR,
-            dim=self.vector_store_config["dim"]
-        )
-        schema = CollectionSchema(
-            fields=[doc_id, doc_vector],
-            description=self.vector_store_config["description"]
-        )
+        persist_dir = os.path.join(self.vector_store_config["vector_store_path"],
+                                   self.vector_store_config["vector_store_name"] + ".vectordb")
+        vector_store = Chroma.from_documents(docs, embeddings, persist_directory=persist_dir)
+        vector_store.persist()
 
     def source_embedding(self):
         if 'read' in registered_methods:
             text = self.read()
-        if 'process' in registered_methods:
-            self.process(text)
+        if 'data_process' in registered_methods:
+            text = self.data_process(text)
         if 'text_split' in registered_methods:
             self.text_split(text)
         if 'text_to_vector' in registered_methods:
