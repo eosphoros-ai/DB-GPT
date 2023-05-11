@@ -48,7 +48,6 @@ notebook
 gradio==3.23
 gradio-client==0.0.8
 wandb
-fschat==0.1.10
 llama-index==0.5.27
 pymysql
 unstructured==0.6.3

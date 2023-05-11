@@ -24,7 +24,7 @@ from pilot.conversation import (
     SeparatorStyle
 )
 
-from fastchat.utils import (
+from pilot.utils import (
     build_logger,
     server_error_msg,
     violates_moderation,
