@@ -301,8 +301,8 @@ def build_single_model_ui():
 
         max_output_tokens = gr.Slider(
             minimum=0,
-            maximum=1024,
-            value=512,
+            maximum=4096,
+            value=2048,
             step=64,
             interactive=True,
             label="最大输出Token数",

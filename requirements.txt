@@ -52,3 +52,4 @@ llama-index==0.5.27
 pymysql
 unstructured==0.6.3
 pytesseract==0.3.10
+chromadb
