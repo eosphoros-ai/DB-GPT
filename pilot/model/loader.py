@@ -10,7 +10,7 @@ from transformers import (
     AutoModel
 )
 
-from fastchat.serve.compression import compress_module
+from pilot.model.compression import compress_module 
 
 class ModelLoader(metaclass=Singleton):
     """Model loader is a class for model load
