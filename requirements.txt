@@ -1,7 +1,5 @@
 accelerate==0.16.0
 torch==2.0.0
-torchvision==0.13.1
-torchaudio==0.12.1
 accelerate==0.16.0
 aiohttp==3.8.4
 aiosignal==1.3.1
@@ -47,11 +45,11 @@ pycocoevalcap
 sentence-transformers
 umap-learn
 notebook
-gradio==3.24.1
+gradio==3.23
 gradio-client==0.0.8
 wandb
-fschat=0.1.10
-llama-index=0.5.27
+llama-index==0.5.27
 pymysql
 unstructured==0.6.3
 pytesseract==0.3.10
+chromadb

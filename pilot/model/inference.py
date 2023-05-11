@@ -5,13 +5,13 @@ import torch
 
 @torch.inference_mode()
 def generate_stream(model, tokenizer, params, device,
-                    context_len=2048, stream_interval=2):
+                    context_len=4096, stream_interval=2):
 
     """Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/inference.py """
     prompt = params["prompt"]
     l_prompt = len(prompt)
     temperature = float(params.get("temperature", 1.0))
-    max_new_tokens = int(params.get("max_new_tokens", 256))
+    max_new_tokens = int(params.get("max_new_tokens", 2048))
     stop_str = params.get("stop", None)
 
     input_ids = tokenizer(prompt).input_ids
