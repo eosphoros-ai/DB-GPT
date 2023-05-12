@@ -38,7 +38,6 @@ class FirstPrompt:
 
     def construct_first_prompt(
             self,
-            command_registry: [] = None,
             fisrt_message: [str]=[],
             prompt_generator: Optional[PromptGenerator] = None
     ) -> str:
@@ -64,7 +63,7 @@ class FirstPrompt:
         if prompt_generator is None:
             prompt_generator = build_default_prompt_generator()
         prompt_generator.goals = fisrt_message
-        prompt_generator.command_registry = command_registry
+        prompt_generator.command_registry = self.command_registry
         # 加载插件中可用命令
         cfg = Config()
         for plugin in cfg.plugins:
