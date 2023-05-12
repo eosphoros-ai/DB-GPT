@@ -7,9 +7,9 @@ import openai
 import requests
 from PIL import Image
 
-from autogpt.commands.command import command
-from autogpt.config import Config
-from autogpt.logs import logger
+from pilot.commands.command_mange import command
+from pilot.configs.config import Config
+from pilot.logs import logger
 
 CFG = Config()
 

@@ -3,8 +3,8 @@ import json
 
 import requests
 
-from autogpt.commands.command import command
-from autogpt.config import Config
+from pilot.commands.command_mange import command
+from pilot.configs.config import Config
 
 CFG = Config()
 
