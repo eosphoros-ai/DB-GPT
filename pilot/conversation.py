@@ -225,8 +225,7 @@ auto_dbgpt_one_shot = Conversation(
     ),
     offset=0,
     sep_style=SeparatorStyle.SINGLE,
-    sep=" ",
-    sep2="</s>",
+    sep="###",
 )
 
 auto_dbgpt_without_shot = Conversation(
