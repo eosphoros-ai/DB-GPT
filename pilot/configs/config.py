@@ -46,6 +46,8 @@ class Config(metaclass=Singleton):
         self.plugins: List[AutoGPTPluginTemplate] = []
         self.plugins_openai = []
 
+        self.command_registry = []
+
         self.huggingface_api_token = os.getenv("HUGGINGFACE_API_TOKEN")
         self.image_provider = os.getenv("IMAGE_PROVIDER")
         self.image_size = int(os.getenv("IMAGE_SIZE", 256))
