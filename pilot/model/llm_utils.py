@@ -4,7 +4,7 @@
 from typing import List, Optional
 from pilot.model.base import Message
 from pilot.configs.config import Config
-from pilot.server.vicuna_server import generate_output
+from pilot.server.llmserver import generate_output
 
 def create_chat_completion(
     messages: List[Message], # type: ignore 
