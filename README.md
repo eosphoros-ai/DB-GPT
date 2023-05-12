@@ -28,15 +28,23 @@ Run on an RTX 4090 GPU (The origin mov not sped up!, [YouTube地址](https://www
 
 <img src="https://github.com/csunny/DB-GPT/blob/main/asserts/SQLGEN.png" width="600" margin-left="auto" margin-right="auto" >
 
+The Generated SQL is runable.
+
+<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/exeable.png" width="600" margin-left="auto" margin-right="auto" >
+
 - 数据库QA示例 
 
 <img src="https://github.com/csunny/DB-GPT/blob/main/asserts/DB_QA.png" margin-left="auto" margin-right="auto" width="600">
 
+基于默认内置知识库QA
+
+<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/VectorDBQA.png" width="600" margin-left="auto" margin-right="auto" >
+
 # Dependencies
 1. First you need to install python requirements.
 ```
-python>=3.9
-pip install -r requirements
+python>=3.10
+pip install -r requirements.txt
 ```
 or if you use conda envirenment, you can use this command
 ```
@@ -55,12 +63,12 @@ The password just for test, you can change this if necessary
 # Install
 1. 基础模型下载
 关于基础模型, 可以根据[vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights)合成教程进行合成。 
-如果此步有困难的同学，也可以直接使用[Hugging Face](https://huggingface.co/)上的模型进行替代。 替代模型: [vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b)
+如果此步有困难的同学，也可以直接使用[Hugging Face](https://huggingface.co/)上的模型进行替代. [替代模型](https://huggingface.co/Tribbiani/vicuna-7b)
 
 2. Run model server
 ```
 cd pilot/server
-python vicuna_server.py
+python llmserver.py
 ```
 
 3. Run gradio webui
@@ -75,6 +83,7 @@ python webserver.py
 
 总的来说，它是一个用于数据库的复杂且创新的AI工具。如果您对如何在工作中使用或实施DB-GPT有任何具体问题，请联系我, 我会尽力提供帮助, 同时也欢迎大家参与到项目建设中, 做一些有趣的事情。
 
-
+# Contribute
+[Contribute](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING)
 # Licence
 [MIT](https://github.com/csunny/DB-GPT/blob/main/LICENSE)

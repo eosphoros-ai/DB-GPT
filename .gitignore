@@ -8,6 +8,8 @@ __pycache__/
 
 .idea
 .vscode
+.idea
+.chroma
 # Distribution / packaging
 .Python
 build/
@@ -132,5 +134,5 @@ dmypy.json
 .pyre/
 .DS_Store
 logs
-
+nltk_data
 .vectordb
