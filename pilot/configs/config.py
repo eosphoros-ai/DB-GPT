@@ -42,7 +42,12 @@ class Config(metaclass=Singleton):
         self.milvus_collection = os.getenv("MILVUS_COLLECTION", "dbgpt")
         self.milvus_secure = os.getenv("MILVUS_SECURE") == "True"
 
-        self.plugins_dir = os.getenv("PLUGINS_DIR", "plugins")
+        self.authorise_key = os.getenv("AUTHORISE_COMMAND_KEY", "y")
+        self.exit_key = os.getenv("EXIT_KEY", "n")
+        self.image_provider = bool(os.getenv("IMAGE_PROVIDER", True))
+        self.image_size = int(os.getenv("IMAGE_SIZE", 256))
+
+        self.plugins_dir = os.getenv("PLUGINS_DIR", "../../plugins")
         self.plugins: List[AutoGPTPluginTemplate] = []
         self.plugins_openai = []
 
@@ -57,6 +62,7 @@ class Config(metaclass=Singleton):
         self.huggingface_audio_to_text_model = os.getenv(
             "HUGGINGFACE_AUDIO_TO_TEXT_MODEL"
         )
+        self.speak_mode = False
 
         disabled_command_categories = os.getenv("DISABLED_COMMAND_CATEGORIES")
         if disabled_command_categories:
@@ -92,4 +98,6 @@ class Config(metaclass=Singleton):
         """Set the temperature value."""
         self.temperature = value
 
-    
+    def set_speak_mode(self, value: bool) -> None:
+        """Set the speak mode value."""
+        self.speak_mode = value
