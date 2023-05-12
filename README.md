@@ -68,7 +68,7 @@ The password just for test, you can change this if necessary
 2. Run model server
 ```
 cd pilot/server
-python vicuna_server.py
+python llmserver.py
 ```
 
 3. Run gradio webui
