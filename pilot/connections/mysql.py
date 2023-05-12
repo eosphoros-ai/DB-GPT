@@ -16,6 +16,7 @@ class MySQLOperator:
         self.conn = pymysql.connect(
             host=host,
             user=user,
+            port=port,
             passwd=password,
             charset="utf8mb4",
             cursorclass=pymysql.cursors.DictCursor
