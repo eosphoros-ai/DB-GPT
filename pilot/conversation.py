@@ -6,20 +6,20 @@ from enum import auto, Enum
 from typing import List, Any
 from pilot.configs.model_config import DB_SETTINGS
 
+
 class SeparatorStyle(Enum):
-    
     SINGLE = auto()
     TWO = auto()
     THREE = auto()
     FOUR = auto()
 
-@dataclasses.dataclass
+@ dataclasses.dataclass
 class Conversation:
     """This class keeps all conversation history. """
 
     system: str
     roles: List[str]
-    messages: List[List[str]] 
+    messages: List[List[str]]
     offset: int
     sep_style: SeparatorStyle = SeparatorStyle.SINGLE
     sep: str = "###"
@@ -34,7 +34,7 @@ class Conversation:
             ret = self.system + self.sep
             for role, message in self.messages:
                 if message:
-                    ret += role + ": " + message + self.sep  
+                    ret += role + ": " + message + self.sep
                 else:
                     ret += role + ":"
             return ret
@@ -51,11 +51,10 @@ class Conversation:
 
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
-                
 
     def append_message(self, role, message):
         self.messages.append([role, message])
-    
+
     def to_gradio_chatbot(self):
         ret = []
         for i, (role, msg) in enumerate(self.messages[self.offset:]):
@@ -103,9 +102,10 @@ def gen_sqlgen_conversation(dbname):
         message += s["schema_info"] + ";"
     return f"数据库{dbname}的Schema信息如下: {message}\n"
 
+
 conv_one_shot = Conversation(
     system="A chat between a curious human and an artificial intelligence assistant, who very familiar with database related knowledge. "
-    "The assistant gives helpful, detailed, professional and polite answers to the human's questions. ",
+           "The assistant gives helpful, detailed, professional and polite answers to the human's questions. ",
     roles=("Human", "Assistant"),
     messages=(
         (
@@ -136,10 +136,10 @@ conv_one_shot = Conversation(
     sep_style=SeparatorStyle.SINGLE,
     sep="###"
 )
-    
+
 conv_vicuna_v1 = Conversation(
-    system = "A chat between a curious user and an artificial intelligence assistant. who very familiar with database related knowledge. "
-    "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
+    system="A chat between a curious user and an artificial intelligence assistant. who very familiar with database related knowledge. "
+           "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
     roles=("USER", "ASSISTANT"),
     messages=(),
     offset=0,
@@ -150,60 +150,60 @@ conv_vicuna_v1 = Conversation(
 
 auto_dbgpt_one_shot = Conversation(
     system="You are DB-GPT, an AI designed to answer questions about HackerNews by query `hackerbews` database in MySQL. "
-    "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
+           "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
     roles=("USER", "ASSISTANT"),
     messages=(
         (
-          "USER", 
-          """ Answer how many users does hackernews have by query mysql database
-            Constraints:
-            1. ~4000 word limit for short term memory. Your short term memory is short, so immediately save important information to files.
-            2. If you are unsure how you previously did something or want to recall past events, thinking about similar events will help you remember.
-            3. No user assistance
-            4. Exclusively use the commands listed in double quotes e.g. "command name"
-
-            Commands:
-            1. analyze_code: Analyze Code, args: "code": "<full_code_string>"
-            2. execute_python_file: Execute Python File, args: "filename": "<filename>"
-            3. append_to_file: Append to file, args: "filename": "<filename>", "text": "<text>"
-            4. delete_file: Delete file, args: "filename": "<filename>"
-            5. list_files: List Files in Directory, args: "directory": "<directory>"
-            6. read_file: Read file, args: "filename": "<filename>"
-            7. write_to_file: Write to file, args: "filename": "<filename>", "text": "<text>"
-            8. tidb_sql_executor: "Execute SQL in TiDB Database.", args: "sql": "<sql>"
-
-            Resources:
-            1. Internet access for searches and information gathering.
-            2. Long Term memory management.
-            3. vicuna powered Agents for delegation of simple tasks.
-            4. File output.
-
-            Performance Evaluation:
-            1. Continuously review and analyze your actions to ensure you are performing to the best of your abilities.
-            2. Constructively self-criticize your big-picture behavior constantly.
-            3. Reflect on past decisions and strategies to refine your approach.
-            4. Every command has a cost, so be smart and efficient. Aim to complete tasks in the least number of steps.
-            5. Write all code to a file.
-
-            You should only respond in JSON format as described below
-            Response Format: 
-            {
-                "thoughts": {
-                    "text": "thought",
-                    "reasoning": "reasoning",
-                    "plan": "- short bulleted\n- list that conveys\n- long-term plan",
-                    "criticism": "constructive self-criticism",
-                    "speak": "thoughts summary to say to user"
-                },
-                "command": {
-                    "name": "command name",
-                    "args": {
-                        "arg name": "value"
-                    }
-                }
-            } 
-            Ensure the response can be parsed by Python json.loads
-          """
+            "USER",
+            """ Answer how many users does hackernews have by query mysql database
+              Constraints:
+              1. ~4000 word limit for short term memory. Your short term memory is short, so immediately save important information to files.
+              2. If you are unsure how you previously did something or want to recall past events, thinking about similar events will help you remember.
+              3. No user assistance
+              4. Exclusively use the commands listed in double quotes e.g. "command name"
+  
+              Commands:
+              1. analyze_code: Analyze Code, args: "code": "<full_code_string>"
+              2. execute_python_file: Execute Python File, args: "filename": "<filename>"
+              3. append_to_file: Append to file, args: "filename": "<filename>", "text": "<text>"
+              4. delete_file: Delete file, args: "filename": "<filename>"
+              5. list_files: List Files in Directory, args: "directory": "<directory>"
+              6. read_file: Read file, args: "filename": "<filename>"
+              7. write_to_file: Write to file, args: "filename": "<filename>", "text": "<text>"
+              8. tidb_sql_executor: "Execute SQL in TiDB Database.", args: "sql": "<sql>"
+  
+              Resources:
+              1. Internet access for searches and information gathering.
+              2. Long Term memory management.
+              3. vicuna powered Agents for delegation of simple tasks.
+              4. File output.
+  
+              Performance Evaluation:
+              1. Continuously review and analyze your actions to ensure you are performing to the best of your abilities.
+              2. Constructively self-criticize your big-picture behavior constantly.
+              3. Reflect on past decisions and strategies to refine your approach.
+              4. Every command has a cost, so be smart and efficient. Aim to complete tasks in the least number of steps.
+              5. Write all code to a file.
+  
+              You should only respond in JSON format as described below
+              Response Format: 
+              {
+                  "thoughts": {
+                      "text": "thought",
+                      "reasoning": "reasoning",
+                      "plan": "- short bulleted\n- list that conveys\n- long-term plan",
+                      "criticism": "constructive self-criticism",
+                      "speak": "thoughts summary to say to user"
+                  },
+                  "command": {
+                      "name": "command name",
+                      "args": {
+                          "arg name": "value"
+                      }
+                  }
+              } 
+              Ensure the response can be parsed by Python json.loads
+            """
         ),
         (
             "ASSISTANT",
@@ -234,7 +234,7 @@ auto_dbgpt_one_shot = Conversation(
 
 auto_dbgpt_without_shot = Conversation(
     system="You are DB-GPT, an AI designed to answer questions about HackerNews by query `hackerbews` database in MySQL. "
-    "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
+           "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
     roles=("USER", "ASSISTANT"),
     messages=(),
     offset=0,
@@ -251,21 +251,18 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、详细的回
             {question}
 """
 
-
-
 default_conversation = conv_one_shot
 
 conversation_types = {
     "native": "LLM原生对话",
     "default_knownledge": "默认知识库对话",
-    "custome":  "新增知识库对话",
+    "custome": "新增知识库对话",
 }
 
 conv_templates = {
     "conv_one_shot": conv_one_shot,
     "vicuna_v1": conv_vicuna_v1,
 }
-
 
 if __name__ == "__main__":
     message = gen_sqlgen_conversation("dbgpt")
