@@ -1,3 +1,4 @@
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Milvus
 from pymilvus import Collection,utility
 from pymilvus import connections, DataType, FieldSchema, CollectionSchema
@@ -36,16 +37,21 @@ from pymilvus import connections, DataType, FieldSchema, CollectionSchema
 # hit = results[0][0]
 # hit.entity.get('title')
 
-milvus = connections.connect(
-  alias="default",
-  host='localhost',
-  port="19530"
-)
-data = ["aaa", "bbb"]
-# text_embeddings = Text2Vectors()
-mivuls = Milvus(collection_name='document', embedding_function= text_embeddings, connection_args={"host": "127.0.0.1", "port": "19530", "alias":"default"}, text_field="")
+# milvus = connections.connect(
+#   alias="default",
+#   host='localhost',
+#   port="19530"
+# )
+from pilot.vector_store.milvus_store import MilvusStore
 
-mivuls.from_texts(texts=data, embedding=text_embeddings)
+data = ["aaa", "bbb"]
+model_name = "/Users/chenketing/Desktop/project/all-MiniLM-L6-v2"
+embeddings = HuggingFaceEmbeddings(model_name=model_name)
+
+# text_embeddings = Text2Vectors()
+mivuls = MilvusStore(cfg={"url": "127.0.0.1", "port": "19530", "alias": "default", "table_name": "test_c"})
+
+# mivuls.from_texts(texts=data, embedding=embeddings)
 #     docs,
 #     embedding=embeddings,
 #     connection_args={"host": "127.0.0.1", "port": "19530", "alias": "default"}
