@@ -36,8 +36,8 @@ ISDEBUG = False
 
 
 DB_SETTINGS = {
-    "user": "puzzle@puzzle0_1954#dev_ipay10",
-    "password": "puzzle123",
-    "host": "obproxy.ocp2.alipay.net",
-    "port": 2883
+    "user": "root",
+    "password": "root",
+    "host": "127.0.0.1",
+    "port": 3306
 }
