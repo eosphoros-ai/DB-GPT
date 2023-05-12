@@ -17,6 +17,10 @@ from pilot.vector_store.extract_tovec import get_vector_storelist, load_knownled
 
 from pilot.configs.model_config import LOGDIR, VICUNA_MODEL_SERVER, LLM_MODEL, DATASETS_DIR
 
+from pilot.plugins import scan_plugins
+from pilot.configs.config import Config
+from pilot.commands.command_mange import CommandRegistry
+
 from pilot.conversation import (
     default_conversation,
     conv_templates,
@@ -441,6 +445,29 @@ if __name__ == "__main__":
     logger.info(f"args: {args}")
 
     dbs = get_database_list()
+
+    # 加载插件
+    cfg = Config()
+    cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
+
+    # 加载插件可执行命令
+    command_registry = CommandRegistry()
+    command_categories = [
+        "autogpt.commands.audio_text",
+        "autogpt.commands.file_operations",
+        "autogpt.commands.image_gen",
+        "autogpt.commands.web_selenium",
+        "autogpt.commands.write_tests",
+    ]
+    # 排除禁用命令
+    command_categories = [
+        x for x in command_categories if x not in cfg.disabled_command_categories
+    ]
+    for command_category in command_categories:
+        command_registry.import_commands(command_category)
+
+
+
     logger.info(args)
     demo = build_webdemo()
     demo.queue(
