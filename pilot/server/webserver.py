@@ -202,7 +202,6 @@ def http_bot(state, mode, db_selector, temperature, max_new_tokens, request: gr.
             if db_selector:
                 new_state.append_message(new_state.roles[0], gen_sqlgen_conversation(dbname) + query)
                 new_state.append_message(new_state.roles[1], None)
-                state = new_state
             else:
                 new_state.append_message(new_state.roles[0], query)
                 new_state.append_message(new_state.roles[1], None)
