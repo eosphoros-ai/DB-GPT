@@ -455,7 +455,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
-    # dbs = get_database_list()
+    dbs = get_database_list()
 
     # 加载插件
     cfg = Config()
