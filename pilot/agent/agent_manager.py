@@ -5,6 +5,9 @@ from __future__ import annotations
 
 from pilot.configs.config import Config
 from pilot.singleton import Singleton
+from pilot.configs.config import Config
+from typing import List
+from pilot.model.base import Message
 
 
 class AgentManager(metaclass=Singleton):
@@ -13,6 +16,19 @@ class AgentManager(metaclass=Singleton):
     def __init__(self):
         self.next_key = 0
         self.agents = {}  # key, (task, full_message_history, model)
+        self.cfg = Config()
+    """Agent manager for managing DB-GPT agents
+       In order to compatible auto gpt plugins, 
+       we use the same template with it.
+    
+        Args: next_keys
+                agents
+                cfg
+    """
+
+    def __init__(self) -> None:
+        self.next_key = 0
+        self.agents = {} #TODO need to define
         self.cfg = Config()
 
     # Create new GPT agent

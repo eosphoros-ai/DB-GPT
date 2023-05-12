@@ -3,7 +3,6 @@ import io
 import uuid
 from base64 import b64decode
 
-import openai
 import requests
 from PIL import Image
 
@@ -26,12 +25,9 @@ def generate_image(prompt: str, size: int = 256) -> str:
         str: The filename of the image
     """
     filename = f"{CFG.workspace_path}/{str(uuid.uuid4())}.jpg"
-
-    # DALL-E
-    if CFG.image_provider == "dalle":
-        return generate_image_with_dalle(prompt, filename, size)
+   
     # HuggingFace
-    elif CFG.image_provider == "huggingface":
+    if CFG.image_provider == "huggingface":
         return generate_image_with_hf(prompt, filename)
     # SD WebUI
     elif CFG.image_provider == "sdwebui":
@@ -75,45 +71,6 @@ def generate_image_with_hf(prompt: str, filename: str) -> str:
     image.save(filename)
 
     return f"Saved to disk:{filename}"
-
-
-def generate_image_with_dalle(prompt: str, filename: str, size: int) -> str:
-    """Generate an image with DALL-E.
-
-    Args:
-        prompt (str): The prompt to use
-        filename (str): The filename to save the image to
-        size (int): The size of the image
-
-    Returns:
-        str: The filename of the image
-    """
-
-    # Check for supported image sizes
-    if size not in [256, 512, 1024]:
-        closest = min([256, 512, 1024], key=lambda x: abs(x - size))
-        logger.info(
-            f"DALL-E only supports image sizes of 256x256, 512x512, or 1024x1024. Setting to {closest}, was {size}."
-        )
-        size = closest
-
-    response = openai.Image.create(
-        prompt=prompt,
-        n=1,
-        size=f"{size}x{size}",
-        response_format="b64_json",
-        api_key=CFG.openai_api_key,
-    )
-
-    logger.info(f"Image Generated for prompt:{prompt}")
-
-    image_data = b64decode(response["data"][0]["b64_json"])
-
-    with open(filename, mode="wb") as png:
-        png.write(image_data)
-
-    return f"Saved to disk:{filename}"
-
 
 def generate_image_with_sd_webui(
     prompt: str,

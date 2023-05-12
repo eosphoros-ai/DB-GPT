@@ -43,7 +43,7 @@ The Generated SQL is runable.
 # Dependencies
 1. First you need to install python requirements.
 ```
-python>=3.9
+python>=3.10
 pip install -r requirements.txt
 ```
 or if you use conda envirenment, you can use this command
@@ -68,7 +68,7 @@ The password just for test, you can change this if necessary
 2. Run model server
 ```
 cd pilot/server
-python vicuna_server.py
+python llmserver.py
 ```
 
 3. Run gradio webui
