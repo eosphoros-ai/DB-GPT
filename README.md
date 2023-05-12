@@ -44,7 +44,7 @@ The Generated SQL is runable.
 1. First you need to install python requirements.
 ```
 python>=3.9
-pip install -r requirements
+pip install -r requirements.txt
 ```
 or if you use conda envirenment, you can use this command
 ```
@@ -63,7 +63,7 @@ The password just for test, you can change this if necessary
 # Install
 1. 基础模型下载
 关于基础模型, 可以根据[vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights)合成教程进行合成。 
-如果此步有困难的同学，也可以直接使用[Hugging Face](https://huggingface.co/)上的模型进行替代。 替代模型: [vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b)
+如果此步有困难的同学，也可以直接使用[Hugging Face](https://huggingface.co/)上的模型进行替代. [替代模型](https://huggingface.co/Tribbiani/vicuna-7b)
 
 2. Run model server
 ```
