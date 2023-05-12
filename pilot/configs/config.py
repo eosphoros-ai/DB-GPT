@@ -3,6 +3,7 @@
 
 import os
 from typing import List
+
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from pilot.singleton import Singleton
 
@@ -18,7 +19,10 @@ class Config(metaclass=Singleton):
 
         self.temperature = float(os.getenv("TEMPERATURE", 0.7))
 
-
+        # TODO change model_config there
+        self.execute_local_commands = (
+            os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
+        )
         # User agent header to use when making HTTP requests
         # Some websites might just completely deny request with an error code if
         # no user agent was found.

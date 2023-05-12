@@ -1,6 +1,5 @@
 from pilot.configs.config import Config
 from pilot.prompts.generator import PromptGenerator
-from __future__ import annotations
 from typing import Any, Optional, Type
 from pilot.prompts.prompt import build_default_prompt_generator
 

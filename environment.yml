@@ -28,7 +28,6 @@ dependencies:
     - kiwisolver==1.4.4
     - matplotlib==3.7.0
     - multidict==6.0.4
-    - openai==0.27.0
     - packaging==23.0
     - psutil==5.9.4
     - pycocotools==2.0.6
@@ -64,3 +63,6 @@ dependencies:
     - pytesseract==0.3.10
     - markdown2
     - chromadb 
+    - colorama
+    - playsound
+    - distro
