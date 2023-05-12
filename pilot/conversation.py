@@ -227,7 +227,7 @@ auto_dbgpt_one_shot = Conversation(
         )
     ),
     offset=0,
-    sep_style=SeparatorStyle.THREE(),
+    sep_style=SeparatorStyle.THREE,
     sep=" ",
     sep2="</s>",
 )
@@ -238,7 +238,7 @@ auto_dbgpt_without_shot = Conversation(
     roles=("USER", "ASSISTANT"),
     messages=(),
     offset=0,
-    sep_style=SeparatorStyle.FOUR(),
+    sep_style=SeparatorStyle.FOUR,
     sep=" ",
     sep2="</s>",
 )

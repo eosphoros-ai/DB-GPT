@@ -69,7 +69,7 @@ class ElevenLabsSpeech(VoiceBase):
         Returns:
             bool: True if the request was successful, False otherwise
         """
-        from autogpt.logs import logger
+        from pilot.logs import logger
 
         tts_url = (
             f"https://api.elevenlabs.io/v1/text-to-speech/{self._voices[voice_index]}"
