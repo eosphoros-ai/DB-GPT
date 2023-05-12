@@ -5,6 +5,7 @@ import torch
 import os
 import nltk
 
+
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_PATH = os.path.join(ROOT_PATH, "models")
 PILOT_PATH = os.path.join(ROOT_PATH, "pilot")
@@ -26,9 +27,8 @@ LLM_MODEL_CONFIG = {
 VECTOR_SEARCH_TOP_K = 3
 LLM_MODEL = "vicuna-13b"
 LIMIT_MODEL_CONCURRENCY = 5
-MAX_POSITION_EMBEDDINGS = 2048
-VICUNA_MODEL_SERVER = "http://192.168.31.114:8000"
-
+MAX_POSITION_EMBEDDINGS = 4096 
+VICUNA_MODEL_SERVER = "http://121.41.167.183:8000"
 
 # Load model config
 ISLOAD_8BIT = True
@@ -36,8 +36,8 @@ ISDEBUG = False
 
 
 DB_SETTINGS = {
-    "user": "root",
-    "password": "aa12345678",
-    "host": "localhost",
-    "port": 3306
+    "user": "puzzle@puzzle0_1954#dev_ipay10",
+    "password": "puzzle123",
+    "host": "obproxy.ocp2.alipay.net",
+    "port": 2883
 }
