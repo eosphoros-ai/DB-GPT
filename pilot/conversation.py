@@ -48,7 +48,6 @@ class Conversation:
                 else:
                     ret += role + ":"
             return ret
-
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
 
@@ -104,12 +103,12 @@ def gen_sqlgen_conversation(dbname):
 
 
 conv_one_shot = Conversation(
-    system="A chat between a curious human and an artificial intelligence assistant, who very familiar with database related knowledge. "
-           "The assistant gives helpful, detailed, professional and polite answers to the human's questions. ",
-    roles=("Human", "Assistant"),
+    system="A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. "
+           "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
+    roles=("USER", "Assistant"),
     messages=(
         (
-            "Human",
+            "USER",
             "What are the key differences between mysql and postgres?",
         ),
         (
@@ -155,12 +154,11 @@ auto_dbgpt_one_shot = Conversation(
     messages=(
         (
             "USER",
-            """ Answer how many users does hackernews have by query mysql database
+            """ Answer how many users does app_users have by query ob database
               Constraints:
-              1. ~4000 word limit for short term memory. Your short term memory is short, so immediately save important information to files.
-              2. If you are unsure how you previously did something or want to recall past events, thinking about similar events will help you remember.
-              3. No user assistance
-              4. Exclusively use the commands listed in double quotes e.g. "command name"
+              1. If you are unsure how you previously did something or want to recall past events, thinking about similar events will help you remember.
+              2. No user assistance
+              3. Exclusively use the commands listed in double quotes e.g. "command name"
   
               Commands:
               1. analyze_code: Analyze Code, args: "code": "<full_code_string>"
@@ -170,13 +168,12 @@ auto_dbgpt_one_shot = Conversation(
               5. list_files: List Files in Directory, args: "directory": "<directory>"
               6. read_file: Read file, args: "filename": "<filename>"
               7. write_to_file: Write to file, args: "filename": "<filename>", "text": "<text>"
-              8. tidb_sql_executor: "Execute SQL in TiDB Database.", args: "sql": "<sql>"
+              8. ob_sql_executor: "Execute SQL in OB Database.", args: "sql": "<sql>"
   
               Resources:
               1. Internet access for searches and information gathering.
               2. Long Term memory management.
               3. vicuna powered Agents for delegation of simple tasks.
-              4. File output.
   
               Performance Evaluation:
               1. Continuously review and analyze your actions to ensure you are performing to the best of your abilities.
@@ -210,16 +207,16 @@ auto_dbgpt_one_shot = Conversation(
             """
             {
                 "thoughts": {
-                    "text": "thought",
-                    "reasoning": "reasoning",
-                    "plan": "- short bulleted\n- list that conveys\n- long-term plan",
-                    "criticism": "constructive self-criticism",
-                    "speak": "thoughts summary to say to user"
+                    "text": "To answer how many users  by query  database we need to write SQL query to get the count of the distinct users from the database. We can use ob_sql_executor command to execute the SQL query in  database.",
+                    "reasoning": "We can use the sql_executor command to execute the SQL query for getting count of distinct users from the users database. We can select the count of the distinct users from the users table.",
+                    "plan": "- Write SQL query to get count of distinct users from users database\n- Use ob_sql_executor to execute the SQL query in OB database\n- Parse the SQL result to get the count\n- Respond with the count as the answer",
+                    "criticism": "None",
+                    "speak": "To get the number of users in users, I will execute an SQL query in OB database using the ob_sql_executor command and respond with the count."
                 },
                 "command": {
-                    "name": "command name",
+                    "name": "ob_sql_executor",
                     "args": {
-                        "arg name": "value"
+                        "sql": "SELECT COUNT(DISTINCT(*)) FROM users ;"
                     }
                 }
             } 
@@ -227,18 +224,18 @@ auto_dbgpt_one_shot = Conversation(
         )
     ),
     offset=0,
-    sep_style=SeparatorStyle.THREE,
+    sep_style=SeparatorStyle.SINGLE,
     sep=" ",
     sep2="</s>",
 )
 
 auto_dbgpt_without_shot = Conversation(
-    system="You are DB-GPT, an AI designed to answer questions about HackerNews by query `hackerbews` database in MySQL. "
+    system="You are DB-GPT, an AI designed to answer questions about users by query `users` database in MySQL. "
            "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
     roles=("USER", "ASSISTANT"),
     messages=(),
     offset=0,
-    sep_style=SeparatorStyle.FOUR,
+    sep_style=SeparatorStyle.SINGLE,
     sep=" ",
     sep2="</s>",
 )
@@ -262,6 +259,7 @@ conversation_types = {
 conv_templates = {
     "conv_one_shot": conv_one_shot,
     "vicuna_v1": conv_vicuna_v1,
+    "auto_dbgpt_one_shot": auto_dbgpt_one_shot
 }
 
 if __name__ == "__main__":

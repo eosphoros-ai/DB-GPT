@@ -66,7 +66,7 @@ class FirstPrompt:
         prompt_generator.goals = fisrt_message
         prompt_generator.command_registry = command_registry
         # 加载插件中可用命令
-        cfg = Config
+        cfg = Config()
         for plugin in cfg.plugins:
             if not plugin.can_handle_post_prompt():
                 continue
