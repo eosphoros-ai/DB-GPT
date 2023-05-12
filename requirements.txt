@@ -73,4 +73,5 @@ pytest-mock
 vcrpy
 pytest-recording
 chromadb
+markdown2
 
