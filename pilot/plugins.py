@@ -77,6 +77,8 @@ def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate
         List[Tuple[str, Path]]: List of plugins.
     """
     loaded_plugins = []
+    current_dir = os.getcwd()
+    print(current_dir)
     # Generic plugins
     plugins_path_path = Path(cfg.plugins_dir)
 
