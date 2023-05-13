@@ -95,7 +95,7 @@ async def api_generate_stream(request: Request):
 @app.post("/generate")
 def generate(prompt_request: Request):
 
-    params =  request.json()
+    params =  prompt_request.json()
     print("Receive prompt: ", params["prompt"])
     output = generate_output(model, tokenizer, params, DEVICE)
     print("Output: ", output)
