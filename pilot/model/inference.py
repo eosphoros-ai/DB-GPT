@@ -72,7 +72,7 @@ def generate_stream(model, tokenizer, params, device,
 def generate_output(model, tokenizer, params, device, context_len=2048, stream_interval=2):
     prompt = params["prompt"]
     temperature = float(params.get("temperature", 1.0))
-    max_new_tokens = int(params.get("max_new_tokens", 1024))
+    max_new_tokens = int(params.get("max_new_tokens", 2048))
     stop_parameter = params.get("stop", None)
     if stop_parameter == tokenizer.eos_token:
         stop_parameter = None
