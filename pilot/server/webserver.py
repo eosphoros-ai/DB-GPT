@@ -225,69 +225,72 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
     }
     logger.info(f"Requert: \n{payload}")
+
     if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
-        auto_db_gpt_response(first_prompt.prompt_generator, payload)
+        response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate"),
+                                 headers=headers, json=payload, timeout=30)
+
+        print(response.json())
+        print(str(response))
+        try:
+            # response = """{"thoughts":{"text":"thought","reasoning":"reasoning","plan":"- short bulleted\n- list that conveys\n- long-term plan","criticism":"constructive self-criticism","speak":"thoughts summary to say to user"},"command":{"name":"db_sql_executor","args":{"sql":"select count(*) as user_count from users u  where create_time >= DATE_SUB(NOW(), INTERVAL 1 MONTH);"}}}"""
+            # response = response.replace("\n", "\\n")
+            plugin_resp = execute_ai_response_json(first_prompt.prompt_generator, response)
+            print(plugin_resp)
+            state.messages[-1][-1] = "DB-GPT执行结果:\n" + plugin_resp
+            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
+        except NotCommands as e:
+            print("命令执行:" + str(e))
+            state.messages[-1][-1] = "命令执行:" + str(e) +"\n模型输出:\n" + str(response)
+            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
     else:
-        stream_ai_response(payload)
+        # 流式输出
+        state.messages[-1][-1] = "▌"
+        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
-def stream_ai_response(payload):
-     # 流式输出
-    state.messages[-1][-1] = "▌"
-    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+        try:
+            # Stream output
+            response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate_stream"),
+                                     headers=headers, json=payload, stream=True, timeout=20)
+            for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+                if chunk:
+                    data = json.loads(chunk.decode())
+                    if data["error_code"] == 0:
+                        output = data["text"][skip_echo_len:].strip()
+                        output = post_process_code(output)
+                        state.messages[-1][-1] = output + "▌"
+                        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                    else:
+                        output = data["text"] + f" (error_code: {data['error_code']})"
+                        state.messages[-1][-1] = output
+                        yield (state, state.to_gradio_chatbot()) + (
+                        disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+                        return
 
-    try:
-        # Stream output
-        response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate_stream"),
-            headers=headers, json=payload, stream=True, timeout=20)
-        for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-            if chunk:
-                data = json.loads(chunk.decode())
-                if data["error_code"] == 0:
-                    output = data["text"][skip_echo_len:].strip()
-                    output = post_process_code(output)
-                    state.messages[-1][-1] = output + "▌"
-                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-                else:
-                    output = data["text"] + f" (error_code: {data['error_code']})"
-                    state.messages[-1][-1] = output
-                    yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
-                    return
+        except requests.exceptions.RequestException as e:
+            state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
+            yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+            return
 
-    except requests.exceptions.RequestException as e:
-        state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
-        yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
-        return
+        state.messages[-1][-1] = state.messages[-1][-1][:-1]
+        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
-    state.messages[-1][-1] = state.messages[-1][-1][:-1]
-    yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+        # 记录运行日志
+        finish_tstamp = time.time()
+        logger.info(f"{output}")
 
-    # 记录运行日志
-    finish_tstamp = time.time()
-    logger.info(f"{output}")
+        with open(get_conv_log_filename(), "a") as fout:
+            data = {
+                "tstamp": round(finish_tstamp, 4),
+                "type": "chat",
+                "model": model_name,
+                "start": round(start_tstamp, 4),
+                "finish": round(start_tstamp, 4),
+                "state": state.dict(),
+                "ip": request.client.host,
+            }
+            fout.write(json.dumps(data) + "\n")
 
-    with open(get_conv_log_filename(), "a") as fout:
-        data = {
-            "tstamp": round(finish_tstamp, 4),
-            "type": "chat",
-            "model": model_name,
-            "start": round(start_tstamp, 4),
-            "finish": round(start_tstamp, 4),
-            "state": state.dict(),
-            "ip": request.client.host,
-        }
-        fout.write(json.dumps(data) + "\n")
-
-
-def auto_db_gpt_response( prompt: PromptGenerator, payload)->str:
-    response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate"),
-                             headers=headers, json=payload,  timeout=30)
-    print(response)
-    try:
-        plugin_resp =  execute_ai_response_json(prompt, response)
-        print(plugin_resp)
-    except NotCommands as e:
-        print(str(e))
-    return "auto_db_gpt_response!"
 
 block_css = (
     code_highlight_css

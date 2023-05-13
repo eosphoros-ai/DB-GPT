@@ -90,8 +90,8 @@ class FirstPrompt:
         for i, goal in enumerate(self.ai_goals):
             full_prompt += f"{i+1}. {goal}\n"
         if  db_schemes:
-            full_prompt +=  f"DB SCHEME:\n\n"
-            full_prompt += f"{db_schemes}\n"
+            full_prompt +=  f"\nDB SCHEME:\n\n"
+            full_prompt += f"{db_schemes}"
 
         # if self.api_budget > 0.0:
         #     full_prompt += f"\nIt takes money to let you run. Your API budget is ${self.api_budget:.3f}"

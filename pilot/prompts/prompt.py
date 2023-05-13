@@ -42,7 +42,7 @@ def build_default_prompt_generator() -> PromptGenerator:
     )
     prompt_generator.add_resource("Long Term memory management.")
     prompt_generator.add_resource(
-        "GPT-3.5 powered Agents for delegation of simple tasks."
+        "DB-GPT powered Agents for delegation of simple tasks."
     )
     # prompt_generator.add_resource("File output.")
 
