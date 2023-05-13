@@ -42,7 +42,7 @@ def execute_ai_response_json(
     cfg = Config()
     try:
         assistant_reply_json = fix_json_using_multiple_techniques(ai_response)
-    except (json.JSONDecodeError, ValueError) as e:
+    except (json.JSONDecodeError, ValueError, AttributeError) as e:
         raise NotCommands("非可执行命令结构")
     command_name, arguments = get_command(assistant_reply_json)
     if cfg.speak_mode:
