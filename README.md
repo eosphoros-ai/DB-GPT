@@ -86,8 +86,7 @@ python webserver.py
 
 总的来说，它是一个用于数据库的复杂且创新的AI工具。如果您对如何在工作中使用或实施DB-GPT有任何具体问题，请联系我, 我会尽力提供帮助, 同时也欢迎大家参与到项目建设中, 做一些有趣的事情。
 
-![wechat](https://github.com/csunny/DB-GPT/blob/main/asserts/wechat.jpg)
-
+<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/wechat.jpg" width="400" margin-left="auto" margin-right="auto" >
 
 # Contribute
 [Contribute](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING)
