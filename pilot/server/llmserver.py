@@ -94,18 +94,23 @@ async def api_generate_stream(request: Request):
 
 @app.post("/generate")
 def generate(prompt_request: PromptRequest):
-    print(prompt_request)
     params = {
         "prompt": prompt_request.prompt,
         "temperature": prompt_request.temperature,
         "max_new_tokens": prompt_request.max_new_tokens,
         "stop": prompt_request.stop
     }
-    print("Receive prompt: ", params["prompt"])
-    output = generate_output(model, tokenizer, params, DEVICE)
-    print("Output: ", output)
-    return {"response": output}
 
+    response = []
+    output = generate_stream_gate(params)
+    for o in output:
+        print(o)
+        response.append(o)
+    
+    rsp = "".join(response)
+    print("rsp:",rsp) 
+    return {"response": rsp}
+    
 
 @app.post("/embedding")
 def embeddings(prompt_request: EmbeddingRequest):
