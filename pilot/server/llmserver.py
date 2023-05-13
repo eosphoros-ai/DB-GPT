@@ -102,6 +102,7 @@ def generate(prompt_request: PromptRequest):
     }
 
     response = [] 
+    rsp_str = ""
     output = generate_stream_gate(params)
     for rsp in output:
         # rsp = rsp.decode("utf-8")
@@ -109,7 +110,7 @@ def generate(prompt_request: PromptRequest):
         print("[TEST: output]:", rsp_str)
         response.append(rsp_str)
 
-        return {"response": rsp_str}
+    return {"response": rsp_str}
     
 
 @app.post("/embedding")
