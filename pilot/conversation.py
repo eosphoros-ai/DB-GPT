@@ -159,7 +159,9 @@ auto_dbgpt_one_shot = Conversation(
               1. If you are unsure how you previously did something or want to recall past events, thinking about similar events will help you remember.
               2. No user assistance
               3. Exclusively use the commands listed in double quotes e.g. "command name"
-  
+              DBScheme:
+                
+                
               Commands:
               1. analyze_code: Analyze Code, args: "code": "<full_code_string>"
               2. execute_python_file: Execute Python File, args: "filename": "<filename>"
@@ -248,6 +250,11 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、详细的回
 """
 
 default_conversation = conv_one_shot
+
+conversation_sql_mode ={
+    "auto_execute_ai_response": "直接执行结果",
+    "dont_execute_ai_response": "不直接执行结果"
+}
 
 conversation_types = {
     "native": "LLM原生对话",

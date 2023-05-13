@@ -39,6 +39,7 @@ class FirstPrompt:
     def construct_first_prompt(
             self,
             fisrt_message: [str]=[],
+            db_schemes: str=None,
             prompt_generator: Optional[PromptGenerator] = None
     ) -> str:
         """
@@ -88,6 +89,10 @@ class FirstPrompt:
             self.ai_goals = fisrt_message
         for i, goal in enumerate(self.ai_goals):
             full_prompt += f"{i+1}. {goal}\n"
+        if  db_schemes:
+            full_prompt +=  f"DB SCHEME:\n\n"
+            full_prompt += f"{db_schemes}\n"
+
         # if self.api_budget > 0.0:
         #     full_prompt += f"\nIt takes money to let you run. Your API budget is ${self.api_budget:.3f}"
         self.prompt_generator = prompt_generator
