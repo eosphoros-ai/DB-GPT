@@ -93,14 +93,9 @@ async def api_generate_stream(request: Request):
     return StreamingResponse(generator, background=background_tasks)
 
 @app.post("/generate")
-def generate(prompt_request: PromptRequest):
-    params = {
-        "prompt": prompt_request.prompt,
-        "temperature": prompt_request.temperature,
-        "max_new_tokens": prompt_request.max_new_tokens,
-        "stop": prompt_request.stop
-    }
+def generate(prompt_request: Request):
 
+    params =  request.json()
     print("Receive prompt: ", params["prompt"])
     output = generate_output(model, tokenizer, params, DEVICE)
     print("Output: ", output)
