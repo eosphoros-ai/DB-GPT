@@ -41,3 +41,7 @@ DB_SETTINGS = {
     "host": "127.0.0.1",
     "port": 3306
 }
+
+VS_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vs_store")
+KNOWLEDGE_UPLOAD_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "knowledge")
+MODEL_NAME_PATH = "model/all-MiniLM-L6-v2"

@@ -54,8 +54,14 @@ class SourceEmbedding(ABC):
 
         persist_dir = os.path.join(self.vector_store_config["vector_store_path"],
                                    self.vector_store_config["vector_store_name"] + ".vectordb")
-        vector_store = Chroma.from_documents(docs, embeddings, persist_directory=persist_dir)
-        vector_store.persist()
+        self.vector_store = Chroma.from_documents(docs, embeddings, persist_directory=persist_dir)
+        self.vector_store.persist()
+
+    @register
+    def similar_search(self, doc, topk):
+        """vector store similarity_search"""
+
+        return self.vector_store.similarity_search(doc, topk)
 
     def source_embedding(self):
         if 'read' in registered_methods:
