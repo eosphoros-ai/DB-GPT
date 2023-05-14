@@ -1,94 +1,131 @@
-# DB-GPT
-A Open Database-GPT Experiment, interact your data and environment using the local GPT, no data leaks, 100% privately, 100% security.
+# DB-GPT ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
 
-![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
+---
 
-一个数据库相关的GPT实验项目, 模型与数据全部本地化部署, 绝对保障数据的隐私安全。 同时此GPT项目可以直接本地部署连接到私有数据库, 进行私有数据处理。 
+[English Edition](README.en.md)
 
-[DB-GPT](https://github.com/csunny/DB-GPT) 是一个实验性的开源应用，它基于[FastChat](https://github.com/lm-sys/FastChat)，并使用[vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b)作为基础模型。此外，此程序结合了[langchain](https://github.com/hwchase17/langchain)和[llama-index](https://github.com/jerryjliu/llama_index)基于现有知识库进行[In-Context Learning](https://arxiv.org/abs/2301.00234)来对其进行数据库相关知识的增强。它可以进行SQL生成、SQL诊断、数据库知识问答、数据处理等一系列的工作。 
+专注于数据库垂直领域的 GPT 项目，提供大模型与数据的本地化使用方案，保障数据的隐私安全，适用企业内和个人。
 
+## 特性一览
 
-## 项目方案
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/DB-GPT.png" width="600" margin-left="auto" margin-right="auto" >
+- SQL 语言能力
+  - SQL生成
+  - SQL诊断
+- 私域问答与数据处理
+  - 数据库知识问答
+  - 数据处理
 
-[DB-GPT](https://github.com/csunny/DB-GPT) is an experimental open-source application that builds upon the [FastChat](https://github.com/lm-sys/FastChat) model and uses vicuna as its base model. Additionally, it looks like this application incorporates langchain and llama-index embedding knowledge to improve Database-QA capabilities. 
+## 架构方案
 
-Overall, it appears to be a sophisticated and innovative tool for working with databases. If you have any specific questions about how to use or implement DB-GPT in your work, please let me know and I'll do my best to assist you.
+<p align="center">
+  <img src="./assets/DB-GPT.png" width="600px" />
+</p>
 
+DB-GPT 基于[FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过 langchain 和 llama-index 提供私域知识库问答能力。 
 
-## 运行效果演示
-Run on an RTX 4090 GPU (The origin mov not sped up!, [YouTube地址](https://www.youtube.com/watch?v=1PWI6F89LPo))
-- 运行演示
+## 效果演示
 
-![](https://github.com/csunny/DB-GPT/blob/main/asserts/演示.gif)
+示例通过 RTX 4090 GPU 演示，[YouTube 地址](https://www.youtube.com/watch?v=1PWI6F89LPo)
+### 运行环境演示
 
+<p align="center">
+  <img src="./assets/演示.gif" width="600px" />
+</p>
 
-- SQL生成示例
-首先选择对应的数据库, 然后模型即可根据对应的数据库Schema信息生成SQL
+### SQL 生成
 
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/SQLGEN.png" width="600" margin-left="auto" margin-right="auto" >
+首先选择对应的数据库, 然后模型即可根据对应的数据库 Schema 信息生成 SQL。
 
-The Generated SQL is runable.
+<p align="center">
+  <img src="./assets/SQLGEN.png" width="600px" />
+</p>
 
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/exeable.png" width="600" margin-left="auto" margin-right="auto" >
+运行成功的效果如下面的演示：
 
-- 数据库QA示例 
+<p align="center">
+  <img src="./assets/exeable.png" width="600px" />
+</p>
 
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/DB_QA.png" margin-left="auto" margin-right="auto" width="600">
+### 数据库问答
 
-基于默认内置知识库QA
+<p align="center">
+  <img src="./assets/DB_QA.png" width="600px" />
+</p>
 
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/VectorDBQA.png" width="600" margin-left="auto" margin-right="auto" >
+基于默认内置知识库。
 
-# Dependencies
-1. First you need to install python requirements.
+<p align="center">
+  <img src="./assets/VectorDBQA.png" width="600px" />
+</p>
+
+## 部署
+
+### 1. 安装 Python
+
+```bash
+$ python>=3.9
+$ pip install -r requirements.txt
 ```
-python>=3.9
-pip install -r requirements.txt
-```
-or if you use conda envirenment, you can use this command
-```
-cd DB-GPT
-conda env create -f environment.yml
+
+或者直接使用 conda 环境
+
+```bash
+$ conda env create -f environment.yml
 ```
 
-2. MySQL Install
+### 2. 安装 MySQL
 
-In this project examples, we connect mysql and run SQL-Generate. so you need install mysql local for test. recommand docker
-```
-docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
-```
-The password just for test, you can change this if necessary
+本项目依赖一个本地的 MySQL 数据库服务，你需要本地安装，推荐直接使用 Docker 安装。
 
-# Install
-1. 基础模型下载
+```bash
+$ docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
+```
+
+### 3. 运行大模型
+
 关于基础模型, 可以根据[vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights)合成教程进行合成。 
 如果此步有困难的同学，也可以直接使用[Hugging Face](https://huggingface.co/)上的模型进行替代. [替代模型](https://huggingface.co/Tribbiani/vicuna-7b)
 
-2. Run model server
-```
-cd pilot/server
-python vicuna_server.py
-```
-
-3. Run gradio webui
-```
-python webserver.py 
+```bash
+$ cd pilot/server
+$ python vicuna_server.py
 ```
 
-4. 基于阿里云部署指南
-[阿里云部署指南](https://open.oceanbase.com/blog/3278046208)
+运行 gradio webui
 
-# Featurs
-- SQL-Generate
-- Database-QA Based Knowledge 
-- SQL-diagnosis
+```bash
+$ python webserver.py 
+```
 
-总的来说，它是一个用于数据库的复杂且创新的AI工具。如果您对如何在工作中使用或实施DB-GPT有任何具体问题，请联系我, 我会尽力提供帮助, 同时也欢迎大家参与到项目建设中, 做一些有趣的事情。
+可以通过阿里云部署大模型，请参考[阿里云部署指南](https://open.oceanbase.com/blog/3278046208)。
 
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/wechat.jpg" width="400" margin-left="auto" margin-right="auto" >
+## 感谢
 
-# Contribute
-[Contribute](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING)
-# Licence
-[MIT](https://github.com/csunny/DB-GPT/blob/main/LICENSE)
+项目取得的成果，需要感谢技术社区，尤其以下项目。
+
+- [FastChat](https://github.com/lm-sys/FastChat) 提供 chat 服务
+- [vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b) 作为基础模型
+- [langchain](https://github.com/hwchase17/langchain) 工具链
+- [llama-index](https://github.com/jerryjliu/llama_index) 基于现有知识库进行[In-Context Learning](https://arxiv.org/abs/2301.00234)来对其进行数据库相关知识的增强。
+
+<!-- GITCONTRIBUTOR_START -->
+
+## Contributors
+
+|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|
+| :---: | :---: |
+
+
+This project follows the git-contributor [spec](https://github.com/xudafeng/git-contributor), auto updated at `Sun May 14 2023 23:02:43 GMT+0800`.
+
+<!-- GITCONTRIBUTOR_END -->
+
+这是一个用于数据库的复杂且创新的工具，如有任何具体问题，请联系如下微信，我会尽力提供帮助，同时也欢迎参与到项目建设中。
+
+<p align="center">
+  <img src="./assets/wechat.jpg" width="320px" />
+</p>
+
+## Licence
+
+The MIT License (MIT)
