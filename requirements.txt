@@ -18,7 +18,6 @@ importlib-resources==5.12.0
 kiwisolver==1.4.4
 matplotlib==3.7.0
 multidict==6.0.4
-openai==0.27.0
 packaging==23.0
 psutil==5.9.4
 pycocotools==2.0.6
@@ -52,4 +51,25 @@ llama-index==0.5.27
 pymysql
 unstructured==0.6.3
 pytesseract==0.3.10
+
+auto-gpt-plugin-template
+pymdown-extensions
+mkdocs
+requests
+gTTS==2.3.1
+
+# Testing dependencies
+pytest
+asynctest
+pytest-asyncio
+pytest-benchmark
+pytest-cov
+pytest-integration
+pytest-mock
+vcrpy
+pytest-recording
 chromadb
+markdown2
+colorama
+playsound
+distro

@@ -36,8 +36,8 @@ class PromptRequest(BaseModel):
     prompt: str
     temperature: float
     max_new_tokens: int
-    stop: Optional[List[str]] = None
-
+    model: str
+    stop: str = None
 
 class StreamRequest(BaseModel):
     model: str
@@ -101,11 +101,17 @@ def generate(prompt_request: PromptRequest):
         "stop": prompt_request.stop
     }
 
-    print("Receive prompt: ", params["prompt"])
-    output = generate_output(model, tokenizer, params, DEVICE)
-    print("Output: ", output)
-    return {"response": output}
+    response = [] 
+    rsp_str = ""
+    output = generate_stream_gate(params)
+    for rsp in output:
+        # rsp = rsp.decode("utf-8")
+        rsp_str = str(rsp, "utf-8")
+        print("[TEST: output]:", rsp_str)
+        response.append(rsp_str)
 
+    return {"response": rsp_str}
+    
 
 @app.post("/embedding")
 def embeddings(prompt_request: EmbeddingRequest):

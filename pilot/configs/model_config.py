@@ -28,7 +28,7 @@ VECTOR_SEARCH_TOP_K = 3
 LLM_MODEL = "vicuna-13b"
 LIMIT_MODEL_CONCURRENCY = 5
 MAX_POSITION_EMBEDDINGS = 4096 
-VICUNA_MODEL_SERVER = "http://47.97.125.199:8000"
+VICUNA_MODEL_SERVER = "http://121.41.167.183:8000"
 
 # Load model config
 ISLOAD_8BIT = True
@@ -37,7 +37,10 @@ ISDEBUG = False
 
 DB_SETTINGS = {
     "user": "root",
-    "password": "aa12345678",
-    "host": "localhost",
+    "password": "aa123456",
+    "host": "127.0.0.1",
     "port": 3306
 }
+
+VS_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vs_store")
+KNOWLEDGE_UPLOAD_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "knowledge")
