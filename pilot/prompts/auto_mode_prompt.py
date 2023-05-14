@@ -51,7 +51,6 @@ class AutoModePrompt:
 
          """
         prompt_start = (
-            "Based on the above definition, answer the current goal and ensure that the response meets both the current constraints and the above definition and constraints"
         )
         if prompt_generator is None:
             prompt_generator = build_default_prompt_generator()
@@ -65,7 +64,7 @@ class AutoModePrompt:
             prompt_generator = plugin.post_prompt(prompt_generator)
 
 
-        full_prompt = f"{prompt_start}\n\nNEW GOALS:\n\n"
+        full_prompt = f"{prompt_start}\n\nGOALS:\n\n"
         if not self.ai_goals :
             self.ai_goals = user_input
         for i, goal in enumerate(self.ai_goals):
@@ -75,9 +74,9 @@ class AutoModePrompt:
         # else:
         #     full_prompt += f"{last_auto_return}\n\n"
 
-        full_prompt += f"New Constraints:\n{DEFAULT_TRIGGERING_PROMPT}\n\n"
+        full_prompt += f"Constraints:\n\n{DEFAULT_TRIGGERING_PROMPT}\n"
 
-        full_prompt += "GENERATE NEXT COMMAND JSON, And ensure that JSON is correctly loadable by Python"
+        full_prompt += """Based on the above definition, answer the current goal and ensure that the response meets both the current constraints and the above definition and constraints"""
         self.prompt_generator = prompt_generator
         return full_prompt
 
