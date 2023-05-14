@@ -1,15 +1,15 @@
 # DB-GPT
-A Open Database-GPT Experiment, A fully localized project.
+A Open Database-GPT Experiment, interact your data and environment using the local GPT, no data leaks, 100% privately, 100% security.
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
 
 一个数据库相关的GPT实验项目, 模型与数据全部本地化部署, 绝对保障数据的隐私安全。 同时此GPT项目可以直接本地部署连接到私有数据库, 进行私有数据处理。 
 
-[DB-GPT](https://github.com/csunny/DB-GPT) 是一个实验性的开源应用程序，它基于[FastChat](https://github.com/lm-sys/FastChat)，并使用[vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b)作为基础模型。此外，此程序结合了[langchain](https://github.com/hwchase17/langchain)和[llama-index](https://github.com/jerryjliu/llama_index)基于现有知识库进行[In-Context Learning](https://arxiv.org/abs/2301.00234)来对其进行数据库相关知识的增强。它可以进行SQL生成、SQL诊断、数据库知识问答等一系列的工作。 
+[DB-GPT](https://github.com/csunny/DB-GPT) 是一个实验性的开源应用，它基于[FastChat](https://github.com/lm-sys/FastChat)，并使用[vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b)作为基础模型。此外，此程序结合了[langchain](https://github.com/hwchase17/langchain)和[llama-index](https://github.com/jerryjliu/llama_index)基于现有知识库进行[In-Context Learning](https://arxiv.org/abs/2301.00234)来对其进行数据库相关知识的增强。它可以进行SQL生成、SQL诊断、数据库知识问答、数据处理等一系列的工作。 
 
 
 ## 项目方案
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/pilot.png" width="600" margin-left="auto" margin-right="auto" >
+<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/DB-GPT.png" width="600" margin-left="auto" margin-right="auto" >
 
 [DB-GPT](https://github.com/csunny/DB-GPT) is an experimental open-source application that builds upon the [FastChat](https://github.com/lm-sys/FastChat) model and uses vicuna as its base model. Additionally, it looks like this application incorporates langchain and llama-index embedding knowledge to improve Database-QA capabilities. 
 
@@ -56,7 +56,7 @@ conda env create -f environment.yml
 
 In this project examples, we connect mysql and run SQL-Generate. so you need install mysql local for test. recommand docker
 ```
-docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa123456 -dit mysql:latest
+docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
 ```
 The password just for test, you can change this if necessary
 
@@ -76,12 +76,17 @@ python llmserver.py
 python webserver.py 
 ```
 
+4. 基于阿里云部署指南
+[阿里云部署指南](https://open.oceanbase.com/blog/3278046208)
+
 # Featurs
 - SQL-Generate
 - Database-QA Based Knowledge 
 - SQL-diagnosis
 
 总的来说，它是一个用于数据库的复杂且创新的AI工具。如果您对如何在工作中使用或实施DB-GPT有任何具体问题，请联系我, 我会尽力提供帮助, 同时也欢迎大家参与到项目建设中, 做一些有趣的事情。
+
+<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/wechat.jpg" width="400" margin-left="auto" margin-right="auto" >
 
 # Contribute
 [Contribute](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING)
