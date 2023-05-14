@@ -20,12 +20,16 @@ from pilot.configs.model_config import LOGDIR, VICUNA_MODEL_SERVER, LLM_MODEL, D
 from pilot.plugins import scan_plugins
 from pilot.configs.config import Config
 from pilot.commands.command_mange import CommandRegistry
-from pilot.prompts.first_conversation_prompt import  FirstPrompt
+from pilot.prompts.auto_mode_prompt import  AutoModePrompt
+from pilot.prompts.generator import PromptGenerator
+
+from pilot.commands.exception_not_commands import NotCommands
 
 from pilot.conversation import (
     default_conversation,
     conv_templates,
     conversation_types,
+    conversation_sql_mode,
     SeparatorStyle
 )
 
@@ -152,11 +156,13 @@ def post_process_code(code):
         code = sep.join(blocks)
     return code
 
-def http_bot(state, mode, db_selector, temperature, max_new_tokens, request: gr.Request):
-
-    # MOCk
-    autogpt = True
+def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, request: gr.Request):
+    if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
+        print("AUTO DB-GPT模式.")
+    if sql_mode == conversation_sql_mode["dont_execute_ai_response"]:
+        print("标准DB-GPT模式.")
     print("是否是AUTO-GPT模式.", autogpt)
+
     start_tstamp = time.time()
     model_name = LLM_MODEL
 
@@ -167,28 +173,26 @@ def http_bot(state, mode, db_selector, temperature, max_new_tokens, request: gr.
         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         return
 
+    cfg = Config()
+    auto_prompt = AutoModePrompt()
+    auto_prompt.command_registry = cfg.command_registry
 
     # TODO when tab mode is AUTO_GPT, Prompt need to rebuild.
     if len(state.messages) == state.offset + 2:
         query = state.messages[-2][1]
         # 第一轮对话需要加入提示Prompt
-        cfg = Config()
-        first_prompt = FirstPrompt()
-        first_prompt.command_registry = cfg.command_registry
-        if(autogpt):
+        if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
             # autogpt模式的第一轮对话需要 构建专属prompt
-            system_prompt = first_prompt.construct_first_prompt(fisrt_message=[query])
+            system_prompt = auto_prompt.construct_first_prompt(fisrt_message=[query], db_schemes= gen_sqlgen_conversation(dbname))
             logger.info("[TEST]:" + system_prompt)
             template_name = "auto_dbgpt_one_shot"
             new_state = conv_templates[template_name].copy()
             new_state.append_message(role='USER', message=system_prompt)
+            # new_state.append_message(new_state.roles[0], query)
+            new_state.append_message(new_state.roles[1], None)
         else:
             template_name = "conv_one_shot"
             new_state = conv_templates[template_name].copy()
-
-        new_state.conv_id = uuid.uuid4().hex
-
-        if not autogpt:
             # prompt 中添加上下文提示, 根据已有知识对话, 上下文提示是否也应该放在第一轮, 还是每一轮都添加上下文?
             # 如果用户侧的问题跨度很大, 应该每一轮都加提示。
             if db_selector:
@@ -198,7 +202,20 @@ def http_bot(state, mode, db_selector, temperature, max_new_tokens, request: gr.
                 new_state.append_message(new_state.roles[0], query)
                 new_state.append_message(new_state.roles[1], None)
 
+        new_state.conv_id = uuid.uuid4().hex
         state = new_state
+    else:
+        ### 后续对话
+        query = state.messages[-2][1]
+        # 第一轮对话需要加入提示Prompt
+        if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
+            ## 获取最后一次插件的返回
+            follow_up_prompt =   auto_prompt.construct_follow_up_prompt([query])
+            state.messages[0][0] = ""
+            state.messages[0][1] = ""
+            state.messages[-2][1] = follow_up_prompt
+
+
     if mode == conversation_types["default_knownledge"] and not db_selector:
         query = state.messages[-2][1]
         knqa = KnownLedgeBaseQA()
@@ -219,50 +236,101 @@ def http_bot(state, mode, db_selector, temperature, max_new_tokens, request: gr.
     }
     logger.info(f"Requert: \n{payload}")
 
-    state.messages[-1][-1] = "▌"
-    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+    if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
+        response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate"),
+                                 headers=headers, json=payload, timeout=120)
 
-    try:
-        # Stream output
-        response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate_stream"),
-            headers=headers, json=payload, stream=True, timeout=20)
-        for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-            if chunk:
-                data = json.loads(chunk.decode())
-                if data["error_code"] == 0:
-                    output = data["text"][skip_echo_len:].strip()
-                    output = post_process_code(output)
-                    state.messages[-1][-1] = output + "▌"
-                    yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+        print(response.json())
+        print(str(response))
+        try:
+            # response = """{"thoughts":{"text":"thought","reasoning":"reasoning","plan":"- short bulleted\n- list that conveys\n- long-term plan","criticism":"constructive self-criticism","speak":"thoughts summary to say to user"},"command":{"name":"db_sql_executor","args":{"sql":"select count(*) as user_count from users u  where create_time >= DATE_SUB(NOW(), INTERVAL 1 MONTH);"}}}"""
+            # response = response.replace("\n", "\\n")
+
+            # response = """{"thoughts":{"text":"In order to get the number of users who have grown in the last three days, I need to analyze the create\_time of each user and see if it is within the last three days. I will use the SQL query to filter the users who have created their account in the last three days.","reasoning":"I can use the SQL query to filter the users who have created their account in the last three days. I will get the current date and then subtract three days from it, and then use this as the filter for the query. This will give me the number of users who have created their account in the last three days.","plan":"- Get the current date and subtract three days from it\n- Use the SQL query to filter the users who have created their account in the last three days\n- Count the number of users who match the filter to get the number of users who have grown in the last three days","criticism":"None"},"command":{"name":"db_sql_executor","args":{"sql":"SELECT COUNT(DISTINCT(ID)) FROM users WHERE create_time >= DATE_SUB(NOW(), INTERVAL 3 DAY);"}}}"""
+            # response = response.replace("\n", "\\)
+            text = response.text.strip()
+            text = text.rstrip()
+            respObj = json.loads(text)
+
+            xx = respObj['response']
+            xx = xx.strip(b'\x00'.decode())
+            respObj_ex = json.loads(xx)
+            if respObj_ex['error_code'] == 0:
+                ai_response = None
+                all_text =  respObj_ex['text']
+                ### 解析返回文本，获取AI回复部分
+                tmpResp = all_text.split(state.sep)
+                last_index = -1
+                for i in range(len(tmpResp)):
+                    if tmpResp[i].find('ASSISTANT:') != -1:
+                        last_index = i
+                ai_response = tmpResp[last_index]
+                ai_response = ai_response.replace("ASSISTANT:", "")
+                ai_response = ai_response.replace("\n", "")
+                ai_response = ai_response.replace("\_", "_")
+
+                print(ai_response)
+                if ai_response == None:
+                    state.messages[-1][-1] = "ASSISTANT未能正确回复，回复结果为:\n" + all_text
+                    yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
                 else:
-                    output = data["text"] + f" (error_code: {data['error_code']})"
-                    state.messages[-1][-1] = output
-                    yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
-                    return
+                    plugin_resp = execute_ai_response_json(auto_prompt.prompt_generator, ai_response)
+                    cfg.set_last_plugin_return(plugin_resp)
+                    print(plugin_resp)
+                    state.messages[-1][-1] = "Model推理信息:\n"+ ai_response +"\n\nDB-GPT执行结果:\n" + plugin_resp
+                    yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
+        except NotCommands as e:
+            print("命令执行:" + e.message)
+            state.messages[-1][-1] = "命令执行:" + e.message +"\n模型输出:\n" + str(ai_response)
+            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
+    else:
+        # 流式输出
+        state.messages[-1][-1] = "▌"
+        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
 
-    except requests.exceptions.RequestException as e:
-        state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
-        yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
-        return
+        try:
+            # Stream output
+            response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate_stream"),
+                                     headers=headers, json=payload, stream=True, timeout=20)
+            for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+                if chunk:
+                    data = json.loads(chunk.decode())
+                    if data["error_code"] == 0:
+                        output = data["text"][skip_echo_len:].strip()
+                        output = post_process_code(output)
+                        state.messages[-1][-1] = output + "▌"
+                        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                    else:
+                        output = data["text"] + f" (error_code: {data['error_code']})"
+                        state.messages[-1][-1] = output
+                        yield (state, state.to_gradio_chatbot()) + (
+                        disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+                        return
 
-    state.messages[-1][-1] = state.messages[-1][-1][:-1]
-    yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+        except requests.exceptions.RequestException as e:
+            state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
+            yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+            return
 
-    # 记录运行日志
-    finish_tstamp = time.time()
-    logger.info(f"{output}")
+        state.messages[-1][-1] = state.messages[-1][-1][:-1]
+        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
-    with open(get_conv_log_filename(), "a") as fout:
-        data = {
-            "tstamp": round(finish_tstamp, 4),
-            "type": "chat",
-            "model": model_name,
-            "start": round(start_tstamp, 4),
-            "finish": round(start_tstamp, 4),
-            "state": state.dict(),
-            "ip": request.client.host,
-        }
-        fout.write(json.dumps(data) + "\n")
+        # 记录运行日志
+        finish_tstamp = time.time()
+        logger.info(f"{output}")
+
+        with open(get_conv_log_filename(), "a") as fout:
+            data = {
+                "tstamp": round(finish_tstamp, 4),
+                "type": "chat",
+                "model": model_name,
+                "start": round(start_tstamp, 4),
+                "finish": round(start_tstamp, 4),
+                "state": state.dict(),
+                "ip": request.client.host,
+            }
+            fout.write(json.dumps(data) + "\n")
+
 
 block_css = (
     code_highlight_css
@@ -279,6 +347,12 @@ block_css = (
         }
             """
 )
+
+def change_sql_mode(sql_mode):
+    if sql_mode in ["直接执行结果"]:
+        return gr.update(visible=True)
+    else:
+        return gr.update(visible=False)
 
 def change_mode(mode):
     if mode in ["默认知识库对话", "LLM原生对话"]:
@@ -316,8 +390,8 @@ def build_single_model_ui():
 
         max_output_tokens = gr.Slider(
             minimum=0,
-            maximum=4096,
-            value=2048,
+            maximum=1024,
+            value=1024,
             step=64,
             interactive=True,
             label="最大输出Token数",
@@ -333,7 +407,11 @@ def build_single_model_ui():
                     choices=dbs,
                     value=dbs[0] if len(models) > 0 else "",
                     interactive=True,
-                    show_label=True).style(container=False) 
+                    show_label=True).style(container=False)
+
+            sql_mode = gr.Radio(["直接执行结果", "不执行结果"], show_label=False, value="不执行结果")
+            sql_vs_setting = gr.Markdown("自动执行模式下, DB-GPT可以具备执行SQL、从网络读取知识自动化存储学习的能力")
+            sql_mode.change(fn=change_sql_mode, inputs=sql_mode, outputs=sql_vs_setting)
         tab_auto = gr.TabItem("AUTO-GPT", elem_id="auto")
         with tab_auto:
             gr.Markdown("自动执行模式下, DB-GPT可以具备执行SQL、从网络读取知识自动化存储学习的能力")
@@ -383,7 +461,7 @@ def build_single_model_ui():
     btn_list = [regenerate_btn, clear_btn]
     regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
         http_bot,
-        [state, mode, db_selector, temperature, max_output_tokens],
+        [state, mode, sql_mode, db_selector, temperature, max_output_tokens],
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
@@ -392,7 +470,7 @@ def build_single_model_ui():
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, mode, db_selector, temperature, max_output_tokens],
+        [state, mode, sql_mode, db_selector, temperature, max_output_tokens],
         [state, chatbot] + btn_list,
     )
 
@@ -400,7 +478,7 @@ def build_single_model_ui():
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, mode, db_selector, temperature, max_output_tokens],
+        [state, mode, sql_mode, db_selector, temperature, max_output_tokens],
         [state, chatbot] + btn_list
     )
 
