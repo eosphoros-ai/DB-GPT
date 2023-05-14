@@ -1,6 +1,4 @@
-# DB-GPT
-
-![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
+# DB-GPT ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
 
 ---
 
