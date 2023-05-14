@@ -105,3 +105,7 @@ class Config(metaclass=Singleton):
     def set_speak_mode(self, value: bool) -> None:
         """Set the speak mode value."""
         self.speak_mode = value
+
+    def set_last_plugin_return(self, value: bool) -> None:
+        """Set the speak mode value."""
+        self.last_plugin_return = value
