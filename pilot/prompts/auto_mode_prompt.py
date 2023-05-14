@@ -51,6 +51,7 @@ class AutoModePrompt:
 
          """
         prompt_start = (
+            DEFAULT_PROMPT_OHTER
         )
         if prompt_generator is None:
             prompt_generator = build_default_prompt_generator()
