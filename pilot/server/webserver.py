@@ -11,7 +11,7 @@ import gradio as gr
 import datetime
 import requests
 from urllib.parse import urljoin
-from pilot.configs.model_config import DB_SETTINGS, KNOWLEDGE_UPLOAD_ROOT_PATH, MODEL_NAME_PATH, VS_ROOT_PATH
+from pilot.configs.model_config import DB_SETTINGS, KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG
 from pilot.server.vectordb_qa import KnownLedgeBaseQA
 from pilot.connections.mysql import MySQLOperator
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
@@ -539,7 +539,7 @@ def knowledge_embedding_store(vs_id, files):
         filename = os.path.split(file.name)[-1]
         shutil.move(file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename))
 
-    knowledge_embedding = KnowledgeEmbedding.knowledge_embedding(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename), MODEL_NAME_PATH, {"vector_store_name": vs_id,
+    knowledge_embedding = KnowledgeEmbedding.knowledge_embedding(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename), LLM_MODEL_CONFIG["sentence-transforms"], {"vector_store_name": vs_id,
                                                       "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
     knowledge_embedding.source_embedding()
     logger.info("knowledge embedding success")
