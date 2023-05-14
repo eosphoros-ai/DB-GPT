@@ -37,7 +37,7 @@ ISDEBUG = False
 
 DB_SETTINGS = {
     "user": "root",
-    "password": "aa12345678",
+    "password": "aa123456",
     "host": "127.0.0.1",
     "port": 3306
 }

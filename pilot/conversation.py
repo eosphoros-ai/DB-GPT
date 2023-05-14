@@ -159,7 +159,12 @@ auto_dbgpt_one_shot = Conversation(
               1. If you are unsure how you previously did something or want to recall past events, thinking about similar events will help you remember.
               2. No user assistance
               3. Exclusively use the commands listed in double quotes e.g. "command name"
-  
+              
+              
+              Schema:
+              数据库gpt-user的Schema信息如下: users(city,create_time,email,last_login_time,phone,user_name);
+              
+              
               Commands:
               1. analyze_code: Analyze Code, args: "code": "<full_code_string>"
               2. execute_python_file: Execute Python File, args: "filename": "<filename>"
@@ -168,21 +173,9 @@ auto_dbgpt_one_shot = Conversation(
               5. list_files: List Files in Directory, args: "directory": "<directory>"
               6. read_file: Read file, args: "filename": "<filename>"
               7. write_to_file: Write to file, args: "filename": "<filename>", "text": "<text>"
-              8. ob_sql_executor: "Execute SQL in OB Database.", args: "sql": "<sql>"
-  
-              Resources:
-              1. Internet access for searches and information gathering.
-              2. Long Term memory management.
-              3. vicuna powered Agents for delegation of simple tasks.
-  
-              Performance Evaluation:
-              1. Continuously review and analyze your actions to ensure you are performing to the best of your abilities.
-              2. Constructively self-criticize your big-picture behavior constantly.
-              3. Reflect on past decisions and strategies to refine your approach.
-              4. Every command has a cost, so be smart and efficient. Aim to complete tasks in the least number of steps.
-              5. Write all code to a file.
-  
-              You should only respond in JSON format as described below
+              8. db_sql_executor: "Execute SQL in Database.", args: "sql": "<sql>"
+              
+              You should only respond in JSON format as described below and ensure the response can be parsed by Python json.loads
               Response Format: 
               {
                   "thoughts": {
@@ -199,7 +192,6 @@ auto_dbgpt_one_shot = Conversation(
                       }
                   }
               } 
-              Ensure the response can be parsed by Python json.loads
             """
         ),
         (
@@ -207,16 +199,16 @@ auto_dbgpt_one_shot = Conversation(
             """
             {
                 "thoughts": {
-                    "text": "To answer how many users  by query  database we need to write SQL query to get the count of the distinct users from the database. We can use ob_sql_executor command to execute the SQL query in  database.",
+                    "text": "To answer how many users  by query  database we need to write SQL query to get the count of the distinct users from the database. We can use db_sql_executor command to execute the SQL query in  database.",
                     "reasoning": "We can use the sql_executor command to execute the SQL query for getting count of distinct users from the users database. We can select the count of the distinct users from the users table.",
-                    "plan": "- Write SQL query to get count of distinct users from users database\n- Use ob_sql_executor to execute the SQL query in OB database\n- Parse the SQL result to get the count\n- Respond with the count as the answer",
+                    "plan": "- Write SQL query to get count of distinct users from users database\n- Use db_sql_executor to execute the SQL query in OB database\n- Parse the SQL result to get the count\n- Respond with the count as the answer",
                     "criticism": "None",
-                    "speak": "To get the number of users in users, I will execute an SQL query in OB database using the ob_sql_executor command and respond with the count."
+                    "speak": "To get the number of users in users, I will execute an SQL query in OB database using the db_sql_executor command and respond with the count."
                 },
                 "command": {
-                    "name": "ob_sql_executor",
+                    "name": "db_sql_executor",
                     "args": {
-                        "sql": "SELECT COUNT(DISTINCT(*)) FROM users ;"
+                        "sql": "SELECT COUNT(DISTINCT(user_name)) FROM users ;"
                     }
                 }
             } 
@@ -248,6 +240,11 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、详细的回
 """
 
 default_conversation = conv_one_shot
+
+conversation_sql_mode ={
+    "auto_execute_ai_response": "直接执行结果",
+    "dont_execute_ai_response": "不直接执行结果"
+}
 
 conversation_types = {
     "native": "LLM原生对话",

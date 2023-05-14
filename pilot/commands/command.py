@@ -42,9 +42,10 @@ def execute_ai_response_json(
     cfg = Config()
     try:
         assistant_reply_json = fix_json_using_multiple_techniques(ai_response)
-    except (json.JSONDecodeError, ValueError) as e:
+    except (json.JSONDecodeError, ValueError, AttributeError) as e:
         raise NotCommands("非可执行命令结构")
     command_name, arguments = get_command(assistant_reply_json)
+
     if cfg.speak_mode:
         say_text(f"I want to execute {command_name}")
 
@@ -105,11 +106,15 @@ def execute_command(
                     or command_name == command["name"].lower()
             ):
                 try:
-
+                    # 删除非定义参数
+                    diff_ags = list(set(arguments.keys()).difference(set(command['args'].keys())))
+                    for arg_name  in diff_ags:
+                        del arguments[arg_name]
+                    print(str(arguments))
                     return command["function"](**arguments)
                 except Exception as e:
                     return f"Error: {str(e)}"
-        raise NotCommands("非可用命令" + command)
+        raise NotCommands("非可用命令" + command_name)
 
 
 def get_command(response_json: Dict):
