@@ -18,7 +18,7 @@
 ## 架构方案
 
 <p align="center">
-  <img src="./asserts/DB-GPT.png" width="740px" />
+  <img src="./assets/DB-GPT.png" width="600px" />
 </p>
 
 DB-GPT 基于[FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过 langchain 和 llama-index 提供私域知识库问答能力。 
@@ -29,7 +29,7 @@ DB-GPT 基于[FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 ### 运行环境演示
 
 <p align="center">
-  <img src="./asserts/演示.gif" width="680px" />
+  <img src="./assets/演示.gif" width="600px" />
 </p>
 
 ### SQL 生成
@@ -37,30 +37,30 @@ DB-GPT 基于[FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 首先选择对应的数据库, 然后模型即可根据对应的数据库 Schema 信息生成 SQL。
 
 <p align="center">
-  <img src="./asserts/SQLGEN.png" width="680px" />
+  <img src="./assets/SQLGEN.png" width="600px" />
 </p>
 
 运行成功的效果如下面的演示：
 
 <p align="center">
-  <img src="./asserts/exeable.png" width="680px" />
+  <img src="./assets/exeable.png" width="600px" />
 </p>
 
 ### 数据库问答
 
 <p align="center">
-  <img src="./asserts/DB_QA.png" width="680px" />
+  <img src="./assets/DB_QA.png" width="600px" />
 </p>
 
 基于默认内置知识库。
 
 <p align="center">
-  <img src="./asserts/VectorDBQA.png" width="680px" />
+  <img src="./assets/VectorDBQA.png" width="600px" />
 </p>
 
 ## 部署
 
-### 1. 安装 Python 依赖的模块。
+### 1. 安装 Python
 
 ```bash
 $ python>=3.9
@@ -109,15 +109,22 @@ $ python webserver.py
 - [llama-index](https://github.com/jerryjliu/llama_index) 基于现有知识库进行[In-Context Learning](https://arxiv.org/abs/2301.00234)来对其进行数据库相关知识的增强。
 
 <!-- GITCONTRIBUTOR_START -->
+
 ## Contributors
 
-|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|
+|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|
 | :---: | :---: |
 
 
-This project follows the git-contributor [spec](https://github.com/xudafeng/git-contributor), auto updated at `Sun May 14 2023 22:37:46 GMT+0800`.
+This project follows the git-contributor [spec](https://github.com/xudafeng/git-contributor), auto updated at `Sun May 14 2023 23:02:43 GMT+0800`.
 
 <!-- GITCONTRIBUTOR_END -->
+
+这是一个用于数据库的复杂且创新的工具，如有任何具体问题，请联系如下微信，我会尽力提供帮助，同时也欢迎参与到项目建设中。
+
+<p align="center">
+  <img src="./assets/wechat.jpg" width="320px" />
+</p>
 
 ## Licence
 
