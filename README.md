@@ -21,78 +21,83 @@
   <img src="./asserts/DB-GPT.png" width="740px" />
 </p>
 
-[DB-GPT](https://github.com/csunny/DB-GPT) is an experimental open-source application that builds upon the [FastChat](https://github.com/lm-sys/FastChat) model and uses vicuna as its base model. Additionally, it looks like this application incorporates langchain and llama-index embedding knowledge to improve Database-QA capabilities. 
-
-Overall, it appears to be a sophisticated and innovative tool for working with databases. If you have any specific questions about how to use or implement DB-GPT in your work, please let me know and I'll do my best to assist you.
-
+DB-GPT 基于[FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过 langchain 和 llama-index 提供私域知识库问答能力。 
 
 ## 效果演示
 
-Run on an RTX 4090 GPU (The origin mov not sped up!, [YouTube地址](https://www.youtube.com/watch?v=1PWI6F89LPo))
-- 运行演示
+示例通过 RTX 4090 GPU 演示，[YouTube 地址](https://www.youtube.com/watch?v=1PWI6F89LPo)
+### 运行环境演示
 
-![](https://github.com/csunny/DB-GPT/blob/main/asserts/演示.gif)
+<p align="center">
+  <img src="./asserts/演示.gif" width="680px" />
+</p>
 
+### SQL 生成
 
-- SQL生成示例
-首先选择对应的数据库, 然后模型即可根据对应的数据库Schema信息生成SQL
+首先选择对应的数据库, 然后模型即可根据对应的数据库 Schema 信息生成 SQL。
 
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/SQLGEN.png" width="600" margin-left="auto" margin-right="auto" >
+<p align="center">
+  <img src="./asserts/SQLGEN.png" width="680px" />
+</p>
 
-The Generated SQL is runable.
+运行成功的效果如下面的演示：
 
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/exeable.png" width="600" margin-left="auto" margin-right="auto" >
+<p align="center">
+  <img src="./asserts/exeable.png" width="680px" />
+</p>
 
-- 数据库QA示例 
+### 数据库问答
 
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/DB_QA.png" margin-left="auto" margin-right="auto" width="600">
+<p align="center">
+  <img src="./asserts/DB_QA.png" width="680px" />
+</p>
 
-基于默认内置知识库QA
+基于默认内置知识库。
 
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/VectorDBQA.png" width="600" margin-left="auto" margin-right="auto" >
+<p align="center">
+  <img src="./asserts/VectorDBQA.png" width="680px" />
+</p>
 
-# Dependencies
-1. First you need to install python requirements.
+## 部署
+
+### 1. 安装 Python 依赖的模块。
+
+```bash
+$ python>=3.9
+$ pip install -r requirements.txt
 ```
-python>=3.9
-pip install -r requirements.txt
-```
-or if you use conda envirenment, you can use this command
-```
-cd DB-GPT
-conda env create -f environment.yml
+
+或者直接使用 conda 环境
+
+```bash
+$ conda env create -f environment.yml
 ```
 
-2. MySQL Install
+### 2. 安装 MySQL
 
-In this project examples, we connect mysql and run SQL-Generate. so you need install mysql local for test. recommand docker
-```
-docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
-```
-The password just for test, you can change this if necessary
+本项目依赖一个本地的 MySQL 数据库服务，你需要本地安装，推荐直接使用 Docker 安装。
 
-# Install
-1. 基础模型下载
+```bash
+$ docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
+```
+
+### 3. 运行大模型
+
 关于基础模型, 可以根据[vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights)合成教程进行合成。 
 如果此步有困难的同学，也可以直接使用[Hugging Face](https://huggingface.co/)上的模型进行替代. [替代模型](https://huggingface.co/Tribbiani/vicuna-7b)
 
-2. Run model server
-```
-cd pilot/server
-python vicuna_server.py
-```
-
-3. Run gradio webui
-```
-python webserver.py 
+```bash
+$ cd pilot/server
+$ python vicuna_server.py
 ```
 
-4. 基于阿里云部署指南
-[阿里云部署指南](https://open.oceanbase.com/blog/3278046208)
+运行 gradio webui
 
-总的来说，它是一个用于数据库的复杂且创新的AI工具。如果您对如何在工作中使用或实施DB-GPT有任何具体问题，请联系我, 我会尽力提供帮助, 同时也欢迎大家参与到项目建设中, 做一些有趣的事情。
+```bash
+$ python webserver.py 
+```
 
-<img src="https://github.com/csunny/DB-GPT/blob/main/asserts/wechat.jpg" width="400" margin-left="auto" margin-right="auto" >
+可以通过阿里云部署大模型，请参考[阿里云部署指南](https://open.oceanbase.com/blog/3278046208)。
 
 ## 感谢
 
@@ -106,7 +111,7 @@ python webserver.py
 <!-- GITCONTRIBUTOR_START -->
 ## Contributors
 
-|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|
+|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|
 | :---: | :---: |
 
 
