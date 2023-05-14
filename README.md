@@ -54,6 +54,17 @@ DB-GPT 基于[FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 
 基于默认内置知识库。
 
+# Dependencies
+1. First you need to install python requirements.
+```
+python>=3.10
+pip install -r requirements.txt
+```
+or if you use conda envirenment, you can use this command
+```
+cd DB-GPT
+conda env create -f environment.yml
+
 <p align="center">
   <img src="./assets/VectorDBQA.png" width="600px" />
 </p>
@@ -63,7 +74,7 @@ DB-GPT 基于[FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 ### 1. 安装 Python
 
 ```bash
-$ python>=3.9
+$ python>=3.10
 $ pip install -r requirements.txt
 ```
 
@@ -86,9 +97,10 @@ $ docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit my
 关于基础模型, 可以根据[vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights)合成教程进行合成。 
 如果此步有困难的同学，也可以直接使用[Hugging Face](https://huggingface.co/)上的模型进行替代. [替代模型](https://huggingface.co/Tribbiani/vicuna-7b)
 
-```bash
-$ cd pilot/server
-$ python vicuna_server.py
+2. Run model server
+```
+cd pilot/server
+python llmserver.py
 ```
 
 运行 gradio webui
