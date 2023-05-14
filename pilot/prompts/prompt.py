@@ -9,6 +9,9 @@ DEFAULT_TRIGGERING_PROMPT = (
     "Determine which next command to use, and respond using the format specified above"
 )
 
+DEFAULT_PROMPT_OHTER = (
+    "Previous response was excellent. Please response according to the requirements based on the new goal"
+)
 
 def build_default_prompt_generator() -> PromptGenerator:
     """
@@ -27,10 +30,10 @@ def build_default_prompt_generator() -> PromptGenerator:
     #     "~4000 word limit for short term memory. Your short term memory is short, so"
     #     " immediately save important information to files."
     # )
-    # prompt_generator.add_constraint(
-    #     "If you are unsure how you previously did something or want to recall past"
-    #     " events, thinking about similar events will help you remember."
-    # )
+    prompt_generator.add_constraint(
+        "If you are unsure how you previously did something or want to recall past"
+        " events, thinking about similar events will help you remember."
+    )
     # prompt_generator.add_constraint("No user assistance")
 
     prompt_generator.add_constraint(
@@ -57,16 +60,16 @@ def build_default_prompt_generator() -> PromptGenerator:
     # prompt_generator.add_resource("File output.")
 
     # Add performance evaluations to the PromptGenerator object
-    # prompt_generator.add_performance_evaluation(
-    #     "Continuously review and analyze your actions to ensure you are performing to"
-    #     " the best of your abilities."
-    # )
-    # prompt_generator.add_performance_evaluation(
-    #     "Constructively self-criticize your big-picture behavior constantly."
-    # )
-    # prompt_generator.add_performance_evaluation(
-    #     "Reflect on past decisions and strategies to refine your approach."
-    # )
+    prompt_generator.add_performance_evaluation(
+        "Continuously review and analyze your actions to ensure you are performing to"
+        " the best of your abilities."
+    )
+    prompt_generator.add_performance_evaluation(
+        "Constructively self-criticize your big-picture behavior constantly."
+    )
+    prompt_generator.add_performance_evaluation(
+        "Reflect on past decisions and strategies to refine your approach."
+    )
     # prompt_generator.add_performance_evaluation(
     #     "Every command has a cost, so be smart and efficient. Aim to complete tasks in"
     #     " the least number of steps."
