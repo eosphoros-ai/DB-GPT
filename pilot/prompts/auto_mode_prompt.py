@@ -7,7 +7,7 @@ from pathlib import Path
 import distro
 import yaml
 from pilot.configs.config import Config
-from pilot.prompts.prompt import build_default_prompt_generator, DEFAULT_TRIGGERING_PROMPT
+from pilot.prompts.prompt import build_default_prompt_generator, DEFAULT_PROMPT_OHTER
 
 
 class AutoModePrompt:
@@ -51,6 +51,7 @@ class AutoModePrompt:
 
          """
         prompt_start = (
+            DEFAULT_PROMPT_OHTER
         )
         if prompt_generator is None:
             prompt_generator = build_default_prompt_generator()
