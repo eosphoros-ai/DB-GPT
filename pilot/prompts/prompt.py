@@ -6,7 +6,7 @@ from pilot.prompts.generator import PromptGenerator
 CFG = Config()
 
 DEFAULT_TRIGGERING_PROMPT = (
-    "Determine which next command to use, and respond using the format specified above:"
+    "Determine which next command to use, and respond using the format specified above"
 )
 
 
@@ -27,11 +27,15 @@ def build_default_prompt_generator() -> PromptGenerator:
     #     "~4000 word limit for short term memory. Your short term memory is short, so"
     #     " immediately save important information to files."
     # )
+    # prompt_generator.add_constraint(
+    #     "If you are unsure how you previously did something or want to recall past"
+    #     " events, thinking about similar events will help you remember."
+    # )
+    # prompt_generator.add_constraint("No user assistance")
+
     prompt_generator.add_constraint(
-        "If you are unsure how you previously did something or want to recall past"
-        " events, thinking about similar events will help you remember."
+        'Only output one correct JSON response at a time'
     )
-    prompt_generator.add_constraint("No user assistance")
     prompt_generator.add_constraint(
         'Exclusively use the commands listed in double quotes e.g. "command name"'
     )
