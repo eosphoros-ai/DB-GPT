@@ -49,7 +49,10 @@ model_name = "/Users/chenketing/Desktop/project/all-MiniLM-L6-v2"
 embeddings = HuggingFaceEmbeddings(model_name=model_name)
 
 # text_embeddings = Text2Vectors()
-mivuls = MilvusStore(cfg={"url": "127.0.0.1", "port": "19530", "alias": "default", "table_name": "test_c"})
+mivuls = MilvusStore(cfg={"url": "127.0.0.1", "port": "19530", "alias": "default", "table_name": "test_k"})
+
+mivuls.insert(["textc","tezt2"])
+print("success")
 
 # mivuls.from_texts(texts=data, embedding=embeddings)
 #     docs,
