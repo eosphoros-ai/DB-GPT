@@ -108,9 +108,8 @@ def execute_command(
                 try:
                     # 删除非定义参数
                     diff_ags = list(set(arguments.keys()).difference(set(command['args'].keys())))
-                    for arg_name  in arguments.keys():
-                        if arg_name  in diff_ags:
-                            del arguments[arg_name]
+                    for arg_name  in diff_ags:
+                        del arguments[arg_name]
                     print(str(arguments))
                     return command["function"](**arguments)
                 except Exception as e:
