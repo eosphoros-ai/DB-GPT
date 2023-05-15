@@ -69,7 +69,7 @@ def execute_ai_response_json(
             arguments,
             prompt,
         )
-        result = f"Command {command_name} returned: " f"{command_result}"
+        result = f"{command_result}"
     return result
 
 
