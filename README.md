@@ -118,7 +118,7 @@ GPU型号 |  显存大小 |   性能
 -------|----------|------------------------------
 TRX4090| 24G      |可以流畅的进行对话推理，无卡顿
 TRX3090| 24G      |可以流畅进行对话推理，有卡顿感，但好与V100
-V100   | 16G      | 可以进行对话推理，有明显卡顿
+V100   | 16G      |可以进行对话推理，有明显卡顿
 ```
 ### DB-GPT安装
 
@@ -164,7 +164,7 @@ $ python webserver.py
 ## 使用说明
 
 我们提供了gradio的用户界面，可以通过我们的用户界面使用DB-GPT， 同时关于我们项目相关的一些代码跟原理介绍，我们也准备了以下几篇参考文章。
-1.  [大模型实战系列(1) ——强强联合Langchain-Vicuna应用实战](https://zhuanlan.zhihu.com/p/628750042)
+1.  [大模型实战系列(1) —— 强强联合Langchain-Vicuna应用实战](https://zhuanlan.zhihu.com/p/628750042)
 2.  [大模型实战系列(2) —— DB-GPT 阿里云部署指南](https://zhuanlan.zhihu.com/p/629467580)
 3.  [大模型实战系列(3) —— DB-GPT插件模型原理与使用]()
 
@@ -194,7 +194,7 @@ This project follows the git-contributor [spec](https://github.com/xudafeng/git-
 
 <!-- GITCONTRIBUTOR_END -->
 
-这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布很多新的feature。如在使用当中有任何具体问题，请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
+这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布一些新的feature。如在使用当中有任何具体问题, 优先在项目下提issue, 如有需要, 请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
 
 <p align="center">
   <img src="./assets/wechat.jpg" width="320px" />
