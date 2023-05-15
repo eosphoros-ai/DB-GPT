@@ -4,7 +4,7 @@ channels:
   - defaults
   - anaconda
 dependencies:
-  - python=3.9
+  - python=3.10
   - cudatoolkit
   - pip
   - pytorch-mutex=1.0=cuda
