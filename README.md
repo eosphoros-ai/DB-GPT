@@ -67,7 +67,10 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 </p>
 
 2. 自己新增知识库
-- TODO
+
+<p align="center">
+  <img src="./assets/new_knownledge.gif" width="600px" />
+</p>
 
 3. 从网络自己爬取数据学习
 - TODO
