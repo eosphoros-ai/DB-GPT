@@ -35,6 +35,10 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
   <img src="./assets/演示.gif" width="600px" />
 </p>
 
+<p align="center">
+  <img src="./assets/Auto-DB-GPT.gif" width="600px" />
+</p>
+
 ### SQL 生成
 
 1. 生成建表语句
