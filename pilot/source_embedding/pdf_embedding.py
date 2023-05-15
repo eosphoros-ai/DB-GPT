@@ -13,9 +13,12 @@ class PDFEmbedding(SourceEmbedding):
 
     def __init__(self, file_path, model_name, vector_store_config):
         """Initialize with pdf path."""
+        super().__init__(file_path, model_name, vector_store_config)
         self.file_path = file_path
         self.model_name = model_name
         self.vector_store_config = vector_store_config
+        # SourceEmbedding(file_path =file_path, );
+        SourceEmbedding(file_path, model_name, vector_store_config)
 
     @register
     def read(self):
