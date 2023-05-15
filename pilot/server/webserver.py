@@ -11,6 +11,9 @@ import gradio as gr
 import datetime
 import requests
 from urllib.parse import urljoin
+
+from langchain import PromptTemplate
+
 from pilot.configs.model_config import DB_SETTINGS, KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG
 from pilot.server.vectordb_qa import KnownLedgeBaseQA
 from pilot.connections.mysql import MySQLOperator
@@ -22,7 +25,7 @@ from pilot.configs.model_config import LOGDIR, VICUNA_MODEL_SERVER, LLM_MODEL, D
 from pilot.plugins import scan_plugins
 from pilot.configs.config import Config
 from pilot.commands.command_mange import CommandRegistry
-from pilot.prompts.auto_mode_prompt import  AutoModePrompt
+from pilot.prompts.auto_mode_prompt import AutoModePrompt
 from pilot.prompts.generator import PromptGenerator
 
 from pilot.commands.exception_not_commands import NotCommands
@@ -32,7 +35,7 @@ from pilot.conversation import (
     conv_templates,
     conversation_types,
     conversation_sql_mode,
-    SeparatorStyle
+    SeparatorStyle, conv_qa_prompt_template
 )
 
 from pilot.utils import (
@@ -57,19 +60,22 @@ models = []
 dbs = []
 vs_list = ["新建知识库"] + get_vector_storelist()
 autogpt = False
+vector_store_client = None
+vector_store_name = {"vs_name": ""}
 
 priority = {
     "vicuna-13b": "aaa"
 }
 
+
 def get_simlar(q):
-    
     docsearch = knownledge_tovec_st(os.path.join(DATASETS_DIR, "plan.md"))
     docs = docsearch.similarity_search_with_score(q, k=1)
 
     contents = [dc.page_content for dc, _ in docs]
     return "\n".join(contents)
-    
+
+
 def gen_sqlgen_conversation(dbname):
     mo = MySQLOperator(
         **DB_SETTINGS
@@ -82,9 +88,11 @@ def gen_sqlgen_conversation(dbname):
         message += s["schema_info"] + ";"
     return f"数据库{dbname}的Schema信息如下: {message}\n"
 
+
 def get_database_list():
     mo = MySQLOperator(**DB_SETTINGS)
     return mo.get_db_list()
+
 
 get_window_url_params = """
 function() {
@@ -98,10 +106,12 @@ function() {
     return url_params;
     }
 """
+
+
 def load_demo(url_params, request: gr.Request):
     logger.info(f"load_demo. ip: {request.client.host}. params: {url_params}")
 
-    dbs = get_database_list()
+    # dbs = get_database_list()
     dropdown_update = gr.Dropdown.update(visible=True)
     if dbs:
         gr.Dropdown.update(choices=dbs)
@@ -115,6 +125,7 @@ def load_demo(url_params, request: gr.Request):
             gr.Row.update(visible=True),
             gr.Accordion.update(visible=True))
 
+
 def get_conv_log_filename():
     t = datetime.datetime.now()
     name = os.path.join(LOGDIR, f"{t.year}-{t.month:02d}-{t.day:02d}-conv.json")
@@ -127,9 +138,8 @@ def regenerate(state, request: gr.Request):
     state.skip_next = False
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
 
-def clear_history(request: gr.Request):
 
-    
+def clear_history(request: gr.Request):
     logger.info(f"clear_history. ip: {request.client.host}")
     state = None
     return (state, [], "") + (disable_btn,) * 5
@@ -142,11 +152,12 @@ def add_text(state, text, request: gr.Request):
         return (state, state.to_gradio_chatbot(), "") + (no_change_btn,) * 5
 
     """ Default support 4000 tokens, if tokens too lang, we will cut off  """
-    text = text[:4000]  
+    text = text[:4000]
     state.append_message(state.roles[0], text)
     state.append_message(state.roles[1], None)
     state.skip_next = False
     return (state, state.to_gradio_chatbot(), "") + (disable_btn,) * 5
+
 
 def post_process_code(code):
     sep = "\n```"
@@ -157,6 +168,7 @@ def post_process_code(code):
                 blocks[i] = blocks[i].replace("\\_", "_")
         code = sep.join(blocks)
     return code
+
 
 def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, request: gr.Request):
     if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
@@ -185,7 +197,8 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         # 第一轮对话需要加入提示Prompt
         if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
             # autogpt模式的第一轮对话需要 构建专属prompt
-            system_prompt = auto_prompt.construct_first_prompt(fisrt_message=[query], db_schemes= gen_sqlgen_conversation(dbname))
+            system_prompt = auto_prompt.construct_first_prompt(fisrt_message=[query],
+                                                               db_schemes=gen_sqlgen_conversation(dbname))
             logger.info("[TEST]:" + system_prompt)
             template_name = "auto_dbgpt_one_shot"
             new_state = conv_templates[template_name].copy()
@@ -212,21 +225,37 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         # 第一轮对话需要加入提示Prompt
         if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
             ## 获取最后一次插件的返回
-            follow_up_prompt =   auto_prompt.construct_follow_up_prompt([query])
+            follow_up_prompt = auto_prompt.construct_follow_up_prompt([query])
             state.messages[0][0] = ""
             state.messages[0][1] = ""
             state.messages[-2][1] = follow_up_prompt
-
-
+    prompt = state.get_prompt()
+    skip_echo_len = len(prompt.replace("</s>", " ")) + 1
     if mode == conversation_types["default_knownledge"] and not db_selector:
         query = state.messages[-2][1]
         knqa = KnownLedgeBaseQA()
         state.messages[-2][1] = knqa.get_similar_answer(query)
-        
+        prompt = state.get_prompt()
+        state.messages[-2][1] = query
+        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
-    prompt = state.get_prompt()
-    
-    skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+    if mode == conversation_types["custome"] and not db_selector:
+        persist_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vector_store_name["vs_name"] + ".vectordb")
+        print("向量数据库持久化地址: ", persist_dir)
+        knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["sentence-transforms"], vector_store_config={"vector_store_name": vector_store_name["vs_name"],
+                                                      "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
+        query = state.messages[-2][1]
+        docs = knowledge_embedding_client.similar_search(query, 1)
+        context = [d.page_content for d in docs]
+        prompt_template = PromptTemplate(
+            template=conv_qa_prompt_template,
+            input_variables=["context", "question"]
+        )
+        result = prompt_template.format(context="\n".join(context), question=query)
+        state.messages[-2][1] = result
+        prompt = state.get_prompt()
+        state.messages[-2][1] = query
+        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
     # Make requests
     payload = {
@@ -245,11 +274,6 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         print(response.json())
         print(str(response))
         try:
-            # response = """{"thoughts":{"text":"thought","reasoning":"reasoning","plan":"- short bulleted\n- list that conveys\n- long-term plan","criticism":"constructive self-criticism","speak":"thoughts summary to say to user"},"command":{"name":"db_sql_executor","args":{"sql":"select count(*) as user_count from users u  where create_time >= DATE_SUB(NOW(), INTERVAL 1 MONTH);"}}}"""
-            # response = response.replace("\n", "\\n")
-
-            # response = """{"thoughts":{"text":"In order to get the number of users who have grown in the last three days, I need to analyze the create\_time of each user and see if it is within the last three days. I will use the SQL query to filter the users who have created their account in the last three days.","reasoning":"I can use the SQL query to filter the users who have created their account in the last three days. I will get the current date and then subtract three days from it, and then use this as the filter for the query. This will give me the number of users who have created their account in the last three days.","plan":"- Get the current date and subtract three days from it\n- Use the SQL query to filter the users who have created their account in the last three days\n- Count the number of users who match the filter to get the number of users who have grown in the last three days","criticism":"None"},"command":{"name":"db_sql_executor","args":{"sql":"SELECT COUNT(DISTINCT(ID)) FROM users WHERE create_time >= DATE_SUB(NOW(), INTERVAL 3 DAY);"}}}"""
-            # response = response.replace("\n", "\\)
             text = response.text.strip()
             text = text.rstrip()
             respObj = json.loads(text)
@@ -259,7 +283,7 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
             respObj_ex = json.loads(xx)
             if respObj_ex['error_code'] == 0:
                 ai_response = None
-                all_text =  respObj_ex['text']
+                all_text = respObj_ex['text']
                 ### 解析返回文本，获取AI回复部分
                 tmpResp = all_text.split(state.sep)
                 last_index = -1
@@ -279,11 +303,11 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
                     plugin_resp = execute_ai_response_json(auto_prompt.prompt_generator, ai_response)
                     cfg.set_last_plugin_return(plugin_resp)
                     print(plugin_resp)
-                    state.messages[-1][-1] = "Model推理信息:\n"+ ai_response +"\n\nDB-GPT执行结果:\n" + plugin_resp
+                    state.messages[-1][-1] = "Model推理信息:\n" + ai_response + "\n\nDB-GPT执行结果:\n" + plugin_resp
                     yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         except NotCommands as e:
             print("命令执行:" + e.message)
-            state.messages[-1][-1] = "命令执行:" + e.message +"\n模型输出:\n" + str(ai_response)
+            state.messages[-1][-1] = "命令执行:" + e.message + "\n模型输出:\n" + str(ai_response)
             yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
     else:
         # 流式输出
@@ -306,7 +330,7 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
                         output = data["text"] + f" (error_code: {data['error_code']})"
                         state.messages[-1][-1] = output
                         yield (state, state.to_gradio_chatbot()) + (
-                        disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+                            disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
                         return
 
         except requests.exceptions.RequestException as e:
@@ -335,8 +359,8 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
 
 
 block_css = (
-    code_highlight_css
-    + """
+        code_highlight_css
+        + """
         pre {
             white-space: pre-wrap;       /* Since CSS 2.1 */
             white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
@@ -350,11 +374,13 @@ block_css = (
             """
 )
 
+
 def change_sql_mode(sql_mode):
     if sql_mode in ["直接执行结果"]:
         return gr.update(visible=True)
     else:
         return gr.update(visible=False)
+
 
 def change_mode(mode):
     if mode in ["默认知识库对话", "LLM原生对话"]:
@@ -362,11 +388,12 @@ def change_mode(mode):
     else:
         return gr.update(visible=True)
 
+
 def change_tab():
-    autogpt = True 
- 
+    autogpt = True
+
+
 def build_single_model_ui():
-   
     notice_markdown = """
     # DB-GPT
     
@@ -398,7 +425,7 @@ def build_single_model_ui():
             interactive=True,
             label="最大输出Token数",
         )
-    tabs= gr.Tabs()
+    tabs = gr.Tabs()
     with tabs:
         tab_sql = gr.TabItem("SQL生成与诊断", elem_id="SQL")
         with tab_sql:
@@ -414,9 +441,6 @@ def build_single_model_ui():
             sql_mode = gr.Radio(["直接执行结果", "不执行结果"], show_label=False, value="不执行结果")
             sql_vs_setting = gr.Markdown("自动执行模式下, DB-GPT可以具备执行SQL、从网络读取知识自动化存储学习的能力")
             sql_mode.change(fn=change_sql_mode, inputs=sql_mode, outputs=sql_vs_setting)
-        tab_auto = gr.TabItem("AUTO-GPT", elem_id="auto")
-        with tab_auto:
-            gr.Markdown("自动执行模式下, DB-GPT可以具备执行SQL、从网络读取知识自动化存储学习的能力")
 
         tab_qa = gr.TabItem("知识问答", elem_id="QA")
         with tab_qa:
@@ -429,7 +453,7 @@ def build_single_model_ui():
                 with gr.Column() as doc2vec:
                     gr.Markdown("向知识库中添加文件")
                     with gr.Tab("上传文件"):
-                        files = gr.File(label="添加文件", 
+                        files = gr.File(label="添加文件",
                                         file_types=[".txt", ".md", ".docx", ".pdf"],
                                         file_count="multiple",
                                         show_label=False
@@ -437,12 +461,12 @@ def build_single_model_ui():
 
                         load_file_button = gr.Button("上传并加载到知识库")
                     with gr.Tab("上传文件夹"):
-                        folder_files = gr.File(label="添加文件",
-                                            file_count="directory",
+                        folder_files = gr.File(label="添加文件夹",
+                                               accept_multiple_files=True,
+                                               file_count="directory",
                                             show_label=False)
                         load_folder_button = gr.Button("上传并加载到知识库")
-       
-    
+
     with gr.Blocks():
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
         with gr.Row():
@@ -451,9 +475,9 @@ def build_single_model_ui():
                     show_label=False,
                     placeholder="Enter text and press ENTER",
                     visible=False,
-                ).style(container=False)          
+                ).style(container=False)
             with gr.Column(scale=2, min_width=50):
-                send_btn = gr.Button(value="发送", visible=False) 
+                send_btn = gr.Button(value="发送", visible=False)
 
     with gr.Row(visible=False) as button_row:
         regenerate_btn = gr.Button(value="重新生成", interactive=False)
@@ -467,7 +491,7 @@ def build_single_model_ui():
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
-    
+
     textbox.submit(
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
@@ -483,24 +507,26 @@ def build_single_model_ui():
         [state, mode, sql_mode, db_selector, temperature, max_output_tokens],
         [state, chatbot] + btn_list
     )
+    vs_add.click(fn=save_vs_name, show_progress=True,
+                           inputs=[vs_name],
+                           outputs=[vs_name])
     load_file_button.click(fn=knowledge_embedding_store,
                            show_progress=True,
                            inputs=[vs_name, files],
                            outputs=[vs_name])
-    # load_folder_button.click(get_vector_store,
-    #                          show_progress=True,
-    #                          inputs=[vs_name, folder_files, 100 , chatbot, vs_add,
-    #                                  vs_add],
-    #                          outputs=["db-out", folder_files, chatbot])
+    load_folder_button.click(fn=knowledge_embedding_store,
+                             show_progress=True,
+                             inputs=[vs_name, folder_files],
+                             outputs=[vs_name])
     return state, chatbot, textbox, send_btn, button_row, parameter_row
 
 
 def build_webdemo():
     with gr.Blocks(
-        title="数据库智能助手",
-        # theme=gr.themes.Base(),
-        theme=gr.themes.Default(),
-        css=block_css,
+            title="数据库智能助手",
+            # theme=gr.themes.Base(),
+            theme=gr.themes.Default(),
+            css=block_css,
     ) as demo:
         url_params = gr.JSON(visible=False)
         (
@@ -531,6 +557,10 @@ def build_webdemo():
     return demo
 
 
+def save_vs_name(vs_name):
+    vector_store_name["vs_name"] = vs_name
+    return vs_name
+
 def knowledge_embedding_store(vs_id, files):
     # vs_path = os.path.join(VS_ROOT_PATH, vs_id)
     if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id)):
@@ -538,13 +568,17 @@ def knowledge_embedding_store(vs_id, files):
     for file in files:
         filename = os.path.split(file.name)[-1]
         shutil.move(file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename))
+        knowledge_embedding_client = KnowledgeEmbedding(
+            file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
+            model_name=LLM_MODEL_CONFIG["sentence-transforms"],
+            vector_store_config={
+                "vector_store_name": vector_store_name["vs_name"],
+                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
+        knowledge_embedding_client.knowledge_embedding()
 
-    knowledge_embedding = KnowledgeEmbedding.knowledge_embedding(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename), LLM_MODEL_CONFIG["sentence-transforms"], {"vector_store_name": vs_id,
-                                                      "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
-    knowledge_embedding.source_embedding()
+
     logger.info("knowledge embedding success")
     return os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, vs_id + ".vectordb")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -559,7 +593,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger.info(f"args: {args}")
 
-    dbs = get_database_list()
+    # dbs = get_database_list()
 
     # 加载插件
     cfg = Config()
@@ -579,7 +613,7 @@ if __name__ == "__main__":
     for command_category in command_categories:
         command_registry.import_commands(command_category)
 
-    cfg.command_registry =command_registry
+    cfg.command_registry = command_registry
 
     logger.info(args)
     demo = build_webdemo()
