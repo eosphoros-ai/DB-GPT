@@ -15,7 +15,7 @@ RUN pip install -r requirements.txt
 EXPOSE 3306
 EXPOSE 8000
 
-CMD ["python", "pilot/server/vicuna_server.py"]
+CMD ["python", "pilot/server/llmserver.py"]
 CMD ["python", "pilot/server/webserver.py"]
 
 
