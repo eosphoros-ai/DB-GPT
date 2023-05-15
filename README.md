@@ -134,6 +134,7 @@ V100   | 16G      |可以进行对话推理，有明显卡顿
 docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
 ```
 向量数据库我们默认使用的是Chroma内存数据库，所以无需特殊安装，如果有需要连接其他的同学，可以按照我们的教程进行安装配置。整个DB-GPT的安装过程，我们使用的是miniconda3的虚拟环境。创建虚拟环境，并安装python依赖包
+
 ```
 python>=3.10
 conda create -n dbgpt_env python=3.10
