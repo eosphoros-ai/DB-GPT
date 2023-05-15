@@ -184,7 +184,7 @@ $ python webserver.py
 - [vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b) 作为基础模型
 - [langchain](https://github.com/hwchase17/langchain) 工具链
 - [AutoGPT](https://github.com/Significant-Gravitas/Auto-GPT) 通用的插件模版
-- [HuggingFace](https://huggingface.co/) 大模型管理
+- [Hugging Face](https://huggingface.co/) 大模型管理
 - [Chroma](https://github.com/chroma-core/chroma) 向量存储
 - [Milvus](https://milvus.io/) 分布式向量存储
 - [ChatGLM](https://github.com/THUDM/ChatGLM-6B) 基础模型
