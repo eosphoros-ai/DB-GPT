@@ -22,12 +22,16 @@ class SourceEmbedding(ABC):
     Implementations should implement the  method
     """
 
-    def __init__(self, yuque_path, model_name, vector_store_config, embedding_args: Optional[Dict] = None):
-        """Initialize with YuqueLoader url, model_name, vector_store_config"""
-        self.yuque_path = yuque_path
+    def __init__(self, file_path, model_name, vector_store_config, embedding_args: Optional[Dict] = None):
+        """Initialize with Loader url, model_name, vector_store_config"""
+        self.file_path = file_path
         self.model_name = model_name
         self.vector_store_config = vector_store_config
         self.embedding_args = embedding_args
+        self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
+        persist_dir = os.path.join(self.vector_store_config["vector_store_path"],
+                                   self.vector_store_config["vector_store_name"] + ".vectordb")
+        self.vector_store_client = Chroma(persist_directory=persist_dir, embedding_function=self.embeddings)
 
     @abstractmethod
     @register
@@ -50,18 +54,16 @@ class SourceEmbedding(ABC):
     @register
     def index_to_store(self, docs):
         """index to vector store"""
-        embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
-
         persist_dir = os.path.join(self.vector_store_config["vector_store_path"],
                                    self.vector_store_config["vector_store_name"] + ".vectordb")
-        self.vector_store = Chroma.from_documents(docs, embeddings, persist_directory=persist_dir)
+        self.vector_store = Chroma.from_documents(docs, self.embeddings, persist_directory=persist_dir)
         self.vector_store.persist()
 
     @register
     def similar_search(self, doc, topk):
         """vector store similarity_search"""
 
-        return self.vector_store.similarity_search(doc, topk)
+        return self.vector_store_client.similarity_search(doc, topk)
 
     def source_embedding(self):
         if 'read' in registered_methods:

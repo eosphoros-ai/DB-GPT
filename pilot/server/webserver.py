@@ -11,6 +11,9 @@ import gradio as gr
 import datetime
 import requests
 from urllib.parse import urljoin
+
+from langchain import PromptTemplate
+
 from pilot.configs.model_config import DB_SETTINGS, KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG
 from pilot.server.vectordb_qa import KnownLedgeBaseQA
 from pilot.connections.mysql import MySQLOperator
@@ -32,7 +35,7 @@ from pilot.conversation import (
     conv_templates,
     conversation_types,
     conversation_sql_mode,
-    SeparatorStyle
+    SeparatorStyle, conv_qa_prompt_template
 )
 
 from pilot.utils import (
@@ -57,6 +60,8 @@ models = []
 dbs = []
 vs_list = ["新建知识库"] + get_vector_storelist()
 autogpt = False
+vector_store_client = None
+vector_store_name = {"vs_name": ""}
 
 priority = {
     "vicuna-13b": "aaa"
@@ -217,16 +222,28 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
             state.messages[0][1] = ""
             state.messages[-2][1] = follow_up_prompt
 
-
     if mode == conversation_types["default_knownledge"] and not db_selector:
         query = state.messages[-2][1]
         knqa = KnownLedgeBaseQA()
         state.messages[-2][1] = knqa.get_similar_answer(query)
-        
 
-    prompt = state.get_prompt()
-    
-    skip_echo_len = len(prompt.replace("</s>", " ")) + 1
+    if mode == conversation_types["custome"] and not db_selector:
+        persist_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vector_store_name["vs_name"] + ".vectordb")
+        print("向量数据库持久化地址: ", persist_dir)
+        knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["sentence-transforms"], vector_store_config={"vector_store_name": vector_store_name["vs_name"],
+                                                      "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
+        query = state.messages[-2][1]
+        docs = knowledge_embedding_client.similar_search(query, 1)
+        context = [d.page_content for d in docs]
+        prompt_template = PromptTemplate(
+            template=conv_qa_prompt_template,
+            input_variables=["context", "question"]
+        )
+        result = prompt_template.format(context="\n".join(context), question=query)
+        state.messages[-2][1] = result
+        prompt = state.get_prompt()
+        state.messages[-2][1] = query
+        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
     # Make requests
     payload = {
@@ -437,8 +454,9 @@ def build_single_model_ui():
 
                         load_file_button = gr.Button("上传并加载到知识库")
                     with gr.Tab("上传文件夹"):
-                        folder_files = gr.File(label="添加文件",
-                                            file_count="directory",
+                        folder_files = gr.File(label="添加文件夹",
+                                               accept_multiple_files=True,
+                                               file_count="directory",
                                             show_label=False)
                         load_folder_button = gr.Button("上传并加载到知识库")
        
@@ -483,15 +501,17 @@ def build_single_model_ui():
         [state, mode, sql_mode, db_selector, temperature, max_output_tokens],
         [state, chatbot] + btn_list
     )
+    vs_add.click(fn=save_vs_name, show_progress=True,
+                           inputs=[vs_name],
+                           outputs=[vs_name])
     load_file_button.click(fn=knowledge_embedding_store,
                            show_progress=True,
                            inputs=[vs_name, files],
                            outputs=[vs_name])
-    # load_folder_button.click(get_vector_store,
-    #                          show_progress=True,
-    #                          inputs=[vs_name, folder_files, 100 , chatbot, vs_add,
-    #                                  vs_add],
-    #                          outputs=["db-out", folder_files, chatbot])
+    load_folder_button.click(fn=knowledge_embedding_store,
+                             show_progress=True,
+                             inputs=[vs_name, folder_files],
+                             outputs=[vs_name])
     return state, chatbot, textbox, send_btn, button_row, parameter_row
 
 
@@ -531,6 +551,10 @@ def build_webdemo():
     return demo
 
 
+def save_vs_name(vs_name):
+    vector_store_name["vs_name"] = vs_name
+    return vs_name
+
 def knowledge_embedding_store(vs_id, files):
     # vs_path = os.path.join(VS_ROOT_PATH, vs_id)
     if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id)):
@@ -538,10 +562,15 @@ def knowledge_embedding_store(vs_id, files):
     for file in files:
         filename = os.path.split(file.name)[-1]
         shutil.move(file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename))
+        knowledge_embedding_client = KnowledgeEmbedding(
+            file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
+            model_name=LLM_MODEL_CONFIG["sentence-transforms"],
+            vector_store_config={
+                "vector_store_name": vector_store_name["vs_name"],
+                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
+        knowledge_embedding_client.knowledge_embedding()
 
-    knowledge_embedding = KnowledgeEmbedding.knowledge_embedding(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename), LLM_MODEL_CONFIG["sentence-transforms"], {"vector_store_name": vs_id,
-                                                      "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
-    knowledge_embedding.source_embedding()
+
     logger.info("knowledge embedding success")
     return os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, vs_id + ".vectordb")
 
