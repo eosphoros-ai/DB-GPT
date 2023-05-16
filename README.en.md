@@ -19,7 +19,7 @@ We have currently released various features, which are listed below to showcase 
   - Supports custom plugins to perform tasks, with native support for Auto-GPT plugins. For example:
     - Automatic SQL execution to obtain query results
     - Automatic crawling of learning knowledge
-- Unified vector storage/indexing of knowledge base
+- Vector storage/indexing of knowledge base
   - Support for unstructured data
   - PDF, Markdown, CSV, WebURL
 
