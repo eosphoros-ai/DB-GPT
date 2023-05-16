@@ -4,6 +4,8 @@
 
 [中文版](README.md)
 
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+
 A Open Database-GPT Experiment, interact your data and environment using the local GPT, no data leaks, 100% privately, 100% security.
 
 ## Features
