@@ -60,11 +60,16 @@ Run on an RTX 4090 GPU. [YouTube](https://www.youtube.com/watch?v=1PWI6F89LPo)
 </p>
 
 1. Based on the default built-in knowledge base, question and answer. 
-  - TODO
+
+<p align="center">
+  <img src="./assets/Knownledge_based_QA_en.png" width="600px" />
+</p>
 
 2. Add your own knowledge base.
 
-  - TODO
+<p align="center">
+  <img src="./assets/new_knownledge_en.gif" width="600px" />
+</p>
 
 3. Learning from crawling data from the Internet
 
