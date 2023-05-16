@@ -1,17 +1,14 @@
 # DB-GPT ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
 
----
 [English Edition](README.en.md)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
-## 背景
-
+## DB-GPT 是什么？
 随着大模型的发布迭代，大模型变得越来越智能，在使用大模型的过程当中，遇到极大的数据安全与隐私挑战。在利用大模型能力的过程中我们的私密数据跟环境需要掌握自己的手里，完全可控，避免任何的数据隐私泄露以及安全风险。基于此，我们发起了DB-GPT项目，为所有以数据库为基础的场景，构建一套完整的私有大模型解决方案。 此方案因为支持本地部署，所以不仅仅可以应用于独立私有环境，而且还可以根据业务模块独立部署隔离，让大模型的能力绝对私有、安全、可控。
 
-## 愿景
-
 DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密，100% 安全。
+
 
 ## 特性一览
 
@@ -27,8 +24,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
     - SQL自动执行，获取查询结果
     - 自动爬取学习知识
 - 知识库统一向量存储/索引
-  - 非结构化数据支持
-  - PDF、Markdown、CSV、WebURL
+  - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
 
 ## 效果演示
 
@@ -58,11 +54,18 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
   <img src="./assets/exeable.png" width="600px" />
 </p>
 
+3. 自动分析执行SQL输出运行结果
+
+<p align="center">
+  <img src="./assets/AUTO-DB-GPT.png" width="600px" />
+</p>
+
 ### 数据库问答
 
 <p align="center">
   <img src="./assets/DB_QA.png" width="600px" />
 </p>
+
 
 1. 基于默认内置知识库问答
 
@@ -89,13 +92,13 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 </p>
 
 核心能力主要有以下几个部分。 
-1. 知识库能力    
-2. 大模型管理能力
-3. 统一的数据向量化存储与索引   
-4. 连接模块   
-5. Agent与插件   
-6. Prompt自动生成与优化  
-7. 多端产品界面
+1. 知识库能力：支持私域知识库问答能力   
+2. 大模型管理能力：基于FastChat提供一个大模型的运营环境。
+3. 统一的数据向量化存储与索引：提供一种统一的方式来存储和索引各种数据类型。   
+4. 连接模块：用于连接不同的模块和数据源，实现数据的流转和交互。 
+5. Agent与插件：提供Agent和插件机制，使得用户可以自定义并增强系统的行为。  
+6. Prompt自动生成与优化：自动化生成高质量的Prompt，并进行优化，提高系统的响应效率。  
+7. 多端产品界面：支持多种不同的客户端产品，例如Web、移动应用和桌面应用等。
 
 下面对每个模块也做一些简要的介绍:
 
@@ -175,6 +178,7 @@ python llmserver.py
 ```bash
 $ python webserver.py 
 ```
+注意: 在启动Webserver之前, 需要修改pilot/configs/model_config.py 文件中的VICUNA_MODEL_SERVER = "http://127.0.0.1:8000", 将地址设置为你的服务器地址。
 
 ## 使用说明
 
@@ -190,7 +194,7 @@ $ python webserver.py
 - [FastChat](https://github.com/lm-sys/FastChat) 提供 chat 服务
 - [vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b) 作为基础模型
 - [langchain](https://github.com/hwchase17/langchain) 工具链
-- [AutoGPT](https://github.com/Significant-Gravitas/Auto-GPT) 通用的插件模版
+- [Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT) 通用的插件模版
 - [Hugging Face](https://huggingface.co/) 大模型管理
 - [Chroma](https://github.com/chroma-core/chroma) 向量存储
 - [Milvus](https://milvus.io/) 分布式向量存储
