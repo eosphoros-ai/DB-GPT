@@ -1,6 +1,5 @@
 # DB-GPT ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
 
----
 [English Edition](README.en.md)
 
 ## 背景
@@ -23,8 +22,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
     - SQL自动执行，获取查询结果
     - 自动爬取学习知识
 - 知识库统一向量存储/索引
-  - 非结构化数据支持
-  - PDF、MarkDown、CSV、WebURL
+  - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
 
 ## 效果演示
 
@@ -54,11 +52,18 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
   <img src="./assets/exeable.png" width="600px" />
 </p>
 
+3. 自动分析执行SQL输出运行结果
+
+<p align="center">
+  <img src="./assets/AUTO-DB-GPT.png" width="600px" />
+</p>
+
 ### 数据库问答
 
 <p align="center">
   <img src="./assets/DB_QA.png" width="600px" />
 </p>
+
 
 1. 基于默认内置知识库问答
 
