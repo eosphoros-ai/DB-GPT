@@ -85,13 +85,13 @@ DB-GPT基于[FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行
 </p>
 
 核心能力主要有以下几个部分。 
-1. 知识库能力    
-2. 大模型管理能力
-3. 统一的数据向量化存储与索引   
-4. 连接模块   
-5. Agent与插件   
-6. Prompt自动生成与优化  
-7. 多端产品界面
+1. 知识库能力：支持私域知识库问答能力   
+2. 大模型管理能力：基于FastChat提供一个大模型的运营环境。
+3. 统一的数据向量化存储与索引：提供一种统一的方式来存储和索引各种数据类型。   
+4. 连接模块：用于连接不同的模块和数据源，实现数据的流转和交互。 
+5. Agent与插件：提供Agent和插件机制，使得用户可以自定义并增强系统的行为。  
+6. Prompt自动生成与优化：自动化生成高质量的Prompt，并进行优化，提高系统的响应效率。  
+7. 多端产品界面：支持多种不同的客户端产品，例如Web、移动应用和桌面应用等。
 
 下面对每个模块也做一些简要的介绍:
 
@@ -168,6 +168,7 @@ python llmserver.py
 ```bash
 $ python webserver.py 
 ```
+注意: 在启动Webserver之前, 需要修改pilot/configs/model_config.py 文件中的VICUNA_MODEL_SERVER = "http://127.0.0.1:8000", 将地址设置为你的服务器地址。
 
 ## 使用说明
 
@@ -183,7 +184,7 @@ $ python webserver.py
 - [FastChat](https://github.com/lm-sys/FastChat) 提供 chat 服务
 - [vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b) 作为基础模型
 - [langchain](https://github.com/hwchase17/langchain) 工具链
-- [AutoGPT](https://github.com/Significant-Gravitas/Auto-GPT) 通用的插件模版
+- [Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT) 通用的插件模版
 - [Hugging Face](https://huggingface.co/) 大模型管理
 - [Chroma](https://github.com/chroma-core/chroma) 向量存储
 - [Milvus](https://milvus.io/) 分布式向量存储
