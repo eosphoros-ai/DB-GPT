@@ -1,106 +1,99 @@
-# DB-GPT
+# DB-GPT ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
 
 ---
 
 [中文版](README.md)
 
-A Open Database-GPT Experiment, interact your data and environment using the local GPT, no data leaks, 100% privately, 100% security.
+## What is DB-GPT?
+
+As large models are released and iterated upon, they are becoming increasingly intelligent. However, in the process of using large models, we face significant challenges in data security and privacy. We need to ensure that our sensitive data and environments remain completely controlled and avoid any data privacy leaks or security risks. Based on this, we have launched the DB-GPT project to build a complete private large model solution for all database-based scenarios. This solution supports local deployment, allowing it to be applied not only in independent private environments but also to be independently deployed and isolated according to business modules, ensuring that the ability of large models is absolutely private, secure, and controllable.
+DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 
 ## Features
 
-We have currently released various features, which are listed below to showcase the capabilities that have been released so far:
+Currently, we have released multiple key features, which are listed below to demonstrate our current capabilities:
+
 - SQL language capabilities
   - SQL generation
   - SQL diagnosis
-- Private domain Q&A and data processing
-  - Database knowledge Q&A
+-  Private domain Q&A and data processing
+  -  Database knowledge Q&A
   - Data processing
-- Plugin model
-  - Supports custom plugins to perform tasks, with native support for Auto-GPT plugins. For example:
-    - Automatic SQL execution to obtain query results
-    - Automatic crawling of learning knowledge
-- Vector storage/indexing of knowledge base
-  - Support for unstructured data
-  - PDF, Markdown, CSV, WebURL
+- Plugins
+  -  Support custom plugin execution tasks and natively support the Auto-GPT plugin, such as:
+    - Automatic execution of SQL and retrieval of query results
+    - Automatic crawling and learning of knowledge
+- Unified vector storage/indexing of knowledge base
+  - Support for unstructured data such as PDF, Markdown, CSV, and WebURL
 
 
 ## Demo
 
 Run on an RTX 4090 GPU. [YouTube](https://www.youtube.com/watch?v=1PWI6F89LPo)
+
 ### Run
 
 <p align="center">
-  <img src="./assets/演示.gif" width="600px" />
+  <img src="./assets/demo_en.gif" width="600px" />
 </p>
 
+### SQL Generation
+
+1. Generate Create Table SQL
+
 <p align="center">
-  <img src="./assets/Auto-DB-GPT.gif" width="600px" />
+   <img src="./assets/SQL_Gen_CreateTable_en.png" width="600px" />
 </p>
 
-### SQL Generate
-
-1. Generate SQL based on schema information.
-
+2. Generating executable SQL:To generate executable SQL, first select the corresponding database and then the model can generate SQL based on the corresponding database schema information. The successful result of running it would be demonstrated as follows:
 <p align="center">
-   <img src="./assets/SQL_Gen_CreateTable.png" width="600px" />
-</p>
-
-2. Generate executable SQL. 
-First, select the corresponding database, and then the model can generate SQL based on the corresponding database schema information. The successful execution result is demonstrated below:
-<p align="center">
-  <img src="./assets/exeable.png" width="600px" />
+  <img src="./assets/exeable_en.png" width="600px" />
 </p>
 
 ### Q&A
 
 <p align="center">
-  <img src="./assets/DB_QA.png" width="600px" />
+  <img src="./assets/DB_QA_en.png" width="600px" />
 </p>
 
-1. Based on the default built-in knowledge base, question and answer.
-
-<p align="center">
-  <img src="./assets/VectorDBQA.png" width="600px" />
-</p>
+1. Based on the default built-in knowledge base, question and answer. 
+  - TODO
 
 2. Add your own knowledge base.
 
-<p align="center">
-  <img src="./assets/new_knownledge.gif" width="600px" />
-</p>
+  - TODO
 
-3. Learn by scraping data from the internet.
-- TODO
+3. Learning from crawling data from the Internet
+
+  - TODO
 
 
-## Architecture Design
-[DB-GPT](https://github.com/csunny/DB-GPT) is an experimental open-source application that builds upon the [FastChat](https://github.com/lm-sys/FastChat) model and uses vicuna as its base model. Additionally, it looks like this application incorporates langchain and llama-index embedding knowledge to improve Database-QA capabilities. 
+## Introduction 
+DB-GPT creates a vast model operating system using [FastChat](https://github.com/lm-sys/FastChat) and offers a large language model powered by [Vicuna](https://huggingface.co/Tribbiani/vicuna-7b). In addition, we provide private domain knowledge base question-answering capability through LangChain. Furthermore, we also provide support for additional plugins, and our design natively supports the Auto-GPT plugin.
 
-Overall, it appears to be a sophisticated and innovative tool for working with databases. If you have any specific questions about how to use or implement DB-GPT in your work, please let me know and I'll do my best to assist you.
+Is the architecture of the entire DB-GPT shown in the following figure:
+
 <p align="center">
   <img src="./assets/DB-GPT.png" width="600px" />
 </p>
 
-The core capabilities mainly include the following parts:
-
-1. Knowledge base
-2. LLMs management
-3. Vector storage and indexing
-4. Connections
-5. Agent and plugins
-6. Prompt generation and optimization
-7. Multi-end product interface  
+The core capabilities mainly consist of the following parts:
+1. Knowledge base capability: Supports private domain knowledge base question-answering capability.
+2. Large-scale model management capability: Provides a large model operating environment based on FastChat.
+3. Unified data vector storage and indexing: Provides a uniform way to store and index various data types.
+4. Connection module: Used to connect different modules and data sources to achieve data flow and interaction.
+5. Agent and plugins: Provides Agent and plugin mechanisms, allowing users to customize and enhance the system's behavior.
+6. Prompt generation and optimization: Automatically generates high-quality prompts and optimizes them to improve system response efficiency.
+7. Multi-platform product interface: Supports various client products, such as web, mobile applications, and desktop applications.
 
 Below is a brief introduction to each module:
 
-### Knowledge Base
+### Knowledge base capability
 
-As the most important scenario for current user needs, we natively support the construction and processing of knowledge bases. At the same time, in this project, we also provide various knowledge base management strategies, such as:
- 1. Default built-in knowledge base 
- 2. Customized new knowledge base 
- 3. Building knowledge bases through plug-in capabilities and other usage scenarios. 
-
-Users only need to organize their knowledge documents and use our existing capabilities to build the knowledge base required for large models.
+As the knowledge base is currently the most significant user demand scenario, we natively support the construction and processing of knowledge bases. At the same time, we also provide multiple knowledge base management strategies in this project, such as:
+1. Default built-in knowledge base
+2. Custom addition of knowledge bases
+3. Various usage scenarios such as constructing knowledge bases through plugin capabilities and web crawling. Users only need to organize the knowledge documents, and they can use our existing capabilities to build the knowledge base required for the large model.
 
 ### LLMs Management
 
@@ -126,7 +119,7 @@ Prompt is a very important part of the interaction between the large model and t
 
 TODO: In terms of terminal display, we will provide a multi-platform product interface, including PC, mobile phone, command line, Slack and other platforms.
 
-## Deployment
+## Deployment 
 
 ### 1. Hardware Requirements
 As our project has the ability to achieve ChatGPT performance of over 85%, there are certain hardware requirements. However, overall, the project can be deployed and used on consumer-grade graphics cards. The specific hardware requirements for deployment are as follows:
@@ -136,6 +129,7 @@ As our project has the ability to achieve ChatGPT performance of over 85%, there
 | RTX 4090  | 24 GB     | Smooth conversation inference        |
 | RTX 3090  | 24 GB     | Smooth conversation inference, better than V100 |
 | V100      | 16 GB     | Conversation inference possible, noticeable stutter |
+
 ### 2. Install
 
 This project relies on a local MySQL database service, which you need to install locally. We recommend using Docker for installation.
@@ -160,36 +154,41 @@ It is recommended to set the Python package path to avoid runtime errors due to 
 ```
 echo "/root/workspace/DB-GPT" > /root/miniconda3/env/dbgpt_env/lib/python3.10/site-packages/dbgpt.pth 
 ```
-
+Notice: You need replace the path to your owner.
 
 ### 3. Run
 You can refer to this document to obtain the Vicuna weights: [Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights) .
 
 If you have difficulty with this step, you can also directly use the model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a replacement.
 
+1. Run server
 ```bash
-$ cd pilot/server
-$ python vicuna_server.py
+$ python pilot/server/llmserver.py
 ```
 
 Run gradio webui
 
 ```bash
-$ python webserver.py 
+$ python pilot/server/webserver.py
 ```
+Notice:  the webserver need to connect llmserver,  so you need change the pilot/configs/model_config.py file. change the VICUNA_MODEL_SERVER = "http://127.0.0.1:8000" to your address.  It's very important.
 
 ## Usage Instructions
 We provide a user interface for Gradio, which allows you to use DB-GPT through our user interface. Additionally, we have prepared several reference articles (written in Chinese) that introduce the code and principles related to our project.
-1.  [大模型实战系列(1) —— 强强联合Langchain-Vicuna应用实战](https://zhuanlan.zhihu.com/p/628750042)
-2.  [大模型实战系列(2) —— DB-GPT 阿里云部署指南](https://zhuanlan.zhihu.com/p/629467580)
-3.  [大模型实战系列(3) —— DB-GPT插件模型原理与使用](https://zhuanlan.zhihu.com/p/629623125)
+- [LLM Practical In Action Series (1) — Combined Langchain-Vicuna Application Practical](https://medium.com/@cfqcsunny/llm-practical-in-action-series-1-combined-langchain-vicuna-application-practical-701cd0413c9f)
 
-## Thanks
+## Acknowledgement
 
-- [FastChat](https://github.com/lm-sys/FastChat)
-- [vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b)
-- [langchain](https://github.com/hwchase17/langchain)
-- [llama-index](https://github.com/jerryjliu/llama_index) and [In-Context Learning](https://arxiv.org/abs/2301.00234)
+The achievements of this project are thanks to the technical community, especially the following projects:
+- FastChat for providing chat services
+- vicuna-13b as the base model
+- langchain tool chain
+- Auto-GPT universal plugin template
+- Hugging Face for big model management
+- Chroma for vector storage
+- Milvus for distributed vector storage
+- ChatGLM as the base model
+- llama-index for enhancing database-related knowledge using in-context learning based on existing knowledge bases.
 
 <!-- GITCONTRIBUTOR_START -->
 
