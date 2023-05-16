@@ -60,11 +60,16 @@ Run on an RTX 4090 GPU. [YouTube](https://www.youtube.com/watch?v=1PWI6F89LPo)
 </p>
 
 1. Based on the default built-in knowledge base, question and answer. 
-  - TODO
+
+<p align="center">
+  <img src="./assets/Knownledge_based_QA_en.png" width="600px" />
+</p>
 
 2. Add your own knowledge base.
 
-  - TODO
+<p align="center">
+  <img src="./assets/new_knownledge_en.gif" width="600px" />
+</p>
 
 3. Learning from crawling data from the Internet
 
@@ -183,15 +188,15 @@ We provide a user interface for Gradio, which allows you to use DB-GPT through o
 ## Acknowledgement
 
 The achievements of this project are thanks to the technical community, especially the following projects:
-- FastChat for providing chat services
-- vicuna-13b as the base model
-- langchain tool chain
-- Auto-GPT universal plugin template
-- Hugging Face for big model management
-- Chroma for vector storage
-- Milvus for distributed vector storage
-- ChatGLM as the base model
-- llama-index for enhancing database-related knowledge using in-context learning based on existing knowledge bases.
+- [FastChat](https://github.com/lm-sys/FastChat) for providing chat services
+- [vicuna-13b](https://lmsys.org/blog/2023-03-30-vicuna/) as the base model
+- [langchain](https://langchain.readthedocs.io/) tool chain
+- [Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT) universal plugin template
+- [Hugging Face](https://huggingface.co/) for big model management
+- [Chroma](https://github.com/chroma-core/chroma) for vector storage
+- [Milvus](https://milvus.io/) for distributed vector storage
+- [ChatGLM](https://github.com/THUDM/ChatGLM-6B) as the base model
+- [llama_index](https://github.com/jerryjliu/llama_index) for enhancing database-related knowledge using [in-context learning](https://arxiv.org/abs/2301.00234) based on existing knowledge bases.
 
 <!-- GITCONTRIBUTOR_START -->
 
