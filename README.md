@@ -57,7 +57,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 3. 自动分析执行SQL输出运行结果
 
 <p align="center">
-  <img src="./assets/AUTO-DB-GPT.png" width="600px" />
+  <img src="./assets/Auto-DB-GPT.png" width="600px" />
 </p>
 
 ### 数据库问答
