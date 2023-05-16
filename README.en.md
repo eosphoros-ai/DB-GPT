@@ -205,3 +205,11 @@ This project follows the git-contributor [spec](https://github.com/xudafeng/git-
 ## Licence
 
 The MIT License (MIT)
+
+## Contact Information
+We are working on building a community, if you have any ideas about building the community, feel free to contact me us.  
+
+name     | email|
+---------|---------------------
+ yushun06|  my_prophet@hotmail.com 
+ csunny  |  cfqcsunny@gmail.com 
