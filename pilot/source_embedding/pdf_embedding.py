@@ -17,8 +17,6 @@ class PDFEmbedding(SourceEmbedding):
         self.file_path = file_path
         self.model_name = model_name
         self.vector_store_config = vector_store_config
-        # SourceEmbedding(file_path =file_path, );
-        SourceEmbedding(file_path, model_name, vector_store_config)
 
     @register
     def read(self):
@@ -30,7 +28,7 @@ class PDFEmbedding(SourceEmbedding):
     def data_process(self, documents: List[Document]):
         i = 0
         for d in documents:
-            documents[i].page_content = d.page_content.replace(" ", "").replace("\n", "")
+            documents[i].page_content = d.page_content.replace("\n", "")
             i += 1
         return documents
 
