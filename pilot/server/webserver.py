@@ -256,8 +256,7 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         prompt = state.get_prompt()
         if len(prompt) > 4000:
             logger.info("prompt length greater than 4000, rebuild")
-            docs = knowledge_embedding_client.similar_search(query, 5)
-            context = [d.page_content for d in docs]
+            context = context[:2000]
             prompt_template = PromptTemplate(
                 template=conv_qa_prompt_template,
                 input_variables=["context", "question"]
