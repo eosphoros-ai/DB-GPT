@@ -73,3 +73,4 @@ markdown2
 colorama
 playsound
 distro
+pypdf

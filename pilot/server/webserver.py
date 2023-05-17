@@ -242,10 +242,10 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
     if mode == conversation_types["custome"] and not db_selector:
         persist_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vector_store_name["vs_name"] + ".vectordb")
         print("向量数据库持久化地址: ", persist_dir)
-        knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["sentence-transforms"], vector_store_config={"vector_store_name": vector_store_name["vs_name"],
+        knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["text2vec"], vector_store_config={"vector_store_name": vector_store_name["vs_name"],
                                                       "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
         query = state.messages[-2][1]
-        docs = knowledge_embedding_client.similar_search(query, 1)
+        docs = knowledge_embedding_client.similar_search(query, 10)
         context = [d.page_content for d in docs]
         prompt_template = PromptTemplate(
             template=conv_qa_prompt_template,
@@ -254,6 +254,18 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         result = prompt_template.format(context="\n".join(context), question=query)
         state.messages[-2][1] = result
         prompt = state.get_prompt()
+        if len(prompt) > 4000:
+            logger.info("prompt length greater than 4000, rebuild")
+            docs = knowledge_embedding_client.similar_search(query, 5)
+            context = [d.page_content for d in docs]
+            prompt_template = PromptTemplate(
+                template=conv_qa_prompt_template,
+                input_variables=["context", "question"]
+            )
+            result = prompt_template.format(context="\n".join(context), question=query)
+            state.messages[-2][1] = result
+            prompt = state.get_prompt()
+        print(len(prompt))
         state.messages[-2][1] = query
         skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
@@ -420,7 +432,7 @@ def build_single_model_ui():
         max_output_tokens = gr.Slider(
             minimum=0,
             maximum=1024,
-            value=1024,
+            value=512,
             step=64,
             interactive=True,
             label="最大输出Token数",
@@ -570,7 +582,7 @@ def knowledge_embedding_store(vs_id, files):
         shutil.move(file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename))
         knowledge_embedding_client = KnowledgeEmbedding(
             file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
-            model_name=LLM_MODEL_CONFIG["sentence-transforms"],
+            model_name=LLM_MODEL_CONFIG["text2vec"],
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
                 "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
