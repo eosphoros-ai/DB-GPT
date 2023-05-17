@@ -20,7 +20,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 LLM_MODEL_CONFIG = {
     "flan-t5-base": os.path.join(MODEL_PATH, "flan-t5-base"),
     "vicuna-13b": os.path.join(MODEL_PATH, "vicuna-13b"),
-    "text2vec": os.path.join(MODEL_PATH, "text2vec"),
+    "text2vec": os.path.join(MODEL_PATH, "text2vec-large-chinese"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2")
 }
 
