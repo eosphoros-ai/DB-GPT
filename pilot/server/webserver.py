@@ -13,6 +13,11 @@ import requests
 from urllib.parse import urljoin
 
 from langchain import PromptTemplate
+import os
+import sys
+
+ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(ROOT_PATH)
 
 from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG
 from pilot.server.vectordb_qa import KnownLedgeBaseQA
@@ -29,6 +34,8 @@ from pilot.prompts.auto_mode_prompt import AutoModePrompt
 from pilot.prompts.generator import PromptGenerator
 
 from pilot.commands.exception_not_commands import NotCommands
+
+
 
 from pilot.conversation import (
     default_conversation,

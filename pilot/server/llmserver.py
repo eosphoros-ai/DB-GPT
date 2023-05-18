@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import uvicorn
 import asyncio
 import json
+import sys
 from typing import Optional, List
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
-from pilot.model.inference import generate_stream
 from pydantic import BaseModel
+
+global_counter = 0
+model_semaphore = None
+
+ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(ROOT_PATH)
+
+from pilot.model.inference import generate_stream
 from pilot.model.inference import generate_output, get_embeddings
 
 from pilot.model.loader import ModelLoader
@@ -18,10 +27,6 @@ from pilot.configs.config import  Config
 
 CFG = Config()
 model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
-
-
-global_counter = 0
-model_semaphore = None
 
 ml = ModelLoader(model_path=model_path)
 model, tokenizer = ml.loader(num_gpus=1, load_8bit=ISLOAD_8BIT, debug=ISDEBUG)

@@ -24,7 +24,7 @@ class BaseLLMAdaper:
         return model, tokenizer
 
 
-llm_model_adapters = List[BaseLLMAdaper] = []
+llm_model_adapters: List[BaseLLMAdaper] = []
 
 # Register llm models to adapters, by this we can use multi models.
 def register_llm_model_adapters(cls):
