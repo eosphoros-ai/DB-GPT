@@ -152,11 +152,6 @@ conda activate dbgpt_env
 pip install -r requirements.txt
 
 ```
-或者也可以使用命令:
-```
-cd DB-GPT
-conda env create -f environment.yml
-```
 
 ### 3. 运行大模型
 
