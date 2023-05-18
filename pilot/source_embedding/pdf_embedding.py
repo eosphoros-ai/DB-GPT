@@ -6,6 +6,7 @@ from langchain.document_loaders import PyPDFLoader
 from langchain.schema import Document
 
 from pilot.source_embedding import SourceEmbedding, register
+from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 
 
 class PDFEmbedding(SourceEmbedding):
@@ -17,20 +18,19 @@ class PDFEmbedding(SourceEmbedding):
         self.file_path = file_path
         self.model_name = model_name
         self.vector_store_config = vector_store_config
-        # SourceEmbedding(file_path =file_path, );
-        SourceEmbedding(file_path, model_name, vector_store_config)
 
     @register
     def read(self):
         """Load from pdf path."""
         loader = PyPDFLoader(self.file_path)
-        return loader.load()
+        textsplitter = CHNDocumentSplitter(pdf=True, sentence_size=100)
+        return loader.load_and_split(textsplitter)
 
     @register
     def data_process(self, documents: List[Document]):
         i = 0
         for d in documents:
-            documents[i].page_content = d.page_content.replace(" ", "").replace("\n", "")
+            documents[i].page_content = d.page_content.replace("\n", "")
             i += 1
         return documents
 

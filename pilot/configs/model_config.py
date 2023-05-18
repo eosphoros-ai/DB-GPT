@@ -20,8 +20,10 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 LLM_MODEL_CONFIG = {
     "flan-t5-base": os.path.join(MODEL_PATH, "flan-t5-base"),
     "vicuna-13b": os.path.join(MODEL_PATH, "vicuna-13b"),
+    "text2vec": os.path.join(MODEL_PATH, "text2vec-large-chinese"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2")
 }
+
 # Load model config
 ISLOAD_8BIT = True
 ISDEBUG = False
@@ -29,4 +31,4 @@ ISDEBUG = False
 
 VECTOR_SEARCH_TOP_K = 3
 VS_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vs_store")
-KNOWLEDGE_UPLOAD_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "knowledge")
+KNOWLEDGE_UPLOAD_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
