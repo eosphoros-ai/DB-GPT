@@ -247,6 +247,13 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、简要的回
             {question}
 """
 
+# conv_qa_prompt_template = """ Please provide the known information so that I can professionally and briefly answer the user's question. If the answer cannot be obtained from the provided content,
+#             please say: "The information provided in the knowledge base is insufficient to answer this question." Fabrication is prohibited.。
+#             known information:
+#             {context}
+#             question:
+#             {question}
+# """
 default_conversation = conv_one_shot
 
 conversation_sql_mode ={

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 from typing import List
 
 from bs4 import BeautifulSoup
@@ -8,6 +9,7 @@ from langchain.schema import Document
 import markdown
 
 from pilot.source_embedding import SourceEmbedding, register
+from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 
 
 class MarkdownEmbedding(SourceEmbedding):
@@ -24,7 +26,28 @@ class MarkdownEmbedding(SourceEmbedding):
     def read(self):
         """Load from markdown path."""
         loader = TextLoader(self.file_path)
-        return loader.load()
+        text_splitter = CHNDocumentSplitter(pdf=True, sentence_size=100)
+        return loader.load_and_split(text_splitter)
+
+    @register
+    def read_batch(self):
+        """Load from markdown path."""
+        docments = []
+        for root, _, files in os.walk(self.file_path, topdown=False):
+            for file in files:
+                filename = os.path.join(root, file)
+                loader = TextLoader(filename)
+                # text_splitor = CHNDocumentSplitter(chunk_size=1000, chunk_overlap=20, length_function=len)
+                # docs = loader.load_and_split()
+                docs = loader.load()
+                # 更新metadata数据
+                new_docs = []
+                for doc in docs:
+                    doc.metadata = {"source": doc.metadata["source"].replace(self.file_path, "")}
+                    print("doc is embedding ... ", doc.metadata)
+                    new_docs.append(doc)
+                docments += new_docs
+        return docments
 
     @register
     def data_process(self, documents: List[Document]):
@@ -35,7 +58,7 @@ class MarkdownEmbedding(SourceEmbedding):
             for tag in soup(['!doctype', 'meta', 'i.fa']):
                 tag.extract()
             documents[i].page_content = soup.get_text()
-            documents[i].page_content = documents[i].page_content.replace(" ", "").replace("\n", " ")
+            documents[i].page_content = documents[i].page_content.replace("\n", " ")
             i += 1
         return documents
 

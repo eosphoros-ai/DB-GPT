@@ -6,7 +6,7 @@ from langchain.document_loaders import PyPDFLoader
 from langchain.schema import Document
 
 from pilot.source_embedding import SourceEmbedding, register
-from pilot.source_embedding.chinese_text_splitter import ChineseTextSplitter
+from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 
 
 class PDFEmbedding(SourceEmbedding):
@@ -23,7 +23,7 @@ class PDFEmbedding(SourceEmbedding):
     def read(self):
         """Load from pdf path."""
         loader = PyPDFLoader(self.file_path)
-        textsplitter = ChineseTextSplitter(pdf=True, sentence_size=100)
+        textsplitter = CHNDocumentSplitter(pdf=True, sentence_size=100)
         return loader.load_and_split(textsplitter)
 
     @register
