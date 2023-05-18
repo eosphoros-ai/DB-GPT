@@ -157,10 +157,6 @@ pip install -r requirements.txt
 cd DB-GPT
 conda env create -f environment.yml
 ```
-另外需要设置一下python包路径, 避免出现运行时找不到包
-```
-echo "/root/workspace/DB-GPT" > /root/miniconda3/env/dbgpt_env/lib/python3.10/site-packages/dbgpt.pth 
-```
 
 ### 3. 运行大模型
 
