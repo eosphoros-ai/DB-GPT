@@ -428,7 +428,7 @@ def build_single_model_ui():
     notice_markdown = """
     # DB-GPT
     
-    [DB-GPT](https://github.com/csunny/DB-GPT) DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure. 
+    [DB-GPT](https://github.com/csunny/DB-GPT) 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密，100% 安全。 
     """
     learn_more_markdown = """ 
         ### Licence
