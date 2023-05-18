@@ -6,6 +6,7 @@ import os
 import shutil
 import uuid
 import json
+import sys
 import time
 import gradio as gr
 import datetime
@@ -13,8 +14,7 @@ import requests
 from urllib.parse import urljoin
 
 from langchain import PromptTemplate
-import os
-import sys
+
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
