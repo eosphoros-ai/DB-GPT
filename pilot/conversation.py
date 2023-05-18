@@ -4,8 +4,16 @@
 import dataclasses
 from enum import auto, Enum
 from typing import List, Any
-from pilot.configs.model_config import DB_SETTINGS
+from pilot.configs.config import Config
 
+CFG = Config()
+
+DB_SETTINGS = {
+    "user": CFG.LOCAL_DB_USER,
+    "password":  CFG.LOCAL_DB_PASSWORD,
+    "host": CFG.LOCAL_DB_HOST,
+    "port": CFG.LOCAL_DB_PORT
+}
 
 class SeparatorStyle(Enum):
     SINGLE = auto()
@@ -91,7 +99,7 @@ class Conversation:
 def gen_sqlgen_conversation(dbname):
     from pilot.connections.mysql import MySQLOperator
     mo = MySQLOperator(
-        **DB_SETTINGS
+        **(DB_SETTINGS)
     )
 
     message = ""
@@ -99,7 +107,7 @@ def gen_sqlgen_conversation(dbname):
     schemas = mo.get_schema(dbname)
     for s in schemas:
         message += s["schema_info"] + ";"
-    return f"数据库{dbname}的Schema信息如下: {message}\n"
+    return f"Database {dbname} Schema information as follows: {message}\n"
 
 
 conv_one_shot = Conversation(
@@ -162,7 +170,7 @@ auto_dbgpt_one_shot = Conversation(
               
               
               Schema:
-              数据库gpt-user的Schema信息如下: users(city,create_time,email,last_login_time,phone,user_name);
+              Database gpt-user Schema information as follows: users(city,create_time,email,last_login_time,phone,user_name);
               
               
               Commands:
