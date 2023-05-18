@@ -238,7 +238,19 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         ### 后续对话
         query = state.messages[-2][1]
         # 第一轮对话需要加入提示Prompt
-        if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
+        if mode == conversation_types["custome"]:
+            template_name = "conv_one_shot"
+            new_state = conv_templates[template_name].copy()
+            # prompt 中添加上下文提示, 根据已有知识对话, 上下文提示是否也应该放在第一轮, 还是每一轮都添加上下文?
+            # 如果用户侧的问题跨度很大, 应该每一轮都加提示。
+            if db_selector:
+                new_state.append_message(new_state.roles[0], gen_sqlgen_conversation(dbname) + query)
+                new_state.append_message(new_state.roles[1], None)
+            else:
+                new_state.append_message(new_state.roles[0], query)
+                new_state.append_message(new_state.roles[1], None)
+            state = new_state
+        elif sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
             ## 获取最后一次插件的返回
             follow_up_prompt = auto_prompt.construct_follow_up_prompt([query])
             state.messages[0][0] = ""
