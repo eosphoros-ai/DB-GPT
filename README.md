@@ -179,7 +179,7 @@ Run gradio webui
 ```bash
 $ python pilot/server/webserver.py
 ```
-Notice:  the webserver need to connect llmserver,  so you need change the pilot/configs/model_config.py file. change the VICUNA_MODEL_SERVER = "http://127.0.0.1:8000" to your address.  It's very important.
+Notice:  the webserver need to connect llmserver,  so you need change the .env file. change the MODEL_SERVER = "http://127.0.0.1:8000" to your address.  It's very important.
 
 ## Usage Instructions
 We provide a user interface for Gradio, which allows you to use DB-GPT through our user interface. Additionally, we have prepared several reference articles (written in Chinese) that introduce the code and principles related to our project.
