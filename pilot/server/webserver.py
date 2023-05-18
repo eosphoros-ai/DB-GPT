@@ -6,6 +6,7 @@ import os
 import shutil
 import uuid
 import json
+import sys
 import time
 import gradio as gr
 import datetime
@@ -14,13 +15,17 @@ from urllib.parse import urljoin
 
 from langchain import PromptTemplate
 
-from pilot.configs.model_config import DB_SETTINGS, KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG
+
+ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(ROOT_PATH)
+
+from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG, VECTOR_SEARCH_TOP_K
 from pilot.server.vectordb_qa import KnownLedgeBaseQA
 from pilot.connections.mysql import MySQLOperator
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
 from pilot.vector_store.extract_tovec import get_vector_storelist, load_knownledge_from_doc, knownledge_tovec_st
 
-from pilot.configs.model_config import LOGDIR, VICUNA_MODEL_SERVER, LLM_MODEL, DATASETS_DIR
+from pilot.configs.model_config import LOGDIR,  DATASETS_DIR
 
 from pilot.plugins import scan_plugins
 from pilot.configs.config import Config
@@ -29,6 +34,8 @@ from pilot.prompts.auto_mode_prompt import AutoModePrompt
 from pilot.prompts.generator import PromptGenerator
 
 from pilot.commands.exception_not_commands import NotCommands
+
+
 
 from pilot.conversation import (
     default_conversation,
@@ -67,7 +74,15 @@ priority = {
     "vicuna-13b": "aaa"
 }
 
+# 加载插件
+CFG= Config()
 
+DB_SETTINGS = {
+    "user": CFG.LOCAL_DB_USER,
+    "password":  CFG.LOCAL_DB_PASSWORD,
+    "host": CFG.LOCAL_DB_HOST,
+    "port": CFG.LOCAL_DB_PORT
+}
 def get_simlar(q):
     docsearch = knownledge_tovec_st(os.path.join(DATASETS_DIR, "plan.md"))
     docs = docsearch.similarity_search_with_score(q, k=1)
@@ -178,7 +193,7 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
     print("是否是AUTO-GPT模式.", autogpt)
 
     start_tstamp = time.time()
-    model_name = LLM_MODEL
+    model_name = CFG.LLM_MODEL
 
     dbname = db_selector
     # TODO 这里的请求需要拼接现有知识库, 使得其根据现有知识库作答, 所以prompt需要继续优化
@@ -223,7 +238,19 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         ### 后续对话
         query = state.messages[-2][1]
         # 第一轮对话需要加入提示Prompt
-        if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
+        if mode == conversation_types["custome"]:
+            template_name = "conv_one_shot"
+            new_state = conv_templates[template_name].copy()
+            # prompt 中添加上下文提示, 根据已有知识对话, 上下文提示是否也应该放在第一轮, 还是每一轮都添加上下文?
+            # 如果用户侧的问题跨度很大, 应该每一轮都加提示。
+            if db_selector:
+                new_state.append_message(new_state.roles[0], gen_sqlgen_conversation(dbname) + query)
+                new_state.append_message(new_state.roles[1], None)
+            else:
+                new_state.append_message(new_state.roles[0], query)
+                new_state.append_message(new_state.roles[1], None)
+            state = new_state
+        elif sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
             ## 获取最后一次插件的返回
             follow_up_prompt = auto_prompt.construct_follow_up_prompt([query])
             state.messages[0][0] = ""
@@ -241,11 +268,13 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
 
     if mode == conversation_types["custome"] and not db_selector:
         persist_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vector_store_name["vs_name"] + ".vectordb")
-        print("向量数据库持久化地址: ", persist_dir)
-        knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["sentence-transforms"], vector_store_config={"vector_store_name": vector_store_name["vs_name"],
+        print("vector store path: ", persist_dir)
+        knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["text2vec"],
+                                                        local_persist=False,
+                                                        vector_store_config={"vector_store_name": vector_store_name["vs_name"],
                                                       "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
         query = state.messages[-2][1]
-        docs = knowledge_embedding_client.similar_search(query, 1)
+        docs = knowledge_embedding_client.similar_search(query, VECTOR_SEARCH_TOP_K)
         context = [d.page_content for d in docs]
         prompt_template = PromptTemplate(
             template=conv_qa_prompt_template,
@@ -254,6 +283,20 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         result = prompt_template.format(context="\n".join(context), question=query)
         state.messages[-2][1] = result
         prompt = state.get_prompt()
+        print("prompt length:" + str(len(prompt)))
+
+        if len(prompt) > 4000:
+            logger.info("prompt length greater than 4000, rebuild")
+            context = context[:2000]
+            prompt_template = PromptTemplate(
+                template=conv_qa_prompt_template,
+                input_variables=["context", "question"]
+            )
+            result = prompt_template.format(context="\n".join(context), question=query)
+            state.messages[-2][1] = result
+            prompt = state.get_prompt()
+            print("new prompt length:" + str(len(prompt)))
+
         state.messages[-2][1] = query
         skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
@@ -268,7 +311,7 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
     logger.info(f"Requert: \n{payload}")
 
     if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
-        response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate"),
+        response = requests.post(urljoin(CFG.MODEL_SERVER, "generate"),
                                  headers=headers, json=payload, timeout=120)
 
         print(response.json())
@@ -316,7 +359,7 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
 
         try:
             # Stream output
-            response = requests.post(urljoin(VICUNA_MODEL_SERVER, "generate_stream"),
+            response = requests.post(urljoin(CFG.MODEL_SERVER, "generate_stream"),
                                      headers=headers, json=payload, stream=True, timeout=20)
             for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
                 if chunk:
@@ -397,7 +440,7 @@ def build_single_model_ui():
     notice_markdown = """
     # DB-GPT
     
-    [DB-GPT](https://github.com/csunny/DB-GPT) 是一个实验性的开源应用程序，它基于[FastChat](https://github.com/lm-sys/FastChat)，并使用vicuna-13b作为基础模型。此外，此程序结合了langchain和llama-index基于现有知识库进行In-Context Learning来对其进行数据库相关知识的增强。它可以进行SQL生成、SQL诊断、数据库知识问答等一系列的工作。 总的来说，它是一个用于数据库的复杂且创新的AI工具。如果您对如何在工作中使用或实施DB-GPT有任何具体问题，请联系我, 我会尽力提供帮助, 同时也欢迎大家参与到项目建设中, 做一些有趣的事情。 
+    [DB-GPT](https://github.com/csunny/DB-GPT) 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密，100% 安全。 
     """
     learn_more_markdown = """ 
         ### Licence
@@ -420,7 +463,7 @@ def build_single_model_ui():
         max_output_tokens = gr.Slider(
             minimum=0,
             maximum=1024,
-            value=1024,
+            value=512,
             step=64,
             interactive=True,
             label="最大输出Token数",
@@ -570,7 +613,8 @@ def knowledge_embedding_store(vs_id, files):
         shutil.move(file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename))
         knowledge_embedding_client = KnowledgeEmbedding(
             file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
-            model_name=LLM_MODEL_CONFIG["sentence-transforms"],
+            model_name=LLM_MODEL_CONFIG["text2vec"],
+            local_persist=False,
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
                 "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
@@ -592,12 +636,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     logger.info(f"args: {args}")
-
-    # dbs = get_database_list()
-
-    # 加载插件
+    # 配置初始化
     cfg = Config()
 
+    # dbs = get_database_list()
     cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
 
     # 加载插件可执行命令
