@@ -2,24 +2,23 @@
 # -*- coding: utf-8 -*-
 
 import os
+import nltk
 from typing import List
 
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from pilot.singleton import Singleton
+
 
 class Config(metaclass=Singleton):
     """Configuration class to store the state of bools for different scripts access"""
     def __init__(self) -> None:
         """Initialize the Config class"""
 
-        # TODO change model_config there 
-
         self.debug_mode = False
         self.skip_reprompt = False
-
         self.temperature = float(os.getenv("TEMPERATURE", 0.7))
 
-        # TODO change model_config there
+
         self.execute_local_commands = (
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
         )
@@ -46,16 +45,11 @@ class Config(metaclass=Singleton):
         self.milvus_collection = os.getenv("MILVUS_COLLECTION", "dbgpt")
         self.milvus_secure = os.getenv("MILVUS_SECURE") == "True"
 
+
         self.authorise_key = os.getenv("AUTHORISE_COMMAND_KEY", "y")
         self.exit_key = os.getenv("EXIT_KEY", "n")
-        self.image_provider = bool(os.getenv("IMAGE_PROVIDER", True))
+        self.image_provider = os.getenv("IMAGE_PROVIDER", True)
         self.image_size = int(os.getenv("IMAGE_SIZE", 256))
-
-        self.plugins_dir = os.getenv("PLUGINS_DIR", "../../plugins")
-        self.plugins: List[AutoGPTPluginTemplate] = []
-        self.plugins_openai = []
-
-        self.command_registry = []
 
         self.huggingface_api_token = os.getenv("HUGGINGFACE_API_TOKEN")
         self.image_provider = os.getenv("IMAGE_PROVIDER")
@@ -68,6 +62,10 @@ class Config(metaclass=Singleton):
         )
         self.speak_mode = False
 
+
+        ### Related configuration of built-in commands
+        self.command_registry = []
+
         disabled_command_categories = os.getenv("DISABLED_COMMAND_CATEGORIES")
         if disabled_command_categories:
             self.disabled_command_categories = disabled_command_categories.split(",")
@@ -77,6 +75,12 @@ class Config(metaclass=Singleton):
         self.execute_local_commands = (
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
         )
+
+
+        ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
+        self.plugins_dir = os.getenv("PLUGINS_DIR", "../../plugins")
+        self.plugins: List[AutoGPTPluginTemplate] = []
+        self.plugins_openai = []
 
         plugins_allowlist = os.getenv("ALLOWLISTED_PLUGINS")
         if plugins_allowlist:
@@ -89,7 +93,21 @@ class Config(metaclass=Singleton):
             self.plugins_denylist = plugins_denylist.split(",")
         else:
             self.plugins_denylist = []
-    
+
+
+        ### Local database connection configuration
+        self.LOCAL_DB_HOST =  os.getenv("LOCAL_DB_HOST",  "127.0.0.1")
+        self.LOCAL_DB_PORT =  int(os.getenv("LOCAL_DB_PORT",  3306))
+        self.LOCAL_DB_USER =  os.getenv("LOCAL_DB_USER",  "root")
+        self.LOCAL_DB_PASSWORD =  os.getenv("LOCAL_DB_PASSWORD",  "aa123456")
+
+        ### LLM Model Service Configuration
+        self.LLM_MODEL = os.getenv("LLM_MODEL",  "vicuna-13b")
+        self.LIMIT_MODEL_CONCURRENCY = int(os.getenv("LIMIT_MODEL_CONCURRENCY",  5))
+        self.MAX_POSITION_EMBEDDINGS = int(os.getenv("MAX_POSITION_EMBEDDINGS",  4096))
+        self.MODEL_SERVER = os.getenv("MODEL_SERVER",  "http://121.41.167.183:8000")
+        self.ISLOAD_8BIT = os.getenv("ISLOAD_8BIT", "True") == "True"
+
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
         self.debug_mode = value
