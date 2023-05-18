@@ -17,13 +17,16 @@ from peft import (
 import torch
 from datasets import load_dataset
 import pandas as pd
+from pilot.configs.config import Config
 
 
-from pilot.configs.model_config import DATA_DIR, LLM_MODEL, LLM_MODEL_CONFIG
+from pilot.configs.model_config import DATA_DIR, LLM_MODEL_CONFIG
 device = "cuda" if torch.cuda.is_available() else "cpu"
 CUTOFF_LEN = 50
 
 df = pd.read_csv(os.path.join(DATA_DIR, "BTC_Tweets_Updated.csv"))
+
+CFG = Config()
 
 def sentiment_score_to_name(score: float):
     if score > 0:
@@ -49,7 +52,7 @@ with open(os.path.join(DATA_DIR, "alpaca-bitcoin-sentiment-dataset.json"), "w") 
 data = load_dataset("json", data_files=os.path.join(DATA_DIR, "alpaca-bitcoin-sentiment-dataset.json"))
 print(data["train"])
 
-BASE_MODEL = LLM_MODEL_CONFIG[LLM_MODEL]
+BASE_MODEL = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
 model = LlamaForCausalLM.from_pretrained(
     BASE_MODEL,
     torch_dtype=torch.float16,
