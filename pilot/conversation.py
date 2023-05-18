@@ -107,7 +107,7 @@ def gen_sqlgen_conversation(dbname):
     schemas = mo.get_schema(dbname)
     for s in schemas:
         message += s["schema_info"] + ";"
-    return f"数据库{dbname}的Schema信息如下: {message}\n"
+    return f"Database {dbname} Schema information as follows: {message}\n"
 
 
 conv_one_shot = Conversation(
@@ -170,7 +170,7 @@ auto_dbgpt_one_shot = Conversation(
               
               
               Schema:
-              数据库gpt-user的Schema信息如下: users(city,create_time,email,last_login_time,phone,user_name);
+              Database gpt-user Schema information as follows: users(city,create_time,email,last_login_time,phone,user_name);
               
               
               Commands:
