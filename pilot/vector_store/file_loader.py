@@ -48,11 +48,7 @@ class KnownLedge2Vector:
             # vector_store.add_documents(documents=documents)
         else:
             documents = self.load_knownlege()
-<<<<<<< HEAD
             # reinit 
-=======
-            # reinit
->>>>>>> 31797ecdb53eff76cceb52454888c91c97572851
             vector_store = Chroma.from_documents(documents=documents, 
                                                  embedding=self.embeddings,
                                                  persist_directory=persist_dir)
@@ -65,11 +61,7 @@ class KnownLedge2Vector:
             for file in files:
                 filename = os.path.join(root, file)
                 docs = self._load_file(filename)
-<<<<<<< HEAD
-                # update metadata. 
-=======
                 # update metadata.
->>>>>>> 31797ecdb53eff76cceb52454888c91c97572851
                 new_docs = [] 
                 for doc in docs:
                     doc.metadata = {"source": doc.metadata["source"].replace(DATASETS_DIR, "")} 
