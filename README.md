@@ -215,5 +215,4 @@ This project follows the git-contributor [spec](https://github.com/xudafeng/git-
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us.  
-[Discord](https://discord.com/invite/twmZk3vv)
+We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.com/invite/twmZk3vv)
