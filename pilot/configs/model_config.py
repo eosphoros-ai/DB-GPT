@@ -29,6 +29,6 @@ ISLOAD_8BIT = True
 ISDEBUG = False
 
 
-VECTOR_SEARCH_TOP_K = 3
+VECTOR_SEARCH_TOP_K = 10
 VS_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vs_store")
 KNOWLEDGE_UPLOAD_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
