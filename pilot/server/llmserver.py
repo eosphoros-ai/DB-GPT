@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import uvicorn
 import asyncio
 import json
+import sys
 from typing import Optional, List
 from fastapi import FastAPI, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
-from pilot.model.inference import generate_stream
 from pydantic import BaseModel
+
+global_counter = 0
+model_semaphore = None
+
+ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(ROOT_PATH)
+
+from pilot.model.inference import generate_stream
 from pilot.model.inference import generate_output, get_embeddings
 
 from pilot.model.loader import ModelLoader
 from pilot.configs.model_config import *
+from pilot.configs.config import  Config
 
-model_path = LLM_MODEL_CONFIG[LLM_MODEL] 
 
-
-global_counter = 0
-model_semaphore = None
+CFG = Config()
+model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
 
 ml = ModelLoader(model_path=model_path)
 model, tokenizer = ml.loader(num_gpus=1, load_8bit=ISLOAD_8BIT, debug=ISDEBUG)
@@ -60,7 +68,7 @@ def generate_stream_gate(params):
             tokenizer,
             params,
             DEVICE,
-            MAX_POSITION_EMBEDDINGS,
+            CFG.MAX_POSITION_EMBEDDINGS,
         ):
             print("output: ", output)
             ret = {
@@ -84,7 +92,7 @@ async def api_generate_stream(request: Request):
     print(model, tokenizer, params, DEVICE) 
 
     if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(LIMIT_MODEL_CONCURRENCY)
+        model_semaphore = asyncio.Semaphore(CFG.LIMIT_MODEL_CONCURRENCY)
     await model_semaphore.acquire() 
 
     generator = generate_stream_gate(params)
