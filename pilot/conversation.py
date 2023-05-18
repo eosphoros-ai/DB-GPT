@@ -4,8 +4,16 @@
 import dataclasses
 from enum import auto, Enum
 from typing import List, Any
-from pilot.configs.model_config import DB_SETTINGS
+from pilot.configs.config import Config
 
+CFG = Config()
+
+DB_SETTINGS = {
+    "user": CFG.LOCAL_DB_USER,
+    "password":  CFG.LOCAL_DB_PASSWORD,
+    "host": CFG.LOCAL_DB_HOST,
+    "port": CFG.LOCAL_DB_PORT
+}
 
 class SeparatorStyle(Enum):
     SINGLE = auto()
@@ -91,7 +99,7 @@ class Conversation:
 def gen_sqlgen_conversation(dbname):
     from pilot.connections.mysql import MySQLOperator
     mo = MySQLOperator(
-        **DB_SETTINGS
+        **(DB_SETTINGS)
     )
 
     message = ""
