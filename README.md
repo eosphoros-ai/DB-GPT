@@ -196,7 +196,7 @@ The achievements of this project are thanks to the technical community, especial
 | :---: | :---: | :---: | :---: |:---: |
 
 
-This project follows the git-contributor [spec](https://github.com/xudafeng/git-contributor), auto updated at `Sun May 14 2023 23:02:43 GMT+0800`.
+This project follows the git-contributor [spec](https://github.com/xudafeng/git-contributor), auto updated at `Fri May 19 2023 00:24:18 GMT+0800`.
 
 <!-- GITCONTRIBUTOR_END -->
 
