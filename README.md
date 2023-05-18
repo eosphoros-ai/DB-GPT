@@ -2,7 +2,7 @@
 
 ---
 
-[中文版](README.zh.md)
+[简体中文](README.zh.md)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
