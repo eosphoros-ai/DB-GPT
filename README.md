@@ -158,10 +158,7 @@ Alternatively, you can use the following command:
 cd DB-GPT
 conda env create -f environment.yml
 ```
-It is recommended to set the Python package path to avoid runtime errors due to package not found.
-```
-echo "/root/workspace/DB-GPT" > /root/miniconda3/env/dbgpt_env/lib/python3.10/site-packages/dbgpt.pth 
-```
+
 Notice: You need replace the path to your owner.
 
 ### 3. Run
