@@ -1,4 +1,7 @@
 from typing import List
+
+from langchain.text_splitter import CharacterTextSplitter
+
 from pilot.source_embedding import SourceEmbedding, register
 
 from bs4 import BeautifulSoup
@@ -20,7 +23,8 @@ class URLEmbedding(SourceEmbedding):
     def read(self):
         """Load from url path."""
         loader = WebBaseLoader(web_path=self.file_path)
-        return loader.load()
+        text_splitor = CharacterTextSplitter(chunk_size=1000, chunk_overlap=20, length_function=len)
+        return loader.load_and_split(text_splitor)
 
     @register
     def data_process(self, documents: List[Document]):
