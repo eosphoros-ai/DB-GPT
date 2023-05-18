@@ -254,7 +254,7 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         result = prompt_template.format(context="\n".join(context), question=query)
         state.messages[-2][1] = result
         prompt = state.get_prompt()
-        print("prompt length:" + len(prompt))
+        print("prompt length:" + str(len(prompt)))
 
         if len(prompt) > 4000:
             logger.info("prompt length greater than 4000, rebuild")
