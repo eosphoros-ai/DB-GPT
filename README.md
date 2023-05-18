@@ -1,205 +1,202 @@
 # DB-GPT ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
 
-[English Edition](README.en.md)
+---
+
+[中文版](README.zh.md)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
-## DB-GPT 是什么？
-随着大模型的发布迭代，大模型变得越来越智能，在使用大模型的过程当中，遇到极大的数据安全与隐私挑战。在利用大模型能力的过程中我们的私密数据跟环境需要掌握自己的手里，完全可控，避免任何的数据隐私泄露以及安全风险。基于此，我们发起了DB-GPT项目，为所有以数据库为基础的场景，构建一套完整的私有大模型解决方案。 此方案因为支持本地部署，所以不仅仅可以应用于独立私有环境，而且还可以根据业务模块独立部署隔离，让大模型的能力绝对私有、安全、可控。
+## What is DB-GPT?
 
-DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密，100% 安全。
+As large models are released and iterated upon, they are becoming increasingly intelligent. However, in the process of using large models, we face significant challenges in data security and privacy. We need to ensure that our sensitive data and environments remain completely controlled and avoid any data privacy leaks or security risks. Based on this, we have launched the DB-GPT project to build a complete private large model solution for all database-based scenarios. This solution supports local deployment, allowing it to be applied not only in independent private environments but also to be independently deployed and isolated according to business modules, ensuring that the ability of large models is absolutely private, secure, and controllable.
+
+DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
+
+## Features
+
+Currently, we have released multiple key features, which are listed below to demonstrate our current capabilities:
+
+- SQL language capabilities
+  - SQL generation
+  - SQL diagnosis
+-  Private domain Q&A and data processing
+  -  Database knowledge Q&A
+  - Data processing
+- Plugins
+  -  Support custom plugin execution tasks and natively support the Auto-GPT plugin, such as:
+    - Automatic execution of SQL and retrieval of query results
+    - Automatic crawling and learning of knowledge
+- Unified vector storage/indexing of knowledge base
+  - Support for unstructured data such as PDF, Markdown, CSV, and WebURL
 
 
-## 特性一览
+## Demo
 
-目前我们已经发布了多种关键的特性，这里一一列举展示一下当前发布的能力。
-- SQL 语言能力
-  - SQL生成
-  - SQL诊断
-- 私域问答与数据处理
-  - 数据库知识问答
-  - 数据处理
-- 插件模型
-  - 支持自定义插件执行任务，原生支持Auto-GPT插件。如:
-    - SQL自动执行，获取查询结果
-    - 自动爬取学习知识
-- 知识库统一向量存储/索引
-  - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
+Run on an RTX 4090 GPU. [YouTube](https://www.youtube.com/watch?v=1PWI6F89LPo)
 
-## 效果演示
-
-示例通过 RTX 4090 GPU 演示，[YouTube 地址](https://www.youtube.com/watch?v=1PWI6F89LPo)
-### 运行环境演示
-
-<p align="center">
-  <img src="./assets/演示.gif" width="600px" />
-</p>
-
-<p align="center">
-  <img src="./assets/Auto-DB-GPT.gif" width="600px" />
-</p>
-
-### SQL 生成
-
-1. 生成建表语句
+### Run
 
 <p align="center">
-   <img src="./assets/SQL_Gen_CreateTable.png" width="600px" />
+  <img src="./assets/demo_en.gif" width="600px" />
 </p>
 
-2. 生成可运行SQL
-首先选择对应的数据库, 然后模型即可根据对应的数据库 Schema 信息生成 SQL, 运行成功的效果如下面的演示：
+### SQL Generation
+
+1. Generate Create Table SQL
 
 <p align="center">
-  <img src="./assets/exeable.png" width="600px" />
+   <img src="./assets/SQL_Gen_CreateTable_en.png" width="600px" />
 </p>
 
-3. 自动分析执行SQL输出运行结果
+2. Generating executable SQL:To generate executable SQL, first select the corresponding database and then the model can generate SQL based on the corresponding database schema information. The successful result of running it would be demonstrated as follows:
+<p align="center">
+  <img src="./assets/exeable_en.png" width="600px" />
+</p>
+
+### Q&A
 
 <p align="center">
-  <img src="./assets/Auto-DB-GPT.png" width="600px" />
+  <img src="./assets/DB_QA_en.png" width="600px" />
 </p>
 
-### 数据库问答
+1. Based on the default built-in knowledge base, question and answer. 
 
 <p align="center">
-  <img src="./assets/DB_QA.png" width="600px" />
+  <img src="./assets/Knownledge_based_QA_en.png" width="600px" />
 </p>
 
-
-1. 基于默认内置知识库问答
+2. Add your own knowledge base.
 
 <p align="center">
-  <img src="./assets/VectorDBQA.png" width="600px" />
+  <img src="./assets/new_knownledge_en.gif" width="600px" />
 </p>
 
-2. 自己新增知识库
+3. Learning from crawling data from the Internet
 
-<p align="center">
-  <img src="./assets/new_knownledge.gif" width="600px" />
-</p>
+  - TODO
 
-3. 从网络自己爬取数据学习
-- TODO
 
-## 架构方案
-DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。 
+## Introduction 
+DB-GPT creates a vast model operating system using [FastChat](https://github.com/lm-sys/FastChat) and offers a large language model powered by [Vicuna](https://huggingface.co/Tribbiani/vicuna-7b). In addition, we provide private domain knowledge base question-answering capability through LangChain. Furthermore, we also provide support for additional plugins, and our design natively supports the Auto-GPT plugin.
 
-整个DB-GPT的架构，如下图所示
+Is the architecture of the entire DB-GPT shown in the following figure:
 
 <p align="center">
   <img src="./assets/DB-GPT.png" width="600px" />
 </p>
 
-核心能力主要有以下几个部分。 
-1. 知识库能力：支持私域知识库问答能力   
-2. 大模型管理能力：基于FastChat提供一个大模型的运营环境。
-3. 统一的数据向量化存储与索引：提供一种统一的方式来存储和索引各种数据类型。   
-4. 连接模块：用于连接不同的模块和数据源，实现数据的流转和交互。 
-5. Agent与插件：提供Agent和插件机制，使得用户可以自定义并增强系统的行为。  
-6. Prompt自动生成与优化：自动化生成高质量的Prompt，并进行优化，提高系统的响应效率。  
-7. 多端产品界面：支持多种不同的客户端产品，例如Web、移动应用和桌面应用等。
+The core capabilities mainly consist of the following parts:
+1. Knowledge base capability: Supports private domain knowledge base question-answering capability.
+2. Large-scale model management capability: Provides a large model operating environment based on FastChat.
+3. Unified data vector storage and indexing: Provides a uniform way to store and index various data types.
+4. Connection module: Used to connect different modules and data sources to achieve data flow and interaction.
+5. Agent and plugins: Provides Agent and plugin mechanisms, allowing users to customize and enhance the system's behavior.
+6. Prompt generation and optimization: Automatically generates high-quality prompts and optimizes them to improve system response efficiency.
+7. Multi-platform product interface: Supports various client products, such as web, mobile applications, and desktop applications.
 
-下面对每个模块也做一些简要的介绍:
+Below is a brief introduction to each module:
 
-### 知识库能力
-知识库作为当前用户需求最大的场景，我们原生支持知识库的构建与处理。同时在本项目当中，也提供了多种知识库的管理策略。 如:
-1. 默认内置知识库  
-2. 自定义新增知识库 
-3. 通过插件能力自抓取构建知识库等多种使用场景。
-   
-用户只需要整理好知识文档，即可用我们现有的能力构建大模型所需要的知识库能力。
+### Knowledge base capability
 
-### 大模型管理能力
-在底层大模型接入中，设计了开放的接口，支持对接多种大模型。同时对于接入模型的效果，我们有非常严格的把控与评审机制。对大模型能力上与ChatGPT对比，在准确率上需要满足85%以上的能力对齐。我们用更高的标准筛选模型，是期望在用户使用过程中，可以省去前面繁琐的测试评估环节。
+As the knowledge base is currently the most significant user demand scenario, we natively support the construction and processing of knowledge bases. At the same time, we also provide multiple knowledge base management strategies in this project, such as:
+1. Default built-in knowledge base
+2. Custom addition of knowledge bases
+3. Various usage scenarios such as constructing knowledge bases through plugin capabilities and web crawling. Users only need to organize the knowledge documents, and they can use our existing capabilities to build the knowledge base required for the large model.
 
-### 统一的数据向量化存储与索引
-为了方便对知识向量化之后的管理，我们内置了多种向量存储引擎，从基于内存的Chroma到分布式的Milvus, 可以根据自己的场景需求，选择不同的存储引擎，整个知识向量存储是AI能力增强的基石，向量作为人与大语言模型交互的中间语言，在本项目中的作用非常重要。
+### LLMs Management
 
-### 连接模块
-为了能够更方便的与用户的私有环境进行交互，项目设计了连接模块，连接模块可以支持连接到数据库、Excel、知识库等等多种环境当中，实现信息与数据交互。 
+In the underlying large model integration, we have designed an open interface that supports integration with various large models. At the same time, we have a very strict control and evaluation mechanism for the effectiveness of the integrated models. In terms of accuracy, the integrated models need to align with the capability of ChatGPT at a level of 85% or higher. We use higher standards to select models, hoping to save users the cumbersome testing and evaluation process in the process of use.
 
-### Agent与插件  
-Agent与插件能力是大模型能否自动化的核心，在本的项目中，原生支持插件模式，大模型可以自动化完成目标。 同时为了充分发挥社区的优势，本项目中所用的插件原生支持Auto-GPT插件生态，即Auto-GPT的插件可以直接在我们的项目中运行。
+### Vector storage and indexing
 
-### Prompt自动生成与优化 
-Prompt是与大模型交互过程中非常重要的部分，一定程度上Prompt决定了大模型生成答案的质量与准确性，在本的项目中，我们会根据用户输入与使用场景，自动优化对应的Prompt，让用户使用大语言模型变得更简单、更高效。 
+In order to facilitate the management of knowledge after vectorization, we have built-in multiple vector storage engines, from memory-based Chroma to distributed Milvus. Users can choose different storage engines according to their own scenario needs. The storage of knowledge vectors is the cornerstone of AI capability enhancement. As the intermediate language for interaction between humans and large language models, vectors play a very important role in this project.
 
-### 多端产品界面
-TODO: 在终端展示上，我们将提供多端产品界面。包括PC、手机、命令行、Slack等多种模式。 
+### Connections
 
+In order to interact more conveniently with users' private environments, the project has designed a connection module, which can support connection to databases, Excel, knowledge bases, and other environments to achieve information and data exchange.
 
-## 安装教程
-### 1.硬件说明
-因为我们的项目在效果上具备ChatGPT 85%以上的能力，因此对硬件有一定的要求。 但总体来说，我们在消费级的显卡上即可完成项目的部署使用，具体部署的硬件说明如下:
-| GPU型号 | 显存大小 | 性能                                       |
-| ------- | -------- | ------------------------------------------ |
-| RTX4090 | 24G      | 可以流畅的进行对话推理，无卡顿             |
-| RTX3090 | 24G      | 可以流畅进行对话推理，有卡顿感，但好于V100 |
-| V100    | 16G      | 可以进行对话推理，有明显卡顿               |
-### 2.DB-GPT安装
+### Agent and Plugin
 
-本项目依赖一个本地的 MySQL 数据库服务，你需要本地安装，推荐直接使用 Docker 安装。
+The ability of Agent and Plugin is the core of whether large models can be automated. In this project, we natively support the plugin mode, and large models can automatically achieve their goals. At the same time, in order to give full play to the advantages of the community, the plugins used in this project natively support the Auto-GPT plugin ecology, that is, Auto-GPT plugins can directly run in our project.
+
+### Prompt Automatic Generation and Optimization
+
+Prompt is a very important part of the interaction between the large model and the user, and to a certain extent, it determines the quality and accuracy of the answer generated by the large model. In this project, we will automatically optimize the corresponding prompt according to user input and usage scenarios, making it easier and more efficient for users to use large language models.
+
+### Multi-Platform Product Interface
+
+TODO: In terms of terminal display, we will provide a multi-platform product interface, including PC, mobile phone, command line, Slack and other platforms.
+
+## Deployment 
+
+### 1. Hardware Requirements
+As our project has the ability to achieve ChatGPT performance of over 85%, there are certain hardware requirements. However, overall, the project can be deployed and used on consumer-grade graphics cards. The specific hardware requirements for deployment are as follows:
+
+| GPU  | VRAM Size | Performance                                 |
+| --------- | --------- | ------------------------------------------- |
+| RTX 4090  | 24 GB     | Smooth conversation inference        |
+| RTX 3090  | 24 GB     | Smooth conversation inference, better than V100 |
+| V100      | 16 GB     | Conversation inference possible, noticeable stutter |
+
+### 2. Install
+
+This project relies on a local MySQL database service, which you need to install locally. We recommend using Docker for installation.
+
+```bash
+$ docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
 ```
-docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
-```
-向量数据库我们默认使用的是Chroma内存数据库，所以无需特殊安装，如果有需要连接其他的同学，可以按照我们的教程进行安装配置。整个DB-GPT的安装过程，我们使用的是miniconda3的虚拟环境。创建虚拟环境，并安装python依赖包
-
+We use [Chroma embedding database](https://github.com/chroma-core/chroma) as the default for our vector database, so there is no need for special installation. If you choose to connect to other databases, you can follow our tutorial for installation and configuration. 
+For the entire installation process of DB-GPT, we use the miniconda3 virtual environment. Create a virtual environment and install the Python dependencies.
 ```
 python>=3.10
 conda create -n dbgpt_env python=3.10
 conda activate dbgpt_env
 pip install -r requirements.txt
-
 ```
-或者也可以使用命令:
+Alternatively, you can use the following command:
 ```
 cd DB-GPT
 conda env create -f environment.yml
 ```
-另外需要设置一下python包路径, 避免出现运行时找不到包
+It is recommended to set the Python package path to avoid runtime errors due to package not found.
 ```
 echo "/root/workspace/DB-GPT" > /root/miniconda3/env/dbgpt_env/lib/python3.10/site-packages/dbgpt.pth 
 ```
+Notice: You need replace the path to your owner.
 
-### 3. 运行大模型
+### 3. Run
+You can refer to this document to obtain the Vicuna weights: [Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights) .
 
-关于基础模型, 可以根据[Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights)合成教程进行合成。 
-如果此步有困难的同学，也可以直接使用[此链接](https://huggingface.co/Tribbiani/vicuna-7b)上的模型进行替代。
+If you have difficulty with this step, you can also directly use the model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a replacement.
 
-  运行模型服务 
+1. Run server
+```bash
+$ python pilot/server/llmserver.py
 ```
-cd pilot/server
-python llmserver.py
-```
 
-运行 gradio webui
+Run gradio webui
 
 ```bash
-$ python webserver.py 
+$ python pilot/server/webserver.py
 ```
-注意: 在启动Webserver之前, 需要修改配置文件 .env文件中的MODEL_SERVER = "http://127.0.0.1:8000", 将地址设置为你的服务器地址。
+Notice:  the webserver need to connect llmserver,  so you need change the pilot/configs/model_config.py file. change the VICUNA_MODEL_SERVER = "http://127.0.0.1:8000" to your address.  It's very important.
 
-## 使用说明
+## Usage Instructions
+We provide a user interface for Gradio, which allows you to use DB-GPT through our user interface. Additionally, we have prepared several reference articles (written in Chinese) that introduce the code and principles related to our project.
+- [LLM Practical In Action Series (1) — Combined Langchain-Vicuna Application Practical](https://medium.com/@cfqcsunny/llm-practical-in-action-series-1-combined-langchain-vicuna-application-practical-701cd0413c9f)
 
-我们提供了Gradio的用户界面，可以通过我们的用户界面使用DB-GPT， 同时关于我们项目相关的一些代码跟原理介绍，我们也准备了以下几篇参考文章。
-1.  [大模型实战系列(1) —— 强强联合Langchain-Vicuna应用实战](https://zhuanlan.zhihu.com/p/628750042)
-2.  [大模型实战系列(2) —— DB-GPT 阿里云部署指南](https://zhuanlan.zhihu.com/p/629467580)
-3.  [大模型实战系列(3) —— DB-GPT插件模型原理与使用](https://zhuanlan.zhihu.com/p/629623125)
+## Acknowledgement
 
-## 感谢
-
-项目取得的成果，需要感谢技术社区，尤其以下项目。
-
-- [FastChat](https://github.com/lm-sys/FastChat) 提供 chat 服务
-- [vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b) 作为基础模型
-- [langchain](https://github.com/hwchase17/langchain) 工具链
-- [Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT) 通用的插件模版
-- [Hugging Face](https://huggingface.co/) 大模型管理
-- [Chroma](https://github.com/chroma-core/chroma) 向量存储
-- [Milvus](https://milvus.io/) 分布式向量存储
-- [ChatGLM](https://github.com/THUDM/ChatGLM-6B) 基础模型
-- [llama-index](https://github.com/jerryjliu/llama_index) 基于现有知识库进行[In-Context Learning](https://arxiv.org/abs/2301.00234)来对其进行数据库相关知识的增强。
+The achievements of this project are thanks to the technical community, especially the following projects:
+- [FastChat](https://github.com/lm-sys/FastChat) for providing chat services
+- [vicuna-13b](https://lmsys.org/blog/2023-03-30-vicuna/) as the base model
+- [langchain](https://langchain.readthedocs.io/) tool chain
+- [Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT) universal plugin template
+- [Hugging Face](https://huggingface.co/) for big model management
+- [Chroma](https://github.com/chroma-core/chroma) for vector storage
+- [Milvus](https://milvus.io/) for distributed vector storage
+- [ChatGLM](https://github.com/THUDM/ChatGLM-6B) as the base model
+- [llama_index](https://github.com/jerryjliu/llama_index) for enhancing database-related knowledge using [in-context learning](https://arxiv.org/abs/2301.00234) based on existing knowledge bases.
 
 <!-- GITCONTRIBUTOR_START -->
 
@@ -213,12 +210,9 @@ This project follows the git-contributor [spec](https://github.com/xudafeng/git-
 
 <!-- GITCONTRIBUTOR_END -->
 
-这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布一些新的feature。如在使用当中有任何具体问题, 优先在项目下提issue, 如有需要, 请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
-
-<p align="center">
-  <img src="./assets/DB_GPT_wechat.png" width="320px" />
-</p>
-
 ## Licence
 
 The MIT License (MIT)
+
+## Contact Information
+We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.com/invite/twmZk3vv)
