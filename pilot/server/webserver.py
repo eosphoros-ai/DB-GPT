@@ -19,7 +19,7 @@ from langchain import PromptTemplate
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 
-from pilot.configs.model_config import DB_SETTINGS, KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG, TOP_RETURN_SIZE
+from pilot.configs.model_config import DB_SETTINGS, KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG, VECTOR_SEARCH_TOP_K
 from pilot.server.vectordb_qa import KnownLedgeBaseQA
 from pilot.connections.mysql import MySQLOperator
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
@@ -262,7 +262,7 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
                                                         vector_store_config={"vector_store_name": vector_store_name["vs_name"],
                                                       "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
         query = state.messages[-2][1]
-        docs = knowledge_embedding_client.similar_search(query, TOP_RETURN_SIZE)
+        docs = knowledge_embedding_client.similar_search(query, VECTOR_SEARCH_TOP_K)
         context = [d.page_content for d in docs]
         prompt_template = PromptTemplate(
             template=conv_qa_prompt_template,
