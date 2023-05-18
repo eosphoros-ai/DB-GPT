@@ -153,13 +153,6 @@ conda create -n dbgpt_env python=3.10
 conda activate dbgpt_env
 pip install -r requirements.txt
 ```
-Alternatively, you can use the following command:
-```
-cd DB-GPT
-conda env create -f environment.yml
-```
-
-Notice: You need replace the path to your owner.
 
 ### 3. Run
 You can refer to this document to obtain the Vicuna weights: [Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights) .
