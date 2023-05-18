@@ -57,6 +57,9 @@ pymdown-extensions
 mkdocs
 requests
 gTTS==2.3.1
+langchain
+nltk
+python-dotenv==1.0.0
 
 # Testing dependencies
 pytest
