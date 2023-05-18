@@ -17,7 +17,7 @@ from pilot.logs import logger
 
 def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
     """
-    加载zip文件的插件，完全兼容Auto_gpt_plugin
+    Loader zip plugin file. Native support Auto_gpt_plugin
 
     Args:
     zip_path (str): Path to the zipfile.
