@@ -19,7 +19,7 @@ from langchain import PromptTemplate
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 
-from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG
+from pilot.configs.model_config import DB_SETTINGS, KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG, TOP_RETURN_SIZE
 from pilot.server.vectordb_qa import KnownLedgeBaseQA
 from pilot.connections.mysql import MySQLOperator
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
@@ -256,11 +256,13 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
 
     if mode == conversation_types["custome"] and not db_selector:
         persist_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vector_store_name["vs_name"] + ".vectordb")
-        print("向量数据库持久化地址: ", persist_dir)
-        knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["sentence-transforms"], vector_store_config={"vector_store_name": vector_store_name["vs_name"],
+        print("vector store path: ", persist_dir)
+        knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["text2vec"],
+                                                        local_persist=False,
+                                                        vector_store_config={"vector_store_name": vector_store_name["vs_name"],
                                                       "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
         query = state.messages[-2][1]
-        docs = knowledge_embedding_client.similar_search(query, 1)
+        docs = knowledge_embedding_client.similar_search(query, TOP_RETURN_SIZE)
         context = [d.page_content for d in docs]
         prompt_template = PromptTemplate(
             template=conv_qa_prompt_template,
@@ -269,6 +271,20 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         result = prompt_template.format(context="\n".join(context), question=query)
         state.messages[-2][1] = result
         prompt = state.get_prompt()
+        print("prompt length:" + str(len(prompt)))
+
+        if len(prompt) > 4000:
+            logger.info("prompt length greater than 4000, rebuild")
+            context = context[:2000]
+            prompt_template = PromptTemplate(
+                template=conv_qa_prompt_template,
+                input_variables=["context", "question"]
+            )
+            result = prompt_template.format(context="\n".join(context), question=query)
+            state.messages[-2][1] = result
+            prompt = state.get_prompt()
+            print("new prompt length:" + str(len(prompt)))
+
         state.messages[-2][1] = query
         skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
@@ -435,7 +451,7 @@ def build_single_model_ui():
         max_output_tokens = gr.Slider(
             minimum=0,
             maximum=1024,
-            value=1024,
+            value=512,
             step=64,
             interactive=True,
             label="最大输出Token数",
@@ -585,7 +601,8 @@ def knowledge_embedding_store(vs_id, files):
         shutil.move(file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename))
         knowledge_embedding_client = KnowledgeEmbedding(
             file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
-            model_name=LLM_MODEL_CONFIG["sentence-transforms"],
+            model_name=LLM_MODEL_CONFIG["text2vec"],
+            local_persist=False,
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
                 "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
@@ -610,8 +627,7 @@ if __name__ == "__main__":
     # 配置初始化
     cfg = Config()
 
-    dbs = get_database_list()
-
+    # dbs = get_database_list()
     cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
 
     # 加载插件可执行命令
