@@ -42,7 +42,7 @@ class AutoModePrompt:
             prompt_generator: Optional[PromptGenerator] = None
     )-> str:
         """
-         基于用户输入的后续对话信息构建完整的prompt信息
+         Build complete prompt information based on subsequent dialogue information entered by the user
          Args:
              self:
              prompt_generator:
@@ -69,7 +69,7 @@ class AutoModePrompt:
         if not self.ai_goals :
             self.ai_goals = user_input
         for i, goal in enumerate(self.ai_goals):
-            full_prompt += f"{i+1}.根据提供的Schema信息, {goal}\n"
+            full_prompt += f"{i+1}.According to the provided Schema information, {goal}\n"
         # if last_auto_return == None:
         #     full_prompt += f"{cfg.last_plugin_return}\n\n"
         # else:
@@ -88,7 +88,7 @@ class AutoModePrompt:
             prompt_generator: Optional[PromptGenerator] = None
     ) -> str:
         """
-        基于用户输入的初始对话信息构建完整的prompt信息
+        Build complete prompt information based on the initial dialogue information entered by the user
         Args:
             self:
             prompt_generator:
@@ -128,7 +128,7 @@ class AutoModePrompt:
         if not self.ai_goals :
             self.ai_goals = fisrt_message
         for i, goal in enumerate(self.ai_goals):
-            full_prompt += f"{i+1}.根据提供的Schema信息,{goal}\n"
+            full_prompt += f"{i+1}.According to the provided Schema information,{goal}\n"
         if  db_schemes:
             full_prompt +=  f"\nSchema:\n\n"
             full_prompt += f"{db_schemes}"
