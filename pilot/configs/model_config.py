@@ -28,12 +28,5 @@ ISDEBUG = False
 
 
 VECTOR_SEARCH_TOP_K = 3
-# LLM_MODEL = "vicuna-13b"
-# LIMIT_MODEL_CONCURRENCY = 5
-# MAX_POSITION_EMBEDDINGS = 4096
-# VICUNA_MODEL_SERVER = "http://121.41.167.183:8000"
-
-
-
 VS_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vs_store")
 KNOWLEDGE_UPLOAD_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "knowledge")
