@@ -178,7 +178,7 @@ python llmserver.py
 ```bash
 $ python webserver.py 
 ```
-注意: 在启动Webserver之前, 需要修改pilot/configs/model_config.py 文件中的VICUNA_MODEL_SERVER = "http://127.0.0.1:8000", 将地址设置为你的服务器地址。
+注意: 在启动Webserver之前, 需要修改.env 文件中的MODEL_SERVER = "http://127.0.0.1:8000", 将地址设置为你的服务器地址。
 
 ## 使用说明
 
