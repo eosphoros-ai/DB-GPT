@@ -76,3 +76,15 @@ class SourceEmbedding(ABC):
             self.text_to_vector(text)
         if 'index_to_store' in registered_methods:
             self.index_to_store(text)
+
+    def batch_embedding(self):
+        if 'read_batch' in registered_methods:
+            text = self.read_batch()
+        if 'data_process' in registered_methods:
+            text = self.data_process(text)
+        if 'text_split' in registered_methods:
+            self.text_split(text)
+        if 'text_to_vector' in registered_methods:
+            self.text_to_vector(text)
+        if 'index_to_store' in registered_methods:
+            self.index_to_store(text)

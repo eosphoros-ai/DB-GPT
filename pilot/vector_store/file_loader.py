@@ -40,20 +40,20 @@ class KnownLedge2Vector:
         
     def init_vector_store(self):
         persist_dir = os.path.join(VECTORE_PATH, ".vectordb")
-        print("向量数据库持久化地址: ", persist_dir)
+        print("Vector store Persist address is: ", persist_dir)
         if os.path.exists(persist_dir):
-            # 从本地持久化文件中Load
-            print("从本地向量加载数据...")
+            # Loader from local file.
+            print("Loader data from local persist vector file...")
             vector_store = Chroma(persist_directory=persist_dir, embedding_function=self.embeddings)
             # vector_store.add_documents(documents=documents)
         else:
             documents = self.load_knownlege()
-            # 重新初始化
+            # reinit 
             vector_store = Chroma.from_documents(documents=documents, 
                                                  embedding=self.embeddings,
                                                  persist_directory=persist_dir)
             vector_store.persist()
-        return vector_store 
+        return vector_store
 
     def load_knownlege(self):
         docments = []
@@ -61,17 +61,17 @@ class KnownLedge2Vector:
             for file in files:
                 filename = os.path.join(root, file)
                 docs = self._load_file(filename)
-                # 更新metadata数据
+                # update metadata.
                 new_docs = [] 
                 for doc in docs:
                     doc.metadata = {"source": doc.metadata["source"].replace(DATASETS_DIR, "")} 
-                    print("文档2向量初始化中, 请稍等...", doc.metadata)
+                    print("Documents to vector running, please wait...", doc.metadata)
                     new_docs.append(doc)
                 docments += new_docs
         return docments
 
     def _load_file(self, filename):
-        # 加载文件
+        # Loader file
         if filename.lower().endswith(".pdf"):
             loader = UnstructuredFileLoader(filename) 
             text_splitor = CharacterTextSplitter()
