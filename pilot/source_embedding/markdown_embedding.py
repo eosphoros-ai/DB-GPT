@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from langchain.document_loaders import TextLoader
 from langchain.schema import Document
 import markdown
+from pilot.configs.model_config import KNOWLEDGE_CHUNK_SPLIT_SIZE
 
 from pilot.source_embedding import SourceEmbedding, register
 from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
@@ -26,7 +27,7 @@ class MarkdownEmbedding(SourceEmbedding):
     def read(self):
         """Load from markdown path."""
         loader = TextLoader(self.file_path)
-        text_splitter = CHNDocumentSplitter(pdf=True, sentence_size=100)
+        text_splitter = CHNDocumentSplitter(pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE)
         return loader.load_and_split(text_splitter)
 
     @register

@@ -1,6 +1,7 @@
-
+from langchain.embeddings import HuggingFaceEmbeddings
 from pymilvus import DataType, FieldSchema, CollectionSchema, connections, Collection
 
+from pilot.configs.model_config import LLM_MODEL_CONFIG
 from pilot.vector_store.vector_store_base import VectorStoreBase
 
 
@@ -9,7 +10,7 @@ class MilvusStore(VectorStoreBase):
         """Construct a milvus memory storage connection.
 
         Args:
-            cfg (Config): Auto-GPT global config.
+            cfg (Config): MilvusStore global config.
         """
         # self.configure(cfg)
 
@@ -71,21 +72,21 @@ class MilvusStore(VectorStoreBase):
                 self.index_params,
                 index_name="vector",
             )
+        info = self.collection.describe()
         self.collection.load()
 
-    # def add(self, data) -> str:
-    #     """Add an embedding of data into milvus.
-    #
-    #     Args:
-    #         data (str): The raw text to construct embedding index.
-    #
-    #     Returns:
-    #         str: log.
-    #     """
-    #     embedding = get_ada_embedding(data)
-    #     result = self.collection.insert([[embedding], [data]])
-    #     _text = (
-    #         "Inserting data into memory at primary key: "
-    #         f"{result.primary_keys[0]}:\n data: {data}"
-    #     )
-    #     return _text
+    def insert(self, text) -> str:
+        """Add an embedding of data into milvus.
+        Args:
+            text (str): The raw text to construct embedding index.
+        Returns:
+            str: log.
+        """
+        # embedding = get_ada_embedding(data)
+        embeddings = HuggingFaceEmbeddings(model_name=LLM_MODEL_CONFIG["sentence-transforms"])
+        result = self.collection.insert([embeddings.embed_documents(text), text])
+        _text = (
+            "Inserting data into memory at primary key: "
+            f"{result.primary_keys[0]}:\n data: {text}"
+        )
+        return _text

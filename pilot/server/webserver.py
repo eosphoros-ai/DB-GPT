@@ -499,6 +499,7 @@ def build_single_model_ui():
                         files = gr.File(label="添加文件",
                                         file_types=[".txt", ".md", ".docx", ".pdf"],
                                         file_count="multiple",
+                                        allow_flagged_uploads=True,
                                         show_label=False
                                         )
 
