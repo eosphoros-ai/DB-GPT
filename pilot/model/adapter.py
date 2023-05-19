@@ -68,6 +68,19 @@ class ChatGLMAdapater(BaseLLMAdaper):
             model_path, trust_remote_code=True, **from_pretrained_kwargs
         ).half().cuda()
         return model, tokenizer
+        
+class ZiYaLLaMaAdapter(BaseLLMAdaper):
+    # TODO
+    pass
+
+class CodeGenAdapter(BaseLLMAdaper):
+    pass
+
+class StarCoderAdapter(BaseLLMAdaper):
+    pass
+
+class T5CodeAdapter(BaseLLMAdaper):
+    pass
 
 class KoalaLLMAdapter(BaseLLMAdaper):
     """Koala LLM Adapter which Based LLaMA """
