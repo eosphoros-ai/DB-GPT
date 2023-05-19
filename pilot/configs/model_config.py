@@ -25,26 +25,11 @@ LLM_MODEL_CONFIG = {
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2")
 }
 
-
-VECTOR_SEARCH_TOP_K = 20
-LLM_MODEL = "vicuna-13b"
-LIMIT_MODEL_CONCURRENCY = 5
-MAX_POSITION_EMBEDDINGS = 4096 
-# VICUNA_MODEL_SERVER = "http://121.41.227.141:8000"
-VICUNA_MODEL_SERVER = "http://120.79.27.110:8000"
-
-# Load model config
 ISLOAD_8BIT = True
 ISDEBUG = False
 
 
-DB_SETTINGS = {
-    "user": "root",
-    "password": "aa123456",
-    "host": "127.0.0.1",
-    "port": 3306
-}
-
+VECTOR_SEARCH_TOP_K = 10
 VS_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vs_store")
 KNOWLEDGE_UPLOAD_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 KNOWLEDGE_CHUNK_SPLIT_SIZE = 100
