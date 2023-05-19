@@ -103,6 +103,25 @@ As the knowledge base is currently the most significant user demand scenario, we
 2. Custom addition of knowledge bases
 3. Various usage scenarios such as constructing knowledge bases through plugin capabilities and web crawling. Users only need to organize the knowledge documents, and they can use our existing capabilities to build the knowledge base required for the large model.
 
+Create your own knowledge base:
+
+1.Place personal knowledge files or folders in the pilot/datasets directory.
+
+2.Run the knowledge repository script in the tools directory.
+
+```
+python tools/knowledge_init.py
+
+--vector_name : your vector store name  default_value:default
+--append: append mode, True:append, False: not append default_value:False
+
+```
+
+3.Add the knowledge base in the interface by entering the name of your knowledge base (if not specified, enter "default") so you can use it for Q&A based on your knowledge base. 
+
+Note that the default vector model used is text2vec-large-chinese (which is a large model, so if your personal computer configuration is not enough, it is recommended to use text2vec-base-chinese). Therefore, ensure that you download the model and place it in the models directory.
+
+
 ### LLMs Management
 
 In the underlying large model integration, we have designed an open interface that supports integration with various large models. At the same time, we have a very strict control and evaluation mechanism for the effectiveness of the integrated models. In terms of accuracy, the integrated models need to align with the capability of ChatGPT at a level of 85% or higher. We use higher standards to select models, hoping to save users the cumbersome testing and evaluation process in the process of use.
