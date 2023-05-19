@@ -48,7 +48,7 @@ class KnownLedge2Vector:
             # vector_store.add_documents(documents=documents)
         else:
             documents = self.load_knownlege()
-            # reinit
+            # reinit 
             vector_store = Chroma.from_documents(documents=documents, 
                                                  embedding=self.embeddings,
                                                  persist_directory=persist_dir)
