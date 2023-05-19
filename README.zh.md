@@ -180,7 +180,8 @@ $ python webserver.py
 2.  [大模型实战系列(2) —— DB-GPT 阿里云部署指南](https://zhuanlan.zhihu.com/p/629467580)
 3.  [大模型实战系列(3) —— DB-GPT插件模型原理与使用](https://zhuanlan.zhihu.com/p/629623125)
 
-####打造属于你的知识库：
+
+### 打造属于你的知识库：
 
 1、将个人知识文件或者文件夹放入pilot/datasets目录中
 
@@ -196,6 +197,7 @@ python tools/knowledge_init.py
 3、在界面上新增知识库输入你的知识库名（如果没指定输入default）,就可以根据你的知识库进行问答
 
 注意，这里默认向量模型是text2vec-large-chinese(模型比较大，如果个人电脑配置不够建议采用text2vec-base-chinese),因此确保需要将模型download下来放到models目录中。
+
 ## 感谢
 
 项目取得的成果，需要感谢技术社区，尤其以下项目。
