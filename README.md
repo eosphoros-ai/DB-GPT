@@ -177,7 +177,7 @@ Notice:  the webserver need to connect llmserver,  so you need change the .env f
 We provide a user interface for Gradio, which allows you to use DB-GPT through our user interface. Additionally, we have prepared several reference articles (written in Chinese) that introduce the code and principles related to our project.
 - [LLM Practical In Action Series (1) — Combined Langchain-Vicuna Application Practical](https://medium.com/@cfqcsunny/llm-practical-in-action-series-1-combined-langchain-vicuna-application-practical-701cd0413c9f)
 
-####Create your own knowledge repository:
+### Create your own knowledge repository:
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
 
