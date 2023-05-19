@@ -4,12 +4,14 @@ from bs4 import BeautifulSoup
 from langchain.document_loaders import PyPDFLoader, TextLoader, markdown
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
-from pilot.configs.model_config import DATASETS_DIR
+from pilot.configs.model_config import DATASETS_DIR, KNOWLEDGE_CHUNK_SPLIT_SIZE
 from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 from pilot.source_embedding.csv_embedding import CSVEmbedding
 from pilot.source_embedding.markdown_embedding import MarkdownEmbedding
 from pilot.source_embedding.pdf_embedding import PDFEmbedding
 import markdown
+
+from pilot.source_embedding.pdf_loader import UnstructuredPaddlePDFLoader
 
 
 class KnowledgeEmbedding:
@@ -63,7 +65,7 @@ class KnowledgeEmbedding:
                 print("directly return vector store")
                 vector_store = Chroma(persist_directory=persist_dir, embedding_function=self.embeddings)
         else:
-            print(vector_name + "is new vector store, knowledge begin load...")
+            print(vector_name + " is new vector store, knowledge begin load...")
             documents = self._load_knownlege(self.file_path)
             vector_store = Chroma.from_documents(documents=documents,
                                                  embedding=self.embeddings,
@@ -88,7 +90,7 @@ class KnowledgeEmbedding:
     def _load_file(self, filename):
         if filename.lower().endswith(".md"):
             loader = TextLoader(filename)
-            text_splitter = CHNDocumentSplitter(pdf=True, sentence_size=100)
+            text_splitter = CHNDocumentSplitter(pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE)
             docs = loader.load_and_split(text_splitter)
             i = 0
             for d in docs:
@@ -100,11 +102,15 @@ class KnowledgeEmbedding:
                 docs[i].page_content = docs[i].page_content.replace("\n", " ")
                 i += 1
         elif filename.lower().endswith(".pdf"):
-            loader = PyPDFLoader(filename)
-            textsplitter = CHNDocumentSplitter(pdf=True, sentence_size=100)
+            loader = UnstructuredPaddlePDFLoader(filename)
+            textsplitter = CHNDocumentSplitter(pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE)
             docs = loader.load_and_split(textsplitter)
+            i = 0
+            for d in docs:
+                docs[i].page_content = d.page_content.replace("\n", " ").replace("�", "")
+                i += 1
         else:
             loader = TextLoader(filename)
-            text_splitor = CHNDocumentSplitter(sentence_size=100)
+            text_splitor = CHNDocumentSplitter(sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE)
             docs = loader.load_and_split(text_splitor)
         return docs

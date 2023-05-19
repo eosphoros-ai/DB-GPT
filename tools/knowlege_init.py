@@ -41,5 +41,4 @@ if __name__ == "__main__":
     append_mode = args.append
     kv  = LocalKnowledgeInit()
     vector_store = kv.knowledge_persist(file_path=DATASETS_DIR, vector_name=vector_name, append_mode=append_mode)
-    docs = vector_store.similarity_search("小明",1)
     print("your knowledge embedding success...")
