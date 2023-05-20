@@ -130,4 +130,4 @@ def embeddings(prompt_request: EmbeddingRequest):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", log_level="info") 
+    uvicorn.run(app, host="0.0.0.0", port=CFG.MODEL_PORT, log_level="info")
