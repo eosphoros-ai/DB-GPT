@@ -196,6 +196,13 @@ python tools/knowledge_init.py
 
 注意，这里默认向量模型是text2vec-large-chinese(模型比较大，如果个人电脑配置不够建议采用text2vec-base-chinese),因此确保需要将模型download下来放到models目录中。
 
+如果在使用知识库时遇到与nltk相关的错误，您需要安装nltk工具包。更多详情，请参见：[nltk文档](https://www.nltk.org/data.html)
+Run the Python interpreter and type the commands:
+```bash
+>>> import nltk
+>>> nltk.download()
+```
+
 ## 感谢
 
 项目取得的成果，需要感谢技术社区，尤其以下项目。
