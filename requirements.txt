@@ -67,6 +67,8 @@ colorama
 playsound
 distro
 pypdf
+paddleocr
+paddlepaddle==2.4.2
 
 # Testing dependencies
 pytest
