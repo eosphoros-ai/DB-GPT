@@ -30,7 +30,6 @@ model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
 
 ml = ModelLoader(model_path=model_path)
 model, tokenizer = ml.loader(num_gpus=1, load_8bit=ISLOAD_8BIT, debug=ISDEBUG)
-#model, tokenizer = load_model(model_path=model_path, device=DEVICE, num_gpus=1, load_8bit=True, debug=False)
 
 class ModelWorker:
     def __init__(self):
