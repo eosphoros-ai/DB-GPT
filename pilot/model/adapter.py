@@ -100,6 +100,7 @@ class GPT4AllAdapter(BaseLLMAdaper):
 
 
 register_llm_model_adapters(VicunaLLMAdapater)
+register_llm_model_adapters(ChatGLMAdapater)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
 register_llm_model_adapters(BaseLLMAdaper)
