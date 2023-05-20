@@ -183,8 +183,8 @@ We provide a user interface for Gradio, which allows you to use DB-GPT through o
 
 2.Run the knowledge repository script in the tools directory.
 
-```
-python tools/knowledge_init.py
+```bash
+& python tools/knowledge_init.py
 
 --vector_name : your vector store name  default_value:default
 --append: append mode, True:append, False: not append default_value:False
@@ -194,6 +194,15 @@ python tools/knowledge_init.py
 3.Add the knowledge repository in the interface by entering the name of your knowledge repository (if not specified, enter "default") so you can use it for Q&A based on your knowledge base. 
 
 Note that the default vector model used is text2vec-large-chinese (which is a large model, so if your personal computer configuration is not enough, it is recommended to use text2vec-base-chinese). Therefore, ensure that you download the model and place it in the models directory.
+
+If nltk-related errors occur during the use of the knowledge base, you need to install the nltk toolkit. For more details, please refer to: [nltk documents](https://www.nltk.org/data.html)
+Run the Python interpreter and type the commands:
+
+```bash
+>>> import nltk
+>>> nltk.download()
+```
+
 ## Acknowledgement
 
 The achievements of this project are thanks to the technical community, especially the following projects:
