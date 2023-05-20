@@ -105,7 +105,8 @@ class Config(metaclass=Singleton):
         self.LLM_MODEL = os.getenv("LLM_MODEL",  "vicuna-13b")
         self.LIMIT_MODEL_CONCURRENCY = int(os.getenv("LIMIT_MODEL_CONCURRENCY",  5))
         self.MAX_POSITION_EMBEDDINGS = int(os.getenv("MAX_POSITION_EMBEDDINGS",  4096))
-        self.MODEL_SERVER = os.getenv("MODEL_SERVER",  "http://121.41.167.183:8000")
+        self.MODEL_PORT = os.getenv("MODEL_PORT",  8000)
+        self.MODEL_SERVER = os.getenv("MODEL_SERVER",  "http://127.0.0.1" + ":" + str(self.MODEL_PORT))
         self.ISLOAD_8BIT = os.getenv("ISLOAD_8BIT", "True") == "True"
 
     def set_debug_mode(self, value: bool) -> None:
