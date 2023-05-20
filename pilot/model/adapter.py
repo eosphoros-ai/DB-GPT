@@ -69,10 +69,6 @@ class ChatGLMAdapater(BaseLLMAdaper):
         ).half().cuda()
         return model, tokenizer
         
-class ZiYaLLaMaAdapter(BaseLLMAdaper):
-    # TODO
-    pass
-
 class CodeGenAdapter(BaseLLMAdaper):
     pass
 
