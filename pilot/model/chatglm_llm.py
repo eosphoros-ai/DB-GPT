@@ -11,7 +11,7 @@ def chatglm_generate_stream(model, tokenizer, params, device, context_len=2048, 
     temperature = float(params.get("temperature", 1.0))
     top_p = float(params.get("top_p", 1.0))
     stop = params.get("stop", "###")
-    echo = params.get("echo", True)
+    echo = params.get("echo", False)
 
     generate_kwargs = {
         "do_sample": True if temperature > 1e-5 else False,
