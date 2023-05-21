@@ -5,8 +5,13 @@ from abc import ABC, abstractmethod
 
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
+from langchain.vectorstores import Milvus
 
 from typing import List, Optional, Dict
+
+
+from pilot.configs.model_config import VECTOR_STORE_TYPE, VECTOR_STORE_CONFIG
+from pilot.vector_store.milvus_store import MilvusStore
 
 registered_methods = []
 
@@ -29,9 +34,20 @@ class SourceEmbedding(ABC):
         self.vector_store_config = vector_store_config
         self.embedding_args = embedding_args
         self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
-        persist_dir = os.path.join(self.vector_store_config["vector_store_path"],
-                                   self.vector_store_config["vector_store_name"] + ".vectordb")
-        self.vector_store_client = Chroma(persist_directory=persist_dir, embedding_function=self.embeddings)
+
+        if VECTOR_STORE_TYPE == "milvus":
+            print(VECTOR_STORE_CONFIG)
+            if self.vector_store_config.get("text_field") is None:
+                self.vector_store_client = MilvusStore({"url": VECTOR_STORE_CONFIG["url"],
+                                            "port": VECTOR_STORE_CONFIG["port"],
+                                            "embedding": self.embeddings})
+            else:
+                self.vector_store_client = Milvus(embedding_function=self.embeddings, collection_name=self.vector_store_config["vector_store_name"], text_field="content",
+                                            connection_args={"host": VECTOR_STORE_CONFIG["url"], "port": VECTOR_STORE_CONFIG["port"]})
+        else:
+            persist_dir = os.path.join(self.vector_store_config["vector_store_path"],
+                                       self.vector_store_config["vector_store_name"] + ".vectordb")
+            self.vector_store_client = Chroma(persist_directory=persist_dir, embedding_function=self.embeddings)
 
     @abstractmethod
     @register
@@ -54,10 +70,18 @@ class SourceEmbedding(ABC):
     @register
     def index_to_store(self, docs):
         """index to vector store"""
-        persist_dir = os.path.join(self.vector_store_config["vector_store_path"],
-                                   self.vector_store_config["vector_store_name"] + ".vectordb")
-        self.vector_store = Chroma.from_documents(docs, self.embeddings, persist_directory=persist_dir)
-        self.vector_store.persist()
+
+        if VECTOR_STORE_TYPE == "chroma":
+            persist_dir = os.path.join(self.vector_store_config["vector_store_path"],
+                                       self.vector_store_config["vector_store_name"] + ".vectordb")
+            self.vector_store = Chroma.from_documents(docs, self.embeddings, persist_directory=persist_dir)
+            self.vector_store.persist()
+
+        elif VECTOR_STORE_TYPE == "milvus":
+            self.vector_store = MilvusStore({"url": VECTOR_STORE_CONFIG["url"],
+                                        "port": VECTOR_STORE_CONFIG["port"],
+                                        "embedding": self.embeddings})
+            self.vector_store.init_schema_and_load(self.vector_store_config["vector_store_name"], docs)
 
     @register
     def similar_search(self, doc, topk):
