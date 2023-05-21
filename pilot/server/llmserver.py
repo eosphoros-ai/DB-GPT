@@ -155,6 +155,7 @@ if __name__ == "__main__":
     model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
     print(model_path, DEVICE)
     
+    
     worker = ModelWorker(
         model_path=model_path, 
         model_name=CFG.LLM_MODEL, 
