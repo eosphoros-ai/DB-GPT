@@ -7,10 +7,11 @@ import torch
 def chatglm_generate_stream(model, tokenizer, params, device, context_len=2048, stream_interval=2):
     
     """Generate text using chatglm model's chat api """
-    messages = params["prompt"]
+    prompt = params["prompt"]
     max_new_tokens = int(params.get("max_new_tokens", 256))
     temperature = float(params.get("temperature", 1.0))
     top_p = float(params.get("top_p", 1.0))
+    stop = params.get("stop", "###")
     echo = params.get("echo", True)
 
     generate_kwargs = {
@@ -23,11 +24,16 @@ def chatglm_generate_stream(model, tokenizer, params, device, context_len=2048, 
     if temperature > 1e-5:
         generate_kwargs["temperature"] = temperature
 
+    # TODO, Fix this
     hist = [] 
-    for i in range(0, len(messages) - 2, 2):
-        hist.append(messages[i][1], messages[i + 1][1])
 
-    query = messages[-2][1]
+    messages = prompt.split(stop)
+
+    # Add history chat to hist for model. 
+    for i in range(1, len(messages) - 2, 2):
+        hist.append((messages[i].split(":")[1], messages[i+1].split(":")[1]))
+
+    query = messages[-2].split(":")[1]
     output = ""
     i = 0
     for i, (response, new_hist) in enumerate(model.stream_chat(tokenizer, query, hist, **generate_kwargs)):
