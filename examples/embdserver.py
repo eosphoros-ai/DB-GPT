@@ -12,7 +12,7 @@ from pilot.conversation import conv_qa_prompt_template, conv_templates
 from langchain.prompts import PromptTemplate
 
 
-vicuna_stream_path = "generate_stream"
+llmstream_stream_path = "generate_stream"
 
 CFG = Config()
 
@@ -44,7 +44,7 @@ def generate(query):
     }
 
     response = requests.post(
-        url=urljoin(CFG.MODEL_SERVER, vicuna_stream_path), data=json.dumps(params)
+        url=urljoin(CFG.MODEL_SERVER, llmstream_stream_path), data=json.dumps(params)
     )
 
     skip_echo_len = len(params["prompt"]) + 1 - params["prompt"].count("</s>") * 3
