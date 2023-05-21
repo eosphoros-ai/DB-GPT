@@ -42,6 +42,7 @@ tenacity==8.2.2
 peft
 pycocoevalcap
 sentence-transformers
+cpm_kernels
 umap-learn
 notebook
 gradio==3.23

@@ -9,6 +9,8 @@ from transformers import (
     AutoModel
 )
 
+from pilot.configs.model_config import DEVICE
+
 class BaseLLMAdaper:
     """The Base class for multi model, in our project.
     We will support those model, which performance resemble ChatGPT  """
@@ -61,13 +63,20 @@ class ChatGLMAdapater(BaseLLMAdaper):
     """LLM Adatpter for THUDM/chatglm-6b"""
     def match(self, model_path: str):
         return "chatglm" in model_path
-    
+
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        model = AutoModel.from_pretrained(
-            model_path, trust_remote_code=True, **from_pretrained_kwargs
-        ).half().cuda()
-        return model, tokenizer
+
+        if DEVICE != "cuda":
+            model = AutoModel.from_pretrained(
+                model_path, trust_remote_code=True, **from_pretrained_kwargs
+            ).float()
+            return model, tokenizer
+        else:
+            model = AutoModel.from_pretrained(
+                model_path, trust_remote_code=True, **from_pretrained_kwargs
+            ).half().cuda()
+            return model, tokenizer
         
 class CodeGenAdapter(BaseLLMAdaper):
     pass
