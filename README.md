@@ -31,6 +31,7 @@ Currently, we have released multiple key features, which are listed below to dem
 
 - Milti LLMs Support
   - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8)
+  - TODO: codegen2, codet5p
 
 
 ## Demo
