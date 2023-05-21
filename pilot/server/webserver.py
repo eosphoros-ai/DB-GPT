@@ -19,7 +19,8 @@ from langchain import PromptTemplate
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 
-from pilot.configs.model_config import DB_SETTINGS, KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG, VECTOR_SEARCH_TOP_K
+from pilot.configs.model_config import DB_SETTINGS, KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG, VECTOR_SEARCH_TOP_K, \
+    VECTOR_STORE_CONFIG
 from pilot.server.vectordb_qa import KnownLedgeBaseQA
 from pilot.connections.mysql import MySQLOperator
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
@@ -267,12 +268,16 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
     if mode == conversation_types["custome"] and not db_selector:
-        persist_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vector_store_name["vs_name"] + ".vectordb")
-        print("vector store path: ", persist_dir)
+        # persist_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vector_store_name["vs_name"])
+        print("vector store type: ", VECTOR_STORE_CONFIG)
+        print("vector store name: ", vector_store_name["vs_name"])
+        vector_store_config = VECTOR_STORE_CONFIG
+        vector_store_config["vector_store_name"] = vector_store_name["vs_name"]
+        vector_store_config["text_field"] = "content"
+        vector_store_config["vector_store_path"] = KNOWLEDGE_UPLOAD_ROOT_PATH
         knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["text2vec"],
                                                         local_persist=False,
-                                                        vector_store_config={"vector_store_name": vector_store_name["vs_name"],
-                                                      "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
+                                                        vector_store_config=vector_store_config)
         query = state.messages[-2][1]
         docs = knowledge_embedding_client.similar_search(query, VECTOR_SEARCH_TOP_K)
         context = [d.page_content for d in docs]
