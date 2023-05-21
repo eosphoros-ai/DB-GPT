@@ -15,7 +15,7 @@ class BaseChatAdpter:
     def get_generate_stream_func(self):
         """Return the generate stream handler func"""
         pass
-
+    
 
 llm_model_chat_adapters: List[BaseChatAdpter] = []
 
