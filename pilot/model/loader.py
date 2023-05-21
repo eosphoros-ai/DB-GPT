@@ -59,8 +59,6 @@ class ModelLoader(metaclass=Singleton):
 
     # TODO multi gpu support
     def loader(self, num_gpus, load_8bit=False, debug=False, cpu_offloading=False, max_gpu_memory: Optional[str]=None):
-
-        cpu_offloading(self.device, load_8bit, cpu_offloading)
         
         if self.device == "cpu":
             kwargs = {"torch_dtype": torch.float32}
