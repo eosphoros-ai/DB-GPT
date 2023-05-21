@@ -27,8 +27,6 @@ from pilot.server.chat_adapter import get_llm_chat_adapter
 
 
 CFG = Config()
-model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
-print(model_path)
 
 class ModelWorker:
 
@@ -154,6 +152,8 @@ def embeddings(prompt_request: EmbeddingRequest):
 
 if __name__ == "__main__":
 
+    model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
+    print(model_path)
     
     worker = ModelWorker(
         model_path=model_path, 
