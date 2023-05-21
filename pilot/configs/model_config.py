@@ -48,3 +48,5 @@ DB_SETTINGS = {
 VS_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vs_store")
 KNOWLEDGE_UPLOAD_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 KNOWLEDGE_CHUNK_SPLIT_SIZE = 100
+VECTOR_STORE_TYPE = "milvus"
+VECTOR_STORE_CONFIG = {"url": "127.0.0.1", "port": "19530"}
