@@ -15,6 +15,9 @@ DB_SETTINGS = {
     "port": CFG.LOCAL_DB_PORT
 }
 
+ROLE_USER = "USER"
+ROLE_ASSISTANT = "Assistant"
+
 class SeparatorStyle(Enum):
     SINGLE = auto()
     TWO = auto()

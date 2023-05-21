@@ -26,6 +26,10 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 - 知识库统一向量存储/索引
   - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
 
+- 多模型支持
+  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8)
+  - TODO: codet5p, codegen2
+
 ## 效果演示
 
 示例通过 RTX 4090 GPU 演示，[YouTube 地址](https://www.youtube.com/watch?v=1PWI6F89LPo)
@@ -177,6 +181,10 @@ $ python webserver.py
 1.  [大模型实战系列(1) —— 强强联合Langchain-Vicuna应用实战](https://zhuanlan.zhihu.com/p/628750042)
 2.  [大模型实战系列(2) —— DB-GPT 阿里云部署指南](https://zhuanlan.zhihu.com/p/629467580)
 3.  [大模型实战系列(3) —— DB-GPT插件模型原理与使用](https://zhuanlan.zhihu.com/p/629623125)
+
+
+### 多模型使用
+在.env 配置文件当中, 修改LLM_MODEL参数来切换使用的模型。
 
 ## 感谢
 

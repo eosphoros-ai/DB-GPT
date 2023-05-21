@@ -364,8 +364,16 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
             for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
                 if chunk:
                     data = json.loads(chunk.decode())
+                    
+                    """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
+                    """
                     if data["error_code"] == 0:
-                        output = data["text"][skip_echo_len:].strip()
+                        
+                        if "vicuna" in CFG.LLM_MODEL:
+                            output = data["text"][skip_echo_len:].strip()
+                        else: 
+                            output = data["text"].strip()
+
                         output = post_process_code(output)
                         state.messages[-1][-1] = output + "▌"
                         yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
