@@ -2,11 +2,39 @@
 # -*- coding: utf-8 -*-
 
 import torch
+import sys
 import warnings
 from pilot.singleton import Singleton
-
+from typing import Optional
 from pilot.model.compression import compress_module 
 from pilot.model.adapter import get_llm_model_adapter
+from pilot.utils import get_gpu_memory
+from pilot.model.llm.monkey_patch import replace_llama_attn_with_non_inplace_operations
+
+def raise_warning_for_incompatible_cpu_offloading_configuration(
+    device: str, load_8bit: bool, cpu_offloading: bool
+):
+    if cpu_offloading:
+        if not load_8bit:
+            warnings.warn(
+                "The cpu-offloading feature can only be used while also using 8-bit-quantization.\n"
+                "Use '--load-8bit' to enable 8-bit-quantization\n"
+                "Continuing without cpu-offloading enabled\n"
+            )
+            return False
+        if not "linux" in sys.platform:
+            warnings.warn(
+                "CPU-offloading is only supported on linux-systems due to the limited compatability with the bitsandbytes-package\n"
+                "Continuing without cpu-offloading enabled\n"
+            )
+            return False
+        if device != "cuda":
+            warnings.warn(
+                "CPU-offloading is only enabled when using CUDA-devices\n"
+                "Continuing without cpu-offloading enabled\n"
+            )
+            return False
+    return cpu_offloading
 
 
 class ModelLoader(metaclass=Singleton):
@@ -30,26 +58,37 @@ class ModelLoader(metaclass=Singleton):
         }
 
     # TODO multi gpu support
-    def loader(self, num_gpus, load_8bit=False, debug=False):
+    def loader(self, num_gpus, load_8bit=False, debug=False, cpu_offloading=False, max_gpu_memory: Optional[str]=None):
+        
         if self.device == "cpu":
-            kwargs = {}
+            kwargs = {"torch_dtype": torch.float32}
 
         elif self.device == "cuda":
             kwargs = {"torch_dtype": torch.float16}
-            if num_gpus == "auto":
+            num_gpus = int(num_gpus)
+
+            if num_gpus != 1:
                 kwargs["device_map"] = "auto"
+                if max_gpu_memory is None:
+                    kwargs["device_map"] = "sequential"
+                
+                available_gpu_memory = get_gpu_memory(num_gpus)
+                kwargs["max_memory"] = {
+                    i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
+                    for i in range(num_gpus)
+                }
+
             else:
-                num_gpus = int(num_gpus)
-                if num_gpus != 1:
-                    kwargs.update({
-                        "device_map": "auto",
-                        "max_memory": {i: "13GiB" for i in range(num_gpus)},
-                    })
+                kwargs["max_memory"] = {i: max_gpu_memory for i in range(num_gpus)}
+
+        elif self.device == "mps":
+            kwargs = kwargs = {"torch_dtype": torch.float16}
+            replace_llama_attn_with_non_inplace_operations()
         else:
-            # Todo Support mps for practise
             raise ValueError(f"Invalid device: {self.device}")
 
-        
+        # TODO when cpu loading,  need use quantization config
+
         llm_adapter = get_llm_model_adapter(self.model_path)
         model, tokenizer = llm_adapter.loader(self.model_path, kwargs)
 
@@ -61,7 +100,7 @@ class ModelLoader(metaclass=Singleton):
             else:
                 compress_module(model, self.device) 
 
-        if (self.device == "cuda" and num_gpus == 1):
+        if (self.device == "cuda" and num_gpus == 1 and not cpu_offloading) or self.device == "mps":
             model.to(self.device)
 
         if debug:
