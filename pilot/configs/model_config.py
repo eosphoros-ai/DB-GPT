@@ -16,7 +16,7 @@ DATA_DIR = os.path.join(PILOT_PATH, "data")
 
 nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 LLM_MODEL_CONFIG = {
     "flan-t5-base": os.path.join(MODEL_PATH, "flan-t5-base"),
     "vicuna-13b": os.path.join(MODEL_PATH, "vicuna-13b"),
