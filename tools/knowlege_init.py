@@ -36,7 +36,7 @@ class LocalKnowledgeInit:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--vector_name", type=str, default="keting")
+    parser.add_argument("--vector_name", type=str, default="default")
     parser.add_argument("--append", type=bool, default=False)
     parser.add_argument("--store_type", type=str, default="Chroma")
     args = parser.parse_args()
