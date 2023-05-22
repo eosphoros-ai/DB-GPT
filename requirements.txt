@@ -42,6 +42,7 @@ tenacity==8.2.2
 peft
 pycocoevalcap
 sentence-transformers
+cpm_kernels
 umap-learn
 notebook
 gradio==3.23
@@ -61,6 +62,13 @@ langchain
 nltk
 python-dotenv==1.0.0
 pymilvus
+vcrpy
+chromadb
+markdown2
+colorama
+playsound
+distro
+pypdf
 
 # Testing dependencies
 pytest
@@ -70,11 +78,4 @@ pytest-benchmark
 pytest-cov
 pytest-integration
 pytest-mock
-vcrpy
 pytest-recording
-chromadb
-markdown2
-colorama
-playsound
-distro
-pypdf

@@ -67,8 +67,8 @@ class MilvusStore(VectorStoreBase):
     def init_schema_and_load(self, vector_name, documents):
         """Create a Milvus collection, indexes it with HNSW, load document.
                 Args:
-                    documents (List[str]): Text to insert.
                     vector_name (Embeddings): your collection name.
+                    documents (List[str]): Text to insert.
                 Returns:
                     VectorStore: The MilvusStore vector store.
                 """
@@ -203,21 +203,21 @@ class MilvusStore(VectorStoreBase):
         info = self.collection.describe()
         self.collection.load()
 
-    def insert(self, text, model_config) -> str:
-        """Add an embedding of data into milvus.
-        Args:
-            text (str): The raw text to construct embedding index.
-        Returns:
-            str: log.
-        """
-        # embedding = get_ada_embedding(data)
-        embeddings = HuggingFaceEmbeddings(model_name=self.model_config["model_name"])
-        result = self.collection.insert([embeddings.embed_documents(text), text])
-        _text = (
-            "Inserting data into memory at primary key: "
-            f"{result.primary_keys[0]}:\n data: {text}"
-        )
-        return _text
+    # def insert(self, text, model_config) -> str:
+    #     """Add an embedding of data into milvus.
+    #     Args:
+    #         text (str): The raw text to construct embedding index.
+    #     Returns:
+    #         str: log.
+    #     """
+    #     # embedding = get_ada_embedding(data)
+    #     embeddings = HuggingFaceEmbeddings(model_name=self.model_config["model_name"])
+    #     result = self.collection.insert([embeddings.embed_documents(text), text])
+    #     _text = (
+    #         "Inserting data into memory at primary key: "
+    #         f"{result.primary_keys[0]}:\n data: {text}"
+    #     )
+    #     return _text
 
     def _add_texts(
         self,
