@@ -268,10 +268,8 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
 
     if mode == conversation_types["custome"] and not db_selector:
         print("vector store name: ", vector_store_name["vs_name"])
-        vector_store_config = []
-        vector_store_config["vector_store_name"] = vector_store_name["vs_name"]
-        vector_store_config["text_field"] = "content"
-        vector_store_config["vector_store_path"] = KNOWLEDGE_UPLOAD_ROOT_PATH
+        vector_store_config = {"vector_store_name": vector_store_name["vs_name"], "text_field": "content",
+                               "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH}
         knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["text2vec"],
                                                         local_persist=False,
                                                         vector_store_config=vector_store_config)
