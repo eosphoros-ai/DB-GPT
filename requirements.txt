@@ -62,8 +62,6 @@ langchain
 nltk
 python-dotenv==1.0.0
 pymilvus==2.2.1
-paddle==2.2
-paddleocr==2.6.1.3
 vcrpy
 chromadb
 markdown2
