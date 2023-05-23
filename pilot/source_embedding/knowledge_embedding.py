@@ -1,7 +1,7 @@
 import os
 
 from bs4 import BeautifulSoup
-from langchain.document_loaders import TextLoader, markdown
+from langchain.document_loaders import TextLoader, markdown, PyPDFLoader
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from pilot.configs.config import Config
@@ -12,7 +12,6 @@ from pilot.source_embedding.markdown_embedding import MarkdownEmbedding
 from pilot.source_embedding.pdf_embedding import PDFEmbedding
 import markdown
 
-from pilot.source_embedding.pdf_loader import UnstructuredPaddlePDFLoader
 from pilot.vector_store.connector import VectorStoreConnector
 
 CFG = Config()
@@ -89,7 +88,7 @@ class KnowledgeEmbedding:
                 docs[i].page_content = docs[i].page_content.replace("\n", " ")
                 i += 1
         elif filename.lower().endswith(".pdf"):
-            loader = UnstructuredPaddlePDFLoader(filename)
+            loader = PyPDFLoader(filename)
             textsplitter = CHNDocumentSplitter(pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE)
             docs = loader.load_and_split(textsplitter)
             i = 0
