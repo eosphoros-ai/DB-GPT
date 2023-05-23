@@ -109,6 +109,14 @@ class Config(metaclass=Singleton):
         self.MODEL_SERVER = os.getenv("MODEL_SERVER",  "http://127.0.0.1" + ":" + str(self.MODEL_PORT))
         self.ISLOAD_8BIT = os.getenv("ISLOAD_8BIT", "True") == "True"
 
+        ### Vector Store Configuration
+        self.VECTOR_STORE_TYPE = os.getenv("VECTOR_STORE_TYPE",  "Chroma")
+        self.MILVUS_URL = os.getenv("MILVUS_URL",  "127.0.0.1")
+        self.MILVUS_PORT = os.getenv("MILVUS_PORT",  "19530")
+        self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME",  None)
+        self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD",  None)
+
+
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
         self.debug_mode = value
