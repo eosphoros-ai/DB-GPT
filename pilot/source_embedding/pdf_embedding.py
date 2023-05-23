@@ -4,6 +4,7 @@ from typing import List
 
 from langchain.document_loaders import PyPDFLoader
 from langchain.schema import Document
+from pilot.configs.model_config import KNOWLEDGE_CHUNK_SPLIT_SIZE
 
 from pilot.source_embedding import SourceEmbedding, register
 from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
@@ -22,8 +23,9 @@ class PDFEmbedding(SourceEmbedding):
     @register
     def read(self):
         """Load from pdf path."""
+        # loader = UnstructuredPaddlePDFLoader(self.file_path)
         loader = PyPDFLoader(self.file_path)
-        textsplitter = CHNDocumentSplitter(pdf=True, sentence_size=100)
+        textsplitter = CHNDocumentSplitter(pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE)
         return loader.load_and_split(textsplitter)
 
     @register

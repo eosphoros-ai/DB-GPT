@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
 from abc import ABC, abstractmethod
 
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
-
 from typing import List, Optional, Dict
 
+from pilot.configs.config import Config
+from pilot.vector_store.connector import VectorStoreConnector
+
 registered_methods = []
+CFG = Config()
 
 
 def register(method):
@@ -29,9 +30,9 @@ class SourceEmbedding(ABC):
         self.vector_store_config = vector_store_config
         self.embedding_args = embedding_args
         self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
-        persist_dir = os.path.join(self.vector_store_config["vector_store_path"],
-                                   self.vector_store_config["vector_store_name"] + ".vectordb")
-        self.vector_store_client = Chroma(persist_directory=persist_dir, embedding_function=self.embeddings)
+
+        vector_store_config["embeddings"] = self.embeddings
+        self.vector_client = VectorStoreConnector(CFG.VECTOR_STORE_TYPE, vector_store_config)
 
     @abstractmethod
     @register
@@ -54,16 +55,12 @@ class SourceEmbedding(ABC):
     @register
     def index_to_store(self, docs):
         """index to vector store"""
-        persist_dir = os.path.join(self.vector_store_config["vector_store_path"],
-                                   self.vector_store_config["vector_store_name"] + ".vectordb")
-        self.vector_store = Chroma.from_documents(docs, self.embeddings, persist_directory=persist_dir)
-        self.vector_store.persist()
+        self.vector_client.load_document(docs)
 
     @register
     def similar_search(self, doc, topk):
         """vector store similarity_search"""
-
-        return self.vector_store_client.similarity_search(doc, topk)
+        return self.vector_client.similar_search(doc, topk)
 
     def source_embedding(self):
         if 'read' in registered_methods:
