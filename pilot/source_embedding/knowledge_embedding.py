@@ -5,7 +5,7 @@ from langchain.document_loaders import TextLoader, markdown
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import DATASETS_DIR, KNOWLEDGE_CHUNK_SPLIT_SIZE, VECTOR_STORE_TYPE
+from pilot.configs.model_config import DATASETS_DIR, KNOWLEDGE_CHUNK_SPLIT_SIZE
 from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 from pilot.source_embedding.csv_embedding import CSVEmbedding
 from pilot.source_embedding.markdown_embedding import MarkdownEmbedding
