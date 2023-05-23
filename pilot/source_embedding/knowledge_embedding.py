@@ -3,6 +3,8 @@ import os
 from bs4 import BeautifulSoup
 from langchain.document_loaders import TextLoader, markdown
 from langchain.embeddings import HuggingFaceEmbeddings
+
+from pilot.configs.config import Config
 from pilot.configs.model_config import DATASETS_DIR, KNOWLEDGE_CHUNK_SPLIT_SIZE, VECTOR_STORE_TYPE
 from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 from pilot.source_embedding.csv_embedding import CSVEmbedding
@@ -13,6 +15,7 @@ import markdown
 from pilot.source_embedding.pdf_loader import UnstructuredPaddlePDFLoader
 from pilot.vector_store.connector import VectorStoreConnector
 
+CFG = Config()
 
 class KnowledgeEmbedding:
     def __init__(self, file_path, model_name, vector_store_config, local_persist=True):
@@ -53,7 +56,7 @@ class KnowledgeEmbedding:
 
     def knowledge_persist_initialization(self, append_mode):
         documents = self._load_knownlege(self.file_path)
-        self.vector_client = VectorStoreConnector(VECTOR_STORE_TYPE, self.vector_store_config)
+        self.vector_client = VectorStoreConnector(CFG.VECTOR_STORE_TYPE, self.vector_store_config)
         self.vector_client.load_document(documents)
         return self.vector_client
 
