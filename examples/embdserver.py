@@ -61,11 +61,12 @@ def generate(query):
         if chunk:
             data = json.loads(chunk.decode())
             if data["error_code"] == 0:
-                
+
                 if "vicuna" in CFG.LLM_MODEL:
                     output = data["text"][skip_echo_len:].strip()
                 else:
                     output = data["text"].strip()
+
                 state.messages[-1][-1] = output + "▌"
                 yield(output) 
  
