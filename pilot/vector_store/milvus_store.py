@@ -2,11 +2,12 @@ from typing import List, Optional, Iterable, Tuple, Any
 
 from pymilvus import connections, Collection, DataType
 
-from pilot.configs.model_config import VECTOR_STORE_CONFIG
 from langchain.docstore.document import Document
+
+from pilot.configs.config import Config
 from pilot.vector_store.vector_store_base import VectorStoreBase
 
-
+CFG = Config()
 class MilvusStore(VectorStoreBase):
     """Milvus database"""
     def __init__(self, ctx: {}) -> None:
@@ -18,11 +19,10 @@ class MilvusStore(VectorStoreBase):
         # self.configure(cfg)
 
         connect_kwargs = {}
-        self.uri = None
-        self.uri = ctx.get("url", VECTOR_STORE_CONFIG["url"])
-        self.port = ctx.get("port", VECTOR_STORE_CONFIG["port"])
-        self.username = ctx.get("username", None)
-        self.password = ctx.get("password", None)
+        self.uri = CFG.MILVUS_URL
+        self.port = CFG.MILVUS_PORT
+        self.username = CFG.MILVUS_USERNAME
+        self.password = CFG.MILVUS_PASSWORD
         self.collection_name = ctx.get("vector_store_name", None)
         self.secure = ctx.get("secure", None)
         self.embedding = ctx.get("embeddings", None)
@@ -238,16 +238,6 @@ class MilvusStore(VectorStoreBase):
         timeout: Optional[int] = None,
     ) -> List[str]:
         """add text data into Milvus.
-        Args:
-            texts (Iterable[str]): The text being embedded and inserted.
-            metadatas (Optional[List[dict]], optional): The metadata that
-                corresponds to each insert. Defaults to None.
-            partition_name (str, optional): The partition of the collection
-                to insert data into. Defaults to None.
-            timeout: specified timeout.
-
-        Returns:
-            List[str]: The resulting keys for each inserted element.
         """
         insert_dict: Any = {self.text_field: list(texts)}
         try:
@@ -279,6 +269,7 @@ class MilvusStore(VectorStoreBase):
         self.init_schema_and_load(self.collection_name, documents)
 
     def similar_search(self, text, topk) -> None:
+        """similar_search in vector database."""
         self.col = Collection(self.collection_name)
         schema = self.col.schema
         for x in schema.fields:
@@ -326,7 +317,6 @@ class MilvusStore(VectorStoreBase):
             timeout=timeout,
             **kwargs,
         )
-        # Organize results.
         ret = []
         for result in res[0]:
             meta = {x: result.entity.get(x) for x in output_fields}

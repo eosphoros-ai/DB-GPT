@@ -4,10 +4,12 @@ from abc import ABC, abstractmethod
 
 from langchain.embeddings import HuggingFaceEmbeddings
 from typing import List, Optional, Dict
-from pilot.configs.model_config import VECTOR_STORE_TYPE
+
+from pilot.configs.config import Config
 from pilot.vector_store.connector import VectorStoreConnector
 
 registered_methods = []
+CFG = Config()
 
 
 def register(method):
@@ -30,7 +32,7 @@ class SourceEmbedding(ABC):
         self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
 
         vector_store_config["embeddings"] = self.embeddings
-        self.vector_client = VectorStoreConnector(VECTOR_STORE_TYPE, vector_store_config)
+        self.vector_client = VectorStoreConnector(CFG.VECTOR_STORE_TYPE, vector_store_config)
 
     @abstractmethod
     @register
