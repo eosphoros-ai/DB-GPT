@@ -33,7 +33,7 @@ def get_gpu_memory(max_gpus=None):
             allocated_memory = torch.cuda.memory_allocated() / (1024 ** 3)
             available_memory = total_memory - allocated_memory
             gpu_memory.append(available_memory)
-        return gpu_memory
+    return gpu_memory
 
 
 
