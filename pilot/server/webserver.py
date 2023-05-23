@@ -267,12 +267,12 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
     if mode == conversation_types["custome"] and not db_selector:
-        persist_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vector_store_name["vs_name"] + ".vectordb")
-        print("vector store path: ", persist_dir)
+        print("vector store name: ", vector_store_name["vs_name"])
+        vector_store_config = {"vector_store_name": vector_store_name["vs_name"], "text_field": "content",
+                               "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH}
         knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["text2vec"],
                                                         local_persist=False,
-                                                        vector_store_config={"vector_store_name": vector_store_name["vs_name"],
-                                                      "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
+                                                        vector_store_config=vector_store_config)
         query = state.messages[-2][1]
         docs = knowledge_embedding_client.similar_search(query, VECTOR_SEARCH_TOP_K)
         context = [d.page_content for d in docs]
@@ -364,14 +364,14 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
             for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
                 if chunk:
                     data = json.loads(chunk.decode())
-                    
+
                     """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
                     """
                     if data["error_code"] == 0:
-                        
+
                         if "vicuna" in CFG.LLM_MODEL:
                             output = data["text"][skip_echo_len:].strip()
-                        else: 
+                        else:
                             output = data["text"].strip()
 
                         output = post_process_code(output)
@@ -507,6 +507,7 @@ def build_single_model_ui():
                         files = gr.File(label="添加文件",
                                         file_types=[".txt", ".md", ".docx", ".pdf"],
                                         file_count="multiple",
+                                        allow_flagged_uploads=True,
                                         show_label=False
                                         )
 
