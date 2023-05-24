@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import torch
 import sys
 import warnings
-from pilot.singleton import Singleton
 from typing import Optional
-from pilot.model.compression import compress_module 
-from pilot.model.adapter import get_llm_model_adapter
-from pilot.utils import get_gpu_memory
+
+import torch
+
 from pilot.configs.model_config import DEVICE
+from pilot.model.adapter import get_llm_model_adapter
+from pilot.model.compression import compress_module
 from pilot.model.llm.monkey_patch import replace_llama_attn_with_non_inplace_operations
+from pilot.singleton import Singleton
+from pilot.utils import get_gpu_memory
+
 
 def raise_warning_for_incompatible_cpu_offloading_configuration(
     device: str, load_8bit: bool, cpu_offloading: bool
@@ -40,27 +43,31 @@ def raise_warning_for_incompatible_cpu_offloading_configuration(
 
 class ModelLoader(metaclass=Singleton):
     """Model loader is a class for model load
-    
+
       Args: model_path
 
-    TODO: multi model support. 
+    TODO: multi model support.
     """
 
     kwargs = {}
 
-    def __init__(self, 
-                 model_path) -> None:
-        
+    def __init__(self, model_path) -> None:
         self.device = DEVICE
-        self.model_path = model_path 
+        self.model_path = model_path
         self.kwargs = {
             "torch_dtype": torch.float16,
             "device_map": "auto",
         }
 
     # TODO multi gpu support
-    def loader(self, num_gpus, load_8bit=False, debug=False, cpu_offloading=False, max_gpu_memory: Optional[str]=None):
-        
+    def loader(
+        self,
+        num_gpus,
+        load_8bit=False,
+        debug=False,
+        cpu_offloading=False,
+        max_gpu_memory: Optional[str] = None,
+    ):
         if self.device == "cpu":
             kwargs = {"torch_dtype": torch.float32}
 
@@ -72,7 +79,7 @@ class ModelLoader(metaclass=Singleton):
                 kwargs["device_map"] = "auto"
                 if max_gpu_memory is None:
                     kwargs["device_map"] = "sequential"
-                
+
                 available_gpu_memory = get_gpu_memory(num_gpus)
                 kwargs["max_memory"] = {
                     i: str(int(available_gpu_memory[i] * 0.85)) + "GiB"
@@ -99,13 +106,14 @@ class ModelLoader(metaclass=Singleton):
                     "8-bit quantization is not supported for multi-gpu inference"
                 )
             else:
-                compress_module(model, self.device) 
+                compress_module(model, self.device)
 
-        if (self.device == "cuda" and num_gpus == 1 and not cpu_offloading) or self.device == "mps":
+        if (
+            self.device == "cuda" and num_gpus == 1 and not cpu_offloading
+        ) or self.device == "mps":
             model.to(self.device)
 
         if debug:
             print(model)
 
         return model, tokenizer
- 

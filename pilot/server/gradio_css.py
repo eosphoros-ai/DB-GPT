@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-code_highlight_css = (
-"""
+code_highlight_css = """
 #chatbot .hll { background-color: #ffffcc }
 #chatbot .c { color: #408080; font-style: italic }
 #chatbot .err { border: 1px solid #FF0000 }
@@ -71,6 +70,5 @@ code_highlight_css = (
 #chatbot .vi { color: #19177C }
 #chatbot .vm { color: #19177C }
 #chatbot .il { color: #666666 }
-""")
-#.highlight  { background: #f8f8f8; }
-
+"""
+# .highlight  { background: #f8f8f8; }
