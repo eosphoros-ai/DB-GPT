@@ -29,6 +29,10 @@ Currently, we have released multiple key features, which are listed below to dem
 - Unified vector storage/indexing of knowledge base
   - Support for unstructured data such as PDF, Markdown, CSV, and WebURL
 
+- Milti LLMs Support
+  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8)
+  - TODO: codegen2, codet5p
+
 
 ## Demo
 
@@ -177,7 +181,11 @@ Notice:  the webserver need to connect llmserver,  so you need change the .env f
 We provide a user interface for Gradio, which allows you to use DB-GPT through our user interface. Additionally, we have prepared several reference articles (written in Chinese) that introduce the code and principles related to our project.
 - [LLM Practical In Action Series (1) — Combined Langchain-Vicuna Application Practical](https://medium.com/@cfqcsunny/llm-practical-in-action-series-1-combined-langchain-vicuna-application-practical-701cd0413c9f)
 
-### Create your own knowledge repository:
+### Multi LLMs Usage
+
+To use multiple models, modify the LLM_MODEL parameter in the .env configuration file to switch between the models.
+
+####Create your own knowledge repository:
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
 
@@ -215,6 +223,10 @@ The achievements of this project are thanks to the technical community, especial
 - [Milvus](https://milvus.io/) for distributed vector storage
 - [ChatGLM](https://github.com/THUDM/ChatGLM-6B) as the base model
 - [llama_index](https://github.com/jerryjliu/llama_index) for enhancing database-related knowledge using [in-context learning](https://arxiv.org/abs/2301.00234) based on existing knowledge bases.
+
+## Contribution
+
+- Please run `black .` before submitting the code.
 
 <!-- GITCONTRIBUTOR_START -->
 

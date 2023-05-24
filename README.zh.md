@@ -26,6 +26,10 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 - 知识库统一向量存储/索引
   - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
 
+- 多模型支持
+  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8)
+  - TODO: codet5p, codegen2
+
 ## 效果演示
 
 示例通过 RTX 4090 GPU 演示，[YouTube 地址](https://www.youtube.com/watch?v=1PWI6F89LPo)
@@ -110,6 +114,7 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
    
 用户只需要整理好知识文档，即可用我们现有的能力构建大模型所需要的知识库能力。
 
+
 ### 大模型管理能力
 在底层大模型接入中，设计了开放的接口，支持对接多种大模型。同时对于接入模型的效果，我们有非常严格的把控与评审机制。对大模型能力上与ChatGPT对比，在准确率上需要满足85%以上的能力对齐。我们用更高的标准筛选模型，是期望在用户使用过程中，可以省去前面繁琐的测试评估环节。
 
@@ -179,6 +184,9 @@ $ python webserver.py
 3.  [大模型实战系列(3) —— DB-GPT插件模型原理与使用](https://zhuanlan.zhihu.com/p/629623125)
 
 
+### 多模型使用
+在.env 配置文件当中, 修改LLM_MODEL参数来切换使用的模型。
+
 ### 打造属于你的知识库：
 
 1、将个人知识文件或者文件夹放入pilot/datasets目录中
@@ -217,8 +225,11 @@ Run the Python interpreter and type the commands:
 - [ChatGLM](https://github.com/THUDM/ChatGLM-6B) 基础模型
 - [llama-index](https://github.com/jerryjliu/llama_index) 基于现有知识库进行[In-Context Learning](https://arxiv.org/abs/2301.00234)来对其进行数据库相关知识的增强。
 
-<!-- GITCONTRIBUTOR_START -->
+# 贡献
 
+- 提交代码前请先执行 `black .`
+
+<!-- GITCONTRIBUTOR_START -->
 
 ## 贡献者
 
