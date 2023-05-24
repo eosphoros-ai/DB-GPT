@@ -9,6 +9,27 @@ Welcome to DB-GPT!
 
 | **DB-GPT** is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 
+| **Features**
+Currently, we have released multiple key features, which are listed below to demonstrate our current capabilities:
+
+- SQL language capabilities
+  - SQL generation
+  - SQL diagnosis
+
+- Private domain Q&A and data processing
+  - Database knowledge Q&A
+  - Data processing
+
+- Plugins
+  - Support custom plugin execution tasks and natively support the Auto-GPT plugin, such as:
+
+- Unified vector storage/indexing of knowledge base
+  - Support for unstructured data such as PDF, Markdown, CSV, and WebURL
+
+- Milti LLMs Support
+  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8)
+  - TODO: codegen2, codet5p
+
 Getting Started
 -----------------
 | How to get started using DB-GPT to interact with your data and environment.
