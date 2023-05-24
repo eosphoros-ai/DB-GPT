@@ -3,10 +3,10 @@
 
 
 class Agent:
-    """Agent class for interacting with DB-GPT 
-       
-       Attributes:
+    """Agent class for interacting with DB-GPT
+
+    Attributes:
     """
-    
+
     def __init__(self) -> None:
         pass

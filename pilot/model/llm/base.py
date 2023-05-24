@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from dataclasses import dataclass, field
-from typing import List, TypedDict
+from dataclasses import dataclass
+from typing import TypedDict
 
 
 class Message(TypedDict):
-    """Vicuna Message object containing a role and the message content """
+    """Vicuna Message object containing a role and the message content"""
 
     role: str
     content: str
@@ -18,12 +18,15 @@ class ModelInfo:
 
     Would be lovely to eventually get this directly from APIs
     """
+
     name: str
     max_tokens: int
+
 
 @dataclass
 class LLMResponse:
     """Standard response struct for a response from a LLM model."""
+
     model_info = ModelInfo
 
 
