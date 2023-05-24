@@ -2,7 +2,7 @@ name: Pylint
 
 on:
   push:
-    branches: [ make_ci_happy ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
