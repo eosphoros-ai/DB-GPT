@@ -4,4 +4,5 @@
 
 class RedisConnector:
     """RedisConnector"""
+
     pass

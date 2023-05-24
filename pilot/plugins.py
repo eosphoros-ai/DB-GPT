@@ -1,11 +1,10 @@
 """加载组件"""
 
-import importlib
 import json
 import os
 import zipfile
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List
 from urllib.parse import urlparse
 from zipimport import zipimporter
 
@@ -14,6 +13,7 @@ from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 from pilot.configs.config import Config
 from pilot.logs import logger
+
 
 def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
     """
@@ -36,6 +36,7 @@ def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
         logger.debug(f"Module '__init__.py' not found in the zipfile @ {zip_path}.")
     return result
 
+
 def write_dict_to_json_file(data: dict, file_path: str) -> None:
     """
     Write a dictionary to a JSON file.
@@ -45,6 +46,7 @@ def write_dict_to_json_file(data: dict, file_path: str) -> None:
     """
     with open(file_path, "w") as file:
         json.dump(data, file, indent=4)
+
 
 def create_directory_if_not_exists(directory_path: str) -> bool:
     """
@@ -65,6 +67,7 @@ def create_directory_if_not_exists(directory_path: str) -> bool:
     else:
         logger.info(f"Directory {directory_path} already exists")
         return True
+
 
 def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate]:
     """Scan the plugins directory for plugins and loads them.
