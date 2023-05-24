@@ -4,3 +4,22 @@ As the knowledge base is currently the most significant user demand scenario, we
 1. Default built-in knowledge base
 2. Custom addition of knowledge bases
 3. Various usage scenarios such as constructing knowledge bases through plugin capabilities and web crawling. Users only need to organize the knowledge documents, and they can use our existing capabilities to build the knowledge base required for the large model.
+
+
+### Create your own knowledge repository
+
+1.Place personal knowledge files or folders in the pilot/datasets directory.
+
+2.Run the knowledge repository script in the tools directory.
+
+```
+python tools/knowledge_init.py
+
+--vector_name : your vector store name  default_value:default
+--append: append mode, True:append, False: not append default_value:False
+
+```
+
+3.Add the knowledge repository in the interface by entering the name of your knowledge repository (if not specified, enter "default") so you can use it for Q&A based on your knowledge base. 
+
+Note that the default vector model used is text2vec-large-chinese (which is a large model, so if your personal computer configuration is not enough, it is recommended to use text2vec-base-chinese). Therefore, ensure that you download the model and place it in the models directory.
