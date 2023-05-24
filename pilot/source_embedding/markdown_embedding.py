@@ -3,12 +3,12 @@
 import os
 from typing import List
 
+import markdown
 from bs4 import BeautifulSoup
 from langchain.document_loaders import TextLoader
 from langchain.schema import Document
-import markdown
-from pilot.configs.model_config import KNOWLEDGE_CHUNK_SPLIT_SIZE
 
+from pilot.configs.model_config import KNOWLEDGE_CHUNK_SPLIT_SIZE
 from pilot.source_embedding import SourceEmbedding, register
 from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 
@@ -27,7 +27,9 @@ class MarkdownEmbedding(SourceEmbedding):
     def read(self):
         """Load from markdown path."""
         loader = TextLoader(self.file_path)
-        text_splitter = CHNDocumentSplitter(pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE)
+        text_splitter = CHNDocumentSplitter(
+            pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE
+        )
         return loader.load_and_split(text_splitter)
 
     @register
@@ -44,7 +46,9 @@ class MarkdownEmbedding(SourceEmbedding):
                 # 更新metadata数据
                 new_docs = []
                 for doc in docs:
-                    doc.metadata = {"source": doc.metadata["source"].replace(self.file_path, "")}
+                    doc.metadata = {
+                        "source": doc.metadata["source"].replace(self.file_path, "")
+                    }
                     print("doc is embedding ... ", doc.metadata)
                     new_docs.append(doc)
                 docments += new_docs
@@ -55,13 +59,10 @@ class MarkdownEmbedding(SourceEmbedding):
         i = 0
         for d in documents:
             content = markdown.markdown(d.page_content)
-            soup = BeautifulSoup(content, 'html.parser')
-            for tag in soup(['!doctype', 'meta', 'i.fa']):
+            soup = BeautifulSoup(content, "html.parser")
+            for tag in soup(["!doctype", "meta", "i.fa"]):
                 tag.extract()
             documents[i].page_content = soup.get_text()
             documents[i].page_content = documents[i].page_content.replace("\n", " ")
             i += 1
         return documents
-
-
-

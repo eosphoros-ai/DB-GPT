@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-import requests
 import json
-import time
-import uuid
 import os
 import sys
 from urllib.parse import urljoin
+
 import gradio as gr
+import requests
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT_PATH)
 
 
-from pilot.configs.config import Config
-from pilot.conversation import conv_qa_prompt_template, conv_templates
 from langchain.prompts import PromptTemplate
 
+from pilot.configs.config import Config
+from pilot.conversation import conv_qa_prompt_template, conv_templates
 
 llmstream_stream_path = "generate_stream"
 
 CFG = Config()
 
-def generate(query):
 
+def generate(query):
     template_name = "conv_one_shot"
     state = conv_templates[template_name].copy()
 
@@ -47,7 +46,7 @@ def generate(query):
         "prompt": prompt,
         "temperature": 1.0,
         "max_new_tokens": 1024,
-        "stop": "###"
+        "stop": "###",
     }
 
     response = requests.post(
@@ -57,19 +56,18 @@ def generate(query):
     skip_echo_len = len(params["prompt"]) + 1 - params["prompt"].count("</s>") * 3
 
     for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-
         if chunk:
             data = json.loads(chunk.decode())
             if data["error_code"] == 0:
-
                 if "vicuna" in CFG.LLM_MODEL:
                     output = data["text"][skip_echo_len:].strip()
                 else:
                     output = data["text"].strip()
 
                 state.messages[-1][-1] = output + "▌"
-                yield(output) 
- 
+                yield (output)
+
+
 if __name__ == "__main__":
     print(CFG.LLM_MODEL)
     with gr.Blocks() as demo:
@@ -78,10 +76,7 @@ if __name__ == "__main__":
             text_input = gr.TextArea()
             text_output = gr.TextArea()
             text_button = gr.Button("提交")
-        
 
         text_button.click(generate, inputs=text_input, outputs=text_output)
 
-    demo.queue(concurrency_count=3).launch(server_name="0.0.0.0") 
-
-    
+    demo.queue(concurrency_count=3).launch(server_name="0.0.0.0")

@@ -1,15 +1,17 @@
-from typing import List, Optional, Iterable, Tuple, Any
-
-from pymilvus import connections, Collection, DataType
+from typing import Any, Iterable, List, Optional, Tuple
 
 from langchain.docstore.document import Document
+from pymilvus import Collection, DataType, connections
 
 from pilot.configs.config import Config
 from pilot.vector_store.vector_store_base import VectorStoreBase
 
 CFG = Config()
+
+
 class MilvusStore(VectorStoreBase):
     """Milvus database"""
+
     def __init__(self, ctx: {}) -> None:
         """init a milvus storage connection.
 
@@ -66,12 +68,12 @@ class MilvusStore(VectorStoreBase):
 
     def init_schema_and_load(self, vector_name, documents):
         """Create a Milvus collection, indexes it with HNSW, load document.
-                Args:
-                    vector_name (Embeddings): your collection name.
-                    documents (List[str]): Text to insert.
-                Returns:
-                    VectorStore: The MilvusStore vector store.
-                """
+        Args:
+            vector_name (Embeddings): your collection name.
+            documents (List[str]): Text to insert.
+        Returns:
+            VectorStore: The MilvusStore vector store.
+        """
         try:
             from pymilvus import (
                 Collection,
@@ -229,13 +231,10 @@ class MilvusStore(VectorStoreBase):
         partition_name: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> List[str]:
-        """add text data into Milvus.
-        """
+        """add text data into Milvus."""
         insert_dict: Any = {self.text_field: list(texts)}
         try:
-            insert_dict[self.vector_field] = self.embedding.embed_documents(
-                list(texts)
-            )
+            insert_dict[self.vector_field] = self.embedding.embed_documents(list(texts))
         except NotImplementedError:
             insert_dict[self.vector_field] = [
                 self.embedding.embed_query(x) for x in texts
