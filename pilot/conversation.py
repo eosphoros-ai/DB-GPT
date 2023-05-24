@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import dataclasses
+import uuid
 from enum import auto, Enum
 from typing import List, Any
 from pilot.configs.config import Config
@@ -36,7 +37,7 @@ class Conversation:
     # Used for gradio server
     skip_next: bool = False
     conv_id: Any = None
-
+    last_user_input: Any = None
     def get_prompt(self):
         if self.sep_style == SeparatorStyle.SINGLE:
             ret = self.system + self.sep
@@ -258,6 +259,7 @@ conversation_types = {
     "native": "LLM原生对话",
     "default_knownledge": "默认知识库对话",
     "custome": "新增知识库对话",
+    "auto_execute_plugin": "对话使用插件",
 }
 
 conv_templates = {
