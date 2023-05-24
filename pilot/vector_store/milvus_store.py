@@ -139,29 +139,21 @@ class MilvusStore(VectorStoreBase):
         fields.append(
             FieldSchema(text_field, DataType.VARCHAR, max_length=max_length + 1)
         )
-        # create the primary key field
+        # primary key field
         fields.append(
             FieldSchema(primary_field, DataType.INT64, is_primary=True, auto_id=True)
         )
-        # create the vector field
+        # vector field
         fields.append(FieldSchema(vector_field, DataType.FLOAT_VECTOR, dim=dim))
-        # Create the schema for the collection
+        # milvus the schema for the collection
         schema = CollectionSchema(fields)
         # Create the collection
         collection = Collection(collection_name, schema)
         self.col = collection
-        # Index parameters for the collection
+        # index parameters for the collection
         index = self.index_params
-        # Create the index
+        # milvus index
         collection.create_index(vector_field, index)
-        # Create the VectorStore
-        # milvus = cls(
-        #     embedding,
-        #     kwargs.get("connection_args", {"port": 19530}),
-        #     collection_name,
-        #     text_field,
-        # )
-        # Add the texts.
         schema = collection.schema
         for x in schema.fields:
             self.fields.append(x.name)
