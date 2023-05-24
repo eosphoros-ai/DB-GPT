@@ -1,6 +1,6 @@
-import pytest
 import os
 
+import pytest
 
 from pilot.configs.config import Config
 from pilot.plugins import (
@@ -15,10 +15,13 @@ PLUGIN_TEST_ZIP_FILE = "Auto-GPT-Plugin-Test-master.zip"
 PLUGIN_TEST_INIT_PY = "Auto-GPT-Plugin-Test-master/src/auto_gpt_vicuna/__init__.py"
 PLUGIN_TEST_OPENAI = "https://weathergpt.vercel.app/"
 
+
 def test_inspect_zip_for_modules():
     current_dir = os.getcwd()
     print(current_dir)
-    result = inspect_zip_for_modules(str(f"{current_dir}/{PLUGINS_TEST_DIR_TEMP}/{PLUGIN_TEST_ZIP_FILE}"))
+    result = inspect_zip_for_modules(
+        str(f"{current_dir}/{PLUGINS_TEST_DIR_TEMP}/{PLUGIN_TEST_ZIP_FILE}")
+    )
     assert result == [PLUGIN_TEST_INIT_PY]
 
 
@@ -99,6 +102,7 @@ def mock_config_openai_plugin():
 
     class MockConfig:
         """Mock config object for testing the scan_plugins function"""
+
         current_dir = os.getcwd()
         plugins_dir = f"{current_dir}/{PLUGINS_TEST_DIR_TEMP}/"
         plugins_openai = [PLUGIN_TEST_OPENAI]

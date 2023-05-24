@@ -1,19 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from llama_index import SimpleDirectoryReader, LangchainEmbedding, GPTListIndex, GPTSimpleVectorIndex, PromptHelper
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
-from llama_index import LLMPredictor
 import torch
+from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.llms.base import LLM
+from llama_index import (
+    GPTListIndex,
+    GPTSimpleVectorIndex,
+    LangchainEmbedding,
+    LLMPredictor,
+    PromptHelper,
+    SimpleDirectoryReader,
+)
 from transformers import pipeline
 
 
 class FlanLLM(LLM):
     model_name = "google/flan-t5-large"
-    pipeline = pipeline("text2text-generation", model=model_name, device=0, model_kwargs={
-        "torch_dtype": torch.bfloat16
-    })
+    pipeline = pipeline(
+        "text2text-generation",
+        model=model_name,
+        device=0,
+        model_kwargs={"torch_dtype": torch.bfloat16},
+    )
 
     def _call(self, prompt, stop=None):
         return self.pipeline(prompt, max_length=9999)[0]["generated_text"]
@@ -23,6 +32,7 @@ class FlanLLM(LLM):
 
     def _llm_type(self):
         return "custome"
+
 
 llm_predictor = LLMPredictor(llm=FlanLLM())
 hfemb = HuggingFaceEmbeddings()
@@ -214,9 +224,10 @@ OceanBase 数据库 EXPLAIN 命令输出的第一部分是执行计划的树形�
 
 回答: nlj也是左表的表是驱动表，这个要了解下计划执行方面的基本原理，取左表的一行数据，再遍历右表，一旦满足连接条件，就可以返回数据
 anti/semi只是因为not exists/exist的语义只是返回左表数据，改成anti join是一种计划优化，连接的方式比子查询更优
-""" 
+"""
 
 from llama_index import Document
+
 text_list = [text1]
 documents = [Document(t) for t in text_list]
 
@@ -226,12 +237,18 @@ max_input_size = 512
 max_chunk_overlap = 20
 prompt_helper = PromptHelper(max_input_size, num_output, max_chunk_overlap)
 
-index = GPTListIndex(documents, embed_model=embed_model, llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+index = GPTListIndex(
+    documents,
+    embed_model=embed_model,
+    llm_predictor=llm_predictor,
+    prompt_helper=prompt_helper,
+)
 index.save_to_disk("index.json")
 
 
 if __name__ == "__main__":
     import logging
+
     logging.getLogger().setLevel(logging.CRITICAL)
     for d in documents:
         print(d)

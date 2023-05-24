@@ -61,6 +61,7 @@ gTTS==2.3.1
 langchain
 nltk
 python-dotenv==1.0.0
+pymilvus==2.2.1
 vcrpy
 chromadb
 markdown2
@@ -68,6 +69,7 @@ colorama
 playsound
 distro
 pypdf
+milvus-cli==0.3.2
 
 # Testing dependencies
 pytest

@@ -1,10 +1,10 @@
 """Loader that loads image files."""
+import os
 from typing import List
 
+import fitz
 from langchain.document_loaders.unstructured import UnstructuredFileLoader
 from paddleocr import PaddleOCR
-import os
-import fitz
 
 
 class UnstructuredPaddlePDFLoader(UnstructuredFileLoader):
@@ -19,9 +19,8 @@ class UnstructuredPaddlePDFLoader(UnstructuredFileLoader):
             ocr = PaddleOCR(lang="ch", use_gpu=False, show_log=False)
             doc = fitz.open(filepath)
             txt_file_path = os.path.join(full_dir_path, "%s.txt" % (filename))
-            img_name = os.path.join(full_dir_path, '.tmp.png')
-            with open(txt_file_path, 'w', encoding='utf-8') as fout:
-
+            img_name = os.path.join(full_dir_path, ".tmp.png")
+            with open(txt_file_path, "w", encoding="utf-8") as fout:
                 for i in range(doc.page_count):
                     page = doc[i]
                     text = page.get_text("")
@@ -42,11 +41,14 @@ class UnstructuredPaddlePDFLoader(UnstructuredFileLoader):
 
         txt_file_path = pdf_ocr_txt(self.file_path)
         from unstructured.partition.text import partition_text
+
         return partition_text(filename=txt_file_path, **self.unstructured_kwargs)
 
 
 if __name__ == "__main__":
-    filepath = os.path.join(os.path.dirname(os.path.dirname(__file__)), "content", "samples", "test.pdf")
+    filepath = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "content", "samples", "test.pdf"
+    )
     loader = UnstructuredPaddlePDFLoader(filepath, mode="elements")
     docs = loader.load()
     for doc in docs:
