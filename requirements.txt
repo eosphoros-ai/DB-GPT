@@ -56,7 +56,6 @@ pytesseract==0.3.10
 auto-gpt-plugin-template
 pymdown-extensions
 mkdocs
-requests
 gTTS==2.3.1
 langchain
 nltk
