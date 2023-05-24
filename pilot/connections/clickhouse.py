@@ -4,4 +4,5 @@
 
 class ClickHouseConnector:
     """ClickHouseConnector"""
+
     pass
