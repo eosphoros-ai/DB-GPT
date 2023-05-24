@@ -38,14 +38,6 @@ class Config(metaclass=Singleton):
         self.use_mac_os_tts = False
         self.use_mac_os_tts = os.getenv("USE_MAC_OS_TTS")
 
-        # milvus or zilliz cloud configuration
-        self.milvus_addr = os.getenv("MILVUS_ADDR", "localhost:19530")
-        self.milvus_username = os.getenv("MILVUS_USERNAME")
-        self.milvus_password = os.getenv("MILVUS_PASSWORD")
-        self.milvus_collection = os.getenv("MILVUS_COLLECTION", "dbgpt")
-        self.milvus_secure = os.getenv("MILVUS_SECURE") == "True"
-
-
         self.authorise_key = os.getenv("AUTHORISE_COMMAND_KEY", "y")
         self.exit_key = os.getenv("EXIT_KEY", "n")
         self.image_provider = os.getenv("IMAGE_PROVIDER", True)
