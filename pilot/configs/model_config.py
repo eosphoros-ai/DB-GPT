@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-import torch
 import os
-import nltk
 
+import nltk
+import torch
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_PATH = os.path.join(ROOT_PATH, "models")
@@ -16,7 +16,13 @@ DATA_DIR = os.path.join(PILOT_PATH, "data")
 
 nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
 
-DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+DEVICE = (
+    "cuda"
+    if torch.cuda.is_available()
+    else "mps"
+    if torch.backends.mps.is_available()
+    else "cpu"
+)
 LLM_MODEL_CONFIG = {
     "flan-t5-base": os.path.join(MODEL_PATH, "flan-t5-base"),
     "vicuna-13b": os.path.join(MODEL_PATH, "vicuna-13b"),
@@ -28,7 +34,7 @@ LLM_MODEL_CONFIG = {
     "chatglm-6b-int4": os.path.join(MODEL_PATH, "chatglm-6b-int4"),
     "chatglm-6b": os.path.join(MODEL_PATH, "chatglm-6b"),
     "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
-    "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2")
+    "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
 }
 
 
@@ -46,5 +52,7 @@ ISDEBUG = False
 
 VECTOR_SEARCH_TOP_K = 10
 VS_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vs_store")
-KNOWLEDGE_UPLOAD_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+KNOWLEDGE_UPLOAD_ROOT_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), "data"
+)
 KNOWLEDGE_CHUNK_SPLIT_SIZE = 100

@@ -215,6 +215,10 @@ The achievements of this project are thanks to the technical community, especial
 - [ChatGLM](https://github.com/THUDM/ChatGLM-6B) as the base model
 - [llama_index](https://github.com/jerryjliu/llama_index) for enhancing database-related knowledge using [in-context learning](https://arxiv.org/abs/2301.00234) based on existing knowledge bases.
 
+## Contribution
+
+- Please run `black .` before submitting the code.
+
 <!-- GITCONTRIBUTOR_START -->
 
 ## Contributors

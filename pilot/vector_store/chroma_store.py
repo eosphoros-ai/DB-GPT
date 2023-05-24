@@ -13,9 +13,12 @@ class ChromaStore(VectorStoreBase):
     def __init__(self, ctx: {}) -> None:
         self.ctx = ctx
         self.embeddings = ctx["embeddings"]
-        self.persist_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH,
-                                   ctx["vector_store_name"] + ".vectordb")
-        self.vector_store_client = Chroma(persist_directory=self.persist_dir, embedding_function=self.embeddings)
+        self.persist_dir = os.path.join(
+            KNOWLEDGE_UPLOAD_ROOT_PATH, ctx["vector_store_name"] + ".vectordb"
+        )
+        self.vector_store_client = Chroma(
+            persist_directory=self.persist_dir, embedding_function=self.embeddings
+        )
 
     def similar_search(self, text, topk) -> None:
         logger.info("ChromaStore similar search")
@@ -27,4 +30,3 @@ class ChromaStore(VectorStoreBase):
         metadatas = [doc.metadata for doc in documents]
         self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
         self.vector_store_client.persist()
-
