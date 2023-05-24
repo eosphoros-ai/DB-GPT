@@ -1,7 +1,5 @@
-
 from pilot.configs.config import Config
 from pilot.prompts.generator import PromptGenerator
-
 
 CFG = Config()
 
@@ -9,9 +7,8 @@ DEFAULT_TRIGGERING_PROMPT = (
     "Determine which next command to use, and respond using the format specified above"
 )
 
-DEFAULT_PROMPT_OHTER = (
-    "Previous response was excellent. Please response according to the requirements based on the new goal"
-)
+DEFAULT_PROMPT_OHTER = "Previous response was excellent. Please response according to the requirements based on the new goal"
+
 
 def build_default_prompt_generator() -> PromptGenerator:
     """
@@ -36,17 +33,15 @@ def build_default_prompt_generator() -> PromptGenerator:
     )
     # prompt_generator.add_constraint("No user assistance")
 
-    prompt_generator.add_constraint(
-        'Only output one correct JSON response at a time'
-    )
+    prompt_generator.add_constraint("Only output one correct JSON response at a time")
     prompt_generator.add_constraint(
         'Exclusively use the commands listed in double quotes e.g. "command name"'
     )
     prompt_generator.add_constraint(
-        'If there is SQL in the args parameter, ensure to use the database and table definitions in  Schema, and ensure that the fields and table names are in the definition'
+        "If there is SQL in the args parameter, ensure to use the database and table definitions in  Schema, and ensure that the fields and table names are in the definition"
     )
     prompt_generator.add_constraint(
-        'The generated command args need to comply with the definition of the command'
+        "The generated command args need to comply with the definition of the command"
     )
 
     # Add resources to the PromptGenerator object

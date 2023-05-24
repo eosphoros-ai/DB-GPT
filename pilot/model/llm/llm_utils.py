@@ -2,35 +2,39 @@
 # -*- coding: utf-8 -*-
 
 import abc
-import time
 import functools
-from typing import List, Optional
-from pilot.model.llm.base import Message
-from pilot.conversation import conv_templates, Conversation, conv_one_shot, auto_dbgpt_one_shot 
+import time
+from typing import Optional
+
 from pilot.configs.config import Config
+from pilot.conversation import (
+    Conversation,
+    auto_dbgpt_one_shot,
+    conv_one_shot,
+    conv_templates,
+)
+from pilot.model.llm.base import Message
 
 
 # TODO Rewrite this
 def retry_stream_api(
-    num_retries: int = 10,
-    backoff_base: float = 2.0,
-    warn_user: bool = True
-): 
+    num_retries: int = 10, backoff_base: float = 2.0, warn_user: bool = True
+):
     """Retry an Vicuna Server call.
 
-        Args: 
-            num_retries int: Number of retries. Defaults to 10.
-            backoff_base float: Base for exponential backoff. Defaults to 2.
-            warn_user bool: Whether to warn the user. Defaults to True.
+    Args:
+        num_retries int: Number of retries. Defaults to 10.
+        backoff_base float: Base for exponential backoff. Defaults to 2.
+        warn_user bool: Whether to warn the user. Defaults to True.
     """
     retry_limit_msg = f"Error: Reached rate limit, passing..."
-    backoff_msg = (f"Error: API Bad gateway. Waiting {{backoff}} seconds...")
+    backoff_msg = f"Error: API Bad gateway. Waiting {{backoff}} seconds..."
 
     def _wrapper(func):
         @functools.wraps(func)
         def _wrapped(*args, **kwargs):
             user_warned = not warn_user
-            num_attempts = num_retries + 1 # +1 for the first attempt
+            num_attempts = num_retries + 1  # +1 for the first attempt
             for attempt in range(1, num_attempts + 1):
                 try:
                     return func(*args, **kwargs)
@@ -39,9 +43,12 @@ def retry_stream_api(
                         raise
 
                 backoff = backoff_base ** (attempt + 2)
-                time.sleep(backoff) 
+                time.sleep(backoff)
+
         return _wrapped
+
     return _wrapper
+
 
 # Overly simple abstraction util we create something better
 # simple retry mechanism when getting a rate error or a bad gateway
@@ -52,15 +59,15 @@ def create_chat_competion(
     max_new_tokens: Optional[int] = None,
 ) -> str:
     """Create a chat completion using the Vicuna-13b
-    
-        Args:
-            messages(List[Message]): The messages to send to the chat completion
-            model (str, optional): The model to use. Default to None.
-            temperature (float, optional): The temperature to use. Defaults to 0.7.
-            max_tokens (int, optional): The max tokens to use. Defaults to None.
 
-        Returns:
-            str: The response from the chat completion
+    Args:
+        messages(List[Message]): The messages to send to the chat completion
+        model (str, optional): The model to use. Default to None.
+        temperature (float, optional): The temperature to use. Defaults to 0.7.
+        max_tokens (int, optional): The max tokens to use. Defaults to None.
+
+    Returns:
+        str: The response from the chat completion
     """
     cfg = Config()
     if temperature is None:
@@ -77,7 +84,7 @@ class ChatIO(abc.ABC):
     @abc.abstractmethod
     def prompt_for_input(self, role: str) -> str:
         """Prompt for input from a role."""
-    
+
     @abc.abstractmethod
     def prompt_for_output(self, role: str) -> str:
         """Prompt for output from a role."""
@@ -105,4 +112,3 @@ class SimpleChatIO(ChatIO):
 
         print(" ".join(outputs[pre:]), flush=True)
         return " ".join(outputs)
-
