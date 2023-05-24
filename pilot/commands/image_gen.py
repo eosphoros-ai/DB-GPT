@@ -25,7 +25,7 @@ def generate_image(prompt: str, size: int = 256) -> str:
         str: The filename of the image
     """
     filename = f"{CFG.workspace_path}/{str(uuid.uuid4())}.jpg"
-   
+
     # HuggingFace
     if CFG.image_provider == "huggingface":
         return generate_image_with_hf(prompt, filename)
@@ -71,6 +71,7 @@ def generate_image_with_hf(prompt: str, filename: str) -> str:
     image.save(filename)
 
     return f"Saved to disk:{filename}"
+
 
 def generate_image_with_sd_webui(
     prompt: str,
