@@ -1,9 +1,10 @@
 import os
 
 from bs4 import BeautifulSoup
-from langchain.document_loaders import TextLoader, markdown
+from langchain.document_loaders import TextLoader, markdown, PyPDFLoader
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
+
+from pilot.configs.config import Config
 from pilot.configs.model_config import DATASETS_DIR, KNOWLEDGE_CHUNK_SPLIT_SIZE
 from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 from pilot.source_embedding.csv_embedding import CSVEmbedding
@@ -11,9 +12,9 @@ from pilot.source_embedding.markdown_embedding import MarkdownEmbedding
 from pilot.source_embedding.pdf_embedding import PDFEmbedding
 import markdown
 
-from pilot.source_embedding.pdf_loader import UnstructuredPaddlePDFLoader
-from pilot.vector_store.milvus_store import MilvusStore
+from pilot.vector_store.connector import VectorStoreConnector
 
+CFG = Config()
 
 class KnowledgeEmbedding:
     def __init__(self, file_path, model_name, vector_store_config, local_persist=True):
@@ -23,6 +24,7 @@ class KnowledgeEmbedding:
         self.vector_store_config = vector_store_config
         self.file_type = "default"
         self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
+        self.vector_store_config["embeddings"] = self.embeddings
         self.local_persist = local_persist
         if not self.local_persist:
             self.knowledge_embedding_client = self.init_knowledge_embedding()
@@ -52,35 +54,10 @@ class KnowledgeEmbedding:
         return self.knowledge_embedding_client.similar_search(text, topk)
 
     def knowledge_persist_initialization(self, append_mode):
-        vector_name = self.vector_store_config["vector_store_name"]
         documents = self._load_knownlege(self.file_path)
-        if self.vector_store_config["vector_store_type"] == "Chroma":
-            persist_dir = os.path.join(self.vector_store_config["vector_store_path"], vector_name + ".vectordb")
-            print("vector db path: ", persist_dir)
-            if os.path.exists(persist_dir):
-                if append_mode:
-                    print("append knowledge return vector store")
-                    new_documents = self._load_knownlege(self.file_path)
-                    vector_store = Chroma.from_documents(documents=new_documents,
-                                                         embedding=self.embeddings,
-                                                         persist_directory=persist_dir)
-                else:
-                    print("directly return vector store")
-                    vector_store = Chroma(persist_directory=persist_dir, embedding_function=self.embeddings)
-            else:
-                print(vector_name + " is new vector store, knowledge begin load...")
-                vector_store = Chroma.from_documents(documents=documents,
-                                                     embedding=self.embeddings,
-                                                     persist_directory=persist_dir)
-                vector_store.persist()
-
-        elif self.vector_store_config["vector_store_type"] == "milvus":
-            vector_store = MilvusStore({"url": self.vector_store_config["url"],
-                                "port": self.vector_store_config["port"],
-                                "embedding": self.embeddings})
-            vector_store.init_schema_and_load(vector_name, documents)
-
-        return vector_store
+        self.vector_client = VectorStoreConnector(CFG.VECTOR_STORE_TYPE, self.vector_store_config)
+        self.vector_client.load_document(documents)
+        return self.vector_client
 
     def _load_knownlege(self, path):
         docments = []
@@ -111,7 +88,7 @@ class KnowledgeEmbedding:
                 docs[i].page_content = docs[i].page_content.replace("\n", " ")
                 i += 1
         elif filename.lower().endswith(".pdf"):
-            loader = UnstructuredPaddlePDFLoader(filename)
+            loader = PyPDFLoader(filename)
             textsplitter = CHNDocumentSplitter(pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE)
             docs = loader.load_and_split(textsplitter)
             i = 0

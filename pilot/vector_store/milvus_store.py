@@ -1,12 +1,15 @@
-from typing import List, Optional, Iterable
+from typing import List, Optional, Iterable, Tuple, Any
 
-from langchain.embeddings import HuggingFaceEmbeddings
-from pymilvus import DataType, FieldSchema, CollectionSchema, connections, Collection
+from pymilvus import connections, Collection, DataType
 
+from langchain.docstore.document import Document
+
+from pilot.configs.config import Config
 from pilot.vector_store.vector_store_base import VectorStoreBase
 
-
+CFG = Config()
 class MilvusStore(VectorStoreBase):
+    """Milvus database"""
     def __init__(self, ctx: {}) -> None:
         """init a milvus storage connection.
 
@@ -16,15 +19,13 @@ class MilvusStore(VectorStoreBase):
         # self.configure(cfg)
 
         connect_kwargs = {}
-        self.uri = None
-        self.uri = ctx["url"]
-        self.port = ctx["port"]
-        self.username = ctx.get("username", None)
-        self.password = ctx.get("password", None)
-        self.collection_name = ctx.get("table_name", None)
+        self.uri = CFG.MILVUS_URL
+        self.port = CFG.MILVUS_PORT
+        self.username = CFG.MILVUS_USERNAME
+        self.password = CFG.MILVUS_PASSWORD
+        self.collection_name = ctx.get("vector_store_name", None)
         self.secure = ctx.get("secure", None)
-        self.model_config = ctx.get("model_config", None)
-        self.embedding = ctx.get("embedding", None)
+        self.embedding = ctx.get("embeddings", None)
         self.fields = []
 
         # use HNSW by default.
@@ -33,6 +34,20 @@ class MilvusStore(VectorStoreBase):
             "index_type": "HNSW",
             "params": {"M": 8, "efConstruction": 64},
         }
+        # use HNSW by default.
+        self.index_params_map = {
+            "IVF_FLAT": {"params": {"nprobe": 10}},
+            "IVF_SQ8": {"params": {"nprobe": 10}},
+            "IVF_PQ": {"params": {"nprobe": 10}},
+            "HNSW": {"params": {"ef": 10}},
+            "RHNSW_FLAT": {"params": {"ef": 10}},
+            "RHNSW_SQ": {"params": {"ef": 10}},
+            "RHNSW_PQ": {"params": {"ef": 10}},
+            "IVF_HNSW": {"params": {"nprobe": 10, "ef": 10}},
+            "ANNOY": {"params": {"search_k": 10}},
+        }
+
+        self.text_field = "content"
 
         if (self.username is None) != (self.password is None):
             raise ValueError(
@@ -48,21 +63,6 @@ class MilvusStore(VectorStoreBase):
             alias="default"
             # secure=self.secure,
         )
-        if self.collection_name is not None:
-            self.col = Collection(self.collection_name)
-            schema = self.col.schema
-            for x in schema.fields:
-                self.fields.append(x.name)
-                if x.auto_id:
-                    self.fields.remove(x.name)
-                if x.is_primary:
-                    self.primary_field = x.name
-                if x.dtype == DataType.FLOAT_VECTOR or x.dtype == DataType.BINARY_VECTOR:
-                    self.vector_field = x.name
-
-
-        # self.init_schema()
-        # self.init_collection_schema()
 
     def init_schema_and_load(self, vector_name, documents):
         """Create a Milvus collection, indexes it with HNSW, load document.
@@ -86,7 +86,6 @@ class MilvusStore(VectorStoreBase):
                 "Could not import pymilvus python package. "
                 "Please install it with `pip install pymilvus`."
             )
-        # Connect to Milvus instance
         if not connections.has_connection("default"):
             connections.connect(
                 host=self.uri or "127.0.0.1",
@@ -140,11 +139,11 @@ class MilvusStore(VectorStoreBase):
         fields.append(
             FieldSchema(text_field, DataType.VARCHAR, max_length=max_length + 1)
         )
-        # Create the primary key field
+        # create the primary key field
         fields.append(
             FieldSchema(primary_field, DataType.INT64, is_primary=True, auto_id=True)
         )
-        # Create the vector field
+        # create the vector field
         fields.append(FieldSchema(vector_field, DataType.FLOAT_VECTOR, dim=dim))
         # Create the schema for the collection
         schema = CollectionSchema(fields)
@@ -176,32 +175,44 @@ class MilvusStore(VectorStoreBase):
 
         return self.collection_name
 
-    def init_schema(self) -> None:
-        """Initialize collection in milvus database."""
-        fields = [
-            FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=True),
-            FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=self.model_config["dim"]),
-            FieldSchema(name="raw_text", dtype=DataType.VARCHAR, max_length=65535),
-        ]
-
-        # create collection if not exist and load it.
-        self.schema = CollectionSchema(fields, "db-gpt memory storage")
-        self.collection = Collection(self.collection_name, self.schema)
-        self.index_params = {
-            "metric_type": "IP",
-            "index_type": "HNSW",
-            "params": {"M": 8, "efConstruction": 64},
-        }
-        # create index if not exist.
-        if not self.collection.has_index():
-            self.collection.release()
-            self.collection.create_index(
-                "vector",
-                self.index_params,
-                index_name="vector",
-            )
-        info = self.collection.describe()
-        self.collection.load()
+    # def init_schema(self) -> None:
+    #     """Initialize collection in milvus database."""
+    #     fields = [
+    #         FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=True),
+    #         FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=self.model_config["dim"]),
+    #         FieldSchema(name="raw_text", dtype=DataType.VARCHAR, max_length=65535),
+    #     ]
+    #
+    #     # create collection if not exist and load it.
+    #     self.schema = CollectionSchema(fields, "db-gpt memory storage")
+    #     self.collection = Collection(self.collection_name, self.schema)
+    #     self.index_params_map = {
+    #         "IVF_FLAT": {"params": {"nprobe": 10}},
+    #         "IVF_SQ8": {"params": {"nprobe": 10}},
+    #         "IVF_PQ": {"params": {"nprobe": 10}},
+    #         "HNSW": {"params": {"ef": 10}},
+    #         "RHNSW_FLAT": {"params": {"ef": 10}},
+    #         "RHNSW_SQ": {"params": {"ef": 10}},
+    #         "RHNSW_PQ": {"params": {"ef": 10}},
+    #         "IVF_HNSW": {"params": {"nprobe": 10, "ef": 10}},
+    #         "ANNOY": {"params": {"search_k": 10}},
+    #     }
+    #
+    #     self.index_params = {
+    #         "metric_type": "IP",
+    #         "index_type": "HNSW",
+    #         "params": {"M": 8, "efConstruction": 64},
+    #     }
+    #     # create index if not exist.
+    #     if not self.collection.has_index():
+    #         self.collection.release()
+    #         self.collection.create_index(
+    #             "vector",
+    #             self.index_params,
+    #             index_name="vector",
+    #         )
+    #     info = self.collection.describe()
+    #     self.collection.load()
 
     # def insert(self, text, model_config) -> str:
     #     """Add an embedding of data into milvus.
@@ -226,17 +237,7 @@ class MilvusStore(VectorStoreBase):
         partition_name: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> List[str]:
-        """Insert text data into Milvus.
-        Args:
-            texts (Iterable[str]): The text being embedded and inserted.
-            metadatas (Optional[List[dict]], optional): The metadata that
-                corresponds to each insert. Defaults to None.
-            partition_name (str, optional): The partition of the collection
-                to insert data into. Defaults to None.
-            timeout: specified timeout.
-
-        Returns:
-            List[str]: The resulting keys for each inserted element.
+        """add text data into Milvus.
         """
         insert_dict: Any = {self.text_field: list(texts)}
         try:
@@ -259,6 +260,72 @@ class MilvusStore(VectorStoreBase):
         res = self.col.insert(
             insert_list, partition_name=partition_name, timeout=timeout
         )
-        # Flush to make sure newly inserted is immediately searchable.
+        # make sure data is searchable.
         self.col.flush()
         return res.primary_keys
+
+    def load_document(self, documents) -> None:
+        """load document in vector database."""
+        self.init_schema_and_load(self.collection_name, documents)
+
+    def similar_search(self, text, topk) -> None:
+        """similar_search in vector database."""
+        self.col = Collection(self.collection_name)
+        schema = self.col.schema
+        for x in schema.fields:
+            self.fields.append(x.name)
+            if x.auto_id:
+                self.fields.remove(x.name)
+            if x.is_primary:
+                self.primary_field = x.name
+            if x.dtype == DataType.FLOAT_VECTOR or x.dtype == DataType.BINARY_VECTOR:
+                self.vector_field = x.name
+        _, docs_and_scores = self._search(text, topk)
+        return [doc for doc, _, _ in docs_and_scores]
+
+    def _search(
+        self,
+        query: str,
+        k: int = 4,
+        param: Optional[dict] = None,
+        expr: Optional[str] = None,
+        partition_names: Optional[List[str]] = None,
+        round_decimal: int = -1,
+        timeout: Optional[int] = None,
+        **kwargs: Any,
+    ) -> Tuple[List[float], List[Tuple[Document, Any, Any]]]:
+        self.col.load()
+        # use default index params.
+        if param is None:
+            index_type = self.col.indexes[0].params["index_type"]
+            param = self.index_params_map[index_type]
+        #  query text embedding.
+        data = [self.embedding.embed_query(query)]
+        # Determine result metadata fields.
+        output_fields = self.fields[:]
+        output_fields.remove(self.vector_field)
+        # milvus search.
+        res = self.col.search(
+            data,
+            self.vector_field,
+            param,
+            k,
+            expr=expr,
+            output_fields=output_fields,
+            partition_names=partition_names,
+            round_decimal=round_decimal,
+            timeout=timeout,
+            **kwargs,
+        )
+        ret = []
+        for result in res[0]:
+            meta = {x: result.entity.get(x) for x in output_fields}
+            ret.append(
+                (
+                    Document(page_content=meta.pop(self.text_field), metadata=meta),
+                    result.distance,
+                    result.id,
+                )
+            )
+
+        return data[0], ret
