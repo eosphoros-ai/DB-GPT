@@ -218,6 +218,10 @@ python tools/knowledge_init.py
 - [ChatGLM](https://github.com/THUDM/ChatGLM-6B) 基础模型
 - [llama-index](https://github.com/jerryjliu/llama_index) 基于现有知识库进行[In-Context Learning](https://arxiv.org/abs/2301.00234)来对其进行数据库相关知识的增强。
 
+# 贡献
+
+- 提交代码前请先执行 `black .`
+
 <!-- GITCONTRIBUTOR_START -->
 
 ## 贡献者
