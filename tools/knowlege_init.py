@@ -2,10 +2,8 @@
 # -*- coding: utf-8 -*-
 import argparse
 
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Milvus
-
-from pilot.configs.model_config import DATASETS_DIR, LLM_MODEL_CONFIG, VECTOR_SEARCH_TOP_K, VECTOR_STORE_CONFIG
+from pilot.configs.model_config import DATASETS_DIR, LLM_MODEL_CONFIG, VECTOR_SEARCH_TOP_K, VECTOR_STORE_CONFIG, \
+    VECTOR_STORE_TYPE
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
 
 
@@ -42,8 +40,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     vector_name = args.vector_name
     append_mode = args.append
-    store_type = args.store_type
-    vector_store_config = {"url": VECTOR_STORE_CONFIG["url"], "port": VECTOR_STORE_CONFIG["port"], "vector_store_name":vector_name, "vector_store_type":store_type}
+    store_type = VECTOR_STORE_TYPE
+    vector_store_config = {"url": VECTOR_STORE_CONFIG["url"], "port": VECTOR_STORE_CONFIG["port"], "vector_store_name":vector_name}
     print(vector_store_config)
     kv  = LocalKnowledgeInit(vector_store_config=vector_store_config)
     vector_store = kv.knowledge_persist(file_path=DATASETS_DIR, append_mode=append_mode)
