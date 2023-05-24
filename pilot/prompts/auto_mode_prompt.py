@@ -1,19 +1,21 @@
-from pilot.prompts.generator import PromptGenerator
-from typing import Any, Optional, Type
-import os
 import platform
-from pathlib import Path
+from typing import Optional
 
 import distro
 import yaml
+
 from pilot.configs.config import Config
-from pilot.prompts.prompt import build_default_prompt_generator, DEFAULT_PROMPT_OHTER, DEFAULT_TRIGGERING_PROMPT
+from pilot.prompts.generator import PromptGenerator
+from pilot.prompts.prompt import (
+    DEFAULT_PROMPT_OHTER,
+    DEFAULT_TRIGGERING_PROMPT,
+    build_default_prompt_generator,
+)
 
 
 class AutoModePrompt:
-    """
+    """ """
 
-    """
     def __init__(
         self,
         ai_goals: list | None = None,
@@ -36,23 +38,21 @@ class AutoModePrompt:
         self.command_registry = None
 
     def construct_follow_up_prompt(
-            self,
-            user_input:[str],
-            last_auto_return: str = None,
-            prompt_generator: Optional[PromptGenerator] = None
-    )-> str:
+        self,
+        user_input: [str],
+        last_auto_return: str = None,
+        prompt_generator: Optional[PromptGenerator] = None,
+    ) -> str:
         """
-         Build complete prompt information based on subsequent dialogue information entered by the user
-         Args:
-             self:
-             prompt_generator:
+        Build complete prompt information based on subsequent dialogue information entered by the user
+        Args:
+            self:
+            prompt_generator:
 
-         Returns:
+        Returns:
 
-         """
-        prompt_start = (
-            DEFAULT_PROMPT_OHTER
-        )
+        """
+        prompt_start = DEFAULT_PROMPT_OHTER
         if prompt_generator is None:
             prompt_generator = build_default_prompt_generator()
         prompt_generator.goals = user_input
@@ -64,12 +64,13 @@ class AutoModePrompt:
                 continue
             prompt_generator = plugin.post_prompt(prompt_generator)
 
-
         full_prompt = f"{prompt_start}\n\nGOALS:\n\n"
-        if not self.ai_goals :
+        if not self.ai_goals:
             self.ai_goals = user_input
         for i, goal in enumerate(self.ai_goals):
-            full_prompt += f"{i+1}.According to the provided Schema information, {goal}\n"
+            full_prompt += (
+                f"{i+1}.According to the provided Schema information, {goal}\n"
+            )
         # if last_auto_return == None:
         #     full_prompt += f"{cfg.last_plugin_return}\n\n"
         # else:
@@ -82,10 +83,10 @@ class AutoModePrompt:
         return full_prompt
 
     def construct_first_prompt(
-            self,
-            fisrt_message: [str]=[],
-            db_schemes: str=None,
-            prompt_generator: Optional[PromptGenerator] = None
+        self,
+        fisrt_message: [str] = [],
+        db_schemes: str = None,
+        prompt_generator: Optional[PromptGenerator] = None,
     ) -> str:
         """
         Build complete prompt information based on the initial dialogue information entered by the user
@@ -125,12 +126,14 @@ class AutoModePrompt:
 
         # Construct full prompt
         full_prompt = f"{prompt_start}\n\nGOALS:\n\n"
-        if not self.ai_goals :
+        if not self.ai_goals:
             self.ai_goals = fisrt_message
         for i, goal in enumerate(self.ai_goals):
-            full_prompt += f"{i+1}.According to the provided Schema information,{goal}\n"
-        if  db_schemes:
-            full_prompt +=  f"\nSchema:\n\n"
+            full_prompt += (
+                f"{i+1}.According to the provided Schema information,{goal}\n"
+            )
+        if db_schemes:
+            full_prompt += f"\nSchema:\n\n"
             full_prompt += f"{db_schemes}"
 
         # if self.api_budget > 0.0:

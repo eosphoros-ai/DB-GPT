@@ -2,25 +2,34 @@
 # -*- coding:utf-8 -*-
 
 import json
-import requests
+from typing import Any, List, Mapping, Optional
 from urllib.parse import urljoin
+
+import requests
 from langchain.embeddings.base import Embeddings
-from pydantic import BaseModel
-from typing import Any, Mapping, Optional, List
 from langchain.llms.base import LLM
+from pydantic import BaseModel
+
 from pilot.configs.config import Config
 
 CFG = Config()
+
+
 class VicunaLLM(LLM):
-
     vicuna_generate_path = "generate_stream"
-    def _call(self, prompt: str, temperature: float, max_new_tokens: int, stop: Optional[List[str]] = None) -> str:
 
+    def _call(
+        self,
+        prompt: str,
+        temperature: float,
+        max_new_tokens: int,
+        stop: Optional[List[str]] = None,
+    ) -> str:
         params = {
             "prompt": prompt,
             "temperature": temperature,
             "max_new_tokens": max_new_tokens,
-            "stop": stop
+            "stop": stop,
         }
         response = requests.post(
             url=urljoin(CFG.MODEL_SERVER, self.vicuna_generate_path),
@@ -41,10 +50,9 @@ class VicunaLLM(LLM):
 
     def _identifying_params(self) -> Mapping[str, Any]:
         return {}
-    
+
 
 class VicunaEmbeddingLLM(BaseModel, Embeddings):
-    
     vicuna_embedding_path = "embedding"
 
     def _call(self, prompt: str) -> str:
@@ -53,15 +61,13 @@ class VicunaEmbeddingLLM(BaseModel, Embeddings):
 
         response = requests.post(
             url=urljoin(CFG.MODEL_SERVER, self.vicuna_embedding_path),
-            json={
-                "prompt": p
-            }
+            json={"prompt": p},
         )
         response.raise_for_status()
         return response.json()["response"]
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """ Call out to Vicuna's server embedding endpoint for embedding search docs.
+        """Call out to Vicuna's server embedding endpoint for embedding search docs.
 
         Args:
             texts: The list of text to embed
@@ -73,17 +79,15 @@ class VicunaEmbeddingLLM(BaseModel, Embeddings):
         for text in texts:
             response = self.embed_query(text)
             results.append(response)
-        return results 
-    
+        return results
 
     def embed_query(self, text: str) -> List[float]:
-        """ Call out to Vicuna's server embedding endpoint for embedding query text.
-        
-        Args: 
+        """Call out to Vicuna's server embedding endpoint for embedding query text.
+
+        Args:
             text: The text to embed.
         Returns:
             Embedding for the text
         """
         embedding = self._call(text)
         return embedding
-
