@@ -107,6 +107,7 @@ As the knowledge base is currently the most significant user demand scenario, we
 2. Custom addition of knowledge bases
 3. Various usage scenarios such as constructing knowledge bases through plugin capabilities and web crawling. Users only need to organize the knowledge documents, and they can use our existing capabilities to build the knowledge base required for the large model.
 
+
 ### LLMs Management
 
 In the underlying large model integration, we have designed an open interface that supports integration with various large models. At the same time, we have a very strict control and evaluation mechanism for the effectiveness of the integrated models. In terms of accuracy, the integrated models need to align with the capability of ChatGPT at a level of 85% or higher. We use higher standards to select models, hoping to save users the cumbersome testing and evaluation process in the process of use.
@@ -176,6 +177,7 @@ $ python pilot/server/webserver.py
 Notice:  the webserver need to connect llmserver,  so you need change the .env file. change the MODEL_SERVER = "http://127.0.0.1:8000" to your address.  It's very important.
 
 ## Usage Instructions
+
 We provide a user interface for Gradio, which allows you to use DB-GPT through our user interface. Additionally, we have prepared several reference articles (written in Chinese) that introduce the code and principles related to our project.
 - [LLM Practical In Action Series (1) — Combined Langchain-Vicuna Application Practical](https://medium.com/@cfqcsunny/llm-practical-in-action-series-1-combined-langchain-vicuna-application-practical-701cd0413c9f)
 
@@ -183,6 +185,23 @@ We provide a user interface for Gradio, which allows you to use DB-GPT through o
 
 To use multiple models, modify the LLM_MODEL parameter in the .env configuration file to switch between the models.
 
+####Create your own knowledge repository:
+
+1.Place personal knowledge files or folders in the pilot/datasets directory.
+
+2.Run the knowledge repository script in the tools directory.
+
+```
+python tools/knowledge_init.py
+
+--vector_name : your vector store name  default_value:default
+--append: append mode, True:append, False: not append default_value:False
+
+```
+
+3.Add the knowledge repository in the interface by entering the name of your knowledge repository (if not specified, enter "default") so you can use it for Q&A based on your knowledge base. 
+
+Note that the default vector model used is text2vec-large-chinese (which is a large model, so if your personal computer configuration is not enough, it is recommended to use text2vec-base-chinese). Therefore, ensure that you download the model and place it in the models directory.
 ## Acknowledgement
 
 The achievements of this project are thanks to the technical community, especially the following projects:
@@ -195,6 +214,10 @@ The achievements of this project are thanks to the technical community, especial
 - [Milvus](https://milvus.io/) for distributed vector storage
 - [ChatGLM](https://github.com/THUDM/ChatGLM-6B) as the base model
 - [llama_index](https://github.com/jerryjliu/llama_index) for enhancing database-related knowledge using [in-context learning](https://arxiv.org/abs/2301.00234) based on existing knowledge bases.
+
+## Contribution
+
+- Please run `black .` before submitting the code.
 
 <!-- GITCONTRIBUTOR_START -->
 

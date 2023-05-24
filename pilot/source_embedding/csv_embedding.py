@@ -1,14 +1,21 @@
-from typing import List, Optional, Dict
-from pilot.source_embedding import SourceEmbedding, register
+from typing import Dict, List, Optional
 
 from langchain.document_loaders import CSVLoader
 from langchain.schema import Document
+
+from pilot.source_embedding import SourceEmbedding, register
 
 
 class CSVEmbedding(SourceEmbedding):
     """csv embedding for read csv document."""
 
-    def __init__(self, file_path, model_name, vector_store_config, embedding_args: Optional[Dict] = None):
+    def __init__(
+        self,
+        file_path,
+        model_name,
+        vector_store_config,
+        embedding_args: Optional[Dict] = None,
+    ):
         """Initialize with csv path."""
         super().__init__(file_path, model_name, vector_store_config)
         self.file_path = file_path
@@ -29,6 +36,3 @@ class CSVEmbedding(SourceEmbedding):
             documents[i].page_content = d.page_content.replace("\n", "")
             i += 1
         return documents
-
-
-
