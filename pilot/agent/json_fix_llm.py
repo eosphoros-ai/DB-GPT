@@ -1,17 +1,21 @@
-
+import contextlib
 import json
 from typing import Any, Dict
-import contextlib
+
 from colorama import Fore
 from regex import regex
 
 from pilot.configs.config import Config
+from pilot.json_utils.json_fix_general import (
+    add_quotes_to_property_names,
+    balance_braces,
+    fix_invalid_escape,
+)
 from pilot.logs import logger
 from pilot.speech import say_text
 
-from pilot.json_utils.json_fix_general import fix_invalid_escape,add_quotes_to_property_names,balance_braces
-
 CFG = Config()
+
 
 def fix_and_parse_json(
     json_to_load: str, try_to_fix_with_gpt: bool = True
@@ -48,7 +52,7 @@ def fix_and_parse_json(
         maybe_fixed_json = maybe_fixed_json[: last_brace_index + 1]
         return json.loads(maybe_fixed_json)
     except (json.JSONDecodeError, ValueError) as e:
-       logger.error("参数解析错误", e)
+        logger.error("参数解析错误", e)
 
 
 def fix_json_using_multiple_techniques(assistant_reply: str) -> Dict[Any, Any]:

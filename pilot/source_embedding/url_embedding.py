@@ -1,13 +1,11 @@
 from typing import List
 
-from langchain.text_splitter import CharacterTextSplitter
-
-from pilot.source_embedding import SourceEmbedding, register
-
 from bs4 import BeautifulSoup
 from langchain.document_loaders import WebBaseLoader
 from langchain.schema import Document
+from langchain.text_splitter import CharacterTextSplitter
 
+from pilot.source_embedding import SourceEmbedding, register
 
 
 class URLEmbedding(SourceEmbedding):
@@ -23,7 +21,9 @@ class URLEmbedding(SourceEmbedding):
     def read(self):
         """Load from url path."""
         loader = WebBaseLoader(web_path=self.file_path)
-        text_splitor = CharacterTextSplitter(chunk_size=1000, chunk_overlap=20, length_function=len)
+        text_splitor = CharacterTextSplitter(
+            chunk_size=1000, chunk_overlap=20, length_function=len
+        )
         return loader.load_and_split(text_splitor)
 
     @register
@@ -31,12 +31,9 @@ class URLEmbedding(SourceEmbedding):
         i = 0
         for d in documents:
             content = d.page_content.replace("\n", "")
-            soup = BeautifulSoup(content, 'html.parser')
-            for tag in soup(['!doctype', 'meta']):
+            soup = BeautifulSoup(content, "html.parser")
+            for tag in soup(["!doctype", "meta"]):
                 tag.extract()
             documents[i].page_content = soup.get_text()
             i += 1
         return documents
-
-
-
