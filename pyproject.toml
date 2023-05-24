@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "db-gpt"
+version = "0.0.6"
+description = ""
+authors = ["csunny <cfqsunny@163.com>"]
+readme = "README.md"
+packages = [{include = "db_gpt"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
