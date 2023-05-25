@@ -7,16 +7,14 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 import toml
+import os
+import sys
 
 project = "DB-GPT"
 copyright = "2023, csunny"
 author = "csunny"
 
-with open("../pyproject.toml") as f:
-    data = toml.load(f)
-
-version = data["tool"]["poetry"]["version"]
-release = version
+version = "0.1.0"
 html_title = project + " " + version
 
 # -- General configuration ---------------------------------------------------
