@@ -31,6 +31,9 @@ class PromptTemplate(BaseModel, ABC):
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
     template_scene: str
+
+    template_define:str
+    """this template define"""
     template: str
     """The prompt template."""
     template_format: str = "f-string"

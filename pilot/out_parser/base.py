@@ -27,11 +27,9 @@ class BaseOutputParser(ABC):
     Output parsers help structure language model responses.
     """
 
-
-    def __init__(self,sep:str, is_stream_out:bool):
+    def __init__(self, sep: str, is_stream_out: bool):
         self.sep = sep
         self.is_stream_out = is_stream_out
-
 
     # TODO 后续和模型绑定
     def _parse_model_stream_resp(self, response, sep: str):
@@ -40,6 +38,7 @@ class BaseOutputParser(ABC):
     def _parse_model_nostream_resp(self, response, sep: str):
         text = response.text.strip()
         text = text.rstrip()
+        text = text.lower()
         respObj = json.loads(text)
 
         xx = respObj['response']
@@ -51,18 +50,21 @@ class BaseOutputParser(ABC):
             tmpResp = all_text.split(sep)
             last_index = -1
             for i in range(len(tmpResp)):
-                if tmpResp[i].find('ASSISTANT:') != -1:
+                if tmpResp[i].find('assistant:') != -1:
                     last_index = i
             ai_response = tmpResp[last_index]
-            ai_response = ai_response.replace("ASSISTANT:", "")
+            ai_response = ai_response.replace("assistant:", "")
             ai_response = ai_response.replace("\n", "")
             ai_response = ai_response.replace("\_", "_")
+            ai_response = ai_response.replace("\*", "*")
             print("un_stream clear response:{}", ai_response)
             return ai_response
         else:
             raise ValueError("Model server error!code=" + respObj_ex['error_code']);
 
-    def parse_model_server_out(self, response)->str:
+
+
+    def parse_model_server_out(self, response) -> str:
         """
         parse the model server http response
         Args:
@@ -71,14 +73,12 @@ class BaseOutputParser(ABC):
         Returns:
 
         """
-        if self.is_stream_out:
-            self._parse_model_nostream_resp(response, self.sep)
+        if not self.is_stream_out:
+            return self._parse_model_nostream_resp(response, self.sep)
         else:
-            ### TODO
-            self._parse_model_stream_resp(response, self.sep)
+            return self._parse_model_stream_resp(response, self.sep)
 
-
-    def parse_prompt_response(self, model_out_text)->T:
+    def parse_prompt_response(self, model_out_text) -> T:
         """
         parse model out text to prompt define response
         Args:
@@ -89,8 +89,7 @@ class BaseOutputParser(ABC):
         """
         pass
 
-
-    def parse_view_response(self, ai_text)->str:
+    def parse_view_response(self, ai_text) -> str:
         """
         parse the ai response info to user view
         Args:

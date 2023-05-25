@@ -18,17 +18,10 @@ from langchain import PromptTemplate
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 
-from pilot.configs.model_config import LOGDIR, DATASETS_DIR
-
-from pilot.plugins import scan_plugins
-from pilot.configs.config import Config
-from pilot.commands.command import execute_ai_response_json
 from pilot.commands.command_mange import CommandRegistry
-from pilot.prompts.auto_mode_prompt import AutoModePrompt
-from pilot.prompts.generator import PromptGenerator
+
 from pilot.scene.base_chat import BaseChat
 
-from pilot.commands.exception_not_commands import NotCommands
 from pilot.configs.config import Config
 from pilot.configs.model_config import (
     DATASETS_DIR,

@@ -17,7 +17,7 @@ from pilot.out_parser.base import BaseOutputParser, T
 
 
 class SqlAction(NamedTuple):
-    SQL: str
+    sql: str
     thoughts: Dict
 
 
@@ -44,19 +44,20 @@ class DbChatOutputParser(BaseOutputParser):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
         response = json.loads(cleaned_output)
-        sql, thoughts = response["SQL"], response["thoughts"]
+        sql, thoughts = response["sql"], response["thoughts"]
 
         return SqlAction(sql, thoughts)
 
-    def parse_view_response(self, data) -> str:
+    def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view
         df = pd.DataFrame(data[1:], columns=data[0])
         table_style = """<style> 
-            table{border-collapse:collapse;width:60%;height:80%;margin:0 auto;float:right;border: 1px solid #007bff; background-color:#CFE299}th,td{border:1px solid #ddd;padding:3px;text-align:center}th{background-color:#C9C3C7;color: #fff;font-weight: bold;}tr:nth-child(even){background-color:#7C9F4A}tr:hover{background-color:#333}
+            table{border-collapse:collapse;width:100%;height:80%;margin:0 auto;float:center;border: 1px solid #007bff; background-color:#333; color:#fff}th,td{border:1px solid #ddd;padding:3px;text-align:center}th{background-color:#C9C3C7;color: #fff;font-weight: bold;}tr:nth-child(even){background-color:#444}tr:hover{background-color:#444}
          </style>"""
         html_table = df.to_html(index=False, escape=False)
         html = f"<html><head>{table_style}</head><body>{html_table}</body></html>"
-        return html.replace("\n", " ")
+        view_text = f"##### {str(speak)}" + "\n" + html.replace("\n", " ")
+        return view_text
 
     @property
     def _type(self) -> str:

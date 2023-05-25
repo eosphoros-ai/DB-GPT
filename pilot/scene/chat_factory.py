@@ -10,7 +10,6 @@ class ChatFactory(metaclass=Singleton):
     def get_implementation(chat_mode, **kwargs):
 
         chat_classes = BaseChat.__subclasses__()
-
         implementation = None
         for cls in chat_classes:
             if(cls.chat_scene == chat_mode):
