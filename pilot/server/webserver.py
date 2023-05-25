@@ -697,7 +697,7 @@ if __name__ == "__main__":
     # 配置初始化
     cfg = Config()
 
-    # dbs = get_database_list()
+    dbs = get_database_list()
     cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
 
     # 加载插件可执行命令
