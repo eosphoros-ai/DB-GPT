@@ -7,11 +7,14 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 import toml
+import os
+import sys
 
 project = "DB-GPT"
 copyright = "2023, csunny"
 author = "csunny"
 
+sys.path.insert(0, os.path.abspath("../"))
 
 with open("../pilot/VERSION") as f:
     version = f.read()
