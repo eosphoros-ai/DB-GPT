@@ -14,7 +14,6 @@ from urllib.parse import urljoin
 import gradio as gr
 import requests
 
-from pilot.server.vectordb_qa import KnownLedgeBaseQA
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -30,6 +29,7 @@ from pilot.configs.model_config import (
     LOGDIR,
     VECTOR_SEARCH_TOP_K,
 )
+from pilot.server.vectordb_qa import KnownLedgeBaseQA
 from pilot.connections.mysql import MySQLOperator
 from pilot.conversation import (
     SeparatorStyle,
