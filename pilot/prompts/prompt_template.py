@@ -207,6 +207,7 @@ class BasePromptTemplate(BaseModel, ABC):
         else:
             raise ValueError(f"{save_path} must be json or yaml")
 
+
 class StringPromptValue(PromptValue):
     text: str
 
@@ -217,7 +218,6 @@ class StringPromptValue(PromptValue):
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
         return [HumanMessage(content=self.text)]
-
 
 
 class StringPromptTemplate(BasePromptTemplate, ABC):

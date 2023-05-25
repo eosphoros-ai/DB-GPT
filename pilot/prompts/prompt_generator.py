@@ -3,8 +3,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 class PromptGenerator:
     """
-        generating custom prompt strings based on constraints；
-        Compatible with AutoGpt Plugin;
+    generating custom prompt strings based on constraints；
+    Compatible with AutoGpt Plugin;
     """
 
     def __init__(self) -> None:
@@ -21,8 +21,6 @@ class PromptGenerator:
         self.name = "Bob"
         self.role = "AI"
         self.response_format = None
-
-
 
     def add_command(
         self,

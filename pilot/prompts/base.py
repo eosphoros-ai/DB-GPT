@@ -1,5 +1,3 @@
-
-
 import json
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -8,7 +6,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
 import yaml
 from pydantic import BaseModel, Extra, Field, root_validator
 
-from pilot.scene.base_message import BaseMessage,HumanMessage,AIMessage, SystemMessage
+from pilot.scene.base_message import BaseMessage, HumanMessage, AIMessage, SystemMessage
 
 
 def get_buffer_string(
@@ -29,7 +27,6 @@ def get_buffer_string(
     return "\n".join(string_messages)
 
 
-
 class PromptValue(BaseModel, ABC):
     @abstractmethod
     def to_string(self) -> str:
@@ -38,6 +35,7 @@ class PromptValue(BaseModel, ABC):
     @abstractmethod
     def to_messages(self) -> List[BaseMessage]:
         """Return prompt as messages."""
+
 
 class ChatPromptValue(PromptValue):
     messages: List[BaseMessage]
