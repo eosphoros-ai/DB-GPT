@@ -273,7 +273,7 @@ def http_bot(
             print("向量数据库持久化地址: ", persist_dir)
             knowledge_embedding_client = KnowledgeEmbedding(
                 file_path="",
-                model_name=LLM_MODEL_CONFIG["sentence-transforms"],
+                model_name=LLM_MODEL_CONFIG["text2vec"],
                 local_persist=False,
                 vector_store_config={
                     "vector_store_name": vector_store_name["vs_name"],
