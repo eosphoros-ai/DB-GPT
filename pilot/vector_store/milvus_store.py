@@ -133,7 +133,7 @@ class MilvusStore(VectorStoreBase):
             max_length = max(max_length, len(y))
         # Create the text field
         fields.append(
-            FieldSchema(text_field, DataType.VARCHAR, max_length=max_length + 100)
+            FieldSchema(text_field, DataType.VARCHAR, max_length=max_length + 1)
         )
         # primary key field
         fields.append(
@@ -250,11 +250,12 @@ class MilvusStore(VectorStoreBase):
 
     def load_document(self, documents) -> None:
         """load document in vector database."""
-        batch_size = 500
-        batched_list = [documents[i:i + batch_size] for i in range(0, len(documents), batch_size)]
-        # docs = []
-        for doc_batch in batched_list:
-            self.init_schema_and_load(self.collection_name, doc_batch)
+        self.init_schema_and_load(self.collection_name, documents)
+        # batch_size = 500
+        # batched_list = [documents[i:i + batch_size] for i in range(0, len(documents), batch_size)]
+        # # docs = []
+        # for doc_batch in batched_list:
+        #     self.init_schema_and_load(self.collection_name, doc_batch)
 
     def similar_search(self, text, topk) -> None:
         """similar_search in vector database."""
