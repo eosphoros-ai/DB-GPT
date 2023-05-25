@@ -3,6 +3,7 @@
 
 import pymysql
 
+
 class MySQLOperator:
     """Connect MySQL Database fetch MetaData For LLM Prompt
     Args:
@@ -31,8 +32,7 @@ class MySQLOperator:
             results = cursor.fetchall()
             return results
 
-
-    def run_sql(self, db_name:str, sql:str, fetch: str = "all"):
+    def run_sql(self, db_name: str, sql: str, fetch: str = "all"):
         with self.conn.cursor() as cursor:
             cursor.execute("USE " + db_name)
             cursor.execute(sql)

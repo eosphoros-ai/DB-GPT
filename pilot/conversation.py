@@ -44,6 +44,7 @@ class Conversation:
     skip_next: bool = False
     conv_id: Any = None
     last_user_input: Any = None
+
     def get_prompt(self):
         if self.sep_style == SeparatorStyle.SINGLE:
             ret = self.system + self.sep
