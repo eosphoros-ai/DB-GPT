@@ -13,7 +13,7 @@ from sqlalchemy import (
 )
 from typing import Any, Iterable, List, Optional
 
-from pilot.scene.base_message import BaseMessage, SystemMessage, HumanMessage, AIMessage
+from pilot.scene.base_message import BaseMessage, SystemMessage, HumanMessage, AIMessage, ViewMessage
 from pilot.scene.base_chat import BaseChat, logger, headers
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
@@ -26,12 +26,14 @@ from pilot.utils import (
 )
 from pilot.common.markdown_text import generate_markdown_table,generate_htm_table,datas_to_table_html
 from pilot.scene.chat_db.prompt import chat_db_prompt
-
+from pilot.out_parser.base import BaseOutputParser
+from pilot.scene.chat_db.out_parser import DbChatOutputParser
 CFG = Config()
 
 
 class ChatWithDb(BaseChat):
     chat_scene: str = ChatScene.ChatWithDb.value
+
 
     """Number of results to return from the query"""
 
@@ -77,17 +79,22 @@ class ChatWithDb(BaseChat):
             "prompt": self.generate_llm_text(),
             "temperature": float(self.temperature),
             "max_new_tokens": int(self.max_new_tokens),
-            "stop": self.sep_style.value,
+            "stop": self.prompt_template.sep,
         }
         logger.info(f"Requert: \n{payload}")
 
         try:
             ### 走非流式的模型服务接口
 
-            # TODO - TEST
+            # # TODO - TEST
             # response = requests.post(urljoin(CFG.MODEL_SERVER, "generate"), headers=headers, json=payload, timeout=120)
-            # clear_response = self.prompt_template.output_parser.parse_model_nostream_resp(response, self.sep_style)
-            # sql_action = self.prompt_template.output_parser.parse(clear_response)
+            # ai_response_text = self.prompt_template.output_parser.parse_model_server_out(response)
+            #
+            # prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
+            # self.current_message.add_ai_message(json.dumps(prompt_define_response._asdict()))
+            # result = self.database.run(self.db_connect, prompt_define_response.SQL)
+
+
             resp_test = {
                 "SQL": "select * from users",
                 "thoughts": {
@@ -100,12 +107,10 @@ class ChatWithDb(BaseChat):
             }
 
             sql_action = SqlAction(**resp_test)
-
-            # self.current_message.add_ai_message(json.dumps(sql_action._asdict()))
-
+            self.current_message.add_ai_message(json.dumps(sql_action._asdict()))
             result = self.database.run(self.db_connect, sql_action.SQL)
 
-            self.current_message.add_ai_message(f"{datas_to_table_html(result)}")
+            self.current_message.add_view_message(self.prompt_template.output_parser.parse_view_response(result))
 
         except Exception as e:
             logger.error("model response parase faild！" + str(e))
@@ -118,17 +123,19 @@ class ChatWithDb(BaseChat):
         ret = []
         # 单论对话只能有一次User 记录 和一次 AI 记录
         # TODO 推理过程前端展示。。。
-        for message in enumerate(self.current_message.messages):
+        for message in self.current_message.messages:
             if (isinstance(message, HumanMessage)):
                 ret[-1][-2] = message.content
-            if (isinstance(message, AIMessage)):
+            # 是否展示推理过程
+            if (isinstance(message, ViewMessage)):
                 ret[-1][-1] = message.content
+
         return ret
 
     # 暂时为了兼容前端
     def current_ai_response(self)->str:
         for message in self.current_message.messages:
-            if message.type == 'ai':
+            if message.type == 'view':
                return  message.content
         return None
 
@@ -137,28 +144,31 @@ class ChatWithDb(BaseChat):
         text = ""
         ### 线处理历史信息
         if (len(self.history_message) > self.chat_retention_rounds):
-            ### 使用历史信息的第一轮和最后一轮数据合并成历史对话记录
+            ### 使用历史信息的第一轮和最后一轮数据合并成历史对话记录, 做上下文提示时，用户展示消息需要过滤掉
             for first_message in self.history_message[0].messages:
-                text += first_message.type + ":" + first_message.content + self.sep
+                if not  isinstance(first_message, ViewMessage):
+                    text += first_message.type + ":" + first_message.content + self.prompt_template.sep
 
             index = self.chat_retention_rounds - 1
             for last_message in self.history_message[-index:].messages:
-                text += last_message.type + ":" + last_message.content + self.sep
+                if not isinstance(last_message, ViewMessage):
+                    text += last_message.type + ":" + last_message.content +  self.prompt_template.sep
 
         else:
             ### 直接历史记录拼接
             for conversation in self.history_message:
                 for message in conversation.messages:
-                    text += message.type + ":" + message.content + self.sep
+                    if not isinstance(message, ViewMessage):
+                        text += message.type + ":" + message.content +  self.prompt_template.sep
 
         ### current conversation
         for now_message in self.current_message.messages:
-            text += now_message.type + ":" + now_message.content + self.sep
+            text += now_message.type + ":" + now_message.content +  self.prompt_template.sep
 
         return text
 
 
-    @property
+    @classmethod
     def chat_type(self) -> str:
         return ChatScene.ChatWithDb.value
 

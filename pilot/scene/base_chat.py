@@ -32,16 +32,14 @@ from pilot.configs.config import Config
 logger = build_logger("BaseChat", LOGDIR + "BaseChat.log")
 headers = {"User-Agent": "dbgpt Client"}
 CFG = Config()
-class BaseChat(ABC):
+class BaseChat( ABC):
     chat_scene: str = None
-    memory: BaseChatHistoryMemory
     llm_model: Any = None
-    sep_style: SeparatorStyle = SeparatorStyle.SINGLE
     temperature: float = 0.6
     max_new_tokens: int = 1024
     # By default, keep the last two rounds of conversation records as the context
     chat_retention_rounds: int = 2
-    sep = SeparatorStyle.SINGLE.value
+
     class Config:
         """Configuration for this pydantic object."""
         arbitrary_types_allowed = True

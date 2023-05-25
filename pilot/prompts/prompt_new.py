@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra, Field, root_validator
 
 from pilot.common.formatting import formatter
 from pilot.out_parser.base import BaseOutputParser
-
+from pilot.common.schema import SeparatorStyle
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
     """Format a template using jinja2."""
@@ -36,7 +36,17 @@ class PromptTemplate(BaseModel, ABC):
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
     response_format:str
+    """default use stream out"""
+    stream_out: bool = True
+    """"""
     output_parser: BaseOutputParser = None
+    """"""
+    sep:str = SeparatorStyle.SINGLE.value
+
+    class Config:
+        """Configuration for this pydantic object."""
+        arbitrary_types_allowed = True
+
     @property
     def _prompt_type(self) -> str:
         """Return the prompt type key."""

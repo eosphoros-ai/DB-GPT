@@ -218,7 +218,6 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
         }
         chat: BaseChat =  CHAT_FACTORY.get_implementation(scene.value, **chat_param)
         chat.call()
-        # state.append_message(state.roles[1], chat.current_ai_response())
         state.messages[-1][-1] =  f"{chat.current_ai_response()}"
         yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 

@@ -21,13 +21,23 @@ from pilot.prompts.base import PromptValue
 T = TypeVar("T")
 
 
-class BaseOutputParser(BaseModel, ABC, Generic[T]):
+class BaseOutputParser(ABC):
     """Class to parse the output of an LLM call.
 
     Output parsers help structure language model responses.
     """
 
-    def parse_model_nostream_resp(self, response, sep: str):
+
+    def __init__(self,sep:str, is_stream_out:bool):
+        self.sep = sep
+        self.is_stream_out = is_stream_out
+
+
+    # TODO 后续和模型绑定
+    def _parse_model_stream_resp(self, response, sep: str):
+        pass
+
+    def _parse_model_nostream_resp(self, response, sep: str):
         text = response.text.strip()
         text = text.rstrip()
         respObj = json.loads(text)
@@ -52,35 +62,44 @@ class BaseOutputParser(BaseModel, ABC, Generic[T]):
         else:
             raise ValueError("Model server error!code=" + respObj_ex['error_code']);
 
-    @abstractmethod
-    def parse(self, text: str) -> T:
-        """Parse the output of an LLM call.
-
-        A method which takes in a string (assumed output of language model )
-        and parses it into some structure.
-
+    def parse_model_server_out(self, response)->str:
+        """
+        parse the model server http response
         Args:
-            text: output of language model
+            response:
 
         Returns:
-            structured output
+
         """
+        if self.is_stream_out:
+            self._parse_model_nostream_resp(response, self.sep)
+        else:
+            ### TODO
+            self._parse_model_stream_resp(response, self.sep)
 
-    def parse_with_prompt(self, completion: str, prompt: PromptValue) -> Any:
-        """Optional method to parse the output of an LLM call with a prompt.
 
-        The prompt is largely provided in the event the OutputParser wants
-        to retry or fix the output in some way, and needs information from
-        the prompt to do so.
-
+    def parse_prompt_response(self, model_out_text)->T:
+        """
+        parse model out text to prompt define response
         Args:
-            completion: output of language model
-            prompt: prompt value
+            model_out_text:
 
         Returns:
-            structured output
+
         """
-        return self.parse(completion)
+        pass
+
+
+    def parse_view_response(self, ai_text)->str:
+        """
+        parse the ai response info to user view
+        Args:
+            text:
+
+        Returns:
+
+        """
+        pass
 
     def get_format_instructions(self) -> str:
         """Instructions on how the LLM output should be formatted."""
