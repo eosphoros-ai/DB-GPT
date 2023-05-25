@@ -41,7 +41,6 @@ iopath==0.1.10
 tenacity==8.2.2
 peft
 pycocoevalcap
-sentence-transformers
 cpm_kernels
 umap-learn
 notebook
@@ -51,7 +50,7 @@ wandb
 llama-index==0.5.27
 pymysql
 unstructured==0.6.3
-pytesseract==0.3.10
+grpcio==1.47.5
 
 auto-gpt-plugin-template
 pymdown-extensions
@@ -79,3 +78,4 @@ pytest-cov
 pytest-integration
 pytest-mock
 pytest-recording
+pytesseract==0.3.10
