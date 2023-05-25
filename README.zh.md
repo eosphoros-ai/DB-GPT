@@ -190,18 +190,28 @@ $ python webserver.py
 
 ### 打造属于你的知识库：
 
-1、将个人知识文件或者文件夹放入pilot/datasets目录中
+1.将个人知识文件或者文件夹放入pilot/datasets目录中
 
-2、在tools目录执行知识入库脚本
+2.在.env文件指定你的向量数据库类型,VECTOR_STORE_TYPE(默认Chroma),目前支持Chroma,Milvus(需要设置MILVUS_URL和MILVUS_PORT)
+
+3.在tools目录执行知识入库脚本（）
+
+如果是选择默认知识库，不需要指定 --vector_name, 默认default
 
 ```
 python tools/knowledge_init.py
 
---vector_name : your vector store name  default_value:default
---append: append mode, True:append, False: not append default_value:False
+```
+
+如果选择新增知识库，在界面上新增知识库输入你的知识库名,
 
 ```
-3、在界面上新增知识库输入你的知识库名（如果没指定输入default）,就可以根据你的知识库进行问答
+python tools/knowledge_init.py --vector_name = yourname
+
+--vector_name: vector_name  default_value:default
+
+```
+就可以根据你的知识库进行问答
 
 注意，这里默认向量模型是text2vec-large-chinese(模型比较大，如果个人电脑配置不够建议采用text2vec-base-chinese),因此确保需要将模型download下来放到models目录中。
 
