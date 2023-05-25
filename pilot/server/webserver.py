@@ -2,50 +2,63 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import datetime
+import json
 import os
 import shutil
-import uuid
-import json
+import sys
 import time
-import gradio as gr
-import datetime
-import requests
+import uuid
 from urllib.parse import urljoin
 
+import gradio as gr
+import requests
 from langchain import PromptTemplate
 
-from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH, LLM_MODEL_CONFIG
-from pilot.server.vectordb_qa import KnownLedgeBaseQA
-from pilot.connections.mysql import MySQLOperator
-from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
-from pilot.vector_store.extract_tovec import get_vector_storelist, load_knownledge_from_doc, knownledge_tovec_st
+ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(ROOT_PATH)
 
 from pilot.configs.model_config import LOGDIR, DATASETS_DIR
 
 from pilot.plugins import scan_plugins
 from pilot.configs.config import Config
+from pilot.commands.command import execute_ai_response_json
 from pilot.commands.command_mange import CommandRegistry
 from pilot.prompts.auto_mode_prompt import AutoModePrompt
 from pilot.prompts.generator import PromptGenerator
 from pilot.scene.base_chat import BaseChat
 
 from pilot.commands.exception_not_commands import NotCommands
-
+from pilot.configs.config import Config
+from pilot.configs.model_config import (
+    DATASETS_DIR,
+    KNOWLEDGE_UPLOAD_ROOT_PATH,
+    LLM_MODEL_CONFIG,
+    LOGDIR,
+    VECTOR_SEARCH_TOP_K,
+)
+from pilot.connections.mysql import MySQLOperator
 from pilot.conversation import (
-    default_conversation,
+    SeparatorStyle,
+    conv_qa_prompt_template,
     conv_templates,
-    conversation_types,
     conversation_sql_mode,
-    SeparatorStyle, conv_qa_prompt_template
+    conversation_types,
+    default_conversation,
 )
-
-from pilot.utils import (
-    build_logger,
-    server_error_msg,
-)
-
+from pilot.plugins import scan_plugins
+from pilot.prompts.auto_mode_prompt import AutoModePrompt
+from pilot.prompts.generator import PromptGenerator
 from pilot.server.gradio_css import code_highlight_css
 from pilot.server.gradio_patch import Chatbot as grChatbot
+from pilot.server.vectordb_qa import KnownLedgeBaseQA
+from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
+from pilot.utils import build_logger, server_error_msg
+from pilot.vector_store.extract_tovec import (
+    get_vector_storelist,
+    knownledge_tovec_st,
+    load_knownledge_from_doc,
+)
 
 from pilot.commands.command import execute_ai_response_json
 from pilot.scene.base import ChatScene
@@ -66,9 +79,7 @@ autogpt = False
 vector_store_client = None
 vector_store_name = {"vs_name": ""}
 
-priority = {
-    "vicuna-13b": "aaa"
-}
+priority = {"vicuna-13b": "aaa"}
 
 # 加载插件
 CFG = Config()
@@ -76,10 +87,12 @@ CHAT_FACTORY = ChatFactory()
 
 DB_SETTINGS = {
     "user": CFG.LOCAL_DB_USER,
-    "password":  CFG.LOCAL_DB_PASSWORD,
+    "password": CFG.LOCAL_DB_PASSWORD,
     "host": CFG.LOCAL_DB_HOST,
-    "port": CFG.LOCAL_DB_PORT
+    "port": CFG.LOCAL_DB_PORT,
 }
+
+
 def get_simlar(q):
     docsearch = knownledge_tovec_st(os.path.join(DATASETS_DIR, "plan.md"))
     docs = docsearch.similarity_search_with_score(q, k=1)
@@ -89,9 +102,7 @@ def get_simlar(q):
 
 
 def gen_sqlgen_conversation(dbname):
-    mo = MySQLOperator(
-        **DB_SETTINGS
-    )
+    mo = MySQLOperator(**DB_SETTINGS)
 
     message = ""
 
@@ -334,8 +345,8 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
 
 
 block_css = (
-        code_highlight_css
-        + """
+    code_highlight_css
+    + """
         pre {
             white-space: pre-wrap;       /* Since CSS 2.1 */
             white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
@@ -372,7 +383,7 @@ def build_single_model_ui():
     notice_markdown = """
     # DB-GPT
     
-    [DB-GPT](https://github.com/csunny/DB-GPT) 是一个实验性的开源应用程序，它基于[FastChat](https://github.com/lm-sys/FastChat)，并使用vicuna-13b作为基础模型。此外，此程序结合了langchain和llama-index基于现有知识库进行In-Context Learning来对其进行数据库相关知识的增强。它可以进行SQL生成、SQL诊断、数据库知识问答等一系列的工作。 总的来说，它是一个用于数据库的复杂且创新的AI工具。如果您对如何在工作中使用或实施DB-GPT有任何具体问题，请联系我, 我会尽力提供帮助, 同时也欢迎大家参与到项目建设中, 做一些有趣的事情。 
+    [DB-GPT](https://github.com/csunny/DB-GPT) 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密，100% 安全。 
     """
     learn_more_markdown = """ 
         ### Licence
@@ -396,7 +407,7 @@ def build_single_model_ui():
         max_output_tokens = gr.Slider(
             minimum=0,
             maximum=1024,
-            value=1024,
+            value=512,
             step=64,
             interactive=True,
             label="最大输出Token数",
@@ -412,7 +423,8 @@ def build_single_model_ui():
                     choices=dbs,
                     value=dbs[0] if len(models) > 0 else "",
                     interactive=True,
-                    show_label=True).style(container=False)
+                    show_label=True,
+                ).style(container=False)
 
             sql_mode = gr.Radio(["直接执行结果", "不执行结果"], show_label=False, value="不执行结果")
             sql_vs_setting = gr.Markdown("自动执行模式下, DB-GPT可以具备执行SQL、从网络读取知识自动化存储学习的能力")
@@ -420,7 +432,9 @@ def build_single_model_ui():
 
         tab_qa = gr.TabItem("知识问答", elem_id="QA")
         with tab_qa:
-            mode = gr.Radio(["LLM原生对话", "默认知识库对话", "新增知识库对话"], show_label=False, value="LLM原生对话")
+            mode = gr.Radio(
+                ["LLM原生对话", "默认知识库对话", "新增知识库对话"], show_label=False, value="LLM原生对话"
+            )
             vs_setting = gr.Accordion("配置知识库", open=False)
             mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
             with vs_setting:
@@ -429,18 +443,22 @@ def build_single_model_ui():
                 with gr.Column() as doc2vec:
                     gr.Markdown("向知识库中添加文件")
                     with gr.Tab("上传文件"):
-                        files = gr.File(label="添加文件",
-                                        file_types=[".txt", ".md", ".docx", ".pdf"],
-                                        file_count="multiple",
-                                        show_label=False
-                                        )
+                        files = gr.File(
+                            label="添加文件",
+                            file_types=[".txt", ".md", ".docx", ".pdf"],
+                            file_count="multiple",
+                            allow_flagged_uploads=True,
+                            show_label=False,
+                        )
 
                         load_file_button = gr.Button("上传并加载到知识库")
                     with gr.Tab("上传文件夹"):
-                        folder_files = gr.File(label="添加文件夹",
-                                               accept_multiple_files=True,
-                                               file_count="directory",
-                                               show_label=False)
+                        folder_files = gr.File(
+                            label="添加文件夹",
+                            accept_multiple_files=True,
+                            file_count="directory",
+                            show_label=False,
+                        )
                         load_folder_button = gr.Button("上传并加载到知识库")
 
     with gr.Blocks():
@@ -481,28 +499,32 @@ def build_single_model_ui():
     ).then(
         http_bot,
         [state, mode, sql_mode, db_selector, temperature, max_output_tokens],
-        [state, chatbot] + btn_list
+        [state, chatbot] + btn_list,
     )
-    vs_add.click(fn=save_vs_name, show_progress=True,
-                 inputs=[vs_name],
-                 outputs=[vs_name])
-    load_file_button.click(fn=knowledge_embedding_store,
-                           show_progress=True,
-                           inputs=[vs_name, files],
-                           outputs=[vs_name])
-    load_folder_button.click(fn=knowledge_embedding_store,
-                             show_progress=True,
-                             inputs=[vs_name, folder_files],
-                             outputs=[vs_name])
+    vs_add.click(
+        fn=save_vs_name, show_progress=True, inputs=[vs_name], outputs=[vs_name]
+    )
+    load_file_button.click(
+        fn=knowledge_embedding_store,
+        show_progress=True,
+        inputs=[vs_name, files],
+        outputs=[vs_name],
+    )
+    load_folder_button.click(
+        fn=knowledge_embedding_store,
+        show_progress=True,
+        inputs=[vs_name, folder_files],
+        outputs=[vs_name],
+    )
     return state, chatbot, textbox, send_btn, button_row, parameter_row
 
 
 def build_webdemo():
     with gr.Blocks(
-            title="数据库智能助手",
-            # theme=gr.themes.Base(),
-            theme=gr.themes.Default(),
-            css=block_css,
+        title="数据库智能助手",
+        # theme=gr.themes.Base(),
+        theme=gr.themes.Default(),
+        css=block_css,
     ) as demo:
         url_params = gr.JSON(visible=False)
         (
@@ -544,14 +566,20 @@ def knowledge_embedding_store(vs_id, files):
         os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id))
     for file in files:
         filename = os.path.split(file.name)[-1]
-        shutil.move(file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename))
+        shutil.move(
+            file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename)
+        )
         knowledge_embedding_client = KnowledgeEmbedding(
             file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
-            model_name=LLM_MODEL_CONFIG["sentence-transforms"],
+            model_name=LLM_MODEL_CONFIG["text2vec"],
+            local_persist=False,
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
-                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
+                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+            },
+        )
         knowledge_embedding_client.knowledge_embedding()
+
 
     logger.info("knowledge embedding success")
     return os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, vs_id + ".vectordb")
@@ -596,5 +624,8 @@ if __name__ == "__main__":
     demo.queue(
         concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
     ).launch(
-        server_name=args.host, server_port=args.port, share=args.share, max_threads=200,
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        max_threads=200,
     )

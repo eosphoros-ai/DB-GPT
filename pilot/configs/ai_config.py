@@ -7,13 +7,13 @@ from __future__ import annotations
 import os
 import platform
 from pathlib import Path
-from typing import Any, Optional, Type
+from typing import Optional
 
 import distro
 import yaml
 
-from pilot.prompts.generator import PromptGenerator
 from pilot.configs.config import Config
+from pilot.prompts.generator import PromptGenerator
 from pilot.prompts.prompt import build_default_prompt_generator
 
 # Soon this will go in a folder where it remembers more stuff about the run(s)
@@ -88,7 +88,7 @@ class AIConfig:
             for goal in config_params.get("ai_goals", [])
         ]
         api_budget = config_params.get("api_budget", 0.0)
-        # type: Type[AIConfig]
+        # type is Type[AIConfig]
         return AIConfig(ai_name, ai_role, ai_goals, api_budget)
 
     def save(self, config_file: str = SAVE_FILE) -> None:
@@ -132,8 +132,6 @@ class AIConfig:
             " simple strategies with no legal complications."
             ""
         )
-
-
 
         cfg = Config()
         if prompt_generator is None:

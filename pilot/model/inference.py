@@ -3,11 +3,12 @@
 
 import torch
 
-@torch.inference_mode()
-def generate_stream(model, tokenizer, params, device,
-                    context_len=4096, stream_interval=2):
 
-    """Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/inference.py """
+@torch.inference_mode()
+def generate_stream(
+    model, tokenizer, params, device, context_len=4096, stream_interval=2
+):
+    """Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/inference.py"""
     prompt = params["prompt"]
     l_prompt = len(prompt)
     temperature = float(params.get("temperature", 1.0))
@@ -22,17 +23,19 @@ def generate_stream(model, tokenizer, params, device,
 
     for i in range(max_new_tokens):
         if i == 0:
-            out = model(
-                torch.as_tensor([input_ids], device=device), use_cache=True)
+            out = model(torch.as_tensor([input_ids], device=device), use_cache=True)
             logits = out.logits
             past_key_values = out.past_key_values
         else:
             attention_mask = torch.ones(
-                1, past_key_values[0][0].shape[-2] + 1, device=device)
-            out = model(input_ids=torch.as_tensor([[token]], device=device),
-                        use_cache=True,
-                        attention_mask=attention_mask,
-                        past_key_values=past_key_values)
+                1, past_key_values[0][0].shape[-2] + 1, device=device
+            )
+            out = model(
+                input_ids=torch.as_tensor([[token]], device=device),
+                use_cache=True,
+                attention_mask=attention_mask,
+                past_key_values=past_key_values,
+            )
             logits = out.logits
             past_key_values = out.past_key_values
 
@@ -68,16 +71,18 @@ def generate_stream(model, tokenizer, params, device,
 
     del past_key_values
 
+
 @torch.inference_mode()
-def generate_output(model, tokenizer, params, device, context_len=4096, stream_interval=2):
-    """Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/inference.py """
+def generate_output(
+    model, tokenizer, params, device, context_len=4096, stream_interval=2
+):
+    """Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/inference.py"""
 
     prompt = params["prompt"]
     l_prompt = len(prompt)
     temperature = float(params.get("temperature", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 2048))
     stop_str = params.get("stop", None)
-
 
     input_ids = tokenizer(prompt).input_ids
     output_ids = list(input_ids)
@@ -87,17 +92,19 @@ def generate_output(model, tokenizer, params, device, context_len=4096, stream_i
 
     for i in range(max_new_tokens):
         if i == 0:
-            out = model(
-                torch.as_tensor([input_ids], device=device), use_cache=True)
+            out = model(torch.as_tensor([input_ids], device=device), use_cache=True)
             logits = out.logits
             past_key_values = out.past_key_values
         else:
             attention_mask = torch.ones(
-                1, past_key_values[0][0].shape[-2] + 1, device=device)
-            out = model(input_ids=torch.as_tensor([[token]], device=device),
-                        use_cache=True,
-                        attention_mask=attention_mask,
-                        past_key_values=past_key_values)
+                1, past_key_values[0][0].shape[-2] + 1, device=device
+            )
+            out = model(
+                input_ids=torch.as_tensor([[token]], device=device),
+                use_cache=True,
+                attention_mask=attention_mask,
+                past_key_values=past_key_values,
+            )
             logits = out.logits
             past_key_values = out.past_key_values
 
@@ -120,7 +127,6 @@ def generate_output(model, tokenizer, params, device, context_len=4096, stream_i
         else:
             stopped = False
 
-
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
             output = tokenizer.decode(output_ids, skip_special_tokens=True)
             pos = output.rfind(stop_str, l_prompt)
@@ -133,8 +139,11 @@ def generate_output(model, tokenizer, params, device, context_len=4096, stream_i
             break
     del past_key_values
 
+
 @torch.inference_mode()
-def generate_output_ex(model, tokenizer, params, device, context_len=2048, stream_interval=2):
+def generate_output_ex(
+    model, tokenizer, params, device, context_len=2048, stream_interval=2
+):
     prompt = params["prompt"]
     temperature = float(params.get("temperature", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 2048))
@@ -161,19 +170,19 @@ def generate_output_ex(model, tokenizer, params, device, context_len=2048, strea
 
     for i in range(max_new_tokens):
         if i == 0:
-            out = model(
-                torch.as_tensor([input_ids], device=device), use_cache=True)
+            out = model(torch.as_tensor([input_ids], device=device), use_cache=True)
             logits = out.logits
             past_key_values = out.past_key_values
         else:
-            out = model(input_ids=torch.as_tensor([[token]], device=device),
-                        use_cache=True,
-                        past_key_values=past_key_values)
+            out = model(
+                input_ids=torch.as_tensor([[token]], device=device),
+                use_cache=True,
+                past_key_values=past_key_values,
+            )
             logits = out.logits
             past_key_values = out.past_key_values
 
         last_token_logits = logits[0][-1]
-
 
         if temperature < 1e-4:
             token = int(torch.argmax(last_token_logits))
@@ -187,7 +196,6 @@ def generate_output_ex(model, tokenizer, params, device, context_len=2048, strea
             stopped = True
         else:
             stopped = False
-
 
         output = tokenizer.decode(output_ids, skip_special_tokens=True)
         # print("Partial output:", output)
@@ -211,7 +219,7 @@ def generate_output_ex(model, tokenizer, params, device, context_len=2048, strea
     del past_key_values
     if pos != -1:
         return output[:pos]
-    return output 
+    return output
 
 
 @torch.inference_mode()

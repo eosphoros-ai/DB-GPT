@@ -5,16 +5,21 @@ import dataclasses
 import uuid
 from enum import auto, Enum
 from typing import List, Any
+
 from pilot.configs.config import Config
 
 CFG = Config()
 
 DB_SETTINGS = {
     "user": CFG.LOCAL_DB_USER,
-    "password":  CFG.LOCAL_DB_PASSWORD,
+    "password": CFG.LOCAL_DB_PASSWORD,
     "host": CFG.LOCAL_DB_HOST,
-    "port": CFG.LOCAL_DB_PORT
+    "port": CFG.LOCAL_DB_PORT,
 }
+
+ROLE_USER = "USER"
+ROLE_ASSISTANT = "Assistant"
+
 
 class SeparatorStyle(Enum):
     SINGLE = auto()
@@ -22,9 +27,10 @@ class SeparatorStyle(Enum):
     THREE = auto()
     FOUR = auto()
 
-@ dataclasses.dataclass
+
+@dataclasses.dataclass
 class Conversation:
-    """This class keeps all conversation history. """
+    """This class keeps all conversation history."""
 
     system: str
     roles: List[str]
@@ -65,7 +71,7 @@ class Conversation:
 
     def to_gradio_chatbot(self):
         ret = []
-        for i, (role, msg) in enumerate(self.messages[self.offset:]):
+        for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 ret.append([msg, None])
             else:
@@ -93,15 +99,14 @@ class Conversation:
             "offset": self.offset,
             "sep": self.sep,
             "sep2": self.sep2,
-            "conv_id": self.conv_id
+            "conv_id": self.conv_id,
         }
 
 
 def gen_sqlgen_conversation(dbname):
     from pilot.connections.mysql import MySQLOperator
-    mo = MySQLOperator(
-        **(DB_SETTINGS)
-    )
+
+    mo = MySQLOperator(**(DB_SETTINGS))
 
     message = ""
 
@@ -113,7 +118,7 @@ def gen_sqlgen_conversation(dbname):
 
 conv_one_shot = Conversation(
     system="A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. "
-           "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
+    "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
     roles=("USER", "Assistant"),
     messages=(
         (
@@ -134,20 +139,19 @@ conv_one_shot = Conversation(
             "whereas PostgreSQL is known for its robustness and reliability.\n"
             "5. Licensing: MySQL is licensed under the GPL (General Public License), which means that it is free and open-source software, "
             "whereas PostgreSQL is licensed under the PostgreSQL License, which is also free and open-source but with different terms.\n"
-
             "Ultimately, the choice between MySQL and PostgreSQL depends on the specific needs and requirements of your application. "
             "Both are excellent database management systems, and choosing the right one "
-            "for your project requires careful consideration of your application's requirements, performance needs, and scalability."
+            "for your project requires careful consideration of your application's requirements, performance needs, and scalability.",
         ),
     ),
     offset=2,
     sep_style=SeparatorStyle.SINGLE,
-    sep="###"
+    sep="###",
 )
 
 conv_vicuna_v1 = Conversation(
     system="A chat between a curious user and an artificial intelligence assistant. who very familiar with database related knowledge. "
-           "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
+    "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
     roles=("USER", "ASSISTANT"),
     messages=(),
     offset=0,
@@ -158,7 +162,7 @@ conv_vicuna_v1 = Conversation(
 
 auto_dbgpt_one_shot = Conversation(
     system="You are DB-GPT, an AI designed to answer questions about HackerNews by query `hackerbews` database in MySQL. "
-           "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
+    "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
     roles=("USER", "ASSISTANT"),
     messages=(
         (
@@ -201,7 +205,7 @@ auto_dbgpt_one_shot = Conversation(
                       }
                   }
               } 
-            """
+            """,
         ),
         (
             "ASSISTANT",
@@ -221,8 +225,8 @@ auto_dbgpt_one_shot = Conversation(
                     }
                 }
             } 
-            """
-        )
+            """,
+        ),
     ),
     offset=0,
     sep_style=SeparatorStyle.SINGLE,
@@ -231,7 +235,7 @@ auto_dbgpt_one_shot = Conversation(
 
 auto_dbgpt_without_shot = Conversation(
     system="You are DB-GPT, an AI designed to answer questions about users by query `users` database in MySQL. "
-           "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
+    "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
     roles=("USER", "ASSISTANT"),
     messages=(),
     offset=0,
@@ -248,11 +252,18 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、简要的回
             {question}
 """
 
+# conv_qa_prompt_template = """ Please provide the known information so that I can professionally and briefly answer the user's question. If the answer cannot be obtained from the provided content,
+#             please say: "The information provided in the knowledge base is insufficient to answer this question." Fabrication is prohibited.。
+#             known information:
+#             {context}
+#             question:
+#             {question}
+# """
 default_conversation = conv_one_shot
 
-conversation_sql_mode ={
+conversation_sql_mode = {
     "auto_execute_ai_response": "直接执行结果",
-    "dont_execute_ai_response": "不直接执行结果"
+    "dont_execute_ai_response": "不直接执行结果",
 }
 
 conversation_types = {
@@ -265,7 +276,7 @@ conversation_types = {
 conv_templates = {
     "conv_one_shot": conv_one_shot,
     "vicuna_v1": conv_vicuna_v1,
-    "auto_dbgpt_one_shot": auto_dbgpt_one_shot
+    "auto_dbgpt_one_shot": auto_dbgpt_one_shot,
 }
 
 if __name__ == "__main__":
