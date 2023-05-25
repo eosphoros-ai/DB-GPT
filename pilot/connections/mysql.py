@@ -3,7 +3,6 @@
 
 import pymysql
 
-
 class MySQLOperator:
     """Connect MySQL Database fetch MetaData For LLM Prompt
     Args:
@@ -31,6 +30,19 @@ class MySQLOperator:
             cursor.execute(_sql)
             results = cursor.fetchall()
             return results
+
+
+    def run_sql(self, db_name:str, sql:str, fetch: str = "all"):
+        with self.conn.cursor() as cursor:
+            cursor.execute("USE " + db_name)
+            cursor.execute(sql)
+            if fetch == "all":
+                result = cursor.fetchall()
+            elif fetch == "one":
+                result = cursor.fetchone()[0]  # type: ignore
+            else:
+                raise ValueError("Fetch parameter must be either 'one' or 'all'")
+            return str(result)
 
     def get_index(self, schema_name):
         pass
