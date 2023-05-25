@@ -185,7 +185,7 @@ We provide a user interface for Gradio, which allows you to use DB-GPT through o
 
 To use multiple models, modify the LLM_MODEL parameter in the .env configuration file to switch between the models.
 
-####Create your own knowledge repository:
+### Create your own knowledge repository:
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
 
@@ -213,7 +213,7 @@ Run the Python interpreter and type the commands:
 
 ## Acknowledgement
 
-The achievements of this project are thanks to the technical community, especially the following projects:
+This project is standing on the shoulders of giants and is not going to work without the open-source communities. Special thanks to the following projects for their excellent contribution to the AI industry:
 - [FastChat](https://github.com/lm-sys/FastChat) for providing chat services
 - [vicuna-13b](https://lmsys.org/blog/2023-03-30-vicuna/) as the base model
 - [langchain](https://langchain.readthedocs.io/) tool chain
@@ -245,4 +245,4 @@ This project follows the git-contributor [spec](https://github.com/xudafeng/git-
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.com/invite/twmZk3vv)
+We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/kMFf77FH)
