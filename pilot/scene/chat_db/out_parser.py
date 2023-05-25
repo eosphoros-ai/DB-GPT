@@ -1,26 +1,20 @@
 import json
+import re
 from abc import ABC, abstractmethod
 from typing import (
-    Any,
     Dict,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
+    NamedTuple
 )
 import pandas as pd
-
+from pilot.utils import build_logger
 from pilot.out_parser.base import BaseOutputParser, T
-
+from pilot.configs.model_config import LOGDIR
 
 class SqlAction(NamedTuple):
     sql: str
     thoughts: Dict
 
-
+logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
 class DbChatOutputParser(BaseOutputParser):
 
     def __init__(self, sep:str, is_stream_out: bool):
@@ -43,9 +37,17 @@ class DbChatOutputParser(BaseOutputParser):
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
+        if not cleaned_output.startswith("{") or not cleaned_output.endswith("}"):
+            logger.info("illegal json processing")
+            json_pattern = r'{(.+?)}'
+            m = re.search(json_pattern, cleaned_output)
+            if m:
+                cleaned_output = m.group(0)
+            else:
+               raise ValueError("model server out not fllow the prompt!")
+
         response = json.loads(cleaned_output)
         sql, thoughts = response["sql"], response["thoughts"]
-
         return SqlAction(sql, thoughts)
 
     def parse_view_response(self, speak, data) -> str:
