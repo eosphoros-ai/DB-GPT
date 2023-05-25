@@ -83,7 +83,7 @@ class ChatWithDb(BaseChat):
             "stop": self.prompt_template.sep,
         }
         logger.info(f"Requert: \n{payload}")
-
+        ai_response_text = ""
         try:
             ### 走非流式的模型服务接口
 
@@ -94,21 +94,7 @@ class ChatWithDb(BaseChat):
 
             result = self.database.run(self.db_connect, prompt_define_response.sql)
 
-            # # TODO - TEST
-            # resp_test = {
-            #     "SQL": "select * from users",
-            #     "thoughts": {
-            #         "text": "thought",
-            #         "reasoning": "reasoning",
-            #         "plan": "- short bulleted\n- list that conveys\n- long-term plan",
-            #         "criticism": "constructive self-criticism",
-            #         "speak": "thoughts summary to say to user"
-            #     }
-            # }
-            #
-            # sql_action = SqlAction(**resp_test)
-            # self.current_message.add_ai_message(json.dumps(sql_action._asdict()))
-            # result = self.database.run(self.db_connect, sql_action.SQL)
+
             if hasattr(prompt_define_response, 'thoughts'):
                 if prompt_define_response.thoughts.get("speak"):
                     self.current_message.add_view_message(
@@ -126,7 +112,7 @@ class ChatWithDb(BaseChat):
         except Exception as e:
             print(traceback.format_exc())
             logger.error("model response parase faild！" + str(e))
-            self.current_message.add_view_message(f"ERROR:{str(e)}!{ai_response_text}")
+            self.current_message.add_view_message(f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """)
         ### 对话记录存储
         self.memory.append(self.current_message)
 
