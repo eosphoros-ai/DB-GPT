@@ -46,7 +46,7 @@ wandb
 llama-index==0.5.27
 pymysql
 unstructured==0.6.3
-grpcio==1.47.5
+grpcio==1.54.2
 
 auto-gpt-plugin-template
 pymdown-extensions
@@ -54,7 +54,7 @@ gTTS==2.3.1
 langchain
 nltk
 python-dotenv==1.0.0
-pymilvus==2.2.1
+# pymilvus==2.2.1
 vcrpy
 chromadb
 markdown2
