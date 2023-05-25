@@ -1,1 +1,3 @@
-__version__ = "0.0.1"
+from pilot.source_embedding import SourceEmbedding, register
+
+__all__ = ["SourceEmbedding", "register"]

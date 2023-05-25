@@ -1,0 +1,14 @@
+version: '3.10'
+
+services:
+  db-gpt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      image: db-gpt:latest
+    container_name: db-gpt  
+    ports:
+      - 8000:8000
+      - 3306:3306
+    restart: unless-stopped
+    read-only: true      
