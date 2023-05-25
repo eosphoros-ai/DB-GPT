@@ -37,14 +37,6 @@ LLM_MODEL_CONFIG = {
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
 }
 
-
-VECTOR_SEARCH_TOP_K = 20
-LLM_MODEL = "vicuna-13b"
-LIMIT_MODEL_CONCURRENCY = 5
-MAX_POSITION_EMBEDDINGS = 4096
-# VICUNA_MODEL_SERVER = "http://121.41.227.141:8000"
-VICUNA_MODEL_SERVER = "http://120.79.27.110:8000"
-
 # Load model config
 ISLOAD_8BIT = True
 ISDEBUG = False
