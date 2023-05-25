@@ -237,11 +237,6 @@ def http_bot(
             yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
             return
 
-        cfg = Config()
-        auto_prompt = AutoModePrompt()
-        auto_prompt.command_registry = cfg.command_registry
-
-        # TODO when tab mode is AUTO_GPT, Prompt need to rebuild.
         if len(state.messages) == state.offset + 2:
             query = state.messages[-2][1]
             # 第一轮对话需要加入提示Prompt
