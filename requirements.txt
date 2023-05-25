@@ -67,7 +67,7 @@ colorama
 playsound
 distro
 pypdf
-milvus-cli==0.3.2
+# milvus-cli==0.3.2
 
 # Testing dependencies
 pytest
