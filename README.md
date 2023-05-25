@@ -44,6 +44,11 @@ Run on an RTX 4090 GPU. [YouTube](https://www.youtube.com/watch?v=1PWI6F89LPo)
   <img src="./assets/demo_en.gif" width="600px" />
 </p>
 
+### Run Plugin
+<p align="center">
+  <img src="./assets/auto_sql_en.gif" width="600px" />
+</p>
+
 ### SQL Generation
 
 1. Generate Create Table SQL
