@@ -12,11 +12,10 @@ project = "DB-GPT"
 copyright = "2023, csunny"
 author = "csunny"
 
-with open("../pyproject.toml") as f:
-    data = toml.load(f)
 
-version = data["tool"]["poetry"]["version"]
-release = version
+with open("../pilot/VERSION") as f:
+    version = f.read()
+
 html_title = project + " " + version
 
 # -- General configuration ---------------------------------------------------
