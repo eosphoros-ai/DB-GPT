@@ -9,8 +9,7 @@ from typing import (
     List,
 )
 
-from pilot.scene.base_message import BaseMessage, AIMessage, HumanMessage, SystemMessage, messages_to_dict, \
-    messages_from_dict
+from pilot.scene.base_message import BaseMessage, AIMessage, HumanMessage, SystemMessage, ViewMessage, messages_to_dict, messages_from_dict
 
 
 class OnceConversation:
@@ -27,11 +26,22 @@ class OnceConversation:
 
     def add_user_message(self, message: str) -> None:
         """Add a user message to the store"""
+        has_message = any(isinstance(instance, HumanMessage) for instance in self.messages)
+        if has_message:
+            raise ValueError("Already Have Human message")
         self.messages.append(HumanMessage(content=message))
 
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
+        has_message = any(isinstance(instance, AIMessage) for instance in self.messages)
+        if has_message:
+            raise ValueError("Already Have Ai message")
         self.messages.append(AIMessage(content=message))
+        """  """
+    def add_view_message(self, message: str) -> None:
+        """Add an AI message to the store"""
+
+        self.messages.append(ViewMessage(content=message))
         """  """
 
     def add_system_message(self, message: str) -> None:
