@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
+
+from langchain.embeddings import HuggingFaceEmbeddings
+
 from pilot.configs.config import Config
 from pilot.vector_store.connector import VectorStoreConnector
 
@@ -32,7 +35,9 @@ class SourceEmbedding(ABC):
         self.model_name = model_name
         self.vector_store_config = vector_store_config
         self.embedding_args = embedding_args
-        self.embeddings = vector_store_config["embeddings"]
+        self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
+
+        vector_store_config["embeddings"] = self.embeddings
         self.vector_client = VectorStoreConnector(
             CFG.VECTOR_STORE_TYPE, vector_store_config
         )
