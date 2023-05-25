@@ -33,7 +33,7 @@ logger = build_logger("BaseChat", LOGDIR + "BaseChat.log")
 headers = {"User-Agent": "dbgpt Client"}
 CFG = Config()
 class BaseChat( ABC):
-    chat_scene: str = None
+    chat_scene:str = None
     llm_model: Any = None
     temperature: float = 0.6
     max_new_tokens: int = 1024

@@ -2,6 +2,7 @@ import requests
 import datetime
 import threading
 import json
+import traceback
 from urllib.parse import urljoin
 from sqlalchemy import (
     MetaData,
@@ -24,16 +25,16 @@ from pilot.utils import (
     build_logger,
     server_error_msg,
 )
-from pilot.common.markdown_text import generate_markdown_table,generate_htm_table,datas_to_table_html
+from pilot.common.markdown_text import generate_markdown_table, generate_htm_table, datas_to_table_html
 from pilot.scene.chat_db.prompt import chat_db_prompt
 from pilot.out_parser.base import BaseOutputParser
 from pilot.scene.chat_db.out_parser import DbChatOutputParser
+
 CFG = Config()
 
 
 class ChatWithDb(BaseChat):
     chat_scene: str = ChatScene.ChatWithDb.value
-
 
     """Number of results to return from the query"""
 
@@ -86,38 +87,48 @@ class ChatWithDb(BaseChat):
         try:
             ### 走非流式的模型服务接口
 
+            response = requests.post(urljoin(CFG.MODEL_SERVER, "generate"), headers=headers, json=payload, timeout=120)
+            ai_response_text = self.prompt_template.output_parser.parse_model_server_out(response)
+            self.current_message.add_ai_message(ai_response_text)
+            prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
+
+            result = self.database.run(self.db_connect, prompt_define_response.sql)
+
             # # TODO - TEST
-            # response = requests.post(urljoin(CFG.MODEL_SERVER, "generate"), headers=headers, json=payload, timeout=120)
-            # ai_response_text = self.prompt_template.output_parser.parse_model_server_out(response)
+            # resp_test = {
+            #     "SQL": "select * from users",
+            #     "thoughts": {
+            #         "text": "thought",
+            #         "reasoning": "reasoning",
+            #         "plan": "- short bulleted\n- list that conveys\n- long-term plan",
+            #         "criticism": "constructive self-criticism",
+            #         "speak": "thoughts summary to say to user"
+            #     }
+            # }
             #
-            # prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
-            # self.current_message.add_ai_message(json.dumps(prompt_define_response._asdict()))
-            # result = self.database.run(self.db_connect, prompt_define_response.SQL)
-
-
-            resp_test = {
-                "SQL": "select * from users",
-                "thoughts": {
-                    "text": "thought",
-                    "reasoning": "reasoning",
-                    "plan": "- short bulleted\n- list that conveys\n- long-term plan",
-                    "criticism": "constructive self-criticism",
-                    "speak": "thoughts summary to say to user"
-                }
-            }
-
-            sql_action = SqlAction(**resp_test)
-            self.current_message.add_ai_message(json.dumps(sql_action._asdict()))
-            result = self.database.run(self.db_connect, sql_action.SQL)
-
-            self.current_message.add_view_message(self.prompt_template.output_parser.parse_view_response(result))
+            # sql_action = SqlAction(**resp_test)
+            # self.current_message.add_ai_message(json.dumps(sql_action._asdict()))
+            # result = self.database.run(self.db_connect, sql_action.SQL)
+            if hasattr(prompt_define_response, 'thoughts'):
+                if prompt_define_response.thoughts.get("speak"):
+                    self.current_message.add_view_message(
+                        self.prompt_template.output_parser.parse_view_response(prompt_define_response.thoughts.get("speak"),result))
+                elif prompt_define_response.thoughts.get("reasoning"):
+                    self.current_message.add_view_message(
+                        self.prompt_template.output_parser.parse_view_response(prompt_define_response.thoughts.get("reasoning"), result))
+                else:
+                    self.current_message.add_view_message(
+                        self.prompt_template.output_parser.parse_view_response(prompt_define_response.thoughts, result))
+            else:
+                self.current_message.add_view_message(
+                    self.prompt_template.output_parser.parse_view_response(prompt_define_response, result))
 
         except Exception as e:
+            print(traceback.format_exc())
             logger.error("model response parase faild！" + str(e))
-            self.current_message.add_ai_message(str(e))
+            self.current_message.add_view_message(f"ERROR:{str(e)}!{ai_response_text}")
         ### 对话记录存储
         self.memory.append(self.current_message)
-
 
     def chat_show(self):
         ret = []
@@ -133,44 +144,42 @@ class ChatWithDb(BaseChat):
         return ret
 
     # 暂时为了兼容前端
-    def current_ai_response(self)->str:
+    def current_ai_response(self) -> str:
         for message in self.current_message.messages:
             if message.type == 'view':
-               return  message.content
+                return message.content
         return None
 
-
     def generate_llm_text(self) -> str:
-        text = ""
+        text = self.prompt_template.template_define +  self.prompt_template.sep
         ### 线处理历史信息
         if (len(self.history_message) > self.chat_retention_rounds):
             ### 使用历史信息的第一轮和最后一轮数据合并成历史对话记录, 做上下文提示时，用户展示消息需要过滤掉
             for first_message in self.history_message[0].messages:
-                if not  isinstance(first_message, ViewMessage):
+                if not isinstance(first_message, ViewMessage):
                     text += first_message.type + ":" + first_message.content + self.prompt_template.sep
 
             index = self.chat_retention_rounds - 1
             for last_message in self.history_message[-index:].messages:
                 if not isinstance(last_message, ViewMessage):
-                    text += last_message.type + ":" + last_message.content +  self.prompt_template.sep
+                    text += last_message.type + ":" + last_message.content + self.prompt_template.sep
 
         else:
             ### 直接历史记录拼接
             for conversation in self.history_message:
                 for message in conversation.messages:
                     if not isinstance(message, ViewMessage):
-                        text += message.type + ":" + message.content +  self.prompt_template.sep
+                        text += message.type + ":" + message.content + self.prompt_template.sep
 
         ### current conversation
         for now_message in self.current_message.messages:
-            text += now_message.type + ":" + now_message.content +  self.prompt_template.sep
+            text += now_message.type + ":" + now_message.content + self.prompt_template.sep
 
         return text
 
-
-    @classmethod
+    @property
     def chat_type(self) -> str:
-        return ChatScene.ChatWithDb.value
+        return ChatScene.ChatExecution.value
 
 
 if __name__ == "__main__":
@@ -203,7 +212,6 @@ if __name__ == "__main__":
     db_connect = db.get_session("gpt-user")
     data = db.run(db_connect, "select * from users")
     print(generate_htm_table(data))
-
 
     #
     # print(db.run(db_connect, "select * from users"))
