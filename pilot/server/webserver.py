@@ -385,13 +385,16 @@ def http_bot(
                         cfg.set_last_plugin_return(plugin_resp)
                         print(plugin_resp)
                         state.messages[-1][-1] = (
-                                "Model推理信息:\n" + ai_response + "\n\nDB-GPT执行结果:\n" + plugin_resp
+                            "Model推理信息:\n"
+                            + ai_response
+                            + "\n\nDB-GPT执行结果:\n"
+                            + plugin_resp
                         )
                         yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
             except NotCommands as e:
                 print("命令执行:" + e.message)
                 state.messages[-1][-1] = (
-                        "命令执行:" + e.message + "\n模型输出:\n" + str(ai_response)
+                    "命令执行:" + e.message + "\n模型输出:\n" + str(ai_response)
                 )
                 yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
         else:
@@ -422,18 +425,32 @@ def http_bot(
 
                             output = post_process_code(output)
                             state.messages[-1][-1] = output + "▌"
-                            yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
+                            yield (state, state.to_gradio_chatbot()) + (
+                                disable_btn,
+                            ) * 5
                         else:
-                            output = data["text"] + f" (error_code: {data['error_code']})"
+                            output = (
+                                data["text"] + f" (error_code: {data['error_code']})"
+                            )
                             state.messages[-1][-1] = output
                             yield (state, state.to_gradio_chatbot()) + (
-                                disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+                                disable_btn,
+                                disable_btn,
+                                disable_btn,
+                                enable_btn,
+                                enable_btn,
+                            )
                             return
 
             except requests.exceptions.RequestException as e:
                 state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
                 yield (state, state.to_gradio_chatbot()) + (
-                disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+                    disable_btn,
+                    disable_btn,
+                    disable_btn,
+                    enable_btn,
+                    enable_btn,
+                )
                 return
 
             state.messages[-1][-1] = state.messages[-1][-1][:-1]
