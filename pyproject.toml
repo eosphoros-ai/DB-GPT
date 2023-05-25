@@ -117,3 +117,14 @@ types-chardet = "^5.0.4.6"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+exclude = [
+    ".venv",
+    "__pycache__",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".ruff_cache",
+    "examples",
+    "notebooks",
+]
