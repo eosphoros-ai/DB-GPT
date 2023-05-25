@@ -2,7 +2,7 @@ import os
 
 import markdown
 from bs4 import BeautifulSoup
-from langchain.document_loaders import PyPDFLoader, TextLoader, markdown
+from langchain.document_loaders import PyPDFLoader, TextLoader
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from pilot.configs.config import Config
