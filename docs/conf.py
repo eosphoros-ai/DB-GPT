@@ -12,8 +12,12 @@ project = "DB-GPT"
 copyright = "2023, csunny"
 author = "csunny"
 
-release = "0.0.6"
-html_title = project + " " + release
+with open("../pyproject.toml") as f:
+    data = toml.load(f)
+
+version = data["tool"]["poetry"]["version"]
+release = version
+html_title = project + " " + version
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
