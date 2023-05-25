@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from pilot.prompts.generator import PromptGenerator
-from typing import Dict, List, NoReturn, Union
-from pilot.configs.config import Config
-
-from pilot.speech import say_text
+import json
+from typing import Dict
 
 from pilot.agent.json_fix_llm import fix_json_using_multiple_techniques
 from pilot.commands.exception_not_commands import NotCommands
-import json
+from pilot.configs.config import Config
+from pilot.prompts.generator import PromptGenerator
+from pilot.speech import say_text
 
 
 def _resolve_pathlike_command_args(command_args):
@@ -25,9 +24,9 @@ def _resolve_pathlike_command_args(command_args):
 
 
 def execute_ai_response_json(
-        prompt: PromptGenerator,
-        ai_response: str,
-        user_input: str = None,
+    prompt: PromptGenerator,
+    ai_response: str,
+    user_input: str = None,
 ) -> str:
     """
 
@@ -52,18 +51,14 @@ def execute_ai_response_json(
     arguments = _resolve_pathlike_command_args(arguments)
     # Execute command
     if command_name is not None and command_name.lower().startswith("error"):
-        result = (
-            f"Command {command_name} threw the following error: {arguments}"
-        )
+        result = f"Command {command_name} threw the following error: {arguments}"
     elif command_name == "human_feedback":
         result = f"Human feedback: {user_input}"
     else:
         for plugin in cfg.plugins:
             if not plugin.can_handle_pre_command():
                 continue
-            command_name, arguments = plugin.pre_command(
-                command_name, arguments
-            )
+            command_name, arguments = plugin.pre_command(command_name, arguments)
         command_result = execute_command(
             command_name,
             arguments,
@@ -74,9 +69,9 @@ def execute_ai_response_json(
 
 
 def execute_command(
-        command_name: str,
-        arguments,
-        prompt: PromptGenerator,
+    command_name: str,
+    arguments,
+    prompt: PromptGenerator,
 ):
     """Execute the command and return the result
 
@@ -102,13 +97,15 @@ def execute_command(
     else:
         for command in prompt.commands:
             if (
-                    command_name == command["label"].lower()
-                    or command_name == command["name"].lower()
+                command_name == command["label"].lower()
+                or command_name == command["name"].lower()
             ):
                 try:
                     # 删除非定义参数
-                    diff_ags = list(set(arguments.keys()).difference(set(command['args'].keys())))
-                    for arg_name  in diff_ags:
+                    diff_ags = list(
+                        set(arguments.keys()).difference(set(command["args"].keys()))
+                    )
+                    for arg_name in diff_ags:
                         del arguments[arg_name]
                     print(str(arguments))
                     return command["function"](**arguments)

@@ -25,6 +25,7 @@ lib/
 lib64/
 parts/
 sdist/
+models
 var/
 wheels/
 models/
@@ -139,3 +140,4 @@ dmypy.json
 logs
 nltk_data
 .vectordb
+pilot/data/

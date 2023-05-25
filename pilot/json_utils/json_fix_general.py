@@ -8,8 +8,8 @@ import re
 from typing import Optional
 
 from pilot.configs.config import Config
-from pilot.logs import logger
 from pilot.json_utils.utilities import extract_char_position
+from pilot.logs import logger
 
 CFG = Config()
 
