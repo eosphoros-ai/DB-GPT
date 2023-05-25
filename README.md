@@ -185,7 +185,7 @@ We provide a user interface for Gradio, which allows you to use DB-GPT through o
 
 To use multiple models, modify the LLM_MODEL parameter in the .env configuration file to switch between the models.
 
-####Create your own knowledge repository:
+### Create your own knowledge repository:
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
 
