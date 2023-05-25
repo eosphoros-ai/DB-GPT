@@ -213,7 +213,7 @@ Run the Python interpreter and type the commands:
 
 ## Acknowledgement
 
-The achievements of this project are thanks to the technical community, especially the following projects:
+This project is standing on the shoulders of giants and is not going to work without the open-source communities. Special thanks to the following projects for their excellent contribution to the AI industry:
 - [FastChat](https://github.com/lm-sys/FastChat) for providing chat services
 - [vicuna-13b](https://lmsys.org/blog/2023-03-30-vicuna/) as the base model
 - [langchain](https://langchain.readthedocs.io/) tool chain
