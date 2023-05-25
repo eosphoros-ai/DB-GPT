@@ -8,6 +8,7 @@ import nltk
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 from pilot.singleton import Singleton
+from pilot.common.sql_database import Database
 
 
 class Config(metaclass=Singleton):
@@ -39,6 +40,14 @@ class Config(metaclass=Singleton):
         self.use_mac_os_tts = False
         self.use_mac_os_tts = os.getenv("USE_MAC_OS_TTS")
 
+        # milvus or zilliz cloud configuration
+        self.milvus_addr = os.getenv("MILVUS_ADDR", "localhost:19530")
+        self.milvus_username = os.getenv("MILVUS_USERNAME")
+        self.milvus_password = os.getenv("MILVUS_PASSWORD")
+        self.milvus_collection = os.getenv("MILVUS_COLLECTION", "dbgpt")
+        self.milvus_secure = os.getenv("MILVUS_SECURE") == "True"
+
+
         self.authorise_key = os.getenv("AUTHORISE_COMMAND_KEY", "y")
         self.exit_key = os.getenv("EXIT_KEY", "n")
         self.image_provider = os.getenv("IMAGE_PROVIDER", True)
@@ -55,6 +64,7 @@ class Config(metaclass=Singleton):
         )
         self.speak_mode = False
 
+        self.prompt_templates = {}
         ### Related configuration of built-in commands
         self.command_registry = []
 
@@ -67,6 +77,8 @@ class Config(metaclass=Singleton):
         self.execute_local_commands = (
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
         )
+        ### message stor file
+        self.message_dir = os.getenv("MESSAGE_HISTORY_DIR", "../../message")
 
         ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
         self.plugins_dir = os.getenv("PLUGINS_DIR", "../../plugins")
@@ -90,6 +102,10 @@ class Config(metaclass=Singleton):
         self.LOCAL_DB_PORT = int(os.getenv("LOCAL_DB_PORT", 3306))
         self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
+
+        ### TODO Adapt to multiple types of libraries
+        self.local_db = Database.from_uri("mysql+pymysql://" + self.LOCAL_DB_USER +":"+ self.LOCAL_DB_PASSWORD +"@" +self.LOCAL_DB_HOST + ":" + str(self.LOCAL_DB_PORT) ,
+                                          engine_args ={"pool_size": 10, "pool_recycle": 3600, "echo": True})
 
         ### LLM Model Service Configuration
         self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b")
