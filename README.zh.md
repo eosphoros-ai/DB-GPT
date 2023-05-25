@@ -26,6 +26,10 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 - 知识库统一向量存储/索引
   - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
 
+- 多模型支持
+  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8)
+  - TODO: codet5p, codegen2
+
 ## 效果演示
 
 示例通过 RTX 4090 GPU 演示，[YouTube 地址](https://www.youtube.com/watch?v=1PWI6F89LPo)
@@ -110,6 +114,8 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
    
 用户只需要整理好知识文档，即可用我们现有的能力构建大模型所需要的知识库能力。
 
+
+
 ### 大模型管理能力
 在底层大模型接入中，设计了开放的接口，支持对接多种大模型。同时对于接入模型的效果，我们有非常严格的把控与评审机制。对大模型能力上与ChatGPT对比，在准确率上需要满足85%以上的能力对齐。我们用更高的标准筛选模型，是期望在用户使用过程中，可以省去前面繁琐的测试评估环节。
 
@@ -152,15 +158,6 @@ conda activate dbgpt_env
 pip install -r requirements.txt
 
 ```
-或者也可以使用命令:
-```
-cd DB-GPT
-conda env create -f environment.yml
-```
-另外需要设置一下python包路径, 避免出现运行时找不到包
-```
-echo "/root/workspace/DB-GPT" > /root/miniconda3/env/dbgpt_env/lib/python3.10/site-packages/dbgpt.pth 
-```
 
 ### 3. 运行大模型
 
@@ -187,6 +184,26 @@ $ python webserver.py
 2.  [大模型实战系列(2) —— DB-GPT 阿里云部署指南](https://zhuanlan.zhihu.com/p/629467580)
 3.  [大模型实战系列(3) —— DB-GPT插件模型原理与使用](https://zhuanlan.zhihu.com/p/629623125)
 
+
+### 多模型使用
+在.env 配置文件当中, 修改LLM_MODEL参数来切换使用的模型。
+
+####打造属于你的知识库：
+
+1、将个人知识文件或者文件夹放入pilot/datasets目录中
+
+2、在tools目录执行知识入库脚本
+
+```
+python tools/knowledge_init.py
+
+--vector_name : your vector store name  default_value:default
+--append: append mode, True:append, False: not append default_value:False
+
+```
+3、在界面上新增知识库输入你的知识库名（如果没指定输入default）,就可以根据你的知识库进行问答
+
+注意，这里默认向量模型是text2vec-large-chinese(模型比较大，如果个人电脑配置不够建议采用text2vec-base-chinese),因此确保需要将模型download下来放到models目录中。
 ## 感谢
 
 项目取得的成果，需要感谢技术社区，尤其以下项目。
@@ -201,14 +218,20 @@ $ python webserver.py
 - [ChatGLM](https://github.com/THUDM/ChatGLM-6B) 基础模型
 - [llama-index](https://github.com/jerryjliu/llama_index) 基于现有知识库进行[In-Context Learning](https://arxiv.org/abs/2301.00234)来对其进行数据库相关知识的增强。
 
+# 贡献
+
+- 提交代码前请先执行 `black .`
+
 <!-- GITCONTRIBUTOR_START -->
 
+## 贡献者
 ## Contributors
 
 |[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|[<img src="https://avatars.githubusercontent.com/u/7636723?s=96&v=4" width="100px;"/><br/><sub><b>明天</b></sub>](https://github.com/yhjun1026)<br/> | [<img src="https://avatars.githubusercontent.com/u/13723926?v=4" width="100px;"/><br/><sub><b>Aries-ckt</b></sub>](https://github.com/Aries-ckt)<br/>|[<img src="https://avatars.githubusercontent.com/u/95130644?v=4" width="100px;"/><br/><sub><b>thebigbone</b></sub>](https://github.com/thebigbone)<br/>|
 | :---: | :---: | :---: | :---: |:---: |
 
 
+[git-contributor 说明](https://github.com/xudafeng/git-contributor)，自动生成时间：`Fri May 19 2023 00:24:18 GMT+0800`。
 This project follows the git-contributor [spec](https://github.com/xudafeng/git-contributor), auto updated at `Sun May 14 2023 23:02:43 GMT+0800`.
 
 <!-- GITCONTRIBUTOR_END -->

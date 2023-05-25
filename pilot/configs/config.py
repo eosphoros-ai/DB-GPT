@@ -2,23 +2,24 @@
 # -*- coding: utf-8 -*-
 
 import os
-import nltk
 from typing import List
 
+import nltk
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
+
 from pilot.singleton import Singleton
 from pilot.common.sql_database import Database
 
 
 class Config(metaclass=Singleton):
     """Configuration class to store the state of bools for different scripts access"""
+
     def __init__(self) -> None:
         """Initialize the Config class"""
 
         self.debug_mode = False
         self.skip_reprompt = False
         self.temperature = float(os.getenv("TEMPERATURE", 0.7))
-
 
         self.execute_local_commands = (
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
@@ -96,30 +97,39 @@ class Config(metaclass=Singleton):
         else:
             self.plugins_denylist = []
 
-
         ### Local database connection configuration
-        self.LOCAL_DB_HOST =  os.getenv("LOCAL_DB_HOST",  "127.0.0.1")
-        self.LOCAL_DB_PORT =  int(os.getenv("LOCAL_DB_PORT",  3306))
-        self.LOCAL_DB_USER =  os.getenv("LOCAL_DB_USER",  "root")
-        self.LOCAL_DB_PASSWORD =  os.getenv("LOCAL_DB_PASSWORD",  "aa123456")
+        self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST", "127.0.0.1")
+        self.LOCAL_DB_PORT = int(os.getenv("LOCAL_DB_PORT", 3306))
+        self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
+        self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
 
         ### TODO Adapt to multiple types of libraries
         self.local_db = Database.from_uri("mysql+pymysql://" + self.LOCAL_DB_USER +":"+ self.LOCAL_DB_PASSWORD +"@" +self.LOCAL_DB_HOST + ":" + str(self.LOCAL_DB_PORT) ,
                                           engine_args ={"pool_size": 10, "pool_recycle": 3600, "echo": True})
 
         ### LLM Model Service Configuration
-        self.LLM_MODEL = os.getenv("LLM_MODEL",  "vicuna-13b")
-        self.LIMIT_MODEL_CONCURRENCY = int(os.getenv("LIMIT_MODEL_CONCURRENCY",  5))
-        self.MAX_POSITION_EMBEDDINGS = int(os.getenv("MAX_POSITION_EMBEDDINGS",  4096))
-        self.MODEL_SERVER = os.getenv("MODEL_SERVER",  "http://121.41.167.183:8000")
+        self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b")
+        self.LIMIT_MODEL_CONCURRENCY = int(os.getenv("LIMIT_MODEL_CONCURRENCY", 5))
+        self.MAX_POSITION_EMBEDDINGS = int(os.getenv("MAX_POSITION_EMBEDDINGS", 4096))
+        self.MODEL_PORT = os.getenv("MODEL_PORT", 8000)
+        self.MODEL_SERVER = os.getenv(
+            "MODEL_SERVER", "http://127.0.0.1" + ":" + str(self.MODEL_PORT)
+        )
         self.ISLOAD_8BIT = os.getenv("ISLOAD_8BIT", "True") == "True"
+
+        ### Vector Store Configuration
+        self.VECTOR_STORE_TYPE = os.getenv("VECTOR_STORE_TYPE", "Chroma")
+        self.MILVUS_URL = os.getenv("MILVUS_URL", "127.0.0.1")
+        self.MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
+        self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
+        self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
 
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
         self.debug_mode = value
 
     def set_plugins(self, value: list) -> None:
-        """Set the plugins value. """
+        """Set the plugins value."""
         self.plugins = value
 
     def set_templature(self, value: int) -> None:

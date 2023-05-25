@@ -4,4 +4,5 @@
 
 class ElasticSearchConnector:
     """ElasticSearchConnector"""
+
     pass
