@@ -41,16 +41,16 @@ class BaseOutputParser(ABC):
         text = text.lower()
         respObj = json.loads(text)
 
-        xx = respObj['response']
-        xx = xx.strip(b'\x00'.decode())
+        xx = respObj["response"]
+        xx = xx.strip(b"\x00".decode())
         respObj_ex = json.loads(xx)
-        if respObj_ex['error_code'] == 0:
-            all_text = respObj_ex['text']
+        if respObj_ex["error_code"] == 0:
+            all_text = respObj_ex["text"]
             ### 解析返回文本，获取AI回复部分
             tmpResp = all_text.split(sep)
             last_index = -1
             for i in range(len(tmpResp)):
-                if tmpResp[i].find('assistant:') != -1:
+                if tmpResp[i].find("assistant:") != -1:
                     last_index = i
             ai_response = tmpResp[last_index]
             ai_response = ai_response.replace("assistant:", "")
@@ -60,9 +60,7 @@ class BaseOutputParser(ABC):
             print("un_stream clear response:{}", ai_response)
             return ai_response
         else:
-            raise ValueError("Model server error!code=" + respObj_ex['error_code']);
-
-
+            raise ValueError("Model server error!code=" + respObj_ex["error_code"])
 
     def parse_model_server_out(self, response) -> str:
         """

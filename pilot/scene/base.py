@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class ChatScene(Enum):
     ChatWithDb = "chat_with_db"
     ChatExecution = "chat_execution"

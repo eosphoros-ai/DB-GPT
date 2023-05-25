@@ -1,25 +1,24 @@
 import json
 import re
 from abc import ABC, abstractmethod
-from typing import (
-    Dict,
-    NamedTuple
-)
+from typing import Dict, NamedTuple
 import pandas as pd
 from pilot.utils import build_logger
 from pilot.out_parser.base import BaseOutputParser, T
 from pilot.configs.model_config import LOGDIR
 
+
 class SqlAction(NamedTuple):
     sql: str
     thoughts: Dict
 
+
 logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
+
+
 class DbChatOutputParser(BaseOutputParser):
-
-    def __init__(self, sep:str, is_stream_out: bool):
-        super().__init__(sep=sep, is_stream_out=is_stream_out )
-
+    def __init__(self, sep: str, is_stream_out: bool):
+        super().__init__(sep=sep, is_stream_out=is_stream_out)
 
     def parse_model_server_out(self, response) -> str:
         return super().parse_model_server_out(response)
@@ -31,20 +30,20 @@ class DbChatOutputParser(BaseOutputParser):
         if "```" in cleaned_output:
             cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json"):]
+            cleaned_output = cleaned_output[len("```json") :]
         if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```"):]
+            cleaned_output = cleaned_output[len("```") :]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
         if not cleaned_output.startswith("{") or not cleaned_output.endswith("}"):
             logger.info("illegal json processing")
-            json_pattern = r'{(.+?)}'
+            json_pattern = r"{(.+?)}"
             m = re.search(json_pattern, cleaned_output)
             if m:
                 cleaned_output = m.group(0)
             else:
-               raise ValueError("model server out not fllow the prompt!")
+                raise ValueError("model server out not fllow the prompt!")
 
         response = json.loads(cleaned_output)
         sql, thoughts = response["sql"], response["thoughts"]

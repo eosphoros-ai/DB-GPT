@@ -45,7 +45,7 @@ RESPONSE_FORMAT = {
         "reasoning": "reasoning",
         "speak": "thoughts summary to say to user",
     },
-    "sql": "SQL Query to run"
+    "sql": "SQL Query to run",
 }
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
@@ -59,7 +59,9 @@ chat_db_prompt = PromptTemplate(
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE + PROMPT_SUFFIX + PROMPT_RESPONSE,
     stream_out=PROMPT_NEED_NEED_STREAM_OUT,
-    output_parser=DbChatOutputParser(sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT),
+    output_parser=DbChatOutputParser(
+        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
+    ),
 )
 
 CFG.prompt_templates.update({chat_db_prompt.template_scene: chat_db_prompt})

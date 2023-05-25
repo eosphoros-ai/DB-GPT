@@ -47,7 +47,6 @@ class Config(metaclass=Singleton):
         self.milvus_collection = os.getenv("MILVUS_COLLECTION", "dbgpt")
         self.milvus_secure = os.getenv("MILVUS_SECURE") == "True"
 
-
         self.authorise_key = os.getenv("AUTHORISE_COMMAND_KEY", "y")
         self.exit_key = os.getenv("EXIT_KEY", "n")
         self.image_provider = os.getenv("IMAGE_PROVIDER", True)
@@ -104,8 +103,17 @@ class Config(metaclass=Singleton):
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
 
         ### TODO Adapt to multiple types of libraries
-        self.local_db = Database.from_uri("mysql+pymysql://" + self.LOCAL_DB_USER +":"+ self.LOCAL_DB_PASSWORD +"@" +self.LOCAL_DB_HOST + ":" + str(self.LOCAL_DB_PORT) ,
-                                          engine_args ={"pool_size": 10, "pool_recycle": 3600, "echo": True})
+        self.local_db = Database.from_uri(
+            "mysql+pymysql://"
+            + self.LOCAL_DB_USER
+            + ":"
+            + self.LOCAL_DB_PASSWORD
+            + "@"
+            + self.LOCAL_DB_HOST
+            + ":"
+            + str(self.LOCAL_DB_PORT),
+            engine_args={"pool_size": 10, "pool_recycle": 3600, "echo": True},
+        )
 
         ### LLM Model Service Configuration
         self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b")

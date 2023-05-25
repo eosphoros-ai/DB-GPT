@@ -4,8 +4,10 @@ from pilot.scene.base_chat import BaseChat, logger, headers
 from pilot.scene.message import OnceConversation
 from pilot.scene.base import ChatScene
 
+
 class ChatWithPlugin(BaseChat):
-    chat_scene: str=  ChatScene.ChatExecution.value
+    chat_scene: str = ChatScene.ChatExecution.value
+
     def __init__(self, chat_mode, chat_session_id, current_user_input):
         super().__init__(chat_mode, chat_session_id, current_user_input)
 

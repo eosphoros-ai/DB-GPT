@@ -137,13 +137,15 @@ def load_demo(url_params, request: gr.Request):
     unique_id = uuid.uuid1()
     state.conv_id = str(unique_id)
 
-    return (state,
-            dropdown_update,
-            gr.Chatbot.update(visible=True),
-            gr.Textbox.update(visible=True),
-            gr.Button.update(visible=True),
-            gr.Row.update(visible=True),
-            gr.Accordion.update(visible=True))
+    return (
+        state,
+        dropdown_update,
+        gr.Chatbot.update(visible=True),
+        gr.Textbox.update(visible=True),
+        gr.Button.update(visible=True),
+        gr.Row.update(visible=True),
+        gr.Accordion.update(visible=True),
+    )
 
 
 def get_conv_log_filename():
@@ -203,30 +205,31 @@ def get_chat_mode(mode, sql_mode, db_selector) -> ChatScene:
     elif mode == conversation_types["auto_execute_plugin"] and not db_selector:
         return ChatScene.ChatExecution
     else:
-     return ChatScene.ChatNormal
+        return ChatScene.ChatNormal
 
 
-def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, request: gr.Request):
+def http_bot(
+    state, mode, sql_mode, db_selector, temperature, max_new_tokens, request: gr.Request
+):
     logger.info(f"User message send!{state.conv_id},{sql_mode},{db_selector}")
     start_tstamp = time.time()
-    scene:ChatScene = get_chat_mode(mode, sql_mode, db_selector)
+    scene: ChatScene = get_chat_mode(mode, sql_mode, db_selector)
     print(f"当前对话模式:{scene.value}")
     model_name = CFG.LLM_MODEL
 
     if ChatScene.ChatWithDb == scene:
         logger.info("基于DB对话走新的模式！")
-        chat_param ={
+        chat_param = {
             "chat_session_id": state.conv_id,
             "db_name": db_selector,
-            "user_input": state.last_user_input
+            "user_input": state.last_user_input,
         }
-        chat: BaseChat =  CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
         chat.call()
-        state.messages[-1][-1] =  f"{chat.current_ai_response()}"
+        state.messages[-1][-1] = f"{chat.current_ai_response()}"
         yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
     else:
-
         dbname = db_selector
         # TODO 这里的请求需要拼接现有知识库, 使得其根据现有知识库作答, 所以prompt需要继续优化
         if state.skip_next:
@@ -242,7 +245,9 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
             # prompt 中添加上下文提示, 根据已有知识对话, 上下文提示是否也应该放在第一轮, 还是每一轮都添加上下文?
             # 如果用户侧的问题跨度很大, 应该每一轮都加提示。
             if db_selector:
-                new_state.append_message(new_state.roles[0], gen_sqlgen_conversation(dbname) + query)
+                new_state.append_message(
+                    new_state.roles[0], gen_sqlgen_conversation(dbname) + query
+                )
                 new_state.append_message(new_state.roles[1], None)
             else:
                 new_state.append_message(new_state.roles[0], query)
@@ -250,7 +255,6 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
 
             new_state.conv_id = uuid.uuid4().hex
             state = new_state
-
 
         prompt = state.get_prompt()
         skip_echo_len = len(prompt.replace("</s>", " ")) + 1
@@ -263,16 +267,25 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
             skip_echo_len = len(prompt.replace("</s>", " ")) + 1
 
         if mode == conversation_types["custome"] and not db_selector:
-            persist_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vector_store_name["vs_name"] + ".vectordb")
+            persist_dir = os.path.join(
+                KNOWLEDGE_UPLOAD_ROOT_PATH, vector_store_name["vs_name"] + ".vectordb"
+            )
             print("向量数据库持久化地址: ", persist_dir)
-            knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["sentence-transforms"], vector_store_config={ "vector_store_name": vector_store_name["vs_name"],
-                                                                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH})
+            knowledge_embedding_client = KnowledgeEmbedding(
+                file_path="",
+                model_name=LLM_MODEL_CONFIG["sentence-transforms"],
+                local_persist=False,
+                vector_store_config={
+                    "vector_store_name": vector_store_name["vs_name"],
+                    "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+                },
+            )
             query = state.messages[-2][1]
             docs = knowledge_embedding_client.similar_search(query, 1)
             context = [d.page_content for d in docs]
             prompt_template = PromptTemplate(
                 template=conv_qa_prompt_template,
-                input_variables=["context", "question"]
+                input_variables=["context", "question"],
             )
             result = prompt_template.format(context="\n".join(context), question=query)
             state.messages[-2][1] = result
@@ -285,7 +298,9 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
             "prompt": prompt,
             "temperature": float(temperature),
             "max_new_tokens": int(max_new_tokens),
-            "stop": state.sep if state.sep_style == SeparatorStyle.SINGLE else state.sep2,
+            "stop": state.sep
+            if state.sep_style == SeparatorStyle.SINGLE
+            else state.sep2,
         }
         logger.info(f"Requert: \n{payload}")
 
@@ -295,8 +310,13 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
 
         try:
             # Stream output
-            response = requests.post(urljoin(CFG.MODEL_SERVER, "generate_stream"),
-                                     headers=headers, json=payload, stream=True, timeout=20)
+            response = requests.post(
+                urljoin(CFG.MODEL_SERVER, "generate_stream"),
+                headers=headers,
+                json=payload,
+                stream=True,
+                timeout=20,
+            )
             for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
                 if chunk:
                     data = json.loads(chunk.decode())
@@ -309,12 +329,23 @@ def http_bot(state, mode, sql_mode, db_selector, temperature, max_new_tokens, re
                         output = data["text"] + f" (error_code: {data['error_code']})"
                         state.messages[-1][-1] = output
                         yield (state, state.to_gradio_chatbot()) + (
-                            disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+                            disable_btn,
+                            disable_btn,
+                            disable_btn,
+                            enable_btn,
+                            enable_btn,
+                        )
                         return
 
         except requests.exceptions.RequestException as e:
             state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
-            yield (state, state.to_gradio_chatbot()) + (disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
+            yield (state, state.to_gradio_chatbot()) + (
+                disable_btn,
+                disable_btn,
+                disable_btn,
+                enable_btn,
+                enable_btn,
+            )
             return
 
         state.messages[-1][-1] = state.messages[-1][-1][:-1]
@@ -572,7 +603,6 @@ def knowledge_embedding_store(vs_id, files):
             },
         )
         knowledge_embedding_client.knowledge_embedding()
-
 
     logger.info("knowledge embedding success")
     return os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, vs_id + ".vectordb")
