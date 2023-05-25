@@ -1,4 +1,3 @@
-accelerate==0.16.0
 torch==2.0.0
 accelerate==0.16.0
 aiohttp==3.8.4
@@ -24,15 +23,12 @@ pycocotools==2.0.6
 pyparsing==3.0.9
 python-dateutil==2.8.2
 pyyaml==6.0
-regex==2022.10.31
 tokenizers==0.13.2
 tqdm==4.64.1
 transformers==4.28.0
 timm==0.6.13
 spacy==3.5.1
 webdataset==0.2.48
-scikit-learn==1.2.2
-scipy==1.10.1
 yarl==1.8.2
 zipp==3.14.0
 omegaconf==2.3.0
@@ -54,7 +50,6 @@ grpcio==1.47.5
 
 auto-gpt-plugin-template
 pymdown-extensions
-mkdocs
 gTTS==2.3.1
 langchain
 nltk
@@ -67,7 +62,6 @@ colorama
 playsound
 distro
 pypdf
-# milvus-cli==0.3.2
 
 # Testing dependencies
 pytest
