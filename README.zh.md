@@ -194,6 +194,8 @@ $ python webserver.py
 
 2.在.env文件指定你的向量数据库类型,VECTOR_STORE_TYPE(默认Chroma),目前支持Chroma,Milvus(需要设置MILVUS_URL和MILVUS_PORT)
 
+注意Milvus版本需要>2.1
+
 3.在tools目录执行知识入库脚本（）
 
 如果是选择默认知识库，不需要指定 --vector_name, 默认default
