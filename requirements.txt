@@ -46,7 +46,7 @@ wandb
 llama-index==0.5.27
 pymysql
 unstructured==0.6.3
-grpcio==1.54.2
+grpcio==1.47.5
 
 auto-gpt-plugin-template
 pymdown-extensions
