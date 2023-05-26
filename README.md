@@ -194,7 +194,9 @@ To use multiple models, modify the LLM_MODEL parameter in the .env configuration
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
 
-2.Run the knowledge repository script in the tools directory.
+2.set .env configuration set your vector store type, eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > 2.1)
+
+3.Run the knowledge repository script in the tools directory.
 
 ```bash
 & python tools/knowledge_init.py
@@ -204,7 +206,7 @@ To use multiple models, modify the LLM_MODEL parameter in the .env configuration
 
 ```
 
-3.Add the knowledge repository in the interface by entering the name of your knowledge repository (if not specified, enter "default") so you can use it for Q&A based on your knowledge base. 
+4.Add the knowledge repository in the interface by entering the name of your knowledge repository (if not specified, enter "default") so you can use it for Q&A based on your knowledge base. 
 
 Note that the default vector model used is text2vec-large-chinese (which is a large model, so if your personal computer configuration is not enough, it is recommended to use text2vec-base-chinese). Therefore, ensure that you download the model and place it in the models directory.
 
