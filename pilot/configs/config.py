@@ -17,6 +17,9 @@ class Config(metaclass=Singleton):
     def __init__(self) -> None:
         """Initialize the Config class"""
 
+        # Gradio language version: en, cn
+        self.LANGUAGE = os.getenv("LANGUAGE", "en")
+
         self.debug_mode = False
         self.skip_reprompt = False
         self.temperature = float(os.getenv("TEMPERATURE", 0.7))
