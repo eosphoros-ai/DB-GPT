@@ -190,6 +190,11 @@ We provide a user interface for Gradio, which allows you to use DB-GPT through o
 
 To use multiple models, modify the LLM_MODEL parameter in the .env configuration file to switch between the models.
 
+### Multi Language Usage
+To use multiple language model, modify the LLM_MODEL parameter in the .env configuration file to switch between the models.
+
+In the .env configuration file, modify the LANGUAGE parameter to switch between different languages, the default is English (Chinese zh, English en, other languages ​​to be added)
+
 ### Create your own knowledge repository:
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
@@ -239,8 +244,8 @@ This project is standing on the shoulders of giants and is not going to work wit
 
 ## Contributors
 
-|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|[<img src="https://avatars.githubusercontent.com/u/7636723?s=96&v=4" width="100px;"/><br/><sub><b>明天</b></sub>](https://github.com/yhjun1026)<br/> | [<img src="https://avatars.githubusercontent.com/u/13723926?v=4" width="100px;"/><br/><sub><b>Aries-ckt</b></sub>](https://github.com/Aries-ckt)<br/>|[<img src="https://avatars.githubusercontent.com/u/95130644?v=4" width="100px;"/><br/><sub><b>thebigbone</b></sub>](https://github.com/thebigbone)<br/>|
-| :---: | :---: | :---: | :---: |:---: |
+|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|[<img src="https://avatars.githubusercontent.com/u/7636723?s=96&v=4" width="100px;"/><br/><sub><b>明天</b></sub>](https://github.com/yhjun1026)<br/> | [<img src="https://avatars.githubusercontent.com/u/13723926?v=4" width="100px;"/><br/><sub><b>Aries-ckt</b></sub>](https://github.com/Aries-ckt)<br/>|[<img src="https://avatars.githubusercontent.com/u/95130644?v=4" width="100px;"/><br/><sub><b>thebigbone</b></sub>](https://github.com/thebigbone)<br/>|[<img src="https://avatars.githubusercontent.com/u/26043513?v=4" width="100px;"/><br/><sub><b>Shinexy</b></sub>](https://github.com/xuyuan23)<br/> |
+| :---: | :---: | :---: | :---: |:---: |:---: |
 
 
 This project follows the git-contributor [spec](https://github.com/xudafeng/git-contributor), auto updated at `Fri May 19 2023 00:24:18 GMT+0800`.
