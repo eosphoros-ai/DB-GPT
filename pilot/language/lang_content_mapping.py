@@ -1,4 +1,3 @@
-
 ## 短期内在该文件中配置，长期考虑将会存储在默认的数据库中存储，并可以支持多种语言的配置
 
 lang_dicts = {
@@ -32,7 +31,7 @@ lang_dicts = {
         "add_folder": "添加文件夹",
         "send": "发送",
         "regenerate": "重新生成",
-        "clear_box": "清理"
+        "clear_box": "清理",
     },
     "en": {
         "unique_id": "English Content",
@@ -64,10 +63,10 @@ lang_dicts = {
         "add_folder": "Add folder",
         "send": "Send",
         "regenerate": "Regenerate",
-        "clear_box": "Clear"
-    }
+        "clear_box": "Clear",
+    },
 }
+
 
 def get_lang_content(key, language="zh"):
     return lang_dicts.get(language, {}).get(key, "")
-

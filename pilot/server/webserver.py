@@ -89,9 +89,18 @@ DB_SETTINGS = {
 
 
 llm_native_dialogue = get_lang_text("knowledge_qa_type_llm_native_dialogue")
-default_knowledge_base_dialogue = get_lang_text("knowledge_qa_type_default_knowledge_base_dialogue")
-add_knowledge_base_dialogue = get_lang_text("knowledge_qa_type_add_knowledge_base_dialogue")
-knowledge_qa_type_list = [llm_native_dialogue, default_knowledge_base_dialogue, add_knowledge_base_dialogue]
+default_knowledge_base_dialogue = get_lang_text(
+    "knowledge_qa_type_default_knowledge_base_dialogue"
+)
+add_knowledge_base_dialogue = get_lang_text(
+    "knowledge_qa_type_add_knowledge_base_dialogue"
+)
+knowledge_qa_type_list = [
+    llm_native_dialogue,
+    default_knowledge_base_dialogue,
+    add_knowledge_base_dialogue,
+]
+
 
 def get_simlar(q):
     docsearch = knownledge_tovec_st(os.path.join(DATASETS_DIR, "plan.md"))
@@ -522,7 +531,9 @@ def build_single_model_ui():
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Accordion(get_lang_text("model_control_param"), open=False, visible=False) as parameter_row:
+    with gr.Accordion(
+        get_lang_text("model_control_param"), open=False, visible=False
+    ) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -554,19 +565,36 @@ def build_single_model_ui():
                     show_label=True,
                 ).style(container=False)
 
-            sql_mode = gr.Radio([get_lang_text("sql_generate_mode_direct"), get_lang_text("sql_generate_mode_none")], show_label=False, value=get_lang_text("sql_generate_mode_none"))
+            sql_mode = gr.Radio(
+                [
+                    get_lang_text("sql_generate_mode_direct"),
+                    get_lang_text("sql_generate_mode_none"),
+                ],
+                show_label=False,
+                value=get_lang_text("sql_generate_mode_none"),
+            )
             sql_vs_setting = gr.Markdown(get_lang_text("sql_vs_setting"))
             sql_mode.change(fn=change_sql_mode, inputs=sql_mode, outputs=sql_vs_setting)
 
         tab_qa = gr.TabItem(get_lang_text("knowledge_qa"), elem_id="QA")
         with tab_qa:
             mode = gr.Radio(
-                [llm_native_dialogue, default_knowledge_base_dialogue, add_knowledge_base_dialogue], show_label=False, value=llm_native_dialogue
+                [
+                    llm_native_dialogue,
+                    default_knowledge_base_dialogue,
+                    add_knowledge_base_dialogue,
+                ],
+                show_label=False,
+                value=llm_native_dialogue,
             )
-            vs_setting = gr.Accordion(get_lang_text("configure_knowledge_base"), open=False)
+            vs_setting = gr.Accordion(
+                get_lang_text("configure_knowledge_base"), open=False
+            )
             mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
             with vs_setting:
-                vs_name = gr.Textbox(label=get_lang_text("new_klg_name"), lines=1, interactive=True)
+                vs_name = gr.Textbox(
+                    label=get_lang_text("new_klg_name"), lines=1, interactive=True
+                )
                 vs_add = gr.Button(get_lang_text("add_as_new_klg"))
                 with gr.Column() as doc2vec:
                     gr.Markdown(get_lang_text("add_file_to_klg"))
@@ -579,7 +607,9 @@ def build_single_model_ui():
                             show_label=False,
                         )
 
-                        load_file_button = gr.Button(get_lang_text("upload_and_load_to_klg"))
+                        load_file_button = gr.Button(
+                            get_lang_text("upload_and_load_to_klg")
+                        )
                     with gr.Tab(get_lang_text("upload_folder")):
                         folder_files = gr.File(
                             label=get_lang_text("add_folder"),
@@ -587,7 +617,9 @@ def build_single_model_ui():
                             file_count="directory",
                             show_label=False,
                         )
-                        load_folder_button = gr.Button(get_lang_text("upload_and_load_to_klg"))
+                        load_folder_button = gr.Button(
+                            get_lang_text("upload_and_load_to_klg")
+                        )
 
     with gr.Blocks():
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
