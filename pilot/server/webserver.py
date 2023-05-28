@@ -56,7 +56,11 @@ from pilot.vector_store.extract_tovec import (
 from pilot.commands.command import execute_ai_response_json
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
+from pilot.language.translation_handler import get_lang_text
 
+
+# 加载插件
+CFG = Config()
 logger = build_logger("webserver", LOGDIR + "webserver.log")
 headers = {"User-Agent": "dbgpt Client"}
 
@@ -67,15 +71,13 @@ disable_btn = gr.Button.update(interactive=True)
 enable_moderation = False
 models = []
 dbs = []
-vs_list = ["新建知识库"] + get_vector_storelist()
+vs_list = [get_lang_text("create_knowledge_base")] + get_vector_storelist()
 autogpt = False
 vector_store_client = None
 vector_store_name = {"vs_name": ""}
 
 priority = {"vicuna-13b": "aaa"}
 
-# 加载插件
-CFG = Config()
 CHAT_FACTORY = ChatFactory()
 
 DB_SETTINGS = {
@@ -84,6 +86,20 @@ DB_SETTINGS = {
     "host": CFG.LOCAL_DB_HOST,
     "port": CFG.LOCAL_DB_PORT,
 }
+
+
+llm_native_dialogue = get_lang_text("knowledge_qa_type_llm_native_dialogue")
+default_knowledge_base_dialogue = get_lang_text(
+    "knowledge_qa_type_default_knowledge_base_dialogue"
+)
+add_knowledge_base_dialogue = get_lang_text(
+    "knowledge_qa_type_add_knowledge_base_dialogue"
+)
+knowledge_qa_type_list = [
+    llm_native_dialogue,
+    default_knowledge_base_dialogue,
+    add_knowledge_base_dialogue,
+]
 
 
 def get_simlar(q):
@@ -102,7 +118,7 @@ def gen_sqlgen_conversation(dbname):
     schemas = mo.get_schema(dbname)
     for s in schemas:
         message += s["schema_info"] + ";"
-    return f"数据库{dbname}的Schema信息如下: {message}\n"
+    return get_lang_text("sql_schema_info").format(dbname, message)
 
 
 def get_database_list():
@@ -491,14 +507,14 @@ block_css = (
 
 
 def change_sql_mode(sql_mode):
-    if sql_mode in ["直接执行结果"]:
+    if sql_mode in [get_lang_text("sql_generate_mode_direct")]:
         return gr.update(visible=True)
     else:
         return gr.update(visible=False)
 
 
 def change_mode(mode):
-    if mode in ["默认知识库对话", "LLM原生对话"]:
+    if mode in [default_knowledge_base_dialogue, llm_native_dialogue]:
         return gr.update(visible=False)
     else:
         return gr.update(visible=True)
@@ -509,20 +525,15 @@ def change_tab():
 
 
 def build_single_model_ui():
-    notice_markdown = """
-    # DB-GPT
-    
-    [DB-GPT](https://github.com/csunny/DB-GPT) 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密，100% 安全。 
-    """
-    learn_more_markdown = """ 
-        ### Licence
-        The service is a research preview intended for non-commercial use only. subject to the model [License](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md) of Vicuna-13B 
-    """
+    notice_markdown = get_lang_text("db_gpt_introduction")
+    learn_more_markdown = get_lang_text("learn_more_markdown")
 
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Accordion("参数", open=False, visible=False) as parameter_row:
+    with gr.Accordion(
+        get_lang_text("model_control_param"), open=False, visible=False
+    ) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -538,56 +549,77 @@ def build_single_model_ui():
             value=512,
             step=64,
             interactive=True,
-            label="最大输出Token数",
+            label=get_lang_text("max_input_token_size"),
         )
     tabs = gr.Tabs()
     with tabs:
-        tab_sql = gr.TabItem("SQL生成与诊断", elem_id="SQL")
+        tab_sql = gr.TabItem(get_lang_text("sql_generate_diagnostics"), elem_id="SQL")
         with tab_sql:
             # TODO A selector to choose database
             with gr.Row(elem_id="db_selector"):
                 db_selector = gr.Dropdown(
-                    label="请选择数据库",
+                    label=get_lang_text("please_choose_database"),
                     choices=dbs,
                     value=dbs[0] if len(models) > 0 else "",
                     interactive=True,
                     show_label=True,
                 ).style(container=False)
 
-            sql_mode = gr.Radio(["直接执行结果", "不执行结果"], show_label=False, value="不执行结果")
-            sql_vs_setting = gr.Markdown("自动执行模式下, DB-GPT可以具备执行SQL、从网络读取知识自动化存储学习的能力")
+            sql_mode = gr.Radio(
+                [
+                    get_lang_text("sql_generate_mode_direct"),
+                    get_lang_text("sql_generate_mode_none"),
+                ],
+                show_label=False,
+                value=get_lang_text("sql_generate_mode_none"),
+            )
+            sql_vs_setting = gr.Markdown(get_lang_text("sql_vs_setting"))
             sql_mode.change(fn=change_sql_mode, inputs=sql_mode, outputs=sql_vs_setting)
 
-        tab_qa = gr.TabItem("知识问答", elem_id="QA")
+        tab_qa = gr.TabItem(get_lang_text("knowledge_qa"), elem_id="QA")
         with tab_qa:
             mode = gr.Radio(
-                ["LLM原生对话", "默认知识库对话", "新增知识库对话"], show_label=False, value="LLM原生对话"
+                [
+                    llm_native_dialogue,
+                    default_knowledge_base_dialogue,
+                    add_knowledge_base_dialogue,
+                ],
+                show_label=False,
+                value=llm_native_dialogue,
             )
-            vs_setting = gr.Accordion("配置知识库", open=False)
+            vs_setting = gr.Accordion(
+                get_lang_text("configure_knowledge_base"), open=False
+            )
             mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
             with vs_setting:
-                vs_name = gr.Textbox(label="新知识库名称", lines=1, interactive=True)
-                vs_add = gr.Button("添加为新知识库")
+                vs_name = gr.Textbox(
+                    label=get_lang_text("new_klg_name"), lines=1, interactive=True
+                )
+                vs_add = gr.Button(get_lang_text("add_as_new_klg"))
                 with gr.Column() as doc2vec:
-                    gr.Markdown("向知识库中添加文件")
-                    with gr.Tab("上传文件"):
+                    gr.Markdown(get_lang_text("add_file_to_klg"))
+                    with gr.Tab(get_lang_text("upload_file")):
                         files = gr.File(
-                            label="添加文件",
+                            label=get_lang_text("add_file"),
                             file_types=[".txt", ".md", ".docx", ".pdf"],
                             file_count="multiple",
                             allow_flagged_uploads=True,
                             show_label=False,
                         )
 
-                        load_file_button = gr.Button("上传并加载到知识库")
-                    with gr.Tab("上传文件夹"):
+                        load_file_button = gr.Button(
+                            get_lang_text("upload_and_load_to_klg")
+                        )
+                    with gr.Tab(get_lang_text("upload_folder")):
                         folder_files = gr.File(
-                            label="添加文件夹",
+                            label=get_lang_text("add_folder"),
                             accept_multiple_files=True,
                             file_count="directory",
                             show_label=False,
                         )
-                        load_folder_button = gr.Button("上传并加载到知识库")
+                        load_folder_button = gr.Button(
+                            get_lang_text("upload_and_load_to_klg")
+                        )
 
     with gr.Blocks():
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
@@ -599,11 +631,11 @@ def build_single_model_ui():
                     visible=False,
                 ).style(container=False)
             with gr.Column(scale=2, min_width=50):
-                send_btn = gr.Button(value="发送", visible=False)
+                send_btn = gr.Button(value=get_lang_text("send"), visible=False)
 
     with gr.Row(visible=False) as button_row:
-        regenerate_btn = gr.Button(value="重新生成", interactive=False)
-        clear_btn = gr.Button(value="清理", interactive=False)
+        regenerate_btn = gr.Button(value=get_lang_text("regenerate"), interactive=False)
+        clear_btn = gr.Button(value=get_lang_text("clear_box"), interactive=False)
 
     gr.Markdown(learn_more_markdown)
     btn_list = [regenerate_btn, clear_btn]
@@ -649,7 +681,7 @@ def build_single_model_ui():
 
 def build_webdemo():
     with gr.Blocks(
-        title="数据库智能助手",
+        title=get_lang_text("database_smart_assistant"),
         # theme=gr.themes.Base(),
         theme=gr.themes.Default(),
         css=block_css,
