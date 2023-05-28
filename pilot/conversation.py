@@ -5,6 +5,7 @@ import dataclasses
 import uuid
 from enum import auto, Enum
 from typing import List, Any
+from pilot.language.translation_handler import get_lang_text
 
 from pilot.configs.config import Config
 
@@ -263,15 +264,17 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、简要的回
 default_conversation = conv_one_shot
 
 conversation_sql_mode = {
-    "auto_execute_ai_response": "直接执行结果",
-    "dont_execute_ai_response": "不直接执行结果",
+    "auto_execute_ai_response": get_lang_text("sql_generate_mode_direct"),
+    "dont_execute_ai_response": get_lang_text("sql_generate_mode_none"),
 }
 
 conversation_types = {
-    "native": "LLM原生对话",
-    "default_knownledge": "默认知识库对话",
-    "custome": "新增知识库对话",
-    "auto_execute_plugin": "对话使用插件",
+    "native": get_lang_text("knowledge_qa_type_llm_native_dialogue"),
+    "default_knownledge": get_lang_text(
+        "knowledge_qa_type_default_knowledge_base_dialogue"
+    ),
+    "custome": get_lang_text("knowledge_qa_type_add_knowledge_base_dialogue"),
+    "auto_execute_plugin": get_lang_text("dialogue_use_plugin"),
 }
 
 conv_templates = {
