@@ -270,7 +270,9 @@ conversation_sql_mode = {
 
 conversation_types = {
     "native": get_lang_text("knowledge_qa_type_llm_native_dialogue"),
-    "default_knownledge": get_lang_text("knowledge_qa_type_default_knowledge_base_dialogue"),
+    "default_knownledge": get_lang_text(
+        "knowledge_qa_type_default_knowledge_base_dialogue"
+    ),
     "custome": get_lang_text("knowledge_qa_type_add_knowledge_base_dialogue"),
     "auto_execute_plugin": get_lang_text("dialogue_use_plugin"),
 }
