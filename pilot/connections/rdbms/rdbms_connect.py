@@ -18,6 +18,8 @@ from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.orm import sessionmaker, scoped_session
 
+from pilot.connections.base import BaseConnect
+
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     return (
@@ -26,7 +28,7 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     )
 
 
-class Database:
+class RDBMSDatabase(BaseConnect):
     """SQLAlchemy wrapper around a database."""
 
     def __init__(
@@ -120,7 +122,7 @@ class Database:
     @classmethod
     def from_uri(
         cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
-    ) -> Database:
+    ) -> RDBMSDatabase:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
         return cls(create_engine(database_uri, **_engine_args), **kwargs)

@@ -8,6 +8,7 @@ from pilot.common.formatting import formatter
 from pilot.out_parser.base import BaseOutputParser
 from pilot.common.schema import SeparatorStyle
 
+
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
     """Format a template using jinja2."""
     try:
@@ -32,22 +33,23 @@ class PromptTemplate(BaseModel, ABC):
     """A list of the names of the variables the prompt template expects."""
     template_scene: str
 
-    template_define:str
+    template_define: str
     """this template define"""
     template: str
     """The prompt template."""
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
-    response_format:str
+    response_format: str
     """default use stream out"""
     stream_out: bool = True
     """"""
     output_parser: BaseOutputParser = None
     """"""
-    sep:str = SeparatorStyle.SINGLE.value
+    sep: str = SeparatorStyle.SINGLE.value
 
     class Config:
         """Configuration for this pydantic object."""
+
         arbitrary_types_allowed = True
 
     @property
@@ -96,10 +98,8 @@ class PromptTemplate(BaseModel, ABC):
         else:
             return "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
 
-
-    def format(self,  **kwargs: Any) -> str:
-        """Format the prompt with the inputs.
-        """
+    def format(self, **kwargs: Any) -> str:
+        """Format the prompt with the inputs."""
 
         kwargs["response"] = json.dumps(self.response_format, indent=4)
         return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)

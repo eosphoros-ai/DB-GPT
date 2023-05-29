@@ -13,13 +13,15 @@ from typing import (
     TypeVar,
     Union,
 )
+from pilot.utils import build_logger
+import re
 
 from pydantic import BaseModel, Extra, Field, root_validator
-
+from pilot.configs.model_config import LOGDIR
 from pilot.prompts.base import PromptValue
 
 T = TypeVar("T")
-
+logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
 
 class BaseOutputParser(ABC):
     """Class to parse the output of an LLM call.
@@ -41,16 +43,16 @@ class BaseOutputParser(ABC):
         text = text.lower()
         respObj = json.loads(text)
 
-        xx = respObj['response']
-        xx = xx.strip(b'\x00'.decode())
+        xx = respObj["response"]
+        xx = xx.strip(b"\x00".decode())
         respObj_ex = json.loads(xx)
-        if respObj_ex['error_code'] == 0:
-            all_text = respObj_ex['text']
+        if respObj_ex["error_code"] == 0:
+            all_text = respObj_ex["text"]
             ### 解析返回文本，获取AI回复部分
             tmpResp = all_text.split(sep)
             last_index = -1
             for i in range(len(tmpResp)):
-                if tmpResp[i].find('assistant:') != -1:
+                if tmpResp[i].find("assistant:") != -1:
                     last_index = i
             ai_response = tmpResp[last_index]
             ai_response = ai_response.replace("assistant:", "")
@@ -60,9 +62,7 @@ class BaseOutputParser(ABC):
             print("un_stream clear response:{}", ai_response)
             return ai_response
         else:
-            raise ValueError("Model server error!code=" + respObj_ex['error_code']);
-
-
+            raise ValueError("Model server error!code=" + respObj_ex["error_code"])
 
     def parse_model_server_out(self, response) -> str:
         """
@@ -87,7 +87,27 @@ class BaseOutputParser(ABC):
         Returns:
 
         """
-        pass
+        cleaned_output = model_out_text.rstrip()
+        if "```json" in cleaned_output:
+            _, cleaned_output = cleaned_output.split("```json")
+        if "```" in cleaned_output:
+            cleaned_output, _ = cleaned_output.split("```")
+        if cleaned_output.startswith("```json"):
+            cleaned_output = cleaned_output[len("```json"):]
+        if cleaned_output.startswith("```"):
+            cleaned_output = cleaned_output[len("```"):]
+        if cleaned_output.endswith("```"):
+            cleaned_output = cleaned_output[: -len("```")]
+        cleaned_output = cleaned_output.strip()
+        if not cleaned_output.startswith("{") or not cleaned_output.endswith("}"):
+            logger.info("illegal json processing")
+            json_pattern = r"{(.+?)}"
+            m = re.search(json_pattern, cleaned_output)
+            if m:
+                cleaned_output = m.group(0)
+            else:
+                raise ValueError("model server out not fllow the prompt!")
+        return cleaned_output
 
     def parse_view_response(self, ai_text) -> str:
         """
@@ -98,7 +118,7 @@ class BaseOutputParser(ABC):
         Returns:
 
         """
-        pass
+        return ai_text
 
     def get_format_instructions(self) -> str:
         """Instructions on how the LLM output should be formatted."""
