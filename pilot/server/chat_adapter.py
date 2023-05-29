@@ -84,6 +84,16 @@ class CodeGenChatAdapter(BaseChatAdpter):
         pass
 
 
+class GuanacoAdapter(BaseChatAdpter):
+    """Model chat adapter for Guanaco """
+    
+    def match(self, model_path: str):
+        return "guanaco" in model_path
+
+    def get_generate_stream_func(self):
+        # TODO 
+        pass
+
 register_llm_model_chat_adapter(VicunaChatAdapter)
 register_llm_model_chat_adapter(ChatGLMChatAdapter)
 
