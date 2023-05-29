@@ -15,6 +15,7 @@ from typing import (
 
 from pydantic import BaseModel, Extra, Field, root_validator
 
+
 class PromptValue(BaseModel, ABC):
     @abstractmethod
     def to_string(self) -> str:
@@ -37,7 +38,6 @@ class BaseMessage(BaseModel):
         """Type of the message, used for serialization."""
 
 
-
 class HumanMessage(BaseMessage):
     """Type of message that is spoken by the human."""
 
@@ -47,7 +47,6 @@ class HumanMessage(BaseMessage):
     def type(self) -> str:
         """Type of the message, used for serialization."""
         return "human"
-
 
 
 class AIMessage(BaseMessage):
@@ -81,8 +80,6 @@ class SystemMessage(BaseMessage):
         return "system"
 
 
-
-
 class Generation(BaseModel):
     """Output of a single generation."""
 
@@ -92,7 +89,6 @@ class Generation(BaseModel):
     generation_info: Optional[Dict[str, Any]] = None
     """Raw generation info response from the provider"""
     """May include things like reason for finishing (e.g. in OpenAI)"""
-
 
 
 class ChatGeneration(Generation):
@@ -126,7 +122,6 @@ class LLMResult(BaseModel):
     """For arbitrary LLM provider specific output."""
 
 
-
 def _message_to_dict(message: BaseMessage) -> dict:
     return {"type": message.type, "data": message.dict()}
 
@@ -147,7 +142,6 @@ def _message_from_dict(message: dict) -> BaseMessage:
         return ViewMessage(**message["data"])
     else:
         raise ValueError(f"Got unexpected type: {_type}")
-
 
 
 def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:

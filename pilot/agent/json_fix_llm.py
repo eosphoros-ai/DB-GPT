@@ -55,54 +55,6 @@ def fix_and_parse_json(
         logger.error("参数解析错误", e)
 
 
-def fix_json_using_multiple_techniques(assistant_reply: str) -> Dict[Any, Any]:
-    """Fix the given JSON string to make it parseable and fully compliant with two techniques.
-
-    Args:
-        json_string (str): The JSON string to fix.
-
-    Returns:
-        str: The fixed JSON string.
-    """
-    assistant_reply = assistant_reply.strip()
-    if assistant_reply.startswith("```json"):
-        assistant_reply = assistant_reply[7:]
-    if assistant_reply.endswith("```"):
-        assistant_reply = assistant_reply[:-3]
-    try:
-        return json.loads(assistant_reply)  # just check the validity
-    except json.JSONDecodeError as e:  # noqa: E722
-        print(f"JSONDecodeError: {e}")
-        pass
-
-    if assistant_reply.startswith("json "):
-        assistant_reply = assistant_reply[5:]
-        assistant_reply = assistant_reply.strip()
-    try:
-        return json.loads(assistant_reply)  # just check the validity
-    except json.JSONDecodeError:  # noqa: E722
-        pass
-
-    # Parse and print Assistant response
-    assistant_reply_json = fix_and_parse_json(assistant_reply)
-    logger.debug("Assistant reply JSON: %s", str(assistant_reply_json))
-    if assistant_reply_json == {}:
-        assistant_reply_json = attempt_to_fix_json_by_finding_outermost_brackets(
-            assistant_reply
-        )
-
-    logger.debug("Assistant reply JSON 2: %s", str(assistant_reply_json))
-    if assistant_reply_json != {}:
-        return assistant_reply_json
-
-    logger.error(
-        "Error: The following AI output couldn't be converted to a JSON:\n",
-        assistant_reply,
-    )
-    if CFG.speak_mode:
-        say_text("I have received an invalid JSON response from the OpenAI API.")
-
-    return {}
 
 
 def correct_json(json_to_load: str) -> str:
