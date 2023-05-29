@@ -83,6 +83,10 @@ class ChatGLMAdapater(BaseLLMAdaper):
             return model, tokenizer
 
 
+class GuanacoAdapter(BaseLLMAdaper):
+    """TODO Support guanaco"""
+    pass
+
 class CodeGenAdapter(BaseLLMAdaper):
     pass
 
