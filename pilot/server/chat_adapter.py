@@ -84,7 +84,30 @@ class CodeGenChatAdapter(BaseChatAdpter):
         pass
 
 
+class GuanacoChatAdapter(BaseChatAdpter):
+    """Model chat adapter for Guanaco """
+    
+    def match(self, model_path: str):
+        return "guanaco" in model_path
+
+    def get_generate_stream_func(self):
+        # TODO 
+        pass
+
+
+class ProxyllmChatAdapter(BaseChatAdpter):
+    def match(self, model_path: str):
+        return "proxyllm" in model_path
+
+    def get_generate_stream_func(self):
+        from pilot.model.proxy_llm import proxyllm_generate_stream
+        return proxyllm_generate_stream 
+
+
 register_llm_model_chat_adapter(VicunaChatAdapter)
 register_llm_model_chat_adapter(ChatGLMChatAdapter)
+
+# Proxy model for test and develop, it's cheap for us now.
+register_llm_model_chat_adapter(ProxyllmChatAdapter)
 
 register_llm_model_chat_adapter(BaseChatAdpter)
