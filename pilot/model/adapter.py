@@ -3,7 +3,7 @@
 from functools import cache
 from typing import List
 
-from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer
 
 from pilot.configs.model_config import DEVICE
 
@@ -85,8 +85,15 @@ class ChatGLMAdapater(BaseLLMAdaper):
 
 class GuanacoAdapter(BaseLLMAdaper):
     """TODO Support guanaco"""
-
-    pass
+    def match(self, model_path: str):
+        return "guanaco" in model_path
+    
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = LlamaTokenizer.from_pretrained(model_path)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, load_in_4bit=True, device_map={"": 0}, **from_pretrained_kwargs
+        )
+        return model, tokenizer
 
 
 class CodeGenAdapter(BaseLLMAdaper):
@@ -143,6 +150,7 @@ class ProxyllmAdapter(BaseLLMAdaper):
 
 register_llm_model_adapters(VicunaLLMAdapater)
 register_llm_model_adapters(ChatGLMAdapater)
+register_llm_model_adapters(GuanacoAdapter)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
 # just for test, remove this later
