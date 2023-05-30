@@ -37,7 +37,7 @@ class ModelWorker:
         self.model, self.tokenizer = self.ml.loader(
             num_gpus, load_8bit=ISLOAD_8BIT, debug=ISDEBUG
         )
-        
+
         if not isinstance(self.model, str):
             if hasattr(self.model.config, "max_sequence_length"):
                 self.context_len = self.model.config.max_sequence_length
