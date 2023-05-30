@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import datetime
 import traceback
+import json
 from pydantic import BaseModel, Field, root_validator, validator, Extra
 from typing import (
     Any,
@@ -39,6 +40,7 @@ from pilot.configs.config import Config
 logger = build_logger("BaseChat", LOGDIR + "BaseChat.log")
 headers = {"User-Agent": "dbgpt Client"}
 CFG = Config()
+
 
 
 class BaseChat(ABC):
@@ -89,8 +91,7 @@ class BaseChat(ABC):
     def do_with_prompt_response(self, prompt_response):
         pass
 
-
-    def call(self):
+    def call(self,  show_fn, state):
         input_values = self.generate_input_values()
 
         ### Chat sequence advance
@@ -164,6 +165,7 @@ class BaseChat(ABC):
                             prompt_define_response, result
                         )
                     )
+                show_fn(state, self.current_ai_response())
             else:
                 response = requests.post(
                     urljoin(CFG.MODEL_SERVER, "generate_stream"),
@@ -171,9 +173,14 @@ class BaseChat(ABC):
                     json=payload,
                     timeout=120,
                 )
-                #TODO
+                show_fn(state, "▌")
+                ai_response_text =  self.prompt_template.output_parser.parse_model_server_out(response)
+                show_info  =""
+                for resp_text_trunck in ai_response_text:
+                    show_info = resp_text_trunck
+                    show_fn(state, resp_text_trunck + "▌")
 
-
+                self.current_message.add_ai_message(show_info)
 
         except Exception as e:
             print(traceback.format_exc())
@@ -181,8 +188,10 @@ class BaseChat(ABC):
             self.current_message.add_view_message(
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
+            show_fn(state, self.current_ai_response())
         ### 对话记录存储
         self.memory.append(self.current_message)
+
 
     def generate_llm_text(self) -> str:
         text = self.prompt_template.template_define + self.prompt_template.sep
@@ -229,8 +238,6 @@ class BaseChat(ABC):
         return text
 
 
-    def chat_show(self):
-        pass
 
     # 暂时为了兼容前端
     def current_ai_response(self) -> str:
