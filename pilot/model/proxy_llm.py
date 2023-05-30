@@ -18,7 +18,8 @@ def proxyllm_generate_stream(
     stop = params.get("stop", "###")
 
     headers = {
-        "Authorization": "Bearer " + CFG.proxy_api_key
+        "Authorization": "Bearer " + CFG.proxy_api_key,
+        "Token": CFG.proxy_api_key 
     }
   
     messages = prompt.split(stop)
@@ -44,9 +45,13 @@ def proxyllm_generate_stream(
         "max_tokens": params.get("max_new_tokens"),
     }
 
+    print(payloads)
+    print(headers)
     res = requests.post(CFG.proxy_server_url, headers=headers, json=payloads, stream=True)
 
     text = ""
+    print("====================================res================")
+    print(res)
     for line in res.iter_lines():
         if line:
             decoded_line = line.decode('utf-8')
