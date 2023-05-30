@@ -39,8 +39,9 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
   <img src="./assets/演示.gif" width="600px" />
 </p>
 
+### SQL 插件化执行
 <p align="center">
-  <img src="./assets/Auto-DB-GPT.gif" width="600px" />
+  <img src="./assets/auto_sql.gif" width="600px" />
 </p>
 
 ### SQL 生成
@@ -187,20 +188,35 @@ $ python webserver.py
 ### 多模型使用
 在.env 配置文件当中, 修改LLM_MODEL参数来切换使用的模型。
 
+### 多语言用户界面模式
+在.env 配置文件当中，修改LANGUAGE参数来切换使用不同的语言，默认是英文(中文zh, 英文en, 其他语言待补充)
+
 ### 打造属于你的知识库：
 
-1、将个人知识文件或者文件夹放入pilot/datasets目录中
+1.将个人知识文件或者文件夹放入pilot/datasets目录中
 
-2、在tools目录执行知识入库脚本
+2.在.env文件指定你的向量数据库类型,VECTOR_STORE_TYPE(默认Chroma),目前支持Chroma,Milvus(需要设置MILVUS_URL和MILVUS_PORT)
+
+注意Milvus版本需要>2.1
+
+3.在tools目录执行知识入库脚本（）
+
+如果是选择默认知识库，不需要指定 --vector_name, 默认default
 
 ```
 python tools/knowledge_init.py
 
---vector_name : your vector store name  default_value:default
---append: append mode, True:append, False: not append default_value:False
+```
+
+如果选择新增知识库，在界面上新增知识库输入你的知识库名,
 
 ```
-3、在界面上新增知识库输入你的知识库名（如果没指定输入default）,就可以根据你的知识库进行问答
+python tools/knowledge_init.py --vector_name = yourname
+
+--vector_name: vector_name  default_value:default
+
+```
+就可以根据你的知识库进行问答
 
 注意，这里默认向量模型是text2vec-large-chinese(模型比较大，如果个人电脑配置不够建议采用text2vec-base-chinese),因此确保需要将模型download下来放到models目录中。
 
@@ -233,8 +249,8 @@ Run the Python interpreter and type the commands:
 
 ## 贡献者
 
-|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|[<img src="https://avatars.githubusercontent.com/u/7636723?s=96&v=4" width="100px;"/><br/><sub><b>明天</b></sub>](https://github.com/yhjun1026)<br/> | [<img src="https://avatars.githubusercontent.com/u/13723926?v=4" width="100px;"/><br/><sub><b>Aries-ckt</b></sub>](https://github.com/Aries-ckt)<br/>|[<img src="https://avatars.githubusercontent.com/u/95130644?v=4" width="100px;"/><br/><sub><b>thebigbone</b></sub>](https://github.com/thebigbone)<br/>|
-| :---: | :---: | :---: | :---: |:---: |
+|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|[<img src="https://avatars.githubusercontent.com/u/7636723?s=96&v=4" width="100px;"/><br/><sub><b>明天</b></sub>](https://github.com/yhjun1026)<br/> | [<img src="https://avatars.githubusercontent.com/u/13723926?v=4" width="100px;"/><br/><sub><b>Aries-ckt</b></sub>](https://github.com/Aries-ckt)<br/>|[<img src="https://avatars.githubusercontent.com/u/95130644?v=4" width="100px;"/><br/><sub><b>thebigbone</b></sub>](https://github.com/thebigbone)<br/>|[<img src="https://avatars.githubusercontent.com/u/26043513?v=4" width="100px;"/><br/><sub><b>Shinexy</b></sub>](https://github.com/xuyuan23)<br/> |
+| :---: | :---: | :---: | :---: |:---: |:---: |
 
 
 [git-contributor 说明](https://github.com/xudafeng/git-contributor)，自动生成时间：`Fri May 19 2023 00:24:18 GMT+0800`。

@@ -89,7 +89,7 @@ Use Cases
 
 | Best Practices and built-in implementations for common DB-GPT use cases:
 
-- `Sql generation and diagnosis <./use_cases/sql_generation_and_diagnosis.html>`: SQL generation and diagnosis.
+- `Sql generation and diagnosis <./use_cases/sql_generation_and_diagnosis.html>`_: SQL generation and diagnosis.
 
 - `knownledge Based QA <./use_cases/knownledge_based_qa.html>`_: A important scene for user to chat with database documents, codes, bugs and schemas.
 
