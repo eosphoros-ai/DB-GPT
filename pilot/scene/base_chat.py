@@ -1,3 +1,4 @@
+import time
 from abc import ABC, abstractmethod
 import datetime
 import traceback
@@ -40,7 +41,6 @@ from pilot.configs.config import Config
 logger = build_logger("BaseChat", LOGDIR + "BaseChat.log")
 headers = {"User-Agent": "dbgpt Client"}
 CFG = Config()
-
 
 
 class BaseChat(ABC):
@@ -91,9 +91,8 @@ class BaseChat(ABC):
     def do_with_prompt_response(self, prompt_response):
         pass
 
-    def call(self,  show_fn, state):
-        input_values = self.generate_input_values()
-
+    def __call_base(self):
+        input_values  = self.generate_input_values()
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)
@@ -120,67 +119,40 @@ class BaseChat(ABC):
             "stop": self.prompt_template.sep,
         }
         logger.info(f"Requert: \n{payload}")
+        return payload
+
+    def stream_call(self):
+        payload = self.__call_base()
+        logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
-            if not self.prompt_template.stream_out:
-                ### 走非流式的模型服务接口
-                response = requests.post(
-                    urljoin(CFG.MODEL_SERVER, "generate"),
-                    headers=headers,
-                    json=payload,
-                    timeout=120,
-                )
+            show_info = ""
 
-                ### output parse
-                ai_response_text = (
-                    self.prompt_template.output_parser.parse_model_server_out(response)
-                )
-                self.current_message.add_ai_message(ai_response_text)
-                prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
+            # response = requests.post(
+            #     urljoin(CFG.MODEL_SERVER, "generate_stream"),
+            #     headers=headers,
+            #     json=payload,
+            #     timeout=120,
+            # )
+            #
+            # ai_response_text = self.prompt_template.output_parser.parse_model_server_out(response)
 
-                result = self.do_with_prompt_response(prompt_define_response)
+            # for resp_text_trunck in ai_response_text:
+            #     show_info = resp_text_trunck
+            #      yield resp_text_trunck + "▌"
+            #
 
-                if hasattr(prompt_define_response, "thoughts"):
-                    if prompt_define_response.thoughts.get("speak"):
-                        self.current_message.add_view_message(
-                            self.prompt_template.output_parser.parse_view_response(
-                                prompt_define_response.thoughts.get("speak"), result
-                            )
-                        )
-                    elif prompt_define_response.thoughts.get("reasoning"):
-                        self.current_message.add_view_message(
-                            self.prompt_template.output_parser.parse_view_response(
-                                prompt_define_response.thoughts.get("reasoning"), result
-                            )
-                        )
-                    else:
-                        self.current_message.add_view_message(
-                            self.prompt_template.output_parser.parse_view_response(
-                                prompt_define_response.thoughts, result
-                            )
-                        )
-                else:
-                    self.current_message.add_view_message(
-                        self.prompt_template.output_parser.parse_view_response(
-                            prompt_define_response, result
-                        )
-                    )
-                show_fn(state, self.current_ai_response())
-            else:
-                response = requests.post(
-                    urljoin(CFG.MODEL_SERVER, "generate_stream"),
-                    headers=headers,
-                    json=payload,
-                    timeout=120,
-                )
-                show_fn(state, "▌")
-                ai_response_text =  self.prompt_template.output_parser.parse_model_server_out(response)
-                show_info  =""
-                for resp_text_trunck in ai_response_text:
-                    show_info = resp_text_trunck
-                    show_fn(state, resp_text_trunck + "▌")
+            #### MOCK TEST
+            def mock_stream_out():
+                for i in range(1, 11):
+                    time.sleep(0.5)
+                    yield f"Message:{i}"
 
-                self.current_message.add_ai_message(show_info)
+            for msg in mock_stream_out():
+                show_info = msg
+                yield msg + "▌"
+
+            self.current_message.add_ai_message(show_info)
 
         except Exception as e:
             print(traceback.format_exc())
@@ -188,10 +160,72 @@ class BaseChat(ABC):
             self.current_message.add_view_message(
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
-            show_fn(state, self.current_ai_response())
         ### 对话记录存储
         self.memory.append(self.current_message)
 
+    def nostream_call(self):
+        payload = self.__call_base()
+        logger.info(f"Requert: \n{payload}")
+        ai_response_text = ""
+        try:
+            ### 走非流式的模型服务接口
+            response = requests.post(
+                urljoin(CFG.MODEL_SERVER, "generate"),
+                headers=headers,
+                json=payload,
+                timeout=120,
+            )
+
+            ### output parse
+            ai_response_text = (
+                self.prompt_template.output_parser.parse_model_server_out(response)
+            )
+            self.current_message.add_ai_message(ai_response_text)
+            prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
+
+            result = self.do_with_prompt_response(prompt_define_response)
+
+            if hasattr(prompt_define_response, "thoughts"):
+                if prompt_define_response.thoughts.get("speak"):
+                    self.current_message.add_view_message(
+                        self.prompt_template.output_parser.parse_view_response(
+                            prompt_define_response.thoughts.get("speak"), result
+                        )
+                    )
+                elif prompt_define_response.thoughts.get("reasoning"):
+                    self.current_message.add_view_message(
+                        self.prompt_template.output_parser.parse_view_response(
+                            prompt_define_response.thoughts.get("reasoning"), result
+                        )
+                    )
+                else:
+                    self.current_message.add_view_message(
+                        self.prompt_template.output_parser.parse_view_response(
+                            prompt_define_response.thoughts, result
+                        )
+                    )
+            else:
+                self.current_message.add_view_message(
+                    self.prompt_template.output_parser.parse_view_response(
+                        prompt_define_response, result
+                    )
+                )
+
+        except Exception as e:
+            print(traceback.format_exc())
+            logger.error("model response parase faild！" + str(e))
+            self.current_message.add_view_message(
+                f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
+            )
+        ### 对话记录存储
+        self.memory.append(self.current_message)
+        return self.current_ai_response()
+
+    def call(self):
+        if self.prompt_template.stream_out:
+            yield  self.stream_call()
+        else:
+            return self.nostream_call()
 
     def generate_llm_text(self) -> str:
         text = self.prompt_template.template_define + self.prompt_template.sep
@@ -201,20 +235,20 @@ class BaseChat(ABC):
             for first_message in self.history_message[0].messages:
                 if not isinstance(first_message, ViewMessage):
                     text += (
-                        first_message.type
-                        + ":"
-                        + first_message.content
-                        + self.prompt_template.sep
+                            first_message.type
+                            + ":"
+                            + first_message.content
+                            + self.prompt_template.sep
                     )
 
             index = self.chat_retention_rounds - 1
             for last_message in self.history_message[-index:].messages:
                 if not isinstance(last_message, ViewMessage):
                     text += (
-                        last_message.type
-                        + ":"
-                        + last_message.content
-                        + self.prompt_template.sep
+                            last_message.type
+                            + ":"
+                            + last_message.content
+                            + self.prompt_template.sep
                     )
 
         else:
@@ -223,21 +257,19 @@ class BaseChat(ABC):
                 for message in conversation.messages:
                     if not isinstance(message, ViewMessage):
                         text += (
-                            message.type
-                            + ":"
-                            + message.content
-                            + self.prompt_template.sep
+                                message.type
+                                + ":"
+                                + message.content
+                                + self.prompt_template.sep
                         )
 
         ### current conversation
         for now_message in self.current_message.messages:
             text += (
-                now_message.type + ":" + now_message.content + self.prompt_template.sep
+                    now_message.type + ":" + now_message.content + self.prompt_template.sep
             )
 
         return text
-
-
 
     # 暂时为了兼容前端
     def current_ai_response(self) -> str:
@@ -265,3 +297,35 @@ class BaseChat(ABC):
 
         """
         pass
+
+
+if __name__ == "__main__":
+    #
+    #     def call_back(t, m):
+    #         print(t)
+    #         print(m)
+    #
+    #     def my_fn(call_fn, xx):
+    #         call_fn(1, xx)
+    #
+    #
+    #     my_fn(call_back, "1231")
+
+    def my_generator():
+        while True:
+            value = yield
+            print('Received value:', value)
+            if value == 'stop':
+                return
+
+
+    # 创建生成器对象
+    gen = my_generator()
+
+    # 启动生成器
+    next(gen)
+
+    # 发送数据到生成器
+    gen.send('Hello')
+    gen.send('World')
+    gen.send('stop')
