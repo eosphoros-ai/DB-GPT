@@ -230,6 +230,11 @@ def get_chat_mode(selected, mode, sql_mode, db_selector) -> ChatScene:
 
     return ChatScene.ChatNormal
 
+def chatbot_callback(state, message):
+    print(f"chatbot_callback:{message}")
+    state.messages[-1][-1] = f"{message}"
+    yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+
 
 def http_bot(
         state, selected, plugin_selector, mode, sql_mode, db_selector, url_input, temperature, max_new_tokens, request: gr.Request
@@ -240,11 +245,6 @@ def http_bot(
     print(f"now chat scene:{scene.value}")
     model_name = CFG.LLM_MODEL
 
-    def chatbot_callback(state, message):
-        print(f"chatbot_callback:{message}")
-        state.messages[-1][-1] = f"{message}"
-        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
-
     if ChatScene.ChatWithDb == scene:
         logger.info("chat with db mode use new architecture design！")
         chat_param = {
@@ -253,7 +253,10 @@ def http_bot(
             "user_input": state.last_user_input,
         }
         chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
-        chat.call(show_fn=chatbot_callback, state= state)
+        chat.call()
+
+        state.messages[-1][-1] = chat.current_ai_response()
+        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
     elif ChatScene.ChatExecution == scene:
         logger.info("plugin mode use new architecture design！")
@@ -263,7 +266,11 @@ def http_bot(
             "user_input": state.last_user_input,
         }
         chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
-        chat.call(chatbot_callback, state)
+        strem_generate =  chat.stream_call()
+
+        for msg in strem_generate:
+            state.messages[-1][-1] = msg
+            yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
         # def generate_numbers():
         #     for i in range(10):
