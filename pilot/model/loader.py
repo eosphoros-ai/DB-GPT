@@ -109,8 +109,10 @@ class ModelLoader(metaclass=Singleton):
                 compress_module(model, self.device)
 
         if (
-            self.device == "cuda" and num_gpus == 1 and not cpu_offloading
-        ) or self.device == "mps" and tokenizer:
+            (self.device == "cuda" and num_gpus == 1 and not cpu_offloading)
+            or self.device == "mps"
+            and tokenizer
+        ):
             model.to(self.device)
 
         if debug:

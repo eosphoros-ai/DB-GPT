@@ -85,7 +85,9 @@ class ChatGLMAdapater(BaseLLMAdaper):
 
 class GuanacoAdapter(BaseLLMAdaper):
     """TODO Support guanaco"""
+
     pass
+
 
 class CodeGenAdapter(BaseLLMAdaper):
     pass
@@ -124,12 +126,14 @@ class GPT4AllAdapter(BaseLLMAdaper):
         return "gpt4all" in model_path
 
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
-        # TODO 
+        # TODO
         pass
 
+
 class ProxyllmAdapter(BaseLLMAdaper):
-    
+
     """The model adapter for local proxy"""
+
     def match(self, model_path: str):
         return "proxyllm" in model_path
 
