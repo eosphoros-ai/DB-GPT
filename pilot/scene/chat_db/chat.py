@@ -42,6 +42,7 @@ from pilot.scene.chat_db.out_parser import DbChatOutputParser
 
 CFG = Config()
 
+
 class ChatWithDb(BaseChat):
     chat_scene: str = ChatScene.ChatWithDb.value
 
@@ -49,7 +50,7 @@ class ChatWithDb(BaseChat):
 
     def __init__(self, chat_session_id, db_name, user_input):
         """ """
-        super().__init__(ChatScene.ChatWithDb, chat_session_id, user_input)
+        super().__init__(chat_mode=ChatScene.ChatWithDb, chat_session_id=chat_session_id, current_user_input=user_input)
         if not db_name:
             raise ValueError(f"{ChatScene.ChatWithDb.value} mode should chose db!")
         self.db_name = db_name
@@ -60,16 +61,15 @@ class ChatWithDb(BaseChat):
 
     def generate_input_values(self):
         input_values = {
-                "input": self.current_user_input,
-                "top_k": str(self.top_k),
-                "dialect": self.database.dialect,
-                "table_info": self.database.table_simple_info(self.db_connect)
-            }
+            "input": self.current_user_input,
+            "top_k": str(self.top_k),
+            "dialect": self.database.dialect,
+            "table_info": self.database.table_simple_info(self.db_connect)
+        }
         return input_values
 
     def do_with_prompt_response(self, prompt_response):
         return self.database.run(self.db_connect, prompt_response.sql)
-
 
     # def call(self) -> str:
     #     input_values = {
@@ -175,9 +175,6 @@ class ChatWithDb(BaseChat):
                 ret[-1][-1] = message.content
 
         return ret
-
-
-
 
     @property
     def chat_type(self) -> str:
