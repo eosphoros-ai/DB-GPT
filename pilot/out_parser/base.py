@@ -18,10 +18,13 @@ import re
 
 from pydantic import BaseModel, Extra, Field, root_validator
 from pilot.configs.model_config import LOGDIR
-from pilot.prompts.base import PromptValue
+from pilot.configs.config import Config
 
 T = TypeVar("T")
 logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
+
+CFG = Config()
+
 
 class BaseOutputParser(ABC):
     """Class to parse the output of an LLM call.
@@ -33,9 +36,39 @@ class BaseOutputParser(ABC):
         self.sep = sep
         self.is_stream_out = is_stream_out
 
+    def __post_process_code(code):
+        sep = "\n```"
+        if sep in code:
+            blocks = code.split(sep)
+            if len(blocks) % 2 == 1:
+                for i in range(1, len(blocks), 2):
+                    blocks[i] = blocks[i].replace("\\_", "_")
+            code = sep.join(blocks)
+        return code
+
     # TODO 后续和模型绑定
     def _parse_model_stream_resp(self, response, sep: str):
-        pass
+
+        for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+            if chunk:
+                data = json.loads(chunk.decode())
+
+                """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
+                """
+                if data["error_code"] == 0:
+                    if "vicuna" in CFG.LLM_MODEL:
+
+                        output = data["text"].strip()
+                    else:
+                        output = data["text"].strip()
+
+                    output = self.__post_process_code(output)
+                    yield output
+                else:
+                    output = (
+                            data["text"] + f" (error_code: {data['error_code']})"
+                    )
+                    yield output
 
     def _parse_model_nostream_resp(self, response, sep: str):
         text = response.text.strip()
@@ -64,7 +97,7 @@ class BaseOutputParser(ABC):
         else:
             raise ValueError("Model server error!code=" + respObj_ex["error_code"])
 
-    def parse_model_server_out(self, response) -> str:
+    def parse_model_server_out(self, response):
         """
         parse the model server http response
         Args:
