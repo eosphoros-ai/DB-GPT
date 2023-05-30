@@ -53,6 +53,7 @@ def create_chat_completion(
         response = None
         # TODO impl this use vicuna server api
 
+
 class Stream(transformers.StoppingCriteria):
     def __init__(self, callback_func=None):
         self.callback_func = callback_func

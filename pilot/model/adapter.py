@@ -85,9 +85,10 @@ class ChatGLMAdapater(BaseLLMAdaper):
 
 class GuanacoAdapter(BaseLLMAdaper):
     """TODO Support guanaco"""
+
     def match(self, model_path: str):
         return "guanaco" in model_path
-    
+
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = LlamaTokenizer.from_pretrained(model_path)
         model = AutoModelForCausalLM.from_pretrained(
