@@ -85,13 +85,13 @@ class CodeGenChatAdapter(BaseChatAdpter):
 
 
 class GuanacoChatAdapter(BaseChatAdpter):
-    """Model chat adapter for Guanaco """
-    
+    """Model chat adapter for Guanaco"""
+
     def match(self, model_path: str):
         return "guanaco" in model_path
 
     def get_generate_stream_func(self):
-        # TODO 
+        # TODO
         pass
 
 
@@ -101,7 +101,8 @@ class ProxyllmChatAdapter(BaseChatAdpter):
 
     def get_generate_stream_func(self):
         from pilot.model.proxy_llm import proxyllm_generate_stream
-        return proxyllm_generate_stream 
+
+        return proxyllm_generate_stream
 
 
 register_llm_model_chat_adapter(VicunaChatAdapter)
