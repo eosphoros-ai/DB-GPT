@@ -434,6 +434,7 @@ def http_bot(
                         """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
                         """
                         if data["error_code"] == 0:
+                            print("****************:",data)
                             if "vicuna" in CFG.LLM_MODEL:
                                 output = data["text"][skip_echo_len:].strip()
                             else:
