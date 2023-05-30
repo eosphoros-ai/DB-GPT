@@ -83,6 +83,10 @@ class ChatGLMAdapater(BaseLLMAdaper):
             return model, tokenizer
 
 
+class GuanacoAdapter(BaseLLMAdaper):
+    """TODO Support guanaco"""
+    pass
+
 class CodeGenAdapter(BaseLLMAdaper):
     pass
 
@@ -119,9 +123,24 @@ class GPT4AllAdapter(BaseLLMAdaper):
     def match(self, model_path: str):
         return "gpt4all" in model_path
 
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        # TODO 
+        pass
+
+class ProxyllmAdapter(BaseLLMAdaper):
+    
+    """The model adapter for local proxy"""
+    def match(self, model_path: str):
+        return "proxyllm" in model_path
+
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        return "proxyllm", None
+
 
 register_llm_model_adapters(VicunaLLMAdapater)
 register_llm_model_adapters(ChatGLMAdapater)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
+# just for test, remove this later
+register_llm_model_adapters(ProxyllmAdapter)
 register_llm_model_adapters(BaseLLMAdaper)
