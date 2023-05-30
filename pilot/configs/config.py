@@ -36,6 +36,10 @@ class Config(metaclass=Singleton):
             " (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36",
         )
 
+        # This is a proxy server, just for test.  we will remove this later.
+        self.proxy_api_key = os.getenv("PROXY_API_KEY")
+        self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
+
         self.elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
         self.elevenlabs_voice_1_id = os.getenv("ELEVENLABS_VOICE_1_ID")
         self.elevenlabs_voice_2_id = os.getenv("ELEVENLABS_VOICE_2_ID")
