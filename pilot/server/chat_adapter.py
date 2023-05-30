@@ -85,14 +85,14 @@ class CodeGenChatAdapter(BaseChatAdpter):
 
 
 class GuanacoChatAdapter(BaseChatAdpter):
-    """Model chat adapter for Guanaco """
-    
+    """Model chat adapter for Guanaco"""
+
     def match(self, model_path: str):
         return "guanaco" in model_path
 
     def get_generate_stream_func(self):
         from pilot.model.guanaco_llm import guanaco_generate_output
-        
+
         return guanaco_generate_output
 
 
