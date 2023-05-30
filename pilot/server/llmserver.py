@@ -37,11 +37,12 @@ class ModelWorker:
         self.model, self.tokenizer = self.ml.loader(
             num_gpus, load_8bit=ISLOAD_8BIT, debug=ISDEBUG
         )
-
-        if hasattr(self.model.config, "max_sequence_length"):
-            self.context_len = self.model.config.max_sequence_length
-        elif hasattr(self.model.config, "max_position_embeddings"):
-            self.context_len = self.model.config.max_position_embeddings
+        
+        if not isinstance(self.model, str):
+            if hasattr(self.model.config, "max_sequence_length"):
+                self.context_len = self.model.config.max_sequence_length
+            elif hasattr(self.model.config, "max_position_embeddings"):
+                self.context_len = self.model.config.max_position_embeddings
 
         else:
             self.context_len = 2048
