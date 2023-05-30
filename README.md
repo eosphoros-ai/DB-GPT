@@ -44,6 +44,11 @@ Run on an RTX 4090 GPU. [YouTube](https://www.youtube.com/watch?v=1PWI6F89LPo)
   <img src="./assets/demo_en.gif" width="600px" />
 </p>
 
+### Run Plugin
+<p align="center">
+  <img src="./assets/auto_sql_en.gif" width="600px" />
+</p>
+
 ### SQL Generation
 
 1. Generate Create Table SQL
@@ -185,11 +190,18 @@ We provide a user interface for Gradio, which allows you to use DB-GPT through o
 
 To use multiple models, modify the LLM_MODEL parameter in the .env configuration file to switch between the models.
 
-####Create your own knowledge repository:
+### Multi Language Usage
+To use multiple language model, modify the LLM_MODEL parameter in the .env configuration file to switch between the models.
+
+In the .env configuration file, modify the LANGUAGE parameter to switch between different languages, the default is English (Chinese zh, English en, other languages ​​to be added)
+
+### Create your own knowledge repository:
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
 
-2.Run the knowledge repository script in the tools directory.
+2.set .env configuration set your vector store type, eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > 2.1)
+
+3.Run the knowledge repository script in the tools directory.
 
 ```bash
 & python tools/knowledge_init.py
@@ -199,7 +211,7 @@ To use multiple models, modify the LLM_MODEL parameter in the .env configuration
 
 ```
 
-3.Add the knowledge repository in the interface by entering the name of your knowledge repository (if not specified, enter "default") so you can use it for Q&A based on your knowledge base. 
+4.Add the knowledge repository in the interface by entering the name of your knowledge repository (if not specified, enter "default") so you can use it for Q&A based on your knowledge base. 
 
 Note that the default vector model used is text2vec-large-chinese (which is a large model, so if your personal computer configuration is not enough, it is recommended to use text2vec-base-chinese). Therefore, ensure that you download the model and place it in the models directory.
 
@@ -213,7 +225,7 @@ Run the Python interpreter and type the commands:
 
 ## Acknowledgement
 
-The achievements of this project are thanks to the technical community, especially the following projects:
+This project is standing on the shoulders of giants and is not going to work without the open-source communities. Special thanks to the following projects for their excellent contribution to the AI industry:
 - [FastChat](https://github.com/lm-sys/FastChat) for providing chat services
 - [vicuna-13b](https://lmsys.org/blog/2023-03-30-vicuna/) as the base model
 - [langchain](https://langchain.readthedocs.io/) tool chain
@@ -232,8 +244,8 @@ The achievements of this project are thanks to the technical community, especial
 
 ## Contributors
 
-|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|[<img src="https://avatars.githubusercontent.com/u/7636723?s=96&v=4" width="100px;"/><br/><sub><b>明天</b></sub>](https://github.com/yhjun1026)<br/> | [<img src="https://avatars.githubusercontent.com/u/13723926?v=4" width="100px;"/><br/><sub><b>Aries-ckt</b></sub>](https://github.com/Aries-ckt)<br/>|[<img src="https://avatars.githubusercontent.com/u/95130644?v=4" width="100px;"/><br/><sub><b>thebigbone</b></sub>](https://github.com/thebigbone)<br/>|
-| :---: | :---: | :---: | :---: |:---: |
+|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|[<img src="https://avatars.githubusercontent.com/u/7636723?s=96&v=4" width="100px;"/><br/><sub><b>明天</b></sub>](https://github.com/yhjun1026)<br/> | [<img src="https://avatars.githubusercontent.com/u/13723926?v=4" width="100px;"/><br/><sub><b>Aries-ckt</b></sub>](https://github.com/Aries-ckt)<br/>|[<img src="https://avatars.githubusercontent.com/u/95130644?v=4" width="100px;"/><br/><sub><b>thebigbone</b></sub>](https://github.com/thebigbone)<br/>|[<img src="https://avatars.githubusercontent.com/u/26043513?v=4" width="100px;"/><br/><sub><b>Shinexy</b></sub>](https://github.com/xuyuan23)<br/> |
+| :---: | :---: | :---: | :---: |:---: |:---: |
 
 
 This project follows the git-contributor [spec](https://github.com/xudafeng/git-contributor), auto updated at `Fri May 19 2023 00:24:18 GMT+0800`.
@@ -245,4 +257,4 @@ This project follows the git-contributor [spec](https://github.com/xudafeng/git-
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.com/invite/twmZk3vv)
+We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/kMFf77FH)
