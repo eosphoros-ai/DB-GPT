@@ -52,7 +52,7 @@ PROMPT_NEED_NEED_STREAM_OUT = False
 
 chat_plugin_prompt = PromptTemplate(
     template_scene=ChatScene.ChatExecution.value,
-    input_variables=["input", "table_info", "dialect", "top_k", "response"],
+    input_variables=["input", "constraints", "commands_infos",  "response"],
     response_format=json.dumps(RESPONSE_FORMAT, indent=4),
     template_define=PROMPT_SCENE_DEFINE,
     template=PROMPT_SUFFIX + _DEFAULT_TEMPLATE + PROMPT_RESPONSE,
