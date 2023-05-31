@@ -23,6 +23,7 @@ from pilot.scene.message import OnceConversation
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.memory.chat_history.base import BaseChatHistoryMemory
 from pilot.memory.chat_history.file_history import FileHistoryMemory
+from pilot.memory.chat_history.mem_history import MemHistoryMemory
 
 from pilot.configs.model_config import LOGDIR, DATASETS_DIR
 from pilot.utils import (
@@ -61,7 +62,10 @@ class BaseChat(ABC):
         self.chat_mode = chat_mode
         self.current_user_input: str = current_user_input
         self.llm_model = CFG.LLM_MODEL
-        ### TODO
+        ### can configurable storage methods
+        # self.memory = MemHistoryMemory(chat_session_id)
+
+        ## TEST
         self.memory = FileHistoryMemory(chat_session_id)
         ### load prompt template
         self.prompt_template: PromptTemplate = CFG.prompt_templates[self.chat_mode.value]
