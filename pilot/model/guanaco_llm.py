@@ -4,7 +4,7 @@
 import torch
 import transformers
 from transformers import GenerationConfig
-from llm_utils import Iteratorize, Stream
+from pilot.model.llm_utils import Iteratorize, Stream
 
 
 def guanaco_generate_output(model, tokenizer, params, device):
