@@ -108,8 +108,8 @@ class Conversation:
 conv_default = Conversation(
     system = None,
     roles=("human", "ai"),
-    messages= (),
-    offset=2,
+    messages=[],
+    offset=0,
     sep_style=SeparatorStyle.SINGLE,
     sep="###",
 )
