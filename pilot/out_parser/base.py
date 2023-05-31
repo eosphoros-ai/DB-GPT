@@ -36,7 +36,7 @@ class BaseOutputParser(ABC):
         self.sep = sep
         self.is_stream_out = is_stream_out
 
-    def __post_process_code(code):
+    def __post_process_code(self, code):
         sep = "\n```"
         if sep in code:
             blocks = code.split(sep)
@@ -92,7 +92,7 @@ class BaseOutputParser(ABC):
             ai_response = ai_response.replace("\n", "")
             ai_response = ai_response.replace("\_", "_")
             ai_response = ai_response.replace("\*", "*")
-            print("un_stream clear response:{}", ai_response)
+            print("un_stream ai response:", ai_response)
             return ai_response
         else:
             raise ValueError("Model server error!code=" + respObj_ex["error_code"])
@@ -140,6 +140,7 @@ class BaseOutputParser(ABC):
                 cleaned_output = m.group(0)
             else:
                 raise ValueError("model server out not fllow the prompt!")
+        cleaned_output = cleaned_output.strip().replace('\n', '').replace('\\n', '').replace('\\', '').replace('\\', '')
         return cleaned_output
 
     def parse_view_response(self, ai_text) -> str:
