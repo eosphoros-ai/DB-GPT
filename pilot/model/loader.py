@@ -113,7 +113,11 @@ class ModelLoader(metaclass=Singleton):
             or self.device == "mps"
             and tokenizer
         ):
-            model.to(self.device)
+            # 4-bit not support this
+            try:
+                model.to(self.device)
+            except ValueError:
+                pass
 
         if debug:
             print(model)
