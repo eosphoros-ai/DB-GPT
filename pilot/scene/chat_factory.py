@@ -1,8 +1,14 @@
 from pilot.scene.base_chat import BaseChat
 from pilot.singleton import Singleton
-from pilot.scene.chat_db.chat import ChatWithDb
+import inspect
+import importlib
 from pilot.scene.chat_execution.chat import ChatWithPlugin
-
+from pilot.scene.chat_normal.chat import ChatNormal
+from pilot.scene.chat_db.professional_qa.chat import ChatWithDbQA
+from pilot.scene.chat_db.auto_execute.chat import ChatWithDbAutoExecute
+from pilot.scene.chat_knowledge.url.chat import ChatUrlKnowledge
+from pilot.scene.chat_knowledge.custom.chat import ChatNewKnowledge
+from pilot.scene.chat_knowledge.default.chat import ChatDefaultKnowledge
 
 class ChatFactory(metaclass=Singleton):
     @staticmethod
@@ -13,5 +19,5 @@ class ChatFactory(metaclass=Singleton):
             if cls.chat_scene == chat_mode:
                 implementation = cls(**kwargs)
         if implementation == None:
-            raise Exception("Invalid implementation name:" + chat_mode)
+            raise Exception(f"Invalid implementation name:{chat_mode}")
         return implementation

@@ -277,6 +277,7 @@ class Database:
 
     def run(self, session, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""
+        print("sql run:" + command)
         cursor = session.execute(text(command))
         if cursor.returns_rows:
             if fetch == "all":

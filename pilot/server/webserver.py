@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import traceback
 import argparse
 import datetime
 import json
@@ -9,7 +9,6 @@ import shutil
 import sys
 import time
 import uuid
-from urllib.parse import urljoin
 
 import gradio as gr
 import requests
@@ -216,19 +215,26 @@ def post_process_code(code):
     return code
 
 
-def get_chat_mode(selected, mode, sql_mode, db_selector) -> ChatScene:
+def get_chat_mode(selected, param=None) -> ChatScene:
     if chat_mode_title['chat_use_plugin'] == selected:
         return ChatScene.ChatExecution
     elif chat_mode_title['knowledge_qa']  == selected:
+        mode= param
         if mode == conversation_types["default_knownledge"]:
             return ChatScene.ChatKnowledge
         elif mode == conversation_types["custome"]:
             return ChatScene.ChatNewKnowledge
+        elif mode == conversation_types["url"]:
+            return ChatScene.ChatUrlKnowledge
+        else:
+            return ChatScene.ChatNormal
     else:
-        if sql_mode == conversation_sql_mode["auto_execute_ai_response"] and db_selector:
-            return ChatScene.ChatWithDb
+        sql_mode= param
+        if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
+            return ChatScene.ChatWithDbExecute
+        else:
+            return ChatScene.ChatWithDbQA
 
-    return ChatScene.ChatNormal
 
 def chatbot_callback(state, message):
     print(f"chatbot_callback:{message}")
@@ -237,244 +243,99 @@ def chatbot_callback(state, message):
 
 
 def http_bot(
-        state, selected, plugin_selector, mode, sql_mode, db_selector, url_input, temperature, max_new_tokens, request: gr.Request
+        state, selected,  temperature, max_new_tokens,  plugin_selector, mode, sql_mode, db_selector, url_input, knowledge_name
 ):
-    logger.info(f"User message send!{state.conv_id},{selected},{mode},{sql_mode},{db_selector},{plugin_selector}")
-    start_tstamp = time.time()
-    scene:ChatScene = get_chat_mode(selected, mode, sql_mode, db_selector)
-    print(f"now chat scene:{scene.value}")
-    model_name = CFG.LLM_MODEL
 
-    if ChatScene.ChatWithDb == scene:
-        logger.info("chat with db mode use new architecture design！")
+    logger.info(f"User message send!{state.conv_id},{selected}")
+    if chat_mode_title['knowledge_qa'] == selected:
+        scene: ChatScene = get_chat_mode(selected, mode)
+    elif chat_mode_title['chat_use_plugin'] == selected:
+        scene: ChatScene = get_chat_mode(selected)
+    else:
+        scene: ChatScene = get_chat_mode(selected, sql_mode)
+    print(f"chat scene:{scene.value}")
+
+    if ChatScene.ChatWithDbExecute == scene:
         chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "db_name": db_selector,
+            "user_input": state.last_user_input
+        }
+        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+    elif ChatScene.ChatWithDbQA == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "db_name": db_selector,
             "user_input": state.last_user_input,
         }
         chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
-        chat.call()
-
-        state.messages[-1][-1] = chat.current_ai_response()
-        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
-
     elif ChatScene.ChatExecution == scene:
-        logger.info("plugin mode use new architecture design！")
         chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "plugin_selector": plugin_selector,
             "user_input": state.last_user_input,
         }
         chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
-        strem_generate =  chat.stream_call()
+    elif ChatScene.ChatNormal == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "user_input": state.last_user_input,
+        }
+        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+    elif ChatScene.ChatKnowledge == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "user_input": state.last_user_input,
+        }
+        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+    elif ChatScene.ChatNewKnowledge == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "user_input": state.last_user_input,
+            "knowledge_name": knowledge_name
+        }
+        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+    elif ChatScene.ChatUrlKnowledge == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "user_input": state.last_user_input,
+            "url": url_input
+        }
+        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
 
-        for msg in strem_generate:
-            state.messages[-1][-1] = msg
+    if not chat.prompt_template.stream_out:
+        logger.info("not stream out, wait model response!")
+        state.messages[-1][-1] = chat.nostream_call()
+        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+    else:
+        logger.info("stream out start!")
+        try:
+            stream_gen = chat.stream_call()
+            for msg in stream_gen:
+                state.messages[-1][-1] = msg
+                yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+        except Exception as e:
+            print(traceback.format_exc())
+            state.messages[-1][-1] = "Error:" + str(e)
             yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
-        # def generate_numbers():
-        #     for i in range(10):
-        #         time.sleep(0.5)
-        #         yield f"Message:{i}"
-        #
-        # def showMessage(message):
-        #      return message
-        #
-        # for n in generate_numbers():
-        #     state.messages[-1][-1] = n + "▌"
-        #     yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
-    else:
-
-        dbname = db_selector
-        # TODO 这里的请求需要拼接现有知识库, 使得其根据现有知识库作答, 所以prompt需要继续优化
-        if state.skip_next:
-            # This generate call is skipped due to invalid inputs
-            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
-            return
-
-        if len(state.messages) == state.offset + 2:
-            query = state.messages[-2][1]
-
-            template_name = "conv_one_shot"
-            new_state = conv_templates[template_name].copy()
-            # prompt 中添加上下文提示, 根据已有知识对话, 上下文提示是否也应该放在第一轮, 还是每一轮都添加上下文?
-            # 如果用户侧的问题跨度很大, 应该每一轮都加提示。
-            if db_selector:
-                new_state.append_message(
-                    new_state.roles[0], gen_sqlgen_conversation(dbname) + query
-                )
-                new_state.append_message(new_state.roles[1], None)
-            else:
-                new_state.append_message(new_state.roles[0], query)
-                new_state.append_message(new_state.roles[1], None)
-
-            new_state.conv_id = uuid.uuid4().hex
-            state = new_state
-        else:
-            ### 后续对话
-            query = state.messages[-2][1]
-            # 第一轮对话需要加入提示Prompt
-            if mode == conversation_types["custome"]:
-                template_name = "conv_one_shot"
-                new_state = conv_templates[template_name].copy()
-                # prompt 中添加上下文提示, 根据已有知识对话, 上下文提示是否也应该放在第一轮, 还是每一轮都添加上下文?
-                # 如果用户侧的问题跨度很大, 应该每一轮都加提示。
-                if db_selector:
-                    new_state.append_message(
-                        new_state.roles[0], gen_sqlgen_conversation(dbname) + query
-                    )
-                    new_state.append_message(new_state.roles[1], None)
-                else:
-                    new_state.append_message(new_state.roles[0], query)
-                    new_state.append_message(new_state.roles[1], None)
-                state = new_state
-
-        prompt = state.get_prompt()
-        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
-        if mode == conversation_types["default_knownledge"] and not db_selector:
-            vector_store_config = {
-                "vector_store_name": "default",
-                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
-            }
-            knowledge_embedding_client = KnowledgeEmbedding(
-                file_path="",
-                model_name=LLM_MODEL_CONFIG["text2vec"],
-                local_persist=False,
-                vector_store_config=vector_store_config,
-            )
-            query = state.messages[-2][1]
-            docs = knowledge_embedding_client.similar_search(query, VECTOR_SEARCH_TOP_K)
-            prompt = KnownLedgeBaseQA.build_knowledge_prompt(query, docs, state)
-            state.messages[-2][1] = query
-            skip_echo_len = len(prompt.replace("</s>", " ")) + 1
-
-        if mode == conversation_types["custome"] and not db_selector:
-            print("vector store name: ", vector_store_name["vs_name"])
-            vector_store_config = {
-                "vector_store_name": vector_store_name["vs_name"],
-                "text_field": "content",
-                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
-            }
-            knowledge_embedding_client = KnowledgeEmbedding(
-                file_path="",
-                model_name=LLM_MODEL_CONFIG["text2vec"],
-                local_persist=False,
-                vector_store_config=vector_store_config,
-            )
-            query = state.messages[-2][1]
-            docs = knowledge_embedding_client.similar_search(query, VECTOR_SEARCH_TOP_K)
-            prompt = KnownLedgeBaseQA.build_knowledge_prompt(query, docs, state)
-
-            state.messages[-2][1] = query
-            skip_echo_len = len(prompt.replace("</s>", " ")) + 1
-
-        if mode == conversation_types["url"] and  url_input:
-            print("url: ", url_input)
-            vector_store_config = {
-                "vector_store_name": url_input,
-                "text_field": "content",
-                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
-            }
-            knowledge_embedding_client = KnowledgeEmbedding(
-                file_path=url_input,
-                model_name=LLM_MODEL_CONFIG["text2vec"],
-                local_persist=False,
-                vector_store_config=vector_store_config,
-            )
-
-            query = state.messages[-2][1]
-            docs = knowledge_embedding_client.similar_search(query, VECTOR_SEARCH_TOP_K)
-            prompt = KnownLedgeBaseQA.build_knowledge_prompt(query, docs, state)
-
-            state.messages[-2][1] = query
-            skip_echo_len = len(prompt.replace("</s>", " ")) + 1
-
-        # Make requests
-        payload = {
-            "model": model_name,
-            "prompt": prompt,
-            "temperature": float(temperature),
-            "max_new_tokens": int(max_new_tokens),
-            "stop": state.sep
-            if state.sep_style == SeparatorStyle.SINGLE
-            else state.sep2,
-        }
-        logger.info(f"Requert: \n{payload}")
-
-        # 流式输出
-        state.messages[-1][-1] = "▌"
-        yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-
-        try:
-            # Stream output
-            response = requests.post(
-                urljoin(CFG.MODEL_SERVER, "generate_stream"),
-                headers=headers,
-                json=payload,
-                stream=True,
-                timeout=20,
-            )
-            for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-                if chunk:
-                    data = json.loads(chunk.decode())
-
-                    """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
-                    """
-                    if data["error_code"] == 0:
-                        if "vicuna" in CFG.LLM_MODEL:
-                            output = data["text"][skip_echo_len:].strip()
-                        else:
-                            output = data["text"].strip()
-
-                        output = post_process_code(output)
-                        state.messages[-1][-1] = output + "▌"
-                        yield (state, state.to_gradio_chatbot()) + (
-                            disable_btn,
-                        ) * 5
-                    else:
-                        output = (
-                            data["text"] + f" (error_code: {data['error_code']})"
-                        )
-                        state.messages[-1][-1] = output
-                        yield (state, state.to_gradio_chatbot()) + (
-                            disable_btn,
-                            disable_btn,
-                            disable_btn,
-                            enable_btn,
-                            enable_btn,
-                        )
-                        return
-
-        except requests.exceptions.RequestException as e:
-            state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
-            yield (state, state.to_gradio_chatbot()) + (
-                disable_btn,
-                disable_btn,
-                disable_btn,
-                enable_btn,
-                enable_btn,
-            )
-            return
-
-        state.messages[-1][-1] = state.messages[-1][-1][:-1]
-        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
-
-        # 记录运行日志
-        finish_tstamp = time.time()
-        logger.info(f"{output}")
-
-        with open(get_conv_log_filename(), "a") as fout:
-            data = {
-                "tstamp": round(finish_tstamp, 4),
-                "type": "chat",
-                "model": model_name,
-                "start": round(start_tstamp, 4),
-                "finish": round(start_tstamp, 4),
-                "state": state.dict(),
-                "ip": request.client.host,
-            }
-            fout.write(json.dumps(data) + "\n")
-
+        if state.messages[-1][-1].endwith("▌"):
+            state.messages[-1][-1] = state.messages[-1][-1][:-1]
+            yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
 block_css = (
     code_highlight_css
@@ -556,6 +417,7 @@ def build_single_model_ui():
                     value=dbs[0] if len(models) > 0 else "",
                     interactive=True,
                     show_label=True,
+                    name="db_selector"
                 ).style(container=False)
 
             sql_mode = gr.Radio(
@@ -565,6 +427,7 @@ def build_single_model_ui():
                 ],
                 show_label=False,
                 value=get_lang_text("sql_generate_mode_none"),
+                name="sql_mode"
             )
             sql_vs_setting = gr.Markdown(get_lang_text("sql_vs_setting"))
             sql_mode.change(fn=change_sql_mode, inputs=sql_mode, outputs=sql_vs_setting)
@@ -581,7 +444,8 @@ def build_single_model_ui():
                     value="",
                     interactive=True,
                     show_label=True,
-                    type="value"
+                    type="value",
+                    name="plugin_selector"
                 ).style(container=False)
 
                 def plugin_change(evt: gr.SelectData):  # SelectData is a subclass of EventData
@@ -602,13 +466,14 @@ def build_single_model_ui():
                 ],
                 show_label=False,
                 value=llm_native_dialogue,
+                name="mode"
             )
             vs_setting = gr.Accordion(
-                get_lang_text("configure_knowledge_base"), open=False
+                get_lang_text("configure_knowledge_base"), open=False, visible=False
             )
             mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
 
-            url_input = gr.Textbox(label=get_lang_text("url_input_label"), lines=1, interactive=True)
+            url_input = gr.Textbox(label=get_lang_text("url_input_label"), lines=1, interactive=True, visible=False, name="url_input")
             def show_url_input(evt:gr.SelectData):
                 if evt.value == url_knowledge_dialogue:
                     return gr.update(visible=True)
@@ -619,7 +484,7 @@ def build_single_model_ui():
 
             with vs_setting:
                 vs_name = gr.Textbox(
-                    label=get_lang_text("new_klg_name"), lines=1, interactive=True
+                    label=get_lang_text("new_klg_name"), lines=1, interactive=True, name = "vs_name"
                 )
                 vs_add = gr.Button(get_lang_text("add_as_new_klg"))
                 with gr.Column() as doc2vec:
@@ -664,10 +529,14 @@ def build_single_model_ui():
         clear_btn = gr.Button(value=get_lang_text("clear_box"), interactive=False)
 
     gr.Markdown(learn_more_markdown)
+
+    params = [plugin_selector, mode, sql_mode, db_selector, url_input, vs_name]
+
+
     btn_list = [regenerate_btn, clear_btn]
     regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
         http_bot,
-        [state, selected, plugin_selected, mode, sql_mode, db_selector, url_input, temperature, max_output_tokens],
+        [state, selected, temperature, max_output_tokens] + params,
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
@@ -676,7 +545,7 @@ def build_single_model_ui():
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, selected, plugin_selected, mode, sql_mode, db_selector, url_input, temperature, max_output_tokens],
+        [state, selected, temperature, max_output_tokens]+ params,
         [state, chatbot] + btn_list,
     )
 
@@ -684,7 +553,7 @@ def build_single_model_ui():
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, selected, plugin_selected, mode, sql_mode, db_selector, url_input,  temperature, max_output_tokens],
+        [state, selected, temperature, max_output_tokens]+ params,
         [state, chatbot] + btn_list,
     )
     vs_add.click(

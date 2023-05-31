@@ -105,18 +105,14 @@ class Conversation:
         }
 
 
-def gen_sqlgen_conversation(dbname):
-    from pilot.connections.mysql import MySQLOperator
-
-    mo = MySQLOperator(**(DB_SETTINGS))
-
-    message = ""
-
-    schemas = mo.get_schema(dbname)
-    for s in schemas:
-        message += s["schema_info"] + ";"
-    return f"Database {dbname} Schema information as follows: {message}\n"
-
+conv_default = Conversation(
+    system = None,
+    roles=("human", "ai"),
+    messages= (),
+    offset=2,
+    sep_style=SeparatorStyle.SINGLE,
+    sep="###",
+)
 
 conv_one_shot = Conversation(
     system="A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. "
@@ -261,7 +257,7 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、简要的回
 #             question:
 #             {question}
 # """
-default_conversation = conv_one_shot
+default_conversation = conv_default
 
 
 chat_mode_title = {
@@ -290,7 +286,3 @@ conv_templates = {
     "vicuna_v1": conv_vicuna_v1,
     "auto_dbgpt_one_shot": auto_dbgpt_one_shot,
 }
-
-if __name__ == "__main__":
-    message = gen_sqlgen_conversation("dbgpt")
-    print(message)

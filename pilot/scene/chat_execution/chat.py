@@ -10,8 +10,7 @@ from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
 from pilot.commands.command import execute_command
 from pilot.prompts.generator import PluginPromptGenerator
-
-from pilot.scene.chat_execution.prompt import chat_plugin_prompt
+from pilot.scene.chat_execution.prompt import prompt
 
 CFG = Config()
 
@@ -20,8 +19,12 @@ class ChatWithPlugin(BaseChat):
     plugins_prompt_generator:PluginPromptGenerator
     select_plugin: str = None
 
-    def __init__(self, chat_session_id, user_input, plugin_selector:str=None):
-        super().__init__(chat_mode=ChatScene.ChatExecution, chat_session_id=chat_session_id, current_user_input=user_input)
+    def __init__(self,temperature, max_new_tokens, chat_session_id, user_input, plugin_selector:str=None):
+        super().__init__(temperature=temperature,
+                         max_new_tokens=max_new_tokens,
+                         chat_mode=ChatScene.ChatExecution,
+                         chat_session_id=chat_session_id,
+                         current_user_input=user_input)
         self.plugins_prompt_generator = PluginPromptGenerator()
         self.plugins_prompt_generator.command_registry = CFG.command_registry
         # 加载插件中可用命令
