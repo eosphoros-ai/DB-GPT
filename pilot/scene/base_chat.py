@@ -179,31 +179,22 @@ class BaseChat(ABC):
             result = self.do_with_prompt_response(prompt_define_response)
 
             if hasattr(prompt_define_response, "thoughts"):
-                if  hasattr(prompt_define_response.thoughts, "speak"):
-                    self.current_message.add_view_message(
-                        self.prompt_template.output_parser.parse_view_response(
-                            prompt_define_response.thoughts.get("speak"), result
-                        )
-                    )
-                elif   hasattr(prompt_define_response.thoughts, "reasoning"):
-                    self.current_message.add_view_message(
-                        self.prompt_template.output_parser.parse_view_response(
-                            prompt_define_response.thoughts.get("reasoning"), result
-                        )
-                    )
+                if  isinstance(prompt_define_response.thoughts, dict):
+                    if "speak" in prompt_define_response.thoughts:
+                        speak_to_user = prompt_define_response.thoughts.get("speak")
+                    else:
+                        speak_to_user = str(prompt_define_response.thoughts)
                 else:
-                    self.current_message.add_view_message(
-                        self.prompt_template.output_parser.parse_view_response(
-                            prompt_define_response.thoughts, result
-                        )
-                    )
+                    if  hasattr(prompt_define_response.thoughts, "speak"):
+                        speak_to_user = prompt_define_response.thoughts.get("speak")
+                    elif   hasattr(prompt_define_response.thoughts, "reasoning"):
+                        speak_to_user = prompt_define_response.thoughts.get("reasoning")
+                    else:
+                        speak_to_user = prompt_define_response.thoughts
             else:
-                self.current_message.add_view_message(
-                    self.prompt_template.output_parser.parse_view_response(
-                        prompt_define_response, result
-                    )
-                )
-
+                speak_to_user = prompt_define_response
+            view_message = self.prompt_template.output_parser.parse_view_response(speak_to_user, result)
+            self.current_message.add_view_message(view_message)
         except Exception as e:
             print(traceback.format_exc())
             logger.error("model response parase faild！" + str(e))
