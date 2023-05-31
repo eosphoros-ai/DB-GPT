@@ -246,7 +246,7 @@ def http_bot(
         state, selected,  temperature, max_new_tokens,  plugin_selector, mode, sql_mode, db_selector, url_input, knowledge_name
 ):
 
-    logger.info(f"User message send!{state.conv_id},{selected}")
+    logger.info(f"User message send!{state.conv_id},{selected},{plugin_selector},{mode},{sql_mode},{db_selector},{url_input}")
     if chat_mode_title['knowledge_qa'] == selected:
         scene: ChatScene = get_chat_mode(selected, mode)
     elif chat_mode_title['chat_use_plugin'] == selected:
@@ -417,7 +417,6 @@ def build_single_model_ui():
                     value=dbs[0] if len(models) > 0 else "",
                     interactive=True,
                     show_label=True,
-                    name="db_selector"
                 ).style(container=False)
 
             sql_mode = gr.Radio(
@@ -426,8 +425,7 @@ def build_single_model_ui():
                     get_lang_text("sql_generate_mode_none"),
                 ],
                 show_label=False,
-                value=get_lang_text("sql_generate_mode_none"),
-                name="sql_mode"
+                value=get_lang_text("sql_generate_mode_none")
             )
             sql_vs_setting = gr.Markdown(get_lang_text("sql_vs_setting"))
             sql_mode.change(fn=change_sql_mode, inputs=sql_mode, outputs=sql_vs_setting)
@@ -444,12 +442,12 @@ def build_single_model_ui():
                     value="",
                     interactive=True,
                     show_label=True,
-                    type="value",
-                    name="plugin_selector"
+                    type="value"
                 ).style(container=False)
 
                 def plugin_change(evt: gr.SelectData):  # SelectData is a subclass of EventData
                     print(f"You selected {evt.value} at {evt.index} from {evt.target}")
+                    print(f"user plugin:{plugins_select_info().get(evt.value)}")
                     return plugins_select_info().get(evt.value)
 
                 plugin_selected = gr.Textbox(show_label=False, visible=False, placeholder="Selected")
@@ -466,14 +464,13 @@ def build_single_model_ui():
                 ],
                 show_label=False,
                 value=llm_native_dialogue,
-                name="mode"
             )
             vs_setting = gr.Accordion(
                 get_lang_text("configure_knowledge_base"), open=False, visible=False
             )
             mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
 
-            url_input = gr.Textbox(label=get_lang_text("url_input_label"), lines=1, interactive=True, visible=False, name="url_input")
+            url_input = gr.Textbox(label=get_lang_text("url_input_label"), lines=1, interactive=True, visible=False)
             def show_url_input(evt:gr.SelectData):
                 if evt.value == url_knowledge_dialogue:
                     return gr.update(visible=True)
@@ -484,7 +481,7 @@ def build_single_model_ui():
 
             with vs_setting:
                 vs_name = gr.Textbox(
-                    label=get_lang_text("new_klg_name"), lines=1, interactive=True, name = "vs_name"
+                    label=get_lang_text("new_klg_name"), lines=1, interactive=True
                 )
                 vs_add = gr.Button(get_lang_text("add_as_new_klg"))
                 with gr.Column() as doc2vec:
@@ -530,7 +527,7 @@ def build_single_model_ui():
 
     gr.Markdown(learn_more_markdown)
 
-    params = [plugin_selector, mode, sql_mode, db_selector, url_input, vs_name]
+    params = [plugin_selected, mode, sql_mode, db_selector, url_input, vs_name]
 
 
     btn_list = [regenerate_btn, clear_btn]

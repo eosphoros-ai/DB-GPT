@@ -55,7 +55,7 @@ class ChatWithPlugin(BaseChat):
 
     def do_with_prompt_response(self, prompt_response):
         ## plugin command run
-        return execute_command(str(prompt_response), self.plugins_prompt_generator)
+        return execute_command(str(prompt_response.command.get('name')), prompt_response.command.get('args',{}), self.plugins_prompt_generator)
 
     def chat_show(self):
         super().chat_show()
