@@ -56,7 +56,7 @@ class BaseChat(ABC):
 
         arbitrary_types_allowed = True
 
-    def __init__(self, chat_mode, chat_session_id, current_user_input):
+    def __init__(self,temperature, max_new_tokens, chat_mode, chat_session_id, current_user_input):
         self.chat_session_id = chat_session_id
         self.chat_mode = chat_mode
         self.current_user_input: str = current_user_input
@@ -64,12 +64,12 @@ class BaseChat(ABC):
         ### TODO
         self.memory = FileHistoryMemory(chat_session_id)
         ### load prompt template
-        self.prompt_template: PromptTemplate = CFG.prompt_templates[
-            self.chat_mode.value
-        ]
+        self.prompt_template: PromptTemplate = CFG.prompt_templates[self.chat_mode.value]
         self.history_message: List[OnceConversation] = []
         self.current_message: OnceConversation = OnceConversation()
         self.current_tokens_used: int = 0
+        self.temperature = temperature
+        self.max_new_tokens = max_new_tokens
         ### load chat_session_id's chat historys
         self._load_history(self.chat_session_id)
 
@@ -92,15 +92,17 @@ class BaseChat(ABC):
         pass
 
     def __call_base(self):
-        input_values  = self.generate_input_values()
+        input_values = self.generate_input_values()
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)
         self.current_message.start_date = datetime.datetime.now()
         # TODO
         self.current_message.tokens = 0
+        current_prompt = None
 
-        current_prompt = self.prompt_template.format(**input_values)
+        if self.prompt_template.template:
+            current_prompt = self.prompt_template.format(**input_values)
 
         ### 构建当前对话， 是否安第一次对话prompt构造？ 是否考虑切换库
         if self.history_message:
@@ -108,8 +110,8 @@ class BaseChat(ABC):
             logger.info(
                 f"There are already {len(self.history_message)} rounds of conversations!"
             )
-
-        self.current_message.add_system_message(current_prompt)
+        if current_prompt:
+            self.current_message.add_system_message(current_prompt)
 
         payload = {
             "model": self.llm_model,
@@ -118,7 +120,6 @@ class BaseChat(ABC):
             "max_new_tokens": int(self.max_new_tokens),
             "stop": self.prompt_template.sep,
         }
-        logger.info(f"Requert: \n{payload}")
         return payload
 
     def stream_call(self):
@@ -127,30 +128,18 @@ class BaseChat(ABC):
         ai_response_text = ""
         try:
             show_info = ""
+            response = requests.post(
+                urljoin(CFG.MODEL_SERVER, "generate_stream"),
+                headers=headers,
+                json=payload,
+                timeout=120,
+            )
 
-            # response = requests.post(
-            #     urljoin(CFG.MODEL_SERVER, "generate_stream"),
-            #     headers=headers,
-            #     json=payload,
-            #     timeout=120,
-            # )
-            #
-            # ai_response_text = self.prompt_template.output_parser.parse_model_server_out(response)
+            ai_response_text = self.prompt_template.output_parser.parse_model_server_out(response)
 
-            # for resp_text_trunck in ai_response_text:
-            #     show_info = resp_text_trunck
-            #      yield resp_text_trunck + "▌"
-            #
-
-            #### MOCK TEST
-            def mock_stream_out():
-                for i in range(1, 11):
-                    time.sleep(0.5)
-                    yield f"Message:{i}"
-
-            for msg in mock_stream_out():
-                show_info = msg
-                yield msg + "▌"
+            for resp_text_trunck in ai_response_text:
+                show_info = resp_text_trunck
+                yield resp_text_trunck + "▌"
 
             self.current_message.add_ai_message(show_info)
 
@@ -186,13 +175,13 @@ class BaseChat(ABC):
             result = self.do_with_prompt_response(prompt_define_response)
 
             if hasattr(prompt_define_response, "thoughts"):
-                if prompt_define_response.thoughts.get("speak"):
+                if  hasattr(prompt_define_response.thoughts, "speak"):
                     self.current_message.add_view_message(
                         self.prompt_template.output_parser.parse_view_response(
                             prompt_define_response.thoughts.get("speak"), result
                         )
                     )
-                elif prompt_define_response.thoughts.get("reasoning"):
+                elif   hasattr(prompt_define_response.thoughts, "reasoning"):
                     self.current_message.add_view_message(
                         self.prompt_template.output_parser.parse_view_response(
                             prompt_define_response.thoughts.get("reasoning"), result
@@ -223,15 +212,18 @@ class BaseChat(ABC):
 
     def call(self):
         if self.prompt_template.stream_out:
-            yield  self.stream_call()
+            yield self.stream_call()
         else:
             return self.nostream_call()
 
     def generate_llm_text(self) -> str:
-        text = self.prompt_template.template_define + self.prompt_template.sep
-        ### 线处理历史信息
+        text = ""
+        if self.prompt_template.template_define:
+            text = self.prompt_template.template_define + self.prompt_template.sep
+
+        ### 处理历史信息
         if len(self.history_message) > self.chat_retention_rounds:
-            ### 使用历史信息的第一轮和最后一轮数据合并成历史对话记录, 做上下文提示时，用户展示消息需要过滤掉
+            ### 使用历史信息的第一轮和最后n轮数据合并成历史对话记录, 做上下文提示时，用户展示消息需要过滤掉
             for first_message in self.history_message[0].messages:
                 if not isinstance(first_message, ViewMessage):
                     text += (
@@ -262,8 +254,8 @@ class BaseChat(ABC):
                                 + message.content
                                 + self.prompt_template.sep
                         )
-
         ### current conversation
+
         for now_message in self.current_message.messages:
             text += (
                     now_message.type + ":" + now_message.content + self.prompt_template.sep
@@ -298,34 +290,3 @@ class BaseChat(ABC):
         """
         pass
 
-
-if __name__ == "__main__":
-    #
-    #     def call_back(t, m):
-    #         print(t)
-    #         print(m)
-    #
-    #     def my_fn(call_fn, xx):
-    #         call_fn(1, xx)
-    #
-    #
-    #     my_fn(call_back, "1231")
-
-    def my_generator():
-        while True:
-            value = yield
-            print('Received value:', value)
-            if value == 'stop':
-                return
-
-
-    # 创建生成器对象
-    gen = my_generator()
-
-    # 启动生成器
-    next(gen)
-
-    # 发送数据到生成器
-    gen.send('Hello')
-    gen.send('World')
-    gen.send('stop')

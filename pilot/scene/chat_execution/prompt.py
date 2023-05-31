@@ -1,4 +1,5 @@
 import json
+import importlib
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.configs.config import Config
 from pilot.scene.base import ChatScene
@@ -50,7 +51,7 @@ PROMPT_SEP = SeparatorStyle.SINGLE.value
 ### Whether the model service is streaming output
 PROMPT_NEED_NEED_STREAM_OUT = False
 
-chat_plugin_prompt = PromptTemplate(
+prompt = PromptTemplate(
     template_scene=ChatScene.ChatExecution.value,
     input_variables=["input", "constraints", "commands_infos",  "response"],
     response_format=json.dumps(RESPONSE_FORMAT, indent=4),
@@ -62,4 +63,4 @@ chat_plugin_prompt = PromptTemplate(
     ),
 )
 
-CFG.prompt_templates.update({chat_plugin_prompt.template_scene: chat_plugin_prompt})
+CFG.prompt_templates.update({prompt.template_scene: prompt})
