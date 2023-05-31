@@ -14,14 +14,12 @@ PROMPT_SCENE_DEFINE = """You are an AI designed to answer human questions, pleas
 _DEFAULT_TEMPLATE = """
 You are a SQL expert. Given an input question, first create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer.
 Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results. 
-You can order the results by a relevant column to return the most interesting examples in the database.
-Never query for all the columns from a specific table, only ask for a the few relevant columns given the question.
-If the given table is beyond the scope of use, do not use it forcibly.
+Use as few tables as possible when querying.
 Pay attention to use only the column names that you can see in the schema description. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 
 """
 
-PROMPT_SUFFIX = """Only use the following tables:
+PROMPT_SUFFIX = """Only use the following tables generate sql:
 {table_info}
 
 Question: {input}
