@@ -10,11 +10,11 @@ import uuid
 
 import gradio as gr
 
-from pilot.summary.db_summary_client import DBSummaryClient
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 
+from pilot.summary.db_summary_client import DBSummaryClient
 from pilot.commands.command_mange import CommandRegistry
 
 from pilot.scene.base_chat import BaseChat
