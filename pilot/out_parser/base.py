@@ -52,9 +52,10 @@ class BaseOutputParser(ABC):
         """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
         """
         if data["error_code"] == 0:
-            if CFG.LLM_MODEL in ["vicuna-13b", "guanaco"]:
-
-                output = data["text"][skip_echo_len:].strip()
+            if "vicuna" in CFG.LLM_MODEL:
+                output = data["text"][skip_echo_len + 11:].strip()
+            elif "guanaco" in CFG.LLM_MODEL:
+                output = data["text"][skip_echo_len + 14:].replace("<s>", "").strip()
             else:
                 output = data["text"].strip()
 
