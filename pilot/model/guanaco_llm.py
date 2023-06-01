@@ -5,6 +5,8 @@ from pilot.conversation import ROLE_ASSISTANT, ROLE_USER
 
 def guanaco_generate_output(model, tokenizer, params, device, context_len=2048):
     """Fork from: https://github.com/KohakuBlueleaf/guanaco-lora/blob/main/generate.py"""
+
+    print(params)
     stop = params.get("stop", "###")
     messages = params["prompt"].split(stop)
 
