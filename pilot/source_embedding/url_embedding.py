@@ -11,6 +11,8 @@ from pilot.source_embedding import SourceEmbedding, register
 from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 
 CFG = Config()
+
+
 class URLEmbedding(SourceEmbedding):
     """url embedding for read url document."""
 
@@ -27,12 +29,12 @@ class URLEmbedding(SourceEmbedding):
         loader = WebBaseLoader(web_path=self.file_path)
         if CFG.LANGUAGE == "en":
             text_splitter = CharacterTextSplitter(
-                chunk_size=KNOWLEDGE_CHUNK_SPLIT_SIZE, chunk_overlap=20, length_function=len
+                chunk_size=KNOWLEDGE_CHUNK_SPLIT_SIZE,
+                chunk_overlap=20,
+                length_function=len,
             )
         else:
-            text_splitter = CHNDocumentSplitter(
-                pdf=True, sentence_size=1000
-            )
+            text_splitter = CHNDocumentSplitter(pdf=True, sentence_size=1000)
         return loader.load_and_split(text_splitter)
 
     @register
