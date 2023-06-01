@@ -46,8 +46,26 @@ class BaseOutputParser(ABC):
             code = sep.join(blocks)
         return code
 
+    def parse_model_stream_resp_ex(self, chunk, skip_echo_len):
+        data = json.loads(chunk.decode())
+
+        """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
+        """
+        if data["error_code"] == 0:
+            if CFG.LLM_MODEL in ["vicuna-13b", "guanaco"]:
+
+                output = data["text"][skip_echo_len:].strip()
+            else:
+                output = data["text"].strip()
+
+            output = self.__post_process_code(output)
+            return output
+        else:
+            output = data["text"] + f" (error_code: {data['error_code']})"
+            return output
+
     # TODO 后续和模型绑定
-    def _parse_model_stream_resp(self, response, sep: str, skip_echo_len):
+    def parse_model_stream_resp(self, response,  skip_echo_len):
 
         for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
@@ -56,7 +74,7 @@ class BaseOutputParser(ABC):
                 """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
                 """
                 if data["error_code"] == 0:
-                    if CFG.LLM_MODEL in ["vicuna", "guanaco"]:
+                    if "vicuna" in  CFG.LLM_MODEL  or  "guanaco" in  CFG.LLM_MODEL:
                         output = data["text"][skip_echo_len:].strip()
                     else:
                         output = data["text"].strip()
@@ -69,7 +87,7 @@ class BaseOutputParser(ABC):
                     )
                     yield output
 
-    def _parse_model_nostream_resp(self, response, sep: str):
+    def parse_model_nostream_resp(self, response, sep: str):
         text = response.text.strip()
         text = text.rstrip()
         text = text.lower()
@@ -96,19 +114,6 @@ class BaseOutputParser(ABC):
         else:
             raise ValueError("Model server error!code=" + respObj_ex["error_code"])
 
-    def parse_model_server_out(self, response, skip_echo_len: int = 0):
-        """
-        parse the model server http response
-        Args:
-            response:
-
-        Returns:
-
-        """
-        if not self.is_stream_out:
-            return self._parse_model_nostream_resp(response, self.sep)
-        else:
-            return self._parse_model_stream_resp(response, self.sep)
 
     def parse_prompt_response(self, model_out_text) -> T:
         """

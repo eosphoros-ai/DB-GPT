@@ -48,7 +48,6 @@ from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
 from pilot.language.translation_handler import get_lang_text
 
-
 # 加载插件
 CFG = Config()
 logger = build_logger("webserver", LOGDIR + "webserver.log")
@@ -77,7 +76,6 @@ DB_SETTINGS = {
     "host": CFG.LOCAL_DB_HOST,
     "port": CFG.LOCAL_DB_PORT,
 }
-
 
 llm_native_dialogue = get_lang_text("knowledge_qa_type_llm_native_dialogue")
 default_knowledge_base_dialogue = get_lang_text(
@@ -111,7 +109,7 @@ def gen_sqlgen_conversation(dbname):
     db_connect = CFG.local_db.get_session(dbname)
     schemas = CFG.local_db.table_simple_info(db_connect)
     for s in schemas:
-        message += s+ ";"
+        message += s + ";"
     return get_lang_text("sql_schema_info").format(dbname, message)
 
 
@@ -209,8 +207,8 @@ def post_process_code(code):
 def get_chat_mode(selected, param=None) -> ChatScene:
     if chat_mode_title['chat_use_plugin'] == selected:
         return ChatScene.ChatExecution
-    elif chat_mode_title['knowledge_qa']  == selected:
-        mode= param
+    elif chat_mode_title['knowledge_qa'] == selected:
+        mode = param
         if mode == conversation_types["default_knownledge"]:
             return ChatScene.ChatKnowledge
         elif mode == conversation_types["custome"]:
@@ -220,7 +218,7 @@ def get_chat_mode(selected, param=None) -> ChatScene:
         else:
             return ChatScene.ChatNormal
     else:
-        sql_mode= param
+        sql_mode = param
         if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
             return ChatScene.ChatWithDbExecute
         else:
@@ -234,10 +232,11 @@ def chatbot_callback(state, message):
 
 
 def http_bot(
-        state, selected,  temperature, max_new_tokens,  plugin_selector, mode, sql_mode, db_selector, url_input, knowledge_name
+        state, selected, temperature, max_new_tokens, plugin_selector, mode, sql_mode, db_selector, url_input,
+        knowledge_name
 ):
-
-    logger.info(f"User message send!{state.conv_id},{selected},{plugin_selector},{mode},{sql_mode},{db_selector},{url_input}")
+    logger.info(
+        f"User message send!{state.conv_id},{selected},{plugin_selector},{mode},{sql_mode},{db_selector},{url_input}")
     if chat_mode_title['knowledge_qa'] == selected:
         scene: ChatScene = get_chat_mode(selected, mode)
     elif chat_mode_title['chat_use_plugin'] == selected:
@@ -312,10 +311,11 @@ def http_bot(
     else:
         logger.info("stream out start!")
         try:
-            stream_gen = chat.stream_call()
-            for msg in stream_gen:
-                state.messages[-1][-1] = msg
-                yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+            response = chat.stream_call()
+            for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+                if chunk:
+                    state.messages[-1][-1] = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk,chat.skip_echo_len)
+                    yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
         except Exception as e:
             print(traceback.format_exc())
             state.messages[-1][-1] = "Error:" + str(e)
@@ -323,8 +323,8 @@ def http_bot(
 
 
 block_css = (
-    code_highlight_css
-    + """
+        code_highlight_css
+        + """
         pre {
             white-space: pre-wrap;       /* Since CSS 2.1 */
             white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
@@ -353,7 +353,6 @@ def change_mode(mode):
         return gr.update(visible=False)
 
 
-
 def build_single_model_ui():
     notice_markdown = get_lang_text("db_gpt_introduction")
     learn_more_markdown = get_lang_text("learn_more_markdown")
@@ -362,7 +361,7 @@ def build_single_model_ui():
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Accordion(
-        get_lang_text("model_control_param"), open=False, visible=False
+            get_lang_text("model_control_param"), open=False, visible=False
     ) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
@@ -458,13 +457,14 @@ def build_single_model_ui():
             mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
 
             url_input = gr.Textbox(label=get_lang_text("url_input_label"), lines=1, interactive=True, visible=False)
-            def show_url_input(evt:gr.SelectData):
+
+            def show_url_input(evt: gr.SelectData):
                 if evt.value == url_knowledge_dialogue:
                     return gr.update(visible=True)
                 else:
                     return gr.update(visible=False)
-            mode.select(fn=show_url_input, inputs=None, outputs=url_input)
 
+            mode.select(fn=show_url_input, inputs=None, outputs=url_input)
 
             with vs_setting:
                 vs_name = gr.Textbox(
@@ -516,7 +516,6 @@ def build_single_model_ui():
 
     params = [plugin_selected, mode, sql_mode, db_selector, url_input, vs_name]
 
-
     btn_list = [regenerate_btn, clear_btn]
     regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
         http_bot,
@@ -529,7 +528,7 @@ def build_single_model_ui():
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, selected, temperature, max_output_tokens]+ params,
+        [state, selected, temperature, max_output_tokens] + params,
         [state, chatbot] + btn_list,
     )
 
@@ -537,7 +536,7 @@ def build_single_model_ui():
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, selected, temperature, max_output_tokens]+ params,
+        [state, selected, temperature, max_output_tokens] + params,
         [state, chatbot] + btn_list,
     )
     vs_add.click(
@@ -560,10 +559,10 @@ def build_single_model_ui():
 
 def build_webdemo():
     with gr.Blocks(
-        title=get_lang_text("database_smart_assistant"),
-        # theme=gr.themes.Base(),
-        theme=gr.themes.Default(),
-        css=block_css,
+            title=get_lang_text("database_smart_assistant"),
+            # theme=gr.themes.Base(),
+            theme=gr.themes.Default(),
+            css=block_css,
     ) as demo:
         url_params = gr.JSON(visible=False)
         (
