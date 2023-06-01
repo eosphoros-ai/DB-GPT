@@ -319,5 +319,9 @@ class MilvusStore(VectorStoreBase):
 
         return data[0], ret
 
+    def vector_name_exists(self):
+        """is vector store name exist."""
+        return utility.has_collection(self.collection_name)
+
     def close(self):
         connections.disconnect()

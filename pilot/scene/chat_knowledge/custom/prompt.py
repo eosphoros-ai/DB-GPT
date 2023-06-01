@@ -11,6 +11,9 @@ from pilot.scene.chat_normal.out_parser import NormalChatOutputParser
 
 CFG = Config()
 
+PROMPT_SCENE_DEFINE = """You are an AI designed to answer human questions, please follow the prompts and conventions of the system's input for your answers"""
+
+
 _DEFAULT_TEMPLATE = """ 基于以下已知的信息, 专业、简要的回答用户的问题,
             如果无法从提供的内容中获取答案, 请说: "知识库中提供的内容不足以回答此问题" 禁止胡乱编造。 
             已知内容: 

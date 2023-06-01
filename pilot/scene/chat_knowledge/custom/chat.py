@@ -18,7 +18,7 @@ from pilot.configs.model_config import (
     VECTOR_SEARCH_TOP_K,
 )
 
-from pilot.scene.chat_normal.prompt import prompt
+from pilot.scene.chat_knowledge.custom.prompt import prompt
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
 
 CFG = Config()
