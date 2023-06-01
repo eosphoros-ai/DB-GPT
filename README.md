@@ -1,3 +1,4 @@
+# DB-GPT: A LLM Tool for Multi Databases
 <div align="center">
   <p>
     <a href="https://github.com/csunny/DB-GPT">

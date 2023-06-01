@@ -1,3 +1,4 @@
+# DB-GPT: 数据库的 LLM 工具
 <div align="center">
   <p>
     <a href="https://github.com/csunny/DB-GPT">
