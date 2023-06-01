@@ -4,10 +4,9 @@
 import json
 from typing import Dict
 
-from pilot.agent.json_fix_llm import fix_json_using_multiple_techniques
 from pilot.commands.exception_not_commands import NotCommands
 from pilot.configs.config import Config
-from pilot.prompts.generator import PromptGenerator
+from pilot.prompts.generator import PluginPromptGenerator
 from pilot.speech import say_text
 
 
@@ -24,8 +23,8 @@ def _resolve_pathlike_command_args(command_args):
 
 
 def execute_ai_response_json(
-    prompt: PromptGenerator,
-    ai_response: str,
+    prompt: PluginPromptGenerator,
+    ai_response,
     user_input: str = None,
 ) -> str:
     """
@@ -39,11 +38,8 @@ def execute_ai_response_json(
 
     """
     cfg = Config()
-    try:
-        assistant_reply_json = fix_json_using_multiple_techniques(ai_response)
-    except (json.JSONDecodeError, ValueError, AttributeError) as e:
-        raise NotCommands("非可执行命令结构")
-    command_name, arguments = get_command(assistant_reply_json)
+
+    command_name, arguments = get_command(ai_response)
 
     if cfg.speak_mode:
         say_text(f"I want to execute {command_name}")
@@ -71,7 +67,7 @@ def execute_ai_response_json(
 def execute_command(
     command_name: str,
     arguments,
-    prompt: PromptGenerator,
+    prompt: PluginPromptGenerator,
 ):
     """Execute the command and return the result
 

@@ -105,18 +105,14 @@ class Conversation:
         }
 
 
-def gen_sqlgen_conversation(dbname):
-    from pilot.connections.mysql import MySQLOperator
-
-    mo = MySQLOperator(**(DB_SETTINGS))
-
-    message = ""
-
-    schemas = mo.get_schema(dbname)
-    for s in schemas:
-        message += s["schema_info"] + ";"
-    return f"Database {dbname} Schema information as follows: {message}\n"
-
+conv_default = Conversation(
+    system = None,
+    roles=("human", "ai"),
+    messages=[],
+    offset=0,
+    sep_style=SeparatorStyle.SINGLE,
+    sep="###",
+)
 
 conv_one_shot = Conversation(
     system="A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. "
@@ -261,7 +257,15 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、简要的回
 #             question:
 #             {question}
 # """
-default_conversation = conv_one_shot
+default_conversation = conv_default
+
+
+chat_mode_title = {
+    "sql_generate_diagnostics": get_lang_text("sql_analysis_and_diagnosis"),
+    "chat_use_plugin": get_lang_text("chat_use_plugin"),
+    "knowledge_qa": get_lang_text("knowledge_qa"),
+
+}
 
 conversation_sql_mode = {
     "auto_execute_ai_response": get_lang_text("sql_generate_mode_direct"),
@@ -274,7 +278,7 @@ conversation_types = {
         "knowledge_qa_type_default_knowledge_base_dialogue"
     ),
     "custome": get_lang_text("knowledge_qa_type_add_knowledge_base_dialogue"),
-    "auto_execute_plugin": get_lang_text("dialogue_use_plugin"),
+    "url": get_lang_text("knowledge_qa_type_url_knowledge_dialogue"),
 }
 
 conv_templates = {
@@ -282,7 +286,3 @@ conv_templates = {
     "vicuna_v1": conv_vicuna_v1,
     "auto_dbgpt_one_shot": auto_dbgpt_one_shot,
 }
-
-if __name__ == "__main__":
-    message = gen_sqlgen_conversation("dbgpt")
-    print(message)

@@ -11,6 +11,7 @@ from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 from pilot.source_embedding.csv_embedding import CSVEmbedding
 from pilot.source_embedding.markdown_embedding import MarkdownEmbedding
 from pilot.source_embedding.pdf_embedding import PDFEmbedding
+from pilot.source_embedding.url_embedding import URLEmbedding
 from pilot.vector_store.connector import VectorStoreConnector
 
 CFG = Config()
@@ -57,6 +58,12 @@ class KnowledgeEmbedding:
             )
         elif self.file_type == "default":
             embedding = MarkdownEmbedding(
+                file_path=self.file_path,
+                model_name=self.model_name,
+                vector_store_config=self.vector_store_config,
+            )
+        elif self.file_type == "url":
+            embedding = URLEmbedding(
                 file_path=self.file_path,
                 model_name=self.model_name,
                 vector_store_config=self.vector_store_config,
