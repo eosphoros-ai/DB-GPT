@@ -8,7 +8,7 @@ def guanaco_generate_output(model, tokenizer, params, device, context_len=2048):
 
     print(params)
     stop = params.get("stop", "###")
-    messages = params["prompt"].split(stop)
+    messages = params["prompt"]
 
 
     hist = []
