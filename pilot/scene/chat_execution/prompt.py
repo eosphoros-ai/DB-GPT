@@ -37,13 +37,9 @@ Ensure the response is correct json and can be parsed by Python json.loads
 """
 
 RESPONSE_FORMAT = {
-    "thoughts": {
-        "text": "thought",
-        "reasoning": "reasoning",
-        "plan": "- short bulleted\n- list that conveys\n- long-term plan",
-        "criticism": "constructive self-criticism",
-        "speak": "thoughts summary to say to user",
-    },
+    "thoughts": "thought text",
+    "reasoning": "reasoning",
+    "speak": "thoughts summary to say to user",
     "command": {"name": "command name", "args": {"arg name": "value"}},
 }
 
