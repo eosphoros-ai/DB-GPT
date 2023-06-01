@@ -55,8 +55,6 @@ def fix_and_parse_json(
         logger.error("参数解析错误", e)
 
 
-
-
 def correct_json(json_to_load: str) -> str:
     """
     Correct common JSON errors.

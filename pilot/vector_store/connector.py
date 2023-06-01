@@ -1,4 +1,5 @@
 from pilot.vector_store.chroma_store import ChromaStore
+
 # from pilot.vector_store.milvus_store import MilvusStore
 
 connector = {"Chroma": ChromaStore, "Milvus": None}

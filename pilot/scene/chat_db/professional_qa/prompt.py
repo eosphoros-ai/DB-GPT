@@ -27,7 +27,6 @@ Pay attention to use only the column names that you can see in the schema descri
 """
 
 
-
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
 PROMPT_NEED_NEED_STREAM_OUT = True
@@ -37,7 +36,7 @@ prompt = PromptTemplate(
     input_variables=["input", "table_info", "dialect", "top_k"],
     response_format=None,
     template_define=PROMPT_SCENE_DEFINE,
-    template=_DEFAULT_TEMPLATE + PROMPT_SUFFIX ,
+    template=_DEFAULT_TEMPLATE + PROMPT_SUFFIX,
     stream_out=PROMPT_NEED_NEED_STREAM_OUT,
     output_parser=NormalChatOutputParser(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
@@ -45,4 +44,3 @@ prompt = PromptTemplate(
 )
 
 CFG.prompt_templates.update({prompt.template_scene: prompt})
-
