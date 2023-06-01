@@ -18,12 +18,12 @@ CFG = Config()
 
 
 class KnowledgeEmbedding:
-    def __init__(self, file_path, model_name, vector_store_config, local_persist=True):
+    def __init__(self, file_path, model_name, vector_store_config, local_persist=True, file_type="default"):
         """Initialize with Loader url, model_name, vector_store_config"""
         self.file_path = file_path
         self.model_name = model_name
         self.vector_store_config = vector_store_config
-        self.file_type = "default"
+        self.file_type = file_type
         self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
         self.vector_store_config["embeddings"] = self.embeddings
         self.local_persist = local_persist
@@ -37,7 +37,13 @@ class KnowledgeEmbedding:
         self.knowledge_embedding_client.batch_embedding()
 
     def init_knowledge_embedding(self):
-        if self.file_path.endswith(".pdf"):
+        if self.file_type == "url":
+            embedding = URLEmbedding(
+                file_path=self.file_path,
+                model_name=self.model_name,
+                vector_store_config=self.vector_store_config,
+            )
+        elif self.file_path.endswith(".pdf"):
             embedding = PDFEmbedding(
                 file_path=self.file_path,
                 model_name=self.model_name,
@@ -56,18 +62,15 @@ class KnowledgeEmbedding:
                 model_name=self.model_name,
                 vector_store_config=self.vector_store_config,
             )
+
+
         elif self.file_type == "default":
             embedding = MarkdownEmbedding(
                 file_path=self.file_path,
                 model_name=self.model_name,
                 vector_store_config=self.vector_store_config,
             )
-        elif self.file_type == "url":
-            embedding = URLEmbedding(
-                file_path=self.file_path,
-                model_name=self.model_name,
-                vector_store_config=self.vector_store_config,
-            )
+
 
         return embedding
 

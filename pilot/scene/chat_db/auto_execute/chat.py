@@ -37,11 +37,18 @@ class ChatWithDbAutoExecute(BaseChat):
         self.top_k: int = 5
 
     def generate_input_values(self):
+        try:
+            from pilot.summary.db_summary_client import DBSummaryClient
+        except ImportError:
+            raise ValueError(
+                "Could not import DBSummaryClient. "
+            )
         input_values = {
             "input": self.current_user_input,
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
-            "table_info": self.database.table_simple_info(self.db_connect)
+            # "table_info": self.database.table_simple_info(self.db_connect)
+            "table_info": DBSummaryClient.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
         return input_values
 

@@ -139,6 +139,11 @@ class Config(metaclass=Singleton):
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
 
+        ### EMBEDDING Configuration
+        self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text2vec")
+        ### SUMMARY_CONFIG Configuration
+        self.SUMMARY_CONFIG = os.getenv("SUMMARY_CONFIG", "VECTOR")
+
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
         self.debug_mode = value
