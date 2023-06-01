@@ -20,32 +20,11 @@ class DbChatOutputParser(BaseOutputParser):
     def __init__(self, sep: str, is_stream_out: bool):
         super().__init__(sep=sep, is_stream_out=is_stream_out)
 
-    def parse_model_server_out(self, response) -> str:
-        return super().parse_model_server_out(response)
 
     def parse_prompt_response(self, model_out_text):
-        cleaned_output = model_out_text.rstrip()
-        if "```json" in cleaned_output:
-            _, cleaned_output = cleaned_output.split("```json")
-        if "```" in cleaned_output:
-            cleaned_output, _ = cleaned_output.split("```")
-        if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json") :]
-        if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```") :]
-        if cleaned_output.endswith("```"):
-            cleaned_output = cleaned_output[: -len("```")]
-        cleaned_output = cleaned_output.strip()
-        if not cleaned_output.startswith("{") or not cleaned_output.endswith("}"):
-            logger.info("illegal json processing")
-            json_pattern = r"{(.+?)}"
-            m = re.search(json_pattern, cleaned_output)
-            if m:
-                cleaned_output = m.group(0)
-            else:
-                raise ValueError("model server out not fllow the prompt!")
-
-        response = json.loads(cleaned_output)
+        clean_str = super().parse_prompt_response(model_out_text);
+        print("clean prompt response:", clean_str)
+        response = json.loads(clean_str)
         sql, thoughts = response["sql"], response["thoughts"]
         return SqlAction(sql, thoughts)
 
