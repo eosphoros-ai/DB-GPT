@@ -11,6 +11,7 @@ from pilot.scene.chat_knowledge.custom.chat import ChatNewKnowledge
 from pilot.scene.chat_knowledge.default.chat import ChatDefaultKnowledge
 from pilot.scene.chat_knowledge.inner_db_summary.chat import InnerChatDBSummary
 
+
 class ChatFactory(metaclass=Singleton):
     @staticmethod
     def get_implementation(chat_mode, **kwargs):

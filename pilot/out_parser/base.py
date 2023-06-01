@@ -83,9 +83,7 @@ class BaseOutputParser(ABC):
                     output = self.__post_process_code(output)
                     yield output
                 else:
-                    output = (
-                            data["text"] + f" (error_code: {data['error_code']})"
-                    )
+                    output = data["text"] + f" (error_code: {data['error_code']})"
                     yield output
 
     def parse_model_nostream_resp(self, response, sep: str):

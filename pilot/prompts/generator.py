@@ -133,10 +133,8 @@ class PluginPromptGenerator:
         else:
             return "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
 
-
-    def generate_commands_string(self)->str:
-        return   f"{self._generate_numbered_list(self.commands, item_type='command')}"
-
+    def generate_commands_string(self) -> str:
+        return f"{self._generate_numbered_list(self.commands, item_type='command')}"
 
     def generate_prompt_string(self) -> str:
         """
