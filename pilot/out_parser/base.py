@@ -59,6 +59,7 @@ class BaseOutputParser(ABC):
                     if "vicuna" in CFG.LLM_MODEL:
 
                         output = data["text"].strip()
+                        print(output)
                     else:
                         output = data["text"].strip()
 
