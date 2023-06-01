@@ -23,7 +23,7 @@ class URLEmbedding(SourceEmbedding):
         """Load from url path."""
         loader = WebBaseLoader(web_path=self.file_path)
         text_splitor = CharacterTextSplitter(
-            chunk_size=1000, chunk_overlap=20, length_function=len
+            chunk_size=100, chunk_overlap=20, length_function=len
         )
         return loader.load_and_split(text_splitor)
 
