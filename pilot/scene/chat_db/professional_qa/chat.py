@@ -50,7 +50,4 @@ class ChatWithDbQA(BaseChat):
         return input_values
 
     def do_with_prompt_response(self, prompt_response):
-        if self.auto_execute:
-            return self.database.run(self.db_connect, prompt_response.sql)
-        else:
-            return prompt_response
+        return prompt_response
