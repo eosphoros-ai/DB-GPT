@@ -129,7 +129,7 @@ class BaseChat(ABC):
     def stream_call(self):
         payload = self.__call_base()
 
-        self.skip_echo_len = len(payload.get('prompt').replace("</s>", " ")) + 11
+        self.skip_echo_len = len(payload.get('prompt').replace("</s>", " "))
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
