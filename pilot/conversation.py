@@ -106,7 +106,7 @@ class Conversation:
 
 
 conv_default = Conversation(
-    system = None,
+    system=None,
     roles=("human", "ai"),
     messages=[],
     offset=0,
@@ -298,7 +298,6 @@ chat_mode_title = {
     "sql_generate_diagnostics": get_lang_text("sql_analysis_and_diagnosis"),
     "chat_use_plugin": get_lang_text("chat_use_plugin"),
     "knowledge_qa": get_lang_text("knowledge_qa"),
-
 }
 
 conversation_sql_mode = {

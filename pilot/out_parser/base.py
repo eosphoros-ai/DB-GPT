@@ -53,7 +53,6 @@ class BaseOutputParser(ABC):
         """
         if data["error_code"] == 0:
             if CFG.LLM_MODEL in ["vicuna-13b", "guanaco"]:
-
                 output = data["text"][skip_echo_len:].strip()
             else:
                 output = data["text"].strip()
@@ -65,8 +64,7 @@ class BaseOutputParser(ABC):
             return output
 
     # TODO 后续和模型绑定
-    def parse_model_stream_resp(self, response,  skip_echo_len):
-
+    def parse_model_stream_resp(self, response, skip_echo_len):
         for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
                 data = json.loads(chunk.decode())
@@ -74,7 +72,7 @@ class BaseOutputParser(ABC):
                 """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
                 """
                 if data["error_code"] == 0:
-                    if "vicuna" in  CFG.LLM_MODEL  or  "guanaco" in  CFG.LLM_MODEL:
+                    if "vicuna" in CFG.LLM_MODEL or "guanaco" in CFG.LLM_MODEL:
                         output = data["text"][skip_echo_len:].strip()
                     else:
                         output = data["text"].strip()
@@ -82,9 +80,7 @@ class BaseOutputParser(ABC):
                     output = self.__post_process_code(output)
                     yield output
                 else:
-                    output = (
-                            data["text"] + f" (error_code: {data['error_code']})"
-                    )
+                    output = data["text"] + f" (error_code: {data['error_code']})"
                     yield output
 
     def parse_model_nostream_resp(self, response, sep: str):
@@ -114,7 +110,6 @@ class BaseOutputParser(ABC):
         else:
             raise ValueError("Model server error!code=" + respObj_ex["error_code"])
 
-
     def parse_prompt_response(self, model_out_text) -> T:
         """
         parse model out text to prompt define response
@@ -130,9 +125,9 @@ class BaseOutputParser(ABC):
         # if "```" in cleaned_output:
         #     cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json"):]
+            cleaned_output = cleaned_output[len("```json") :]
         if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```"):]
+            cleaned_output = cleaned_output[len("```") :]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
@@ -144,7 +139,13 @@ class BaseOutputParser(ABC):
                 cleaned_output = m.group(0)
             else:
                 raise ValueError("model server out not fllow the prompt!")
-        cleaned_output = cleaned_output.strip().replace('\n', '').replace('\\n', '').replace('\\', '').replace('\\', '')
+        cleaned_output = (
+            cleaned_output.strip()
+            .replace("\n", "")
+            .replace("\\n", "")
+            .replace("\\", "")
+            .replace("\\", "")
+        )
         return cleaned_output
 
     def parse_view_response(self, ai_text, data) -> str:

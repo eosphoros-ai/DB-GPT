@@ -29,7 +29,6 @@ lang_dicts = {
         "url_input_label": "输入网页地址",
         "add_as_new_klg": "添加为新知识库",
         "add_file_to_klg": "向知识库中添加文件",
-
         "upload_file": "上传文件",
         "add_file": "添加文件",
         "upload_and_load_to_klg": "上传并加载到知识库",
