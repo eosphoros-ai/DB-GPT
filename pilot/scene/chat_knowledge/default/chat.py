@@ -17,7 +17,7 @@ from pilot.configs.model_config import (
     VECTOR_SEARCH_TOP_K,
 )
 
-from pilot.scene.chat_normal.prompt import prompt
+from pilot.scene.chat_knowledge.default.prompt import prompt
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
 
 CFG = Config()
@@ -52,8 +52,9 @@ class ChatDefaultKnowledge(BaseChat):
         docs = self.knowledge_embedding_client.similar_search(
             self.current_user_input, VECTOR_SEARCH_TOP_K
         )
-        docs = docs[:2000]
-        input_values = {"context": docs, "question": self.current_user_input}
+        context = [d.page_content for d in docs]
+        context = context[:2000]
+        input_values = {"context": context, "question": self.current_user_input}
         return input_values
 
     def do_with_prompt_response(self, prompt_response):
