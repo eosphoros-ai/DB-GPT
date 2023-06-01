@@ -53,9 +53,11 @@ class BaseOutputParser(ABC):
         """
         if data["error_code"] == 0:
             if "vicuna" in CFG.LLM_MODEL:
-                output = data["text"][skip_echo_len + 11:].strip()
+                # output = data["text"][skip_echo_len + 11:].strip()
+                output = data["text"][skip_echo_len:].strip()
             elif "guanaco" in CFG.LLM_MODEL:
-                output = data["text"][skip_echo_len + 14:].replace("<s>", "").strip()
+                # output = data["text"][skip_echo_len + 14:].replace("<s>", "").strip()
+                output = data["text"][skip_echo_len:].replace("<s>", "").strip()
             else:
                 output = data["text"].strip()
 
