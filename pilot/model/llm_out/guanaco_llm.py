@@ -1,4 +1,5 @@
 import torch
+import copy
 from threading import Thread
 from transformers import TextIteratorStreamer, StoppingCriteriaList, StoppingCriteria
 from pilot.conversation import ROLE_ASSISTANT, ROLE_USER
@@ -8,19 +9,35 @@ def guanaco_generate_output(model, tokenizer, params, device, context_len=2048):
 
     print(params)
     stop = params.get("stop", "###")
-    messages = params["prompt"]
+    prompt = params["prompt"]
+    messages = prompt.split(stop)
+    #
+    # # Add history conversation
+    # hist = []
+    # once_conversation = []
+    # for message in messages[:-1]:
+    #     if len(message) <= 0:
+    #         continue
+    #
+    #     if "human:" in message:
+    #         once_conversation.append(f"""###system:{message.split("human:")[1]} """ )
+    #     elif "system:" in message:
+    #         once_conversation.append(f"""###system:{message.split("system:")[1]} """)
+    #     elif "ai:" in message:
+    #         once_conversation.append(f"""###system:{message.split("ai:")[1]} """)
+    #         last_conversation = copy.deepcopy(once_conversation)
+    #         hist.append("".join(last_conversation))
+    #         once_conversation = []
+    #     else:
+    #         once_conversation.append(f"""###system:{message} """)
+    #
+    #
+    #
+    #
+    #
+    # query = "".join(hist)
 
-
-    hist = []
-    for i in range(1, len(messages) - 2, 2):
-        hist.append(
-            (
-                messages[i].split(ROLE_USER + ":")[1],
-                messages[i + 1].split(ROLE_ASSISTANT + ":")[1],
-            )
-        )
-
-    query = messages[-2].split(ROLE_USER + ":")[1]
+    query = prompt
     print("Query Message: ", query)
 
     input_ids = tokenizer(query, return_tensors="pt").input_ids
