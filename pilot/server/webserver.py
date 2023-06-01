@@ -85,9 +85,7 @@ add_knowledge_base_dialogue = get_lang_text(
     "knowledge_qa_type_add_knowledge_base_dialogue"
 )
 
-url_knowledge_dialogue = get_lang_text(
-    "knowledge_qa_type_url_knowledge_dialogue"
-)
+url_knowledge_dialogue = get_lang_text("knowledge_qa_type_url_knowledge_dialogue")
 
 knowledge_qa_type_list = [
     llm_native_dialogue,
@@ -205,9 +203,9 @@ def post_process_code(code):
 
 
 def get_chat_mode(selected, param=None) -> ChatScene:
-    if chat_mode_title['chat_use_plugin'] == selected:
+    if chat_mode_title["chat_use_plugin"] == selected:
         return ChatScene.ChatExecution
-    elif chat_mode_title['knowledge_qa'] == selected:
+    elif chat_mode_title["knowledge_qa"] == selected:
         mode = param
         if mode == conversation_types["default_knownledge"]:
             return ChatScene.ChatKnowledge
@@ -232,14 +230,23 @@ def chatbot_callback(state, message):
 
 
 def http_bot(
-        state, selected, temperature, max_new_tokens, plugin_selector, mode, sql_mode, db_selector, url_input,
-        knowledge_name
+    state,
+    selected,
+    temperature,
+    max_new_tokens,
+    plugin_selector,
+    mode,
+    sql_mode,
+    db_selector,
+    url_input,
+    knowledge_name,
 ):
     logger.info(
-        f"User message send!{state.conv_id},{selected},{plugin_selector},{mode},{sql_mode},{db_selector},{url_input}")
-    if chat_mode_title['knowledge_qa'] == selected:
+        f"User message send!{state.conv_id},{selected},{plugin_selector},{mode},{sql_mode},{db_selector},{url_input}"
+    )
+    if chat_mode_title["knowledge_qa"] == selected:
         scene: ChatScene = get_chat_mode(selected, mode)
-    elif chat_mode_title['chat_use_plugin'] == selected:
+    elif chat_mode_title["chat_use_plugin"] == selected:
         scene: ChatScene = get_chat_mode(selected)
     else:
         scene: ChatScene = get_chat_mode(selected, sql_mode)
@@ -251,7 +258,7 @@ def http_bot(
             "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "db_name": db_selector,
-            "user_input": state.last_user_input
+            "user_input": state.last_user_input,
         }
     elif ChatScene.ChatWithDbQA == scene:
         chat_param = {
@@ -289,7 +296,7 @@ def http_bot(
             "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
-            "knowledge_name": knowledge_name
+            "knowledge_name": knowledge_name,
         }
     elif ChatScene.ChatUrlKnowledge == scene:
         chat_param = {
@@ -297,7 +304,7 @@ def http_bot(
             "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
-            "url": url_input
+            "url": url_input,
         }
     else:
         state.messages[-1][-1] = f"ERROR: Can't support scene!{scene}"
@@ -314,7 +321,11 @@ def http_bot(
             response = chat.stream_call()
             for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
                 if chunk:
-                    state.messages[-1][-1] = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk,chat.skip_echo_len)
+                    state.messages[-1][
+                        -1
+                    ] = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                        chunk, chat.skip_echo_len
+                    )
                     yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
         except Exception as e:
             print(traceback.format_exc())
@@ -323,8 +334,8 @@ def http_bot(
 
 
 block_css = (
-        code_highlight_css
-        + """
+    code_highlight_css
+    + """
         pre {
             white-space: pre-wrap;       /* Since CSS 2.1 */
             white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
@@ -361,7 +372,7 @@ def build_single_model_ui():
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
     with gr.Accordion(
-            get_lang_text("model_control_param"), open=False, visible=False
+        get_lang_text("model_control_param"), open=False, visible=False
     ) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
@@ -411,7 +422,7 @@ def build_single_model_ui():
                     get_lang_text("sql_generate_mode_none"),
                 ],
                 show_label=False,
-                value=get_lang_text("sql_generate_mode_none")
+                value=get_lang_text("sql_generate_mode_none"),
             )
             sql_vs_setting = gr.Markdown(get_lang_text("sql_vs_setting"))
             sql_mode.change(fn=change_sql_mode, inputs=sql_mode, outputs=sql_vs_setting)
@@ -428,15 +439,19 @@ def build_single_model_ui():
                     value="",
                     interactive=True,
                     show_label=True,
-                    type="value"
+                    type="value",
                 ).style(container=False)
 
-                def plugin_change(evt: gr.SelectData):  # SelectData is a subclass of EventData
+                def plugin_change(
+                    evt: gr.SelectData,
+                ):  # SelectData is a subclass of EventData
                     print(f"You selected {evt.value} at {evt.index} from {evt.target}")
                     print(f"user plugin:{plugins_select_info().get(evt.value)}")
                     return plugins_select_info().get(evt.value)
 
-                plugin_selected = gr.Textbox(show_label=False, visible=False, placeholder="Selected")
+                plugin_selected = gr.Textbox(
+                    show_label=False, visible=False, placeholder="Selected"
+                )
                 plugin_selector.select(plugin_change, None, plugin_selected)
 
         tab_qa = gr.TabItem(get_lang_text("knowledge_qa"), elem_id="QA")
@@ -456,7 +471,12 @@ def build_single_model_ui():
             )
             mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
 
-            url_input = gr.Textbox(label=get_lang_text("url_input_label"), lines=1, interactive=True, visible=False)
+            url_input = gr.Textbox(
+                label=get_lang_text("url_input_label"),
+                lines=1,
+                interactive=True,
+                visible=False,
+            )
 
             def show_url_input(evt: gr.SelectData):
                 if evt.value == url_knowledge_dialogue:
@@ -559,10 +579,10 @@ def build_single_model_ui():
 
 def build_webdemo():
     with gr.Blocks(
-            title=get_lang_text("database_smart_assistant"),
-            # theme=gr.themes.Base(),
-            theme=gr.themes.Default(),
-            css=block_css,
+        title=get_lang_text("database_smart_assistant"),
+        # theme=gr.themes.Base(),
+        theme=gr.themes.Default(),
+        css=block_css,
     ) as demo:
         url_params = gr.JSON(visible=False)
         (

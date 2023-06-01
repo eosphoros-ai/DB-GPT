@@ -9,7 +9,7 @@ from pilot.conversation import ROLE_ASSISTANT, ROLE_USER
 
 @torch.inference_mode()
 def chatglm_generate_stream(
-        model, tokenizer, params, device, context_len=2048, stream_interval=2
+    model, tokenizer, params, device, context_len=2048, stream_interval=2
 ):
     """Generate text using chatglm model's chat api"""
     prompt = params["prompt"]
@@ -57,7 +57,7 @@ def chatglm_generate_stream(
     # i = 0
 
     for i, (response, new_hist) in enumerate(
-            model.stream_chat(tokenizer, query, hist, **generate_kwargs)
+        model.stream_chat(tokenizer, query, hist, **generate_kwargs)
     ):
         if echo:
             output = query + " " + response

@@ -29,5 +29,3 @@ prompt = PromptTemplate(
 
 
 CFG.prompt_templates.update({prompt.template_scene: prompt})
-
-

@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sqlparse
-import regex as  re
+import regex as re
 import warnings
 from typing import Any, Iterable, List, Optional
 from pydantic import BaseModel, Field, root_validator, validator, Extra
@@ -283,16 +283,16 @@ class Database:
             return f"Error: {e}"
 
     def __write(self, session, write_sql):
-       print(f"Write[{write_sql}]")
-       db_cache = self.get_session_db(session)
-       result = session.execute(text(write_sql))
-       session.commit()
-       #TODO  Subsequent optimization of dynamically specified database submission loss target problem
-       session.execute(text(f"use `{db_cache}`"))
-       print(f"SQL[{write_sql}], result:{result.rowcount}")
-       return result.rowcount
+        print(f"Write[{write_sql}]")
+        db_cache = self.get_session_db(session)
+        result = session.execute(text(write_sql))
+        session.commit()
+        # TODO  Subsequent optimization of dynamically specified database submission loss target problem
+        session.execute(text(f"use `{db_cache}`"))
+        print(f"SQL[{write_sql}], result:{result.rowcount}")
+        return result.rowcount
 
-    def __query(self,session, query, fetch: str = "all"):
+    def __query(self, session, query, fetch: str = "all"):
         """
         only for query
         Args:
@@ -390,37 +390,44 @@ class Database:
         cmd_type = parts[0]
 
         # 根据命令类型进行处理
-        if cmd_type == 'insert':
-            match = re.match(r"insert into (\w+) \((.*?)\) values \((.*?)\)", write_sql.lower())
+        if cmd_type == "insert":
+            match = re.match(
+                r"insert into (\w+) \((.*?)\) values \((.*?)\)", write_sql.lower()
+            )
             if match:
                 table_name, columns, values = match.groups()
                 # 将字段列表和值列表分割为单独的字段和值
-                columns = columns.split(',')
-                values = values.split(',')
+                columns = columns.split(",")
+                values = values.split(",")
                 # 构造 WHERE 子句
-                where_clause = " AND ".join([f"{col.strip()}={val.strip()}" for col, val in zip(columns, values)])
-                return f'SELECT * FROM {table_name} WHERE {where_clause}'
+                where_clause = " AND ".join(
+                    [
+                        f"{col.strip()}={val.strip()}"
+                        for col, val in zip(columns, values)
+                    ]
+                )
+                return f"SELECT * FROM {table_name} WHERE {where_clause}"
 
-        elif cmd_type == 'delete':
+        elif cmd_type == "delete":
             table_name = parts[2]  # delete from <table_name> ...
             # 返回一个select语句，它选择该表的所有数据
-            return f'SELECT * FROM {table_name}'
+            return f"SELECT * FROM {table_name}"
 
-        elif cmd_type == 'update':
+        elif cmd_type == "update":
             table_name = parts[1]
-            set_idx = parts.index('set')
-            where_idx = parts.index('where')
+            set_idx = parts.index("set")
+            where_idx = parts.index("where")
             # 截取 `set` 子句中的字段名
-            set_clause = parts[set_idx + 1: where_idx][0].split('=')[0].strip()
+            set_clause = parts[set_idx + 1 : where_idx][0].split("=")[0].strip()
             # 截取 `where` 之后的条件语句
-            where_clause = ' '.join(parts[where_idx + 1:])
+            where_clause = " ".join(parts[where_idx + 1 :])
             # 返回一个select语句，它选择更新的数据
-            return f'SELECT {set_clause} FROM {table_name} WHERE {where_clause}'
+            return f"SELECT {set_clause} FROM {table_name} WHERE {where_clause}"
         else:
             raise ValueError(f"Unsupported SQL command type: {cmd_type}")
 
     def __sql_parse(self, sql):
-        sql =  sql.strip()
+        sql = sql.strip()
         parsed = sqlparse.parse(sql)[0]
         sql_type = parsed.get_type()
 
@@ -428,8 +435,6 @@ class Database:
         ttype = first_token.ttype
         print(f"SQL:{sql}, ttype:{ttype}, sql_type:{sql_type}")
         return parsed, ttype, sql_type
-
-
 
     def get_indexes(self, table_name):
         """Get table indexes about specified table."""

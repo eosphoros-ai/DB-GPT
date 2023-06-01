@@ -1,4 +1,3 @@
-
 from pilot.scene.base_chat import BaseChat, logger, headers
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
@@ -24,18 +23,20 @@ from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
 CFG = Config()
 
 
-class ChatUrlKnowledge (BaseChat):
+class ChatUrlKnowledge(BaseChat):
     chat_scene: str = ChatScene.ChatUrlKnowledge.value
 
     """Number of results to return from the query"""
 
-    def __init__(self,temperature, max_new_tokens, chat_session_id, user_input,  url):
+    def __init__(self, temperature, max_new_tokens, chat_session_id, user_input, url):
         """ """
-        super().__init__(temperature=temperature,
-                         max_new_tokens=max_new_tokens,
-                         chat_mode=ChatScene.ChatUrlKnowledge,
-                         chat_session_id=chat_session_id,
-                         current_user_input=user_input)
+        super().__init__(
+            temperature=temperature,
+            max_new_tokens=max_new_tokens,
+            chat_mode=ChatScene.ChatUrlKnowledge,
+            chat_session_id=chat_session_id,
+            current_user_input=user_input,
+        )
         self.url = url
         vector_store_config = {
             "vector_store_name": url,
@@ -54,18 +55,15 @@ class ChatUrlKnowledge (BaseChat):
         self.knowledge_embedding_client.knowledge_embedding()
 
     def generate_input_values(self):
-        docs = self.knowledge_embedding_client.similar_search(self.current_user_input, VECTOR_SEARCH_TOP_K)
+        docs = self.knowledge_embedding_client.similar_search(
+            self.current_user_input, VECTOR_SEARCH_TOP_K
+        )
         docs = docs[:2000]
-        input_values = {
-            "context": docs,
-            "question": self.current_user_input
-        }
+        input_values = {"context": docs, "question": self.current_user_input}
         return input_values
 
     def do_with_prompt_response(self, prompt_response):
         return prompt_response
-
-
 
     @property
     def chat_type(self) -> str:

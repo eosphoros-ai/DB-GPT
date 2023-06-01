@@ -7,33 +7,30 @@ from pilot.configs.config import Config
 from pilot.scene.base import ChatScene
 from pilot.common.schema import SeparatorStyle
 
-from pilot.scene.chat_knowledge.inner_db_summary.out_parser import NormalChatOutputParser
+from pilot.scene.chat_knowledge.inner_db_summary.out_parser import (
+    NormalChatOutputParser,
+)
 
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE =""""""
+PROMPT_SCENE_DEFINE = """"""
 
 _DEFAULT_TEMPLATE = """
 Based on the following known database information?, answer which tables are involved in the user input.
 Known database information:{db_profile_summary}
 Input:{db_input}
 You should only respond in JSON format as described below and ensure the response can be parsed by Python json.loads
-The response format must be JSON, and the key of JSON must be "table".
+
 
 """
 PROMPT_RESPONSE = """You must respond in JSON format as following format:
 {response}
-
-Ensure the response is correct json and can be parsed by Python json.loads
+The response format must be JSON, and the key of JSON must be "table".
 """
 
 
-
-RESPONSE_FORMAT = {
-                "table": ["orders", "products"]
-            }
-
+RESPONSE_FORMAT = {"table": ["orders", "products"]}
 
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
@@ -54,5 +51,3 @@ prompt = PromptTemplate(
 
 
 CFG.prompt_templates.update({prompt.template_scene: prompt})
-
-
