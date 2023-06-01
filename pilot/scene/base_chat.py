@@ -129,7 +129,7 @@ class BaseChat(ABC):
     def stream_call(self):
         payload = self.__call_base()
 
-        skip_echo_len = len(payload.get('prompt').replace("</s>", " ")) + 1
+        self.skip_echo_len = len(payload.get('prompt').replace("</s>", " ")) + 11
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
@@ -138,14 +138,16 @@ class BaseChat(ABC):
                 urljoin(CFG.MODEL_SERVER, "generate_stream"),
                 headers=headers,
                 json=payload,
+                stream=True,
                 timeout=120,
             )
+            return response;
 
-            ai_response_text = self.prompt_template.output_parser.parse_model_server_out(response, skip_echo_len)
+            # yield self.prompt_template.output_parser.parse_model_stream_resp(response, skip_echo_len)
 
-            for resp_text_trunck in ai_response_text:
-                show_info = resp_text_trunck
-                yield resp_text_trunck + "▌"
+            # for resp_text_trunck in ai_response_text:
+            #     show_info = resp_text_trunck
+            #     yield resp_text_trunck + "▌"
 
             self.current_message.add_ai_message(show_info)
 
@@ -173,7 +175,7 @@ class BaseChat(ABC):
 
             ### output parse
             ai_response_text = (
-                self.prompt_template.output_parser.parse_model_server_out(response)
+                self.prompt_template.output_parser.parse_model_nostream_resp(response, self.prompt_template.sep)
             )
             self.current_message.add_ai_message(ai_response_text)
             prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
