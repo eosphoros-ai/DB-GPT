@@ -13,6 +13,7 @@ from pilot.summary.mysql_db_summary import MysqlSummary
 from pilot.scene.chat_factory import ChatFactory
 
 CFG = Config()
+chat_factory = ChatFactory()
 
 
 class DBSummaryClient:
@@ -88,13 +89,18 @@ class DBSummaryClient:
         )
         if CFG.SUMMARY_CONFIG == "FAST":
             table_docs = knowledge_embedding_client.similar_search(query, topk)
-            related_tables = [json.loads(table_doc.page_content)["table_name"] for table_doc in table_docs]
+            related_tables = [
+                json.loads(table_doc.page_content)["table_name"]
+                for table_doc in table_docs
+            ]
         else:
             table_docs = knowledge_embedding_client.similar_search(query, 1)
             # prompt = KnownLedgeBaseQA.build_db_summary_prompt(
             #     query, table_docs[0].page_content
             # )
-            related_tables = _get_llm_response(query, dbname, table_docs[0].page_content)
+            related_tables = _get_llm_response(
+                query, dbname, table_docs[0].page_content
+            )
         related_table_summaries = []
         for table in related_tables:
             vector_store_config = {
@@ -118,35 +124,14 @@ def _get_llm_response(query, db_input, dbsummary):
         "max_new_tokens": 512,
         "chat_session_id": uuid.uuid1(),
         "user_input": query,
-        "db_input": db_input,
+        "db_select": db_input,
         "db_summary": dbsummary,
     }
-    chat_factory = ChatFactory()
-    chat: BaseChat = chat_factory.get_implementation(ChatScene.InnerChatDBSummary.value(), **chat_param)
-
-    return chat.call()
-    # payload = {
-    #     "model": CFG.LLM_MODEL,
-    #     "prompt": prompt,
-    #     "temperature": float(0.7),
-    #     "max_new_tokens": int(512),
-    #     "stop": state.sep
-    #     if state.sep_style == SeparatorStyle.SINGLE
-    #     else state.sep2,
-    # }
-    # headers = {"User-Agent": "dbgpt Client"}
-    # response = requests.post(
-    #     urljoin(CFG.MODEL_SERVER, "generate"),
-    #     headers=headers,
-    #     json=payload,
-    #     timeout=120,
-    # )
-    #
-    #         print(related_tables)
-    #         return related_tables
-    # except NotCommands as e:
-    #     print("llm response error:" + e.message)
-
+    chat: BaseChat = chat_factory.get_implementation(
+        ChatScene.InnerChatDBSummary.value, **chat_param
+    )
+    res = chat.nostream_call()
+    return json.loads(res)["table"]
 
 
 # if __name__ == "__main__":

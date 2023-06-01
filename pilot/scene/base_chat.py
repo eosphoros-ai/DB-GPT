@@ -57,7 +57,14 @@ class BaseChat(ABC):
 
         arbitrary_types_allowed = True
 
-    def __init__(self,temperature, max_new_tokens, chat_mode, chat_session_id, current_user_input):
+    def __init__(
+        self,
+        temperature,
+        max_new_tokens,
+        chat_mode,
+        chat_session_id,
+        current_user_input,
+    ):
         self.chat_session_id = chat_session_id
         self.chat_mode = chat_mode
         self.current_user_input: str = current_user_input
@@ -68,7 +75,9 @@ class BaseChat(ABC):
         ## TEST
         self.memory = FileHistoryMemory(chat_session_id)
         ### load prompt template
-        self.prompt_template: PromptTemplate = CFG.prompt_templates[self.chat_mode.value]
+        self.prompt_template: PromptTemplate = CFG.prompt_templates[
+            self.chat_mode.value
+        ]
         self.history_message: List[OnceConversation] = []
         self.current_message: OnceConversation = OnceConversation()
         self.current_tokens_used: int = 0
@@ -129,7 +138,7 @@ class BaseChat(ABC):
     def stream_call(self):
         payload = self.__call_base()
 
-        self.skip_echo_len = len(payload.get('prompt').replace("</s>", " ")) + 11
+        self.skip_echo_len = len(payload.get("prompt").replace("</s>", " ")) + 11
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
@@ -141,7 +150,7 @@ class BaseChat(ABC):
                 stream=True,
                 timeout=120,
             )
-            return response;
+            return response
 
             # yield self.prompt_template.output_parser.parse_model_stream_resp(response, skip_echo_len)
 
@@ -175,29 +184,37 @@ class BaseChat(ABC):
 
             ### output parse
             ai_response_text = (
-                self.prompt_template.output_parser.parse_model_nostream_resp(response, self.prompt_template.sep)
+                self.prompt_template.output_parser.parse_model_nostream_resp(
+                    response, self.prompt_template.sep
+                )
             )
             self.current_message.add_ai_message(ai_response_text)
-            prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
+            prompt_define_response = (
+                self.prompt_template.output_parser.parse_prompt_response(
+                    ai_response_text
+                )
+            )
 
             result = self.do_with_prompt_response(prompt_define_response)
 
             if hasattr(prompt_define_response, "thoughts"):
-                if  isinstance(prompt_define_response.thoughts, dict):
+                if isinstance(prompt_define_response.thoughts, dict):
                     if "speak" in prompt_define_response.thoughts:
                         speak_to_user = prompt_define_response.thoughts.get("speak")
                     else:
                         speak_to_user = str(prompt_define_response.thoughts)
                 else:
-                    if  hasattr(prompt_define_response.thoughts, "speak"):
+                    if hasattr(prompt_define_response.thoughts, "speak"):
                         speak_to_user = prompt_define_response.thoughts.get("speak")
-                    elif   hasattr(prompt_define_response.thoughts, "reasoning"):
+                    elif hasattr(prompt_define_response.thoughts, "reasoning"):
                         speak_to_user = prompt_define_response.thoughts.get("reasoning")
                     else:
                         speak_to_user = prompt_define_response.thoughts
             else:
                 speak_to_user = prompt_define_response
-            view_message = self.prompt_template.output_parser.parse_view_response(speak_to_user, result)
+            view_message = self.prompt_template.output_parser.parse_view_response(
+                speak_to_user, result
+            )
             self.current_message.add_view_message(view_message)
         except Exception as e:
             print(traceback.format_exc())
@@ -226,20 +243,20 @@ class BaseChat(ABC):
             for first_message in self.history_message[0].messages:
                 if not isinstance(first_message, ViewMessage):
                     text += (
-                            first_message.type
-                            + ":"
-                            + first_message.content
-                            + self.prompt_template.sep
+                        first_message.type
+                        + ":"
+                        + first_message.content
+                        + self.prompt_template.sep
                     )
 
             index = self.chat_retention_rounds - 1
             for last_message in self.history_message[-index:].messages:
                 if not isinstance(last_message, ViewMessage):
                     text += (
-                            last_message.type
-                            + ":"
-                            + last_message.content
-                            + self.prompt_template.sep
+                        last_message.type
+                        + ":"
+                        + last_message.content
+                        + self.prompt_template.sep
                     )
 
         else:
@@ -248,16 +265,16 @@ class BaseChat(ABC):
                 for message in conversation.messages:
                     if not isinstance(message, ViewMessage):
                         text += (
-                                message.type
-                                + ":"
-                                + message.content
-                                + self.prompt_template.sep
+                            message.type
+                            + ":"
+                            + message.content
+                            + self.prompt_template.sep
                         )
         ### current conversation
 
         for now_message in self.current_message.messages:
             text += (
-                    now_message.type + ":" + now_message.content + self.prompt_template.sep
+                now_message.type + ":" + now_message.content + self.prompt_template.sep
             )
 
         return text
@@ -288,4 +305,3 @@ class BaseChat(ABC):
 
         """
         pass
-

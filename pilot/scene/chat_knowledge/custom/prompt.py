@@ -23,7 +23,6 @@ _DEFAULT_TEMPLATE = """ 基于以下已知的信息, 专业、简要的回答用
 """
 
 
-
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
 PROMPT_NEED_NEED_STREAM_OUT = True
@@ -42,5 +41,3 @@ prompt = PromptTemplate(
 
 
 CFG.prompt_templates.update({prompt.template_scene: prompt})
-
-

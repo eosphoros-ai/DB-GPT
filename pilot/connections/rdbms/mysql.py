@@ -11,8 +11,7 @@ class MySQLConnect(RDBMSDatabase):
     Usage:
     """
 
-    type:str = "MySQL"
+    type: str = "MySQL"
     connect_url = "mysql+pymysql://"
 
     default_db = ["information_schema", "performance_schema", "sys", "mysql"]
-

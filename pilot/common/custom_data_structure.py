@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from collections import deque
 
+
 class FixedSizeDict(OrderedDict):
     def __init__(self, max_size):
         super().__init__()
@@ -10,6 +11,7 @@ class FixedSizeDict(OrderedDict):
         if len(self) >= self.max_size:
             self.popitem(last=False)
         super().__setitem__(key, value)
+
 
 class FixedSizeList:
     def __init__(self, max_size):

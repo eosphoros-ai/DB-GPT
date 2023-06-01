@@ -10,14 +10,13 @@ from pilot.configs.model_config import LOGDIR
 
 logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
 
+
 class PluginAction(NamedTuple):
     command: Dict
     thoughts: Dict
 
 
-
 class PluginChatOutputParser(BaseOutputParser):
-
     def parse_prompt_response(self, model_out_text) -> T:
         response = json.loads(super().parse_prompt_response(model_out_text))
         command, thoughts = response["command"], response["thoughts"]
@@ -25,7 +24,7 @@ class PluginChatOutputParser(BaseOutputParser):
 
     def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view
-        print(f"parse_view_response:{speak},{str(data)}" )
+        print(f"parse_view_response:{speak},{str(data)}")
         view_text = f"##### {speak}" + "\n" + str(data)
         return view_text
 
