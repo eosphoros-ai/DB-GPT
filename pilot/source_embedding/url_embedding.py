@@ -5,9 +5,12 @@ from langchain.document_loaders import WebBaseLoader
 from langchain.schema import Document
 from langchain.text_splitter import CharacterTextSplitter
 
+from pilot.configs.config import Config
+from pilot.configs.model_config import KNOWLEDGE_CHUNK_SPLIT_SIZE
 from pilot.source_embedding import SourceEmbedding, register
+from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 
-
+CFG = Config()
 class URLEmbedding(SourceEmbedding):
     """url embedding for read url document."""
 
@@ -22,10 +25,15 @@ class URLEmbedding(SourceEmbedding):
     def read(self):
         """Load from url path."""
         loader = WebBaseLoader(web_path=self.file_path)
-        text_splitor = CharacterTextSplitter(
-            chunk_size=1000, chunk_overlap=20, length_function=len
-        )
-        return loader.load_and_split(text_splitor)
+        if CFG.LANGUAGE == "en":
+            text_splitter = CharacterTextSplitter(
+                chunk_size=KNOWLEDGE_CHUNK_SPLIT_SIZE, chunk_overlap=20, length_function=len
+            )
+        else:
+            text_splitter = CHNDocumentSplitter(
+                pdf=True, sentence_size=1000
+            )
+        return loader.load_and_split(text_splitter)
 
     @register
     def data_process(self, documents: List[Document]):
