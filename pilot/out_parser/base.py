@@ -108,7 +108,7 @@ class BaseOutputParser(ABC):
         if not self.is_stream_out:
             return self._parse_model_nostream_resp(response, self.sep)
         else:
-            return self._parse_model_stream_resp(response, self.sep, skip_echo_len)
+            return self._parse_model_stream_resp(response, self.sep)
 
     def parse_prompt_response(self, model_out_text) -> T:
         """

@@ -91,8 +91,9 @@ class GuanacoChatAdapter(BaseChatAdpter):
         return "guanaco" in model_path
 
     def get_generate_stream_func(self):
-        # TODO
-        pass
+        from pilot.model.guanaco_llm import guanaco_generate_output
+
+        return guanaco_generate_output
 
 
 class ProxyllmChatAdapter(BaseChatAdpter):
@@ -107,6 +108,7 @@ class ProxyllmChatAdapter(BaseChatAdpter):
 
 register_llm_model_chat_adapter(VicunaChatAdapter)
 register_llm_model_chat_adapter(ChatGLMChatAdapter)
+register_llm_model_chat_adapter(GuanacoChatAdapter)
 
 # Proxy model for test and develop, it's cheap for us now.
 register_llm_model_chat_adapter(ProxyllmChatAdapter)
