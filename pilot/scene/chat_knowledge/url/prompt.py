@@ -11,7 +11,7 @@ from pilot.scene.chat_normal.out_parser import NormalChatOutputParser
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = """A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. 
+PROMPT_SCENE_DEFINE = """A chat between a curious human and an artificial intelligence assistant, who very familiar with database related knowledge. 
     The assistant gives helpful, detailed, professional and polite answers to the user's questions. """
 
 
