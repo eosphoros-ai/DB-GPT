@@ -245,18 +245,6 @@ Run the Python interpreter and type the commands:
 
 - 提交代码前请先执行 `black .`
 
-<!-- GITCONTRIBUTOR_START -->
-
-## 贡献者
-
-|[<img src="https://avatars.githubusercontent.com/u/17919400?v=4" width="100px;"/><br/><sub><b>csunny</b></sub>](https://github.com/csunny)<br/>|[<img src="https://avatars.githubusercontent.com/u/1011681?v=4" width="100px;"/><br/><sub><b>xudafeng</b></sub>](https://github.com/xudafeng)<br/>|[<img src="https://avatars.githubusercontent.com/u/7636723?s=96&v=4" width="100px;"/><br/><sub><b>明天</b></sub>](https://github.com/yhjun1026)<br/> | [<img src="https://avatars.githubusercontent.com/u/13723926?v=4" width="100px;"/><br/><sub><b>Aries-ckt</b></sub>](https://github.com/Aries-ckt)<br/>|[<img src="https://avatars.githubusercontent.com/u/95130644?v=4" width="100px;"/><br/><sub><b>thebigbone</b></sub>](https://github.com/thebigbone)<br/>|[<img src="https://avatars.githubusercontent.com/u/26043513?v=4" width="100px;"/><br/><sub><b>Shinexy</b></sub>](https://github.com/xuyuan23)<br/> |
-| :---: | :---: | :---: | :---: |:---: |:---: |
-
-
-[git-contributor 说明](https://github.com/xudafeng/git-contributor)，自动生成时间：`Fri May 19 2023 00:24:18 GMT+0800`。
-
-<!-- GITCONTRIBUTOR_END -->
-
 这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布一些新的feature。如在使用当中有任何具体问题, 优先在项目下提issue, 如有需要, 请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
 
 <p align="center">
