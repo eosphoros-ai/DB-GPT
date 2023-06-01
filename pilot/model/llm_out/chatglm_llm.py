@@ -29,6 +29,7 @@ def chatglm_generate_stream(
         generate_kwargs["temperature"] = temperature
 
     # TODO, Fix this
+    print(prompt)
     messages = prompt.split(stop)
     #
     # # Add history conversation
