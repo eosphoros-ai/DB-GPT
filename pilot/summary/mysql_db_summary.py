@@ -22,6 +22,7 @@ class MysqlSummary(DBSummary):
 
         self.db = CFG.local_db
         self.db.get_session(name)
+
         self.metadata = """user info :{users}, grant info:{grant}, charset:{charset}, collation:{collation}""".format(
             users=self.db.get_users(),
             grant=self.db.get_grants(),
