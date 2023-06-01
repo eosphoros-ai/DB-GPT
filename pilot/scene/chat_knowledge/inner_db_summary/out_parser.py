@@ -15,7 +15,7 @@ class NormalChatOutputParser(BaseOutputParser):
     def parse_prompt_response(self, model_out_text) -> T:
         return model_out_text
 
-    def parse_view_response(self, ai_text) -> str:
+    def parse_view_response(self, ai_text, data) -> str:
         return ai_text["table"]
 
     def get_format_instructions(self) -> str:
