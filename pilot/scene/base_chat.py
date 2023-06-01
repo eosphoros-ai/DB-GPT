@@ -128,6 +128,8 @@ class BaseChat(ABC):
 
     def stream_call(self):
         payload = self.__call_base()
+
+        skip_echo_len = len(payload.get('prompt').replace("</s>", " ")) + 1
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
@@ -139,7 +141,7 @@ class BaseChat(ABC):
                 timeout=120,
             )
 
-            ai_response_text = self.prompt_template.output_parser.parse_model_server_out(response)
+            ai_response_text = self.prompt_template.output_parser.parse_model_server_out(response, skip_echo_len)
 
             for resp_text_trunck in ai_response_text:
                 show_info = resp_text_trunck
