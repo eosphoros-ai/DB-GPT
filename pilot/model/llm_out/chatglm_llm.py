@@ -35,7 +35,7 @@ def chatglm_generate_stream(
     # # Add history conversation
     hist = []
     once_conversation = []
-    for message in messages:
+    for message in messages[:-2]:
         if len(message) <= 0:
             continue
 
@@ -51,7 +51,7 @@ def chatglm_generate_stream(
         # else:
         #     once_conversation.append(f"""###system:{message} """)
 
-    query = messages[-1].split("human:")[1]
+    query = messages[-2].split("human:")[1]
     print("Query Message: ", query)
     # output = ""
     # i = 0
