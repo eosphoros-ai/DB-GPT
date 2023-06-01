@@ -18,7 +18,7 @@ from pilot.configs.model_config import (
     VECTOR_SEARCH_TOP_K,
 )
 
-from pilot.scene.chat_normal.prompt import prompt
+from pilot.scene.chat_knowledge.url.prompt import prompt
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
 
 CFG = Config()
@@ -44,6 +44,7 @@ class ChatUrlKnowledge (BaseChat):
         }
         self.knowledge_embedding_client = KnowledgeEmbedding(
             file_path=url,
+            file_type="url",
             model_name=LLM_MODEL_CONFIG["text2vec"],
             local_persist=False,
             vector_store_config=vector_store_config,

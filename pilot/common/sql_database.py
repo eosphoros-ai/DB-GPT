@@ -19,6 +19,7 @@ from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.orm import sessionmaker, scoped_session
 
+
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
     return (
         f'Name: {index["name"]}, Unique: {index["unique"]},'
@@ -91,7 +92,7 @@ class Database:
         #     raise TypeError("sample_rows_in_table_info must be an integer")
         #
         # self._sample_rows_in_table_info = sample_rows_in_table_info
-        # self._indexes_in_table_info = indexes_in_table_info
+        self._indexes_in_table_info = indexes_in_table_info
         #
         # self._custom_table_info = custom_table_info
         # if self._custom_table_info:
@@ -429,3 +430,65 @@ class Database:
         return parsed, ttype, sql_type
 
 
+
+    def get_indexes(self, table_name):
+        """Get table indexes about specified table."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SHOW INDEXES FROM {table_name}"))
+        indexes = cursor.fetchall()
+        return [(index[2], index[4]) for index in indexes]
+
+    def get_fields(self, table_name):
+        """Get column fields about specified table."""
+        session = self._db_sessions()
+        cursor = session.execute(
+            text(
+                f"SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='{table_name}'".format(
+                    table_name
+                )
+            )
+        )
+        fields = cursor.fetchall()
+        return [(field[0], field[1], field[2], field[3], field[4]) for field in fields]
+
+    def get_charset(self):
+        """Get character_set."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SELECT @@character_set_database"))
+        character_set = cursor.fetchone()[0]
+        return character_set
+
+    def get_collation(self):
+        """Get collation."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SELECT @@collation_database"))
+        collation = cursor.fetchone()[0]
+        return collation
+
+    def get_grants(self):
+        """Get grant info."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SHOW GRANTS"))
+        grants = cursor.fetchall()
+        return grants
+
+    def get_users(self):
+        """Get user info."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SELECT user, host FROM mysql.user"))
+        users = cursor.fetchall()
+        return [(user[0], user[1]) for user in users]
+
+    def get_table_comments(self, database):
+        session = self._db_sessions()
+        cursor = session.execute(
+            text(
+                f"""SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = '{database}'""".format(
+                    database
+                )
+            )
+        )
+        table_comments = cursor.fetchall()
+        return [
+            (table_comment[0], table_comment[1]) for table_comment in table_comments
+        ]

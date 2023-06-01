@@ -37,8 +37,15 @@ class ChatWithDbQA(BaseChat):
 
         table_info = ""
         dialect = "mysql"
+        try:
+            from pilot.summary.db_summary_client import DBSummaryClient
+        except ImportError:
+            raise ValueError(
+                "Could not import DBSummaryClient. "
+            )
         if self.db_name:
-            table_info = self.database.table_simple_info(self.db_connect)
+            table_info = DBSummaryClient.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
+            # table_info = self.database.table_simple_info(self.db_connect)
             dialect = self.database.dialect
 
         input_values = {
