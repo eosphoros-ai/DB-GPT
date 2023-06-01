@@ -105,45 +105,74 @@ class Conversation:
         }
 
 
-def gen_sqlgen_conversation(dbname):
-    from pilot.connections.mysql import MySQLOperator
+conv_default = Conversation(
+    system=None,
+    roles=("human", "ai"),
+    messages=[],
+    offset=0,
+    sep_style=SeparatorStyle.SINGLE,
+    sep="###",
+)
 
-    mo = MySQLOperator(**(DB_SETTINGS))
-
-    message = ""
-
-    schemas = mo.get_schema(dbname)
-    for s in schemas:
-        message += s["schema_info"] + ";"
-    return f"Database {dbname} Schema information as follows: {message}\n"
+#
+# conv_one_shot = Conversation(
+#     system="A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. "
+#     "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
+#     roles=("USER", "Assistant"),
+#     messages=(
+#         (
+#             "USER",
+#             "What are the key differences between mysql and postgres?",
+#         ),
+#         (
+#             "Assistant",
+#             "MySQL and PostgreSQL are both popular open-source relational database management systems (RDBMS) "
+#             "that have many similarities but also some differences. Here are some key differences: \n"
+#             "1. Data Types: PostgreSQL has a more extensive set of data types, "
+#             "including support for array, hstore, JSON, and XML, whereas MySQL has a more limited set.\n"
+#             "2. ACID compliance: Both MySQL and PostgreSQL support ACID compliance (Atomicity, Consistency, Isolation, Durability), "
+#             "but PostgreSQL is generally considered to be more strict in enforcing it.\n"
+#             "3. Replication: MySQL has a built-in replication feature, which allows you to replicate data across multiple servers,"
+#             "whereas PostgreSQL has a similar feature, but it is not as mature as MySQL's.\n"
+#             "4. Performance: MySQL is generally considered to be faster and more efficient in handling large datasets, "
+#             "whereas PostgreSQL is known for its robustness and reliability.\n"
+#             "5. Licensing: MySQL is licensed under the GPL (General Public License), which means that it is free and open-source software, "
+#             "whereas PostgreSQL is licensed under the PostgreSQL License, which is also free and open-source but with different terms.\n"
+#             "Ultimately, the choice between MySQL and PostgreSQL depends on the specific needs and requirements of your application. "
+#             "Both are excellent database management systems, and choosing the right one "
+#             "for your project requires careful consideration of your application's requirements, performance needs, and scalability.",
+#         ),
+#     ),
+#     offset=2,
+#     sep_style=SeparatorStyle.SINGLE,
+#     sep="###",
+# )
 
 
 conv_one_shot = Conversation(
-    system="A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. "
-    "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
-    roles=("USER", "Assistant"),
+    system="You are a DB-GPT. Please provide me with user input and all table information known in the database, so I can accurately query tables are involved in the user input. If there are multiple tables involved, I will separate them by comma. Here is an example:",
+    roles=("USER", "ASSISTANT"),
     messages=(
         (
             "USER",
-            "What are the key differences between mysql and postgres?",
+            "please query there are how many orders?"
+            "Querying the table involved in the user input？"
+            "database schema:"
+            "database name:db_test, database type:MYSQL, table infos:table name:carts,table description:购物车表;table name:categories,table description:商品分类表;table name:chat_groups,table description:群组表;table name:chat_users,table description:聊天用户表;table name:friends,table description:好友表;table name:messages,table description:消息表;table name:orders,table description:订单表;table name:products,table description:商品表;table name:table_test,table description:;table name:users,table description:用户表，"
+            "You should only respond in JSON format as described below and ensure the response can be parsed by Python json.loads"
+            """Response Format: 
+            {
+                "table": ["orders", "products"]
+            }
+            """,
         ),
         (
             "Assistant",
-            "MySQL and PostgreSQL are both popular open-source relational database management systems (RDBMS) "
-            "that have many similarities but also some differences. Here are some key differences: \n"
-            "1. Data Types: PostgreSQL has a more extensive set of data types, "
-            "including support for array, hstore, JSON, and XML, whereas MySQL has a more limited set.\n"
-            "2. ACID compliance: Both MySQL and PostgreSQL support ACID compliance (Atomicity, Consistency, Isolation, Durability), "
-            "but PostgreSQL is generally considered to be more strict in enforcing it.\n"
-            "3. Replication: MySQL has a built-in replication feature, which allows you to replicate data across multiple servers,"
-            "whereas PostgreSQL has a similar feature, but it is not as mature as MySQL's.\n"
-            "4. Performance: MySQL is generally considered to be faster and more efficient in handling large datasets, "
-            "whereas PostgreSQL is known for its robustness and reliability.\n"
-            "5. Licensing: MySQL is licensed under the GPL (General Public License), which means that it is free and open-source software, "
-            "whereas PostgreSQL is licensed under the PostgreSQL License, which is also free and open-source but with different terms.\n"
-            "Ultimately, the choice between MySQL and PostgreSQL depends on the specific needs and requirements of your application. "
-            "Both are excellent database management systems, and choosing the right one "
-            "for your project requires careful consideration of your application's requirements, performance needs, and scalability.",
+            """
+            {
+                "table": ["orders", "products"]
+            }
+            """,
         ),
     ),
     offset=2,
@@ -174,12 +203,12 @@ auto_dbgpt_one_shot = Conversation(
               1. If you are unsure how you previously did something or want to recall past events, thinking about similar events will help you remember.
               2. No user assistance
               3. Exclusively use the commands listed in double quotes e.g. "command name"
-              
-              
+
+
               Schema:
               Database gpt-user Schema information as follows: users(city,create_time,email,last_login_time,phone,user_name);
-              
-              
+
+
               Commands:
               1. analyze_code: Analyze Code, args: "code": "<full_code_string>"
               2. execute_python_file: Execute Python File, args: "filename": "<filename>"
@@ -189,7 +218,7 @@ auto_dbgpt_one_shot = Conversation(
               6. read_file: Read file, args: "filename": "<filename>"
               7. write_to_file: Write to file, args: "filename": "<filename>", "text": "<text>"
               8. db_sql_executor: "Execute SQL in Database.", args: "sql": "<sql>"
-              
+
               You should only respond in JSON format as described below and ensure the response can be parsed by Python json.loads
               Response Format: 
               {
@@ -252,6 +281,7 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、简要的回
             {context}
             问题:
             {question}
+            
 """
 
 # conv_qa_prompt_template = """ Please provide the known information so that I can professionally and briefly answer the user's question. If the answer cannot be obtained from the provided content,
@@ -261,7 +291,14 @@ conv_qa_prompt_template = """ 基于以下已知的信息, 专业、简要的回
 #             question:
 #             {question}
 # """
-default_conversation = conv_one_shot
+default_conversation = conv_default
+
+
+chat_mode_title = {
+    "sql_generate_diagnostics": get_lang_text("sql_analysis_and_diagnosis"),
+    "chat_use_plugin": get_lang_text("chat_use_plugin"),
+    "knowledge_qa": get_lang_text("knowledge_qa"),
+}
 
 conversation_sql_mode = {
     "auto_execute_ai_response": get_lang_text("sql_generate_mode_direct"),
@@ -274,7 +311,7 @@ conversation_types = {
         "knowledge_qa_type_default_knowledge_base_dialogue"
     ),
     "custome": get_lang_text("knowledge_qa_type_add_knowledge_base_dialogue"),
-    "auto_execute_plugin": get_lang_text("dialogue_use_plugin"),
+    "url": get_lang_text("knowledge_qa_type_url_knowledge_dialogue"),
 }
 
 conv_templates = {
@@ -282,6 +319,15 @@ conv_templates = {
     "vicuna_v1": conv_vicuna_v1,
     "auto_dbgpt_one_shot": auto_dbgpt_one_shot,
 }
+
+conv_db_summary_templates = """
+Based on the following known database information?, answer which tables are involved in the user input.
+Known database information:{db_profile_summary}
+Input:{db_input}
+You should only respond in JSON format as described below and ensure the response can be parsed by Python json.loads
+The response format must be JSON, and the key of JSON must be "table".
+
+"""
 
 if __name__ == "__main__":
     message = gen_sqlgen_conversation("dbgpt")
