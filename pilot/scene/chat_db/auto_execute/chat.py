@@ -51,7 +51,33 @@ class ChatWithDbAutoExecute(BaseChat):
 
 
 if __name__ == "__main__":
-    ss = "{\n    \"thoughts\": \"to get the user's city, we need to join the users table with the tran_order table using the user_name column. we also need to filter the results to only show orders for user test1.\",\n    \"sql\": \"select o.order_id, o.product_name, u.city from tran_order o join users u on o.user_name = u.user_name where o.user_name = 'test1' limit 5\"\n}"
-    ss.strip().replace('\n', '').replace('\\n', '').replace('', '').replace('	', '').replace('\\', '').replace('\\', '')
-    print(ss)
-    json.loads(ss)
+    db = CFG.local_db
+    connect = db.get_session("gpt-user")
+
+    results = db.run(connect, """SELECT user_name, phone, email, city, create_time, last_login_time
+        FROM `gpt-user`.users
+        WHERE user_name='test1';
+        """)
+
+    print(str(db.get_session_db(connect)))
+    print(str(results))
+    results = db.run(connect, """SELECT user_name, phone, email, city, create_time, last_login_time
+        FROM `gpt-user`.users
+        WHERE user_name='test2';
+        """)
+    print(str(db.get_session_db(connect)))
+    print(str(results))
+
+    results = db.run(connect, """INSERT INTO `gpt-user`.users
+        (user_name, phone, email, city, create_time, last_login_time)
+        VALUES('test4', '23', NULL, '成都', '2023-05-09 09:09:09', NULL);
+        """)
+    print(str(db.get_session_db(connect)))
+    print(str(results))
+
+    results = db.run(connect, """SELECT user_name, phone, email, city, create_time, last_login_time
+        FROM `gpt-user`.users
+        WHERE user_name='test3';
+        """)
+    print(str(db.get_session_db(connect)))
+    print(str(results))
