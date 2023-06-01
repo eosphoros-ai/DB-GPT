@@ -1,8 +1,15 @@
-# DB-GPT ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
+<div align="center">
+  <p>
+    <a href="https://github.com/csunny/DB-GPT">
+        <img alt="stars" src="https://img.shields.io/github/stars/csunny/db-gpt?style=social" />
+    </a>
+    <a href="https://github.com/csunny/DB-GPT">
+        <img alt="forks" src="https://img.shields.io/github/forks/csunny/db-gpt?style=social" />
+    </a>
+  </p>
 
----
-
-[简体中文](README.zh.md)
+[**简体中文**](README.zh.md)|[**Discord**](https://discord.gg/ea6BnZkY) 
+</div>
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
@@ -11,6 +18,14 @@
 As large models are released and iterated upon, they are becoming increasingly intelligent. However, in the process of using large models, we face significant challenges in data security and privacy. We need to ensure that our sensitive data and environments remain completely controlled and avoid any data privacy leaks or security risks. Based on this, we have launched the DB-GPT project to build a complete private large model solution for all database-based scenarios. This solution supports local deployment, allowing it to be applied not only in independent private environments but also to be independently deployed and isolated according to business modules, ensuring that the ability of large models is absolutely private, secure, and controllable.
 
 DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
+
+## News
+- [2023/06/01]🔥 On the basis of the Vicuna-13B basic model, task chain calls are implemented through plugins. For example, the implementation of creating a database with a single sentence.[demo]()
+- [2023/06/01]🔥 QLoRA guanaco(7b, 13b, 33b) support.
+- [2023/05/28]🔥 Learning from crawling data from the Internet [demo](./assets/chaturl_en.gif)
+- [2023/05/21] Generate SQL and execute it automatically. [demo](./assets/auto_sql_en.gif)
+- [2023/05/15] Chat with documents. [demo](./assets/new_knownledge_en.gif)
+- [2023/05/06] SQL generation and diagnosis. [demo](./assets/demo_en.gif)
 
 ## Features
 
@@ -37,53 +52,6 @@ Currently, we have released multiple key features, which are listed below to dem
 ## Demo
 
 Run on an RTX 4090 GPU. [YouTube](https://www.youtube.com/watch?v=1PWI6F89LPo)
-
-### Run
-
-<p align="center">
-  <img src="./assets/demo_en.gif" width="600px" />
-</p>
-
-### Run Plugin
-<p align="center">
-  <img src="./assets/auto_sql_en.gif" width="600px" />
-</p>
-
-### SQL Generation
-
-1. Generate Create Table SQL
-
-<p align="center">
-   <img src="./assets/SQL_Gen_CreateTable_en.png" width="600px" />
-</p>
-
-2. Generating executable SQL:To generate executable SQL, first select the corresponding database and then the model can generate SQL based on the corresponding database schema information. The successful result of running it would be demonstrated as follows:
-<p align="center">
-  <img src="./assets/exeable_en.png" width="600px" />
-</p>
-
-### Q&A
-
-<p align="center">
-  <img src="./assets/DB_QA_en.png" width="600px" />
-</p>
-
-1. Based on the default built-in knowledge base, question and answer. 
-
-<p align="center">
-  <img src="./assets/Knownledge_based_QA_en.png" width="600px" />
-</p>
-
-2. Add your own knowledge base.
-
-<p align="center">
-  <img src="./assets/new_knownledge_en.gif" width="600px" />
-</p>
-
-3. Learning from crawling data from the Internet
-
-  - TODO
-
 
 ## Introduction 
 DB-GPT creates a vast model operating system using [FastChat](https://github.com/lm-sys/FastChat) and offers a large language model powered by [Vicuna](https://huggingface.co/Tribbiani/vicuna-7b). In addition, we provide private domain knowledge base question-answering capability through LangChain. Furthermore, we also provide support for additional plugins, and our design natively supports the Auto-GPT plugin.
