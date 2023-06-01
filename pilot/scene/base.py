@@ -8,4 +8,5 @@ class ChatScene(Enum):
     ChatKnowledge = "chat_default_knowledge"
     ChatNewKnowledge = "chat_new_knowledge"
     ChatUrlKnowledge = "chat_url_knowledge"
+    InnerChatDBSummary = "inner_chat_db_summary"
     ChatNormal = "chat_normal"
