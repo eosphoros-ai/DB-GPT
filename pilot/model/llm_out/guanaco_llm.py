@@ -39,8 +39,8 @@ def guanaco_generate_output(model, tokenizer, params, device, context_len=2048):
     )
 
 
-    # t1 = Thread(target=model.generate, kwargs=generate_kwargs)
-    # t1.start()
+    t1 = Thread(target=model.generate, kwargs=generate_kwargs)
+    t1.start()
 
     generator =  model.generate(**generate_kwargs)
     for output in generator:
