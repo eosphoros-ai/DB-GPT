@@ -6,7 +6,7 @@ from langchain.prompts import PromptTemplate
 from pilot.configs.model_config import VECTOR_SEARCH_TOP_K
 from pilot.conversation import conv_qa_prompt_template, conv_db_summary_templates
 from pilot.logs import logger
-from pilot.model.vicuna_llm import VicunaLLM
+from pilot.model.llm_out.vicuna_llm import VicunaLLM
 from pilot.vector_store.file_loader import KnownLedge2Vector
 
 

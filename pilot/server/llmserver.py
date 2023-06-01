@@ -19,7 +19,7 @@ sys.path.append(ROOT_PATH)
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import *
-from pilot.model.inference import generate_output, generate_stream, get_embeddings
+from pilot.model.llm_out.vicuna_base_llm import get_embeddings
 from pilot.model.loader import ModelLoader
 from pilot.server.chat_adapter import get_llm_chat_adapter
 
