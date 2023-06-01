@@ -333,9 +333,6 @@ def http_bot(
             state.messages[-1][-1] = "Error:" + str(e)
             yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
-        if state.messages[-1][-1].endwith("▌"):
-            state.messages[-1][-1] = state.messages[-1][-1][:-1]
-            yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
 block_css = (
     code_highlight_css
