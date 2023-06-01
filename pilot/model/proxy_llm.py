@@ -21,22 +21,46 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
     }
 
     messages = prompt.split(stop)
-
     # Add history conversation
-    for i in range(1, len(messages) - 2, 2):
-        history.append(
-            {"role": "user", "content": messages[i].split(ROLE_USER + ":")[1]},
-        )
-        history.append(
-            {
-                "role": "system",
-                "content": messages[i + 1].split(ROLE_ASSISTANT + ":")[1],
-            }
-        )
+    for message in messages:
+        if len(message) <= 0:
+            continue
+        if "human:" in message:
+            history.append(
+                {"role": "user", "content": message.split("human:")[1]},
+            )
+        elif "system:" in message:
+            history.append(
+                {
+                    "role": "system",
+                    "content": message.split("system:")[1],
+                }
+            )
+        elif "ai:" in message:
+            history.append(
+                {
+                    "role": "ai",
+                    "content": message.split("ai:")[1],
+                }
+            )
+        else:
+            history.append(
+                {
+                    "role": "system",
+                    "content": message,
+                }
+            )
 
-    # Add user query
-    query = messages[-2].split(ROLE_USER + ":")[1]
-    history.append({"role": "user", "content": query})
+    # 把最后一个用户的信息移动到末尾
+    temp_his = history[::-1]
+    last_user_input = None
+    for m in temp_his:
+        if m["role"] == "user":
+            last_user_input = m
+    if last_user_input:
+        history.remove(last_user_input)
+        history.append(last_user_input)
+
     payloads = {
         "model": "gpt-3.5-turbo",  # just for test, remove this later
         "messages": history,

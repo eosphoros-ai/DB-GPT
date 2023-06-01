@@ -3,7 +3,7 @@ import json
 from typing import Any, Callable, Dict, List, Optional
 
 
-class PromptGenerator:
+class PluginPromptGenerator:
     """
     A class for generating custom prompt strings based on constraints, commands,
         resources, and performance evaluations.
@@ -132,6 +132,11 @@ class PromptGenerator:
             return "\n".join(f"{i+1}. {item}" for i, item in enumerate(command_strings))
         else:
             return "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
+
+
+    def generate_commands_string(self)->str:
+        return   f"{self._generate_numbered_list(self.commands, item_type='command')}"
+
 
     def generate_prompt_string(self) -> str:
         """
