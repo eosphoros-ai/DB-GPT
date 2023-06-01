@@ -52,7 +52,6 @@ class ChatDefaultKnowledge(BaseChat):
         docs = self.knowledge_embedding_client.similar_search(
             self.current_user_input, VECTOR_SEARCH_TOP_K
         )
-        docs = docs[:2000]
         context = [d.page_content for d in docs]
         context = context[:2000]
         input_values = {"context": context, "question": self.current_user_input}
