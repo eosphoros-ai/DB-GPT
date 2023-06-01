@@ -13,14 +13,16 @@ logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
 
 class PluginAction(NamedTuple):
     command: Dict
-    thoughts: Dict
+    speak: str
+    reasoning:str
+    thoughts: str
 
 
 class PluginChatOutputParser(BaseOutputParser):
     def parse_prompt_response(self, model_out_text) -> T:
         response = json.loads(super().parse_prompt_response(model_out_text))
-        command, thoughts = response["command"], response["thoughts"]
-        return PluginAction(command, thoughts)
+        command, thoughts, speak, reasoning = response["command"], response["thoughts"], response["speak"], response["reasoning"]
+        return PluginAction(command, speak, reasoning, thoughts)
 
     def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view
