@@ -643,7 +643,7 @@ def knowledge_embedding_store(vs_id, files):
         knowledge_embedding_client.knowledge_embedding()
 
     logger.info("knowledge embedding success")
-    return os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, vs_id + ".vectordb")
+    return vs_id
 
 
 if __name__ == "__main__":

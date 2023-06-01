@@ -52,14 +52,17 @@ class ChatUrlKnowledge(BaseChat):
         )
 
         # url soruce in vector
-        self.knowledge_embedding_client.knowledge_embedding()
+        if not self.knowledge_embedding_client.vector_exist():
+            self.knowledge_embedding_client.knowledge_embedding()
+        logger.info("url embedding success")
 
     def generate_input_values(self):
         docs = self.knowledge_embedding_client.similar_search(
             self.current_user_input, VECTOR_SEARCH_TOP_K
         )
-        docs = docs[:2000]
-        input_values = {"context": docs, "question": self.current_user_input}
+        context = [d.page_content for d in docs]
+        context = context[:2000]
+        input_values = {"context": context, "question": self.current_user_input}
         return input_values
 
     def do_with_prompt_response(self, prompt_response):

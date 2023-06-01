@@ -11,11 +11,10 @@ from pilot.scene.chat_normal.out_parser import NormalChatOutputParser
 
 CFG = Config()
 
-_DEFAULT_TEMPLATE = """ 基于以下已知的信息, 专业、简要的回答用户的问题,
-            如果无法从提供的内容中获取答案, 请说: "知识库中提供的内容不足以回答此问题" 禁止胡乱编造。 
-            已知内容: 
+_DEFAULT_TEMPLATE = """ Based on the known information, provide professional and concise answers to the user's questions. If the answer cannot be obtained from the provided content, please say: 'The information provided in the knowledge base is not sufficient to answer this question.' Fabrication is prohibited.。 
+            known information: 
             {context}
-            问题:
+            question:
             {question}
 """
 
