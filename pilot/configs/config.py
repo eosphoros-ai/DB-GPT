@@ -103,8 +103,12 @@ class Config(metaclass=Singleton):
         else:
             self.plugins_denylist = []
         ### Native SQL Execution Capability Control Configuration
-        self.NATIVE_SQL_CAN_RUN_DDL = os.getenv("NATIVE_SQL_CAN_RUN_DDL", "True") =="True"
-        self.NATIVE_SQL_CAN_RUN_WRITE = os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True") =="True"
+        self.NATIVE_SQL_CAN_RUN_DDL = (
+            os.getenv("NATIVE_SQL_CAN_RUN_DDL", "True") == "True"
+        )
+        self.NATIVE_SQL_CAN_RUN_WRITE = (
+            os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True") == "True"
+        )
 
         ### Local database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST", "127.0.0.1")

@@ -33,13 +33,13 @@ class PromptTemplate(BaseModel, ABC):
     """A list of the names of the variables the prompt template expects."""
     template_scene: Optional[str]
 
-    template_define:  Optional[str]
+    template_define: Optional[str]
     """this template define"""
-    template:  Optional[str]
+    template: Optional[str]
     """The prompt template."""
     template_format: str = "f-string"
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
-    response_format:  Optional[str]
+    response_format: Optional[str]
     """default use stream out"""
     stream_out: bool = True
     """"""
@@ -62,7 +62,9 @@ class PromptTemplate(BaseModel, ABC):
         if self.template:
             if self.response_format:
                 kwargs["response"] = json.dumps(self.response_format, indent=4)
-            return DEFAULT_FORMATTER_MAPPING[self.template_format](self.template, **kwargs)
+            return DEFAULT_FORMATTER_MAPPING[self.template_format](
+                self.template, **kwargs
+            )
 
     def add_goals(self, goal: str) -> None:
         self.goals.append(goal)

@@ -1,4 +1,3 @@
-
 from pilot.scene.base_chat import BaseChat, logger, headers
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
@@ -19,24 +18,22 @@ class ChatNormal(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self,temperature, max_new_tokens, chat_session_id, user_input):
+    def __init__(self, temperature, max_new_tokens, chat_session_id, user_input):
         """ """
-        super().__init__(temperature=temperature,
-                         max_new_tokens=max_new_tokens,
-                         chat_mode=ChatScene.ChatNormal,
-                         chat_session_id=chat_session_id,
-                         current_user_input=user_input)
+        super().__init__(
+            temperature=temperature,
+            max_new_tokens=max_new_tokens,
+            chat_mode=ChatScene.ChatNormal,
+            chat_session_id=chat_session_id,
+            current_user_input=user_input,
+        )
 
     def generate_input_values(self):
-        input_values = {
-            "input": self.current_user_input
-        }
+        input_values = {"input": self.current_user_input}
         return input_values
 
     def do_with_prompt_response(self, prompt_response):
         return prompt_response
-
-
 
     @property
     def chat_type(self) -> str:

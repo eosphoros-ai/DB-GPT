@@ -37,20 +37,23 @@ class MysqlSummary(DBSummary):
                     table_name=table_comment[0], table_comment=table_comment[1]
                 )
             )
+
             vector_table = json.dumps(
                 {"table_name": table_comment[0], "table_description": table_comment[1]}
             )
             self.vector_tables_info.append(
                 vector_table.encode("utf-8").decode("unicode_escape")
             )
-
+        self.table_columns_info = []
         for table_name in tables:
             table_summary = MysqlTableSummary(self.db, name, table_name)
-            self.tables[table_name] = table_summary.get_summery()
+            # self.tables[table_name] = table_summary.get_summery()
+            self.tables[table_name] = table_summary.get_columns()
+            self.table_columns_info.append(table_summary.get_columns())
             # self.tables_info.append(table_summary.get_summery())
 
     def get_summery(self):
-        if CFG.SUMMARY_CONFIG == "VECTOR":
+        if CFG.SUMMARY_CONFIG == "FAST":
             return self.vector_tables_info
         else:
             return self.summery.format(
@@ -62,6 +65,9 @@ class MysqlSummary(DBSummary):
 
     def get_table_comments(self):
         return self.table_comments
+
+    def get_columns(self):
+        return self.table_columns_info
 
 
 class MysqlTableSummary(TableSummary):
@@ -78,10 +84,16 @@ class MysqlTableSummary(TableSummary):
         self.db = instance
         fields = self.db.get_fields(name)
         indexes = self.db.get_indexes(name)
+        field_names = []
         for field in fields:
             field_summary = MysqlFieldsSummary(field)
             self.fields.append(field_summary)
             self.fields_info.append(field_summary.get_summery())
+            field_names.append(field[0])
+
+        self.column_summery = """{name}({columns_info})""".format(
+            name=name, columns_info=",".join(field_names)
+        )
 
         for index in indexes:
             index_summary = MysqlIndexSummary(index)
@@ -95,6 +107,9 @@ class MysqlTableSummary(TableSummary):
             fields=";".join(self.fields_info),
             indexes=";".join(self.indexes_info),
         )
+
+    def get_columns(self):
+        return self.column_summery
 
 
 class MysqlFieldsSummary(FieldSummary):

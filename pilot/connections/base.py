@@ -11,10 +11,8 @@ class BaseConnect(BaseModel, ABC):
     type
     driver: str
 
-
     def get_session(self, db_name: str):
         pass
-
 
     def get_table_names(self) -> Iterable[str]:
         pass

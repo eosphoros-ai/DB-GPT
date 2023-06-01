@@ -19,13 +19,17 @@ class ChatWithDbQA(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self,temperature, max_new_tokens, chat_session_id, db_name, user_input):
+    def __init__(
+        self, temperature, max_new_tokens, chat_session_id, db_name, user_input
+    ):
         """ """
-        super().__init__(temperature=temperature,
-                         max_new_tokens=max_new_tokens,
-                         chat_mode=ChatScene.ChatWithDbQA,
-                         chat_session_id=chat_session_id,
-                         current_user_input=user_input)
+        super().__init__(
+            temperature=temperature,
+            max_new_tokens=max_new_tokens,
+            chat_mode=ChatScene.ChatWithDbQA,
+            chat_session_id=chat_session_id,
+            current_user_input=user_input,
+        )
         self.db_name = db_name
         if db_name:
             self.database = CFG.local_db
@@ -34,17 +38,16 @@ class ChatWithDbQA(BaseChat):
         self.top_k: int = 5
 
     def generate_input_values(self):
-
         table_info = ""
         dialect = "mysql"
         try:
             from pilot.summary.db_summary_client import DBSummaryClient
         except ImportError:
-            raise ValueError(
-                "Could not import DBSummaryClient. "
-            )
+            raise ValueError("Could not import DBSummaryClient. ")
         if self.db_name:
-            table_info = DBSummaryClient.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
+            table_info = DBSummaryClient.get_similar_tables(
+                dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+            )
             # table_info = self.database.table_simple_info(self.db_connect)
             dialect = self.database.dialect
 
@@ -52,7 +55,7 @@ class ChatWithDbQA(BaseChat):
             "input": self.current_user_input,
             "top_k": str(self.top_k),
             "dialect": dialect,
-            "table_info": table_info
+            "table_info": table_info,
         }
         return input_values
 

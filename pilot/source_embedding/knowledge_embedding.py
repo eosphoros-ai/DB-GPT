@@ -18,7 +18,14 @@ CFG = Config()
 
 
 class KnowledgeEmbedding:
-    def __init__(self, file_path, model_name, vector_store_config, local_persist=True, file_type="default"):
+    def __init__(
+        self,
+        file_path,
+        model_name,
+        vector_store_config,
+        local_persist=True,
+        file_type="default",
+    ):
         """Initialize with Loader url, model_name, vector_store_config"""
         self.file_path = file_path
         self.model_name = model_name
@@ -63,14 +70,12 @@ class KnowledgeEmbedding:
                 vector_store_config=self.vector_store_config,
             )
 
-
         elif self.file_type == "default":
             embedding = MarkdownEmbedding(
                 file_path=self.file_path,
                 model_name=self.model_name,
                 vector_store_config=self.vector_store_config,
             )
-
 
         return embedding
 
