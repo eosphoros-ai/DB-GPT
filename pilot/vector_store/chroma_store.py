@@ -24,6 +24,11 @@ class ChromaStore(VectorStoreBase):
         logger.info("ChromaStore similar search")
         return self.vector_store_client.similarity_search(text, topk)
 
+    def vector_name_exists(self):
+        return (
+            os.path.exists(self.persist_dir) and len(os.listdir(self.persist_dir)) > 0
+        )
+
     def load_document(self, documents):
         logger.info("ChromaStore load document")
         texts = [doc.page_content for doc in documents]

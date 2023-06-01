@@ -11,18 +11,26 @@ from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 from pilot.source_embedding.csv_embedding import CSVEmbedding
 from pilot.source_embedding.markdown_embedding import MarkdownEmbedding
 from pilot.source_embedding.pdf_embedding import PDFEmbedding
+from pilot.source_embedding.url_embedding import URLEmbedding
 from pilot.vector_store.connector import VectorStoreConnector
 
 CFG = Config()
 
 
 class KnowledgeEmbedding:
-    def __init__(self, file_path, model_name, vector_store_config, local_persist=True):
+    def __init__(
+        self,
+        file_path,
+        model_name,
+        vector_store_config,
+        local_persist=True,
+        file_type="default",
+    ):
         """Initialize with Loader url, model_name, vector_store_config"""
         self.file_path = file_path
         self.model_name = model_name
         self.vector_store_config = vector_store_config
-        self.file_type = "default"
+        self.file_type = file_type
         self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
         self.vector_store_config["embeddings"] = self.embeddings
         self.local_persist = local_persist
@@ -36,7 +44,13 @@ class KnowledgeEmbedding:
         self.knowledge_embedding_client.batch_embedding()
 
     def init_knowledge_embedding(self):
-        if self.file_path.endswith(".pdf"):
+        if self.file_type == "url":
+            embedding = URLEmbedding(
+                file_path=self.file_path,
+                model_name=self.model_name,
+                vector_store_config=self.vector_store_config,
+            )
+        elif self.file_path.endswith(".pdf"):
             embedding = PDFEmbedding(
                 file_path=self.file_path,
                 model_name=self.model_name,
@@ -55,6 +69,7 @@ class KnowledgeEmbedding:
                 model_name=self.model_name,
                 vector_store_config=self.vector_store_config,
             )
+
         elif self.file_type == "default":
             embedding = MarkdownEmbedding(
                 file_path=self.file_path,
@@ -66,6 +81,9 @@ class KnowledgeEmbedding:
 
     def similar_search(self, text, topk):
         return self.knowledge_embedding_client.similar_search(text, topk)
+
+    def vector_exist(self):
+        return self.knowledge_embedding_client.vector_name_exist()
 
     def knowledge_persist_initialization(self, append_mode):
         documents = self._load_knownlege(self.file_path)

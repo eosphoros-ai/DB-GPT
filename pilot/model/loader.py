@@ -100,7 +100,7 @@ class ModelLoader(metaclass=Singleton):
         llm_adapter = get_llm_model_adapter(self.model_path)
         model, tokenizer = llm_adapter.loader(self.model_path, kwargs)
 
-        if load_8bit:
+        if load_8bit and tokenizer:
             if num_gpus != 1:
                 warnings.warn(
                     "8-bit quantization is not supported for multi-gpu inference"
@@ -109,9 +109,15 @@ class ModelLoader(metaclass=Singleton):
                 compress_module(model, self.device)
 
         if (
-            self.device == "cuda" and num_gpus == 1 and not cpu_offloading
-        ) or self.device == "mps":
-            model.to(self.device)
+            (self.device == "cuda" and num_gpus == 1 and not cpu_offloading)
+            or self.device == "mps"
+            and tokenizer
+        ):
+            # 4-bit not support this
+            try:
+                model.to(self.device)
+            except ValueError:
+                pass
 
         if debug:
             print(model)

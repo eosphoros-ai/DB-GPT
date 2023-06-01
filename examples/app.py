@@ -3,7 +3,6 @@
 
 import gradio as gr
 from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from llama_index import (
     Document,
     GPTSimpleVectorIndex,
@@ -12,7 +11,7 @@ from llama_index import (
     ServiceContext,
 )
 
-from pilot.model.vicuna_llm import VicunaEmbeddingLLM, VicunaRequestLLM
+from pilot.model.llm_out.vicuna_llm import VicunaEmbeddingLLM, VicunaRequestLLM
 
 
 def agent_demo():
@@ -49,7 +48,7 @@ def get_answer(q):
 
 
 def get_similar(q):
-    from pilot.vector_store.extract_tovec import knownledge_tovec, knownledge_tovec_st
+    from pilot.vector_store.extract_tovec import knownledge_tovec_st
 
     docsearch = knownledge_tovec_st("./datasets/plan.md")
     docs = docsearch.similarity_search_with_score(q, k=1)

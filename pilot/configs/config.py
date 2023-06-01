@@ -36,6 +36,10 @@ class Config(metaclass=Singleton):
             " (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36",
         )
 
+        # This is a proxy server, just for test.  we will remove this later.
+        self.proxy_api_key = os.getenv("PROXY_API_KEY")
+        self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
+
         self.elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
         self.elevenlabs_voice_1_id = os.getenv("ELEVENLABS_VOICE_1_ID")
         self.elevenlabs_voice_2_id = os.getenv("ELEVENLABS_VOICE_2_ID")
@@ -98,6 +102,13 @@ class Config(metaclass=Singleton):
             self.plugins_denylist = plugins_denylist.split(",")
         else:
             self.plugins_denylist = []
+        ### Native SQL Execution Capability Control Configuration
+        self.NATIVE_SQL_CAN_RUN_DDL = (
+            os.getenv("NATIVE_SQL_CAN_RUN_DDL", "True") == "True"
+        )
+        self.NATIVE_SQL_CAN_RUN_WRITE = (
+            os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True") == "True"
+        )
 
         ### Local database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST", "127.0.0.1")
@@ -134,6 +145,11 @@ class Config(metaclass=Singleton):
         self.MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
+
+        ### EMBEDDING Configuration
+        self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text2vec")
+        ### SUMMARY_CONFIG Configuration
+        self.SUMMARY_CONFIG = os.getenv("SUMMARY_CONFIG", "VECTOR")
 
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
