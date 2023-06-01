@@ -22,7 +22,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 ## 最新发布
 
-- [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.[演示](./assets/auto_plugin.gif)
+- [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.[演示](./assets/dbgpt_bytebase_plugin.gif)
 - [2023/06/01]🔥 QLoRA guanaco(原驼)支持, 支持4090运行33B
 - [2023/05/28]🔥根据URL进行对话 [演示](./assets/chat_url_zh.gif)
 - [2023/05/21] SQL生成与自动执行. [演示](./assets/auto_sql.gif)
