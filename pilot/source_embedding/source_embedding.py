@@ -66,6 +66,9 @@ class SourceEmbedding(ABC):
         """vector store similarity_search"""
         return self.vector_client.similar_search(doc, topk)
 
+    def vector_name_exist(self):
+        return self.vector_client.vector_name_exists()
+
     def source_embedding(self):
         if "read" in registered_methods:
             text = self.read()

@@ -9,6 +9,7 @@ from pilot.scene.chat_db.auto_execute.chat import ChatWithDbAutoExecute
 from pilot.scene.chat_knowledge.url.chat import ChatUrlKnowledge
 from pilot.scene.chat_knowledge.custom.chat import ChatNewKnowledge
 from pilot.scene.chat_knowledge.default.chat import ChatDefaultKnowledge
+from pilot.scene.chat_knowledge.inner_db_summary.chat import InnerChatDBSummary
 
 class ChatFactory(metaclass=Singleton):
     @staticmethod
