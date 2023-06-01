@@ -82,6 +82,9 @@ class KnowledgeEmbedding:
     def similar_search(self, text, topk):
         return self.knowledge_embedding_client.similar_search(text, topk)
 
+    def vector_exist(self):
+        return self.knowledge_embedding_client.vector_name_exist()
+
     def knowledge_persist_initialization(self, append_mode):
         documents = self._load_knownlege(self.file_path)
         self.vector_client = VectorStoreConnector(
