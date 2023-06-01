@@ -254,7 +254,6 @@ def http_bot(
             "db_name": db_selector,
             "user_input": state.last_user_input
         }
-        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
     elif ChatScene.ChatWithDbQA == scene:
         chat_param = {
             "temperature": temperature,
@@ -263,7 +262,6 @@ def http_bot(
             "db_name": db_selector,
             "user_input": state.last_user_input,
         }
-        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
     elif ChatScene.ChatExecution == scene:
         chat_param = {
             "temperature": temperature,
@@ -272,7 +270,6 @@ def http_bot(
             "plugin_selector": plugin_selector,
             "user_input": state.last_user_input,
         }
-        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
     elif ChatScene.ChatNormal == scene:
         chat_param = {
             "temperature": temperature,
@@ -280,7 +277,6 @@ def http_bot(
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
         }
-        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
     elif ChatScene.ChatKnowledge == scene:
         chat_param = {
             "temperature": temperature,
@@ -288,7 +284,6 @@ def http_bot(
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
         }
-        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
     elif ChatScene.ChatNewKnowledge == scene:
         chat_param = {
             "temperature": temperature,
@@ -297,7 +292,6 @@ def http_bot(
             "user_input": state.last_user_input,
             "knowledge_name": knowledge_name
         }
-        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
     elif ChatScene.ChatUrlKnowledge == scene:
         chat_param = {
             "temperature": temperature,
@@ -306,8 +300,11 @@ def http_bot(
             "user_input": state.last_user_input,
             "url": url_input
         }
-        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+    else:
+        state.messages[-1][-1] = f"ERROR: Can't support scene!{scene}"
+        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
+    chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
     if not chat.prompt_template.stream_out:
         logger.info("not stream out, wait model response!")
         state.messages[-1][-1] = chat.nostream_call()

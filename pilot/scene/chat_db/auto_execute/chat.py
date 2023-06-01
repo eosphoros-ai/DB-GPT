@@ -47,44 +47,10 @@ class ChatWithDbAutoExecute(BaseChat):
             "input": self.current_user_input,
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
-            # "table_info": self.database.table_simple_info(self.db_connect)
-            "table_info": DBSummaryClient.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
+            "table_info": self.database.table_simple_info(self.db_connect)
+            # "table_info": DBSummaryClient.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
         return input_values
 
     def do_with_prompt_response(self, prompt_response):
         return self.database.run(self.db_connect, prompt_response.sql)
-
-
-
-if __name__ == "__main__":
-    db = CFG.local_db
-    connect = db.get_session("gpt-user")
-
-    results = db.run(connect, """SELECT user_name, phone, email, city, create_time, last_login_time
-        FROM `gpt-user`.users
-        WHERE user_name='test1';
-        """)
-
-    print(str(db.get_session_db(connect)))
-    print(str(results))
-    results = db.run(connect, """SELECT user_name, phone, email, city, create_time, last_login_time
-        FROM `gpt-user`.users
-        WHERE user_name='test2';
-        """)
-    print(str(db.get_session_db(connect)))
-    print(str(results))
-
-    results = db.run(connect, """INSERT INTO `gpt-user`.users
-        (user_name, phone, email, city, create_time, last_login_time)
-        VALUES('test4', '23', NULL, '成都', '2023-05-09 09:09:09', NULL);
-        """)
-    print(str(db.get_session_db(connect)))
-    print(str(results))
-
-    results = db.run(connect, """SELECT user_name, phone, email, city, create_time, last_login_time
-        FROM `gpt-user`.users
-        WHERE user_name='test3';
-        """)
-    print(str(db.get_session_db(connect)))
-    print(str(results))
