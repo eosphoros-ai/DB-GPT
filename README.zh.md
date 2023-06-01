@@ -1,6 +1,15 @@
-# DB-GPT ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
+<div align="center">
+  <p>
+    <a href="https://github.com/csunny/DB-GPT">
+        <img alt="stars" src="https://img.shields.io/github/stars/csunny/db-gpt?style=social" />
+    </a>
+    <a href="https://github.com/csunny/DB-GPT">
+        <img alt="forks" src="https://img.shields.io/github/forks/csunny/db-gpt?style=social" />
+    </a>
+  </p>
 
-[English](README.zh.md)
+[**English**](README.md)|[**Discord**](https://discord.gg/ea6BnZkY) 
+</div>
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
@@ -9,6 +18,14 @@
 
 DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密，100% 安全。
 
+## 最新发布
+
+- [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.[演示]()
+- [2023/06/01]🔥 QLoRA guanaco(原驼)支持, 支持4090运行33B
+- [2023/05/28]🔥根据URL进行对话 [演示](./assets/chaturl_en.gif)
+- [2023/05/21] SQL生成与自动执行. [演示](./assets/auto_sql.gif)
+- [2023/05/15] 知识库对话 [演示](./assets/new_knownledge.gif)
+- [2023/05/06] SQL生成与诊断 [演示](./assets/演示.gif)
 
 ## 特性一览
 
@@ -33,59 +50,6 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 ## 效果演示
 
 示例通过 RTX 4090 GPU 演示，[YouTube 地址](https://www.youtube.com/watch?v=1PWI6F89LPo)
-### 运行环境演示
-
-<p align="center">
-  <img src="./assets/演示.gif" width="600px" />
-</p>
-
-### SQL 插件化执行
-<p align="center">
-  <img src="./assets/auto_sql.gif" width="600px" />
-</p>
-
-### SQL 生成
-
-1. 生成建表语句
-
-<p align="center">
-   <img src="./assets/SQL_Gen_CreateTable.png" width="600px" />
-</p>
-
-2. 生成可运行SQL
-首先选择对应的数据库, 然后模型即可根据对应的数据库 Schema 信息生成 SQL, 运行成功的效果如下面的演示：
-
-<p align="center">
-  <img src="./assets/exeable.png" width="600px" />
-</p>
-
-3. 自动分析执行SQL输出运行结果
-
-<p align="center">
-  <img src="./assets/Auto-DB-GPT.png" width="600px" />
-</p>
-
-### 数据库问答
-
-<p align="center">
-  <img src="./assets/DB_QA.png" width="600px" />
-</p>
-
-
-1. 基于默认内置知识库问答
-
-<p align="center">
-  <img src="./assets/VectorDBQA.png" width="600px" />
-</p>
-
-2. 自己新增知识库
-
-<p align="center">
-  <img src="./assets/new_knownledge.gif" width="600px" />
-</p>
-
-3. 从网络自己爬取数据学习
-- TODO
 
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。 
