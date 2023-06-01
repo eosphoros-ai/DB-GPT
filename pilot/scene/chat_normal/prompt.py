@@ -1,31 +1,32 @@
 import builtins
+import importlib
 
+from pilot.prompts.prompt_new import PromptTemplate
+from pilot.configs.config import Config
+from pilot.scene.base import ChatScene
+from pilot.common.schema import SeparatorStyle
 
-def stream_write_and_read(lst):
-    # 对lst使用yield from进行可迭代对象的扁平化
-    yield from lst
-    while True:
-        val = yield
-        lst.append(val)
+from pilot.scene.chat_normal.out_parser import NormalChatOutputParser
 
+PROMPT_SCENE_DEFINE = """A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. 
+    The assistant gives helpful, detailed, professional and polite answers to the user's questions. """
 
-if __name__ == "__main__":
-    # 创建一个空列表
-    my_list = []
+CFG = Config()
 
-    # 使用生成器写入数据
-    stream_writer = stream_write_and_read(my_list)
-    next(stream_writer)
-    stream_writer.send(10)
-    print(1)
-    stream_writer.send(20)
-    print(2)
-    stream_writer.send(30)
-    print(3)
+PROMPT_SEP = SeparatorStyle.SINGLE.value
 
-    # 使用生成器读取数据
-    stream_reader = stream_write_and_read(my_list)
-    next(stream_reader)
-    print(stream_reader.send(None))
-    print(stream_reader.send(None))
-    print(stream_reader.send(None))
+PROMPT_NEED_NEED_STREAM_OUT = True
+
+prompt = PromptTemplate(
+    template_scene=ChatScene.ChatNormal.value,
+    input_variables=["input"],
+    response_format=None,
+    template_define=PROMPT_SCENE_DEFINE,
+    template=None,
+    stream_out=PROMPT_NEED_NEED_STREAM_OUT,
+    output_parser=NormalChatOutputParser(
+        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
+    ),
+)
+
+CFG.prompt_templates.update({prompt.template_scene: prompt})
