@@ -11,5 +11,10 @@ class VectorStoreBase(ABC):
 
     @abstractmethod
     def similar_search(self, text, topk) -> None:
-        """Initialize schema in vector database."""
+        """similar search in vector database."""
+        pass
+
+    @abstractmethod
+    def vector_name_exists(self, text, topk) -> None:
+        """is vector store name exist."""
         pass

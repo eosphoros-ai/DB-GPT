@@ -32,7 +32,6 @@ class MilvusStore(VectorStoreBase):
         self.fields = []
         self.alias = "default"
 
-
         # use HNSW by default.
         self.index_params = {
             "metric_type": "L2",
@@ -105,9 +104,7 @@ class MilvusStore(VectorStoreBase):
         embeddings = self.embedding.embed_query(texts[0])
 
         if utility.has_collection(self.collection_name):
-            self.col = Collection(
-                self.collection_name, using=self.alias
-            )
+            self.col = Collection(self.collection_name, using=self.alias)
             self.fields = []
             for x in self.col.schema.fields:
                 self.fields.append(x.name)
@@ -115,7 +112,10 @@ class MilvusStore(VectorStoreBase):
                     self.fields.remove(x.name)
                 if x.is_primary:
                     self.primary_field = x.name
-                if x.dtype == DataType.FLOAT_VECTOR or x.dtype == DataType.BINARY_VECTOR:
+                if (
+                    x.dtype == DataType.FLOAT_VECTOR
+                    or x.dtype == DataType.BINARY_VECTOR
+                ):
                     self.vector_field = x.name
             self._add_documents(texts, metadatas)
             return self.collection_name
@@ -132,9 +132,7 @@ class MilvusStore(VectorStoreBase):
         for y in texts:
             max_length = max(max_length, len(y))
         # Create the text field
-        fields.append(
-            FieldSchema(text_field, DataType.VARCHAR, max_length= 65535)
-        )
+        fields.append(FieldSchema(text_field, DataType.VARCHAR, max_length=65535))
         # primary key field
         fields.append(
             FieldSchema(primary_field, DataType.INT64, is_primary=True, auto_id=True)
@@ -252,7 +250,9 @@ class MilvusStore(VectorStoreBase):
         """load document in vector database."""
         # self.init_schema_and_load(self.collection_name, documents)
         batch_size = 500
-        batched_list = [documents[i:i + batch_size] for i in range(0, len(documents), batch_size)]
+        batched_list = [
+            documents[i : i + batch_size] for i in range(0, len(documents), batch_size)
+        ]
         # docs = []
         for doc_batch in batched_list:
             self.init_schema_and_load(self.collection_name, doc_batch)
@@ -318,6 +318,10 @@ class MilvusStore(VectorStoreBase):
             )
 
         return data[0], ret
+
+    def vector_name_exists(self):
+        """is vector store name exist."""
+        return utility.has_collection(self.collection_name)
 
     def close(self):
         connections.disconnect()

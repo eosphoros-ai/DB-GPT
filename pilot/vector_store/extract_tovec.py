@@ -8,7 +8,7 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import Chroma
 
 from pilot.configs.model_config import DATASETS_DIR, VECTORE_PATH
-from pilot.model.vicuna_llm import VicunaEmbeddingLLM
+from pilot.model.llm_out.vicuna_llm import VicunaEmbeddingLLM
 
 embeddings = VicunaEmbeddingLLM()
 
