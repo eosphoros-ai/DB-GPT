@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import traceback
 import argparse
 import datetime
-import json
 import os
 import shutil
 import sys
-import time
 import uuid
-from urllib.parse import urljoin
 
 import gradio as gr
-import requests
 
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 
+from pilot.summary.db_summary_client import DBSummaryClient
 from pilot.commands.command_mange import CommandRegistry
 
 from pilot.scene.base_chat import BaseChat
@@ -28,35 +25,31 @@ from pilot.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
     LLM_MODEL_CONFIG,
     LOGDIR,
-    VECTOR_SEARCH_TOP_K,
 )
-from pilot.connections.mysql import MySQLOperator
+
 from pilot.conversation import (
-    SeparatorStyle,
-    conv_qa_prompt_template,
-    conv_templates,
     conversation_sql_mode,
     conversation_types,
+    chat_mode_title,
     default_conversation,
 )
-from pilot.plugins import scan_plugins
-from pilot.prompts.auto_mode_prompt import AutoModePrompt
-from pilot.prompts.generator import PromptGenerator
+from pilot.common.plugins import scan_plugins
+
 from pilot.server.gradio_css import code_highlight_css
 from pilot.server.gradio_patch import Chatbot as grChatbot
-from pilot.server.vectordb_qa import KnownLedgeBaseQA
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
-from pilot.utils import build_logger, server_error_msg
+from pilot.utils import build_logger
 from pilot.vector_store.extract_tovec import (
     get_vector_storelist,
     knownledge_tovec_st,
-    load_knownledge_from_doc,
 )
 
-from pilot.commands.command import execute_ai_response_json
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
+from pilot.language.translation_handler import get_lang_text
 
+# 加载插件
+CFG = Config()
 logger = build_logger("webserver", LOGDIR + "webserver.log")
 headers = {"User-Agent": "dbgpt Client"}
 
@@ -67,15 +60,14 @@ disable_btn = gr.Button.update(interactive=True)
 enable_moderation = False
 models = []
 dbs = []
-vs_list = ["新建知识库"] + get_vector_storelist()
+vs_list = [get_lang_text("create_knowledge_base")] + get_vector_storelist()
 autogpt = False
 vector_store_client = None
 vector_store_name = {"vs_name": ""}
+# db_summary = {"dbsummary": ""}
 
 priority = {"vicuna-13b": "aaa"}
 
-# 加载插件
-CFG = Config()
 CHAT_FACTORY = ChatFactory()
 
 DB_SETTINGS = {
@@ -84,6 +76,22 @@ DB_SETTINGS = {
     "host": CFG.LOCAL_DB_HOST,
     "port": CFG.LOCAL_DB_PORT,
 }
+
+llm_native_dialogue = get_lang_text("knowledge_qa_type_llm_native_dialogue")
+default_knowledge_base_dialogue = get_lang_text(
+    "knowledge_qa_type_default_knowledge_base_dialogue"
+)
+add_knowledge_base_dialogue = get_lang_text(
+    "knowledge_qa_type_add_knowledge_base_dialogue"
+)
+
+url_knowledge_dialogue = get_lang_text("knowledge_qa_type_url_knowledge_dialogue")
+
+knowledge_qa_type_list = [
+    llm_native_dialogue,
+    default_knowledge_base_dialogue,
+    add_knowledge_base_dialogue,
+]
 
 
 def get_simlar(q):
@@ -95,19 +103,19 @@ def get_simlar(q):
 
 
 def gen_sqlgen_conversation(dbname):
-    mo = MySQLOperator(**DB_SETTINGS)
-
     message = ""
-
-    schemas = mo.get_schema(dbname)
+    db_connect = CFG.local_db.get_session(dbname)
+    schemas = CFG.local_db.table_simple_info(db_connect)
     for s in schemas:
-        message += s["schema_info"] + ";"
-    return f"数据库{dbname}的Schema信息如下: {message}\n"
+        message += s + ";"
+    return get_lang_text("sql_schema_info").format(dbname, message)
 
 
-def get_database_list():
-    mo = MySQLOperator(**DB_SETTINGS)
-    return mo.get_db_list()
+def plugins_select_info():
+    plugins_infos: dict = {}
+    for plugin in CFG.plugins:
+        plugins_infos.update({f"【{plugin._name}】=>{plugin._description}": plugin._name})
+    return plugins_infos
 
 
 get_window_url_params = """
@@ -194,266 +202,135 @@ def post_process_code(code):
     return code
 
 
-def get_chat_mode(mode, sql_mode, db_selector) -> ChatScene:
-    if mode == conversation_types["default_knownledge"] and not db_selector:
-        return ChatScene.ChatKnowledge
-    elif mode == conversation_types["custome"] and not db_selector:
-        return ChatScene.ChatNewKnowledge
-    elif sql_mode == conversation_sql_mode["auto_execute_ai_response"] and db_selector:
-        return ChatScene.ChatWithDb
-
-    elif mode == conversation_types["auto_execute_plugin"] and not db_selector:
+def get_chat_mode(selected, param=None) -> ChatScene:
+    if chat_mode_title["chat_use_plugin"] == selected:
         return ChatScene.ChatExecution
+    elif chat_mode_title["knowledge_qa"] == selected:
+        mode = param
+        if mode == conversation_types["default_knownledge"]:
+            return ChatScene.ChatKnowledge
+        elif mode == conversation_types["custome"]:
+            return ChatScene.ChatNewKnowledge
+        elif mode == conversation_types["url"]:
+            return ChatScene.ChatUrlKnowledge
+        else:
+            return ChatScene.ChatNormal
     else:
-        return ChatScene.ChatNormal
+        sql_mode = param
+        if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
+            return ChatScene.ChatWithDbExecute
+        else:
+            return ChatScene.ChatWithDbQA
+
+
+def chatbot_callback(state, message):
+    print(f"chatbot_callback:{message}")
+    state.messages[-1][-1] = f"{message}"
+    yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
 
 def http_bot(
-    state, mode, sql_mode, db_selector, temperature, max_new_tokens, request: gr.Request
+    state,
+    selected,
+    temperature,
+    max_new_tokens,
+    plugin_selector,
+    mode,
+    sql_mode,
+    db_selector,
+    url_input,
+    knowledge_name,
 ):
-    logger.info(f"User message send!{state.conv_id},{sql_mode},{db_selector}")
-    start_tstamp = time.time()
-    scene: ChatScene = get_chat_mode(mode, sql_mode, db_selector)
-    print(f"当前对话模式:{scene.value}")
-    model_name = CFG.LLM_MODEL
+    logger.info(
+        f"User message send!{state.conv_id},{selected},{plugin_selector},{mode},{sql_mode},{db_selector},{url_input}"
+    )
+    if chat_mode_title["knowledge_qa"] == selected:
+        scene: ChatScene = get_chat_mode(selected, mode)
+    elif chat_mode_title["chat_use_plugin"] == selected:
+        scene: ChatScene = get_chat_mode(selected)
+    else:
+        scene: ChatScene = get_chat_mode(selected, sql_mode)
+    print(f"chat scene:{scene.value}")
 
-    if ChatScene.ChatWithDb == scene:
-        logger.info("基于DB对话走新的模式！")
+    if ChatScene.ChatWithDbExecute == scene:
         chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "db_name": db_selector,
             "user_input": state.last_user_input,
         }
-        chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
-        chat.call()
-        state.messages[-1][-1] = f"{chat.current_ai_response()}"
+    elif ChatScene.ChatWithDbQA == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "db_name": db_selector,
+            "user_input": state.last_user_input,
+        }
+    elif ChatScene.ChatExecution == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "plugin_selector": plugin_selector,
+            "user_input": state.last_user_input,
+        }
+    elif ChatScene.ChatNormal == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "user_input": state.last_user_input,
+        }
+    elif ChatScene.ChatKnowledge == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "user_input": state.last_user_input,
+        }
+    elif ChatScene.ChatNewKnowledge == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "user_input": state.last_user_input,
+            "knowledge_name": knowledge_name,
+        }
+    elif ChatScene.ChatUrlKnowledge == scene:
+        chat_param = {
+            "temperature": temperature,
+            "max_new_tokens": max_new_tokens,
+            "chat_session_id": state.conv_id,
+            "user_input": state.last_user_input,
+            "url": url_input,
+        }
+    else:
+        state.messages[-1][-1] = f"ERROR: Can't support scene!{scene}"
         yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
+    chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+    if not chat.prompt_template.stream_out:
+        logger.info("not stream out, wait model response!")
+        state.messages[-1][-1] = chat.nostream_call()
+        yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
     else:
-        dbname = db_selector
-        # TODO 这里的请求需要拼接现有知识库, 使得其根据现有知识库作答, 所以prompt需要继续优化
-        if state.skip_next:
-            # This generate call is skipped due to invalid inputs
-            yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
-            return
-
-        if len(state.messages) == state.offset + 2:
-            query = state.messages[-2][1]
-            # 第一轮对话需要加入提示Prompt
-            if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
-                # autogpt模式的第一轮对话需要 构建专属prompt
-                system_prompt = auto_prompt.construct_first_prompt(
-                    fisrt_message=[query], db_schemes=gen_sqlgen_conversation(dbname)
-                )
-                logger.info("[TEST]:" + system_prompt)
-                template_name = "auto_dbgpt_one_shot"
-                new_state = conv_templates[template_name].copy()
-                new_state.append_message(role="USER", message=system_prompt)
-                # new_state.append_message(new_state.roles[0], query)
-                new_state.append_message(new_state.roles[1], None)
-            else:
-                template_name = "conv_one_shot"
-                new_state = conv_templates[template_name].copy()
-                # prompt 中添加上下文提示, 根据已有知识对话, 上下文提示是否也应该放在第一轮, 还是每一轮都添加上下文?
-                # 如果用户侧的问题跨度很大, 应该每一轮都加提示。
-                if db_selector:
-                    new_state.append_message(
-                        new_state.roles[0], gen_sqlgen_conversation(dbname) + query
+        logger.info("stream out start!")
+        try:
+            response = chat.stream_call()
+            for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+                if chunk:
+                    state.messages[-1][
+                        -1
+                    ] = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                        chunk, chat.skip_echo_len
                     )
-                    new_state.append_message(new_state.roles[1], None)
-                else:
-                    new_state.append_message(new_state.roles[0], query)
-                    new_state.append_message(new_state.roles[1], None)
-
-            new_state.conv_id = uuid.uuid4().hex
-            state = new_state
-        else:
-            ### 后续对话
-            query = state.messages[-2][1]
-            # 第一轮对话需要加入提示Prompt
-            if mode == conversation_types["custome"]:
-                template_name = "conv_one_shot"
-                new_state = conv_templates[template_name].copy()
-                # prompt 中添加上下文提示, 根据已有知识对话, 上下文提示是否也应该放在第一轮, 还是每一轮都添加上下文?
-                # 如果用户侧的问题跨度很大, 应该每一轮都加提示。
-                if db_selector:
-                    new_state.append_message(
-                        new_state.roles[0], gen_sqlgen_conversation(dbname) + query
-                    )
-                    new_state.append_message(new_state.roles[1], None)
-                else:
-                    new_state.append_message(new_state.roles[0], query)
-                    new_state.append_message(new_state.roles[1], None)
-                state = new_state
-            elif sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
-                ## 获取最后一次插件的返回
-                follow_up_prompt = auto_prompt.construct_follow_up_prompt([query])
-                state.messages[0][0] = ""
-                state.messages[0][1] = ""
-                state.messages[-2][1] = follow_up_prompt
-        prompt = state.get_prompt()
-        skip_echo_len = len(prompt.replace("</s>", " ")) + 1
-        if mode == conversation_types["default_knownledge"] and not db_selector:
-            vector_store_config = {
-                "vector_store_name": "default",
-                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
-            }
-            knowledge_embedding_client = KnowledgeEmbedding(
-                file_path="",
-                model_name=LLM_MODEL_CONFIG["text2vec"],
-                local_persist=False,
-                vector_store_config=vector_store_config,
-            )
-            query = state.messages[-2][1]
-            docs = knowledge_embedding_client.similar_search(query, VECTOR_SEARCH_TOP_K)
-            prompt = KnownLedgeBaseQA.build_knowledge_prompt(query, docs, state)
-            state.messages[-2][1] = query
-            skip_echo_len = len(prompt.replace("</s>", " ")) + 1
-
-        if mode == conversation_types["custome"] and not db_selector:
-            print("vector store name: ", vector_store_name["vs_name"])
-            vector_store_config = {
-                "vector_store_name": vector_store_name["vs_name"],
-                "text_field": "content",
-                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
-            }
-            knowledge_embedding_client = KnowledgeEmbedding(
-                file_path="",
-                model_name=LLM_MODEL_CONFIG["text2vec"],
-                local_persist=False,
-                vector_store_config=vector_store_config,
-            )
-            query = state.messages[-2][1]
-            docs = knowledge_embedding_client.similar_search(query, VECTOR_SEARCH_TOP_K)
-            prompt = KnownLedgeBaseQA.build_knowledge_prompt(query, docs, state)
-
-            state.messages[-2][1] = query
-            skip_echo_len = len(prompt.replace("</s>", " ")) + 1
-
-        # Make requests
-        payload = {
-            "model": model_name,
-            "prompt": prompt,
-            "temperature": float(temperature),
-            "max_new_tokens": int(max_new_tokens),
-            "stop": state.sep
-            if state.sep_style == SeparatorStyle.SINGLE
-            else state.sep2,
-        }
-        logger.info(f"Requert: \n{payload}")
-
-        if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
-            response = requests.post(
-                urljoin(CFG.MODEL_SERVER, "generate"),
-                headers=headers,
-                json=payload,
-                timeout=120,
-            )
-
-            print(response.json())
-            print(str(response))
-            try:
-                text = response.text.strip()
-                text = text.rstrip()
-                respObj = json.loads(text)
-
-                xx = respObj["response"]
-                xx = xx.strip(b"\x00".decode())
-                respObj_ex = json.loads(xx)
-                if respObj_ex["error_code"] == 0:
-                    ai_response = None
-                    all_text = respObj_ex["text"]
-                    ### 解析返回文本，获取AI回复部分
-                    tmpResp = all_text.split(state.sep)
-                    last_index = -1
-                    for i in range(len(tmpResp)):
-                        if tmpResp[i].find("ASSISTANT:") != -1:
-                            last_index = i
-                    ai_response = tmpResp[last_index]
-                    ai_response = ai_response.replace("ASSISTANT:", "")
-                    ai_response = ai_response.replace("\n", "")
-                    ai_response = ai_response.replace("\_", "_")
-
-                    print(ai_response)
-                    if ai_response == None:
-                        state.messages[-1][-1] = "ASSISTANT未能正确回复，回复结果为:\n" + all_text
-                        yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
-                    else:
-                        plugin_resp = execute_ai_response_json(
-                            auto_prompt.prompt_generator, ai_response
-                        )
-                        cfg.set_last_plugin_return(plugin_resp)
-                        print(plugin_resp)
-                        state.messages[-1][-1] = (
-                                "Model推理信息:\n" + ai_response + "\n\nDB-GPT执行结果:\n" + plugin_resp
-                        )
-                        yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
-            except NotCommands as e:
-                print("命令执行:" + e.message)
-                state.messages[-1][-1] = (
-                        "命令执行:" + e.message + "\n模型输出:\n" + str(ai_response)
-                )
-                yield (state, state.to_gradio_chatbot()) + (no_change_btn,) * 5
-        else:
-            # 流式输出
-            state.messages[-1][-1] = "▌"
-            yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-
-            try:
-                # Stream output
-                response = requests.post(
-                    urljoin(CFG.MODEL_SERVER, "generate_stream"),
-                    headers=headers,
-                    json=payload,
-                    stream=True,
-                    timeout=20,
-                )
-                for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-                    if chunk:
-                        data = json.loads(chunk.decode())
-
-                        """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
-                        """
-                        if data["error_code"] == 0:
-                            if "vicuna" in CFG.LLM_MODEL:
-                                output = data["text"][skip_echo_len:].strip()
-                            else:
-                                output = data["text"].strip()
-
-                            output = post_process_code(output)
-                            state.messages[-1][-1] = output + "▌"
-                            yield (state, state.to_gradio_chatbot()) + (disable_btn,) * 5
-                        else:
-                            output = data["text"] + f" (error_code: {data['error_code']})"
-                            state.messages[-1][-1] = output
-                            yield (state, state.to_gradio_chatbot()) + (
-                                disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
-                            return
-
-            except requests.exceptions.RequestException as e:
-                state.messages[-1][-1] = server_error_msg + f" (error_code: 4)"
-                yield (state, state.to_gradio_chatbot()) + (
-                disable_btn, disable_btn, disable_btn, enable_btn, enable_btn)
-                return
-
-            state.messages[-1][-1] = state.messages[-1][-1][:-1]
+                    yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+        except Exception as e:
+            print(traceback.format_exc())
+            state.messages[-1][-1] = "Error:" + str(e)
             yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
-
-            # 记录运行日志
-            finish_tstamp = time.time()
-            logger.info(f"{output}")
-
-            with open(get_conv_log_filename(), "a") as fout:
-                data = {
-                    "tstamp": round(finish_tstamp, 4),
-                    "type": "chat",
-                    "model": model_name,
-                    "start": round(start_tstamp, 4),
-                    "finish": round(start_tstamp, 4),
-                    "state": state.dict(),
-                    "ip": request.client.host,
-                }
-                fout.write(json.dumps(data) + "\n")
 
 
 block_css = (
@@ -474,38 +351,29 @@ block_css = (
 
 
 def change_sql_mode(sql_mode):
-    if sql_mode in ["直接执行结果"]:
+    if sql_mode in [get_lang_text("sql_generate_mode_direct")]:
         return gr.update(visible=True)
     else:
         return gr.update(visible=False)
 
 
 def change_mode(mode):
-    if mode in ["默认知识库对话", "LLM原生对话"]:
-        return gr.update(visible=False)
-    else:
+    if mode in [add_knowledge_base_dialogue]:
         return gr.update(visible=True)
-
-
-def change_tab():
-    autogpt = True
+    else:
+        return gr.update(visible=False)
 
 
 def build_single_model_ui():
-    notice_markdown = """
-    # DB-GPT
-    
-    [DB-GPT](https://github.com/csunny/DB-GPT) 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密，100% 安全。 
-    """
-    learn_more_markdown = """ 
-        ### Licence
-        The service is a research preview intended for non-commercial use only. subject to the model [License](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md) of Vicuna-13B 
-    """
+    notice_markdown = get_lang_text("db_gpt_introduction")
+    learn_more_markdown = get_lang_text("learn_more_markdown")
 
     state = gr.State()
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
 
-    with gr.Accordion("参数", open=False, visible=False) as parameter_row:
+    with gr.Accordion(
+        get_lang_text("model_control_param"), open=False, visible=False
+    ) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -521,56 +389,132 @@ def build_single_model_ui():
             value=512,
             step=64,
             interactive=True,
-            label="最大输出Token数",
+            label=get_lang_text("max_input_token_size"),
         )
+
     tabs = gr.Tabs()
+
+    def on_select(evt: gr.SelectData):  # SelectData is a subclass of EventData
+        print(f"You selected {evt.value} at {evt.index} from {evt.target}")
+        return evt.value
+
+    selected = gr.Textbox(show_label=False, visible=False, placeholder="Selected")
+    tabs.select(on_select, None, selected)
+
     with tabs:
-        tab_sql = gr.TabItem("SQL生成与诊断", elem_id="SQL")
+        tab_sql = gr.TabItem(get_lang_text("sql_generate_diagnostics"), elem_id="SQL")
         with tab_sql:
             # TODO A selector to choose database
             with gr.Row(elem_id="db_selector"):
                 db_selector = gr.Dropdown(
-                    label="请选择数据库",
+                    label=get_lang_text("please_choose_database"),
                     choices=dbs,
                     value=dbs[0] if len(models) > 0 else "",
                     interactive=True,
                     show_label=True,
                 ).style(container=False)
 
-            sql_mode = gr.Radio(["直接执行结果", "不执行结果"], show_label=False, value="不执行结果")
-            sql_vs_setting = gr.Markdown("自动执行模式下, DB-GPT可以具备执行SQL、从网络读取知识自动化存储学习的能力")
+            db_selector.change(fn=db_selector_changed, inputs=db_selector)
+
+            sql_mode = gr.Radio(
+                [
+                    get_lang_text("sql_generate_mode_direct"),
+                    get_lang_text("sql_generate_mode_none"),
+                ],
+                show_label=False,
+                value=get_lang_text("sql_generate_mode_none"),
+            )
+            sql_vs_setting = gr.Markdown(get_lang_text("sql_vs_setting"))
             sql_mode.change(fn=change_sql_mode, inputs=sql_mode, outputs=sql_vs_setting)
 
-        tab_qa = gr.TabItem("知识问答", elem_id="QA")
+        tab_plugin = gr.TabItem(get_lang_text("chat_use_plugin"), elem_id="PLUGIN")
+        # tab_plugin.select(change_func)
+        with tab_plugin:
+            print("tab_plugin in...")
+            with gr.Row(elem_id="plugin_selector"):
+                # TODO
+                plugin_selector = gr.Dropdown(
+                    label=get_lang_text("select_plugin"),
+                    choices=list(plugins_select_info().keys()),
+                    value="",
+                    interactive=True,
+                    show_label=True,
+                    type="value",
+                ).style(container=False)
+
+                def plugin_change(
+                    evt: gr.SelectData,
+                ):  # SelectData is a subclass of EventData
+                    print(f"You selected {evt.value} at {evt.index} from {evt.target}")
+                    print(f"user plugin:{plugins_select_info().get(evt.value)}")
+                    return plugins_select_info().get(evt.value)
+
+                plugin_selected = gr.Textbox(
+                    show_label=False, visible=False, placeholder="Selected"
+                )
+                plugin_selector.select(plugin_change, None, plugin_selected)
+
+        tab_qa = gr.TabItem(get_lang_text("knowledge_qa"), elem_id="QA")
         with tab_qa:
             mode = gr.Radio(
-                ["LLM原生对话", "默认知识库对话", "新增知识库对话"], show_label=False, value="LLM原生对话"
+                [
+                    llm_native_dialogue,
+                    default_knowledge_base_dialogue,
+                    add_knowledge_base_dialogue,
+                    url_knowledge_dialogue,
+                ],
+                show_label=False,
+                value=llm_native_dialogue,
             )
-            vs_setting = gr.Accordion("配置知识库", open=False)
+            vs_setting = gr.Accordion(
+                get_lang_text("configure_knowledge_base"), open=False, visible=False
+            )
             mode.change(fn=change_mode, inputs=mode, outputs=vs_setting)
+
+            url_input = gr.Textbox(
+                label=get_lang_text("url_input_label"),
+                lines=1,
+                interactive=True,
+                visible=False,
+            )
+
+            def show_url_input(evt: gr.SelectData):
+                if evt.value == url_knowledge_dialogue:
+                    return gr.update(visible=True)
+                else:
+                    return gr.update(visible=False)
+
+            mode.select(fn=show_url_input, inputs=None, outputs=url_input)
+
             with vs_setting:
-                vs_name = gr.Textbox(label="新知识库名称", lines=1, interactive=True)
-                vs_add = gr.Button("添加为新知识库")
+                vs_name = gr.Textbox(
+                    label=get_lang_text("new_klg_name"), lines=1, interactive=True
+                )
+                vs_add = gr.Button(get_lang_text("add_as_new_klg"))
                 with gr.Column() as doc2vec:
-                    gr.Markdown("向知识库中添加文件")
-                    with gr.Tab("上传文件"):
+                    gr.Markdown(get_lang_text("add_file_to_klg"))
+                    with gr.Tab(get_lang_text("upload_file")):
                         files = gr.File(
-                            label="添加文件",
+                            label=get_lang_text("add_file"),
                             file_types=[".txt", ".md", ".docx", ".pdf"],
                             file_count="multiple",
                             allow_flagged_uploads=True,
                             show_label=False,
                         )
 
-                        load_file_button = gr.Button("上传并加载到知识库")
-                    with gr.Tab("上传文件夹"):
+                        load_file_button = gr.Button(
+                            get_lang_text("upload_and_load_to_klg")
+                        )
+                    with gr.Tab(get_lang_text("upload_folder")):
                         folder_files = gr.File(
-                            label="添加文件夹",
+                            label=get_lang_text("add_folder"),
                             accept_multiple_files=True,
                             file_count="directory",
                             show_label=False,
                         )
-                        load_folder_button = gr.Button("上传并加载到知识库")
+                        load_folder_button = gr.Button(
+                            get_lang_text("upload_and_load_to_klg")
+                        )
 
     with gr.Blocks():
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
@@ -582,17 +526,20 @@ def build_single_model_ui():
                     visible=False,
                 ).style(container=False)
             with gr.Column(scale=2, min_width=50):
-                send_btn = gr.Button(value="发送", visible=False)
+                send_btn = gr.Button(value=get_lang_text("send"), visible=False)
 
     with gr.Row(visible=False) as button_row:
-        regenerate_btn = gr.Button(value="重新生成", interactive=False)
-        clear_btn = gr.Button(value="清理", interactive=False)
+        regenerate_btn = gr.Button(value=get_lang_text("regenerate"), interactive=False)
+        clear_btn = gr.Button(value=get_lang_text("clear_box"), interactive=False)
 
     gr.Markdown(learn_more_markdown)
+
+    params = [plugin_selected, mode, sql_mode, db_selector, url_input, vs_name]
+
     btn_list = [regenerate_btn, clear_btn]
     regenerate_btn.click(regenerate, state, [state, chatbot, textbox] + btn_list).then(
         http_bot,
-        [state, mode, sql_mode, db_selector, temperature, max_output_tokens],
+        [state, selected, temperature, max_output_tokens] + params,
         [state, chatbot] + btn_list,
     )
     clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
@@ -601,7 +548,7 @@ def build_single_model_ui():
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, mode, sql_mode, db_selector, temperature, max_output_tokens],
+        [state, selected, temperature, max_output_tokens] + params,
         [state, chatbot] + btn_list,
     )
 
@@ -609,7 +556,7 @@ def build_single_model_ui():
         add_text, [state, textbox], [state, chatbot, textbox] + btn_list
     ).then(
         http_bot,
-        [state, mode, sql_mode, db_selector, temperature, max_output_tokens],
+        [state, selected, temperature, max_output_tokens] + params,
         [state, chatbot] + btn_list,
     )
     vs_add.click(
@@ -632,7 +579,7 @@ def build_single_model_ui():
 
 def build_webdemo():
     with gr.Blocks(
-        title="数据库智能助手",
+        title=get_lang_text("database_smart_assistant"),
         # theme=gr.themes.Base(),
         theme=gr.themes.Default(),
         css=block_css,
@@ -671,6 +618,10 @@ def save_vs_name(vs_name):
     return vs_name
 
 
+def db_selector_changed(dbname):
+    DBSummaryClient.db_summary_embedding(dbname)
+
+
 def knowledge_embedding_store(vs_id, files):
     # vs_path = os.path.join(VS_ROOT_PATH, vs_id)
     if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id)):
@@ -692,7 +643,7 @@ def knowledge_embedding_store(vs_id, files):
         knowledge_embedding_client.knowledge_embedding()
 
     logger.info("knowledge embedding success")
-    return os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, vs_id + ".vectordb")
+    return vs_id
 
 
 if __name__ == "__main__":
@@ -716,8 +667,8 @@ if __name__ == "__main__":
 
     # 加载插件可执行命令
     command_categories = [
-        "pilot.commands.audio_text",
-        "pilot.commands.image_gen",
+        "pilot.commands.built_in.audio_text",
+        "pilot.commands.built_in.image_gen",
     ]
     # 排除禁用命令
     command_categories = [
