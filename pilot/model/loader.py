@@ -118,6 +118,8 @@ class ModelLoader(metaclass=Singleton):
                 model.to(self.device)
             except ValueError:
                 pass
+            except AttributeError:
+                pass
 
         if debug:
             print(model)
