@@ -64,6 +64,9 @@ def guanaco_generate_stream(model, tokenizer, params, device, context_len=2048):
     print(params)
     stop = params.get("stop", "###")
     prompt = params["prompt"]
+    max_new_tokens = params.get("max_new_tokens", 512)
+    temerature = params.get("temperature", 1.0)
+
     query = prompt
     print("Query Message: ", query)
 
@@ -82,7 +85,7 @@ def guanaco_generate_stream(model, tokenizer, params, device, context_len=2048):
             self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs
         ) -> bool:
             for stop_id in stop_token_ids:
-                if input_ids[0][-1] == stop_id:
+                if input_ids[-1][-1] == stop_id:
                     return True
             return False
 
@@ -90,8 +93,8 @@ def guanaco_generate_stream(model, tokenizer, params, device, context_len=2048):
 
     generate_kwargs = dict(
         input_ids=input_ids,
-        max_new_tokens=512,
-        temperature=1.0,
+        max_new_tokens=max_new_tokens,
+        temperature=temerature,
         do_sample=True,
         top_k=1,
         streamer=streamer,
@@ -100,9 +103,9 @@ def guanaco_generate_stream(model, tokenizer, params, device, context_len=2048):
     )
 
 
-    generator = model.generate(**generate_kwargs)
+    model.generate(**generate_kwargs)
+
     out = ""
     for new_text in streamer:
         out += new_text
-        yield new_text
-    return out
+        yield out

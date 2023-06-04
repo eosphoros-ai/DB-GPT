@@ -68,15 +68,11 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
         "max_tokens": params.get("max_new_tokens"),
     }
 
-    print(payloads)
-    print(headers)
     res = requests.post(
         CFG.proxy_server_url, headers=headers, json=payloads, stream=True
     )
 
     text = ""
-    print("====================================res================")
-    print(res)
     for line in res.iter_lines():
         if line:
             decoded_line = line.decode("utf-8")
