@@ -56,7 +56,6 @@ class BaseOutputParser(ABC):
                 # output = data["text"][skip_echo_len + 11:].strip()
                 output = data["text"][skip_echo_len:].strip()
             elif "guanaco" in CFG.LLM_MODEL:
-
                 # NO stream output
                 # output = data["text"][skip_echo_len + 2:].replace("<s>", "").strip()
 
