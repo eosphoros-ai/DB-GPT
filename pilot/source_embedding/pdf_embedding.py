@@ -11,7 +11,7 @@ from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 
 
 class PDFEmbedding(SourceEmbedding):
-    """yuque embedding for read yuque document."""
+    """pdf embedding for read pdf document."""
 
     def __init__(self, file_path, model_name, vector_store_config):
         """Initialize with pdf path."""
