@@ -34,7 +34,8 @@ LLM_MODEL_CONFIG = {
     "chatglm-6b-int4": os.path.join(MODEL_PATH, "chatglm-6b-int4"),
     "chatglm-6b": os.path.join(MODEL_PATH, "chatglm-6b"),
     "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
-    "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
+    "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"0),
+    "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"
 }
 
 # Load model config
