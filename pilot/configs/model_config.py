@@ -36,7 +36,6 @@ LLM_MODEL_CONFIG = {
     "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
-    "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "proxyllm": "proxyllm",
 }
 
