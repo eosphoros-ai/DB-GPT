@@ -138,10 +138,9 @@ dmypy.json
 .pyre/
 .DS_Store
 logs
-<<<<<<< HEAD
-.vectordb
-=======
 nltk_data
 .vectordb
 pilot/data/
->>>>>>> 0027788c0848c31d73f736d8042f86b9e5d5c336
+
+logswebserver.log.*
+.history/*
