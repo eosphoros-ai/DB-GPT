@@ -14,6 +14,8 @@ fonttools==4.38.0
 frozenlist==1.3.3
 huggingface-hub==0.13.4
 importlib-resources==5.12.0
+
+sqlparse==0.4.4
 kiwisolver==1.4.4
 matplotlib==3.7.0
 multidict==6.0.4
@@ -54,7 +56,7 @@ gTTS==2.3.1
 langchain
 nltk
 python-dotenv==1.0.0
-pymilvus==2.2.1
+# pymilvus==2.2.1
 vcrpy
 chromadb
 markdown2
