@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 import markdown
 from bs4 import BeautifulSoup
@@ -12,19 +13,28 @@ from pilot.source_embedding.csv_embedding import CSVEmbedding
 from pilot.source_embedding.markdown_embedding import MarkdownEmbedding
 from pilot.source_embedding.pdf_embedding import PDFEmbedding
 from pilot.source_embedding.url_embedding import URLEmbedding
+from pilot.source_embedding.word_embedding import WordEmbedding
 from pilot.vector_store.connector import VectorStoreConnector
 
 CFG = Config()
 
+KnowledgeEmbeddingType = {
+    ".txt": (MarkdownEmbedding, {}),
+    ".md": (MarkdownEmbedding,{}),
+    ".pdf": (PDFEmbedding, {}),
+    ".doc": (WordEmbedding, {}),
+    ".docx": (WordEmbedding, {}),
+    ".csv": (CSVEmbedding, {}),
+}
 
 class KnowledgeEmbedding:
     def __init__(
         self,
-        file_path,
         model_name,
         vector_store_config,
-        local_persist=True,
-        file_type="default",
+        file_type: Optional[str] = "default",
+        file_path: Optional[str] = None,
+
     ):
         """Initialize with Loader url, model_name, vector_store_config"""
         self.file_path = file_path
@@ -33,11 +43,9 @@ class KnowledgeEmbedding:
         self.file_type = file_type
         self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
         self.vector_store_config["embeddings"] = self.embeddings
-        self.local_persist = local_persist
-        if not self.local_persist:
-            self.knowledge_embedding_client = self.init_knowledge_embedding()
 
     def knowledge_embedding(self):
+        self.knowledge_embedding_client = self.init_knowledge_embedding()
         self.knowledge_embedding_client.source_embedding()
 
     def knowledge_embedding_batch(self):
@@ -50,40 +58,24 @@ class KnowledgeEmbedding:
                 model_name=self.model_name,
                 vector_store_config=self.vector_store_config,
             )
-        elif self.file_path.endswith(".pdf"):
-            embedding = PDFEmbedding(
-                file_path=self.file_path,
-                model_name=self.model_name,
-                vector_store_config=self.vector_store_config,
-            )
-        elif self.file_path.endswith(".md"):
-            embedding = MarkdownEmbedding(
-                file_path=self.file_path,
-                model_name=self.model_name,
-                vector_store_config=self.vector_store_config,
-            )
-
-        elif self.file_path.endswith(".csv"):
-            embedding = CSVEmbedding(
-                file_path=self.file_path,
-                model_name=self.model_name,
-                vector_store_config=self.vector_store_config,
-            )
-
-        elif self.file_type == "default":
-            embedding = MarkdownEmbedding(
-                file_path=self.file_path,
-                model_name=self.model_name,
-                vector_store_config=self.vector_store_config,
-            )
-
+            return embedding
+        extension = "." + self.file_path.rsplit(".", 1)[-1]
+        if extension in KnowledgeEmbeddingType:
+            knowledge_class, knowledge_args = KnowledgeEmbeddingType[extension]
+            embedding = knowledge_class(self.file_path, model_name=self.model_name, vector_store_config=self.vector_store_config, **knowledge_args)
+            return embedding
+        raise ValueError(f"Unsupported knowledge file type '{extension}'")
         return embedding
 
     def similar_search(self, text, topk):
-        return self.knowledge_embedding_client.similar_search(text, topk)
+        vector_client = VectorStoreConnector(CFG.VECTOR_STORE_TYPE, self.vector_store_config)
+        return vector_client.similar_search(text, topk)
 
     def vector_exist(self):
-        return self.knowledge_embedding_client.vector_name_exist()
+        vector_client = VectorStoreConnector(
+            CFG.VECTOR_STORE_TYPE, self.vector_store_config
+        )
+        return vector_client.vector_name_exists()
 
     def knowledge_persist_initialization(self, append_mode):
         documents = self._load_knownlege(self.file_path)
