@@ -12,8 +12,6 @@
 [**English**](README.md)|[**Discord**](https://discord.gg/ea6BnZkY) 
 </div>
 
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
-
 ## DB-GPT 是什么？
 
 随着大模型的发布迭代，大模型变得越来越智能，在使用大模型的过程当中，遇到极大的数据安全与隐私挑战。在利用大模型能力的过程中我们的私密数据跟环境需要掌握自己的手里，完全可控，避免任何的数据隐私泄露以及安全风险。基于此，我们发起了DB-GPT项目，为所有以数据库为基础的场景，构建一套完整的私有大模型解决方案。 此方案因为支持本地部署，所以不仅仅可以应用于独立私有环境，而且还可以根据业务模块独立部署隔离，让大模型的能力绝对私有、安全、可控。
@@ -51,7 +49,22 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 ## 效果演示
 
-示例通过 RTX 4090 GPU 演示，[YouTube 地址](https://www.youtube.com/watch?v=1PWI6F89LPo)
+示例通过 RTX 4090 GPU 演示
+<p align="center">
+  <img src="./assets/演示.gif" width="680px" />
+</p>
+
+<p align="center">
+  <img src="./assets/auto_sql.gif" width="680px" />
+</p>
+
+<p align="center">
+  <img src="./assets/chat_url_zh.gif" width="680px" />
+</p>
+
+<p align="center">
+  <img src="./assets/new_knownledge.gif" width="680px" />
+</p>
 
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。 
@@ -220,3 +233,6 @@ Run the Python interpreter and type the commands:
 ## Licence
 
 The MIT License (MIT)
+
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+
