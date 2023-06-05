@@ -42,9 +42,7 @@ class ChatDefaultKnowledge(BaseChat):
             "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         self.knowledge_embedding_client = KnowledgeEmbedding(
-            file_path="",
             model_name=LLM_MODEL_CONFIG["text2vec"],
-            local_persist=False,
             vector_store_config=vector_store_config,
         )
 

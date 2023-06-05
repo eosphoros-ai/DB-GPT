@@ -74,17 +74,11 @@ class DBSummaryClient:
     @staticmethod
     def get_similar_tables(dbname, query, topk):
         """get user query related tables info"""
-        embeddings = HuggingFaceEmbeddings(
-            model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-        )
         vector_store_config = {
             "vector_store_name": dbname + "_profile",
-            "embeddings": embeddings,
         }
         knowledge_embedding_client = KnowledgeEmbedding(
-            file_path="",
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-            local_persist=False,
             vector_store_config=vector_store_config,
         )
         if CFG.SUMMARY_CONFIG == "FAST":
@@ -105,12 +99,10 @@ class DBSummaryClient:
         for table in related_tables:
             vector_store_config = {
                 "vector_store_name": table + "_ts",
-                "embeddings": embeddings,
             }
             knowledge_embedding_client = KnowledgeEmbedding(
                 file_path="",
                 model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-                local_persist=False,
                 vector_store_config=vector_store_config,
             )
             table_summery = knowledge_embedding_client.similar_search(query, 1)

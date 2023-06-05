@@ -10,6 +10,7 @@ from langchain.schema import Document
 
 from pilot.configs.model_config import KNOWLEDGE_CHUNK_SPLIT_SIZE
 from pilot.source_embedding import SourceEmbedding, register
+from pilot.source_embedding.EncodeTextLoader import EncodeTextLoader
 from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 
 
@@ -22,11 +23,12 @@ class MarkdownEmbedding(SourceEmbedding):
         self.file_path = file_path
         self.model_name = model_name
         self.vector_store_config = vector_store_config
+        # self.encoding = encoding
 
     @register
     def read(self):
         """Load from markdown path."""
-        loader = TextLoader(self.file_path)
+        loader = EncodeTextLoader(self.file_path)
         text_splitter = CHNDocumentSplitter(
             pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE
         )
