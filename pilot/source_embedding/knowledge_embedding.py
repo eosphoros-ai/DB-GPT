@@ -1,14 +1,8 @@
-import os
 from typing import Optional
 
-import markdown
-from bs4 import BeautifulSoup
-from langchain.document_loaders import PyPDFLoader, TextLoader
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import DATASETS_DIR, KNOWLEDGE_CHUNK_SPLIT_SIZE
-from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 from pilot.source_embedding.csv_embedding import CSVEmbedding
 from pilot.source_embedding.markdown_embedding import MarkdownEmbedding
 from pilot.source_embedding.pdf_embedding import PDFEmbedding
@@ -82,61 +76,3 @@ class KnowledgeEmbedding:
             CFG.VECTOR_STORE_TYPE, self.vector_store_config
         )
         return vector_client.vector_name_exists()
-
-    def knowledge_persist_initialization(self, append_mode):
-        documents = self._load_knownlege(self.file_path)
-        self.vector_client = VectorStoreConnector(
-            CFG.VECTOR_STORE_TYPE, self.vector_store_config
-        )
-        self.vector_client.load_document(documents)
-        return self.vector_client
-
-    def _load_knownlege(self, path):
-        docments = []
-        for root, _, files in os.walk(path, topdown=False):
-            for file in files:
-                filename = os.path.join(root, file)
-                docs = self._load_file(filename)
-                new_docs = []
-                for doc in docs:
-                    doc.metadata = {
-                        "source": doc.metadata["source"].replace(DATASETS_DIR, "")
-                    }
-                    print("doc is embedding...", doc.metadata)
-                    new_docs.append(doc)
-                docments += new_docs
-        return docments
-
-    def _load_file(self, filename):
-        if filename.lower().endswith(".md"):
-            loader = TextLoader(filename)
-            text_splitter = CHNDocumentSplitter(
-                pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE
-            )
-            docs = loader.load_and_split(text_splitter)
-            i = 0
-            for d in docs:
-                content = markdown.markdown(d.page_content)
-                soup = BeautifulSoup(content, "html.parser")
-                for tag in soup(["!doctype", "meta", "i.fa"]):
-                    tag.extract()
-                docs[i].page_content = soup.get_text()
-                docs[i].page_content = docs[i].page_content.replace("\n", " ")
-                i += 1
-        elif filename.lower().endswith(".pdf"):
-            loader = PyPDFLoader(filename)
-            textsplitter = CHNDocumentSplitter(
-                pdf=True, sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE
-            )
-            docs = loader.load_and_split(textsplitter)
-            i = 0
-            for d in docs:
-                docs[i].page_content = d.page_content.replace("\n", " ").replace(
-                    "�", ""
-                )
-                i += 1
-        else:
-            loader = TextLoader(filename)
-            text_splitor = CHNDocumentSplitter(sentence_size=KNOWLEDGE_CHUNK_SPLIT_SIZE)
-            docs = loader.load_and_split(text_splitor)
-        return docs
