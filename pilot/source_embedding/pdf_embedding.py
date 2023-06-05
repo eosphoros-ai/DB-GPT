@@ -20,6 +20,7 @@ class PDFEmbedding(SourceEmbedding):
         self.model_name = model_name
         self.vector_store_config = vector_store_config
         self.encoding = encoding
+
     @register
     def read(self):
         """Load from pdf path."""
