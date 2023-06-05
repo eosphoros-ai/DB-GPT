@@ -40,7 +40,6 @@ class LocalKnowledgeInit:
                 client.source_embedding()
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--vector_name", type=str, default="default")

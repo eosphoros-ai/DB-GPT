@@ -29,7 +29,9 @@ _DEFAULT_TEMPLATE_EN = """ Based on the known information below, provide users w
             {question}
 """
 
-_DEFAULT_TEMPLATE = _DEFAULT_TEMPLATE_EN if CFG.LANGUAGE == 'en' else _DEFAULT_TEMPLATE_ZH
+_DEFAULT_TEMPLATE = (
+    _DEFAULT_TEMPLATE_EN if CFG.LANGUAGE == "en" else _DEFAULT_TEMPLATE_ZH
+)
 
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value

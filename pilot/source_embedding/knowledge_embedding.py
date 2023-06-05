@@ -20,12 +20,13 @@ CFG = Config()
 
 KnowledgeEmbeddingType = {
     ".txt": (MarkdownEmbedding, {}),
-    ".md": (MarkdownEmbedding,{}),
+    ".md": (MarkdownEmbedding, {}),
     ".pdf": (PDFEmbedding, {}),
     ".doc": (WordEmbedding, {}),
     ".docx": (WordEmbedding, {}),
     ".csv": (CSVEmbedding, {}),
 }
+
 
 class KnowledgeEmbedding:
     def __init__(
@@ -34,7 +35,6 @@ class KnowledgeEmbedding:
         vector_store_config,
         file_type: Optional[str] = "default",
         file_path: Optional[str] = None,
-
     ):
         """Initialize with Loader url, model_name, vector_store_config"""
         self.file_path = file_path
@@ -62,13 +62,20 @@ class KnowledgeEmbedding:
         extension = "." + self.file_path.rsplit(".", 1)[-1]
         if extension in KnowledgeEmbeddingType:
             knowledge_class, knowledge_args = KnowledgeEmbeddingType[extension]
-            embedding = knowledge_class(self.file_path, model_name=self.model_name, vector_store_config=self.vector_store_config, **knowledge_args)
+            embedding = knowledge_class(
+                self.file_path,
+                model_name=self.model_name,
+                vector_store_config=self.vector_store_config,
+                **knowledge_args,
+            )
             return embedding
         raise ValueError(f"Unsupported knowledge file type '{extension}'")
         return embedding
 
     def similar_search(self, text, topk):
-        vector_client = VectorStoreConnector(CFG.VECTOR_STORE_TYPE, self.vector_store_config)
+        vector_client = VectorStoreConnector(
+            CFG.VECTOR_STORE_TYPE, self.vector_store_config
+        )
         return vector_client.similar_search(text, topk)
 
     def vector_exist(self):
