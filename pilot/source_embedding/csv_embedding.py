@@ -12,14 +12,12 @@ class CSVEmbedding(SourceEmbedding):
     def __init__(
         self,
         file_path,
-        model_name,
         vector_store_config,
         embedding_args: Optional[Dict] = None,
     ):
         """Initialize with csv path."""
-        super().__init__(file_path, model_name, vector_store_config)
+        super().__init__(file_path, vector_store_config)
         self.file_path = file_path
-        self.model_name = model_name
         self.vector_store_config = vector_store_config
         self.embedding_args = embedding_args
 
