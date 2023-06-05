@@ -82,7 +82,7 @@ class ChatGLMAdapater(BaseLLMAdaper):
             )
             return model, tokenizer
 
-        
+
 class GuanacoAdapter(BaseLLMAdaper):
     """TODO Support guanaco"""
 
@@ -95,7 +95,6 @@ class GuanacoAdapter(BaseLLMAdaper):
             model_path, load_in_4bit=True, device_map={"": 0}, **from_pretrained_kwargs
         )
         return model, tokenizer
-
 
 
 class GuanacoAdapter(BaseLLMAdaper):
