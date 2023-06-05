@@ -23,13 +23,11 @@ class SourceEmbedding(ABC):
     def __init__(
         self,
         file_path,
-        model_name,
         vector_store_config,
         embedding_args: Optional[Dict] = None,
     ):
         """Initialize with Loader url, model_name, vector_store_config"""
         self.file_path = file_path
-        self.model_name = model_name
         self.vector_store_config = vector_store_config
         self.embedding_args = embedding_args
         self.embeddings = vector_store_config["embeddings"]
