@@ -59,6 +59,7 @@ class ChatGLMChatAdapter(BaseChatAdpter):
 
         return chatglm_generate_stream
 
+
 class CodeT5ChatAdapter(BaseChatAdpter):
 
     """Model chat adapter for CodeT5"""
