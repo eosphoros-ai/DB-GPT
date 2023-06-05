@@ -3,11 +3,13 @@
 
 from langchain.prompts import PromptTemplate
 
-from pilot.configs.model_config import VECTOR_SEARCH_TOP_K
+from pilot.configs.config import Config
 from pilot.conversation import conv_qa_prompt_template, conv_db_summary_templates
 from pilot.logs import logger
 from pilot.model.llm_out.vicuna_llm import VicunaLLM
 from pilot.vector_store.file_loader import KnownLedge2Vector
+
+CFG = Config()
 
 
 class KnownLedgeBaseQA:
@@ -22,7 +24,7 @@ class KnownLedgeBaseQA:
         )
 
         retriever = self.vector_store.as_retriever(
-            search_kwargs={"k": VECTOR_SEARCH_TOP_K}
+            search_kwargs={"k": CFG.KNOWLEDGE_SEARCH_TOP_SIZE}
         )
         docs = retriever.get_relevant_documents(query=query)
 
