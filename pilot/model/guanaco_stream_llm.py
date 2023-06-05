@@ -3,7 +3,6 @@ from threading import Thread
 from transformers import TextIteratorStreamer, StoppingCriteriaList, StoppingCriteria
 
 
-
 def guanaco_stream_generate_output(model, tokenizer, params, device, context_len=2048):
     """Fork from: https://github.com/KohakuBlueleaf/guanaco-lora/blob/main/generate.py"""
     tokenizer.bos_token_id = 1
@@ -19,7 +18,7 @@ def guanaco_stream_generate_output(model, tokenizer, params, device, context_len
     streamer = TextIteratorStreamer(
         tokenizer, timeout=10.0, skip_prompt=True, skip_special_tokens=True
     )
-    
+
     tokenizer.bos_token_id = 1
     stop_token_ids = [0]
 
