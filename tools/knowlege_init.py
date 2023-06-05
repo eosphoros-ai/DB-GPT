@@ -10,7 +10,6 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import (
     DATASETS_DIR,
     LLM_MODEL_CONFIG,
-    VECTOR_SEARCH_TOP_K,
 )
 from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
 
@@ -19,7 +18,6 @@ CFG = Config()
 
 class LocalKnowledgeInit:
     embeddings: object = None
-    top_k: int = VECTOR_SEARCH_TOP_K
 
     def __init__(self, vector_store_config) -> None:
         self.vector_store_config = vector_store_config
