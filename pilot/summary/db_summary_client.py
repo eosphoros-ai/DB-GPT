@@ -21,8 +21,10 @@ class DBSummaryClient:
     , get_similar_tables method(get user query related tables info)
     """
 
-    @staticmethod
-    def db_summary_embedding(dbname):
+    def __init__(self):
+        pass
+
+    def db_summary_embedding(self, dbname):
         """put db profile and table profile summary into vector store"""
         if CFG.LOCAL_DB_HOST is not None and CFG.LOCAL_DB_PORT is not None:
             db_summary_client = MysqlSummary(dbname)
@@ -56,7 +58,7 @@ class DBSummaryClient:
                 table_summary,
             ) in db_summary_client.get_table_summary().items():
                 table_vector_store_config = {
-                    "vector_store_name": table_name + "_ts",
+                    "vector_store_name": dbname + "_" + table_name + "_ts",
                     "embeddings": embeddings,
                 }
                 embedding = StringEmbedding(
@@ -67,8 +69,7 @@ class DBSummaryClient:
 
         logger.info("db summary embedding success")
 
-    @staticmethod
-    def get_similar_tables(dbname, query, topk):
+    def get_similar_tables(self, dbname, query, topk):
         """get user query related tables info"""
         vector_store_config = {
             "vector_store_name": dbname + "_profile",
@@ -94,7 +95,7 @@ class DBSummaryClient:
         related_table_summaries = []
         for table in related_tables:
             vector_store_config = {
-                "vector_store_name": table + "_ts",
+                "vector_store_name": dbname + "_" + table + "_ts",
             }
             knowledge_embedding_client = KnowledgeEmbedding(
                 file_path="",
@@ -104,6 +105,12 @@ class DBSummaryClient:
             table_summery = knowledge_embedding_client.similar_search(query, 1)
             related_table_summaries.append(table_summery[0].page_content)
         return related_table_summaries
+
+    def init_db_summary(self):
+        db = CFG.local_db
+        dbs = db.get_database_list()
+        for dbname in dbs:
+            self.db_summary_embedding(dbname)
 
 
 def _get_llm_response(query, db_input, dbsummary):
