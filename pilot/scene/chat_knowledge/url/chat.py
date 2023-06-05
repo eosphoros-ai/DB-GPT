@@ -40,15 +40,13 @@ class ChatUrlKnowledge(BaseChat):
         self.url = url
         vector_store_config = {
             "vector_store_name": url,
-            "text_field": "content",
             "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         self.knowledge_embedding_client = KnowledgeEmbedding(
-            file_path=url,
-            file_type="url",
             model_name=LLM_MODEL_CONFIG["text2vec"],
-            local_persist=False,
             vector_store_config=vector_store_config,
+            file_type="url",
+            file_path=url,
         )
 
         # url soruce in vector
