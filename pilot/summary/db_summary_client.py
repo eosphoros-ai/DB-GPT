@@ -34,24 +34,21 @@ class DBSummaryClient:
             "embeddings": embeddings,
         }
         embedding = StringEmbedding(
-            db_summary_client.get_summery(),
-            LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-            vector_store_config,
+            file_path=db_summary_client.get_summery(),
+            vector_store_config=vector_store_config,
         )
         if not embedding.vector_name_exist():
             if CFG.SUMMARY_CONFIG == "FAST":
                 for vector_table_info in db_summary_client.get_summery():
                     embedding = StringEmbedding(
                         vector_table_info,
-                        LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
                         vector_store_config,
                     )
                     embedding.source_embedding()
             else:
                 embedding = StringEmbedding(
-                    db_summary_client.get_summery(),
-                    LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-                    vector_store_config,
+                    file_path=db_summary_client.get_summery(),
+                    vector_store_config=vector_store_config,
                 )
                 embedding.source_embedding()
             for (
@@ -64,7 +61,6 @@ class DBSummaryClient:
                 }
                 embedding = StringEmbedding(
                     table_summary,
-                    LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
                     table_vector_store_config,
                 )
                 embedding.source_embedding()
@@ -124,30 +120,3 @@ def _get_llm_response(query, db_input, dbsummary):
     )
     res = chat.nostream_call()
     return json.loads(res)["table"]
-
-
-# if __name__ == "__main__":
-#     # summary = DBSummaryClient.get_similar_tables("db_test", "查询在线用户的购物车", 10)
-#
-#     text= """Based on the input "查询在线聊天的用户好友" and the known database information, the tables involved in the user input are "chat_users" and "friends".
-# Response:
-#
-# {
-#    "table": ["chat_users"]
-# }"""
-#     text = text.rstrip().replace("\n","")
-#     start = text.find("{")
-#     end = text.find("}") + 1
-#
-#     # 从字符串中截取出JSON数据
-#     json_str = text[start:end]
-#
-#     # 将JSON数据转换为Python中的字典类型
-#     data = json.loads(json_str)
-#     # pattern = r'{s*"table"s*:s*[[^]]*]s*}'
-#     # match = re.search(pattern, text)
-#     # if match:
-#     #     json_string = match.group(0)
-#     #     # 将JSON字符串转换为Python对象
-#     #     json_obj = json.loads(json_string)
-#     # print(summary)

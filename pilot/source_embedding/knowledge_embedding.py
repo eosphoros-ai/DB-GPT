@@ -64,7 +64,6 @@ class KnowledgeEmbedding:
             knowledge_class, knowledge_args = KnowledgeEmbeddingType[extension]
             embedding = knowledge_class(
                 self.file_path,
-                model_name=self.model_name,
                 vector_store_config=self.vector_store_config,
                 **knowledge_args,
             )
