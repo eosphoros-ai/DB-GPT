@@ -49,7 +49,6 @@ class KnowledgeEmbedding:
         if self.file_type == "url":
             embedding = URLEmbedding(
                 file_path=self.file_path,
-                model_name=self.model_name,
                 vector_store_config=self.vector_store_config,
             )
             return embedding
