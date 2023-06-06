@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import threading
 import traceback
 import argparse
 import datetime
@@ -414,7 +415,7 @@ def build_single_model_ui():
                     show_label=True,
                 ).style(container=False)
 
-            db_selector.change(fn=db_selector_changed, inputs=db_selector)
+            # db_selector.change(fn=db_selector_changed, inputs=db_selector)
 
             sql_mode = gr.Radio(
                 [
@@ -618,10 +619,6 @@ def save_vs_name(vs_name):
     return vs_name
 
 
-def db_selector_changed(dbname):
-    DBSummaryClient.db_summary_embedding(dbname)
-
-
 def knowledge_embedding_store(vs_id, files):
     # vs_path = os.path.join(VS_ROOT_PATH, vs_id)
     if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id)):
@@ -634,7 +631,6 @@ def knowledge_embedding_store(vs_id, files):
         knowledge_embedding_client = KnowledgeEmbedding(
             file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
             model_name=LLM_MODEL_CONFIG["text2vec"],
-            local_persist=False,
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
                 "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
@@ -644,6 +640,12 @@ def knowledge_embedding_store(vs_id, files):
 
     logger.info("knowledge embedding success")
     return vs_id
+
+
+def async_db_summery():
+    client = DBSummaryClient()
+    thread = threading.Thread(target=client.init_db_summary)
+    thread.start()
 
 
 if __name__ == "__main__":
@@ -662,7 +664,7 @@ if __name__ == "__main__":
     cfg = Config()
 
     dbs = cfg.local_db.get_database_list()
-
+    async_db_summery()
     cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
 
     # 加载插件可执行命令

@@ -97,6 +97,20 @@ class GuanacoAdapter(BaseLLMAdaper):
         return model, tokenizer
 
 
+class GuanacoAdapter(BaseLLMAdaper):
+    """TODO Support guanaco"""
+
+    def match(self, model_path: str):
+        return "guanaco" in model_path
+
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = LlamaTokenizer.from_pretrained(model_path)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, load_in_4bit=True, device_map={"": 0}, **from_pretrained_kwargs
+        )
+        return model, tokenizer
+
+
 class CodeGenAdapter(BaseLLMAdaper):
     pass
 

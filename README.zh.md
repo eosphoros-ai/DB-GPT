@@ -1,14 +1,33 @@
-# DB-GPT ![GitHub Repo stars](https://img.shields.io/github/stars/csunny/db-gpt?style=social)
+# DB-GPT: 数据库的 LLM 工具
+<div align="center">
+  <p>
+    <a href="https://github.com/csunny/DB-GPT">
+        <img alt="stars" src="https://img.shields.io/github/stars/csunny/db-gpt?style=social" />
+    </a>
+    <a href="https://github.com/csunny/DB-GPT">
+        <img alt="forks" src="https://img.shields.io/github/forks/csunny/db-gpt?style=social" />
+    </a>
+  </p>
 
-[English](README.zh.md)
+[**English**](README.md)|[**Discord**](https://discord.gg/ea6BnZkY) 
+</div>
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
 ## DB-GPT 是什么？
+
 随着大模型的发布迭代，大模型变得越来越智能，在使用大模型的过程当中，遇到极大的数据安全与隐私挑战。在利用大模型能力的过程中我们的私密数据跟环境需要掌握自己的手里，完全可控，避免任何的数据隐私泄露以及安全风险。基于此，我们发起了DB-GPT项目，为所有以数据库为基础的场景，构建一套完整的私有大模型解决方案。 此方案因为支持本地部署，所以不仅仅可以应用于独立私有环境，而且还可以根据业务模块独立部署隔离，让大模型的能力绝对私有、安全、可控。
 
 DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密，100% 安全。
 
+## 最新发布
+
+- [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.[演示](./assets/dbgpt_bytebase_plugin.gif)
+- [2023/06/01]🔥 QLoRA guanaco(原驼)支持, 支持4090运行33B
+- [2023/05/28]🔥根据URL进行对话 [演示](./assets/chat_url_zh.gif)
+- [2023/05/21] SQL生成与自动执行. [演示](./assets/auto_sql.gif)
+- [2023/05/15] 知识库对话 [演示](./assets/new_knownledge.gif)
+- [2023/05/06] SQL生成与诊断 [演示](./assets/演示.gif)
 
 ## 特性一览
 
@@ -33,59 +52,6 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 ## 效果演示
 
 示例通过 RTX 4090 GPU 演示，[YouTube 地址](https://www.youtube.com/watch?v=1PWI6F89LPo)
-### 运行环境演示
-
-<p align="center">
-  <img src="./assets/演示.gif" width="600px" />
-</p>
-
-### SQL 插件化执行
-<p align="center">
-  <img src="./assets/auto_sql.gif" width="600px" />
-</p>
-
-### SQL 生成
-
-1. 生成建表语句
-
-<p align="center">
-   <img src="./assets/SQL_Gen_CreateTable.png" width="600px" />
-</p>
-
-2. 生成可运行SQL
-首先选择对应的数据库, 然后模型即可根据对应的数据库 Schema 信息生成 SQL, 运行成功的效果如下面的演示：
-
-<p align="center">
-  <img src="./assets/exeable.png" width="600px" />
-</p>
-
-3. 自动分析执行SQL输出运行结果
-
-<p align="center">
-  <img src="./assets/Auto-DB-GPT.png" width="600px" />
-</p>
-
-### 数据库问答
-
-<p align="center">
-  <img src="./assets/DB_QA.png" width="600px" />
-</p>
-
-
-1. 基于默认内置知识库问答
-
-<p align="center">
-  <img src="./assets/VectorDBQA.png" width="600px" />
-</p>
-
-2. 自己新增知识库
-
-<p align="center">
-  <img src="./assets/new_knownledge.gif" width="600px" />
-</p>
-
-3. 从网络自己爬取数据学习
-- TODO
 
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。 
@@ -147,7 +113,7 @@ TODO: 在终端展示上，我们将提供多端产品界面。包括PC、手机
 
 本项目依赖一个本地的 MySQL 数据库服务，你需要本地安装，推荐直接使用 Docker 安装。
 ```
-docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
+docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa123456 -dit mysql:latest
 ```
 向量数据库我们默认使用的是Chroma内存数据库，所以无需特殊安装，如果有需要连接其他的同学，可以按照我们的教程进行安装配置。整个DB-GPT的安装过程，我们使用的是miniconda3的虚拟环境。创建虚拟环境，并安装python依赖包
 
