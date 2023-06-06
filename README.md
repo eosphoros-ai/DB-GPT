@@ -1,4 +1,5 @@
-# DB-GPT: A LLM Tool for Multi Databases
+# DB-GPT: Revolutionizing Database Interactions with Private LLM Technology
+ 
 <div align="center">
   <p>
     <a href="https://github.com/csunny/DB-GPT">
