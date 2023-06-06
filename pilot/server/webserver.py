@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import signal
 import threading
 import traceback
 import argparse
@@ -651,6 +652,11 @@ def async_db_summery():
     thread = threading.Thread(target=client.init_db_summary)
     thread.start()
 
+def signal_handler(sig, frame):
+    print("in order to avoid chroma db atexit problem")
+    os._exit(0)
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -668,6 +674,7 @@ if __name__ == "__main__":
     cfg = Config()
 
     dbs = cfg.local_db.get_database_list()
+    signal.signal(signal.SIGINT, signal_handler)
     async_db_summery()
     cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
 
