@@ -95,8 +95,20 @@ class GuanacoAdapter(BaseLLMAdaper):
             model_path, load_in_4bit=True, device_map={"": 0}, **from_pretrained_kwargs
         )
         return model, tokenizer
+    
 
+class GorillaAdapter(BaseLLMAdaper):
+    """TODO Support guanaco"""
 
+    def match(self, model_path: str):
+        return "gorilla" in model_path
+
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+        )
+        return model, tokenizer
 
 class CodeGenAdapter(BaseLLMAdaper):
     pass
@@ -138,6 +150,7 @@ class GPT4AllAdapter(BaseLLMAdaper):
 register_llm_model_adapters(VicunaLLMAdapater)
 register_llm_model_adapters(ChatGLMAdapater)
 register_llm_model_adapters(GuanacoAdapter)
+register_llm_model_adapters(GorillaAdapter)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
 register_llm_model_adapters(BaseLLMAdaper)
