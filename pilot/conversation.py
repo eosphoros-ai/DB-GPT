@@ -295,7 +295,7 @@ default_conversation = conv_default
 
 
 chat_mode_title = {
-    "sql_generate_diagnostics": get_lang_text("sql_analysis_and_diagnosis"),
+    "sql_generate_diagnostics": get_lang_text("sql_generate_diagnostics"),
     "chat_use_plugin": get_lang_text("chat_use_plugin"),
     "knowledge_qa": get_lang_text("knowledge_qa"),
 }
