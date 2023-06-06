@@ -1,4 +1,4 @@
-# DB-GPT: 数据库的 LLM 工具
+# DB-GPT: 用私有化LLM技术定义数据库下一代交互方式
 <div align="center">
   <p>
     <a href="https://github.com/csunny/DB-GPT">
