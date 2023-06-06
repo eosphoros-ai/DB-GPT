@@ -17,7 +17,6 @@ from langchain.vectorstores import Chroma
 from pilot.configs.model_config import (
     DATASETS_DIR,
     LLM_MODEL_CONFIG,
-    VECTOR_SEARCH_TOP_K,
     VECTORE_PATH,
 )
 
@@ -41,7 +40,6 @@ class KnownLedge2Vector:
 
     embeddings: object = None
     model_name = LLM_MODEL_CONFIG["sentence-transforms"]
-    top_k: int = VECTOR_SEARCH_TOP_K
 
     def __init__(self, model_name=None) -> None:
         if not model_name:

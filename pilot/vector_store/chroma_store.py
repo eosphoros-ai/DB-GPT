@@ -1,7 +1,6 @@
 import os
 
 from langchain.vectorstores import Chroma
-
 from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.logs import logger
 from pilot.vector_store.vector_store_base import VectorStoreBase
