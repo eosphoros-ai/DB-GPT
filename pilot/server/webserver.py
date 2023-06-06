@@ -246,12 +246,13 @@ def http_bot(
     logger.info(
         f"User message send!{state.conv_id},{selected},{plugin_selector},{mode},{sql_mode},{db_selector},{url_input}"
     )
-    if chat_mode_title["knowledge_qa"] == selected:
-        scene: ChatScene = get_chat_mode(selected, mode)
+    if chat_mode_title["sql_generate_diagnostics"] == selected:
+        scene: ChatScene = get_chat_mode(selected, sql_mode)
     elif chat_mode_title["chat_use_plugin"] == selected:
         scene: ChatScene = get_chat_mode(selected)
     else:
-        scene: ChatScene = get_chat_mode(selected, sql_mode)
+        scene: ChatScene = get_chat_mode(selected, mode)
+
     print(f"chat scene:{scene.value}")
 
     if ChatScene.ChatWithDbExecute == scene:
