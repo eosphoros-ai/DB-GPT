@@ -206,7 +206,13 @@ def post_process_code(code):
 def get_chat_mode(selected, param=None) -> ChatScene:
     if chat_mode_title["chat_use_plugin"] == selected:
         return ChatScene.ChatExecution
-    elif chat_mode_title["knowledge_qa"] == selected:
+    elif  chat_mode_title["sql_generate_diagnostics"] == selected:
+        sql_mode = param
+        if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
+            return ChatScene.ChatWithDbExecute
+        else:
+            return ChatScene.ChatWithDbQA
+    else:
         mode = param
         if mode == conversation_types["default_knownledge"]:
             return ChatScene.ChatKnowledge
@@ -216,12 +222,7 @@ def get_chat_mode(selected, param=None) -> ChatScene:
             return ChatScene.ChatUrlKnowledge
         else:
             return ChatScene.ChatNormal
-    else:
-        sql_mode = param
-        if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
-            return ChatScene.ChatWithDbExecute
-        else:
-            return ChatScene.ChatWithDbQA
+
 
 
 def chatbot_callback(state, message):
