@@ -110,6 +110,7 @@ register_llm_model_chat_adapter(VicunaChatAdapter)
 register_llm_model_chat_adapter(ChatGLMChatAdapter)
 register_llm_model_chat_adapter(GuanacoChatAdapter)
 
+
 # Proxy model for test and develop, it's cheap for us now.
 register_llm_model_chat_adapter(ProxyllmChatAdapter)
 

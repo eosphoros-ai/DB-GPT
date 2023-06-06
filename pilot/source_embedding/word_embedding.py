@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from typing import List
 
-from langchain.document_loaders import PyPDFLoader
+from langchain.document_loaders import PyPDFLoader, UnstructuredWordDocumentLoader
 from langchain.schema import Document
 
 from pilot.configs.config import Config
@@ -12,20 +12,19 @@ from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 CFG = Config()
 
 
-class PDFEmbedding(SourceEmbedding):
-    """pdf embedding for read pdf document."""
+class WordEmbedding(SourceEmbedding):
+    """word embedding for read word document."""
 
     def __init__(self, file_path, vector_store_config):
-        """Initialize with pdf path."""
+        """Initialize with word path."""
         super().__init__(file_path, vector_store_config)
         self.file_path = file_path
         self.vector_store_config = vector_store_config
 
     @register
     def read(self):
-        """Load from pdf path."""
-        # loader = UnstructuredPaddlePDFLoader(self.file_path)
-        loader = PyPDFLoader(self.file_path)
+        """Load from word path."""
+        loader = UnstructuredWordDocumentLoader(self.file_path)
         textsplitter = CHNDocumentSplitter(
             pdf=True, sentence_size=CFG.KNOWLEDGE_CHUNK_SIZE
         )

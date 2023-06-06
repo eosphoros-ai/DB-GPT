@@ -1,4 +1,4 @@
-# DB-GPT: 数据库的 LLM 工具
+# DB-GPT: 用私有化LLM技术定义数据库下一代交互方式
 <div align="center">
   <p>
     <a href="https://github.com/csunny/DB-GPT">
@@ -11,8 +11,6 @@
 
 [**English**](README.md)|[**Discord**](https://discord.gg/ea6BnZkY) 
 </div>
-
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
 ## DB-GPT 是什么？
 
@@ -51,7 +49,22 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 ## 效果演示
 
-示例通过 RTX 4090 GPU 演示，[YouTube 地址](https://www.youtube.com/watch?v=1PWI6F89LPo)
+示例通过 RTX 4090 GPU 演示
+<p align="center">
+  <img src="./assets/演示.gif" width="680px" />
+</p>
+
+<p align="center">
+  <img src="./assets/auto_sql.gif" width="680px" />
+</p>
+
+<p align="center">
+  <img src="./assets/chat_url_zh.gif" width="680px" />
+</p>
+
+<p align="center">
+  <img src="./assets/new_knownledge.gif" width="680px" />
+</p>
 
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。 
@@ -220,3 +233,6 @@ Run the Python interpreter and type the commands:
 ## Licence
 
 The MIT License (MIT)
+
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+

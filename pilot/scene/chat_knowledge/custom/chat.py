@@ -14,7 +14,6 @@ from pilot.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
     LLM_MODEL_CONFIG,
     LOGDIR,
-    VECTOR_SEARCH_TOP_K,
 )
 
 from pilot.scene.chat_knowledge.custom.prompt import prompt
@@ -46,15 +45,13 @@ class ChatNewKnowledge(BaseChat):
             "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         self.knowledge_embedding_client = KnowledgeEmbedding(
-            file_path="",
             model_name=LLM_MODEL_CONFIG["text2vec"],
-            local_persist=False,
             vector_store_config=vector_store_config,
         )
 
     def generate_input_values(self):
         docs = self.knowledge_embedding_client.similar_search(
-            self.current_user_input, VECTOR_SEARCH_TOP_K
+            self.current_user_input, CFG.KNOWLEDGE_SEARCH_TOP_SIZE
         )
         context = [d.page_content for d in docs]
         context = context[:2000]
