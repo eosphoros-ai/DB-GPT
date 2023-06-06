@@ -1,4 +1,5 @@
-# DB-GPT: A LLM Tool for Multi Databases
+# DB-GPT: Revolutionizing Database Interactions with Private LLM Technology
+ 
 <div align="center">
   <p>
     <a href="https://github.com/csunny/DB-GPT">
@@ -11,8 +12,6 @@
 
 [**简体中文**](README.zh.md)|[**Discord**](https://discord.gg/ea6BnZkY) 
 </div>
-
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
 ## What is DB-GPT?
 
@@ -53,7 +52,18 @@ Currently, we have released multiple key features, which are listed below to dem
 
 ## Demo
 
-Run on an RTX 4090 GPU. [YouTube](https://www.youtube.com/watch?v=1PWI6F89LPo)
+Run on an RTX 4090 GPU.
+<p align="center">
+  <img src="./assets/auto_sql_en.gif" width="680px" />
+</p>
+
+<p align="center">
+  <img src="./assets/chaturl_en.gif" width="680px" />
+</p>
+
+<p align="center">
+  <img src="./assets/new_knownledge_en.gif" width="680px" />
+</p>
 
 ## Introduction 
 DB-GPT creates a vast model operating system using [FastChat](https://github.com/lm-sys/FastChat) and offers a large language model powered by [Vicuna](https://huggingface.co/Tribbiani/vicuna-7b). In addition, we provide private domain knowledge base question-answering capability through LangChain. Furthermore, we also provide support for additional plugins, and our design natively supports the Auto-GPT plugin.
@@ -61,7 +71,7 @@ DB-GPT creates a vast model operating system using [FastChat](https://github.com
 Is the architecture of the entire DB-GPT shown in the following figure:
 
 <p align="center">
-  <img src="./assets/DB-GPT.png" width="600px" />
+  <img src="./assets/DB-GPT.png" width="680px" />
 </p>
 
 The core capabilities mainly consist of the following parts:
@@ -216,3 +226,5 @@ The MIT License (MIT)
 
 ## Contact Information
 We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/kMFf77FH)
+
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)

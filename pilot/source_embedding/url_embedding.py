@@ -16,11 +16,10 @@ CFG = Config()
 class URLEmbedding(SourceEmbedding):
     """url embedding for read url document."""
 
-    def __init__(self, file_path, model_name, vector_store_config):
+    def __init__(self, file_path, vector_store_config):
         """Initialize with url path."""
-        super().__init__(file_path, model_name, vector_store_config)
+        super().__init__(file_path, vector_store_config)
         self.file_path = file_path
-        self.model_name = model_name
         self.vector_store_config = vector_store_config
 
     @register
@@ -29,7 +28,7 @@ class URLEmbedding(SourceEmbedding):
         loader = WebBaseLoader(web_path=self.file_path)
         if CFG.LANGUAGE == "en":
             text_splitter = CharacterTextSplitter(
-                chunk_size=KNOWLEDGE_CHUNK_SPLIT_SIZE,
+                chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
                 chunk_overlap=20,
                 length_function=len,
             )
