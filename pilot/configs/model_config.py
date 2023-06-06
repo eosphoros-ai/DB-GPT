@@ -35,6 +35,7 @@ LLM_MODEL_CONFIG = {
     "chatglm-6b": os.path.join(MODEL_PATH, "chatglm-6b"),
     "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
+    "gorilla-7b-tf-delta-v0": os.path.join(MODEL_PATH, "gorilla-7b-tf-delta-v0"), 
 }
 
 # Load model config
