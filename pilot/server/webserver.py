@@ -406,58 +406,6 @@ def build_single_model_ui():
 
     with tabs:
 
-        tab_sql = gr.TabItem(get_lang_text("sql_generate_diagnostics"), elem_id="SQL")
-        with tab_sql:
-            # TODO A selector to choose database
-            with gr.Row(elem_id="db_selector"):
-                db_selector = gr.Dropdown(
-                    label=get_lang_text("please_choose_database"),
-                    choices=dbs,
-                    value=dbs[0] if len(models) > 0 else "",
-                    interactive=True,
-                    show_label=True,
-                ).style(container=False)
-
-            # db_selector.change(fn=db_selector_changed, inputs=db_selector)
-
-            sql_mode = gr.Radio(
-                [
-                    get_lang_text("sql_generate_mode_direct"),
-                    get_lang_text("sql_generate_mode_none"),
-                ],
-                show_label=False,
-                value=get_lang_text("sql_generate_mode_none"),
-            )
-            sql_vs_setting = gr.Markdown(get_lang_text("sql_vs_setting"))
-            sql_mode.change(fn=change_sql_mode, inputs=sql_mode, outputs=sql_vs_setting)
-
-        tab_plugin = gr.TabItem(get_lang_text("chat_use_plugin"), elem_id="PLUGIN")
-        # tab_plugin.select(change_func)
-        with tab_plugin:
-            print("tab_plugin in...")
-            with gr.Row(elem_id="plugin_selector"):
-                # TODO
-                plugin_selector = gr.Dropdown(
-                    label=get_lang_text("select_plugin"),
-                    choices=list(plugins_select_info().keys()),
-                    value="",
-                    interactive=True,
-                    show_label=True,
-                    type="value",
-                ).style(container=False)
-
-                def plugin_change(
-                    evt: gr.SelectData,
-                ):  # SelectData is a subclass of EventData
-                    print(f"You selected {evt.value} at {evt.index} from {evt.target}")
-                    print(f"user plugin:{plugins_select_info().get(evt.value)}")
-                    return plugins_select_info().get(evt.value)
-
-                plugin_selected = gr.Textbox(
-                    show_label=False, visible=False, placeholder="Selected"
-                )
-                plugin_selector.select(plugin_change, None, plugin_selected)
-
         tab_qa = gr.TabItem(get_lang_text("knowledge_qa"), elem_id="QA")
         with tab_qa:
             mode = gr.Radio(
@@ -519,6 +467,59 @@ def build_single_model_ui():
                         load_folder_button = gr.Button(
                             get_lang_text("upload_and_load_to_klg")
                         )
+
+        tab_sql = gr.TabItem(get_lang_text("sql_generate_diagnostics"), elem_id="SQL")
+        with tab_sql:
+            # TODO A selector to choose database
+            with gr.Row(elem_id="db_selector"):
+                db_selector = gr.Dropdown(
+                    label=get_lang_text("please_choose_database"),
+                    choices=dbs,
+                    value=dbs[0] if len(models) > 0 else "",
+                    interactive=True,
+                    show_label=True,
+                ).style(container=False)
+
+            # db_selector.change(fn=db_selector_changed, inputs=db_selector)
+
+            sql_mode = gr.Radio(
+                [
+                    get_lang_text("sql_generate_mode_direct"),
+                    get_lang_text("sql_generate_mode_none"),
+                ],
+                show_label=False,
+                value=get_lang_text("sql_generate_mode_none"),
+            )
+            sql_vs_setting = gr.Markdown(get_lang_text("sql_vs_setting"))
+            sql_mode.change(fn=change_sql_mode, inputs=sql_mode, outputs=sql_vs_setting)
+
+        tab_plugin = gr.TabItem(get_lang_text("chat_use_plugin"), elem_id="PLUGIN")
+        # tab_plugin.select(change_func)
+        with tab_plugin:
+            print("tab_plugin in...")
+            with gr.Row(elem_id="plugin_selector"):
+                # TODO
+                plugin_selector = gr.Dropdown(
+                    label=get_lang_text("select_plugin"),
+                    choices=list(plugins_select_info().keys()),
+                    value="",
+                    interactive=True,
+                    show_label=True,
+                    type="value",
+                ).style(container=False)
+
+                def plugin_change(
+                    evt: gr.SelectData,
+                ):  # SelectData is a subclass of EventData
+                    print(f"You selected {evt.value} at {evt.index} from {evt.target}")
+                    print(f"user plugin:{plugins_select_info().get(evt.value)}")
+                    return plugins_select_info().get(evt.value)
+
+                plugin_selected = gr.Textbox(
+                    show_label=False, visible=False, placeholder="Selected"
+                )
+                plugin_selector.select(plugin_change, None, plugin_selected)
+
 
     with gr.Blocks():
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
