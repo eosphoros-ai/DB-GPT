@@ -207,7 +207,7 @@ def post_process_code(code):
 def get_chat_mode(selected, param=None) -> ChatScene:
     if chat_mode_title["chat_use_plugin"] == selected:
         return ChatScene.ChatExecution
-    elif  chat_mode_title["sql_generate_diagnostics"] == selected:
+    elif chat_mode_title["sql_generate_diagnostics"] == selected:
         sql_mode = param
         if sql_mode == conversation_sql_mode["auto_execute_ai_response"]:
             return ChatScene.ChatWithDbExecute
@@ -223,7 +223,6 @@ def get_chat_mode(selected, param=None) -> ChatScene:
             return ChatScene.ChatUrlKnowledge
         else:
             return ChatScene.ChatNormal
-
 
 
 def chatbot_callback(state, message):
@@ -406,7 +405,6 @@ def build_single_model_ui():
     tabs.select(on_select, None, selected)
 
     with tabs:
-
         tab_qa = gr.TabItem(get_lang_text("knowledge_qa"), elem_id="QA")
         with tab_qa:
             mode = gr.Radio(
@@ -520,7 +518,6 @@ def build_single_model_ui():
                     show_label=False, visible=False, placeholder="Selected"
                 )
                 plugin_selector.select(plugin_change, None, plugin_selected)
-
 
     with gr.Blocks():
         chatbot = grChatbot(elem_id="chatbot", visible=False).style(height=550)
@@ -652,10 +649,10 @@ def async_db_summery():
     thread = threading.Thread(target=client.init_db_summary)
     thread.start()
 
+
 def signal_handler(sig, frame):
     print("in order to avoid chroma db atexit problem")
     os._exit(0)
-
 
 
 if __name__ == "__main__":
