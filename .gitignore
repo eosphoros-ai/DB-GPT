@@ -141,6 +141,7 @@ logs
 nltk_data
 .vectordb
 pilot/data/
+pilot/nltk_data
 
 logswebserver.log.*
 .history/*
