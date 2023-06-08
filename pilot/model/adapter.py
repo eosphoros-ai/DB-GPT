@@ -6,8 +6,10 @@ from typing import List
 from functools import cache
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer, BitsAndBytesConfig
 from pilot.configs.model_config import DEVICE
+from pilot.configs.config import Config
 
 bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype="bfloat16", bnb_4bit_use_double_quant=False)
+CFG = Config()
 
 class BaseLLMAdaper:
     """The Base class for multi model, in our project.
@@ -106,7 +108,8 @@ class FalconAdapater(BaseLLMAdaper):
 
     def loader(self, model_path: str, from_pretrained_kwagrs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-        if QLORA:
+
+        if CFG.QLoRA:
             model = AutoModelForCausalLM.from_pretrained(
                 model_path, 
                 load_in_4bit=True, #quantize
