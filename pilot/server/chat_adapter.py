@@ -116,10 +116,21 @@ class ProxyllmChatAdapter(BaseChatAdpter):
         return proxyllm_generate_stream
 
 
+class GorillaChatAdapter(BaseChatAdpter): 
+
+    def match(self, model_path: str):
+        return "gorilla" in model_path
+
+    def get_generate_stream_func(self):
+        from pilot.model.llm_out.gorilla_llm import generate_stream
+
+        return generate_stream
+
+
 register_llm_model_chat_adapter(VicunaChatAdapter)
 register_llm_model_chat_adapter(ChatGLMChatAdapter)
 register_llm_model_chat_adapter(GuanacoChatAdapter)
-register_llm_model_adapters(FalconChatAdapter)
+register_llm_model_chat_adapter(FalconChatAdapter)
 register_llm_model_chat_adapter(GorillaChatAdapter)
 
 # Proxy model for test and develop, it's cheap for us now.
