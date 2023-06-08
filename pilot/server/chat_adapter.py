@@ -60,20 +60,6 @@ class ChatGLMChatAdapter(BaseChatAdpter):
         return chatglm_generate_stream
 
 
-class GuanacoChatAdapter(BaseChatAdpter):
-    """Model chat adapter for Guanaco"""
-
-    def match(self, model_path: str):
-        return "guanaco" in model_path
-
-    def get_generate_stream_func(self):
-        from pilot.model.llm_out.guanaco_stream_llm import (
-            guanaco_stream_generate_output,
-        )
-
-        return guanaco_generate_output
-
-
 class CodeT5ChatAdapter(BaseChatAdpter):
 
     """Model chat adapter for CodeT5"""
