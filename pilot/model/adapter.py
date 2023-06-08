@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from functools import cache
+
+import torch
 from typing import List
-
-from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer
-
+from functools import cache
+from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer, BitsAndBytesConfig
 from pilot.configs.model_config import DEVICE
 
+bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype="bfloat16", bnb_4bit_use_double_quant=False)
 
 class BaseLLMAdaper:
     """The Base class for multi model, in our project.
@@ -95,19 +96,32 @@ class GuanacoAdapter(BaseLLMAdaper):
             model_path, load_in_4bit=True, device_map={"": 0}, **from_pretrained_kwargs
         )
         return model, tokenizer
-
-
-class GuanacoAdapter(BaseLLMAdaper):
-    """TODO Support guanaco"""
+    
+    
+class FalconAdapater(BaseLLMAdaper):
+    """falcon Adapter"""
 
     def match(self, model_path: str):
-        return "guanaco" in model_path
+        return "falcon" in model_path
 
-    def loader(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = LlamaTokenizer.from_pretrained(model_path)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path, load_in_4bit=True, device_map={"": 0}, **from_pretrained_kwargs
-        )
+    def loader(self, model_path: str, from_pretrained_kwagrs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        if QLORA:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path, 
+                load_in_4bit=True, #quantize
+                quantization_config=bnb_config, 
+                device_map={"": 0}, 
+                trust_remote_code=True, 
+                **from_pretrained_kwagrs
+            )
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path, 
+                trust_remote_code=True,
+                device_map={"": 0},
+                **from_pretrained_kwagrs
+            )
         return model, tokenizer
     
     
@@ -180,6 +194,7 @@ class ProxyllmAdapter(BaseLLMAdaper):
 register_llm_model_adapters(VicunaLLMAdapater)
 register_llm_model_adapters(ChatGLMAdapater)
 register_llm_model_adapters(GuanacoAdapter)
+register_llm_model_adapters(FalconAdapater)
 register_llm_model_adapters(GorillaAdapter)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
