@@ -106,7 +106,7 @@ class FalconAdapater(BaseLLMAdaper):
 
     def loader(self, model_path: str, from_pretrained_kwagrs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-        if QLORA == True:
+        if QLORA:
             model = AutoModelForCausalLM.from_pretrained(
                 model_path, 
                 load_in_4bit=True, #quantize
