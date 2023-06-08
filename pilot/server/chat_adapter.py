@@ -94,6 +94,7 @@ class GuanacoChatAdapter(BaseChatAdpter):
 
         return guanaco_generate_stream
 
+   
 class FalconChatAdapter(BaseChatAdpter):
     """Model chat adapter for Guanaco"""
 
@@ -119,6 +120,7 @@ register_llm_model_chat_adapter(VicunaChatAdapter)
 register_llm_model_chat_adapter(ChatGLMChatAdapter)
 register_llm_model_chat_adapter(GuanacoChatAdapter)
 register_llm_model_adapters(FalconChatAdapter)
+register_llm_model_chat_adapter(GorillaChatAdapter)
 
 # Proxy model for test and develop, it's cheap for us now.
 register_llm_model_chat_adapter(ProxyllmChatAdapter)
