@@ -36,7 +36,7 @@ class Config(metaclass=Singleton):
             " (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36",
         )
 
-        # This is a proxy server, just for test.  we will remove this later.
+        # This is a proxy server, just for test_py.  we will remove this later.
         self.proxy_api_key = os.getenv("PROXY_API_KEY")
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
@@ -112,6 +112,7 @@ class Config(metaclass=Singleton):
 
         ### Local database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST", "127.0.0.1")
+        self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "xx.db")
         self.LOCAL_DB_PORT = int(os.getenv("LOCAL_DB_PORT", 3306))
         self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
