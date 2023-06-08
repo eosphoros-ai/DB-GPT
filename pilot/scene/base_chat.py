@@ -70,10 +70,8 @@ class BaseChat(ABC):
         self.current_user_input: str = current_user_input
         self.llm_model = CFG.LLM_MODEL
         ### can configurable storage methods
-        # self.memory = MemHistoryMemory(chat_session_id)
+        self.memory = MemHistoryMemory(chat_session_id)
 
-        ## TEST
-        self.memory = FileHistoryMemory(chat_session_id)
         ### load prompt template
         self.prompt_template: PromptTemplate = CFG.prompt_templates[
             self.chat_mode.value
