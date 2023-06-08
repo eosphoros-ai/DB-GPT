@@ -4,12 +4,24 @@
 import torch
 from typing import List
 from functools import cache
-from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer, BitsAndBytesConfig
+from transformers import (
+    AutoModel,
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    LlamaTokenizer,
+    BitsAndBytesConfig,
+)
 from pilot.configs.model_config import DEVICE
 from pilot.configs.config import Config
 
-bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype="bfloat16", bnb_4bit_use_double_quant=False)
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype="bfloat16",
+    bnb_4bit_use_double_quant=False,
+)
 CFG = Config()
+
 
 class BaseLLMAdaper:
     """The Base class for multi model, in our project.
@@ -98,8 +110,8 @@ class GuanacoAdapter(BaseLLMAdaper):
             model_path, load_in_4bit=True, device_map={"": 0}, **from_pretrained_kwargs
         )
         return model, tokenizer
-    
-    
+
+
 class FalconAdapater(BaseLLMAdaper):
     """falcon Adapter"""
 
@@ -111,23 +123,23 @@ class FalconAdapater(BaseLLMAdaper):
 
         if CFG.QLoRA:
             model = AutoModelForCausalLM.from_pretrained(
-                model_path, 
-                load_in_4bit=True, #quantize
-                quantization_config=bnb_config, 
-                device_map={"": 0}, 
-                trust_remote_code=True, 
-                **from_pretrained_kwagrs
+                model_path,
+                load_in_4bit=True,  # quantize
+                quantization_config=bnb_config,
+                device_map={"": 0},
+                trust_remote_code=True,
+                **from_pretrained_kwagrs,
             )
         else:
             model = AutoModelForCausalLM.from_pretrained(
-                model_path, 
+                model_path,
                 trust_remote_code=True,
                 device_map={"": 0},
-                **from_pretrained_kwagrs
+                **from_pretrained_kwagrs,
             )
         return model, tokenizer
-    
-    
+
+
 class GorillaAdapter(BaseLLMAdaper):
     """TODO Support guanaco"""
 
