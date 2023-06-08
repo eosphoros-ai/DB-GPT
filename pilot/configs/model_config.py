@@ -35,13 +35,14 @@ LLM_MODEL_CONFIG = {
     "chatglm-6b": os.path.join(MODEL_PATH, "chatglm-6b"),
     "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
+    "falcon-40b": os.path.join(MODEL_PATH, "falcon-40b"),
+    "gorilla-7b": os.path.join(MODEL_PATH, "gorilla-7b"),
     "proxyllm": "proxyllm",
 }
 
 # Load model config
 ISLOAD_8BIT = True
 ISDEBUG = False
-
 
 VECTOR_SEARCH_TOP_K = 10
 VS_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vs_store")
