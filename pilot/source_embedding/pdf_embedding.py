@@ -4,10 +4,10 @@ from typing import List
 
 from langchain.document_loaders import PyPDFLoader
 from langchain.schema import Document
+from langchain.text_splitter import SpacyTextSplitter
 
 from pilot.configs.config import Config
 from pilot.source_embedding import SourceEmbedding, register
-from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
 
 CFG = Config()
 
@@ -24,10 +24,12 @@ class PDFEmbedding(SourceEmbedding):
     @register
     def read(self):
         """Load from pdf path."""
-        # loader = UnstructuredPaddlePDFLoader(self.file_path)
         loader = PyPDFLoader(self.file_path)
-        textsplitter = CHNDocumentSplitter(
-            pdf=True, sentence_size=CFG.KNOWLEDGE_CHUNK_SIZE
+        # textsplitter = CHNDocumentSplitter(
+        #     pdf=True, sentence_size=CFG.KNOWLEDGE_CHUNK_SIZE
+        # )
+        textsplitter = SpacyTextSplitter(
+            pipeline="zh_core_web_sm", chunk_size=1000, chunk_overlap=200
         )
         return loader.load_and_split(textsplitter)
 
