@@ -1,0 +1,1145 @@
+2023-06-06 09:47:08 | INFO | webserver | args: Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 09:47:08 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 09:47:08 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 09:47:08 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 09:47:08 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 09:47:08 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 09:47:08 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 09:47:08 | INFO | stdout | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server
+2023-06-06 09:47:08 | INFO | stdout |  [0m Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 09:47:08 | DEBUG | LOGGER | Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 09:47:08 | INFO | stdout |  [0m Denylisted Plugins: []
+2023-06-06 09:47:08 | DEBUG | LOGGER | Denylisted Plugins: []
+2023-06-06 09:47:08 | INFO | stdout |  [0m Found module 'Db-GPT-SimpleChart-Plugin/src/simplechart/__init__.py' in the zipfile at: Db-GPT-SimpleChart-Plugin/src/simplechart/__init__.py
+2023-06-06 09:47:08 | DEBUG | LOGGER | Found module 'Db-GPT-SimpleChart-Plugin/src/simplechart/__init__.py' in the zipfile at: Db-GPT-SimpleChart-Plugin/src/simplechart/__init__.py
+2023-06-06 09:47:08 | INFO | stdout |  [0m Plugin: ../../plugins/Db-GPT-SimpleChart-Plugin.zip Module: Db-GPT-SimpleChart-Plugin/src/simplechart/__init__.py
+2023-06-06 09:47:08 | DEBUG | LOGGER | Plugin: ../../plugins/Db-GPT-SimpleChart-Plugin.zip Module: Db-GPT-SimpleChart-Plugin/src/simplechart/__init__.py
+2023-06-06 09:47:08 | INFO | stdout |  [0m Checking if plugin DbGPTSimpleChart should be loaded
+2023-06-06 09:47:08 | DEBUG | LOGGER | Checking if plugin DbGPTSimpleChart should be loaded
+2023-06-06 09:47:08 | INFO | stdout |  [0m Loading plugin DbGPTSimpleChart as it was in the allowlist.
+2023-06-06 09:47:08 | DEBUG | LOGGER | Loading plugin DbGPTSimpleChart as it was in the allowlist.
+2023-06-06 09:47:08 | INFO | stdout |  [0m Found module 'Auto-GPT-TiDB-Serverless-Plugin/src/tidb/__init__.py' in the zipfile at: Auto-GPT-TiDB-Serverless-Plugin/src/tidb/__init__.py
+2023-06-06 09:47:08 | DEBUG | LOGGER | Found module 'Auto-GPT-TiDB-Serverless-Plugin/src/tidb/__init__.py' in the zipfile at: Auto-GPT-TiDB-Serverless-Plugin/src/tidb/__init__.py
+2023-06-06 09:47:08 | INFO | stdout |  [0m Plugin: ../../plugins/Auto-GPT-TiDB-Serverless-Plugin.zip Module: Auto-GPT-TiDB-Serverless-Plugin/src/tidb/__init__.py
+2023-06-06 09:47:08 | DEBUG | LOGGER | Plugin: ../../plugins/Auto-GPT-TiDB-Serverless-Plugin.zip Module: Auto-GPT-TiDB-Serverless-Plugin/src/tidb/__init__.py
+2023-06-06 09:47:08 | INFO | stdout |  [0m Checking if plugin AutoGPTTiDB should be loaded
+2023-06-06 09:47:08 | DEBUG | LOGGER | Checking if plugin AutoGPTTiDB should be loaded
+2023-06-06 09:47:08 | INFO | stdout |  [0m Loading plugin AutoGPTTiDB as it was in the allowlist.
+2023-06-06 09:47:08 | DEBUG | LOGGER | Loading plugin AutoGPTTiDB as it was in the allowlist.
+2023-06-06 09:47:08 | INFO | stdout |  [0m
+2023-06-06 09:47:08 | INFO | stdout | Plugins found: 2
+2023-06-06 09:47:08 | INFO | stdout | --------------------
+2023-06-06 09:47:08 | INFO | LOGGER | 
+Plugins found: 2
+--------------------
+2023-06-06 09:47:08 | INFO | stdout |  [0m Db-GPT-SimpleChart-Template: 0.1.0 - This is a AutoGPT plugin  to reveal simple chart.
+2023-06-06 09:47:08 | INFO | LOGGER | Db-GPT-SimpleChart-Template: 0.1.0 - This is a AutoGPT plugin  to reveal simple chart.
+2023-06-06 09:47:08 | INFO | stdout |  [0m Auto-GPT-TiDB-Serverless-Plugin: 0.1.0 - This is an AutoGPT plugin to connect TIDB.
+2023-06-06 09:47:08 | INFO | LOGGER | Auto-GPT-TiDB-Serverless-Plugin: 0.1.0 - This is an AutoGPT plugin to connect TIDB.
+2023-06-06 09:47:08 | INFO | webserver | Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 09:47:10 | INFO | stdout | tab_plugin in...
+2023-06-06 09:47:10 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'allow_flagged_uploads': True}
+2023-06-06 09:47:10 | ERROR | stderr |   warnings.warn(
+2023-06-06 09:47:10 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'accept_multiple_files': True}
+2023-06-06 09:47:10 | ERROR | stderr |   warnings.warn(
+2023-06-06 09:47:10 | INFO | stdout | Running on local URL:  http://0.0.0.0:7860
+2023-06-06 09:47:10 | INFO | stdout | 
+2023-06-06 09:47:10 | INFO | stdout | To create a public link, set `share=True` in `launch()`.
+2023-06-06 09:47:13 | INFO | webserver | load_demo. ip: 127.0.0.1. params: {'__theme': 'dark'}
+2023-06-06 09:47:15 | INFO | stdout | You selected Plugin Mode at 1 from <gradio.layouts.Tabs object at 0x285a798a0>
+2023-06-06 09:47:16 | INFO | stdout | You selected Documents QA at 2 from <gradio.layouts.Tabs object at 0x285a798a0>
+2023-06-06 09:47:17 | INFO | stdout | You selected SQL Generation & Diagnostics at 0 from <gradio.layouts.Tabs object at 0x285a798a0>
+2023-06-06 09:55:34 | INFO | stdout | Keyboard interruption in main thread... closing server.
+2023-06-06 10:02:19 | INFO | webserver | args: Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:02:19 | INFO | stdout | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server
+2023-06-06 10:02:19 | INFO | stdout |  [0m Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:02:19 | DEBUG | LOGGER | Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:02:19 | INFO | stdout |  [0m Denylisted Plugins: []
+2023-06-06 10:02:19 | DEBUG | LOGGER | Denylisted Plugins: []
+2023-06-06 10:02:19 | INFO | webserver | Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [cached since 0.02205s ago] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [cached since 0.02205s ago] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00013s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00013s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00014s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00014s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 10:02:19 | ERROR | stderr | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/common/sql_database.py:142: UserWarning: This method is deprecated - please use `get_usable_table_names`.
+2023-06-06 10:02:19 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00014s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00014s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00013s] {}
+2023-06-06 10:02:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00013s] {}
+2023-06-06 10:02:20 | INFO | stdout | tab_plugin in...
+2023-06-06 10:02:20 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'allow_flagged_uploads': True}
+2023-06-06 10:02:20 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:02:20 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'accept_multiple_files': True}
+2023-06-06 10:02:20 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:02:21 | INFO | stdout | Running on local URL:  http://0.0.0.0:7860
+2023-06-06 10:02:21 | INFO | stdout | 
+2023-06-06 10:02:21 | INFO | stdout | To create a public link, set `share=True` in `launch()`.
+2023-06-06 10:02:22 | ERROR | stderr | Exception in thread Thread-2 (init_db_summary):
+2023-06-06 10:02:22 | ERROR | stderr | Traceback (most recent call last):
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
+2023-06-06 10:02:22 | ERROR | stderr |     self.run()
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/threading.py", line 953, in run
+2023-06-06 10:02:22 | ERROR | stderr |     self._target(*self._args, **self._kwargs)
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/summary/db_summary_client.py", line 113, in init_db_summary
+2023-06-06 10:02:22 | ERROR | stderr |     self.db_summary_embedding(dbname)
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/summary/db_summary_client.py", line 38, in db_summary_embedding
+2023-06-06 10:02:22 | ERROR | stderr |     embedding = StringEmbedding(
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/string_embedding.py", line 13, in __init__
+2023-06-06 10:02:22 | ERROR | stderr |     super().__init__(file_path, vector_store_config)
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/source_embedding.py", line 34, in __init__
+2023-06-06 10:02:22 | ERROR | stderr |     self.vector_client = VectorStoreConnector(
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/connector.py", line 15, in __init__
+2023-06-06 10:02:22 | ERROR | stderr |     self.client = self.connector_class(ctx)
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/chroma_store.py", line 19, in __init__
+2023-06-06 10:02:22 | ERROR | stderr |     self.vector_store_client = Chroma(
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/langchain/vectorstores/chroma.py", line 82, in __init__
+2023-06-06 10:02:22 | ERROR | stderr |     self._client = chromadb.Client(self._client_settings)
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/__init__.py", line 94, in Client
+2023-06-06 10:02:22 | ERROR | stderr |     return chromadb.api.local.LocalAPI(settings, get_db(settings), telemetry_client)
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/__init__.py", line 49, in get_db
+2023-06-06 10:02:22 | ERROR | stderr |     import chromadb.db.duckdb
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/duckdb.py", line 3, in <module>
+2023-06-06 10:02:22 | ERROR | stderr |     from chromadb.db.clickhouse import (
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/clickhouse.py", line 11, in <module>
+2023-06-06 10:02:22 | ERROR | stderr |     from chromadb.db.index.hnswlib import Hnswlib, delete_all_indexes
+2023-06-06 10:02:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/index/hnswlib.py", line 7, in <module>
+2023-06-06 10:02:22 | ERROR | stderr |     import hnswlib
+2023-06-06 10:02:22 | ERROR | stderr | ImportError: dlopen(/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so, 0x0002): tried: '/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (mach-o file, but is an incompatible architecture (have 'x86_64', need 'arm64')), '/System/Volumes/Preboot/Cryptexes/OS/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (no such file), '/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (mach-o file, but is an incompatible architecture (have 'x86_64', need 'arm64'))
+2023-06-06 10:05:24 | INFO | stdout | Keyboard interruption in main thread... closing server.
+2023-06-06 10:05:28 | INFO | webserver | args: Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:05:28 | INFO | stdout | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server
+2023-06-06 10:05:28 | INFO | stdout |  [0m Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:05:28 | DEBUG | LOGGER | Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:05:28 | INFO | stdout |  [0m Denylisted Plugins: []
+2023-06-06 10:05:28 | DEBUG | LOGGER | Denylisted Plugins: []
+2023-06-06 10:05:28 | INFO | stdout |  [0m Found module 'DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py' in the zipfile at: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:05:28 | DEBUG | LOGGER | Found module 'DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py' in the zipfile at: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:05:28 | INFO | stdout |  [0m Plugin: ../../plugins/DB-GPT-Plugin-ByteBase.zip Module: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:05:28 | DEBUG | LOGGER | Plugin: ../../plugins/DB-GPT-Plugin-ByteBase.zip Module: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:05:28 | INFO | stdout |  [0m Checking if plugin DBGPTByteBasePlugin should be loaded
+2023-06-06 10:05:28 | DEBUG | LOGGER | Checking if plugin DBGPTByteBasePlugin should be loaded
+2023-06-06 10:05:28 | INFO | stdout |  [0m Loading plugin DBGPTByteBasePlugin as it was in the allowlist.
+2023-06-06 10:05:28 | DEBUG | LOGGER | Loading plugin DBGPTByteBasePlugin as it was in the allowlist.
+2023-06-06 10:05:28 | INFO | stdout |  [0m
+2023-06-06 10:05:28 | INFO | stdout | Plugins found: 1
+2023-06-06 10:05:28 | INFO | stdout | --------------------
+2023-06-06 10:05:28 | INFO | LOGGER | 
+Plugins found: 1
+--------------------
+2023-06-06 10:05:28 | INFO | stdout |  [0m DB-GPT-ByteBase-Plugin: 0.1.0 - This is a DB-GPT plugins, provide service capability to operate bytebase.
+2023-06-06 10:05:28 | INFO | LOGGER | DB-GPT-ByteBase-Plugin: 0.1.0 - This is a DB-GPT plugins, provide service capability to operate bytebase.
+2023-06-06 10:05:28 | INFO | webserver | Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | [cached since 0.01591s ago] {}
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | [cached since 0.01591s ago] {}
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 10:05:28 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00017s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00017s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:05:29 | ERROR | stderr | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/common/sql_database.py:142: UserWarning: This method is deprecated - please use `get_usable_table_names`.
+2023-06-06 10:05:29 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:05:29 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:05:30 | INFO | stdout | tab_plugin in...
+2023-06-06 10:05:30 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'allow_flagged_uploads': True}
+2023-06-06 10:05:30 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:05:30 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'accept_multiple_files': True}
+2023-06-06 10:05:30 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:05:30 | INFO | stdout | Running on local URL:  http://0.0.0.0:7860
+2023-06-06 10:05:30 | INFO | stdout | 
+2023-06-06 10:05:30 | INFO | stdout | To create a public link, set `share=True` in `launch()`.
+2023-06-06 10:05:32 | ERROR | stderr | Exception in thread Thread-2 (init_db_summary):
+2023-06-06 10:05:32 | ERROR | stderr | Traceback (most recent call last):
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
+2023-06-06 10:05:32 | ERROR | stderr |     self.run()
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/threading.py", line 953, in run
+2023-06-06 10:05:32 | ERROR | stderr |     self._target(*self._args, **self._kwargs)
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/summary/db_summary_client.py", line 113, in init_db_summary
+2023-06-06 10:05:32 | ERROR | stderr |     self.db_summary_embedding(dbname)
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/summary/db_summary_client.py", line 38, in db_summary_embedding
+2023-06-06 10:05:32 | ERROR | stderr |     embedding = StringEmbedding(
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/string_embedding.py", line 13, in __init__
+2023-06-06 10:05:32 | ERROR | stderr |     super().__init__(file_path, vector_store_config)
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/source_embedding.py", line 34, in __init__
+2023-06-06 10:05:32 | ERROR | stderr |     self.vector_client = VectorStoreConnector(
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/connector.py", line 15, in __init__
+2023-06-06 10:05:32 | ERROR | stderr |     self.client = self.connector_class(ctx)
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/chroma_store.py", line 19, in __init__
+2023-06-06 10:05:32 | ERROR | stderr |     self.vector_store_client = Chroma(
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/langchain/vectorstores/chroma.py", line 82, in __init__
+2023-06-06 10:05:32 | ERROR | stderr |     self._client = chromadb.Client(self._client_settings)
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/__init__.py", line 94, in Client
+2023-06-06 10:05:32 | ERROR | stderr |     return chromadb.api.local.LocalAPI(settings, get_db(settings), telemetry_client)
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/__init__.py", line 49, in get_db
+2023-06-06 10:05:32 | ERROR | stderr |     import chromadb.db.duckdb
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/duckdb.py", line 3, in <module>
+2023-06-06 10:05:32 | ERROR | stderr |     from chromadb.db.clickhouse import (
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/clickhouse.py", line 11, in <module>
+2023-06-06 10:05:32 | ERROR | stderr |     from chromadb.db.index.hnswlib import Hnswlib, delete_all_indexes
+2023-06-06 10:05:32 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/index/hnswlib.py", line 7, in <module>
+2023-06-06 10:05:32 | ERROR | stderr |     import hnswlib
+2023-06-06 10:05:32 | ERROR | stderr | ImportError: dlopen(/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so, 0x0002): tried: '/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (mach-o file, but is an incompatible architecture (have 'x86_64', need 'arm64')), '/System/Volumes/Preboot/Cryptexes/OS/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (no such file), '/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (mach-o file, but is an incompatible architecture (have 'x86_64', need 'arm64'))
+2023-06-06 10:05:57 | INFO | stdout | Keyboard interruption in main thread... closing server.
+2023-06-06 10:09:36 | INFO | webserver | args: Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:09:36 | INFO | stdout | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server
+2023-06-06 10:09:36 | INFO | stdout |  [0m Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:09:36 | DEBUG | LOGGER | Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:09:36 | INFO | stdout |  [0m Denylisted Plugins: []
+2023-06-06 10:09:36 | DEBUG | LOGGER | Denylisted Plugins: []
+2023-06-06 10:09:36 | INFO | stdout |  [0m Found module 'DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py' in the zipfile at: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:09:36 | DEBUG | LOGGER | Found module 'DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py' in the zipfile at: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:09:36 | INFO | stdout |  [0m Plugin: ../../plugins/DB-GPT-Plugin-ByteBase.zip Module: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:09:36 | DEBUG | LOGGER | Plugin: ../../plugins/DB-GPT-Plugin-ByteBase.zip Module: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:09:36 | INFO | stdout |  [0m Checking if plugin DBGPTByteBasePlugin should be loaded
+2023-06-06 10:09:36 | DEBUG | LOGGER | Checking if plugin DBGPTByteBasePlugin should be loaded
+2023-06-06 10:09:36 | INFO | stdout |  [0m Loading plugin DBGPTByteBasePlugin as it was in the allowlist.
+2023-06-06 10:09:36 | DEBUG | LOGGER | Loading plugin DBGPTByteBasePlugin as it was in the allowlist.
+2023-06-06 10:09:36 | INFO | stdout |  [0m
+2023-06-06 10:09:36 | INFO | stdout | Plugins found: 1
+2023-06-06 10:09:36 | INFO | stdout | --------------------
+2023-06-06 10:09:36 | INFO | LOGGER | 
+Plugins found: 1
+--------------------
+2023-06-06 10:09:36 | INFO | stdout |  [0m DB-GPT-ByteBase-Plugin: 0.1.0 - This is a DB-GPT plugins, provide service capability to operate bytebase.
+2023-06-06 10:09:36 | INFO | LOGGER | DB-GPT-ByteBase-Plugin: 0.1.0 - This is a DB-GPT plugins, provide service capability to operate bytebase.
+2023-06-06 10:09:36 | INFO | webserver | Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [cached since 0.01701s ago] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [cached since 0.01701s ago] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00013s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00013s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00006s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00006s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00006s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00006s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00006s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00006s] {}
+2023-06-06 10:09:36 | ERROR | stderr | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/common/sql_database.py:142: UserWarning: This method is deprecated - please use `get_usable_table_names`.
+2023-06-06 10:09:36 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00006s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00006s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00006s] {}
+2023-06-06 10:09:36 | INFO | sqlalchemy.engine.Engine | [generated in 0.00006s] {}
+2023-06-06 10:09:37 | INFO | stdout | tab_plugin in...
+2023-06-06 10:09:37 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'allow_flagged_uploads': True}
+2023-06-06 10:09:37 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:09:37 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'accept_multiple_files': True}
+2023-06-06 10:09:37 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:09:38 | INFO | stdout | Running on local URL:  http://0.0.0.0:7860
+2023-06-06 10:09:38 | INFO | stdout | 
+2023-06-06 10:09:38 | INFO | stdout | To create a public link, set `share=True` in `launch()`.
+2023-06-06 10:09:39 | ERROR | stderr | Exception in thread Thread-2 (init_db_summary):
+2023-06-06 10:09:39 | ERROR | stderr | Traceback (most recent call last):
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
+2023-06-06 10:09:39 | ERROR | stderr |     self.run()
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/threading.py", line 953, in run
+2023-06-06 10:09:39 | ERROR | stderr |     self._target(*self._args, **self._kwargs)
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/summary/db_summary_client.py", line 113, in init_db_summary
+2023-06-06 10:09:39 | ERROR | stderr |     self.db_summary_embedding(dbname)
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/summary/db_summary_client.py", line 38, in db_summary_embedding
+2023-06-06 10:09:39 | ERROR | stderr |     embedding = StringEmbedding(
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/string_embedding.py", line 13, in __init__
+2023-06-06 10:09:39 | ERROR | stderr |     super().__init__(file_path, vector_store_config)
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/source_embedding.py", line 34, in __init__
+2023-06-06 10:09:39 | ERROR | stderr |     self.vector_client = VectorStoreConnector(
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/connector.py", line 15, in __init__
+2023-06-06 10:09:39 | ERROR | stderr |     self.client = self.connector_class(ctx)
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/chroma_store.py", line 18, in __init__
+2023-06-06 10:09:39 | ERROR | stderr |     self.vector_store_client = Chroma(
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/langchain/vectorstores/chroma.py", line 82, in __init__
+2023-06-06 10:09:39 | ERROR | stderr |     self._client = chromadb.Client(self._client_settings)
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/__init__.py", line 94, in Client
+2023-06-06 10:09:39 | ERROR | stderr |     return chromadb.api.local.LocalAPI(settings, get_db(settings), telemetry_client)
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/__init__.py", line 49, in get_db
+2023-06-06 10:09:39 | ERROR | stderr |     import chromadb.db.duckdb
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/duckdb.py", line 3, in <module>
+2023-06-06 10:09:39 | ERROR | stderr |     from chromadb.db.clickhouse import (
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/clickhouse.py", line 11, in <module>
+2023-06-06 10:09:39 | ERROR | stderr |     from chromadb.db.index.hnswlib import Hnswlib, delete_all_indexes
+2023-06-06 10:09:39 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/index/hnswlib.py", line 7, in <module>
+2023-06-06 10:09:39 | ERROR | stderr |     import hnswlib
+2023-06-06 10:09:39 | ERROR | stderr | ImportError: dlopen(/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so, 0x0002): tried: '/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (mach-o file, but is an incompatible architecture (have 'x86_64', need 'arm64')), '/System/Volumes/Preboot/Cryptexes/OS/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (no such file), '/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (mach-o file, but is an incompatible architecture (have 'x86_64', need 'arm64'))
+2023-06-06 10:34:05 | INFO | webserver | load_demo. ip: 127.0.0.1. params: {'__theme': 'dark'}
+2023-06-06 10:36:19 | INFO | stdout | Keyboard interruption in main thread... closing server.
+2023-06-06 10:36:24 | INFO | webserver | args: Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:36:24 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:36:24 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:36:24 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:36:24 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:36:24 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:36:24 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:36:24 | INFO | stdout | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server
+2023-06-06 10:36:24 | INFO | stdout |  [0m Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:36:24 | DEBUG | LOGGER | Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:36:24 | INFO | stdout |  [0m Denylisted Plugins: []
+2023-06-06 10:36:24 | DEBUG | LOGGER | Denylisted Plugins: []
+2023-06-06 10:36:24 | INFO | webserver | Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:36:25 | INFO | stdout | tab_plugin in...
+2023-06-06 10:36:25 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'allow_flagged_uploads': True}
+2023-06-06 10:36:25 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:36:25 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'accept_multiple_files': True}
+2023-06-06 10:36:25 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:36:26 | INFO | stdout | Running on local URL:  http://0.0.0.0:7860
+2023-06-06 10:36:26 | INFO | stdout | 
+2023-06-06 10:36:26 | INFO | stdout | To create a public link, set `share=True` in `launch()`.
+2023-06-06 10:38:15 | INFO | stdout | Keyboard interruption in main thread... closing server.
+2023-06-06 10:38:19 | INFO | webserver | args: Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:38:19 | INFO | stdout | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server
+2023-06-06 10:38:19 | INFO | stdout |  [0m Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:38:19 | DEBUG | LOGGER | Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:38:19 | INFO | stdout |  [0m Denylisted Plugins: []
+2023-06-06 10:38:19 | DEBUG | LOGGER | Denylisted Plugins: []
+2023-06-06 10:38:19 | INFO | stdout |  [0m Found module 'DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py' in the zipfile at: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:38:19 | DEBUG | LOGGER | Found module 'DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py' in the zipfile at: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:38:19 | INFO | stdout |  [0m Plugin: ../../plugins/DB-GPT-Plugin-ByteBase.zip Module: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:38:19 | DEBUG | LOGGER | Plugin: ../../plugins/DB-GPT-Plugin-ByteBase.zip Module: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:38:19 | INFO | stdout |  [0m Checking if plugin DBGPTByteBasePlugin should be loaded
+2023-06-06 10:38:19 | DEBUG | LOGGER | Checking if plugin DBGPTByteBasePlugin should be loaded
+2023-06-06 10:38:19 | INFO | stdout |  [0m Loading plugin DBGPTByteBasePlugin as it was in the allowlist.
+2023-06-06 10:38:19 | DEBUG | LOGGER | Loading plugin DBGPTByteBasePlugin as it was in the allowlist.
+2023-06-06 10:38:19 | INFO | stdout |  [0m
+2023-06-06 10:38:19 | INFO | stdout | Plugins found: 1
+2023-06-06 10:38:19 | INFO | stdout | --------------------
+2023-06-06 10:38:19 | INFO | LOGGER | 
+Plugins found: 1
+--------------------
+2023-06-06 10:38:19 | INFO | stdout |  [0m DB-GPT-ByteBase-Plugin: 0.1.0 - This is a DB-GPT plugins, provide service capability to operate bytebase.
+2023-06-06 10:38:19 | INFO | LOGGER | DB-GPT-ByteBase-Plugin: 0.1.0 - This is a DB-GPT plugins, provide service capability to operate bytebase.
+2023-06-06 10:38:19 | INFO | webserver | Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [cached since 0.01556s ago] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [cached since 0.01556s ago] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:38:19 | ERROR | stderr | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/common/sql_database.py:142: UserWarning: This method is deprecated - please use `get_usable_table_names`.
+2023-06-06 10:38:19 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 10:38:19 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 10:38:20 | INFO | stdout | tab_plugin in...
+2023-06-06 10:38:20 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'allow_flagged_uploads': True}
+2023-06-06 10:38:20 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:38:20 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'accept_multiple_files': True}
+2023-06-06 10:38:20 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:38:20 | INFO | stdout | Running on local URL:  http://0.0.0.0:7860
+2023-06-06 10:38:20 | INFO | stdout | 
+2023-06-06 10:38:20 | INFO | stdout | To create a public link, set `share=True` in `launch()`.
+2023-06-06 10:38:22 | ERROR | stderr | Exception in thread Thread-2 (init_db_summary):
+2023-06-06 10:38:22 | ERROR | stderr | Traceback (most recent call last):
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
+2023-06-06 10:38:22 | ERROR | stderr |     self.run()
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/threading.py", line 953, in run
+2023-06-06 10:38:22 | ERROR | stderr |     self._target(*self._args, **self._kwargs)
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/summary/db_summary_client.py", line 113, in init_db_summary
+2023-06-06 10:38:22 | ERROR | stderr |     self.db_summary_embedding(dbname)
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/summary/db_summary_client.py", line 38, in db_summary_embedding
+2023-06-06 10:38:22 | ERROR | stderr |     embedding = StringEmbedding(
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/string_embedding.py", line 13, in __init__
+2023-06-06 10:38:22 | ERROR | stderr |     super().__init__(file_path, vector_store_config)
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/source_embedding.py", line 34, in __init__
+2023-06-06 10:38:22 | ERROR | stderr |     self.vector_client = VectorStoreConnector(
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/connector.py", line 15, in __init__
+2023-06-06 10:38:22 | ERROR | stderr |     self.client = self.connector_class(ctx)
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/chroma_store.py", line 18, in __init__
+2023-06-06 10:38:22 | ERROR | stderr |     self.vector_store_client = Chroma(
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/langchain/vectorstores/chroma.py", line 82, in __init__
+2023-06-06 10:38:22 | ERROR | stderr |     self._client = chromadb.Client(self._client_settings)
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/__init__.py", line 94, in Client
+2023-06-06 10:38:22 | ERROR | stderr |     return chromadb.api.local.LocalAPI(settings, get_db(settings), telemetry_client)
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/__init__.py", line 49, in get_db
+2023-06-06 10:38:22 | ERROR | stderr |     import chromadb.db.duckdb
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/duckdb.py", line 3, in <module>
+2023-06-06 10:38:22 | ERROR | stderr |     from chromadb.db.clickhouse import (
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/clickhouse.py", line 11, in <module>
+2023-06-06 10:38:22 | ERROR | stderr |     from chromadb.db.index.hnswlib import Hnswlib, delete_all_indexes
+2023-06-06 10:38:22 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/db/index/hnswlib.py", line 7, in <module>
+2023-06-06 10:38:22 | ERROR | stderr |     import hnswlib
+2023-06-06 10:38:22 | ERROR | stderr | ImportError: dlopen(/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so, 0x0002): tried: '/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (mach-o file, but is an incompatible architecture (have 'x86_64', need 'arm64')), '/System/Volumes/Preboot/Cryptexes/OS/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (no such file), '/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/hnswlib.cpython-310-darwin.so' (mach-o file, but is an incompatible architecture (have 'x86_64', need 'arm64'))
+2023-06-06 10:40:22 | INFO | stdout | Keyboard interruption in main thread... closing server.
+2023-06-06 10:40:26 | INFO | webserver | args: Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:40:26 | INFO | stdout | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server
+2023-06-06 10:40:26 | INFO | stdout |  [0m Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:40:26 | DEBUG | LOGGER | Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 10:40:26 | INFO | stdout |  [0m Denylisted Plugins: []
+2023-06-06 10:40:26 | DEBUG | LOGGER | Denylisted Plugins: []
+2023-06-06 10:40:26 | INFO | stdout |  [0m Found module 'DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py' in the zipfile at: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:40:26 | DEBUG | LOGGER | Found module 'DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py' in the zipfile at: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:40:26 | INFO | stdout |  [0m Plugin: ../../plugins/DB-GPT-Plugin-ByteBase.zip Module: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:40:26 | DEBUG | LOGGER | Plugin: ../../plugins/DB-GPT-Plugin-ByteBase.zip Module: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 10:40:26 | INFO | stdout |  [0m Checking if plugin DBGPTByteBasePlugin should be loaded
+2023-06-06 10:40:26 | DEBUG | LOGGER | Checking if plugin DBGPTByteBasePlugin should be loaded
+2023-06-06 10:40:26 | INFO | stdout |  [0m Loading plugin DBGPTByteBasePlugin as it was in the allowlist.
+2023-06-06 10:40:26 | DEBUG | LOGGER | Loading plugin DBGPTByteBasePlugin as it was in the allowlist.
+2023-06-06 10:40:26 | INFO | stdout |  [0m
+2023-06-06 10:40:26 | INFO | stdout | Plugins found: 1
+2023-06-06 10:40:26 | INFO | stdout | --------------------
+2023-06-06 10:40:26 | INFO | LOGGER | 
+Plugins found: 1
+--------------------
+2023-06-06 10:40:26 | INFO | stdout |  [0m DB-GPT-ByteBase-Plugin: 0.1.0 - This is a DB-GPT plugins, provide service capability to operate bytebase.
+2023-06-06 10:40:26 | INFO | LOGGER | DB-GPT-ByteBase-Plugin: 0.1.0 - This is a DB-GPT plugins, provide service capability to operate bytebase.
+2023-06-06 10:40:26 | INFO | webserver | Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [cached since 0.02028s ago] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [cached since 0.02028s ago] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:40:26 | ERROR | stderr | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/common/sql_database.py:142: UserWarning: This method is deprecated - please use `get_usable_table_names`.
+2023-06-06 10:40:26 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 10:40:26 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 10:40:28 | INFO | stdout | tab_plugin in...
+2023-06-06 10:40:28 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'allow_flagged_uploads': True}
+2023-06-06 10:40:28 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:40:28 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'accept_multiple_files': True}
+2023-06-06 10:40:28 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:40:28 | INFO | stdout | Running on local URL:  http://0.0.0.0:7860
+2023-06-06 10:40:28 | INFO | stdout | 
+2023-06-06 10:40:28 | INFO | stdout | To create a public link, set `share=True` in `launch()`.
+2023-06-06 10:40:30 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 10:40:30 | INFO | LOGGER | ChromaStore load document
+2023-06-06 10:40:30 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 10:40:30 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  5.39it/s]
+2023-06-06 10:40:30 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  5.38it/s]
+2023-06-06 10:40:30 | ERROR | stderr | 
+2023-06-06 10:40:30 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 10:40:30 | INFO | LOGGER | ChromaStore load document
+2023-06-06 10:40:30 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 10:40:30 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  6.81it/s]
+2023-06-06 10:40:30 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  6.80it/s]
+2023-06-06 10:40:30 | ERROR | stderr | 
+2023-06-06 10:40:30 | INFO | langchain.embeddings | db summary embedding success
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | use `gpt-user`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | use `gpt-user`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00021s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00021s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `gpt-user`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `gpt-user`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`tran_order`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`tran_order`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`user_card`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`user_card`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`user_card_test`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`user_card_test`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`users`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`users`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `gpt-user`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `gpt-user`
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [cached since 3.751s ago] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [cached since 3.751s ago] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [cached since 3.752s ago] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [cached since 3.752s ago] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [cached since 3.753s ago] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [cached since 3.753s ago] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [cached since 3.753s ago] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [cached since 3.753s ago] {}
+2023-06-06 10:40:30 | ERROR | stderr | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/common/sql_database.py:142: UserWarning: This method is deprecated - please use `get_usable_table_names`.
+2023-06-06 10:40:30 | ERROR | stderr |   warnings.warn(
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'gpt-user'
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'gpt-user'
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='users'
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='users'
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM users
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM users
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='tran_order'
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='tran_order'
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00013s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00013s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM tran_order
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM tran_order
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='user_card_test'
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='user_card_test'
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM user_card_test
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM user_card_test
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='user_card'
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='user_card'
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00025s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00025s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM user_card
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM user_card
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 10:40:30 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 10:40:32 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 10:40:32 | INFO | LOGGER | ChromaStore load document
+2023-06-06 10:40:32 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 10:40:32 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  4.87it/s]
+2023-06-06 10:40:32 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  4.87it/s]
+2023-06-06 10:40:32 | ERROR | stderr | 
+2023-06-06 10:40:32 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 10:40:32 | INFO | LOGGER | ChromaStore load document
+2023-06-06 10:40:32 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 10:40:32 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  5.44it/s]
+2023-06-06 10:40:32 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  5.43it/s]
+2023-06-06 10:40:32 | ERROR | stderr | 
+2023-06-06 10:40:32 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 10:40:32 | INFO | LOGGER | ChromaStore load document
+2023-06-06 10:40:32 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 10:40:32 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  6.87it/s]
+2023-06-06 10:40:32 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  6.86it/s]
+2023-06-06 10:40:32 | ERROR | stderr | 
+2023-06-06 10:40:32 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 10:40:32 | INFO | LOGGER | ChromaStore load document
+2023-06-06 10:40:33 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 10:40:33 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  7.07it/s]
+2023-06-06 10:40:33 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  7.06it/s]
+2023-06-06 10:40:33 | ERROR | stderr | 
+2023-06-06 10:40:33 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 10:40:33 | INFO | LOGGER | ChromaStore load document
+2023-06-06 10:40:33 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 10:40:33 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  6.64it/s]
+2023-06-06 10:40:33 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  6.63it/s]
+2023-06-06 10:40:33 | ERROR | stderr | 
+2023-06-06 10:40:33 | INFO | langchain.embeddings | db summary embedding success
+2023-06-06 14:35:25 | INFO | webserver | load_demo. ip: 127.0.0.1. params: {'__theme': 'dark'}
+2023-06-06 14:35:27 | INFO | stdout | You selected Documents Chat at 2 from <gradio.layouts.Tabs object at 0x174a47eb0>
+2023-06-06 14:36:41 | INFO | webserver | add_text. ip: 127.0.0.1. len: 23
+2023-06-06 14:36:41 | INFO | webserver | User message send!5218fc48-0434-11ee-b40e-b26789cc3e58,Documents Chat,,Chat with url,Execute without mode,,https://github.com/jerryjliu/llama_index/blob/main/llama_index/question_gen/prompts.py
+2023-06-06 14:36:41 | INFO | stdout | chat scene:chat_url_knowledge
+2023-06-06 14:36:44 | ERROR | stderr | Traceback (most recent call last):
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/routes.py", line 394, in run_predict
+2023-06-06 14:36:44 | ERROR | stderr |     output = await app.get_blocks().process_api(
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/blocks.py", line 1075, in process_api
+2023-06-06 14:36:44 | ERROR | stderr |     result = await self.call_function(
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/blocks.py", line 898, in call_function
+2023-06-06 14:36:44 | ERROR | stderr |     prediction = await anyio.to_thread.run_sync(
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/to_thread.py", line 33, in run_sync
+2023-06-06 14:36:44 | ERROR | stderr |     return await get_asynclib().run_sync_in_worker_thread(
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 877, in run_sync_in_worker_thread
+2023-06-06 14:36:44 | ERROR | stderr |     return await future
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 807, in run
+2023-06-06 14:36:44 | ERROR | stderr |     result = context.run(func, *args)
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/utils.py", line 549, in async_iteration
+2023-06-06 14:36:44 | ERROR | stderr |     return next(iterator)
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server/webserver.py", line 315, in http_bot
+2023-06-06 14:36:44 | ERROR | stderr |     chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/scene/chat_factory.py", line 22, in get_implementation
+2023-06-06 14:36:44 | ERROR | stderr |     implementation = cls(**kwargs)
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/scene/chat_knowledge/url/chat.py", line 53, in __init__
+2023-06-06 14:36:44 | ERROR | stderr |     self.knowledge_embedding_client.knowledge_embedding()
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/knowledge_embedding.py", line 42, in knowledge_embedding
+2023-06-06 14:36:44 | ERROR | stderr |     self.knowledge_embedding_client = self.init_knowledge_embedding()
+2023-06-06 14:36:44 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/knowledge_embedding.py", line 50, in init_knowledge_embedding
+2023-06-06 14:36:44 | ERROR | stderr |     embedding = URLEmbedding(
+2023-06-06 14:36:44 | ERROR | stderr | TypeError: URLEmbedding.__init__() got an unexpected keyword argument 'model_name'
+2023-06-06 14:40:42 | INFO | stdout | Keyboard interruption in main thread... closing server.
+2023-06-06 14:40:48 | INFO | webserver | args: Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00007s] {}
+2023-06-06 14:40:48 | INFO | stdout | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server
+2023-06-06 14:40:48 | INFO | stdout |  [0m Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 14:40:48 | DEBUG | LOGGER | Allowlisted Plugins: ['AutoGPTTiDB', 'DbGPTSimpleChart', 'DBGPTByteBasePlugin']
+2023-06-06 14:40:48 | INFO | stdout |  [0m Denylisted Plugins: []
+2023-06-06 14:40:48 | DEBUG | LOGGER | Denylisted Plugins: []
+2023-06-06 14:40:48 | INFO | stdout |  [0m Found module 'DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py' in the zipfile at: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 14:40:48 | DEBUG | LOGGER | Found module 'DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py' in the zipfile at: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 14:40:48 | INFO | stdout |  [0m Plugin: ../../plugins/DB-GPT-Plugin-ByteBase.zip Module: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 14:40:48 | DEBUG | LOGGER | Plugin: ../../plugins/DB-GPT-Plugin-ByteBase.zip Module: DB-GPT-Plugin-ByteBase/src/bytebase/__init__.py
+2023-06-06 14:40:48 | INFO | stdout |  [0m Checking if plugin DBGPTByteBasePlugin should be loaded
+2023-06-06 14:40:48 | DEBUG | LOGGER | Checking if plugin DBGPTByteBasePlugin should be loaded
+2023-06-06 14:40:48 | INFO | stdout |  [0m Loading plugin DBGPTByteBasePlugin as it was in the allowlist.
+2023-06-06 14:40:48 | DEBUG | LOGGER | Loading plugin DBGPTByteBasePlugin as it was in the allowlist.
+2023-06-06 14:40:48 | INFO | stdout |  [0m
+2023-06-06 14:40:48 | INFO | stdout | Plugins found: 1
+2023-06-06 14:40:48 | INFO | stdout | --------------------
+2023-06-06 14:40:48 | INFO | LOGGER | 
+Plugins found: 1
+--------------------
+2023-06-06 14:40:48 | INFO | stdout |  [0m DB-GPT-ByteBase-Plugin: 0.1.0 - This is a DB-GPT plugins, provide service capability to operate bytebase.
+2023-06-06 14:40:48 | INFO | LOGGER | DB-GPT-ByteBase-Plugin: 0.1.0 - This is a DB-GPT plugins, provide service capability to operate bytebase.
+2023-06-06 14:40:48 | INFO | webserver | Namespace(host='0.0.0.0', port=None, concurrency_count=10, model_list_mode='once', share=False)
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | BEGIN (implicit)
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine |  show databases;
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [cached since 0.02746s ago] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [cached since 0.02746s ago] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | use `dbgpt-test`
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `dbgpt-test`.`test_name`
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `dbgpt-test`
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00014s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00014s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00027s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00027s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00026s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00026s] {}
+2023-06-06 14:40:48 | ERROR | stderr | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/common/sql_database.py:142: UserWarning: This method is deprecated - please use `get_usable_table_names`.
+2023-06-06 14:40:48 | ERROR | stderr |   warnings.warn(
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'dbgpt-test'
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00009s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='test_name'
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00020s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00020s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM test_name
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00016s] {}
+2023-06-06 14:40:48 | INFO | sqlalchemy.engine.Engine | [generated in 0.00016s] {}
+2023-06-06 14:40:50 | INFO | stdout | tab_plugin in...
+2023-06-06 14:40:50 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'allow_flagged_uploads': True}
+2023-06-06 14:40:50 | ERROR | stderr |   warnings.warn(
+2023-06-06 14:40:50 | ERROR | stderr | /Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/deprecation.py:43: UserWarning: You have unused kwarg parameters in File, please remove them: {'accept_multiple_files': True}
+2023-06-06 14:40:50 | ERROR | stderr |   warnings.warn(
+2023-06-06 14:40:51 | INFO | stdout | Running on local URL:  http://0.0.0.0:7860
+2023-06-06 14:40:51 | INFO | stdout | 
+2023-06-06 14:40:51 | INFO | stdout | To create a public link, set `share=True` in `launch()`.
+2023-06-06 14:40:51 | INFO | langchain.embeddings | db summary embedding success
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | use `gpt-user`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | use `gpt-user`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00021s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00021s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `gpt-user`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `gpt-user`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`tran_order`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`tran_order`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`user_card`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`user_card`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`user_card_test`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`user_card_test`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`users`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW CREATE TABLE `gpt-user`.`users`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `gpt-user`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW FULL TABLES FROM `gpt-user`
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [raw sql] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT user, host FROM mysql.user
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [cached since 3.354s ago] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [cached since 3.354s ago] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW GRANTS
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [cached since 3.353s ago] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [cached since 3.353s ago] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT @@character_set_database
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [cached since 3.352s ago] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [cached since 3.352s ago] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT @@collation_database
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [cached since 3.352s ago] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [cached since 3.352s ago] {}
+2023-06-06 14:40:51 | ERROR | stderr | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/common/sql_database.py:142: UserWarning: This method is deprecated - please use `get_usable_table_names`.
+2023-06-06 14:40:51 | ERROR | stderr |   warnings.warn(
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'gpt-user'
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = 'gpt-user'
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00008s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='user_card_test'
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='user_card_test'
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00014s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00014s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM user_card_test
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM user_card_test
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00015s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00015s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='tran_order'
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='tran_order'
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00012s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM tran_order
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM tran_order
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='users'
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='users'
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00010s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM users
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM users
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00013s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00013s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='user_card'
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='user_card'
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM user_card
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | SHOW INDEXES FROM user_card
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 14:40:51 | INFO | sqlalchemy.engine.Engine | [generated in 0.00011s] {}
+2023-06-06 14:40:53 | INFO | langchain.embeddings | db summary embedding success
+2023-06-06 14:40:57 | INFO | webserver | load_demo. ip: 127.0.0.1. params: {'__theme': 'dark'}
+2023-06-06 14:40:59 | INFO | stdout | You selected Plugin Mode at 1 from <gradio.layouts.Tabs object at 0x17dba0790>
+2023-06-06 14:41:00 | INFO | stdout | You selected Documents Chat at 2 from <gradio.layouts.Tabs object at 0x17dba0790>
+2023-06-06 14:41:15 | INFO | webserver | add_text. ip: 127.0.0.1. len: 23
+2023-06-06 14:41:16 | INFO | webserver | User message send!17f8300a-0435-11ee-8255-b26789cc3e58,Documents Chat,,Chat with url,Execute without mode,,https://github.com/jerryjliu/llama_index/blob/main/llama_index/question_gen/prompts.py
+2023-06-06 14:41:16 | INFO | stdout | chat scene:chat_url_knowledge
+2023-06-06 14:41:18 | INFO | langchain.document_loaders.web_base | fake_useragent not found, using default user agent.To get a realistic header for requests, `pip install fake_useragent`.
+2023-06-06 14:41:19 | ERROR | stderr | /Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/url_embedding.py:44: MarkupResemblesLocatorWarning: The input looks more like a filename than markup. You may want to open this file and pass the filehandle into Beautiful Soup.
+2023-06-06 14:41:19 | ERROR | stderr |   soup = BeautifulSoup(content, "html.parser")
+2023-06-06 14:41:19 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 14:41:19 | INFO | LOGGER | ChromaStore load document
+2023-06-06 14:41:19 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 14:41:23 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:03<00:00,  3.59s/it]
+2023-06-06 14:41:23 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:03<00:00,  3.59s/it]
+2023-06-06 14:41:23 | ERROR | stderr | 
+2023-06-06 14:41:23 | INFO | webserver | stream out start!
+2023-06-06 14:41:23 | INFO | stdout |  [0m ChromaStore similar search
+2023-06-06 14:41:23 | INFO | LOGGER | ChromaStore similar search
+2023-06-06 14:41:23 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 14:41:23 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  8.30it/s]
+2023-06-06 14:41:23 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  8.28it/s]
+2023-06-06 14:41:23 | ERROR | stderr | 
+2023-06-06 14:43:48 | INFO | webserver | load_demo. ip: 127.0.0.1. params: {'__theme': 'dark'}
+2023-06-06 14:43:50 | INFO | stdout | You selected Documents Chat at 2 from <gradio.layouts.Tabs object at 0x17dba0790>
+2023-06-06 14:44:01 | INFO | webserver | add_text. ip: 127.0.0.1. len: 20
+2023-06-06 14:44:01 | INFO | webserver | User message send!7df4d23c-0435-11ee-8255-b26789cc3e58,Documents Chat,,Chat with url,Execute without mode,,http://news.cctv.com/2023/06/06/ARTIFE8J0XWMTM5P8GngBo1b230606.shtml
+2023-06-06 14:44:01 | INFO | stdout | chat scene:chat_url_knowledge
+2023-06-06 14:44:04 | INFO | langchain.document_loaders.web_base | fake_useragent not found, using default user agent.To get a realistic header for requests, `pip install fake_useragent`.
+2023-06-06 14:44:04 | WARNING | langchain.text_splitter | Created a chunk of size 1132, which is longer than the specified 500
+2023-06-06 14:44:04 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 14:44:04 | INFO | LOGGER | ChromaStore load document
+2023-06-06 14:44:04 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 14:44:06 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:01<00:00,  1.71s/it]
+2023-06-06 14:44:06 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:01<00:00,  1.71s/it]
+2023-06-06 14:44:06 | ERROR | stderr | 
+2023-06-06 14:44:06 | ERROR | stderr | Traceback (most recent call last):
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/routes.py", line 394, in run_predict
+2023-06-06 14:44:06 | ERROR | stderr |     output = await app.get_blocks().process_api(
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/blocks.py", line 1075, in process_api
+2023-06-06 14:44:06 | ERROR | stderr |     result = await self.call_function(
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/blocks.py", line 898, in call_function
+2023-06-06 14:44:06 | ERROR | stderr |     prediction = await anyio.to_thread.run_sync(
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/to_thread.py", line 33, in run_sync
+2023-06-06 14:44:06 | ERROR | stderr |     return await get_asynclib().run_sync_in_worker_thread(
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 877, in run_sync_in_worker_thread
+2023-06-06 14:44:06 | ERROR | stderr |     return await future
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 807, in run
+2023-06-06 14:44:06 | ERROR | stderr |     result = context.run(func, *args)
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/utils.py", line 549, in async_iteration
+2023-06-06 14:44:06 | ERROR | stderr |     return next(iterator)
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server/webserver.py", line 315, in http_bot
+2023-06-06 14:44:06 | ERROR | stderr |     chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/scene/chat_factory.py", line 22, in get_implementation
+2023-06-06 14:44:06 | ERROR | stderr |     implementation = cls(**kwargs)
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/scene/chat_knowledge/url/chat.py", line 53, in __init__
+2023-06-06 14:44:06 | ERROR | stderr |     self.knowledge_embedding_client.knowledge_embedding()
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/knowledge_embedding.py", line 43, in knowledge_embedding
+2023-06-06 14:44:06 | ERROR | stderr |     self.knowledge_embedding_client.source_embedding()
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/source_embedding.py", line 80, in source_embedding
+2023-06-06 14:44:06 | ERROR | stderr |     self.index_to_store(text)
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/source_embedding.py", line 60, in index_to_store
+2023-06-06 14:44:06 | ERROR | stderr |     self.vector_client.load_document(docs)
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/connector.py", line 19, in load_document
+2023-06-06 14:44:06 | ERROR | stderr |     self.client.load_document(docs)
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/chroma_store.py", line 35, in load_document
+2023-06-06 14:44:06 | ERROR | stderr |     self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/langchain/vectorstores/chroma.py", line 116, in add_texts
+2023-06-06 14:44:06 | ERROR | stderr |     self._collection.add(
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/models/Collection.py", line 101, in add
+2023-06-06 14:44:06 | ERROR | stderr |     ids, embeddings, metadatas, documents = self._validate_embedding_set(
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/models/Collection.py", line 355, in _validate_embedding_set
+2023-06-06 14:44:06 | ERROR | stderr |     validate_metadatas(maybe_cast_one_to_many(metadatas))
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/types.py", line 120, in validate_metadatas
+2023-06-06 14:44:06 | ERROR | stderr |     validate_metadata(metadata)
+2023-06-06 14:44:06 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/types.py", line 109, in validate_metadata
+2023-06-06 14:44:06 | ERROR | stderr |     raise ValueError(
+2023-06-06 14:44:06 | ERROR | stderr | ValueError: Expected metadata value to be a str, int, or float, got None
+2023-06-06 14:45:14 | INFO | webserver | load_demo. ip: 127.0.0.1. params: {'__theme': 'dark'}
+2023-06-06 14:45:14 | INFO | stdout | You selected Documents Chat at 2 from <gradio.layouts.Tabs object at 0x17dba0790>
+2023-06-06 14:45:25 | INFO | webserver | add_text. ip: 127.0.0.1. len: 20
+2023-06-06 14:45:25 | INFO | webserver | User message send!b0c4fac0-0435-11ee-8255-b26789cc3e58,Documents Chat,,Chat with url,Execute without mode,,https://baijiahao.baidu.com/s?id=1767932945706593915&wfr=spider&for=pc
+2023-06-06 14:45:25 | INFO | stdout | chat scene:chat_url_knowledge
+2023-06-06 14:45:28 | INFO | langchain.document_loaders.web_base | fake_useragent not found, using default user agent.To get a realistic header for requests, `pip install fake_useragent`.
+2023-06-06 14:45:29 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 14:45:29 | INFO | LOGGER | ChromaStore load document
+2023-06-06 14:45:29 | ERROR | stderr | Batches:   0%|          | 0/1 [00:00<?, ?it/s]
+2023-06-06 14:45:30 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  1.19it/s]
+2023-06-06 14:45:30 | ERROR | stderr | Batches: 100%|██████████| 1/1 [00:00<00:00,  1.19it/s]
+2023-06-06 14:45:30 | ERROR | stderr | 
+2023-06-06 14:45:30 | ERROR | stderr | Traceback (most recent call last):
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/routes.py", line 394, in run_predict
+2023-06-06 14:45:30 | ERROR | stderr |     output = await app.get_blocks().process_api(
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/blocks.py", line 1075, in process_api
+2023-06-06 14:45:30 | ERROR | stderr |     result = await self.call_function(
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/blocks.py", line 898, in call_function
+2023-06-06 14:45:30 | ERROR | stderr |     prediction = await anyio.to_thread.run_sync(
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/to_thread.py", line 33, in run_sync
+2023-06-06 14:45:30 | ERROR | stderr |     return await get_asynclib().run_sync_in_worker_thread(
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 877, in run_sync_in_worker_thread
+2023-06-06 14:45:30 | ERROR | stderr |     return await future
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 807, in run
+2023-06-06 14:45:30 | ERROR | stderr |     result = context.run(func, *args)
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/utils.py", line 549, in async_iteration
+2023-06-06 14:45:30 | ERROR | stderr |     return next(iterator)
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server/webserver.py", line 315, in http_bot
+2023-06-06 14:45:30 | ERROR | stderr |     chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/scene/chat_factory.py", line 22, in get_implementation
+2023-06-06 14:45:30 | ERROR | stderr |     implementation = cls(**kwargs)
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/scene/chat_knowledge/url/chat.py", line 53, in __init__
+2023-06-06 14:45:30 | ERROR | stderr |     self.knowledge_embedding_client.knowledge_embedding()
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/knowledge_embedding.py", line 43, in knowledge_embedding
+2023-06-06 14:45:30 | ERROR | stderr |     self.knowledge_embedding_client.source_embedding()
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/source_embedding.py", line 80, in source_embedding
+2023-06-06 14:45:30 | ERROR | stderr |     self.index_to_store(text)
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/source_embedding.py", line 60, in index_to_store
+2023-06-06 14:45:30 | ERROR | stderr |     self.vector_client.load_document(docs)
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/connector.py", line 19, in load_document
+2023-06-06 14:45:30 | ERROR | stderr |     self.client.load_document(docs)
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/chroma_store.py", line 35, in load_document
+2023-06-06 14:45:30 | ERROR | stderr |     self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/langchain/vectorstores/chroma.py", line 116, in add_texts
+2023-06-06 14:45:30 | ERROR | stderr |     self._collection.add(
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/models/Collection.py", line 101, in add
+2023-06-06 14:45:30 | ERROR | stderr |     ids, embeddings, metadatas, documents = self._validate_embedding_set(
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/models/Collection.py", line 355, in _validate_embedding_set
+2023-06-06 14:45:30 | ERROR | stderr |     validate_metadatas(maybe_cast_one_to_many(metadatas))
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/types.py", line 120, in validate_metadatas
+2023-06-06 14:45:30 | ERROR | stderr |     validate_metadata(metadata)
+2023-06-06 14:45:30 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/types.py", line 109, in validate_metadata
+2023-06-06 14:45:30 | ERROR | stderr |     raise ValueError(
+2023-06-06 14:45:30 | ERROR | stderr | ValueError: Expected metadata value to be a str, int, or float, got None
+2023-06-06 14:46:50 | INFO | webserver | load_demo. ip: 127.0.0.1. params: {'__theme': 'dark'}
+2023-06-06 14:46:51 | INFO | stdout | You selected Documents Chat at 2 from <gradio.layouts.Tabs object at 0x17dba0790>
+2023-06-06 14:47:09 | INFO | webserver | add_text. ip: 127.0.0.1. len: 26
+2023-06-06 14:47:09 | INFO | webserver | User message send!ea49f2aa-0435-11ee-8255-b26789cc3e58,Documents Chat,,Chat with url,Execute without mode,,https://www.infoq.cn/article/saW52Ys9ymut3c2zb9WP
+2023-06-06 14:47:09 | INFO | stdout | chat scene:chat_url_knowledge
+2023-06-06 14:47:12 | INFO | langchain.document_loaders.web_base | fake_useragent not found, using default user agent.To get a realistic header for requests, `pip install fake_useragent`.
+2023-06-06 14:47:12 | INFO | stdout |  [0m ChromaStore load document
+2023-06-06 14:47:12 | INFO | LOGGER | ChromaStore load document
+2023-06-06 14:47:12 | ERROR | stderr | Batches: 0it [00:00, ?it/s]
+2023-06-06 14:47:12 | ERROR | stderr | Batches: 0it [00:00, ?it/s]
+2023-06-06 14:47:12 | ERROR | stderr | 
+2023-06-06 14:47:12 | ERROR | stderr | Traceback (most recent call last):
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/routes.py", line 394, in run_predict
+2023-06-06 14:47:12 | ERROR | stderr |     output = await app.get_blocks().process_api(
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/blocks.py", line 1075, in process_api
+2023-06-06 14:47:12 | ERROR | stderr |     result = await self.call_function(
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/blocks.py", line 898, in call_function
+2023-06-06 14:47:12 | ERROR | stderr |     prediction = await anyio.to_thread.run_sync(
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/to_thread.py", line 33, in run_sync
+2023-06-06 14:47:12 | ERROR | stderr |     return await get_asynclib().run_sync_in_worker_thread(
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 877, in run_sync_in_worker_thread
+2023-06-06 14:47:12 | ERROR | stderr |     return await future
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/anyio/_backends/_asyncio.py", line 807, in run
+2023-06-06 14:47:12 | ERROR | stderr |     result = context.run(func, *args)
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/gradio/utils.py", line 549, in async_iteration
+2023-06-06 14:47:12 | ERROR | stderr |     return next(iterator)
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/server/webserver.py", line 315, in http_bot
+2023-06-06 14:47:12 | ERROR | stderr |     chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/scene/chat_factory.py", line 22, in get_implementation
+2023-06-06 14:47:12 | ERROR | stderr |     implementation = cls(**kwargs)
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/scene/chat_knowledge/url/chat.py", line 53, in __init__
+2023-06-06 14:47:12 | ERROR | stderr |     self.knowledge_embedding_client.knowledge_embedding()
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/knowledge_embedding.py", line 43, in knowledge_embedding
+2023-06-06 14:47:12 | ERROR | stderr |     self.knowledge_embedding_client.source_embedding()
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/source_embedding.py", line 80, in source_embedding
+2023-06-06 14:47:12 | ERROR | stderr |     self.index_to_store(text)
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/source_embedding/source_embedding.py", line 60, in index_to_store
+2023-06-06 14:47:12 | ERROR | stderr |     self.vector_client.load_document(docs)
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/connector.py", line 19, in load_document
+2023-06-06 14:47:12 | ERROR | stderr |     self.client.load_document(docs)
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/vector_store/chroma_store.py", line 35, in load_document
+2023-06-06 14:47:12 | ERROR | stderr |     self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/langchain/vectorstores/chroma.py", line 116, in add_texts
+2023-06-06 14:47:12 | ERROR | stderr |     self._collection.add(
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/models/Collection.py", line 101, in add
+2023-06-06 14:47:12 | ERROR | stderr |     ids, embeddings, metadatas, documents = self._validate_embedding_set(
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/models/Collection.py", line 348, in _validate_embedding_set
+2023-06-06 14:47:12 | ERROR | stderr |     ids = validate_ids(maybe_cast_one_to_many(ids))
+2023-06-06 14:47:12 | ERROR | stderr |   File "/Users/tuyang.yhj/conda/envs/DB-GPT/lib/python3.10/site-packages/chromadb/api/types.py", line 77, in maybe_cast_one_to_many
+2023-06-06 14:47:12 | ERROR | stderr |     if isinstance(target[0], (int, float)):
+2023-06-06 14:47:12 | ERROR | stderr | IndexError: list index out of range
