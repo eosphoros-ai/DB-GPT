@@ -43,7 +43,6 @@ LLM_MODEL_CONFIG = {
 # Load model config
 ISLOAD_8BIT = True
 ISDEBUG = False
-QLORA = os.getenv("QUANTIZE_QLORA") == "True"
 
 VECTOR_SEARCH_TOP_K = 10
 VS_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "vs_store")
