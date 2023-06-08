@@ -61,6 +61,8 @@ class BaseOutputParser(ABC):
 
                 # stream out output
                 output = data["text"][11:].replace("<s>", "").strip()
+
+                # TODO gorilla and falcon output 
             else:
                 output = data["text"].strip()
 
