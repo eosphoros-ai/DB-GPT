@@ -7,6 +7,7 @@ from functools import cache
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer, BitsAndBytesConfig
 from pilot.configs.model_config import DEVICE
 
+bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype="bfloat16", bnb_4bit_use_double_quant=False)
 
 class BaseLLMAdaper:
     """The Base class for multi model, in our project.
@@ -105,19 +106,21 @@ class FalconAdapater(BaseLLMAdaper):
 
     def loader(self, model_path: str, from_pretrained_kwagrs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-        bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype="bfloat16",
-                bnb_4bit_use_double_quant=False,
+        if QLORA == True:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path, 
+                load_in_4bit=True, #quantize
+                quantization_config=bnb_config, 
+                device_map={"": 0}, 
+                trust_remote_code=True, 
+                **from_pretrained_kwagrs
             )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path, 
-            #load_in_4bit=True,  #quantize
-            quantization_config=bnb_config, 
-            device_map={"": 0}, 
-            trust_remote_code=True, 
-            **from_pretrained_kwagrs
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path, 
+                trust_remote_code=True,
+                device_map={"": 0},
+                **from_pretrained_kwagrs
             )
         return model, tokenizer
 
