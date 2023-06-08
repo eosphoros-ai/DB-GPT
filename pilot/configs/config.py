@@ -146,7 +146,7 @@ class Config(metaclass=Singleton):
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
 
-        # QLoRA 
+        # QLoRA
         self.QLoRA = os.getenv("QUANTIZE_QLORA", "True")
 
         ### EMBEDDING Configuration
