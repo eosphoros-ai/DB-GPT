@@ -1,5 +1,6 @@
 import torch
 
+
 @torch.inference_mode()
 def generate_stream(
     model, tokenizer, params, device, context_len=42048, stream_interval=2
@@ -22,7 +23,7 @@ def generate_stream(
             out = model(torch.as_tensor([input_ids], device=device), use_cache=True)
             logits = out.logits
             past_key_values = out.past_key_values
-        else:     
+        else:
             out = model(
                 input_ids=torch.as_tensor([[token]], device=device),
                 use_cache=True,
@@ -37,7 +38,6 @@ def generate_stream(
         token = int(torch.multinomial(probs, num_samples=1))
         output_ids.append(token)
 
-
         if token == tokenizer.eos_token_id:
             stopped = True
         else:
@@ -45,7 +45,11 @@ def generate_stream(
 
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
             tmp_output_ids = output_ids[input_echo_len:]
-            output = tokenizer.decode(tmp_output_ids, skip_special_tokens=True, spaces_between_special_tokens=False,)
+            output = tokenizer.decode(
+                tmp_output_ids,
+                skip_special_tokens=True,
+                spaces_between_special_tokens=False,
+            )
             pos = output.rfind(stop_str, l_prompt)
             if pos != -1:
                 output = output[:pos]
