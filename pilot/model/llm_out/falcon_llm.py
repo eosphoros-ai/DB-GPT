@@ -19,7 +19,7 @@ def falcon_generate_output(model, tokenizer, params, device, context_len=2048):
     streamer = TextIteratorStreamer(
         tokenizer, timeout=10.0, skip_prompt=True, skip_special_tokens=True
     )
-    
+
     tokenizer.bos_token_id = 1
     stop_token_ids = [0]
 
