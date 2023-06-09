@@ -39,9 +39,9 @@ class ModelWorker:
         )
 
         if not isinstance(self.model, str):
-            if hasattr(self.model.config, "max_sequence_length"):
+            if hasattr(self.model, "config") and hasattr(self.model.config, "max_sequence_length"):
                 self.context_len = self.model.config.max_sequence_length
-            elif hasattr(self.model.config, "max_position_embeddings"):
+            elif hasattr(self.model, "config") and hasattr(self.model.config, "max_position_embeddings"):
                 self.context_len = self.model.config.max_position_embeddings
 
         else:
@@ -66,6 +66,7 @@ class ModelWorker:
 
     def generate_stream_gate(self, params):
         try:
+            print(f"llmserver params: {params}, self: {self}")
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
