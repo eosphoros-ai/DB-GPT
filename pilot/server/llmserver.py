@@ -66,7 +66,6 @@ class ModelWorker:
 
     def generate_stream_gate(self, params):
         try:
-            print(f"llmserver params: {params}, self: {self}")
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
