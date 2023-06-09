@@ -94,7 +94,7 @@ class GuanacoChatAdapter(BaseChatAdpter):
 
         return guanaco_generate_stream
 
-   
+
 class FalconChatAdapter(BaseChatAdpter):
     """Model chat adapter for Guanaco"""
 
@@ -105,7 +105,8 @@ class FalconChatAdapter(BaseChatAdpter):
         from pilot.model.llm_out.falcon_llm import falcon_generate_output
 
         return falcon_generate_output
-    
+
+
 class ProxyllmChatAdapter(BaseChatAdpter):
     def match(self, model_path: str):
         return "proxyllm" in model_path
@@ -116,8 +117,7 @@ class ProxyllmChatAdapter(BaseChatAdpter):
         return proxyllm_generate_stream
 
 
-class GorillaChatAdapter(BaseChatAdpter): 
-
+class GorillaChatAdapter(BaseChatAdpter):
     def match(self, model_path: str):
         return "gorilla" in model_path
 

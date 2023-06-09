@@ -51,7 +51,10 @@ def chatglm_generate_stream(
         # else:
         #     once_conversation.append(f"""###system:{message} """)
 
-    query = messages[-2].split("human:")[1]
+    try:
+        query = messages[-2].split("human:")[1]
+    except IndexError:
+        query = messages[-3].split("human:")[1]
     print("Query Message: ", query)
     # output = ""
     # i = 0
