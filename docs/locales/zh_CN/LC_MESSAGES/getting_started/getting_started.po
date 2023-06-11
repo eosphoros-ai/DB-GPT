@@ -118,6 +118,29 @@ msgstr "向量数据库我们默认使用的是Chroma内存数据库，所以无
 "需要连接其他的同学，可以按照我们的教程进行安装配置。整个DB-GPT的"
 "安装过程，我们使用的是miniconda3的虚拟环境。创建虚拟环境，并安装python依赖包"
 
+
+#: ../../getting_started/getting_started.md:35 0314bad0928940fc8e382d289d356c66
+msgid ""
+"Once the environment is installed, we have to create a new folder "
+"\"models\" in the DB-GPT project, and then we can put all the models "
+"downloaded from huggingface in this directory"
+msgstr "环境安装完成后，我们必须在DB-GPT项目中创建一个新文件夹\"models\"，"
+"然后我们可以把从huggingface下载的所有模型放到这个目录下。"
+
+#: ../../getting_started/getting_started.md:42 afdf176f72224fd6b8b6e9e23c80c1ef
+msgid ""
+"The model files are large and will take a long time to download. During "
+"the download, let's configure the .env file, which needs to be copied and"
+" created from the .env.template"
+msgstr "模型文件很大，需要很长时间才能下载。在下载过程中，让我们配置.env文件，"
+"它需要从。env.template中复制和创建。"
+
+#: ../../getting_started/getting_started.md:48 76c87610993f41059c3c0aade5117171
+msgid ""
+"You can configure basic parameters in the .env file, for example setting "
+"LLM_MODEL to the model to be used"
+msgstr "您可以在.env文件中配置基本参数，例如将LLM_MODEL设置为要使用的模型。"
+
 #: ../../getting_started/getting_started.md:35 443f5f92e4cd4ce4887bae2556b605b0
 msgid "3. Run"
 msgstr "3. 运行"
