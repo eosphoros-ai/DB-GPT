@@ -47,6 +47,12 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
+# multi language config
+language = "en"
+locals_dirs = ['./locales/']
+gettext_compact = False
+gettext_uuid = True
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
