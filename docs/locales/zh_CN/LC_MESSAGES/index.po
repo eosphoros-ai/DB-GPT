@@ -122,7 +122,7 @@ msgstr "开始使用DB-GPT与您的数据环境进行交互。"
 
 #: ../../index.rst:36 87f507e0c27a4a38ba2a5c19e804549f
 msgid "`Quickstart Guid <./getting_started/getting_started.html>`_"
-msgstr "`使用指南<./getting_started/getting_started.html>`_"
+msgstr "`使用指南 <./getting_started/getting_started.html>`_"
 
 #: ../../index.rst:38 ab35a5cd96c548ecb0c285fd822f652a
 msgid "Concepts and terminology"
@@ -130,7 +130,7 @@ msgstr "相关概念"
 
 #: ../../index.rst:40 3fbd5c96df084ef889442a0b89ad6c05
 msgid "`Concepts and terminology  <./getting_started/concepts.html>`_"
-msgstr "相关概念 <./getting_started/concepts.html>`_"
+msgstr "`相关概念 <./getting_started/concepts.html>`_"
 
 #: ../../index.rst:42 6d9a0d727ce14edfbdcf678c6fbba76b
 msgid "Coming soon..."
