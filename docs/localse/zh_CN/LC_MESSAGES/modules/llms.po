@@ -1,0 +1,56 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-06-11 14:10+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.11.0\n"
+
+#: ../../modules/llms.md:1 9c05a511436b4a408e2d1acd2f2568e7
+msgid "LLMs"
+msgstr "大语言模型"
+
+#: ../../modules/llms.md:3 c6549cbde17e42e596470a537286cedb
+#, python-format
+msgid ""
+"In the underlying large model integration, we have designed an open "
+"interface that supports integration with various large models. At the "
+"same time, we have a very strict control and evaluation mechanism for the"
+" effectiveness of the integrated models. In terms of accuracy, the "
+"integrated models need to align with the capability of ChatGPT at a level"
+" of 85% or higher. We use higher standards to select models, hoping to "
+"save users the cumbersome testing and evaluation process in the process "
+"of use."
+msgstr "在底层大模型接入中，我们设计了开放的接口，支持对接多种大模型。同时对于接入模型的效果，"
+"我们有非常严格的把控与评审机制。对大模型能力上与ChatGPT对比，在准确率上需要满足85%"
+"以上的能力对齐。我们用更高的标准筛选模型，是期望在用户使用过程中，可以省去前面繁琐的测试评估环节。"
+
+#: ../../modules/llms.md:5 1b18ef91924442f7ab7a117aec6122d5
+msgid "Multi LLMs Usage"
+msgstr "多模型使用"
+
+#: ../../modules/llms.md:6 b14256f1768d45ef929be664b8afb31e
+msgid ""
+"To use multiple models, modify the LLM_MODEL parameter in the .env "
+"configuration file to switch between the models."
+msgstr "如果要使用不同的模型，请修改.env配置文件中的LLM MODEL参数以在模型之间切换。"
+
+#: ../../modules/llms.md:8 42cbe90a1a524d8381a0a743ef1a927e
+msgid ""
+"Notice: you can create .env file from .env.template, just use command "
+"like this:"
+msgstr "注意:你可以从 .env.template 创建 .env 文件。只需使用如下命令:"
+

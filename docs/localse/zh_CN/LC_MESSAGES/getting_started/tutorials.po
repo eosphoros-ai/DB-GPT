@@ -1,0 +1,33 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-06-11 14:10+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.11.0\n"
+
+#: ../../getting_started/tutorials.md:1 12b03941d64f4bdf96eaaeec0147a387
+msgid "Tutorials"
+msgstr "教程"
+
+#: ../../getting_started/tutorials.md:4 b966c15b01f94a1e84d4b6142b8f4111
+msgid "This is a collection of DB-GPT tutorials on Medium."
+msgstr "这是知乎上DB-GPT教程的集合。．"
+
+#: ../../getting_started/tutorials.md:6 869431aac3864180acb41b852d48d29e
+msgid "Comming soon..."
+msgstr "未完待续"
+
