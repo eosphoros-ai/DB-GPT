@@ -48,8 +48,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # multi language config
-language = "en"   # ['en', 'zh_CN'] #
-locales_dirs = ['./locales/']
+language = "en"  # ['en', 'zh_CN'] #
+locales_dirs = ["./locales/"]
 gettext_compact = False
 gettext_uuid = True
 
