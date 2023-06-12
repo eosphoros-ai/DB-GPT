@@ -1,11 +1,13 @@
 from typing import Optional
 
+from chromadb.errors import NotEnoughElementsException
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from pilot.configs.config import Config
 from pilot.source_embedding.csv_embedding import CSVEmbedding
 from pilot.source_embedding.markdown_embedding import MarkdownEmbedding
 from pilot.source_embedding.pdf_embedding import PDFEmbedding
+from pilot.source_embedding.ppt_embedding import PPTEmbedding
 from pilot.source_embedding.url_embedding import URLEmbedding
 from pilot.source_embedding.word_embedding import WordEmbedding
 from pilot.vector_store.connector import VectorStoreConnector
@@ -19,6 +21,8 @@ KnowledgeEmbeddingType = {
     ".doc": (WordEmbedding, {}),
     ".docx": (WordEmbedding, {}),
     ".csv": (CSVEmbedding, {}),
+    ".ppt": (PPTEmbedding, {}),
+    ".pptx": (PPTEmbedding, {}),
 }
 
 
@@ -42,8 +46,12 @@ class KnowledgeEmbedding:
         self.knowledge_embedding_client = self.init_knowledge_embedding()
         self.knowledge_embedding_client.source_embedding()
 
-    def knowledge_embedding_batch(self):
-        self.knowledge_embedding_client.batch_embedding()
+    def knowledge_embedding_batch(self, docs):
+        # docs = self.knowledge_embedding_client.read_batch()
+        self.knowledge_embedding_client.index_to_store(docs)
+
+    def read(self):
+        return self.knowledge_embedding_client.read_batch()
 
     def init_knowledge_embedding(self):
         if self.file_type == "url":
@@ -68,7 +76,11 @@ class KnowledgeEmbedding:
         vector_client = VectorStoreConnector(
             CFG.VECTOR_STORE_TYPE, self.vector_store_config
         )
-        return vector_client.similar_search(text, topk)
+        try:
+            ans = vector_client.similar_search(text, topk)
+        except NotEnoughElementsException:
+            ans = vector_client.similar_search(text, 1)
+        return ans
 
     def vector_exist(self):
         vector_client = VectorStoreConnector(

@@ -23,7 +23,7 @@ class LocalKnowledgeInit:
         self.vector_store_config = vector_store_config
         self.model_name = LLM_MODEL_CONFIG["text2vec"]
 
-    def knowledge_persist(self, file_path, append_mode):
+    def knowledge_persist(self, file_path):
         """knowledge persist"""
         for root, _, files in os.walk(file_path, topdown=False):
             for file in files:
@@ -41,7 +41,6 @@ class LocalKnowledgeInit:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--vector_name", type=str, default="default")
-    parser.add_argument("--append", type=bool, default=False)
     args = parser.parse_args()
     vector_name = args.vector_name
     append_mode = args.append
@@ -49,5 +48,5 @@ if __name__ == "__main__":
     vector_store_config = {"vector_store_name": vector_name}
     print(vector_store_config)
     kv = LocalKnowledgeInit(vector_store_config=vector_store_config)
-    kv.knowledge_persist(file_path=DATASETS_DIR, append_mode=append_mode)
+    kv.knowledge_persist(file_path=DATASETS_DIR)
     print("your knowledge embedding success...")

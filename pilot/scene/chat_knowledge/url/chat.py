@@ -38,7 +38,7 @@ class ChatUrlKnowledge(BaseChat):
         )
         self.url = url
         vector_store_config = {
-            "vector_store_name": url,
+            "vector_store_name": url.replace(":", ""),
             "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         self.knowledge_embedding_client = KnowledgeEmbedding(
