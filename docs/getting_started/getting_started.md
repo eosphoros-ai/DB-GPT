@@ -32,6 +32,21 @@ conda activate dbgpt_env
 pip install -r requirements.txt
 ```
 
+Once the environment is installed, we have to create a new folder "models" in the DB-GPT project, and then we can put all the models downloaded from huggingface in this directory
+
+```
+git clone https://huggingface.co/Tribbiani/vicuna-13b 
+git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+```
+
+The model files are large and will take a long time to download. During the download, let's configure the .env file, which needs to be copied and created from the .env.template
+
+```
+cp .env.template .env
+```
+
+You can configure basic parameters in the .env file, for example setting LLM_MODEL to the model to be used
+
 ### 3. Run
 You can refer to this document to obtain the Vicuna weights: [Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights) .
 
