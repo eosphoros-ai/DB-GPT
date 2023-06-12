@@ -66,6 +66,7 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
         "messages": history,
         "temperature": params.get("temperature"),
         "max_tokens": params.get("max_new_tokens"),
+        "stream": True
     }
 
     res = requests.post(
@@ -75,8 +76,32 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
     text = ""
     for line in res.iter_lines():
         if line:
-            decoded_line = line.decode("utf-8")
-            json_line = json.loads(decoded_line)
-            print(json_line)
-            text += json_line["choices"][0]["message"]["content"]
+            json_data = line.split(b': ', 1)[1]
+            decoded_line = json_data.decode("utf-8")
+            if decoded_line.lower() != '[DONE]'.lower():
+                obj = json.loads(json_data)
+                if obj['choices'][0]['delta'].get('content') is not None:
+                    content = obj['choices'][0]['delta']['content']
+                    text += content
             yield text
+
+    # native result.
+    # payloads = {
+    #     "model": "gpt-3.5-turbo",  # just for test, remove this later
+    #     "messages": history,
+    #     "temperature": params.get("temperature"),
+    #     "max_tokens": params.get("max_new_tokens"),
+    # }
+    #
+    # res = requests.post(
+    #     CFG.proxy_server_url, headers=headers, json=payloads, stream=True
+    # )
+    #
+    # text = ""
+    # line = res.content
+    # if line:
+    #     decoded_line = line.decode("utf-8")
+    #     json_line = json.loads(decoded_line)
+    #     print(json_line)
+    #     text += json_line["choices"][0]["message"]["content"]
+    #     yield text
