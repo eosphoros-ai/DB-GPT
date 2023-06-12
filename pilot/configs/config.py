@@ -17,8 +17,9 @@ class Config(metaclass=Singleton):
     def __init__(self) -> None:
         """Initialize the Config class"""
 
-        # Gradio language version: en, cn
+        # Gradio language version: en, zh
         self.LANGUAGE = os.getenv("LANGUAGE", "en")
+        self.WEB_SERVER_PORT = int(os.getenv("WEB_SERVER_PORT", 7860))
 
         self.debug_mode = False
         self.skip_reprompt = False
