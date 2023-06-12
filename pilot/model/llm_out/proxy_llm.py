@@ -76,7 +76,13 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
     for line in res.iter_lines():
         if line:
             decoded_line = line.decode("utf-8")
-            json_line = json.loads(decoded_line)
-            print(json_line)
-            text += json_line["choices"][0]["message"]["content"]
-            yield text
+            try:
+                json_line = json.loads(decoded_line)
+                print(json_line)
+                text += json_line["choices"][0]["message"]["content"]
+                yield text
+            except Exception as e:
+                text += decoded_line
+    yield json.loads(text)["choices"][0]["message"]["content"]
+    
+            
