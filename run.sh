@@ -15,11 +15,11 @@ function find_python_command() {
 
 PYTHONCMD=$(find_python_command)
 
-nohup PYTHONCMD pilot/server/llmserver.py >> /root/server.log 2>&1 &
+nohup $PYTHONCMD pilot/server/llmserver.py >> /root/server.log 2>&1 &
 while [ `grep -c "Uvicorn running on" /root/server.log` -eq '0' ];do
         sleep 1s;
         echo "wait server running"
 done
 echo "server running"
 
-PYTHONCMD pilot/server/webserver.py 
+$PYTHONCMD pilot/server/webserver.py 
