@@ -19,7 +19,6 @@ As the knowledge base is currently the most significant user demand scenario, we
 python tools/knowledge_init.py
 
 --vector_name : your vector store name  default_value:default
---append: append mode, True:append, False: not append default_value:False
 
 ```
 
