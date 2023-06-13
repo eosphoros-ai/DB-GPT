@@ -392,6 +392,14 @@ class Database:
         indexes = cursor.fetchall()
         return [(index[2], index[4]) for index in indexes]
 
+    def get_show_create_table(self, table_name):
+        """Get table show create table about specified table."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SHOW CREATE TABLE  {table_name}"))
+        ans = cursor.fetchall()
+        return ans[0][1]
+
+
     def get_fields(self, table_name):
         """Get column fields about specified table."""
         session = self._db_sessions()
