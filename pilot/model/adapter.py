@@ -93,8 +93,8 @@ class ChatGLMAdapater(BaseLLMAdaper):
                 AutoModel.from_pretrained(
                     model_path, trust_remote_code=True, **from_pretrained_kwargs
                 )
-                    .half()
-                    .cuda()
+                .half()
+                .cuda()
             )
             return model, tokenizer
 
