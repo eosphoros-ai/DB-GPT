@@ -64,59 +64,8 @@ class Database:
         self._usable_tables = set()
         self._usable_tables = set()
         self._sample_rows_in_table_info = set()
-        # including view support by adding the views as well as tables to the all
-        # tables list if view_support is True
-        # self._all_tables = set(
-        #     self._inspector.get_table_names(schema=schema)
-        #     + (self._inspector.get_view_names(schema=schema) if view_support else [])
-        # )
-
-        # self._include_tables = set(include_tables) if include_tables else set()
-        # if self._include_tables:
-        #     missing_tables = self._include_tables - self._all_tables
-        #     if missing_tables:
-        #         raise ValueError(
-        #             f"include_tables {missing_tables} not found in database"
-        #         )
-        # self._ignore_tables = set(ignore_tables) if ignore_tables else set()
-        # if self._ignore_tables:
-        #     missing_tables = self._ignore_tables - self._all_tables
-        #     if missing_tables:
-        #         raise ValueError(
-        #             f"ignore_tables {missing_tables} not found in database"
-        #         )
-        # usable_tables = self.get_usable_table_names()
-        # self._usable_tables = set(usable_tables) if usable_tables else self._all_tables
-
-        # if not isinstance(sample_rows_in_table_info, int):
-        #     raise TypeError("sample_rows_in_table_info must be an integer")
-        #
-        # self._sample_rows_in_table_info = sample_rows_in_table_info
         self._indexes_in_table_info = indexes_in_table_info
-        #
-        # self._custom_table_info = custom_table_info
-        # if self._custom_table_info:
-        #     if not isinstance(self._custom_table_info, dict):
-        #         raise TypeError(
-        #             "table_info must be a dictionary with table names as keys and the "
-        #             "desired table info as values"
-        #         )
-        #     # only keep the tables that are also present in the database
-        #     intersection = set(self._custom_table_info).intersection(self._all_tables)
-        #     self._custom_table_info = dict(
-        #         (table, self._custom_table_info[table])
-        #         for table in self._custom_table_info
-        #         if table in intersection
-        #     )
 
-        # self._metadata = metadata or MetaData()
-        # # # including view support if view_support = true
-        # self._metadata.reflect(
-        #     views=view_support,
-        #     bind=self._engine,
-        #     only=list(self._usable_tables),
-        #     schema=self._schema,
-        # )
 
     @classmethod
     def from_uri(

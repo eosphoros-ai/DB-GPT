@@ -35,7 +35,7 @@ from pilot.conversation import (
     chat_mode_title,
     default_conversation,
 )
-from pilot.common.plugins import scan_plugins
+from pilot.common.plugins import scan_plugins, load_native_plugins
 
 from pilot.server.gradio_css import code_highlight_css
 from pilot.server.gradio_patch import Chatbot as grChatbot
@@ -658,7 +658,7 @@ def signal_handler(sig, frame):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int)
+    parser.add_argument("--port", type=int, default=CFG.WEB_SERVER_PORT)
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument(
         "--model-list-mode", type=str, default="once", choices=["once", "reload"]
@@ -670,6 +670,7 @@ if __name__ == "__main__":
     # 配置初始化
     cfg = Config()
 
+    load_native_plugins(cfg)
     dbs = cfg.local_db.get_database_list()
     signal.signal(signal.SIGINT, signal_handler)
     async_db_summery()
