@@ -10,6 +10,9 @@ As the knowledge base is currently the most significant user demand scenario, we
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
 
+We currently support many document formats: txt, pdf, md, html, doc, ppt, and url.
+
+
 2.Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma
 (now only support Chroma and Milvus, if you set Milvus, please set MILVUS_URL and MILVUS_PORT)
 
