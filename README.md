@@ -179,6 +179,8 @@ In the .env configuration file, modify the LANGUAGE parameter to switch between 
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
 
+We currently support many document formats: txt, pdf, md, html, doc, ppt, and url.
+
 2.set .env configuration set your vector store type, eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > 2.1)
 
 3.Run the knowledge repository script in the tools directory.
