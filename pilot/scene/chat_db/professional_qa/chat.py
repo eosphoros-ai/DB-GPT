@@ -52,7 +52,7 @@ class ChatWithDbQA(BaseChat):
             raise ValueError("Could not import DBSummaryClient. ")
         if self.db_name:
             client = DBSummaryClient()
-            table_info = client.get_similar_tables(
+            table_info = client.get_db_summary(
                 dbname=self.db_name, query=self.current_user_input, topk=self.top_k
             )
             # table_info = self.database.table_simple_info(self.db_connect)
@@ -60,8 +60,8 @@ class ChatWithDbQA(BaseChat):
 
         input_values = {
             "input": self.current_user_input,
-            "top_k": str(self.top_k),
-            "dialect": dialect,
+            # "top_k": str(self.top_k),
+            # "dialect": dialect,
             "table_info": table_info,
         }
         return input_values
