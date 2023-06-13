@@ -19,5 +19,5 @@ def gpt4all_generate_stream(model, tokenizer, params, device, max_position_embed
 
     while t.is_alive():
         yield sys.stdout.output
-        time.sleep(0.1)
+        time.sleep(0.01)
     t.join()
