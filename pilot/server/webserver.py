@@ -658,7 +658,7 @@ def signal_handler(sig, frame):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int)
+    parser.add_argument("--port", type=int, default=CFG.WEB_SERVER_PORT)
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument(
         "--model-list-mode", type=str, default="once", choices=["once", "reload"]
