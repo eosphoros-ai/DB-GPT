@@ -46,7 +46,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
   - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
 
 - 多模型支持
-  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8)
+  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b)
   - TODO: codet5p, codegen2
 
 ## 效果演示
