@@ -73,7 +73,9 @@ class ModelWorker:
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
-                # 生产请不要打开输出！gpt4all线程与父进程共享stdout， 打开会影响前端输出
+                # Please do not open the output in production!
+                # The gpt4all thread shares stdout with the parent process,
+                # and opening it may affect the frontend output.
                 # print("output: ", output)
                 ret = {
                     "text": output,
