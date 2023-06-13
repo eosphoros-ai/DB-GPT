@@ -145,3 +145,4 @@ pilot/nltk_data
 
 logswebserver.log.*
 .history/*
+.plugin_env
