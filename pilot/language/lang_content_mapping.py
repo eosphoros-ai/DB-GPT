@@ -44,7 +44,7 @@ lang_dicts = {
         "learn_more_markdown": "The service is a research preview intended for non-commercial use only. subject to the model [License](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md) of Vicuna-13B",
         "model_control_param": "Model Parameters",
         "sql_generate_mode_direct": "Execute directly",
-        "sql_generate_mode_none": "chat to db",
+        "sql_generate_mode_none": "db chat",
         "max_input_token_size": "Maximum output token size",
         "please_choose_database": "Please choose database",
         "sql_generate_diagnostics": "SQL Generation & Diagnostics",
