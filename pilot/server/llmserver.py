@@ -84,6 +84,11 @@ class ModelWorker:
         return get_embeddings(self.model, self.tokenizer, prompt)
 
 
+model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
+worker = ModelWorker(
+    model_path=model_path, model_name=CFG.LLM_MODEL, device=DEVICE, num_gpus=1
+)
+
 app = FastAPI()
 
 
@@ -157,11 +162,4 @@ def embeddings(prompt_request: EmbeddingRequest):
 
 
 if __name__ == "__main__":
-    model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
-    print(model_path, DEVICE)
-
-    worker = ModelWorker(
-        model_path=model_path, model_name=CFG.LLM_MODEL, device=DEVICE, num_gpus=1
-    )
-
     uvicorn.run(app, host="0.0.0.0", port=CFG.MODEL_PORT, log_level="info")

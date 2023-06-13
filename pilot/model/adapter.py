@@ -213,6 +213,6 @@ register_llm_model_adapters(FalconAdapater)
 register_llm_model_adapters(GorillaAdapter)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
-# just for test, remove this later
+# just for test_py, remove this later
 register_llm_model_adapters(ProxyllmAdapter)
 register_llm_model_adapters(BaseLLMAdaper)
