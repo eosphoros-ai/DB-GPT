@@ -37,7 +37,6 @@ def get_llm_chat_adapter(model_path: str) -> BaseChatAdpter:
 
 
 class VicunaChatAdapter(BaseChatAdpter):
-
     """Model chat Adapter for vicuna"""
 
     def match(self, model_path: str):
@@ -60,7 +59,6 @@ class ChatGLMChatAdapter(BaseChatAdpter):
 
 
 class CodeT5ChatAdapter(BaseChatAdpter):
-
     """Model chat adapter for CodeT5"""
 
     def match(self, model_path: str):
@@ -72,7 +70,6 @@ class CodeT5ChatAdapter(BaseChatAdpter):
 
 
 class CodeGenChatAdapter(BaseChatAdpter):
-
     """Model chat adapter for CodeGen"""
 
     def match(self, model_path: str):
@@ -127,11 +124,22 @@ class GorillaChatAdapter(BaseChatAdpter):
         return generate_stream
 
 
+class GPT4AllChatAdapter(BaseChatAdpter):
+    def match(self, model_path: str):
+        return "gpt4all" in model_path
+
+    def get_generate_stream_func(self):
+        from pilot.model.llm_out.gpt4all_llm import gpt4all_generate_stream
+
+        return gpt4all_generate_stream
+
+
 register_llm_model_chat_adapter(VicunaChatAdapter)
 register_llm_model_chat_adapter(ChatGLMChatAdapter)
 register_llm_model_chat_adapter(GuanacoChatAdapter)
 register_llm_model_chat_adapter(FalconChatAdapter)
 register_llm_model_chat_adapter(GorillaChatAdapter)
+register_llm_model_chat_adapter(GPT4AllChatAdapter)
 
 # Proxy model for test and develop, it's cheap for us now.
 register_llm_model_chat_adapter(ProxyllmChatAdapter)
