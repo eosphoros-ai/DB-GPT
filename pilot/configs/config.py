@@ -88,7 +88,6 @@ class Config(metaclass=Singleton):
         self.message_dir = os.getenv("MESSAGE_HISTORY_DIR", "../../message")
 
         ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
-        self.plugins_dir = os.getenv("PLUGINS_DIR", "../../plugins")
         self.plugins: List[AutoGPTPluginTemplate] = []
         self.plugins_openai = []
 

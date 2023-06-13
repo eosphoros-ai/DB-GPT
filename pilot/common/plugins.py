@@ -15,6 +15,7 @@ import requests
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 from pilot.configs.config import Config
+from pilot.configs.model_config import PLUGINS_DIR
 from pilot.logs import logger
 
 
@@ -82,7 +83,7 @@ def load_native_plugins(cfg: Config):
                             headers={'Authorization': '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'})
 
     if response.status_code == 200:
-        plugins_path_path = Path(cfg.plugins_dir)
+        plugins_path_path = Path(PLUGINS_DIR)
         files = glob.glob(os.path.join(plugins_path_path, f'{native_plugin_repo}*'))
         for file in files:
             os.remove(file)
@@ -111,7 +112,7 @@ def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate
     current_dir = os.getcwd()
     print(current_dir)
     # Generic plugins
-    plugins_path_path = Path(cfg.plugins_dir)
+    plugins_path_path = Path(PLUGINS_DIR)
 
     logger.debug(f"Allowlisted Plugins: {cfg.plugins_allowlist}")
     logger.debug(f"Denylisted Plugins: {cfg.plugins_denylist}")

@@ -10,7 +10,7 @@ from pilot.scene.chat_execution.out_parser import PluginChatOutputParser
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = """You are an AI designed to solve the user's goals with given commands, please follow the prompts and constraints of the system's input for your answers.Play to your strengths as an LLM and pursue simple strategies with no legal complications."""
+PROMPT_SCENE_DEFINE = """You are an AI designed to solve the user's goals with given commands, please follow the prompts and constraints of the system's input for your answers."""
 
 PROMPT_SUFFIX = """
 Goals: 
@@ -20,25 +20,22 @@ Goals:
 
 _DEFAULT_TEMPLATE = """
 Constraints:
-    Exclusively use the commands listed in double quotes e.g. "command name"
-    Reflect on past decisions and strategies to refine your approach.
-    Constructively self-criticize your big-picture behavior constantly.
-    {constraints}
+0.Exclusively use the commands listed in double quotes e.g. "command name"
+{constraints}
     
 Commands:
-    {commands_infos}
+{commands_infos}
 """
 
 
-PROMPT_RESPONSE = """You must respond in JSON format as following format:
-{response}
-
+PROMPT_RESPONSE = """
+Please response strictly according to the following json format:
+    {response}
 Ensure the response is correct json and can be parsed by Python json.loads
 """
 
 RESPONSE_FORMAT = {
     "thoughts": "thought text",
-    "reasoning": "reasoning",
     "speak": "thoughts summary to say to user",
     "command": {"name": "command name", "args": {"arg name": "value"}},
 }
