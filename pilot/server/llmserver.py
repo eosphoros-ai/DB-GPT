@@ -86,6 +86,9 @@ class ModelWorker:
         except torch.cuda.CudaError:
             ret = {"text": "**GPU OutOfMemory, Please Refresh.**", "error_code": 0}
             yield json.dumps(ret).encode() + b"\0"
+        except Exception as e:
+            ret = {"text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}", "error_code": 0}
+            yield json.dumps(ret).encode() + b"\0"
 
     def get_embeddings(self, prompt):
         return get_embeddings(self.model, self.tokenizer, prompt)
