@@ -8,4 +8,82 @@ To use multiple models, modify the LLM_MODEL parameter in the .env configuration
 Notice: you can create .env file from .env.template, just use command like this:
 ```
 cp .env.template .env
+LLM_MODEL=vicuna-13b
+MODEL_SERVER=http://127.0.0.1:8000
 ```
+now we support models vicuna-13b, vicuna-7b, chatglm-6b, flan-t5-base, guanaco-33b-merged, falcon-40b, gorilla-7b.
+
+DB-GPT provides a model load adapter and chat adapter. load adapter which allows you to easily adapt load different LLM models by inheriting the BaseLLMAdapter. You just implement match() and loader() method.
+
+vicuna llm load adapter
+
+```
+class VicunaLLMAdapater(BaseLLMAdaper):
+    """Vicuna Adapter"""
+
+    def match(self, model_path: str):
+        return "vicuna" in model_path
+
+    def loader(self, model_path: str, from_pretrained_kwagrs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwagrs
+        )
+        return model, tokenizer
+```
+
+chatglm load adapter
+```
+
+class ChatGLMAdapater(BaseLLMAdaper):
+    """LLM Adatpter for THUDM/chatglm-6b"""
+
+    def match(self, model_path: str):
+        return "chatglm" in model_path
+
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+
+        if DEVICE != "cuda":
+            model = AutoModel.from_pretrained(
+                model_path, trust_remote_code=True, **from_pretrained_kwargs
+            ).float()
+            return model, tokenizer
+        else:
+            model = (
+                AutoModel.from_pretrained(
+                    model_path, trust_remote_code=True, **from_pretrained_kwargs
+                )
+                .half()
+                .cuda()
+            )
+            return model, tokenizer
+```
+chat adapter which allows you to easily adapt chat different LLM models by inheriting the BaseChatAdpter.you just implement match() and get_generate_stream_func() method
+
+vicuna llm chat adapter
+```
+class VicunaChatAdapter(BaseChatAdpter):
+ """Model chat Adapter for vicuna"""
+
+    def match(self, model_path: str):
+        return "vicuna" in model_path
+
+    def get_generate_stream_func(self):
+        return generate_stream
+```
+
+chatglm llm chat adapter
+```
+class ChatGLMChatAdapter(BaseChatAdpter):
+    """Model chat Adapter for ChatGLM"""
+
+    def match(self, model_path: str):
+        return "chatglm" in model_path
+
+    def get_generate_stream_func(self):
+        from pilot.model.llm_out.chatglm_llm import chatglm_generate_stream
+
+        return chatglm_generate_stream
+```
+ if you want to integrate your own model, just need to inheriting BaseLLMAdaper and BaseChatAdpter and implement the methods
