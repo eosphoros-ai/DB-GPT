@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import torch
+import os
 from typing import List
 from functools import cache
 from transformers import (
@@ -185,18 +186,26 @@ class RWKV4LLMAdapter(BaseLLMAdaper):
 
 
 class GPT4AllAdapter(BaseLLMAdaper):
-    """A light version for someone who want practise LLM use laptop."""
+    """
+    A light version for someone who want practise LLM use laptop.
+    All model names see: https://gpt4all.io/models/models.json
+    """
 
     def match(self, model_path: str):
         return "gpt4all" in model_path
 
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
-        # TODO
-        pass
+        import gpt4all
+
+        if model_path is None and from_pretrained_kwargs.get("model_name") is None:
+            model = gpt4all.GPT4All("ggml-gpt4all-j-v1.3-groovy")
+        else:
+            path, file = os.path.split(model_path)
+            model = gpt4all.GPT4All(model_path=path, model_name=file)
+        return model, None
 
 
 class ProxyllmAdapter(BaseLLMAdaper):
-
     """The model adapter for local proxy"""
 
     def match(self, model_path: str):
@@ -211,6 +220,7 @@ register_llm_model_adapters(ChatGLMAdapater)
 register_llm_model_adapters(GuanacoAdapter)
 register_llm_model_adapters(FalconAdapater)
 register_llm_model_adapters(GorillaAdapter)
+register_llm_model_adapters(GPT4AllAdapter)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
 # just for test, remove this later

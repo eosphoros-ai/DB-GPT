@@ -39,9 +39,13 @@ class ModelWorker:
         )
 
         if not isinstance(self.model, str):
-            if hasattr(self.model.config, "max_sequence_length"):
+            if hasattr(self.model, "config") and hasattr(
+                self.model.config, "max_sequence_length"
+            ):
                 self.context_len = self.model.config.max_sequence_length
-            elif hasattr(self.model.config, "max_position_embeddings"):
+            elif hasattr(self.model, "config") and hasattr(
+                self.model.config, "max_position_embeddings"
+            ):
                 self.context_len = self.model.config.max_position_embeddings
 
         else:
@@ -69,7 +73,10 @@ class ModelWorker:
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
-                print("output: ", output)
+                # Please do not open the output in production!
+                # The gpt4all thread shares stdout with the parent process,
+                # and opening it may affect the frontend output.
+                # print("output: ", output)
                 ret = {
                     "text": output,
                     "error_code": 0,
