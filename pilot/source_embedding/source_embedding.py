@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
+
+from chromadb.errors import NotEnoughElementsException
 from pilot.configs.config import Config
 from pilot.vector_store.connector import VectorStoreConnector
 
@@ -62,7 +64,11 @@ class SourceEmbedding(ABC):
     @register
     def similar_search(self, doc, topk):
         """vector store similarity_search"""
-        return self.vector_client.similar_search(doc, topk)
+        try:
+            ans = self.vector_client.similar_search(doc, topk)
+        except NotEnoughElementsException:
+            ans = self.vector_client.similar_search(doc, 1)
+        return ans
 
     def vector_name_exist(self):
         return self.vector_client.vector_name_exists()
@@ -79,14 +85,11 @@ class SourceEmbedding(ABC):
         if "index_to_store" in registered_methods:
             self.index_to_store(text)
 
-    def batch_embedding(self):
-        if "read_batch" in registered_methods:
-            text = self.read_batch()
+    def read_batch(self):
+        if "read" in registered_methods:
+            text = self.read()
         if "data_process" in registered_methods:
             text = self.data_process(text)
         if "text_split" in registered_methods:
             self.text_split(text)
-        if "text_to_vector" in registered_methods:
-            self.text_to_vector(text)
-        if "index_to_store" in registered_methods:
-            self.index_to_store(text)
+        return text
