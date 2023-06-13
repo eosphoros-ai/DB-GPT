@@ -35,7 +35,7 @@ Currently, we have released multiple key features, which are listed below to dem
 - SQL language capabilities
   - SQL generation
   - SQL diagnosis
--  Private domain Q&A and data processing
+- Private domain Q&A and data processing
   -  Database knowledge Q&A
   - Data processing
 - Plugins
@@ -62,7 +62,7 @@ Run on an RTX 4090 GPU.
 </p>
 
 <p align="center">
-  <img src="./assets/new_knownledge_en.gif" width="680px" />
+  <img src="./assets/knownledge_qa_en.jpg" width="680px" />
 </p>
 
 ## Introduction 
@@ -225,6 +225,6 @@ This project is standing on the shoulders of giants and is not going to work wit
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/kMFf77FH)
+We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/xfNDzZ9t)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
