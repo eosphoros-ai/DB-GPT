@@ -1,0 +1,37 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-06-11 14:10+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.11.0\n"
+
+#: ../../modules/plugins.md:1 48f1b7ff4099485ba3853c373e64273f
+msgid "Plugins"
+msgstr "插件"
+
+#: ../../modules/plugins.md:3 3d94b3250511468d80aa29359f01128d
+msgid ""
+"The ability of Agent and Plugin is the core of whether large models can "
+"be automated. In this project, we natively support the plugin mode, and "
+"large models can automatically achieve their goals. At the same time, in "
+"order to give full play to the advantages of the community, the plugins "
+"used in this project natively support the Auto-GPT plugin ecology, that "
+"is, Auto-GPT plugins can directly run in our project."
+msgstr "Agent与插件能力是大模型能否自动化的核心，在本的项目中，原生支持插件模式，"
+"大模型可以自动化完成目标。 同时为了充分发挥社区的优势，本项目中所用的插件原生支持"
+"Auto-GPT插件生态，即Auto-GPT的插件可以直接在我们的项目中运行。"
+
