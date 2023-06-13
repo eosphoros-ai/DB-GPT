@@ -667,7 +667,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     logger.info(f"args: {args}")
-    # 配置初始化
+    
+    # init config 
     cfg = Config()
 
     load_native_plugins(cfg)
@@ -676,12 +677,12 @@ if __name__ == "__main__":
     async_db_summery()
     cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
 
-    # 加载插件可执行命令
+    # Loader plugins and commands
     command_categories = [
         "pilot.commands.built_in.audio_text",
         "pilot.commands.built_in.image_gen",
     ]
-    # 排除禁用命令
+    # exclude commands 
     command_categories = [
         x for x in command_categories if x not in cfg.disabled_command_categories
     ]
