@@ -136,6 +136,8 @@ class BaseChat(ABC):
         return payload
 
     def stream_call(self):
+
+        # TODO Retry when server connection error
         payload = self.__call_base()
 
         self.skip_echo_len = len(payload.get("prompt").replace("</s>", " ")) + 11
