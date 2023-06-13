@@ -10,7 +10,7 @@
     </a>
   </p>
 
-[**简体中文**](README.zh.md)|[**Discord**](https://discord.gg/ea6BnZkY) 
+[**简体中文**](README.zh.md)|[**Discord**](https://discord.gg/xfNDzZ9t) 
 </div>
 
 ## What is DB-GPT?
@@ -46,7 +46,7 @@ Currently, we have released multiple key features, which are listed below to dem
   - Support for unstructured data such as PDF, Markdown, CSV, and WebURL
 
 - Milti LLMs Support
-  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8), guanaco(7b,13b,33b) 
+  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b)
   - TODO: codegen2, codet5p
 
 
