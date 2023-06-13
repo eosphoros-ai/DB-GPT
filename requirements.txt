@@ -29,7 +29,7 @@ tokenizers==0.13.2
 tqdm==4.64.1
 transformers==4.28.0
 timm==0.6.13
-spacy==3.5.1
+spacy==3.5.3
 webdataset==0.2.48
 yarl==1.8.2
 zipp==3.14.0
