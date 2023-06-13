@@ -13,8 +13,18 @@ VECTORE_PATH = os.path.join(PILOT_PATH, "vector_store")
 LOGDIR = os.path.join(ROOT_PATH, "logs")
 DATASETS_DIR = os.path.join(PILOT_PATH, "datasets")
 DATA_DIR = os.path.join(PILOT_PATH, "data")
-
 nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
+PLUGINS_DIR =  os.path.join(ROOT_PATH, "plugins")
+FONT_DIR =  os.path.join(PILOT_PATH, "fonts")
+
+# 获取当前工作目录
+current_directory = os.getcwd()
+print("当前工作目录：", current_directory)
+
+# 设置当前工作目录
+new_directory = PILOT_PATH
+os.chdir(new_directory)
+print("新的工作目录：", os.getcwd())
 
 DEVICE = (
     "cuda"
