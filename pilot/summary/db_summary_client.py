@@ -32,13 +32,14 @@ class DBSummaryClient:
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
         vector_store_config = {
-            "vector_store_name": dbname + "_profile",
+            "vector_store_name": dbname + "_summary",
             "embeddings": embeddings,
         }
         embedding = StringEmbedding(
             file_path=db_summary_client.get_summery(),
             vector_store_config=vector_store_config,
         )
+        self.init_db_profile(db_summary_client, dbname, embeddings)
         if not embedding.vector_name_exist():
             if CFG.SUMMARY_CONFIG == "FAST":
                 for vector_table_info in db_summary_client.get_summery():
@@ -69,10 +70,22 @@ class DBSummaryClient:
 
         logger.info("db summary embedding success")
 
+    def get_db_summary(self, dbname, query, topk):
+        vector_store_config = {
+            "vector_store_name": dbname + "_profile",
+        }
+        knowledge_embedding_client = KnowledgeEmbedding(
+            model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            vector_store_config=vector_store_config,
+        )
+        table_docs =knowledge_embedding_client.similar_search(query, topk)
+        ans = [d.page_content for d in table_docs]
+        return ans
+
     def get_similar_tables(self, dbname, query, topk):
         """get user query related tables info"""
         vector_store_config = {
-            "vector_store_name": dbname + "_profile",
+            "vector_store_name": dbname + "_summary",
         }
         knowledge_embedding_client = KnowledgeEmbedding(
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
@@ -111,6 +124,29 @@ class DBSummaryClient:
         dbs = db.get_database_list()
         for dbname in dbs:
             self.db_summary_embedding(dbname)
+
+    def init_db_profile(self, db_summary_client, dbname, embeddings):
+        profile_store_config = {
+            "vector_store_name": dbname + "_profile",
+            "embeddings": embeddings,
+        }
+        embedding = StringEmbedding(
+            file_path=db_summary_client.get_db_summery(),
+            vector_store_config=profile_store_config,
+        )
+        if not embedding.vector_name_exist():
+            docs = []
+            docs.extend(embedding.read_batch())
+            for table_summary in db_summary_client.table_info_json():
+                embedding = StringEmbedding(
+                    table_summary,
+                    profile_store_config,
+                )
+                docs.extend(embedding.read_batch())
+            embedding.index_to_store(docs)
+        logger.info("init db profile success...")
+
+
 
 
 def _get_llm_response(query, db_input, dbsummary):

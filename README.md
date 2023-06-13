@@ -10,7 +10,7 @@
     </a>
   </p>
 
-[**简体中文**](README.zh.md)|[**Discord**](https://discord.gg/ea6BnZkY) 
+[**简体中文**](README.zh.md)|[**Discord**](https://discord.gg/xfNDzZ9t) 
 </div>
 
 ## What is DB-GPT?
@@ -35,7 +35,7 @@ Currently, we have released multiple key features, which are listed below to dem
 - SQL language capabilities
   - SQL generation
   - SQL diagnosis
--  Private domain Q&A and data processing
+- Private domain Q&A and data processing
   -  Database knowledge Q&A
   - Data processing
 - Plugins
@@ -46,7 +46,7 @@ Currently, we have released multiple key features, which are listed below to dem
   - Support for unstructured data such as PDF, Markdown, CSV, and WebURL
 
 - Milti LLMs Support
-  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8), guanaco(7b,13b,33b) 
+  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b)
   - TODO: codegen2, codet5p
 
 
@@ -62,7 +62,7 @@ Run on an RTX 4090 GPU.
 </p>
 
 <p align="center">
-  <img src="./assets/new_knownledge_en.gif" width="680px" />
+  <img src="./assets/knownledge_qa_en.jpg" width="680px" />
 </p>
 
 ## Introduction 
@@ -179,6 +179,15 @@ In the .env configuration file, modify the LANGUAGE parameter to switch between 
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
 
+We currently support many document formats: txt, pdf, md, html, doc, ppt, and url.
+
+before execution:
+
+```
+python -m spacy download zh_core_web_sm
+
+```
+
 2.set .env configuration set your vector store type, eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > 2.1)
 
 3.Run the knowledge repository script in the tools directory.
@@ -225,6 +234,6 @@ This project is standing on the shoulders of giants and is not going to work wit
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/kMFf77FH)
+We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/xfNDzZ9t)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)

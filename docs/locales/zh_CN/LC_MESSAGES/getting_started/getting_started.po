@@ -1,0 +1,179 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-06-11 14:10+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.11.0\n"
+
+#: ../../getting_started/getting_started.md:1 cf1947dea9a843dd8b6fff68642f29b1
+msgid "Quickstart Guide"
+msgstr "使用指南"
+
+#: ../../getting_started/getting_started.md:3 4184879bf5b34521a95e497f4747241a
+msgid ""
+"This tutorial gives you a quick walkthrough about use DB-GPT with you "
+"environment and data."
+msgstr "本教程为您提供了关于如何使用DB-GPT的使用指南。"
+
+#: ../../getting_started/getting_started.md:5 7431b72cc1504b8bbcafb7512a6b6c92
+msgid "Installation"
+msgstr "安装"
+
+#: ../../getting_started/getting_started.md:7 b8faf2ec4e034855a2674ffcade8cee2
+msgid "To get started, install DB-GPT with the following steps."
+msgstr "请按照以下步骤安装DB-GPT"
+
+#: ../../getting_started/getting_started.md:9 ae0f536a064647cda04ea3d253991d80
+msgid "1. Hardware Requirements"
+msgstr "1. 硬件要求"
+
+#: ../../getting_started/getting_started.md:10 8fa637100e644b478e0d6858f0a5b63d
+msgid ""
+"As our project has the ability to achieve ChatGPT performance of over "
+"85%, there are certain hardware requirements. However, overall, the "
+"project can be deployed and used on consumer-grade graphics cards. The "
+"specific hardware requirements for deployment are as follows:"
+msgstr "由于我们的项目有能力达到85%以上的ChatGPT性能，所以对硬件有一定的要求。"
+"但总体来说，我们在消费级的显卡上即可完成项目的部署使用，具体部署的硬件说明如下:"
+
+#: ../../getting_started/getting_started.md c68539579083407882fb0d28943d40db
+msgid "GPU"
+msgstr "GPU"
+
+#: ../../getting_started/getting_started.md 613fbe77d41a4a20a30c3c9a0b6ec20c
+msgid "VRAM Size"
+msgstr "显存大小"
+
+#: ../../getting_started/getting_started.md c0b7f8249d3d4c629ba5deb8188a49b4
+msgid "Performance"
+msgstr "显存大小"
+
+#: ../../getting_started/getting_started.md 5d103f7e4d1b4b6cb7358c0c717c9f73
+msgid "RTX 4090"
+msgstr "RTX 4090"
+
+#: ../../getting_started/getting_started.md 48338f6b18dc41efb3613d47b1a762a7
+#: f14d278e083440b58fc7faeed30e2879
+msgid "24 GB"
+msgstr "24 GB"
+
+#: ../../getting_started/getting_started.md dc238037ff3449cdb95cbd882d8de170
+msgid "Smooth conversation inference"
+msgstr "可以流畅的进行对话推理，无卡顿"
+
+#: ../../getting_started/getting_started.md d7f84ac79bf84cb6a453d3bfd26eb935
+msgid "RTX 3090"
+msgstr "RTX 3090"
+
+#: ../../getting_started/getting_started.md 511ee322b777476b87a3aa5624609944
+msgid "Smooth conversation inference, better than V100"
+msgstr "可以流畅进行对话推理，有卡顿感，但好于V100"
+
+#: ../../getting_started/getting_started.md 974b704e8cf84f6483774153df8a8c6c
+msgid "V100"
+msgstr "V100"
+
+#: ../../getting_started/getting_started.md 72008961ce004a0fa24b74db55fcf96e
+msgid "16 GB"
+msgstr "16 GB"
+
+#: ../../getting_started/getting_started.md 2a3b936fe04c4b7789680c26be7f4869
+msgid "Conversation inference possible, noticeable stutter"
+msgstr "可以进行对话推理，有明显卡顿"
+
+#: ../../getting_started/getting_started.md:18 fb1dbccb8f804384ade8e171aa40f99c
+msgid "2. Install"
+msgstr "2. 安装"
+
+#: ../../getting_started/getting_started.md:20 695fdb8858c6488e9a0872d68fb387e5
+msgid ""
+"This project relies on a local MySQL database service, which you need to "
+"install locally. We recommend using Docker for installation."
+msgstr "本项目依赖一个本地的 MySQL 数据库服务，你需要本地安装，推荐直接使用 Docker 安装。"
+
+#: ../../getting_started/getting_started.md:25 954f3a282ec54b11a55ebfe1f680d1df
+msgid ""
+"We use [Chroma embedding database](https://github.com/chroma-core/chroma)"
+" as the default for our vector database, so there is no need for special "
+"installation. If you choose to connect to other databases, you can follow"
+" our tutorial for installation and configuration.  For the entire "
+"installation process of DB-GPT, we use the miniconda3 virtual "
+"environment. Create a virtual environment and install the Python "
+"dependencies."
+msgstr "向量数据库我们默认使用的是Chroma内存数据库，所以无需特殊安装，如果有"
+"需要连接其他的同学，可以按照我们的教程进行安装配置。整个DB-GPT的"
+"安装过程，我们使用的是miniconda3的虚拟环境。创建虚拟环境，并安装python依赖包"
+
+
+#: ../../getting_started/getting_started.md:35 0314bad0928940fc8e382d289d356c66
+msgid ""
+"Once the environment is installed, we have to create a new folder "
+"\"models\" in the DB-GPT project, and then we can put all the models "
+"downloaded from huggingface in this directory"
+msgstr "环境安装完成后，我们必须在DB-GPT项目中创建一个新文件夹\"models\"，"
+"然后我们可以把从huggingface下载的所有模型放到这个目录下。"
+
+#: ../../getting_started/getting_started.md:42 afdf176f72224fd6b8b6e9e23c80c1ef
+msgid ""
+"The model files are large and will take a long time to download. During "
+"the download, let's configure the .env file, which needs to be copied and"
+" created from the .env.template"
+msgstr "模型文件很大，需要很长时间才能下载。在下载过程中，让我们配置.env文件，"
+"它需要从。env.template中复制和创建。"
+
+#: ../../getting_started/getting_started.md:48 76c87610993f41059c3c0aade5117171
+msgid ""
+"You can configure basic parameters in the .env file, for example setting "
+"LLM_MODEL to the model to be used"
+msgstr "您可以在.env文件中配置基本参数，例如将LLM_MODEL设置为要使用的模型。"
+
+#: ../../getting_started/getting_started.md:35 443f5f92e4cd4ce4887bae2556b605b0
+msgid "3. Run"
+msgstr "3. 运行"
+
+#: ../../getting_started/getting_started.md:36 3dab200eceda460b81a096d44de43d21
+msgid ""
+"You can refer to this document to obtain the Vicuna weights: "
+"[Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-"
+"weights) ."
+msgstr "关于基础模型, 可以根据[Vicuna](https://github.com/lm-sys/FastChat/b"
+"lob/main/README.md#model-weights) 合成教程进行合成。"
+
+
+#: ../../getting_started/getting_started.md:38 b036ca6294f04bceb686187d2d8b6646
+msgid ""
+"If you have difficulty with this step, you can also directly use the "
+"model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a "
+"replacement."
+msgstr "如果此步有困难的同学，也可以直接使用[此链接](https://huggingface.co/Tribbiani/vicuna-7b)上的模型进行替代。"
+
+#: ../../getting_started/getting_started.md:40 35537c13ff6f4bd69951c486274ca1f9
+msgid "Run server"
+msgstr "运行模型服务"
+
+#: ../../getting_started/getting_started.md:45 f7aa3668a6c94fb3a1b8346392d921f3
+msgid "Run gradio webui"
+msgstr "运行模型服务"
+
+#: ../../getting_started/getting_started.md:51 d80c908f01144e2c8a15b7f6e8e7f88d
+msgid ""
+"Notice:  the webserver need to connect llmserver,  so you need change the"
+" .env file. change the MODEL_SERVER = \"http://127.0.0.1:8000\" to your "
+"address.  It's very important."
+msgstr "注意: 在启动Webserver之前, 需要修改.env 文件中的MODEL_SERVER"
+" = "http://127.0.0.1:8000", 将地址设置为你的服务器地址。"
+
