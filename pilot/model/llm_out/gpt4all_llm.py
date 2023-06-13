@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
+import threading
+import sys
+import time
+
 
 def gpt4all_generate_stream(model, tokenizer, params, device, max_position_embeddings):
     stop = params.get("stop", "###")
@@ -7,11 +11,13 @@ def gpt4all_generate_stream(model, tokenizer, params, device, max_position_embed
     role, query = prompt.split(stop)[1].split(":")
     print(f"gpt4all, role: {role}, query: {query}")
 
-    messages = [{"role": "user", "content": query}]
-    res = model.chat_completion(messages)
-    if res.get('choices') and len(res.get('choices')) > 0 and res.get('choices')[0].get('message') and \
-            res.get('choices')[0].get('message').get('content'):
-        yield res.get('choices')[0].get('message').get('content')
-    else:
-        yield "error response"
+    def worker():
+        model.generate(prompt=query, streaming=True)
 
+    t = threading.Thread(target=worker)
+    t.start()
+
+    while t.is_alive():
+        yield sys.stdout.output
+        time.sleep(0.1)
+    t.join()

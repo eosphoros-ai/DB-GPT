@@ -187,8 +187,8 @@ class RWKV4LLMAdapter(BaseLLMAdaper):
 
 class GPT4AllAdapter(BaseLLMAdaper):
     """
-        A light version for someone who want practise LLM use laptop.
-        All model names see: https://gpt4all.io/models/models.json
+    A light version for someone who want practise LLM use laptop.
+    All model names see: https://gpt4all.io/models/models.json
     """
 
     def match(self, model_path: str):
@@ -197,7 +197,7 @@ class GPT4AllAdapter(BaseLLMAdaper):
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
         import gpt4all
 
-        if model_path is None and from_pretrained_kwargs.get('model_name') is None:
+        if model_path is None and from_pretrained_kwargs.get("model_name") is None:
             model = gpt4all.GPT4All("ggml-gpt4all-j-v1.3-groovy")
         else:
             path, file = os.path.split(model_path)

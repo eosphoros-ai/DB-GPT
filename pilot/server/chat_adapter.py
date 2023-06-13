@@ -125,7 +125,6 @@ class GorillaChatAdapter(BaseChatAdpter):
 
 
 class GPT4AllChatAdapter(BaseChatAdpter):
-
     def match(self, model_path: str):
         return "gpt4all" in model_path
 
