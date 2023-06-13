@@ -10,6 +10,15 @@ As the knowledge base is currently the most significant user demand scenario, we
 
 1.Place personal knowledge files or folders in the pilot/datasets directory.
 
+We currently support many document formats: txt, pdf, md, html, doc, ppt, and url.
+
+before execution:
+
+```
+python -m spacy download zh_core_web_sm
+
+```
+
 2.Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma
 (now only support Chroma and Milvus, if you set Milvus, please set MILVUS_URL and MILVUS_PORT)
 
@@ -19,7 +28,6 @@ As the knowledge base is currently the most significant user demand scenario, we
 python tools/knowledge_init.py
 
 --vector_name : your vector store name  default_value:default
---append: append mode, True:append, False: not append default_value:False
 
 ```
 
