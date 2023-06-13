@@ -3,6 +3,7 @@ import os
 import pytest
 
 from pilot.configs.config import Config
+from pilot.configs.model_config import PLUGINS_DIR
 from pilot.plugins import (
     denylist_allowlist_check,
     inspect_zip_for_modules,

@@ -17,8 +17,9 @@ class Config(metaclass=Singleton):
     def __init__(self) -> None:
         """Initialize the Config class"""
 
-        # Gradio language version: en, cn
+        # Gradio language version: en, zh
         self.LANGUAGE = os.getenv("LANGUAGE", "en")
+        self.WEB_SERVER_PORT = int(os.getenv("WEB_SERVER_PORT", 7860))
 
         self.debug_mode = False
         self.skip_reprompt = False
@@ -36,7 +37,7 @@ class Config(metaclass=Singleton):
             " (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36",
         )
 
-        # This is a proxy server, just for test.  we will remove this later.
+        # This is a proxy server, just for test_py.  we will remove this later.
         self.proxy_api_key = os.getenv("PROXY_API_KEY")
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
@@ -87,9 +88,10 @@ class Config(metaclass=Singleton):
         self.message_dir = os.getenv("MESSAGE_HISTORY_DIR", "../../message")
 
         ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
-        self.plugins_dir = os.getenv("PLUGINS_DIR", "../../plugins")
         self.plugins: List[AutoGPTPluginTemplate] = []
         self.plugins_openai = []
+
+        self.plugins_git_branch = os.getenv("PLUGINS_GIT_BRANCH", "plugin_dashboard")
 
         plugins_allowlist = os.getenv("ALLOWLISTED_PLUGINS")
         if plugins_allowlist:
@@ -112,6 +114,7 @@ class Config(metaclass=Singleton):
 
         ### Local database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST", "127.0.0.1")
+        self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "xx.db")
         self.LOCAL_DB_PORT = int(os.getenv("LOCAL_DB_PORT", 3306))
         self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")

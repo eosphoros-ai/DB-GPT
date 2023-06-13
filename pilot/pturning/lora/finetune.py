@@ -110,7 +110,7 @@ train_val = data["train"].train_test_split(test_size=200, shuffle=True, seed=42)
 
 train_data = train_val["train"].map(generate_and_tokenize_prompt)
 
-val_data = train_val["test"].map(generate_and_tokenize_prompt)
+val_data = train_val["test_py"].map(generate_and_tokenize_prompt)
 
 # Training
 LORA_R = 8
