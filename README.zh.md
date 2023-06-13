@@ -178,6 +178,13 @@ $ python webserver.py
 
 当前支持的文档格式: txt, pdf, md, html, doc, ppt, and url.
 
+在操作之前先执行
+
+```
+python -m spacy download zh_core_web_sm
+
+```
+
 2.在.env文件指定你的向量数据库类型,VECTOR_STORE_TYPE(默认Chroma),目前支持Chroma,Milvus(需要设置MILVUS_URL和MILVUS_PORT)
 
 注意Milvus版本需要>2.1
