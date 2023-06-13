@@ -43,7 +43,7 @@ Currently, we have released multiple key features, which are listed below to dem
     - Automatic execution of SQL and retrieval of query results
     - Automatic crawling and learning of knowledge
 - Unified vector storage/indexing of knowledge base
-  - Support for unstructured data such as PDF, Markdown, CSV, and WebURL
+  - Support for unstructured data such as PDF, TXT, Markdown, CSV, DOC, PPT, and WebURL
 
 - Milti LLMs Support
   - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b)
