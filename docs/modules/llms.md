@@ -13,6 +13,19 @@ MODEL_SERVER=http://127.0.0.1:8000
 ```
 now we support models vicuna-13b, vicuna-7b, chatglm-6b, flan-t5-base, guanaco-33b-merged, falcon-40b, gorilla-7b.
 
+if you want use other model, such as chatglm-6b, you just need update .env config file.
+```
+LLM_MODEL=chatglm-6b
+```
+
+## Run Model with cpu.
+we alse support smaller models, like gpt4all.  you can use it with cpu/mps(M1/M2), Download from [gpt4all model](https://gpt4all.io/models/ggml-gpt4all-j-v1.3-groovy.bin)
+
+put it in the models path, then change .env config.
+```
+LLM_MODEL=gptj-6b
+```
+
 DB-GPT provides a model load adapter and chat adapter. load adapter which allows you to easily adapt load different LLM models by inheriting the BaseLLMAdapter. You just implement match() and loader() method.
 
 vicuna llm load adapter
@@ -87,7 +100,6 @@ class ChatGLMChatAdapter(BaseChatAdpter):
         return chatglm_generate_stream
 ```
  if you want to integrate your own model, just need to inheriting BaseLLMAdaper and BaseChatAdpter and implement the methods
- 
 
 ## Multi Proxy LLMs
 ### 1. Openai proxy
