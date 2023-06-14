@@ -35,13 +35,12 @@ class RDBMSDatabase(BaseConnect):
     """SQLAlchemy wrapper around a database."""
 
     def __init__(
-            self,
-            engine,
-            schema: Optional[str] = None,
-            metadata: Optional[MetaData] = None,
-            ignore_tables: Optional[List[str]] = None,
-            include_tables: Optional[List[str]] = None,
-
+        self,
+        engine,
+        schema: Optional[str] = None,
+        metadata: Optional[MetaData] = None,
+        ignore_tables: Optional[List[str]] = None,
+        include_tables: Optional[List[str]] = None,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -61,18 +60,37 @@ class RDBMSDatabase(BaseConnect):
         Todo password encryption
         Returns:
         """
-        return cls.from_uri_db(cls,
-                               CFG.LOCAL_DB_HOST,
-                               CFG.LOCAL_DB_PORT,
-                               CFG.LOCAL_DB_USER,
-                               CFG.LOCAL_DB_PASSWORD,
-                               engine_args={"pool_size": 10, "pool_recycle": 3600, "echo": True})
+        return cls.from_uri_db(
+            cls,
+            CFG.LOCAL_DB_HOST,
+            CFG.LOCAL_DB_PORT,
+            CFG.LOCAL_DB_USER,
+            CFG.LOCAL_DB_PASSWORD,
+            engine_args={"pool_size": 10, "pool_recycle": 3600, "echo": True},
+        )
 
     @classmethod
-    def from_uri_db(cls, host: str, port: int, user: str, pwd: str, db_name: str = None,
-                    engine_args: Optional[dict] = None, **kwargs: Any) -> RDBMSDatabase:
-        db_url: str = cls.connect_driver + "://" + CFG.LOCAL_DB_USER + ":" + CFG.LOCAL_DB_PASSWORD + "@" + CFG.LOCAL_DB_HOST + ":" + str(
-            CFG.LOCAL_DB_PORT)
+    def from_uri_db(
+        cls,
+        host: str,
+        port: int,
+        user: str,
+        pwd: str,
+        db_name: str = None,
+        engine_args: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> RDBMSDatabase:
+        db_url: str = (
+            cls.connect_driver
+            + "://"
+            + CFG.LOCAL_DB_USER
+            + ":"
+            + CFG.LOCAL_DB_PASSWORD
+            + "@"
+            + CFG.LOCAL_DB_HOST
+            + ":"
+            + str(CFG.LOCAL_DB_PORT)
+        )
         if cls.dialect:
             db_url = cls.dialect + "+" + db_url
         if db_name:
@@ -81,7 +99,7 @@ class RDBMSDatabase(BaseConnect):
 
     @classmethod
     def from_uri(
-            cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
+        cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
     ) -> RDBMSDatabase:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
@@ -167,7 +185,7 @@ class RDBMSDatabase(BaseConnect):
             tbl
             for tbl in self._metadata.sorted_tables
             if tbl.name in set(all_table_names)
-               and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
+            and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
         ]
 
         tables = []
@@ -180,7 +198,7 @@ class RDBMSDatabase(BaseConnect):
             create_table = str(CreateTable(table).compile(self._engine))
             table_info = f"{create_table.rstrip()}"
             has_extra_info = (
-                    self._indexes_in_table_info or self._sample_rows_in_table_info
+                self._indexes_in_table_info or self._sample_rows_in_table_info
             )
             if has_extra_info:
                 table_info += "\n\n/*"

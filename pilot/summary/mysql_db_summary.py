@@ -43,15 +43,14 @@ CFG = Config()
 #     "tps": 50
 # }
 
+
 class MysqlSummary(DBSummary):
     """Get mysql summary template."""
 
     def __init__(self, name):
         self.name = name
         self.type = "MYSQL"
-        self.summery = (
-            """{{"database_name": "{name}", "type": "{type}", "tables": "{tables}", "qps": "{qps}", "tps": {tps}}}"""
-        )
+        self.summery = """{{"database_name": "{name}", "type": "{type}", "tables": "{tables}", "qps": "{qps}", "tps": {tps}}}"""
         self.tables = {}
         self.tables_info = []
         self.vector_tables_info = []
@@ -92,9 +91,12 @@ class MysqlSummary(DBSummary):
             self.tables[table_name] = table_summary.get_columns()
             self.table_columns_info.append(table_summary.get_columns())
             # self.table_columns_json.append(table_summary.get_summary_json())
-            table_profile = "table name:{table_name},table description:{table_comment}".format(
-                    table_name=table_name, table_comment=self.db.get_show_create_table(table_name)
+            table_profile = (
+                "table name:{table_name},table description:{table_comment}".format(
+                    table_name=table_name,
+                    table_comment=self.db.get_show_create_table(table_name),
                 )
+            )
             self.table_columns_json.append(table_profile)
             # self.tables_info.append(table_summary.get_summery())
 
@@ -108,7 +110,11 @@ class MysqlSummary(DBSummary):
 
     def get_db_summery(self):
         return self.summery.format(
-            name=self.name, type=self.type, tables=";".join(self.vector_tables_info), qps=1000, tps=1000
+            name=self.name,
+            type=self.type,
+            tables=";".join(self.vector_tables_info),
+            qps=1000,
+            tps=1000,
         )
 
     def get_table_summary(self):
@@ -153,7 +159,12 @@ class MysqlTableSummary(TableSummary):
             self.indexes_info.append(index_summary.get_summery())
 
         self.json_summery = self.json_summery_template.format(
-            name=name, comment=comment_map[name], fields=self.fields_info, indexes=self.indexes_info, size_in_bytes=1000, rows=1000
+            name=name,
+            comment=comment_map[name],
+            fields=self.fields_info,
+            indexes=self.indexes_info,
+            size_in_bytes=1000,
+            rows=1000,
         )
 
     def get_summery(self):
@@ -203,7 +214,9 @@ class MysqlIndexSummary(IndexSummary):
         self.bind_fields = index[1]
 
     def get_summery(self):
-        return self.summery_template.format(name=self.name, bind_fields=self.bind_fields)
+        return self.summery_template.format(
+            name=self.name, bind_fields=self.bind_fields
+        )
 
 
 if __name__ == "__main__":

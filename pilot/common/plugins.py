@@ -77,19 +77,23 @@ def load_native_plugins(cfg: Config):
     print("load_native_plugins")
     ### TODO 默认拉主分支，后续拉发布版本
     branch_name = cfg.plugins_git_branch
-    native_plugin_repo ="DB-GPT-Plugins"
+    native_plugin_repo = "DB-GPT-Plugins"
     url = "https://github.com/csunny/{repo}/archive/{branch}.zip"
-    response = requests.get(url.format(repo=native_plugin_repo, branch=branch_name),
-                            headers={'Authorization': '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'})
+    response = requests.get(
+        url.format(repo=native_plugin_repo, branch=branch_name),
+        headers={"Authorization": "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"},
+    )
 
     if response.status_code == 200:
         plugins_path_path = Path(PLUGINS_DIR)
-        files = glob.glob(os.path.join(plugins_path_path, f'{native_plugin_repo}*'))
+        files = glob.glob(os.path.join(plugins_path_path, f"{native_plugin_repo}*"))
         for file in files:
             os.remove(file)
         now = datetime.datetime.now()
-        time_str = now.strftime('%Y%m%d%H%M%S')
-        file_name = f"{plugins_path_path}/{native_plugin_repo}-{branch_name}-{time_str}.zip"
+        time_str = now.strftime("%Y%m%d%H%M%S")
+        file_name = (
+            f"{plugins_path_path}/{native_plugin_repo}-{branch_name}-{time_str}.zip"
+        )
         print(file_name)
         with open(file_name, "wb") as f:
             f.write(response.content)

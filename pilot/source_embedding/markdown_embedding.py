@@ -30,7 +30,11 @@ class MarkdownEmbedding(SourceEmbedding):
     def read(self):
         """Load from markdown path."""
         loader = EncodeTextLoader(self.file_path)
-        textsplitter = SpacyTextSplitter(pipeline='zh_core_web_sm', chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE, chunk_overlap=200)
+        textsplitter = SpacyTextSplitter(
+            pipeline="zh_core_web_sm",
+            chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
+            chunk_overlap=100,
+        )
         return loader.load_and_split(textsplitter)
 
     @register

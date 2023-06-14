@@ -51,7 +51,7 @@ class BaseOutputParser(ABC):
 
         """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
         """
-        if data["error_code"] == 0:
+        if data.get("error_code", 0) == 0:
             if "vicuna" in CFG.LLM_MODEL:
                 # output = data["text"][skip_echo_len + 11:].strip()
                 output = data["text"][skip_echo_len:].strip()
@@ -121,17 +121,17 @@ class BaseOutputParser(ABC):
             raise ValueError("Model server error!code=" + respObj_ex["error_code"])
 
     def __extract_json(slef, s):
-        i = s.index('{')
+        i = s.index("{")
         count = 1  # 当前所在嵌套深度，即还没闭合的'{'个数
-        for j, c in enumerate(s[i + 1:], start=i + 1):
-            if c == '}':
+        for j, c in enumerate(s[i + 1 :], start=i + 1):
+            if c == "}":
                 count -= 1
-            elif c == '{':
+            elif c == "{":
                 count += 1
             if count == 0:
                 break
-        assert (count == 0)  # 检查是否找到最后一个'}'
-        return s[i:j + 1]
+        assert count == 0  # 检查是否找到最后一个'}'
+        return s[i : j + 1]
 
     def parse_prompt_response(self, model_out_text) -> T:
         """
