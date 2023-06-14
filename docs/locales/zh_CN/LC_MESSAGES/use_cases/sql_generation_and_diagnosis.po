@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-14 14:51+0800\n"
+"POT-Creation-Date: 2023-06-14 21:47+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -37,6 +37,15 @@ msgstr ""
 
 #: ../../use_cases/sql_generation_and_diagnosis.md:5
 #: ffcbe5278cdc41a7b656f03bf82a8b26
-msgid "[SQL Generation](../../assets/demo_en.gif)"
+msgid "![SQL Generation](../../assets/demo_en.gif)"
 msgstr ""
+
+#: ../../use_cases/sql_generation_and_diagnosis.md:5
+#: 3e5a3a7db4ee4cc8bff28c3f2c7387dd
+#, fuzzy
+msgid "SQL Generation"
+msgstr "SQL生成和诊断"
+
+#~ msgid "![SQL Generation](../../assets/demo_en.gif)"
+#~ msgstr "![SQL 生成](../../assets/demo_en.gif)"
 
