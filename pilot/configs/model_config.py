@@ -13,8 +13,14 @@ VECTORE_PATH = os.path.join(PILOT_PATH, "vector_store")
 LOGDIR = os.path.join(ROOT_PATH, "logs")
 DATASETS_DIR = os.path.join(PILOT_PATH, "datasets")
 DATA_DIR = os.path.join(PILOT_PATH, "data")
-
 nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
+PLUGINS_DIR = os.path.join(ROOT_PATH, "plugins")
+FONT_DIR = os.path.join(PILOT_PATH, "fonts")
+
+current_directory = os.getcwd()
+
+new_directory = PILOT_PATH
+os.chdir(new_directory)
 
 DEVICE = (
     "cuda"
@@ -37,6 +43,7 @@ LLM_MODEL_CONFIG = {
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "falcon-40b": os.path.join(MODEL_PATH, "falcon-40b"),
     "gorilla-7b": os.path.join(MODEL_PATH, "gorilla-7b"),
+    "gptj-6b": os.path.join(MODEL_PATH, "ggml-gpt4all-j-v1.3-groovy.bin"),
     "proxyllm": "proxyllm",
 }
 

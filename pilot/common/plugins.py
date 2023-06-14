@@ -2,7 +2,10 @@
 
 import json
 import os
+import glob
 import zipfile
+import requests
+import datetime
 from pathlib import Path
 from typing import List
 from urllib.parse import urlparse
@@ -12,6 +15,7 @@ import requests
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 from pilot.configs.config import Config
+from pilot.configs.model_config import PLUGINS_DIR
 from pilot.logs import logger
 
 
@@ -69,6 +73,35 @@ def create_directory_if_not_exists(directory_path: str) -> bool:
         return True
 
 
+def load_native_plugins(cfg: Config):
+    print("load_native_plugins")
+    ### TODO 默认拉主分支，后续拉发布版本
+    branch_name = cfg.plugins_git_branch
+    native_plugin_repo = "DB-GPT-Plugins"
+    url = "https://github.com/csunny/{repo}/archive/{branch}.zip"
+    response = requests.get(
+        url.format(repo=native_plugin_repo, branch=branch_name),
+        headers={"Authorization": "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"},
+    )
+
+    if response.status_code == 200:
+        plugins_path_path = Path(PLUGINS_DIR)
+        files = glob.glob(os.path.join(plugins_path_path, f"{native_plugin_repo}*"))
+        for file in files:
+            os.remove(file)
+        now = datetime.datetime.now()
+        time_str = now.strftime("%Y%m%d%H%M%S")
+        file_name = (
+            f"{plugins_path_path}/{native_plugin_repo}-{branch_name}-{time_str}.zip"
+        )
+        print(file_name)
+        with open(file_name, "wb") as f:
+            f.write(response.content)
+        print("文件已保存到本地")
+    else:
+        print("获取Release信息失败，状态码为：", response.status_code)
+
+
 def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate]:
     """Scan the plugins directory for plugins and loads them.
 
@@ -83,7 +116,7 @@ def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate
     current_dir = os.getcwd()
     print(current_dir)
     # Generic plugins
-    plugins_path_path = Path(cfg.plugins_dir)
+    plugins_path_path = Path(PLUGINS_DIR)
 
     logger.debug(f"Allowlisted Plugins: {cfg.plugins_allowlist}")
     logger.debug(f"Denylisted Plugins: {cfg.plugins_denylist}")
@@ -104,7 +137,7 @@ def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate
                     if (
                         "_abc_impl" in a_keys
                         and a_module.__name__ != "AutoGPTPluginTemplate"
-                        and denylist_allowlist_check(a_module.__name__, cfg)
+                        # and denylist_allowlist_check(a_module.__name__, cfg)
                     ):
                         loaded_plugins.append(a_module())
 
