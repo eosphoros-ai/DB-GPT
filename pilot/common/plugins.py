@@ -78,6 +78,7 @@ def load_native_plugins(cfg: Config):
     if not cfg.plugins_auto_load:
         print("not auto load_native_plugins")
         return
+
     def load_from_git(cfg: Config):
         print("async load_native_plugins")
         branch_name = cfg.plugins_git_branch
@@ -85,16 +86,20 @@ def load_native_plugins(cfg: Config):
         url = "https://github.com/csunny/{repo}/archive/{branch}.zip"
         try:
             session = requests.Session()
-            response = session.get(url.format(repo=native_plugin_repo, branch=branch_name),
-                                    headers={'Authorization': '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'})
+            response = session.get(
+                url.format(repo=native_plugin_repo, branch=branch_name),
+                headers={"Authorization": "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"},
+            )
 
             if response.status_code == 200:
                 plugins_path_path = Path(PLUGINS_DIR)
-                files = glob.glob(os.path.join(plugins_path_path, f'{native_plugin_repo}*'))
+                files = glob.glob(
+                    os.path.join(plugins_path_path, f"{native_plugin_repo}*")
+                )
                 for file in files:
                     os.remove(file)
                 now = datetime.datetime.now()
-                time_str = now.strftime('%Y%m%d%H%M%S')
+                time_str = now.strftime("%Y%m%d%H%M%S")
                 file_name = f"{plugins_path_path}/{native_plugin_repo}-{branch_name}-{time_str}.zip"
                 print(file_name)
                 with open(file_name, "wb") as f:
@@ -108,7 +113,6 @@ def load_native_plugins(cfg: Config):
 
     t = threading.Thread(target=load_from_git, args=(cfg,))
     t.start()
-
 
 
 def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate]:
