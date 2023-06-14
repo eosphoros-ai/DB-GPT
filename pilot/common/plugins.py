@@ -84,7 +84,8 @@ def load_native_plugins(cfg: Config):
         native_plugin_repo = "DB-GPT-Plugins"
         url = "https://github.com/csunny/{repo}/archive/{branch}.zip"
         try:
-            response = requests.get(url.format(repo=native_plugin_repo, branch=branch_name),
+            session = requests.Session()
+            response = session.get(url.format(repo=native_plugin_repo, branch=branch_name),
                                     headers={'Authorization': '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'})
 
             if response.status_code == 200:
