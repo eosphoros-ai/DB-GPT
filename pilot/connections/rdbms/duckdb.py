@@ -1,13 +1,16 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+from typing import Optional, Any
+
 from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
 
 from pilot.configs.config import Config
 
 CFG = Config()
 
-class ClickHouseConnector(RDBMSDatabase):
-    """ClickHouseConnector"""
+class DuckDbConnect(RDBMSDatabase):
+    """Connect Duckdb Database fetch MetaData
+    Args:
+    Usage:
+    """
 
     type: str = "DUCKDB"
 
