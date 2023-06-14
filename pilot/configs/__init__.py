@@ -10,5 +10,6 @@ if "pytest" in sys.argv or "pytest" in sys.modules or os.getenv("CI"):
 
 # Load the users .env file into environment variables
 load_dotenv(verbose=True, override=True)
+load_dotenv(".plugin_env")
 
 del load_dotenv

@@ -14,7 +14,7 @@ project = "DB-GPT"
 copyright = "2023, csunny"
 author = "csunny"
 
-version = "0.1.0"
+version = "👏👏 0.2.2"
 html_title = project + " " + version
 
 # -- General configuration ---------------------------------------------------
@@ -46,6 +46,12 @@ autodoc_pydantic_model_undoc_members = False
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
+
+# multi language config
+language = "en"  # ['en', 'zh_CN'] #
+locales_dirs = ["./locales/"]
+gettext_compact = False
+gettext_uuid = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

@@ -19,6 +19,9 @@ from sqlalchemy.schema import CreateTable
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 from pilot.connections.base import BaseConnect
+from pilot.configs.config import Config
+
+CFG = Config()
 
 
 def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
@@ -38,10 +41,6 @@ class RDBMSDatabase(BaseConnect):
         metadata: Optional[MetaData] = None,
         ignore_tables: Optional[List[str]] = None,
         include_tables: Optional[List[str]] = None,
-        sample_rows_in_table_info: int = 3,
-        indexes_in_table_info: bool = False,
-        custom_table_info: Optional[dict] = None,
-        view_support: bool = False,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -55,69 +54,48 @@ class RDBMSDatabase(BaseConnect):
 
         self._db_sessions = Session
 
-        self._all_tables = set()
-        self.view_support = False
-        self._usable_tables = set()
-        self._include_tables = set()
-        self._ignore_tables = set()
-        self._custom_table_info = set()
-        self._indexes_in_table_info = set()
-        self._usable_tables = set()
-        self._usable_tables = set()
-        self._sample_rows_in_table_info = set()
-        # including view support by adding the views as well as tables to the all
-        # tables list if view_support is True
-        # self._all_tables = set(
-        #     self._inspector.get_table_names(schema=schema)
-        #     + (self._inspector.get_view_names(schema=schema) if view_support else [])
-        # )
+    @classmethod
+    def from_config(cls) -> RDBMSDatabase:
+        """
+        Todo password encryption
+        Returns:
+        """
+        return cls.from_uri_db(
+            cls,
+            CFG.LOCAL_DB_HOST,
+            CFG.LOCAL_DB_PORT,
+            CFG.LOCAL_DB_USER,
+            CFG.LOCAL_DB_PASSWORD,
+            engine_args={"pool_size": 10, "pool_recycle": 3600, "echo": True},
+        )
 
-        # self._include_tables = set(include_tables) if include_tables else set()
-        # if self._include_tables:
-        #     missing_tables = self._include_tables - self._all_tables
-        #     if missing_tables:
-        #         raise ValueError(
-        #             f"include_tables {missing_tables} not found in database"
-        #         )
-        # self._ignore_tables = set(ignore_tables) if ignore_tables else set()
-        # if self._ignore_tables:
-        #     missing_tables = self._ignore_tables - self._all_tables
-        #     if missing_tables:
-        #         raise ValueError(
-        #             f"ignore_tables {missing_tables} not found in database"
-        #         )
-        # usable_tables = self.get_usable_table_names()
-        # self._usable_tables = set(usable_tables) if usable_tables else self._all_tables
-
-        # if not isinstance(sample_rows_in_table_info, int):
-        #     raise TypeError("sample_rows_in_table_info must be an integer")
-        #
-        # self._sample_rows_in_table_info = sample_rows_in_table_info
-        # self._indexes_in_table_info = indexes_in_table_info
-        #
-        # self._custom_table_info = custom_table_info
-        # if self._custom_table_info:
-        #     if not isinstance(self._custom_table_info, dict):
-        #         raise TypeError(
-        #             "table_info must be a dictionary with table names as keys and the "
-        #             "desired table info as values"
-        #         )
-        #     # only keep the tables that are also present in the database
-        #     intersection = set(self._custom_table_info).intersection(self._all_tables)
-        #     self._custom_table_info = dict(
-        #         (table, self._custom_table_info[table])
-        #         for table in self._custom_table_info
-        #         if table in intersection
-        #     )
-
-        # self._metadata = metadata or MetaData()
-        # # # including view support if view_support = true
-        # self._metadata.reflect(
-        #     views=view_support,
-        #     bind=self._engine,
-        #     only=list(self._usable_tables),
-        #     schema=self._schema,
-        # )
+    @classmethod
+    def from_uri_db(
+        cls,
+        host: str,
+        port: int,
+        user: str,
+        pwd: str,
+        db_name: str = None,
+        engine_args: Optional[dict] = None,
+        **kwargs: Any,
+    ) -> RDBMSDatabase:
+        db_url: str = (
+            cls.connect_driver
+            + "://"
+            + CFG.LOCAL_DB_USER
+            + ":"
+            + CFG.LOCAL_DB_PASSWORD
+            + "@"
+            + CFG.LOCAL_DB_HOST
+            + ":"
+            + str(CFG.LOCAL_DB_PORT)
+        )
+        if cls.dialect:
+            db_url = cls.dialect + "+" + db_url
+        if db_name:
+            db_url = db_url + "/" + db_name
+        return cls.from_uri(db_url, engine_args, **kwargs)
 
     @classmethod
     def from_uri(
