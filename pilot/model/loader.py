@@ -73,12 +73,12 @@ class ModelLoader(metaclass=Singleton):
 
         elif self.device == "cuda":
             kwargs = {"torch_dtype": torch.float16}
-            num_gpus = int(num_gpus)
+            num_gpus = torch.cuda.device_count()
 
             if num_gpus != 1:
                 kwargs["device_map"] = "auto"
-                if max_gpu_memory is None:
-                    kwargs["device_map"] = "sequential"
+                # if max_gpu_memory is None:
+                #     kwargs["device_map"] = "sequential"
 
                 available_gpu_memory = get_gpu_memory(num_gpus)
                 kwargs["max_memory"] = {
