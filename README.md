@@ -20,7 +20,7 @@ As large models are released and iterated upon, they are becoming increasingly i
 DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 
 ## News
-
+- [2023/06/14] support gpt4all model, which can run at M1/M2, or cpu machine. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
 - [2023/06/01]🔥 On the basis of the Vicuna-13B basic model, task chain calls are implemented through plugins. For example, the implementation of creating a database with a single sentence.[demo](./assets/auto_plugin.gif)
 - [2023/06/01]🔥 QLoRA guanaco(7b, 13b, 33b) support.
 - [2023/05/28]🔥 Learning from crawling data from the Internet [demo](./assets/chaturl_en.gif)
