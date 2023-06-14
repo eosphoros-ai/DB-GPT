@@ -57,6 +57,11 @@ If you have difficulty with this step, you can also directly use the model from 
 $ python pilot/server/llmserver.py
 ```
 
+Starting `llmserver.py` with the following command will result in a relatively stable Python service with multiple processes.
+```bash
+$ gunicorn llmserver:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 &
+```
+
 Run gradio webui
 
 ```bash
