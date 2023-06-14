@@ -108,7 +108,7 @@ class GuanacoAdapter(BaseLLMAdaper):
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = LlamaTokenizer.from_pretrained(model_path)
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, load_in_4bit=True, device_map={"": 0}, **from_pretrained_kwargs
+            model_path, load_in_4bit=True, **from_pretrained_kwargs
         )
         return model, tokenizer
 
@@ -127,7 +127,6 @@ class FalconAdapater(BaseLLMAdaper):
                 model_path,
                 load_in_4bit=True,  # quantize
                 quantization_config=bnb_config,
-                device_map={"": 0},
                 trust_remote_code=True,
                 **from_pretrained_kwagrs,
             )
@@ -135,7 +134,6 @@ class FalconAdapater(BaseLLMAdaper):
             model = AutoModelForCausalLM.from_pretrained(
                 model_path,
                 trust_remote_code=True,
-                device_map={"": 0},
                 **from_pretrained_kwagrs,
             )
         return model, tokenizer
