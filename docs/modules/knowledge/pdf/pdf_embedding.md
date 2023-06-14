@@ -1,17 +1,9 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-from typing import List
+PDFEmbedding
+==================================
+pdfembedding can import PDF text into a vector knowledge base. The entire embedding process includes the read (loading data), data_process (data processing), and index_to_store (embedding to the vector database) methods.
 
-from langchain.document_loaders import PyPDFLoader
-from langchain.schema import Document
-from langchain.text_splitter import SpacyTextSplitter
-
-from pilot.configs.config import Config
-from pilot.source_embedding import SourceEmbedding, register
-
-CFG = Config()
-
-
+inheriting the SourceEmbedding
+```
 class PDFEmbedding(SourceEmbedding):
     """pdf embedding for read pdf document."""
 
@@ -20,8 +12,12 @@ class PDFEmbedding(SourceEmbedding):
         super().__init__(file_path, vector_store_config)
         self.file_path = file_path
         self.vector_store_config = vector_store_config
+```
 
-    @register
+implement read() and data_process()
+read() method allows you to read data and split data into chunk
+```
+@register
     def read(self):
         """Load from pdf path."""
         loader = PyPDFLoader(self.file_path)
@@ -34,11 +30,14 @@ class PDFEmbedding(SourceEmbedding):
             chunk_overlap=100,
         )
         return loader.load_and_split(textsplitter)
-
-    @register
+```
+data_process() method allows you to pre processing your ways
+```
+@register
     def data_process(self, documents: List[Document]):
         i = 0
         for d in documents:
             documents[i].page_content = d.page_content.replace("\n", "")
             i += 1
         return documents
+```
