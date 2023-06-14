@@ -106,9 +106,7 @@ def load_native_plugins(cfg: Config):
         except Exception as e:
             print("load plugin from git exception!" + str(e))
 
-    # 创建一个线程
     t = threading.Thread(target=load_from_git, args=(cfg,))
-    # 启动线程
     t.start()
 
 
