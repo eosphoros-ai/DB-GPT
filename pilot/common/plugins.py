@@ -79,8 +79,7 @@ def load_native_plugins(cfg: Config):
         print("not auto load_native_plugins")
         return
     def load_from_git(cfg: Config):
-        print("load_native_plugins")
-        ### TODO 默认拉主分支，后续拉发布版本
+        print("async load_native_plugins")
         branch_name = cfg.plugins_git_branch
         native_plugin_repo = "DB-GPT-Plugins"
         url = "https://github.com/csunny/{repo}/archive/{branch}.zip"
@@ -98,10 +97,10 @@ def load_native_plugins(cfg: Config):
             print(file_name)
             with open(file_name, "wb") as f:
                 f.write(response.content)
-            print("文件已保存到本地")
+            print("save file")
             cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
         else:
-            print("获取Release信息失败，状态码为：", response.status_code)
+            print("get file faild，response code：", response.status_code)
 
     # 创建一个线程
     t = threading.Thread(target=load_from_git, args=(cfg,))
