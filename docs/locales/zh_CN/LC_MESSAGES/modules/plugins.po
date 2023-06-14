@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-11 14:10+0800\n"
+"POT-Creation-Date: 2023-06-14 17:26+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -17,13 +17,13 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.11.0\n"
+"Generated-By: Babel 2.12.1\n"
 
-#: ../../modules/plugins.md:1 48f1b7ff4099485ba3853c373e64273f
+#: ../../modules/plugins.md:1 be587eb6ad384844b83ac740a2f3309e
 msgid "Plugins"
 msgstr "插件"
 
-#: ../../modules/plugins.md:3 3d94b3250511468d80aa29359f01128d
+#: ../../modules/plugins.md:3 291a6adc34684b28867b7d1adcceadbb
 msgid ""
 "The ability of Agent and Plugin is the core of whether large models can "
 "be automated. In this project, we natively support the plugin mode, and "
@@ -31,7 +31,73 @@ msgid ""
 "order to give full play to the advantages of the community, the plugins "
 "used in this project natively support the Auto-GPT plugin ecology, that "
 "is, Auto-GPT plugins can directly run in our project."
-msgstr "Agent与插件能力是大模型能否自动化的核心，在本的项目中，原生支持插件模式，"
-"大模型可以自动化完成目标。 同时为了充分发挥社区的优势，本项目中所用的插件原生支持"
-"Auto-GPT插件生态，即Auto-GPT的插件可以直接在我们的项目中运行。"
+msgstr ""
+"Agent与插件能力是大模型能否自动化的核心，在本的项目中，原生支持插件模式，大模型可以自动化完成目标。 同时为了充分发挥社区的优势"
+"，本项目中所用的插件原生支持Auto-GPT插件生态，即Auto-GPT的插件可以直接在我们的项目中运行。"
+
+#: ../../modules/plugins.md:5 72010cbac395488bb72c5ffa79806f61
+#, fuzzy
+msgid "Local Plugins"
+msgstr "插件"
+
+#: ../../modules/plugins.md:7 842e405d6748425dab6684c3377e580a
+msgid "1.1 How to write local plugins."
+msgstr "如何编写一个本地插件"
+
+#: ../../modules/plugins.md:9 23fa64fa76954000a3f33f5b3205975e
+msgid ""
+"Local plugins use the Auto-GPT plugin template. A simple example is as "
+"follows: first write a plugin file called \"sql_executor.py\"."
+msgstr "本地插件使用Auto-GPT插件模板，一个简单的示例如下：首先编写一个插件文件`sql_executor.py`"
+
+#: ../../modules/plugins.md:39 5044401271fb4cfba53299875886b5b9
+msgid ""
+"Then set the \"can_handle_post_prompt\" method of the plugin template to "
+"True. In the \"post_prompt\" method, write the prompt information and the"
+" mapped plugin function."
+msgstr "然后设置can_handle_post_prompt函数为True, 在post_prompt函数中编写prompt信息和插件映射函数"
+
+#: ../../modules/plugins.md:81 8f2001c2934d4655a1993a98d5e7dd63
+msgid "1.2 How to use local plugins"
+msgstr "1.2 如何使用本地插件"
+
+#: ../../modules/plugins.md:83 aa6234c1531a470db97e076408c70ebc
+msgid ""
+"Pack your plugin project into `your-plugin.zip` and place it in the "
+"`/plugins/` directory of the DB-GPT project. After starting the "
+"webserver, you can select and use it in the `Plugin Model` section."
+msgstr "将您的插件项目打包成your-plugin.zip，并将其放置在DB-GPT项目的/plugins/目录中。启动Web服务器后，您可以在插件模型部分中选择并使用它。"
+
+#: ../../modules/plugins.md:86 6d1402451cb44ab2bb9ded2a303d8dd0
+#, fuzzy
+msgid "Public Plugins"
+msgstr "插件"
+
+#: ../../modules/plugins.md:88 2bb33cadc7604f529c762939a6225f17
+msgid "1.1 How to use public plugins"
+msgstr "1.1 如何编写公共插件"
+
+#: ../../modules/plugins.md:90 d5f458dcba2e435987ffbc62a1d7a989
+msgid ""
+"By default, after launching the webserver, plugins from the public plugin"
+" library `DB-GPT-Plugins` will be automatically loaded. For more details,"
+" please refer to [DB-GPT-Plugins](https://github.com/csunny/DB-GPT-"
+"Plugins)"
+msgstr "默认情况下，在启动Web服务器后，将自动加载来自公共插件库DB-GPT-Plugins的插件。要了解更多详情，请参阅[DB-GPT-Plugins](https://github.com/csunny/DB-GPT-Plugins)"
+
+#: ../../modules/plugins.md:92 28fa983769ae44a0b790d977c60ce982
+msgid "1.2 Contribute to the DB-GPT-Plugins repository"
+msgstr "1.2 贡献到DB-GPT-Plugins仓库"
+
+#: ../../modules/plugins.md:94 68573e7cc17f479fa676d0631e011baf
+msgid ""
+"Please refer to the plugin development process in the public plugin "
+"library, and put the configuration parameters in `.plugin_env`"
+msgstr "请参考公共插件库开发过程，将插件配置参数写入.plugin_env文件"
+
+#: ../../modules/plugins.md:96 8d6860026b824b46b2899cbf3dc3b4a0
+msgid ""
+"We warmly welcome everyone to contribute plugins to the public plugin "
+"library!"
+msgstr "非常欢迎大家向我们公共插件库贡献插件！"
 
