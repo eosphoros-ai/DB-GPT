@@ -7,7 +7,7 @@ lang_dicts = {
         "learn_more_markdown": "该服务是仅供非商业用途的研究预览。受 Vicuna-13B 模型 [License](https://github.com/facebookresearch/llama/blob/main/MODEL_CARD.md) 的约束",
         "model_control_param": "模型参数",
         "sql_generate_mode_direct": "直接执行结果",
-        "sql_generate_mode_none": "db问答",
+        "sql_generate_mode_none": "DB问答",
         "max_input_token_size": "最大输出Token数",
         "please_choose_database": "请选择数据",
         "sql_generate_diagnostics": "SQL生成与诊断",
