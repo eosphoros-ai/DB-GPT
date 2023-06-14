@@ -74,6 +74,9 @@ def create_directory_if_not_exists(directory_path: str) -> bool:
 
 
 def load_native_plugins(cfg: Config):
+    if not cfg.plugins_auto_load:
+        print("not auto load_native_plugins")
+        return
     print("load_native_plugins")
     ### TODO 默认拉主分支，后续拉发布版本
     branch_name = cfg.plugins_git_branch
