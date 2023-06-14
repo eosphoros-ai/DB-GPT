@@ -66,7 +66,6 @@ class Database:
         self._sample_rows_in_table_info = set()
         self._indexes_in_table_info = indexes_in_table_info
 
-
     @classmethod
     def from_uri(
         cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
@@ -398,7 +397,6 @@ class Database:
         cursor = session.execute(text(f"SHOW CREATE TABLE  {table_name}"))
         ans = cursor.fetchall()
         return ans[0][1]
-
 
     def get_fields(self, table_name):
         """Get column fields about specified table."""

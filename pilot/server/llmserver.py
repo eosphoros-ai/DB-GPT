@@ -87,7 +87,10 @@ class ModelWorker:
             ret = {"text": "**GPU OutOfMemory, Please Refresh.**", "error_code": 0}
             yield json.dumps(ret).encode() + b"\0"
         except Exception as e:
-            ret = {"text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}", "error_code": 0}
+            ret = {
+                "text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                "error_code": 0,
+            }
             yield json.dumps(ret).encode() + b"\0"
 
     def get_embeddings(self, prompt):
