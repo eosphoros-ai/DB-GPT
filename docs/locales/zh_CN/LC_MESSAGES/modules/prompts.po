@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-11 14:10+0800\n"
+"POT-Creation-Date: 2023-06-14 22:33+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -17,13 +17,13 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.11.0\n"
+"Generated-By: Babel 2.12.1\n"
 
-#: ../../modules/prompts.md:1 bb9583334e6948b98b59126234ae045f
+#: ../../modules/prompts.md:1 b9279c238c014a74aecbc75b5d3dc202
 msgid "Prompts"
 msgstr ""
 
-#: ../../modules/prompts.md:3 e6f5129e260c4a739a40115fff82850f
+#: ../../modules/prompts.md:3 f0c720c1c85b401cbc26ed0eb3f6e70e
 msgid ""
 "Prompt is a very important part of the interaction between the large "
 "model and the user, and to a certain extent, it determines the quality "
@@ -31,7 +31,9 @@ msgid ""
 " we will automatically optimize the corresponding prompt according to "
 "user input and usage scenarios, making it easier and more efficient for "
 "users to use large language models."
-msgstr "Prompt是与大模型交互过程中非常重要的部分，一定程度上Prompt决定了"
-"大模型生成答案的质量与准确性，在本的项目中，我们会根据用户输入与"
-"使用场景，自动优化对应的Prompt，让用户使用大语言模型变得更简单、更高效。"
+msgstr "Prompt是与大模型交互过程中非常重要的部分，一定程度上Prompt决定了大模型生成答案的质量与准确性，在本的项目中，我们会根据用户输入与使用场景，自动优化对应的Prompt，让用户使用大语言模型变得更简单、更高效。"
+
+#: ../../modules/prompts.md:5 6576d32e28a14be6a5d8180eed000aa7
+msgid "1.DB-GPT Prompt"
+msgstr ""
 
