@@ -10,16 +10,15 @@ DB-GPT is divided into several functions, including chat with knowledge base, ex
 
 ### Knowledge
 
-[How to Create your own knowledge repository](https://db-gpt.readthedocs.io/en/latest/modules/knowledge.html)
+[How to Create your own knowledge repository](https://db-gpt.readthedocs.io/en/latest/modules/knownledge.html)
 
-[Add new Knowledge demonstration](https://github.com/csunny/DB-GPT/blob/main/assets/new_knownledge_en.gif)
+![Add new Knowledge demonstration](../../assets/new_knownledge.gif)
 
 ### SQL Generation
-[sql generation demonstration](https://github.com/csunny/DB-GPT/blob/main/assets/demo_en.gif)
+![sql generation demonstration](../../assets/demo_en.gif)
 
 ### SQL Execute
-[sql execute demonstration](https://github.com/csunny/DB-GPT/blob/main/assets/auto_sql_en.gif)
-
+![sql execute demonstration](../../assets/auto_sql_en.gif)
 
 ### Plugins
-[db plugins demonstration](https://github.com/csunny/DB-GPT/blob/main/assets/auto_plugin.gif)
+![db plugins demonstration](../../assets/dbgpt_bytebase_plugin.gif)
