@@ -43,7 +43,6 @@ if __name__ == "__main__":
     parser.add_argument("--vector_name", type=str, default="default")
     args = parser.parse_args()
     vector_name = args.vector_name
-    append_mode = args.append
     store_type = CFG.VECTOR_STORE_TYPE
     vector_store_config = {"vector_store_name": vector_name}
     print(vector_store_config)
