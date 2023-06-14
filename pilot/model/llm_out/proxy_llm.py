@@ -51,7 +51,7 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
                 }
             )
 
-    # Move the last user's information to the end 
+    # Move the last user's information to the end
     temp_his = history[::-1]
     last_user_input = None
     for m in temp_his:
@@ -76,7 +76,7 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
     text = ""
     for line in res.iter_lines():
         if line:
-            json_data = line.split(b': ', 1)[1]
+            json_data = line.split(b": ", 1)[1]
             decoded_line = json_data.decode("utf-8")
             if decoded_line.lower() != "[DONE]".lower():
                 obj = json.loads(json_data)
