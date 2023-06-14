@@ -37,6 +37,7 @@ Once the environment is installed, we have to create a new folder "models" in th
 ```
 git clone https://huggingface.co/Tribbiani/vicuna-13b 
 git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
 ```
 
 The model files are large and will take a long time to download. During the download, let's configure the .env file, which needs to be copied and created from the .env.template
@@ -55,6 +56,11 @@ If you have difficulty with this step, you can also directly use the model from 
 1. Run server
 ```bash
 $ python pilot/server/llmserver.py
+```
+
+Starting `llmserver.py` with the following command will result in a relatively stable Python service with multiple processes.
+```bash
+$ gunicorn llmserver:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 &
 ```
 
 Run gradio webui

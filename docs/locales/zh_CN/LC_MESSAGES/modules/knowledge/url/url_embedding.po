@@ -1,0 +1,55 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-06-14 14:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../modules/knowledge/url/url_embedding.md:1
+#: e6d335e613ec4c3a80b89de67ba93098
+msgid "URL Embedding"
+msgstr ""
+
+#: ../../modules/knowledge/url/url_embedding.md:3
+#: 25e7643335264bdaaa9386ded243d51d
+msgid ""
+"url embedding can import PDF text into a vector knowledge base. The "
+"entire embedding process includes the read (loading data), data_process "
+"(data processing), and index_to_store (embedding to the vector database) "
+"methods."
+msgstr ""
+"url embedding 可以导入url格式的文档到向量数据库， 整个导入过程分为数据读取read(), "
+"数据预处理data_process()和数据进向量数据库index_to_store()"
+
+#: ../../modules/knowledge/url/url_embedding.md:5
+#: 4b8ca6d93ed0412ab1e640bd42b400ac
+msgid "inheriting the SourceEmbedding"
+msgstr "继承SourceEmbedding"
+
+#: ../../modules/knowledge/url/url_embedding.md:17
+#: 5d69d27adc70406db97c398a339f6453
+#, fuzzy
+msgid ""
+"implement read() and data_process() read() method allows you to read data"
+" and split data into chunk"
+msgstr "实现read方法可以加载数据"
+
+#: ../../modules/knowledge/url/url_embedding.md:34
+#: 7d055e181d9b4d47965ab249b18bd704
+msgid "data_process() method allows you to pre processing your ways"
+msgstr "实现data_process方法可以进行数据预处理"
+

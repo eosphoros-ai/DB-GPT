@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
 
+
 class PostgresConnector(RDBMSDatabase):
     """PostgresConnector is a class which Connector"""
 
