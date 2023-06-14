@@ -46,7 +46,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
+# Unit test_py / coverage reports
 htmlcov/
 .tox/
 .nox/
@@ -145,3 +145,4 @@ pilot/nltk_data
 
 logswebserver.log.*
 .history/*
+.plugin_env

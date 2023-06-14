@@ -68,7 +68,7 @@ It's very important for DB-GPT, DB-GPT also provide standard, extendable interfa
 
 - `Plugins <./modules/plugins.html>`_: Plugins management, scheduler.
 
-- `Knownledge <./modules/knownledge.html>`_: Knownledge management, embedding, and search.
+- `Knowledge <./modules/knowledge.html>`_: Knowledge management, embedding, and search.
 
 - `Connections <./modules/connections.html>`_: Supported multi databases connection. management connections and interact with this.
 
@@ -81,8 +81,8 @@ It's very important for DB-GPT, DB-GPT also provide standard, extendable interfa
    ./modules/llms.md
    ./modules/prompts.md
    ./modules/plugins.md
-   ./modules/connections.md
-   ./modules/knownledge.md
+   ./modules/connections.rst
+   ./modules/knowledge.rst
 
 Use Cases
 ---------

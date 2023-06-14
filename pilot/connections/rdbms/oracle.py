@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
+from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
 
 
-class OracleConnector:
+class OracleConnector(RDBMSDatabase):
     """OracleConnector"""
 
-    pass
+    type: str = "ORACLE"
+
+    driver: str = "oracle"
+
+    default_db = ["SYS", "SYSTEM", "OUTLN", "ORDDATA", "XDB"]

@@ -51,7 +51,7 @@ class BaseOutputParser(ABC):
 
         """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
         """
-        if data["error_code"] == 0:
+        if data.get("error_code", 0) == 0:
             if "vicuna" in CFG.LLM_MODEL:
                 # output = data["text"][skip_echo_len + 11:].strip()
                 output = data["text"][skip_echo_len:].strip()
@@ -95,7 +95,6 @@ class BaseOutputParser(ABC):
     def parse_model_nostream_resp(self, response, sep: str):
         text = response.text.strip()
         text = text.rstrip()
-        text = text.lower()
         respObj = json.loads(text)
 
         xx = respObj["response"]
@@ -111,13 +110,28 @@ class BaseOutputParser(ABC):
                     last_index = i
             ai_response = tmpResp[last_index]
             ai_response = ai_response.replace("assistant:", "")
-            ai_response = ai_response.replace("\n", "")
+            ai_response = ai_response.replace("Assistant:", "")
+            ai_response = ai_response.replace("ASSISTANT:", "")
+            ai_response = ai_response.replace("\n", " ")
             ai_response = ai_response.replace("\_", "_")
             ai_response = ai_response.replace("\*", "*")
             print("un_stream ai response:", ai_response)
             return ai_response
         else:
             raise ValueError("Model server error!code=" + respObj_ex["error_code"])
+
+    def __extract_json(slef, s):
+        i = s.index("{")
+        count = 1  # 当前所在嵌套深度，即还没闭合的'{'个数
+        for j, c in enumerate(s[i + 1 :], start=i + 1):
+            if c == "}":
+                count -= 1
+            elif c == "{":
+                count += 1
+            if count == 0:
+                break
+        assert count == 0  # 检查是否找到最后一个'}'
+        return s[i : j + 1]
 
     def parse_prompt_response(self, model_out_text) -> T:
         """
@@ -129,8 +143,8 @@ class BaseOutputParser(ABC):
 
         """
         cleaned_output = model_out_text.rstrip()
-        # if "```json" in cleaned_output:
-        #     _, cleaned_output = cleaned_output.split("```json")
+        if "```json" in cleaned_output:
+            _, cleaned_output = cleaned_output.split("```json")
         # if "```" in cleaned_output:
         #     cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
@@ -142,18 +156,12 @@ class BaseOutputParser(ABC):
         cleaned_output = cleaned_output.strip()
         if not cleaned_output.startswith("{") or not cleaned_output.endswith("}"):
             logger.info("illegal json processing")
-            json_pattern = r"{(.+?)}"
-            m = re.search(json_pattern, cleaned_output)
-            if m:
-                cleaned_output = m.group(0)
-            else:
-                raise ValueError("model server out not fllow the prompt!")
+            cleaned_output = self.__extract_json(cleaned_output)
         cleaned_output = (
             cleaned_output.strip()
-            .replace("\n", "")
-            .replace("\\n", "")
-            .replace("\\", "")
-            .replace("\\", "")
+            .replace("\n", " ")
+            .replace("\\n", " ")
+            .replace("\\", " ")
         )
         return cleaned_output
 
