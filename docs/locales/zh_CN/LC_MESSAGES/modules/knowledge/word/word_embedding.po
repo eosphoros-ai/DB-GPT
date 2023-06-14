@@ -1,0 +1,55 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-06-14 14:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../modules/knowledge/word/word_embedding.md:1
+#: 1b3272def692480bb101060a33d076c6
+msgid "WordEmbedding"
+msgstr ""
+
+#: ../../modules/knowledge/word/word_embedding.md:3
+#: a7ea0e94e5c74dab9aa7fb80ed42ed39
+msgid ""
+"word embedding can import word doc/docx text into a vector knowledge "
+"base. The entire embedding process includes the read (loading data), "
+"data_process (data processing), and index_to_store (embedding to the "
+"vector database) methods."
+msgstr ""
+"word embedding 可以导入word格式的doc文档到向量数据库， 整个导入过程分为数据读取read(), "
+"数据预处理data_process()和数据进向量数据库index_to_store()"
+
+#: ../../modules/knowledge/word/word_embedding.md:5
+#: 12ba9527ef0745538dffb6b1dcf96933
+msgid "inheriting the SourceEmbedding"
+msgstr "继承SourceEmbedding"
+
+#: ../../modules/knowledge/word/word_embedding.md:17
+#: a4e5e7553f4a43b0b79ba0de83268ef0
+#, fuzzy
+msgid ""
+"implement read() and data_process() read() method allows you to read data"
+" and split data into chunk"
+msgstr "实现read方法可以加载数据"
+
+#: ../../modules/knowledge/word/word_embedding.md:29
+#: 188a434dee7543f89cf5f1584f29ca62
+msgid "data_process() method allows you to pre processing your ways"
+msgstr "实现data_process方法可以进行数据预处理"
+
