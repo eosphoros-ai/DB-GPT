@@ -5,6 +5,7 @@ import os
 import glob
 import zipfile
 import requests
+import threading
 import datetime
 from pathlib import Path
 from typing import List
@@ -74,32 +75,44 @@ def create_directory_if_not_exists(directory_path: str) -> bool:
 
 
 def load_native_plugins(cfg: Config):
-    print("load_native_plugins")
-    ### TODO 默认拉主分支，后续拉发布版本
-    branch_name = cfg.plugins_git_branch
-    native_plugin_repo = "DB-GPT-Plugins"
-    url = "https://github.com/csunny/{repo}/archive/{branch}.zip"
-    response = requests.get(
-        url.format(repo=native_plugin_repo, branch=branch_name),
-        headers={"Authorization": "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"},
-    )
+    if not cfg.plugins_auto_load:
+        print("not auto load_native_plugins")
+        return
 
-    if response.status_code == 200:
-        plugins_path_path = Path(PLUGINS_DIR)
-        files = glob.glob(os.path.join(plugins_path_path, f"{native_plugin_repo}*"))
-        for file in files:
-            os.remove(file)
-        now = datetime.datetime.now()
-        time_str = now.strftime("%Y%m%d%H%M%S")
-        file_name = (
-            f"{plugins_path_path}/{native_plugin_repo}-{branch_name}-{time_str}.zip"
-        )
-        print(file_name)
-        with open(file_name, "wb") as f:
-            f.write(response.content)
-        print("文件已保存到本地")
-    else:
-        print("获取Release信息失败，状态码为：", response.status_code)
+    def load_from_git(cfg: Config):
+        print("async load_native_plugins")
+        branch_name = cfg.plugins_git_branch
+        native_plugin_repo = "DB-GPT-Plugins"
+        url = "https://github.com/csunny/{repo}/archive/{branch}.zip"
+        try:
+            session = requests.Session()
+            response = session.get(
+                url.format(repo=native_plugin_repo, branch=branch_name),
+                headers={"Authorization": "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"},
+            )
+
+            if response.status_code == 200:
+                plugins_path_path = Path(PLUGINS_DIR)
+                files = glob.glob(
+                    os.path.join(plugins_path_path, f"{native_plugin_repo}*")
+                )
+                for file in files:
+                    os.remove(file)
+                now = datetime.datetime.now()
+                time_str = now.strftime("%Y%m%d%H%M%S")
+                file_name = f"{plugins_path_path}/{native_plugin_repo}-{branch_name}-{time_str}.zip"
+                print(file_name)
+                with open(file_name, "wb") as f:
+                    f.write(response.content)
+                print("save file")
+                cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
+            else:
+                print("get file faild，response code：", response.status_code)
+        except Exception as e:
+            print("load plugin from git exception!" + str(e))
+
+    t = threading.Thread(target=load_from_git, args=(cfg,))
+    t.start()
 
 
 def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate]:
