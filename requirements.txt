@@ -17,7 +17,7 @@ importlib-resources==5.12.0
 
 sqlparse==0.4.4
 kiwisolver==1.4.4
-matplotlib==3.7.0
+matplotlib==3.7.1
 multidict==6.0.4
 packaging==23.0
 psutil==5.9.4

@@ -13,8 +13,14 @@ VECTORE_PATH = os.path.join(PILOT_PATH, "vector_store")
 LOGDIR = os.path.join(ROOT_PATH, "logs")
 DATASETS_DIR = os.path.join(PILOT_PATH, "datasets")
 DATA_DIR = os.path.join(PILOT_PATH, "data")
-
 nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
+PLUGINS_DIR =  os.path.join(ROOT_PATH, "plugins")
+FONT_DIR =  os.path.join(PILOT_PATH, "fonts")
+
+current_directory = os.getcwd()
+
+new_directory = PILOT_PATH
+os.chdir(new_directory)
 
 DEVICE = (
     "cuda"
