@@ -155,7 +155,7 @@ class BaseOutputParser(ABC):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
         if not cleaned_output.startswith("{") or not cleaned_output.endswith("}"):
-            logger.info("illegal json processing")
+            logger.info("illegal json processing:\n" + cleaned_output)
             cleaned_output = self.__extract_json(cleaned_output)
         cleaned_output = (
             cleaned_output.strip()
