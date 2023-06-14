@@ -87,3 +87,24 @@ class ChatGLMChatAdapter(BaseChatAdpter):
         return chatglm_generate_stream
 ```
  if you want to integrate your own model, just need to inheriting BaseLLMAdaper and BaseChatAdpter and implement the methods
+ 
+
+## Multi Proxy LLMs
+### 1. Openai proxy
+ If you haven't deployed a private infrastructure for a large model, or if you want to use DB-GPT in a low-cost and high-efficiency way, you can also use OpenAI's large model as your underlying model.
+
+- If your environment deploying DB-GPT has access to OpenAI, then modify the .env configuration file as below will work.
+```
+LLM_MODEL=proxy_llm
+MODEL_SERVER=127.0.0.1:8000
+PROXY_API_KEY=sk-xxx
+PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
+```
+
+- If you can't access OpenAI locally but have an OpenAI proxy service, you can configure as follows.
+```
+LLM_MODEL=proxy_llm
+MODEL_SERVER=127.0.0.1:8000
+PROXY_API_KEY=sk-xxx
+PROXY_SERVER_URL={your-openai-proxy-server/v1/chat/completions}
+```
