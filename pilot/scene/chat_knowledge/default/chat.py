@@ -56,7 +56,9 @@ class ChatDefaultKnowledge(BaseChat):
             context = context[:2000]
             input_values = {"context": context, "question": self.current_user_input}
         except NoIndexException:
-            raise ValueError("you have no default knowledge store, please execute python knowledge_init.py")
+            raise ValueError(
+                "you have no default knowledge store, please execute python knowledge_init.py"
+            )
         return input_values
 
     def do_with_prompt_response(self, prompt_response):
