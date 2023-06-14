@@ -33,7 +33,7 @@ class MarkdownEmbedding(SourceEmbedding):
         textsplitter = SpacyTextSplitter(
             pipeline="zh_core_web_sm",
             chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
-            chunk_overlap=200,
+            chunk_overlap=100,
         )
         return loader.load_and_split(textsplitter)
 
