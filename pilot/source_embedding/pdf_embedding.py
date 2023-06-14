@@ -29,7 +29,9 @@ class PDFEmbedding(SourceEmbedding):
         #     pdf=True, sentence_size=CFG.KNOWLEDGE_CHUNK_SIZE
         # )
         textsplitter = SpacyTextSplitter(
-            pipeline="zh_core_web_sm", chunk_size=1000, chunk_overlap=200
+            pipeline="zh_core_web_sm",
+            chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
+            chunk_overlap=100,
         )
         return loader.load_and_split(textsplitter)
 

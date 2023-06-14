@@ -39,9 +39,13 @@ class ModelWorker:
         )
 
         if not isinstance(self.model, str):
-            if hasattr(self.model.config, "max_sequence_length"):
+            if hasattr(self.model, "config") and hasattr(
+                self.model.config, "max_sequence_length"
+            ):
                 self.context_len = self.model.config.max_sequence_length
-            elif hasattr(self.model.config, "max_position_embeddings"):
+            elif hasattr(self.model, "config") and hasattr(
+                self.model.config, "max_position_embeddings"
+            ):
                 self.context_len = self.model.config.max_position_embeddings
 
         else:
@@ -69,7 +73,10 @@ class ModelWorker:
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
-                print("output: ", output)
+                # Please do not open the output in production!
+                # The gpt4all thread shares stdout with the parent process,
+                # and opening it may affect the frontend output.
+                # print("output: ", output)
                 ret = {
                     "text": output,
                     "error_code": 0,
@@ -79,10 +86,21 @@ class ModelWorker:
         except torch.cuda.CudaError:
             ret = {"text": "**GPU OutOfMemory, Please Refresh.**", "error_code": 0}
             yield json.dumps(ret).encode() + b"\0"
+        except Exception as e:
+            ret = {
+                "text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                "error_code": 0,
+            }
+            yield json.dumps(ret).encode() + b"\0"
 
     def get_embeddings(self, prompt):
         return get_embeddings(self.model, self.tokenizer, prompt)
 
+
+model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
+worker = ModelWorker(
+    model_path=model_path, model_name=CFG.LLM_MODEL, device=DEVICE, num_gpus=1
+)
 
 app = FastAPI()
 
@@ -157,11 +175,4 @@ def embeddings(prompt_request: EmbeddingRequest):
 
 
 if __name__ == "__main__":
-    model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
-    print(model_path, DEVICE)
-
-    worker = ModelWorker(
-        model_path=model_path, model_name=CFG.LLM_MODEL, device=DEVICE, num_gpus=1
-    )
-
     uvicorn.run(app, host="0.0.0.0", port=CFG.MODEL_PORT, log_level="info")

@@ -1,0 +1,97 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-06-13 11:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../modules/llms.md:1 34386f3fecba48fbbd86718283ba593c
+msgid "LLMs"
+msgstr "大语言模型"
+
+#: ../../modules/llms.md:3 241b39ad980f4cfd90a7f0fdae05a1d2
+#, python-format
+msgid ""
+"In the underlying large model integration, we have designed an open "
+"interface that supports integration with various large models. At the "
+"same time, we have a very strict control and evaluation mechanism for the"
+" effectiveness of the integrated models. In terms of accuracy, the "
+"integrated models need to align with the capability of ChatGPT at a level"
+" of 85% or higher. We use higher standards to select models, hoping to "
+"save users the cumbersome testing and evaluation process in the process "
+"of use."
+msgstr "在底层大模型接入中，我们设计了开放的接口，支持对接多种大模型。同时对于接入模型的效果，我们有非常严格的把控与评审机制。对大模型能力上与ChatGPT对比，在准确率上需要满足85%以上的能力对齐。我们用更高的标准筛选模型，是期望在用户使用过程中，可以省去前面繁琐的测试评估环节。"
+
+#: ../../modules/llms.md:5 25175e87a62e41bca86798eb783cefd6
+msgid "Multi LLMs Usage"
+msgstr "多模型使用"
+
+#: ../../modules/llms.md:6 8c35341e9ca94202ba779567813f9973
+msgid ""
+"To use multiple models, modify the LLM_MODEL parameter in the .env "
+"configuration file to switch between the models."
+msgstr "如果要使用不同的模型，请修改.env配置文件中的LLM MODEL参数以在模型之间切换。"
+
+#: ../../modules/llms.md:8 2edf3309a6554f39ad74e19faff09cee
+msgid ""
+"Notice: you can create .env file from .env.template, just use command "
+"like this:"
+msgstr "注意:你可以从 .env.template 创建 .env 文件。只需使用如下命令:"
+
+#: ../../modules/llms.md:14 5fa7639ef294425e89e13b7c6617fb4b
+msgid ""
+"now we support models vicuna-13b, vicuna-7b, chatglm-6b, flan-t5-base, "
+"guanaco-33b-merged, falcon-40b, gorilla-7b."
+msgstr "现在我们支持的模型有vicuna-13b, vicuna-7b, chatglm-6b, flan-t5-base, "
+"guanaco-33b-merged, falcon-40b, gorilla-7b."
+
+#: ../../modules/llms.md:16 96c9a5ad00264bd2a07bdbdec87e471e
+msgid ""
+"DB-GPT provides a model load adapter and chat adapter. load adapter which"
+" allows you to easily adapt load different LLM models by inheriting the "
+"BaseLLMAdapter. You just implement match() and loader() method."
+msgstr "DB-GPT提供了多模型适配器load adapter和chat adapter.load adapter通过继承BaseLLMAdapter类, 实现match和loader方法允许你适配不同的LLM."
+
+#: ../../modules/llms.md:18 1033714691464f50900c04c9e1bb5643
+msgid "vicuna llm load adapter"
+msgstr "vicuna llm load adapter"
+
+#: ../../modules/llms.md:35 faa6432575be45bcae5deb1cc7fee3fb
+msgid "chatglm load adapter"
+msgstr "chatglm load adapter"
+
+#: ../../modules/llms.md:62 61c4189cabf04e628132c2bf5f02bb50
+msgid ""
+"chat adapter which allows you to easily adapt chat different LLM models "
+"by inheriting the BaseChatAdpter.you just implement match() and "
+"get_generate_stream_func() method"
+msgstr "chat adapter通过继承BaseChatAdpter允许你通过实现match和get_generate_stream_func方法允许你适配不同的LLM."
+
+#: ../../modules/llms.md:64 407a67e4e2c6414b9cde346961d850c0
+msgid "vicuna llm chat adapter"
+msgstr "vicuna llm chat adapter"
+
+#: ../../modules/llms.md:76 53a55238cd90406db58c50dc64465195
+msgid "chatglm llm chat adapter"
+msgstr "chatglm llm chat adapter"
+
+#: ../../modules/llms.md:89 b0c5ff72c05e40b3b301d6b81205fe63
+msgid ""
+"if you want to integrate your own model, just need to inheriting "
+"BaseLLMAdaper and BaseChatAdpter and implement the methods"
+msgstr "如果你想集成自己的模型，只需要继承BaseLLMAdaper和BaseChatAdpter类，然后实现里面的方法即可"
+
