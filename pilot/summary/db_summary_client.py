@@ -78,7 +78,7 @@ class DBSummaryClient:
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
         )
-        table_docs =knowledge_embedding_client.similar_search(query, topk)
+        table_docs = knowledge_embedding_client.similar_search(query, topk)
         ans = [d.page_content for d in table_docs]
         return ans
 
@@ -145,8 +145,6 @@ class DBSummaryClient:
                 docs.extend(embedding.read_batch())
             embedding.index_to_store(docs)
         logger.info("init db profile success...")
-
-
 
 
 def _get_llm_response(query, db_input, dbsummary):
