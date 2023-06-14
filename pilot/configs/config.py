@@ -90,6 +90,7 @@ class Config(metaclass=Singleton):
         ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
         self.plugins: List[AutoGPTPluginTemplate] = []
         self.plugins_openai = []
+        self.plugins_auto_load =  os.getenv("AUTO_LOAD_PLUGIN", "False") == "True"
 
         self.plugins_git_branch = os.getenv("PLUGINS_GIT_BRANCH", "plugin_dashboard")
 
@@ -154,8 +155,8 @@ class Config(metaclass=Singleton):
 
         ### EMBEDDING Configuration
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text2vec")
-        self.KNOWLEDGE_CHUNK_SIZE = int(os.getenv("KNOWLEDGE_CHUNK_SIZE", 500))
-        self.KNOWLEDGE_SEARCH_TOP_SIZE = int(os.getenv("KNOWLEDGE_SEARCH_TOP_SIZE", 10))
+        self.KNOWLEDGE_CHUNK_SIZE = int(os.getenv("KNOWLEDGE_CHUNK_SIZE", 100))
+        self.KNOWLEDGE_SEARCH_TOP_SIZE = int(os.getenv("KNOWLEDGE_SEARCH_TOP_SIZE", 5))
         ### SUMMARY_CONFIG Configuration
         self.SUMMARY_CONFIG = os.getenv("SUMMARY_CONFIG", "VECTOR")
 
