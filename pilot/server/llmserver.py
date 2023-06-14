@@ -75,8 +75,7 @@ class ModelWorker:
             ):
                 # Please do not open the output in production!
                 # The gpt4all thread shares stdout with the parent process,
-                # and opening it may affect the frontend output.
-                
+                # and opening it may affect the frontend output
                 if not ("gptj" in CFG.LLM_MODEL or "guanaco" in CFG.LLM_MODEL):
                     print("output: ", output)
 
