@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-14 14:51+0800\n"
+"POT-Creation-Date: 2023-06-14 17:19+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -50,42 +50,63 @@ msgid "Knowledge"
 msgstr "知识库"
 
 #: ../../getting_started/tutorials.md:13 ea00f3de8c754bf2950e735a2f14043a
+#, fuzzy
 msgid ""
 "[How to Create your own knowledge repository](https://db-"
-"gpt.readthedocs.io/en/latest/modules/knowledge.html)"
+"gpt.readthedocs.io/en/latest/modules/knownledge.html)"
 msgstr ""
 "[怎么创建自己的知识库](https://db-"
 "gpt.readthedocs.io/en/latest/modules/knowledge.html)"
 
 #: ../../getting_started/tutorials.md:15 07195f11314945989eeeb9400c8a9b43
-msgid "[Add new Knowledge demonstration](../../assets/new_knownledge_en.gif)"
+#, fuzzy
+msgid "![Add new Knowledge demonstration](../../assets/new_knownledge.gif)"
+msgstr "[新增知识库演示](../../assets/new_knownledge_en.gif)"
+
+#: ../../getting_started/tutorials.md:15 333cdda401df4509a11d14535391b8a8
+#, fuzzy
+msgid "Add new Knowledge demonstration"
 msgstr "[新增知识库演示](../../assets/new_knownledge_en.gif)"
 
 #: ../../getting_started/tutorials.md:17 5245cd247a184f63a10f735f414f303f
 msgid "SQL Generation"
 msgstr ""
 
-#: ../../getting_started/tutorials.md:18 38077ab510264112b6156c27b8880967
+#: ../../getting_started/tutorials.md:18 9a980e7625d34b98bf318851c43fb13d
 #, fuzzy
-msgid "[sql generation demonstration](../../assets/demo_en.gif)"
+msgid "![sql generation demonstration](../../assets/demo_en.gif)"
+msgstr "[sql生成演示](../../assets/demo_en.gif)"
+
+#: ../../getting_started/tutorials.md:18 952c680cf62140978b4e94d36c49134a
+#, fuzzy
+msgid "sql generation demonstration"
 msgstr "[sql生成演示](../../assets/demo_en.gif)"
 
 #: ../../getting_started/tutorials.md:20 c0a6f9fefbb9404695fe3bffb6ecc577
 msgid "SQL Execute"
 msgstr "SQL执行"
 
-#: ../../getting_started/tutorials.md:21 39fe94853f9c4165b40812c57171a6f4
+#: ../../getting_started/tutorials.md:21 e959cc6ca356407d854ee5541233c19a
 #, fuzzy
-msgid "[sql execute demonstration](../../assets/auto_sql_en.gif)"
+msgid "![sql execute demonstration](../../assets/auto_sql_en.gif)"
 msgstr "[sql execute 演示](../../assets/auto_sql_en.gif)"
 
-#: ../../getting_started/tutorials.md:24 0fd9770dbf3c49b0b644599dc70187a7
+#: ../../getting_started/tutorials.md:21 69247d51ccd349b082ea452f6d74d2b3
+#, fuzzy
+msgid "sql execute demonstration"
+msgstr "SQL执行"
+
+#: ../../getting_started/tutorials.md:23 0fd9770dbf3c49b0b644599dc70187a7
 #, fuzzy
 msgid "Plugins"
 msgstr "DB Plugins"
 
-#: ../../getting_started/tutorials.md:25 fc9830406c39473ab32df00a33340385
+#: ../../getting_started/tutorials.md:24 cf58eb1ee13f49f69e501c0e221b4bed
 #, fuzzy
-msgid "[db plugins demonstration](../../assets/dbgpt_bytebase_plugin.gif)"
+msgid "![db plugins demonstration](../../assets/dbgpt_bytebase_plugin.gif)"
 msgstr "[db plugins 演示](../../assets/dbgpt_bytebase_plugin.gif)"
+
+#: ../../getting_started/tutorials.md:24 9e474caadb87481ba51f8595067f7edd
+msgid "db plugins demonstration"
+msgstr ""
 
