@@ -31,7 +31,7 @@ class PluginChatOutputParser(BaseOutputParser):
         command, thoughts, speak = (
             response["command"],
             response["thoughts"],
-            response["speak"]
+            response["speak"],
         )
         return PluginAction(command, speak, thoughts)
 
