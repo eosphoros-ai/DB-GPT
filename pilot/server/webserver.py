@@ -667,8 +667,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     logger.info(f"args: {args}")
-    
-    # init config 
+
+    # init config
     cfg = Config()
 
     load_native_plugins(cfg)
@@ -682,7 +682,7 @@ if __name__ == "__main__":
         "pilot.commands.built_in.audio_text",
         "pilot.commands.built_in.image_gen",
     ]
-    # exclude commands 
+    # exclude commands
     command_categories = [
         x for x in command_categories if x not in cfg.disabled_command_categories
     ]

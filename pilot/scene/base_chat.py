@@ -134,6 +134,7 @@ class BaseChat(ABC):
         return payload
 
     def stream_call(self):
+        # TODO Retry when server connection error
         payload = self.__call_base()
 
         self.skip_echo_len = len(payload.get("prompt").replace("</s>", " ")) + 11
@@ -187,19 +188,19 @@ class BaseChat(ABC):
                 )
             )
 
-#             ### MOCK
-#             ai_response_text = """{
-# "thoughts": "可以从users表和tran_order表联合查询，按城市和订单数量进行分组统计，并使用柱状图展示。",
-# "reasoning": "为了分析用户在不同城市的分布情况，需要查询users表和tran_order表，使用LEFT JOIN将两个表联合起来。按照城市进行分组，统计每个城市的订单数量。使用柱状图展示可以直观地看出每个城市的订单数量，方便比较。",
-# "speak": "根据您的分析目标，我查询了用户表和订单表，统计了每个城市的订单数量，并生成了柱状图展示。",
-# "command": {
-# "name": "histogram-executor",
-# "args": {
-# "title": "订单城市分布柱状图",
-# "sql": "SELECT users.city, COUNT(tran_order.order_id) AS order_count FROM users LEFT JOIN tran_order ON users.user_name = tran_order.user_name GROUP BY users.city"
-# }
-# }
-# }"""
+            #             ### MOCK
+            #             ai_response_text = """{
+            # "thoughts": "可以从users表和tran_order表联合查询，按城市和订单数量进行分组统计，并使用柱状图展示。",
+            # "reasoning": "为了分析用户在不同城市的分布情况，需要查询users表和tran_order表，使用LEFT JOIN将两个表联合起来。按照城市进行分组，统计每个城市的订单数量。使用柱状图展示可以直观地看出每个城市的订单数量，方便比较。",
+            # "speak": "根据您的分析目标，我查询了用户表和订单表，统计了每个城市的订单数量，并生成了柱状图展示。",
+            # "command": {
+            # "name": "histogram-executor",
+            # "args": {
+            # "title": "订单城市分布柱状图",
+            # "sql": "SELECT users.city, COUNT(tran_order.order_id) AS order_count FROM users LEFT JOIN tran_order ON users.user_name = tran_order.user_name GROUP BY users.city"
+            # }
+            # }
+            # }"""
 
             self.current_message.add_ai_message(ai_response_text)
             prompt_define_response = (
