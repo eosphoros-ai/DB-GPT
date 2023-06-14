@@ -90,6 +90,7 @@ class Config(metaclass=Singleton):
         ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
         self.plugins: List[AutoGPTPluginTemplate] = []
         self.plugins_openai = []
+        self.plugins_auto_load =  os.getenv("AUTO_LOAD_PLUGIN", "True") == "True"
 
         self.plugins_git_branch = os.getenv("PLUGINS_GIT_BRANCH", "plugin_dashboard")
 
