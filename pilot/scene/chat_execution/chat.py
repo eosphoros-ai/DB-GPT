@@ -80,7 +80,6 @@ class ChatWithPlugin(BaseChat):
     def __list_to_prompt_str(self, list: List) -> str:
         return "\n".join(f"{i + 1 + 1}. {item}" for i, item in enumerate(list))
 
-
     def generate(self, p) -> str:
         return super().generate(p)
 
