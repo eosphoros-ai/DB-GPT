@@ -9,7 +9,7 @@
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/ea6BnZkY) 
+[**English**](README.md)|[**Discord**](https://discord.gg/ea6BnZkY) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)
 </div>
 
 ## DB-GPT 是什么？
