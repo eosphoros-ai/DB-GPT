@@ -2,10 +2,6 @@
 
 This tutorial gives you a quick walkthrough about use DB-GPT with you environment and data.
 
-<figure class="video_container">
-  <iframe src="https://www.bilibili.com/video/BV1SM4y1a7Nj/?buvid=551b023900b290f9497610b2155a2668&is_story_h5=false&mid=%2BVyE%2Fwau5woPcUKieCWS0A%3D%3D&p=1&plat_id=116&share_from=ugc&share_medium=iphone&share_plat=ios&share_session_id=5D08B533-82A4-4D40-9615-7826065B4574&share_source=GENERIC&share_tag=s_i&timestamp=1686307943&unique_k=bhO3lgQ&up_id=31375446" frameborder="0" allowfullscreen="true" height=600 width=800></iframe>
-</figure>
-
 ## Installation
 
 To get started, install DB-GPT with the following steps.

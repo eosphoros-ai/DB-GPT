@@ -72,6 +72,8 @@ It's very important for DB-GPT, DB-GPT also provide standard, extendable interfa
 
 - `Connections <./modules/connections.html>`_: Supported multi databases connection. management connections and interact with this.
 
+- `Vector <./modules/vector.html>`_: Supported multi vector database.
+
 .. toctree::
    :maxdepth: 2
    :caption: Modules
@@ -83,6 +85,7 @@ It's very important for DB-GPT, DB-GPT also provide standard, extendable interfa
    ./modules/plugins.md
    ./modules/connections.rst
    ./modules/knowledge.rst
+   ./modules/vector.rst
 
 Use Cases
 ---------
