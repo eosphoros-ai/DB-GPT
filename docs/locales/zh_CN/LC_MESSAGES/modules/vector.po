@@ -1,0 +1,66 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.2.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-06-15 21:28+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../modules/vector.rst:2 ../../modules/vector.rst:16
+#: 717d29faf59845cc86e24c343d574685
+msgid "VectorConnector"
+msgstr "VectorConnector"
+
+#: ../../modules/vector.rst:4 18436a753b2c4d4199318383faa226f0
+msgid "**VectorConnector Introduce**"
+msgstr "VectorConnector介绍"
+
+#: ../../modules/vector.rst:6 8bc42e668949407280d033cadcc898c8
+msgid ""
+"vector knowledge base is a method of mapping words in language to a high-"
+"dimensional vector space. In the vector space, each word is represented "
+"as a vector that contains many numerical features, which represent the "
+"relationship between the word and other words. This mapping is a "
+"clustering technique, and the semantic relationship between words can be "
+"calculated by computing the differences between their vectors in the "
+"vector space. Vector knowledge bases can be used for natural language "
+"processing tasks such as sentiment analysis, text classification, and "
+"machine translation. Common vector knowledge bases include Word2Vec, "
+"GloVe, and FastText. The training of these vector knowledge bases usually"
+" requires a large corpus and computing resources to complete."
+msgstr "向量知识库是一种将语言中的单词映射到一个高维向量空间中的方法。在向量空间中，每个单词都表示为一个向量，这个向量包含了许多数值特征，这些特征代表了该单词与其他单词之间的关系。这种映射是一种聚类技术，通过将语言中的单词映射到向量空间中，单词之间的语义关系可以通过计算它们在向量空间中的差异来计算。向量知识库可以用于自然语言处理任务，如情感分析、文本分类、机器翻译等。常见的向量知识库有Word2Vec、GloVe、FastText等。这些向量知识库的训练通常需要大量的语料库和计算资源来完成。"
+
+#: ../../modules/vector.rst:8 0be8cf38ca00436dac74a462f438940d
+msgid ""
+"VectorConnector is a vector database connection adapter that allows you "
+"to connect different vector databases and abstracts away implementation "
+"differences and underlying details of different vector data. For example,"
+" it can be used to connect to databases such as Milvus, Chroma, "
+"Elasticsearch, and Weaviate."
+msgstr "vectorconnector是一个向量数据库连接适配器，你可以通过它来连接不同的向量数据库，并且屏蔽掉了不同的向量数据的是实现差异和底层细节。例如Milvus, Chroma, Elasticsearch, Weaviate..."
+
+#: ../../modules/vector.rst:10 4d359cf0cf254b9392e9d3b963bc1071
+msgid "DB-GPT VectorConnector currently support milvus and chroma vector database"
+msgstr "DB-GPT VectorConnector当前支持Milvus和Chroma，未来会越来越多."
+
+#: ../../modules/vector.rst:12 60809c6ecbb64cc8888b9dc2f9de398a
+msgid "`Chroma <./vector/chroma.html>`_: supported chroma vector database."
+msgstr "msgid "`Chroma <./vector/chroma.html>`_: 支持Chroma向量数据库"
+
+#: ../../modules/vector.rst:13 e24aeb84d75741fe9517a0d5ec5d92f1
+msgid "`Milvus <./vector/milvus.html>`_: supported milvus vector database."
+msgstr "Milvus <./vector/milvus.html>`_: 支持Milvus向量数据库"
+
