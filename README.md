@@ -20,6 +20,13 @@ As large models are released and iterated upon, they are becoming increasingly i
 
 DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 
+<h2 align="center">DB-GPT Demonstration</h2>
+
+
+<figure class="video_container">
+  <iframe src="https://www.bilibili.com/video/BV1SM4y1a7Nj/?buvid=551b023900b290f9497610b2155a2668&is_story_h5=false&mid=%2BVyE%2Fwau5woPcUKieCWS0A%3D%3D&p=1&plat_id=116&share_from=ugc&share_medium=iphone&share_plat=ios&share_session_id=5D08B533-82A4-4D40-9615-7826065B4574&share_source=GENERIC&share_tag=s_i&timestamp=1686307943&unique_k=bhO3lgQ&up_id=31375446" frameborder="0" allowfullscreen="true" height=600 width=800> </iframe>
+</figure>
+
 ## News
 - [2023/06/14] support gpt4all model, which can run at M1/M2, or cpu machine. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
 - [2023/06/01]🔥 On the basis of the Vicuna-13B basic model, task chain calls are implemented through plugins. For example, the implementation of creating a database with a single sentence.[demo](./assets/auto_plugin.gif)
@@ -28,6 +35,21 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 - [2023/05/21] Generate SQL and execute it automatically. [demo](./assets/auto_sql_en.gif)
 - [2023/05/15] Chat with documents. [demo](./assets/new_knownledge_en.gif)
 - [2023/05/06] SQL generation and diagnosis. [demo](./assets/demo_en.gif)
+
+## Demo
+
+Run on an RTX 4090 GPU.
+<p align="center">
+  <img src="./assets/auto_sql_en.gif" width="680px" />
+</p>
+
+<p align="center">
+  <img src="./assets/chaturl_en.gif" width="680px" />
+</p>
+
+<p align="center">
+  <img src="./assets/knownledge_qa_en.jpg" width="680px" />
+</p>
 
 ## Features
 
@@ -50,21 +72,6 @@ Currently, we have released multiple key features, which are listed below to dem
   - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b)
   - TODO: codegen2, codet5p
 
-
-## Demo
-
-Run on an RTX 4090 GPU.
-<p align="center">
-  <img src="./assets/auto_sql_en.gif" width="680px" />
-</p>
-
-<p align="center">
-  <img src="./assets/chaturl_en.gif" width="680px" />
-</p>
-
-<p align="center">
-  <img src="./assets/knownledge_qa_en.jpg" width="680px" />
-</p>
 
 ## Introduction 
 DB-GPT creates a vast model operating system using [FastChat](https://github.com/lm-sys/FastChat) and offers a large language model powered by [Vicuna](https://huggingface.co/Tribbiani/vicuna-7b). In addition, we provide private domain knowledge base question-answering capability through LangChain. Furthermore, we also provide support for additional plugins, and our design natively supports the Auto-GPT plugin.
