@@ -10,7 +10,8 @@
     </a>
   </p>
 
-[**简体中文**](README.zh.md)|[**Discord**](https://discord.gg/xfNDzZ9t) 
+[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/xfNDzZ9t) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/) 
+
 </div>
 
 ## What is DB-GPT?
