@@ -107,7 +107,7 @@ class ChatGLMChatAdapter(BaseChatAdpter):
 
 - If your environment deploying DB-GPT has access to OpenAI, then modify the .env configuration file as below will work.
 ```
-LLM_MODEL=proxy_llm
+LLM_MODEL=proxyllm
 MODEL_SERVER=127.0.0.1:8000
 PROXY_API_KEY=sk-xxx
 PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
