@@ -33,11 +33,11 @@ Currently, we have released multiple key features, which are listed below to dem
 Getting Started
 -----------------
 | How to get started using DB-GPT to interact with your data and environment.
-- `Quickstart Guid <./getting_started/getting_started.html>`_
+- `Quickstart Guide <./getting_started/getting_started.html>`_
 
 | Concepts and terminology
 
-- `Concepts and terminology  <./getting_started/concepts.html>`_
+- `Concepts and Terminology  <./getting_started/concepts.html>`_
 
 | Coming soon...
 
