@@ -34,19 +34,19 @@ msgid ""
 msgstr ""
 
 #: ../../getting_started/tutorials.md:8 b5e106a97bbd4467b071bb05d837d7d9
-msgid "Introduce"
+msgid "Introduction"
 msgstr ""
 
 #: ../../getting_started/tutorials.md:9 9df43436183d4b41a75a09fec15743d7
 #, fuzzy
 msgid "[What is DB-GPT](https://www.youtube.com/watch?v=QszhVJerc0I)"
 msgstr ""
-"###Introduce [什么是DB-"
+"###Introduction [什么是DB-"
 "GPT](https://www.bilibili.com/video/BV1SM4y1a7Nj/?buvid=551b023900b290f9497610b2155a2668&is_story_h5=false&mid=%2BVyE%2Fwau5woPcUKieCWS0A%3D%3D&p=1&plat_id=116&share_from=ugc&share_medium=iphone&share_plat=ios&share_session_id=5D08B533-82A4-4D40-9615-7826065B4574&share_source=GENERIC&share_tag=s_i&timestamp=1686307943&unique_k=bhO3lgQ&up_id=31375446)"
 "  by csunny (https://github.com/csunny/DB-GPT)"
 
 #: ../../getting_started/tutorials.md:11 3096811f862649bf84ff3cd29cdf14db
-msgid "Knowledge"
+msgid "Knowledge Base"
 msgstr "知识库"
 
 #: ../../getting_started/tutorials.md:13 ea00f3de8c754bf2950e735a2f14043a
