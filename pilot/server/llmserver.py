@@ -90,8 +90,7 @@ class ModelWorker:
             ret = {"text": "**GPU OutOfMemory, Please Refresh.**", "error_code": 0}
             yield json.dumps(ret).encode() + b"\0"
         except Exception as e:
-            
-            msg = "{}: {}".format(str(e),traceback.format_exc())
+            msg = "{}: {}".format(str(e), traceback.format_exc())
 
             ret = {
                 "text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {msg}",

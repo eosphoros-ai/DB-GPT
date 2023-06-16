@@ -32,9 +32,14 @@ class BaseLLMAdaper:
         return True
 
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False,trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=False, trust_remote_code=True
+        )
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, low_cpu_mem_usage=True, trust_remote_code=True, **from_pretrained_kwargs
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs,
         )
         return model, tokenizer
 
