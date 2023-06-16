@@ -115,7 +115,7 @@ PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
 
 - If you can't access OpenAI locally but have an OpenAI proxy service, you can configure as follows.
 ```
-LLM_MODEL=proxy_llm
+LLM_MODEL=proxyllm
 MODEL_SERVER=127.0.0.1:8000
 PROXY_API_KEY=sk-xxx
 PROXY_SERVER_URL={your-openai-proxy-server/v1/chat/completions}
