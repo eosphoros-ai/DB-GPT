@@ -43,6 +43,9 @@ LLM_MODEL_CONFIG = {
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "falcon-40b": os.path.join(MODEL_PATH, "falcon-40b"),
     "gorilla-7b": os.path.join(MODEL_PATH, "gorilla-7b"),
+
+    # TODO Support baichuan-7b
+    #"baichuan-7b" : os.path.join(MODEL_PATH, "baichuan-7b"),
     "gptj-6b": os.path.join(MODEL_PATH, "ggml-gpt4all-j-v1.3-groovy.bin"),
     "proxyllm": "proxyllm",
 }

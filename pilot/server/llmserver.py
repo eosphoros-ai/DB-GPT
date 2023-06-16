@@ -5,6 +5,7 @@ import asyncio
 import json
 import os
 import sys
+import traceback
 
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request
@@ -89,10 +90,14 @@ class ModelWorker:
             ret = {"text": "**GPU OutOfMemory, Please Refresh.**", "error_code": 0}
             yield json.dumps(ret).encode() + b"\0"
         except Exception as e:
+            
+            msg = "{}: {}".format(str(e),traceback.format_exc())
+
             ret = {
-                "text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                "text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {msg}",
                 "error_code": 0,
             }
+
             yield json.dumps(ret).encode() + b"\0"
 
     def get_embeddings(self, prompt):
