@@ -10,7 +10,7 @@
     </a>
   </p>
 
-[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/xfNDzZ9t) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/) 
+[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/xfNDzZ9t) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
 
 </div>
 
