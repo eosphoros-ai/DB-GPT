@@ -9,7 +9,7 @@
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/ea6BnZkY) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)
+[**English**](README.md)|[**Discord**](https://discord.gg/ea6BnZkY) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
 </div>
 
 
@@ -238,10 +238,12 @@ Run the Python interpreter and type the commands:
 
 这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布一些新的feature。如在使用当中有任何具体问题, 优先在项目下提issue, 如有需要, 请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
 
-<p align="center">
-  <img src="./assets/wechat.jpg" width="320px" />
-</p>
+## 联系我们
+微信群已超扫码加群上限, 进群请添加如下微信帮拉进群。
 
+--------------
+|xy643854343|mingtian2635|chenB305|cfq1612784863|
+|-----------|----------|-----------|---------------|
 ## Licence
 
 The MIT License (MIT)
