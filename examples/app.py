@@ -5,7 +5,7 @@ import gradio as gr
 from langchain.agents import AgentType, initialize_agent, load_tools
 from llama_index import (
     Document,
-    GPTSimpleVectorIndex,
+    GPTVectorStoreIndex,
     LangchainEmbedding,
     LLMPredictor,
     ServiceContext,
@@ -33,7 +33,7 @@ def knowledged_qa_demo(text_list):
     service_context = ServiceContext.from_defaults(
         llm_predictor=llm_predictor, embed_model=embed_model
     )
-    index = GPTSimpleVectorIndex.from_documents(
+    index = GPTVectorStoreIndex.from_documents(
         documents, service_context=service_context
     )
     return index
