@@ -152,7 +152,6 @@ class Config(metaclass=Singleton):
 
         self.WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://127.0.0.1:8080")
 
-
         # QLoRA
         self.QLoRA = os.getenv("QUANTIZE_QLORA", "True")
 
