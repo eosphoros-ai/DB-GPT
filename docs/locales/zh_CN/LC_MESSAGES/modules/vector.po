@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.2.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-15 21:28+0800\n"
+"POT-Creation-Date: 2023-06-19 19:10+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,16 +19,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../modules/vector.rst:2 ../../modules/vector.rst:16
-#: 717d29faf59845cc86e24c343d574685
+#: ../../modules/vector.rst:2 ../../modules/vector.rst:17
+#: 22f05e3df5a14919ba30198e3800fdb9
 msgid "VectorConnector"
 msgstr "VectorConnector"
 
-#: ../../modules/vector.rst:4 18436a753b2c4d4199318383faa226f0
+#: ../../modules/vector.rst:4 caa4353c84a04157809b694a6a7b46ca
 msgid "**VectorConnector Introduce**"
 msgstr "VectorConnector介绍"
 
-#: ../../modules/vector.rst:6 8bc42e668949407280d033cadcc898c8
+#: ../../modules/vector.rst:6 e2f584d6cf374a10ae4471d3b9a72cef
 msgid ""
 "vector knowledge base is a method of mapping words in language to a high-"
 "dimensional vector space. In the vector space, each word is represented "
@@ -43,7 +43,7 @@ msgid ""
 " requires a large corpus and computing resources to complete."
 msgstr "向量知识库是一种将语言中的单词映射到一个高维向量空间中的方法。在向量空间中，每个单词都表示为一个向量，这个向量包含了许多数值特征，这些特征代表了该单词与其他单词之间的关系。这种映射是一种聚类技术，通过将语言中的单词映射到向量空间中，单词之间的语义关系可以通过计算它们在向量空间中的差异来计算。向量知识库可以用于自然语言处理任务，如情感分析、文本分类、机器翻译等。常见的向量知识库有Word2Vec、GloVe、FastText等。这些向量知识库的训练通常需要大量的语料库和计算资源来完成。"
 
-#: ../../modules/vector.rst:8 0be8cf38ca00436dac74a462f438940d
+#: ../../modules/vector.rst:8 02a16590b6ec49c09a8247f89714eada
 msgid ""
 "VectorConnector is a vector database connection adapter that allows you "
 "to connect different vector databases and abstracts away implementation "
@@ -54,17 +54,22 @@ msgstr ""
 "vectorconnector是一个向量数据库连接适配器，你可以通过它来连接不同的向量数据库，并且屏蔽掉了不同的向量数据的是实现差异和底层细节。例如Milvus,"
 " Chroma, Elasticsearch, Weaviate..."
 
-#: ../../modules/vector.rst:10 4d359cf0cf254b9392e9d3b963bc1071
+#: ../../modules/vector.rst:10 c38e3540e8844ea2a550620e2afac343
 msgid "DB-GPT VectorConnector currently support milvus and chroma vector database"
 msgstr "DB-GPT VectorConnector当前支持Milvus和Chroma，未来会越来越多."
 
-#: ../../modules/vector.rst:12 60809c6ecbb64cc8888b9dc2f9de398a
+#: ../../modules/vector.rst:12 f7e25f67a8764cab9664f8b7208af1aa
 #, fuzzy
 msgid "`chroma <./vector/chroma.html>`_: supported chroma vector database."
 msgstr "msgid \"`Chroma <./vector/chroma.html>`_: 支持Chroma向量数据库"
 
-#: ../../modules/vector.rst:13 e24aeb84d75741fe9517a0d5ec5d92f1
+#: ../../modules/vector.rst:13 d08ef7653e964af590d9bb99d36204a8
 #, fuzzy
 msgid "`milvus <./vector/milvus.html>`_: supported milvus vector database."
+msgstr "Milvus <./vector/milvus.html>`_: 支持Milvus向量数据库"
+
+#: ../../modules/vector.rst:14 2f95f18ad59b471cbfbc3f4dda4f5982
+#, fuzzy
+msgid "`weaviate <./vector/weaviate.html>`_: supported weaviate vector database."
 msgstr "Milvus <./vector/milvus.html>`_: 支持Milvus向量数据库"
 
