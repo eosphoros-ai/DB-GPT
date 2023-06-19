@@ -1,8 +1,9 @@
 from pilot.vector_store.chroma_store import ChromaStore
 
-# from pilot.vector_store.milvus_store import MilvusStore
+from pilot.vector_store.milvus_store import MilvusStore
+from pilot.vector_store.weaviate_store import WeaviateStore
 
-connector = {"Chroma": ChromaStore, "Milvus": None}
+connector = {"Chroma": ChromaStore, "Milvus": MilvusStore, "Weaviate": WeaviateStore}
 
 
 class VectorStoreConnector:
