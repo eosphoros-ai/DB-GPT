@@ -50,17 +50,21 @@ msgid ""
 "differences and underlying details of different vector data. For example,"
 " it can be used to connect to databases such as Milvus, Chroma, "
 "Elasticsearch, and Weaviate."
-msgstr "vectorconnector是一个向量数据库连接适配器，你可以通过它来连接不同的向量数据库，并且屏蔽掉了不同的向量数据的是实现差异和底层细节。例如Milvus, Chroma, Elasticsearch, Weaviate..."
+msgstr ""
+"vectorconnector是一个向量数据库连接适配器，你可以通过它来连接不同的向量数据库，并且屏蔽掉了不同的向量数据的是实现差异和底层细节。例如Milvus,"
+" Chroma, Elasticsearch, Weaviate..."
 
 #: ../../modules/vector.rst:10 4d359cf0cf254b9392e9d3b963bc1071
 msgid "DB-GPT VectorConnector currently support milvus and chroma vector database"
 msgstr "DB-GPT VectorConnector当前支持Milvus和Chroma，未来会越来越多."
 
 #: ../../modules/vector.rst:12 60809c6ecbb64cc8888b9dc2f9de398a
-msgid "`Chroma <./vector/chroma.html>`_: supported chroma vector database."
-msgstr "msgid "`Chroma <./vector/chroma.html>`_: 支持Chroma向量数据库"
+#, fuzzy
+msgid "`chroma <./vector/chroma.html>`_: supported chroma vector database."
+msgstr "msgid \"`Chroma <./vector/chroma.html>`_: 支持Chroma向量数据库"
 
 #: ../../modules/vector.rst:13 e24aeb84d75741fe9517a0d5ec5d92f1
-msgid "`Milvus <./vector/milvus.html>`_: supported milvus vector database."
+#, fuzzy
+msgid "`milvus <./vector/milvus.html>`_: supported milvus vector database."
 msgstr "Milvus <./vector/milvus.html>`_: 支持Milvus向量数据库"
 
