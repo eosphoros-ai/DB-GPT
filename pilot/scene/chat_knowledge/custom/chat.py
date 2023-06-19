@@ -53,7 +53,7 @@ class ChatNewKnowledge(BaseChat):
         docs = self.knowledge_embedding_client.similar_search(
             self.current_user_input, CFG.KNOWLEDGE_SEARCH_TOP_SIZE
         )
-        context = [d.page_content for d in docs]
+        context = [d["page_content"] for d in docs]
         context = context[:2000]
         input_values = {"context": context, "question": self.current_user_input}
         return input_values
