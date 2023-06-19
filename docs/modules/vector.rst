@@ -11,6 +11,7 @@ DB-GPT VectorConnector currently support milvus and chroma vector database
 
 - `chroma <./vector/chroma.html>`_: supported chroma vector database.
 - `milvus <./vector/milvus.html>`_: supported milvus vector database.
+- `weaviate <./vector/weaviate.html>`_: supported weaviate vector database.
 
 
 .. toctree::
@@ -21,3 +22,4 @@ DB-GPT VectorConnector currently support milvus and chroma vector database
 
    ./vector/chroma/chroma.md
    ./vector/milvus/milvus.md
+   ./vector/weaviate/weaviate.md

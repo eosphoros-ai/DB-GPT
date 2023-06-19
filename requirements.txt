@@ -59,7 +59,7 @@ nltk
 python-dotenv==1.0.0
 # pymilvus==2.2.1
 vcrpy
-chromadb=0.3.22
+chromadb==0.3.22
 markdown2
 colorama
 playsound
