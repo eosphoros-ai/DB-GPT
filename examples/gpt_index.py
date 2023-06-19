@@ -4,7 +4,7 @@
 import logging
 import sys
 
-from llama_index import GPTSimpleVectorIndex, SimpleDirectoryReader
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -13,7 +13,7 @@ logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 documents = SimpleDirectoryReader("data").load_data()
 # split the document to chunk, max token size=500, convert chunk to vector
 
-index = GPTSimpleVectorIndex(documents)
+index = GPTVectorStoreIndex(documents)
 
 # save index
 index.save_to_disk("index.json")
