@@ -150,6 +150,8 @@ class Config(metaclass=Singleton):
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
 
+        self.WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://127.0.0.1:8080")
+
         # QLoRA
         self.QLoRA = os.getenv("QUANTIZE_QLORA", "True")
 
@@ -158,7 +160,7 @@ class Config(metaclass=Singleton):
         self.KNOWLEDGE_CHUNK_SIZE = int(os.getenv("KNOWLEDGE_CHUNK_SIZE", 100))
         self.KNOWLEDGE_SEARCH_TOP_SIZE = int(os.getenv("KNOWLEDGE_SEARCH_TOP_SIZE", 5))
         ### SUMMARY_CONFIG Configuration
-        self.SUMMARY_CONFIG = os.getenv("SUMMARY_CONFIG", "VECTOR")
+        self.SUMMARY_CONFIG = os.getenv("SUMMARY_CONFIG", "FAST")
 
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
