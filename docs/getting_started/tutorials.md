@@ -5,7 +5,7 @@ This is a collection of DB-GPT tutorials on Medium.
 
 DB-GPT is divided into several functions, including chat with knowledge base, execute SQL, chat with database, and execute plugins.
 
-### Introduce
+### Introduction
 [What is DB-GPT](https://www.youtube.com/watch?v=QszhVJerc0I)
 
 ### Knowledge
