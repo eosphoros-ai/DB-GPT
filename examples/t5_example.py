@@ -6,7 +6,7 @@ from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.llms.base import LLM
 from llama_index import (
     GPTListIndex,
-    GPTSimpleVectorIndex,
+    GPTVectorStoreIndex,
     LangchainEmbedding,
     LLMPredictor,
     PromptHelper,
