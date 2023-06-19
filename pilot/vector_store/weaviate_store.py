@@ -45,18 +45,21 @@ class WeaviateStore(VectorStoreBase):
         # }
         # vector = self.embedding.embed_query(text)
         response = (
-            self.vector_store_client.query.get(self.vector_name, ["metadata", "page_content"])
+            self.vector_store_client.query.get(
+                self.vector_name, ["metadata", "page_content"]
+            )
             # .with_near_vector({"vector": vector})
-            .with_limit(topk)
-            .do()
+            .with_limit(topk).do()
         )
-        res = response['data']['Get'][list(response['data']['Get'].keys())[0]]
+        res = response["data"]["Get"][list(response["data"]["Get"].keys())[0]]
         docs = []
         for r in res:
-            docs.append(Document(
-                page_content=r['page_content'],
-                metadata={"metadata": r['metadata']},
-            ))
+            docs.append(
+                Document(
+                    page_content=r["page_content"],
+                    metadata={"metadata": r["metadata"]},
+                )
+            )
         return docs
 
     def vector_name_exists(self) -> bool:
@@ -110,7 +113,7 @@ class WeaviateStore(VectorStoreBase):
                             # },
                             "description": "Text content of the document",
                             "name": "page_content",
-                        }
+                        },
                     ],
                     # "vectorizer": "text2vec-transformers",
                 }
@@ -132,7 +135,12 @@ class WeaviateStore(VectorStoreBase):
 
             # Batch import all documents
             for i in range(len(texts)):
-                properties = {"metadata": metadatas[i]['source'], "page_content": texts[i]}
+                properties = {
+                    "metadata": metadatas[i]["source"],
+                    "page_content": texts[i],
+                }
 
-                self.vector_store_client.batch.add_data_object(data_object=properties, class_name=self.vector_name)
+                self.vector_store_client.batch.add_data_object(
+                    data_object=properties, class_name=self.vector_name
+                )
             self.vector_store_client.batch.flush()
