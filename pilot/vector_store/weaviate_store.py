@@ -2,15 +2,19 @@ import os
 import json
 import weaviate
 from langchain.vectorstores import Weaviate
+
+from pilot.configs.config import Config
 from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.logs import logger
 from pilot.vector_store.vector_store_base import VectorStoreBase
+
+CFG = Config()
 
 
 class WeaviateStore(VectorStoreBase):
     """Weaviate database"""
 
-    def __init__(self, ctx: dict, weaviate_url: str) -> None:
+    def __init__(self, ctx: dict) -> None:
         """Initialize with Weaviate client."""
         try:
             import weaviate
@@ -21,9 +25,11 @@ class WeaviateStore(VectorStoreBase):
             )
 
         self.ctx = ctx
-        self.weaviate_url = weaviate_url
+        self.weaviate_url = CFG.WEAVIATE_URL
+        self.embedding = ctx.get("embeddings", None)
+        self.vector_name = ctx["vector_store_name"]
         self.persist_dir = os.path.join(
-            KNOWLEDGE_UPLOAD_ROOT_PATH, ctx["vector_store_name"] + ".vectordb"
+            KNOWLEDGE_UPLOAD_ROOT_PATH, self.vector_name + ".vectordb"
         )
 
         self.vector_store_client = weaviate.Client(self.weaviate_url)
@@ -31,26 +37,26 @@ class WeaviateStore(VectorStoreBase):
     def similar_search(self, text: str, topk: int) -> None:
         """Perform similar search in Weaviate"""
         logger.info("Weaviate similar search")
-        nearText = {
-            "concepts": [text],
-            "distance": 0.75,  # prior to v1.14 use "certainty" instead of "distance"
-        }
+        # nearText = {
+        #     "concepts": [text],
+        #     "distance": 0.75,  # prior to v1.14 use "certainty" instead of "distance"
+        # }
+        # vector = self.embedding.embed_query(text)
         response = (
-            self.vector_store_client.query.get("Document", ["metadata", "text"])
-            .with_near_vector({"vector": nearText})
+            self.vector_store_client.query.get(self.vector_name, ["metadata", "page_content"])
+            # .with_near_vector({"vector": vector})
             .with_limit(topk)
-            .with_additional(["distance"])
             .do()
         )
-
-        return json.dumps(response, indent=2)
+        docs = response['data']['Get'][list(response['data']['Get'].keys())[0]]
+        return docs
 
     def vector_name_exists(self) -> bool:
         """Check if a vector name exists for a given class in Weaviate.
         Returns:
             bool: True if the vector name exists, False otherwise.
         """
-        if self.vector_store_client.schema.get("Document"):
+        if self.vector_store_client.schema.get(self.vector_name):
             return True
         return False
 
@@ -62,39 +68,39 @@ class WeaviateStore(VectorStoreBase):
         schema = {
             "classes": [
                 {
-                    "class": "Document",
+                    "class": self.vector_name,
                     "description": "A document with metadata and text",
-                    "moduleConfig": {
-                        "text2vec-transformers": {
-                            "poolingStrategy": "masked_mean",
-                            "vectorizeClassName": False,
-                        }
-                    },
+                    # "moduleConfig": {
+                    #     "text2vec-transformers": {
+                    #         "poolingStrategy": "masked_mean",
+                    #         "vectorizeClassName": False,
+                    #     }
+                    # },
                     "properties": [
                         {
                             "dataType": ["text"],
-                            "moduleConfig": {
-                                "text2vec-transformers": {
-                                    "skip": False,
-                                    "vectorizePropertyName": False,
-                                }
-                            },
+                            # "moduleConfig": {
+                            #     "text2vec-transformers": {
+                            #         "skip": False,
+                            #         "vectorizePropertyName": False,
+                            #     }
+                            # },
                             "description": "Metadata of the document",
                             "name": "metadata",
                         },
                         {
                             "dataType": ["text"],
-                            "moduleConfig": {
-                                "text2vec-transformers": {
-                                    "skip": False,
-                                    "vectorizePropertyName": False,
-                                }
-                            },
+                            # "moduleConfig": {
+                            #     "text2vec-transformers": {
+                            #         "skip": False,
+                            #         "vectorizePropertyName": False,
+                            #     }
+                            # },
                             "description": "Text content of the document",
-                            "name": "text",
-                        },
+                            "name": "page_content",
+                        }
                     ],
-                    "vectorizer": "text2vec-transformers",
+                    # "vectorizer": "text2vec-transformers",
                 }
             ]
         }
@@ -114,6 +120,7 @@ class WeaviateStore(VectorStoreBase):
 
             # Batch import all documents
             for i in range(len(texts)):
-                properties = {"metadata": metadatas[i], "text": texts[i]}
+                properties = {"metadata": metadatas[i]['source'], "page_content": texts[i]}
 
-                self.vector_store_client.batch.add_data_object(properties, "Document")
+                self.vector_store_client.batch.add_data_object(data_object=properties, class_name=self.vector_name)
+            self.vector_store_client.batch.flush()
