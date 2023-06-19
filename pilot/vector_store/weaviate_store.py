@@ -1,7 +1,9 @@
 import os
 import json
 import weaviate
+from langchain.schema import Document
 from langchain.vectorstores import Weaviate
+from weaviate.exceptions import WeaviateBaseError
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
@@ -48,7 +50,13 @@ class WeaviateStore(VectorStoreBase):
             .with_limit(topk)
             .do()
         )
-        docs = response['data']['Get'][list(response['data']['Get'].keys())[0]]
+        res = response['data']['Get'][list(response['data']['Get'].keys())[0]]
+        docs = []
+        for r in res:
+            docs.append(Document(
+                page_content=r['page_content'],
+                metadata={"metadata": r['metadata']},
+            ))
         return docs
 
     def vector_name_exists(self) -> bool:
@@ -56,9 +64,13 @@ class WeaviateStore(VectorStoreBase):
         Returns:
             bool: True if the vector name exists, False otherwise.
         """
-        if self.vector_store_client.schema.get(self.vector_name):
-            return True
-        return False
+        try:
+            if self.vector_store_client.schema.get(self.vector_name):
+                return True
+            return False
+        except WeaviateBaseError as e:
+            logger.error("vector_name_exists error", e.message)
+            return False
 
     def _default_schema(self) -> None:
         """
