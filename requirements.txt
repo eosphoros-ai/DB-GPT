@@ -59,12 +59,13 @@ nltk
 python-dotenv==1.0.0
 # pymilvus==2.2.1
 vcrpy
-chromadb
+chromadb=0.3.22
 markdown2
 colorama
 playsound
 distro
 pypdf
+weaviate-client
 
 # Testing dependencies
 pytest
