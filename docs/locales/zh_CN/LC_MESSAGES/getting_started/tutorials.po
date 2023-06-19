@@ -31,7 +31,7 @@ msgstr "这是知乎上DB-GPT教程的集合。．"
 msgid ""
 "DB-GPT is divided into several functions, including chat with knowledge "
 "base, execute SQL, chat with database, and execute plugins."
-msgstr ""
+msgstr "DB-GPT包含以下功能, 和知识库聊天, 执行SQL，和数据库聊天以及执行插件。"
 
 #: ../../getting_started/tutorials.md:8 726f4394d6214c45979995ce521f8964
 msgid "Introduction"
@@ -71,7 +71,7 @@ msgstr "[新增知识库演示](../../assets/new_knownledge_en.gif)"
 
 #: ../../getting_started/tutorials.md:17 dcdb8d1e73f241649756a126e1ddc185
 msgid "SQL Generation"
-msgstr ""
+msgstr "SQL生成"
 
 #: ../../getting_started/tutorials.md:18 517960225da64780afc858958ab34446
 #, fuzzy
@@ -95,7 +95,7 @@ msgstr "[sql execute 演示](../../assets/auto_sql_en.gif)"
 #: ../../getting_started/tutorials.md:21 2c6d6c7428c3487eb969f87ccbc00961
 #, fuzzy
 msgid "sql execute demonstration"
-msgstr "SQL执行"
+msgstr "SQL执行演示"
 
 #: ../../getting_started/tutorials.md:23 4ff018bac02f45fe8da5b649c501bf6b
 #, fuzzy

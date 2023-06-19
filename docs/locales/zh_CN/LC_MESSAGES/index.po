@@ -130,10 +130,6 @@ msgstr "相关概念"
 msgid "`Concepts and Terminology  <./getting_started/concepts.html>`_"
 msgstr "`相关概念 <./getting_started/concepts.html>`_"
 
-#: ../../index.rst:42 41f0f43bf23142dcbab2c8a80a69f713
-msgid "Coming soon..."
-msgstr ""
-
 #: ../../index.rst:44 ee8121fc3ef34d61a94b25c8b2bb961f
 msgid "`Tutorials <.getting_started/tutorials.html>`_"
 msgstr "`教程 <.getting_started/tutorials.html>`_"
