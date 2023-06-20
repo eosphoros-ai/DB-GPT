@@ -32,18 +32,12 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 ## Demo
 
 Run on an RTX 4090 GPU.
-<div width="680px">
-<video id="video" controls="" preload="none" poster="./assets/executor_sql.png">
-      <source id="mp4" src="./assets/demo.mp4" type="video/mp4">
-</video>
-</div>
+https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0
 
--------------------
 <p align="center">
   <img src="./assets/auto_sql_en.gif" width="680px" />
 </p>
 
-----------------
 <p align="center">
   <img src="./assets/knownledge_qa_en.jpg" width="680px" />
 </p>
