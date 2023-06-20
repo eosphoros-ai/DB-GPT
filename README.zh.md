@@ -23,7 +23,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 ## 最新发布
 - [2023/06/14]🔥 支持gpt4all模型，可以在M1/M2 或者CPU机器上运行。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
-- [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.[演示](./assets/dbgpt_bytebase_plugin.gif)
+- [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.
 - [2023/06/01]🔥 QLoRA guanaco(原驼)支持, 支持4090运行33B
 - [2023/05/28]🔥根据URL进行对话 [演示](./assets/chat_url_zh.gif)
 - [2023/05/21] SQL生成与自动执行. [演示](./assets/auto_sql.gif)
@@ -53,18 +53,24 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 ## 效果演示
 
 示例通过 RTX 4090 GPU 演示
-<p align="center">
-  <img src="./assets/演示.gif" width="680px" />
-</p>
+<div width="680px">
+<video id="video" controls="" preload="none" poster="./assets/executor_sql.png">
+      <source id="mp4" src="./assets/demo.mp4" type="video/mp4">
+</videos>
+</div>
 
+
+---------------
 <p align="center">
   <img src="./assets/auto_sql.gif" width="680px" />
 </p>
 
+---------------
 <p align="center">
   <img src="./assets/chat_url_zh.gif" width="680px" />
 </p>
 
+---------------
 <p align="center">
   <img src="./assets/new_knownledge.gif" width="680px" />
 </p>
