@@ -40,11 +40,11 @@ https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089d
 </videos> -->
 
 <p align="center">
-  <img src="./assets/auto_sql_en.gif" width="680px" />
+  <img src="./assets/auto_sql_en.gif" width="800px" />
 </p>
 
 <p align="center">
-  <img src="./assets/knownledge_qa_en.jpg" width="680px" />
+  <img src="./assets/knownledge_qa_en.jpg" width="800px" />
 </p>
 
 ## Features
@@ -75,7 +75,7 @@ DB-GPT creates a vast model operating system using [FastChat](https://github.com
 Is the architecture of the entire DB-GPT shown in the following figure:
 
 <p align="center">
-  <img src="./assets/DB-GPT.png" width="680px" />
+  <img src="./assets/DB-GPT.png" width="800" />
 </p>
 
 The core capabilities mainly consist of the following parts:
