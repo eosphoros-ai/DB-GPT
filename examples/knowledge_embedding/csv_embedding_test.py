@@ -1,4 +1,4 @@
-from pilot.source_embedding.csv_embedding import CSVEmbedding
+from pilot.embedding_engine.csv_embedding import CSVEmbedding
 
 # path = "/Users/chenketing/Downloads/share_ireserve双写数据异常2.xlsx"
 path = "xx.csv"

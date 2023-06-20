@@ -7,8 +7,8 @@ from langchain.text_splitter import CharacterTextSplitter
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import KNOWLEDGE_CHUNK_SPLIT_SIZE
-from pilot.source_embedding import SourceEmbedding, register
-from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
+from pilot.embedding_engine import SourceEmbedding, register
+from pilot.embedding_engine.chn_document_splitter import CHNDocumentSplitter
 
 CFG = Config()
 
