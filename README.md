@@ -40,6 +40,10 @@ https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089d
 </videos> -->
 
 <p align="left">
+  <img src="./assets/exector_sql.png" width="800px" />
+</p>
+
+<p align="left">
   <img src="./assets/auto_sql_en.gif" width="800px" />
 </p>
 
