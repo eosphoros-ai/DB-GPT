@@ -32,16 +32,23 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 ## Demo
 
 Run on an RTX 4090 GPU.
-<p align="center">
-  <img src="./assets/auto_sql_en.gif" width="680px" />
+
+https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0
+
+<!-- <video id="video" controls="" preload="auto" poster="assets/exector_sql.png">
+      <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
+</videos> -->
+
+<p align="left">
+  <img src="./assets/exector_sql.png" width="800px" />
 </p>
 
-<p align="center">
-  <img src="./assets/chaturl_en.gif" width="680px" />
+<p align="left">
+  <img src="./assets/auto_sql_en.gif" width="800px" />
 </p>
 
-<p align="center">
-  <img src="./assets/knownledge_qa_en.jpg" width="680px" />
+<p align="left">
+  <img src="./assets/knownledge_qa_en.jpg" width="800px" />
 </p>
 
 ## Features
@@ -72,7 +79,7 @@ DB-GPT creates a vast model operating system using [FastChat](https://github.com
 Is the architecture of the entire DB-GPT shown in the following figure:
 
 <p align="center">
-  <img src="./assets/DB-GPT.png" width="680px" />
+  <img src="./assets/DB-GPT.png" width="800" />
 </p>
 
 The core capabilities mainly consist of the following parts:
@@ -238,3 +245,4 @@ The MIT License (MIT)
 We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/xfNDzZ9t)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+
