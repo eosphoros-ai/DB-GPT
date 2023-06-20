@@ -35,7 +35,7 @@ Run on an RTX 4090 GPU.
 <div width="680px">
 <video id="video" controls="" preload="none" poster="./assets/executor_sql.png">
       <source id="mp4" src="./assets/demo.mp4" type="video/mp4">
-</videos>
+</video>
 </div>
 
 -------------------
