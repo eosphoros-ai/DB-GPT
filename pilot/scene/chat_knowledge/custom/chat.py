@@ -1,3 +1,5 @@
+from chromadb.errors import NoIndexException
+
 from pilot.scene.base_chat import BaseChat, logger, headers
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
@@ -50,13 +52,19 @@ class ChatNewKnowledge(BaseChat):
         )
 
     def generate_input_values(self):
-        docs = self.knowledge_embedding_client.similar_search(
-            self.current_user_input, CFG.KNOWLEDGE_SEARCH_TOP_SIZE
-        )
-        context = [d.page_content for d in docs]
-        self.metadata = [d.metadata for d in docs]
-        context = context[:2000]
-        input_values = {"context": context, "question": self.current_user_input}
+        try:
+            docs = self.knowledge_embedding_client.similar_search(
+                self.current_user_input, CFG.KNOWLEDGE_SEARCH_TOP_SIZE
+            )
+            context = [d.page_content for d in docs]
+            self.metadata = [d.metadata for d in docs]
+            context = context[:2000]
+            input_values = {"context": context, "question": self.current_user_input}
+        except NoIndexException:
+            raise ValueError(
+                f"you have no {self.knowledge_name} knowledge store, please upload your knowledge"
+            )
+
         return input_values
 
     def do_with_prompt_response(self, prompt_response):
