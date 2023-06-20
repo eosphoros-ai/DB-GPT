@@ -25,7 +25,6 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import (
     DATASETS_DIR,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
-    LLM_MODEL_CONFIG,
     LOGDIR,
 )
 
@@ -632,7 +631,7 @@ def knowledge_embedding_store(vs_id, files):
         )
         knowledge_embedding_client = KnowledgeEmbedding(
             file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
-            model_name=LLM_MODEL_CONFIG["text2vec"],
+            model_name=CFG.EMBEDDING_MODEL,
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
                 "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
