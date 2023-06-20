@@ -53,24 +53,20 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 ## 效果演示
 
 示例通过 RTX 4090 GPU 演示
-<div width="680px">
-<video id="video" controls="" preload="none" poster="./assets/executor_sql.png">
-      <source id="mp4" src="./assets/demo.mp4" type="video/mp4">
-</video>
-</div>
+<video id="video" controls="" preload="auto" poster="assets/exector_sql.png">
+      <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
+</videos>
 
-
----------------
 <p align="center">
   <img src="./assets/auto_sql.gif" width="680px" />
 </p>
 
----------------
+
 <p align="center">
   <img src="./assets/chat_url_zh.gif" width="680px" />
 </p>
 
----------------
+
 <p align="center">
   <img src="./assets/new_knownledge.gif" width="680px" />
 </p>
