@@ -1,4 +1,4 @@
-from pilot.source_embedding.url_embedding import URLEmbedding
+from pilot.embedding_engine.url_embedding import URLEmbedding
 
 path = "https://www.understandingwar.org/backgrounder/russian-offensive-campaign-assessment-february-8-2023"
 model_name = "your_path/all-MiniLM-L6-v2"
