@@ -33,7 +33,13 @@ from peft import (
      PeftModel
 )
 
-torch.backends.cuda.matmul.allow_tf32 = True
-
 from peft.tuners.lora import LoraLayer
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
+
+
+torch.backends.cuda.matmul.allow_tf32 = True
+
+logger = logging.getLogger(__name__)
+IGNORE_INDEX = -100
+DEFAULT_PAD_TOKEN = "[PAD]"
+
