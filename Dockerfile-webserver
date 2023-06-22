@@ -16,6 +16,8 @@ RUN pip3 install --upgrade pip
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN python3 -m spacy download zh_core_web_sm
+
 EXPOSE 7860
 
 CMD ["python3", "pilot/server/webserver.py"]
