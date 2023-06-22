@@ -10,10 +10,12 @@ WORKDIR /app
 
 COPY . /app
 
-RUN pip install -r requirements.txt
+
+# upgrade pip
+RUN pip3 install --upgrade pip
+
+RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 7860
-EXPOSE 8000
 
-CMD ["python", "pilot/server/llmserver.py"]
-CMD ["python", "pilot/server/webserver.py"]
+CMD ["python3", "pilot/server/webserver.py"]
