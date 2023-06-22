@@ -25,7 +25,8 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import (
     DATASETS_DIR,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
-    LOGDIR, LLM_MODEL_CONFIG,
+    LOGDIR,
+    LLM_MODEL_CONFIG,
 )
 
 from pilot.conversation import (
