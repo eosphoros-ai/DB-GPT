@@ -13,15 +13,30 @@ services:
     volumes:
       - my-db:/var/lib/mysql
     restart: unless-stopped
-  db-gpt:
+  webserver:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: db-gpt
+      dockerfile: Dockerfile-webserver
+    environment:
+      - MODEL_SERVER=http://llmserver:8000
+      - LOCAL_DB_HOST=db
+    env_file:
+      - .env
     ports:
       - 7860:7860
     expose:
       - 7860
+    restart: unless-stopped
+  llmserver:
+    build:
+      context: .
+      dockerfile: Dockerfile-llmserver
+    volumes:
+      - ./models:/app/models
+    env_file:
+      - .env    
+    ports:
+      - 8000:8000
     restart: unless-stopped
     deploy:
       resources:
@@ -30,6 +45,8 @@ services:
             - driver: nvidia
               device_ids: ['1', '0']
               capabilities: [gpu]
+
+
 
 volumes:
   my-db:

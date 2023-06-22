@@ -25,10 +25,10 @@ lib/
 lib64/
 parts/
 sdist/
-models
+
 var/
 wheels/
-models/
+models/*
 pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
