@@ -16,11 +16,16 @@ services:
   webserver:
     build:
       context: .
-      dockerfile: Dockerfile-webserver
+      dockerfile: Dockerfile
+    command: python3 pilot/server/webserver.py
     environment:
       - MODEL_SERVER=http://llmserver:8000
       - LOCAL_DB_HOST=db
       - WEB_SERVER_PORT=7860
+      - ALLOWLISTED_PLUGINS=db_dashboard
+    depends_on:
+      - db
+      - llmserver
     volumes:
       - ./models:/app/models
       - ./plugins:/app/plugins
@@ -28,16 +33,19 @@ services:
     env_file:
       - .env.template
     ports:
-      - 7860:7860
+      - 7860:7860/tcp
     expose:
-      - 7860
+      - 7860/tcp
     restart: unless-stopped
   llmserver:
     build:
       context: .
-      dockerfile: Dockerfile-llmserver
+      dockerfile: Dockerfile
+    command: python3 pilot/server/llmserver.py
     environment:
       - LOCAL_DB_HOST=db
+    depends_on:
+      - db
     volumes:
       - ./models:/app/models
     env_file:
@@ -52,7 +60,15 @@ services:
             - driver: nvidia
               device_ids: ['0']
               capabilities: [gpu]
-
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    restart: unless-stopped
+    environment:
+      - TUNNEL_URL=http://webserver:7860
+    command: tunnel --no-autoupdate
+    depends_on:
+      - webserver
 
 
 volumes:
