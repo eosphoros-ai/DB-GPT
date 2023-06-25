@@ -1,4 +1,4 @@
-from pilot.source_embedding.pdf_embedding import PDFEmbedding
+from pilot.embedding_engine.pdf_embedding import PDFEmbedding
 
 path = "xxx.pdf"
 path = "your_path/OceanBase-数据库-V4.1.0-应用开发.pdf"

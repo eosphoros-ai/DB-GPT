@@ -7,7 +7,7 @@ from langchain.schema import Document
 from langchain.text_splitter import SpacyTextSplitter
 
 from pilot.configs.config import Config
-from pilot.source_embedding import SourceEmbedding, register
+from pilot.embedding_engine import SourceEmbedding, register
 
 CFG = Config()
 

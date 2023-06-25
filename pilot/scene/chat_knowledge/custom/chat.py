@@ -19,7 +19,7 @@ from pilot.configs.model_config import (
 )
 
 from pilot.scene.chat_knowledge.custom.prompt import prompt
-from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 
 CFG = Config()
 
