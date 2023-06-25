@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+    margin: 0;
+    color: var(--joy-palette-text-primary, var(--joy-palette-neutral-800, #25252D));
+    font-family: var(--joy-fontFamily-body, var(--joy-Josefin Sans, sans-serif));
+    font-size: var(--joy-fontSize-md, 1rem);
+    line-height: var(--joy-lineHeight-md, 1.5);
+    background-color: var(--joy-palette-background-body);
+}
