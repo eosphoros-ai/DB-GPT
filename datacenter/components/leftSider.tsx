@@ -17,9 +17,9 @@ const LeftSider =  () => {
 			active: pathname === '/agents',
 		}, {
 			label: 'Datastores',
-			route: '/',
+			route: '/datastores',
 			icon: <StorageRoundedIcon fontSize="small" />,
-			active: pathname === '/'
+			active: pathname === '/datastores'
 		}];
 	}, [pathname]);
 
