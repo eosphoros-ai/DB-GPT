@@ -39,6 +39,8 @@ LLM_MODEL_CONFIG = {
     "codet5p-2b": os.path.join(MODEL_PATH, "codet5p-2b"),
     "chatglm-6b-int4": os.path.join(MODEL_PATH, "chatglm-6b-int4"),
     "chatglm-6b": os.path.join(MODEL_PATH, "chatglm-6b"),
+    "chatglm2-6b": os.path.join(MODEL_PATH, "chatglm2-6b"),
+    "chatglm2-6b-int4": os.path.join(MODEL_PATH, "chatglm2-6b-int4"),
     "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "falcon-40b": os.path.join(MODEL_PATH, "falcon-40b"),
