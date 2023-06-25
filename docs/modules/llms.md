@@ -17,6 +17,12 @@ if you want use other model, such as chatglm-6b, you just need update .env confi
 ```
 LLM_MODEL=chatglm-6b
 ```
+or chatglm2-6b, which  is the second-generation version of the open-source bilingual (Chinese-English) chat model ChatGLM-6B. 
+```
+LLM_MODEL=chatglm2-6b
+```
+
+
 
 ## Run Model with cpu.
 we alse support smaller models, like gpt4all.  you can use it with cpu/mps(M1/M2), Download from [gpt4all model](https://gpt4all.io/models/ggml-gpt4all-j-v1.3-groovy.bin)

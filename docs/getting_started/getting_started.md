@@ -38,6 +38,7 @@ Once the environment is installed, we have to create a new folder "models" in th
 git clone https://huggingface.co/Tribbiani/vicuna-13b 
 git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
 git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
+git clone https://huggingface.co/THUDM/chatglm2-6b
 ```
 
 The model files are large and will take a long time to download. During the download, let's configure the .env file, which needs to be copied and created from the .env.template
