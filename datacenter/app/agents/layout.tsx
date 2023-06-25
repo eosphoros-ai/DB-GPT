@@ -6,9 +6,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <Box sx={{ color: 'red' }}>
-      123
+    <>
       {children}
-    </Box>
+    </>
   )
 }

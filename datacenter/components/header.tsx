@@ -18,6 +18,7 @@ const Header =  () => {
 				position: 'sticky',
 				top: 0,
 				zIndex: 1100,
+				background: 'var(--joy-palette-background-body)'
 			}}
 		>
 			<div className='flex items-center justify-center gap-3'>
