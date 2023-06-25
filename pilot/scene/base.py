@@ -10,3 +10,7 @@ class ChatScene(Enum):
     ChatUrlKnowledge = "chat_url_knowledge"
     InnerChatDBSummary = "inner_chat_db_summary"
     ChatNormal = "chat_normal"
+
+    @staticmethod
+    def is_valid_mode(mode):
+        return any(mode == item.value for item in ChatScene)

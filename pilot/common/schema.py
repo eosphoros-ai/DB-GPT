@@ -7,3 +7,7 @@ class SeparatorStyle(Enum):
     TWO = "</s>"
     THREE = auto()
     FOUR = auto()
+
+class ExampleType(Enum):
+    ONE_SHOT = "one_shot"
+    FEW_SHOT = "few_shot"
