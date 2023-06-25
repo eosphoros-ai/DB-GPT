@@ -6,8 +6,8 @@ from langchain.document_loaders import PyPDFLoader, UnstructuredWordDocumentLoad
 from langchain.schema import Document
 
 from pilot.configs.config import Config
-from pilot.source_embedding import SourceEmbedding, register
-from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
+from pilot.embedding_engine import SourceEmbedding, register
+from pilot.embedding_engine.chn_document_splitter import CHNDocumentSplitter
 
 CFG = Config()
 
