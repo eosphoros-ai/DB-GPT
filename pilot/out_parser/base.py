@@ -32,7 +32,7 @@ class BaseOutputParser(ABC):
     Output parsers help structure language model responses.
     """
 
-    def __init__(self, sep: str, is_stream_out: bool):
+    def __init__(self, sep: str, is_stream_out: bool = True):
         self.sep = sep
         self.is_stream_out = is_stream_out
 

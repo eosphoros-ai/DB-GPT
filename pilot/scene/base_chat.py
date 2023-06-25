@@ -70,7 +70,7 @@ class BaseChat(ABC):
         self.current_user_input: str = current_user_input
         self.llm_model = CFG.LLM_MODEL
         ### can configurable storage methods
-        self.memory = MemHistoryMemory(chat_session_id)
+        self.memory = FileHistoryMemory(chat_session_id)
 
         ### load prompt template
         self.prompt_template: PromptTemplate = CFG.prompt_templates[
@@ -139,9 +139,7 @@ class BaseChat(ABC):
 
         self.skip_echo_len = len(payload.get("prompt").replace("</s>", " ")) + 11
         logger.info(f"Requert: \n{payload}")
-        ai_response_text = ""
         try:
-            show_info = ""
             response = requests.post(
                 urljoin(CFG.MODEL_SERVER, "generate_stream"),
                 headers=headers,
@@ -157,16 +155,10 @@ class BaseChat(ABC):
             #     show_info = resp_text_trunck
             #     yield resp_text_trunck + "▌"
 
-            self.current_message.add_ai_message(show_info)
-
         except Exception as e:
             print(traceback.format_exc())
             logger.error("model response parase faild！" + str(e))
-            self.current_message.add_view_message(
-                f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
-            )
-        ### 对话记录存储
-        self.memory.append(self.current_message)
+            raise ValueError(str(e))
 
     def nostream_call(self):
         payload = self.__call_base()
@@ -187,20 +179,6 @@ class BaseChat(ABC):
                     response, self.prompt_template.sep
                 )
             )
-
-            #             ### MOCK
-            #             ai_response_text = """{
-            # "thoughts": "可以从users表和tran_order表联合查询，按城市和订单数量进行分组统计，并使用柱状图展示。",
-            # "reasoning": "为了分析用户在不同城市的分布情况，需要查询users表和tran_order表，使用LEFT JOIN将两个表联合起来。按照城市进行分组，统计每个城市的订单数量。使用柱状图展示可以直观地看出每个城市的订单数量，方便比较。",
-            # "speak": "根据您的分析目标，我查询了用户表和订单表，统计了每个城市的订单数量，并生成了柱状图展示。",
-            # "command": {
-            # "name": "histogram-executor",
-            # "args": {
-            # "title": "订单城市分布柱状图",
-            # "sql": "SELECT users.city, COUNT(tran_order.order_id) AS order_count FROM users LEFT JOIN tran_order ON users.user_name = tran_order.user_name GROUP BY users.city"
-            # }
-            # }
-            # }"""
 
             self.current_message.add_ai_message(ai_response_text)
             prompt_define_response = (
@@ -292,6 +270,7 @@ class BaseChat(ABC):
             )
 
         return text
+
 
     # 暂时为了兼容前端
     def current_ai_response(self) -> str:

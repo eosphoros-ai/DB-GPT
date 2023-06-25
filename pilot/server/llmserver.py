@@ -5,7 +5,6 @@ import asyncio
 import json
 import os
 import sys
-import traceback
 
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request
@@ -76,10 +75,8 @@ class ModelWorker:
             ):
                 # Please do not open the output in production!
                 # The gpt4all thread shares stdout with the parent process,
-                # and opening it may affect the frontend output
-                if not ("gptj" in CFG.LLM_MODEL or "guanaco" in CFG.LLM_MODEL):
-                    print("output: ", output)
-
+                # and opening it may affect the frontend output.
+                # print("output: ", output)
                 ret = {
                     "text": output,
                     "error_code": 0,
@@ -90,13 +87,10 @@ class ModelWorker:
             ret = {"text": "**GPU OutOfMemory, Please Refresh.**", "error_code": 0}
             yield json.dumps(ret).encode() + b"\0"
         except Exception as e:
-            msg = "{}: {}".format(str(e), traceback.format_exc())
-
             ret = {
-                "text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {msg}",
+                "text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
                 "error_code": 0,
             }
-
             yield json.dumps(ret).encode() + b"\0"
 
     def get_embeddings(self, prompt):
