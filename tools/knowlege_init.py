@@ -11,7 +11,7 @@ from pilot.configs.model_config import (
     DATASETS_DIR,
     LLM_MODEL_CONFIG,
 )
-from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 
 CFG = Config()
 
