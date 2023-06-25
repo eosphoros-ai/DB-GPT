@@ -26,7 +26,7 @@ const Index = () => {
     <>
       <div className="header">
         <div>Knowledge Spaces</div>
-        <Button onClick={() => setIsAddKnowledgeSpaceModalShow(true)} type='primary'>
+        <Button onClick={() => setIsAddKnowledgeSpaceModalShow(true)} type='default'>
           + New Knowledge Space
         </Button>
       </div>
