@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import signal
 import threading
 import traceback
 import argparse
@@ -12,12 +11,10 @@ import uuid
 
 import gradio as gr
 
-
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 
 from pilot.summary.db_summary_client import DBSummaryClient
-from pilot.commands.command_mange import CommandRegistry
 
 from pilot.scene.base_chat import BaseChat
 
@@ -25,8 +22,8 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import (
     DATASETS_DIR,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
-    LOGDIR,
     LLM_MODEL_CONFIG,
+    LOGDIR,
 )
 
 from pilot.conversation import (
@@ -35,7 +32,6 @@ from pilot.conversation import (
     chat_mode_title,
     default_conversation,
 )
-from pilot.common.plugins import scan_plugins, load_native_plugins
 
 from pilot.server.gradio_css import code_highlight_css
 from pilot.server.gradio_patch import Chatbot as grChatbot
@@ -49,6 +45,19 @@ from pilot.vector_store.extract_tovec import (
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
 from pilot.language.translation_handler import get_lang_text
+from pilot.server.webserver_base import server_init
+
+
+import uvicorn
+from fastapi import BackgroundTasks, Request
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from fastapi import FastAPI, applications
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.exceptions import  RequestValidationError
+from fastapi.staticfiles import StaticFiles
+
+from pilot.server.api_v1.api_v1 import router as api_v1, validation_exception_handler
 
 # 加载插件
 CFG = Config()
@@ -94,6 +103,19 @@ knowledge_qa_type_list = [
     default_knowledge_base_dialogue,
     add_knowledge_base_dialogue,
 ]
+
+def swagger_monkey_patch(*args, **kwargs):
+    return get_swagger_ui_html(
+        *args, **kwargs,
+        swagger_js_url='https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js',
+        swagger_css_url='https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css'
+    )
+applications.get_swagger_ui_html = swagger_monkey_patch
+
+app = FastAPI()
+# app.mount("static", StaticFiles(directory="static"), name="static")
+app.include_router(api_v1)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
 def get_simlar(q):
@@ -324,15 +346,14 @@ def http_bot(
             response = chat.stream_call()
             for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
                 if chunk:
-                    state.messages[-1][
-                        -1
-                    ] = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
-                        chunk, chat.skip_echo_len
-                    )
+                    msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
+                    state.messages[-1][-1] =msg
+                    chat.current_message.add_ai_message(msg)
                     yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
+            chat.memory.append(chat.current_message)
         except Exception as e:
             print(traceback.format_exc())
-            state.messages[-1][-1] = "Error:" + str(e)
+            state.messages[-1][-1] = f"""<span style=\"color:red\">ERROR!</span>{str(e)} """
             yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
 
@@ -632,7 +653,7 @@ def knowledge_embedding_store(vs_id, files):
         )
         knowledge_embedding_client = KnowledgeEmbedding(
             file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
-            model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            model_name=LLM_MODEL_CONFIG["text2vec"],
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
                 "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
@@ -657,48 +678,36 @@ def signal_handler(sig, frame):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model_list_mode", type=str, default="once", choices=["once", "reload"])
+    parser.add_argument('-new', '--new', action='store_true', help='enable new http mode')
+
+    # old version server config
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=CFG.WEB_SERVER_PORT)
     parser.add_argument("--concurrency-count", type=int, default=10)
-    parser.add_argument(
-        "--model-list-mode", type=str, default="once", choices=["once", "reload"]
-    )
     parser.add_argument("--share", default=False, action="store_true")
 
+
+    # init server config
     args = parser.parse_args()
-    logger.info(f"args: {args}")
+    server_init(args)
 
-    # init config
-    cfg = Config()
+    if args.new:
+        import uvicorn
+        uvicorn.run(app, host="0.0.0.0", port=5000)
+    else:
+        ### Compatibility mode starts the old version server by default
+        demo = build_webdemo()
+        demo.queue(
+            concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
+        ).launch(
+            server_name=args.host,
+            server_port=args.port,
+            share=args.share,
+            max_threads=200,
+        )
 
-    load_native_plugins(cfg)
-    dbs = cfg.local_db.get_database_list()
-    signal.signal(signal.SIGINT, signal_handler)
-    async_db_summery()
-    cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
 
-    # Loader plugins and commands
-    command_categories = [
-        "pilot.commands.built_in.audio_text",
-        "pilot.commands.built_in.image_gen",
-    ]
-    # exclude commands
-    command_categories = [
-        x for x in command_categories if x not in cfg.disabled_command_categories
-    ]
-    command_registry = CommandRegistry()
-    for command_category in command_categories:
-        command_registry.import_commands(command_category)
 
-    cfg.command_registry = command_registry
 
-    logger.info(args)
-    demo = build_webdemo()
-    demo.queue(
-        concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
-    ).launch(
-        server_name=args.host,
-        server_port=args.port,
-        share=args.share,
-        max_threads=200,
-    )
+

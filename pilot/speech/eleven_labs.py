@@ -35,7 +35,7 @@ class ElevenLabsSpeech(VoiceBase):
         }
         self._headers = {
             "Content-Type": "application/json",
-            "xi-api-key": cfg.elevenlabs_api_key,
+            "xi-api_v1-key": cfg.elevenlabs_api_key,
         }
         self._voices = default_voices.copy()
         if cfg.elevenlabs_voice_1_id in voice_options:

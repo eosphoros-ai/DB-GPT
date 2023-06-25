@@ -1,13 +1,12 @@
 from pilot.vector_store.chroma_store import ChromaStore
 
-from pilot.vector_store.milvus_store import MilvusStore
-from pilot.vector_store.weaviate_store import WeaviateStore
+# from pilot.vector_store.milvus_store import MilvusStore
 
-connector = {"Chroma": ChromaStore, "Milvus": MilvusStore, "Weaviate": WeaviateStore}
+connector = {"Chroma": ChromaStore, "Milvus": None}
 
 
 class VectorStoreConnector:
-    """vector store connector, can connect different vector db provided load document api and similar search api."""
+    """vector store connector, can connect different vector db provided load document api_v1 and similar search api_v1."""
 
     def __init__(self, vector_store_type, ctx: {}) -> None:
         """initialize vector store connector."""

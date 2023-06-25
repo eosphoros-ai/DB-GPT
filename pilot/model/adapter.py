@@ -32,14 +32,9 @@ class BaseLLMAdaper:
         return True
 
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=False, trust_remote_code=True
-        )
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            low_cpu_mem_usage=True,
-            trust_remote_code=True,
-            **from_pretrained_kwargs,
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
         return model, tokenizer
 
@@ -62,7 +57,7 @@ def get_llm_model_adapter(model_path: str) -> BaseLLMAdaper:
     raise ValueError(f"Invalid model adapter for {model_path}")
 
 
-# TODO support cpu? for practice we support gpt4all or chatglm-6b-int4?
+# TODO support cpu? for practise we support gpt4all or chatglm-6b-int4?
 
 
 class VicunaLLMAdapater(BaseLLMAdaper):
