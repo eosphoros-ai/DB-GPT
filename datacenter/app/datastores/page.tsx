@@ -55,7 +55,7 @@ const Index = () => {
               render: (props) => {
                 if (props.step === 0) {
                   return (
-                    <Button type="primary" onClick={async () => {
+                    <Button type="default" onClick={async () => {
                       if (knowledgeSpaceName === '') {
                         props.onSubmit?.()
                       } else {
@@ -86,7 +86,7 @@ const Index = () => {
                   );
                 } else if (props.step === 1) {
                   return (
-                    <Button type="primary" onClick={() => props.onSubmit?.()}>
+                    <Button type="default" onClick={() => props.onSubmit?.()}>
                       Web Page {'>'}
                     </Button>
                   );
@@ -97,7 +97,7 @@ const Index = () => {
                     Previous {'<'} 
                   </Button>,
                   <Button
-                    type="primary"
+                    type="default"
                     key="goToTree"
                     onClick={async () => {
                       props.onSubmit?.();
