@@ -39,7 +39,7 @@ from pilot.common.plugins import scan_plugins, load_native_plugins
 
 from pilot.server.gradio_css import code_highlight_css
 from pilot.server.gradio_patch import Chatbot as grChatbot
-from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 from pilot.utils import build_logger
 from pilot.vector_store.extract_tovec import (
     get_vector_storelist,

@@ -50,6 +50,7 @@ pymysql
 unstructured==0.6.3
 grpcio==1.47.5
 gpt4all==0.3.0
+diskcache==5.6.1
 
 auto-gpt-plugin-template
 pymdown-extensions

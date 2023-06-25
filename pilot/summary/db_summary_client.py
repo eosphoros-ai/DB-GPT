@@ -7,8 +7,8 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
 from pilot.scene.base import ChatScene
 from pilot.scene.base_chat import BaseChat
-from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
-from pilot.source_embedding.string_embedding import StringEmbedding
+from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.string_embedding import StringEmbedding
 from pilot.summary.mysql_db_summary import MysqlSummary
 from pilot.scene.chat_factory import ChatFactory
 
