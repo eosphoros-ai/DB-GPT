@@ -23,6 +23,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 
 ## 最新发布
+- [2023/06/25]🔥 支持ChatGLM2-6B模型。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
 - [2023/06/14]🔥 支持gpt4all模型，可以在M1/M2 或者CPU机器上运行。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
 - [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.
 - [2023/06/01]🔥 QLoRA guanaco(原驼)支持, 支持4090运行33B
