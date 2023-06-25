@@ -4,12 +4,12 @@ from chromadb.errors import NotEnoughElementsException
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from pilot.configs.config import Config
-from pilot.source_embedding.csv_embedding import CSVEmbedding
-from pilot.source_embedding.markdown_embedding import MarkdownEmbedding
-from pilot.source_embedding.pdf_embedding import PDFEmbedding
-from pilot.source_embedding.ppt_embedding import PPTEmbedding
-from pilot.source_embedding.url_embedding import URLEmbedding
-from pilot.source_embedding.word_embedding import WordEmbedding
+from pilot.embedding_engine.csv_embedding import CSVEmbedding
+from pilot.embedding_engine.markdown_embedding import MarkdownEmbedding
+from pilot.embedding_engine.pdf_embedding import PDFEmbedding
+from pilot.embedding_engine.ppt_embedding import PPTEmbedding
+from pilot.embedding_engine.url_embedding import URLEmbedding
+from pilot.embedding_engine.word_embedding import WordEmbedding
 from pilot.vector_store.connector import VectorStoreConnector
 
 CFG = Config()

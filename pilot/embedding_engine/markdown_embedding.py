@@ -9,9 +9,9 @@ from langchain.schema import Document
 from langchain.text_splitter import SpacyTextSplitter
 
 from pilot.configs.config import Config
-from pilot.source_embedding import SourceEmbedding, register
-from pilot.source_embedding.EncodeTextLoader import EncodeTextLoader
-from pilot.source_embedding.chn_document_splitter import CHNDocumentSplitter
+from pilot.embedding_engine import SourceEmbedding, register
+from pilot.embedding_engine.EncodeTextLoader import EncodeTextLoader
+from pilot.embedding_engine.chn_document_splitter import CHNDocumentSplitter
 
 CFG = Config()
 

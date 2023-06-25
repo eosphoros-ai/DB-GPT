@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from langchain.document_loaders import CSVLoader
 from langchain.schema import Document
 
-from pilot.source_embedding import SourceEmbedding, register
+from pilot.embedding_engine import SourceEmbedding, register
 
 
 class CSVEmbedding(SourceEmbedding):
