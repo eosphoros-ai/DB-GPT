@@ -43,11 +43,28 @@ class OnceConversation:
 
     def add_ai_message(self, message: str) -> None:
         """Add an AI message to the store"""
+
         has_message = any(isinstance(instance, AIMessage) for instance in self.messages)
         if has_message:
-            raise ValueError("Already Have Ai message")
-        self.messages.append(AIMessage(content=message))
+            self.update_ai_message(message)
+        else:
+            self.messages.append(AIMessage(content=message))
         """  """
+
+
+    def __update_ai_message(self, new_message:str)-> None:
+        """
+        stream out message update
+        Args:
+            new_message:
+
+        Returns:
+
+        """
+
+        for item in self.messages:
+            if item.type == "ai":
+                item.content = new_message
 
     def add_view_message(self, message: str) -> None:
         """Add an AI message to the store"""
