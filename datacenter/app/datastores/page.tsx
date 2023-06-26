@@ -1,6 +1,6 @@
 'use client'
 
-import Router from 'next/router'
+import { useRouter } from 'next/navigation'
 import type { ProFormInstance } from '@ant-design/pro-components';
 import React, { useState, useRef, useEffect } from 'react'
 import {
@@ -17,6 +17,7 @@ import {
 import { Button, Modal, Table, message } from 'antd'
 
 const Index = () => {
+  const router = useRouter();
   const formRef = useRef<ProFormInstance>();
   const [knowledgeSpaceList, setKnowledgeSpaceList] = useState<any>([]);
   const [isAddKnowledgeSpaceModalShow, setIsAddKnowledgeSpaceModalShow] =
@@ -56,7 +57,7 @@ const Index = () => {
               key: 'name',
               align: 'center',
               render: (text: string) => {
-                return <a href='javascript:;' onClick={() => Router.push(`/datastores/documents?name=${text}`)}>{text}</a>
+                return <a href='javascript:;' onClick={() => router.push(`/datastores/documents?name=${text}`)}>{text}</a>
               }
             },
             {
