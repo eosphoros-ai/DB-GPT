@@ -9,6 +9,7 @@ import sys
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 global_counter = 0
@@ -22,8 +23,10 @@ from pilot.configs.model_config import *
 from pilot.model.llm_out.vicuna_base_llm import get_embeddings
 from pilot.model.loader import ModelLoader
 from pilot.server.chat_adapter import get_llm_chat_adapter
+from knowledge.knowledge_controller import router
 
 CFG = Config()
+
 
 
 class ModelWorker:
@@ -103,7 +106,21 @@ worker = ModelWorker(
 )
 
 app = FastAPI()
+app.include_router(router)
 
+origins = [
+    "http://localhost",
+    "http://localhost:8000",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class PromptRequest(BaseModel):
     prompt: str
