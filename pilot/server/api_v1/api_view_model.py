@@ -6,21 +6,21 @@ T = TypeVar('T')
 
 class Result(Generic[T], BaseModel):
     success: bool
-    err_code: str
-    err_msg: str
-    data: List[T]
+    err_code: str = None
+    err_msg: str = None
+    data: List[T] = None
 
     @classmethod
     def succ(cls, data: List[T]):
-        return Result(True, None, None, data)
+        return Result(success=True, err_code=None, err_msg=None, data=data)
 
     @classmethod
     def faild(cls, msg):
-        return Result(True, "E000X", msg, None)
+        return Result(success=False, err_code="E000X", err_msg=msg, data=None)
 
     @classmethod
     def faild(cls, code, msg):
-        return Result(True, code, msg, None)
+        return Result(success=False, err_code=code, err_msg=msg, data=None)
 
 
 class ConversationVo(BaseModel):

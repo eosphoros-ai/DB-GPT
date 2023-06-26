@@ -42,7 +42,7 @@ class ChatUrlKnowledge(BaseChat):
             "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         self.knowledge_embedding_client = KnowledgeEmbedding(
-            model_name=LLM_MODEL_CONFIG["text2vec"],
+            model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
             file_type="url",
             file_path=url,
