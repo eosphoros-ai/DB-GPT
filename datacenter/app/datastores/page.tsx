@@ -13,22 +13,47 @@ import {
   ProFormTextArea,
   StepsForm
 } from '@ant-design/pro-components'
-import { Button, Modal, message } from 'antd'
+import { Button, Modal, Table, message } from 'antd'
 
 const Index = () => {
   const formRef = useRef<ProFormInstance>();
+  const [knowledgeSpaceList, setKnowledgeSpaceList] = useState<any>([]);
   const [isAddKnowledgeSpaceModalShow, setIsAddKnowledgeSpaceModalShow] =
     useState<boolean>(false);
   const [knowledgeSpaceName, setKnowledgeSpaceName] = useState<string>('');
-  const [webUrlName, setWebUrlName] = useState<string>('');
   const [webPageUrl, setWebPageUrl] = useState<string>('');
   return (
     <>
-      <div className="header">
-        <div>Knowledge Spaces</div>
+      <div className="page-header p-4">
+        <div className="page-header-title">Knowledge Spaces</div>
         <Button onClick={() => setIsAddKnowledgeSpaceModalShow(true)} type='default'>
           + New Knowledge Space
         </Button>
+      </div>
+      <div className="page-body p-4">
+        <Table
+          columns={[
+            {
+              title: 'Name',
+              dataIndex: 'name',
+              key: 'name',
+              align: 'center',
+            },
+            {
+              title: 'Provider',
+              dataIndex: 'vector_type',
+              key: 'vector_type',
+              align: 'center',
+            },
+            {
+              title: 'Owner',
+              dataIndex: 'owner',
+              key: 'owner',
+              align: 'center',
+            },
+          ]}
+          dataSource={knowledgeSpaceList}
+        />
       </div>
       <Modal
         title="Add Knowledge Space"
@@ -76,6 +101,17 @@ const Index = () => {
                         if (data.success) {
                           props.onSubmit?.();
                           message.success('success');
+                          const res = await fetch('http://localhost:8000/knowledge/space/list', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({}),
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setKnowledgeSpaceList(data.data);
+                          }
                         } else {
                           message.error(data.err_msg || 'failed');
                         }
@@ -107,8 +143,8 @@ const Index = () => {
                         'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                          doc_name: webUrlName,
-                          doc_type: webPageUrl
+                          doc_name: webPageUrl,
+                          doc_type: 'URL'
                         }),
                       });
                       const data = await res.json();
@@ -161,14 +197,6 @@ const Index = () => {
               title="Setup the Datasource"
             >
               <ProFormText
-                name="webUrlName"
-                label="Name"
-                width="lg"
-                placeholder="Please input the name"
-                rules={[{ required: true }]}
-                onChange={(e: any) => setWebUrlName(e.target.value)}
-              />
-              <ProFormText
                 name="webPageUrl"
                 label="Web Page URL"
                 width="lg"
@@ -181,9 +209,13 @@ const Index = () => {
         </ProCard>
       </Modal>
       <style jsx>{`
-        .header {
+        .page-header {
           display: flex;
           justify-content: space-between;
+          .page-header-title {
+            font-size: 30px;
+            font-weight: bold
+          }
         }
         .datasource-type-wrap {
           height: 100px;
