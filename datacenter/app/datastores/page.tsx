@@ -1,5 +1,6 @@
 'use client'
 
+import Router from 'next/router'
 import type { ProFormInstance } from '@ant-design/pro-components';
 import React, { useState, useRef, useEffect } from 'react'
 import {
@@ -55,7 +56,7 @@ const Index = () => {
               key: 'name',
               align: 'center',
               render: (text: string) => {
-                return <a href='javascript:;'>{text}</a>
+                return <a href='javascript:;' onClick={() => Router.push(`/datastores/documents?name=${text}`)}>{text}</a>
               }
             },
             {
@@ -103,7 +104,6 @@ const Index = () => {
                       if (knowledgeSpaceName === '') {
                         props.onSubmit?.()
                       } else {
-                        props.onSubmit?.();
                         const res = await fetch('http://localhost:8000/knowledge/space/add', {
                           method: 'POST',
                           headers: {
