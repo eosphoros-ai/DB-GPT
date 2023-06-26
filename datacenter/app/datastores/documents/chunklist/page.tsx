@@ -1,22 +1,23 @@
 "use client";
 
-import Router from 'next/router'
-import { withRouter } from 'next/router'
+import { useSearchParams } from 'next/navigation'
 import React, { useState, useEffect } from 'react';
 import { Table, Popover } from 'antd';
 import moment from 'moment';
 
-const ChunkList = ({ router }) => {
+const ChunkList = () => {
+    const spaceName = useSearchParams().get('spacename');
+    const documentId = useSearchParams().get('documentid');
     const [chunkList, setChunkList] = useState<any>([]);
     useEffect(() => {
         async function fetchChunks() {
-            const res = await fetch(`http://localhost:8000/knowledge/${router.query.spacename}/chunk/list`, {
+            const res = await fetch(`http://localhost:8000/knowledge/${spaceName}/chunk/list`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    document_id: router.query.documentid
+                    document_id: documentId
                 }),
             });
             const data = await res.json();
@@ -61,4 +62,4 @@ const ChunkList = ({ router }) => {
     )
 }
 
-export default withRouter(ChunkList);
+export default ChunkList;
