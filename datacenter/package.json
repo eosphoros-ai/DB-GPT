@@ -31,6 +31,7 @@
     "cuid": "^3.0.0",
     "eslint": "8.43.0",
     "eslint-config-next": "13.4.7",
+    "moment": "^2.29.4",
     "next": "13.4.7",
     "next-auth": "^4.20.1",
     "postcss": "8.4.24",
