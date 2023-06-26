@@ -1,7 +1,7 @@
 'use client'
 
 import type { ProFormInstance } from '@ant-design/pro-components';
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   ProCard,
   ProForm,
@@ -22,6 +22,22 @@ const Index = () => {
     useState<boolean>(false);
   const [knowledgeSpaceName, setKnowledgeSpaceName] = useState<string>('');
   const [webPageUrl, setWebPageUrl] = useState<string>('');
+  useEffect(() => {
+    async function fetchData() {
+      const res = await fetch('http://localhost:8000/knowledge/space/list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setKnowledgeSpaceList(data.data);
+      }
+    }
+    fetchData();
+  }, []);
   return (
     <>
       <div className="page-header p-4">
@@ -38,6 +54,9 @@ const Index = () => {
               dataIndex: 'name',
               key: 'name',
               align: 'center',
+              render: (text: string) => {
+                return <a href='javascript:;'>{text}</a>
+              }
             },
             {
               title: 'Provider',
@@ -151,6 +170,7 @@ const Index = () => {
                       if (data.success) {
                         props.onSubmit?.();
                         message.success('success');
+                        setIsAddKnowledgeSpaceModalShow(false);
                       } else {
                         message.error(data.err_msg || 'failed');
                       }
