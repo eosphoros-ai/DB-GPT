@@ -1,8 +1,9 @@
 "use client";
 
+import Router from 'next/router'
 import { withRouter } from 'next/router'
 import React, { useState, useEffect } from 'react';
-import { Table } from 'antd';
+import { Table, Button } from 'antd';
 import moment from 'moment';
 
 const Documents = ({ router }) => {
@@ -57,6 +58,19 @@ const Documents = ({ router }) => {
                         dataIndex: 'status',
                         key: 'status',
                         align: 'center',
+                    },
+                    {
+                        title: 'Operation',
+                        dataIndex: 'operation',
+                        key: 'operation',
+                        align: 'center',
+                        render: (_: any, label: any) => {
+                            return (
+                                <Button onClick={() => {
+                                    Router.push(`/datastores/documents/chunklist?spacename=${router.query.name}&documentid=${label.id}`)
+                                }}>Detail of Chunks</Button>
+                            )
+                        }
                     },
                 ]}
                 dataSource={documents}
