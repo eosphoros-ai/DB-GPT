@@ -1,16 +1,18 @@
 "use client";
 
-import Router from 'next/router'
-import { withRouter } from 'next/router'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useState, useEffect } from 'react';
 import { Table, Button } from 'antd';
 import moment from 'moment';
 
-const Documents = ({ router }) => {
+const Documents = () => {
+    const router = useRouter();
+    const spaceName = useSearchParams().get('name');
     const [documents, setDocuments] = useState<any>([]);
     useEffect(() => {
         async function fetchDocuments() {
-            const res = await fetch(`http://localhost:8000/knowledge/${router.query.name}/document/list`, {
+            const res = await fetch(`http://localhost:8000/knowledge/${spaceName}/document/list`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -67,7 +69,7 @@ const Documents = ({ router }) => {
                         render: (_: any, label: any) => {
                             return (
                                 <Button onClick={() => {
-                                    Router.push(`/datastores/documents/chunklist?spacename=${router.query.name}&documentid=${label.id}`)
+                                    router.push(`/datastores/documents/chunklist?spacename=${spaceName}&documentid=${label.id}`)
                                 }}>Detail of Chunks</Button>
                             )
                         }
@@ -79,4 +81,4 @@ const Documents = ({ router }) => {
     )
 }
 
-export default withRouter(Documents);
+export default Documents;
