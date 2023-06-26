@@ -16,7 +16,7 @@ class VectorStoreConnector:
 
     def load_document(self, docs):
         """load document in vector database."""
-        self.client.load_document(docs)
+        return self.client.load_document(docs)
 
     def similar_search(self, docs, topk):
         """similar search in vector database."""
@@ -25,3 +25,6 @@ class VectorStoreConnector:
     def vector_name_exists(self):
         """is vector store name exist."""
         return self.client.vector_name_exists()
+
+    def delete_by_ids(self, ids):
+        self.client.delete_by_ids(ids=ids)

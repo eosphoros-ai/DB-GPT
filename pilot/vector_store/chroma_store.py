@@ -32,5 +32,10 @@ class ChromaStore(VectorStoreBase):
         logger.info("ChromaStore load document")
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
-        self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
+        ids = self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
         self.vector_store_client.persist()
+        return ids
+
+    def delete_by_ids(self, ids):
+        collection = self.vector_store_client._collection
+        collection.delete(ids=ids)

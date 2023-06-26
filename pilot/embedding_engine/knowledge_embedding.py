@@ -48,9 +48,10 @@ class KnowledgeEmbedding:
 
     def knowledge_embedding_batch(self, docs):
         # docs = self.knowledge_embedding_client.read_batch()
-        self.knowledge_embedding_client.index_to_store(docs)
+        return self.knowledge_embedding_client.index_to_store(docs)
 
     def read(self):
+        self.knowledge_embedding_client = self.init_knowledge_embedding()
         return self.knowledge_embedding_client.read_batch()
 
     def init_knowledge_embedding(self):
@@ -66,7 +67,7 @@ class KnowledgeEmbedding:
             embedding = knowledge_class(
                 self.file_path,
                 vector_store_config=self.vector_store_config,
-                **knowledge_args,
+                **knowledge_args
             )
             return embedding
         raise ValueError(f"Unsupported knowledge file type '{extension}'")
