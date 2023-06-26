@@ -60,7 +60,7 @@ const Index = () => {
                         props.onSubmit?.()
                       } else {
                         props.onSubmit?.();
-                        const res = await fetch('/knowledge/space/add', {
+                        const res = await fetch('http://localhost:8000/knowledge/space/add', {
                           method: 'POST',
                           headers: {
                           'Content-Type': 'application/json',
@@ -101,7 +101,7 @@ const Index = () => {
                     key="goToTree"
                     onClick={async () => {
                       props.onSubmit?.();
-                      const res = await fetch(`/knowledge/${knowledgeSpaceName}/document/add`, {
+                      const res = await fetch(`http://localhost:8000/knowledge/${knowledgeSpaceName}/document/add`, {
                         method: 'POST',
                         headers: {
                         'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ const Index = () => {
                 name="webPageUrl"
                 label="Web Page URL"
                 width="lg"
-                placeholder="Please input the name"
+                placeholder="Please input the Web Page URL"
                 rules={[{ required: true }]}
                 onChange={(e: any) => setWebPageUrl(e.target.value)}
               />
