@@ -1,5 +1,5 @@
 import json
-
+from typing import Dict, NamedTuple, List
 from pilot.scene.base_message import (
     HumanMessage,
     ViewMessage,
@@ -12,17 +12,18 @@ from pilot.common.markdown_text import (
     generate_htm_table,
 )
 from pilot.scene.chat_db.auto_execute.prompt import prompt
+from pilot.scene.chat_dashboard.data_preparation.report_schma import ChartData, ReportData
 
 CFG = Config()
 
 
-class ChatWithDbAutoExecute(BaseChat):
-    chat_scene: str = ChatScene.ChatWithDbExecute.value
-
+class ChatDashboard(BaseChat):
+    chat_scene: str = ChatScene.ChatDashboard.value
+    report_name: str
     """Number of results to return from the query"""
 
     def __init__(
-        self, chat_session_id, db_name, user_input
+        self, chat_session_id, db_name, user_input, report_name
     ):
         """ """
         super().__init__(
@@ -34,7 +35,7 @@ class ChatWithDbAutoExecute(BaseChat):
             raise ValueError(
                 f"{ChatScene.ChatWithDbExecute.value} mode should chose db!"
             )
-        self.db_name = db_name
+        self.report_name = report_name
         self.database = CFG.local_db
         # 准备DB信息(拿到指定库的链接)
         self.db_connect = self.database.get_session(self.db_name)
@@ -48,12 +49,33 @@ class ChatWithDbAutoExecute(BaseChat):
         client = DBSummaryClient()
         input_values = {
             "input": self.current_user_input,
-            "top_k": str(self.top_k),
             "dialect": self.database.dialect,
-            "table_info": self.database.table_simple_info(self.db_connect)
+            "table_info": self.database.table_simple_info(self.db_connect),
+            "supported_chat_type": "" #TODO
             # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
         return input_values
 
     def do_action(self, prompt_response):
-        return self.database.run(self.db_connect, prompt_response.sql)
+        ### TODO 记录整体信息，处理成功的，和未成功的分开记录处理
+        report_data: ReportData = ReportData()
+        chart_datas: List[ChartData] = []
+        for chart_item in prompt_response:
+            try:
+                datas = self.database.run(self.db_connect, chart_item.sql)
+                chart_data: ChartData = ChartData()
+            except Exception as e:
+                # TODO 修复流程
+                print(str(e))
+
+
+            chart_datas.append(chart_data)
+
+        report_data.conv_uid = self.chat_session_id
+        report_data.template_name = self.report_name
+        report_data.template_introduce = None
+        report_data.charts = chart_datas
+
+        return report_data
+
+

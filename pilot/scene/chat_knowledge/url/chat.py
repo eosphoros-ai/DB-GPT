@@ -27,11 +27,9 @@ class ChatUrlKnowledge(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, temperature, max_new_tokens, chat_session_id, user_input, url):
+    def __init__(self, chat_session_id, user_input, url):
         """ """
         super().__init__(
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
             chat_mode=ChatScene.ChatUrlKnowledge,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
@@ -62,8 +60,6 @@ class ChatUrlKnowledge(BaseChat):
         input_values = {"context": context, "question": self.current_user_input}
         return input_values
 
-    def do_with_prompt_response(self, prompt_response):
-        return prompt_response
 
     @property
     def chat_type(self) -> str:
