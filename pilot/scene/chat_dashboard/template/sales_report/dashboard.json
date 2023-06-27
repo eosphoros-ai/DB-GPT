@@ -1,0 +1,9 @@
+{
+  "title": "Sales Report",
+  "name": "sale_report",
+  "introduce": "",
+  "layout": "TODO",
+  "supported_chart_type":["HeatMap","sheet", "LineChart", "PieChart", "BarChart"],
+  "key_metrics":[],
+  "trends": []
+}
