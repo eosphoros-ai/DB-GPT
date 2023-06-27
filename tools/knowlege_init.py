@@ -4,6 +4,8 @@ import argparse
 import os
 import sys
 
+from pilot.embedding_engine.knowledge_type import KnowledgeType
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from pilot.configs.config import Config
@@ -30,7 +32,8 @@ class LocalKnowledgeInit:
                 filename = os.path.join(root, file)
                 # docs = self._load_file(filename)
                 ke = KnowledgeEmbedding(
-                    file_path=filename,
+                    knowledge_source=filename,
+                    knowledge_type=KnowledgeType.DOCUMENT.value,
                     model_name=self.model_name,
                     vector_store_config=self.vector_store_config,
                 )

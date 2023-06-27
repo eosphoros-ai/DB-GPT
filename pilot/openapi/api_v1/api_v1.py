@@ -9,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from typing import List
 
-from pilot.server.api_v1.api_view_model import Result, ConversationVo, MessageVo
+from pilot.openapi.api_v1.api_view_model import Result, ConversationVo, MessageVo
 from pilot.configs.config import Config
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene

@@ -1,3 +1,4 @@
+from pilot.embedding_engine.knowledge_type import KnowledgeType
 from pilot.scene.base_chat import BaseChat, logger, headers
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
@@ -44,8 +45,8 @@ class ChatUrlKnowledge(BaseChat):
         self.knowledge_embedding_client = KnowledgeEmbedding(
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
-            file_type="url",
-            file_path=url,
+            knowledge_type=KnowledgeType.URL.value,
+            knowledge_source=url,
         )
 
         # url soruce in vector
