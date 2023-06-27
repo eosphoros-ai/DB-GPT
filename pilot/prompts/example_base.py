@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
 
 from pilot.common.schema import ExampleType
 
+
 class ExampleSelector(BaseModel, ABC):
     examples: List[List]
     use_example: bool = False

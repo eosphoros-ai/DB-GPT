@@ -104,7 +104,9 @@ class BaseChat(ABC):
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)
-        self.current_message.start_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.current_message.start_date = datetime.datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         # TODO
         self.current_message.tokens = 0
         current_prompt = None
@@ -200,8 +202,11 @@ class BaseChat(ABC):
             # }"""
 
             self.current_message.add_ai_message(ai_response_text)
-            prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
-
+            prompt_define_response = (
+                self.prompt_template.output_parser.parse_prompt_response(
+                    ai_response_text
+                )
+            )
 
             result = self.do_action(prompt_define_response)
 

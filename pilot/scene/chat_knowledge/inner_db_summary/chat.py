@@ -36,7 +36,6 @@ class InnerChatDBSummary(BaseChat):
         }
         return input_values
 
-
     @property
     def chat_type(self) -> str:
         return ChatScene.InnerChatDBSummary.value

@@ -21,9 +21,7 @@ class ChatWithDbAutoExecute(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(
-        self, chat_session_id, db_name, user_input
-    ):
+    def __init__(self, chat_session_id, db_name, user_input):
         """ """
         super().__init__(
             chat_mode=ChatScene.ChatWithDbExecute,
