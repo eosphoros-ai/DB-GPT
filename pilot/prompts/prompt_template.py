@@ -182,7 +182,7 @@ class BasePromptTemplate(BaseModel, ABC):
         Example:
         .. code-block:: python
 
-            prompt.save(file_path="path/prompt.yaml")
+            prompt.save(file_path="path/prompt.api_v1")
         """
         if self.partial_variables:
             raise ValueError("Cannot save prompt with partial variables.")
@@ -201,11 +201,11 @@ class BasePromptTemplate(BaseModel, ABC):
         if save_path.suffix == ".json":
             with open(file_path, "w") as f:
                 json.dump(prompt_dict, f, indent=4)
-        elif save_path.suffix == ".yaml":
+        elif save_path.suffix == ".api_v1":
             with open(file_path, "w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
-            raise ValueError(f"{save_path} must be json or yaml")
+            raise ValueError(f"{save_path} must be json or api_v1")
 
 
 class StringPromptValue(PromptValue):

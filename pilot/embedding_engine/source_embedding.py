@@ -59,7 +59,7 @@ class SourceEmbedding(ABC):
     @register
     def index_to_store(self, docs):
         """index to vector store"""
-        self.vector_client.load_document(docs)
+        return self.vector_client.load_document(docs)
 
     @register
     def similar_search(self, doc, topk):
