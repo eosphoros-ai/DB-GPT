@@ -8,6 +8,7 @@ from pilot.memory.chat_history.base import BaseChatHistoryMemory
 from pilot.scene.message import (
     OnceConversation,
     conversation_from_dict,
+    _conversation_to_dic,
     conversations_to_dict,
 )
 from pilot.common.formatting import MyEncoder
@@ -41,12 +42,15 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
     def __get_messages_by_conv_uid(self, conv_uid: str):
         cursor = self.connect.cursor()
         cursor.execute("SELECT messages FROM chat_history where conv_uid=?", [conv_uid])
-        return cursor.fetchone()
-
+        content = cursor.fetchone()
+        if content:
+            return cursor.fetchone()[0]
+        else:
+            return None
     def messages(self) -> List[OnceConversation]:
         context = self.__get_messages_by_conv_uid(self.chat_seesion_id)
         if context:
-            conversations: List[OnceConversation] = json.loads(context[0])
+            conversations: List[OnceConversation] = json.loads(context)
             return conversations
         return []
 
@@ -54,15 +58,15 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         context = self.__get_messages_by_conv_uid(self.chat_seesion_id)
         conversations: List[OnceConversation] = []
         if context:
-            conversations = json.load(context)
-        conversations.append(once_message)
+            conversations = json.loads(context)
+        conversations.append(_conversation_to_dic(once_message))
         cursor = self.connect.cursor()
         if context:
             cursor.execute("UPDATE chat_history set messages=? where conv_uid=?",
-                           [json.dumps(conversations_to_dict(conversations), ensure_ascii=False, indent=4), self.chat_seesion_id])
+                           [json.dumps(conversations, ensure_ascii=False), self.chat_seesion_id])
         else:
             cursor.execute("INSERT INTO chat_history(conv_uid, user_name, messages)VALUES(?,?,?)",
-                           [self.chat_seesion_id, "", json.dumps(conversations_to_dict(conversations), ensure_ascii=False, indent=4)])
+                           [self.chat_seesion_id, "", json.dumps(conversations_to_dict(conversations), ensure_ascii=False)])
         cursor.commit()
         self.connect.commit()
 
