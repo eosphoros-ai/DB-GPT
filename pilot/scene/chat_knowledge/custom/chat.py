@@ -27,9 +27,7 @@ class ChatNewKnowledge(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(
-        self,  chat_session_id, user_input, knowledge_name
-    ):
+    def __init__(self, chat_session_id, user_input, knowledge_name):
         """ """
         super().__init__(
             chat_mode=ChatScene.ChatNewKnowledge,
@@ -55,7 +53,6 @@ class ChatNewKnowledge(BaseChat):
         context = context[:2000]
         input_values = {"context": context, "question": self.current_user_input}
         return input_values
-
 
     @property
     def chat_type(self) -> str:

@@ -13,7 +13,11 @@ from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 from pilot.openapi.knowledge.knowledge_service import KnowledgeService
 from pilot.openapi.knowledge.request.knowledge_request import (
     KnowledgeQueryRequest,
-    KnowledgeQueryResponse, KnowledgeDocumentRequest, DocumentSyncRequest, ChunkQueryRequest, DocumentQueryRequest,
+    KnowledgeQueryResponse,
+    KnowledgeDocumentRequest,
+    DocumentSyncRequest,
+    ChunkQueryRequest,
+    DocumentQueryRequest,
 )
 
 from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
@@ -62,16 +66,15 @@ def document_add(space_name: str, request: KnowledgeDocumentRequest):
 def document_list(space_name: str, query_request: DocumentQueryRequest):
     print(f"/document/list params: {space_name}, {query_request}")
     try:
-        return Result.succ(knowledge_space_service.get_knowledge_documents(
-                space_name,
-                query_request
-            ))
+        return Result.succ(
+            knowledge_space_service.get_knowledge_documents(space_name, query_request)
+        )
     except Exception as e:
         return Result.faild(code="E000X", msg=f"document list error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/upload")
-def document_sync(space_name: str, file: UploadFile = File(...)):
+async def document_sync(space_name: str, file: UploadFile = File(...)):
     print(f"/document/upload params: {space_name}")
     try:
         with NamedTemporaryFile(delete=False) as tmp:
@@ -92,7 +95,7 @@ def document_sync(space_name: str, request: DocumentSyncRequest):
         knowledge_space_service.sync_knowledge_document(
             space_name=space_name, doc_ids=request.doc_ids
         )
-        Result.succ([])
+        return Result.succ([])
     except Exception as e:
         return Result.faild(code="E000X", msg=f"document sync error {e}")
 
@@ -101,9 +104,7 @@ def document_sync(space_name: str, request: DocumentSyncRequest):
 def document_list(space_name: str, query_request: ChunkQueryRequest):
     print(f"/document/list params: {space_name}, {query_request}")
     try:
-        return Result.succ(knowledge_space_service.get_document_chunks(
-                query_request
-            ))
+        return Result.succ(knowledge_space_service.get_document_chunks(query_request))
     except Exception as e:
         return Result.faild(code="E000X", msg=f"document chunk list error {e}")
 

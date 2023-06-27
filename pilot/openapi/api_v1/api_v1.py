@@ -12,16 +12,21 @@ from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 from typing import List
 
-from pilot.server.api_v1.api_view_model import Result, ConversationVo, MessageVo, ChatSceneVo
+from pilot.server.api_v1.api_view_model import (
+    Result,
+    ConversationVo,
+    MessageVo,
+    ChatSceneVo,
+)
 from pilot.configs.config import Config
 from pilot.openapi.knowledge.knowledge_service import KnowledgeService
 from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
-from pilot.configs.model_config import (LOGDIR)
+from pilot.configs.model_config import LOGDIR
 from pilot.utils import build_logger
-from pilot.scene.base_message import (BaseMessage)
+from pilot.scene.base_message import BaseMessage
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.scene.message import OnceConversation
 
@@ -40,19 +45,19 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 def __get_conv_user_message(conversations: dict):
-    messages = conversations['messages']
+    messages = conversations["messages"]
     for item in messages:
-        if item['type'] == "human":
-            return item['data']['content']
+        if item["type"] == "human":
+            return item["data"]["content"]
     return ""
 
 
-@router.get('/v1/chat/dialogue/list', response_model=Result[ConversationVo])
+@router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
 async def dialogue_list(response: Response, user_id: str = None):
     # 设置CORS头部信息
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET'
-    response.headers['Access-Control-Request-Headers'] = 'content-type'
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET"
+    response.headers["Access-Control-Request-Headers"] = "content-type"
 
     dialogues: List = []
     datas = DuckdbHistoryMemory.conv_list(user_id)
@@ -63,26 +68,44 @@ async def dialogue_list(response: Response, user_id: str = None):
         conversations = json.loads(messages)
 
         first_conv: OnceConversation = conversations[0]
-        conv_vo: ConversationVo = ConversationVo(conv_uid=conv_uid, user_input=__get_conv_user_message(first_conv),
-                                                 chat_mode=first_conv['chat_mode'])
+        conv_vo: ConversationVo = ConversationVo(
+            conv_uid=conv_uid,
+            user_input=__get_conv_user_message(first_conv),
+            chat_mode=first_conv["chat_mode"],
+        )
         dialogues.append(conv_vo)
 
     return Result[ConversationVo].succ(dialogues)
 
 
-@router.post('/v1/chat/dialogue/scenes', response_model=Result[List[ChatSceneVo]])
+@router.post("/v1/chat/dialogue/scenes", response_model=Result[List[ChatSceneVo]])
 async def dialogue_scenes():
     scene_vos: List[ChatSceneVo] = []
-    new_modes:List[ChatScene] = [ChatScene.ChatDb, ChatScene.ChatData, ChatScene.ChatDashboard, ChatScene.ChatKnowledge, ChatScene.ChatExecution]
+    new_modes: List[ChatScene] = [
+        ChatScene.ChatDb,
+        ChatScene.ChatData,
+        ChatScene.ChatDashboard,
+        ChatScene.ChatKnowledge,
+        ChatScene.ChatExecution,
+    ]
     for scene in new_modes:
-        if not scene.value in [ChatScene.ChatNormal.value, ChatScene.InnerChatDBSummary.value]:
-            scene_vo = ChatSceneVo(chat_scene=scene.value, scene_name=scene.name, param_title="Selection Param")
+        if not scene.value in [
+            ChatScene.ChatNormal.value,
+            ChatScene.InnerChatDBSummary.value,
+        ]:
+            scene_vo = ChatSceneVo(
+                chat_scene=scene.value,
+                scene_name=scene.name,
+                param_title="Selection Param",
+            )
             scene_vos.append(scene_vo)
     return Result.succ(scene_vos)
 
 
-@router.post('/v1/chat/dialogue/new', response_model=Result[ConversationVo])
-async def dialogue_new(chat_mode: str = ChatScene.ChatNormal.value, user_id: str = None):
+@router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
+async def dialogue_new(
+    chat_mode: str = ChatScene.ChatNormal.value, user_id: str = None
+):
     unique_id = uuid.uuid1()
     return Result.succ(ConversationVo(conv_uid=str(unique_id), chat_mode=chat_mode))
 
@@ -90,7 +113,7 @@ async def dialogue_new(chat_mode: str = ChatScene.ChatNormal.value, user_id: str
 def get_db_list():
     db = CFG.local_db
     dbs = db.get_database_list()
-    params:dict = {}
+    params: dict = {}
     for name in dbs:
         params.update({name: name})
     return params
@@ -108,7 +131,7 @@ def knowledge_list():
     return knowledge_service.get_knowledge_space(request)
 
 
-@router.post('/v1/chat/mode/params/list', response_model=Result[dict])
+@router.post("/v1/chat/mode/params/list", response_model=Result[dict])
 async def params_list(chat_mode: str = ChatScene.ChatNormal.value):
     if ChatScene.ChatDb.value == chat_mode:
         return Result.succ(get_db_list())
@@ -124,14 +147,14 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value):
         return Result.succ(None)
 
 
-@router.post('/v1/chat/dialogue/delete')
+@router.post("/v1/chat/dialogue/delete")
 async def dialogue_delete(con_uid: str):
     history_mem = DuckdbHistoryMemory(con_uid)
     history_mem.delete()
     return Result.succ(None)
 
 
-@router.get('/v1/chat/dialogue/messages/history', response_model=Result[MessageVo])
+@router.get("/v1/chat/dialogue/messages/history", response_model=Result[MessageVo])
 async def dialogue_history_messages(con_uid: str):
     print(f"dialogue_history_messages:{con_uid}")
     message_vos: List[MessageVo] = []
@@ -140,17 +163,21 @@ async def dialogue_history_messages(con_uid: str):
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:
-            once_message_vos = [message2Vo(element, once['chat_order']) for element in once['messages']]
+            once_message_vos = [
+                message2Vo(element, once["chat_order"]) for element in once["messages"]
+            ]
             message_vos.extend(once_message_vos)
     return Result.succ(message_vos)
 
 
-@router.post('/v1/chat/completions')
+@router.post("/v1/chat/completions")
 async def chat_completions(dialogue: ConversationVo = Body()):
     print(f"chat_completions:{dialogue.chat_mode},{dialogue.select_param}")
 
     if not ChatScene.is_valid_mode(dialogue.chat_mode):
-        raise StopAsyncIteration(Result.faild("Unsupported Chat Mode," + dialogue.chat_mode + "!"))
+        raise StopAsyncIteration(
+            Result.faild("Unsupported Chat Mode," + dialogue.chat_mode + "!")
+        )
 
     chat_param = {
         "chat_session_id": dialogue.conv_uid,
@@ -188,7 +215,9 @@ def stream_generator(chat):
     model_response = chat.stream_call()
     for chunk in model_response.iter_lines(decode_unicode=False, delimiter=b"\0"):
         if chunk:
-            msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
+            msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                chunk, chat.skip_echo_len
+            )
             chat.current_message.add_ai_message(msg)
             yield msg
             # chat.current_message.add_ai_message(msg)
@@ -206,7 +235,9 @@ def stream_generator(chat):
 
 def message2Vo(message: dict, order) -> MessageVo:
     # message.additional_kwargs['time_stamp'] if message.additional_kwargs["time_stamp"] else 0
-    return MessageVo(role=message['type'], context=message['data']['content'], order=order)
+    return MessageVo(
+        role=message["type"], context=message["data"]["content"], order=order
+    )
 
 
 def non_stream_response(chat):
@@ -214,38 +245,38 @@ def non_stream_response(chat):
     return chat.nostream_call()
 
 
-@router.get('/v1/db/types', response_model=Result[str])
+@router.get("/v1/db/types", response_model=Result[str])
 async def db_types():
     return Result.succ(["mysql", "duckdb"])
 
 
-@router.get('/v1/db/list', response_model=Result[str])
+@router.get("/v1/db/list", response_model=Result[str])
 async def db_list():
     db = CFG.local_db
     dbs = db.get_database_list()
     return Result.succ(dbs)
 
 
-@router.get('/v1/knowledge/list')
+@router.get("/v1/knowledge/list")
 async def knowledge_list():
     return ["test1", "test2"]
 
 
-@router.post('/v1/knowledge/add')
+@router.post("/v1/knowledge/add")
 async def knowledge_add():
     return ["test1", "test2"]
 
 
-@router.post('/v1/knowledge/delete')
+@router.post("/v1/knowledge/delete")
 async def knowledge_delete():
     return ["test1", "test2"]
 
 
-@router.get('/v1/knowledge/types')
+@router.get("/v1/knowledge/types")
 async def knowledge_types():
     return ["test1", "test2"]
 
 
-@router.get('/v1/knowledge/detail')
+@router.get("/v1/knowledge/detail")
 async def knowledge_detail():
     return ["test1", "test2"]

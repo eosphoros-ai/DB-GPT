@@ -13,5 +13,3 @@ if "pytest" in sys.argv or "pytest" in sys.modules or os.getenv("CI"):
 load_dotenv(verbose=True, override=True)
 
 del load_dotenv
-
-
