@@ -22,7 +22,7 @@ export default function Home() {
     sendGetRequest('/v1/chat/dialogue/list', {
     })
   }
-  console.log(mode, 'mode', radioClasses, 'radioClasses')
+
   useEffect(() => {
     handleGetD();
   }, []);
@@ -75,7 +75,6 @@ export default function Home() {
                         type="number"
                         value={temperatureNum / 10}
                         onChange={(e) => {
-                          console.log(Number(e.target.value) * 10, '===')
                           setTemperatureNum(Number(e.target.value) * 10);
                         }}
                         slotProps={{
@@ -92,7 +91,6 @@ export default function Home() {
                       value={temperatureNum}
                       max={10}
                       onChange={(e, value) => {
-                        console.log(e, 'e', value, 'v')
                         setTemperatureNum(value);
                       }}
                     />
@@ -127,7 +125,6 @@ export default function Home() {
                       max={1024}
                       step={64}
                       onChange={(e, value) => {
-                        console.log(e, 'e', value, 'v')
                         setTokenSize(value);
                       }}
                     />
