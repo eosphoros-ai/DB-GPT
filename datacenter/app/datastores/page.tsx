@@ -75,15 +75,21 @@ const Index = () => {
   }, [])
   return (
     <>
-      <div className="page-header p-4">
-        <div className="page-header-title">Knowledge Spaces</div>
+      <Sheet sx={{
+        display: "flex",
+        justifyContent: "space-between"
+      }} className="p-4">
+        <Sheet sx={{
+          fontSize: '30px',
+          fontWeight: 'bold'
+        }}>Knowledge Spaces</Sheet>
         <Button
           onClick={() => setIsAddKnowledgeSpaceModalShow(true)}
           variant="outlined"
         >
           + New Knowledge Space
         </Button>
-      </div>
+      </Sheet>
       <div className="page-body p-4">
         <Table sx={{ '& thead th:nth-child(1)': { width: '40%' } }}>
           <thead>
@@ -116,7 +122,6 @@ const Index = () => {
         </Table>
       </div>
       <Modal
-        title="Add Knowledge Space"
         sx={{
           display: 'flex',
           justifyContent: 'center',
@@ -288,24 +293,6 @@ const Index = () => {
           )}
         </Sheet>
       </Modal>
-      <style jsx>{`
-        .page-header {
-          display: flex;
-          justify-content: space-between;
-          .page-header-title {
-            font-size: 30px;
-            font-weight: bold;
-          }
-        }
-        .datasource-type-wrap {
-          height: 100px;
-          line-height: 100px;
-          border: 1px solid black;
-          border-radius: 20px;
-          margin-bottom: 20px;
-          cursor: pointer;
-        }
-      `}</style>
     </>
   )
 }
