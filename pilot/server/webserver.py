@@ -58,7 +58,7 @@ from fastapi.exceptions import  RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from pilot.server.api_v1.api_v1 import router as api_v1, validation_exception_handler
+from pilot.openapi.api_v1.api_v1 import router as api_v1, validation_exception_handler
 
 # 加载插件
 CFG = Config()

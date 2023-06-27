@@ -75,7 +75,7 @@ class BaseChat(ABC):
         self.prompt_template: PromptTemplate = CFG.prompt_templates[
             self.chat_mode.value
         ]
-        self.history_message: List[OnceConversation] = []
+        self.history_message: List[OnceConversation] = self.memory.messages()
         self.current_message: OnceConversation = OnceConversation(chat_mode.value)
         self.current_tokens_used: int = 0
         ### load chat_session_id's chat historys
@@ -95,7 +95,7 @@ class BaseChat(ABC):
     def generate_input_values(self):
         pass
 
-    @abstractmethod
+
     def do_action(self, prompt_response):
         return prompt_response
 
