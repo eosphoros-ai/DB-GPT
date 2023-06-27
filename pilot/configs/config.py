@@ -90,7 +90,7 @@ class Config(metaclass=Singleton):
         ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
         self.plugins: List[AutoGPTPluginTemplate] = []
         self.plugins_openai = []
-        self.plugins_auto_load = os.getenv("AUTO_LOAD_PLUGIN", "True") == "True"
+        self.plugins_auto_load =  os.getenv("AUTO_LOAD_PLUGIN", "True") == "True"
 
         self.plugins_git_branch = os.getenv("PLUGINS_GIT_BRANCH", "plugin_dashboard")
 
@@ -149,8 +149,6 @@ class Config(metaclass=Singleton):
         self.MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
-
-        self.WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://127.0.0.1:8080")
 
         # QLoRA
         self.QLoRA = os.getenv("QUANTIZE_QLORA", "True")
