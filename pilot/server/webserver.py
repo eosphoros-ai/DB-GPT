@@ -11,6 +11,8 @@ import uuid
 
 import gradio as gr
 
+from pilot.embedding_engine.knowledge_type import KnowledgeType
+
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 
@@ -664,7 +666,8 @@ def knowledge_embedding_store(vs_id, files):
             file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename)
         )
         knowledge_embedding_client = KnowledgeEmbedding(
-            file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
+            knowledge_source=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
+            knowledge_type=KnowledgeType.DOCUMENT.value,
             model_name=LLM_MODEL_CONFIG["text2vec"],
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],

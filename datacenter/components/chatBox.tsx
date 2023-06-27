@@ -34,7 +34,7 @@ const ChatBoxComp = ({
   const [isLoading, setIsLoading] = useState(false);
   const [firstMsg, setFirstMsg] = useState<Message>();
   const [hideTemplateMessages, setHideTemplateMessages] = useState(false);
-	console.log(messages, 'mmm');
+
   const methods = useForm<z.infer<typeof Schema>>({
     resolver: zodResolver(Schema),
     defaultValues: {},
@@ -76,7 +76,6 @@ const ChatBoxComp = ({
         display: 'flex',
         flex: 1,
         flexBasis: '100%',
-        maxWidth: '700px',
         width: '100%',
         height: '100%',
         maxHeight: '100%',
