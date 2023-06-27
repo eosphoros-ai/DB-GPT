@@ -37,6 +37,11 @@ const LeftSider =  () => {
 	const [chatSelect, setChatSelect] = useState();
 	const menus = useMemo(() => {
 		return [{
+			label: 'Home',
+			icon: <SmartToyRoundedIcon fontSize="small" />,
+			route: '/',
+			active: pathname === '/',
+		}, {
 			label: 'Agents',
 			icon: <SmartToyRoundedIcon fontSize="small" />,
 			route: '/agents',
