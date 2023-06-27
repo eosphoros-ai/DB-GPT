@@ -1,27 +1,32 @@
 from pydantic import BaseModel, Field
-from typing import TypeVar, Union, List, Generic
+from typing import TypeVar, Union, List, Generic, Any
 
 T = TypeVar('T')
 
 
 class Result(Generic[T], BaseModel):
     success: bool
-    err_code: str
-    err_msg: str
-    data: List[T]
+    err_code: str = None
+    err_msg: str = None
+    data: T = None
 
     @classmethod
-    def succ(cls, data: List[T]):
-        return Result(True, None, None, data)
+    def succ(cls, data: T):
+        return Result(success=True, err_code=None, err_msg=None, data=data)
 
     @classmethod
     def faild(cls, msg):
-        return Result(True, "E000X", msg, None)
+        return Result(success=False, err_code="E000X", err_msg=msg, data=None)
 
     @classmethod
     def faild(cls, code, msg):
-        return Result(True, code, msg, None)
+        return Result(success=False, err_code=code, err_msg=msg, data=None)
 
+
+class ChatSceneVo(BaseModel):
+    chat_scene: str = Field(...,  description="chat_scene")
+    scene_name: str = Field(...,  description="chat_scene name show for user")
+    param_title: str = Field(...,  description="chat_scene required parameter title")
 
 class ConversationVo(BaseModel):
     """
@@ -31,15 +36,21 @@ class ConversationVo(BaseModel):
     """ 
     user input 
     """
-    user_input: str
+    user_input: str = ""
+    """
+    user
+    """
+    user_name: str = ""
     """ 
     the scene of chat 
     """
     chat_mode: str  = Field(..., description="the scene of chat ")
+
     """
     chat scene select param 
     """
-    select_param: str
+    select_param: str = None
+
 
 
 class MessageVo(BaseModel):
@@ -51,7 +62,12 @@ class MessageVo(BaseModel):
     current message 
     """
     context: str
+
+    """ message postion order """
+    order: int
+
     """
     time the current message was sent 
     """
-    time_stamp: float
+    time_stamp: Any = None
+
