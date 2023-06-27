@@ -9,22 +9,23 @@ try:
 except ImportError:
     pass
 
+
 class GPTCache(Cache):
 
-    """ 
-        GPTCache is a semantic cache that uses 
+    """
+    GPTCache is a semantic cache that uses
     """
 
     def __init__(self, cache) -> None:
         """GPT Cache is a semantic cache that uses GPTCache lib."""
-        
+
         if isinstance(cache, str):
             _cache = Cache()
             init_similar_cache(
                 data_dir=os.path.join(
                     platformdirs.user_cache_dir("dbgpt"), f"_{cache}.gptcache"
                 ),
-                cache_obj=_cache
+                cache_obj=_cache,
             )
         else:
             _cache = cache
@@ -41,4 +42,4 @@ class GPTCache(Cache):
         return get(key) is not None
 
     def create(self, llm: str, **kwargs: Dict[str, Any]) -> str:
-        pass 
+        pass

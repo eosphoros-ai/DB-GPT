@@ -4,17 +4,24 @@ from datetime import datetime
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
 from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
-from pilot.embedding_engine.knowledge_type import KnowledgeType
 from pilot.logs import logger
-from pilot.openapi.knowledge.document_chunk_dao import DocumentChunkEntity, DocumentChunkDao
+from pilot.openapi.knowledge.document_chunk_dao import (
+    DocumentChunkEntity,
+    DocumentChunkDao,
+)
 from pilot.openapi.knowledge.knowledge_document_dao import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
-from pilot.openapi.knowledge.knowledge_space_dao import KnowledgeSpaceDao, KnowledgeSpaceEntity
+from pilot.openapi.knowledge.knowledge_space_dao import (
+    KnowledgeSpaceDao,
+    KnowledgeSpaceEntity,
+)
 from pilot.openapi.knowledge.request.knowledge_request import (
     KnowledgeSpaceRequest,
-    KnowledgeDocumentRequest, DocumentQueryRequest, ChunkQueryRequest,
+    KnowledgeDocumentRequest,
+    DocumentQueryRequest,
+    ChunkQueryRequest,
 )
 from enum import Enum
 
@@ -23,7 +30,7 @@ knowledge_space_dao = KnowledgeSpaceDao()
 knowledge_document_dao = KnowledgeDocumentDao()
 document_chunk_dao = DocumentChunkDao()
 
-CFG=Config()
+CFG = Config()
 
 
 class SyncStatus(Enum):
@@ -53,10 +60,7 @@ class KnowledgeService:
     """create knowledge document"""
 
     def create_knowledge_document(self, space, request: KnowledgeDocumentRequest):
-        query = KnowledgeDocumentEntity(
-            doc_name=request.doc_name,
-            space=space
-        )
+        query = KnowledgeDocumentEntity(doc_name=request.doc_name, space=space)
         documents = knowledge_document_dao.get_knowledge_documents(query)
         if len(documents) > 0:
             raise Exception(f"document name:{request.doc_name} have already named")
@@ -74,26 +78,27 @@ class KnowledgeService:
 
     """get knowledge space"""
 
-    def get_knowledge_space(self, request:KnowledgeSpaceRequest):
+    def get_knowledge_space(self, request: KnowledgeSpaceRequest):
         query = KnowledgeSpaceEntity(
-            name=request.name,
-            vector_type=request.vector_type,
-            owner=request.owner
+            name=request.name, vector_type=request.vector_type, owner=request.owner
         )
         return knowledge_space_dao.get_knowledge_space(query)
 
     """get knowledge get_knowledge_documents"""
 
-    def get_knowledge_documents(self, space, request:DocumentQueryRequest):
+    def get_knowledge_documents(self, space, request: DocumentQueryRequest):
         query = KnowledgeDocumentEntity(
             doc_name=request.doc_name,
             doc_type=request.doc_type,
             space=space,
             status=request.status,
         )
-        return knowledge_document_dao.get_knowledge_documents(query, page=request.page, page_size=request.page_size)
+        return knowledge_document_dao.get_knowledge_documents(
+            query, page=request.page, page_size=request.page_size
+        )
 
     """sync knowledge document chunk into vector store"""
+
     def sync_knowledge_document(self, space_name, doc_ids):
         for doc_id in doc_ids:
             query = KnowledgeDocumentEntity(
@@ -101,12 +106,14 @@ class KnowledgeService:
                 space=space_name,
             )
             doc = knowledge_document_dao.get_knowledge_documents(query)[0]
-            client = KnowledgeEmbedding(knowledge_source=doc.content,
-                                        knowledge_type=doc.doc_type.upper(),
-                                        model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-                                        vector_store_config={
-                                            "vector_store_name": space_name,
-                                        })
+            client = KnowledgeEmbedding(
+                knowledge_source=doc.content,
+                knowledge_type=doc.doc_type.upper(),
+                model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+                vector_store_config={
+                    "vector_store_name": space_name,
+                },
+            )
             chunk_docs = client.read()
             # update document status
             doc.status = SyncStatus.RUNNING.name
@@ -114,9 +121,12 @@ class KnowledgeService:
             doc.gmt_modified = datetime.now()
             knowledge_document_dao.update_knowledge_document(doc)
             # async doc embeddings
-            thread = threading.Thread(target=self.async_doc_embedding(client, chunk_docs, doc))
+            thread = threading.Thread(
+                target=self.async_doc_embedding, args=(client, chunk_docs, doc)
+            )
             thread.start()
-            #save chunk details
+            logger.info(f"begin save document chunks, doc:{doc.doc_name}")
+            # save chunk details
             chunk_entities = [
                 DocumentChunkEntity(
                     doc_name=doc.doc_name,
@@ -125,9 +135,10 @@ class KnowledgeService:
                     content=chunk_doc.page_content,
                     meta_info=str(chunk_doc.metadata),
                     gmt_created=datetime.now(),
-                    gmt_modified=datetime.now()
+                    gmt_modified=datetime.now(),
                 )
-                for chunk_doc in chunk_docs]
+                for chunk_doc in chunk_docs
+            ]
             document_chunk_dao.create_documents_chunks(chunk_entities)
 
         return True
@@ -145,26 +156,30 @@ class KnowledgeService:
         return knowledge_space_dao.delete_knowledge_space(space_id)
 
     """get document chunks"""
-    def get_document_chunks(self, request:ChunkQueryRequest):
+
+    def get_document_chunks(self, request: ChunkQueryRequest):
         query = DocumentChunkEntity(
             id=request.id,
             document_id=request.document_id,
             doc_name=request.doc_name,
-            doc_type=request.doc_type
+            doc_type=request.doc_type,
         )
-        return document_chunk_dao.get_document_chunks(query, page=request.page, page_size=request.page_size)
+        return document_chunk_dao.get_document_chunks(
+            query, page=request.page, page_size=request.page_size
+        )
 
     def async_doc_embedding(self, client, chunk_docs, doc):
-        logger.info(f"async_doc_embedding, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}")
+        logger.info(
+            f"async_doc_embedding, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
+        )
         try:
             vector_ids = client.knowledge_embedding_batch(chunk_docs)
             doc.status = SyncStatus.FINISHED.name
-            doc.content = "embedding success"
+            doc.result = "document embedding success"
             doc.vector_ids = ",".join(vector_ids)
+            logger.info(f"async document embedding, success:{doc.doc_name}")
         except Exception as e:
             doc.status = SyncStatus.FAILED.name
-            doc.content = str(e)
-
+            doc.result = "document embedding failed" + str(e)
+            logger.error(f"document embedding, failed:{doc.doc_name}, {str(e)}")
         return knowledge_document_dao.update_knowledge_document(doc)
-
-

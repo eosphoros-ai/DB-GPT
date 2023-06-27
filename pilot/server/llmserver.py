@@ -27,7 +27,6 @@ from pilot.server.chat_adapter import get_llm_chat_adapter
 CFG = Config()
 
 
-
 class ModelWorker:
     def __init__(self, model_path, model_name, device, num_gpus=1):
         if model_path.endswith("/"):
@@ -106,6 +105,7 @@ worker = ModelWorker(
 
 app = FastAPI()
 from pilot.openapi.knowledge.knowledge_controller import router
+
 app.include_router(router)
 
 origins = [
@@ -119,8 +119,9 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
+
 
 class PromptRequest(BaseModel):
     prompt: str

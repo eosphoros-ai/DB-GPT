@@ -85,7 +85,6 @@ class OnceConversation:
         self.messages.clear()
         self.session_id = None
 
-
     def get_user_message(self):
         for once in self.messages:
             if isinstance(once, HumanMessage):

@@ -3,8 +3,8 @@ import hashlib
 from typing import Any, Dict
 from abc import ABC, abstractmethod
 
+
 class Cache(ABC):
-    
     def create(self, key: str) -> bool:
         pass
 
