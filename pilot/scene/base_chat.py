@@ -24,6 +24,7 @@ from pilot.prompts.prompt_new import PromptTemplate
 from pilot.memory.chat_history.base import BaseChatHistoryMemory
 from pilot.memory.chat_history.file_history import FileHistoryMemory
 from pilot.memory.chat_history.mem_history import MemHistoryMemory
+from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 
 from pilot.configs.model_config import LOGDIR, DATASETS_DIR
 from pilot.utils import (
@@ -59,8 +60,6 @@ class BaseChat(ABC):
 
     def __init__(
         self,
-        temperature,
-        max_new_tokens,
         chat_mode,
         chat_session_id,
         current_user_input,
@@ -70,17 +69,15 @@ class BaseChat(ABC):
         self.current_user_input: str = current_user_input
         self.llm_model = CFG.LLM_MODEL
         ### can configurable storage methods
-        self.memory = MemHistoryMemory(chat_session_id)
+        self.memory = DuckdbHistoryMemory(chat_session_id)
 
         ### load prompt template
         self.prompt_template: PromptTemplate = CFG.prompt_templates[
             self.chat_mode.value
         ]
         self.history_message: List[OnceConversation] = []
-        self.current_message: OnceConversation = OnceConversation()
+        self.current_message: OnceConversation = OnceConversation(chat_mode.value)
         self.current_tokens_used: int = 0
-        self.temperature = temperature
-        self.max_new_tokens = max_new_tokens
         ### load chat_session_id's chat historys
         self._load_history(self.chat_session_id)
 
@@ -99,15 +96,15 @@ class BaseChat(ABC):
         pass
 
     @abstractmethod
-    def do_with_prompt_response(self, prompt_response):
-        pass
+    def do_action(self, prompt_response):
+        return prompt_response
 
     def __call_base(self):
         input_values = self.generate_input_values()
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)
-        self.current_message.start_date = datetime.datetime.now()
+        self.current_message.start_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # TODO
         self.current_message.tokens = 0
         current_prompt = None
@@ -203,13 +200,10 @@ class BaseChat(ABC):
             # }"""
 
             self.current_message.add_ai_message(ai_response_text)
-            prompt_define_response = (
-                self.prompt_template.output_parser.parse_prompt_response(
-                    ai_response_text
-                )
-            )
+            prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
 
-            result = self.do_with_prompt_response(prompt_define_response)
+
+            result = self.do_action(prompt_define_response)
 
             if hasattr(prompt_define_response, "thoughts"):
                 if isinstance(prompt_define_response.thoughts, dict):

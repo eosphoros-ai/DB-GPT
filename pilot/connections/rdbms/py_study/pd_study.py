@@ -6,6 +6,8 @@ import numpy as np
 from matplotlib.font_manager import FontProperties
 from pyecharts.charts import Bar
 from pyecharts import options as opts
+from test_cls_1 import TestBase,Test1
+from test_cls_2 import Test2
 
 CFG = Config()
 
@@ -56,20 +58,29 @@ CFG = Config()
 #
 
 
+# if __name__ == "__main__":
+
+    # def __extract_json(s):
+    #     i = s.index("{")
+    #     count = 1  # 当前所在嵌套深度，即还没闭合的'{'个数
+    #     for j, c in enumerate(s[i + 1 :], start=i + 1):
+    #         if c == "}":
+    #             count -= 1
+    #         elif c == "{":
+    #             count += 1
+    #         if count == 0:
+    #             break
+    #     assert count == 0  # 检查是否找到最后一个'}'
+    #     return s[i : j + 1]
+    #
+    # ss = """here's a sql statement that can be used to generate a histogram to analyze the distribution of user orders in different cities:select u.city, count(*) as order_countfrom tran_order oleft join user u on o.user_id = u.idgroup by u.city;this will return the number of orders for each city that has at least one order. we can use this data to generate a histogram that shows the distribution of orders across different cities.here's the response in the required format:{ "thoughts": "here's a sql statement that can be used to generate a histogram to analyze the distribution of user orders in different cities:\n\nselect u.city, count(*) as order_count\nfrom tran_order o\nleft join user u on o.user_id = u.id\ngroup by u.city;", "speak": "here's a sql statement that can be used to generate a histogram to analyze the distribution of user orders in different cities.", "command": { "name": "histogram-executor", "args": { "title": "distribution of user orders in different cities", "sql": "select u.city, count(*) as order_count\nfrom tran_order o\nleft join user u on o.user_id = u.id\ngroup by u.city;" } }}"""
+    # print(__extract_json(ss))
+
 if __name__ == "__main__":
-
-    def __extract_json(s):
-        i = s.index("{")
-        count = 1  # 当前所在嵌套深度，即还没闭合的'{'个数
-        for j, c in enumerate(s[i + 1 :], start=i + 1):
-            if c == "}":
-                count -= 1
-            elif c == "{":
-                count += 1
-            if count == 0:
-                break
-        assert count == 0  # 检查是否找到最后一个'}'
-        return s[i : j + 1]
-
-    ss = """here's a sql statement that can be used to generate a histogram to analyze the distribution of user orders in different cities:select u.city, count(*) as order_countfrom tran_order oleft join user u on o.user_id = u.idgroup by u.city;this will return the number of orders for each city that has at least one order. we can use this data to generate a histogram that shows the distribution of orders across different cities.here's the response in the required format:{ "thoughts": "here's a sql statement that can be used to generate a histogram to analyze the distribution of user orders in different cities:\n\nselect u.city, count(*) as order_count\nfrom tran_order o\nleft join user u on o.user_id = u.id\ngroup by u.city;", "speak": "here's a sql statement that can be used to generate a histogram to analyze the distribution of user orders in different cities.", "command": { "name": "histogram-executor", "args": { "title": "distribution of user orders in different cities", "sql": "select u.city, count(*) as order_count\nfrom tran_order o\nleft join user u on o.user_id = u.id\ngroup by u.city;" } }}"""
-    print(__extract_json(ss))
+    test1 = Test1()
+    test2 = Test2()
+    test1.write()
+    test1.test()
+    test2.write()
+    test1.test()
+    test2.test()
