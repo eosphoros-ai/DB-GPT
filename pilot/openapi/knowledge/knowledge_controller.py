@@ -1,26 +1,22 @@
-import json
-import os
-import sys
-from typing import List
+from tempfile import NamedTemporaryFile
 
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile
+
 from langchain.embeddings import HuggingFaceEmbeddings
-ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(ROOT_PATH)
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
 
-from pilot.server.api_v1.api_view_model import Result
+from pilot.openapi.api_v1.api_view_model import Result
 from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 
-from pilot.server.knowledge.knowledge_service import KnowledgeService
-from pilot.server.knowledge.request.knowledge_request import (
+from pilot.openapi.knowledge.knowledge_service import KnowledgeService
+from pilot.openapi.knowledge.request.knowledge_request import (
     KnowledgeQueryRequest,
     KnowledgeQueryResponse, KnowledgeDocumentRequest, DocumentSyncRequest, ChunkQueryRequest, DocumentQueryRequest,
 )
 
-from pilot.server.knowledge.request.knowledge_request import KnowledgeSpaceRequest
+from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
 
 CFG = Config()
 router = APIRouter()
@@ -74,6 +70,21 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
         return Result.faild(code="E000X", msg=f"document list error {e}")
 
 
+@router.post("/knowledge/{space_name}/document/upload")
+def document_sync(space_name: str, file: UploadFile = File(...)):
+    print(f"/document/upload params: {space_name}")
+    try:
+        with NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(file.read())
+            tmp_path = tmp.name
+            tmp_content = tmp.read()
+
+        return {"file_path": tmp_path, "file_content": tmp_content}
+        Result.succ([])
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"document sync error {e}")
+
+
 @router.post("/knowledge/{space_name}/document/sync")
 def document_sync(space_name: str, request: DocumentSyncRequest):
     print(f"Received params: {space_name}, {request}")
@@ -90,7 +101,7 @@ def document_sync(space_name: str, request: DocumentSyncRequest):
 def document_list(space_name: str, query_request: ChunkQueryRequest):
     print(f"/document/list params: {space_name}, {query_request}")
     try:
-        Result.succ(knowledge_space_service.get_document_chunks(
+        return Result.succ(knowledge_space_service.get_document_chunks(
                 query_request
             ))
     except Exception as e:
