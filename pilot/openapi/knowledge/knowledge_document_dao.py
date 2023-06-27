@@ -9,6 +9,8 @@ from pilot.configs.config import Config
 CFG = Config()
 
 Base = declarative_base()
+
+
 class KnowledgeDocumentEntity(Base):
     __tablename__ = 'knowledge_document'
     id = Column(Integer, primary_key=True)

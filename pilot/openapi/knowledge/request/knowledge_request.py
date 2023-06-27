@@ -29,6 +29,8 @@ class KnowledgeDocumentRequest(BaseModel):
     doc_name: str
     """doc_type: doc type"""
     doc_type: str
+    """content: content"""
+    content: str
     """text_chunk_size: text_chunk_size"""
     # text_chunk_size: int
 

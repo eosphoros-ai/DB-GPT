@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from pilot.configs.config import Config
 
-from pilot.server.knowledge.request.knowledge_request import KnowledgeSpaceRequest
+from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
 from sqlalchemy.orm import sessionmaker
 
 CFG = Config()

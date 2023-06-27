@@ -11,6 +11,8 @@ import uuid
 
 import gradio as gr
 
+from pilot.embedding_engine.knowledge_type import KnowledgeType
+
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 
@@ -57,7 +59,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.exceptions import  RequestValidationError
 from fastapi.staticfiles import StaticFiles
 
-from pilot.server.api_v1.api_v1 import router as api_v1, validation_exception_handler
+from pilot.openapi.api_v1.api_v1 import router as api_v1, validation_exception_handler
 
 # 加载插件
 CFG = Config()
@@ -652,8 +654,9 @@ def knowledge_embedding_store(vs_id, files):
             file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename)
         )
         knowledge_embedding_client = KnowledgeEmbedding(
-            file_path=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
-            model_name=LLM_MODEL_CONFIG["text2vec"],
+            knowledge_source=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
+            knowledge_type=KnowledgeType.DOCUMENT.value,
+            model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
                 "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
