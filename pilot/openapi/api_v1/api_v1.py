@@ -14,6 +14,8 @@ from typing import List
 
 from pilot.openapi.api_v1.api_view_model import Result, ConversationVo, MessageVo, ChatSceneVo
 from pilot.configs.config import Config
+from pilot.openapi.knowledge.knowledge_service import KnowledgeService
+from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
@@ -27,6 +29,7 @@ router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()
 logger = build_logger("api_v1", LOGDIR + "api_v1.log")
+knowledge_service = KnowledgeService()
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -70,8 +73,7 @@ async def dialogue_list(response: Response, user_id: str = None):
 @router.post('/v1/chat/dialogue/scenes', response_model=Result[List[ChatSceneVo]])
 async def dialogue_scenes():
     scene_vos: List[ChatSceneVo] = []
-    new_modes: List[ChatScene] = [ChatScene.ChatWithDbQA, ChatScene.ChatWithDbExecute, ChatScene.ChatDashboard,
-                                  ChatScene.ChatKnowledge, ChatScene.ChatExecution]
+    new_modes:List[ChatScene] = [ChatScene.ChatDb, ChatScene.ChatData, ChatScene.ChatDashboard, ChatScene.ChatKnowledge, ChatScene.ChatExecution]
     for scene in new_modes:
         if not scene.value in [ChatScene.ChatNormal.value, ChatScene.InnerChatDBSummary.value]:
             scene_vo = ChatSceneVo(chat_scene=scene.value, scene_name=scene.name, param_title="Selection Param")
@@ -88,7 +90,7 @@ async def dialogue_new(chat_mode: str = ChatScene.ChatNormal.value, user_id: str
 def get_db_list():
     db = CFG.local_db
     dbs = db.get_database_list()
-    params: dict = {}
+    params:dict = {}
     for name in dbs:
         params.update({name: name})
     return params
@@ -102,9 +104,8 @@ def plugins_select_info():
 
 
 def knowledge_list():
-    knowledge: dict = {}
-    ### TODO
-    return knowledge
+    request = KnowledgeSpaceRequest()
+    return knowledge_service.get_knowledge_space(request)
 
 
 @router.post('/v1/chat/mode/params/list', response_model=Result[dict])
@@ -165,7 +166,7 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     elif ChatScene.ChatExecution.value == dialogue.chat_mode:
         chat_param.update({"plugin_selector": dialogue.select_param})
     elif ChatScene.ChatKnowledge.value == dialogue.chat_mode:
-        chat_param.update({"knowledge_name": dialogue.select_param})
+        chat_param.update({"knowledge_space": dialogue.select_param})
 
     chat: BaseChat = CHAT_FACTORY.get_implementation(dialogue.chat_mode, **chat_param)
     if not chat.prompt_template.stream_out:
