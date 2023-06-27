@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { Button, Table } from '@/lib/mui'
 import moment from 'moment'
+import { message } from 'antd'
 
 const Documents = () => {
   const router = useRouter()
@@ -51,16 +52,43 @@ const Documents = () => {
               <td>{row.status}</td>
               <td>
                 {
-                  <Button
-                    variant="outlined"
-                    onClick={() => {
-                      router.push(
-                        `/datastores/documents/chunklist?spacename=${spaceName}&documentid=${row.id}`
-                      )
-                    }}
-                  >
-                    Detail of Chunks
-                  </Button>
+                  <>
+                    <Button
+                      variant="outlined"
+                      onClick={async () => {
+                        const res = await fetch(
+                          `http://localhost:8000/knowledge/${spaceName}/document/sync`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              doc_ids: [row.id]
+                            })
+                          }
+                        )
+                        const data = await res.json()
+                        if (data.success) {
+                          message.success('success');
+                        } else {
+                          message.error(data.err_msg || 'failed');
+                        }
+                      }}
+                    >
+                      Synch
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        router.push(
+                          `/datastores/documents/chunklist?spacename=${spaceName}&documentid=${row.id}`
+                        )
+                      }}
+                    >
+                      Detail of Chunks
+                    </Button>
+                  </>
                 }
               </td>
             </tr>
