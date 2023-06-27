@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 from typing import List
 
-from pilot.server.api_v1.api_view_model import Result, ConversationVo, MessageVo, ChatSceneVo
+from pilot.openapi.api_v1.api_view_model import Result, ConversationVo, MessageVo, ChatSceneVo
 from pilot.configs.config import Config
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
@@ -70,7 +70,8 @@ async def dialogue_list(response: Response, user_id: str = None):
 @router.post('/v1/chat/dialogue/scenes', response_model=Result[List[ChatSceneVo]])
 async def dialogue_scenes():
     scene_vos: List[ChatSceneVo] = []
-    new_modes:List[ChatScene] = [ChatScene.ChatDb, ChatScene.ChatData, ChatScene.ChatDashboard, ChatScene.ChatKnowledge, ChatScene.ChatExecution]
+    new_modes: List[ChatScene] = [ChatScene.ChatWithDbQA, ChatScene.ChatWithDbExecute, ChatScene.ChatDashboard,
+                                  ChatScene.ChatKnowledge, ChatScene.ChatExecution]
     for scene in new_modes:
         if not scene.value in [ChatScene.ChatNormal.value, ChatScene.InnerChatDBSummary.value]:
             scene_vo = ChatSceneVo(chat_scene=scene.value, scene_name=scene.name, param_title="Selection Param")
@@ -87,7 +88,7 @@ async def dialogue_new(chat_mode: str = ChatScene.ChatNormal.value, user_id: str
 def get_db_list():
     db = CFG.local_db
     dbs = db.get_database_list()
-    params:dict = {}
+    params: dict = {}
     for name in dbs:
         params.update({name: name})
     return params
@@ -108,9 +109,9 @@ def knowledge_list():
 
 @router.post('/v1/chat/mode/params/list', response_model=Result[dict])
 async def params_list(chat_mode: str = ChatScene.ChatNormal.value):
-    if ChatScene.ChatDb.value == chat_mode:
+    if ChatScene.ChatWithDbQA.value == chat_mode:
         return Result.succ(get_db_list())
-    elif ChatScene.ChatData.value == chat_mode:
+    elif ChatScene.ChatWithDbExecute.value == chat_mode:
         return Result.succ(get_db_list())
     elif ChatScene.ChatDashboard.value == chat_mode:
         return Result.succ(get_db_list())
@@ -155,24 +156,21 @@ async def chat_completions(dialogue: ConversationVo = Body()):
         "user_input": dialogue.user_input,
     }
 
-    if ChatScene.ChatDb == dialogue.chat_mode:
-        chat_param.update("db_name", dialogue.select_param)
-    elif ChatScene.ChatData == dialogue.chat_mode:
-        chat_param.update("db_name", dialogue.select_param)
-    elif ChatScene.ChatDashboard == dialogue.chat_mode:
-        chat_param.update("db_name", dialogue.select_param)
-    elif ChatScene.ChatExecution == dialogue.chat_mode:
-        chat_param.update("plugin_selector", dialogue.select_param)
-    elif ChatScene.ChatKnowledge == dialogue.chat_mode:
-        chat_param.update("knowledge_name", dialogue.select_param)
+    if ChatScene.ChatWithDbQA.value == dialogue.chat_mode:
+        chat_param.update({"db_name": dialogue.select_param})
+    elif ChatScene.ChatWithDbExecute.value == dialogue.chat_mode:
+        chat_param.update({"db_name": dialogue.select_param})
+    elif ChatScene.ChatDashboard.value == dialogue.chat_mode:
+        chat_param.update({"db_name": dialogue.select_param})
+    elif ChatScene.ChatExecution.value == dialogue.chat_mode:
+        chat_param.update({"plugin_selector": dialogue.select_param})
+    elif ChatScene.ChatKnowledge.value == dialogue.chat_mode:
+        chat_param.update({"knowledge_name": dialogue.select_param})
 
     chat: BaseChat = CHAT_FACTORY.get_implementation(dialogue.chat_mode, **chat_param)
     if not chat.prompt_template.stream_out:
         return non_stream_response(chat)
     else:
-        # generator = stream_generator(chat)
-        # result = Result.succ(data=StreamingResponse(stream_test(), media_type='text/plain'))
-        # return result
         return StreamingResponse(stream_generator(chat), media_type="text/plain")
 
 
@@ -194,12 +192,6 @@ def stream_generator(chat):
             # json_text = json.dumps(vo.__dict__)
             # yield json_text.encode('utf-8')
     chat.memory.append(chat.current_message)
-
-
-# def stream_response(chat):
-#     logger.info("stream out start!")
-#     api_response = StreamingResponse(stream_generator(chat), media_type="application/json")
-#     return api_response
 
 
 def message2Vo(message: dict, order) -> MessageVo:
