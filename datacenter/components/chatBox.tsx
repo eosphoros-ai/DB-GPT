@@ -76,7 +76,6 @@ const ChatBoxComp = ({
         display: 'flex',
         flex: 1,
         flexBasis: '100%',
-        maxWidth: '700px',
         width: '100%',
         height: '100%',
         maxHeight: '100%',

@@ -1,6 +1,5 @@
 "use client"
 import './globals.css'
-import Header from '@/components/header';
 import LeftSider from '@/components/leftSider';
 import { CssVarsProvider, ThemeProvider } from '@mui/joy/styles';
 import { joyTheme } from './defaultTheme';
@@ -16,10 +15,9 @@ export default function RootLayout({
         <ThemeProvider theme={joyTheme}>
           <CssVarsProvider theme={joyTheme} defaultMode="light">
             <div className='min-h-screen flex flex-col'>
-              <Header />
               <div className="flex flex-1 flex-row">
                 <LeftSider />
-                <div className='flex-1'>{children}</div>
+                <div className='flex-1 overflow-auto'>{children}</div>
               </div>
             </div>
           </CssVarsProvider>
