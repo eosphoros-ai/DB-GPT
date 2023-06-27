@@ -12,11 +12,7 @@ class ChartData(BaseModel):
 
 
 class ReportData(BaseModel):
-    conv_uid:str
-    template_name:str
-    template_introduce:str
+    conv_uid: str
+    template_name: str
+    template_introduce: str
     charts: List[ChartData]
-
-
-
-

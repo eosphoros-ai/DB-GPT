@@ -29,7 +29,7 @@ class ChatKnowledge(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self,  chat_session_id, user_input, knowledge_space):
+    def __init__(self, chat_session_id, user_input, knowledge_space):
         """ """
         super().__init__(
             chat_mode=ChatScene.ChatKnowledge,
@@ -58,8 +58,6 @@ class ChatKnowledge(BaseChat):
                 "you have no knowledge space, please add your knowledge space"
             )
         return input_values
-
-
 
     @property
     def chat_type(self) -> str:

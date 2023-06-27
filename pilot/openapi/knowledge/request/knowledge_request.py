@@ -30,17 +30,19 @@ class KnowledgeDocumentRequest(BaseModel):
     """doc_type: doc type"""
     doc_type: str
     """content: content"""
-    content: str
+    content: str = None
     """text_chunk_size: text_chunk_size"""
     # text_chunk_size: int
 
+
 class DocumentQueryRequest(BaseModel):
     """doc_name: doc path"""
+
     doc_name: str = None
     """doc_type: doc type"""
-    doc_type: str= None
+    doc_type: str = None
     """status: status"""
-    status: str= None
+    status: str = None
     """page: page"""
     page: int = 1
     """page_size: page size"""
@@ -49,10 +51,13 @@ class DocumentQueryRequest(BaseModel):
 
 class DocumentSyncRequest(BaseModel):
     """doc_ids: doc ids"""
+
     doc_ids: List
+
 
 class ChunkQueryRequest(BaseModel):
     """id: id"""
+
     id: int = None
     """document_id: doc id"""
     document_id: int = None

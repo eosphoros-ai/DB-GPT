@@ -43,7 +43,7 @@ class MyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, set):
             return list(obj)
-        elif hasattr(obj, '__dict__'):
+        elif hasattr(obj, "__dict__"):
             return obj.__dict__
         else:
             return json.JSONEncoder.default(self, obj)

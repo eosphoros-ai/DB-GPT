@@ -33,8 +33,6 @@ class BaseChatHistoryMemory(ABC):
     def clear(self) -> None:
         """Clear session memory from the local file"""
 
-
-    def conv_list(self, user_name:str=None) -> None:
+    def conv_list(self, user_name: str = None) -> None:
         """get user's conversation list"""
         pass
-
