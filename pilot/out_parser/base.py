@@ -120,7 +120,7 @@ class BaseOutputParser(ABC):
         else:
             raise ValueError("Model server error!code=" + respObj_ex["error_code"])
 
-    def __extract_json(slef, s):
+    def __extract_json(self, s):
         i = s.index("{")
         count = 1  # 当前所在嵌套深度，即还没闭合的'{'个数
         for j, c in enumerate(s[i + 1 :], start=i + 1):
