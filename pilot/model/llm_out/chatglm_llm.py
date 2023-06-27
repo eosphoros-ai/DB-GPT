@@ -11,7 +11,7 @@ from pilot.conversation import ROLE_ASSISTANT, ROLE_USER
 def chatglm_generate_stream(
     model, tokenizer, params, device, context_len=2048, stream_interval=2
 ):
-    """Generate text using chatglm model's chat api"""
+    """Generate text using chatglm model's chat api_v1"""
     prompt = params["prompt"]
     temperature = float(params.get("temperature", 1.0))
     top_p = float(params.get("top_p", 1.0))
