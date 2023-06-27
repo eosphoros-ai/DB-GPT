@@ -14,6 +14,8 @@ from typing import List
 
 from pilot.server.api_v1.api_view_model import Result, ConversationVo, MessageVo, ChatSceneVo
 from pilot.configs.config import Config
+from pilot.openapi.knowledge.knowledge_service import KnowledgeService
+from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
@@ -27,6 +29,7 @@ router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()
 logger = build_logger("api_v1", LOGDIR + "api_v1.log")
+knowledge_service = KnowledgeService()
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -101,9 +104,8 @@ def plugins_select_info():
 
 
 def knowledge_list():
-    knowledge: dict = {}
-    ### TODO
-    return knowledge
+    request = KnowledgeSpaceRequest()
+    return knowledge_service.get_knowledge_space(request)
 
 
 @router.post('/v1/chat/mode/params/list', response_model=Result[dict])
@@ -164,7 +166,7 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     elif ChatScene.ChatExecution == dialogue.chat_mode:
         chat_param.update("plugin_selector", dialogue.select_param)
     elif ChatScene.ChatKnowledge == dialogue.chat_mode:
-        chat_param.update("knowledge_name", dialogue.select_param)
+        chat_param.update("knowledge_space", dialogue.select_param)
 
     chat: BaseChat = CHAT_FACTORY.get_implementation(dialogue.chat_mode, **chat_param)
     if not chat.prompt_template.stream_out:
