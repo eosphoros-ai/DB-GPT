@@ -4,7 +4,7 @@ from chromadb.errors import NotEnoughElementsException
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from pilot.configs.config import Config
-from pilot.embedding_engine.knowledge_type import get_knowledge_embedding
+from pilot.embedding_engine.knowledge_type import get_knowledge_embedding, KnowledgeType
 from pilot.vector_store.connector import VectorStoreConnector
 
 CFG = Config()
@@ -15,7 +15,7 @@ class KnowledgeEmbedding:
         self,
         model_name,
         vector_store_config,
-        knowledge_type: Optional[str],
+        knowledge_type: Optional[str] = KnowledgeType.DOCUMENT.value,
         knowledge_source: Optional[str] = None,
     ):
         """Initialize with knowledge embedding client, model_name, vector_store_config, knowledge_type, knowledge_source"""
