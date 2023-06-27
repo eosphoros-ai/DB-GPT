@@ -4,14 +4,15 @@ from datetime import datetime
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
 from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.knowledge_type import KnowledgeType
 from pilot.logs import logger
-from pilot.server.knowledge.document_chunk_dao import DocumentChunkEntity, DocumentChunkDao
-from pilot.server.knowledge.knowledge_document_dao import (
+from pilot.openapi.knowledge.document_chunk_dao import DocumentChunkEntity, DocumentChunkDao
+from pilot.openapi.knowledge.knowledge_document_dao import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
-from pilot.server.knowledge.knowledge_space_dao import KnowledgeSpaceDao, KnowledgeSpaceEntity
-from pilot.server.knowledge.request.knowledge_request import (
+from pilot.openapi.knowledge.knowledge_space_dao import KnowledgeSpaceDao, KnowledgeSpaceEntity
+from pilot.openapi.knowledge.request.knowledge_request import (
     KnowledgeSpaceRequest,
     KnowledgeDocumentRequest, DocumentQueryRequest, ChunkQueryRequest,
 )
@@ -23,6 +24,7 @@ knowledge_document_dao = KnowledgeDocumentDao()
 document_chunk_dao = DocumentChunkDao()
 
 CFG=Config()
+
 
 class SyncStatus(Enum):
     TODO = "TODO"
@@ -65,7 +67,7 @@ class KnowledgeService:
             chunk_size=0,
             status=SyncStatus.TODO.name,
             last_sync=datetime.now(),
-            content="",
+            content=request.content,
         )
         knowledge_document_dao.create_knowledge_document(document)
         return True
@@ -99,8 +101,8 @@ class KnowledgeService:
                 space=space_name,
             )
             doc = knowledge_document_dao.get_knowledge_documents(query)[0]
-            client = KnowledgeEmbedding(file_path=doc.doc_name,
-                                        file_type="url",
+            client = KnowledgeEmbedding(knowledge_source=doc.content,
+                                        knowledge_type=doc.doc_type.upper(),
                                         model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
                                         vector_store_config={
                                             "vector_store_name": space_name,
@@ -127,11 +129,6 @@ class KnowledgeService:
                 )
                 for chunk_doc in chunk_docs]
             document_chunk_dao.create_documents_chunks(chunk_entities)
-            #update document status
-            # doc.status = SyncStatus.RUNNING.name
-            # doc.chunk_size = len(chunk_docs)
-            # doc.gmt_modified = datetime.now()
-            # knowledge_document_dao.update_knowledge_document(doc)
 
         return True
 
