@@ -68,7 +68,6 @@ import {
           signal: ctrl.signal,
   
           async onopen(response) {
-            console.log('onopen', response);
             if (
               response.ok &&
               response.headers.get('content-type') === EventStreamContentType
@@ -91,7 +90,6 @@ import {
             throw new RetriableError();
           },
           onerror(err) {
-            console.log('on error', err, Object.keys(err));
 						throw new Error(err);
             // if (err instanceof FatalError) {
             //   ctrl.abort();
