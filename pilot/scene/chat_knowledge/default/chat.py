@@ -29,7 +29,7 @@ class ChatDefaultKnowledge(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self,  chat_session_id, user_input):
+    def __init__(self, chat_session_id, user_input):
         """ """
         super().__init__(
             chat_mode=ChatScene.ChatDefaultKnowledge,
@@ -58,8 +58,6 @@ class ChatDefaultKnowledge(BaseChat):
                 "you have no default knowledge store, please execute python knowledge_init.py"
             )
         return input_values
-
-
 
     @property
     def chat_type(self) -> str:

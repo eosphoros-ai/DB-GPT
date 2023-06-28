@@ -1,8 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import type { ProFormInstance } from '@ant-design/pro-components'
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { message } from 'antd'
 import {
   Modal,
@@ -31,16 +30,33 @@ const stepsOfAddingSpace = [
   'Choose a Datasource type',
   'Setup the Datasource'
 ]
+const documentTypeList = [
+  {
+    type: 'text',
+    title: 'Text',
+    subTitle: 'Paste some text'
+  },
+  {
+    type: 'webPage',
+    title: 'Web Page',
+    subTitle: 'Crawl text from a web page'
+  },
+  {
+    type: 'file',
+    title: 'File',
+    subTitle: 'It can be: PDF, CSV, JSON, Text, PowerPoint, Word, Excel'
+  }
+]
 
 const Index = () => {
   const router = useRouter()
-  const formRef = useRef<ProFormInstance>()
   const [activeStep, setActiveStep] = useState<number>(0)
   const [knowledgeSpaceList, setKnowledgeSpaceList] = useState<any>([])
   const [isAddKnowledgeSpaceModalShow, setIsAddKnowledgeSpaceModalShow] =
     useState<boolean>(false)
   const [knowledgeSpaceName, setKnowledgeSpaceName] = useState<string>('')
   const [webPageUrl, setWebPageUrl] = useState<string>('')
+  const [documentName, setDocumentName] = useState<string>('')
   useEffect(() => {
     async function fetchData() {
       const res = await fetch('http://localhost:8000/knowledge/space/list', {
@@ -59,15 +75,21 @@ const Index = () => {
   }, [])
   return (
     <>
-      <div className="page-header p-4">
-        <div className="page-header-title">Knowledge Spaces</div>
+      <Sheet sx={{
+        display: "flex",
+        justifyContent: "space-between"
+      }} className="p-4">
+        <Sheet sx={{
+          fontSize: '30px',
+          fontWeight: 'bold'
+        }}>Knowledge Spaces</Sheet>
         <Button
           onClick={() => setIsAddKnowledgeSpaceModalShow(true)}
           variant="outlined"
         >
           + New Knowledge Space
         </Button>
-      </div>
+      </Sheet>
       <div className="page-body p-4">
         <Table sx={{ '& thead th:nth-child(1)': { width: '40%' } }}>
           <thead>
@@ -100,7 +122,6 @@ const Index = () => {
         </Table>
       </div>
       <Modal
-        title="Add Knowledge Space"
         sx={{
           display: 'flex',
           justifyContent: 'center',
@@ -191,14 +212,42 @@ const Index = () => {
           ) : activeStep === 1 ? (
             <>
               <Box sx={{ margin: '30px auto' }}>
-                <Button variant="outlined" onClick={() => setActiveStep(2)}>
-                  Web Page
-                </Button>
+                {documentTypeList.map((item: any) => (
+                  <Sheet
+                    key={item.type}
+                    sx={{
+                      boxSizing: 'border-box',
+                      height: '80px',
+                      padding: '12px',            
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      border: '1px solid gray',
+                      borderRadius: '6px',
+                      marginBottom: '20px',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      if (item.type === 'webPage') {
+                        setActiveStep(2);
+                      }
+                    }}
+                  >
+                    <Sheet sx={{ fontSize: '20px', fontWeight: 'bold' }}>{item.title}</Sheet>
+                    <Sheet>{item.subTitle}</Sheet>
+                  </Sheet>
+                ))}
               </Box>
             </>
           ) : (
             <>
               <Box sx={{ margin: '30px auto' }}>
+                Name:
+                <Input
+                  placeholder="Please input the name"
+                  onChange={(e: any) => setDocumentName(e.target.value)}
+                  sx={{ marginBottom: '20px'}}
+                />
                 Web Page URL:
                 <Input
                   placeholder="Please input the Web Page URL"
@@ -207,6 +256,14 @@ const Index = () => {
               </Box>
               <Button
                 onClick={async () => {
+                  if (documentName === '') {
+                    message.error('Please input the name');
+                    return;
+                  }
+                  if (webPageUrl === '') {
+                    message.error('Please input the Web Page URL');
+                    return;
+                  }
                   const res = await fetch(
                     `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/add`,
                     {
@@ -215,7 +272,8 @@ const Index = () => {
                         'Content-Type': 'application/json'
                       },
                       body: JSON.stringify({
-                        doc_name: webPageUrl,
+                        doc_name: documentName,
+                        content: webPageUrl,
                         doc_type: 'URL'
                       })
                     }
@@ -235,24 +293,6 @@ const Index = () => {
           )}
         </Sheet>
       </Modal>
-      <style jsx>{`
-        .page-header {
-          display: flex;
-          justify-content: space-between;
-          .page-header-title {
-            font-size: 30px;
-            font-weight: bold;
-          }
-        }
-        .datasource-type-wrap {
-          height: 100px;
-          line-height: 100px;
-          border: 1px solid black;
-          border-radius: 20px;
-          margin-bottom: 20px;
-          cursor: pointer;
-        }
-      `}</style>
     </>
   )
 }

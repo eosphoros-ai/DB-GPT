@@ -12,7 +12,10 @@ from pilot.common.markdown_text import (
     generate_htm_table,
 )
 from pilot.scene.chat_db.auto_execute.prompt import prompt
-from pilot.scene.chat_dashboard.data_preparation.report_schma import ChartData, ReportData
+from pilot.scene.chat_dashboard.data_preparation.report_schma import (
+    ChartData,
+    ReportData,
+)
 
 CFG = Config()
 
@@ -22,9 +25,7 @@ class ChatDashboard(BaseChat):
     report_name: str
     """Number of results to return from the query"""
 
-    def __init__(
-        self, chat_session_id, db_name, user_input, report_name
-    ):
+    def __init__(self, chat_session_id, db_name, user_input, report_name):
         """ """
         super().__init__(
             chat_mode=ChatScene.ChatWithDbExecute,
@@ -51,7 +52,7 @@ class ChatDashboard(BaseChat):
             "input": self.current_user_input,
             "dialect": self.database.dialect,
             "table_info": self.database.table_simple_info(self.db_connect),
-            "supported_chat_type": "" #TODO
+            "supported_chat_type": ""  # TODO
             # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
         return input_values
@@ -68,7 +69,6 @@ class ChatDashboard(BaseChat):
                 # TODO 修复流程
                 print(str(e))
 
-
             chart_datas.append(chart_data)
 
         report_data.conv_uid = self.chat_session_id
@@ -77,5 +77,3 @@ class ChatDashboard(BaseChat):
         report_data.charts = chart_datas
 
         return report_data
-
-

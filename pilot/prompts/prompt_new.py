@@ -9,6 +9,7 @@ from pilot.out_parser.base import BaseOutputParser
 from pilot.common.schema import SeparatorStyle
 from pilot.prompts.example_base import ExampleSelector
 
+
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
     """Format a template using jinja2."""
     try:

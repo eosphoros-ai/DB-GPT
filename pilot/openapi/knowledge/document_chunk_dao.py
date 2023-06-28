@@ -10,8 +10,10 @@ from pilot.configs.config import Config
 CFG = Config()
 
 Base = declarative_base()
+
+
 class DocumentChunkEntity(Base):
-    __tablename__ = 'document_chunk'
+    __tablename__ = "document_chunk"
     id = Column(Integer, primary_key=True)
     document_id = Column(Integer)
     doc_name = Column(String(100))
@@ -29,43 +31,55 @@ class DocumentChunkDao:
     def __init__(self):
         database = "knowledge_management"
         self.db_engine = create_engine(
-            f'mysql+pymysql://{CFG.LOCAL_DB_USER}:{CFG.LOCAL_DB_PASSWORD}@{CFG.LOCAL_DB_HOST}:{CFG.LOCAL_DB_PORT}/{database}',
-            echo=True)
+            f"mysql+pymysql://{CFG.LOCAL_DB_USER}:{CFG.LOCAL_DB_PASSWORD}@{CFG.LOCAL_DB_HOST}:{CFG.LOCAL_DB_PORT}/{database}",
+            echo=True,
+        )
         self.Session = sessionmaker(bind=self.db_engine)
 
-    def create_documents_chunks(self, documents:List):
+    def create_documents_chunks(self, documents: List):
         session = self.Session()
         docs = [
             DocumentChunkEntity(
-            doc_name=document.doc_name,
-            doc_type=document.doc_type,
-            document_id=document.document_id,
-            content=document.content or "",
-            meta_info=document.meta_info or "",
-            gmt_created=datetime.now(),
-            gmt_modified=datetime.now()
+                doc_name=document.doc_name,
+                doc_type=document.doc_type,
+                document_id=document.document_id,
+                content=document.content or "",
+                meta_info=document.meta_info or "",
+                gmt_created=datetime.now(),
+                gmt_modified=datetime.now(),
             )
-        for document in documents]
+            for document in documents
+        ]
         session.add_all(docs)
         session.commit()
         session.close()
 
-    def get_document_chunks(self, query:DocumentChunkEntity, page=1, page_size=20):
+    def get_document_chunks(self, query: DocumentChunkEntity, page=1, page_size=20):
         session = self.Session()
         document_chunks = session.query(DocumentChunkEntity)
         if query.id is not None:
             document_chunks = document_chunks.filter(DocumentChunkEntity.id == query.id)
         if query.document_id is not None:
-            document_chunks = document_chunks.filter(DocumentChunkEntity.document_id == query.document_id)
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.document_id == query.document_id
+            )
         if query.doc_type is not None:
-            document_chunks = document_chunks.filter(DocumentChunkEntity.doc_type == query.doc_type)
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.doc_type == query.doc_type
+            )
         if query.doc_name is not None:
-            document_chunks = document_chunks.filter(DocumentChunkEntity.doc_name == query.doc_name)
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.doc_name == query.doc_name
+            )
         if query.meta_info is not None:
-            document_chunks = document_chunks.filter(DocumentChunkEntity.meta_info == query.meta_info)
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.meta_info == query.meta_info
+            )
 
         document_chunks = document_chunks.order_by(DocumentChunkEntity.id.desc())
-        document_chunks = document_chunks.offset((page - 1) * page_size).limit(page_size)
+        document_chunks = document_chunks.offset((page - 1) * page_size).limit(
+            page_size
+        )
         result = document_chunks.all()
         return result
 

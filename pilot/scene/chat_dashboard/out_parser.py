@@ -10,9 +10,9 @@ from pilot.configs.model_config import LOGDIR
 
 class ChartItem(NamedTuple):
     sql: str
-    title:str
+    title: str
     thoughts: str
-    showcase:str
+    showcase: str
 
 
 logger = build_logger("webserver", LOGDIR + "ChatDashboardOutputParser.log")
@@ -28,7 +28,11 @@ class ChatDashboardOutputParser(BaseOutputParser):
         response = json.loads(clean_str)
         chart_items = List[ChartItem]
         for item in response:
-            chart_items.append(ChartItem(item["sql"], item["title"], item["thoughts"], item["showcase"]))
+            chart_items.append(
+                ChartItem(
+                    item["sql"], item["title"], item["thoughts"], item["showcase"]
+                )
+            )
         return chart_items
 
     def parse_view_response(self, speak, data) -> str:
