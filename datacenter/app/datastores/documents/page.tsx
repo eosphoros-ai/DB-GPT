@@ -91,7 +91,7 @@ const Documents = () => {
           + Add Datasource
         </Button>
       </Sheet>
-      <Table sx={{ '& thead th:nth-child(1)': { width: '40%' } }}>
+      <Table color="neutral" stripe="odd" variant="outlined">
         <thead>
           <tr>
             <th>Name</th>
