@@ -15,6 +15,10 @@ class ExampleSelector(BaseModel, ABC):
         else:
             return self.__few_shot_context(count)
 
+    def __examples_text(self, used_examples):
+
+
+
     def __few_shot_context(self, count: int = 2) -> List[List]:
         """
         Use 2 or more examples, default 2

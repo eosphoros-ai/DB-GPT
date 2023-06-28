@@ -2,7 +2,7 @@ import uuid
 import json
 import asyncio
 import time
-from fastapi import APIRouter, Request, Body, status, HTTPException, Response
+from fastapi import APIRouter, Request, Body, status, HTTPException, Response, BackgroundTasks
 
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
@@ -31,6 +31,8 @@ CHAT_FACTORY = ChatFactory()
 logger = build_logger("api_v1", LOGDIR + "api_v1.log")
 knowledge_service = KnowledgeService()
 
+model_semaphore = None
+global_counter = 0
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     message = ""
@@ -148,6 +150,11 @@ async def dialogue_history_messages(con_uid: str):
 @router.post('/v1/chat/completions')
 async def chat_completions(dialogue: ConversationVo = Body()):
     print(f"chat_completions:{dialogue.chat_mode},{dialogue.select_param}")
+    global model_semaphore, global_counter
+    global_counter += 1
+    if model_semaphore is None:
+        model_semaphore = asyncio.Semaphore(CFG.LIMIT_MODEL_CONCURRENCY)
+    await model_semaphore.acquire()
 
     if not ChatScene.is_valid_mode(dialogue.chat_mode):
         raise StopAsyncIteration(Result.faild("Unsupported Chat Mode," + dialogue.chat_mode + "!"))
@@ -170,73 +177,31 @@ async def chat_completions(dialogue: ConversationVo = Body()):
 
     chat: BaseChat = CHAT_FACTORY.get_implementation(dialogue.chat_mode, **chat_param)
     if not chat.prompt_template.stream_out:
-        return non_stream_response(chat)
+        return chat.nostream_call()
     else:
-        return StreamingResponse(stream_generator(chat), media_type="text/plain")
+        background_tasks = BackgroundTasks()
+        background_tasks.add_task(release_model_semaphore)
+        return StreamingResponse(stream_generator(chat), background=background_tasks)
 
-
-def stream_test():
-    for message in ["Hello", "world", "how", "are", "you"]:
-        yield message
-        # yield json.dumps(Result.succ(message).__dict__).encode("utf-8")
-
+def release_model_semaphore():
+    model_semaphore.release()
 
 def stream_generator(chat):
     model_response = chat.stream_call()
-    for chunk in model_response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-        if chunk:
-            msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
-            chat.current_message.add_ai_message(msg)
-            yield msg
-            # chat.current_message.add_ai_message(msg)
-            # vo = MessageVo(role="view", context=msg, order=chat.current_message.chat_order)
-            # json_text = json.dumps(vo.__dict__)
-            # yield json_text.encode('utf-8')
+    if not CFG.NEW_SERVER_MODE:
+        for chunk in model_response.iter_lines(decode_unicode=False, delimiter=b"\0"):
+            if chunk:
+                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
+                chat.current_message.add_ai_message(msg)
+                yield msg
+    else:
+        for chunk in model_response:
+            if chunk:
+                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
+                chat.current_message.add_ai_message(msg)
+                yield msg
     chat.memory.append(chat.current_message)
 
 
 def message2Vo(message: dict, order) -> MessageVo:
-    # message.additional_kwargs['time_stamp'] if message.additional_kwargs["time_stamp"] else 0
     return MessageVo(role=message['type'], context=message['data']['content'], order=order)
-
-
-def non_stream_response(chat):
-    logger.info("not stream out, wait model response!")
-    return chat.nostream_call()
-
-
-@router.get('/v1/db/types', response_model=Result[str])
-async def db_types():
-    return Result.succ(["mysql", "duckdb"])
-
-
-@router.get('/v1/db/list', response_model=Result[str])
-async def db_list():
-    db = CFG.local_db
-    dbs = db.get_database_list()
-    return Result.succ(dbs)
-
-
-@router.get('/v1/knowledge/list')
-async def knowledge_list():
-    return ["test1", "test2"]
-
-
-@router.post('/v1/knowledge/add')
-async def knowledge_add():
-    return ["test1", "test2"]
-
-
-@router.post('/v1/knowledge/delete')
-async def knowledge_delete():
-    return ["test1", "test2"]
-
-
-@router.get('/v1/knowledge/types')
-async def knowledge_types():
-    return ["test1", "test2"]
-
-
-@router.get('/v1/knowledge/detail')
-async def knowledge_detail():
-    return ["test1", "test2"]

@@ -44,7 +44,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         cursor.execute("SELECT messages FROM chat_history where conv_uid=?", [conv_uid])
         content = cursor.fetchone()
         if content:
-            return cursor.fetchone()[0]
+            return content[0]
         else:
             return None
     def messages(self) -> List[OnceConversation]:
@@ -66,7 +66,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
                            [json.dumps(conversations, ensure_ascii=False), self.chat_seesion_id])
         else:
             cursor.execute("INSERT INTO chat_history(conv_uid, user_name, messages)VALUES(?,?,?)",
-                           [self.chat_seesion_id, "", json.dumps(conversations_to_dict(conversations), ensure_ascii=False)])
+                           [self.chat_seesion_id, "", json.dumps(conversations, ensure_ascii=False)])
         cursor.commit()
         self.connect.commit()
 
