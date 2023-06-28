@@ -10,7 +10,7 @@
     </a>
   </p>
 
-[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/hmGPnMSb) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
+[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/4BNdxm5d) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
 
 </div>
 
@@ -150,7 +150,7 @@ This project is standing on the shoulders of giants and is not going to work wit
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/hmGPnMSb)
+We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/4BNdxm5d)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
