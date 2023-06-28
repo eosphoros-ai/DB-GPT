@@ -243,10 +243,8 @@ const Documents = () => {
                       cursor: 'pointer'
                     }}
                     onClick={() => {
-                      if (item.type === 'webPage') {
-                        setDocumentType(item.type)
-                        setActiveStep(1)
-                      }
+                      setDocumentType(item.type)
+                      setActiveStep(1)
                     }}
                   >
                     <Sheet sx={{ fontSize: '20px', fontWeight: 'bold' }}>
