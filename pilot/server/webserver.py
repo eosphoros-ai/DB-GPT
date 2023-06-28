@@ -56,7 +56,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from fastapi import FastAPI, applications
 from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.exceptions import  RequestValidationError
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -107,12 +107,16 @@ knowledge_qa_type_list = [
     add_knowledge_base_dialogue,
 ]
 
+
 def swagger_monkey_patch(*args, **kwargs):
     return get_swagger_ui_html(
-        *args, **kwargs,
-        swagger_js_url='https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js',
-        swagger_css_url='https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css'
+        *args,
+        **kwargs,
+        swagger_js_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js",
+        swagger_css_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css",
     )
+
+
 applications.get_swagger_ui_html = swagger_monkey_patch
 
 app = FastAPI()
@@ -360,14 +364,18 @@ def http_bot(
             response = chat.stream_call()
             for chunk in response.iter_lines(decode_unicode=False, delimiter=b"\0"):
                 if chunk:
-                    msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
-                    state.messages[-1][-1] =msg
+                    msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                        chunk, chat.skip_echo_len
+                    )
+                    state.messages[-1][-1] = msg
                     chat.current_message.add_ai_message(msg)
                     yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
             chat.memory.append(chat.current_message)
         except Exception as e:
             print(traceback.format_exc())
-            state.messages[-1][-1] = f"""<span style=\"color:red\">ERROR!</span>{str(e)} """
+            state.messages[-1][
+                -1
+            ] = f"""<span style=\"color:red\">ERROR!</span>{str(e)} """
             yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
 
@@ -693,8 +701,12 @@ def signal_handler(sig, frame):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_list_mode", type=str, default="once", choices=["once", "reload"])
-    parser.add_argument('-new', '--new', action='store_true', help='enable new http mode')
+    parser.add_argument(
+        "--model_list_mode", type=str, default="once", choices=["once", "reload"]
+    )
+    parser.add_argument(
+        "-new", "--new", action="store_true", help="enable new http mode"
+    )
 
     # old version server config
     parser.add_argument("--host", type=str, default="0.0.0.0")
@@ -702,27 +714,24 @@ if __name__ == "__main__":
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument("--share", default=False, action="store_true")
 
-
     # init server config
     args = parser.parse_args()
     server_init(args)
 
     if args.new:
         import uvicorn
+
         uvicorn.run(app, host="0.0.0.0", port=5000)
     else:
         ### Compatibility mode starts the old version server by default
         demo = build_webdemo()
         demo.queue(
-            concurrency_count=args.concurrency_count, status_update_rate=10, api_open=False
+            concurrency_count=args.concurrency_count,
+            status_update_rate=10,
+            api_open=False,
         ).launch(
             server_name=args.host,
             server_port=args.port,
             share=args.share,
             max_threads=200,
         )
-
-
-
-
-

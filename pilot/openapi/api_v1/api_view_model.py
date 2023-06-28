@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import TypeVar, Union, List, Generic, Any
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Result(Generic[T], BaseModel):
@@ -24,15 +24,17 @@ class Result(Generic[T], BaseModel):
 
 
 class ChatSceneVo(BaseModel):
-    chat_scene: str = Field(...,  description="chat_scene")
-    scene_name: str = Field(...,  description="chat_scene name show for user")
-    param_title: str = Field(...,  description="chat_scene required parameter title")
+    chat_scene: str = Field(..., description="chat_scene")
+    scene_name: str = Field(..., description="chat_scene name show for user")
+    param_title: str = Field(..., description="chat_scene required parameter title")
+
 
 class ConversationVo(BaseModel):
     """
     dialogue_uid
     """
-    conv_uid: str = Field(...,  description="dialogue uid")
+
+    conv_uid: str = Field(..., description="dialogue uid")
     """ 
     user input 
     """
@@ -44,7 +46,7 @@ class ConversationVo(BaseModel):
     """ 
     the scene of chat 
     """
-    chat_mode: str  = Field(..., description="the scene of chat ")
+    chat_mode: str = Field(..., description="the scene of chat ")
 
     """
     chat scene select param 
@@ -52,11 +54,11 @@ class ConversationVo(BaseModel):
     select_param: str = None
 
 
-
 class MessageVo(BaseModel):
     """
-    role that sends out the current message 
+    role that sends out the current message
     """
+
     role: str
     """
     current message 
@@ -70,4 +72,3 @@ class MessageVo(BaseModel):
     time the current message was sent 
     """
     time_stamp: Any = None
-
