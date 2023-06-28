@@ -352,9 +352,6 @@ const Index = () => {
                       `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/upload`,
                       {
                         method: 'POST',
-                        headers: {
-                          'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW'
-                        },
                         body: formData
                       }
                     )
