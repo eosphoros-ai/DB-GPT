@@ -9,7 +9,7 @@
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/hmGPnMSb) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
+[**English**](README.md)|[**Discord**](https://discord.gg/4BNdxm5d) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
 </div>
 
 
