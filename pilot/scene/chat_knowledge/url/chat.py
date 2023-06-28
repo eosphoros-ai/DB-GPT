@@ -61,7 +61,6 @@ class ChatUrlKnowledge(BaseChat):
         input_values = {"context": context, "question": self.current_user_input}
         return input_values
 
-
     @property
     def chat_type(self) -> str:
         return ChatScene.ChatUrlKnowledge.value

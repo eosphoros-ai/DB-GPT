@@ -38,7 +38,9 @@ class KnowledgeEmbedding:
         return self.knowledge_embedding_client.read_batch()
 
     def init_knowledge_embedding(self):
-        return get_knowledge_embedding(self.file_type.upper(), self.file_path, self.vector_store_config)
+        return get_knowledge_embedding(
+            self.file_type.upper(), self.file_path, self.vector_store_config
+        )
 
     def similar_search(self, text, topk):
         vector_client = VectorStoreConnector(

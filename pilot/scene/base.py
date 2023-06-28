@@ -1,10 +1,12 @@
 from enum import Enum
 
+
 class Scene:
     def __init__(self, code, describe, is_inner):
         self.code = code
         self.describe = describe
         self.is_inner = is_inner
+
 
 class ChatScene(Enum):
     ChatWithDbExecute = "chat_with_db_execute"
@@ -24,4 +26,3 @@ class ChatScene(Enum):
     @staticmethod
     def is_valid_mode(mode):
         return any(mode == item.value for item in ChatScene)
-
