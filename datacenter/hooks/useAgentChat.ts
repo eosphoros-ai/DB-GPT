@@ -21,22 +21,22 @@ import {
   }: Props) => {
     const [state, setState] = useStateReducer({
       history: [{
-        from: 'human',
-        message: 'hello',
+        role: 'human',
+        context: 'hello',
       }, {
-        from: 'agent',
-        message: 'Hello! How can I assist you today?',
-      }] as { from: 'human' | 'agent'; message: string; id?: string }[],
+        role: 'agent',
+        context: 'Hello! How can I assist you today?',
+      }] as { role: 'human' | 'agent'; context: string; id?: string }[],
     });
   
     const { visitorId } = useVisitorId();
   
-    const handleChatSubmit = async (message: string) => {
-      if (!message) {
+    const handleChatSubmit = async (context: string) => {
+      if (!context) {
         return;
       }
   
-      const history = [...state.history, { from: 'human', message }];
+      const history = [...state.history, { role: 'human', context }];
       const nextIndex = history.length;
   
       setState({
@@ -61,7 +61,7 @@ import {
           body: JSON.stringify({
             ...queryBody,
             streaming: true,
-            query: message,
+            query: context,
             visitorId: visitorId,
             channel,
           }),
@@ -112,8 +112,8 @@ import {
                 history: [
                   ...history,
                   {
-                    from: 'agent',
-                    message: event.data.replace('[ERROR]', ''),
+                    role: 'agent',
+                    context: event.data.replace('[ERROR]', ''),
                   } as any,
                 ],
               });
@@ -121,9 +121,9 @@ import {
               buffer += decodeURIComponent(event.data) as string;
               const h = [...history];
               if (h?.[nextIndex]) {
-                h[nextIndex].message = `${buffer}`;
+                h[nextIndex].context = `${buffer}`;
               } else {
-                h.push({ from: 'agent', message: buffer });
+                h.push({ role: 'agent', context: buffer });
               }
               setState({
                 history: h as any,
@@ -136,7 +136,7 @@ import {
 				setState({
 					history: [
 						...history,
-						{ from: 'agent', message: answer || '请求出错' as string },
+						{ role: 'agent', context: answer || '请求出错' as string },
 					] as any,
 				});
         // if (err instanceof ApiError) {

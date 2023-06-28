@@ -17,7 +17,7 @@ type Props = {
   messages: Message[];
   onSubmit: (message: string) => Promise<any>;
   messageTemplates?: string[];
-  initialMessage?: string;
+  initialMessage?: Message;
   readOnly?: boolean;
 }; 
 
@@ -63,7 +63,7 @@ const ChatBoxComp = ({
   React.useEffect(() => {
     setTimeout(() => {
       setFirstMsg(
-        initialMessage ? { from: 'agent', message: initialMessage } : undefined
+        initialMessage ? initialMessage : undefined
       );
     }, 0);
   }, [initialMessage]);
@@ -112,7 +112,7 @@ const ChatBoxComp = ({
               whiteSpace: 'pre-wrap',
             }}
           >
-            {firstMsg?.message}
+            {firstMsg?.context}
           </Card>
         )}
 
@@ -120,17 +120,17 @@ const ChatBoxComp = ({
           <Stack
             key={index}
             sx={{
-              mr: each.from === 'agent' ? 'auto' : 'none',
-              ml: each.from === 'human' ? 'auto' : 'none',
+              mr: each.role === 'ai' ? 'auto' : 'none',
+              ml: each.role === 'human' ? 'auto' : 'none',
             }}
           >
             <Card
               size="sm"
               variant={'outlined'}
               className={
-                each.from === 'agent' ? 'message-agent' : 'message-human'
+                each.role === 'ai' ? 'message-agent' : 'message-human'
               }
-              color={each.from === 'agent' ? 'primary' : 'neutral'}
+              color={each.role === 'ai' ? 'primary' : 'neutral'}
               sx={(theme) => ({
                 px: 2,
                 'ol, ul': {
@@ -153,7 +153,7 @@ const ChatBoxComp = ({
               })}
             >
               <ReactMarkdown remarkPlugins={[remarkGfm]} linkTarget={'_blank'}>
-                {each.message}
+                {each.context}
               </ReactMarkdown>
             </Card>
           </Stack>
