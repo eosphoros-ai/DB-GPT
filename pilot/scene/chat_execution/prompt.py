@@ -9,9 +9,7 @@ from pilot.scene.chat_execution.example import example
 
 CFG = Config()
 
-# PROMPT_SCENE_DEFINE = """You are an AI designed to solve the user's goals with given commands, please follow the prompts and constraints of the system's input for your answers."""
 PROMPT_SCENE_DEFINE = "You are an AI designed to solve the user's goals with given commands, please follow the  constraints of the system's input for your answers."
-
 
 _DEFAULT_TEMPLATE = """
 Goals: 
