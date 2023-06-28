@@ -10,6 +10,7 @@ import {
   Box,
   Stack,
   Input,
+  Chip,
   styled
 } from '@/lib/mui'
 import moment from 'moment'
@@ -108,7 +109,20 @@ const Documents = () => {
               <td>{row.doc_type}</td>
               <td>{row.chunk_size}</td>
               <td>{moment(row.last_sync).format('YYYY-MM-DD HH:MM:SS')}</td>
-              <td>{row.status}</td>
+              <td><Chip color={
+                (function(){
+                  switch(row.status) {
+                    case 'TODO':
+                      return 'neutral';
+                    case 'RUNNING':
+                      return 'primary';
+                    case 'FINISHED':
+                      return 'success';
+                    case 'FAILED':
+                      return 'danger';
+                  }
+                })()
+              }>{row.status}</Chip></td>
               <td>
                 {
                   <>
