@@ -39,7 +39,9 @@ class KnowledgeEmbedding:
         return self.knowledge_embedding_client.read_batch()
 
     def init_knowledge_embedding(self):
-        return get_knowledge_embedding(self.knowledge_type, self.knowledge_source, self.vector_store_config)
+        return get_knowledge_embedding(
+            self.knowledge_type, self.knowledge_source, self.vector_store_config
+        )
 
     def similar_search(self, text, topk):
         vector_client = VectorStoreConnector(
@@ -56,3 +58,9 @@ class KnowledgeEmbedding:
             CFG.VECTOR_STORE_TYPE, self.vector_store_config
         )
         return vector_client.vector_name_exists()
+
+    def delete_by_ids(self, ids):
+        vector_client = VectorStoreConnector(
+            CFG.VECTOR_STORE_TYPE, self.vector_store_config
+        )
+        vector_client.delete_by_ids(ids=ids)

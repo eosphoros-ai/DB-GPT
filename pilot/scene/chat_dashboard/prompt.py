@@ -24,12 +24,14 @@ give {dialect} data analysis SQL, analysis title, display method and analytical 
 Ensure the response is correct json and can be parsed by Python json.loads
 """
 
-RESPONSE_FORMAT = [{
-    "sql": "data analysis SQL",
-    "title": "Data Analysis Title",
-    "showcase": "What type of charts to show",
-    "thoughts": "Current thinking and value of data analysis"
-}]
+RESPONSE_FORMAT = [
+    {
+        "sql": "data analysis SQL",
+        "title": "Data Analysis Title",
+        "showcase": "What type of charts to show",
+        "thoughts": "Current thinking and value of data analysis",
+    }
+]
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 

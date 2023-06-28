@@ -34,7 +34,6 @@ RESPONSE_FORMAT = {
 }
 
 
-
 EXAMPLE_TYPE = ExampleType.ONE_SHOT
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 ### Whether the model service is streaming output
@@ -47,8 +46,10 @@ prompt = PromptTemplate(
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE,
     stream_out=PROMPT_NEED_STREAM_OUT,
-    output_parser=PluginChatOutputParser(sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT),
-    example=example
+    output_parser=PluginChatOutputParser(
+        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT
+    ),
+    example=example,
 )
 
 CFG.prompt_templates.update({prompt.template_scene: prompt})
