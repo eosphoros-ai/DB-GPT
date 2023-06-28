@@ -39,6 +39,7 @@ from pilot.scene.base_message import (
     ViewMessage,
 )
 from pilot.configs.config import Config
+from pilot.server.llmserver import worker
 
 logger = build_logger("BaseChat", LOGDIR + "BaseChat.log")
 headers = {"User-Agent": "dbgpt Client"}
@@ -59,10 +60,10 @@ class BaseChat(ABC):
         arbitrary_types_allowed = True
 
     def __init__(
-        self,
-        chat_mode,
-        chat_session_id,
-        current_user_input,
+            self,
+            chat_mode,
+            chat_session_id,
+            current_user_input,
     ):
         self.chat_session_id = chat_session_id
         self.chat_mode = chat_mode
@@ -94,7 +95,6 @@ class BaseChat(ABC):
     @abstractmethod
     def generate_input_values(self):
         pass
-
 
     def do_action(self, prompt_response):
         return prompt_response
@@ -138,24 +138,17 @@ class BaseChat(ABC):
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
-            show_info = ""
-            response = requests.post(
-                urljoin(CFG.MODEL_SERVER, "generate_stream"),
-                headers=headers,
-                json=payload,
-                stream=True,
-                timeout=120,
-            )
-            return response
-
-            # yield self.prompt_template.output_parser.parse_model_stream_resp(response, skip_echo_len)
-
-            # for resp_text_trunck in ai_response_text:
-            #     show_info = resp_text_trunck
-            #     yield resp_text_trunck + "▌"
-
-            self.current_message.add_ai_message(show_info)
-
+            if not CFG.NEW_SERVER_MODE:
+                response = requests.post(
+                    urljoin(CFG.MODEL_SERVER, "generate_stream"),
+                    headers=headers,
+                    json=payload,
+                    stream=True,
+                    timeout=120,
+                )
+                return response
+            else:
+                return worker.generate_stream_gate(payload)
         except Exception as e:
             print(traceback.format_exc())
             logger.error("model response parase faild！" + str(e))
@@ -170,39 +163,28 @@ class BaseChat(ABC):
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
-            ### 走非流式的模型服务接口
-            response = requests.post(
-                urljoin(CFG.MODEL_SERVER, "generate"),
-                headers=headers,
-                json=payload,
-                timeout=120,
-            )
+            rsp_str = ""
+            if not CFG.NEW_SERVER_MODE:
+                ### 走非流式的模型服务接口
+                rsp_str = requests.post(
+                    urljoin(CFG.MODEL_SERVER, "generate"),
+                    headers=headers,
+                    json=payload,
+                    timeout=120,
+                )
+            else:
+                ###TODO  no stream mode need independent
+                output = worker.generate_stream_gate(payload)
+                for rsp in output:
+                    rsp_str = str(rsp, "utf-8")
+                    print("[TEST: output]:", rsp_str)
 
             ### output parse
-            ai_response_text = (
-                self.prompt_template.output_parser.parse_model_nostream_resp(
-                    response, self.prompt_template.sep
-                )
-            )
-
-            #             ### MOCK
-            #             ai_response_text = """{
-            # "thoughts": "可以从users表和tran_order表联合查询，按城市和订单数量进行分组统计，并使用柱状图展示。",
-            # "reasoning": "为了分析用户在不同城市的分布情况，需要查询users表和tran_order表，使用LEFT JOIN将两个表联合起来。按照城市进行分组，统计每个城市的订单数量。使用柱状图展示可以直观地看出每个城市的订单数量，方便比较。",
-            # "speak": "根据您的分析目标，我查询了用户表和订单表，统计了每个城市的订单数量，并生成了柱状图展示。",
-            # "command": {
-            # "name": "histogram-executor",
-            # "args": {
-            # "title": "订单城市分布柱状图",
-            # "sql": "SELECT users.city, COUNT(tran_order.order_id) AS order_count FROM users LEFT JOIN tran_order ON users.user_name = tran_order.user_name GROUP BY users.city"
-            # }
-            # }
-            # }"""
-
+            ai_response_text = self.prompt_template.output_parser.parse_model_nostream_resp(rsp_str,
+                                                                                            self.prompt_template.sep)
+            ### model result deal
             self.current_message.add_ai_message(ai_response_text)
             prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
-
-
             result = self.do_action(prompt_define_response)
 
             if hasattr(prompt_define_response, "thoughts"):
@@ -248,41 +230,42 @@ class BaseChat(ABC):
         ### 处理历史信息
         if len(self.history_message) > self.chat_retention_rounds:
             ### 使用历史信息的第一轮和最后n轮数据合并成历史对话记录, 做上下文提示时，用户展示消息需要过滤掉
-            for first_message in self.history_message[0].messages:
-                if not isinstance(first_message, ViewMessage):
+            for first_message in self.history_message[0]['messages']:
+                if not first_message['type'] in [ViewMessage.type, SystemMessage.type]:
                     text += (
-                        first_message.type
-                        + ":"
-                        + first_message.content
-                        + self.prompt_template.sep
+                            first_message['type']
+                            + ":"
+                            + first_message['data']['content']
+                            + self.prompt_template.sep
                     )
 
             index = self.chat_retention_rounds - 1
-            for last_message in self.history_message[-index:].messages:
-                if not isinstance(last_message, ViewMessage):
-                    text += (
-                        last_message.type
-                        + ":"
-                        + last_message.content
-                        + self.prompt_template.sep
-                    )
+            for round_conv in self.history_message[-index:]:
+                for round_message in round_conv['messages']:
+                    if not isinstance(round_message, ViewMessage):
+                        text += (
+                                round_message['type']
+                                + ":"
+                                + round_message['data']['content']
+                                + self.prompt_template.sep
+                        )
 
         else:
             ### 直接历史记录拼接
             for conversation in self.history_message:
-                for message in conversation.messages:
+                for message in conversation['messages']:
                     if not isinstance(message, ViewMessage):
                         text += (
-                            message.type
-                            + ":"
-                            + message.content
-                            + self.prompt_template.sep
+                                message['type']
+                                + ":"
+                                + message['data']['content']
+                                + self.prompt_template.sep
                         )
         ### current conversation
 
         for now_message in self.current_message.messages:
             text += (
-                now_message.type + ":" + now_message.content + self.prompt_template.sep
+                    now_message.type + ":" + now_message.content + self.prompt_template.sep
             )
 
         return text

@@ -95,7 +95,7 @@ class OnceConversation:
 
 def _conversation_to_dic(once: OnceConversation) -> dict:
     start_str: str = ""
-    if once.start_date:
+    if hasattr(once, 'start_date') and once.start_date:
         if isinstance(once.start_date, datetime):
             start_str = once.start_date.strftime("%Y-%m-%d %H:%M:%S")
         else:
