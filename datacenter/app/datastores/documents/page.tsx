@@ -128,6 +128,7 @@ const Documents = () => {
                   <>
                     <Button
                       variant="outlined"
+                      size="sm"
                       onClick={async () => {
                         const res = await fetch(
                           `http://localhost:8000/knowledge/${spaceName}/document/sync`,
@@ -153,6 +154,7 @@ const Documents = () => {
                     </Button>
                     <Button
                       variant="outlined"
+                      size="sm"
                       onClick={() => {
                         router.push(
                           `/datastores/documents/chunklist?spacename=${spaceName}&documentid=${row.id}`
