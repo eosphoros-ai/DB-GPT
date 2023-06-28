@@ -344,6 +344,10 @@ const Index = () => {
                       message.error('Please select a file')
                       return
                     }
+                    const formData = new FormData();
+                    formData.append('doc_name', documentName);
+                    formData.append('doc_file', originFileObj);
+                    formData.append('doc_type', 'DOCUMENT');
                     const res = await fetch(
                       `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/upload`,
                       {
@@ -351,11 +355,7 @@ const Index = () => {
                         headers: {
                           'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW'
                         },
-                        body: JSON.stringify({
-                          doc_name: documentName,
-                          doc_file: originFileObj,
-                          doc_type: 'DOCUMENT'
-                        })
+                        body: formData
                       }
                     )
                     const data = await res.json()
