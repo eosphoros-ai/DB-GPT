@@ -21,6 +21,7 @@ from pilot.server.api_v1.api_view_model import (
 from pilot.configs.config import Config
 from pilot.openapi.knowledge.knowledge_service import KnowledgeService
 from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
+
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
@@ -127,8 +128,13 @@ def plugins_select_info():
 
 
 def knowledge_list():
+    """return knowledge space list"""
+    params: dict = {}
     request = KnowledgeSpaceRequest()
-    return knowledge_service.get_knowledge_space(request)
+    spaces = knowledge_service.get_knowledge_space(request)
+    for space in spaces:
+        params.update({space.name: space.name})
+    return params
 
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
