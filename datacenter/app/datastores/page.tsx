@@ -349,7 +349,7 @@ const Index = () => {
                       {
                         method: 'POST',
                         headers: {
-                          'Content-Type': 'multipart/form-data'
+                          'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW'
                         },
                         body: JSON.stringify({
                           doc_name: documentName,
