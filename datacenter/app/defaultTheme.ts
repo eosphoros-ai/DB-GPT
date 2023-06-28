@@ -10,7 +10,7 @@ export const joyTheme = extendTheme({
           ...colors.purple,
         },
         neutral: {
-          plainColor: '#25252D',
+          plainColor: '#4d4d4d',
           plainHoverColor: '#131318',
           plainHoverBg: '#EBEBEF',
           plainActiveBg: '#D8D8DF',
@@ -42,7 +42,7 @@ export const joyTheme = extendTheme({
           primary: '#EBEBEF'
         },
         background: {
-          body: '#09090D',
+          body: '#0f172a',
           surface: '#1e293b40'
         }
       },
