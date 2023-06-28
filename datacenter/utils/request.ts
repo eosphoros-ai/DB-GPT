@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { isPlainObject } from 'lodash';
 
 axios.defaults.baseURL = 'http://30.183.153.244:5000';
 
@@ -8,6 +9,24 @@ axios.interceptors.response.use(
   response => response.data,
 	err => Promise.reject(err)
 );
+
+const DEFAULT_HEADERS = {
+  'content-type': 'application/json',
+};
+
+// body 字段 trim
+const sanitizeBody = (obj: Record<string, any>): string => {
+  // simple shallow copy to avoid changing original obj
+  if (!isPlainObject(obj)) return JSON.stringify(obj);
+  const resObj = { ...obj };
+  for (const key in resObj) {
+    const val = resObj[key];
+    if (typeof val === 'string') {
+      resObj[key] = val.trim();
+    }
+  }
+  return JSON.stringify(resObj);
+};
 
 export const sendGetRequest = (url: string, qs?: { [key: string]: any }) => {
 	if (qs) {
@@ -19,13 +38,15 @@ export const sendGetRequest = (url: string, qs?: { [key: string]: any }) => {
       url += `?${str}`;
     }
   }
-	axios.get(url, {
-    headers: {
-      "Content-Type": 'text/plain'
-    }
-	}).then(res => {
-		console.log(res, 'res');
-	}).catch(err => {
-		console.log(err, 'err');
-	})
+	return axios.get(url, {
+    headers: DEFAULT_HEADERS
+  }).then(res => res).catch(err => Promise.reject(err));
+}
+
+export const sendPostRequest = (url: string, body?: any) => {
+  const reqBody = sanitizeBody(body);
+  return axios.post(url, {
+    body: reqBody,
+    headers: DEFAULT_HEADERS
+  }).then(res => res).catch(err => Promise.reject(err));
 }
