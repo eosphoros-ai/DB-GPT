@@ -1,267 +1,98 @@
 "use client";
-
-import ReactMarkdown from 'react-markdown';
-import { Collapse } from 'antd';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Box, Slider, Input, Tabs, TabList, Typography, TabPanel, Tab, RadioGroup, Radio, tabClasses, useColorScheme, radioClasses } from '@/lib/mui';
-import { sendGetRequest } from '@/utils/request';
-import { useEffect, useState } from 'react';
-import ChatBoxComp from '@/components/chatBox';
-import useAgentChat from '@/hooks/useAgentChat';
+import { useState } from 'react';
+import { Button, Input, useColorScheme } from '@/lib/mui';
+import IconButton from '@mui/joy/IconButton';
+import SendRoundedIcon from '@mui/icons-material/SendRounded';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { sendPostRequest } from '@/utils/request';
+import { useRouter } from 'next/navigation';
+import { useQueryDialog } from '@/hooks/useQueryDialogue';
 
 export default function Home() {
-  const [temperatureNum, setTemperatureNum] = useState(3);
-  const [tokenSize, setTokenSize] = useState(0);
-  const { mode, setMode } = useColorScheme();
-
-  const { handleChatSubmit, history } = useAgentChat({
-    queryAgentURL: `/api/agents/query`,
+  const Schema = z.object({ query: z.string().min(1) });
+  const router = useRouter();
+  const { mode } = useColorScheme();
+  const [isLoading, setIsLoading] = useState(false);
+  const methods = useForm<z.infer<typeof Schema>>({
+    resolver: zodResolver(Schema),
+    defaultValues: {},
   });
+  const { refreshDialogList } = useQueryDialog();
+  const submit = async ({ query }: z.infer<typeof Schema>) => {
+    try {
+      setIsLoading(true);
+      methods.reset();
+      const res = await sendPostRequest('/v1/chat/dialogue/new', {
+        chat_mode: 'chat_normal'
+      });
+      if (res?.success && res?.data?.conv_uid) {
+        // router.push(`/agents/${res?.data?.conv_uid}?newMessage=${query}`);
+        // await refreshDialogList();
+      }
+    } catch (err) {
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const handleGetD = () => {
-    sendGetRequest('/v1/chat/dialogue/list', {
-    })
-  }
-
-  useEffect(() => {
-    handleGetD();
-  }, []);
   return (
-    <div className='p-6 w-full h-full text-sm flex flex-col gap-4'>
-      <ReactMarkdown linkTarget={'_blank'}>
-        [DB-GPT](https://github.com/csunny/DB-GPT) 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密，100% 安全。
-      </ReactMarkdown>
-      <Box
-        sx={{
-          '& .ant-collapse': {
-            backgroundColor: 'var(--joy-palette-background-level1)',
-            color: 'var(--joy-palette-neutral-plainColor)'
-          },
-          '& .ant-collapse>.ant-collapse-item >.ant-collapse-header, & .ant-collapse .ant-collapse-content': {
-            color: 'var(--joy-palette-neutral-plainColor)'
-          },
-          '& .ant-collapse .ant-collapse-content>.ant-collapse-content-box': {
-            paddingTop: 0
-          }
-        }}
-      >
-        <Collapse
-          collapsible="header"
-          defaultActiveKey={['1']}
-          ghost
-          bordered
-          expandIcon={({ isActive }) => (
-            <div className={`text-2xl cursor-pointer ${isActive ? 'rotate-0' : 'rotate-90'}`}>
-              <ArrowDropDownIcon />
+    <> 
+      <div className={`${mode} absolute z-20 top-0 inset-x-0 flex justify-center overflow-hidden pointer-events-none`}>
+        <div className='w-[108rem] flex-none flex justify-end'>
+          <picture>
+            <source srcSet='/bg1.avif' type='image/avif'></source>
+            <img srcSet='/bg2.png' alt="" className='w-[71.75rem] flex-none max-w-none '/>
+          </picture>
+        </div>
+      </div>
+      <div className='mx-auto flex h-full max-w-3xl flex-col gap-6 px-5 pt-6 sm:gap-8 xl:max-w-4xl'>
+        <div className='lg:my-auto grid gap-8 lg:grid-cols-3'>
+          <div className='lg:col-span-3 lg:mt-12'>
+            <p className='mb-3'>Scenes</p>
+            <div className='grid gap-2 lg:grid-cols-4 lg:gap-5'>
+              <Button size="md" variant="soft">LLM native dialogue</Button>
+              <Button size="md" variant="soft">Default documents</Button>
+              <Button size="md" variant="soft">New documents</Button>
+              <Button size="md" variant="soft">Chat with url</Button>
             </div>
-          )}
-          expandIconPosition="end"
-          items={[
-            {
-              key: '1',
-              label: 'This panel can only be collapsed by clicking text',
-              children: (
-                <>
-                  <Box
-                    className="p-4 border"
-                    sx={{
-                      borderColor: 'var(--joy-palette-background-level2)',
-                    }}
-                  >
-                    <div className='flex flex-row justify-between items-center'>
-                      <span>Temperature</span>
-                      <Input
-                        size='sm'
-                        type="number"
-                        value={temperatureNum / 10}
-                        onChange={(e) => {
-                          setTemperatureNum(Number(e.target.value) * 10);
-                        }}
-                        slotProps={{
-                          input: {
-                            min: 0,
-                            max: 1,
-                            step: 0.1,
-                          },
-                        }}
-                      />
-                    </div>
-                    <Slider
-                      color="info"
-                      value={temperatureNum}
-                      max={10}
-                      onChange={(e, value) => {
-                        setTemperatureNum(value);
-                      }}
-                    />
-                  </Box>
-                  <Box
-                    className="p-4 border border-t-0"
-                    sx={{
-                      borderColor: 'var(--joy-palette-background-level2)',
-                    }}
-                  >
-                    <div className='flex flex-row justify-between items-center'>
-                      <span>Maximum output token size</span>
-                      <Input
-                        size="sm"
-                        type="number"
-                        value={tokenSize}
-                        onChange={(e) => {
-                          setTokenSize(Number(e.target.value));
-                        }}
-                        slotProps={{
-                          input: {
-                            min: 0,
-                            max: 1024,
-                            step: 64,
-                          },
-                        }}
-                      />
-                    </div>
-                    <Slider
-                      color="info"
-                      value={tokenSize}
-                      max={1024}
-                      step={64}
-                      onChange={(e, value) => {
-                        setTokenSize(value);
-                      }}
-                    />
-                  </Box>
-                </>
-              ),
-            },
-          ]}
-        />
-      </Box>
-      <Box>
-        <Tabs
-          className='w-full'
-          aria-label="Pricing plan"
-          defaultValue={0}
-          sx={(theme) => ({
-            '--Tabs-gap': '0px',
-            borderRadius: 'unset',
-            boxShadow: 'sm',
-            overflow: 'auto',
-            WebkitBoxShadow: 'none'
-          })}
+          </div>
+        </div>
+        <div className='h-60 flex-none'></div>
+      </div>
+      <div className='pointer-events-none absolute inset-x-0 bottom-0 z-0 mx-auto flex w-full max-w-3xl flex-col items-center justify-center px-3.5 py-4 max-md:border-t sm:px-5 md:py-8 xl:max-w-4xl [&>*]:pointer-events-auto'>
+        <form
+          style={{
+            maxWidth: '100%',
+            width: '100%',
+            position: 'relative',
+            display: 'flex',
+            marginTop: 'auto',
+            overflow: 'visible',
+            background: 'none',
+            justifyContent: 'center',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          }}
+          onSubmit={(e) => {
+            methods.handleSubmit(submit)(e);
+          }}
         >
-          <TabList
-            sx={{
-              '--ListItem-radius': '0px',
-              borderRadius: 0,
-              bgcolor: 'background.body',
-              [`& .${tabClasses.root}`]: {
-                fontWeight: 'lg',
-                flex: 'unset',
-                position: 'relative',
-                [`&.${tabClasses.selected}`]: {
-                  border: '1px solid var(--joy-palette-background-level2)',
-                  borderTopLeftRadius: '8px',
-                  borderTopRightRadius: '8px',
-                },
-                [`&.${tabClasses.selected}:before`]: {
-                  content: '""',
-                  display: 'block',
-                  position: 'absolute',
-                  bottom: -4,
-                  width: '100%',
-                  height: 6,
-                  bgcolor: mode == 'dark' ? '#000' : 'var(--joy-palette-background-surface)',
-                },
-                [`&.${tabClasses.focusVisible}`]: {
-                  outlineOffset: '-3px',
-                },
-              },
-            }}
-          >
-            <Tab sx={{ py: 1.5 }}>Documents Chat</Tab>
-            <Tab>SQL Generation & Diagnostics</Tab>
-            <Tab>Plugin Mode</Tab>
-          </TabList>
-          <TabPanel 
-            value={0} 
-            sx={{ 
-              p: 3,
-              border: '1px solid var(--joy-palette-background-level2)',
-              borderBottomLeftRadius: '8px',
-              borderBottomRightRadius: '8px',
-            }}
-          >
-            <RadioGroup
-              orientation="horizontal"
-              defaultValue="LLM native dialogue"
-              name="radio-buttons-group"
-              className='gap-3 p-3'
-              sx={{
-                backgroundColor: 'var(--joy-palette-background-level1)',
-                '& .MuiRadio-radio': {
-                  borderColor: '#707070'
-                },
-              }}
-            >
-              <Box className="px-2 py-1 border rounded" sx={{ borderColor: 'var(--joy-palette-background-level2)' }}>
-                <Radio value="LLM native dialogue" label="LLM native dialogue" variant="outlined"
-                  sx={{ 
-                    borderColor: 'var(--joy-palette-neutral-outlinedHoverColor)',
-                  }} 
-                />
-              </Box>
-              <Box className="px-2 py-1 border rounded" sx={{ borderColor: 'var(--joy-palette-background-level2)' }}>
-                <Radio value="Default documents" label="Default documents" variant="outlined" />
-              </Box>
-              <Box className="px-2 py-1 border rounded" sx={{ borderColor: 'var(--joy-palette-background-level2)' }}>
-                <Radio value="New documents" label="New documents" variant="outlined" />
-              </Box>
-              <Box className="px-2 py-1 border rounded" sx={{ borderColor: 'var(--joy-palette-background-level2)' }}>
-                <Radio value="Chat with url" label="Chat with url" variant="outlined" />
-              </Box>
-            </RadioGroup>
-          </TabPanel>
-          <TabPanel value={1} sx={{ p: 3 }}>
-            <Typography level="inherit">
-              Best for professional developers building enterprise or data-rich
-              applications.
-            </Typography>
-            <Typography textColor="primary.400" fontSize="xl3" fontWeight="xl" my={1}>
-              $15{' '}
-              <Typography fontSize="sm" textColor="text.secondary" fontWeight="md">
-                / dev / month
-              </Typography>
-            </Typography>
-          </TabPanel>
-          <TabPanel value={2} sx={{ p: 3 }}>
-            <Typography level="inherit">
-              The most advanced features for data-rich applications, as well as the
-              highest priority for support.
-            </Typography>
-            <Typography textColor="primary.400" fontSize="xl3" fontWeight="xl" my={1}>
-              <Typography
-                fontSize="xl"
-                borderRadius="sm"
-                px={0.5}
-                mr={0.5}
-                sx={(theme) => ({
-                  ...theme.variants.soft.danger,
-                  color: 'danger.400',
-                  verticalAlign: 'text-top',
-                  textDecoration: 'line-through',
-                })}
-              >
-                $49
-              </Typography>
-              $37*{' '}
-              <Typography fontSize="sm" textColor="text.secondary" fontWeight="md">
-                / dev / month
-              </Typography>
-            </Typography>
-          </TabPanel> 
-        </Tabs>
-      </Box>
-      <ChatBoxComp messages={history} onSubmit={handleChatSubmit}/>
-    </div>
+          <Input
+            sx={{ width: '100%' }}
+            variant="outlined"
+            placeholder='Ask anything'
+            endDecorator={
+              <IconButton type="submit" disabled={isLoading}>
+                <SendRoundedIcon />
+              </IconButton>
+            }
+            {...methods.register('query')}
+          />
+        </form>
+      </div>
+    </>
     
   )
 }
