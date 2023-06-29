@@ -118,11 +118,11 @@ class KnowledgeDocumentDao:
         count = knowledge_documents.scalar()
         return count
 
-    # def update_knowledge_document(self, document: KnowledgeDocumentEntity):
-    #     session = self.Session()
-    #     updated_space = session.merge(document)
-    #     session.commit()
-    #     return updated_space.id
+    def update_knowledge_document(self, document: KnowledgeDocumentEntity):
+        session = self.Session()
+        updated_space = session.merge(document)
+        session.commit()
+        return updated_space.id
     #
     # def delete_knowledge_document(self, document_id: int):
     #     cursor = self.conn.cursor()

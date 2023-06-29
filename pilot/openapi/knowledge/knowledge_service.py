@@ -76,6 +76,7 @@ class KnowledgeService:
             status=SyncStatus.TODO.name,
             last_sync=datetime.now(),
             content=request.content,
+            result="",
         )
         knowledge_document_dao.create_knowledge_document(document)
         return True
