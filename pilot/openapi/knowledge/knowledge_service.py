@@ -25,7 +25,10 @@ from pilot.openapi.knowledge.request.knowledge_request import (
 )
 from enum import Enum
 
-from pilot.openapi.knowledge.request.knowledge_response import ChunkQueryResponse, DocumentQueryResponse
+from pilot.openapi.knowledge.request.knowledge_response import (
+    ChunkQueryResponse,
+    DocumentQueryResponse,
+)
 
 knowledge_space_dao = KnowledgeSpaceDao()
 knowledge_document_dao = KnowledgeDocumentDao()

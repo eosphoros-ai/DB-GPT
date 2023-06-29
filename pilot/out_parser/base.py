@@ -122,7 +122,7 @@ class BaseOutputParser(ABC):
     def __extract_json(slef, s):
         i = s.index("{")
         count = 1  # 当前所在嵌套深度，即还没闭合的'{'个数
-        for j, c in enumerate(s[i + 1:], start=i + 1):
+        for j, c in enumerate(s[i + 1 :], start=i + 1):
             if c == "}":
                 count -= 1
             elif c == "{":
@@ -130,7 +130,7 @@ class BaseOutputParser(ABC):
             if count == 0:
                 break
         assert count == 0  # 检查是否找到最后一个'}'
-        return s[i: j + 1]
+        return s[i : j + 1]
 
     def parse_prompt_response(self, model_out_text) -> T:
         """
@@ -147,9 +147,9 @@ class BaseOutputParser(ABC):
         # if "```" in cleaned_output:
         #     cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json"):]
+            cleaned_output = cleaned_output[len("```json") :]
         if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```"):]
+            cleaned_output = cleaned_output[len("```") :]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
@@ -158,9 +158,9 @@ class BaseOutputParser(ABC):
             cleaned_output = self.__extract_json(cleaned_output)
         cleaned_output = (
             cleaned_output.strip()
-                .replace("\n", " ")
-                .replace("\\n", " ")
-                .replace("\\", " ")
+            .replace("\n", " ")
+            .replace("\\n", " ")
+            .replace("\\", " ")
         )
         return cleaned_output
 
