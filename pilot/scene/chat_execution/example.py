@@ -2,8 +2,8 @@ from pilot.prompts.example_base import ExampleSelector
 
 ## Two examples are defined by default
 EXAMPLES = [
-    [{"System": "123"}, {"System": "xxx"}, {"User": "xxx"}, {"Assistant": "xxx"}],
-    [{"System": "123"}, {"System": "xxx"}, {"User": "xxx"}, {"Assistant": "xxx"}],
+    [{"system": "123"},{"system":"xxx"},{"human":"xxx"},{"assistant":"xxx"}],
+    [{"system": "123"},{"system":"xxx"},{"human":"xxx"},{"assistant":"xxx"}]
 ]
 
-example = ExampleSelector(examples=EXAMPLES, use_example=True)
+plugin_example = ExampleSelector(examples_record=EXAMPLES, use_example=True)

@@ -33,7 +33,7 @@ class ModelWorker:
             model_path = model_path[:-1]
         self.model_name = model_name or model_path.split("/")[-1]
         self.device = device
-
+        print(f"Loading {model_name} LLM ModelServer in {device}! Please Wait......")
         self.ml = ModelLoader(model_path=model_path)
         self.model, self.tokenizer = self.ml.loader(
             num_gpus, load_8bit=ISLOAD_8BIT, debug=ISDEBUG
@@ -41,11 +41,11 @@ class ModelWorker:
 
         if not isinstance(self.model, str):
             if hasattr(self.model, "config") and hasattr(
-                self.model.config, "max_sequence_length"
+                    self.model.config, "max_sequence_length"
             ):
                 self.context_len = self.model.config.max_sequence_length
             elif hasattr(self.model, "config") and hasattr(
-                self.model.config, "max_position_embeddings"
+                    self.model.config, "max_position_embeddings"
             ):
                 self.context_len = self.model.config.max_position_embeddings
 
@@ -55,29 +55,32 @@ class ModelWorker:
         self.llm_chat_adapter = get_llm_chat_adapter(model_path)
         self.generate_stream_func = self.llm_chat_adapter.get_generate_stream_func()
 
+    def start_check(self):
+        print("LLM Model Loading Success！")
+
     def get_queue_length(self):
         if (
-            model_semaphore is None
-            or model_semaphore._value is None
-            or model_semaphore._waiters is None
+                model_semaphore is None
+                or model_semaphore._value is None
+                or model_semaphore._waiters is None
         ):
             return 0
         else:
             (
-                CFG.LIMIT_MODEL_CONCURRENCY
-                - model_semaphore._value
-                + len(model_semaphore._waiters)
+                    CFG.LIMIT_MODEL_CONCURRENCY
+                    - model_semaphore._value
+                    + len(model_semaphore._waiters)
             )
 
     def generate_stream_gate(self, params):
         try:
             for output in self.generate_stream_func(
-                self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
+                    self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
                 # Please do not open the output in production!
                 # The gpt4all thread shares stdout with the parent process,
                 # and opening it may affect the frontend output.
-                # print("output: ", output)
+                print("output: ", output)
                 ret = {
                     "text": output,
                     "error_code": 0,
@@ -178,10 +181,9 @@ def generate(prompt_request: PromptRequest):
     for rsp in output:
         # rsp = rsp.decode("utf-8")
         rsp_str = str(rsp, "utf-8")
-        print("[TEST: output]:", rsp_str)
         response.append(rsp_str)
 
-    return {"response": rsp_str}
+    return rsp_str
 
 
 @app.post("/embedding")

@@ -8,7 +8,7 @@ from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = """You are an AI designed to answer human questions, please follow the prompts and conventions of the system's input for your answers"""
+PROMPT_SCENE_DEFINE = None
 
 
 _DEFAULT_TEMPLATE = """

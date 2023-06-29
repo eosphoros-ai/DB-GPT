@@ -46,7 +46,10 @@ class PromptTemplate(BaseModel, ABC):
     output_parser: BaseOutputParser = None
     """"""
     sep: str = SeparatorStyle.SINGLE.value
-    example: ExampleSelector = None
+
+    example_selector: ExampleSelector = None
+
+    need_historical_messages: bool = False
 
     class Config:
         """Configuration for this pydantic object."""

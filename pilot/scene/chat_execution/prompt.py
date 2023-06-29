@@ -5,13 +5,11 @@ from pilot.scene.base import ChatScene
 from pilot.common.schema import SeparatorStyle, ExampleType
 
 from pilot.scene.chat_execution.out_parser import PluginChatOutputParser
-from pilot.scene.chat_execution.example import example
+from pilot.scene.chat_execution.example import plugin_example
 
 CFG = Config()
 
-# PROMPT_SCENE_DEFINE = """You are an AI designed to solve the user's goals with given commands, please follow the prompts and constraints of the system's input for your answers."""
 PROMPT_SCENE_DEFINE = "You are an AI designed to solve the user's goals with given commands, please follow the  constraints of the system's input for your answers."
-
 
 _DEFAULT_TEMPLATE = """
 Goals: 
@@ -51,7 +49,7 @@ prompt = PromptTemplate(
     output_parser=PluginChatOutputParser(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT
     ),
-    example=example,
+    example_selector=plugin_example,
 )
 
 CFG.prompt_templates.update({prompt.template_scene: prompt})
