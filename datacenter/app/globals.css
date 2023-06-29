@@ -37,4 +37,19 @@ tr:hover {
 
 html body .ant-btn-primary {
   background-color: #1677ff;
+.ant-pagination .ant-pagination-prev * {
+  color: rgb(145, 35, 167) !important;
+}
+
+.ant-pagination .ant-pagination-next * {
+  color: rgb(145, 35, 167) !important;
+}
+
+.ant-pagination .ant-pagination-item {
+  border-color: rgb(145, 35, 167) !important;
+  background-color: rgb(145, 35, 167) !important;
+}
+
+.ant-pagination .ant-pagination-item.ant-pagination-item-active a {
+  color: white !important;
 }
