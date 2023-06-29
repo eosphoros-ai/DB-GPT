@@ -2,35 +2,31 @@ import {
     EventStreamContentType,
     fetchEventSource,
   } from '@microsoft/fetch-event-source';
-  import { ApiError, ApiErrorType } from '@/utils/api-error';  
   import useStateReducer from './useStateReducer';
-  import useVisitorId from './useVisitorId';
-  
+import { Message } from '@/types';
+import { useEffect } from 'react';
+
   type Props = {
     queryAgentURL: string;
-    queryHistoryURL?: string;
     channel?: "dashboard" | "website" | "slack" | "crisp";
     queryBody?: any;
+    initHistory: Message[];
   };
 
   const useAgentChat = ({
     queryAgentURL,
-    queryHistoryURL,
     channel,
     queryBody,
+    initHistory
   }: Props) => {
     const [state, setState] = useStateReducer({
-      history: [{
-        role: 'human',
-        context: 'hello',
-      }, {
-        role: 'agent',
-        context: 'Hello! How can I assist you today?',
-      }] as { role: 'human' | 'agent'; context: string; id?: string }[],
+      history: (initHistory || []) as { role: 'human' | 'ai'; context: string; id?: string }[],
     });
-  
-    const { visitorId } = useVisitorId();
-  
+    
+    useEffect(() => {
+      if (initHistory) setState({ history: initHistory });
+    }, [initHistory]);
+
     const handleChatSubmit = async (context: string) => {
       if (!context) {
         return;
@@ -50,9 +46,6 @@ import {
         const ctrl = new AbortController();
         let buffer = '';
   
-        class RetriableError extends Error {}
-        class FatalError extends Error {}
-  
         await fetchEventSource(queryAgentURL, {
           method: 'POST',
           headers: {
@@ -60,9 +53,7 @@ import {
           },
           body: JSON.stringify({
             ...queryBody,
-            streaming: true,
-            query: context,
-            visitorId: visitorId,
+            user_input: context,
             channel,
           }),
           signal: ctrl.signal,
@@ -79,64 +70,59 @@ import {
               response.status !== 429
             ) {
               if (response.status === 402) {
-                throw new ApiError(ApiErrorType.USAGE_LIMIT);
+                //throw new ApiError(ApiErrorType.USAGE_LIMIT);
               }
-              throw new FatalError();
+              // client-side errors are usually non-retriable:
+              //throw new FatalError();
             } else {
-              throw new RetriableError();
+              //throw new RetriableError();
             }
           },
           onclose() {
-            throw new RetriableError();
+            // if the server closes the connection unexpectedly, retry:
+            console.log('onclose');
+            //throw new RetriableError();
           },
           onerror(err) {
 						throw new Error(err);
-            // if (err instanceof FatalError) {
-            //   ctrl.abort();
-            //   throw new Error(); // rethrow to stop the operation
-            // } else if (err instanceof ApiError) {
-            //   console.log('ApiError', ApiError);
-            //   throw new Error();
-            // } else {
-            //   throw new Error(err);
-            // }
           },
           onmessage: (event) => {
+            event.data = event.data.replaceAll('\\n', '\n');
             console.log(event, 'event');
             if (event.data === '[DONE]') {
               ctrl.abort();
             } else if (event.data?.startsWith('[ERROR]')) {
               ctrl.abort();
-  
               setState({
                 history: [
                   ...history,
                   {
-                    role: 'agent',
+                    role: 'ai',
                     context: event.data.replace('[ERROR]', ''),
                   } as any,
                 ],
               });
             } else {
-              buffer += decodeURIComponent(event.data) as string;
               const h = [...history];
-              if (h?.[nextIndex]) {
-                h[nextIndex].context = `${buffer}`;
-              } else {
-                h.push({ role: 'agent', context: buffer });
+              if (event.data) {
+                if (h?.[nextIndex]) {
+                  h[nextIndex].context = `${event.data}`;
+                } else {
+                  h.push({ role: 'ai', context: event.data });
+                }
+                setState({
+                  history: h as any,
+                });
               }
-              setState({
-                history: h as any,
-              });
+              
             }
           },
         });
       } catch (err) {
-        console.log('err', err);
 				setState({
 					history: [
 						...history,
-						{ role: 'agent', context: answer || '请求出错' as string },
+						{ role: 'ai', context: answer || '请求出错' as string },
 					] as any,
 				});
         // if (err instanceof ApiError) {
@@ -156,13 +142,12 @@ import {
         //   setState({
         //     history: [
         //       ...history,
-        //       { from: 'agent', message: answer as string },
+        //       { from: 'ai', message: answer as string },
         //     ] as any,
         //   });
         // }
       }
     };
-  
     return {
       handleChatSubmit,
       history: state.history,
