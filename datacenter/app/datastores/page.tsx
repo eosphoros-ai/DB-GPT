@@ -39,17 +39,17 @@ const documentTypeList = [
   {
     type: 'text',
     title: 'Text',
-    subTitle: 'Paste some text'
+    subTitle: 'Fill your raw text'
   },
   {
     type: 'webPage',
-    title: 'Web Page',
-    subTitle: 'Crawl text from a web page'
+    title: 'URL',
+    subTitle: 'Fetch the content of a URL'
   },
   {
     type: 'file',
-    title: 'File',
-    subTitle: 'It can be: PDF, CSV, JSON, Text, PowerPoint, Word, Excel'
+    title: 'Document',
+    subTitle: 'Upload a document, document type can be PDF, CSV, Text, PowerPoint, Word, Markdown'
   }
 ]
 
