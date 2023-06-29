@@ -252,7 +252,6 @@ async def stream_generator(chat):
         for chunk in model_response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
                 msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
-                chat.current_message.add_ai_message(msg)
                 msg = msg.replace("\n", "\\n")
                 yield f"data:{msg}\n\n"
                 await asyncio.sleep(0.1)
@@ -260,11 +259,13 @@ async def stream_generator(chat):
         for chunk in model_response:
             if chunk:
                 msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
-                chat.current_message.add_ai_message(msg)
 
                 msg = msg.replace("\n", "\\n")
                 yield f"data:{msg}\n\n"
                 await asyncio.sleep(0.1)
+
+    chat.current_message.add_ai_message(msg)
+    chat.current_message.add_view_message(msg)
     chat.memory.append(chat.current_message)
 
 
