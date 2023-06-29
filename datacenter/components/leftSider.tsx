@@ -4,8 +4,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Box, List, ListItem, ListItemButton, ListItemDecorator, ListItemContent, Typography, Button, useColorScheme } from '@/lib/mui';
-import SmartToyRoundedIcon from '@mui/icons-material/SmartToyRounded'; // Icons import
-import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
+import Article from '@mui/icons-material/Article';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -19,14 +18,9 @@ const LeftSider =  () => {
 
 	const menus = useMemo(() => {
 		return [{
-			label: 'Agents',
-			icon: <SmartToyRoundedIcon fontSize="small" />,
-			route: '/agents',
-			active: pathname === '/agents',
-		}, {
-			label: 'Datastores',
+			label: 'Knowledge Space',
 			route: '/datastores',
-			icon: <StorageRoundedIcon fontSize="small" />,
+			icon: <Article fontSize="small" />,
 			active: pathname === '/datastores'
 		}];
 	}, [pathname]);
@@ -75,13 +69,6 @@ const LeftSider =  () => {
 						}}
 					>
 						<div className='flex items-center  gap-3'>
-							<Image
-								src="/databerry-logo-icon.png"
-								width="100"
-								height="100"
-								className='w-12'
-								alt="Databerry"
-							/>
 							<Typography component="h1" fontWeight="xl">
 								DB-GPT
 							</Typography>
