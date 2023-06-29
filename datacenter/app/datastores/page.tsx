@@ -2,7 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
-import { message } from 'antd'
+import { InboxOutlined } from '@ant-design/icons'
+import type { UploadProps } from 'antd'
+import { message, Upload } from 'antd'
 import {
   Modal,
   Button,
@@ -13,6 +15,8 @@ import {
   Input,
   styled
 } from '@/lib/mui'
+
+const { Dragger } = Upload
 
 const Item = styled(Sheet)(({ theme }) => ({
   width: '33%',
@@ -51,12 +55,28 @@ const documentTypeList = [
 const Index = () => {
   const router = useRouter()
   const [activeStep, setActiveStep] = useState<number>(0)
+  const [documentType, setDocumentType] = useState<string>('')
   const [knowledgeSpaceList, setKnowledgeSpaceList] = useState<any>([])
   const [isAddKnowledgeSpaceModalShow, setIsAddKnowledgeSpaceModalShow] =
     useState<boolean>(false)
   const [knowledgeSpaceName, setKnowledgeSpaceName] = useState<string>('')
   const [webPageUrl, setWebPageUrl] = useState<string>('')
-  const [documentName, setDocumentName] = useState<string>('')
+  const [documentName, setDocumentName] = useState<any>('')
+  const [originFileObj, setOriginFileObj] = useState<any>(null)
+  const props: UploadProps = {
+    name: 'file',
+    multiple: false,
+    onChange(info) {
+      console.log(info)
+      if (info.fileList.length === 0) {
+        setOriginFileObj(null)
+        setDocumentName('')
+        return
+      }
+      setOriginFileObj(info.file.originFileObj)
+      setDocumentName(info.file.originFileObj?.name)
+    }
+  }
   useEffect(() => {
     async function fetchData() {
       const res = await fetch('http://localhost:8000/knowledge/space/list', {
@@ -75,14 +95,21 @@ const Index = () => {
   }, [])
   return (
     <>
-      <Sheet sx={{
-        display: "flex",
-        justifyContent: "space-between"
-      }} className="p-4">
-        <Sheet sx={{
-          fontSize: '30px',
-          fontWeight: 'bold'
-        }}>Knowledge Spaces</Sheet>
+      <Sheet
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between'
+        }}
+        className="p-4"
+      >
+        <Sheet
+          sx={{
+            fontSize: '30px',
+            fontWeight: 'bold'
+          }}
+        >
+          Knowledge Spaces
+        </Sheet>
         <Button
           onClick={() => setIsAddKnowledgeSpaceModalShow(true)}
           variant="outlined"
@@ -91,7 +118,7 @@ const Index = () => {
         </Button>
       </Sheet>
       <div className="page-body p-4">
-        <Table sx={{ '& thead th:nth-child(1)': { width: '40%' } }}>
+        <Table color="neutral" stripe="odd" variant="outlined">
           <thead>
             <tr>
               <th>Name</th>
@@ -218,7 +245,7 @@ const Index = () => {
                     sx={{
                       boxSizing: 'border-box',
                       height: '80px',
-                      padding: '12px',            
+                      padding: '12px',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
@@ -228,12 +255,13 @@ const Index = () => {
                       cursor: 'pointer'
                     }}
                     onClick={() => {
-                      if (item.type === 'webPage') {
-                        setActiveStep(2);
-                      }
+                      setDocumentType(item.type)
+                      setActiveStep(2)
                     }}
                   >
-                    <Sheet sx={{ fontSize: '20px', fontWeight: 'bold' }}>{item.title}</Sheet>
+                    <Sheet sx={{ fontSize: '20px', fontWeight: 'bold' }}>
+                      {item.title}
+                    </Sheet>
                     <Sheet>{item.subTitle}</Sheet>
                   </Sheet>
                 ))}
@@ -246,44 +274,94 @@ const Index = () => {
                 <Input
                   placeholder="Please input the name"
                   onChange={(e: any) => setDocumentName(e.target.value)}
-                  sx={{ marginBottom: '20px'}}
+                  sx={{ marginBottom: '20px' }}
                 />
-                Web Page URL:
-                <Input
-                  placeholder="Please input the Web Page URL"
-                  onChange={(e: any) => setWebPageUrl(e.target.value)}
-                />
+                {documentType === 'webPage' ? (
+                  <>
+                    Web Page URL:
+                    <Input
+                      placeholder="Please input the Web Page URL"
+                      onChange={(e: any) => setWebPageUrl(e.target.value)}
+                    />
+                  </>
+                ) : documentType === 'file' ? (
+                  <>
+                    <Dragger {...props}>
+                      <p className="ant-upload-drag-icon">
+                        <InboxOutlined />
+                      </p>
+                      <p
+                        style={{ color: 'rgb(22, 108, 255)', fontSize: '20px' }}
+                      >
+                        Select or Drop file
+                      </p>
+                      <p
+                        className="ant-upload-hint"
+                        style={{ color: 'rgb(22, 108, 255)' }}
+                      >
+                        PDF, PowerPoint, Excel, Word, Text, Markdown,
+                      </p>
+                    </Dragger>
+                  </>
+                ) : (
+                  <></>
+                )}
               </Box>
               <Button
                 onClick={async () => {
                   if (documentName === '') {
-                    message.error('Please input the name');
-                    return;
+                    message.error('Please input the name')
+                    return
                   }
-                  if (webPageUrl === '') {
-                    message.error('Please input the Web Page URL');
-                    return;
-                  }
-                  const res = await fetch(
-                    `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/add`,
-                    {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                        doc_name: documentName,
-                        content: webPageUrl,
-                        doc_type: 'URL'
-                      })
+                  if (documentType === 'webPage') {
+                    if (webPageUrl === '') {
+                      message.error('Please input the Web Page URL')
+                      return
                     }
-                  )
-                  const data = await res.json()
-                  if (data.success) {
-                    message.success('success')
-                    setIsAddKnowledgeSpaceModalShow(false)
-                  } else {
-                    message.error(data.err_msg || 'failed')
+                    const res = await fetch(
+                      `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/add`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          doc_name: documentName,
+                          content: webPageUrl,
+                          doc_type: 'URL'
+                        })
+                      }
+                    )
+                    const data = await res.json()
+                    if (data.success) {
+                      message.success('success')
+                      setIsAddKnowledgeSpaceModalShow(false)
+                    } else {
+                      message.error(data.err_msg || 'failed')
+                    }
+                  } else if (documentType === 'file') {
+                    if (!originFileObj) {
+                      message.error('Please select a file')
+                      return
+                    }
+                    const formData = new FormData();
+                    formData.append('doc_name', documentName);
+                    formData.append('doc_file', originFileObj);
+                    formData.append('doc_type', 'DOCUMENT');
+                    const res = await fetch(
+                      `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/upload`,
+                      {
+                        method: 'POST',
+                        body: formData
+                      }
+                    )
+                    const data = await res.json()
+                    if (data.success) {
+                      message.success('success')
+                      setIsAddKnowledgeSpaceModalShow(false)
+                    } else {
+                      message.error(data.err_msg || 'failed')
+                    }
                   }
                 }}
               >
