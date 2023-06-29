@@ -125,7 +125,7 @@ const Index = () => {
       </Sheet>
       <div className="page-body p-4">
         {knowledgeSpaceList.length ? (
-          <Table color="neutral" stripe="odd" variant="outlined">
+          <Table color="info" variant="soft" size="lg">
             <thead>
               <tr>
                 <th>Name</th>
