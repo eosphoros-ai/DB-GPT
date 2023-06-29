@@ -55,7 +55,6 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory=static_file_path), name="static")
-app.add_route("/test",  "static/test.html")
 
 app.include_router(api_v1)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
