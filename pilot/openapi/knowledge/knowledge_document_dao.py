@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, String, DateTime, Integer, Text, create_engine
+from sqlalchemy import Column, String, DateTime, Integer, Text, create_engine, func
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from pilot.configs.config import Config
@@ -92,15 +92,41 @@ class KnowledgeDocumentDao:
         result = knowledge_documents.all()
         return result
 
-    def update_knowledge_document(self, document: KnowledgeDocumentEntity):
+    def get_knowledge_documents_count(self, query):
         session = self.Session()
-        updated_space = session.merge(document)
-        session.commit()
-        return updated_space.id
+        knowledge_documents = session.query(func.count(KnowledgeDocumentEntity.id))
+        if query.id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.id == query.id
+            )
+        if query.doc_name is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.doc_name == query.doc_name
+            )
+        if query.doc_type is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.doc_type == query.doc_type
+            )
+        if query.space is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space == query.space
+            )
+        if query.status is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.status == query.status
+            )
+        count = knowledge_documents.scalar()
+        return count
 
-    def delete_knowledge_document(self, document_id: int):
-        cursor = self.conn.cursor()
-        query = "DELETE FROM knowledge_document WHERE id = %s"
-        cursor.execute(query, (document_id,))
-        self.conn.commit()
-        cursor.close()
+    # def update_knowledge_document(self, document: KnowledgeDocumentEntity):
+    #     session = self.Session()
+    #     updated_space = session.merge(document)
+    #     session.commit()
+    #     return updated_space.id
+    #
+    # def delete_knowledge_document(self, document_id: int):
+    #     cursor = self.conn.cursor()
+    #     query = "DELETE FROM knowledge_document WHERE id = %s"
+    #     cursor.execute(query, (document_id,))
+    #     self.conn.commit()
+    #     cursor.close()
