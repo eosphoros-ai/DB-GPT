@@ -12,7 +12,7 @@ from transformers import (
     LlamaTokenizer,
     BitsAndBytesConfig,
 )
-from pilot.configs.model_config import DEVICE
+from pilot.configs.model_config import DEVICE, NUM_GPUS
 from pilot.configs.config import Config
 
 bnb_config = BitsAndBytesConfig(
@@ -79,13 +79,36 @@ class VicunaLLMAdapater(BaseLLMAdaper):
         return model, tokenizer
 
 
+def auto_configure_device_map(num_gpus):
+    num_trans_layers = 28
+    per_gpu_layers = 30 / num_gpus
+    device_map = {
+        'transformer.embedding.word_embeddings': 0,
+        'transformer.encoder.final_layernorm': 0,
+        'transformer.output_layer': 0,
+        'transformer.rotary_pos_emb': 0,
+        'lm_head': 0
+    }
+
+    used = 2
+    gpu_target = 0
+    for i in range(num_trans_layers):
+        if used >= per_gpu_layers:
+            gpu_target += 1
+            used = 0
+        assert gpu_target < num_gpus
+        device_map[f'transformer.encoder.layers.{i}'] = gpu_target
+        used += 1
+
+    return device_map
+
 class ChatGLMAdapater(BaseLLMAdaper):
     """LLM Adatpter for THUDM/chatglm-6b"""
 
     def match(self, model_path: str):
         return "chatglm" in model_path
 
-    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+    def loader(self, model_path: str, from_pretrained_kwargs: dict, device_map=None, num_gpus=NUM_GPUS):
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
         if DEVICE != "cuda":
@@ -96,11 +119,22 @@ class ChatGLMAdapater(BaseLLMAdaper):
         else:
             model = (
                 AutoModel.from_pretrained(
-                    model_path, trust_remote_code=True, **from_pretrained_kwargs
+                    model_path, trust_remote_code=True,
+                    **from_pretrained_kwargs
                 )
                 .half()
-                .cuda()
+                # .cuda()
             )
+            from accelerate import dispatch_model
+
+            # model = AutoModel.from_pretrained(model_path, trust_remote_code=True,
+            #                                   **from_pretrained_kwargs).half()
+            #
+            if device_map is None:
+                device_map = auto_configure_device_map(num_gpus)
+
+            model = dispatch_model(model, device_map=device_map)
+
             return model, tokenizer
 
 
