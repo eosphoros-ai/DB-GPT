@@ -6,4 +6,4 @@ EXAMPLES = [
     [{"system": "123"},{"system":"xxx"},{"human":"xxx"},{"assistant":"xxx"}]
 ]
 
-example = ExampleSelector(examples=EXAMPLES, use_example=True)
+plugin_example = ExampleSelector(examples_record=EXAMPLES, use_example=True)
