@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "export": "next export",
+    "compile": "next build && next export"
   },
   "dependencies": {
     "@ant-design/pro-components": "^2.6.2",
