@@ -11,3 +11,20 @@ body {
   line-height: var(--joy-lineHeight-md, 1.5);
   background-color: var(--joy-palette-background-body);
 }
+
+.ant-pagination .ant-pagination-prev * {
+  color: rgb(145, 35, 167) !important;
+}
+
+.ant-pagination .ant-pagination-next * {
+  color: rgb(145, 35, 167) !important;
+}
+
+.ant-pagination .ant-pagination-item {
+  border-color: rgb(145, 35, 167) !important;
+  background-color: rgb(145, 35, 167) !important;
+}
+
+.ant-pagination .ant-pagination-item.ant-pagination-item-active a {
+  color: white !important;
+}
