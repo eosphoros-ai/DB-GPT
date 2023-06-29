@@ -63,8 +63,8 @@ const Index = () => {
   const [knowledgeSpaceName, setKnowledgeSpaceName] = useState<string>('')
   const [webPageUrl, setWebPageUrl] = useState<string>('')
   const [documentName, setDocumentName] = useState<any>('')
-  const [textSource, setTextSource] = useState<string>('');
-  const [text, setText] = useState<string>('');
+  const [textSource, setTextSource] = useState<string>('')
+  const [text, setText] = useState<string>('')
   const [originFileObj, setOriginFileObj] = useState<any>(null)
   const props: UploadProps = {
     name: 'file',
@@ -82,13 +82,16 @@ const Index = () => {
   }
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch('http://localhost:8000/knowledge/space/list', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-      })
+      const res = await fetch(
+        'http://30.183.154.125:5000/knowledge/space/list',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({})
+        }
+      )
       const data = await res.json()
       if (data.success) {
         setKnowledgeSpaceList(data.data)
@@ -121,35 +124,39 @@ const Index = () => {
         </Button>
       </Sheet>
       <div className="page-body p-4">
-        <Table color="neutral" stripe="odd" variant="outlined">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Provider</th>
-              <th>Owner</th>
-            </tr>
-          </thead>
-          <tbody>
-            {knowledgeSpaceList.map((row: any) => (
-              <tr key={row.id}>
-                <td>
-                  {
-                    <a
-                      href="javascript:;"
-                      onClick={() =>
-                        router.push(`/datastores/documents?name=${row.name}`)
-                      }
-                    >
-                      {row.name}
-                    </a>
-                  }
-                </td>
-                <td>{row.vector_type}</td>
-                <td>{row.owner}</td>
+        {knowledgeSpaceList.length ? (
+          <Table color="neutral" stripe="odd" variant="outlined">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Provider</th>
+                <th>Owner</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {knowledgeSpaceList.map((row: any) => (
+                <tr key={row.id}>
+                  <td>
+                    {
+                      <a
+                        href="javascript:;"
+                        onClick={() =>
+                          router.push(`/datastores/documents?name=${row.name}`)
+                        }
+                      >
+                        {row.name}
+                      </a>
+                    }
+                  </td>
+                  <td>{row.vector_type}</td>
+                  <td>{row.owner}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        ) : (
+          <></>
+        )}
       </div>
       <Modal
         sx={{
@@ -199,7 +206,7 @@ const Index = () => {
                     return
                   }
                   const res = await fetch(
-                    'http://localhost:8000/knowledge/space/add',
+                    'http://30.183.154.125:5000/knowledge/space/add',
                     {
                       method: 'POST',
                       headers: {
@@ -218,7 +225,7 @@ const Index = () => {
                     message.success('success')
                     setActiveStep(1)
                     const res = await fetch(
-                      'http://localhost:8000/knowledge/space/list',
+                      'http://30.183.154.125:5000/knowledge/space/list',
                       {
                         method: 'POST',
                         headers: {
@@ -335,7 +342,7 @@ const Index = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/add`,
+                      `http://30.183.154.125:5000/knowledge/${knowledgeSpaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
@@ -360,12 +367,12 @@ const Index = () => {
                       message.error('Please select a file')
                       return
                     }
-                    const formData = new FormData();
-                    formData.append('doc_name', documentName);
-                    formData.append('doc_file', originFileObj);
-                    formData.append('doc_type', 'DOCUMENT');
+                    const formData = new FormData()
+                    formData.append('doc_name', documentName)
+                    formData.append('doc_file', originFileObj)
+                    formData.append('doc_type', 'DOCUMENT')
                     const res = await fetch(
-                      `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/upload`,
+                      `http://30.183.154.125:5000/knowledge/${knowledgeSpaceName}/document/upload`,
                       {
                         method: 'POST',
                         body: formData
@@ -384,7 +391,7 @@ const Index = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/add`,
+                      `http://30.183.154.125:5000/knowledge/${knowledgeSpaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
