@@ -1,3 +1,4 @@
+import signal
 import traceback
 import os
 import shutil
@@ -9,10 +10,7 @@ sys.path.append(ROOT_PATH)
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import (
-    DATASETS_DIR,
-    KNOWLEDGE_UPLOAD_ROOT_PATH,
-    LLM_MODEL_CONFIG,
-    LOGDIR,
+    LOGDIR
 )
 from pilot.utils import build_logger
 
@@ -33,6 +31,11 @@ static_file_path = os.path.join(os.getcwd(), "server/static")
 
 CFG = Config()
 logger = build_logger("webserver", LOGDIR + "webserver.log")
+
+
+def signal_handler(sig, frame):
+    print("in order to avoid chroma db atexit problem")
+    os._exit(0)
 
 
 def swagger_monkey_patch(*args, **kwargs):
@@ -72,9 +75,10 @@ if __name__ == "__main__":
 
     # old version server config
     parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=CFG.WEB_SERVER_PORT)
+    parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument("--share", default=False, action="store_true")
+    signal.signal(signal.SIGINT, signal_handler)
 
     # init server config
     args = parser.parse_args()
@@ -82,4 +86,4 @@ if __name__ == "__main__":
     CFG.NEW_SERVER_MODE = True
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
