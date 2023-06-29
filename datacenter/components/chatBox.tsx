@@ -17,8 +17,9 @@ type Props = {
   messages: Message[];
   onSubmit: (message: string) => Promise<any>;
   messageTemplates?: string[];
-  initialMessage?: Message;
+  initialMessage?: string;
   readOnly?: boolean;
+  clearIntialMessage?: () => void;
 }; 
 
 const Schema = z.object({ query: z.string().min(1) });
@@ -29,6 +30,7 @@ const ChatBoxComp = ({
   messageTemplates,
   initialMessage,
   readOnly,
+  clearIntialMessage
 }: Props) => {
   const scrollableRef = React.useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,6 +54,11 @@ const ChatBoxComp = ({
     }
   };
 
+  const handleInitMessage = async () => {
+    await submit({ query: (initialMessage as string) });
+    clearIntialMessage?.();
+  }
+
   React.useEffect(() => {
     if (!scrollableRef.current) {
       return;
@@ -61,11 +68,9 @@ const ChatBoxComp = ({
   }, [messages?.length]);
 
   React.useEffect(() => {
-    setTimeout(() => {
-      setFirstMsg(
-        initialMessage ? initialMessage : undefined
-      );
-    }, 0);
+    if (initialMessage && messages.length <= 0) {
+      handleInitMessage();
+    }
   }, [initialMessage]);
 
   return (
@@ -116,7 +121,7 @@ const ChatBoxComp = ({
           </Card>
         )}
 
-        {messages.map((each, index) => (
+        {messages.filter(item => ['ai', 'human'].includes(item.role)).map((each, index) => (
           <Stack
             key={index}
             sx={{
