@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 from typing import List
 
-from langchain.document_loaders import PyPDFLoader, UnstructuredWordDocumentLoader
+from langchain.document_loaders import UnstructuredWordDocumentLoader
 from langchain.schema import Document
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import CharacterTextSplitter, SpacyTextSplitter
 
 from pilot.configs.config import Config
 from pilot.embedding_engine import SourceEmbedding, register
-from pilot.embedding_engine.chn_document_splitter import CHNDocumentSplitter
 
 CFG = Config()
 
@@ -33,7 +32,11 @@ class WordEmbedding(SourceEmbedding):
                 length_function=len,
             )
         else:
-            text_splitter = CHNDocumentSplitter(pdf=True, sentence_size=1000)
+            text_splitter = SpacyTextSplitter(
+                pipeline="zh_core_web_sm",
+                chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
+                chunk_overlap=100,
+            )
         return loader.load_and_split(text_splitter)
 
     @register
