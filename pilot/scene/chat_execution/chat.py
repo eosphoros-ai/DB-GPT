@@ -63,6 +63,7 @@ class ChatWithPlugin(BaseChat):
         return input_values
 
     def do_action(self, prompt_response):
+        print(f"do_action:{prompt_response}")
         ## plugin command run
         return execute_command(
             str(prompt_response.command.get("name")),

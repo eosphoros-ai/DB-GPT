@@ -54,4 +54,5 @@ class ChatWithDbAutoExecute(BaseChat):
         return input_values
 
     def do_action(self, prompt_response):
+        print(f"do_action:{prompt_response}")
         return self.database.run(self.db_connect, prompt_response.sql)
