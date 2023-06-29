@@ -30,13 +30,14 @@ th {
 tr:nth-child(even) {
   background-color: #f2f2f2;
 }
-
 tr:hover {
   background-color: #ddd;
 }
 
-html body .ant-btn-primary {
+body .ant-btn-primary {
   background-color: #1677ff;
+}
+
 .ant-pagination .ant-pagination-prev * {
   color: rgb(145, 35, 167) !important;
 }
