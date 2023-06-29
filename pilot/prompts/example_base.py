@@ -6,7 +6,7 @@ from pilot.common.schema import ExampleType
 
 
 class ExampleSelector(BaseModel, ABC):
-    examples: List[List]
+    examples_record: List[List]
     use_example: bool = False
     type: str = ExampleType.ONE_SHOT.value
 
@@ -16,17 +16,13 @@ class ExampleSelector(BaseModel, ABC):
         else:
             return self.__few_shot_context(count)
 
-    def __examples_text(self, used_examples):
-
-
-
     def __few_shot_context(self, count: int = 2) -> List[List]:
         """
         Use 2 or more examples, default 2
         Returns: example text
         """
         if self.use_example:
-            need_use = self.examples[:count]
+            need_use = self.examples_record[:count]
             return need_use
         return None
 
@@ -37,7 +33,7 @@ class ExampleSelector(BaseModel, ABC):
 
         """
         if self.use_example:
-            need_use = self.examples[:1]
+            need_use = self.examples_record[:1]
             return need_use
 
         return None

@@ -18,6 +18,7 @@ from pilot.utils import build_logger
 
 from pilot.server.webserver_base import server_init
 
+from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, applications
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.exceptions import RequestValidationError
@@ -25,6 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pilot.openapi.api_v1.api_v1 import router as api_v1, validation_exception_handler
 
+static_file_path = os.path.join(os.getcwd(), "server/static")
 
 CFG = Config()
 logger = build_logger("webserver", LOGDIR + "webserver.log")
@@ -52,7 +54,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# app.mount("static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=static_file_path), name="static")
+app.add_route("/test",  "static/test.html")
+
 app.include_router(api_v1)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 

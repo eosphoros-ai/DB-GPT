@@ -52,7 +52,7 @@ class BaseChat(ABC):
     temperature: float = 0.6
     max_new_tokens: int = 1024
     # By default, keep the last two rounds of conversation records as the context
-    chat_retention_rounds: int = 2
+    chat_retention_rounds: int = 1
 
     class Config:
         """Configuration for this pydantic object."""
@@ -79,8 +79,6 @@ class BaseChat(ABC):
         self.history_message: List[OnceConversation] = self.memory.messages()
         self.current_message: OnceConversation = OnceConversation(chat_mode.value)
         self.current_tokens_used: int = 0
-        ### load chat_session_id's chat historys
-        self._load_history(self.chat_session_id)
 
     class Config:
         """Configuration for this pydantic object."""
@@ -107,18 +105,9 @@ class BaseChat(ABC):
         self.current_message.start_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # TODO
         self.current_message.tokens = 0
-        current_prompt = None
 
         if self.prompt_template.template:
             current_prompt = self.prompt_template.format(**input_values)
-
-        ### 构建当前对话， 是否安第一次对话prompt构造？ 是否考虑切换库
-        if self.history_message:
-            ## TODO 带历史对话记录的场景需要确定切换库后怎么处理
-            logger.info(
-                f"There are already {len(self.history_message)} rounds of conversations!"
-            )
-        if current_prompt:
             self.current_message.add_system_message(current_prompt)
 
         payload = {
@@ -155,7 +144,7 @@ class BaseChat(ABC):
             self.current_message.add_view_message(
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
-        ### 对话记录存储
+        ### store current conversation
         self.memory.append(self.current_message)
 
     def nostream_call(self):
@@ -165,7 +154,6 @@ class BaseChat(ABC):
         try:
             rsp_str = ""
             if not CFG.NEW_SERVER_MODE:
-                ### 走非流式的模型服务接口
                 rsp_str = requests.post(
                     urljoin(CFG.MODEL_SERVER, "generate"),
                     headers=headers,
@@ -212,7 +200,7 @@ class BaseChat(ABC):
             self.current_message.add_view_message(
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
-        ### 对话记录存储
+        ### store dialogue
         self.memory.append(self.current_message)
         return self.current_ai_response()
 
@@ -224,67 +212,98 @@ class BaseChat(ABC):
 
     def generate_llm_text(self) -> str:
         text = ""
+        ### Load scene setting or character definition
         if self.prompt_template.template_define:
-            text = self.prompt_template.template_define + self.prompt_template.sep
+            text += self.prompt_template.template_define + self.prompt_template.sep
+        ### Load prompt
+        text += self.__load_system_message()
 
-        ### 处理历史信息
-        if len(self.history_message) > self.chat_retention_rounds:
-            ### 使用历史信息的第一轮和最后n轮数据合并成历史对话记录, 做上下文提示时，用户展示消息需要过滤掉
-            for first_message in self.history_message[0]['messages']:
-                if not first_message['type'] in [ViewMessage.type, SystemMessage.type]:
-                    text += (
-                            first_message['type']
-                            + ":"
-                            + first_message['data']['content']
-                            + self.prompt_template.sep
-                    )
+        ### Load examples
+        text += self.__load_example_messages()
 
-            index = self.chat_retention_rounds - 1
-            for round_conv in self.history_message[-index:]:
+        ### Load History
+        text += self.__load_histroy_messages()
+
+        ### Load User Input
+        text += self.__load_user_message()
+        return text
+
+    def __load_system_message(self):
+        system_convs = self.current_message.get_system_conv()
+        system_text = ""
+        for system_conv in system_convs:
+            system_text += system_conv.type + ":" + system_conv.content + self.prompt_template.sep
+        return system_text
+
+    def __load_user_message(self):
+        user_conv = self.current_message.get_user_conv()
+        if user_conv:
+            return user_conv.type + ":" + user_conv.content + self.prompt_template.sep
+        else:
+            raise ValueError("Hi! What do you want to talk about？")
+
+    def __load_example_messages(self):
+        example_text = ""
+        if self.prompt_template.example_selector:
+            for round_conv in self.prompt_template.example_selector.examples():
                 for round_message in round_conv['messages']:
-                    if not isinstance(round_message, ViewMessage):
-                        text += (
+                    if not round_message['type'] in [SystemMessage.type, ViewMessage.type]:
+                        example_text += (
                                 round_message['type']
                                 + ":"
                                 + round_message['data']['content']
                                 + self.prompt_template.sep
                         )
+        return example_text
 
-        else:
-            ### 直接历史记录拼接
-            for conversation in self.history_message:
-                for message in conversation['messages']:
-                    if not isinstance(message, ViewMessage):
-                        text += (
-                                message['type']
+    def __load_histroy_messages(self):
+        history_text = ""
+        if self.prompt_template.need_historical_messages:
+            if self.history_message:
+                logger.info(
+                    f"There are already {len(self.history_message)} rounds of conversations! Will use {self.chat_retention_rounds} rounds of content as history!"
+                )
+            if len(self.history_message) > self.chat_retention_rounds:
+                for first_message in self.history_message[0]['messages']:
+                    if not first_message['type'] in [ViewMessage.type, SystemMessage.type]:
+                        history_text += (
+                                first_message['type']
                                 + ":"
-                                + message['data']['content']
+                                + first_message['data']['content']
                                 + self.prompt_template.sep
                         )
-        ### current conversation
 
-        for now_message in self.current_message.messages:
-            text += (
-                    now_message.type + ":" + now_message.content + self.prompt_template.sep
-            )
+                index = self.chat_retention_rounds - 1
+                for round_conv in self.history_message[-index:]:
+                    for round_message in round_conv['messages']:
+                        if not round_message['type'] in [SystemMessage.type, ViewMessage.type]:
+                            history_text += (
+                                    round_message['type']
+                                    + ":"
+                                    + round_message['data']['content']
+                                    + self.prompt_template.sep
+                            )
 
-        return text
+            else:
+                ### user all history
+                for conversation in self.history_message:
+                    for message in conversation['messages']:
+                        ### histroy message not have promot and view info
+                        if not message['type'] in [SystemMessage.type, ViewMessage.type]:
+                            history_text += (
+                                    message['type']
+                                    + ":"
+                                    + message['data']['content']
+                                    + self.prompt_template.sep
+                            )
 
-    # 暂时为了兼容前端
+        return history_text
+
     def current_ai_response(self) -> str:
         for message in self.current_message.messages:
             if message.type == "view":
                 return message.content
         return None
-
-    def _load_history(self, session_id: str) -> List[OnceConversation]:
-        """
-        load chat history by session_id
-        Args:
-            session_id:
-        Returns:
-        """
-        return self.memory.messages()
 
     def generate(self, p) -> str:
         """
