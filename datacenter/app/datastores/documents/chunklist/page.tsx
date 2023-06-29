@@ -41,7 +41,7 @@ const ChunkList = () => {
     <div className="p-4">
       {chunkList.length ? (
         <>
-          <Table color="neutral" stripe="odd" variant="outlined">
+          <Table color="info" variant="soft" size="lg">
             <thead>
               <tr>
                 <th>Name</th>
