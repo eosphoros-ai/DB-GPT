@@ -11,14 +11,27 @@ const AgentPage = (props) => {
 		ready: !!props.params?.agentId
 	});
 
-	const { handleChatSubmit, history } = useAgentChat({
-		queryAgentURL: `/v1/chat/completions`,
-			queryBody: {}
+	const { history, handleChatSubmit } = useAgentChat({
+		queryAgentURL: `http://30.183.154.8:5000/v1/chat/completions`,
+		queryBody: {
+			conv_uid: props.params?.agentId,
+			chat_mode: 'chat_normal'
+		},
+		initHistory: historyList?.data
 	});
 
 	return (
 		<div className='mx-auto flex h-full max-w-3xl flex-col gap-6 px-5 pt-6 sm:gap-8 xl:max-w-4xl'>
-			<ChatBoxComp messages={historyList?.data || []} onSubmit={handleChatSubmit}/>
+			<ChatBoxComp
+				initialMessage={historyList?.data ? (historyList?.data?.length <= 0 ? props.searchParams?.initMessage : undefined) : undefined}
+				clearIntialMessage={() => {
+					const searchParams = new URLSearchParams(window.location.search);
+					searchParams.delete('initMessage');
+					window.history.replaceState(null, null, `?${searchParams.toString()}`);
+				}}
+				messages={history || []}
+				onSubmit={handleChatSubmit}
+			/>
 		</div>
 	)
 }
