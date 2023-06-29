@@ -26,6 +26,11 @@ class BaseChatHistoryMemory(ABC):
         """Retrieve the messages from the local file"""
 
     @abstractmethod
+    def create(self, user_name:str) -> None:
+        """Append the message to the record in the local file"""
+
+
+    @abstractmethod
     def append(self, message: OnceConversation) -> None:
         """Append the message to the record in the local file"""
 
