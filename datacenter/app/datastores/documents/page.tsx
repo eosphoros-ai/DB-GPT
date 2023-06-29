@@ -296,9 +296,9 @@ const Documents = () => {
                   </>
                 ) : (
                   <>
-                    Source:
+                    Text Source(Optional):
                     <Input
-                      placeholder="Please input the source"
+                      placeholder="Please input the text source"
                       onChange={(e: any) => setTextSource(e.target.value)}
                       sx={{ marginBottom: '20px' }}
                     />
@@ -395,10 +395,6 @@ const Documents = () => {
                       message.error(data.err_msg || 'failed')
                     }
                   } else {
-                    if (textSource === '') {
-                      message.error('Please input the source')
-                      return
-                    }
                     if (text === '') {
                       message.error('Please input the text')
                       return
