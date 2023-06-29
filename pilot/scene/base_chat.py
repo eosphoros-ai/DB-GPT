@@ -86,6 +86,11 @@ class BaseChat(ABC):
         extra = Extra.forbid
         arbitrary_types_allowed = True
 
+    def __init_history_message(self):
+        self.history_message == self.memory.messages()
+        if not self.history_message:
+            self.memory.create(self.current_user_input, "")
+
     @property
     def chat_type(self) -> str:
         raise NotImplementedError("Not supported for this chat type.")
@@ -103,9 +108,8 @@ class BaseChat(ABC):
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)
         self.current_message.start_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        # TODO
-        self.current_message.tokens = 0
 
+        self.current_message.tokens = 0
         if self.prompt_template.template:
             current_prompt = self.prompt_template.format(**input_values)
             self.current_message.add_system_message(current_prompt)

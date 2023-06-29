@@ -37,7 +37,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         if not result:
             # 如果表不存在，则创建新表
             self.connect.execute(
-                "CREATE TABLE chat_history (conv_uid VARCHAR(100) PRIMARY KEY, user_name VARCHAR(100), messages TEXT)")
+                "CREATE TABLE chat_history (conv_uid VARCHAR(100) PRIMARY KEY, chat_mode VARCHAR(50), summary VARCHAR(255),  user_name VARCHAR(100), messages TEXT)")
 
     def __get_messages_by_conv_uid(self, conv_uid: str):
         cursor = self.connect.cursor()
@@ -47,12 +47,24 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
             return content[0]
         else:
             return None
+
     def messages(self) -> List[OnceConversation]:
         context = self.__get_messages_by_conv_uid(self.chat_seesion_id)
         if context:
             conversations: List[OnceConversation] = json.loads(context)
             return conversations
         return []
+
+    def create(self, chat_mode, summary: str, user_name: str) -> None:
+        try:
+            cursor = self.connect.cursor()
+            cursor.execute(
+                "INSERT INTO chat_history(conv_uid, chat_mode summary, user_name, messages)VALUES(?,?,?,?,?)",
+                [self.chat_seesion_id, chat_mode, summary, user_name, ""])
+            cursor.commit()
+            self.connect.commit()
+        except Exception as e:
+            print("init create conversation log error！" + str(e))
 
     def append(self, once_message: OnceConversation) -> None:
         context = self.__get_messages_by_conv_uid(self.chat_seesion_id)
@@ -65,8 +77,9 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
             cursor.execute("UPDATE chat_history set messages=? where conv_uid=?",
                            [json.dumps(conversations, ensure_ascii=False), self.chat_seesion_id])
         else:
-            cursor.execute("INSERT INTO chat_history(conv_uid, user_name, messages)VALUES(?,?,?)",
-                           [self.chat_seesion_id, "", json.dumps(conversations, ensure_ascii=False)])
+            cursor.execute(
+                "INSERT INTO chat_history(conv_uid, chat_mode,  summary, user_name, messages)VALUES(?,?,?,?,?)",
+                [self.chat_seesion_id, once_message.chat_mode, once_message.get_user_conv().content, "",json.dumps(conversations, ensure_ascii=False)])
         cursor.commit()
         self.connect.commit()
 
@@ -103,11 +116,11 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
 
         return []
 
-
-    def get_messages(self)-> List[OnceConversation]:
+    def get_messages(self) -> List[OnceConversation]:
         cursor = self.connect.cursor()
         cursor.execute("SELECT messages FROM chat_history where conv_uid=?", [self.chat_seesion_id])
         context = cursor.fetchone()
         if context:
-            return json.loads(context[0])
+            if context[0]:
+                return json.loads(context[0])
         return None

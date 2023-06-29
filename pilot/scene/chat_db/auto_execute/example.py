@@ -1,5 +1,5 @@
 from pilot.prompts.example_base import ExampleSelector
-
+from pilot.common.schema import ExampleType
 ## Two examples are defined by default
 EXAMPLES = [
     {
@@ -36,4 +36,4 @@ EXAMPLES = [
     },
 ]
 
-plugin_example = ExampleSelector(examples_record=EXAMPLES, use_example=True)
+sql_data_example = ExampleSelector(examples_record=EXAMPLES, use_example=True, type=ExampleType.ONE_SHOT.value)
