@@ -2,12 +2,13 @@
 
 import { useSearchParams } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
-import { Table, Stack } from '@/lib/mui'
+import { useColorScheme, Table, Stack } from '@/lib/mui'
 import { Popover, Pagination } from 'antd'
-import { fetchURL } from '@/app/datastores/constants';
+import { fetchBaseURL } from '@/app/datastores/constants'
 const page_size = 20
 
 const ChunkList = () => {
+  const { mode } = useColorScheme()
   const spaceName = useSearchParams().get('spacename')
   const documentId = useSearchParams().get('documentid')
   const [total, setTotal] = useState<number>(0)
@@ -16,7 +17,7 @@ const ChunkList = () => {
   useEffect(() => {
     async function fetchChunks() {
       const res = await fetch(
-        `${fetchURL}/knowledge/${spaceName}/chunk/list`,
+        `${fetchBaseURL}/knowledge/${spaceName}/chunk/list`,
         {
           method: 'POST',
           headers: {
@@ -42,7 +43,20 @@ const ChunkList = () => {
     <div className="p-4">
       {chunkList.length ? (
         <>
-          <Table color="info" variant="soft" size="lg">
+          <Table
+            color="info"
+            variant="soft"
+            size="lg"
+            sx={{
+              '& tbody tr: hover': {
+                backgroundColor:
+                  mode === 'light' ? 'rgb(246, 246, 246)' : 'rgb(33, 33, 40)'
+              },
+              '& tbody tr: hover a': {
+                textDecoration: 'underline'
+              }
+            }}
+          >
             <thead>
               <tr>
                 <th>Name</th>
@@ -79,9 +93,13 @@ const ChunkList = () => {
               ))}
             </tbody>
           </Table>
-          <Stack direction="row" justifyContent="flex-end" sx={{
-            marginTop: '20px'
-          }}>
+          <Stack
+            direction="row"
+            justifyContent="flex-end"
+            sx={{
+              marginTop: '20px'
+            }}
+          >
             <Pagination
               defaultPageSize={20}
               showSizeChanger={false}
@@ -89,7 +107,7 @@ const ChunkList = () => {
               total={total}
               onChange={async (page) => {
                 const res = await fetch(
-                  `${fetchURL}/knowledge/${spaceName}/chunk/list`,
+                  `${fetchBaseURL}/knowledge/${spaceName}/chunk/list`,
                   {
                     method: 'POST',
                     headers: {
