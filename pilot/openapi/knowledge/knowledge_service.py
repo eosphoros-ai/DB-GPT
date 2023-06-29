@@ -25,6 +25,7 @@ from pilot.openapi.knowledge.request.knowledge_request import (
 )
 from enum import Enum
 
+from pilot.openapi.knowledge.request.knowledge_response import ChunkQueryResponse, DocumentQueryResponse
 
 knowledge_space_dao = KnowledgeSpaceDao()
 knowledge_document_dao = KnowledgeDocumentDao()
@@ -93,9 +94,13 @@ class KnowledgeService:
             space=space,
             status=request.status,
         )
-        return knowledge_document_dao.get_knowledge_documents(
+        res = DocumentQueryResponse()
+        res.data = knowledge_document_dao.get_knowledge_documents(
             query, page=request.page, page_size=request.page_size
         )
+        res.total = knowledge_document_dao.get_knowledge_documents_count(query)
+        res.page = request.page
+        return res
 
     """sync knowledge document chunk into vector store"""
 
@@ -164,9 +169,13 @@ class KnowledgeService:
             doc_name=request.doc_name,
             doc_type=request.doc_type,
         )
-        return document_chunk_dao.get_document_chunks(
+        res = ChunkQueryResponse()
+        res.data = document_chunk_dao.get_document_chunks(
             query, page=request.page, page_size=request.page_size
         )
+        res.total = document_chunk_dao.get_document_chunks_count(query)
+        res.page = request.page
+        return res
 
     def async_doc_embedding(self, client, chunk_docs, doc):
         logger.info(
