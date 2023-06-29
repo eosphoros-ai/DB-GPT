@@ -2,12 +2,15 @@
 
 import { useSearchParams } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
-import { Table } from '@/lib/mui'
-import { Popover } from 'antd'
+import { Table, Stack } from '@/lib/mui'
+import { Popover, Pagination } from 'antd'
+const page_size = 20;
 
 const ChunkList = () => {
   const spaceName = useSearchParams().get('spacename')
   const documentId = useSearchParams().get('documentid')
+  const [total, setTotal] = useState<number>(0);
+  const [current, setCurrent] = useState<number>(0);
   const [chunkList, setChunkList] = useState<any>([])
   useEffect(() => {
     async function fetchChunks() {
@@ -19,13 +22,17 @@ const ChunkList = () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            document_id: documentId
+            document_id: documentId,
+            page: 1,
+            page_size
           })
         }
       )
       const data = await res.json()
       if (data.success) {
-        setChunkList(data.data)
+        setChunkList(data.data.data)
+        setTotal(data.data.total);
+        setCurrent(data.data.page);
       }
     }
     fetchChunks()
@@ -69,6 +76,30 @@ const ChunkList = () => {
           ))}
         </tbody>
       </Table>
+      <Stack direction="row" justifyContent="flex-end">
+        <Pagination current={current} total={total} onChange={async page => {
+          const res = await fetch(
+            `http://localhost:8000/knowledge/${spaceName}/chunk/list`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                document_id: documentId,
+                page,
+                page_size
+              })
+            }
+          )
+          const data = await res.json()
+          if (data.success) {
+            setChunkList(data.data.data)
+            setTotal(data.data.total);
+            setCurrent(data.data.page);
+          }
+        }} hideOnSinglePage />
+      </Stack>
     </div>
   )
 }
