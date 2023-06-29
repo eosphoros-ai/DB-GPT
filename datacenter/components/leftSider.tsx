@@ -1,20 +1,23 @@
 "use client";
-import React, { useEffect, useMemo, useState } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import React, { useEffect, useMemo } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Box, List, ListItem, ListItemButton, ListItemDecorator, ListItemContent, Typography, Button, useColorScheme } from '@/lib/mui';
+import { Popconfirm } from 'antd';
+import { Box, List, ListItem, ListItemButton, ListItemDecorator, ListItemContent, Typography, Button, useColorScheme, IconButton } from '@/lib/mui';
 import Article from '@mui/icons-material/Article';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
-import { useQueryDialog } from '@/hooks/useQueryDialogue';
+import { useDialogueContext } from '@/app/context/dialogue';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import { sendPostRequest } from '@/utils/request';
 
 const LeftSider =  () => {
   const pathname = usePathname();
+	const router = useRouter();
+	const { dialogueList, queryDialogueList, refreshDialogList } = useDialogueContext();
 	const { mode, setMode } = useColorScheme();
-	const { dialogueList } = useQueryDialog();
 
 	const menus = useMemo(() => {
 		return [{
@@ -32,6 +35,12 @@ const LeftSider =  () => {
 			setMode('light');
 		}
 	};
+
+	useEffect(() => {
+		(async () => {
+			await queryDialogueList();
+		})();
+	}, []);
 
 	return (
 		<>
@@ -80,7 +89,7 @@ const LeftSider =  () => {
 						}}
 					>
 						<Link href={`/`}>
-							<Button variant="outlined" color="primary" className='w-full'>+ 新建对话</Button>
+							<Button variant="outlined" color="primary" className='w-full'>+ New Chat</Button>
 						</Link>
 					</Box>
 					<Box
@@ -112,13 +121,30 @@ const LeftSider =  () => {
 													variant={isSelect ? 'soft' : 'plain'}
 												>
 													<ListItemContent>
-														<Link href={`/agents/${each.conv_uid}`}>
+														<Link href={`/agents/${each.conv_uid}?scene=${each?.chat_mode}`}>
 															<Typography fontSize={14} noWrap={true}>
 																{each?.user_name || each?.user_input || 'undefined'}
 															</Typography>
 														</Link>
 													</ListItemContent>
 												</ListItemButton>
+												<Popconfirm
+													title="删除对话"
+													description="确认要删除该对话吗"
+													onConfirm={async() => {
+														await sendPostRequest(`v1/chat/dialogue/delete?con_uid=${each.conv_uid}`);
+														await refreshDialogList();
+														if (pathname === `/agents/${each.conv_uid}`) {
+															router.push('/');
+														}
+													}}
+													okText="Yes"
+    											cancelText="No"
+												>
+													<IconButton color="neutral" variant="plain">
+														<DeleteOutlineOutlinedIcon />
+													</IconButton>
+												</Popconfirm>
 											</ListItem>
 										)
 									})}

@@ -1,3 +1,4 @@
+import { message } from 'antd';
 import axios from 'axios';
 import { isPlainObject } from 'lodash';
 
@@ -40,7 +41,10 @@ export const sendGetRequest = (url: string, qs?: { [key: string]: any }) => {
   }
 	return axios.get(url, {
     headers: DEFAULT_HEADERS
-  }).then(res => res).catch(err => Promise.reject(err));
+  }).then(res => res).catch(err => {
+    message.error(err);
+    Promise.reject(err);
+  });
 }
 
 export const sendPostRequest = (url: string, body?: any) => {
@@ -48,5 +52,8 @@ export const sendPostRequest = (url: string, body?: any) => {
   return axios.post(url, {
     body: reqBody,
     headers: DEFAULT_HEADERS
-  }).then(res => res).catch(err => Promise.reject(err));
+  }).then(res => res).catch(err => {
+    message.error(err);
+    Promise.reject(err);
+  });
 }

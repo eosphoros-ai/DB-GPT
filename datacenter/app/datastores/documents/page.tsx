@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import {
+  useColorScheme,
   Button,
   Table,
   Sheet,
@@ -18,6 +19,7 @@ import moment from 'moment'
 import { InboxOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import { Upload, Pagination, message } from 'antd'
+import { fetchBaseURL } from '@/app/datastores/constants'
 
 const { Dragger } = Upload
 const Item = styled(Sheet)(({ theme }) => ({
@@ -48,14 +50,16 @@ const documentTypeList = [
   {
     type: 'file',
     title: 'Document',
-    subTitle: 'Upload a document, document type can be PDF, CSV, Text, PowerPoint, Word, Markdown'
+    subTitle:
+      'Upload a document, document type can be PDF, CSV, Text, PowerPoint, Word, Markdown'
   }
 ]
-const page_size = 20;
+const page_size = 20
 
 const Documents = () => {
   const router = useRouter()
   const spaceName = useSearchParams().get('name')
+  const { mode } = useColorScheme()
   const [isAddDocumentModalShow, setIsAddDocumentModalShow] =
     useState<boolean>(false)
   const [activeStep, setActiveStep] = useState<number>(0)
@@ -85,7 +89,7 @@ const Documents = () => {
   useEffect(() => {
     async function fetchDocuments() {
       const res = await fetch(
-        `http://30.183.154.125:5000/knowledge/${spaceName}/document/list`,
+        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
         {
           method: 'POST',
           headers: {
@@ -123,7 +127,20 @@ const Documents = () => {
       </Sheet>
       {documents.length ? (
         <>
-          <Table color="neutral" stripe="odd" variant="outlined">
+          <Table
+            color="info"
+            variant="soft"
+            size="lg"
+            sx={{
+              '& tbody tr: hover': {
+                backgroundColor:
+                  mode === 'light' ? 'rgb(246, 246, 246)' : 'rgb(33, 33, 40)'
+              },
+              '& tbody tr: hover a': {
+                textDecoration: 'underline'
+              }
+            }}
+          >
             <thead>
               <tr>
                 <th>Name</th>
@@ -138,11 +155,21 @@ const Documents = () => {
               {documents.map((row: any) => (
                 <tr key={row.id}>
                   <td>{row.doc_name}</td>
-                  <td>{row.doc_type}</td>
-                  <td>{row.chunk_size}</td>
+                  <td>
+                    <Chip
+                      variant="soft"
+                      color="neutral"
+                      sx={{ fontWeight: 300 }}
+                    >
+                      {row.doc_type}
+                    </Chip>
+                  </td>
+                  <td>{row.chunk_size} chunks</td>
                   <td>{moment(row.last_sync).format('YYYY-MM-DD HH:MM:SS')}</td>
                   <td>
                     <Chip
+                      sx={{ fontWeight: 300 }}
+                      variant="soft"
                       color={(function () {
                         switch (row.status) {
                           case 'TODO':
@@ -167,7 +194,7 @@ const Documents = () => {
                           size="sm"
                           onClick={async () => {
                             const res = await fetch(
-                              `http://30.183.154.125:5000/knowledge/${spaceName}/document/sync`,
+                              `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
                               {
                                 method: 'POST',
                                 headers: {
@@ -206,9 +233,13 @@ const Documents = () => {
               ))}
             </tbody>
           </Table>
-          <Stack direction="row" justifyContent="flex-end" sx={{
-            marginTop: '20px'
-          }}>
+          <Stack
+            direction="row"
+            justifyContent="flex-end"
+            sx={{
+              marginTop: '20px'
+            }}
+          >
             <Pagination
               defaultPageSize={20}
               showSizeChanger={false}
@@ -216,7 +247,7 @@ const Documents = () => {
               total={total}
               onChange={async (page) => {
                 const res = await fetch(
-                  `http://30.183.154.125:5000/knowledge/${spaceName}/document/list`,
+                  `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
                   {
                     method: 'POST',
                     headers: {
@@ -369,7 +400,7 @@ const Documents = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${spaceName}/document/add`,
+                      `${fetchBaseURL}/knowledge/${spaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
@@ -387,7 +418,7 @@ const Documents = () => {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
                       const res = await fetch(
-                        `http://30.183.154.125:5000/knowledge/${spaceName}/document/list`,
+                        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
                         {
                           method: 'POST',
                           headers: {
@@ -401,7 +432,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
                         setTotal(data.data.total)
                         setCurrent(data.data.page)
                       }
@@ -418,7 +449,7 @@ const Documents = () => {
                     formData.append('doc_file', originFileObj)
                     formData.append('doc_type', 'DOCUMENT')
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${spaceName}/document/upload`,
+                      `${fetchBaseURL}/knowledge/${spaceName}/document/upload`,
                       {
                         method: 'POST',
                         body: formData
@@ -429,7 +460,7 @@ const Documents = () => {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
                       const res = await fetch(
-                        `http://30.183.154.125:5000/knowledge/${spaceName}/document/list`,
+                        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
                         {
                           method: 'POST',
                           headers: {
@@ -443,7 +474,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
                         setTotal(data.data.total)
                         setCurrent(data.data.page)
                       }
@@ -456,7 +487,7 @@ const Documents = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${spaceName}/document/add`,
+                      `${fetchBaseURL}/knowledge/${spaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
@@ -475,7 +506,7 @@ const Documents = () => {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
                       const res = await fetch(
-                        `http://30.183.154.125:5000/knowledge/${spaceName}/document/list`,
+                        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
                         {
                           method: 'POST',
                           headers: {
@@ -489,7 +520,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
                         setTotal(data.data.total)
                         setCurrent(data.data.page)
                       }
