@@ -9,7 +9,8 @@ import sys
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
+
+# from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 global_counter = 0
@@ -41,11 +42,11 @@ class ModelWorker:
 
         if not isinstance(self.model, str):
             if hasattr(self.model, "config") and hasattr(
-                    self.model.config, "max_sequence_length"
+                self.model.config, "max_sequence_length"
             ):
                 self.context_len = self.model.config.max_sequence_length
             elif hasattr(self.model, "config") and hasattr(
-                    self.model.config, "max_position_embeddings"
+                self.model.config, "max_position_embeddings"
             ):
                 self.context_len = self.model.config.max_position_embeddings
 
@@ -60,22 +61,22 @@ class ModelWorker:
 
     def get_queue_length(self):
         if (
-                model_semaphore is None
-                or model_semaphore._value is None
-                or model_semaphore._waiters is None
+            model_semaphore is None
+            or model_semaphore._value is None
+            or model_semaphore._waiters is None
         ):
             return 0
         else:
             (
-                    CFG.LIMIT_MODEL_CONCURRENCY
-                    - model_semaphore._value
-                    + len(model_semaphore._waiters)
+                CFG.LIMIT_MODEL_CONCURRENCY
+                - model_semaphore._value
+                + len(model_semaphore._waiters)
             )
 
     def generate_stream_gate(self, params):
         try:
             for output in self.generate_stream_func(
-                    self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
+                self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
                 # Please do not open the output in production!
                 # The gpt4all thread shares stdout with the parent process,
@@ -107,23 +108,23 @@ worker = ModelWorker(
 )
 
 app = FastAPI()
-from pilot.openapi.knowledge.knowledge_controller import router
-
-app.include_router(router)
-
-origins = [
-    "http://localhost",
-    "http://localhost:8000",
-    "http://localhost:3000",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# from pilot.openapi.knowledge.knowledge_controller import router
+#
+# app.include_router(router)
+#
+# origins = [
+#     "http://localhost",
+#     "http://localhost:8000",
+#     "http://localhost:3000",
+# ]
+#
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 
 class PromptRequest(BaseModel):

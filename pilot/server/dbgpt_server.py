@@ -23,8 +23,11 @@ from fastapi import FastAPI, applications
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from pilot.openapi.knowledge.knowledge_controller import router as knowledge_router
+
 
 from pilot.openapi.api_v1.api_v1 import router as api_v1, validation_exception_handler
+
 
 static_file_path = os.path.join(os.getcwd(), "server/static")
 
@@ -34,9 +37,10 @@ logger = build_logger("webserver", LOGDIR + "webserver.log")
 
 def swagger_monkey_patch(*args, **kwargs):
     return get_swagger_ui_html(
-        *args, **kwargs,
-        swagger_js_url='https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js',
-        swagger_css_url='https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css'
+        *args,
+        **kwargs,
+        swagger_js_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js",
+        swagger_css_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css"
     )
 
 
@@ -55,14 +59,16 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory=static_file_path), name="static")
-app.add_route("/test",  "static/test.html")
-
+app.add_route("/test", "static/test.html")
+app.include_router(knowledge_router)
 app.include_router(api_v1)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_list_mode", type=str, default="once", choices=["once", "reload"])
+    parser.add_argument(
+        "--model_list_mode", type=str, default="once", choices=["once", "reload"]
+    )
 
     # old version server config
     parser.add_argument("--host", type=str, default="0.0.0.0")
@@ -75,4 +81,5 @@ if __name__ == "__main__":
     server_init(args)
     CFG.NEW_SERVER_MODE = True
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=5000)
