@@ -267,7 +267,6 @@ const Documents = () => {
                   onChange={(e: any) => setDocumentName(e.target.value)}
                   sx={{ marginBottom: '20px' }}
                 />
-                Web Page URL:
                 {documentType === 'webPage' ? (
                   <>
                     Web Page URL:
