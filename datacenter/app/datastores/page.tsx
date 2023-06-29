@@ -39,17 +39,17 @@ const documentTypeList = [
   {
     type: 'text',
     title: 'Text',
-    subTitle: 'Paste some text'
+    subTitle: 'Fill your raw text'
   },
   {
     type: 'webPage',
-    title: 'Web Page',
-    subTitle: 'Crawl text from a web page'
+    title: 'URL',
+    subTitle: 'Fetch the content of a URL'
   },
   {
     type: 'file',
-    title: 'File',
-    subTitle: 'It can be: PDF, CSV, JSON, Text, PowerPoint, Word, Excel'
+    title: 'Document',
+    subTitle: 'Upload a document, document type can be PDF, CSV, Text, PowerPoint, Word, Markdown'
   }
 ]
 
@@ -125,11 +125,11 @@ const Index = () => {
       </Sheet>
       <div className="page-body p-4">
         {knowledgeSpaceList.length ? (
-          <Table color="neutral" stripe="odd" variant="outlined">
+          <Table color="info" variant="soft" size="lg">
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Provider</th>
+                <th>Vector</th>
                 <th>Owner</th>
               </tr>
             </thead>
