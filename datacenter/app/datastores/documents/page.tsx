@@ -10,6 +10,7 @@ import {
   Box,
   Stack,
   Input,
+  Textarea,
   Chip,
   styled
 } from '@/lib/mui'
@@ -61,6 +62,8 @@ const Documents = () => {
   const [documents, setDocuments] = useState<any>([])
   const [webPageUrl, setWebPageUrl] = useState<string>('')
   const [documentName, setDocumentName] = useState<any>('')
+  const [textSource, setTextSource] = useState<string>('');
+  const [text, setText] = useState<string>('');
   const [originFileObj, setOriginFileObj] = useState<any>(null)
   const props: UploadProps = {
     name: 'file',
@@ -293,7 +296,20 @@ const Documents = () => {
                     </Dragger>
                   </>
                 ) : (
-                  <></>
+                  <>
+                    Source:
+                    <Input
+                      placeholder="Please input the source"
+                      onChange={(e: any) => setTextSource(e.target.value)}
+                      sx={{ marginBottom: '20px' }}
+                    />
+                    Text:
+                    <Textarea
+                      onChange={(e: any) => setText(e.target.value)}
+                      minRows={4}
+                      sx={{ marginBottom: '20px' }}
+                    />
+                  </>
                 )}
               </Box>
               <Button
@@ -356,6 +372,51 @@ const Documents = () => {
                       {
                         method: 'POST',
                         body: formData
+                      }
+                    )
+                    const data = await res.json()
+                    if (data.success) {
+                      message.success('success')
+                      setIsAddDocumentModalShow(false)
+                      const res = await fetch(
+                        `http://localhost:8000/knowledge/${spaceName}/document/list`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({})
+                        }
+                      )
+                      const data = await res.json()
+                      if (data.success) {
+                        setDocuments(data.data)
+                      }
+                    } else {
+                      message.error(data.err_msg || 'failed')
+                    }
+                  } else {
+                    if (textSource === '') {
+                      message.error('Please input the source')
+                      return
+                    }
+                    if (text === '') {
+                      message.error('Please input the text')
+                      return
+                    }
+                    const res = await fetch(
+                      `http://localhost:8000/knowledge/${spaceName}/document/add`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          doc_name: documentName,
+                          source: textSource,
+                          content: text,
+                          doc_type: 'TEXT'
+                        })
                       }
                     )
                     const data = await res.json()
