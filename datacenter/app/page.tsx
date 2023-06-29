@@ -28,8 +28,7 @@ export default function Home() {
         chat_mode: 'chat_normal'
       });
       if (res?.success && res?.data?.conv_uid) {
-        // router.push(`/agents/${res?.data?.conv_uid}?newMessage=${query}`);
-        // await refreshDialogList();
+        router.push(`/agents/${res?.data?.conv_uid}?initMessage=${query}`);
       }
     } catch (err) {
     } finally {
