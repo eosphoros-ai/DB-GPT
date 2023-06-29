@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import {
+  useColorScheme,
   Button,
   Table,
   Sheet,
@@ -17,7 +18,8 @@ import {
 import moment from 'moment'
 import { InboxOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
-import { Upload, message } from 'antd'
+import { Upload, Pagination, message } from 'antd'
+import { fetchBaseURL } from '@/app/datastores/constants'
 
 const { Dragger } = Upload
 const Item = styled(Sheet)(({ theme }) => ({
@@ -38,23 +40,26 @@ const documentTypeList = [
   {
     type: 'text',
     title: 'Text',
-    subTitle: 'Paste some text'
+    subTitle: 'Fill your raw text'
   },
   {
     type: 'webPage',
-    title: 'Web Page',
-    subTitle: 'Crawl text from a web page'
+    title: 'URL',
+    subTitle: 'Fetch the content of a URL'
   },
   {
     type: 'file',
-    title: 'File',
-    subTitle: 'It can be: PDF, CSV, JSON, Text, PowerPoint, Word, Excel'
+    title: 'Document',
+    subTitle:
+      'Upload a document, document type can be PDF, CSV, Text, PowerPoint, Word, Markdown'
   }
 ]
+const page_size = 20
 
 const Documents = () => {
   const router = useRouter()
   const spaceName = useSearchParams().get('name')
+  const { mode } = useColorScheme()
   const [isAddDocumentModalShow, setIsAddDocumentModalShow] =
     useState<boolean>(false)
   const [activeStep, setActiveStep] = useState<number>(0)
@@ -62,9 +67,11 @@ const Documents = () => {
   const [documents, setDocuments] = useState<any>([])
   const [webPageUrl, setWebPageUrl] = useState<string>('')
   const [documentName, setDocumentName] = useState<any>('')
-  const [textSource, setTextSource] = useState<string>('');
-  const [text, setText] = useState<string>('');
+  const [textSource, setTextSource] = useState<string>('')
+  const [text, setText] = useState<string>('')
   const [originFileObj, setOriginFileObj] = useState<any>(null)
+  const [total, setTotal] = useState<number>(0)
+  const [current, setCurrent] = useState<number>(0)
   const props: UploadProps = {
     name: 'file',
     multiple: false,
@@ -82,18 +89,23 @@ const Documents = () => {
   useEffect(() => {
     async function fetchDocuments() {
       const res = await fetch(
-        `http://localhost:8000/knowledge/${spaceName}/document/list`,
+        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({})
+          body: JSON.stringify({
+            page: 1,
+            page_size
+          })
         }
       )
       const data = await res.json()
       if (data.success) {
-        setDocuments(data.data)
+        setDocuments(data.data.data)
+        setTotal(data.data.total)
+        setCurrent(data.data.page)
       }
     }
     fetchDocuments()
@@ -113,89 +125,154 @@ const Documents = () => {
           + Add Datasource
         </Button>
       </Sheet>
-      <Table color="neutral" stripe="odd" variant="outlined">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Size</th>
-            <th>Last Synch</th>
-            <th>Status</th>
-            <th>Operation</th>
-          </tr>
-        </thead>
-        <tbody>
-          {documents.map((row: any) => (
-            <tr key={row.id}>
-              <td>{row.doc_name}</td>
-              <td>{row.doc_type}</td>
-              <td>{row.chunk_size}</td>
-              <td>{moment(row.last_sync).format('YYYY-MM-DD HH:MM:SS')}</td>
-              <td>
-                <Chip
-                  color={(function () {
-                    switch (row.status) {
-                      case 'TODO':
-                        return 'neutral'
-                      case 'RUNNING':
-                        return 'primary'
-                      case 'FINISHED':
-                        return 'success'
-                      case 'FAILED':
-                        return 'danger'
-                    }
-                  })()}
-                >
-                  {row.status}
-                </Chip>
-              </td>
-              <td>
-                {
-                  <>
-                    <Button
-                      variant="outlined"
-                      size="sm"
-                      onClick={async () => {
-                        const res = await fetch(
-                          `http://localhost:8000/knowledge/${spaceName}/document/sync`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              doc_ids: [row.id]
-                            })
-                          }
-                        )
-                        const data = await res.json()
-                        if (data.success) {
-                          message.success('success')
-                        } else {
-                          message.error(data.err_msg || 'failed')
+      {documents.length ? (
+        <>
+          <Table
+            color="info"
+            variant="soft"
+            size="lg"
+            sx={{
+              '& tbody tr: hover': {
+                backgroundColor:
+                  mode === 'light' ? 'rgb(246, 246, 246)' : 'rgb(33, 33, 40)'
+              },
+              '& tbody tr: hover a': {
+                textDecoration: 'underline'
+              }
+            }}
+          >
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Last Synch</th>
+                <th>Status</th>
+                <th>Operation</th>
+              </tr>
+            </thead>
+            <tbody>
+              {documents.map((row: any) => (
+                <tr key={row.id}>
+                  <td>{row.doc_name}</td>
+                  <td>
+                    <Chip
+                      variant="soft"
+                      color="neutral"
+                      sx={{ fontWeight: 300 }}
+                    >
+                      {row.doc_type}
+                    </Chip>
+                  </td>
+                  <td>{row.chunk_size} chunks</td>
+                  <td>{moment(row.last_sync).format('YYYY-MM-DD HH:MM:SS')}</td>
+                  <td>
+                    <Chip
+                      sx={{ fontWeight: 300 }}
+                      variant="soft"
+                      color={(function () {
+                        switch (row.status) {
+                          case 'TODO':
+                            return 'neutral'
+                          case 'RUNNING':
+                            return 'primary'
+                          case 'FINISHED':
+                            return 'success'
+                          case 'FAILED':
+                            return 'danger'
                         }
-                      }}
+                      })()}
                     >
-                      Synch
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="sm"
-                      onClick={() => {
-                        router.push(
-                          `/datastores/documents/chunklist?spacename=${spaceName}&documentid=${row.id}`
-                        )
-                      }}
-                    >
-                      Detail of Chunks
-                    </Button>
-                  </>
+                      {row.status}
+                    </Chip>
+                  </td>
+                  <td>
+                    {
+                      <>
+                        <Button
+                          variant="outlined"
+                          size="sm"
+                          onClick={async () => {
+                            const res = await fetch(
+                              `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                              {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                  doc_ids: [row.id]
+                                })
+                              }
+                            )
+                            const data = await res.json()
+                            if (data.success) {
+                              message.success('success')
+                            } else {
+                              message.error(data.err_msg || 'failed')
+                            }
+                          }}
+                        >
+                          Synch
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="sm"
+                          onClick={() => {
+                            router.push(
+                              `/datastores/documents/chunklist?spacename=${spaceName}&documentid=${row.id}`
+                            )
+                          }}
+                        >
+                          Detail of Chunks
+                        </Button>
+                      </>
+                    }
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+          <Stack
+            direction="row"
+            justifyContent="flex-end"
+            sx={{
+              marginTop: '20px'
+            }}
+          >
+            <Pagination
+              defaultPageSize={20}
+              showSizeChanger={false}
+              current={current}
+              total={total}
+              onChange={async (page) => {
+                const res = await fetch(
+                  `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      page,
+                      page_size
+                    })
+                  }
+                )
+                const data = await res.json()
+                if (data.success) {
+                  setDocuments(data.data.data)
+                  setTotal(data.data.total)
+                  setCurrent(data.data.page)
                 }
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+              }}
+              hideOnSinglePage
+            />
+          </Stack>
+        </>
+      ) : (
+        <></>
+      )}
       <Modal
         sx={{
           display: 'flex',
@@ -296,9 +373,9 @@ const Documents = () => {
                   </>
                 ) : (
                   <>
-                    Source:
+                    Text Source(Optional):
                     <Input
-                      placeholder="Please input the source"
+                      placeholder="Please input the text source"
                       onChange={(e: any) => setTextSource(e.target.value)}
                       sx={{ marginBottom: '20px' }}
                     />
@@ -323,7 +400,7 @@ const Documents = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://localhost:8000/knowledge/${spaceName}/document/add`,
+                      `${fetchBaseURL}/knowledge/${spaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
@@ -341,18 +418,23 @@ const Documents = () => {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
                       const res = await fetch(
-                        `http://localhost:8000/knowledge/${spaceName}/document/list`,
+                        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
                         {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json'
                           },
-                          body: JSON.stringify({})
+                          body: JSON.stringify({
+                            page: current,
+                            page_size
+                          })
                         }
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
+                        setTotal(data.data.total)
+                        setCurrent(data.data.page)
                       }
                     } else {
                       message.error(data.err_msg || 'failed')
@@ -362,12 +444,12 @@ const Documents = () => {
                       message.error('Please select a file')
                       return
                     }
-                    const formData = new FormData();
-                    formData.append('doc_name', documentName);
-                    formData.append('doc_file', originFileObj);
-                    formData.append('doc_type', 'DOCUMENT');
+                    const formData = new FormData()
+                    formData.append('doc_name', documentName)
+                    formData.append('doc_file', originFileObj)
+                    formData.append('doc_type', 'DOCUMENT')
                     const res = await fetch(
-                      `http://localhost:8000/knowledge/${spaceName}/document/upload`,
+                      `${fetchBaseURL}/knowledge/${spaceName}/document/upload`,
                       {
                         method: 'POST',
                         body: formData
@@ -378,33 +460,34 @@ const Documents = () => {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
                       const res = await fetch(
-                        `http://localhost:8000/knowledge/${spaceName}/document/list`,
+                        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
                         {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json'
                           },
-                          body: JSON.stringify({})
+                          body: JSON.stringify({
+                            page: current,
+                            page_size
+                          })
                         }
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
+                        setTotal(data.data.total)
+                        setCurrent(data.data.page)
                       }
                     } else {
                       message.error(data.err_msg || 'failed')
                     }
                   } else {
-                    if (textSource === '') {
-                      message.error('Please input the source')
-                      return
-                    }
                     if (text === '') {
                       message.error('Please input the text')
                       return
                     }
                     const res = await fetch(
-                      `http://localhost:8000/knowledge/${spaceName}/document/add`,
+                      `${fetchBaseURL}/knowledge/${spaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
@@ -423,18 +506,23 @@ const Documents = () => {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
                       const res = await fetch(
-                        `http://localhost:8000/knowledge/${spaceName}/document/list`,
+                        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
                         {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json'
                           },
-                          body: JSON.stringify({})
+                          body: JSON.stringify({
+                            page: current,
+                            page_size
+                          })
                         }
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
+                        setTotal(data.data.total)
+                        setCurrent(data.data.page)
                       }
                     } else {
                       message.error(data.err_msg || 'failed')
