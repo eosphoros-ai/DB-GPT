@@ -16,6 +16,7 @@ import {
   Textarea,
   styled
 } from '@/lib/mui'
+import { fetchURL } from '@/app/datastores/constants';
 
 const { Dragger } = Upload
 
@@ -83,7 +84,7 @@ const Index = () => {
   useEffect(() => {
     async function fetchData() {
       const res = await fetch(
-        'http://30.183.154.125:5000/knowledge/space/list',
+        `${fetchURL}/knowledge/space/list`,
         {
           method: 'POST',
           headers: {
@@ -206,7 +207,7 @@ const Index = () => {
                     return
                   }
                   const res = await fetch(
-                    'http://30.183.154.125:5000/knowledge/space/add',
+                    `${fetchURL}/knowledge/space/add`,
                     {
                       method: 'POST',
                       headers: {
@@ -225,7 +226,7 @@ const Index = () => {
                     message.success('success')
                     setActiveStep(1)
                     const res = await fetch(
-                      'http://30.183.154.125:5000/knowledge/space/list',
+                      `${fetchURL}/knowledge/space/list`,
                       {
                         method: 'POST',
                         headers: {
@@ -342,7 +343,7 @@ const Index = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${knowledgeSpaceName}/document/add`,
+                      `${fetchURL}/knowledge/${knowledgeSpaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
@@ -372,7 +373,7 @@ const Index = () => {
                     formData.append('doc_file', originFileObj)
                     formData.append('doc_type', 'DOCUMENT')
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${knowledgeSpaceName}/document/upload`,
+                      `${fetchURL}/knowledge/${knowledgeSpaceName}/document/upload`,
                       {
                         method: 'POST',
                         body: formData
@@ -391,7 +392,7 @@ const Index = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${knowledgeSpaceName}/document/add`,
+                      `${fetchURL}/knowledge/${knowledgeSpaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
