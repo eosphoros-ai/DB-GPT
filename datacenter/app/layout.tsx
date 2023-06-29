@@ -5,12 +5,12 @@ import LeftSider from '@/components/leftSider';
 import { CssVarsProvider, ThemeProvider } from '@mui/joy/styles';
 import { joyTheme } from './defaultTheme';
 import TopProgressBar from '@/components/topProgressBar';
-
-export default function RootLayout({
+function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+
   return (
     <html lang="en" className="h-full font-sans">
       <body className={`h-full font-sans`}>
@@ -31,3 +31,5 @@ export default function RootLayout({
     </html>
   )
 }
+
+export default RootLayout;
