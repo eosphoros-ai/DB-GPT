@@ -203,7 +203,7 @@ const Agents = () => {
             </Stack>
           </Grid>
           <Grid xs={4}>
-            <ChatBoxComp messages={history} onSubmit={handleChatSubmit}/>
+            <ChatBoxComp messages={[]} onSubmit={handleChatSubmit}/>
           </Grid>
         </Grid>
       </div>
