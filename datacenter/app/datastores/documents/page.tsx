@@ -123,7 +123,7 @@ const Documents = () => {
       </Sheet>
       {documents.length ? (
         <>
-          <Table color="neutral" stripe="odd" variant="outlined">
+          <Table color="info" variant="soft" size="lg">
             <thead>
               <tr>
                 <th>Name</th>
@@ -401,7 +401,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
                         setTotal(data.data.total)
                         setCurrent(data.data.page)
                       }
@@ -443,7 +443,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
                         setTotal(data.data.total)
                         setCurrent(data.data.page)
                       }
@@ -489,7 +489,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
                         setTotal(data.data.total)
                         setCurrent(data.data.page)
                       }
