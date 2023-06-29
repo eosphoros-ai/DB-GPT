@@ -2,13 +2,13 @@ import uuid
 import json
 import asyncio
 import time
+import os
 from fastapi import APIRouter, Request, Body, status, HTTPException, Response, BackgroundTasks
 
-from fastapi.responses import JSONResponse
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 from typing import List
 
@@ -34,7 +34,7 @@ knowledge_service = KnowledgeService()
 
 model_semaphore = None
 global_counter = 0
-
+static_file_path = os.path.join(os.getcwd(), "server/static")
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     message = ""
@@ -82,6 +82,9 @@ def knowledge_list():
         params.update({space.name: space.name})
     return params
 
+@router.get("/")
+async def read_main():
+    return FileResponse(f"{static_file_path}/test.html")
 
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
