@@ -10,11 +10,26 @@ import {
   Box,
   Stack,
   Input,
+  Textarea,
+  Chip,
   styled
 } from '@/lib/mui'
 import moment from 'moment'
-import { message } from 'antd'
+import { InboxOutlined } from '@ant-design/icons'
+import type { UploadProps } from 'antd'
+import { Upload, message } from 'antd'
 
+const { Dragger } = Upload
+const Item = styled(Sheet)(({ theme }) => ({
+  width: '50%',
+  backgroundColor:
+    theme.palette.mode === 'dark' ? theme.palette.background.level1 : '#fff',
+  ...theme.typography.body2,
+  padding: theme.spacing(1),
+  textAlign: 'center',
+  borderRadius: 4,
+  color: theme.vars.palette.text.secondary
+}))
 const stepsOfAddingDocument = [
   'Choose a Datasource type',
   'Setup the Datasource'
@@ -36,16 +51,6 @@ const documentTypeList = [
     subTitle: 'It can be: PDF, CSV, JSON, Text, PowerPoint, Word, Excel'
   }
 ]
-const Item = styled(Sheet)(({ theme }) => ({
-  width: '50%',
-  backgroundColor:
-    theme.palette.mode === 'dark' ? theme.palette.background.level1 : '#fff',
-  ...theme.typography.body2,
-  padding: theme.spacing(1),
-  textAlign: 'center',
-  borderRadius: 4,
-  color: theme.vars.palette.text.secondary
-}))
 
 const Documents = () => {
   const router = useRouter()
@@ -53,9 +58,27 @@ const Documents = () => {
   const [isAddDocumentModalShow, setIsAddDocumentModalShow] =
     useState<boolean>(false)
   const [activeStep, setActiveStep] = useState<number>(0)
+  const [documentType, setDocumentType] = useState<string>('')
   const [documents, setDocuments] = useState<any>([])
   const [webPageUrl, setWebPageUrl] = useState<string>('')
-  const [documentName, setDocumentName] = useState<string>('')
+  const [documentName, setDocumentName] = useState<any>('')
+  const [textSource, setTextSource] = useState<string>('');
+  const [text, setText] = useState<string>('');
+  const [originFileObj, setOriginFileObj] = useState<any>(null)
+  const props: UploadProps = {
+    name: 'file',
+    multiple: false,
+    onChange(info) {
+      console.log(info)
+      if (info.fileList.length === 0) {
+        setOriginFileObj(null)
+        setDocumentName('')
+        return
+      }
+      setOriginFileObj(info.file.originFileObj)
+      setDocumentName(info.file.originFileObj?.name)
+    }
+  }
   useEffect(() => {
     async function fetchDocuments() {
       const res = await fetch(
@@ -90,7 +113,7 @@ const Documents = () => {
           + Add Datasource
         </Button>
       </Sheet>
-      <Table sx={{ '& thead th:nth-child(1)': { width: '40%' } }}>
+      <Table color="neutral" stripe="odd" variant="outlined">
         <thead>
           <tr>
             <th>Name</th>
@@ -108,12 +131,30 @@ const Documents = () => {
               <td>{row.doc_type}</td>
               <td>{row.chunk_size}</td>
               <td>{moment(row.last_sync).format('YYYY-MM-DD HH:MM:SS')}</td>
-              <td>{row.status}</td>
+              <td>
+                <Chip
+                  color={(function () {
+                    switch (row.status) {
+                      case 'TODO':
+                        return 'neutral'
+                      case 'RUNNING':
+                        return 'primary'
+                      case 'FINISHED':
+                        return 'success'
+                      case 'FAILED':
+                        return 'danger'
+                    }
+                  })()}
+                >
+                  {row.status}
+                </Chip>
+              </td>
               <td>
                 {
                   <>
                     <Button
                       variant="outlined"
+                      size="sm"
                       onClick={async () => {
                         const res = await fetch(
                           `http://localhost:8000/knowledge/${spaceName}/document/sync`,
@@ -139,6 +180,7 @@ const Documents = () => {
                     </Button>
                     <Button
                       variant="outlined"
+                      size="sm"
                       onClick={() => {
                         router.push(
                           `/datastores/documents/chunklist?spacename=${spaceName}&documentid=${row.id}`
@@ -204,9 +246,8 @@ const Documents = () => {
                       cursor: 'pointer'
                     }}
                     onClick={() => {
-                      if (item.type === 'webPage') {
-                        setActiveStep(1)
-                      }
+                      setDocumentType(item.type)
+                      setActiveStep(1)
                     }}
                   >
                     <Sheet sx={{ fontSize: '20px', fontWeight: 'bold' }}>
@@ -226,11 +267,49 @@ const Documents = () => {
                   onChange={(e: any) => setDocumentName(e.target.value)}
                   sx={{ marginBottom: '20px' }}
                 />
-                Web Page URL:
-                <Input
-                  placeholder="Please input the Web Page URL"
-                  onChange={(e: any) => setWebPageUrl(e.target.value)}
-                />
+                {documentType === 'webPage' ? (
+                  <>
+                    Web Page URL:
+                    <Input
+                      placeholder="Please input the Web Page URL"
+                      onChange={(e: any) => setWebPageUrl(e.target.value)}
+                    />
+                  </>
+                ) : documentType === 'file' ? (
+                  <>
+                    <Dragger {...props}>
+                      <p className="ant-upload-drag-icon">
+                        <InboxOutlined />
+                      </p>
+                      <p
+                        style={{ color: 'rgb(22, 108, 255)', fontSize: '20px' }}
+                      >
+                        Select or Drop file
+                      </p>
+                      <p
+                        className="ant-upload-hint"
+                        style={{ color: 'rgb(22, 108, 255)' }}
+                      >
+                        PDF, PowerPoint, Excel, Word, Text, Markdown,
+                      </p>
+                    </Dragger>
+                  </>
+                ) : (
+                  <>
+                    Source:
+                    <Input
+                      placeholder="Please input the source"
+                      onChange={(e: any) => setTextSource(e.target.value)}
+                      sx={{ marginBottom: '20px' }}
+                    />
+                    Text:
+                    <Textarea
+                      onChange={(e: any) => setText(e.target.value)}
+                      minRows={4}
+                      sx={{ marginBottom: '20px' }}
+                    />
+                  </>
+                )}
               </Box>
               <Button
                 onClick={async () => {
@@ -238,44 +317,128 @@ const Documents = () => {
                     message.error('Please input the name')
                     return
                   }
-                  if (webPageUrl === '') {
-                    message.error('Please input the Web Page URL')
-                    return
-                  }
-                  const res = await fetch(
-                    `http://localhost:8000/knowledge/${spaceName}/document/add`,
-                    {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                        doc_name: documentName,
-                        content: webPageUrl,
-                        doc_type: 'URL'
-                      })
+                  if (documentType === 'webPage') {
+                    if (webPageUrl === '') {
+                      message.error('Please input the Web Page URL')
+                      return
                     }
-                  )
-                  const data = await res.json()
-                  if (data.success) {
-                    message.success('success')
-                    setIsAddDocumentModalShow(false)
                     const res = await fetch(
-                      `http://localhost:8000/knowledge/${spaceName}/document/list`,
+                      `http://localhost:8000/knowledge/${spaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
                           'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({})
+                        body: JSON.stringify({
+                          doc_name: documentName,
+                          content: webPageUrl,
+                          doc_type: 'URL'
+                        })
                       }
                     )
                     const data = await res.json()
                     if (data.success) {
-                      setDocuments(data.data)
+                      message.success('success')
+                      setIsAddDocumentModalShow(false)
+                      const res = await fetch(
+                        `http://localhost:8000/knowledge/${spaceName}/document/list`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({})
+                        }
+                      )
+                      const data = await res.json()
+                      if (data.success) {
+                        setDocuments(data.data)
+                      }
+                    } else {
+                      message.error(data.err_msg || 'failed')
+                    }
+                  } else if (documentType === 'file') {
+                    if (!originFileObj) {
+                      message.error('Please select a file')
+                      return
+                    }
+                    const formData = new FormData();
+                    formData.append('doc_name', documentName);
+                    formData.append('doc_file', originFileObj);
+                    formData.append('doc_type', 'DOCUMENT');
+                    const res = await fetch(
+                      `http://localhost:8000/knowledge/${spaceName}/document/upload`,
+                      {
+                        method: 'POST',
+                        body: formData
+                      }
+                    )
+                    const data = await res.json()
+                    if (data.success) {
+                      message.success('success')
+                      setIsAddDocumentModalShow(false)
+                      const res = await fetch(
+                        `http://localhost:8000/knowledge/${spaceName}/document/list`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({})
+                        }
+                      )
+                      const data = await res.json()
+                      if (data.success) {
+                        setDocuments(data.data)
+                      }
+                    } else {
+                      message.error(data.err_msg || 'failed')
                     }
                   } else {
-                    message.error(data.err_msg || 'failed')
+                    if (textSource === '') {
+                      message.error('Please input the source')
+                      return
+                    }
+                    if (text === '') {
+                      message.error('Please input the text')
+                      return
+                    }
+                    const res = await fetch(
+                      `http://localhost:8000/knowledge/${spaceName}/document/add`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          doc_name: documentName,
+                          source: textSource,
+                          content: text,
+                          doc_type: 'TEXT'
+                        })
+                      }
+                    )
+                    const data = await res.json()
+                    if (data.success) {
+                      message.success('success')
+                      setIsAddDocumentModalShow(false)
+                      const res = await fetch(
+                        `http://localhost:8000/knowledge/${spaceName}/document/list`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({})
+                        }
+                      )
+                      const data = await res.json()
+                      if (data.success) {
+                        setDocuments(data.data)
+                      }
+                    } else {
+                      message.error(data.err_msg || 'failed')
+                    }
                   }
                 }}
               >
