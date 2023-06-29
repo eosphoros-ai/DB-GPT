@@ -1,14 +1,13 @@
 "use client";
-import React, { useMemo, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import React, { useEffect, useMemo, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Box, List, ListItem, ListItemButton, ListItemDecorator, ListItemContent, Typography, Button, useColorScheme, Alert } from '@/lib/mui';
+import { Box, List, ListItem, ListItemButton, ListItemDecorator, ListItemContent, Typography, Button, useColorScheme } from '@/lib/mui';
 import SmartToyRoundedIcon from '@mui/icons-material/SmartToyRounded'; // Icons import
 import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
-import HomeIcon from '@mui/icons-material/Home';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 import { useQueryDialog } from '@/hooks/useQueryDialogue';
@@ -16,16 +15,10 @@ import { useQueryDialog } from '@/hooks/useQueryDialogue';
 const LeftSider =  () => {
   const pathname = usePathname();
 	const { mode, setMode } = useColorScheme();
-	const [chatSelect, setChatSelect] = useState();
 	const { dialogueList } = useQueryDialog();
 
 	const menus = useMemo(() => {
 		return [{
-			label: 'Home',
-			icon: <HomeIcon fontSize="small" />,
-			route: '/',
-			active: pathname === '/',
-		}, {
 			label: 'Agents',
 			icon: <SmartToyRoundedIcon fontSize="small" />,
 			route: '/agents',
@@ -53,7 +46,7 @@ const LeftSider =  () => {
 					<MenuIcon />
 				</div>
 				<span className='truncate px-4'>New Chat</span>
-				<a href='javascript: void(0)' className='-mr-3 flex h-9 w-9 shrink-0 items-center justify-center'>
+				<a href='' className='-mr-3 flex h-9 w-9 shrink-0 items-center justify-center'>
 					<AddIcon />
 				</a>
 			</nav>
@@ -99,7 +92,9 @@ const LeftSider =  () => {
 							px: 2
 						}}
 					>
-						<Button variant="outlined" color="primary" className='w-full'>+ 新建对话</Button>
+						<Link href={`/`}>
+							<Button variant="outlined" color="primary" className='w-full'>+ 新建对话</Button>
+						</Link>
 					</Box>
 					<Box
 						sx={{
@@ -121,26 +116,25 @@ const LeftSider =  () => {
 										'& .JoyListItemButton-root': { p: '8px' },
 									}}
 								>
-									{dialogueList?.data?.map((each) => (
-										<ListItem key={each.conv_uid}>
-											<ListItemButton
-												selected={chatSelect === each.conv_uid}
-												variant={chatSelect === each.conv_uid ? 'soft' : 'plain'}
-												onClick={() => {
-													setChatSelect(each.conv_uid);
-												}}
-											>
-												<ListItemContent>
-													<Link href={`/agents/${each.conv_uid}`}>
-														<Typography fontSize={14} noWrap={true}>
-															{each?.user_name || each?.user_input || 'undefined'}
-														</Typography>
-													</Link>
-												
-												</ListItemContent>
-											</ListItemButton>
-										</ListItem>
-									))}
+									{dialogueList?.data?.map((each) => {
+										const isSelect = pathname === `/agents/${each.conv_uid}`;
+										return (
+											<ListItem key={each.conv_uid}>
+												<ListItemButton
+													selected={isSelect}
+													variant={isSelect ? 'soft' : 'plain'}
+												>
+													<ListItemContent>
+														<Link href={`/agents/${each.conv_uid}`}>
+															<Typography fontSize={14} noWrap={true}>
+																{each?.user_name || each?.user_input || 'undefined'}
+															</Typography>
+														</Link>
+													</ListItemContent>
+												</ListItemButton>
+											</ListItem>
+										)
+									})}
 								</List>
 							</ListItem>
 						</List>
@@ -178,7 +172,6 @@ const LeftSider =  () => {
 														color="neutral"
 														selected={each.active}
 														variant={each.active ? 'soft' : 'plain'}
-														onClick={() => { setChatSelect(undefined); }}
 													>
 														<ListItemDecorator
 															sx={{ 
