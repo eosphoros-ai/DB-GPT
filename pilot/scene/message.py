@@ -85,16 +85,22 @@ class OnceConversation:
         self.messages.clear()
         self.session_id = None
 
-    def get_user_message(self):
-        for once in self.messages:
-            if isinstance(once, HumanMessage):
-                return once.content
-        return ""
+    def get_user_conv(self):
+        for message in self.messages:
+            if isinstance(message, HumanMessage):
+                return message
+        return None
 
+    def get_system_conv(self):
+        system_convs = []
+        for message in self.messages:
+            if isinstance(message, SystemMessage):
+                system_convs.append(message)
+        return system_convs
 
 def _conversation_to_dic(once: OnceConversation) -> dict:
     start_str: str = ""
-    if once.start_date:
+    if hasattr(once, 'start_date') and once.start_date:
         if isinstance(once.start_date, datetime):
             start_str = once.start_date.strftime("%Y-%m-%d %H:%M:%S")
         else:
