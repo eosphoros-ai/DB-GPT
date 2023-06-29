@@ -60,10 +60,10 @@ class BaseChat(ABC):
         arbitrary_types_allowed = True
 
     def __init__(
-            self,
-            chat_mode,
-            chat_session_id,
-            current_user_input,
+        self,
+        chat_mode,
+        chat_session_id,
+        current_user_input,
     ):
         self.chat_session_id = chat_session_id
         self.chat_mode = chat_mode
@@ -102,7 +102,9 @@ class BaseChat(ABC):
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)
-        self.current_message.start_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.current_message.start_date = datetime.datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         # TODO
         self.current_message.tokens = 0
 
@@ -168,11 +170,18 @@ class BaseChat(ABC):
                     print("[TEST: output]:", rsp_str)
 
             ### output parse
-            ai_response_text = self.prompt_template.output_parser.parse_model_nostream_resp(rsp_str,
-                                                                                            self.prompt_template.sep)
+            ai_response_text = (
+                self.prompt_template.output_parser.parse_model_nostream_resp(
+                    rsp_str, self.prompt_template.sep
+                )
+            )
             ### model result deal
             self.current_message.add_ai_message(ai_response_text)
-            prompt_define_response = self.prompt_template.output_parser.parse_prompt_response(ai_response_text)
+            prompt_define_response = (
+                self.prompt_template.output_parser.parse_prompt_response(
+                    ai_response_text
+                )
+            )
             result = self.do_action(prompt_define_response)
 
             if hasattr(prompt_define_response, "thoughts"):
@@ -232,7 +241,9 @@ class BaseChat(ABC):
         system_convs = self.current_message.get_system_conv()
         system_text = ""
         for system_conv in system_convs:
-            system_text += system_conv.type + ":" + system_conv.content + self.prompt_template.sep
+            system_text += (
+                system_conv.type + ":" + system_conv.content + self.prompt_template.sep
+            )
         return system_text
 
     def __load_user_message(self):
@@ -246,13 +257,16 @@ class BaseChat(ABC):
         example_text = ""
         if self.prompt_template.example_selector:
             for round_conv in self.prompt_template.example_selector.examples():
-                for round_message in round_conv['messages']:
-                    if not round_message['type'] in [SystemMessage.type, ViewMessage.type]:
+                for round_message in round_conv["messages"]:
+                    if not round_message["type"] in [
+                        SystemMessage.type,
+                        ViewMessage.type,
+                    ]:
                         example_text += (
-                                round_message['type']
-                                + ":"
-                                + round_message['data']['content']
-                                + self.prompt_template.sep
+                            round_message["type"]
+                            + ":"
+                            + round_message["data"]["content"]
+                            + self.prompt_template.sep
                         )
         return example_text
 
@@ -264,37 +278,46 @@ class BaseChat(ABC):
                     f"There are already {len(self.history_message)} rounds of conversations! Will use {self.chat_retention_rounds} rounds of content as history!"
                 )
             if len(self.history_message) > self.chat_retention_rounds:
-                for first_message in self.history_message[0]['messages']:
-                    if not first_message['type'] in [ViewMessage.type, SystemMessage.type]:
+                for first_message in self.history_message[0]["messages"]:
+                    if not first_message["type"] in [
+                        ViewMessage.type,
+                        SystemMessage.type,
+                    ]:
                         history_text += (
-                                first_message['type']
-                                + ":"
-                                + first_message['data']['content']
-                                + self.prompt_template.sep
+                            first_message["type"]
+                            + ":"
+                            + first_message["data"]["content"]
+                            + self.prompt_template.sep
                         )
 
                 index = self.chat_retention_rounds - 1
                 for round_conv in self.history_message[-index:]:
-                    for round_message in round_conv['messages']:
-                        if not round_message['type'] in [SystemMessage.type, ViewMessage.type]:
+                    for round_message in round_conv["messages"]:
+                        if not round_message["type"] in [
+                            SystemMessage.type,
+                            ViewMessage.type,
+                        ]:
                             history_text += (
-                                    round_message['type']
-                                    + ":"
-                                    + round_message['data']['content']
-                                    + self.prompt_template.sep
+                                round_message["type"]
+                                + ":"
+                                + round_message["data"]["content"]
+                                + self.prompt_template.sep
                             )
 
             else:
                 ### user all history
                 for conversation in self.history_message:
-                    for message in conversation['messages']:
+                    for message in conversation["messages"]:
                         ### histroy message not have promot and view info
-                        if not message['type'] in [SystemMessage.type, ViewMessage.type]:
+                        if not message["type"] in [
+                            SystemMessage.type,
+                            ViewMessage.type,
+                        ]:
                             history_text += (
-                                    message['type']
-                                    + ":"
-                                    + message['data']['content']
-                                    + self.prompt_template.sep
+                                message["type"]
+                                + ":"
+                                + message["data"]["content"]
+                                + self.prompt_template.sep
                             )
 
         return history_text

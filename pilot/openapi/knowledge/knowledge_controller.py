@@ -76,18 +76,34 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
 
 
 @router.post("/knowledge/{space_name}/document/upload")
-async def document_upload(space_name: str,  doc_name: str = Form(...),  doc_type: str = Form(...), doc_file: UploadFile = File(...)):
+async def document_upload(
+    space_name: str,
+    doc_name: str = Form(...),
+    doc_type: str = Form(...),
+    doc_file: UploadFile = File(...),
+):
     print(f"/document/upload params: {space_name}")
     try:
         if doc_file:
-            with NamedTemporaryFile(dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name), delete=False) as tmp:
+            with NamedTemporaryFile(
+                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name), delete=False
+            ) as tmp:
                 tmp.write(await doc_file.read())
                 tmp_path = tmp.name
-                shutil.move(tmp_path, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename))
+                shutil.move(
+                    tmp_path,
+                    os.path.join(
+                        KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
+                    ),
+                )
                 request = KnowledgeDocumentRequest()
                 request.doc_name = doc_name
                 request.doc_type = doc_type
-                request.content = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename),
+                request.content = (
+                    os.path.join(
+                        KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
+                    ),
+                )
                 knowledge_space_service.create_knowledge_document(
                     space=space_name, request=request
                 )
