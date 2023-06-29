@@ -85,6 +85,8 @@ async def document_upload(
     print(f"/document/upload params: {space_name}")
     try:
         if doc_file:
+            if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name)):
+                os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name))
             with NamedTemporaryFile(
                 dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name), delete=False
             ) as tmp:
