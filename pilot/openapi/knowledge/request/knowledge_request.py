@@ -1,6 +1,7 @@
 from typing import List
 
 from pydantic import BaseModel
+from fastapi import UploadFile
 
 
 class KnowledgeQueryRequest(BaseModel):
@@ -26,11 +27,14 @@ class KnowledgeSpaceRequest(BaseModel):
 class KnowledgeDocumentRequest(BaseModel):
     """doc_name: doc path"""
 
-    doc_name: str
+    doc_name: str = None
     """doc_type: doc type"""
-    doc_type: str
+    doc_type: str = None
     """content: content"""
     content: str = None
+    """content: content"""
+    source: str = None
+
     """text_chunk_size: text_chunk_size"""
     # text_chunk_size: int
 
