@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { isPlainObject } from 'lodash';
 
-axios.defaults.baseURL = 'http://30.183.153.244:5000';
+axios.defaults.baseURL = 'http://30.183.154.8:5000';
 
 axios.defaults.timeout = 10000;
 
