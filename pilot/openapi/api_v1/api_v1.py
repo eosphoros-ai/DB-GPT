@@ -2,17 +2,29 @@ import uuid
 import json
 import asyncio
 import time
-from fastapi import APIRouter, Request, Body, status, HTTPException, Response, BackgroundTasks
+from fastapi import (
+    APIRouter,
+    Request,
+    Body,
+    status,
+    HTTPException,
+    Response,
+    BackgroundTasks,
+)
 
 from fastapi.responses import JSONResponse
 from fastapi.responses import StreamingResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sse_starlette.sse import EventSourceResponse
 from typing import List
 
-from pilot.openapi.api_v1.api_view_model import Result, ConversationVo, MessageVo, ChatSceneVo
+from pilot.openapi.api_v1.api_view_model import (
+    Result,
+    ConversationVo,
+    MessageVo,
+    ChatSceneVo,
+)
 from pilot.configs.config import Config
 from pilot.openapi.knowledge.knowledge_service import KnowledgeService
 from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
@@ -103,7 +115,7 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-        chat_mode: str = ChatScene.ChatNormal.value, user_id: str = None
+    chat_mode: str = ChatScene.ChatNormal.value, user_id: str = None
 ):
     unique_id = uuid.uuid1()
     return Result.succ(ConversationVo(conv_uid=str(unique_id), chat_mode=chat_mode))
@@ -220,11 +232,19 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     }
 
     if not chat.prompt_template.stream_out:
-        return StreamingResponse(no_stream_generator(chat), headers=headers, media_type='text/event-stream',
-                                 background=background_tasks)
+        return StreamingResponse(
+            no_stream_generator(chat),
+            headers=headers,
+            media_type="text/event-stream",
+            background=background_tasks,
+        )
     else:
-        return StreamingResponse(stream_generator(chat), headers=headers, media_type='text/plain',
-                                 background=background_tasks)
+        return StreamingResponse(
+            stream_generator(chat),
+            headers=headers,
+            media_type="text/plain",
+            background=background_tasks,
+        )
 
 
 def release_model_semaphore():
@@ -236,12 +256,15 @@ async def no_stream_generator(chat):
     msg = msg.replace("\n", "\\n")
     yield f"data: {msg}\n\n"
 
+
 async def stream_generator(chat):
     model_response = chat.stream_call()
     if not CFG.NEW_SERVER_MODE:
         for chunk in model_response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
-                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
+                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                    chunk, chat.skip_echo_len
+                )
                 chat.current_message.add_ai_message(msg)
                 msg = msg.replace("\n", "\\n")
                 yield f"data:{msg}\n\n"
@@ -249,7 +272,9 @@ async def stream_generator(chat):
     else:
         for chunk in model_response:
             if chunk:
-                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
+                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                    chunk, chat.skip_echo_len
+                )
                 chat.current_message.add_ai_message(msg)
 
                 msg = msg.replace("\n", "\\n")
@@ -259,4 +284,6 @@ async def stream_generator(chat):
 
 
 def message2Vo(message: dict, order) -> MessageVo:
-    return MessageVo(role=message['type'], context=message['data']['content'], order=order)
+    return MessageVo(
+        role=message["type"], context=message["data"]["content"], order=order
+    )
