@@ -95,7 +95,7 @@ class BaseOutputParser(ABC):
                     yield output
 
     def parse_model_nostream_resp(self, response, sep: str):
-        text = response.text.strip()
+        text = response.strip()
         text = text.rstrip()
         text = text.strip(b"\x00".decode())
         respObj_ex = json.loads(text)

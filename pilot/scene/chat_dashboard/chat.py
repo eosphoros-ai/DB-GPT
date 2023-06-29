@@ -65,6 +65,12 @@ class ChatDashboard(BaseChat):
             try:
                 datas = self.database.run(self.db_connect, chart_item.sql)
                 chart_data: ChartData = ChartData()
+                chart_data.chart_sql = chart_item['sql']
+                chart_data.chart_type = chart_item['showcase']
+                chart_data.chart_name = chart_item['title']
+                chart_data.chart_desc = chart_item['thoughts']
+                chart_data.column_name = datas[0]
+                chart_data.values =datas
             except Exception as e:
                 # TODO 修复流程
                 print(str(e))
