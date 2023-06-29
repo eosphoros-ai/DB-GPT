@@ -6,6 +6,7 @@ import { InboxOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import { message, Upload } from 'antd'
 import {
+  useColorScheme,
   Modal,
   Button,
   Table,
@@ -14,8 +15,10 @@ import {
   Box,
   Input,
   Textarea,
+  Chip,
   styled
 } from '@/lib/mui'
+import { fetchBaseURL } from '@/app/datastores/constants'
 
 const { Dragger } = Upload
 
@@ -39,22 +42,24 @@ const documentTypeList = [
   {
     type: 'text',
     title: 'Text',
-    subTitle: 'Paste some text'
+    subTitle: 'Fill your raw text'
   },
   {
     type: 'webPage',
-    title: 'Web Page',
-    subTitle: 'Crawl text from a web page'
+    title: 'URL',
+    subTitle: 'Fetch the content of a URL'
   },
   {
     type: 'file',
-    title: 'File',
-    subTitle: 'It can be: PDF, CSV, JSON, Text, PowerPoint, Word, Excel'
+    title: 'Document',
+    subTitle:
+      'Upload a document, document type can be PDF, CSV, Text, PowerPoint, Word, Markdown'
   }
 ]
 
 const Index = () => {
   const router = useRouter()
+  const { mode } = useColorScheme()
   const [activeStep, setActiveStep] = useState<number>(0)
   const [documentType, setDocumentType] = useState<string>('')
   const [knowledgeSpaceList, setKnowledgeSpaceList] = useState<any>([])
@@ -63,8 +68,8 @@ const Index = () => {
   const [knowledgeSpaceName, setKnowledgeSpaceName] = useState<string>('')
   const [webPageUrl, setWebPageUrl] = useState<string>('')
   const [documentName, setDocumentName] = useState<any>('')
-  const [textSource, setTextSource] = useState<string>('');
-  const [text, setText] = useState<string>('');
+  const [textSource, setTextSource] = useState<string>('')
+  const [text, setText] = useState<string>('')
   const [originFileObj, setOriginFileObj] = useState<any>(null)
   const props: UploadProps = {
     name: 'file',
@@ -82,7 +87,7 @@ const Index = () => {
   }
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch('http://localhost:8000/knowledge/space/list', {
+      const res = await fetch(`${fetchBaseURL}/knowledge/space/list`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -121,35 +126,69 @@ const Index = () => {
         </Button>
       </Sheet>
       <div className="page-body p-4">
-        <Table color="neutral" stripe="odd" variant="outlined">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Provider</th>
-              <th>Owner</th>
-            </tr>
-          </thead>
-          <tbody>
-            {knowledgeSpaceList.map((row: any) => (
-              <tr key={row.id}>
-                <td>
-                  {
-                    <a
-                      href="javascript:;"
-                      onClick={() =>
-                        router.push(`/datastores/documents?name=${row.name}`)
-                      }
-                    >
-                      {row.name}
-                    </a>
-                  }
-                </td>
-                <td>{row.vector_type}</td>
-                <td>{row.owner}</td>
+        {knowledgeSpaceList.length ? (
+          <Table
+            color="info"
+            variant="soft"
+            size="lg"
+            sx={{
+              '& tbody tr: hover': {
+                backgroundColor:
+                  mode === 'light' ? 'rgb(246, 246, 246)' : 'rgb(33, 33, 40)'
+              },
+              '& tbody tr: hover a': {
+                textDecoration: 'underline'
+              }
+            }}
+          >
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Vector</th>
+                <th>Owner</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {knowledgeSpaceList.map((row: any) => (
+                <tr key={row.id}>
+                  <td>
+                    {
+                      <a
+                        style={{ fontWeight: 'bold' }}
+                        href="javascript:;"
+                        onClick={() =>
+                          router.push(`/datastores/documents?name=${row.name}`)
+                        }
+                      >
+                        {row.name}
+                      </a>
+                    }
+                  </td>
+                  <td>
+                    <Chip
+                      variant="soft"
+                      color="neutral"
+                      sx={{ fontWeight: 300 }}
+                    >
+                      {row.vector_type}
+                    </Chip>
+                  </td>
+                  <td>
+                    <Chip
+                      variant="soft"
+                      color="neutral"
+                      sx={{ fontWeight: 300 }}
+                    >
+                      {row.owner}
+                    </Chip>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        ) : (
+          <></>
+        )}
       </div>
       <Modal
         sx={{
@@ -198,27 +237,24 @@ const Index = () => {
                     message.error('please input the name')
                     return
                   }
-                  const res = await fetch(
-                    'http://localhost:8000/knowledge/space/add',
-                    {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                        name: knowledgeSpaceName,
-                        vector_type: 'Chroma',
-                        owner: 'keting',
-                        desc: 'test1'
-                      })
-                    }
-                  )
+                  const res = await fetch(`${fetchBaseURL}/knowledge/space/add`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      name: knowledgeSpaceName,
+                      vector_type: 'Chroma',
+                      owner: 'keting',
+                      desc: 'test1'
+                    })
+                  })
                   const data = await res.json()
                   if (data.success) {
                     message.success('success')
                     setActiveStep(1)
                     const res = await fetch(
-                      'http://localhost:8000/knowledge/space/list',
+                      `${fetchBaseURL}/knowledge/space/list`,
                       {
                         method: 'POST',
                         headers: {
@@ -308,9 +344,9 @@ const Index = () => {
                   </>
                 ) : (
                   <>
-                    Source:
+                    Text Source(Optional):
                     <Input
-                      placeholder="Please input the source"
+                      placeholder="Please input the text source"
                       onChange={(e: any) => setTextSource(e.target.value)}
                       sx={{ marginBottom: '20px' }}
                     />
@@ -335,7 +371,7 @@ const Index = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/add`,
+                      `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
@@ -360,12 +396,12 @@ const Index = () => {
                       message.error('Please select a file')
                       return
                     }
-                    const formData = new FormData();
-                    formData.append('doc_name', documentName);
-                    formData.append('doc_file', originFileObj);
-                    formData.append('doc_type', 'DOCUMENT');
+                    const formData = new FormData()
+                    formData.append('doc_name', documentName)
+                    formData.append('doc_file', originFileObj)
+                    formData.append('doc_type', 'DOCUMENT')
                     const res = await fetch(
-                      `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/upload`,
+                      `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/upload`,
                       {
                         method: 'POST',
                         body: formData
@@ -379,16 +415,12 @@ const Index = () => {
                       message.error(data.err_msg || 'failed')
                     }
                   } else {
-                    if (textSource === '') {
-                      message.error('Please input the source')
-                      return
-                    }
                     if (text === '') {
                       message.error('Please input the text')
                       return
                     }
                     const res = await fetch(
-                      `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/add`,
+                      `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
