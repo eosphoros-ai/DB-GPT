@@ -13,6 +13,7 @@ import {
   Stack,
   Box,
   Input,
+  Textarea,
   styled
 } from '@/lib/mui'
 
@@ -62,6 +63,8 @@ const Index = () => {
   const [knowledgeSpaceName, setKnowledgeSpaceName] = useState<string>('')
   const [webPageUrl, setWebPageUrl] = useState<string>('')
   const [documentName, setDocumentName] = useState<any>('')
+  const [textSource, setTextSource] = useState<string>('');
+  const [text, setText] = useState<string>('');
   const [originFileObj, setOriginFileObj] = useState<any>(null)
   const props: UploadProps = {
     name: 'file',
@@ -304,7 +307,20 @@ const Index = () => {
                     </Dragger>
                   </>
                 ) : (
-                  <></>
+                  <>
+                    Text Source(Optional):
+                    <Input
+                      placeholder="Please input the text source"
+                      onChange={(e: any) => setTextSource(e.target.value)}
+                      sx={{ marginBottom: '20px' }}
+                    />
+                    Text:
+                    <Textarea
+                      onChange={(e: any) => setText(e.target.value)}
+                      minRows={4}
+                      sx={{ marginBottom: '20px' }}
+                    />
+                  </>
                 )}
               </Box>
               <Button
@@ -353,6 +369,33 @@ const Index = () => {
                       {
                         method: 'POST',
                         body: formData
+                      }
+                    )
+                    const data = await res.json()
+                    if (data.success) {
+                      message.success('success')
+                      setIsAddKnowledgeSpaceModalShow(false)
+                    } else {
+                      message.error(data.err_msg || 'failed')
+                    }
+                  } else {
+                    if (text === '') {
+                      message.error('Please input the text')
+                      return
+                    }
+                    const res = await fetch(
+                      `http://localhost:8000/knowledge/${knowledgeSpaceName}/document/add`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          doc_name: documentName,
+                          source: textSource,
+                          content: text,
+                          doc_type: 'TEXT'
+                        })
                       }
                     )
                     const data = await res.json()
