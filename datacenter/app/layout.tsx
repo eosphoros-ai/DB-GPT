@@ -5,18 +5,21 @@ import LeftSider from '@/components/leftSider';
 import { CssVarsProvider, ThemeProvider } from '@mui/joy/styles';
 import { joyTheme } from './defaultTheme';
 import TopProgressBar from '@/components/topProgressBar';
+import DialogueContext from './context/dialogue';
+
 function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-
+  
   return (
     <html lang="en" className="h-full font-sans">
       <body className={`h-full font-sans`}>
         <ThemeProvider theme={joyTheme}>
           <CssVarsProvider theme={joyTheme} defaultMode="light">
             <TopProgressBar />
+            <DialogueContext>
               <div className={`contents h-full`}>
                 <div className="grid h-full w-screen grid-cols-1 grid-rows-[auto,1fr] overflow-hidden text-smd dark:text-gray-300 md:grid-cols-[280px,1fr] md:grid-rows-[1fr]">
                   <LeftSider />
@@ -25,6 +28,7 @@ function RootLayout({
                   </div>
                 </div>
               </div>
+            </DialogueContext>
           </CssVarsProvider>
         </ThemeProvider>
       </body>

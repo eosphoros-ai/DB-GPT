@@ -5,12 +5,13 @@ import {
   import useStateReducer from './useStateReducer';
 import { Message } from '@/types';
 import { useEffect } from 'react';
+import { useDialogueContext } from '@/app/context/dialogue';
 
   type Props = {
     queryAgentURL: string;
     channel?: "dashboard" | "website" | "slack" | "crisp";
     queryBody?: any;
-    initHistory: Message[];
+    initHistory?: Message[];
   };
 
   const useAgentChat = ({
@@ -20,14 +21,16 @@ import { useEffect } from 'react';
     initHistory
   }: Props) => {
     const [state, setState] = useStateReducer({
-      history: (initHistory || []) as { role: 'human' | 'ai'; context: string; id?: string }[],
+      history: (initHistory || []) as { role: 'human' | 'view'; context: string; id?: string }[],
     });
-    
+
+    const { refreshDialogList } = useDialogueContext();
+
     useEffect(() => {
       if (initHistory) setState({ history: initHistory });
     }, [initHistory]);
 
-    const handleChatSubmit = async (context: string) => {
+    const handleChatSubmit = async (context: string, otherQueryBody?: any) => {
       if (!context) {
         return;
       }
@@ -52,6 +55,7 @@ import { useEffect } from 'react';
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            ...otherQueryBody,
             ...queryBody,
             user_input: context,
             channel,
@@ -59,6 +63,12 @@ import { useEffect } from 'react';
           signal: ctrl.signal,
   
           async onopen(response) {
+            if (history.length <= 1) {
+              refreshDialogList();
+              const searchParams = new URLSearchParams(window.location.search);
+              searchParams.delete('initMessage');
+              window.history.replaceState(null, null, `?${searchParams.toString()}`);
+            }
             if (
               response.ok &&
               response.headers.get('content-type') === EventStreamContentType
@@ -81,14 +91,14 @@ import { useEffect } from 'react';
           onclose() {
             // if the server closes the connection unexpectedly, retry:
             console.log('onclose');
-            //throw new RetriableError();
           },
-          onerror(err) {
+          onerror(err) {            
 						throw new Error(err);
           },
           onmessage: (event) => {
+            console.log(event, 'e');
             event.data = event.data.replaceAll('\\n', '\n');
-            console.log(event, 'event');
+            
             if (event.data === '[DONE]') {
               ctrl.abort();
             } else if (event.data?.startsWith('[ERROR]')) {
@@ -97,7 +107,7 @@ import { useEffect } from 'react';
                 history: [
                   ...history,
                   {
-                    role: 'ai',
+                    role: 'view',
                     context: event.data.replace('[ERROR]', ''),
                   } as any,
                 ],
@@ -108,7 +118,7 @@ import { useEffect } from 'react';
                 if (h?.[nextIndex]) {
                   h[nextIndex].context = `${event.data}`;
                 } else {
-                  h.push({ role: 'ai', context: event.data });
+                  h.push({ role: 'view', context: event.data });
                 }
                 setState({
                   history: h as any,
@@ -119,10 +129,12 @@ import { useEffect } from 'react';
           },
         });
       } catch (err) {
+        console.log('---e', err);
+
 				setState({
 					history: [
 						...history,
-						{ role: 'ai', context: answer || '请求出错' as string },
+						{ role: 'view', context: answer || '请求出错' as string },
 					] as any,
 				});
         // if (err instanceof ApiError) {

@@ -6,6 +6,7 @@ import { InboxOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import { message, Upload } from 'antd'
 import {
+  useColorScheme,
   Modal,
   Button,
   Table,
@@ -14,8 +15,10 @@ import {
   Box,
   Input,
   Textarea,
+  Chip,
   styled
 } from '@/lib/mui'
+import { fetchBaseURL } from '@/app/datastores/constants'
 
 const { Dragger } = Upload
 
@@ -49,12 +52,14 @@ const documentTypeList = [
   {
     type: 'file',
     title: 'Document',
-    subTitle: 'Upload a document, document type can be PDF, CSV, Text, PowerPoint, Word, Markdown'
+    subTitle:
+      'Upload a document, document type can be PDF, CSV, Text, PowerPoint, Word, Markdown'
   }
 ]
 
 const Index = () => {
   const router = useRouter()
+  const { mode } = useColorScheme()
   const [activeStep, setActiveStep] = useState<number>(0)
   const [documentType, setDocumentType] = useState<string>('')
   const [knowledgeSpaceList, setKnowledgeSpaceList] = useState<any>([])
@@ -82,16 +87,13 @@ const Index = () => {
   }
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch(
-        'http://30.183.154.125:5000/knowledge/space/list',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({})
-        }
-      )
+      const res = await fetch(`${fetchBaseURL}/knowledge/space/list`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      })
       const data = await res.json()
       if (data.success) {
         setKnowledgeSpaceList(data.data)
@@ -125,11 +127,24 @@ const Index = () => {
       </Sheet>
       <div className="page-body p-4">
         {knowledgeSpaceList.length ? (
-          <Table color="neutral" stripe="odd" variant="outlined">
+          <Table
+            color="info"
+            variant="soft"
+            size="lg"
+            sx={{
+              '& tbody tr: hover': {
+                backgroundColor:
+                  mode === 'light' ? 'rgb(246, 246, 246)' : 'rgb(33, 33, 40)'
+              },
+              '& tbody tr: hover a': {
+                textDecoration: 'underline'
+              }
+            }}
+          >
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Provider</th>
+                <th>Vector</th>
                 <th>Owner</th>
               </tr>
             </thead>
@@ -139,6 +154,7 @@ const Index = () => {
                   <td>
                     {
                       <a
+                        style={{ fontWeight: 'bold' }}
                         href="javascript:;"
                         onClick={() =>
                           router.push(`/datastores/documents?name=${row.name}`)
@@ -148,8 +164,24 @@ const Index = () => {
                       </a>
                     }
                   </td>
-                  <td>{row.vector_type}</td>
-                  <td>{row.owner}</td>
+                  <td>
+                    <Chip
+                      variant="soft"
+                      color="neutral"
+                      sx={{ fontWeight: 300 }}
+                    >
+                      {row.vector_type}
+                    </Chip>
+                  </td>
+                  <td>
+                    <Chip
+                      variant="soft"
+                      color="neutral"
+                      sx={{ fontWeight: 300 }}
+                    >
+                      {row.owner}
+                    </Chip>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -205,27 +237,24 @@ const Index = () => {
                     message.error('please input the name')
                     return
                   }
-                  const res = await fetch(
-                    'http://30.183.154.125:5000/knowledge/space/add',
-                    {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                        name: knowledgeSpaceName,
-                        vector_type: 'Chroma',
-                        owner: 'keting',
-                        desc: 'test1'
-                      })
-                    }
-                  )
+                  const res = await fetch(`${fetchBaseURL}/knowledge/space/add`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      name: knowledgeSpaceName,
+                      vector_type: 'Chroma',
+                      owner: 'keting',
+                      desc: 'test1'
+                    })
+                  })
                   const data = await res.json()
                   if (data.success) {
                     message.success('success')
                     setActiveStep(1)
                     const res = await fetch(
-                      'http://30.183.154.125:5000/knowledge/space/list',
+                      `${fetchBaseURL}/knowledge/space/list`,
                       {
                         method: 'POST',
                         headers: {
@@ -342,7 +371,7 @@ const Index = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${knowledgeSpaceName}/document/add`,
+                      `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
@@ -372,7 +401,7 @@ const Index = () => {
                     formData.append('doc_file', originFileObj)
                     formData.append('doc_type', 'DOCUMENT')
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${knowledgeSpaceName}/document/upload`,
+                      `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/upload`,
                       {
                         method: 'POST',
                         body: formData
@@ -391,7 +420,7 @@ const Index = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${knowledgeSpaceName}/document/add`,
+                      `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
