@@ -1,24 +1,21 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
-import Button from '@mui/joy/Button';
-import Card from '@mui/joy/Card';
-import CircularProgress from '@mui/joy/CircularProgress';
-import IconButton from '@mui/joy/IconButton';
-import Input from '@mui/joy/Input';
-import Stack from '@mui/joy/Stack';
+import { Card, CircularProgress, IconButton, Input, Stack, Select, Option, Tooltip } from '@/lib/mui';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { z } from 'zod';
 import { Message } from '@/types';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import Markdown from 'markdown-to-jsx';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { okaidia } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 type Props = {
   messages: Message[];
-  onSubmit: (message: string) => Promise<any>;
-  messageTemplates?: string[];
+  onSubmit: (message: string, otherQueryBody?: any) => Promise<any>;
   initialMessage?: string;
   readOnly?: boolean;
+  paramsList?: { [key: string]: string };
   clearIntialMessage?: () => void;
 }; 
 
@@ -27,15 +24,15 @@ const Schema = z.object({ query: z.string().min(1) });
 const ChatBoxComp = ({
   messages,
   onSubmit,
-  messageTemplates,
   initialMessage,
   readOnly,
+  paramsList,
   clearIntialMessage
 }: Props) => {
   const scrollableRef = React.useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [firstMsg, setFirstMsg] = useState<Message>();
-  const [hideTemplateMessages, setHideTemplateMessages] = useState(false);
+  const [currentParam, setCurrentParam] = useState<string | undefined | null>();
 
   const methods = useForm<z.infer<typeof Schema>>({
     resolver: zodResolver(Schema),
@@ -45,9 +42,10 @@ const ChatBoxComp = ({
   const submit = async ({ query }: z.infer<typeof Schema>) => {
     try {
       setIsLoading(true);
-      setHideTemplateMessages(true);
       methods.reset();
-      await onSubmit(query);
+      await onSubmit(query, {
+        select_param: paramsList?.[currentParam]
+      });
     } catch (err) {
     } finally {
       setIsLoading(false);
@@ -55,9 +53,27 @@ const ChatBoxComp = ({
   };
 
   const handleInitMessage = async () => {
-    await submit({ query: (initialMessage as string) });
-    clearIntialMessage?.();
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.delete('initMessage');
+      window.history.replaceState(null, null, `?${searchParams.toString()}`);
+      await submit({ query: (initialMessage as string) });
+    } catch (err) {
+      console.log(err);
+    } finally {
+      clearIntialMessage?.();
+    }
   }
+
+  const options = {
+    overrides: {
+      code: ({ children }) => (
+        <SyntaxHighlighter language="javascript" style={okaidia}>
+          {children}
+        </SyntaxHighlighter>
+      ),
+    },
+  };
 
   React.useEffect(() => {
     if (!scrollableRef.current) {
@@ -72,6 +88,12 @@ const ChatBoxComp = ({
       handleInitMessage();
     }
   }, [initialMessage]);
+
+  React.useEffect(() => {
+    if (paramsList && Object.keys(paramsList || {})?.length > 0) {
+      setCurrentParam(Object.keys(paramsList || {})?.[0]);
+    }
+  }, [paramsList]);
 
   return (
     <Stack
@@ -121,11 +143,11 @@ const ChatBoxComp = ({
           </Card>
         )}
 
-        {messages.filter(item => ['ai', 'human'].includes(item.role)).map((each, index) => (
+        {messages.filter(item => ['view', 'human'].includes(item.role)).map((each, index) => (
           <Stack
             key={index}
             sx={{
-              mr: each.role === 'ai' ? 'auto' : 'none',
+              mr: each.role === 'view' ? 'auto' : 'none',
               ml: each.role === 'human' ? 'auto' : 'none',
             }}
           >
@@ -133,9 +155,9 @@ const ChatBoxComp = ({
               size="sm"
               variant={'outlined'}
               className={
-                each.role === 'ai' ? 'message-agent' : 'message-human'
+                each.role === 'view' ? 'message-agent' : 'message-human'
               }
-              color={each.role === 'ai' ? 'primary' : 'neutral'}
+              color={each.role === 'view' ? 'primary' : 'neutral'}
               sx={(theme) => ({
                 px: 2,
                 'ol, ul': {
@@ -157,9 +179,9 @@ const ChatBoxComp = ({
                 },
               })}
             >
-              <ReactMarkdown remarkPlugins={[remarkGfm]} linkTarget={'_blank'}>
-                {each.context}
-              </ReactMarkdown>
+              <Markdown options={options}>
+                {each.context?.replaceAll('\\n', '\n')}
+              </Markdown>
             </Card>
           </Stack>
         ))}
@@ -186,37 +208,41 @@ const ChatBoxComp = ({
             justifyContent: 'center',
             marginLeft: 'auto',
             marginRight: 'auto',
+            flexDirection: 'column',
+            gap: '12px'
           }}
           onSubmit={(e) => {
             e.stopPropagation();
-
             methods.handleSubmit(submit)(e);
           }}
         >
-          {!hideTemplateMessages && (messageTemplates?.length || 0) > 0 && (
-            <Stack
-              direction="row"
-              gap={1}
-              sx={{
-                position: 'absolute',
-                zIndex: 1,
-                transform: 'translateY(-100%)',
-                flexWrap: 'wrap',
-                mt: -1,
-                left: '0',
-              }}
-            >
-              {messageTemplates?.map((each, idx) => (
-                <Button
-                  key={idx}
-                  size="sm"
-                  variant="soft"
-                  onClick={() => submit({ query: each })}
-                >
-                  {each}
-                </Button>
-              ))}
-            </Stack>
+          {(Object.keys(paramsList || {}).length > 0) && (
+            <div className='flex items-center gap-3'>
+              <Select
+                value={currentParam}
+                onChange={(e, newValue) => {
+                  setCurrentParam(newValue);
+                }}
+                className='max-w-xs'
+              >
+                {Object.keys(paramsList || {}).map(paramItem => (
+                  <Option
+                    key={paramItem}
+                    value={paramItem}
+                  >
+                    {paramsList?.[paramItem]}
+                  </Option>
+                ))}
+              </Select>
+              <Tooltip
+                className="cursor-pointer"
+                title={currentParam}
+                placement="top"
+                variant="outlined"
+              >
+                <InfoOutlinedIcon />
+              </Tooltip>
+            </div>
           )}
 
           <Input
