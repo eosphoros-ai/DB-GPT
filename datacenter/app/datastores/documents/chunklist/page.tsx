@@ -78,7 +78,9 @@ const ChunkList = () => {
               ))}
             </tbody>
           </Table>
-          <Stack direction="row" justifyContent="flex-end">
+          <Stack direction="row" justifyContent="flex-end" sx={{
+            marginTop: '20px'
+          }}>
             <Pagination
               defaultPageSize={20}
               showSizeChanger={false}
