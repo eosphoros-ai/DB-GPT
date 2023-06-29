@@ -74,15 +74,15 @@ async def dialogue_list(response: Response, user_id: str = None):
         )
         dialogues.append(conv_vo)
 
-    return Result[ConversationVo].succ(dialogues)
+    return Result[ConversationVo].succ(dialogues[-10:][::-1])
 
 
 @router.post("/v1/chat/dialogue/scenes", response_model=Result[List[ChatSceneVo]])
 async def dialogue_scenes():
     scene_vos: List[ChatSceneVo] = []
     new_modes: List[ChatScene] = [
-        ChatScene.ChatDb,
-        ChatScene.ChatData,
+        ChatScene.ChatWithDbExecute,
+        ChatScene.ChatWithDbQA,
         ChatScene.ChatDashboard,
         ChatScene.ChatKnowledge,
         ChatScene.ChatExecution,
