@@ -129,7 +129,7 @@ const Index = () => {
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Provider</th>
+                <th>Vector</th>
                 <th>Owner</th>
               </tr>
             </thead>
