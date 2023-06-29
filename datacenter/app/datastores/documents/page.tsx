@@ -38,17 +38,17 @@ const documentTypeList = [
   {
     type: 'text',
     title: 'Text',
-    subTitle: 'Paste some text'
+    subTitle: 'Fill your raw text'
   },
   {
     type: 'webPage',
-    title: 'Web Page',
-    subTitle: 'Crawl text from a web page'
+    title: 'URL',
+    subTitle: 'Fetch the content of a URL'
   },
   {
     type: 'file',
-    title: 'File',
-    subTitle: 'It can be: PDF, CSV, JSON, Text, PowerPoint, Word, Excel'
+    title: 'Document',
+    subTitle: 'Upload a document, document type can be PDF, CSV, Text, PowerPoint, Word, Markdown'
   }
 ]
 const page_size = 20;
@@ -123,7 +123,7 @@ const Documents = () => {
       </Sheet>
       {documents.length ? (
         <>
-          <Table color="neutral" stripe="odd" variant="outlined">
+          <Table color="info" variant="soft" size="lg">
             <thead>
               <tr>
                 <th>Name</th>
@@ -138,11 +138,12 @@ const Documents = () => {
               {documents.map((row: any) => (
                 <tr key={row.id}>
                   <td>{row.doc_name}</td>
-                  <td>{row.doc_type}</td>
-                  <td>{row.chunk_size}</td>
+                  <td><Chip variant='soft' color='neutral'>{row.doc_type}</Chip></td>
+                  <td>{row.chunk_size} chunks</td>
                   <td>{moment(row.last_sync).format('YYYY-MM-DD HH:MM:SS')}</td>
                   <td>
                     <Chip
+                      variant="soft"
                       color={(function () {
                         switch (row.status) {
                           case 'TODO':
@@ -401,7 +402,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
                         setTotal(data.data.total)
                         setCurrent(data.data.page)
                       }
@@ -443,7 +444,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
                         setTotal(data.data.total)
                         setCurrent(data.data.page)
                       }
@@ -489,7 +490,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       if (data.success) {
-                        setDocuments(data.data)
+                        setDocuments(data.data.data)
                         setTotal(data.data.total)
                         setCurrent(data.data.page)
                       }
