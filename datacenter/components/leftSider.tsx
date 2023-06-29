@@ -18,7 +18,7 @@ const LeftSider =  () => {
 
 	const menus = useMemo(() => {
 		return [{
-			label: 'Datastores',
+			label: 'Knowledge Space',
 			route: '/datastores',
 			icon: <Article fontSize="small" />,
 			active: pathname === '/datastores'
