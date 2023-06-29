@@ -18,6 +18,7 @@ import moment from 'moment'
 import { InboxOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
 import { Upload, Pagination, message } from 'antd'
+import { fetchURL } from '@/app/datastores/constants';
 
 const { Dragger } = Upload
 const Item = styled(Sheet)(({ theme }) => ({
@@ -85,7 +86,7 @@ const Documents = () => {
   useEffect(() => {
     async function fetchDocuments() {
       const res = await fetch(
-        `http://30.183.154.125:5000/knowledge/${spaceName}/document/list`,
+        `${fetchURL}/knowledge/${spaceName}/document/list`,
         {
           method: 'POST',
           headers: {
@@ -168,7 +169,7 @@ const Documents = () => {
                           size="sm"
                           onClick={async () => {
                             const res = await fetch(
-                              `http://30.183.154.125:5000/knowledge/${spaceName}/document/sync`,
+                              `${fetchURL}/knowledge/${spaceName}/document/sync`,
                               {
                                 method: 'POST',
                                 headers: {
@@ -217,7 +218,7 @@ const Documents = () => {
               total={total}
               onChange={async (page) => {
                 const res = await fetch(
-                  `http://30.183.154.125:5000/knowledge/${spaceName}/document/list`,
+                  `${fetchURL}/knowledge/${spaceName}/document/list`,
                   {
                     method: 'POST',
                     headers: {
@@ -370,7 +371,7 @@ const Documents = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${spaceName}/document/add`,
+                      `${fetchURL}/knowledge/${spaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
@@ -388,7 +389,7 @@ const Documents = () => {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
                       const res = await fetch(
-                        `http://30.183.154.125:5000/knowledge/${spaceName}/document/list`,
+                        `${fetchURL}/knowledge/${spaceName}/document/list`,
                         {
                           method: 'POST',
                           headers: {
@@ -419,7 +420,7 @@ const Documents = () => {
                     formData.append('doc_file', originFileObj)
                     formData.append('doc_type', 'DOCUMENT')
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${spaceName}/document/upload`,
+                      `${fetchURL}/knowledge/${spaceName}/document/upload`,
                       {
                         method: 'POST',
                         body: formData
@@ -430,7 +431,7 @@ const Documents = () => {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
                       const res = await fetch(
-                        `http://30.183.154.125:5000/knowledge/${spaceName}/document/list`,
+                        `${fetchURL}/knowledge/${spaceName}/document/list`,
                         {
                           method: 'POST',
                           headers: {
@@ -457,7 +458,7 @@ const Documents = () => {
                       return
                     }
                     const res = await fetch(
-                      `http://30.183.154.125:5000/knowledge/${spaceName}/document/add`,
+                      `${fetchURL}/knowledge/${spaceName}/document/add`,
                       {
                         method: 'POST',
                         headers: {
@@ -476,7 +477,7 @@ const Documents = () => {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
                       const res = await fetch(
-                        `http://30.183.154.125:5000/knowledge/${spaceName}/document/list`,
+                        `${fetchURL}/knowledge/${spaceName}/document/list`,
                         {
                           method: 'POST',
                           headers: {
