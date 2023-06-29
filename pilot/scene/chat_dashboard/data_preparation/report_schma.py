@@ -4,7 +4,9 @@ from typing import TypeVar, Union, List, Generic, Any
 
 class ChartData(BaseModel):
     chart_uid: str
+    chart_name: str
     chart_type: str
+    chart_desc: str
     chart_sql: str
     column_name: List
     values: List
