@@ -34,6 +34,7 @@
     "eslint": "8.43.0",
     "eslint-config-next": "13.4.7",
     "lodash": "^4.17.21",
+    "markdown-to-jsx": "^7.2.1",
     "moment": "^2.29.4",
     "next": "13.4.7",
     "next-auth": "^4.20.1",
@@ -42,7 +43,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.43.8",
-    "react-markdown": "^8.0.7",
+    "react-syntax-highlighter": "^15.5.0",
     "remark-gfm": "^3.0.1",
     "styled-components": "^5.3.11",
     "swr": "^2.1.1",
@@ -52,6 +53,7 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.195",
-    "@types/nprogress": "^0.2.0"
+    "@types/nprogress": "^0.2.0",
+    "@types/react-syntax-highlighter": "^15.5.7"
   }
 }
