@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Streaming Demo</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div id="output"></div>
+    <script>
+        $(document).ready(function() {
+            var source = new EventSource("/v1/chat/completions");
+            source.onmessage = function(event) {
+                $("#output").append(event.data);
+            }
+        });
+    </script>
+</body>
+</html>
