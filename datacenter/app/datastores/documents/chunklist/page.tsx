@@ -80,6 +80,8 @@ const ChunkList = () => {
           </Table>
           <Stack direction="row" justifyContent="flex-end">
             <Pagination
+              defaultPageSize={20}
+              showSizeChanger={false}
               current={current}
               total={total}
               onChange={async (page) => {
