@@ -138,11 +138,12 @@ const Documents = () => {
               {documents.map((row: any) => (
                 <tr key={row.id}>
                   <td>{row.doc_name}</td>
-                  <td>{row.doc_type}</td>
+                  <td><Chip variant='soft' color='neutral'>{row.doc_type}</Chip></td>
                   <td>{row.chunk_size}</td>
                   <td>{moment(row.last_sync).format('YYYY-MM-DD HH:MM:SS')}</td>
                   <td>
                     <Chip
+                      variant="soft"
                       color={(function () {
                         switch (row.status) {
                           case 'TODO':
