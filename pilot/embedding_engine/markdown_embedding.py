@@ -11,7 +11,6 @@ from langchain.text_splitter import SpacyTextSplitter, CharacterTextSplitter
 from pilot.configs.config import Config
 from pilot.embedding_engine import SourceEmbedding, register
 from pilot.embedding_engine.EncodeTextLoader import EncodeTextLoader
-from pilot.embedding_engine.chn_document_splitter import CHNDocumentSplitter
 
 CFG = Config()
 
@@ -30,11 +29,7 @@ class MarkdownEmbedding(SourceEmbedding):
     def read(self):
         """Load from markdown path."""
         loader = EncodeTextLoader(self.file_path)
-        # text_splitter = SpacyTextSplitter(
-        #     pipeline="zh_core_web_sm",
-        #     chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
-        #     chunk_overlap=100,
-        # )
+
         if CFG.LANGUAGE == "en":
             text_splitter = CharacterTextSplitter(
                 chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
@@ -42,7 +37,11 @@ class MarkdownEmbedding(SourceEmbedding):
                 length_function=len,
             )
         else:
-            text_splitter = CHNDocumentSplitter(pdf=True, sentence_size=1000)
+            text_splitter = SpacyTextSplitter(
+                pipeline="zh_core_web_sm",
+                chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
+                chunk_overlap=100,
+            )
         return loader.load_and_split(text_splitter)
 
     @register
