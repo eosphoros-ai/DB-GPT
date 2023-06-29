@@ -1,4 +1,5 @@
 "use client";
+import { useRequest } from 'ahooks';
 import { useState } from 'react';
 import { Button, Input, useColorScheme } from '@/lib/mui';
 import IconButton from '@mui/joy/IconButton';
@@ -8,7 +9,6 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { sendPostRequest } from '@/utils/request';
 import { useRouter } from 'next/navigation';
-import { useQueryDialog } from '@/hooks/useQueryDialogue';
 
 export default function Home() {
   const Schema = z.object({ query: z.string().min(1) });
@@ -19,7 +19,8 @@ export default function Home() {
     resolver: zodResolver(Schema),
     defaultValues: {},
   });
-  const { refreshDialogList } = useQueryDialog();
+  const { data: scenesList } = useRequest(async () => await sendPostRequest('v1/chat/dialogue/scenes'));
+
   const submit = async ({ query }: z.infer<typeof Schema>) => {
     try {
       setIsLoading(true);
@@ -50,11 +51,24 @@ export default function Home() {
         <div className='lg:my-auto grid gap-8 lg:grid-cols-3'>
           <div className='lg:col-span-3 lg:mt-12'>
             <p className='mb-3'>Scenes</p>
-            <div className='grid gap-2 lg:grid-cols-4 lg:gap-5'>
-              <Button size="md" variant="soft">LLM native dialogue</Button>
-              <Button size="md" variant="soft">Default documents</Button>
-              <Button size="md" variant="soft">New documents</Button>
-              <Button size="md" variant="soft">Chat with url</Button>
+            <div className='grid gap-2 lg:grid-cols-3 lg:gap-4'>
+              {scenesList?.data?.map(scene => (
+                <Button
+                  key={scene['chat_scene']}
+                  size="md"
+                  variant="soft"
+                  onClick={async () => {
+                    const res = await sendPostRequest('/v1/chat/dialogue/new', {
+                      chat_mode: scene['chat_scene']
+                    });
+                    if (res?.success && res?.data?.conv_uid) {
+                      router.push(`/agents/${res?.data?.conv_uid}?scene=${scene['chat_scene']}`);
+                    }
+                  }}
+                >
+                  {scene['scene_name']
+                }</Button>
+              ))}
             </div>
           </div>
         </div>
