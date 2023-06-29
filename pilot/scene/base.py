@@ -20,8 +20,8 @@ class ChatScene(Enum):
     ChatNormal = "chat_normal"
     ChatDashboard = "chat_dashboard"
     ChatKnowledge = "chat_knowledge"
-    ChatDb = "chat_db"
-    ChatData = "chat_data"
+    # ChatDb = "chat_db"
+    # ChatData= "chat_data"
 
     @staticmethod
     def is_valid_mode(mode):
