@@ -22,6 +22,7 @@ import {
 import moment from 'moment'
 import { InboxOutlined } from '@ant-design/icons'
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import CachedIcon from '@mui/icons-material/Cached';
 import type { UploadProps } from 'antd'
 import { Upload, Pagination, Popover, message } from 'antd'
 import { fetchBaseURL } from '@/app/datastores/constants'
@@ -264,7 +265,7 @@ const Documents = () => {
                             }
                           }}
                         >
-                          Synch
+                          Synch<CachedIcon />
                         </Button>
                         <Button
                           variant="outlined"
