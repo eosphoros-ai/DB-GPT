@@ -51,6 +51,7 @@ class KnowledgeEmbedding:
         self.knowledge_embedding_client.index_to_store(docs)
 
     def read(self):
+        self.knowledge_embedding_client = self.init_knowledge_embedding()
         return self.knowledge_embedding_client.read_batch()
 
     def init_knowledge_embedding(self):

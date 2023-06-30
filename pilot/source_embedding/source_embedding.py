@@ -34,7 +34,6 @@ class SourceEmbedding(ABC):
         self.embedding_args = embedding_args
         self.embeddings = vector_store_config["embeddings"]
 
-
     @abstractmethod
     @register
     def read(self) -> List[ABC]:
