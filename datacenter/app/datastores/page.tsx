@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { InboxOutlined } from '@ant-design/icons'
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import type { UploadProps } from 'antd'
 import { message, Upload, Popover } from 'antd'
 import {
@@ -16,6 +17,8 @@ import {
   Input,
   Textarea,
   Chip,
+  Switch,
+  Typography,
   styled
 } from '@/lib/mui'
 import { fetchBaseURL } from '@/app/datastores/constants'
@@ -34,9 +37,9 @@ const Item = styled(Sheet)(({ theme }) => ({
 }))
 
 const stepsOfAddingSpace = [
-  '1.Knowledge Space Config',
-  '2.Choose a Datasource type',
-  '3.Setup the Datasource'
+  'Knowledge Space Config',
+  'Choose a Datasource type',
+  'Setup the Datasource'
 ]
 const documentTypeList = [
   {
@@ -71,6 +74,7 @@ const Index = () => {
   const [textSource, setTextSource] = useState<string>('')
   const [text, setText] = useState<string>('')
   const [originFileObj, setOriginFileObj] = useState<any>(null)
+  const [synchChecked, setSynchChecked] = useState<boolean>(true)
   const props: UploadProps = {
     name: 'file',
     multiple: false,
@@ -138,6 +142,9 @@ const Index = () => {
               },
               '& tbody tr: hover a': {
                 textDecoration: 'underline'
+              },
+              '& tbody tr a': {
+                color: 'rgb(13, 96, 217)'
               }
             }}
           >
@@ -214,9 +221,13 @@ const Index = () => {
               {stepsOfAddingSpace.map((item: any, index: number) => (
                 <Item
                   key={item}
-                  sx={{ fontWeight: activeStep === index ? 'bold' : '', color: activeStep === index ? '#814DDE' : '' }}
+                  sx={{
+                    fontWeight: activeStep === index ? 'bold' : '',
+                    color: activeStep === index ? '#814DDE' : ''
+                  }}
                 >
-                  {item}
+                  {index < activeStep ? <CheckCircleOutlinedIcon /> : `${index + 1}.`}
+                  {`${item}`}
                 </Item>
               ))}
             </Stack>
@@ -361,95 +372,164 @@ const Index = () => {
                     />
                   </>
                 )}
+                <Typography
+                  component="label"
+                  sx={{
+                    marginTop: '20px'
+                  }}
+                  endDecorator={
+                    <Switch
+                      checked={synchChecked}
+                      onChange={(event: any) =>
+                        setSynchChecked(event.target.checked)
+                      }
+                    />
+                  }
+                >
+                  Synch:
+                </Typography>
               </Box>
-              <Button
-                variant='outlined'
-                onClick={async () => {
-                  if (documentName === '') {
-                    message.error('Please input the name')
-                    return
-                  }
-                  if (documentType === 'webPage') {
-                    if (webPageUrl === '') {
-                      message.error('Please input the Web Page URL')
-                      return
-                    }
-                    const res = await fetch(
-                      `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/add`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          doc_name: documentName,
-                          content: webPageUrl,
-                          doc_type: 'URL'
-                        })
-                      }
-                    )
-                    const data = await res.json()
-                    if (data.success) {
-                      message.success('success')
-                      setIsAddKnowledgeSpaceModalShow(false)
-                    } else {
-                      message.error(data.err_msg || 'failed')
-                    }
-                  } else if (documentType === 'file') {
-                    if (!originFileObj) {
-                      message.error('Please select a file')
-                      return
-                    }
-                    const formData = new FormData()
-                    formData.append('doc_name', documentName)
-                    formData.append('doc_file', originFileObj)
-                    formData.append('doc_type', 'DOCUMENT')
-                    const res = await fetch(
-                      `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/upload`,
-                      {
-                        method: 'POST',
-                        body: formData
-                      }
-                    )
-                    const data = await res.json()
-                    if (data.success) {
-                      message.success('success')
-                      setIsAddKnowledgeSpaceModalShow(false)
-                    } else {
-                      message.error(data.err_msg || 'failed')
-                    }
-                  } else {
-                    if (text === '') {
-                      message.error('Please input the text')
-                      return
-                    }
-                    const res = await fetch(
-                      `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/add`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          doc_name: documentName,
-                          source: textSource,
-                          content: text,
-                          doc_type: 'TEXT'
-                        })
-                      }
-                    )
-                    const data = await res.json()
-                    if (data.success) {
-                      message.success('success')
-                      setIsAddKnowledgeSpaceModalShow(false)
-                    } else {
-                      message.error(data.err_msg || 'failed')
-                    }
-                  }
-                }}
+              <Stack
+                direction="row"
+                justifyContent="flex-start"
+                alignItems="center"
+                sx={{ marginBottom: '20px' }}
               >
-                Finish
-              </Button>
+                <Button
+                  variant="outlined"
+                  sx={{ marginRight: '20px' }}
+                  onClick={() => setActiveStep(1)}
+                >
+                  {'< Back'}
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={async () => {
+                    if (documentName === '') {
+                      message.error('Please input the name')
+                      return
+                    }
+                    if (documentType === 'webPage') {
+                      if (webPageUrl === '') {
+                        message.error('Please input the Web Page URL')
+                        return
+                      }
+                      const res = await fetch(
+                        `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/add`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            doc_name: documentName,
+                            content: webPageUrl,
+                            doc_type: 'URL'
+                          })
+                        }
+                      )
+                      const data = await res.json()
+                      if (data.success) {
+                        message.success('success')
+                        setIsAddKnowledgeSpaceModalShow(false)
+                        synchChecked &&
+                          fetch(
+                            `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                doc_ids: [data.data]
+                              })
+                            }
+                          )
+                      } else {
+                        message.error(data.err_msg || 'failed')
+                      }
+                    } else if (documentType === 'file') {
+                      if (!originFileObj) {
+                        message.error('Please select a file')
+                        return
+                      }
+                      const formData = new FormData()
+                      formData.append('doc_name', documentName)
+                      formData.append('doc_file', originFileObj)
+                      formData.append('doc_type', 'DOCUMENT')
+                      const res = await fetch(
+                        `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/upload`,
+                        {
+                          method: 'POST',
+                          body: formData
+                        }
+                      )
+                      const data = await res.json()
+                      if (data.success) {
+                        message.success('success')
+                        setIsAddKnowledgeSpaceModalShow(false)
+                        synchChecked &&
+                          fetch(
+                            `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                doc_ids: [data.data]
+                              })
+                            }
+                          )
+                      } else {
+                        message.error(data.err_msg || 'failed')
+                      }
+                    } else {
+                      if (text === '') {
+                        message.error('Please input the text')
+                        return
+                      }
+                      const res = await fetch(
+                        `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/add`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            doc_name: documentName,
+                            source: textSource,
+                            content: text,
+                            doc_type: 'TEXT'
+                          })
+                        }
+                      )
+                      const data = await res.json()
+                      if (data.success) {
+                        message.success('success')
+                        setIsAddKnowledgeSpaceModalShow(false)
+                        synchChecked &&
+                          fetch(
+                            `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                doc_ids: [data.data]
+                              })
+                            }
+                          )
+                      } else {
+                        message.error(data.err_msg || 'failed')
+                      }
+                    }
+                  }}
+                >
+                  Finish
+                </Button>
+              </Stack>
             </>
           )}
         </Sheet>
