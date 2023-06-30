@@ -1,7 +1,7 @@
 "use client";
 import { useRequest } from 'ahooks';
 import { useState } from 'react';
-import { Button, Input, useColorScheme } from '@/lib/mui';
+import { Button, Input, useColorScheme, Box, buttonClasses } from '@/lib/mui';
 import IconButton from '@mui/joy/IconButton';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,25 +38,30 @@ export default function Home() {
   };
 
   return (
-    <> 
-      <div className={`absolute z-20 top-0 inset-x-0 flex justify-center overflow-hidden pointer-events-none`}>
-        <div className='w-[108rem] flex-none flex justify-end'>
-          <picture>
-            <source srcSet='/bg1.avif' type='image/avif'></source>
-            <img srcSet='/bg2.png' alt="" className='w-[71.75rem] flex-none max-w-none '/>
-          </picture>
-        </div>
-      </div>
-      <div className='mx-auto flex h-full max-w-3xl flex-col gap-6 px-5 pt-6 sm:gap-8 xl:max-w-4xl'>
-        <div className='lg:my-auto grid gap-8 lg:grid-cols-3'>
-          <div className='lg:col-span-3 lg:mt-12'>
-            <p className='mb-3'>Scenes</p>
-            <div className='grid gap-2 lg:grid-cols-3 lg:gap-4'>
+    <>
+      <div className='mx-auto justify-end flex max-w-3xl flex-col h-3/4 gap-6 px-5 pt-6 sm:gap-16 xl:max-w-4xl'>
+        <div className='grid gap-8 lg:grid-cols-3'>
+          <div className='lg:col-span-3'>
+            <p className='mb-8 text-center text-2xl'>Scenes</p>
+            <Box
+              className='grid gap-2 lg:grid-cols-3 lg:gap-6'
+              sx={{
+                [`& .${buttonClasses.root}`]: {
+                  color: 'var(--joy-palette-primary-solidColor)',
+                  backgroundColor: 'var(--joy-palette-primary-solidBg)',
+                  height: '52px',
+                  '&: hover': {
+                    backgroundColor: 'var(--joy-palette-primary-solidHoverBg)',
+                  }
+                }
+              }}
+            >
               {scenesList?.data?.map(scene => (
                 <Button
                   key={scene['chat_scene']}
                   size="md"
-                  variant="soft"
+                  variant="solid"
+                  className='text-base rounded-none	'
                   onClick={async () => {
                     const res = await sendPostRequest('/v1/chat/dialogue/new', {
                       chat_mode: scene['chat_scene']
@@ -69,42 +74,42 @@ export default function Home() {
                   {scene['scene_name']
                 }</Button>
               ))}
-            </div>
+            </Box>
           </div>
         </div>
-        <div className='h-60 flex-none'></div>
+        <div className='mt-6 pointer-events-none inset-x-0 bottom-0 z-0 mx-auto flex w-full max-w-3xl flex-col items-center justify-center max-md:border-t xl:max-w-4xl [&>*]:pointer-events-auto'>
+          <form
+            style={{
+              maxWidth: '100%',
+              width: '100%',
+              position: 'relative',
+              display: 'flex',
+              marginTop: 'auto',
+              overflow: 'visible',
+              background: 'none',
+              justifyContent: 'center',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}
+            onSubmit={(e) => {
+              methods.handleSubmit(submit)(e);
+            }}
+          >
+            <Input
+              sx={{ width: '100%' }}
+              variant="outlined"
+              placeholder='Ask anything'
+              endDecorator={
+                <IconButton type="submit" disabled={isLoading}>
+                  <SendRoundedIcon />
+                </IconButton>
+              }
+              {...methods.register('query')}
+            />
+          </form>
+        </div>
       </div>
-      <div className='pointer-events-none absolute inset-x-0 bottom-0 z-0 mx-auto flex w-full max-w-3xl flex-col items-center justify-center px-3.5 py-4 max-md:border-t sm:px-5 md:py-8 xl:max-w-4xl [&>*]:pointer-events-auto'>
-        <form
-          style={{
-            maxWidth: '100%',
-            width: '100%',
-            position: 'relative',
-            display: 'flex',
-            marginTop: 'auto',
-            overflow: 'visible',
-            background: 'none',
-            justifyContent: 'center',
-            marginLeft: 'auto',
-            marginRight: 'auto',
-          }}
-          onSubmit={(e) => {
-            methods.handleSubmit(submit)(e);
-          }}
-        >
-          <Input
-            sx={{ width: '100%' }}
-            variant="outlined"
-            placeholder='Ask anything'
-            endDecorator={
-              <IconButton type="submit" disabled={isLoading}>
-                <SendRoundedIcon />
-              </IconButton>
-            }
-            {...methods.register('query')}
-          />
-        </form>
-      </div>
+      
     </>
     
   )

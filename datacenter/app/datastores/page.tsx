@@ -21,7 +21,6 @@ import {
   Typography,
   styled
 } from '@/lib/mui'
-import { fetchBaseURL } from '@/app/datastores/constants'
 
 const { Dragger } = Upload
 
@@ -91,7 +90,7 @@ const Index = () => {
   }
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch(`${fetchBaseURL}/knowledge/space/list`, {
+      const res = await fetch(`${process.env.API_BASE_URL}/knowledge/space/list`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -249,7 +248,7 @@ const Index = () => {
                     return
                   }
                   const res = await fetch(
-                    `${fetchBaseURL}/knowledge/space/add`,
+                    `${process.env.API_BASE_URL}/knowledge/space/add`,
                     {
                       method: 'POST',
                       headers: {
@@ -268,7 +267,7 @@ const Index = () => {
                     message.success('success')
                     setActiveStep(1)
                     const res = await fetch(
-                      `${fetchBaseURL}/knowledge/space/list`,
+                      `${process.env.API_BASE_URL}/knowledge/space/list`,
                       {
                         method: 'POST',
                         headers: {
@@ -415,7 +414,7 @@ const Index = () => {
                         return
                       }
                       const res = await fetch(
-                        `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/add`,
+                        `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/add`,
                         {
                           method: 'POST',
                           headers: {
@@ -434,7 +433,7 @@ const Index = () => {
                         setIsAddKnowledgeSpaceModalShow(false)
                         synchChecked &&
                           fetch(
-                            `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/sync`,
                             {
                               method: 'POST',
                               headers: {
@@ -458,7 +457,7 @@ const Index = () => {
                       formData.append('doc_file', originFileObj)
                       formData.append('doc_type', 'DOCUMENT')
                       const res = await fetch(
-                        `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/upload`,
+                        `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/upload`,
                         {
                           method: 'POST',
                           body: formData
@@ -470,7 +469,7 @@ const Index = () => {
                         setIsAddKnowledgeSpaceModalShow(false)
                         synchChecked &&
                           fetch(
-                            `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/sync`,
                             {
                               method: 'POST',
                               headers: {
@@ -490,7 +489,7 @@ const Index = () => {
                         return
                       }
                       const res = await fetch(
-                        `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/add`,
+                        `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/add`,
                         {
                           method: 'POST',
                           headers: {
@@ -510,7 +509,7 @@ const Index = () => {
                         setIsAddKnowledgeSpaceModalShow(false)
                         synchChecked &&
                           fetch(
-                            `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/sync`,
                             {
                               method: 'POST',
                               headers: {
