@@ -15,6 +15,8 @@ import {
   Chip,
   Switch,
   Typography,
+  Breadcrumbs,
+  Link,
   styled
 } from '@/lib/mui'
 import moment from 'moment'
@@ -115,20 +117,33 @@ const Documents = () => {
   }, [])
   return (
     <div className="p-4">
-      <Sheet
-        sx={{
-          display: 'flex',
-          flexDirection: 'row-reverse'
-        }}
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ marginBottom: '20px' }}
       >
+        <Breadcrumbs aria-label="breadcrumbs">
+          <Link
+            onClick={() => {
+              router.push('/datastores')
+            }}
+            key="Knowledge Space"
+            underline="hover"
+            color="neutral"
+            fontSize="inherit"
+          >
+            Knowledge Space
+          </Link>
+          <Typography fontSize="inherit">Documents</Typography>
+        </Breadcrumbs>
         <Button
           variant="outlined"
           onClick={() => setIsAddDocumentModalShow(true)}
-          sx={{ marginBottom: '20px' }}
         >
           + Add Datasource
         </Button>
-      </Sheet>
+      </Stack>
       {documents.length ? (
         <>
           <Table
@@ -442,187 +457,202 @@ const Documents = () => {
                   Synch:
                 </Typography>
               </Box>
-              <Button
-                variant="outlined"
-                onClick={async () => {
-                  if (documentName === '') {
-                    message.error('Please input the name')
-                    return
-                  }
-                  if (documentType === 'webPage') {
-                    if (webPageUrl === '') {
-                      message.error('Please input the Web Page URL')
-                      return
-                    }
-                    const res = await fetch(
-                      `${fetchBaseURL}/knowledge/${spaceName}/document/add`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          doc_name: documentName,
-                          content: webPageUrl,
-                          doc_type: 'URL'
-                        })
-                      }
-                    )
-                    const data = await res.json()
-                    data.success && fetch(
-                      `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          doc_ids: [data.data]
-                        })
-                      }
-                    )
-                    if (data.success) {
-                      message.success('success')
-                      setIsAddDocumentModalShow(false)
-                      const res = await fetch(
-                        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
-                        {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            page: current,
-                            page_size
-                          })
-                        }
-                      )
-                      const data = await res.json()
-                      if (data.success) {
-                        setDocuments(data.data.data)
-                        setTotal(data.data.total)
-                        setCurrent(data.data.page)
-                      }
-                    } else {
-                      message.error(data.err_msg || 'failed')
-                    }
-                  } else if (documentType === 'file') {
-                    if (!originFileObj) {
-                      message.error('Please select a file')
-                      return
-                    }
-                    const formData = new FormData()
-                    formData.append('doc_name', documentName)
-                    formData.append('doc_file', originFileObj)
-                    formData.append('doc_type', 'DOCUMENT')
-                    const res = await fetch(
-                      `${fetchBaseURL}/knowledge/${spaceName}/document/upload`,
-                      {
-                        method: 'POST',
-                        body: formData
-                      }
-                    )
-                    const data = await res.json()
-                    data.success && fetch(
-                      `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          doc_ids: [data.data]
-                        })
-                      }
-                    )
-                    if (data.success) {
-                      message.success('success')
-                      setIsAddDocumentModalShow(false)
-                      const res = await fetch(
-                        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
-                        {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            page: current,
-                            page_size
-                          })
-                        }
-                      )
-                      const data = await res.json()
-                      if (data.success) {
-                        setDocuments(data.data.data)
-                        setTotal(data.data.total)
-                        setCurrent(data.data.page)
-                      }
-                    } else {
-                      message.error(data.err_msg || 'failed')
-                    }
-                  } else {
-                    if (text === '') {
-                      message.error('Please input the text')
-                      return
-                    }
-                    const res = await fetch(
-                      `${fetchBaseURL}/knowledge/${spaceName}/document/add`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          doc_name: documentName,
-                          source: textSource,
-                          content: text,
-                          doc_type: 'TEXT'
-                        })
-                      }
-                    )
-                    const data = await res.json()
-                    data.success && fetch(
-                      `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          doc_ids: [data.data]
-                        })
-                      }
-                    )
-                    if (data.success) {
-                      message.success('success')
-                      setIsAddDocumentModalShow(false)
-                      const res = await fetch(
-                        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
-                        {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            page: current,
-                            page_size
-                          })
-                        }
-                      )
-                      const data = await res.json()
-                      if (data.success) {
-                        setDocuments(data.data.data)
-                        setTotal(data.data.total)
-                        setCurrent(data.data.page)
-                      }
-                    } else {
-                      message.error(data.err_msg || 'failed')
-                    }
-                  }
-                }}
+              <Stack
+                direction="row"
+                justifyContent="flex-start"
+                alignItems="center"
+                sx={{ marginBottom: '20px' }}
               >
-                Finish
-              </Button>
+                <Button
+                  variant="outlined"
+                  sx={{ marginRight: '20px' }}
+                  onClick={() => setActiveStep(0)}
+                >{'< Back'}</Button>
+                <Button
+                  variant="outlined"
+                  onClick={async () => {
+                    if (documentName === '') {
+                      message.error('Please input the name')
+                      return
+                    }
+                    if (documentType === 'webPage') {
+                      if (webPageUrl === '') {
+                        message.error('Please input the Web Page URL')
+                        return
+                      }
+                      const res = await fetch(
+                        `${fetchBaseURL}/knowledge/${spaceName}/document/add`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            doc_name: documentName,
+                            content: webPageUrl,
+                            doc_type: 'URL'
+                          })
+                        }
+                      )
+                      const data = await res.json()
+                      data.success &&
+                        fetch(
+                          `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              doc_ids: [data.data]
+                            })
+                          }
+                        )
+                      if (data.success) {
+                        message.success('success')
+                        setIsAddDocumentModalShow(false)
+                        const res = await fetch(
+                          `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              page: current,
+                              page_size
+                            })
+                          }
+                        )
+                        const data = await res.json()
+                        if (data.success) {
+                          setDocuments(data.data.data)
+                          setTotal(data.data.total)
+                          setCurrent(data.data.page)
+                        }
+                      } else {
+                        message.error(data.err_msg || 'failed')
+                      }
+                    } else if (documentType === 'file') {
+                      if (!originFileObj) {
+                        message.error('Please select a file')
+                        return
+                      }
+                      const formData = new FormData()
+                      formData.append('doc_name', documentName)
+                      formData.append('doc_file', originFileObj)
+                      formData.append('doc_type', 'DOCUMENT')
+                      const res = await fetch(
+                        `${fetchBaseURL}/knowledge/${spaceName}/document/upload`,
+                        {
+                          method: 'POST',
+                          body: formData
+                        }
+                      )
+                      const data = await res.json()
+                      data.success &&
+                        fetch(
+                          `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              doc_ids: [data.data]
+                            })
+                          }
+                        )
+                      if (data.success) {
+                        message.success('success')
+                        setIsAddDocumentModalShow(false)
+                        const res = await fetch(
+                          `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              page: current,
+                              page_size
+                            })
+                          }
+                        )
+                        const data = await res.json()
+                        if (data.success) {
+                          setDocuments(data.data.data)
+                          setTotal(data.data.total)
+                          setCurrent(data.data.page)
+                        }
+                      } else {
+                        message.error(data.err_msg || 'failed')
+                      }
+                    } else {
+                      if (text === '') {
+                        message.error('Please input the text')
+                        return
+                      }
+                      const res = await fetch(
+                        `${fetchBaseURL}/knowledge/${spaceName}/document/add`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            doc_name: documentName,
+                            source: textSource,
+                            content: text,
+                            doc_type: 'TEXT'
+                          })
+                        }
+                      )
+                      const data = await res.json()
+                      data.success &&
+                        fetch(
+                          `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              doc_ids: [data.data]
+                            })
+                          }
+                        )
+                      if (data.success) {
+                        message.success('success')
+                        setIsAddDocumentModalShow(false)
+                        const res = await fetch(
+                          `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              page: current,
+                              page_size
+                            })
+                          }
+                        )
+                        const data = await res.json()
+                        if (data.success) {
+                          setDocuments(data.data.data)
+                          setTotal(data.data.total)
+                          setCurrent(data.data.page)
+                        }
+                      } else {
+                        message.error(data.err_msg || 'failed')
+                      }
+                    }
+                  }}
+                >
+                  Finish
+                </Button>
+              </Stack>
             </>
           )}
         </Sheet>
