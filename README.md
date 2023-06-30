@@ -10,7 +10,7 @@
     </a>
   </p>
 
-[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/hmGPnMSb) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
+[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/4BNdxm5d) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
 
 </div>
 
@@ -21,10 +21,11 @@ As large models are released and iterated upon, they are becoming increasingly i
 DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 
 ## News
+- [2023/06/25]🔥support chatglm2-6b model. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
 - [2023/06/14] support gpt4all model, which can run at M1/M2, or cpu machine. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
 - [2023/06/01]🔥 On the basis of the Vicuna-13B basic model, task chain calls are implemented through plugins. For example, the implementation of creating a database with a single sentence.[demo](./assets/auto_plugin.gif)
 - [2023/06/01]🔥 QLoRA guanaco(7b, 13b, 33b) support.
-- [2023/05/28]🔥 Learning from crawling data from the Internet [demo](./assets/chaturl_en.gif)
+- [2023/05/28] Learning from crawling data from the Internet [demo](./assets/chaturl_en.gif)
 - [2023/05/21] Generate SQL and execute it automatically. [demo](./assets/auto_sql_en.gif)
 - [2023/05/15] Chat with documents. [demo](./assets/new_knownledge_en.gif)
 - [2023/05/06] SQL generation and diagnosis. [demo](./assets/demo_en.gif)
@@ -149,7 +150,7 @@ This project is standing on the shoulders of giants and is not going to work wit
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/hmGPnMSb)
+We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/4BNdxm5d)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
