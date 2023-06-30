@@ -18,7 +18,7 @@ import {
 import moment from 'moment'
 import { InboxOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
-import { Upload, Pagination, message } from 'antd'
+import { Upload, Pagination, Popover, message } from 'antd'
 import { fetchBaseURL } from '@/app/datastores/constants'
 
 const { Dragger } = Upload
@@ -149,6 +149,7 @@ const Documents = () => {
                 <th>Size</th>
                 <th>Last Synch</th>
                 <th>Status</th>
+                <th>Result</th>
                 <th>Operation</th>
               </tr>
             </thead>
@@ -157,11 +158,7 @@ const Documents = () => {
                 <tr key={row.id}>
                   <td>{row.doc_name}</td>
                   <td>
-                    <Chip
-                      variant="solid"
-                      color="neutral"
-                      sx={{ opacity: .5 }}
-                    >
+                    <Chip variant="solid" color="neutral" sx={{ opacity: 0.5 }}>
                       {row.doc_type}
                     </Chip>
                   </td>
@@ -169,7 +166,7 @@ const Documents = () => {
                   <td>{moment(row.last_sync).format('YYYY-MM-DD HH:MM:SS')}</td>
                   <td>
                     <Chip
-                      sx={{ opacity: .5 }}
+                      sx={{ opacity: 0.5 }}
                       variant="solid"
                       color={(function () {
                         switch (row.status) {
@@ -186,6 +183,37 @@ const Documents = () => {
                     >
                       {row.status}
                     </Chip>
+                  </td>
+                  <td>
+                    {(function () {
+                      if (row.status === 'TODO' || row.status === 'RUNNING') {
+                        return ''
+                      } else if (row.status === 'FINISHED') {
+                        return (
+                          <Popover content={row.result} trigger="hover">
+                            <Chip
+                              variant="solid"
+                              color="success"
+                              sx={{ opacity: 0.5 }}
+                            >
+                              SUCCESS
+                            </Chip>
+                          </Popover>
+                        )
+                      } else {
+                        return (
+                          <Popover content={row.result} trigger="hover">
+                            <Chip
+                              variant="solid"
+                              color="danger"
+                              sx={{ opacity: 0.5 }}
+                            >
+                              FAILED
+                            </Chip>
+                          </Popover>
+                        )
+                      }
+                    })()}
                   </td>
                   <td>
                     {
@@ -301,7 +329,10 @@ const Documents = () => {
               {stepsOfAddingDocument.map((item: any, index: number) => (
                 <Item
                   key={item}
-                  sx={{ fontWeight: activeStep === index ? 'bold' : '', color: activeStep === index ? '#814DDE' : '' }}
+                  sx={{
+                    fontWeight: activeStep === index ? 'bold' : '',
+                    color: activeStep === index ? '#814DDE' : ''
+                  }}
                 >
                   {item}
                 </Item>
@@ -393,7 +424,7 @@ const Documents = () => {
                 )}
               </Box>
               <Button
-                variant='outlined'
+                variant="outlined"
                 onClick={async () => {
                   if (documentName === '') {
                     message.error('Please input the name')
