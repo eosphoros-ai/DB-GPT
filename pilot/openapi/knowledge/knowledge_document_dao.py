@@ -123,6 +123,7 @@ class KnowledgeDocumentDao:
         updated_space = session.merge(document)
         session.commit()
         return updated_space.id
+
     #
     # def delete_knowledge_document(self, document_id: int):
     #     cursor = self.conn.cursor()

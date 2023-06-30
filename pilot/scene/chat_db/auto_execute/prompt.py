@@ -46,6 +46,6 @@ prompt = PromptTemplate(
     output_parser=DbChatOutputParser(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
     ),
-    example_selector=sql_data_example
+    example_selector=sql_data_example,
 )
 CFG.prompt_templates.update({prompt.template_scene: prompt})
