@@ -2,6 +2,7 @@ import uuid
 import json
 import asyncio
 import time
+import os
 from fastapi import (
     APIRouter,
     Request,
@@ -12,11 +13,11 @@ from fastapi import (
     BackgroundTasks,
 )
 
-from fastapi.responses import JSONResponse
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from sse_starlette.sse import EventSourceResponse
 from typing import List
 
 from pilot.openapi.api_v1.api_view_model import (
@@ -46,6 +47,7 @@ knowledge_service = KnowledgeService()
 
 model_semaphore = None
 global_counter = 0
+static_file_path = os.path.join(os.getcwd(), "server/static")
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -95,6 +97,10 @@ def knowledge_list():
     return params
 
 
+@router.get("/")
+async def read_main():
+    return FileResponse(f"{static_file_path}/test.html")
+
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
 async def dialogue_list(response: Response, user_id: str = None):
@@ -110,8 +116,6 @@ async def dialogue_list(response: Response, user_id: str = None):
         conv_uid = item.get("conv_uid")
         summary = item.get("summary")
         chat_mode = item.get("chat_mode")
-
-
 
         conv_vo: ConversationVo = ConversationVo(
             conv_uid=conv_uid,
@@ -147,13 +151,13 @@ async def dialogue_scenes():
     return Result.succ(scene_vos)
 
 
-
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
     chat_mode: str = ChatScene.ChatNormal.value, user_id: str = None
 ):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)
+
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
 async def params_list(chat_mode: str = ChatScene.ChatNormal.value):
@@ -274,15 +278,15 @@ async def stream_generator(chat):
                 msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
                     chunk, chat.skip_echo_len
                 )
-                chat.current_message.add_ai_message(msg)
                 msg = msg.replace("\n", "\\n")
                 yield f"data:{msg}\n\n"
                 await asyncio.sleep(0.1)
     else:
         for chunk in model_response:
             if chunk:
-                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
-                chat.current_message.add_ai_message(msg)
+                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                    chunk, chat.skip_echo_len
+                )
 
                 msg = msg.replace("\n", "\\n")
                 yield f"data:{msg}\n\n"
