@@ -56,8 +56,9 @@ class KnowledgeDocumentDao:
         )
         session.add(knowledge_document)
         session.commit()
-
+        doc_id = knowledge_document.id
         session.close()
+        return doc_id
 
     def get_knowledge_documents(self, query, page=1, page_size=20):
         session = self.Session()
