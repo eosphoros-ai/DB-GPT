@@ -27,7 +27,7 @@ const AgentPage = (props: {
 	});
 
 	const { history, handleChatSubmit } = useAgentChat({
-		queryAgentURL: `http://30.183.153.109:5000/v1/chat/completions`,
+		queryAgentURL: `/v1/chat/completions`,
 		queryBody: {
 			conv_uid: props.params?.agentId,
 			chat_mode: props.searchParams?.scene || 'chat_normal',
