@@ -2,7 +2,7 @@ import { message } from 'antd';
 import axios from 'axios';
 import { isPlainObject } from 'lodash';
 
-axios.defaults.baseURL = 'http://localhost:5000';
+axios.defaults.baseURL = 'http://127.0.0.1:5000';
 
 axios.defaults.timeout = 10000;
 
