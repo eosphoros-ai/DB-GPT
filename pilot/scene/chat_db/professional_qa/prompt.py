@@ -8,7 +8,9 @@ from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = """You are an assistant that answers user specialized database questions. """
+PROMPT_SCENE_DEFINE = (
+    """You are an assistant that answers user specialized database questions. """
+)
 
 # PROMPT_SUFFIX = """Only use the following tables generate sql if have any table info:
 # {table_info}
