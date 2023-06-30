@@ -8,9 +8,7 @@ const DynamicWrapper = dynamic(() => import ('@/components/agentPage'), {
 
 const DynamicAgentPage = (props: any) => {
 	return (
-		<div>
-			<DynamicWrapper {...props} />
-		</div>
+		<DynamicWrapper {...props} />
 	)
 }
 export default DynamicAgentPage;
