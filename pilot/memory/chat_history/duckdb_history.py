@@ -15,13 +15,12 @@ from pilot.common.formatting import MyEncoder
 
 default_db_path = os.path.join(os.getcwd(), "message")
 duckdb_path = os.getenv("DB_DUCKDB_PATH", default_db_path + "/chat_history.db")
-table_name = 'chat_history'
+table_name = "chat_history"
 
 CFG = Config()
 
 
 class DuckdbHistoryMemory(BaseChatHistoryMemory):
-
     def __init__(self, chat_session_id: str):
         self.chat_seesion_id = chat_session_id
         os.makedirs(default_db_path, exist_ok=True)
@@ -29,10 +28,10 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         self.__init_chat_history_tables()
 
     def __init_chat_history_tables(self):
-
         # 检查表是否存在
-        result = self.connect.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-                                      [table_name]).fetchall()
+        result = self.connect.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?", [table_name]
+        ).fetchall()
 
         if not result:
             # 如果表不存在，则创建新表
@@ -74,8 +73,10 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         conversations.append(_conversation_to_dic(once_message))
         cursor = self.connect.cursor()
         if context:
-            cursor.execute("UPDATE chat_history set messages=? where conv_uid=?",
-                           [json.dumps(conversations, ensure_ascii=False), self.chat_seesion_id])
+            cursor.execute(
+                "UPDATE chat_history set messages=? where conv_uid=?",
+                [json.dumps(conversations, ensure_ascii=False), self.chat_seesion_id],
+            )
         else:
             cursor.execute(
                 "INSERT INTO chat_history(conv_uid, chat_mode,  summary, user_name, messages)VALUES(?,?,?,?,?)",
@@ -85,13 +86,17 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
 
     def clear(self) -> None:
         cursor = self.connect.cursor()
-        cursor.execute("DELETE FROM chat_history where conv_uid=?", [self.chat_seesion_id])
+        cursor.execute(
+            "DELETE FROM chat_history where conv_uid=?", [self.chat_seesion_id]
+        )
         cursor.commit()
         self.connect.commit()
 
     def delete(self) -> bool:
         cursor = self.connect.cursor()
-        cursor.execute("DELETE FROM chat_history where conv_uid=?", [self.chat_seesion_id])
+        cursor.execute(
+            "DELETE FROM chat_history where conv_uid=?", [self.chat_seesion_id]
+        )
         cursor.commit()
         return True
 
@@ -100,7 +105,9 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         if os.path.isfile(duckdb_path):
             cursor = duckdb.connect(duckdb_path).cursor()
             if user_name:
-                cursor.execute("SELECT * FROM chat_history where user_name=? limit 20", [user_name])
+                cursor.execute(
+                    "SELECT * FROM chat_history where user_name=? limit 20", [user_name]
+                )
             else:
                 cursor.execute("SELECT * FROM chat_history limit 20")
             # 获取查询结果字段名
@@ -118,7 +125,9 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
 
     def get_messages(self) -> List[OnceConversation]:
         cursor = self.connect.cursor()
-        cursor.execute("SELECT messages FROM chat_history where conv_uid=?", [self.chat_seesion_id])
+        cursor.execute(
+            "SELECT messages FROM chat_history where conv_uid=?", [self.chat_seesion_id]
+        )
         context = cursor.fetchone()
         if context:
             if context[0]:

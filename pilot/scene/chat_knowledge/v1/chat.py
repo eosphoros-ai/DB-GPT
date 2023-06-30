@@ -18,7 +18,7 @@ from pilot.configs.model_config import (
     LOGDIR,
 )
 
-from pilot.scene.chat_knowledge.default.prompt import prompt
+from pilot.scene.chat_knowledge.v1.prompt import prompt
 from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 
 CFG = Config()
