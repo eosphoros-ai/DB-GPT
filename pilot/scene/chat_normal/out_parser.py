@@ -12,7 +12,6 @@ logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
 
 
 class NormalChatOutputParser(BaseOutputParser):
-
     def parse_prompt_response(self, model_out_text) -> T:
         return model_out_text
 
