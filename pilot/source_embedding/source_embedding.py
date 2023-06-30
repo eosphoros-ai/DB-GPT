@@ -33,9 +33,7 @@ class SourceEmbedding(ABC):
         self.vector_store_config = vector_store_config
         self.embedding_args = embedding_args
         self.embeddings = vector_store_config["embeddings"]
-        self.vector_client = VectorStoreConnector(
-            CFG.VECTOR_STORE_TYPE, vector_store_config
-        )
+
 
     @abstractmethod
     @register
@@ -59,11 +57,17 @@ class SourceEmbedding(ABC):
     @register
     def index_to_store(self, docs):
         """index to vector store"""
+        self.vector_client = VectorStoreConnector(
+            CFG.VECTOR_STORE_TYPE, self.vector_store_config
+        )
         self.vector_client.load_document(docs)
 
     @register
     def similar_search(self, doc, topk):
         """vector store similarity_search"""
+        self.vector_client = VectorStoreConnector(
+            CFG.VECTOR_STORE_TYPE, self.vector_store_config
+        )
         try:
             ans = self.vector_client.similar_search(doc, topk)
         except NotEnoughElementsException:
@@ -71,6 +75,9 @@ class SourceEmbedding(ABC):
         return ans
 
     def vector_name_exist(self):
+        self.vector_client = VectorStoreConnector(
+            CFG.VECTOR_STORE_TYPE, self.vector_store_config
+        )
         return self.vector_client.vector_name_exists()
 
     def source_embedding(self):
