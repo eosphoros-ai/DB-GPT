@@ -25,17 +25,20 @@ class LocalKnowledgeInit:
 
     def knowledge_persist(self, file_path):
         """knowledge persist"""
+        docs = []
+        embedding_engine = None
         for root, _, files in os.walk(file_path, topdown=False):
             for file in files:
                 filename = os.path.join(root, file)
-                # docs = self._load_file(filename)
                 ke = KnowledgeEmbedding(
                     file_path=filename,
                     model_name=self.model_name,
                     vector_store_config=self.vector_store_config,
                 )
-                client = ke.init_knowledge_embedding()
-                client.source_embedding()
+                embedding_engine = ke.init_knowledge_embedding()
+                doc = ke.read()
+                docs.extend(doc)
+        embedding_engine.index_to_store(docs)
 
 
 if __name__ == "__main__":
