@@ -2,14 +2,14 @@
 import React, { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Popconfirm } from 'antd';
+import { Modal } from 'antd';
 import { Box, List, ListItem, ListItemButton, ListItemDecorator, ListItemContent, Typography, Button, useColorScheme, IconButton } from '@/lib/mui';
 import Article from '@mui/icons-material/Article';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
-import { useDialogueContext } from '@/app/context/dialogue';
+import SmsOutlinedIcon from '@mui/icons-material/SmsOutlined';import { useDialogueContext } from '@/app/context/dialogue';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import { sendPostRequest } from '@/utils/request';
 
@@ -110,6 +110,7 @@ const LeftSider =  () => {
 									aria-labelledby="nav-list-browse"
 									sx={{
 										'& .JoyListItemButton-root': { p: '8px' },
+										gap: '4px'
 									}}
 								>
 									{dialogueList?.data?.map((each) => {
@@ -119,32 +120,46 @@ const LeftSider =  () => {
 												<ListItemButton
 													selected={isSelect}
 													variant={isSelect ? 'soft' : 'plain'}
+													sx={{
+														'&:hover .del-btn': {
+															visibility: 'visible'
+														}
+													}}
 												>
 													<ListItemContent>
-														<Link href={`/agents/${each.conv_uid}?scene=${each?.chat_mode}`}>
+														<Link href={`/agents/${each.conv_uid}?scene=${each?.chat_mode}`} className="flex items-center justify-between">
 															<Typography fontSize={14} noWrap={true}>
+																<SmsOutlinedIcon className='mr-2' />
 																{each?.user_name || each?.user_input || 'undefined'}
 															</Typography>
+															<IconButton
+																color="neutral"
+																variant="plain"
+																size="sm"
+																onClick={(e) => {
+																	e.preventDefault();
+																	e.stopPropagation();
+																	Modal.confirm({
+																		title: 'Delete Chat',
+																		content: 'Are you sure delete this chat?',
+																		width: '276px',
+																		centered: true,
+																		async onOk() {
+																			await sendPostRequest(`v1/chat/dialogue/delete?con_uid=${each.conv_uid}`);
+																			await refreshDialogList();
+																			if (pathname === `/agents/${each.conv_uid}`) {
+																				router.push('/');
+																			}
+																		}
+																	})
+																}}
+																className='del-btn invisible'
+															>
+																<DeleteOutlineOutlinedIcon />
+															</IconButton>
 														</Link>
 													</ListItemContent>
 												</ListItemButton>
-												<Popconfirm
-													title="删除对话"
-													description="确认要删除该对话吗"
-													onConfirm={async() => {
-														await sendPostRequest(`v1/chat/dialogue/delete?con_uid=${each.conv_uid}`);
-														await refreshDialogList();
-														if (pathname === `/agents/${each.conv_uid}`) {
-															router.push('/');
-														}
-													}}
-													okText="Yes"
-    											cancelText="No"
-												>
-													<IconButton color="neutral" variant="plain">
-														<DeleteOutlineOutlinedIcon />
-													</IconButton>
-												</Popconfirm>
 											</ListItem>
 										)
 									})}
@@ -157,6 +172,8 @@ const LeftSider =  () => {
 						<Box
 							sx={{
 								p: 2,
+								pt: 3,
+								pb: 6,
 								borderTop: '1px solid',
 								borderColor: 'divider',
 								display: {
@@ -183,6 +200,7 @@ const LeftSider =  () => {
 												<ListItem>
 													<ListItemButton
 														color="neutral"
+														sx={{ marginBottom: 1, height: '2.5rem' }}
 														selected={each.active}
 														variant={each.active ? 'soft' : 'plain'}
 													>
@@ -202,6 +220,7 @@ const LeftSider =  () => {
 								</ListItem>
 								<ListItem>
 									<ListItemButton
+										sx={{ height: '2.5rem' }}
 										onClick={handleChangeTheme}
 									>
 										<ListItemDecorator>

@@ -1,15 +1,6 @@
 import { message } from 'antd';
-import axios from 'axios';
+import axios from './ctx-axios';
 import { isPlainObject } from 'lodash';
-
-axios.defaults.baseURL = 'http://30.183.153.109:5000';
-
-axios.defaults.timeout = 10000;
-
-axios.interceptors.response.use(
-  response => response.data,
-	err => Promise.reject(err)
-);
 
 const DEFAULT_HEADERS = {
   'content-type': 'application/json',

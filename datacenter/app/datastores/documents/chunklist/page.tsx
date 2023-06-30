@@ -4,7 +4,6 @@ import { useSearchParams } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { useColorScheme, Table, Stack } from '@/lib/mui'
 import { Popover, Pagination } from 'antd'
-import { fetchBaseURL } from '@/app/datastores/constants'
 const page_size = 20
 
 const ChunkList = () => {
@@ -17,7 +16,7 @@ const ChunkList = () => {
   useEffect(() => {
     async function fetchChunks() {
       const res = await fetch(
-        `${fetchBaseURL}/knowledge/${spaceName}/chunk/list`,
+        `${process.env.API_BASE_URL}/knowledge/${spaceName}/chunk/list`,
         {
           method: 'POST',
           headers: {
@@ -107,7 +106,7 @@ const ChunkList = () => {
               total={total}
               onChange={async (page) => {
                 const res = await fetch(
-                  `${fetchBaseURL}/knowledge/${spaceName}/chunk/list`,
+                  `${process.env.API_BASE_URL}/knowledge/${spaceName}/chunk/list`,
                   {
                     method: 'POST',
                     headers: {
