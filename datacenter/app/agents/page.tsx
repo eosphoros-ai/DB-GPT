@@ -16,7 +16,7 @@ const Item = styled(Sheet)(({ theme }) => ({
 
 const Agents = () => {
   const { handleChatSubmit, history } = useAgentChat({
-    queryAgentURL: `http://30.183.153.109:5000/v1/chat/completions`,
+    queryAgentURL: `/v1/chat/completions`,
   });
 
   const data = [

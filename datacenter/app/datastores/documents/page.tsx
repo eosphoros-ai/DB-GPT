@@ -25,7 +25,6 @@ import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import CachedIcon from '@mui/icons-material/Cached';
 import type { UploadProps } from 'antd'
 import { Upload, Pagination, Popover, message } from 'antd'
-import { fetchBaseURL } from '@/app/datastores/constants'
 
 const { Dragger } = Upload
 const Item = styled(Sheet)(({ theme }) => ({
@@ -96,7 +95,7 @@ const Documents = () => {
   useEffect(() => {
     async function fetchDocuments() {
       const res = await fetch(
-        `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
+        `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/list`,
         {
           method: 'POST',
           headers: {
@@ -246,7 +245,7 @@ const Documents = () => {
                           }}
                           onClick={async () => {
                             const res = await fetch(
-                              `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                              `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/sync`,
                               {
                                 method: 'POST',
                                 headers: {
@@ -299,7 +298,7 @@ const Documents = () => {
               total={total}
               onChange={async (page) => {
                 const res = await fetch(
-                  `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
+                  `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/list`,
                   {
                     method: 'POST',
                     headers: {
@@ -486,7 +485,7 @@ const Documents = () => {
                         return
                       }
                       const res = await fetch(
-                        `${fetchBaseURL}/knowledge/${spaceName}/document/add`,
+                        `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/add`,
                         {
                           method: 'POST',
                           headers: {
@@ -503,7 +502,7 @@ const Documents = () => {
                       data.success &&
                         synchChecked &&
                         fetch(
-                          `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/sync`,
                           {
                             method: 'POST',
                             headers: {
@@ -518,7 +517,7 @@ const Documents = () => {
                         message.success('success')
                         setIsAddDocumentModalShow(false)
                         const res = await fetch(
-                          `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
+                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/list`,
                           {
                             method: 'POST',
                             headers: {
@@ -549,7 +548,7 @@ const Documents = () => {
                       formData.append('doc_file', originFileObj)
                       formData.append('doc_type', 'DOCUMENT')
                       const res = await fetch(
-                        `${fetchBaseURL}/knowledge/${spaceName}/document/upload`,
+                        `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/upload`,
                         {
                           method: 'POST',
                           body: formData
@@ -559,7 +558,7 @@ const Documents = () => {
                       data.success &&
                         synchChecked &&
                         fetch(
-                          `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/sync`,
                           {
                             method: 'POST',
                             headers: {
@@ -574,7 +573,7 @@ const Documents = () => {
                         message.success('success')
                         setIsAddDocumentModalShow(false)
                         const res = await fetch(
-                          `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
+                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/list`,
                           {
                             method: 'POST',
                             headers: {
@@ -601,7 +600,7 @@ const Documents = () => {
                         return
                       }
                       const res = await fetch(
-                        `${fetchBaseURL}/knowledge/${spaceName}/document/add`,
+                        `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/add`,
                         {
                           method: 'POST',
                           headers: {
@@ -619,7 +618,7 @@ const Documents = () => {
                       data.success &&
                         synchChecked &&
                         fetch(
-                          `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/sync`,
                           {
                             method: 'POST',
                             headers: {
@@ -634,7 +633,7 @@ const Documents = () => {
                         message.success('success')
                         setIsAddDocumentModalShow(false)
                         const res = await fetch(
-                          `${fetchBaseURL}/knowledge/${spaceName}/document/list`,
+                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/list`,
                           {
                             method: 'POST',
                             headers: {
