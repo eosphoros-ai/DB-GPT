@@ -397,7 +397,9 @@ const Index = () => {
                   variant="outlined"
                   sx={{ marginRight: '20px' }}
                   onClick={() => setActiveStep(1)}
-                >{'< Back'}</Button>
+                >
+                  {'< Back'}
+                </Button>
                 <Button
                   variant="outlined"
                   onClick={async () => {
@@ -428,18 +430,19 @@ const Index = () => {
                       if (data.success) {
                         message.success('success')
                         setIsAddKnowledgeSpaceModalShow(false)
-                        fetch(
-                          `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              doc_ids: [data.data]
-                            })
-                          }
-                        )
+                        synchChecked &&
+                          fetch(
+                            `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                doc_ids: [data.data]
+                              })
+                            }
+                          )
                       } else {
                         message.error(data.err_msg || 'failed')
                       }
@@ -463,18 +466,19 @@ const Index = () => {
                       if (data.success) {
                         message.success('success')
                         setIsAddKnowledgeSpaceModalShow(false)
-                        fetch(
-                          `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              doc_ids: [data.data]
-                            })
-                          }
-                        )
+                        synchChecked &&
+                          fetch(
+                            `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                doc_ids: [data.data]
+                              })
+                            }
+                          )
                       } else {
                         message.error(data.err_msg || 'failed')
                       }
@@ -502,18 +506,19 @@ const Index = () => {
                       if (data.success) {
                         message.success('success')
                         setIsAddKnowledgeSpaceModalShow(false)
-                        fetch(
-                          `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              doc_ids: [data.data]
-                            })
-                          }
-                        )
+                        synchChecked &&
+                          fetch(
+                            `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                doc_ids: [data.data]
+                              })
+                            }
+                          )
                       } else {
                         message.error(data.err_msg || 'failed')
                       }
