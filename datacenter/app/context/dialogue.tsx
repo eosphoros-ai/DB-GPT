@@ -10,7 +10,7 @@ export const [useDialogueContext, DialogueProvider] = createCtx<{
 	refreshDialogList: () => void;
 }>();
 
-export default ({ children }: {
+const DialogueContext = ({ children }: {
 	children: React.ReactElement
 }) => {
 	const { 
@@ -33,3 +33,5 @@ export default ({ children }: {
 		</DialogueProvider>
 	)
 }
+
+export default DialogueContext;
