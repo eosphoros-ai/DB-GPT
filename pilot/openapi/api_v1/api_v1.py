@@ -3,7 +3,15 @@ import json
 import asyncio
 import time
 import os
-from fastapi import APIRouter, Request, Body, status, HTTPException, Response, BackgroundTasks
+from fastapi import (
+    APIRouter,
+    Request,
+    Body,
+    status,
+    HTTPException,
+    Response,
+    BackgroundTasks,
+)
 
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.responses import StreamingResponse, FileResponse
@@ -12,7 +20,12 @@ from fastapi.exceptions import RequestValidationError
 from sse_starlette.sse import EventSourceResponse
 from typing import List
 
-from pilot.openapi.api_v1.api_view_model import Result, ConversationVo, MessageVo, ChatSceneVo
+from pilot.openapi.api_v1.api_view_model import (
+    Result,
+    ConversationVo,
+    MessageVo,
+    ChatSceneVo,
+)
 from pilot.configs.config import Config
 from pilot.openapi.knowledge.knowledge_service import KnowledgeService
 from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
@@ -35,6 +48,7 @@ knowledge_service = KnowledgeService()
 model_semaphore = None
 global_counter = 0
 static_file_path = os.path.join(os.getcwd(), "server/static")
+
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     message = ""
@@ -82,6 +96,7 @@ def knowledge_list():
         params.update({space.name: space.name})
     return params
 
+
 @router.get("/")
 async def read_main():
     return FileResponse(f"{static_file_path}/test.html")
@@ -101,8 +116,6 @@ async def dialogue_list(response: Response, user_id: str = None):
         conv_uid = item.get("conv_uid")
         summary = item.get("summary")
         chat_mode = item.get("chat_mode")
-
-
 
         conv_vo: ConversationVo = ConversationVo(
             conv_uid=conv_uid,
@@ -138,13 +151,13 @@ async def dialogue_scenes():
     return Result.succ(scene_vos)
 
 
-
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-        chat_mode: str = ChatScene.ChatNormal.value, user_id: str = None
+    chat_mode: str = ChatScene.ChatNormal.value, user_id: str = None
 ):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)
+
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
 async def params_list(chat_mode: str = ChatScene.ChatNormal.value):
@@ -232,11 +245,19 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     }
 
     if not chat.prompt_template.stream_out:
-        return StreamingResponse(no_stream_generator(chat), headers=headers, media_type='text/event-stream',
-                                 background=background_tasks)
+        return StreamingResponse(
+            no_stream_generator(chat),
+            headers=headers,
+            media_type="text/event-stream",
+            background=background_tasks,
+        )
     else:
-        return StreamingResponse(stream_generator(chat), headers=headers, media_type='text/plain',
-                                 background=background_tasks)
+        return StreamingResponse(
+            stream_generator(chat),
+            headers=headers,
+            media_type="text/plain",
+            background=background_tasks,
+        )
 
 
 def release_model_semaphore():
@@ -254,14 +275,18 @@ async def stream_generator(chat):
     if not CFG.NEW_SERVER_MODE:
         for chunk in model_response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
-                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
+                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                    chunk, chat.skip_echo_len
+                )
                 msg = msg.replace("\n", "\\n")
                 yield f"data:{msg}\n\n"
                 await asyncio.sleep(0.1)
     else:
         for chunk in model_response:
             if chunk:
-                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(chunk, chat.skip_echo_len)
+                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                    chunk, chat.skip_echo_len
+                )
 
                 msg = msg.replace("\n", "\\n")
                 yield f"data:{msg}\n\n"
@@ -273,4 +298,6 @@ async def stream_generator(chat):
 
 
 def message2Vo(message: dict, order) -> MessageVo:
-    return MessageVo(role=message['type'], context=message['data']['content'], order=order)
+    return MessageVo(
+        role=message["type"], context=message["data"]["content"], order=order
+    )

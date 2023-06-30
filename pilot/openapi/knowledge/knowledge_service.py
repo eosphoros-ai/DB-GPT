@@ -115,8 +115,13 @@ class KnowledgeService:
                 space=space_name,
             )
             doc = knowledge_document_dao.get_knowledge_documents(query)[0]
-            if doc.status == SyncStatus.RUNNING.name or doc.status == SyncStatus.FINISHED.name:
-                raise Exception(f" doc:{doc.doc_name} status is {doc.status}, can not sync")
+            if (
+                doc.status == SyncStatus.RUNNING.name
+                or doc.status == SyncStatus.FINISHED.name
+            ):
+                raise Exception(
+                    f" doc:{doc.doc_name} status is {doc.status}, can not sync"
+                )
             client = KnowledgeEmbedding(
                 knowledge_source=doc.content,
                 knowledge_type=doc.doc_type.upper(),
