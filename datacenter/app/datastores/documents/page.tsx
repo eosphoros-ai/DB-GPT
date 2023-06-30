@@ -33,8 +33,8 @@ const Item = styled(Sheet)(({ theme }) => ({
   color: theme.vars.palette.text.secondary
 }))
 const stepsOfAddingDocument = [
-  'Choose a Datasource type',
-  'Setup the Datasource'
+  '1.Choose a Datasource type',
+  '2.Setup the Datasource'
 ]
 const documentTypeList = [
   {
@@ -121,6 +121,7 @@ const Documents = () => {
         <Button
           variant="outlined"
           onClick={() => setIsAddDocumentModalShow(true)}
+          sx={{ marginBottom: '20px' }}
         >
           + Add Datasource
         </Button>
@@ -128,8 +129,8 @@ const Documents = () => {
       {documents.length ? (
         <>
           <Table
-            color="info"
-            variant="soft"
+            color="primary"
+            variant="plain"
             size="lg"
             sx={{
               '& tbody tr: hover': {
@@ -157,9 +158,9 @@ const Documents = () => {
                   <td>{row.doc_name}</td>
                   <td>
                     <Chip
-                      variant="soft"
+                      variant="solid"
                       color="neutral"
-                      sx={{ fontWeight: 300 }}
+                      sx={{ opacity: .5 }}
                     >
                       {row.doc_type}
                     </Chip>
@@ -168,8 +169,8 @@ const Documents = () => {
                   <td>{moment(row.last_sync).format('YYYY-MM-DD HH:MM:SS')}</td>
                   <td>
                     <Chip
-                      sx={{ fontWeight: 300 }}
-                      variant="soft"
+                      sx={{ opacity: .5 }}
+                      variant="solid"
                       color={(function () {
                         switch (row.status) {
                           case 'TODO':
@@ -192,6 +193,9 @@ const Documents = () => {
                         <Button
                           variant="outlined"
                           size="sm"
+                          sx={{
+                            marginRight: '20px'
+                          }}
                           onClick={async () => {
                             const res = await fetch(
                               `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
@@ -297,7 +301,7 @@ const Documents = () => {
               {stepsOfAddingDocument.map((item: any, index: number) => (
                 <Item
                   key={item}
-                  sx={{ fontWeight: activeStep === index ? 'bold' : '' }}
+                  sx={{ fontWeight: activeStep === index ? 'bold' : '', color: activeStep === index ? '#814DDE' : '' }}
                 >
                   {item}
                 </Item>
@@ -389,6 +393,7 @@ const Documents = () => {
                 )}
               </Box>
               <Button
+                variant='outlined'
                 onClick={async () => {
                   if (documentName === '') {
                     message.error('Please input the name')
