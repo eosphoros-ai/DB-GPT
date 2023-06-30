@@ -15,7 +15,7 @@
 
 ## DB-GPT 是什么？
 
-随着大模型的发布迭代，大模型变得越来越智能，在使用大模型的过程当中，遇到极大的数据安全与隐私挑战。在利用大模型能力的过程中我们的私密数据跟环境需要掌握自己的手里，完全可控，避免任何的数据隐私泄露以及安全风险。基于此，我们发起了DB-GPT项目，为所有以数据库为基础的场景，构建一套完整的私有大模型解决方案。 此方案因为支持本地部署，所以不仅仅可以应用于独立私有环境，而且还可以根据业务模块独立部署隔离，让大模型的能力绝对私有、安全、可控。
+随着大模型的发布迭代，大模型变得越来越智能，在使用大模型的过程当中，遇到极大的数据安全与隐私挑战。在利用大模型能力的过程中我们的私密数据跟环境需要掌握自己的手里，完全可控，避免任何的数据隐私泄露以及安全风险。基于此，我们发起了DB-GPT项目，为所有以数据库为基础的场景，构建一套完整的私有大模型解决方案。 此方案因为支持本地部署，所以不仅仅可以应用于独立私有环境，而且还可以根据业务模块独立部署隔离，让大模型的能力绝对私有、安全、可控。我们的愿景是让围绕数据库构建大模型应用更简单，更方便。
 
 DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密
 
@@ -23,6 +23,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 
 ## 最新发布
+- [2023/06/30]🔥 DB-GPT产品。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
 - [2023/06/25]🔥 支持ChatGLM2-6B模型。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
 - [2023/06/14]🔥 支持gpt4all模型，可以在M1/M2 或者CPU机器上运行。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
 - [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.
@@ -39,6 +40,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
   - SQL生成
   - SQL诊断
 - 私域问答与数据处理
+  - 知识库管理(目前支持 txt, pdf, md, html, doc, ppt, and url)
   - 数据库知识问答
   - 数据处理
 - 插件模型
@@ -108,37 +110,6 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 ### 打造属于你的知识库
 - [参考手册](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/knowledge.html)
 
-1.将个人知识文件或者文件夹放入pilot/datasets目录中
-
-当前支持的文档格式: txt, pdf, md, html, doc, ppt, and url.
-
-在操作之前先执行
-
-```
-python -m spacy download zh_core_web_sm
-
-```
-
-2.在.env文件指定你的向量数据库类型,VECTOR_STORE_TYPE(默认Chroma),目前支持Chroma,Milvus(需要设置MILVUS_URL和MILVUS_PORT)
-
-**注意Milvus版本需要>2.1**
-
-3.在tools目录执行知识入库脚本, 如果是选择默认知识库，不需要指定 --vector_name, 默认default
-
-```
-python tools/knowledge_init.py
-```
-
-如果选择新增知识库，在界面上新增知识库输入你的知识库名,
-
-```
-python tools/knowledge_init.py --vector_name = yourname
-
---vector_name: vector_name  default_value:default
-```
-就可以根据你的知识库进行问答
-
-注意，这里默认向量模型是text2vec-large-chinese(模型比较大，如果个人电脑配置不够建议采用text2vec-base-chinese),因此确保需要将模型download下来放到models目录中。
 
 如果在使用知识库时遇到与nltk相关的错误，您需要安装nltk工具包。更多详情，请参见：[nltk文档](https://www.nltk.org/data.html)
 Run the Python interpreter and type the commands:
@@ -147,7 +118,7 @@ Run the Python interpreter and type the commands:
 >>> nltk.download()
 ```
 
-我们提供了Gradio的用户界面，可以通过我们的用户界面使用DB-GPT， 同时关于我们项目相关的一些代码跟原理介绍，我们也准备了以下几篇参考文章。
+我们提供了全新的的用户界面，可以通过我们的用户界面使用DB-GPT， 同时关于我们项目相关的一些代码跟原理介绍，我们也准备了以下几篇参考文章。
 1.  [大模型实战系列(1) —— 强强联合Langchain-Vicuna应用实战](https://zhuanlan.zhihu.com/p/628750042)
 2.  [大模型实战系列(2) —— DB-GPT 阿里云部署指南](https://zhuanlan.zhihu.com/p/629467580)
 3.  [大模型实战系列(3) —— DB-GPT插件模型原理与使用](https://zhuanlan.zhihu.com/p/629623125)
