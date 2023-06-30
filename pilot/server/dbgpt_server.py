@@ -1,4 +1,3 @@
-import signal
 import traceback
 import os
 import shutil
@@ -10,7 +9,10 @@ sys.path.append(ROOT_PATH)
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import (
-    LOGDIR
+    DATASETS_DIR,
+    KNOWLEDGE_UPLOAD_ROOT_PATH,
+    LLM_MODEL_CONFIG,
+    LOGDIR,
 )
 from pilot.utils import build_logger
 
@@ -62,7 +64,6 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory=static_file_path), name="static")
-app.add_route("/test", "static/test.html")
 app.include_router(knowledge_router)
 app.include_router(api_v1)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

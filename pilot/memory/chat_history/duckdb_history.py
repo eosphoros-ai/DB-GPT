@@ -36,7 +36,8 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         if not result:
             # 如果表不存在，则创建新表
             self.connect.execute(
-                "CREATE TABLE chat_history (conv_uid VARCHAR(100) PRIMARY KEY, chat_mode VARCHAR(50), summary VARCHAR(255),  user_name VARCHAR(100), messages TEXT)")
+                "CREATE TABLE chat_history (conv_uid VARCHAR(100) PRIMARY KEY, chat_mode VARCHAR(50), summary VARCHAR(255),  user_name VARCHAR(100), messages TEXT)"
+            )
 
     def __get_messages_by_conv_uid(self, conv_uid: str):
         cursor = self.connect.cursor()
@@ -59,7 +60,8 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
             cursor = self.connect.cursor()
             cursor.execute(
                 "INSERT INTO chat_history(conv_uid, chat_mode summary, user_name, messages)VALUES(?,?,?,?,?)",
-                [self.chat_seesion_id, chat_mode, summary, user_name, ""])
+                [self.chat_seesion_id, chat_mode, summary, user_name, ""],
+            )
             cursor.commit()
             self.connect.commit()
         except Exception as e:
@@ -80,7 +82,14 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         else:
             cursor.execute(
                 "INSERT INTO chat_history(conv_uid, chat_mode,  summary, user_name, messages)VALUES(?,?,?,?,?)",
-                [self.chat_seesion_id, once_message.chat_mode, once_message.get_user_conv().content, "",json.dumps(conversations, ensure_ascii=False)])
+                [
+                    self.chat_seesion_id,
+                    once_message.chat_mode,
+                    once_message.get_user_conv().content,
+                    "",
+                    json.dumps(conversations, ensure_ascii=False),
+                ],
+            )
         cursor.commit()
         self.connect.commit()
 
