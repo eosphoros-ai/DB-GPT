@@ -12,28 +12,6 @@ body {
   background-color: var(--joy-palette-background-body);
 }
 
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  text-align: left;
-  padding: 8px;
-}
-
-th {
-  background-color: #f2f2f2;
-}
-
-tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-tr:hover {
-  background-color: #ddd;
-}
-
 body .ant-btn-primary {
   background-color: #1677ff;
 }
