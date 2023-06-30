@@ -97,7 +97,7 @@ def knowledge_list():
     return params
 
 
-@router.get("/index")
+@router.get("/")
 async def read_main():
     return FileResponse(f"{static_file_path}/index.html")
 
