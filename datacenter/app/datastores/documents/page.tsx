@@ -275,7 +275,7 @@ const Documents = () => {
                             )
                           }}
                         >
-                          Detail of Chunks
+                          Details
                         </Button>
                       </>
                     }
