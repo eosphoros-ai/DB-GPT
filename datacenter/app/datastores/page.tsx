@@ -3,8 +3,9 @@
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { InboxOutlined } from '@ant-design/icons'
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import type { UploadProps } from 'antd'
-import { message, Upload } from 'antd'
+import { message, Upload, Popover } from 'antd'
 import {
   useColorScheme,
   Modal,
@@ -16,6 +17,8 @@ import {
   Input,
   Textarea,
   Chip,
+  Switch,
+  Typography,
   styled
 } from '@/lib/mui'
 
@@ -33,7 +36,7 @@ const Item = styled(Sheet)(({ theme }) => ({
 }))
 
 const stepsOfAddingSpace = [
-  'Knowledge Space Configuration',
+  'Knowledge Space Config',
   'Choose a Datasource type',
   'Setup the Datasource'
 ]
@@ -70,6 +73,7 @@ const Index = () => {
   const [textSource, setTextSource] = useState<string>('')
   const [text, setText] = useState<string>('')
   const [originFileObj, setOriginFileObj] = useState<any>(null)
+  const [synchChecked, setSynchChecked] = useState<boolean>(true)
   const props: UploadProps = {
     name: 'file',
     multiple: false,
@@ -127,8 +131,8 @@ const Index = () => {
       <div className="page-body p-4">
         {knowledgeSpaceList.length ? (
           <Table
-            color="info"
-            variant="soft"
+            color="primary"
+            variant="plain"
             size="lg"
             sx={{
               '& tbody tr: hover': {
@@ -137,6 +141,9 @@ const Index = () => {
               },
               '& tbody tr: hover a': {
                 textDecoration: 'underline'
+              },
+              '& tbody tr a': {
+                color: 'rgb(13, 96, 217)'
               }
             }}
           >
@@ -145,6 +152,7 @@ const Index = () => {
                 <th>Name</th>
                 <th>Vector</th>
                 <th>Owner</th>
+                <th>Description</th>
               </tr>
             </thead>
             <tbody>
@@ -164,22 +172,21 @@ const Index = () => {
                     }
                   </td>
                   <td>
-                    <Chip
-                      variant="soft"
-                      color="neutral"
-                      sx={{ fontWeight: 300 }}
-                    >
+                    <Chip variant="solid" color="neutral" sx={{ opacity: 0.5 }}>
                       {row.vector_type}
                     </Chip>
                   </td>
                   <td>
-                    <Chip
-                      variant="soft"
-                      color="neutral"
-                      sx={{ fontWeight: 300 }}
-                    >
+                    <Chip variant="solid" color="neutral" sx={{ opacity: 0.5 }}>
                       {row.owner}
                     </Chip>
+                  </td>
+                  <td>
+                    <Popover content={row.desc} trigger="hover">
+                      {row.desc.length > 10
+                        ? `${row.desc.slice(0, 10)}...`
+                        : row.desc}
+                    </Popover>
                   </td>
                 </tr>
               ))}
@@ -213,9 +220,13 @@ const Index = () => {
               {stepsOfAddingSpace.map((item: any, index: number) => (
                 <Item
                   key={item}
-                  sx={{ fontWeight: activeStep === index ? 'bold' : '' }}
+                  sx={{
+                    fontWeight: activeStep === index ? 'bold' : '',
+                    color: activeStep === index ? '#814DDE' : ''
+                  }}
                 >
-                  {item}
+                  {index < activeStep ? <CheckCircleOutlinedIcon /> : `${index + 1}.`}
+                  {`${item}`}
                 </Item>
               ))}
             </Stack>
@@ -236,18 +247,21 @@ const Index = () => {
                     message.error('please input the name')
                     return
                   }
-                  const res = await fetch(`${process.env.API_BASE_URL}/knowledge/space/add`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                      name: knowledgeSpaceName,
-                      vector_type: 'Chroma',
-                      owner: 'keting',
-                      desc: 'test1'
-                    })
-                  })
+                  const res = await fetch(
+                    `${process.env.API_BASE_URL}/knowledge/space/add`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        name: knowledgeSpaceName,
+                        vector_type: 'Chroma',
+                        owner: 'keting',
+                        desc: 'test1'
+                      })
+                    }
+                  )
                   const data = await res.json()
                   if (data.success) {
                     message.success('success')
@@ -357,94 +371,164 @@ const Index = () => {
                     />
                   </>
                 )}
+                <Typography
+                  component="label"
+                  sx={{
+                    marginTop: '20px'
+                  }}
+                  endDecorator={
+                    <Switch
+                      checked={synchChecked}
+                      onChange={(event: any) =>
+                        setSynchChecked(event.target.checked)
+                      }
+                    />
+                  }
+                >
+                  Synch:
+                </Typography>
               </Box>
-              <Button
-                onClick={async () => {
-                  if (documentName === '') {
-                    message.error('Please input the name')
-                    return
-                  }
-                  if (documentType === 'webPage') {
-                    if (webPageUrl === '') {
-                      message.error('Please input the Web Page URL')
-                      return
-                    }
-                    const res = await fetch(
-                      `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/add`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          doc_name: documentName,
-                          content: webPageUrl,
-                          doc_type: 'URL'
-                        })
-                      }
-                    )
-                    const data = await res.json()
-                    if (data.success) {
-                      message.success('success')
-                      setIsAddKnowledgeSpaceModalShow(false)
-                    } else {
-                      message.error(data.err_msg || 'failed')
-                    }
-                  } else if (documentType === 'file') {
-                    if (!originFileObj) {
-                      message.error('Please select a file')
-                      return
-                    }
-                    const formData = new FormData()
-                    formData.append('doc_name', documentName)
-                    formData.append('doc_file', originFileObj)
-                    formData.append('doc_type', 'DOCUMENT')
-                    const res = await fetch(
-                      `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/upload`,
-                      {
-                        method: 'POST',
-                        body: formData
-                      }
-                    )
-                    const data = await res.json()
-                    if (data.success) {
-                      message.success('success')
-                      setIsAddKnowledgeSpaceModalShow(false)
-                    } else {
-                      message.error(data.err_msg || 'failed')
-                    }
-                  } else {
-                    if (text === '') {
-                      message.error('Please input the text')
-                      return
-                    }
-                    const res = await fetch(
-                      `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/add`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          doc_name: documentName,
-                          source: textSource,
-                          content: text,
-                          doc_type: 'TEXT'
-                        })
-                      }
-                    )
-                    const data = await res.json()
-                    if (data.success) {
-                      message.success('success')
-                      setIsAddKnowledgeSpaceModalShow(false)
-                    } else {
-                      message.error(data.err_msg || 'failed')
-                    }
-                  }
-                }}
+              <Stack
+                direction="row"
+                justifyContent="flex-start"
+                alignItems="center"
+                sx={{ marginBottom: '20px' }}
               >
-                Finish
-              </Button>
+                <Button
+                  variant="outlined"
+                  sx={{ marginRight: '20px' }}
+                  onClick={() => setActiveStep(1)}
+                >
+                  {'< Back'}
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={async () => {
+                    if (documentName === '') {
+                      message.error('Please input the name')
+                      return
+                    }
+                    if (documentType === 'webPage') {
+                      if (webPageUrl === '') {
+                        message.error('Please input the Web Page URL')
+                        return
+                      }
+                      const res = await fetch(
+                        `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/add`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            doc_name: documentName,
+                            content: webPageUrl,
+                            doc_type: 'URL'
+                          })
+                        }
+                      )
+                      const data = await res.json()
+                      if (data.success) {
+                        message.success('success')
+                        setIsAddKnowledgeSpaceModalShow(false)
+                        synchChecked &&
+                          fetch(
+                            `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                doc_ids: [data.data]
+                              })
+                            }
+                          )
+                      } else {
+                        message.error(data.err_msg || 'failed')
+                      }
+                    } else if (documentType === 'file') {
+                      if (!originFileObj) {
+                        message.error('Please select a file')
+                        return
+                      }
+                      const formData = new FormData()
+                      formData.append('doc_name', documentName)
+                      formData.append('doc_file', originFileObj)
+                      formData.append('doc_type', 'DOCUMENT')
+                      const res = await fetch(
+                        `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/upload`,
+                        {
+                          method: 'POST',
+                          body: formData
+                        }
+                      )
+                      const data = await res.json()
+                      if (data.success) {
+                        message.success('success')
+                        setIsAddKnowledgeSpaceModalShow(false)
+                        synchChecked &&
+                          fetch(
+                            `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                doc_ids: [data.data]
+                              })
+                            }
+                          )
+                      } else {
+                        message.error(data.err_msg || 'failed')
+                      }
+                    } else {
+                      if (text === '') {
+                        message.error('Please input the text')
+                        return
+                      }
+                      const res = await fetch(
+                        `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/add`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            doc_name: documentName,
+                            source: textSource,
+                            content: text,
+                            doc_type: 'TEXT'
+                          })
+                        }
+                      )
+                      const data = await res.json()
+                      if (data.success) {
+                        message.success('success')
+                        setIsAddKnowledgeSpaceModalShow(false)
+                        synchChecked &&
+                          fetch(
+                            `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                doc_ids: [data.data]
+                              })
+                            }
+                          )
+                      } else {
+                        message.error(data.err_msg || 'failed')
+                      }
+                    }
+                  }}
+                >
+                  Finish
+                </Button>
+              </Stack>
             </>
           )}
         </Sheet>
