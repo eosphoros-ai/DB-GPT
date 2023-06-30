@@ -141,7 +141,10 @@ const Index = () => {
               },
               '& tbody tr: hover a': {
                 textDecoration: 'underline'
-              }
+              },
+              '& tbody tr a': {
+                color: 'rgb(13, 96, 217)'
+              },
             }}
           >
             <thead>
