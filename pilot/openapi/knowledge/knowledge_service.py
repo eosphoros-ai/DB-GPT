@@ -78,8 +78,7 @@ class KnowledgeService:
             content=request.content,
             result="",
         )
-        knowledge_document_dao.create_knowledge_document(document)
-        return True
+        return knowledge_document_dao.create_knowledge_document(document)
 
     """get knowledge space"""
 
