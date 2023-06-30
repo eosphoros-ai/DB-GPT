@@ -6,6 +6,9 @@ const nextConfig = {
 	},
 	typescript: {
 		ignoreBuildErrors: true
+	},
+	env: {
+		API_BASE_URL: process.env.API_BASE_URL || 'http://30.183.154.76:5000'
 	}
 }
 

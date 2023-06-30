@@ -7,7 +7,11 @@ export const joyTheme = extendTheme({
       palette: {
         mode: 'dark',
         primary: {
-          ...colors.purple,
+          ...colors.grey,
+          solidBg: '#dfdfdf91',
+          solidColor: '#4e4e4e',
+          solidHoverBg: '#d5d5d5',
+          outlinedColor: '#4e4e59'
         },
         neutral: {
           plainColor: '#4d4d4d',
@@ -21,16 +25,13 @@ export const joyTheme = extendTheme({
           surface: '#fff'
         },
         text: {
-          primary: '#25252D'
+          primary: '#505050'
         },
       },
     },
     dark: {
       palette: {
         mode: 'light',
-        primary: {
-          ...colors.purple,
-        },
         neutral: {
           plainColor: '#D8D8DF',
           plainHoverColor: '#F7F7F8',
