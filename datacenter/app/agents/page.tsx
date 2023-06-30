@@ -16,7 +16,7 @@ const Item = styled(Sheet)(({ theme }) => ({
 
 const Agents = () => {
   const { handleChatSubmit, history } = useAgentChat({
-    queryAgentURL: `http://30.183.154.8:5000/v1/chat/completions`,
+    queryAgentURL: `http://30.183.153.109:5000/v1/chat/completions`,
   });
 
   const data = [
@@ -119,10 +119,10 @@ const Agents = () => {
                     <Grid key={item.label} xs={3}>
                       <Card  className="flex-1 h-full">
                         <CardContent className="justify-around">
-                          <Typography gutterBottom variant="h5" component="div">
+                          <Typography gutterBottom component="div">
                             {item.label}
                           </Typography>
-                          <Typography variant="body2">
+                          <Typography>
                             {item.value}
                           </Typography>
                         </CardContent>
@@ -134,7 +134,7 @@ const Agents = () => {
               <Item className='flex-1'>
                 <Card className='h-full'>
                   <CardContent className='h-full'>
-                    <Typography gutterBottom variant="h5" component="div">
+                    <Typography gutterBottom component="div">
                       Revenue Won by Month
                     </Typography>
                     <div className='flex-1'>
@@ -156,7 +156,7 @@ const Agents = () => {
                   <Grid xs={4} className='h-full'>
                     <Card className='flex-1 h-full'>
                       <CardContent className='h-full'>
-                        <Typography gutterBottom variant="h5" component="div">
+                        <Typography gutterBottom component="div">
                           Close % by Month
                         </Typography>
                         <div className='flex-1'>
@@ -171,7 +171,7 @@ const Agents = () => {
                   <Grid xs={4} className='h-full'>
                     <Card className='flex-1 h-full'>
                       <CardContent className='h-full'>
-                        <Typography gutterBottom variant="h5" component="div">
+                        <Typography gutterBottom component="div">
                           Close % by Month
                         </Typography>
                         <div className='flex-1'>
@@ -186,7 +186,7 @@ const Agents = () => {
                   <Grid xs={4} className='h-full'>
                     <Card className='flex-1 h-full'>
                       <CardContent className='h-full'>
-                        <Typography gutterBottom variant="h5" component="div">
+                        <Typography gutterBottom component="div">
                           Close % by Month
                         </Typography>
                         <div className='flex-1'>
