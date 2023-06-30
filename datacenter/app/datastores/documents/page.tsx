@@ -21,6 +21,7 @@ import {
 } from '@/lib/mui'
 import moment from 'moment'
 import { InboxOutlined } from '@ant-design/icons'
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import type { UploadProps } from 'antd'
 import { Upload, Pagination, Popover, message } from 'antd'
 import { fetchBaseURL } from '@/app/datastores/constants'
@@ -37,8 +38,8 @@ const Item = styled(Sheet)(({ theme }) => ({
   color: theme.vars.palette.text.secondary
 }))
 const stepsOfAddingDocument = [
-  '1.Choose a Datasource type',
-  '2.Setup the Datasource'
+  'Choose a Datasource type',
+  'Setup the Datasource'
 ]
 const documentTypeList = [
   {
@@ -352,7 +353,8 @@ const Documents = () => {
                     color: activeStep === index ? '#814DDE' : ''
                   }}
                 >
-                  {item}
+                  {index < activeStep ? <CheckCircleOutlinedIcon /> : `${index + 1}.`}
+                  {`${item}`}
                 </Item>
               ))}
             </Stack>
