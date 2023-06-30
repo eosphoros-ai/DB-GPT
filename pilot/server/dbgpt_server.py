@@ -6,7 +6,7 @@ import sys
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
-
+import signal
 from pilot.configs.config import Config
 from pilot.configs.model_config import (
     DATASETS_DIR,
@@ -30,6 +30,8 @@ from pilot.openapi.api_v1.api_v1 import router as api_v1, validation_exception_h
 
 
 static_file_path = os.path.join(os.getcwd(), "server/static")
+
+
 
 CFG = Config()
 logger = build_logger("webserver", LOGDIR + "webserver.log")
@@ -63,7 +65,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory=static_file_path), name="static")
+app.mount("/_next/static", StaticFiles(directory=static_file_path + "/_next/static", html=True))
+app.mount("/", StaticFiles(directory=static_file_path), name="static2")
+
 app.include_router(knowledge_router)
 app.include_router(api_v1)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
