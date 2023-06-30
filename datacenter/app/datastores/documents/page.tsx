@@ -13,6 +13,8 @@ import {
   Input,
   Textarea,
   Chip,
+  Switch,
+  Typography,
   styled
 } from '@/lib/mui'
 import moment from 'moment'
@@ -72,6 +74,7 @@ const Documents = () => {
   const [originFileObj, setOriginFileObj] = useState<any>(null)
   const [total, setTotal] = useState<number>(0)
   const [current, setCurrent] = useState<number>(0)
+  const [synchChecked, setSynchChecked] = useState<boolean>(true)
   const props: UploadProps = {
     name: 'file',
     multiple: false,
@@ -422,6 +425,22 @@ const Documents = () => {
                     />
                   </>
                 )}
+                <Typography
+                  component="label"
+                  sx={{
+                    marginTop: '20px'
+                  }}
+                  endDecorator={
+                    <Switch
+                      checked={synchChecked}
+                      onChange={(event: any) =>
+                        setSynchChecked(event.target.checked)
+                      }
+                    />
+                  }
+                >
+                  Synch:
+                </Typography>
               </Box>
               <Button
                 variant="outlined"
@@ -450,6 +469,18 @@ const Documents = () => {
                       }
                     )
                     const data = await res.json()
+                    data.success && fetch(
+                      `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          doc_ids: [data.data]
+                        })
+                      }
+                    )
                     if (data.success) {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
@@ -492,6 +523,18 @@ const Documents = () => {
                       }
                     )
                     const data = await res.json()
+                    data.success && fetch(
+                      `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          doc_ids: [data.data]
+                        })
+                      }
+                    )
                     if (data.success) {
                       message.success('success')
                       setIsAddDocumentModalShow(false)
@@ -538,6 +581,18 @@ const Documents = () => {
                       }
                     )
                     const data = await res.json()
+                    data.success && fetch(
+                      `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          doc_ids: [data.data]
+                        })
+                      }
+                    )
                     if (data.success) {
                       message.success('success')
                       setIsAddDocumentModalShow(false)

@@ -16,6 +16,8 @@ import {
   Input,
   Textarea,
   Chip,
+  Switch,
+  Typography,
   styled
 } from '@/lib/mui'
 import { fetchBaseURL } from '@/app/datastores/constants'
@@ -71,6 +73,7 @@ const Index = () => {
   const [textSource, setTextSource] = useState<string>('')
   const [text, setText] = useState<string>('')
   const [originFileObj, setOriginFileObj] = useState<any>(null)
+  const [synchChecked, setSynchChecked] = useState<boolean>(true)
   const props: UploadProps = {
     name: 'file',
     multiple: false,
@@ -214,7 +217,10 @@ const Index = () => {
               {stepsOfAddingSpace.map((item: any, index: number) => (
                 <Item
                   key={item}
-                  sx={{ fontWeight: activeStep === index ? 'bold' : '', color: activeStep === index ? '#814DDE' : '' }}
+                  sx={{
+                    fontWeight: activeStep === index ? 'bold' : '',
+                    color: activeStep === index ? '#814DDE' : ''
+                  }}
                 >
                   {item}
                 </Item>
@@ -361,9 +367,25 @@ const Index = () => {
                     />
                   </>
                 )}
+                <Typography
+                  component="label"
+                  sx={{
+                    marginTop: '20px'
+                  }}
+                  endDecorator={
+                    <Switch
+                      checked={synchChecked}
+                      onChange={(event: any) =>
+                        setSynchChecked(event.target.checked)
+                      }
+                    />
+                  }
+                >
+                  Synch:
+                </Typography>
               </Box>
               <Button
-                variant='outlined'
+                variant="outlined"
                 onClick={async () => {
                   if (documentName === '') {
                     message.error('Please input the name')
@@ -392,6 +414,18 @@ const Index = () => {
                     if (data.success) {
                       message.success('success')
                       setIsAddKnowledgeSpaceModalShow(false)
+                      fetch(
+                        `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            doc_ids: [data.data]
+                          })
+                        }
+                      )
                     } else {
                       message.error(data.err_msg || 'failed')
                     }
@@ -415,6 +449,18 @@ const Index = () => {
                     if (data.success) {
                       message.success('success')
                       setIsAddKnowledgeSpaceModalShow(false)
+                      fetch(
+                        `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            doc_ids: [data.data]
+                          })
+                        }
+                      )
                     } else {
                       message.error(data.err_msg || 'failed')
                     }
@@ -442,6 +488,18 @@ const Index = () => {
                     if (data.success) {
                       message.success('success')
                       setIsAddKnowledgeSpaceModalShow(false)
+                      fetch(
+                        `${fetchBaseURL}/knowledge/${knowledgeSpaceName}/document/sync`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                            doc_ids: [data.data]
+                          })
+                        }
+                      )
                     } else {
                       message.error(data.err_msg || 'failed')
                     }
