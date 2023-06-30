@@ -44,8 +44,8 @@ const ChunkList = () => {
       {chunkList.length ? (
         <>
           <Table
-            color="info"
-            variant="soft"
+            color="primary"
+            variant="plain"
             size="lg"
             sx={{
               '& tbody tr: hover': {
