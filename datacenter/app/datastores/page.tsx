@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { InboxOutlined } from '@ant-design/icons'
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import type { UploadProps } from 'antd'
 import { message, Upload, Popover } from 'antd'
 import {
@@ -36,9 +37,9 @@ const Item = styled(Sheet)(({ theme }) => ({
 }))
 
 const stepsOfAddingSpace = [
-  '1.Knowledge Space Config',
-  '2.Choose a Datasource type',
-  '3.Setup the Datasource'
+  'Knowledge Space Config',
+  'Choose a Datasource type',
+  'Setup the Datasource'
 ]
 const documentTypeList = [
   {
@@ -225,7 +226,8 @@ const Index = () => {
                     color: activeStep === index ? '#814DDE' : ''
                   }}
                 >
-                  {item}
+                  {index < activeStep ? <CheckCircleOutlinedIcon /> : `${index + 1}.`}
+                  {`${item}`}
                 </Item>
               ))}
             </Stack>
