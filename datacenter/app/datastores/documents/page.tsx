@@ -18,7 +18,7 @@ import {
 import moment from 'moment'
 import { InboxOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
-import { Upload, Pagination, message } from 'antd'
+import { Upload, Pagination, Popover, message } from 'antd'
 import { fetchBaseURL } from '@/app/datastores/constants'
 
 const { Dragger } = Upload
@@ -33,8 +33,8 @@ const Item = styled(Sheet)(({ theme }) => ({
   color: theme.vars.palette.text.secondary
 }))
 const stepsOfAddingDocument = [
-  'Choose a Datasource type',
-  'Setup the Datasource'
+  '1.Choose a Datasource type',
+  '2.Setup the Datasource'
 ]
 const documentTypeList = [
   {
@@ -121,6 +121,7 @@ const Documents = () => {
         <Button
           variant="outlined"
           onClick={() => setIsAddDocumentModalShow(true)}
+          sx={{ marginBottom: '20px' }}
         >
           + Add Datasource
         </Button>
@@ -128,8 +129,8 @@ const Documents = () => {
       {documents.length ? (
         <>
           <Table
-            color="info"
-            variant="soft"
+            color="primary"
+            variant="plain"
             size="lg"
             sx={{
               '& tbody tr: hover': {
@@ -148,6 +149,7 @@ const Documents = () => {
                 <th>Size</th>
                 <th>Last Synch</th>
                 <th>Status</th>
+                <th>Result</th>
                 <th>Operation</th>
               </tr>
             </thead>
@@ -156,11 +158,7 @@ const Documents = () => {
                 <tr key={row.id}>
                   <td>{row.doc_name}</td>
                   <td>
-                    <Chip
-                      variant="soft"
-                      color="neutral"
-                      sx={{ fontWeight: 300 }}
-                    >
+                    <Chip variant="solid" color="neutral" sx={{ opacity: 0.5 }}>
                       {row.doc_type}
                     </Chip>
                   </td>
@@ -168,8 +166,8 @@ const Documents = () => {
                   <td>{moment(row.last_sync).format('YYYY-MM-DD HH:MM:SS')}</td>
                   <td>
                     <Chip
-                      sx={{ fontWeight: 300 }}
-                      variant="soft"
+                      sx={{ opacity: 0.5 }}
+                      variant="solid"
                       color={(function () {
                         switch (row.status) {
                           case 'TODO':
@@ -187,11 +185,45 @@ const Documents = () => {
                     </Chip>
                   </td>
                   <td>
+                    {(function () {
+                      if (row.status === 'TODO' || row.status === 'RUNNING') {
+                        return ''
+                      } else if (row.status === 'FINISHED') {
+                        return (
+                          <Popover content={row.result} trigger="hover">
+                            <Chip
+                              variant="solid"
+                              color="success"
+                              sx={{ opacity: 0.5 }}
+                            >
+                              SUCCESS
+                            </Chip>
+                          </Popover>
+                        )
+                      } else {
+                        return (
+                          <Popover content={row.result} trigger="hover">
+                            <Chip
+                              variant="solid"
+                              color="danger"
+                              sx={{ opacity: 0.5 }}
+                            >
+                              FAILED
+                            </Chip>
+                          </Popover>
+                        )
+                      }
+                    })()}
+                  </td>
+                  <td>
                     {
                       <>
                         <Button
                           variant="outlined"
                           size="sm"
+                          sx={{
+                            marginRight: '20px'
+                          }}
                           onClick={async () => {
                             const res = await fetch(
                               `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
@@ -297,7 +329,10 @@ const Documents = () => {
               {stepsOfAddingDocument.map((item: any, index: number) => (
                 <Item
                   key={item}
-                  sx={{ fontWeight: activeStep === index ? 'bold' : '' }}
+                  sx={{
+                    fontWeight: activeStep === index ? 'bold' : '',
+                    color: activeStep === index ? '#814DDE' : ''
+                  }}
                 >
                   {item}
                 </Item>
@@ -389,6 +424,7 @@ const Documents = () => {
                 )}
               </Box>
               <Button
+                variant="outlined"
                 onClick={async () => {
                   if (documentName === '') {
                     message.error('Please input the name')
