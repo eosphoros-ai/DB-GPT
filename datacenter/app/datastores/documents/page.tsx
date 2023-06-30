@@ -467,7 +467,9 @@ const Documents = () => {
                   variant="outlined"
                   sx={{ marginRight: '20px' }}
                   onClick={() => setActiveStep(0)}
-                >{'< Back'}</Button>
+                >
+                  {'< Back'}
+                </Button>
                 <Button
                   variant="outlined"
                   onClick={async () => {
@@ -496,6 +498,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       data.success &&
+                        synchChecked &&
                         fetch(
                           `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
                           {
@@ -551,6 +554,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       data.success &&
+                        synchChecked &&
                         fetch(
                           `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
                           {
@@ -610,6 +614,7 @@ const Documents = () => {
                       )
                       const data = await res.json()
                       data.success &&
+                        synchChecked &&
                         fetch(
                           `${fetchBaseURL}/knowledge/${spaceName}/document/sync`,
                           {
