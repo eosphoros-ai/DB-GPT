@@ -66,7 +66,7 @@ app.add_middleware(
 )
 
 app.mount("/_next/static", StaticFiles(directory=static_file_path + "/_next/static", html=True))
-app.mount("/", StaticFiles(directory=static_file_path), name="static2")
+app.mount("/static", StaticFiles(directory=static_file_path), name="static2")
 
 app.include_router(knowledge_router)
 app.include_router(api_v1)
