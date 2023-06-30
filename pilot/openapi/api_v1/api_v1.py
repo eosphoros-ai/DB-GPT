@@ -17,7 +17,6 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from sse_starlette.sse import EventSourceResponse
 from typing import List
 
 from pilot.openapi.api_v1.api_view_model import (
