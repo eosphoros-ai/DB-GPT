@@ -1,9 +1,9 @@
 "use client"
 import './globals.css'
-import './nprogress.css';
+import '@/nprogress.css';
 import LeftSider from '@/components/leftSider';
 import { CssVarsProvider, ThemeProvider } from '@mui/joy/styles';
-import { joyTheme } from './defaultTheme';
+import { joyTheme } from '@/defaultTheme';
 import TopProgressBar from '@/components/topProgressBar';
 import DialogueContext from './context/dialogue';
 
