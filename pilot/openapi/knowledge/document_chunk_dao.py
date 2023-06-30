@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import Column, String, DateTime, Integer, Text, create_engine
+from sqlalchemy import Column, String, DateTime, Integer, Text, create_engine, func
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from pilot.configs.config import Config
@@ -82,6 +82,30 @@ class DocumentChunkDao:
         )
         result = document_chunks.all()
         return result
+
+    def get_document_chunks_count(self, query: DocumentChunkEntity):
+        session = self.Session()
+        document_chunks = session.query(func.count(DocumentChunkEntity.id))
+        if query.id is not None:
+            document_chunks = document_chunks.filter(DocumentChunkEntity.id == query.id)
+        if query.document_id is not None:
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.document_id == query.document_id
+            )
+        if query.doc_type is not None:
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.doc_type == query.doc_type
+            )
+        if query.doc_name is not None:
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.doc_name == query.doc_name
+            )
+        if query.meta_info is not None:
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.meta_info == query.meta_info
+            )
+        count = document_chunks.scalar()
+        return count
 
     # def update_knowledge_document(self, document:KnowledgeDocumentEntity):
     #     session = self.Session()

@@ -40,6 +40,7 @@ def server_init(args):
     cfg = Config()
 
     from pilot.server.llmserver import worker
+
     worker.start_check()
     load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
