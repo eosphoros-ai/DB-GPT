@@ -1,7 +1,7 @@
 "use client";
 import { useRequest } from 'ahooks';
 import { useState } from 'react';
-import { Button, Input, useColorScheme, Box, buttonClasses } from '@/lib/mui';
+import { Button, Input, Box, buttonClasses } from '@/lib/mui';
 import IconButton from '@mui/joy/IconButton';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +13,6 @@ import { useRouter } from 'next/navigation';
 export default function Home() {
   const Schema = z.object({ query: z.string().min(1) });
   const router = useRouter();
-  const { mode } = useColorScheme();
   const [isLoading, setIsLoading] = useState(false);
   const methods = useForm<z.infer<typeof Schema>>({
     resolver: zodResolver(Schema),
@@ -29,7 +28,7 @@ export default function Home() {
         chat_mode: 'chat_normal'
       });
       if (res?.success && res?.data?.conv_uid) {
-        router.push(`/agents/${res?.data?.conv_uid}?initMessage=${query}`);
+        router.push(`/chat?id=${res?.data?.conv_uid}&initMessage=${query}`);
       }
     } catch (err) {
     } finally {
@@ -67,7 +66,7 @@ export default function Home() {
                       chat_mode: scene['chat_scene']
                     });
                     if (res?.success && res?.data?.conv_uid) {
-                      router.push(`/agents/${res?.data?.conv_uid}?scene=${scene['chat_scene']}`);
+                      router.push(`/chat?id=${res?.data?.conv_uid}&scene=${scene['chat_scene']}`);
                     }
                   }}
                 >

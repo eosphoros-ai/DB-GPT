@@ -25,26 +25,34 @@ export const joyTheme = extendTheme({
           surface: '#fff'
         },
         text: {
-          primary: '#505050'
+          primary: '#505050',
         },
       },
     },
     dark: {
       palette: {
         mode: 'light',
+        primary: {
+          ...colors.grey,
+          softBg: '#353539',
+          softHoverBg: '#35353978',
+          softDisabledBg: '#353539'
+        },
         neutral: {
           plainColor: '#D8D8DF',
           plainHoverColor: '#F7F7F8',
-          plainHoverBg: '#25252D',
+          plainHoverBg: '#353539',
           plainActiveBg: '#434356',
-          plainDisabledColor: '#434356'
+          plainDisabledColor: '#434356',
+          outlinedBorder: '#353539',
+          outlinedHoverBorder: '#454651'
         },
         text: {
           primary: '#EBEBEF'
         },
         background: {
-          body: '#0f172a',
-          surface: '#1e293b40'
+          body: '#212121',
+          surface: '#525262',
         }
       },
     },
