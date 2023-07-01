@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useMemo } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Modal } from 'antd';
 import { Box, List, ListItem, ListItemButton, ListItemDecorator, ListItemContent, Typography, Button, useColorScheme, IconButton } from '@/lib/mui';
@@ -15,6 +15,7 @@ import { sendPostRequest } from '@/utils/request';
 
 const LeftSider =  () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 	const router = useRouter();
 	const { dialogueList, queryDialogueList, refreshDialogList } = useDialogueContext();
 	const { mode, setMode } = useColorScheme();
@@ -114,7 +115,7 @@ const LeftSider =  () => {
 									}}
 								>
 									{dialogueList?.data?.map((each) => {
-										const isSelect = pathname === `/agents/${each.conv_uid}`;
+										const isSelect = pathname === `/chat` && searchParams.get('id') === each.conv_uid;
 										return (
 											<ListItem key={each.conv_uid}>
 												<ListItemButton
@@ -127,7 +128,7 @@ const LeftSider =  () => {
 													}}
 												>
 													<ListItemContent>
-														<Link href={`/agents/${each.conv_uid}?scene=${each?.chat_mode}`} className="flex items-center justify-between">
+														<Link href={`/chat?id=${each.conv_uid}&scene=${each?.chat_mode}`} className="flex items-center justify-between">
 															<Typography fontSize={14} noWrap={true}>
 																<SmsOutlinedIcon className='mr-2' />
 																{each?.user_name || each?.user_input || 'undefined'}
@@ -147,7 +148,7 @@ const LeftSider =  () => {
 																		async onOk() {
 																			await sendPostRequest(`v1/chat/dialogue/delete?con_uid=${each.conv_uid}`);
 																			await refreshDialogList();
-																			if (pathname === `/agents/${each.conv_uid}`) {
+																			if (pathname === `/chat` && searchParams.get('id') === each.conv_uid) {
 																				router.push('/');
 																			}
 																		}
