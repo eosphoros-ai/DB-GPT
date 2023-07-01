@@ -28,7 +28,7 @@ export default function Home() {
         chat_mode: 'chat_normal'
       });
       if (res?.success && res?.data?.conv_uid) {
-        router.push(`/agents/${res?.data?.conv_uid}?initMessage=${query}`);
+        router.push(`/chat?id=${res?.data?.conv_uid}&initMessage=${query}`);
       }
     } catch (err) {
     } finally {
@@ -66,7 +66,7 @@ export default function Home() {
                       chat_mode: scene['chat_scene']
                     });
                     if (res?.success && res?.data?.conv_uid) {
-                      router.push(`/agents/${res?.data?.conv_uid}?scene=${scene['chat_scene']}`);
+                      router.push(`/chat?id=${res?.data?.conv_uid}&scene=${scene['chat_scene']}`);
                     }
                   }}
                 >
