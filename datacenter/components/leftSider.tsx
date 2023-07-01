@@ -44,7 +44,7 @@ const LeftSider =  () => {
 
 	return (
 		<>
-			<nav className='flex h-12 items-center justify-between border-b bg-gray-50 px-4 dark:border-gray-800 dark:bg-gray-800/70 md:hidden'>
+			<nav className='flex h-12 items-center justify-between border-b px-4 dark:border-gray-800 dark:bg-gray-800/70 md:hidden'>
 				<div>
 					<MenuIcon />
 				</div>

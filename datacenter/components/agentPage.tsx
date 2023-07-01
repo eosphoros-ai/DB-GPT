@@ -2,7 +2,7 @@
 import { useRequest } from 'ahooks';
 import { sendGetRequest, sendPostRequest } from '@/utils/request';
 import useAgentChat from '@/hooks/useAgentChat';
-import ChatBoxComp from '@/components/chatBox';
+import ChatBoxComp from '@/components/chatBoxTemp';
 import { useDialogueContext } from '@/app/context/dialogue';
 
 const AgentPage = (props: {
@@ -36,7 +36,7 @@ const AgentPage = (props: {
 	});
 
 	return (
-		<div className='mx-auto flex h-full max-w-3xl flex-col gap-6 px-5 py-6 sm:gap-8 xl:max-w-5xl '>
+		<>
 			<ChatBoxComp
 				initialMessage={historyList?.data ? (historyList?.data?.length <= 0 ? props.searchParams?.initMessage : undefined) : undefined}
 				clearIntialMessage={async () => {
@@ -46,7 +46,7 @@ const AgentPage = (props: {
 				onSubmit={handleChatSubmit}
 				paramsList={paramsList?.data}
 			/>
-		</div>
+		</>
 	)
 }
 
