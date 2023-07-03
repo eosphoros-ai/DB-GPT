@@ -5,6 +5,7 @@ import useAgentChat from '@/hooks/useAgentChat';
 import ChatBoxComp from '@/components/chatBoxTemp';
 import { useDialogueContext } from '@/app/context/dialogue';
 import { useSearchParams } from 'next/navigation';
+
 const AgentPage = () => {
 	const searchParams = useSearchParams();
 	const { refreshDialogList } = useDialogueContext();
@@ -20,7 +21,7 @@ const AgentPage = () => {
 
 	const { data: paramsList } = useRequest(async () => await sendPostRequest(`/v1/chat/mode/params/list?chat_mode=${scene}`), {
 		ready: !!scene,
-		refreshDeps: [scene]
+		refreshDeps: [id, scene]
 	});
 
 	const { history, handleChatSubmit } = useAgentChat({
