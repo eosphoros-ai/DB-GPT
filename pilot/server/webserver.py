@@ -37,7 +37,7 @@ from pilot.conversation import (
 
 from pilot.server.gradio_css import code_highlight_css
 from pilot.server.gradio_patch import Chatbot as grChatbot
-from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 from pilot.utils import build_logger
 from pilot.vector_store.extract_tovec import (
     get_vector_storelist,
@@ -297,54 +297,40 @@ def http_bot(
 
     if ChatScene.ChatWithDbExecute == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "db_name": db_selector,
             "user_input": state.last_user_input,
         }
     elif ChatScene.ChatWithDbQA == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "db_name": db_selector,
             "user_input": state.last_user_input,
         }
     elif ChatScene.ChatExecution == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "plugin_selector": plugin_selector,
             "user_input": state.last_user_input,
         }
     elif ChatScene.ChatNormal == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
         }
     elif ChatScene.ChatDefaultKnowledge == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
         }
     elif ChatScene.ChatNewKnowledge == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
             "knowledge_name": knowledge_name,
         }
     elif ChatScene.ChatUrlKnowledge == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
             "url": url_input,
