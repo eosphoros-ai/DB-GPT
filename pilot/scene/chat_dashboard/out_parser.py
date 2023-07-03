@@ -1,12 +1,13 @@
 import json
 import re
+from dataclasses import dataclass, asdict
 from abc import ABC, abstractmethod
 from typing import Dict, NamedTuple, List
 import pandas as pd
 from pilot.utils import build_logger
 from pilot.out_parser.base import BaseOutputParser, T
 from pilot.configs.model_config import LOGDIR
-
+from pilot.scene.base import ChatScene
 
 class ChartItem(NamedTuple):
     sql: str
@@ -26,7 +27,7 @@ class ChatDashboardOutputParser(BaseOutputParser):
         clean_str = super().parse_prompt_response(model_out_text)
         print("clean prompt response:", clean_str)
         response = json.loads(clean_str)
-        chart_items = List[ChartItem]
+        chart_items: List[ChartItem] = []
         for item in response:
             chart_items.append(
                 ChartItem(
@@ -36,10 +37,8 @@ class ChatDashboardOutputParser(BaseOutputParser):
         return chart_items
 
     def parse_view_response(self, speak, data) -> str:
-        ### TODO
-
-        return data
+        return json.dumps(data.prepare_dict())
 
     @property
     def _type(self) -> str:
-        return "chat_dashboard"
+        return ChatScene.ChatDashboard.value

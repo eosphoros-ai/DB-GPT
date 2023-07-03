@@ -452,3 +452,5 @@ class Database:
         return [
             (table_comment[0], table_comment[1]) for table_comment in table_comments
         ]
+
+
