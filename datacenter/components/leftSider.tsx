@@ -130,7 +130,7 @@ const LeftSider =  () => {
 													<ListItemContent>
 														<Link href={`/chat?id=${each.conv_uid}&scene=${each?.chat_mode}`} className="flex items-center justify-between">
 															<Typography fontSize={14} noWrap={true}>
-																<SmsOutlinedIcon className='mr-2' />
+																<SmsOutlinedIcon style={{ marginRight: '0.5rem' }} />
 																{each?.user_name || each?.user_input || 'undefined'}
 															</Typography>
 															<IconButton
