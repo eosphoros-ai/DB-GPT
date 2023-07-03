@@ -130,7 +130,7 @@ const LeftSider =  () => {
 													<ListItemContent>
 														<Link href={`/chat?id=${each.conv_uid}&scene=${each?.chat_mode}`} className="flex items-center justify-between">
 															<Typography fontSize={14} noWrap={true}>
-																<SmsOutlinedIcon className='mr-2' />
+																<SmsOutlinedIcon style={{ marginRight: '0.5rem' }} />
 																{each?.user_name || each?.user_input || 'undefined'}
 															</Typography>
 															<IconButton
@@ -146,7 +146,7 @@ const LeftSider =  () => {
 																		width: '276px',
 																		centered: true,
 																		async onOk() {
-																			await sendPostRequest(`v1/chat/dialogue/delete?con_uid=${each.conv_uid}`);
+																			await sendPostRequest(`/v1/chat/dialogue/delete?con_uid=${each.conv_uid}`);
 																			await refreshDialogList();
 																			if (pathname === `/chat` && searchParams.get('id') === each.conv_uid) {
 																				router.push('/');

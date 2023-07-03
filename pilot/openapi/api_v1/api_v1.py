@@ -53,7 +53,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     message = ""
     for error in exc.errors():
         message += ".".join(error.get("loc")) + ":" + error.get("msg") + ";"
-    return Result.faild(msg=message)
+    return Result.faild(code= "E0001", msg=message)
 
 
 def __get_conv_user_message(conversations: dict):
@@ -96,9 +96,9 @@ def knowledge_list():
     return params
 
 
-@router.get("/")
-async def read_main():
-    return FileResponse(f"{static_file_path}/index.html")
+# @router.get("/")
+# async def read_main():
+#     return FileResponse(f"{static_file_path}/index.html")
 
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
