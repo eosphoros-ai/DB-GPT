@@ -54,7 +54,12 @@ def chatglm_generate_stream(
     try:
         query = messages[-2].split("human:")[1]
     except IndexError:
-        query = messages[-3].split("human:")[1]
+        # fix doc qa: https://github.com/csunny/DB-GPT/issues/274
+        doc_qa_message = messages[-2]
+        if "system:" in doc_qa_message:
+            query = doc_qa_message.split("system:")[1]
+        else:
+            query = messages[-3].split("human:")[1]
     print("Query Message: ", query)
     # output = ""
     # i = 0
