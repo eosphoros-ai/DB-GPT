@@ -160,18 +160,20 @@ class BaseChat(ABC):
         try:
             rsp_str = ""
             if not CFG.NEW_SERVER_MODE:
-                rsp_str = requests.post(
+                rsp_obj = requests.post(
                     urljoin(CFG.MODEL_SERVER, "generate"),
                     headers=headers,
                     json=payload,
                     timeout=120,
                 )
+                rsp_str = rsp_obj.text
             else:
                 ###TODO  no stream mode need independent
                 from pilot.server.llmserver import worker
                 output = worker.generate_stream_gate(payload)
                 for rsp in output:
-                    rsp_str = str(rsp, "utf-8")
+                    rsp = rsp.replace(b"\0", b"")
+                    rsp_str = rsp.decode()
                     print("[TEST: output]:", rsp_str)
 
             ### output parse
