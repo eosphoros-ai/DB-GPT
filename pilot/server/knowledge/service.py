@@ -5,15 +5,15 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
 from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 from pilot.logs import logger
-from pilot.server.knowledge.chunk_dao import (
+from pilot.server.knowledge.chunk_db import (
     DocumentChunkEntity,
     DocumentChunkDao,
 )
-from pilot.server.knowledge.document_dao import (
+from pilot.server.knowledge.document_db import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
-from pilot.server.knowledge.space_dao import (
+from pilot.server.knowledge.space_db import (
     KnowledgeSpaceDao,
     KnowledgeSpaceEntity,
 )
@@ -195,7 +195,8 @@ class KnowledgeService:
             vector_ids = client.knowledge_embedding_batch(chunk_docs)
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document embedding success"
-            doc.vector_ids = ",".join(vector_ids)
+            if vector_ids is not None:
+                doc.vector_ids = ",".join(vector_ids)
             logger.info(f"async document embedding, success:{doc.doc_name}")
         except Exception as e:
             doc.status = SyncStatus.FAILED.name
