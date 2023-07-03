@@ -279,7 +279,7 @@ async def stream_generator(chat):
                 )
                 msg = msg.replace("\n", "\\n")
                 yield f"data:{msg}\n\n"
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.02)
     else:
         for chunk in model_response:
             if chunk:
@@ -289,7 +289,7 @@ async def stream_generator(chat):
 
                 msg = msg.replace("\n", "\\n")
                 yield f"data:{msg}\n\n"
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.02)
 
     chat.current_message.add_ai_message(msg)
     chat.current_message.add_view_message(msg)
