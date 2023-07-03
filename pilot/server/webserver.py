@@ -690,9 +690,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_list_mode", type=str, default="once", choices=["once", "reload"]
     )
-    parser.add_argument(
-        "-new", "--new", action="store_true", help="enable new http mode"
-    )
 
     # old version server config
     parser.add_argument("--host", type=str, default="0.0.0.0")
@@ -704,20 +701,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     server_init(args)
 
-    if args.new:
-        import uvicorn
-
-        uvicorn.run(app, host="0.0.0.0", port=5000)
-    else:
-        ### Compatibility mode starts the old version server by default
-        demo = build_webdemo()
-        demo.queue(
-            concurrency_count=args.concurrency_count,
-            status_update_rate=10,
-            api_open=False,
-        ).launch(
-            server_name=args.host,
-            server_port=args.port,
-            share=args.share,
-            max_threads=200,
-        )
+    demo = build_webdemo()
+    demo.queue(
+        concurrency_count=args.concurrency_count,
+        status_update_rate=10,
+        api_open=False,
+    ).launch(
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        max_threads=200,
+    )
