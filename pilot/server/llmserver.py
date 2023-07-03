@@ -168,7 +168,7 @@ async def api_generate_stream(request: Request):
 
 
 @app.post("/generate")
-def generate(prompt_request: PromptRequest):
+def generate(prompt_request: PromptRequest)->str:
     params = {
         "prompt": prompt_request.prompt,
         "temperature": prompt_request.temperature,
