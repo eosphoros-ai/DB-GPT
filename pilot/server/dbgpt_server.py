@@ -95,6 +95,9 @@ if __name__ == "__main__":
 
     # init server config
     args = parser.parse_args()
+
+    from pilot.server.llmserver import worker
+    worker.start_check()
     server_init(args)
     CFG.NEW_SERVER_MODE = True
     import uvicorn

@@ -39,7 +39,6 @@ from pilot.scene.base_message import (
     ViewMessage,
 )
 from pilot.configs.config import Config
-from pilot.server.llmserver import worker
 
 logger = build_logger("BaseChat", LOGDIR + "BaseChat.log")
 headers = {"User-Agent": "dbgpt Client"}
@@ -143,6 +142,7 @@ class BaseChat(ABC):
                 )
                 return response
             else:
+                from pilot.server.llmserver import worker
                 return worker.generate_stream_gate(payload)
         except Exception as e:
             print(traceback.format_exc())
@@ -168,6 +168,7 @@ class BaseChat(ABC):
                 )
             else:
                 ###TODO  no stream mode need independent
+                from pilot.server.llmserver import worker
                 output = worker.generate_stream_gate(payload)
                 for rsp in output:
                     rsp_str = str(rsp, "utf-8")
