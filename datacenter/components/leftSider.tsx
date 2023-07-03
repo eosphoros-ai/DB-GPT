@@ -146,7 +146,7 @@ const LeftSider =  () => {
 																		width: '276px',
 																		centered: true,
 																		async onOk() {
-																			await sendPostRequest(`v1/chat/dialogue/delete?con_uid=${each.conv_uid}`);
+																			await sendPostRequest(`/v1/chat/dialogue/delete?con_uid=${each.conv_uid}`);
 																			await refreshDialogList();
 																			if (pathname === `/chat` && searchParams.get('id') === each.conv_uid) {
 																				router.push('/');

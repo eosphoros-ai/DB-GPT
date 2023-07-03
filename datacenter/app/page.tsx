@@ -18,7 +18,7 @@ export default function Home() {
     resolver: zodResolver(Schema),
     defaultValues: {},
   });
-  const { data: scenesList } = useRequest(async () => await sendPostRequest('v1/chat/dialogue/scenes'));
+  const { data: scenesList } = useRequest(async () => await sendPostRequest('/v1/chat/dialogue/scenes'));
 
   const submit = async ({ query }: z.infer<typeof Schema>) => {
     try {
