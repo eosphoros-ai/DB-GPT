@@ -18,7 +18,7 @@ export default function Home() {
     resolver: zodResolver(Schema),
     defaultValues: {},
   });
-  const { data: scenesList } = useRequest(async () => await sendPostRequest('v1/chat/dialogue/scenes'));
+  const { data: scenesList } = useRequest(async () => await sendPostRequest('/v1/chat/dialogue/scenes'));
 
   const submit = async ({ query }: z.infer<typeof Schema>) => {
     try {
@@ -61,6 +61,9 @@ export default function Home() {
                   size="md"
                   variant="solid"
                   className='text-base rounded-none	'
+                  style={{
+                    boxShadow: '0px 8px 10px 0px rgb(31 31 31 / 50%)'
+                  }}
                   onClick={async () => {
                     const res = await sendPostRequest('/v1/chat/dialogue/new', {
                       chat_mode: scene['chat_scene']

@@ -30,7 +30,7 @@ export const sendGetRequest = (url: string, qs?: { [key: string]: any }) => {
       url += `?${str}`;
     }
   }
-	return axios.get(url, {
+	return axios.get("/api" + url, {
     headers: DEFAULT_HEADERS
   }).then(res => res).catch(err => {
     message.error(err);
@@ -40,7 +40,7 @@ export const sendGetRequest = (url: string, qs?: { [key: string]: any }) => {
 
 export const sendPostRequest = (url: string, body?: any) => {
   const reqBody = sanitizeBody(body);
-  return axios.post(url, {
+  return axios.post("/api" + url, {
     body: reqBody,
     headers: DEFAULT_HEADERS
   }).then(res => res).catch(err => {
