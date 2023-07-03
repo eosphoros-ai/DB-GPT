@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: DB-GPT 0.1.0\n"
+"Project-Id-Version: DB-GPT 0.2.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-14 22:33+0800\n"
+"POT-Creation-Date: 2023-06-30 17:16+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,11 +19,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../modules/llms.md:1 7737e31f5fcc4dc4be573a0bb73ca419
+#: ../../modules/llms.md:1 7fa87bcbc5de40b2902c41545027d8b8
 msgid "LLMs"
 msgstr "大语言模型"
 
-#: ../../modules/llms.md:3 8a8422f18e5d4c7aa1c1abf3a89f5d27
+#: ../../modules/llms.md:3 48a7c98128114cf58c57c41575ae53a6
 #, python-format
 msgid ""
 "In the underlying large model integration, we have designed an open "
@@ -36,23 +36,23 @@ msgid ""
 "of use."
 msgstr "在底层大模型接入中，我们设计了开放的接口，支持对接多种大模型。同时对于接入模型的效果，我们有非常严格的把控与评审机制。对大模型能力上与ChatGPT对比，在准确率上需要满足85%以上的能力对齐。我们用更高的标准筛选模型，是期望在用户使用过程中，可以省去前面繁琐的测试评估环节。"
 
-#: ../../modules/llms.md:5 c48ee3f4c51c49ae9dba40b1854dd483
+#: ../../modules/llms.md:5 8d162757e5934dca9395605a5809193a
 msgid "Multi LLMs Usage"
 msgstr "多模型使用"
 
-#: ../../modules/llms.md:6 ad44cef629f64bf4a4d72431568149fe
+#: ../../modules/llms.md:6 b1a5b940bee64aaa8945c078f9788459
 msgid ""
 "To use multiple models, modify the LLM_MODEL parameter in the .env "
 "configuration file to switch between the models."
 msgstr "如果要使用不同的模型，请修改.env配置文件中的LLM MODEL参数以在模型之间切换。"
 
-#: ../../modules/llms.md:8 b08325fd36af4ef582c8a46685986aaf
+#: ../../modules/llms.md:8 77c89d2a77d64b8aa6796c59aad07ed2
 msgid ""
 "Notice: you can create .env file from .env.template, just use command "
 "like this:"
 msgstr "注意:你可以从 .env.template 创建 .env 文件。只需使用如下命令:"
 
-#: ../../modules/llms.md:14 75ec45409dc84fd9bf3dfa98835d4645
+#: ../../modules/llms.md:14 4fc870de8fc14861a97a5417a9e886f4
 msgid ""
 "now we support models vicuna-13b, vicuna-7b, chatglm-6b, flan-t5-base, "
 "guanaco-33b-merged, falcon-40b, gorilla-7b."
@@ -60,29 +60,36 @@ msgstr ""
 "现在我们支持的模型有vicuna-13b, vicuna-7b, chatglm-6b, flan-t5-base, guanaco-33b-"
 "merged, falcon-40b, gorilla-7b."
 
-#: ../../modules/llms.md:16 a6e99cf291e049c99e2d6813d03b0427
+#: ../../modules/llms.md:16 76cd62716d864bc48c362a5f095dbe94
 msgid ""
 "if you want use other model, such as chatglm-6b, you just need update "
 ".env config file."
 msgstr "如果你想使用其他模型，比如chatglm-6b, 仅仅需要修改.env 配置文件"
 
-#: ../../modules/llms.md:21 1b9a9aa83dc7420fb5c6c17c982abb20
+#: ../../modules/llms.md:20 be990b58d30c469486c21e4a11739274
+msgid ""
+"or chatglm2-6b, which  is the second-generation version of the open-"
+"source bilingual (Chinese-English) chat model ChatGLM-6B."
+msgstr ""
+
+#: ../../modules/llms.md:27 52b37848bd8345aea6a5a331019a01cd
 msgid "Run Model with cpu."
 msgstr "用CPU运行模型"
 
-#: ../../modules/llms.md:22 e6bdeeca06764ed583154ddc78f0f26e
+#: ../../modules/llms.md:28 e3090ffbb05646e6af1b0eebedabc9e6
 msgid ""
 "we alse support smaller models, like gpt4all.  you can use it with "
 "cpu/mps(M1/M2), Download from [gpt4all model](https://gpt4all.io/models"
 "/ggml-gpt4all-j-v1.3-groovy.bin)"
-msgstr "我们也支持一些小模型，你可以通过CPU/MPS(M1、M2)运行, 模型下载[gpt4all](https://gpt4all.io/models"
+msgstr ""
+"我们也支持一些小模型，你可以通过CPU/MPS(M1、M2)运行, 模型下载[gpt4all](https://gpt4all.io/models"
 "/ggml-gpt4all-j-v1.3-groovy.bin)"
 
-#: ../../modules/llms.md:24 da5b575421ef45e7ad0f56fac151948d
+#: ../../modules/llms.md:30 67b0f633acee493d86033806a5f0db9a
 msgid "put it in the models path, then change .env config."
 msgstr "将模型放在models路径, 修改.env 配置文件"
 
-#: ../../modules/llms.md:29 03453d147e64404ab2c116faf0147b70
+#: ../../modules/llms.md:35 f1103e6c60b44657ba47129f97156251
 msgid ""
 "DB-GPT provides a model load adapter and chat adapter. load adapter which"
 " allows you to easily adapt load different LLM models by inheriting the "
@@ -91,15 +98,15 @@ msgstr ""
 "DB-GPT提供了多模型适配器load adapter和chat adapter.load adapter通过继承BaseLLMAdapter类,"
 " 实现match和loader方法允许你适配不同的LLM."
 
-#: ../../modules/llms.md:31 06b14da2931349859182473cd79abd68
+#: ../../modules/llms.md:37 768ae456f55b4b1894d7dff43c7a7f01
 msgid "vicuna llm load adapter"
 msgstr "vicuna llm load adapter"
 
-#: ../../modules/llms.md:48 fe7be51e9e2240c1882ef05f94a39d90
+#: ../../modules/llms.md:54 5364ea2d1b2e4759a98045b4ff7be4fe
 msgid "chatglm load adapter"
 msgstr "chatglm load adapter"
 
-#: ../../modules/llms.md:75 3535d4e0a0b946a49ed13710ae0ae5f3
+#: ../../modules/llms.md:81 eb7e5dc538a14a67b030b7a8b89a8e8a
 msgid ""
 "chat adapter which allows you to easily adapt chat different LLM models "
 "by inheriting the BaseChatAdpter.you just implement match() and "
@@ -108,43 +115,43 @@ msgstr ""
 "chat "
 "adapter通过继承BaseChatAdpter允许你通过实现match和get_generate_stream_func方法允许你适配不同的LLM."
 
-#: ../../modules/llms.md:77 b8dba90d769d45f090086fa044f22a96
+#: ../../modules/llms.md:83 f8e2cbbbf1e64b07af1a18bc089d268f
 msgid "vicuna llm chat adapter"
 msgstr "vicuna llm chat adapter"
 
-#: ../../modules/llms.md:89 f1d6e8145f704b5bbd1c49224c1e30f9
+#: ../../modules/llms.md:95 dba52e8a07354536bbfa38319129b98f
 msgid "chatglm llm chat adapter"
 msgstr "chatglm llm chat adapter"
 
-#: ../../modules/llms.md:102 295e498cec384d9589431b1d5942f590
+#: ../../modules/llms.md:108 3b9b667a154f4123ac0c2618ce9a8626
 msgid ""
 "if you want to integrate your own model, just need to inheriting "
 "BaseLLMAdaper and BaseChatAdpter and implement the methods"
 msgstr "如果你想集成自己的模型，只需要继承BaseLLMAdaper和BaseChatAdpter类，然后实现里面的方法即可"
 
-#: ../../modules/llms.md:104 07dd4757b06440fe8e9959446ff05892
+#: ../../modules/llms.md:110 713bb7cbd7644cc3b3734901b46d3ee0
 #, fuzzy
 msgid "Multi Proxy LLMs"
 msgstr "多模型使用"
 
-#: ../../modules/llms.md:105 1b9fc9ce08b94f6493f4b6ce51878fe2
+#: ../../modules/llms.md:111 125f310663e54a5b9a78f036df2c7062
 msgid "1. Openai proxy"
 msgstr ""
 
-#: ../../modules/llms.md:106 64e44b3c7c254034a1f72d2e362f4c4d
+#: ../../modules/llms.md:112 56a578a5e1234fe38a61eacd74d52b93
 msgid ""
 "If you haven't deployed a private infrastructure for a large model, or if"
 " you want to use DB-GPT in a low-cost and high-efficiency way, you can "
 "also use OpenAI's large model as your underlying model."
 msgstr ""
 
-#: ../../modules/llms.md:108 bca7d8118cd546ca8160400fe729be89
+#: ../../modules/llms.md:114 ce9d8db45c0441a59dc67babedfa1829
 msgid ""
 "If your environment deploying DB-GPT has access to OpenAI, then modify "
 "the .env configuration file as below will work."
 msgstr ""
 
-#: ../../modules/llms.md:116 7b84ddb937954787b4c8422f743afeda
+#: ../../modules/llms.md:122 cc81057c5bb6453e90bd5ab6c5d29c19
 msgid ""
 "If you can't access OpenAI locally but have an OpenAI proxy service, you "
 "can configure as follows."

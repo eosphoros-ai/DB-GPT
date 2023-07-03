@@ -7,7 +7,11 @@ export const joyTheme = extendTheme({
       palette: {
         mode: 'dark',
         primary: {
-          ...colors.purple,
+          ...colors.grey,
+          solidBg: '#dfdfdf91',
+          solidColor: '#4e4e4e',
+          solidHoverBg: '#d5d5d5',
+          outlinedColor: '#4e4e59'
         },
         neutral: {
           plainColor: '#4d4d4d',
@@ -21,7 +25,7 @@ export const joyTheme = extendTheme({
           surface: '#fff'
         },
         text: {
-          primary: '#25252D'
+          primary: '#505050',
         },
       },
     },
@@ -29,21 +33,26 @@ export const joyTheme = extendTheme({
       palette: {
         mode: 'light',
         primary: {
-          ...colors.purple,
+          ...colors.grey,
+          softBg: '#353539',
+          softHoverBg: '#35353978',
+          softDisabledBg: '#353539'
         },
         neutral: {
           plainColor: '#D8D8DF',
           plainHoverColor: '#F7F7F8',
-          plainHoverBg: '#25252D',
+          plainHoverBg: '#353539',
           plainActiveBg: '#434356',
-          plainDisabledColor: '#434356'
+          plainDisabledColor: '#434356',
+          outlinedBorder: '#353539',
+          outlinedHoverBorder: '#454651'
         },
         text: {
           primary: '#EBEBEF'
         },
         background: {
-          body: '#0f172a',
-          surface: '#1e293b40'
+          body: '#212121',
+          surface: '#525262',
         }
       },
     },
