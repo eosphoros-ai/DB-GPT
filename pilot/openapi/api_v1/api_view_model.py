@@ -34,7 +34,7 @@ class ConversationVo(BaseModel):
     dialogue_uid
     """
 
-    conv_uid: str = Field(..., description="dialogue uid")
+    conv_uid: str = ""
     """ 
     user input 
     """
@@ -46,7 +46,7 @@ class ConversationVo(BaseModel):
     """ 
     the scene of chat 
     """
-    chat_mode: str = Field(..., description="the scene of chat ")
+    chat_mode: str = ""
 
     """
     chat scene select param 

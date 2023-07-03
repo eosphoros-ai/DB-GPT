@@ -8,7 +8,7 @@ const nextConfig = {
 		ignoreBuildErrors: true
 	},
 	env: {
-		API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:5000'
+		API_BASE_URL: process.env.API_BASE_URL || 'https://u158074-879a-d00019a9.westa.seetacloud.com:8443'
 	}
 }
 
