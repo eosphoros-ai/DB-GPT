@@ -176,13 +176,13 @@ def generate(prompt_request: PromptRequest):
         "stop": prompt_request.stop,
     }
 
-    response = []
+
     rsp_str = ""
     output = worker.generate_stream_gate(params)
     for rsp in output:
         # rsp = rsp.decode("utf-8")
-        rsp_str = str(rsp, "utf-8")
-        response.append(rsp_str)
+        rsp = rsp.replace(b"\0", b"")
+        rsp_str = rsp.decode()
 
     return rsp_str
 

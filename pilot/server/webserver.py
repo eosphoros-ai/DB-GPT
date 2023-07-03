@@ -703,21 +703,15 @@ if __name__ == "__main__":
     # init server config
     args = parser.parse_args()
     server_init(args)
-
-    if args.new:
-        import uvicorn
-
-        uvicorn.run(app, host="0.0.0.0", port=5000)
-    else:
-        ### Compatibility mode starts the old version server by default
-        demo = build_webdemo()
-        demo.queue(
-            concurrency_count=args.concurrency_count,
-            status_update_rate=10,
-            api_open=False,
-        ).launch(
-            server_name=args.host,
-            server_port=args.port,
-            share=args.share,
-            max_threads=200,
-        )
+    dbs = CFG.local_db.get_database_list()
+    demo = build_webdemo()
+    demo.queue(
+        concurrency_count=args.concurrency_count,
+        status_update_rate=10,
+        api_open=False,
+    ).launch(
+        server_name=args.host,
+        server_port=args.port,
+        share=args.share,
+        max_threads=200,
+    )
