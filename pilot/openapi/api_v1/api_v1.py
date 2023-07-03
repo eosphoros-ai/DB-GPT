@@ -228,6 +228,8 @@ async def chat_completions(dialogue: ConversationVo = Body()):
         chat_param.update({"db_name": dialogue.select_param})
     elif ChatScene.ChatDashboard.value == dialogue.chat_mode:
         chat_param.update({"db_name": dialogue.select_param})
+        ## DEFAULT
+        chat_param.update({"report_name": "sales_report"})
     elif ChatScene.ChatExecution.value == dialogue.chat_mode:
         chat_param.update({"plugin_selector": dialogue.select_param})
     elif ChatScene.ChatKnowledge.value == dialogue.chat_mode:
