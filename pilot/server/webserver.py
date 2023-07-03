@@ -690,6 +690,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_list_mode", type=str, default="once", choices=["once", "reload"]
     )
+    parser.add_argument(
+        "-new", "--new", action="store_true", help="enable new http mode"
+    )
 
     # old version server config
     parser.add_argument("--host", type=str, default="0.0.0.0")
@@ -700,7 +703,7 @@ if __name__ == "__main__":
     # init server config
     args = parser.parse_args()
     server_init(args)
-
+    dbs = CFG.local_db.get_database_list()
     demo = build_webdemo()
     demo.queue(
         concurrency_count=args.concurrency_count,
