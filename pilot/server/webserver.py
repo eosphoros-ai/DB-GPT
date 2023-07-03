@@ -703,7 +703,7 @@ if __name__ == "__main__":
     # init server config
     args = parser.parse_args()
     server_init(args)
-
+    dbs = CFG.local_db.get_database_list()
     if args.new:
         import uvicorn
 
