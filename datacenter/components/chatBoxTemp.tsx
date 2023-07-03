@@ -10,11 +10,11 @@ import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import Markdown from 'markdown-to-jsx';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { okaidia } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useSearchParams } from 'next/navigation';
 
 type Props = {
   messages: Message[];
   onSubmit: (message: string, otherQueryBody?: any) => Promise<any>;
-  initialMessage?: string;
   readOnly?: boolean;
   paramsList?: { [key: string]: string };
   clearIntialMessage?: () => void;
@@ -25,12 +25,13 @@ const Schema = z.object({ query: z.string().min(1) });
 const ChatBoxComp = ({
   messages,
   onSubmit,
-  initialMessage,
   readOnly,
   paramsList,
   clearIntialMessage
 }: Props) => {
   const { mode } = useColorScheme();
+  const searchParams = useSearchParams();
+  const initMessage = searchParams.get('initMessage');
   const scrollableRef = React.useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentParam, setCurrentParam] = useState<string | undefined | null>();
@@ -42,6 +43,7 @@ const ChatBoxComp = ({
 
   const submit = async ({ query }: z.infer<typeof Schema>) => {
     try {
+      console.log('submit');
       setIsLoading(true);
       methods.reset();
       await onSubmit(query, {
@@ -55,10 +57,11 @@ const ChatBoxComp = ({
 
   const handleInitMessage = async () => {
     try {
-      const searchParams = new URLSearchParams(window.location.search);
-      searchParams.delete('initMessage');
-      window.history.replaceState(null, null, `?${searchParams.toString()}`);
-      await submit({ query: (initialMessage as string) });
+      const searchParamsTemp = new URLSearchParams(window.location.search);
+      const initMessage = searchParamsTemp.get('initMessage');
+      searchParamsTemp.delete('initMessage');
+      window.history.replaceState(null, null, `?${searchParamsTemp.toString()}`);
+      await submit({ query: (initMessage as string) });
     } catch (err) {
       console.log(err);
     } finally {
@@ -83,12 +86,12 @@ const ChatBoxComp = ({
 
     scrollableRef.current.scrollTo(0, scrollableRef.current.scrollHeight);
   }, [messages?.length]);
-
+  
   React.useEffect(() => {
-    if (initialMessage && messages.length <= 0) {
+    if (initMessage && messages.length <= 0) {
       handleInitMessage();
     }
-  }, [initialMessage]);
+  }, [initMessage, messages.length]);
 
   React.useEffect(() => {
     if (paramsList && Object.keys(paramsList || {})?.length > 0) {
