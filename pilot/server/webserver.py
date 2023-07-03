@@ -297,39 +297,29 @@ def http_bot(
 
     if ChatScene.ChatWithDbExecute == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "db_name": db_selector,
             "user_input": state.last_user_input,
         }
     elif ChatScene.ChatWithDbQA == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "db_name": db_selector,
             "user_input": state.last_user_input,
         }
     elif ChatScene.ChatExecution == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "plugin_selector": plugin_selector,
             "user_input": state.last_user_input,
         }
     elif ChatScene.ChatNormal == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
         }
     elif ChatScene.ChatDefaultKnowledge == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
         }
@@ -341,8 +331,6 @@ def http_bot(
         }
     elif ChatScene.ChatUrlKnowledge == scene:
         chat_param = {
-            "temperature": temperature,
-            "max_new_tokens": max_new_tokens,
             "chat_session_id": state.conv_id,
             "user_input": state.last_user_input,
             "url": url_input,

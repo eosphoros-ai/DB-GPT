@@ -49,6 +49,7 @@ class LocalKnowledgeInit:
         space = KnowledgeSpaceRequest
         space.name = self.vector_store_config["vector_store_name"]
         space.desc = "knowledge_init.py"
+        space.vector_type = CFG.VECTOR_STORE_TYPE
         space.owner = "DB-GPT"
         knowledge_space_service.create_knowledge_space(space)
 
