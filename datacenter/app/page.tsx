@@ -61,6 +61,9 @@ export default function Home() {
                   size="md"
                   variant="solid"
                   className='text-base rounded-none	'
+                  style={{
+                    boxShadow: '0px 8px 10px 0px rgb(31 31 31 / 50%)'
+                  }}
                   onClick={async () => {
                     const res = await sendPostRequest('/v1/chat/dialogue/new', {
                       chat_mode: scene['chat_scene']
