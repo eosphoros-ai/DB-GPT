@@ -172,7 +172,8 @@ class BaseChat(ABC):
                 from pilot.server.llmserver import worker
                 output = worker.generate_stream_gate(payload)
                 for rsp in output:
-                    rsp_str = str(rsp, "utf-8")
+                    rsp = rsp.replace(b"\0", b"")
+                    rsp_str = rsp.decode()
                     print("[TEST: output]:", rsp_str)
 
             ### output parse
