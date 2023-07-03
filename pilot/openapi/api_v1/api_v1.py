@@ -97,9 +97,9 @@ def knowledge_list():
     return params
 
 
-@router.get("/")
-async def read_main():
-    return FileResponse(f"{static_file_path}/index.html")
+# @router.get("/")
+# async def read_main():
+#     return FileResponse(f"{static_file_path}/index.html")
 
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
