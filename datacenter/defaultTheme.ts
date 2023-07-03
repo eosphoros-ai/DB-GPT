@@ -8,7 +8,7 @@ export const joyTheme = extendTheme({
         mode: 'dark',
         primary: {
           ...colors.grey,
-          solidBg: '#dfdfdf91',
+          solidBg: '#9a9a9a91',
           solidColor: '#4e4e4e',
           solidHoverBg: '#d5d5d5',
           outlinedColor: '#4e4e59'
@@ -36,7 +36,9 @@ export const joyTheme = extendTheme({
           ...colors.grey,
           softBg: '#353539',
           softHoverBg: '#35353978',
-          softDisabledBg: '#353539'
+          softDisabledBg: '#353539',
+          solidBg: '#434356',
+          solidHoverBg: '#5a5a72',
         },
         neutral: {
           plainColor: '#D8D8DF',
