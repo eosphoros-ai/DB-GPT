@@ -26,8 +26,8 @@ from pilot.openapi.api_v1.api_view_model import (
     ChatSceneVo,
 )
 from pilot.configs.config import Config
-from pilot.openapi.knowledge.knowledge_service import KnowledgeService
-from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
+from pilot.server.knowledge.service import KnowledgeService
+from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
 
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene

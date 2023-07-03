@@ -5,19 +5,19 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
 from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 from pilot.logs import logger
-from pilot.openapi.knowledge.document_chunk_dao import (
+from pilot.server.knowledge.chunk_dao import (
     DocumentChunkEntity,
     DocumentChunkDao,
 )
-from pilot.openapi.knowledge.knowledge_document_dao import (
+from pilot.server.knowledge.document_dao import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
-from pilot.openapi.knowledge.knowledge_space_dao import (
+from pilot.server.knowledge.space_dao import (
     KnowledgeSpaceDao,
     KnowledgeSpaceEntity,
 )
-from pilot.openapi.knowledge.request.knowledge_request import (
+from pilot.server.knowledge.request.request import (
     KnowledgeSpaceRequest,
     KnowledgeDocumentRequest,
     DocumentQueryRequest,
@@ -25,7 +25,7 @@ from pilot.openapi.knowledge.request.knowledge_request import (
 )
 from enum import Enum
 
-from pilot.openapi.knowledge.request.knowledge_response import (
+from pilot.server.knowledge.request.response import (
     ChunkQueryResponse,
     DocumentQueryResponse,
 )
