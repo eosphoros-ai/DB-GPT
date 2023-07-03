@@ -11,7 +11,7 @@ from pilot.conversation import ROLE_ASSISTANT, ROLE_USER
 def chatglm_generate_stream(
     model, tokenizer, params, device, context_len=2048, stream_interval=2
 ):
-    """Generate text using chatglm model's chat api"""
+    """Generate text using chatglm model's chat api_v1"""
     prompt = params["prompt"]
     temperature = float(params.get("temperature", 1.0))
     top_p = float(params.get("top_p", 1.0))
@@ -54,7 +54,12 @@ def chatglm_generate_stream(
     try:
         query = messages[-2].split("human:")[1]
     except IndexError:
-        query = messages[-3].split("human:")[1]
+        # fix doc qa: https://github.com/csunny/DB-GPT/issues/274
+        doc_qa_message = messages[-2]
+        if "system:" in doc_qa_message:
+            query = doc_qa_message.split("system:")[1]
+        else:
+            query = messages[-3].split("human:")[1]
     print("Query Message: ", query)
     # output = ""
     # i = 0

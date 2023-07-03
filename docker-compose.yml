@@ -1,14 +1,76 @@
 version: '3.10'
 
 services:
-  db-gpt:
+  db:
+    image: mysql:8.0.33
+    environment:
+      MYSQL_DATABASE: 'db'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'aa123456'
+    ports:
+      - 3306:3306
+    volumes:
+      - my-db:/var/lib/mysql
+    restart: unless-stopped
+  webserver:
     build:
       context: .
       dockerfile: Dockerfile
-      image: db-gpt:latest
-    container_name: db-gpt  
+    command: python3 pilot/server/webserver.py
+    environment:
+      - MODEL_SERVER=http://llmserver:8000
+      - LOCAL_DB_HOST=db
+      - WEB_SERVER_PORT=7860
+      - ALLOWLISTED_PLUGINS=db_dashboard
+    depends_on:
+      - db
+      - llmserver
+    volumes:
+      - ./models:/app/models
+      - ./plugins:/app/plugins
+      - data:/app/pilot/data
+    env_file:
+      - .env.template
+    ports:
+      - 7860:7860/tcp
+    expose:
+      - 7860/tcp
+    restart: unless-stopped
+  llmserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python3 pilot/server/llmserver.py
+    environment:
+      - LOCAL_DB_HOST=db
+    depends_on:
+      - db
+    volumes:
+      - ./models:/app/models
+    env_file:
+      - .env.template
     ports:
       - 8000:8000
-      - 3306:3306
     restart: unless-stopped
-    read-only: true      
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    restart: unless-stopped
+    environment:
+      - TUNNEL_URL=http://webserver:7860
+    command: tunnel --no-autoupdate
+    depends_on:
+      - webserver
+
+
+volumes:
+  my-db:
+  data:

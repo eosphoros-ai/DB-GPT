@@ -32,7 +32,7 @@ class BaseOutputParser(ABC):
     Output parsers help structure language model responses.
     """
 
-    def __init__(self, sep: str, is_stream_out: bool):
+    def __init__(self, sep: str, is_stream_out: bool = True):
         self.sep = sep
         self.is_stream_out = is_stream_out
 
@@ -47,6 +47,8 @@ class BaseOutputParser(ABC):
         return code
 
     def parse_model_stream_resp_ex(self, chunk, skip_echo_len):
+        if b"\0" in chunk:
+            chunk = chunk.replace(b"\0", b"")
         data = json.loads(chunk.decode())
 
         """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
@@ -93,13 +95,10 @@ class BaseOutputParser(ABC):
                     yield output
 
     def parse_model_nostream_resp(self, response, sep: str):
-        text = response.text.strip()
+        text = response.strip()
         text = text.rstrip()
-        respObj = json.loads(text)
-
-        xx = respObj["response"]
-        xx = xx.strip(b"\x00".decode())
-        respObj_ex = json.loads(xx)
+        text = text.strip(b"\x00".decode())
+        respObj_ex = json.loads(text)
         if respObj_ex["error_code"] == 0:
             all_text = respObj_ex["text"]
             ### 解析返回文本，获取AI回复部分
@@ -120,18 +119,46 @@ class BaseOutputParser(ABC):
         else:
             raise ValueError("Model server error!code=" + respObj_ex["error_code"])
 
-    def __extract_json(slef, s):
-        i = s.index("{")
-        count = 1  # 当前所在嵌套深度，即还没闭合的'{'个数
-        for j, c in enumerate(s[i + 1 :], start=i + 1):
-            if c == "}":
-                count -= 1
-            elif c == "{":
-                count += 1
-            if count == 0:
-                break
-        assert count == 0  # 检查是否找到最后一个'}'
-        return s[i : j + 1]
+    def __extract_json(self, s):
+
+        temp_json = self.__json_interception(s, True)
+        if not temp_json:
+            temp_json = self.__json_interception(s)
+        try:
+            json.loads(temp_json)
+            return temp_json
+        except Exception as e:
+            raise ValueError("Failed to find a valid json response！" + temp_json)
+
+    def __json_interception(self, s, is_json_array: bool = False):
+        if is_json_array:
+            i = s.index("[")
+            if i <0:
+                return None
+            count = 1
+            for j, c in enumerate(s[i + 1:], start=i + 1):
+                if c == "]":
+                    count -= 1
+                elif c == "[":
+                    count += 1
+                if count == 0:
+                    break
+            assert count == 0
+            return s[i: j + 1]
+        else:
+            i = s.index("{")
+            if i <0:
+                return None
+            count = 1
+            for j, c in enumerate(s[i + 1:], start=i + 1):
+                if c == "}":
+                    count -= 1
+                elif c == "{":
+                    count += 1
+                if count == 0:
+                    break
+            assert count == 0
+            return s[i: j + 1]
 
     def parse_prompt_response(self, model_out_text) -> T:
         """
@@ -148,9 +175,9 @@ class BaseOutputParser(ABC):
         # if "```" in cleaned_output:
         #     cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json") :]
+            cleaned_output = cleaned_output[len("```json"):]
         if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```") :]
+            cleaned_output = cleaned_output[len("```"):]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
@@ -159,9 +186,9 @@ class BaseOutputParser(ABC):
             cleaned_output = self.__extract_json(cleaned_output)
         cleaned_output = (
             cleaned_output.strip()
-            .replace("\n", " ")
-            .replace("\\n", " ")
-            .replace("\\", " ")
+                .replace("\n", " ")
+                .replace("\\n", " ")
+                .replace("\\", " ")
         )
         return cleaned_output
 

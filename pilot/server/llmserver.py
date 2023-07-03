@@ -5,11 +5,12 @@ import asyncio
 import json
 import os
 import sys
-import traceback
 
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import StreamingResponse
+
+# from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 global_counter = 0
@@ -33,7 +34,7 @@ class ModelWorker:
             model_path = model_path[:-1]
         self.model_name = model_name or model_path.split("/")[-1]
         self.device = device
-
+        print(f"Loading {model_name} LLM ModelServer in {device}! Please Wait......")
         self.ml = ModelLoader(model_path=model_path)
         self.model, self.tokenizer = self.ml.loader(
             num_gpus, load_8bit=ISLOAD_8BIT, debug=ISDEBUG
@@ -54,6 +55,9 @@ class ModelWorker:
 
         self.llm_chat_adapter = get_llm_chat_adapter(model_path)
         self.generate_stream_func = self.llm_chat_adapter.get_generate_stream_func()
+
+    def start_check(self):
+        print("LLM Model Loading Success！")
 
     def get_queue_length(self):
         if (
@@ -76,10 +80,8 @@ class ModelWorker:
             ):
                 # Please do not open the output in production!
                 # The gpt4all thread shares stdout with the parent process,
-                # and opening it may affect the frontend output
-                if not ("gptj" in CFG.LLM_MODEL or "guanaco" in CFG.LLM_MODEL):
-                    print("output: ", output)
-
+                # and opening it may affect the frontend output.
+                print("output: ", output)
                 ret = {
                     "text": output,
                     "error_code": 0,
@@ -90,13 +92,10 @@ class ModelWorker:
             ret = {"text": "**GPU OutOfMemory, Please Refresh.**", "error_code": 0}
             yield json.dumps(ret).encode() + b"\0"
         except Exception as e:
-            msg = "{}: {}".format(str(e), traceback.format_exc())
-
             ret = {
-                "text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {msg}",
+                "text": f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
                 "error_code": 0,
             }
-
             yield json.dumps(ret).encode() + b"\0"
 
     def get_embeddings(self, prompt):
@@ -109,6 +108,23 @@ worker = ModelWorker(
 )
 
 app = FastAPI()
+# from pilot.openapi.knowledge.knowledge_controller import router
+#
+# app.include_router(router)
+#
+# origins = [
+#     "http://localhost",
+#     "http://localhost:8000",
+#     "http://localhost:3000",
+# ]
+#
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 
 class PromptRequest(BaseModel):
@@ -152,7 +168,7 @@ async def api_generate_stream(request: Request):
 
 
 @app.post("/generate")
-def generate(prompt_request: PromptRequest):
+def generate(prompt_request: PromptRequest)->str:
     params = {
         "prompt": prompt_request.prompt,
         "temperature": prompt_request.temperature,
@@ -166,10 +182,9 @@ def generate(prompt_request: PromptRequest):
     for rsp in output:
         # rsp = rsp.decode("utf-8")
         rsp_str = str(rsp, "utf-8")
-        print("[TEST: output]:", rsp_str)
         response.append(rsp_str)
 
-    return {"response": rsp_str}
+    return rsp_str
 
 
 @app.post("/embedding")

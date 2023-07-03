@@ -51,7 +51,7 @@ def create_chat_completion(
                 return message
 
         response = None
-        # TODO impl this use vicuna server api
+        # TODO impl this use vicuna server api_v1
 
 
 class Stream(transformers.StoppingCriteria):

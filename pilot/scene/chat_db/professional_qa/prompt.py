@@ -8,7 +8,9 @@ from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = """A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. """
+PROMPT_SCENE_DEFINE = (
+    """You are an assistant that answers user specialized database questions. """
+)
 
 # PROMPT_SUFFIX = """Only use the following tables generate sql if have any table info:
 # {table_info}
@@ -27,21 +29,24 @@ PROMPT_SCENE_DEFINE = """A chat between a curious user and an artificial intelli
 # """
 
 _DEFAULT_TEMPLATE_EN = """
-You are a database expert. you will be given metadata information about a database or table, and then provide a brief summary and answer to the question. For example, question: "How many tables are there in database 'db_gpt'?" , answer: "There are 5 tables in database 'db_gpt', which are 'book', 'book_category', 'borrower', 'borrowing', and 'category'.
-Based on the database metadata information below, provide users with professional and concise answers to their questions. If the answer cannot be obtained from the provided content, please say: "The information provided in the knowledge base is not sufficient to answer this question." It is forbidden to make up information randomly.
-database metadata information: 
+Provide professional answers to requests and questions. If you can't get an answer from what you've provided, say: "Insufficient information in the knowledge base is available to answer this question." Feel free to fudge information.
+Use the following tables generate sql if have any table info:
 {table_info}
-question:
+
+user question:
 {input}
+think step by step.
 """
 
 _DEFAULT_TEMPLATE_ZH = """
-你是一位数据库专家。你将获得有关数据库或表的元数据信息，然后提供简要的总结和回答。例如，问题：“数据库 'db_gpt' 中有多少个表？” 答案：“数据库 'db_gpt' 中有 5 个表，分别是 'book'、'book_category'、'borrower'、'borrowing' 和 'category'。”
-根据以下数据库元数据信息，为用户提供专业简洁的答案。如果无法从提供的内容中获取答案，请说：“知识库中提供的信息不足以回答此问题。” 禁止随意捏造信息。
-数据库元数据信息: 
+根据要求和问题，提供专业的答案。如果无法从提供的内容中获取答案，请说：“知识库中提供的信息不足以回答此问题。” 禁止随意捏造信息。
+
+使用以下表结构信息: 
 {table_info}
+
 问题:
 {input}
+一步步思考
 """
 
 _DEFAULT_TEMPLATE = (

@@ -22,15 +22,11 @@ class ChatWithPlugin(BaseChat):
 
     def __init__(
         self,
-        temperature,
-        max_new_tokens,
         chat_session_id,
         user_input,
         plugin_selector: str = None,
     ):
         super().__init__(
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
             chat_mode=ChatScene.ChatExecution,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
@@ -66,7 +62,8 @@ class ChatWithPlugin(BaseChat):
         }
         return input_values
 
-    def do_with_prompt_response(self, prompt_response):
+    def do_action(self, prompt_response):
+        print(f"do_action:{prompt_response}")
         ## plugin command run
         return execute_command(
             str(prompt_response.command.get("name")),

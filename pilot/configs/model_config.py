@@ -39,12 +39,12 @@ LLM_MODEL_CONFIG = {
     "codet5p-2b": os.path.join(MODEL_PATH, "codet5p-2b"),
     "chatglm-6b-int4": os.path.join(MODEL_PATH, "chatglm-6b-int4"),
     "chatglm-6b": os.path.join(MODEL_PATH, "chatglm-6b"),
+    "chatglm2-6b": os.path.join(MODEL_PATH, "chatglm2-6b"),
+    "chatglm2-6b-int4": os.path.join(MODEL_PATH, "chatglm2-6b-int4"),
     "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "falcon-40b": os.path.join(MODEL_PATH, "falcon-40b"),
     "gorilla-7b": os.path.join(MODEL_PATH, "gorilla-7b"),
-    # TODO Support baichuan-7b
-    # "baichuan-7b" : os.path.join(MODEL_PATH, "baichuan-7b"),
     "gptj-6b": os.path.join(MODEL_PATH, "ggml-gpt4all-j-v1.3-groovy.bin"),
     "proxyllm": "proxyllm",
 }
