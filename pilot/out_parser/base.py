@@ -95,19 +95,18 @@ class BaseOutputParser(ABC):
                     yield output
 
     def parse_model_nostream_resp(self, response, sep: str):
-        text = response.strip()
-        text = text.rstrip()
-        text = text.strip(b"\x00".decode())
-        respObj_ex = json.loads(text)
-        if respObj_ex["error_code"] == 0:
-            all_text = respObj_ex["text"]
+        resp_obj_ex = json.loads(response)
+        if isinstance(resp_obj_ex, str):
+            resp_obj_ex = json.loads(resp_obj_ex)
+        if resp_obj_ex["error_code"] == 0:
+            all_text = resp_obj_ex["text"]
             ### 解析返回文本，获取AI回复部分
-            tmpResp = all_text.split(sep)
+            tmp_resp = all_text.split(sep)
             last_index = -1
-            for i in range(len(tmpResp)):
-                if tmpResp[i].find("assistant:") != -1:
+            for i in range(len(tmp_resp)):
+                if tmp_resp[i].find("assistant:") != -1:
                     last_index = i
-            ai_response = tmpResp[last_index]
+            ai_response = tmp_resp[last_index]
             ai_response = ai_response.replace("assistant:", "")
             ai_response = ai_response.replace("Assistant:", "")
             ai_response = ai_response.replace("ASSISTANT:", "")
@@ -117,7 +116,7 @@ class BaseOutputParser(ABC):
             print("un_stream ai response:", ai_response)
             return ai_response
         else:
-            raise ValueError("Model server error!code=" + respObj_ex["error_code"])
+            raise ValueError("Model server error!code=" + resp_obj_ex["error_code"])
 
     def __extract_json(self, s):
         i = s.index("{")
