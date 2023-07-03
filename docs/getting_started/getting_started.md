@@ -31,13 +31,20 @@ conda create -n dbgpt_env python=3.10
 conda activate dbgpt_env
 pip install -r requirements.txt
 ```
+Before use DB-GPT Knowledge Management
+```
+python -m spacy download zh_core_web_sm
+
+```
 
 Once the environment is installed, we have to create a new folder "models" in the DB-GPT project, and then we can put all the models downloaded from huggingface in this directory
 
+make sure you have install git-lfs
 ```
 git clone https://huggingface.co/Tribbiani/vicuna-13b 
 git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
 git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
+git clone https://huggingface.co/THUDM/chatglm2-6b
 ```
 
 The model files are large and will take a long time to download. During the download, let's configure the .env file, which needs to be copied and created from the .env.template
@@ -53,20 +60,30 @@ You can refer to this document to obtain the Vicuna weights: [Vicuna](https://gi
 
 If you have difficulty with this step, you can also directly use the model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a replacement.
 
-1. Run server
+1. prepare server sql script
 ```bash
-$ python pilot/server/llmserver.py
+mysql> CREATE DATABASE knowledge_management;
+mysql> use knowledge_management;
+mysql> source ./assets/schema/knowledge_management.sql
+```
+set .env configuration set your vector store type, eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > 2.1)
+
+
+2. Run db-gpt server 
+
+```bash
+$ python pilot/server/dbgpt_server.py
 ```
 
-Starting `llmserver.py` with the following command will result in a relatively stable Python service with multiple processes.
-```bash
-$ gunicorn llmserver:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 &
-```
+3. Run new webui
 
-Run gradio webui
 
 ```bash
-$ python pilot/server/webserver.py
+$ cd datacenter
+$ npm i
+$ npm run dev
 ```
+Notice: make sure node.js is the latest version, learn more about db-gt webui,
+read https://github.com/csunny/DB-GPT/tree/new-page-framework/datacenter
 
-Notice:  the webserver need to connect llmserver,  so you need change the .env file. change the MODEL_SERVER = "http://127.0.0.1:8000" to your address.  It's very important.
+Open http://localhost:3000 with your browser to see the result.
