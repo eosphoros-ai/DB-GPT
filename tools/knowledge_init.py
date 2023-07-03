@@ -6,8 +6,8 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from pilot.embedding_engine.knowledge_type import KnowledgeType
-from pilot.openapi.knowledge.knowledge_service import KnowledgeService
-from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
+from pilot.server.knowledge.service import KnowledgeService
+from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
 
 
 from pilot.configs.config import Config
