@@ -72,9 +72,9 @@ app.include_router(knowledge_router, prefix="/api")
 app.include_router(api_v1)
 app.include_router(knowledge_router)
 
-app.mount("/static", StaticFiles(directory=static_file_path), name="static")
 app.mount("/_next/static", StaticFiles(directory=static_file_path + "/_next/static"))
 app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
+# app.mount("/chat", StaticFiles(directory=static_file_path + "/chat.html", html=True), name="chat")
 
 
 
