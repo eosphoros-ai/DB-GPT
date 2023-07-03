@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { InboxOutlined } from '@ant-design/icons'
-import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
 import type { UploadProps } from 'antd'
 import { message, Upload, Popover } from 'antd'
 import {
@@ -90,13 +90,16 @@ const Index = () => {
   }
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch(`${process.env.API_BASE_URL}/knowledge/space/list`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-      })
+      const res = await fetch(
+        `${process.env.API_BASE_URL}/knowledge/space/list`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({})
+        }
+      )
       const data = await res.json()
       if (data.success) {
         setKnowledgeSpaceList(data.data)
@@ -128,74 +131,94 @@ const Index = () => {
           + New Knowledge Space
         </Button>
       </Sheet>
-      <div className="page-body p-4">
-        {knowledgeSpaceList.length ? (
-          <Table
-            color="primary"
-            variant="plain"
-            size="lg"
-            sx={{
-              '& tbody tr: hover': {
-                backgroundColor:
-                  mode === 'light' ? 'rgb(246, 246, 246)' : 'rgb(33, 33, 40)'
-              },
-              '& tbody tr: hover a': {
-                textDecoration: 'underline'
-              },
-              '& tbody tr a': {
-                color: 'rgb(13, 96, 217)'
-              }
-            }}
-          >
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Vector</th>
-                <th>Owner</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {knowledgeSpaceList.map((row: any) => (
-                <tr key={row.id}>
-                  <td>
-                    {
-                      <a
-                        style={{ fontWeight: 'bold' }}
-                        href="javascript:;"
-                        onClick={() =>
-                          router.push(`/datastores/documents?name=${row.name}`)
-                        }
-                      >
-                        {row.name}
-                      </a>
-                    }
-                  </td>
-                  <td>
-                    <Chip variant="solid" color="neutral" sx={{ opacity: 0.5 }}>
-                      {row.vector_type}
-                    </Chip>
-                  </td>
-                  <td>
-                    <Chip variant="solid" color="neutral" sx={{ opacity: 0.5 }}>
-                      {row.owner}
-                    </Chip>
-                  </td>
-                  <td>
-                    <Popover content={row.desc} trigger="hover">
-                      {row.desc.length > 10
-                        ? `${row.desc.slice(0, 10)}...`
-                        : row.desc}
-                    </Popover>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        ) : (
-          <></>
-        )}
-      </div>
+      <Box className="page-body p-4" sx={{
+        '&': {
+          height: '90%',
+          overflow: 'auto',
+        },
+        '&::-webkit-scrollbar': {
+          display: 'none'
+        }
+      }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          flexWrap="wrap"
+          sx={{
+            '& i': {
+              width: '430px',
+              marginRight: '30px'
+            }
+          }}
+        >
+          {knowledgeSpaceList.map((item: any, index: number) => (
+            <Box
+              key={index}
+              sx={{
+                padding: '20px',
+                marginRight: '30px',
+                marginBottom: '30px',
+                backgroundColor: mode === 'light' ? 'rgb(246, 246, 246)' : 'rgb(72, 72, 72)',
+                borderTop: '3px solid rgb(82, 196, 26)',
+                flexShrink: 0,
+                flexGrow: 0,
+                cursor: 'pointer',
+                '&: hover': {
+                  boxShadow: '0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);'
+                }
+              }}
+              onClick={() => {
+                router.push(`/datastores/documents?name=${item.name}`);
+              }}
+            >
+              <Box sx={{
+                fontSize: '18px',
+                marginBottom: '10px',
+                fontWeight: 'bold',
+              }}>{item.name}</Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: '130px',
+                    flexGrow: 0,
+                    flexShrink: 0
+                  }}
+                >
+                  <Box>{item.vector_type}</Box>
+                  <Box sx={{ fontSize: '12px' }}>Vector</Box>
+                </Box>
+                <Box
+                  sx={{
+                    width: '130px',
+                    flexGrow: 0,
+                    flexShrink: 0
+                  }}
+                >
+                  <Box>{item.owner}</Box>
+                  <Box sx={{ fontSize: '12px' }}>Owner</Box>
+                </Box>
+                <Box
+                  sx={{
+                    width: '130px',
+                    flexGrow: 0,
+                    flexShrink: 0
+                  }}
+                >
+                  <Box>{item.owner}</Box>
+                  <Box sx={{ fontSize: '12px' }}>Docs</Box>
+                </Box>
+              </Box>
+            </Box>
+          ))}
+          <i></i><i></i><i></i><i></i><i></i>
+        </Stack>
+      </Box>
       <Modal
         sx={{
           display: 'flex',
@@ -225,7 +248,11 @@ const Index = () => {
                     color: activeStep === index ? '#814DDE' : ''
                   }}
                 >
-                  {index < activeStep ? <CheckCircleOutlinedIcon /> : `${index + 1}.`}
+                  {index < activeStep ? (
+                    <CheckCircleOutlinedIcon />
+                  ) : (
+                    `${index + 1}.`
+                  )}
                   {`${item}`}
                 </Item>
               ))}
