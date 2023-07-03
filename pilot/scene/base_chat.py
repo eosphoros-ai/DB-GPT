@@ -160,12 +160,13 @@ class BaseChat(ABC):
         try:
             rsp_str = ""
             if not CFG.NEW_SERVER_MODE:
-                rsp_str = requests.post(
+                rsp_obj = requests.post(
                     urljoin(CFG.MODEL_SERVER, "generate"),
                     headers=headers,
                     json=payload,
                     timeout=120,
                 )
+                rsp_str = rsp_obj.text
             else:
                 ###TODO  no stream mode need independent
                 from pilot.server.llmserver import worker

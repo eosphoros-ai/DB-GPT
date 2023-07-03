@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { InboxOutlined } from '@ant-design/icons'
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
+import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
+import ContentPasteSearchOutlinedIcon from '@mui/icons-material/ContentPasteSearchOutlined';
 import type { UploadProps } from 'antd'
 import { message, Upload, Popover } from 'antd'
 import {
@@ -108,29 +110,13 @@ const Index = () => {
     fetchData()
   }, [])
   return (
-    <>
-      <Sheet
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between'
-        }}
-        className="p-4"
-      >
-        <Sheet
-          sx={{
-            fontSize: '30px',
-            fontWeight: 'bold'
-          }}
-        >
-          Knowledge Spaces
-        </Sheet>
-        <Button
-          onClick={() => setIsAddKnowledgeSpaceModalShow(true)}
-          variant="outlined"
-        >
-          + New Knowledge Space
-        </Button>
-      </Sheet>
+    <Box
+      sx={{
+        width: '100%',
+        height: '100%',
+        backgroundColor: mode === 'light' ? 'rgb(238, 240, 245)' : 'rgb(33, 33, 33)'
+      }}
+    >
       <Box className="page-body p-4" sx={{
         '&': {
           height: '90%',
@@ -152,14 +138,35 @@ const Index = () => {
             }
           }}
         >
+          <Box
+            sx={{
+              boxSizing: "content-box",
+              width: '390px',
+              height: '79px',
+              padding: '33px 20px 40px',
+              marginRight: '30px',
+              marginBottom: '30px',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              color: 'black',
+              backgroundColor: mode === 'light' ? 'rgb(224, 228, 237)' : 'rgb(72, 72, 72)',
+              flexShrink: 0,
+              flexGrow: 0,
+              cursor: 'pointer',
+              '&: hover': {
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);'
+              }
+            }}
+            onClick={() => setIsAddKnowledgeSpaceModalShow(true)}
+          ><AddBoxOutlinedIcon sx={{ marginRight: '10px', fontSize: '30px' }} />Space</Box>
           {knowledgeSpaceList.map((item: any, index: number) => (
             <Box
               key={index}
               sx={{
-                padding: '20px',
+                padding: '30px 20px 40px',
                 marginRight: '30px',
                 marginBottom: '30px',
-                backgroundColor: mode === 'light' ? 'rgb(246, 246, 246)' : 'rgb(72, 72, 72)',
+                backgroundColor: mode === 'light' ? 'rgb(255, 255, 255)' : 'rgb(72, 72, 72)',
                 borderTop: '3px solid rgb(82, 196, 26)',
                 flexShrink: 0,
                 flexGrow: 0,
@@ -176,7 +183,8 @@ const Index = () => {
                 fontSize: '18px',
                 marginBottom: '10px',
                 fontWeight: 'bold',
-              }}>{item.name}</Box>
+                color: 'black'
+              }}><ContentPasteSearchOutlinedIcon sx={{ marginRight: '5px' }}/>{item.name}</Box>
               <Box
                 sx={{
                   display: 'flex',
@@ -190,8 +198,12 @@ const Index = () => {
                     flexShrink: 0
                   }}
                 >
-                  <Box>{item.vector_type}</Box>
-                  <Box sx={{ fontSize: '12px' }}>Vector</Box>
+                  <Box
+                    sx={{
+                      color: 'black'
+                    }}
+                  >{item.vector_type}</Box>
+                  <Box sx={{ fontSize: '12px', color: 'black' }}>Vector</Box>
                 </Box>
                 <Box
                   sx={{
@@ -200,8 +212,12 @@ const Index = () => {
                     flexShrink: 0
                   }}
                 >
-                  <Box>{item.owner}</Box>
-                  <Box sx={{ fontSize: '12px' }}>Owner</Box>
+                  <Box
+                    sx={{
+                      color: 'black'
+                    }}
+                  >{item.owner}</Box>
+                  <Box sx={{ fontSize: '12px', color: 'black' }}>Owner</Box>
                 </Box>
                 <Box
                   sx={{
@@ -210,8 +226,12 @@ const Index = () => {
                     flexShrink: 0
                   }}
                 >
-                  <Box>{item.owner}</Box>
-                  <Box sx={{ fontSize: '12px' }}>Docs</Box>
+                  <Box
+                    sx={{
+                      color: 'black'
+                    }}
+                  >{item.docs || 0}</Box>
+                  <Box sx={{ fontSize: '12px', color: 'black' }}>Docs</Box>
                 </Box>
               </Box>
             </Box>
@@ -560,7 +580,7 @@ const Index = () => {
           )}
         </Sheet>
       </Modal>
-    </>
+    </Box>
   )
 }
 
