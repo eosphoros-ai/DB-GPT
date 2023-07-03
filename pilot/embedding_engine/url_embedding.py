@@ -3,7 +3,7 @@ from typing import List
 from bs4 import BeautifulSoup
 from langchain.document_loaders import WebBaseLoader
 from langchain.schema import Document
-from langchain.text_splitter import CharacterTextSplitter, SpacyTextSplitter
+from langchain.text_splitter import CharacterTextSplitter, SpacyTextSplitter, RecursiveCharacterTextSplitter
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import KNOWLEDGE_CHUNK_SPLIT_SIZE
@@ -33,11 +33,14 @@ class URLEmbedding(SourceEmbedding):
                 length_function=len,
             )
         else:
-            text_splitter = SpacyTextSplitter(
-                pipeline="zh_core_web_sm",
-                chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
-                chunk_overlap=100,
-            )
+            try:
+                text_splitter = SpacyTextSplitter(
+                    pipeline="zh_core_web_sm",
+                    chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
+                    chunk_overlap=100,
+                )
+            except Exception:
+                text_splitter = RecursiveCharacterTextSplitter(chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE, chunk_overlap=50)
         return loader.load_and_split(text_splitter)
 
     @register
