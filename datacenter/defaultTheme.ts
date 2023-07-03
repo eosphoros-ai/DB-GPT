@@ -36,7 +36,9 @@ export const joyTheme = extendTheme({
           ...colors.grey,
           softBg: '#353539',
           softHoverBg: '#35353978',
-          softDisabledBg: '#353539'
+          softDisabledBg: '#353539',
+          solidBg: '#434356',
+          solidHoverBg: '#5a5a72',
         },
         neutral: {
           plainColor: '#D8D8DF',
