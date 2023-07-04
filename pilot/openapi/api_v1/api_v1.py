@@ -66,7 +66,7 @@ def __get_conv_user_message(conversations: dict):
 
 def __new_conversation(chat_mode, user_id) -> ConversationVo:
     unique_id = uuid.uuid1()
-    history_mem = DuckdbHistoryMemory(str(unique_id))
+    # history_mem = DuckdbHistoryMemory(str(unique_id))
     return ConversationVo(conv_uid=str(unique_id), chat_mode=chat_mode)
 
 
@@ -102,12 +102,7 @@ async def read_main():
 
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
-async def dialogue_list(response: Response, user_id: str = None):
-    # 设置CORS头部信息
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET"
-    response.headers["Access-Control-Request-Headers"] = "content-type"
-
+async def dialogue_list( user_id: str = None):
     dialogues: List = []
     datas = DuckdbHistoryMemory.conv_list(user_id)
 
@@ -132,43 +127,41 @@ async def dialogue_scenes():
     new_modes: List[ChatScene] = [
         ChatScene.ChatWithDbExecute,
         ChatScene.ChatWithDbQA,
-        ChatScene.ChatDashboard,
         ChatScene.ChatKnowledge,
+        ChatScene.ChatDashboard,
         ChatScene.ChatExecution,
     ]
     for scene in new_modes:
-        if not scene.value in [
-            ChatScene.ChatNormal.value,
-            ChatScene.InnerChatDBSummary.value,
-        ]:
-            scene_vo = ChatSceneVo(
-                chat_scene=scene.value,
-                scene_name=scene.name,
-                param_title="Selection Param",
-            )
-            scene_vos.append(scene_vo)
+
+        scene_vo = ChatSceneVo(
+            chat_scene=scene.value(),
+            scene_name=scene.scene_name(),
+            scene_describe= scene.describe(),
+            param_title=",".join(scene.param_types()),
+        )
+        scene_vos.append(scene_vo)
     return Result.succ(scene_vos)
 
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-    chat_mode: str = ChatScene.ChatNormal.value, user_id: str = None
+    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
 ):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)
 
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
-async def params_list(chat_mode: str = ChatScene.ChatNormal.value):
-    if ChatScene.ChatWithDbQA.value == chat_mode:
+async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
+    if ChatScene.ChatWithDbQA.value() == chat_mode:
         return Result.succ(get_db_list())
-    elif ChatScene.ChatWithDbExecute.value == chat_mode:
+    elif ChatScene.ChatWithDbExecute.value() == chat_mode:
         return Result.succ(get_db_list())
-    elif ChatScene.ChatDashboard.value == chat_mode:
+    elif ChatScene.ChatDashboard.value() == chat_mode:
         return Result.succ(get_db_list())
-    elif ChatScene.ChatExecution.value == chat_mode:
+    elif ChatScene.ChatExecution.value() == chat_mode:
         return Result.succ(plugins_select_info())
-    elif ChatScene.ChatKnowledge.value == chat_mode:
+    elif ChatScene.ChatKnowledge.value() == chat_mode:
         return Result.succ(knowledge_list())
     else:
         return Result.succ(None)
@@ -201,7 +194,7 @@ async def dialogue_history_messages(con_uid: str):
 async def chat_completions(dialogue: ConversationVo = Body()):
     print(f"chat_completions:{dialogue.chat_mode},{dialogue.select_param}")
     if not dialogue.chat_mode:
-        dialogue.chat_mode = ChatScene.ChatNormal.value
+        dialogue.chat_mode = ChatScene.ChatNormal.value()
     if not dialogue.conv_uid:
         conv_vo = __new_conversation(dialogue.chat_mode, dialogue.user_name)
         dialogue.conv_uid = conv_vo.conv_uid
@@ -222,17 +215,17 @@ async def chat_completions(dialogue: ConversationVo = Body()):
         "user_input": dialogue.user_input,
     }
 
-    if ChatScene.ChatWithDbQA.value == dialogue.chat_mode:
+    if ChatScene.ChatWithDbQA.value() == dialogue.chat_mode:
         chat_param.update({"db_name": dialogue.select_param})
-    elif ChatScene.ChatWithDbExecute.value == dialogue.chat_mode:
+    elif ChatScene.ChatWithDbExecute.value() == dialogue.chat_mode:
         chat_param.update({"db_name": dialogue.select_param})
-    elif ChatScene.ChatDashboard.value == dialogue.chat_mode:
+    elif ChatScene.ChatDashboard.value() == dialogue.chat_mode:
         chat_param.update({"db_name": dialogue.select_param})
         ## DEFAULT
         chat_param.update({"report_name": "sales_report"})
-    elif ChatScene.ChatExecution.value == dialogue.chat_mode:
+    elif ChatScene.ChatExecution.value() == dialogue.chat_mode:
         chat_param.update({"plugin_selector": dialogue.select_param})
-    elif ChatScene.ChatKnowledge.value == dialogue.chat_mode:
+    elif ChatScene.ChatKnowledge.value() == dialogue.chat_mode:
         chat_param.update({"knowledge_space": dialogue.select_param})
 
     chat: BaseChat = CHAT_FACTORY.get_implementation(dialogue.chat_mode, **chat_param)

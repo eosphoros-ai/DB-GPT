@@ -39,7 +39,7 @@ PROMPT_SEP = SeparatorStyle.SINGLE.value
 PROMPT_NEED_NEED_STREAM_OUT = True
 
 prompt = PromptTemplate(
-    template_scene=ChatScene.ChatDefaultKnowledge.value,
+    template_scene=ChatScene.ChatDefaultKnowledge.value(),
     input_variables=["context", "question"],
     response_format=None,
     template_define=PROMPT_SCENE_DEFINE,
