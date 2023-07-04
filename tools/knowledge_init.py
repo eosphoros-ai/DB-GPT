@@ -46,12 +46,18 @@ class LocalKnowledgeInit:
                 docs.extend(doc)
         embedding_engine.index_to_store(docs)
         print(f"""begin create {self.vector_store_config["vector_store_name"]} space""")
-        space = KnowledgeSpaceRequest
-        space.name = self.vector_store_config["vector_store_name"]
-        space.desc = "knowledge_init.py"
-        space.vector_type = CFG.VECTOR_STORE_TYPE
-        space.owner = "DB-GPT"
-        knowledge_space_service.create_knowledge_space(space)
+        try:
+            space = KnowledgeSpaceRequest
+            space.name = self.vector_store_config["vector_store_name"]
+            space.desc = "knowledge_init.py"
+            space.vector_type = CFG.VECTOR_STORE_TYPE
+            space.owner = "DB-GPT"
+            knowledge_space_service.create_knowledge_space(space)
+        except Exception as e:
+            if "have already named" in str(e):
+                print(f"Warning: you have already named {space.name}")
+            else:
+                raise e
 
 
 if __name__ == "__main__":
