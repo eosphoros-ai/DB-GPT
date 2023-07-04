@@ -102,12 +102,7 @@ async def read_main():
 
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
-async def dialogue_list(response: Response, user_id: str = None):
-    # 设置CORS头部信息
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET"
-    response.headers["Access-Control-Request-Headers"] = "content-type"
-
+async def dialogue_list( user_id: str = None):
     dialogues: List = []
     datas = DuckdbHistoryMemory.conv_list(user_id)
 
