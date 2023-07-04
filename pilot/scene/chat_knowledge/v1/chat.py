@@ -25,7 +25,7 @@ CFG = Config()
 
 
 class ChatKnowledge(BaseChat):
-    chat_scene: str = ChatScene.ChatKnowledge.value
+    chat_scene: str = ChatScene.ChatKnowledge.value()
 
     """Number of results to return from the query"""
 
