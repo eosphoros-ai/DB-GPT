@@ -95,12 +95,6 @@ def knowledge_list():
         params.update({space.name: space.name})
     return params
 
-#
-# @router.get("/chat")
-# async def read_main():
-#     return FileResponse(f"{static_file_path}/chat.html")
-
-
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
 async def dialogue_list( user_id: str = None):
     dialogues: List = []
