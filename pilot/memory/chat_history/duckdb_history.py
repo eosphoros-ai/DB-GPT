@@ -36,8 +36,9 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         if not result:
             # 如果表不存在，则创建新表
             self.connect.execute(
-                "CREATE TABLE chat_history (conv_uid VARCHAR(100) PRIMARY KEY, chat_mode VARCHAR(50), summary VARCHAR(255),  user_name VARCHAR(100), messages TEXT)"
+                "CREATE TABLE chat_history (id integer primary key, conv_uid VARCHAR(100) UNIQUE, chat_mode VARCHAR(50), summary VARCHAR(255),  user_name VARCHAR(100), messages TEXT)"
             )
+            self.connect.execute("CREATE SEQUENCE seq_id START 1;")
 
     def __get_messages_by_conv_uid(self, conv_uid: str):
         cursor = self.connect.cursor()
@@ -59,7 +60,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         try:
             cursor = self.connect.cursor()
             cursor.execute(
-                "INSERT INTO chat_history(conv_uid, chat_mode summary, user_name, messages)VALUES(?,?,?,?,?)",
+                "INSERT INTO chat_history(id, conv_uid, chat_mode summary, user_name, messages)VALUES(nextval('seq_id'),?,?,?,?,?)",
                 [self.chat_seesion_id, chat_mode, summary, user_name, ""],
             )
             cursor.commit()
@@ -81,7 +82,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
             )
         else:
             cursor.execute(
-                "INSERT INTO chat_history(conv_uid, chat_mode,  summary, user_name, messages)VALUES(?,?,?,?,?)",
+                "INSERT INTO chat_history(id, conv_uid, chat_mode,  summary, user_name, messages)VALUES(nextval('seq_id'),?,?,?,?,?)",
                 [
                     self.chat_seesion_id,
                     once_message.chat_mode,
@@ -115,10 +116,10 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
             cursor = duckdb.connect(duckdb_path).cursor()
             if user_name:
                 cursor.execute(
-                    "SELECT * FROM chat_history where user_name=? limit 20", [user_name]
+                    "SELECT * FROM chat_history where user_name=? order by id desc limit 20", [user_name]
                 )
             else:
-                cursor.execute("SELECT * FROM chat_history limit 20")
+                cursor.execute("SELECT * FROM chat_history order by id desc limit 20")
             # 获取查询结果字段名
             fields = [field[0] for field in cursor.description]
             data = []

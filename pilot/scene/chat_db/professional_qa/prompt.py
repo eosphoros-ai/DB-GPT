@@ -59,7 +59,7 @@ PROMPT_SEP = SeparatorStyle.SINGLE.value
 PROMPT_NEED_NEED_STREAM_OUT = True
 
 prompt = PromptTemplate(
-    template_scene=ChatScene.ChatWithDbQA.value,
+    template_scene=ChatScene.ChatWithDbQA.value(),
     input_variables=["input", "table_info"],
     response_format=None,
     template_define=PROMPT_SCENE_DEFINE,
