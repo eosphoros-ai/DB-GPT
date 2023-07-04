@@ -86,18 +86,7 @@ class KnowledgeService:
         query = KnowledgeSpaceEntity(
             name=request.name, vector_type=request.vector_type, owner=request.owner
         )
-        res = SpaceQueryResponse()
-        space: KnowledgeSpaceEntity = knowledge_space_dao.get_knowledge_space(query)
-        res.name = space.name
-        res.vector_type = space.vector_type
-        res.desc = space.desc
-        query = KnowledgeDocumentEntity(
-            space=space,
-        )
-        res.doc_count = knowledge_document_dao.get_knowledge_documents_count(query)
-        return res
-
-
+        return knowledge_space_dao.get_knowledge_space(query)
 
     """get knowledge get_knowledge_documents"""
 
