@@ -11,7 +11,7 @@ CFG = Config()
 PROMPT_SCENE_DEFINE = None
 
 _DEFAULT_TEMPLATE = """
-You are a SQL expert. Given an input question, create a syntactically correct {dialect} query.
+You are a SQL expert. Given an input question, create a syntactically correct {dialect} sql.
 
 Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results. 
 Use as few tables as possible when querying.
@@ -51,7 +51,6 @@ prompt = PromptTemplate(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
     ),
     example_selector=sql_data_example,
-    # example_selector=None,
     temperature=PROMPT_TEMPERATURE
 )
 CFG.prompt_templates.update({prompt.template_scene: prompt})
