@@ -115,7 +115,7 @@ class BaseChat(ABC):
 
         payload = {
             "model": self.llm_model,
-            "prompt": self.generate_llm_text().replace("ai:", "assistant:"),
+            "prompt": self.generate_llm_text(),
             "temperature": float(self.prompt_template.temperature),
             "max_new_tokens": int(self.prompt_template.max_new_tokens),
             "stop": self.prompt_template.sep,
