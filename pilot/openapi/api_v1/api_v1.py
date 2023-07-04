@@ -95,10 +95,10 @@ def knowledge_list():
         params.update({space.name: space.name})
     return params
 
-
-@router.get("/chat")
-async def read_main():
-    return FileResponse(f"{static_file_path}/chat.html")
+#
+# @router.get("/chat")
+# async def read_main():
+#     return FileResponse(f"{static_file_path}/chat.html")
 
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
@@ -118,7 +118,7 @@ async def dialogue_list( user_id: str = None):
         )
         dialogues.append(conv_vo)
 
-    return Result[ConversationVo].succ(dialogues[-10:])
+    return Result[ConversationVo].succ(dialogues[:10])
 
 
 @router.post("/v1/chat/dialogue/scenes", response_model=Result[List[ChatSceneVo]])
