@@ -339,7 +339,7 @@ def http_bot(
         state.messages[-1][-1] = f"ERROR: Can't support scene!{scene}"
         yield (state, state.to_gradio_chatbot()) + (enable_btn,) * 5
 
-    chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value, **chat_param)
+    chat: BaseChat = CHAT_FACTORY.get_implementation(scene.value(), **chat_param)
     if not chat.prompt_template.stream_out:
         logger.info("not stream out, wait model response!")
         state.messages[-1][-1] = chat.nostream_call()
