@@ -51,6 +51,9 @@ class PromptTemplate(BaseModel, ABC):
 
     need_historical_messages: bool = False
 
+    temperature: float = 0.6
+    max_new_tokens: int = 1024
+
     class Config:
         """Configuration for this pydantic object."""
 

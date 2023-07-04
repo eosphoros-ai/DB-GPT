@@ -48,8 +48,6 @@ CFG = Config()
 class BaseChat(ABC):
     chat_scene: str = None
     llm_model: Any = None
-    temperature: float = 0.6
-    max_new_tokens: int = 1024
     # By default, keep the last two rounds of conversation records as the context
     chat_retention_rounds: int = 1
 
@@ -117,9 +115,9 @@ class BaseChat(ABC):
 
         payload = {
             "model": self.llm_model,
-            "prompt": self.generate_llm_text(),
-            "temperature": float(self.temperature),
-            "max_new_tokens": int(self.max_new_tokens),
+            "prompt": self.generate_llm_text().replace("ai:", "assistant:"),
+            "temperature": float(self.prompt_template.temperature),
+            "max_new_tokens": int(self.prompt_template.max_new_tokens),
             "stop": self.prompt_template.sep,
         }
         return payload
@@ -127,6 +125,7 @@ class BaseChat(ABC):
     def stream_call(self):
         # TODO Retry when server connection error
         payload = self.__call_base()
+
 
         self.skip_echo_len = len(payload.get("prompt").replace("</s>", " ")) + 11
         logger.info(f"Requert: \n{payload}")
