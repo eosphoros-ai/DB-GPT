@@ -16,7 +16,7 @@ class ChatScene(Enum):
                               "Dialogue with your private data through natural language.", ["DB Select"])
     ChatWithDbQA = Scene("chat_with_db_qa", "Chat Meta Data", "Have a Professional Conversation with Metadata.",
                          ["DB Select"])
-    ChatExecution = Scene("chat_execution", "Chat Plugin", "Use tools through dialogue to accomplish your goals.",
+    ChatExecution = Scene("chat_execution", "Plugin", "Use tools through dialogue to accomplish your goals.",
                           ["Plugin Select"])
     ChatDefaultKnowledge = Scene("chat_default_knowledge", "Chat Default Knowledge",
                                  "Dialogue through natural language and private documents and knowledge bases.")
@@ -29,7 +29,7 @@ class ChatScene(Enum):
     InnerChatDBSummary = Scene("inner_chat_db_summary", "DB Summary", "Db Summary.", True)
 
     ChatNormal = Scene("chat_normal", "Chat Normal", "Native LLM large model AI dialogue.")
-    ChatDashboard = Scene("chat_dashboard", "Chat Dashboard",
+    ChatDashboard = Scene("chat_dashboard", "Dashboard",
                           "Provide you with professional analysis reports through natural language.", ["DB Select"])
     ChatKnowledge = Scene("chat_knowledge", "Chat Knowledge",
                           "Dialogue through natural language and private documents and knowledge bases.",
