@@ -40,7 +40,7 @@ PROMPT_SEP = SeparatorStyle.SINGLE.value
 PROMPT_NEED_NEED_STREAM_OUT = False
 
 prompt = PromptTemplate(
-    template_scene=ChatScene.ChatDashboard.value,
+    template_scene=ChatScene.ChatDashboard.value(),
     input_variables=["input", "table_info", "dialect", "supported_chat_type"],
     response_format=json.dumps(RESPONSE_FORMAT, indent=4),
     template_define=PROMPT_SCENE_DEFINE,

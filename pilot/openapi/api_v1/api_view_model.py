@@ -26,7 +26,8 @@ class Result(Generic[T], BaseModel):
 class ChatSceneVo(BaseModel):
     chat_scene: str = Field(..., description="chat_scene")
     scene_name: str = Field(..., description="chat_scene name show for user")
-    param_title: str = Field(..., description="chat_scene required parameter title")
+    scene_describe: str = Field("", description="chat_scene describe ")
+    param_title: str = Field("", description="chat_scene required parameter title")
 
 
 class ConversationVo(BaseModel):

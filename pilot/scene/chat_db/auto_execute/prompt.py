@@ -37,7 +37,7 @@ PROMPT_SEP = SeparatorStyle.SINGLE.value
 PROMPT_NEED_NEED_STREAM_OUT = False
 
 prompt = PromptTemplate(
-    template_scene=ChatScene.ChatWithDbExecute.value,
+    template_scene=ChatScene.ChatWithDbExecute.value(),
     input_variables=["input", "table_info", "dialect", "top_k", "response"],
     response_format=json.dumps(RESPONSE_FORMAT_SIMPLE, indent=4),
     template_define=PROMPT_SCENE_DEFINE,
