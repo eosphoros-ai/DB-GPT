@@ -3,7 +3,7 @@
   "name": "sale_report",
   "introduce": "",
   "layout": "TODO",
-  "supported_chart_type":["HeatMap","sheet", "LineChart", "PieChart", "BarChart", "Scatterplot", "IndicatorValue", "Table"],
+  "supported_chart_type":["FacetChart", "GaugeChart", "RadarChart", "Sheet", "LineChart", "PieChart", "BarChart", "PointChart", "IndicatorValue"],
   "key_metrics":[],
   "trends": []
 }
