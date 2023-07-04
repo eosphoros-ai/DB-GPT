@@ -16,6 +16,7 @@ import { sendPostRequest } from '@/utils/request';
 const LeftSider =  () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+	const id = searchParams.get('id');
 	const router = useRouter();
 	const { dialogueList, queryDialogueList, refreshDialogList } = useDialogueContext();
 	const { mode, setMode } = useColorScheme();
@@ -90,7 +91,12 @@ const LeftSider =  () => {
 						}}
 					>
 						<Link href={`/`}>
-							<Button variant="outlined" color="primary" className='w-full'>+ New Chat</Button>
+							<Button
+								color="primary"
+								className='w-full text-[#fff] bg-gradient-to-r from-[#31afff] to-[#1677ff] dark:bg-gradient-to-r dark:from-[#6a6a6a] dark:to-[#80868f]'
+							>
+								+ New Chat
+							</Button>
 						</Link>
 					</Box>
 					<Box
@@ -115,7 +121,7 @@ const LeftSider =  () => {
 									}}
 								>
 									{dialogueList?.data?.map((each) => {
-										const isSelect = pathname === `/chat` && searchParams.get('id') === each.conv_uid;
+										const isSelect = (pathname === `/chat` || pathname === '/chat/') && id === each.conv_uid;
 										return (
 											<ListItem key={each.conv_uid}>
 												<ListItemButton
