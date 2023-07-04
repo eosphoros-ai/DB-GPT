@@ -18,6 +18,7 @@ class Config(metaclass=Singleton):
         """Initialize the Config class"""
 
         self.NEW_SERVER_MODE = False
+        self.SERVER_LIGHT_MODE = False
 
         # Gradio language version: en, zh
         self.LANGUAGE = os.getenv("LANGUAGE", "en")
