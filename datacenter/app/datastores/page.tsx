@@ -114,8 +114,8 @@ const Index = () => {
       sx={{
         width: '100%',
         height: '100%',
-        backgroundColor: mode === 'light' ? 'rgb(238, 240, 245)' : 'rgb(33, 33, 33)'
       }}
+      className='bg-[#EEF0F5] dark:bg-[#212121]'
     >
       <Box className="page-body p-4" sx={{
         '&': {
@@ -149,7 +149,6 @@ const Index = () => {
               fontSize: '18px',
               fontWeight: 'bold',
               color: 'black',
-              backgroundColor: mode === 'light' ? 'rgb(224, 228, 237)' : 'rgb(72, 72, 72)',
               flexShrink: 0,
               flexGrow: 0,
               cursor: 'pointer',
@@ -158,6 +157,7 @@ const Index = () => {
               }
             }}
             onClick={() => setIsAddKnowledgeSpaceModalShow(true)}
+            className='bg-[#E0E4ED] dark:bg-[#484848]'
           ><AddBoxOutlinedIcon sx={{ marginRight: '10px', fontSize: '30px' }} />Space</Box>
           {knowledgeSpaceList.map((item: any, index: number) => (
             <Box
@@ -166,7 +166,6 @@ const Index = () => {
                 padding: '30px 20px 40px',
                 marginRight: '30px',
                 marginBottom: '30px',
-                backgroundColor: mode === 'light' ? 'rgb(255, 255, 255)' : 'rgb(72, 72, 72)',
                 borderTop: '3px solid rgb(82, 196, 26)',
                 flexShrink: 0,
                 flexGrow: 0,
@@ -178,6 +177,7 @@ const Index = () => {
               onClick={() => {
                 router.push(`/datastores/documents?name=${item.name}`);
               }}
+              className='bg-[#FFFFFF] dark:bg-[#484848]'
             >
               <Box sx={{
                 fontSize: '18px',
