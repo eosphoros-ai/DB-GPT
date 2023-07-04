@@ -17,7 +17,7 @@ CFG = Config()
 
 
 class ChatWithDbAutoExecute(BaseChat):
-    chat_scene: str = ChatScene.ChatWithDbExecute.value
+    chat_scene: str = ChatScene.ChatWithDbExecute.value()
 
     """Number of results to return from the query"""
 

@@ -73,10 +73,10 @@ class BaseChat(ABC):
 
         ### load prompt template
         self.prompt_template: PromptTemplate = CFG.prompt_templates[
-            self.chat_mode.value
+            self.chat_mode.value()
         ]
         self.history_message: List[OnceConversation] = self.memory.messages()
-        self.current_message: OnceConversation = OnceConversation(chat_mode.value)
+        self.current_message: OnceConversation = OnceConversation(chat_mode.value())
         self.current_tokens_used: int = 0
 
     class Config:

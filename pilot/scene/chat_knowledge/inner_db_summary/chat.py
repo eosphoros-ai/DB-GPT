@@ -8,7 +8,7 @@ CFG = Config()
 
 
 class InnerChatDBSummary(BaseChat):
-    chat_scene: str = ChatScene.InnerChatDBSummary.value
+    chat_scene: str = ChatScene.InnerChatDBSummary.value()
 
     """Number of results to return from the query"""
 
