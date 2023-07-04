@@ -93,7 +93,10 @@ const LeftSider =  () => {
 						<Link href={`/`}>
 							<Button
 								color="primary"
-								className='w-full text-[#fff] bg-gradient-to-r from-[#31afff] to-[#1677ff] dark:bg-gradient-to-r dark:from-[#6a6a6a] dark:to-[#80868f]'
+								className='w-full bg-gradient-to-r from-[#31afff] to-[#1677ff] dark:bg-gradient-to-r dark:from-[#6a6a6a] dark:to-[#80868f]'
+								style={{
+									color: '#fff'
+								}}
 							>
 								+ New Chat
 							</Button>
