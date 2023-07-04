@@ -14,8 +14,8 @@ EXAMPLES = [
 							\"command\": {\"name\": \"command name\", \"args\": {\"arg name\": \"value\"}},
 						}""",
                     "example": True,
-                },
-            },
+                }
+            }
         ]
     },
     {
@@ -30,10 +30,10 @@ EXAMPLES = [
 							\"command\": {\"name\": \"command name\", \"args\": {\"arg name\": \"value\"}},
 						}""",
                     "example": True,
-                },
-            },
+                }
+            }
         ]
-    },
+    }
 ]
 
 plugin_example = ExampleSelector(examples_record=EXAMPLES, use_example=True)

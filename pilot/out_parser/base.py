@@ -113,10 +113,21 @@ class BaseOutputParser(ABC):
             ai_response = ai_response.replace("\n", " ")
             ai_response = ai_response.replace("\_", "_")
             ai_response = ai_response.replace("\*", "*")
+            ai_response = ai_response.replace("\t", "")
             print("un_stream ai response:", ai_response)
             return ai_response
         else:
             raise ValueError("Model server error!code=" + resp_obj_ex["error_code"])
+
+    def __illegal_json_ends(self, s):
+        temp_json = s
+        illegal_json_ends_1 = [", }", ",}"]
+        illegal_json_ends_2 = ", ]", ",]"
+        for illegal_json_end in illegal_json_ends_1:
+            temp_json = temp_json.replace(illegal_json_end, " }")
+        for illegal_json_end in illegal_json_ends_2:
+            temp_json = temp_json.replace(illegal_json_end, " ]")
+        return temp_json
 
     def __extract_json(self, s):
 
@@ -124,14 +135,14 @@ class BaseOutputParser(ABC):
         if not temp_json:
             temp_json = self.__json_interception(s)
         try:
-            json.loads(temp_json)
+            temp_json = self.__illegal_json_ends(temp_json)
             return temp_json
         except Exception as e:
             raise ValueError("Failed to find a valid json response！" + temp_json)
 
     def __json_interception(self, s, is_json_array: bool = False):
         if is_json_array:
-            i = s.index("[")
+            i = s.find("[")
             if i <0:
                 return None
             count = 1
@@ -145,7 +156,7 @@ class BaseOutputParser(ABC):
             assert count == 0
             return s[i: j + 1]
         else:
-            i = s.index("{")
+            i = s.find("{")
             if i <0:
                 return None
             count = 1
@@ -189,6 +200,7 @@ class BaseOutputParser(ABC):
                 .replace("\\n", " ")
                 .replace("\\", " ")
         )
+        cleaned_output = self.__illegal_json_ends(cleaned_output)
         return cleaned_output
 
     def parse_view_response(self, ai_text, data) -> str:

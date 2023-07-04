@@ -11,11 +11,11 @@ EXAMPLES = [
                 "data": {
                     "content": """{
 							\"thoughts\": \"thought text\",
-							\"sql\": \"SELECT city FROM users where user_name='test1'\",
+							\"sql\": \"SELECT city FROM user where user_name='test1'\",
 						}""",
                     "example": True,
-                },
-            },
+                }
+            }
         ]
     },
     {
@@ -26,13 +26,13 @@ EXAMPLES = [
                 "data": {
                     "content": """{
 							\"thoughts\": \"thought text\",
-							\"sql\": \"SELECT b.* FROM users a  LEFT JOIN tran_order b ON a.user_name=b.user_name  where a.city='成都'\",
+							\"sql\": \"SELECT b.* FROM user a  LEFT JOIN tran_order b ON a.user_name=b.user_name  where a.city='成都'\",
 						}""",
                     "example": True,
-                },
-            },
+                }
+            }
         ]
-    },
+    }
 ]
 
 sql_data_example = ExampleSelector(
