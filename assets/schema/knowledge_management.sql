@@ -8,7 +8,7 @@ CREATE TABLE `knowledge_space` (
   `gmt_modified` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`),
   KEY `idx_name` (`name`) COMMENT 'index:idx_name'
-) ENGINE=InnoDB AUTO_INCREMENT=100001 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='knowledge space table';
+) ENGINE=InnoDB AUTO_INCREMENT=100001 DEFAULT CHARSET=utf8mb4 COMMENT='knowledge space table';
 
 CREATE TABLE `knowledge_document` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'auto increment id',
@@ -25,7 +25,7 @@ CREATE TABLE `knowledge_document` (
   `gmt_modified` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`),
   KEY `idx_doc_name` (`doc_name`) COMMENT 'index:idx_doc_name'
-) ENGINE=InnoDB AUTO_INCREMENT=100001 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='knowledge document table';
+) ENGINE=InnoDB AUTO_INCREMENT=100001 DEFAULT CHARSET=utf8mb4 COMMENT='knowledge document table';
 
 CREATE TABLE `document_chunk` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'auto increment id',
@@ -38,4 +38,4 @@ CREATE TABLE `document_chunk` (
   `gmt_modified` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`),
   KEY `idx_document_id` (`document_id`) COMMENT 'index:document_id'
-) ENGINE=InnoDB AUTO_INCREMENT=100001 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='knowledge document chunk detail'
+) ENGINE=InnoDB AUTO_INCREMENT=100001 DEFAULT CHARSET=utf8mb4 COMMENT='knowledge document chunk detail'
