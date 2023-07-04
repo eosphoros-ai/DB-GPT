@@ -38,7 +38,7 @@ PROMPT_SEP = SeparatorStyle.SINGLE.value
 PROMPT_NEED_NEED_STREAM_OUT = False
 
 prompt = PromptTemplate(
-    template_scene=ChatScene.InnerChatDBSummary.value,
+    template_scene=ChatScene.InnerChatDBSummary.value(),
     input_variables=["db_profile_summary", "db_input", "response"],
     response_format=json.dumps(RESPONSE_FORMAT, indent=4),
     template_define=PROMPT_SCENE_DEFINE,
