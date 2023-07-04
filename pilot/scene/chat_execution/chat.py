@@ -16,7 +16,7 @@ CFG = Config()
 
 
 class ChatWithPlugin(BaseChat):
-    chat_scene: str = ChatScene.ChatExecution.value
+    chat_scene: str = ChatScene.ChatExecution.value()
     plugins_prompt_generator: PluginPromptGenerator
     select_plugin: str = None
 

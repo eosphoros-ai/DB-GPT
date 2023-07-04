@@ -15,7 +15,7 @@ CFG = Config()
 
 
 class ChatWithDbQA(BaseChat):
-    chat_scene: str = ChatScene.ChatWithDbQA.value
+    chat_scene: str = ChatScene.ChatWithDbQA.value()
 
     """Number of results to return from the query"""
 
