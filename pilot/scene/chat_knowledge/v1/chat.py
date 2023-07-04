@@ -61,4 +61,4 @@ class ChatKnowledge(BaseChat):
 
     @property
     def chat_type(self) -> str:
-        return ChatScene.ChatKnowledge.value
+        return ChatScene.ChatKnowledge.value()

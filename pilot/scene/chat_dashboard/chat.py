@@ -23,7 +23,7 @@ CFG = Config()
 
 
 class ChatDashboard(BaseChat):
-    chat_scene: str = ChatScene.ChatDashboard.value
+    chat_scene: str = ChatScene.ChatDashboard.value()
     report_name: str
     """Number of results to return from the query"""
 

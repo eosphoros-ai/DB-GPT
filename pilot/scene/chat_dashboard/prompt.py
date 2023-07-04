@@ -17,7 +17,7 @@ Provide professional data analysis, use as few dimensions as possible, but no le
 Used to support goal: {input}
 
 Pay attention to the length of the output content of the analysis result, do not exceed 4000tokens
-According to the characteristics of the analyzed data, choose the best one from the charts provided below to display，chart types:
+According to the characteristics of the analyzed data, choose the best one from the charts provided below to display, use different types of charts as much as possible，chart types:
 {supported_chat_type}
 
 Give {dialect} data analysis SQL, analysis title, display method and analytical thinking,respond in the following json format:
@@ -40,7 +40,7 @@ PROMPT_SEP = SeparatorStyle.SINGLE.value
 PROMPT_NEED_NEED_STREAM_OUT = False
 
 prompt = PromptTemplate(
-    template_scene=ChatScene.ChatDashboard.value,
+    template_scene=ChatScene.ChatDashboard.value(),
     input_variables=["input", "table_info", "dialect", "supported_chat_type"],
     response_format=json.dumps(RESPONSE_FORMAT, indent=4),
     template_define=PROMPT_SCENE_DEFINE,
