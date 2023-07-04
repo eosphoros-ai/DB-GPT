@@ -2,7 +2,7 @@ import os
 import shutil
 from tempfile import NamedTemporaryFile
 
-from fastapi import APIRouter, File, UploadFile, Request, Form
+from fastapi import APIRouter, File, UploadFile, Form
 
 from langchain.embeddings import HuggingFaceEmbeddings
 
@@ -12,8 +12,8 @@ from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_P
 from pilot.openapi.api_v1.api_view_model import Result
 from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 
-from pilot.openapi.knowledge.knowledge_service import KnowledgeService
-from pilot.openapi.knowledge.request.knowledge_request import (
+from pilot.server.knowledge.service import KnowledgeService
+from pilot.server.knowledge.request.request import (
     KnowledgeQueryRequest,
     KnowledgeQueryResponse,
     KnowledgeDocumentRequest,
@@ -22,7 +22,7 @@ from pilot.openapi.knowledge.request.knowledge_request import (
     DocumentQueryRequest,
 )
 
-from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
+from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
 
 CFG = Config()
 router = APIRouter()
