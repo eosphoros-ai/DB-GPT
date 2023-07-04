@@ -8,10 +8,9 @@ export const joyTheme = extendTheme({
         mode: 'dark',
         primary: {
           ...colors.grey,
-          solidBg: '#9a9a9a91',
-          solidColor: '#4e4e4e',
-          solidHoverBg: '#d5d5d5',
-          outlinedColor: '#4e4e59'
+          solidBg: '#e6f4ff',
+          solidColor: '#1677ff',
+          solidHoverBg: '#e6f4ff',
         },
         neutral: {
           plainColor: '#4d4d4d',
@@ -37,8 +36,8 @@ export const joyTheme = extendTheme({
           softBg: '#353539',
           softHoverBg: '#35353978',
           softDisabledBg: '#353539',
-          solidBg: '#434356',
-          solidHoverBg: '#5a5a72',
+          solidBg: '#51525beb',
+          solidHoverBg: '#51525beb',
         },
         neutral: {
           plainColor: '#D8D8DF',
@@ -54,7 +53,7 @@ export const joyTheme = extendTheme({
         },
         background: {
           body: '#212121',
-          surface: '#525262',
+          surface: '#51525beb',
         }
       },
     },
