@@ -103,7 +103,8 @@ if __name__ == "__main__":
         from pilot.server.llmserver import worker
         worker.start_check()
         CFG.NEW_SERVER_MODE = True
-
+    else:
+        CFG.SERVER_LIGHT_MODE = True
 
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=args.port)

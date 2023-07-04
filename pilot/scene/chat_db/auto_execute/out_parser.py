@@ -35,15 +35,16 @@ class DbChatOutputParser(BaseOutputParser):
         if len(data) <= 1:
             data.insert(0, ["result"])
         df = pd.DataFrame(data[1:], columns=data[0])
-        if not CFG.NEW_SERVER_MODE:
+        if not CFG.NEW_SERVER_MODE and not CFG.SERVER_LIGHT_MODE:
             table_style = """<style> 
                 table{border-collapse:collapse;width:100%;height:80%;margin:0 auto;float:center;border: 1px solid #007bff; background-color:#333; color:#fff}th,td{border:1px solid #ddd;padding:3px;text-align:center}th{background-color:#C9C3C7;color: #fff;font-weight: bold;}tr:nth-child(even){background-color:#444}tr:hover{background-color:#444}
              </style>"""
             html_table = df.to_html(index=False, escape=False)
             html = f"<html><head>{table_style}</head><body>{html_table}</body></html>"
         else:
-            html = df.to_html(index=False, escape=False, sparsify=False)
-            html = "".join(html.split())
+            html_table = df.to_html(index=False, escape=False, sparsify=False)
+            table_str = "".join(html_table.split())
+            html = f"""<div class="w-full overflow-auto">{table_str}</table></div>"""
 
         view_text = f"##### {str(speak)}" + "\n" + html.replace("\n", " ")
         return view_text
