@@ -29,7 +29,6 @@ const ChatBoxComp = ({
   paramsList,
   clearIntialMessage
 }: Props) => {
-  const { mode } = useColorScheme();
   const searchParams = useSearchParams();
   const initMessage = searchParams.get('initMessage');
   const scrollableRef = React.useRef<HTMLDivElement>(null);
@@ -77,6 +76,7 @@ const ChatBoxComp = ({
         </SyntaxHighlighter>
       ),
     },
+    wrapper: React.Fragment,
   };
 
   React.useEffect(() => {
@@ -102,19 +102,18 @@ const ChatBoxComp = ({
   return (
     <div className='w-full h-full'>
       <Stack
-        className="w-full h-full"
+        className="w-full h-full bg-[#fefefe] dark:bg-[#212121]"
         sx={{
-          background: mode === 'light' ? '#fefefe' : '#212121',
           'table': {
             borderCollapse: 'collapse',
             border: '1px solid #ccc',
+            width: '100%',
           },
           'th, td': {
             border: '1px solid #ccc',
             padding: '10px',
             textAlign: 'center'
           },
-        
         }}
       >
         <Stack
@@ -151,7 +150,7 @@ const ChatBoxComp = ({
                         <FaceRetouchingNaturalOutlinedIcon />
                       )}
                     </div>
-                    <div className='inline align-middle mt-0.5'>
+                    <div className='inline align-middle mt-0.5 max-w-full flex-1 overflow-auto'>
                       <Markdown options={options}>
                         {each.context?.replaceAll('\\n', '\n')}
                       </Markdown>
@@ -172,9 +171,9 @@ const ChatBoxComp = ({
         </Stack>
         {!readOnly && (
           <Box
+            className="bg-[#fefefe] dark:bg-[#212121] before:bg-[#fefefe] before:dark:bg-[#212121]"
             sx={{
               position: 'relative',
-              background: mode === 'light' ? '#fefefe' : '#212121', 
               '&::before': {
                 content: '" "',
                 position: 'absolute',
@@ -184,7 +183,6 @@ const ChatBoxComp = ({
                 width: '100%',
                 margin: '0 auto',
                 height: '20px',
-                background: mode === 'light' ? '#fefefe' : '#212121', 
                 filter: 'blur(10px)',
                 zIndex: 2,
               }
