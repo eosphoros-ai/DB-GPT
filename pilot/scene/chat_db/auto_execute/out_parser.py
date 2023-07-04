@@ -44,7 +44,7 @@ class DbChatOutputParser(BaseOutputParser):
         else:
             html_table = df.to_html(index=False, escape=False, sparsify=False)
             table_str = "".join(html_table.split())
-            html = f"""<div class="w-full overflow-auto">{table_str}</table></div>"""
+            html = f"""<div class="w-full overflow-auto">{table_str}</div>"""
 
         view_text = f"##### {str(speak)}" + "\n" + html.replace("\n", " ")
         return view_text

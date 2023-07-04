@@ -1,7 +1,7 @@
 "use client";
 import { useRequest } from 'ahooks';
 import { useState } from 'react';
-import { Button, Input, Box, buttonClasses } from '@/lib/mui';
+import { Button, Input, Box, buttonClasses, Divider, Typography } from '@/lib/mui';
 import IconButton from '@mui/joy/IconButton';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,12 +38,18 @@ export default function Home() {
 
   return (
     <>
-      <div className='mx-auto justify-end flex max-w-3xl flex-col h-3/4 gap-6 px-5 pt-6 sm:gap-16 xl:max-w-4xl'>
+      <div className='mx-auto h-full justify-center flex max-w-3xl flex-col gap-8 px-5 pt-6 xl:max-w-4xl'>
+        <div className='max-w-xs my-0 mx-auto'>
+          <Typography level="h3" className="text-center">DB-GPT</Typography>
+          <Typography level="body1" className="text-center pt-4">
+            Revolutionizing Database Interactions with Private LLM Technology
+          </Typography>
+        </div>
         <div className='grid gap-8 lg:grid-cols-3'>
           <div className='lg:col-span-3'>
-            <p className='mb-8 text-center text-2xl'>Scenes</p>
+            <Divider className="text-[#878c93]">Quick Start</Divider>
             <Box
-              className='grid gap-2 lg:grid-cols-3 lg:gap-6'
+              className='grid pt-7 rounded-xl gap-2 lg:grid-cols-3 lg:gap-6'
               sx={{
                 [`& .${buttonClasses.root}`]: {
                   color: 'var(--joy-palette-primary-solidColor)',
@@ -60,10 +66,7 @@ export default function Home() {
                   key={scene['chat_scene']}
                   size="md"
                   variant="solid"
-                  className='text-base rounded-none	'
-                  style={{
-                    boxShadow: '0px 8px 10px 0px rgb(31 31 31 / 50%)'
-                  }}
+                  className='text-base rounded-none'
                   onClick={async () => {
                     const res = await sendPostRequest('/v1/chat/dialogue/new', {
                       chat_mode: scene['chat_scene']
@@ -79,7 +82,7 @@ export default function Home() {
             </Box>
           </div>
         </div>
-        <div className='mt-6 pointer-events-none inset-x-0 bottom-0 z-0 mx-auto flex w-full max-w-3xl flex-col items-center justify-center max-md:border-t xl:max-w-4xl [&>*]:pointer-events-auto'>
+        <div className='mt-6 mb-[10%] pointer-events-none inset-x-0 bottom-0 z-0 mx-auto flex w-full max-w-3xl flex-col items-center justify-center max-md:border-t xl:max-w-4xl [&>*]:pointer-events-auto'>
           <form
             style={{
               maxWidth: '100%',
@@ -92,6 +95,7 @@ export default function Home() {
               justifyContent: 'center',
               marginLeft: 'auto',
               marginRight: 'auto',
+              height: '52px'
             }}
             onSubmit={(e) => {
               methods.handleSubmit(submit)(e);
