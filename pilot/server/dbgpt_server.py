@@ -91,15 +91,19 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument("--share", default=False, action="store_true")
+    parser.add_argument("-light", "--light", default=False,action="store_true", help="enable light mode")
     signal.signal(signal.SIGINT, signal_handler)
 
     # init server config
     args = parser.parse_args()
-
-    from pilot.server.llmserver import worker
-    worker.start_check()
     server_init(args)
-    CFG.NEW_SERVER_MODE = True
-    import uvicorn
 
+    if not args.light:
+        print("Model Unified Deployment Mode!")
+        from pilot.server.llmserver import worker
+        worker.start_check()
+        CFG.NEW_SERVER_MODE = True
+
+
+    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=args.port)
