@@ -69,8 +69,7 @@ export const sendPostRequest = (url: string, body?: any) => {
 
 export const sendSpacePostRequest = (url: string, body?: any) => {
   const reqBody = sanitizeBody(body);
-  return axios.post(url, {
-    body: reqBody,
+  return axios.post(url, body, {
     headers: DEFAULT_HEADERS
   }).then(res => res).catch(err => {
     message.error(err);
@@ -79,9 +78,7 @@ export const sendSpacePostRequest = (url: string, body?: any) => {
 }
 
 export const sendSpaceUploadPostRequest = (url: string, body?: any) => {
-  return axios.post(url, {
-    body: body,
-  }).then(res => res).catch(err => {
+  return axios.post(url, body).then(res => res).catch(err => {
     message.error(err);
     Promise.reject(err);
   });
