@@ -49,7 +49,7 @@ import { useDialogueContext } from '@/app/context/dialogue';
         const ctrl = new AbortController();
         let buffer = '';
   
-        await fetchEventSource(`${process.env.API_BASE_URL ? process.env.API_BASE_URL: ''}{"/api" + queryAgentURL}`, {
+        await fetchEventSource(`${process.env.API_BASE_URL ? process.env.API_BASE_URL : ''}${"/api" + queryAgentURL}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
