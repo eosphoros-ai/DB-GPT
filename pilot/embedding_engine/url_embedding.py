@@ -3,7 +3,7 @@ from typing import List
 from bs4 import BeautifulSoup
 from langchain.document_loaders import WebBaseLoader
 from langchain.schema import Document
-from langchain.text_splitter import CharacterTextSplitter, SpacyTextSplitter, RecursiveCharacterTextSplitter
+from langchain.text_splitter import SpacyTextSplitter, RecursiveCharacterTextSplitter
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import KNOWLEDGE_CHUNK_SPLIT_SIZE
@@ -27,7 +27,7 @@ class URLEmbedding(SourceEmbedding):
         """Load from url path."""
         loader = WebBaseLoader(web_path=self.file_path)
         if CFG.LANGUAGE == "en":
-            text_splitter = CharacterTextSplitter(
+            text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
                 chunk_overlap=20,
                 length_function=len,

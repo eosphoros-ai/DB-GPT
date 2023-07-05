@@ -4,7 +4,7 @@ from typing import List
 
 from langchain.document_loaders import UnstructuredWordDocumentLoader
 from langchain.schema import Document
-from langchain.text_splitter import CharacterTextSplitter, SpacyTextSplitter, RecursiveCharacterTextSplitter
+from langchain.text_splitter import SpacyTextSplitter, RecursiveCharacterTextSplitter
 
 from pilot.configs.config import Config
 from pilot.embedding_engine import SourceEmbedding, register
@@ -26,7 +26,7 @@ class WordEmbedding(SourceEmbedding):
         """Load from word path."""
         loader = UnstructuredWordDocumentLoader(self.file_path)
         if CFG.LANGUAGE == "en":
-            text_splitter = CharacterTextSplitter(
+            text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
                 chunk_overlap=20,
                 length_function=len,
