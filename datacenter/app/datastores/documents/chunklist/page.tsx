@@ -11,6 +11,7 @@ import {
   Link
 } from '@/lib/mui'
 import { Popover, Pagination } from 'antd'
+import { sendSpaceGetRequest, sendSpacePostRequest, sendSpaceUploadPostRequest } from '@/utils/request';
 const page_size = 20
 
 const ChunkList = () => {
@@ -23,21 +24,11 @@ const ChunkList = () => {
   const [chunkList, setChunkList] = useState<any>([])
   useEffect(() => {
     async function fetchChunks() {
-      const res = await fetch(
-        `${process.env.API_BASE_URL}/knowledge/${spaceName}/chunk/list`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            document_id: documentId,
-            page: 1,
-            page_size
-          })
-        }
-      )
-      const data = await res.json()
+      const data = await sendSpacePostRequest(`/knowledge/${spaceName}/chunk/list`, {
+        document_id: documentId,
+        page: 1,
+        page_size
+      })
       if (data.success) {
         setChunkList(data.data.data)
         setTotal(data.data.total)
@@ -150,21 +141,11 @@ const ChunkList = () => {
                 current={current}
                 total={total}
                 onChange={async (page) => {
-                  const res = await fetch(
-                    `${process.env.API_BASE_URL}/knowledge/${spaceName}/chunk/list`,
-                    {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
-                        document_id: documentId,
-                        page,
-                        page_size
-                      })
-                    }
-                  )
-                  const data = await res.json()
+                  const data = await sendSpacePostRequest(`/knowledge/${spaceName}/chunk/list`, {
+                    document_id: documentId,
+                    page,
+                    page_size
+                  })
                   if (data.success) {
                     setChunkList(data.data.data)
                     setTotal(data.data.total)

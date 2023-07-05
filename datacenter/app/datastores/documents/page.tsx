@@ -25,6 +25,7 @@ import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import CachedIcon from '@mui/icons-material/Cached';
 import type { UploadProps } from 'antd'
 import { Upload, Pagination, Popover, message } from 'antd'
+import { sendSpaceGetRequest, sendSpacePostRequest, sendSpaceUploadPostRequest } from '@/utils/request';
 
 const { Dragger } = Upload
 const Item = styled(Sheet)(({ theme }) => ({
@@ -94,20 +95,10 @@ const Documents = () => {
   }
   useEffect(() => {
     async function fetchDocuments() {
-      const res = await fetch(
-        `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/list`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            page: 1,
-            page_size
-          })
-        }
-      )
-      const data = await res.json()
+      const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/list`, {
+        page: 1,
+        page_size
+      })
       if (data.success) {
         setDocuments(data.data.data)
         setTotal(data.data.total)
@@ -244,19 +235,9 @@ const Documents = () => {
                             marginRight: '20px'
                           }}
                           onClick={async () => {
-                            const res = await fetch(
-                              `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/sync`,
-                              {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                  doc_ids: [row.id]
-                                })
-                              }
-                            )
-                            const data = await res.json()
+                            const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/sync`, {
+                              doc_ids: [row.id]
+                            })
                             if (data.success) {
                               message.success('success')
                             } else {
@@ -297,20 +278,10 @@ const Documents = () => {
               current={current}
               total={total}
               onChange={async (page) => {
-                const res = await fetch(
-                  `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/list`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                      page,
-                      page_size
-                    })
-                  }
-                )
-                const data = await res.json()
+                const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/list`, {
+                  page,
+                  page_size
+                })
                 if (data.success) {
                   setDocuments(data.data.data)
                   setTotal(data.data.total)
@@ -484,52 +455,23 @@ const Documents = () => {
                         message.error('Please input the Web Page URL')
                         return
                       }
-                      const res = await fetch(
-                        `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/add`,
-                        {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            doc_name: documentName,
-                            content: webPageUrl,
-                            doc_type: 'URL'
-                          })
-                        }
-                      )
-                      const data = await res.json()
+                      const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/add`, {
+                        doc_name: documentName,
+                        content: webPageUrl,
+                        doc_type: 'URL'
+                      })
                       data.success &&
                         synchChecked &&
-                        fetch(
-                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/sync`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              doc_ids: [data.data]
-                            })
-                          }
-                        )
+                        sendSpacePostRequest(`/knowledge/${spaceName}/document/sync`, {
+                          doc_ids: [data.data]
+                        })
                       if (data.success) {
                         message.success('success')
                         setIsAddDocumentModalShow(false)
-                        const res = await fetch(
-                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/list`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              page: current,
-                              page_size
-                            })
-                          }
-                        )
-                        const data = await res.json()
+                        const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/list`, {
+                          page: current,
+                          page_size
+                        })
                         if (data.success) {
                           setDocuments(data.data.data)
                           setTotal(data.data.total)
@@ -547,45 +489,19 @@ const Documents = () => {
                       formData.append('doc_name', documentName)
                       formData.append('doc_file', originFileObj)
                       formData.append('doc_type', 'DOCUMENT')
-                      const res = await fetch(
-                        `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/upload`,
-                        {
-                          method: 'POST',
-                          body: formData
-                        }
-                      )
-                      const data = await res.json()
+                      const data = await sendSpaceUploadPostRequest(`/knowledge/${spaceName}/document/upload`, formData);
                       data.success &&
                         synchChecked &&
-                        fetch(
-                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/sync`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              doc_ids: [data.data]
-                            })
-                          }
-                        )
+                        sendSpacePostRequest(`/knowledge/${spaceName}/document/sync`, {
+                          doc_ids: [data.data]
+                        })
                       if (data.success) {
                         message.success('success')
                         setIsAddDocumentModalShow(false)
-                        const res = await fetch(
-                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/list`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              page: current,
-                              page_size
-                            })
-                          }
-                        )
-                        const data = await res.json()
+                        const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/list`, {
+                          page: current,
+                          page_size
+                        })
                         if (data.success) {
                           setDocuments(data.data.data)
                           setTotal(data.data.total)
@@ -599,53 +515,24 @@ const Documents = () => {
                         message.error('Please input the text')
                         return
                       }
-                      const res = await fetch(
-                        `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/add`,
-                        {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            doc_name: documentName,
-                            source: textSource,
-                            content: text,
-                            doc_type: 'TEXT'
-                          })
-                        }
-                      )
-                      const data = await res.json()
+                      const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/add`, {
+                        doc_name: documentName,
+                        source: textSource,
+                        content: text,
+                        doc_type: 'TEXT'
+                      })
                       data.success &&
                         synchChecked &&
-                        fetch(
-                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/sync`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              doc_ids: [data.data]
-                            })
-                          }
-                        )
+                        sendSpacePostRequest(`/knowledge/${spaceName}/document/sync`, {
+                          doc_ids: [data.data]
+                        })
                       if (data.success) {
                         message.success('success')
                         setIsAddDocumentModalShow(false)
-                        const res = await fetch(
-                          `${process.env.API_BASE_URL}/knowledge/${spaceName}/document/list`,
-                          {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              page: current,
-                              page_size
-                            })
-                          }
-                        )
-                        const data = await res.json()
+                        const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/list`, {
+                          page: current,
+                          page_size
+                        });
                         if (data.success) {
                           setDocuments(data.data.data)
                           setTotal(data.data.total)
