@@ -27,6 +27,7 @@ class DbChatOutputParser(BaseOutputParser):
         clean_str = super().parse_prompt_response(model_out_text)
         print("clean prompt response:", clean_str)
         response = json.loads(clean_str)
+
         sql, thoughts = response["sql"], response["thoughts"]
         return SqlAction(sql, thoughts)
 
