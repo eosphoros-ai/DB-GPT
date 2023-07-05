@@ -70,6 +70,8 @@ const Index = () => {
   const [isAddKnowledgeSpaceModalShow, setIsAddKnowledgeSpaceModalShow] =
     useState<boolean>(false)
   const [knowledgeSpaceName, setKnowledgeSpaceName] = useState<string>('')
+  const [owner, setOwner] = useState<string>('')
+  const [description, setDescription] = useState<string>('')
   const [webPageUrl, setWebPageUrl] = useState<string>('')
   const [documentName, setDocumentName] = useState<any>('')
   const [textSource, setTextSource] = useState<string>('')
@@ -157,11 +159,12 @@ const Index = () => {
                 width: '32px',
                 height: '32px',
                 lineHeight: '28px',
-                border: '1px solid gray',
+                border: '1px solid #2AA3FF',
                 textAlign: 'center',
                 borderRadius: '5px',
                 marginRight: '5px',
-                fontWeight: '300'
+                fontWeight: '300',
+                color: '#2AA3FF'
               }}
             >+</Box>
             <Box
@@ -277,7 +280,7 @@ const Index = () => {
                   key={item}
                   sx={{
                     fontWeight: activeStep === index ? 'bold' : '',
-                    color: activeStep === index ? '#814DDE' : ''
+                    color: activeStep === index ? '#2AA3FF' : ''
                   }}
                 >
                   {index < activeStep ? (
@@ -297,6 +300,19 @@ const Index = () => {
                 <Input
                   placeholder="Please input the name"
                   onChange={(e: any) => setKnowledgeSpaceName(e.target.value)}
+                  sx={{ marginBottom: '20px' }}
+                />
+                Owner:
+                <Input
+                  placeholder="Please input the owner"
+                  onChange={(e: any) => setOwner(e.target.value)}
+                  sx={{ marginBottom: '20px' }}
+                />
+                Description:
+                <Input
+                  placeholder="Please input the description"
+                  onChange={(e: any) => setDescription(e.target.value)}
+                  sx={{ marginBottom: '20px' }}
                 />
               </Box>
               <Button
@@ -306,13 +322,21 @@ const Index = () => {
                     message.error('please input the name')
                     return
                   }
+                  if (owner === '') {
+                    message.error('please input the owner')
+                    return
+                  }
+                  if (description === '') {
+                    message.error('please input the description')
+                    return
+                  }
                   const data = await sendSpacePostRequest(
                     `/knowledge/space/add`,
                     {
                         name: knowledgeSpaceName,
                         vector_type: 'Chroma',
-                        owner: 'keting',
-                        desc: 'test1'
+                        owner,
+                        desc: description
                     }
                   )
                   if (data.success) {
