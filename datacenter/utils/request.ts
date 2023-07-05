@@ -38,11 +38,49 @@ export const sendGetRequest = (url: string, qs?: { [key: string]: any }) => {
   });
 }
 
+export const sendSpaceGetRequest = (url: string, qs?: { [key: string]: any }) => {
+	if (qs) {
+    const str = Object.keys(qs)
+      .filter(k => qs[k] !== undefined && qs[k] !== '')
+      .map(k => `${k}=${qs[k]}`)
+      .join('&');
+    if (str) {
+      url += `?${str}`;
+    }
+  }
+	return axios.get(url, {
+    headers: DEFAULT_HEADERS
+  }).then(res => res).catch(err => {
+    message.error(err);
+    Promise.reject(err);
+  });
+}
+
 export const sendPostRequest = (url: string, body?: any) => {
   const reqBody = sanitizeBody(body);
   return axios.post("/api" + url, {
     body: reqBody,
     headers: DEFAULT_HEADERS
+  }).then(res => res).catch(err => {
+    message.error(err);
+    Promise.reject(err);
+  });
+}
+
+export const sendSpacePostRequest = (url: string, body?: any) => {
+  const reqBody = sanitizeBody(body);
+  return axios.post(url, {
+    body: reqBody,
+    headers: DEFAULT_HEADERS
+  }).then(res => res).catch(err => {
+    message.error(err);
+    Promise.reject(err);
+  });
+}
+
+export const sendSpaceUploadPostRequest = (url: string, body?: any) => {
+  return axios.post(url, {
+    body: body,
   }).then(res => res).catch(err => {
     message.error(err);
     Promise.reject(err);
