@@ -321,7 +321,7 @@ const Documents = () => {
                   key={item}
                   sx={{
                     fontWeight: activeStep === index ? 'bold' : '',
-                    color: activeStep === index ? '#814DDE' : ''
+                    color: activeStep === index ? '#2AA3FF' : ''
                   }}
                 >
                   {index < activeStep ? <CheckCircleOutlinedIcon /> : `${index + 1}.`}
