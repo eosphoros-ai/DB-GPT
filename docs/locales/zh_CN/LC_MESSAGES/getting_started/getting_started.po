@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-30 17:16+0800\n"
+"POT-Creation-Date: 2023-07-05 17:51+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -131,7 +131,8 @@ msgstr ""
 "GPT项目中创建一个新文件夹\"models\"，然后我们可以把从huggingface下载的所有模型放到这个目录下。"
 
 #: ../../getting_started/getting_started.md:42 4dfb7d63fdf544f2bf9dd8663efa8d31
-msgid "make sure you have install git-lfs"
+#, fuzzy
+msgid "Notice make sure you have install git-lfs"
 msgstr "确保你已经安装了git-lfs"
 
 #: ../../getting_started/getting_started.md:50 a52c137b8ef54b7ead41a2d8ff81d457
@@ -178,43 +179,33 @@ msgid ""
 "set .env configuration set your vector store type, "
 "eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > "
 "2.1)"
-msgstr "在.env文件设置向量数据库环境变量，eg:VECTOR_STORE_TYPE=Chroma, 目前我们支持了 Chroma and Milvus(version >2.1) "
+msgstr ""
+"在.env文件设置向量数据库环境变量，eg:VECTOR_STORE_TYPE=Chroma, 目前我们支持了 Chroma and "
+"Milvus(version >2.1) "
 
 #: ../../getting_started/getting_started.md:72 cdb7ef30e8c9441293e8b3fd95d621ed
 #, fuzzy
 msgid "Run db-gpt server"
 msgstr "运行模型服务"
 
-#: ../../getting_started/getting_started.md:78 10fdefed00d34863819fffca48ca5bea
+#: ../../getting_started/getting_started.md:77 e7bb3001d46b458aa0c522c4a7a8d45b
 #, fuzzy
-msgid "Run new webui"
-msgstr "运行模型服务"
+msgid "Open http://localhost:5000 with your browser to see the product."
+msgstr "打开浏览器访问http://localhost:5000"
 
-#: ../../getting_started/getting_started.md:86 60b48f6f0a7f43efa30c636a127860b6
+#: ../../getting_started/getting_started.md:79 68c55e3ecfc642f2869a9917ec65904c
 msgid ""
-"Notice: make sure node.js is the latest version, learn more about db-gpt "
-"webui, read https://github.com/csunny/DB-GPT/tree/new-page-"
-"framework/datacenter"
-msgstr "确保node.js是最新的版本，想知道更多请访问https://github.com/csunny/DB-GPT/tree/new-page-framework/datacenter,"
+"If you want to access an external LLM service, you need to 1.set the "
+"variables LLM_MODEL=YOUR_MODEL_NAME "
+"MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env "
+"file. 2.execute dbgpt_server.py in light mode"
+msgstr "如果你想访问外部的大模型服务，1.需要在.env文件设置模型名和外部模型服务地址。2.使用light模式启动服务"
 
-#: ../../getting_started/getting_started.md:89 e7bb3001d46b458aa0c522c4a7a8d45b
-msgid "Open http://localhost:3000 with your browser to see the result."
-msgstr "打开浏览器访问http://localhost:3000"
+#: ../../getting_started/getting_started.md:86 474aea4023bb44dd970773b110bbf0ee
+msgid ""
+"If you want to learn about dbgpt-webui, read https://github.com/csunny"
+"/DB-GPT/tree/new-page-framework/datacenter"
+msgstr "如果你想了解DB-GPT前端服务，访问https://github.com/csunny"
+"/DB-GPT/tree/new-page-framework/datacenter"
 
-#~ msgid ""
-#~ "Starting `llmserver.py` with the following "
-#~ "command will result in a relatively "
-#~ "stable Python service with multiple "
-#~ "processes."
-#~ msgstr ""
-
-#~ msgid ""
-#~ "Notice:  the webserver need to connect"
-#~ " llmserver,  so you need change the"
-#~ " .env file. change the MODEL_SERVER ="
-#~ " \"http://127.0.0.1:8000\" to your address.  "
-#~ "It's very important."
-#~ msgstr ""
-#~ "注意: 在启动Webserver之前, 需要修改.env 文件中的MODEL_SERVER "
-#~ "= \"http://127.0.0.1:8000\", 将地址设置为你的服务器地址。"
 
