@@ -8,7 +8,7 @@ const nextConfig = {
 		ignoreBuildErrors: true
 	},
 	env: {
-		API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL ||'http://120.26.193.159:5000'
+		API_BASE_URL: process.env.API_BASE_URL
 	},
 	trailingSlash: true
 }
