@@ -39,7 +39,7 @@ python -m spacy download zh_core_web_sm
 
 Once the environment is installed, we have to create a new folder "models" in the DB-GPT project, and then we can put all the models downloaded from huggingface in this directory
 
-make sure you have install git-lfs
+Notice make sure you have install git-lfs
 ```
 git clone https://huggingface.co/Tribbiani/vicuna-13b 
 git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
@@ -74,16 +74,14 @@ set .env configuration set your vector store type, eg:VECTOR_STORE_TYPE=Chroma, 
 ```bash
 $ python pilot/server/dbgpt_server.py
 ```
+Open http://localhost:5000 with your browser to see the product.
 
-3. Run new webui
-
+If you want to access an external LLM service, you need to 1.set the variables LLM_MODEL=YOUR_MODEL_NAME MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env file.
+2.execute dbgpt_server.py in light mode
 
 ```bash
-$ cd datacenter
-$ npm i
-$ npm run dev
+$ python pilot/server/dbgpt_server.py --light
 ```
-Notice: make sure node.js is the latest version, learn more about db-gt webui,
-read https://github.com/csunny/DB-GPT/tree/new-page-framework/datacenter
 
-Open http://localhost:3000 with your browser to see the result.
+If you want to learn about dbgpt-webui, read https://github.com/csunny/DB-GPT/tree/new-page-framework/datacenter
+
