@@ -59,7 +59,7 @@ class SourceEmbedding(ABC):
         self.vector_client = VectorStoreConnector(
             CFG.VECTOR_STORE_TYPE, self.vector_store_config
         )
-        self.vector_client.load_document(docs)
+        return self.vector_client.load_document(docs)
 
     @register
     def similar_search(self, doc, topk):

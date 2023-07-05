@@ -23,7 +23,7 @@ from fastapi import FastAPI, applications
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from pilot.openapi.knowledge.knowledge_controller import router as knowledge_router
+from pilot.server.knowledge.api import router as knowledge_router
 
 
 from pilot.openapi.api_v1.api_v1 import router as api_v1, validation_exception_handler

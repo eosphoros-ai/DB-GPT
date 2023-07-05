@@ -6,8 +6,8 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from pilot.embedding_engine.knowledge_type import KnowledgeType
-from pilot.openapi.knowledge.knowledge_service import KnowledgeService
-from pilot.openapi.knowledge.request.knowledge_request import KnowledgeSpaceRequest
+from pilot.server.knowledge.service import KnowledgeService
+from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
 
 
 from pilot.configs.config import Config
@@ -46,12 +46,18 @@ class LocalKnowledgeInit:
                 docs.extend(doc)
         embedding_engine.index_to_store(docs)
         print(f"""begin create {self.vector_store_config["vector_store_name"]} space""")
-        space = KnowledgeSpaceRequest
-        space.name = self.vector_store_config["vector_store_name"]
-        space.desc = "knowledge_init.py"
-        space.vector_type = CFG.VECTOR_STORE_TYPE
-        space.owner = "DB-GPT"
-        knowledge_space_service.create_knowledge_space(space)
+        try:
+            space = KnowledgeSpaceRequest
+            space.name = self.vector_store_config["vector_store_name"]
+            space.desc = "knowledge_init.py"
+            space.vector_type = CFG.VECTOR_STORE_TYPE
+            space.owner = "DB-GPT"
+            knowledge_space_service.create_knowledge_space(space)
+        except Exception as e:
+            if "have already named" in str(e):
+                print(f"Warning: you have already named {space.name}")
+            else:
+                raise e
 
 
 if __name__ == "__main__":
