@@ -4,25 +4,26 @@ import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { InboxOutlined } from '@ant-design/icons'
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
-import ContentPasteSearchOutlinedIcon from '@mui/icons-material/ContentPasteSearchOutlined';
+import ContentPasteSearchOutlinedIcon from '@mui/icons-material/ContentPasteSearchOutlined'
 import type { UploadProps } from 'antd'
 import { message, Upload } from 'antd'
 import {
   useColorScheme,
   Modal,
   Button,
-  Table,
   Sheet,
   Stack,
   Box,
   Input,
   Textarea,
-  Chip,
   Switch,
   Typography,
   styled
 } from '@/lib/mui'
-import { sendSpaceGetRequest, sendSpacePostRequest, sendSpaceUploadPostRequest } from '@/utils/request';
+import {
+  sendSpacePostRequest,
+  sendSpaceUploadPostRequest
+} from '@/utils/request'
 
 const { Dragger } = Upload
 
@@ -94,7 +95,7 @@ const Index = () => {
   }
   useEffect(() => {
     async function fetchData() {
-      const data = await sendSpacePostRequest('/knowledge/space/list')
+      const data = await sendSpacePostRequest('/knowledge/space/list', {})
       if (data.success) {
         setKnowledgeSpaceList(data.data)
       }
@@ -105,19 +106,22 @@ const Index = () => {
     <Box
       sx={{
         width: '100%',
-        height: '100%',
+        height: '100%'
       }}
-      className='bg-[#F1F2F5] dark:bg-[#212121]'
+      className="bg-[#F1F2F5] dark:bg-[#212121]"
     >
-      <Box className="page-body p-4" sx={{
-        '&': {
-          height: '90%',
-          overflow: 'auto',
-        },
-        '&::-webkit-scrollbar': {
-          display: 'none'
-        }
-      }}>
+      <Box
+        className="page-body p-4"
+        sx={{
+          '&': {
+            height: '90%',
+            overflow: 'auto'
+          },
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
+        }}
+      >
         <Stack
           direction="row"
           justifyContent="space-between"
@@ -134,7 +138,7 @@ const Index = () => {
             sx={{
               display: 'flex',
               alignContent: 'start',
-              boxSizing: "content-box",
+              boxSizing: 'content-box',
               width: '390px',
               height: '79px',
               padding: '33px 20px 40px',
@@ -148,11 +152,12 @@ const Index = () => {
               cursor: 'pointer',
               borderRadius: '16px',
               '&: hover': {
-                boxShadow: '0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);'
+                boxShadow:
+                  '0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);'
               }
             }}
             onClick={() => setIsAddKnowledgeSpaceModalShow(true)}
-            className='bg-[#E9EBEE] dark:bg-[#484848]'
+            className="bg-[#E9EBEE] dark:bg-[#484848]"
           >
             <Box
               sx={{
@@ -166,12 +171,16 @@ const Index = () => {
                 fontWeight: '300',
                 color: '#2AA3FF'
               }}
-            >+</Box>
+            >
+              +
+            </Box>
             <Box
               sx={{
-                fontSize: '16px',
+                fontSize: '16px'
               }}
-            >space</Box>
+            >
+              space
+            </Box>
           </Box>
           {knowledgeSpaceList.map((item: any, index: number) => (
             <Box
@@ -186,24 +195,32 @@ const Index = () => {
                 cursor: 'pointer',
                 borderRadius: '10px',
                 '&: hover': {
-                  boxShadow: '0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);'
+                  boxShadow:
+                    '0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);'
                 }
               }}
               onClick={() => {
-                router.push(`/datastores/documents?name=${item.name}`);
+                router.push(`/datastores/documents?name=${item.name}`)
               }}
-              className='bg-[#FFFFFF] dark:bg-[#484848]'
+              className="bg-[#FFFFFF] dark:bg-[#484848]"
             >
-              <Box sx={{
-                fontSize: '18px',
-                marginBottom: '10px',
-                fontWeight: 'bold',
-                color: 'black'
-              }}><ContentPasteSearchOutlinedIcon sx={{ marginRight: '5px', color: '#2AA3FF' }}/>{item.name}</Box>
+              <Box
+                sx={{
+                  fontSize: '18px',
+                  marginBottom: '10px',
+                  fontWeight: 'bold',
+                  color: 'black'
+                }}
+              >
+                <ContentPasteSearchOutlinedIcon
+                  sx={{ marginRight: '5px', color: '#2AA3FF' }}
+                />
+                {item.name}
+              </Box>
               <Box
                 sx={{
                   display: 'flex',
-                  justifyContent: 'flex-start',
+                  justifyContent: 'flex-start'
                 }}
               >
                 <Box
@@ -217,7 +234,9 @@ const Index = () => {
                     sx={{
                       color: '#2AA3FF'
                     }}
-                  >{item.vector_type}</Box>
+                  >
+                    {item.vector_type}
+                  </Box>
                   <Box sx={{ fontSize: '12px', color: 'black' }}>Vector</Box>
                 </Box>
                 <Box
@@ -231,7 +250,9 @@ const Index = () => {
                     sx={{
                       color: '#2AA3FF'
                     }}
-                  >{item.owner}</Box>
+                  >
+                    {item.owner}
+                  </Box>
                   <Box sx={{ fontSize: '12px', color: 'black' }}>Owner</Box>
                 </Box>
                 <Box
@@ -245,13 +266,19 @@ const Index = () => {
                     sx={{
                       color: '#2AA3FF'
                     }}
-                  >{item.docs || 0}</Box>
+                  >
+                    {item.docs || 0}
+                  </Box>
                   <Box sx={{ fontSize: '12px', color: 'black' }}>Docs</Box>
                 </Box>
               </Box>
             </Box>
           ))}
-          <i></i><i></i><i></i><i></i><i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
+          <i></i>
         </Stack>
       </Box>
       <Modal
@@ -333,16 +360,19 @@ const Index = () => {
                   const data = await sendSpacePostRequest(
                     `/knowledge/space/add`,
                     {
-                        name: knowledgeSpaceName,
-                        vector_type: 'Chroma',
-                        owner,
-                        desc: description
+                      name: knowledgeSpaceName,
+                      vector_type: 'Chroma',
+                      owner,
+                      desc: description
                     }
                   )
                   if (data.success) {
                     message.success('success')
                     setActiveStep(1)
-                    const data = await sendSpacePostRequest('/knowledge/space/list')
+                    const data = await sendSpacePostRequest(
+                      '/knowledge/space/list',
+                      {}
+                    )
                     if (data.success) {
                       setKnowledgeSpaceList(data.data)
                     }
@@ -479,18 +509,24 @@ const Index = () => {
                         message.error('Please input the Web Page URL')
                         return
                       }
-                      const data = await sendSpacePostRequest(`/knowledge/${knowledgeSpaceName}/document/add`, {
-                        doc_name: documentName,
-                        content: webPageUrl,
-                        doc_type: 'URL'
-                      })
+                      const data = await sendSpacePostRequest(
+                        `/knowledge/${knowledgeSpaceName}/document/add`,
+                        {
+                          doc_name: documentName,
+                          content: webPageUrl,
+                          doc_type: 'URL'
+                        }
+                      )
                       if (data.success) {
                         message.success('success')
                         setIsAddKnowledgeSpaceModalShow(false)
                         synchChecked &&
-                          sendSpacePostRequest(`/knowledge/${knowledgeSpaceName}/document/sync`, {
-                            doc_ids: [data.data]
-                          })
+                          sendSpacePostRequest(
+                            `/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              doc_ids: [data.data]
+                            }
+                          )
                       } else {
                         message.error(data.err_msg || 'failed')
                       }
@@ -504,14 +540,20 @@ const Index = () => {
                       formData.append('doc_file', originFileObj)
                       formData.append('doc_type', 'DOCUMENT')
 
-                      const data = await sendSpaceUploadPostRequest(`/knowledge/${knowledgeSpaceName}/document/upload`, formData);
+                      const data = await sendSpaceUploadPostRequest(
+                        `/knowledge/${knowledgeSpaceName}/document/upload`,
+                        formData
+                      )
                       if (data.success) {
                         message.success('success')
                         setIsAddKnowledgeSpaceModalShow(false)
                         synchChecked &&
-                          sendSpacePostRequest(`/knowledge/${knowledgeSpaceName}/document/sync`, {
-                            doc_ids: [data.data]
-                          });
+                          sendSpacePostRequest(
+                            `/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              doc_ids: [data.data]
+                            }
+                          )
                       } else {
                         message.error(data.err_msg || 'failed')
                       }
@@ -520,19 +562,25 @@ const Index = () => {
                         message.error('Please input the text')
                         return
                       }
-                      const data = await sendSpacePostRequest(`/knowledge/${knowledgeSpaceName}/document/add`, {
-                        doc_name: documentName,
-                            source: textSource,
-                            content: text,
-                            doc_type: 'TEXT'
-                      })
+                      const data = await sendSpacePostRequest(
+                        `/knowledge/${knowledgeSpaceName}/document/add`,
+                        {
+                          doc_name: documentName,
+                          source: textSource,
+                          content: text,
+                          doc_type: 'TEXT'
+                        }
+                      )
                       if (data.success) {
                         message.success('success')
                         setIsAddKnowledgeSpaceModalShow(false)
                         synchChecked &&
-                          sendSpacePostRequest(`/knowledge/${knowledgeSpaceName}/document/sync`, {
-                            doc_ids: [data.data]
-                          })
+                          sendSpacePostRequest(
+                            `/knowledge/${knowledgeSpaceName}/document/sync`,
+                            {
+                              doc_ids: [data.data]
+                            }
+                          )
                       } else {
                         message.error(data.err_msg || 'failed')
                       }
