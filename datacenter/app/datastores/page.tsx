@@ -22,6 +22,7 @@ import {
   Typography,
   styled
 } from '@/lib/mui'
+import { sendSpaceGetRequest, sendSpacePostRequest, sendSpaceUploadPostRequest } from '@/utils/request';
 
 const { Dragger } = Upload
 
@@ -91,17 +92,7 @@ const Index = () => {
   }
   useEffect(() => {
     async function fetchData() {
-      const res = await fetch(
-        `${process.env.API_BASE_URL}/knowledge/space/list`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({})
-        }
-      )
-      const data = await res.json()
+      const data = await sendSpacePostRequest('/knowledge/space/list')
       if (data.success) {
         setKnowledgeSpaceList(data.data)
       }
@@ -315,36 +306,19 @@ const Index = () => {
                     message.error('please input the name')
                     return
                   }
-                  const res = await fetch(
-                    `${process.env.API_BASE_URL}/knowledge/space/add`,
+                  const data = await sendSpacePostRequest(
+                    `/knowledge/space/add`,
                     {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json'
-                      },
-                      body: JSON.stringify({
                         name: knowledgeSpaceName,
                         vector_type: 'Chroma',
                         owner: 'keting',
                         desc: 'test1'
-                      })
                     }
                   )
-                  const data = await res.json()
                   if (data.success) {
                     message.success('success')
                     setActiveStep(1)
-                    const res = await fetch(
-                      `${process.env.API_BASE_URL}/knowledge/space/list`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({})
-                      }
-                    )
-                    const data = await res.json()
+                    const data = await sendSpacePostRequest('/knowledge/space/list')
                     if (data.success) {
                       setKnowledgeSpaceList(data.data)
                     }
@@ -481,37 +455,18 @@ const Index = () => {
                         message.error('Please input the Web Page URL')
                         return
                       }
-                      const res = await fetch(
-                        `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/add`,
-                        {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            doc_name: documentName,
-                            content: webPageUrl,
-                            doc_type: 'URL'
-                          })
-                        }
-                      )
-                      const data = await res.json()
+                      const data = await sendSpacePostRequest(`/knowledge/${knowledgeSpaceName}/document/add`, {
+                        doc_name: documentName,
+                        content: webPageUrl,
+                        doc_type: 'URL'
+                      })
                       if (data.success) {
                         message.success('success')
                         setIsAddKnowledgeSpaceModalShow(false)
                         synchChecked &&
-                          fetch(
-                            `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/sync`,
-                            {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify({
-                                doc_ids: [data.data]
-                              })
-                            }
-                          )
+                          sendSpacePostRequest(`/knowledge/${knowledgeSpaceName}/document/sync`, {
+                            doc_ids: [data.data]
+                          })
                       } else {
                         message.error(data.err_msg || 'failed')
                       }
@@ -524,30 +479,15 @@ const Index = () => {
                       formData.append('doc_name', documentName)
                       formData.append('doc_file', originFileObj)
                       formData.append('doc_type', 'DOCUMENT')
-                      const res = await fetch(
-                        `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/upload`,
-                        {
-                          method: 'POST',
-                          body: formData
-                        }
-                      )
-                      const data = await res.json()
+
+                      const data = await sendSpaceUploadPostRequest(`/knowledge/${knowledgeSpaceName}/document/upload`, formData);
                       if (data.success) {
                         message.success('success')
                         setIsAddKnowledgeSpaceModalShow(false)
                         synchChecked &&
-                          fetch(
-                            `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/sync`,
-                            {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify({
-                                doc_ids: [data.data]
-                              })
-                            }
-                          )
+                          sendSpacePostRequest(`/knowledge/${knowledgeSpaceName}/document/sync`, {
+                            doc_ids: [data.data]
+                          });
                       } else {
                         message.error(data.err_msg || 'failed')
                       }
@@ -556,38 +496,19 @@ const Index = () => {
                         message.error('Please input the text')
                         return
                       }
-                      const res = await fetch(
-                        `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/add`,
-                        {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            doc_name: documentName,
+                      const data = await sendSpacePostRequest(`/knowledge/${knowledgeSpaceName}/document/add`, {
+                        doc_name: documentName,
                             source: textSource,
                             content: text,
                             doc_type: 'TEXT'
-                          })
-                        }
-                      )
-                      const data = await res.json()
+                      })
                       if (data.success) {
                         message.success('success')
                         setIsAddKnowledgeSpaceModalShow(false)
                         synchChecked &&
-                          fetch(
-                            `${process.env.API_BASE_URL}/knowledge/${knowledgeSpaceName}/document/sync`,
-                            {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify({
-                                doc_ids: [data.data]
-                              })
-                            }
-                          )
+                          sendSpacePostRequest(`/knowledge/${knowledgeSpaceName}/document/sync`, {
+                            doc_ids: [data.data]
+                          })
                       } else {
                         message.error(data.err_msg || 'failed')
                       }
