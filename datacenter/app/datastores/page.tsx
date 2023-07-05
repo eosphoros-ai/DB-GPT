@@ -4,10 +4,9 @@ import { useRouter } from 'next/navigation'
 import React, { useState, useEffect } from 'react'
 import { InboxOutlined } from '@ant-design/icons'
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
-import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
 import ContentPasteSearchOutlinedIcon from '@mui/icons-material/ContentPasteSearchOutlined';
 import type { UploadProps } from 'antd'
-import { message, Upload, Popover } from 'antd'
+import { message, Upload } from 'antd'
 import {
   useColorScheme,
   Modal,
@@ -115,7 +114,7 @@ const Index = () => {
         width: '100%',
         height: '100%',
       }}
-      className='bg-[#EEF0F5] dark:bg-[#212121]'
+      className='bg-[#F1F2F5] dark:bg-[#212121]'
     >
       <Box className="page-body p-4" sx={{
         '&': {
@@ -140,6 +139,8 @@ const Index = () => {
         >
           <Box
             sx={{
+              display: 'flex',
+              alignContent: 'start',
               boxSizing: "content-box",
               width: '390px',
               height: '79px',
@@ -152,13 +153,32 @@ const Index = () => {
               flexShrink: 0,
               flexGrow: 0,
               cursor: 'pointer',
+              borderRadius: '16px',
               '&: hover': {
                 boxShadow: '0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);'
               }
             }}
             onClick={() => setIsAddKnowledgeSpaceModalShow(true)}
-            className='bg-[#E0E4ED] dark:bg-[#484848]'
-          ><AddBoxOutlinedIcon sx={{ marginRight: '10px', fontSize: '30px' }} />Space</Box>
+            className='bg-[#E9EBEE] dark:bg-[#484848]'
+          >
+            <Box
+              sx={{
+                width: '32px',
+                height: '32px',
+                lineHeight: '28px',
+                border: '1px solid gray',
+                textAlign: 'center',
+                borderRadius: '5px',
+                marginRight: '5px',
+                fontWeight: '300'
+              }}
+            >+</Box>
+            <Box
+              sx={{
+                fontSize: '16px',
+              }}
+            >space</Box>
+          </Box>
           {knowledgeSpaceList.map((item: any, index: number) => (
             <Box
               key={index}
@@ -166,10 +186,11 @@ const Index = () => {
                 padding: '30px 20px 40px',
                 marginRight: '30px',
                 marginBottom: '30px',
-                borderTop: '3px solid rgb(82, 196, 26)',
+                borderTop: '4px solid rgb(84, 164, 248)',
                 flexShrink: 0,
                 flexGrow: 0,
                 cursor: 'pointer',
+                borderRadius: '10px',
                 '&: hover': {
                   boxShadow: '0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);'
                 }
@@ -184,7 +205,7 @@ const Index = () => {
                 marginBottom: '10px',
                 fontWeight: 'bold',
                 color: 'black'
-              }}><ContentPasteSearchOutlinedIcon sx={{ marginRight: '5px' }}/>{item.name}</Box>
+              }}><ContentPasteSearchOutlinedIcon sx={{ marginRight: '5px', color: '#2AA3FF' }}/>{item.name}</Box>
               <Box
                 sx={{
                   display: 'flex',
@@ -200,7 +221,7 @@ const Index = () => {
                 >
                   <Box
                     sx={{
-                      color: 'black'
+                      color: '#2AA3FF'
                     }}
                   >{item.vector_type}</Box>
                   <Box sx={{ fontSize: '12px', color: 'black' }}>Vector</Box>
@@ -214,7 +235,7 @@ const Index = () => {
                 >
                   <Box
                     sx={{
-                      color: 'black'
+                      color: '#2AA3FF'
                     }}
                   >{item.owner}</Box>
                   <Box sx={{ fontSize: '12px', color: 'black' }}>Owner</Box>
@@ -228,7 +249,7 @@ const Index = () => {
                 >
                   <Box
                     sx={{
-                      color: 'black'
+                      color: '#2AA3FF'
                     }}
                   >{item.docs || 0}</Box>
                   <Box sx={{ fontSize: '12px', color: 'black' }}>Docs</Box>
