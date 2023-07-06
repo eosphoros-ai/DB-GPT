@@ -11,10 +11,10 @@ def generate_stream(
     """Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/inference.py"""
     prompt = params["prompt"]
     l_prompt = len(prompt)
+    prompt = prompt.replace("ai:", "assistant:").replace("human:", "user:")
     temperature = float(params.get("temperature", 1.0))
     max_new_tokens = int(params.get("max_new_tokens", 2048))
     stop_str = params.get("stop", None)
-
     input_ids = tokenizer(prompt).input_ids
     output_ids = list(input_ids)
 

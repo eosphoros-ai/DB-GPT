@@ -31,9 +31,15 @@ conda create -n dbgpt_env python=3.10
 conda activate dbgpt_env
 pip install -r requirements.txt
 ```
+Before use DB-GPT Knowledge Management
+```
+python -m spacy download zh_core_web_sm
+
+```
 
 Once the environment is installed, we have to create a new folder "models" in the DB-GPT project, and then we can put all the models downloaded from huggingface in this directory
 
+Notice make sure you have install git-lfs
 ```
 git clone https://huggingface.co/Tribbiani/vicuna-13b 
 git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
@@ -54,20 +60,28 @@ You can refer to this document to obtain the Vicuna weights: [Vicuna](https://gi
 
 If you have difficulty with this step, you can also directly use the model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a replacement.
 
-1. Run server
+1. prepare server sql script
 ```bash
-$ python pilot/server/llmserver.py
+mysql> CREATE DATABASE knowledge_management;
+mysql> use knowledge_management;
+mysql> source ./assets/schema/knowledge_management.sql
+```
+set .env configuration set your vector store type, eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > 2.1)
+
+
+2. Run db-gpt server 
+
+```bash
+$ python pilot/server/dbgpt_server.py
+```
+Open http://localhost:5000 with your browser to see the product.
+
+If you want to access an external LLM service, you need to 1.set the variables LLM_MODEL=YOUR_MODEL_NAME MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env file.
+2.execute dbgpt_server.py in light mode
+
+```bash
+$ python pilot/server/dbgpt_server.py --light
 ```
 
-Starting `llmserver.py` with the following command will result in a relatively stable Python service with multiple processes.
-```bash
-$ gunicorn llmserver:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 &
-```
+If you want to learn about dbgpt-webui, read https://github.com/csunny/DB-GPT/tree/new-page-framework/datacenter
 
-Run gradio webui
-
-```bash
-$ python pilot/server/webserver.py
-```
-
-Notice:  the webserver need to connect llmserver,  so you need change the .env file. change the MODEL_SERVER = "http://127.0.0.1:8000" to your address.  It's very important.

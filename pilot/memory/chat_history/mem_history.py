@@ -11,13 +11,13 @@ from pilot.scene.message import (
     conversation_from_dict,
     conversations_to_dict,
 )
-
+from pilot.common.custom_data_structure import FixedSizeDict, FixedSizeList
 
 CFG = Config()
 
 
 class MemHistoryMemory(BaseChatHistoryMemory):
-    histroies_map = {}
+    histroies_map = FixedSizeDict(100)
 
     def __init__(self, chat_session_id: str):
         self.chat_seesion_id = chat_session_id
