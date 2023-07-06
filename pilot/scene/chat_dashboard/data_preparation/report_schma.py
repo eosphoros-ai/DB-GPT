@@ -3,6 +3,17 @@ from pydantic import BaseModel, Field
 from typing import TypeVar, Union, List, Generic, Any
 from dataclasses import dataclass, asdict
 
+class ValueItem(BaseModel):
+    name: str
+    type: str = None
+    value: float
+    def dict(self, *args, **kwargs):
+        return {
+            "name": self.name,
+            "type": self.type,
+            "value": self.value
+        }
+
 class ChartData(BaseModel):
     chart_uid: str
     chart_name: str
@@ -10,7 +21,7 @@ class ChartData(BaseModel):
     chart_desc: str
     chart_sql: str
     column_name: List
-    values: List
+    values: List[ValueItem]
     style: Any = None
 
     def dict(self, *args, **kwargs):
@@ -21,7 +32,7 @@ class ChartData(BaseModel):
             "chart_desc": self.chart_desc,
             "chart_sql": self.chart_sql,
             "column_name": [str(item) for item in self.column_name],
-            "values":  [[str(item) for item in sublist] for sublist in self.values],
+            "values":  [value.dict() for value in self.values],
             "style": self.style
         }
 

@@ -268,6 +268,32 @@ class Database:
             result.insert(0, field_names)
             return result
 
+    def query_ex(self, session, query, fetch: str = "all"):
+        """
+        only for query
+        Args:
+            session:
+            query:
+            fetch:
+        Returns:
+        """
+        print(f"Query[{query}]")
+        if not query:
+            return []
+        cursor = session.execute(text(query))
+        if cursor.returns_rows:
+            if fetch == "all":
+                result = cursor.fetchall()
+            elif fetch == "one":
+                result = cursor.fetchone()[0]  # type: ignore
+            else:
+                raise ValueError("Fetch parameter must be either 'one' or 'all'")
+            field_names = list(i[0:] for i in cursor.keys())
+
+            result = list(result)
+            return field_names, result
+
+
     def run(self, session, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""
         print("SQL:" + command)
