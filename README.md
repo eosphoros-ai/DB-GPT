@@ -21,13 +21,13 @@ As large models are released and iterated upon, they are becoming increasingly i
 DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 
 ## News
-- [2023/06/30]🔥DB-GPT product. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
+- [2023/07/06]🔥🔥🔥Brand-new DB-GPT product with a brand-new web UI. [documents](https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html) 
 - [2023/06/25]🔥support chatglm2-6b model. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
 - [2023/06/14] support gpt4all model, which can run at M1/M2, or cpu machine. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
 - [2023/06/01]🔥 On the basis of the Vicuna-13B basic model, task chain calls are implemented through plugins. For example, the implementation of creating a database with a single sentence.[demo](./assets/auto_plugin.gif)
 - [2023/06/01]🔥 QLoRA guanaco(7b, 13b, 33b) support.
-- [2023/05/28] Learning from crawling data from the Internet [demo](./assets/chaturl_en.gif)
-- [2023/05/21] Generate SQL and execute it automatically. [demo](./assets/auto_sql_en.gif)
+- [2023/05/28] Learning from crawling data from the Internet [demo](./assets/dbgpt_demo.gif)
+- [2023/05/21] Generate SQL and execute it automatically. [demo](./assets/chat-data.gif)
 - [2023/05/15] Chat with documents. [demo](./assets/new_knownledge_en.gif)
 - [2023/05/06] SQL generation and diagnosis. [demo](./assets/demo_en.gif)
 
@@ -35,19 +35,17 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 
 Run on an RTX 4090 GPU.
 
-https://github.com/csunny/DB-GPT/assets/dbgpt_demo.mp4
+<p align="left">
+  <img src="./assets/dbgpt_demo.gif" width="800px" />
+</p>
+
 
 <!-- <video id="video" controls="" preload="auto" poster="assets/exector_sql.png">
       <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
 </videos> -->
 
-<p align="left">
-  <img src="./assets/exector_sql.png" width="800px" />
-</p>
 
-<p align="left">
-  <img src="./assets/auto_sql_en.gif" width="800px" />
-</p>
+
 
 
 ## Features
