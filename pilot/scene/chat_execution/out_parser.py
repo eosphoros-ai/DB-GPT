@@ -29,12 +29,12 @@ class PluginChatOutputParser(BaseOutputParser):
             raise ValueError("model server out not fllow the prompt!")
 
         for key in sorted(response):
-            if key.strip() == 'command':
-                command =response[key]
-            if key.strip() == 'thoughts':
-                thoughts =response[key]
-            if key.strip() == 'speak':
-                speak =response[key]
+            if key.strip() == "command":
+                command = response[key]
+            if key.strip() == "thoughts":
+                thoughts = response[key]
+            if key.strip() == "speak":
+                speak = response[key]
         return PluginAction(command, speak, thoughts)
 
     def parse_view_response(self, speak, data) -> str:

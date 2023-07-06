@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import TypeVar, Union, List, Generic, Any
 from dataclasses import dataclass, asdict
 
+
 class ChartData(BaseModel):
     chart_uid: str
     chart_name: str
@@ -21,9 +22,10 @@ class ChartData(BaseModel):
             "chart_desc": self.chart_desc,
             "chart_sql": self.chart_sql,
             "column_name": [str(item) for item in self.column_name],
-            "values":  [[str(item) for item in sublist] for sublist in self.values],
-            "style": self.style
+            "values": [[str(item) for item in sublist] for sublist in self.values],
+            "style": self.style,
         }
+
 
 class ReportData(BaseModel):
     conv_uid: str
@@ -36,5 +38,5 @@ class ReportData(BaseModel):
             "conv_uid": self.conv_uid,
             "template_name": self.template_name,
             "template_introduce": self.template_introduce,
-            "charts": [chart.dict() for chart in self.charts]
+            "charts": [chart.dict() for chart in self.charts],
         }

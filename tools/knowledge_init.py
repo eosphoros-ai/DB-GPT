@@ -3,6 +3,7 @@
 import argparse
 import os
 import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from pilot.embedding_engine.knowledge_type import KnowledgeType
@@ -16,6 +17,7 @@ from pilot.configs.model_config import (
     LLM_MODEL_CONFIG,
 )
 from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+
 knowledge_space_service = KnowledgeService()
 
 CFG = Config()

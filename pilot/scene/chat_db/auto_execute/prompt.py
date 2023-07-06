@@ -51,6 +51,6 @@ prompt = PromptTemplate(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
     ),
     example_selector=sql_data_example,
-    temperature=PROMPT_TEMPERATURE
+    temperature=PROMPT_TEMPERATURE,
 )
 CFG.prompt_templates.update({prompt.template_scene: prompt})

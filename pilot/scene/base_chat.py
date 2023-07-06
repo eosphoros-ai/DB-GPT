@@ -126,7 +126,6 @@ class BaseChat(ABC):
         # TODO Retry when server connection error
         payload = self.__call_base()
 
-
         self.skip_echo_len = len(payload.get("prompt").replace("</s>", " ")) + 11
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
@@ -142,6 +141,7 @@ class BaseChat(ABC):
                 return response
             else:
                 from pilot.server.llmserver import worker
+
                 return worker.generate_stream_gate(payload)
         except Exception as e:
             print(traceback.format_exc())
@@ -169,6 +169,7 @@ class BaseChat(ABC):
             else:
                 ###TODO  no stream mode need independent
                 from pilot.server.llmserver import worker
+
                 output = worker.generate_stream_gate(payload)
                 for rsp in output:
                     rsp = rsp.replace(b"\0", b"")
