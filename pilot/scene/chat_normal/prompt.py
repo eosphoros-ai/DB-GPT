@@ -8,8 +8,7 @@ from pilot.common.schema import SeparatorStyle
 
 from pilot.scene.chat_normal.out_parser import NormalChatOutputParser
 
-PROMPT_SCENE_DEFINE = """A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. 
-    The assistant gives helpful, detailed, professional and polite answers to the user's questions. """
+PROMPT_SCENE_DEFINE = None
 
 CFG = Config()
 
@@ -18,7 +17,7 @@ PROMPT_SEP = SeparatorStyle.SINGLE.value
 PROMPT_NEED_NEED_STREAM_OUT = True
 
 prompt = PromptTemplate(
-    template_scene=ChatScene.ChatNormal.value,
+    template_scene=ChatScene.ChatNormal.value(),
     input_variables=["input"],
     response_format=None,
     template_define=PROMPT_SCENE_DEFINE,
