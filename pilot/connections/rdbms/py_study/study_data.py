@@ -10,8 +10,11 @@ if __name__ == "__main__":
 
     # print(datas)
 
-    str = """{ "thoughts": "thought text", "sql": "SELECT COUNT(DISTINCT user_id) FROM transactions_order WHERE user_id IN (SELECT DISTINCT user_id FROM users WHERE country='China') AND create_time BETWEEN 20230101 AND 20230131" ,}"""
+    # str = """{ "thoughts": "thought text", "sql": "SELECT COUNT(DISTINCT user_id) FROM transactions_order WHERE user_id IN (SELECT DISTINCT user_id FROM users WHERE country='China') AND create_time BETWEEN 20230101 AND 20230131" ,}"""
+    #
+    # print(str.find("["))
 
-    print(str.find("["))
+    test =["t1", "t2", "t3", "tx"]
+    print(str(test[1:]))
 
 
