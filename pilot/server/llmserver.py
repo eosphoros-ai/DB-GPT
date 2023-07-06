@@ -168,14 +168,13 @@ async def api_generate_stream(request: Request):
 
 
 @app.post("/generate")
-def generate(prompt_request: PromptRequest)->str:
+def generate(prompt_request: PromptRequest) -> str:
     params = {
         "prompt": prompt_request.prompt,
         "temperature": prompt_request.temperature,
         "max_new_tokens": prompt_request.max_new_tokens,
         "stop": prompt_request.stop,
     }
-
 
     rsp_str = ""
     output = worker.generate_stream_gate(params)

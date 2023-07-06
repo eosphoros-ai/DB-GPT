@@ -27,7 +27,8 @@ from enum import Enum
 
 from pilot.server.knowledge.request.response import (
     ChunkQueryResponse,
-    DocumentQueryResponse, SpaceQueryResponse,
+    DocumentQueryResponse,
+    SpaceQueryResponse,
 )
 
 knowledge_space_dao = KnowledgeSpaceDao()

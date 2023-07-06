@@ -28,10 +28,10 @@ class DbChatOutputParser(BaseOutputParser):
         print("clean prompt response:", clean_str)
         response = json.loads(clean_str)
         for key in sorted(response):
-            if key.strip() == 'sql':
-                sql =response[key]
-            if key.strip() == 'thoughts':
-                thoughts =response[key]
+            if key.strip() == "sql":
+                sql = response[key]
+            if key.strip() == "thoughts":
+                thoughts = response[key]
         return SqlAction(sql, thoughts)
 
     def parse_view_response(self, speak, data) -> str:

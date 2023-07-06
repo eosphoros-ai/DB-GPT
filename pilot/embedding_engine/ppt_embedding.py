@@ -4,7 +4,7 @@ from typing import List
 
 from langchain.document_loaders import UnstructuredPowerPointLoader
 from langchain.schema import Document
-from langchain.text_splitter import SpacyTextSplitter,  RecursiveCharacterTextSplitter
+from langchain.text_splitter import SpacyTextSplitter, RecursiveCharacterTextSplitter
 
 from pilot.configs.config import Config
 from pilot.embedding_engine import SourceEmbedding, register
@@ -45,7 +45,9 @@ class PPTEmbedding(SourceEmbedding):
                     chunk_overlap=100,
                 )
             except Exception:
-                text_splitter = RecursiveCharacterTextSplitter(chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE, chunk_overlap=50)
+                text_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE, chunk_overlap=50
+                )
         return loader.load_and_split(text_splitter)
 
     @register
