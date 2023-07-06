@@ -1,5 +1,3 @@
-from chromadb.errors import NoIndexException
-
 from pilot.scene.base_chat import BaseChat, logger, headers
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
@@ -19,23 +17,19 @@ from pilot.configs.model_config import (
 )
 
 from pilot.scene.chat_knowledge.custom.prompt import prompt
-from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
 
 CFG = Config()
 
 
 class ChatNewKnowledge(BaseChat):
-    chat_scene: str = ChatScene.ChatNewKnowledge.value
+    chat_scene: str = ChatScene.ChatNewKnowledge.value()
 
     """Number of results to return from the query"""
 
-    def __init__(
-        self, temperature, max_new_tokens, chat_session_id, user_input, knowledge_name
-    ):
+    def __init__(self, chat_session_id, user_input, knowledge_name):
         """ """
         super().__init__(
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
             chat_mode=ChatScene.ChatNewKnowledge,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
@@ -52,23 +46,13 @@ class ChatNewKnowledge(BaseChat):
         )
 
     def generate_input_values(self):
-        try:
-            docs = self.knowledge_embedding_client.similar_search(
-                self.current_user_input, CFG.KNOWLEDGE_SEARCH_TOP_SIZE
-            )
-            context = [d.page_content for d in docs]
-            self.metadata = [d.metadata for d in docs]
-            context = context[:2000]
-            input_values = {"context": context, "question": self.current_user_input}
-        except NoIndexException:
-            raise ValueError(
-                f"you have no {self.knowledge_name} knowledge store, please upload your knowledge"
-            )
-
+        docs = self.knowledge_embedding_client.similar_search(
+            self.current_user_input, CFG.KNOWLEDGE_SEARCH_TOP_SIZE
+        )
+        context = [d.page_content for d in docs]
+        context = context[:2000]
+        input_values = {"context": context, "question": self.current_user_input}
         return input_values
-
-    def do_with_prompt_response(self, prompt_response):
-        return prompt_response
 
     @property
     def chat_type(self) -> str:

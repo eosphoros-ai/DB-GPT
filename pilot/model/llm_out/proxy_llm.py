@@ -39,7 +39,7 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
         elif "ai:" in message:
             history.append(
                 {
-                    "role": "ai",
+                    "role": "assistant",
                     "content": message.split("ai:")[1],
                 }
             )
@@ -57,6 +57,7 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
     for m in temp_his:
         if m["role"] == "user":
             last_user_input = m
+            break
     if last_user_input:
         history.remove(last_user_input)
         history.append(last_user_input)
