@@ -23,7 +23,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 
 ## 最新发布
-- [2023/06/30]🔥 DB-GPT产品。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
+- [2023/07/06]🔥🔥🔥 全新的DB-GPT产品。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)
 - [2023/06/25]🔥 支持ChatGLM2-6B模型。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
 - [2023/06/14]🔥 支持gpt4all模型，可以在M1/M2 或者CPU机器上运行。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
 - [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.
@@ -58,24 +58,8 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 示例通过 RTX 4090 GPU 演示
 
-https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0
-
-<!-- <video id="video" controls="" preload="auto" poster="assets/exector_sql.png">
-      <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
-</videos> -->
-
 <p align="left">
-  <img src="./assets/auto_sql.gif" width="800px" />
-</p>
-
-
-<p align="left">
-  <img src="./assets/chat_url_zh.gif" width="800px" />
-</p>
-
-
-<p align="left">
-  <img src="./assets/new_knownledge.gif" width="800px" />
+  <img src="./assets/dbgpt_demo.gif" width="800px" />
 </p>
 
 ## 架构方案
@@ -106,9 +90,6 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 
 ### 多模型使用
   [使用指南](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
-
-### 打造属于你的知识库
-- [参考手册](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/knowledge.html)
 
 
 如果在使用知识库时遇到与nltk相关的错误，您需要安装nltk工具包。更多详情，请参见：[nltk文档](https://www.nltk.org/data.html)
