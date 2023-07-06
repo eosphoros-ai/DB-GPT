@@ -11,7 +11,7 @@ import {
   Link
 } from '@/lib/mui'
 import { Popover, Pagination } from 'antd'
-import { sendSpaceGetRequest, sendSpacePostRequest, sendSpaceUploadPostRequest } from '@/utils/request';
+import { sendSpacePostRequest } from '@/utils/request'
 const page_size = 20
 
 const ChunkList = () => {
@@ -24,11 +24,14 @@ const ChunkList = () => {
   const [chunkList, setChunkList] = useState<any>([])
   useEffect(() => {
     async function fetchChunks() {
-      const data = await sendSpacePostRequest(`/knowledge/${spaceName}/chunk/list`, {
-        document_id: documentId,
-        page: 1,
-        page_size
-      })
+      const data = await sendSpacePostRequest(
+        `/knowledge/${spaceName}/chunk/list`,
+        {
+          document_id: documentId,
+          page: 1,
+          page_size
+        }
+      )
       if (data.success) {
         setChunkList(data.data.data)
         setTotal(data.data.total)
@@ -141,11 +144,14 @@ const ChunkList = () => {
                 current={current}
                 total={total}
                 onChange={async (page) => {
-                  const data = await sendSpacePostRequest(`/knowledge/${spaceName}/chunk/list`, {
-                    document_id: documentId,
-                    page,
-                    page_size
-                  })
+                  const data = await sendSpacePostRequest(
+                    `/knowledge/${spaceName}/chunk/list`,
+                    {
+                      document_id: documentId,
+                      page,
+                      page_size
+                    }
+                  )
                   if (data.success) {
                     setChunkList(data.data.data)
                     setTotal(data.data.total)
