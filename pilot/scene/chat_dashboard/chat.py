@@ -35,9 +35,7 @@ class ChatDashboard(BaseChat):
             current_user_input=user_input,
         )
         if not db_name:
-            raise ValueError(
-                f"{ChatScene.ChatDashboard.value} mode should chose db!"
-            )
+            raise ValueError(f"{ChatScene.ChatDashboard.value} mode should chose db!")
         self.db_name = db_name
         self.report_name = report_name
         self.database = CFG.local_db
@@ -47,12 +45,11 @@ class ChatDashboard(BaseChat):
         self.dashboard_template = self.__load_dashboard_template(report_name)
 
     def __load_dashboard_template(self, template_name):
-
         current_dir = os.getcwd()
         print(current_dir)
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        with open(f"{current_dir}/template/{template_name}/dashboard.json", 'r') as f:
+        with open(f"{current_dir}/template/{template_name}/dashboard.json", "r") as f:
             data = f.read()
         return json.loads(data)
 
@@ -66,7 +63,7 @@ class ChatDashboard(BaseChat):
             "input": self.current_user_input,
             "dialect": self.database.dialect,
             "table_info": self.database.table_simple_info(self.db_connect),
-            "supported_chat_type": self.dashboard_template['supported_chart_type']
+            "supported_chat_type": self.dashboard_template["supported_chart_type"]
             # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
 
@@ -78,16 +75,24 @@ class ChatDashboard(BaseChat):
         for chart_item in prompt_response:
             try:
                 datas = self.database.run(self.db_connect, chart_item.sql)
-                chart_datas.append(ChartData(chart_uid=str(uuid.uuid1()),
-                                             chart_name=chart_item.title,
-                                             chart_type=chart_item.showcase,
-                                             chart_desc=chart_item.thoughts,
-                                             chart_sql=chart_item.sql,
-                                             column_name=datas[0],
-                                             values=datas))
+                chart_datas.append(
+                    ChartData(
+                        chart_uid=str(uuid.uuid1()),
+                        chart_name=chart_item.title,
+                        chart_type=chart_item.showcase,
+                        chart_desc=chart_item.thoughts,
+                        chart_sql=chart_item.sql,
+                        column_name=datas[0],
+                        values=datas,
+                    )
+                )
             except Exception as e:
                 # TODO 修复流程
                 print(str(e))
 
-        return ReportData(conv_uid=self.chat_session_id, template_name=self.report_name, template_introduce=None,
-                          charts=chart_datas)
+        return ReportData(
+            conv_uid=self.chat_session_id,
+            template_name=self.report_name,
+            template_introduce=None,
+            charts=chart_datas,
+        )

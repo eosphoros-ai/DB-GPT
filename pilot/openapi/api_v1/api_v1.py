@@ -53,7 +53,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     message = ""
     for error in exc.errors():
         message += ".".join(error.get("loc")) + ":" + error.get("msg") + ";"
-    return Result.faild(code= "E0001", msg=message)
+    return Result.faild(code="E0001", msg=message)
 
 
 def __get_conv_user_message(conversations: dict):
@@ -95,8 +95,9 @@ def knowledge_list():
         params.update({space.name: space.name})
     return params
 
+
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
-async def dialogue_list( user_id: str = None):
+async def dialogue_list(user_id: str = None):
     dialogues: List = []
     datas = DuckdbHistoryMemory.conv_list(user_id)
 
@@ -126,11 +127,10 @@ async def dialogue_scenes():
         ChatScene.ChatExecution,
     ]
     for scene in new_modes:
-
         scene_vo = ChatSceneVo(
             chat_scene=scene.value(),
             scene_name=scene.scene_name(),
-            scene_describe= scene.describe(),
+            scene_describe=scene.describe(),
             param_title=",".join(scene.param_types()),
         )
         scene_vos.append(scene_vo)
@@ -138,7 +138,9 @@ async def dialogue_scenes():
 
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
-async def dialogue_new(chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None):
+async def dialogue_new(
+    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
+):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)
 

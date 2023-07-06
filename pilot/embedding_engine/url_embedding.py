@@ -40,7 +40,9 @@ class URLEmbedding(SourceEmbedding):
                     chunk_overlap=100,
                 )
             except Exception:
-                text_splitter = RecursiveCharacterTextSplitter(chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE, chunk_overlap=50)
+                text_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE, chunk_overlap=50
+                )
         return loader.load_and_split(text_splitter)
 
     @register

@@ -86,7 +86,7 @@ if __name__ == "__main__":
     # test2.test()
 
     # 定义包含元组的列表
-    data = [('key1', 'value1'), ('key2', 'value2'), ('key3', 'value3')]
+    data = [("key1", "value1"), ("key2", "value2"), ("key3", "value3")]
 
     # 使用字典解析将列表转换为字典
     result = {k: v for k, v in data}

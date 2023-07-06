@@ -116,7 +116,8 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
             cursor = duckdb.connect(duckdb_path).cursor()
             if user_name:
                 cursor.execute(
-                    "SELECT * FROM chat_history where user_name=? order by id desc limit 20", [user_name]
+                    "SELECT * FROM chat_history where user_name=? order by id desc limit 20",
+                    [user_name],
                 )
             else:
                 cursor.execute("SELECT * FROM chat_history order by id desc limit 20")
