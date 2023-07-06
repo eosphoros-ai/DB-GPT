@@ -31,7 +31,7 @@ class MarkdownEmbedding(SourceEmbedding):
         loader = EncodeTextLoader(self.file_path)
 
         if CFG.LANGUAGE == "en":
-            text_splitter = CharacterTextSplitter(
+            text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
                 chunk_overlap=20,
                 length_function=len,

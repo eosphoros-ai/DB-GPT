@@ -21,11 +21,14 @@ import {
 } from '@/lib/mui'
 import moment from 'moment'
 import { InboxOutlined } from '@ant-design/icons'
-import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
-import CachedIcon from '@mui/icons-material/Cached';
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
+import CachedIcon from '@mui/icons-material/Cached'
 import type { UploadProps } from 'antd'
 import { Upload, Pagination, Popover, message } from 'antd'
-import { sendSpaceGetRequest, sendSpacePostRequest, sendSpaceUploadPostRequest } from '@/utils/request';
+import {
+  sendSpacePostRequest,
+  sendSpaceUploadPostRequest
+} from '@/utils/request'
 
 const { Dragger } = Upload
 const Item = styled(Sheet)(({ theme }) => ({
@@ -95,10 +98,13 @@ const Documents = () => {
   }
   useEffect(() => {
     async function fetchDocuments() {
-      const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/list`, {
-        page: 1,
-        page_size
-      })
+      const data = await sendSpacePostRequest(
+        `/knowledge/${spaceName}/document/list`,
+        {
+          page: 1,
+          page_size
+        }
+      )
       if (data.success) {
         setDocuments(data.data.data)
         setTotal(data.data.total)
@@ -235,9 +241,12 @@ const Documents = () => {
                             marginRight: '20px'
                           }}
                           onClick={async () => {
-                            const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/sync`, {
-                              doc_ids: [row.id]
-                            })
+                            const data = await sendSpacePostRequest(
+                              `/knowledge/${spaceName}/document/sync`,
+                              {
+                                doc_ids: [row.id]
+                              }
+                            )
                             if (data.success) {
                               message.success('success')
                             } else {
@@ -245,7 +254,8 @@ const Documents = () => {
                             }
                           }}
                         >
-                          Synch<CachedIcon />
+                          Synch
+                          <CachedIcon />
                         </Button>
                         <Button
                           variant="outlined"
@@ -278,10 +288,13 @@ const Documents = () => {
               current={current}
               total={total}
               onChange={async (page) => {
-                const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/list`, {
-                  page,
-                  page_size
-                })
+                const data = await sendSpacePostRequest(
+                  `/knowledge/${spaceName}/document/list`,
+                  {
+                    page,
+                    page_size
+                  }
+                )
                 if (data.success) {
                   setDocuments(data.data.data)
                   setTotal(data.data.total)
@@ -324,7 +337,11 @@ const Documents = () => {
                     color: activeStep === index ? '#2AA3FF' : ''
                   }}
                 >
-                  {index < activeStep ? <CheckCircleOutlinedIcon /> : `${index + 1}.`}
+                  {index < activeStep ? (
+                    <CheckCircleOutlinedIcon />
+                  ) : (
+                    `${index + 1}.`
+                  )}
                   {`${item}`}
                 </Item>
               ))}
@@ -455,23 +472,32 @@ const Documents = () => {
                         message.error('Please input the Web Page URL')
                         return
                       }
-                      const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/add`, {
-                        doc_name: documentName,
-                        content: webPageUrl,
-                        doc_type: 'URL'
-                      })
+                      const data = await sendSpacePostRequest(
+                        `/knowledge/${spaceName}/document/add`,
+                        {
+                          doc_name: documentName,
+                          content: webPageUrl,
+                          doc_type: 'URL'
+                        }
+                      )
                       data.success &&
                         synchChecked &&
-                        sendSpacePostRequest(`/knowledge/${spaceName}/document/sync`, {
-                          doc_ids: [data.data]
-                        })
+                        sendSpacePostRequest(
+                          `/knowledge/${spaceName}/document/sync`,
+                          {
+                            doc_ids: [data.data]
+                          }
+                        )
                       if (data.success) {
                         message.success('success')
                         setIsAddDocumentModalShow(false)
-                        const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/list`, {
-                          page: current,
-                          page_size
-                        })
+                        const data = await sendSpacePostRequest(
+                          `/knowledge/${spaceName}/document/list`,
+                          {
+                            page: current,
+                            page_size
+                          }
+                        )
                         if (data.success) {
                           setDocuments(data.data.data)
                           setTotal(data.data.total)
@@ -489,19 +515,28 @@ const Documents = () => {
                       formData.append('doc_name', documentName)
                       formData.append('doc_file', originFileObj)
                       formData.append('doc_type', 'DOCUMENT')
-                      const data = await sendSpaceUploadPostRequest(`/knowledge/${spaceName}/document/upload`, formData);
+                      const data = await sendSpaceUploadPostRequest(
+                        `/knowledge/${spaceName}/document/upload`,
+                        formData
+                      )
                       data.success &&
                         synchChecked &&
-                        sendSpacePostRequest(`/knowledge/${spaceName}/document/sync`, {
-                          doc_ids: [data.data]
-                        })
+                        sendSpacePostRequest(
+                          `/knowledge/${spaceName}/document/sync`,
+                          {
+                            doc_ids: [data.data]
+                          }
+                        )
                       if (data.success) {
                         message.success('success')
                         setIsAddDocumentModalShow(false)
-                        const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/list`, {
-                          page: current,
-                          page_size
-                        })
+                        const data = await sendSpacePostRequest(
+                          `/knowledge/${spaceName}/document/list`,
+                          {
+                            page: current,
+                            page_size
+                          }
+                        )
                         if (data.success) {
                           setDocuments(data.data.data)
                           setTotal(data.data.total)
@@ -515,24 +550,33 @@ const Documents = () => {
                         message.error('Please input the text')
                         return
                       }
-                      const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/add`, {
-                        doc_name: documentName,
-                        source: textSource,
-                        content: text,
-                        doc_type: 'TEXT'
-                      })
+                      const data = await sendSpacePostRequest(
+                        `/knowledge/${spaceName}/document/add`,
+                        {
+                          doc_name: documentName,
+                          source: textSource,
+                          content: text,
+                          doc_type: 'TEXT'
+                        }
+                      )
                       data.success &&
                         synchChecked &&
-                        sendSpacePostRequest(`/knowledge/${spaceName}/document/sync`, {
-                          doc_ids: [data.data]
-                        })
+                        sendSpacePostRequest(
+                          `/knowledge/${spaceName}/document/sync`,
+                          {
+                            doc_ids: [data.data]
+                          }
+                        )
                       if (data.success) {
                         message.success('success')
                         setIsAddDocumentModalShow(false)
-                        const data = await sendSpacePostRequest(`/knowledge/${spaceName}/document/list`, {
-                          page: current,
-                          page_size
-                        });
+                        const data = await sendSpacePostRequest(
+                          `/knowledge/${spaceName}/document/list`,
+                          {
+                            page: current,
+                            page_size
+                          }
+                        )
                         if (data.success) {
                           setDocuments(data.data.data)
                           setTotal(data.data.total)
