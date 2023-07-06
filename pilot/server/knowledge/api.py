@@ -56,9 +56,11 @@ def space_list(request: KnowledgeSpaceRequest):
 def document_add(space_name: str, request: KnowledgeDocumentRequest):
     print(f"/document/add params: {space_name}, {request}")
     try:
-        return Result.succ(knowledge_space_service.create_knowledge_document(
-            space=space_name, request=request
-        ))
+        return Result.succ(
+            knowledge_space_service.create_knowledge_document(
+                space=space_name, request=request
+            )
+        )
         # return Result.succ([])
     except Exception as e:
         return Result.faild(code="E000X", msg=f"document add error {e}")
@@ -106,9 +108,11 @@ async def document_upload(
                         KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
                     ),
                 )
-                return Result.succ(knowledge_space_service.create_knowledge_document(
-                    space=space_name, request=request
-                ))
+                return Result.succ(
+                    knowledge_space_service.create_knowledge_document(
+                        space=space_name, request=request
+                    )
+                )
                 # return Result.succ([])
         return Result.faild(code="E000X", msg=f"doc_file is None")
     except Exception as e:

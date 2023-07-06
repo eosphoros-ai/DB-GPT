@@ -32,7 +32,6 @@ from pilot.openapi.api_v1.api_v1 import router as api_v1, validation_exception_h
 static_file_path = os.path.join(os.getcwd(), "server/static")
 
 
-
 CFG = Config()
 logger = build_logger("webserver", LOGDIR + "webserver.log")
 
@@ -66,7 +65,7 @@ app.add_middleware(
 )
 
 
-app.include_router(api_v1,  prefix="/api")
+app.include_router(api_v1, prefix="/api")
 app.include_router(knowledge_router, prefix="/api")
 
 app.include_router(api_v1)
@@ -75,7 +74,6 @@ app.include_router(knowledge_router)
 app.mount("/_next/static", StaticFiles(directory=static_file_path + "/_next/static"))
 app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
 # app.mount("/chat", StaticFiles(directory=static_file_path + "/chat.html", html=True), name="chat")
-
 
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
@@ -91,7 +89,13 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument("--share", default=False, action="store_true")
-    parser.add_argument("-light", "--light", default=False,action="store_true", help="enable light mode")
+    parser.add_argument(
+        "-light",
+        "--light",
+        default=False,
+        action="store_true",
+        help="enable light mode",
+    )
     signal.signal(signal.SIGINT, signal_handler)
 
     # init server config
@@ -101,10 +105,12 @@ if __name__ == "__main__":
     if not args.light:
         print("Model Unified Deployment Mode!")
         from pilot.server.llmserver import worker
+
         worker.start_check()
         CFG.NEW_SERVER_MODE = True
     else:
         CFG.SERVER_LIGHT_MODE = True
 
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=args.port)
