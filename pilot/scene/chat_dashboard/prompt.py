@@ -13,8 +13,14 @@ PROMPT_SCENE_DEFINE = """You are a {dialect} data analysis expert, please provid
 _DEFAULT_TEMPLATE = """
 According to the structure definition in the following tables:
 {table_info}
-Provide professional data analysis, use as few dimensions as possible, but no less than three, and no more than eight dimensions.
-Used to support goal: {input}
+Provide professional data analysis to support the goal: 
+{input}
+
+Constraint:
+Provide multi-dimensional analysis as much as possible according to the target requirements, no less than three and no more than 8 dimensions.
+The data columns of the analysis output should not exceed 4.
+According to the characteristics of the analyzed data, choose the most suitable one from the charts provided below for display, chart type:
+{supported_chat_type}
 
 Pay attention to the length of the output content of the analysis result, do not exceed 4000tokens
 According to the characteristics of the analyzed data, choose the best one from the charts provided below to display, use different types of charts as much as possible，chart types:
@@ -22,7 +28,7 @@ According to the characteristics of the analyzed data, choose the best one from 
 
 Give {dialect} data analysis SQL, analysis title, display method and analytical thinking,respond in the following json format:
 {response}
-Do not use unprovided fields and do not use unprovided data in the where condition of sql.
+Do not use unprovided fields and value in the where condition of sql.
 Ensure the response is correct json and can be parsed by Python json.loads
 """
 
