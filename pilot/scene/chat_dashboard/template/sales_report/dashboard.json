@@ -3,7 +3,8 @@
   "name": "sale_report",
   "introduce": "",
   "layout": "TODO",
-  "supported_chart_type":["FacetChart", "GaugeChart", "RadarChart", "Sheet", "LineChart", "PieChart", "BarChart", "PointChart", "KeyMetrics"],
+  "supported_chart_type":[ "Table", "LineChart",  "BarChart", "IndicatorValue"],
   "key_metrics":[],
   "trends": []
 }
+

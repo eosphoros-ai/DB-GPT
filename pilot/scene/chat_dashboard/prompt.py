@@ -16,8 +16,7 @@ According to the structure definition in the following tables:
 Provide professional data analysis to support the goal: 
 {input}
 
-Constraint:
-Provide multi-dimensional analysis as much as possible according to the target requirements, no less than three and no more than 8 dimensions.
+Provide multi-dimensional analysis as much as possible according to the target requirements, no less than 3 and no more than 8 dimensions.
 The data columns of the analysis output should not exceed 4.
 According to the characteristics of the analyzed data, choose the most suitable one from the charts provided below for display, chart type:
 {supported_chat_type}
@@ -26,9 +25,8 @@ Pay attention to the length of the output content of the analysis result, do not
 According to the characteristics of the analyzed data, choose the best one from the charts provided below to display, use different types of charts as much as possible，chart types:
 {supported_chat_type}
 
-Give {dialect} data analysis SQL, analysis title, display method and analytical thinking,respond in the following json format:
+Give {dialect} data analysis SQL and do not use value not provided in sql, analysis title, display method and analytical thinking,respond in the following json format:
 {response}
-Do not use unprovided fields and value in the where condition of sql.
 Ensure the response is correct json and can be parsed by Python json.loads
 """
 
