@@ -14,7 +14,7 @@ class Scene:
 class ChatScene(Enum):
     ChatWithDbExecute = Scene("chat_with_db_execute", "Chat Data",
                               "Dialogue with your private data through natural language.", ["DB Select"])
-    ChatWithDbQA = Scene("chat_with_db_qa", "Chat Meta Data", "Have a Professional Conversation with Metadata.",
+    ChatWithDbQA = Scene("chat_with_db_qa", "Chat DB", "Have a Professional Conversation with Metadata.",
                          ["DB Select"])
     ChatExecution = Scene("chat_execution", "Plugin", "Use tools through dialogue to accomplish your goals.",
                           ["Plugin Select"])
