@@ -64,7 +64,6 @@ const documentTypeList = [
 
 const Index = () => {
   const router = useRouter()
-  const { mode } = useColorScheme()
   const [activeStep, setActiveStep] = useState<number>(0)
   const [documentType, setDocumentType] = useState<string>('')
   const [knowledgeSpaceList, setKnowledgeSpaceList] = useState<any>([])
