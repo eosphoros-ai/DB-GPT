@@ -96,7 +96,6 @@ import { useDialogueContext } from '@/app/context/dialogue';
 						throw new Error(err);
           },
           onmessage: (event) => {
-            console.log(event, 'e');
             event.data = event.data.replaceAll('\\n', '\n');
             
             if (event.data === '[DONE]') {
@@ -129,7 +128,7 @@ import { useDialogueContext } from '@/app/context/dialogue';
           },
         });
       } catch (err) {
-        console.log('---e', err);
+        console.log(err);
 
 				setState({
 					history: [
