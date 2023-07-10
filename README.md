@@ -44,6 +44,33 @@ Run on an RTX 4090 GPU.
       <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
 </videos> -->
 
+<p align="left">
+  <img src="./assets/dbgpt_demo.gif" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/dashboard.png" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/chatSQL.png" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/chatdb.png" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/chatdata.png" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/ks.png" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/chat_knowledge.png" width="800px" />
+</p>
 
 
 
@@ -125,6 +152,12 @@ This project is standing on the shoulders of giants and is not going to work wit
 ## Contribution
 
 - Please run `black .` before submitting the code.
+
+## RoadMap
+
+<p align="left">
+  <img src="./assets/roadmap.jpg" width="800px" />
+</p>
 
 ## Licence
 
