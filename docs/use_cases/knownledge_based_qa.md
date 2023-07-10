@@ -11,9 +11,9 @@ vector_store_config = {
 
 file_path = "your file path"
 
-knowledge_embedding_client = KnowledgeEmbedding(file_path=file_path, model_name=LLM_MODEL_CONFIG["text2vec"], vector_store_config=vector_store_config)
+embedding_engine = EmbeddingEngine(file_path=file_path, model_name=LLM_MODEL_CONFIG["text2vec"], vector_store_config=vector_store_config)
 
-knowledge_embedding_client.knowledge_embedding()
+embedding_engine.knowledge_embedding()
 
 ```
 
@@ -37,7 +37,7 @@ vector_store_config = {
 
 query = "your query"
 
-knowledge_embedding_client = KnowledgeEmbedding(file_path="", model_name=LLM_MODEL_CONFIG["text2vec"], vector_store_config=vector_store_config)
+embedding_engine = EmbeddingEngine(file_path="", model_name=LLM_MODEL_CONFIG["text2vec"], vector_store_config=vector_store_config)
 
-knowledge_embedding_client.similar_search(query, 10)
+embedding_engine.similar_search(query, 10)
 ```
