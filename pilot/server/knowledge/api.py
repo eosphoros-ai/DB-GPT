@@ -10,7 +10,7 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 
 from pilot.openapi.api_v1.api_view_model import Result
-from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 
 from pilot.server.knowledge.service import KnowledgeService
 from pilot.server.knowledge.request.request import (
@@ -143,7 +143,7 @@ def document_list(space_name: str, query_request: ChunkQueryRequest):
 @router.post("/knowledge/{vector_name}/query")
 def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
     print(f"Received params: {space_name}, {query_request}")
-    client = KnowledgeEmbedding(
+    client = EmbeddingEngine(
         model_name=embeddings, vector_store_config={"vector_store_name": space_name}
     )
     docs = client.similar_search(query_request.query, query_request.top_k)

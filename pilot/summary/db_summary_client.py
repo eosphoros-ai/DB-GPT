@@ -7,7 +7,7 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
 from pilot.scene.base import ChatScene
 from pilot.scene.base_chat import BaseChat
-from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 from pilot.embedding_engine.string_embedding import StringEmbedding
 from pilot.summary.mysql_db_summary import MysqlSummary
 from pilot.scene.chat_factory import ChatFactory
@@ -74,7 +74,7 @@ class DBSummaryClient:
         vector_store_config = {
             "vector_store_name": dbname + "_profile",
         }
-        knowledge_embedding_client = KnowledgeEmbedding(
+        knowledge_embedding_client = EmbeddingEngine(
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
         )
@@ -87,7 +87,7 @@ class DBSummaryClient:
         vector_store_config = {
             "vector_store_name": dbname + "_summary",
         }
-        knowledge_embedding_client = KnowledgeEmbedding(
+        knowledge_embedding_client = EmbeddingEngine(
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
         )
@@ -110,7 +110,7 @@ class DBSummaryClient:
             vector_store_config = {
                 "vector_store_name": dbname + "_" + table + "_ts",
             }
-            knowledge_embedding_client = KnowledgeEmbedding(
+            knowledge_embedding_client = EmbeddingEngine(
                 file_path="",
                 model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
                 vector_store_config=vector_store_config,

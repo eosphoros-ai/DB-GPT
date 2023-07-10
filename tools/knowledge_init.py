@@ -16,7 +16,7 @@ from pilot.configs.model_config import (
     DATASETS_DIR,
     LLM_MODEL_CONFIG,
 )
-from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 
 knowledge_space_service = KnowledgeService()
 
@@ -37,7 +37,7 @@ class LocalKnowledgeInit:
         for root, _, files in os.walk(file_path, topdown=False):
             for file in files:
                 filename = os.path.join(root, file)
-                ke = KnowledgeEmbedding(
+                ke = EmbeddingEngine(
                     knowledge_source=filename,
                     knowledge_type=KnowledgeType.DOCUMENT.value,
                     model_name=self.model_name,
