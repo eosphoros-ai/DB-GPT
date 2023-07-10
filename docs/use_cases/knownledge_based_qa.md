@@ -37,7 +37,7 @@ vector_store_config = {
 
 query = "your query"
 
-embedding_engine = EmbeddingEngine(file_path="", model_name=LLM_MODEL_CONFIG["text2vec"], vector_store_config=vector_store_config)
+embedding_engine = EmbeddingEngine(knowledge_source=url, knowledge_type=KnowledgeType.URL.value, model_name=embedding_model, vector_store_config=vector_store_config)
 
 embedding_engine.similar_search(query, 10)
 ```
