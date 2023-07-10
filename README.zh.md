@@ -61,27 +61,35 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
 
+#### 根据自然语言对话生成分析图表
 
 <p align="left">
   <img src="./assets/dashboard.png" width="800px" />
 </p>
 
+
+#### 根据自然语言对话生成SQL
 <p align="left">
   <img src="./assets/chatSQL.png" width="800px" />
 </p>
 
+#### 与数据库元数据信息进行对话, 生成准确SQL语句
 <p align="left">
   <img src="./assets/chatdb.png" width="800px" />
 </p>
 
+
+#### 与数据对话, 直接查看执行结果
 <p align="left">
   <img src="./assets/chatdata.png" width="800px" />
 </p>
 
+#### 知识库管理
 <p align="left">
   <img src="./assets/ks.png" width="800px" />
 </p>
 
+#### 根据知识库对话, 比如pdf、csv、txt、words等等.
 <p align="left">
   <img src="./assets/chat_knowledge.png" width="800px" />
 </p>
