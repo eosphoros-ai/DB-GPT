@@ -19,8 +19,51 @@
 
 DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密
 
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+
+
 [DB-GPT视频介绍](https://www.bilibili.com/video/BV1SM4y1a7Nj/?buvid=551b023900b290f9497610b2155a2668&is_story_h5=false&mid=%2BVyE%2Fwau5woPcUKieCWS0A%3D%3D&p=1&plat_id=116&share_from=ugc&share_medium=iphone&share_plat=ios&share_session_id=5D08B533-82A4-4D40-9615-7826065B4574&share_source=GENERIC&share_tag=s_i&timestamp=1686307943&unique_k=bhO3lgQ&up_id=31375446)  
 
+
+## 效果演示
+
+示例通过 RTX 4090 GPU 演示
+
+
+https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
+
+#### 根据自然语言对话生成分析图表
+
+<p align="left">
+  <img src="./assets/dashboard.png" width="800px" />
+</p>
+
+
+#### 根据自然语言对话生成SQL
+<p align="left">
+  <img src="./assets/chatSQL.png" width="800px" />
+</p>
+
+#### 与数据库元数据信息进行对话, 生成准确SQL语句
+<p align="left">
+  <img src="./assets/chatdb.png" width="800px" />
+</p>
+
+
+#### 与数据对话, 直接查看执行结果
+<p align="left">
+  <img src="./assets/chatdata.png" width="800px" />
+</p>
+
+#### 知识库管理
+<p align="left">
+  <img src="./assets/ks.png" width="800px" />
+</p>
+
+#### 根据知识库对话, 比如pdf、csv、txt、words等等.
+<p align="left">
+  <img src="./assets/chat_knowledge.png" width="800px" />
+</p>
 
 ## 最新发布
 - [2023/07/06]🔥🔥🔥 全新的DB-GPT产品。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)
@@ -54,37 +97,6 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
   - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b)
   - TODO: codet5p, codegen2
 
-## 效果演示
-
-示例通过 RTX 4090 GPU 演示
-
-
-https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
-
-
-<p align="left">
-  <img src="./assets/dashboard.png" width="800px" />
-</p>
-
-<p align="left">
-  <img src="./assets/chatSQL.png" width="800px" />
-</p>
-
-<p align="left">
-  <img src="./assets/chatdb.png" width="800px" />
-</p>
-
-<p align="left">
-  <img src="./assets/chatdata.png" width="800px" />
-</p>
-
-<p align="left">
-  <img src="./assets/ks.png" width="800px" />
-</p>
-
-<p align="left">
-  <img src="./assets/chat_knowledge.png" width="800px" />
-</p>
 
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。
@@ -166,6 +178,4 @@ Run the Python interpreter and type the commands:
 ## Licence
 
 The MIT License (MIT)
-
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
