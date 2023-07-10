@@ -29,6 +29,10 @@ DEVICE = (
     if torch.backends.mps.is_available()
     else "cpu"
 )
+
+# cpu numbers（Modify based on the actual number of GPUs）
+NUM_GPUS = 4
+
 LLM_MODEL_CONFIG = {
     "flan-t5-base": os.path.join(MODEL_PATH, "flan-t5-base"),
     "vicuna-13b": os.path.join(MODEL_PATH, "vicuna-13b"),
