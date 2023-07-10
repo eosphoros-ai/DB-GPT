@@ -8,15 +8,16 @@ from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = """You are a {dialect} data analysis expert, please provide a professional data analysis solution according to the following situations"""
+PROMPT_SCENE_DEFINE = None
 
 _DEFAULT_TEMPLATE = """
+You are a {dialect} data analysis expert, please provide a professional data analysis solution according to the following situations
 According to the structure definition in the following tables:
 {table_info}
 Provide professional data analysis to support the goal: 
 {input}
 
-Provide multi-dimensional analysis as much as possible according to the target requirements, no less than 3 and no more than 8 dimensions.
+Provide multi-dimensional analysis as much as possible according to the target requirements, no less than 4 and no more than 8 dimensions.
 The data columns of the analysis output should not exceed 4.
 According to the characteristics of the analyzed data, choose the most suitable one from the charts provided below for display, chart type:
 {supported_chat_type}
@@ -25,9 +26,11 @@ Pay attention to the length of the output content of the analysis result, do not
 According to the characteristics of the analyzed data, choose the best one from the charts provided below to display, use different types of charts as much as possible，chart types:
 {supported_chat_type}
 
-Give {dialect} data analysis SQL and do not use value not provided in sql, analysis title, display method and analytical thinking,respond in the following json format:
+Do not use unprovided fields and field value in data analysis SQL.
+Give {dialect} data analysis SQL, analysis title, display method and analytical thinking,respond in the following json format:
 {response}
 Ensure the response is correct json and can be parsed by Python json.loads
+
 """
 
 RESPONSE_FORMAT = [
@@ -55,3 +58,5 @@ prompt = PromptTemplate(
     ),
 )
 CFG.prompt_templates.update({prompt.template_scene: prompt})
+
+
