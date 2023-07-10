@@ -58,8 +58,32 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 示例通过 RTX 4090 GPU 演示
 
+
+https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
+
+
 <p align="left">
-  <img src="./assets/dbgpt_demo.gif" width="800px" />
+  <img src="./assets/dashboard.png" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/chatSQL.png" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/chatdb.png" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/chatdata.png" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/ks.png" width="800px" />
+</p>
+
+<p align="left">
+  <img src="./assets/chat_knowledge.png" width="800px" />
 </p>
 
 ## 架构方案
@@ -124,6 +148,14 @@ Run the Python interpreter and type the commands:
 - 提交代码前请先执行 `black .`
 
 这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布一些新的feature。如在使用当中有任何具体问题, 优先在项目下提issue, 如有需要, 请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
+
+
+
+# 路线图
+
+<p align="left">
+  <img src="./assets/roadmap.jpg" width="800px" />
+</p>
 
 ## 联系我们
 微信群已超扫码加群上限, 进群请添加如下微信帮拉进群。
