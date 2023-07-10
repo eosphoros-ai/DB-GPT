@@ -8,7 +8,6 @@ from langchain.text_splitter import SpacyTextSplitter, RecursiveCharacterTextSpl
 
 from pilot.configs.config import Config
 from pilot.embedding_engine import SourceEmbedding, register
-from pilot.embedding_engine.chn_document_splitter import CHNDocumentSplitter
 
 CFG = Config()
 

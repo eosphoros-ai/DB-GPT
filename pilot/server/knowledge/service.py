@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
-from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 from pilot.logs import logger
 from pilot.server.knowledge.chunk_db import (
     DocumentChunkEntity,
@@ -122,7 +122,7 @@ class KnowledgeService:
                 raise Exception(
                     f" doc:{doc.doc_name} status is {doc.status}, can not sync"
                 )
-            client = KnowledgeEmbedding(
+            client = EmbeddingEngine(
                 knowledge_source=doc.content,
                 knowledge_type=doc.doc_type.upper(),
                 model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
