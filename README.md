@@ -82,6 +82,11 @@ Is the architecture of the entire DB-GPT shown in the following figure:
   <img src="./assets/DB-GPT.png" width="800" />
 </p>
 
+
+https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
+
+
+
 The core capabilities mainly consist of the following parts:
 1. Knowledge base capability: Supports private domain knowledge base question-answering capability.
 2. Large-scale model management capability: Provides a large model operating environment based on FastChat.
