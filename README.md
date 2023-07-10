@@ -41,30 +41,37 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
       <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
 </videos> -->
 
+
+#### Chat with data, and figure charts.
+
 <p align="left">
   <img src="./assets/dashboard.png" width="800px" />
 </p>
 
+#### Text2SQL, generate SQL from chat
 <p align="left">
   <img src="./assets/chatSQL.png" width="800px" />
 </p>
 
+#### Chat with database meta information.
 <p align="left">
   <img src="./assets/chatdb.png" width="800px" />
 </p>
 
+#### Chat with data, and execute results.
 <p align="left">
   <img src="./assets/chatdata.png" width="800px" />
 </p>
 
+#### Knownledge space to manage docs.
 <p align="left">
   <img src="./assets/ks.png" width="800px" />
 </p>
 
+#### Chat with knowledge, such as txt、pdf、csv、words. etc
 <p align="left">
   <img src="./assets/chat_knowledge.png" width="800px" />
 </p>
-
 
 
 
