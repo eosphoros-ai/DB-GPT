@@ -19,40 +19,11 @@
 
 DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密
 
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+
+
 [DB-GPT视频介绍](https://www.bilibili.com/video/BV1SM4y1a7Nj/?buvid=551b023900b290f9497610b2155a2668&is_story_h5=false&mid=%2BVyE%2Fwau5woPcUKieCWS0A%3D%3D&p=1&plat_id=116&share_from=ugc&share_medium=iphone&share_plat=ios&share_session_id=5D08B533-82A4-4D40-9615-7826065B4574&share_source=GENERIC&share_tag=s_i&timestamp=1686307943&unique_k=bhO3lgQ&up_id=31375446)  
 
-
-## 最新发布
-- [2023/07/06]🔥🔥🔥 全新的DB-GPT产品。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)
-- [2023/06/25]🔥 支持ChatGLM2-6B模型。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
-- [2023/06/14]🔥 支持gpt4all模型，可以在M1/M2 或者CPU机器上运行。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
-- [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.
-- [2023/06/01]🔥 QLoRA guanaco(原驼)支持, 支持4090运行33B
-- [2023/05/28]🔥根据URL进行对话 [演示](./assets/chat_url_zh.gif)
-- [2023/05/21] SQL生成与自动执行. [演示](./assets/auto_sql.gif)
-- [2023/05/15] 知识库对话 [演示](./assets/new_knownledge.gif)
-- [2023/05/06] SQL生成与诊断 [演示](./assets/演示.gif)
-
-## 特性一览
-
-目前我们已经发布了多种关键的特性，这里一一列举展示一下当前发布的能力。
-- SQL 语言能力
-  - SQL生成
-  - SQL诊断
-- 私域问答与数据处理
-  - 知识库管理(目前支持 txt, pdf, md, html, doc, ppt, and url)
-  - 数据库知识问答
-  - 数据处理
-- 插件模型
-  - 支持自定义插件执行任务，原生支持Auto-GPT插件。如:
-    - SQL自动执行，获取查询结果
-    - 自动爬取学习知识
-- 知识库统一向量存储/索引
-  - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
-
-- 多模型支持
-  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b)
-  - TODO: codet5p, codegen2
 
 ## 效果演示
 
@@ -93,6 +64,39 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
 <p align="left">
   <img src="./assets/chat_knowledge.png" width="800px" />
 </p>
+
+## 最新发布
+- [2023/07/06]🔥🔥🔥 全新的DB-GPT产品。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)
+- [2023/06/25]🔥 支持ChatGLM2-6B模型。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
+- [2023/06/14]🔥 支持gpt4all模型，可以在M1/M2 或者CPU机器上运行。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
+- [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.
+- [2023/06/01]🔥 QLoRA guanaco(原驼)支持, 支持4090运行33B
+- [2023/05/28]🔥根据URL进行对话 [演示](./assets/chat_url_zh.gif)
+- [2023/05/21] SQL生成与自动执行. [演示](./assets/auto_sql.gif)
+- [2023/05/15] 知识库对话 [演示](./assets/new_knownledge.gif)
+- [2023/05/06] SQL生成与诊断 [演示](./assets/演示.gif)
+
+## 特性一览
+
+目前我们已经发布了多种关键的特性，这里一一列举展示一下当前发布的能力。
+- SQL 语言能力
+  - SQL生成
+  - SQL诊断
+- 私域问答与数据处理
+  - 知识库管理(目前支持 txt, pdf, md, html, doc, ppt, and url)
+  - 数据库知识问答
+  - 数据处理
+- 插件模型
+  - 支持自定义插件执行任务，原生支持Auto-GPT插件。如:
+    - SQL自动执行，获取查询结果
+    - 自动爬取学习知识
+- 知识库统一向量存储/索引
+  - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
+
+- 多模型支持
+  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b)
+  - TODO: codet5p, codegen2
+
 
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。
@@ -174,6 +178,4 @@ Run the Python interpreter and type the commands:
 ## Licence
 
 The MIT License (MIT)
-
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
