@@ -10,7 +10,7 @@ from pilot.vector_store.connector import VectorStoreConnector
 CFG = Config()
 
 
-class KnowledgeEmbedding:
+class EmbeddingEngine:
     def __init__(
         self,
         model_name,
