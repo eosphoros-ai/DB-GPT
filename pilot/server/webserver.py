@@ -665,6 +665,7 @@ def knowledge_embedding_store(vs_id, files):
             model_name=LLM_MODEL_CONFIG["text2vec"],
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
+                "vector_store_type": CFG.VECTOR_STORE_TYPE,
                 "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             },
         )
