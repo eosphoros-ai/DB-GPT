@@ -114,7 +114,7 @@ class ChatGLMAdapater(BaseLLMAdaper):
     def match(self, model_path: str):
         return "chatglm" in model_path
 
-    def loader(self, model_path: str, from_pretrained_kwargs: dict, device_map=None, num_gpus=cfg.NUM_GPUS):
+    def loader(self, model_path: str, from_pretrained_kwargs: dict, device_map=None, num_gpus=CFG.NUM_GPUS):
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
         if DEVICE != "cuda":
