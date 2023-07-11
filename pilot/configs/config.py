@@ -28,6 +28,8 @@ class Config(metaclass=Singleton):
         self.skip_reprompt = False
         self.temperature = float(os.getenv("TEMPERATURE", 0.7))
 
+        self.NUM_GPUS = int(os.getenv("NUM_GPUS",1))
+
         self.execute_local_commands = (
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
         )
