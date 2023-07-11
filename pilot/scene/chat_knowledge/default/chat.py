@@ -38,7 +38,8 @@ class ChatDefaultKnowledge(BaseChat):
         )
         vector_store_config = {
             "vector_store_name": "default",
-            "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+            "vector_store_type": CFG.VECTOR_STORE_TYPE,
+            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         self.knowledge_embedding_client = EmbeddingEngine(
             model_name=LLM_MODEL_CONFIG["text2vec"],

@@ -26,7 +26,7 @@ before execution:
 ::
 
     url = "https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html"
-    embedding_model = "text2vec"
+    embedding_model = "your_model_path/all-MiniLM-L6-v2"
     vector_store_config = {
             "vector_store_name": your_name,
         }
@@ -43,9 +43,11 @@ Document type can be .txt, .pdf, .md, .doc, .ppt.
 ::
 
     document_path = "your_path/test.md"
-    embedding_model = "text2vec"
+    embedding_model = "your_model_path/all-MiniLM-L6-v2"
     vector_store_config = {
             "vector_store_name": your_name,
+            "vector_store_type": "Chroma",
+            "chroma_persist_path": "your_persist_dir",
         }
     embedding_engine = EmbeddingEngine(
                         knowledge_source=document_path,
@@ -59,7 +61,7 @@ Document type can be .txt, .pdf, .md, .doc, .ppt.
 ::
 
     raw_text = "a long passage"
-    embedding_model = "text2vec"
+    embedding_model = "your_model_path/all-MiniLM-L6-v2"
     vector_store_config = {
             "vector_store_name": your_name,
         }

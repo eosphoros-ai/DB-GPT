@@ -32,10 +32,16 @@ Below is an example of using the knowledge base API to query knowledge:
 
 ```
 vector_store_config = {
-    "vector_store_name": name
+            "vector_store_name": your_name,
+            "vector_store_type": "Chroma",
+            "chroma_persist_path": "your_persist_dir",
 }
 
+integrate
+
 query = "your query"
+
+embedding_model = "your_model_path/all-MiniLM-L6-v2"
 
 embedding_engine = EmbeddingEngine(knowledge_source=url, knowledge_type=KnowledgeType.URL.value, model_name=embedding_model, vector_store_config=vector_store_config)
 
