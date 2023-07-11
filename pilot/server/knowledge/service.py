@@ -2,7 +2,7 @@ import threading
 from datetime import datetime
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import LLM_MODEL_CONFIG
+from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 from pilot.logs import logger
 from pilot.server.knowledge.chunk_db import (
@@ -128,6 +128,8 @@ class KnowledgeService:
                 model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
                 vector_store_config={
                     "vector_store_name": space_name,
+                    "vector_store_type": CFG.VECTOR_STORE_TYPE,
+                    "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
                 },
             )
             chunk_docs = client.read()

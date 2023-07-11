@@ -3,11 +3,8 @@ from typing import Optional
 from chromadb.errors import NotEnoughElementsException
 from langchain.embeddings import HuggingFaceEmbeddings
 
-from pilot.configs.config import Config
 from pilot.embedding_engine.knowledge_type import get_knowledge_embedding, KnowledgeType
 from pilot.vector_store.connector import VectorStoreConnector
-
-CFG = Config()
 
 
 class EmbeddingEngine:
@@ -45,7 +42,7 @@ class EmbeddingEngine:
 
     def similar_search(self, text, topk):
         vector_client = VectorStoreConnector(
-            CFG.VECTOR_STORE_TYPE, self.vector_store_config
+            self.vector_store_config["vector_store_type"], self.vector_store_config
         )
         try:
             ans = vector_client.similar_search(text, topk)
@@ -55,12 +52,12 @@ class EmbeddingEngine:
 
     def vector_exist(self):
         vector_client = VectorStoreConnector(
-            CFG.VECTOR_STORE_TYPE, self.vector_store_config
+            self.vector_store_config["vector_store_type"], self.vector_store_config
         )
         return vector_client.vector_name_exists()
 
     def delete_by_ids(self, ids):
         vector_client = VectorStoreConnector(
-            CFG.VECTOR_STORE_TYPE, self.vector_store_config
+            self.vector_store_config["vector_store_type"], self.vector_store_config
         )
         vector_client.delete_by_ids(ids=ids)

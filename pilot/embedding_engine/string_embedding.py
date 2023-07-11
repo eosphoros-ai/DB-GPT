@@ -8,11 +8,12 @@ from pilot.embedding_engine import SourceEmbedding, register
 class StringEmbedding(SourceEmbedding):
     """string embedding for read string document."""
 
-    def __init__(self, file_path, vector_store_config):
-        """Initialize with pdf path."""
-        super().__init__(file_path, vector_store_config)
+    def __init__(self, file_path, vector_store_config, text_splitter=None):
+        """Initialize raw text word path."""
+        super().__init__(file_path, vector_store_config, text_splitter=None)
         self.file_path = file_path
         self.vector_store_config = vector_store_config
+        self.text_splitter = text_splitter or None
 
     @register
     def read(self):

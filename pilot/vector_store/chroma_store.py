@@ -1,7 +1,6 @@
 import os
 
 from langchain.vectorstores import Chroma
-from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.logs import logger
 from pilot.vector_store.vector_store_base import VectorStoreBase
 
@@ -13,7 +12,7 @@ class ChromaStore(VectorStoreBase):
         self.ctx = ctx
         self.embeddings = ctx["embeddings"]
         self.persist_dir = os.path.join(
-            KNOWLEDGE_UPLOAD_ROOT_PATH, ctx["vector_store_name"] + ".vectordb"
+            ctx["chroma_persist_path"], ctx["vector_store_name"] + ".vectordb"
         )
         self.vector_store_client = Chroma(
             persist_directory=self.persist_dir, embedding_function=self.embeddings

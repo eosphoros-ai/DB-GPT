@@ -9,17 +9,12 @@ from pilot.embedding_engine import SourceEmbedding, register
 class CSVEmbedding(SourceEmbedding):
     """csv embedding for read csv document."""
 
-    def __init__(
-        self,
-        file_path,
-        vector_store_config,
-        embedding_args: Optional[Dict] = None,
-    ):
+    def __init__(self, file_path, vector_store_config, text_splitter=None):
         """Initialize with csv path."""
-        super().__init__(file_path, vector_store_config)
+        super().__init__(file_path, vector_store_config, text_splitter=None)
         self.file_path = file_path
         self.vector_store_config = vector_store_config
-        self.embedding_args = embedding_args
+        self.text_splitter = text_splitter or None
 
     @register
     def read(self):
