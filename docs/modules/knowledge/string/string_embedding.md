@@ -1,11 +1,9 @@
-from typing import List, Optional
+String
+==================================
+string embedding can import a long raw text into a vector knowledge base. The entire embedding process includes the read (loading data), data_process (data processing), and index_to_store (embedding to the vector database) methods.
 
-from langchain.schema import Document
-from langchain.text_splitter import TextSplitter
-
-from pilot.embedding_engine import SourceEmbedding, register
-
-
+inheriting the SourceEmbedding
+```
 class StringEmbedding(SourceEmbedding):
     """string embedding for read string document."""
 
@@ -20,17 +18,24 @@ class StringEmbedding(SourceEmbedding):
         self.file_path = file_path
         self.vector_store_config = vector_store_config
         self.text_splitter = text_splitter or None
+```
 
-    @register
+implement read() and data_process()
+read() method allows you to read data and split data into chunk
+```
+@register
     def read(self):
         """Load from String path."""
         metadata = {"source": "raw text"}
         return [Document(page_content=self.file_path, metadata=metadata)]
-
-    @register
+```
+data_process() method allows you to pre processing your ways
+```
+@register
     def data_process(self, documents: List[Document]):
         i = 0
         for d in documents:
             documents[i].page_content = d.page_content.replace("\n", "")
             i += 1
         return documents
+```

@@ -105,7 +105,12 @@ Document type can be .txt, .pdf, .md, .doc, .ppt.
 
 Note that the default vector model used is text2vec-large-chinese (which is a large model, so if your personal computer configuration is not enough, it is recommended to use text2vec-base-chinese). Therefore, ensure that you download the model and place it in the models directory.
 
-- `pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf embedding.
+- `pdf_embedding <./knowledge/pdf/pdf_embedding.html>`_: supported pdf embedding.
+- `markdown_embedding <./knowledge/markdown/markdown_embedding.html>`_: supported markdown embedding.
+- `word_embedding <./knowledge/word/word_embedding.html>`_: supported word embedding.
+- `url_embedding <./knowledge/url/url_embedding.html>`_: supported url embedding.
+- `ppt_embedding <./knowledge/ppt/ppt_embedding.html>`_: supported ppt embedding.
+- `string_embedding <./knowledge/string/string_embedding.html>`_: supported raw text embedding.
 
 
 .. toctree::
@@ -119,3 +124,4 @@ Note that the default vector model used is text2vec-large-chinese (which is a la
    ./knowledge/word/word_embedding.md
    ./knowledge/url/url_embedding.md
    ./knowledge/ppt/ppt_embedding.md
+   ./knowledge/string/string_embedding.md
