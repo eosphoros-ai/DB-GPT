@@ -1,4 +1,4 @@
-PPTEmbedding
+PPT
 ==================================
 ppt embedding can import ppt text into a vector knowledge base. The entire embedding process includes the read (loading data), data_process (data processing), and index_to_store (embedding to the vector database) methods.
 
