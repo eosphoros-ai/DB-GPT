@@ -6,8 +6,6 @@ from pymilvus import Collection, DataType, connections, utility
 from pilot.vector_store.vector_store_base import VectorStoreBase
 
 
-
-
 class MilvusStore(VectorStoreBase):
     """Milvus database"""
 

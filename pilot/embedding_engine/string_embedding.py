@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, Optional
 
 from langchain.schema import Document
+from langchain.text_splitter import TextSplitter
 
 from pilot.embedding_engine import SourceEmbedding, register
 
@@ -8,9 +9,14 @@ from pilot.embedding_engine import SourceEmbedding, register
 class StringEmbedding(SourceEmbedding):
     """string embedding for read string document."""
 
-    def __init__(self, file_path, vector_store_config, text_splitter=None):
+    def __init__(
+        self,
+        file_path,
+        vector_store_config,
+        text_splitter: Optional[TextSplitter] = None,
+    ):
         """Initialize raw text word path."""
-        super().__init__(file_path, vector_store_config, text_splitter=None)
+        super().__init__(file_path=file_path, vector_store_config=vector_store_config)
         self.file_path = file_path
         self.vector_store_config = vector_store_config
         self.text_splitter = text_splitter or None

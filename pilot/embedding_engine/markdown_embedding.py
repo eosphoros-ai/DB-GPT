@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
-from typing import List
+from typing import List, Optional
 
 import markdown
 from bs4 import BeautifulSoup
@@ -10,6 +10,7 @@ from langchain.text_splitter import (
     SpacyTextSplitter,
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
+    TextSplitter,
 )
 
 from pilot.embedding_engine import SourceEmbedding, register
@@ -19,7 +20,12 @@ from pilot.embedding_engine.EncodeTextLoader import EncodeTextLoader
 class MarkdownEmbedding(SourceEmbedding):
     """markdown embedding for read markdown document."""
 
-    def __init__(self, file_path, vector_store_config, text_splitter=None):
+    def __init__(
+        self,
+        file_path,
+        vector_store_config,
+        text_splitter: Optional[TextSplitter] = None,
+    ):
         """Initialize raw text word path."""
         super().__init__(file_path, vector_store_config, text_splitter=None)
         self.file_path = file_path

@@ -26,13 +26,13 @@ class SourceEmbedding(ABC):
         self,
         file_path,
         vector_store_config: {},
-        text_splitter: TextSplitter = None,
+        text_splitter: Optional[TextSplitter] = None,
         embedding_args: Optional[Dict] = None,
     ):
         """Initialize with Loader url, model_name, vector_store_config"""
         self.file_path = file_path
         self.vector_store_config = vector_store_config
-        self.text_splitter = text_splitter
+        self.text_splitter = text_splitter or None
         self.embedding_args = embedding_args
         self.embeddings = vector_store_config["embeddings"]
 
