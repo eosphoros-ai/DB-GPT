@@ -16,11 +16,53 @@
 
 ## What is DB-GPT?
 
-As large models are released and iterated upon, they are becoming increasingly intelligent. However, in the process of using large models, we face significant challenges in data security and privacy. We need to ensure that our sensitive data and environments remain completely controlled and avoid any data privacy leaks or security risks. Based on this, we have launched the DB-GPT project to build a complete private large model solution for all database-based scenarios. This solution supports local deployment, allowing it to be applied not only in independent private environments but also to be independently deployed and isolated according to business modules, ensuring that the ability of large models is absolutely private, secure, and controllable.
-
 DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 
-## News
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+
+## Demo
+
+Run on an RTX 4090 GPU.
+
+https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
+
+<!-- <video id="video" controls="" preload="auto" poster="assets/exector_sql.png">
+      <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
+</videos> -->
+
+
+#### Chat with data, and figure charts.
+
+<p align="left">
+  <img src="./assets/dashboard.png" width="800px" />
+</p>
+
+#### Text2SQL, generate SQL from chat
+<p align="left">
+  <img src="./assets/chatSQL.png" width="800px" />
+</p>
+
+#### Chat with database meta information.
+<p align="left">
+  <img src="./assets/chatdb.png" width="800px" />
+</p>
+
+#### Chat with data, and execute results.
+<p align="left">
+  <img src="./assets/chatdata.png" width="800px" />
+</p>
+
+#### Knownledge space to manage docs.
+<p align="left">
+  <img src="./assets/ks.png" width="800px" />
+</p>
+
+#### Chat with knowledge, such as txt、pdf、csv、words. etc
+<p align="left">
+  <img src="./assets/chat_knowledge.png" width="800px" />
+</p>
+
+## Releases 
 - [2023/07/06]🔥🔥🔥Brand-new DB-GPT product with a brand-new web UI. [documents](https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html) 
 - [2023/06/25]🔥support chatglm2-6b model. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
 - [2023/06/14] support gpt4all model, which can run at M1/M2, or cpu machine. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
@@ -30,23 +72,6 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 - [2023/05/21] Generate SQL and execute it automatically. [demo](./assets/chat-data.gif)
 - [2023/05/15] Chat with documents. [demo](./assets/new_knownledge_en.gif)
 - [2023/05/06] SQL generation and diagnosis. [demo](./assets/demo_en.gif)
-
-## Demo
-
-Run on an RTX 4090 GPU.
-
-<p align="left">
-  <img src="./assets/dbgpt_demo.gif" width="800px" />
-</p>
-
-
-<!-- <video id="video" controls="" preload="auto" poster="assets/exector_sql.png">
-      <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
-</videos> -->
-
-
-
-
 
 ## Features
 
@@ -73,7 +98,6 @@ Currently, we have released multiple key features, which are listed below to dem
 
 ## Introduction 
 DB-GPT creates a vast model operating system using [FastChat](https://github.com/lm-sys/FastChat) and offers a large language model powered by [Vicuna](https://huggingface.co/Tribbiani/vicuna-7b). In addition, we provide private domain knowledge base question-answering capability. Furthermore, we also provide support for additional plugins, and our design natively supports the Auto-GPT plugin.Our vision is to make it easier and more convenient to build  applications around databases and llm.
-
 
 
 Is the architecture of the entire DB-GPT shown in the following figure:
@@ -126,6 +150,12 @@ This project is standing on the shoulders of giants and is not going to work wit
 
 - Please run `black .` before submitting the code.
 
+## RoadMap
+
+<p align="left">
+  <img src="./assets/roadmap.jpg" width="800px" />
+</p>
+
 ## Licence
 
 The MIT License (MIT)
@@ -133,5 +163,5 @@ The MIT License (MIT)
 ## Contact Information
 We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/4BNdxm5d)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+
 
