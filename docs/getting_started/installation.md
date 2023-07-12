@@ -19,6 +19,7 @@ you will prepare embedding models from huggingface
 Notice make sure you have install git-lfs
 ```{tip}
 git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+
 git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
 ```
 version:
