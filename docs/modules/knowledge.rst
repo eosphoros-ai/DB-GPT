@@ -16,20 +16,55 @@ before execution:
 
 ::
 
+    pip install  db-gpt -i https://pypi.org/
     python -m spacy download zh_core_web_sm
+    from pilot import EmbeddingEngine,KnowledgeType
 
-2.Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma
-(now only support Chroma and Milvus, if you set Milvus, please set MILVUS_URL and MILVUS_PORT)
+
+2.prepare embedding model, you can download from https://huggingface.co/.
+Notice you have installed git-lfs.
+
+eg: git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+
+::
+
+    embedding_model = "your_embedding_model_path/all-MiniLM-L6-v2"
+
+3.prepare vector_store instance and vector store config, now we support Chroma, Milvus and Weaviate.
+
+::
+
+    #Chroma
+    vector_store_config = {
+        "vector_store_type":"Chroma",
+        "vector_store_name":"your_name",#you can define yourself
+        "chroma_persist_path":"your_persist_dir"
+    }
+    #Milvus
+    vector_store_config = {
+        "vector_store_type":"Milvus",
+        "vector_store_name":"your_name",#you can define yourself
+        "milvus_url":"your_url",
+        "milvus_port":"your_port",
+        "milvus_username":"your_username",(optional)
+        "milvus_password":"your_password",(optional)
+        "milvus_secure":"your_secure"(optional)
+    }
+    #Weaviate
+    vector_store_config = {
+        "vector_store_type":"Weaviate",
+        "vector_store_name":"your_name",#you can define yourself
+        "weaviate_url":"your_url",
+        "weaviate_port":"your_port",
+        "weaviate_username":"your_username",(optional)
+        "weaviate_password":"your_password",(optional)
+    }
 
 3.init Url Type EmbeddingEngine api and embedding your document into vector store in your code.
 
 ::
 
     url = "https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html"
-    embedding_model = "your_model_path/all-MiniLM-L6-v2"
-    vector_store_config = {
-            "vector_store_name": your_name,
-        }
     embedding_engine = EmbeddingEngine(
                         knowledge_source=url,
                         knowledge_type=KnowledgeType.URL.value,
@@ -43,12 +78,6 @@ Document type can be .txt, .pdf, .md, .doc, .ppt.
 ::
 
     document_path = "your_path/test.md"
-    embedding_model = "your_model_path/all-MiniLM-L6-v2"
-    vector_store_config = {
-            "vector_store_name": your_name,
-            "vector_store_type": "Chroma",
-            "chroma_persist_path": "your_persist_dir",
-        }
     embedding_engine = EmbeddingEngine(
                         knowledge_source=document_path,
                         knowledge_type=KnowledgeType.DOCUMENT.value,
@@ -61,10 +90,6 @@ Document type can be .txt, .pdf, .md, .doc, .ppt.
 ::
 
     raw_text = "a long passage"
-    embedding_model = "your_model_path/all-MiniLM-L6-v2"
-    vector_store_config = {
-            "vector_store_name": your_name,
-        }
     embedding_engine = EmbeddingEngine(
                         knowledge_source=raw_text,
                         knowledge_type=KnowledgeType.TEXT.value,

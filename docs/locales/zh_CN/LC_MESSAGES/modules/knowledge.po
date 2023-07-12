@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-10 16:59+0800\n"
+"POT-Creation-Date: 2023-07-12 11:57+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../modules/knowledge.rst:2 ../../modules/knowledge.rst:84
+#: ../../modules/knowledge.rst:2 ../../modules/knowledge.rst:98
 #: ca36c0ca545c4d70b51fe811a3e7caca
 msgid "Knowledge"
 msgstr "知识"
@@ -54,22 +54,29 @@ msgstr "准备"
 
 #: ../../modules/knowledge.rst:15 515555d13e7548deb596d80ea1514bb2
 msgid "before execution:"
-msgstr ""
+msgstr "开始前"
 
-#: ../../modules/knowledge.rst:21 8b790c0c37114dfc8eda4863af9314b4
+#: ../../modules/knowledge.rst:21 3333f92965ee41ea9cfa542de6c1e976
 msgid ""
-"2.Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma "
-"(now only support Chroma and Milvus, if you set Milvus, please set "
-"MILVUS_URL and MILVUS_PORT)"
-msgstr "2.更新你的.env，设置你的向量存储类型，VECTOR_STORE_TYPE=Chroma(现在只支持Chroma和Milvus，如果你设置了Milvus，请设置MILVUS_URL和MILVUS_PORT)"
+"2.prepare embedding model, you can download from https://huggingface.co/."
+" Notice you have installed git-lfs. eg: git clone "
+"https://huggingface.co/THUDM/chatglm2-6b"
+msgstr "提前准备Embedding Model, 你可以在https://huggingface.co/进行下载，注意：你需要先安装git-lfs.eg: git clone "
+"https://huggingface.co/THUDM/chatglm2-6b"
 
-#: ../../modules/knowledge.rst:24 058fa57484a64756ab2650b46f4b33bf
+#: ../../modules/knowledge.rst:29 7abcbe007d594f4aaa43ddef88ef4d89
+msgid ""
+"3.prepare vector_store instance and vector store config, now we support "
+"Chroma, Milvus and Weaviate."
+msgstr "提前准备向量数据库环境，目前支持Chroma, Milvus and Weaviate向量数据库"
+
+#: ../../modules/knowledge.rst:50 058fa57484a64756ab2650b46f4b33bf
 msgid ""
 "3.init Url Type EmbeddingEngine api and embedding your document into "
 "vector store in your code."
 msgstr "初始化 Url类型 EmbeddingEngine api， 将url文档embedding向量化到向量数据库 "
 
-#: ../../modules/knowledge.rst:40 5f255b96abd346479ab3c371393e47dc
+#: ../../modules/knowledge.rst:62 5f255b96abd346479ab3c371393e47dc
 #, fuzzy
 msgid ""
 "4.init Document Type EmbeddingEngine api and embedding your document into"
@@ -79,17 +86,17 @@ msgstr ""
 "初始化 文档型类型 EmbeddingEngine api， 将文档embedding向量化到向量数据库(文档可以是.txt, .pdf, "
 ".md, .html, .doc, .ppt)"
 
-#: ../../modules/knowledge.rst:57 d8c85ba7714749269714b03857738f70
+#: ../../modules/knowledge.rst:75 d8c85ba7714749269714b03857738f70
 msgid ""
 "5.init TEXT Type EmbeddingEngine api and embedding your document into "
 "vector store in your code."
 msgstr "初始化TEXT类型 EmbeddingEngine api， 将文档embedding向量化到向量数据库"
 
-#: ../../modules/knowledge.rst:73 c59e4650d57e44ae8d967768dddf908a
+#: ../../modules/knowledge.rst:87 c59e4650d57e44ae8d967768dddf908a
 msgid "4.similar search based on your knowledge base. ::"
 msgstr "在知识库进行相似性搜索"
 
-#: ../../modules/knowledge.rst:79 f500fcdc791c4286b411819ae9ab3dc6
+#: ../../modules/knowledge.rst:93 f500fcdc791c4286b411819ae9ab3dc6
 msgid ""
 "Note that the default vector model used is text2vec-large-chinese (which "
 "is a large model, so if your personal computer configuration is not "
@@ -99,7 +106,7 @@ msgstr ""
 "注意，这里默认向量模型是text2vec-large-chinese(模型比较大，如果个人电脑配置不够建议采用text2vec-base-"
 "chinese),因此确保需要将模型download下来放到models目录中。"
 
-#: ../../modules/knowledge.rst:81 62a5e10a19844ba9955113f5c78cb460
+#: ../../modules/knowledge.rst:95 62a5e10a19844ba9955113f5c78cb460
 msgid ""
 "`pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf "
 "embedding."
@@ -130,4 +137,12 @@ msgstr "pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf embeddin
 #~ "1.Place personal knowledge files or "
 #~ "folders in the pilot/datasets directory."
 #~ msgstr "1.将个人知识文件或文件夹放在pilot/datasets目录中。"
+
+#~ msgid ""
+#~ "2.Update your .env, set your vector "
+#~ "store type, VECTOR_STORE_TYPE=Chroma (now only"
+#~ " support Chroma and Milvus, if you"
+#~ " set Milvus, please set MILVUS_URL "
+#~ "and MILVUS_PORT)"
+#~ msgstr "2.更新你的.env，设置你的向量存储类型，VECTOR_STORE_TYPE=Chroma(现在只支持Chroma和Milvus，如果你设置了Milvus，请设置MILVUS_URL和MILVUS_PORT)"
 
