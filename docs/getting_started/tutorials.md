@@ -21,4 +21,4 @@ DB-GPT is divided into several functions, including chat with knowledge base, ex
 ![sql execute demonstration](../../assets/auto_sql_en.gif)
 
 ### Plugins
-![db plugins demonstration](../../assets/chart_db_city_users.png)
+![db plugins demonstration](../../assets/dashboard.png)
