@@ -8,6 +8,13 @@ from pilot.vector_store.connector import VectorStoreConnector
 
 
 class EmbeddingEngine:
+    """EmbeddingEngine provide a chain process include(read->text_split->data_process->index_store) for knowledge document embedding into vector store.
+    1.knowledge_embedding:knowledge document source into vector store.(Chroma, Milvus, Weaviate)
+    2.similar_search: similarity search from vector_store
+    how to use reference:https://db-gpt.readthedocs.io/en/latest/modules/knowledge.html
+    how to integrate:https://db-gpt.readthedocs.io/en/latest/modules/knowledge/pdf/pdf_embedding.html
+    """
+
     def __init__(
         self,
         model_name,
@@ -24,14 +31,17 @@ class EmbeddingEngine:
         self.vector_store_config["embeddings"] = self.embeddings
 
     def knowledge_embedding(self):
+        """source embedding is chain process.read->text_split->data_process->index_store"""
         self.knowledge_embedding_client = self.init_knowledge_embedding()
         self.knowledge_embedding_client.source_embedding()
 
     def knowledge_embedding_batch(self, docs):
+        """Deprecation"""
         # docs = self.knowledge_embedding_client.read_batch()
         return self.knowledge_embedding_client.index_to_store(docs)
 
     def read(self):
+        """Deprecation"""
         self.knowledge_embedding_client = self.init_knowledge_embedding()
         return self.knowledge_embedding_client.read_batch()
 
