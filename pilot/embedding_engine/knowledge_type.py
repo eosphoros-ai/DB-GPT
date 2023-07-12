@@ -40,7 +40,9 @@ class KnowledgeType(Enum):
     YOUTUBE = "YOUTUBE"
 
 
-def get_knowledge_embedding(knowledge_type, knowledge_source, vector_store_config):
+def get_knowledge_embedding(
+    knowledge_type, knowledge_source, vector_store_config, text_splitter
+):
     match knowledge_type:
         case KnowledgeType.DOCUMENT.value:
             extension = "." + knowledge_source.rsplit(".", 1)[-1]
@@ -49,6 +51,7 @@ def get_knowledge_embedding(knowledge_type, knowledge_source, vector_store_confi
                 embedding = knowledge_class(
                     knowledge_source,
                     vector_store_config=vector_store_config,
+                    text_splitter=text_splitter,
                     **knowledge_args,
                 )
                 return embedding
@@ -57,12 +60,14 @@ def get_knowledge_embedding(knowledge_type, knowledge_source, vector_store_confi
             embedding = URLEmbedding(
                 file_path=knowledge_source,
                 vector_store_config=vector_store_config,
+                text_splitter=text_splitter,
             )
             return embedding
         case KnowledgeType.TEXT.value:
             embedding = StringEmbedding(
                 file_path=knowledge_source,
                 vector_store_config=vector_store_config,
+                text_splitter=text_splitter,
             )
             return embedding
         case KnowledgeType.OSS.value:
