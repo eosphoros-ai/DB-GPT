@@ -1,18 +1,26 @@
-from typing import List
+from typing import List, Optional
 
 from bs4 import BeautifulSoup
 from langchain.document_loaders import WebBaseLoader
 from langchain.schema import Document
-from langchain.text_splitter import SpacyTextSplitter, RecursiveCharacterTextSplitter
+from langchain.text_splitter import (
+    SpacyTextSplitter,
+    RecursiveCharacterTextSplitter,
+    TextSplitter,
+)
 
 from pilot.embedding_engine import SourceEmbedding, register
-
 
 
 class URLEmbedding(SourceEmbedding):
     """url embedding for read url document."""
 
-    def __init__(self, file_path, vector_store_config, text_splitter=None):
+    def __init__(
+        self,
+        file_path,
+        vector_store_config,
+        text_splitter: Optional[TextSplitter] = None,
+    ):
         """Initialize url word path."""
         super().__init__(file_path, vector_store_config, text_splitter=None)
         self.file_path = file_path
