@@ -72,6 +72,24 @@ eg: git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
                         vector_store_config=vector_store_config)
     embedding_engine.knowledge_embedding()
 
+If you want to add your text_splitter, do this:
+
+::
+
+    url = "https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html"
+
+    text_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=100, chunk_overlap=50
+                    )
+    embedding_engine = EmbeddingEngine(
+                        knowledge_source=url,
+                        knowledge_type=KnowledgeType.URL.value,
+                        model_name=embedding_model,
+                        vector_store_config=vector_store_config,
+                        text_splitter=text_splitter
+                        )
+
+
 4.init Document Type EmbeddingEngine api and embedding your document into vector store in your code.
 Document type can be .txt, .pdf, .md, .doc, .ppt.
 
