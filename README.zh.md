@@ -66,6 +66,7 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
 </p>
 
 ## 最新发布
+- [2023/07/12]🔥🔥🔥DB-GPT Python API 0.3.0. [documents](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/installation.html)
 - [2023/07/06]🔥🔥🔥 全新的DB-GPT产品。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)
 - [2023/06/25]🔥 支持ChatGLM2-6B模型。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
 - [2023/06/14]🔥 支持gpt4all模型，可以在M1/M2 或者CPU机器上运行。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
