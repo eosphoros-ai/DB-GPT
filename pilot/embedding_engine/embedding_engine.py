@@ -22,6 +22,7 @@ class EmbeddingEngine:
         vector_store_config,
         knowledge_type: Optional[str] = KnowledgeType.DOCUMENT.value,
         knowledge_source: Optional[str] = None,
+        source_reader: Optional = None,
         text_splitter: Optional[TextSplitter] = None,
     ):
         """Initialize with knowledge embedding client, model_name, vector_store_config, knowledge_type, knowledge_source"""
@@ -31,6 +32,7 @@ class EmbeddingEngine:
         self.knowledge_type = knowledge_type
         self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
         self.vector_store_config["embeddings"] = self.embeddings
+        self.source_reader = source_reader
         self.text_splitter = text_splitter
 
     def knowledge_embedding(self):
@@ -53,6 +55,7 @@ class EmbeddingEngine:
             self.knowledge_type,
             self.knowledge_source,
             self.vector_store_config,
+            self.source_reader,
             self.text_splitter,
         )
 
