@@ -73,6 +73,7 @@ class VicunaLLMAdapater(BaseLLMAdaper):
         )
         return model, tokenizer
 
+
 def auto_configure_device_map(num_gpus):
     """handling multi gpu calls"""
     # transformer.word_embeddings occupying 1 floors
@@ -81,18 +82,18 @@ def auto_configure_device_map(num_gpus):
     # Allocate a total of 30 layers to number On gpus cards
     num_trans_layers = 28
     per_gpu_layers = 30 / num_gpus
-    #Bugfix: call torch.embedding in Linux and the incoming weight and input are not on the same device, resulting in a RuntimeError
-    #Under Windows, model. device will be set to transformer. word_ Embeddings. device
-    #Under Linux, model. device will be set to lm_ Head.device
-    #When calling chat or stream_ During chat, input_ IDS will be placed on model. device
-    #If transformer. word_ If embeddings. device and model. device are different, it will cause a RuntimeError
-    #Therefore, here we will transform. word_ Embeddings, transformer. final_ Layernorm, lm_ Put all the heads on the first card
+    # Bugfix: call torch.embedding in Linux and the incoming weight and input are not on the same device, resulting in a RuntimeError
+    # Under Windows, model. device will be set to transformer. word_ Embeddings. device
+    # Under Linux, model. device will be set to lm_ Head.device
+    # When calling chat or stream_ During chat, input_ IDS will be placed on model. device
+    # If transformer. word_ If embeddings. device and model. device are different, it will cause a RuntimeError
+    # Therefore, here we will transform. word_ Embeddings, transformer. final_ Layernorm, lm_ Put all the heads on the first card
     device_map = {
-        'transformer.embedding.word_embeddings': 0,
-        'transformer.encoder.final_layernorm': 0,
-        'transformer.output_layer': 0,
-        'transformer.rotary_pos_emb': 0,
-        'lm_head': 0
+        "transformer.embedding.word_embeddings": 0,
+        "transformer.encoder.final_layernorm": 0,
+        "transformer.output_layer": 0,
+        "transformer.rotary_pos_emb": 0,
+        "lm_head": 0,
     }
 
     used = 2
@@ -102,7 +103,7 @@ def auto_configure_device_map(num_gpus):
             gpu_target += 1
             used = 0
         assert gpu_target < num_gpus
-        device_map[f'transformer.encoder.layers.{i}'] = gpu_target
+        device_map[f"transformer.encoder.layers.{i}"] = gpu_target
         used += 1
 
     return device_map
@@ -114,7 +115,13 @@ class ChatGLMAdapater(BaseLLMAdaper):
     def match(self, model_path: str):
         return "chatglm" in model_path
 
-    def loader(self, model_path: str, from_pretrained_kwargs: dict, device_map=None, num_gpus=CFG.NUM_GPUS):
+    def loader(
+        self,
+        model_path: str,
+        from_pretrained_kwargs: dict,
+        device_map=None,
+        num_gpus=CFG.NUM_GPUS,
+    ):
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
         if DEVICE != "cuda":
@@ -125,10 +132,8 @@ class ChatGLMAdapater(BaseLLMAdaper):
         else:
             model = (
                 AutoModel.from_pretrained(
-                    model_path, trust_remote_code=True,
-                    **from_pretrained_kwargs
-                )
-                .half()
+                    model_path, trust_remote_code=True, **from_pretrained_kwargs
+                ).half()
                 # .cuda()
             )
             from accelerate import dispatch_model
