@@ -2,7 +2,11 @@ from typing import Dict, List, Optional
 
 from langchain.document_loaders import CSVLoader
 from langchain.schema import Document
-from langchain.text_splitter import TextSplitter, SpacyTextSplitter, RecursiveCharacterTextSplitter
+from langchain.text_splitter import (
+    TextSplitter,
+    SpacyTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 
 from pilot.embedding_engine import SourceEmbedding, register
 
@@ -18,7 +22,9 @@ class CSVEmbedding(SourceEmbedding):
         text_splitter: Optional[TextSplitter] = None,
     ):
         """Initialize with csv path."""
-        super().__init__(file_path, vector_store_config, source_reader=None, text_splitter=None)
+        super().__init__(
+            file_path, vector_store_config, source_reader=None, text_splitter=None
+        )
         self.file_path = file_path
         self.vector_store_config = vector_store_config
         self.source_reader = source_reader or None
