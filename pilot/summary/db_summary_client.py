@@ -77,7 +77,6 @@ class DBSummaryClient:
     def get_db_summary(self, dbname, query, topk):
         vector_store_config = {
             "vector_store_name": dbname + "_profile",
-            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
