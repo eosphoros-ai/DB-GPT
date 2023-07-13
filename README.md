@@ -63,7 +63,7 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
 </p>
 
 ## Releases 
-- [2023/07/12]🔥🔥🔥DB-GPT Python API 0.3.0. [documents](https://db-gpt.readthedocs.io/en/latest/getting_started/installation.html) 
+- [2023/07/12]🔥🔥🔥DB-GPT Python API 0.3.0 and Multi GPU Support [documents](https://db-gpt.readthedocs.io/en/latest/getting_started/installation.html) 
 - [2023/07/06]🔥🔥🔥Brand-new DB-GPT product with a brand-new web UI. [documents](https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html) 
 - [2023/06/25]🔥support chatglm2-6b model. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
 - [2023/06/14] support gpt4all model, which can run at M1/M2, or cpu machine. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
