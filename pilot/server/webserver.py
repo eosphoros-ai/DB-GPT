@@ -666,7 +666,7 @@ def knowledge_embedding_store(vs_id, files):
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
                 "vector_store_type": CFG.VECTOR_STORE_TYPE,
-                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+                "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             },
         )
         knowledge_embedding_client.knowledge_embedding()
