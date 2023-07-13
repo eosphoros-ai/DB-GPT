@@ -5,7 +5,7 @@ DB-GPT provides a third-party Python API package that you can integrate into you
 
 You can simply pip install:
 ```bash
-pip install -i https://pypi.org/ db-gpt==0.3.0
+pip install -i https://pypi.org/simple/ db-gpt==0.3.0
 ```
 
 ```{tip}
