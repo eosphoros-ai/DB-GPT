@@ -23,10 +23,11 @@ According to the characteristics of the analyzed data, choose the most suitable 
 {supported_chat_type}
 
 Pay attention to the length of the output content of the analysis result, do not exceed 4000tokens
+Do not use unprovided fields and field value in data analysis SQL, Do not use column pay_status as a query condition in  SQL.
+
 According to the characteristics of the analyzed data, choose the best one from the charts provided below to display, use different types of charts as much as possible，chart types:
 {supported_chat_type}
 
-Do not use unprovided fields and field value in data analysis SQL.
 Give {dialect} data analysis SQL, analysis title, display method and analytical thinking,respond in the following json format:
 {response}
 Ensure the response is correct json and can be parsed by Python json.loads
