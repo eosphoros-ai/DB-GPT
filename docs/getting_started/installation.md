@@ -4,11 +4,13 @@ DB-GPT provides a third-party Python API package that you can integrate into you
 ### Installation from Pip
 
 You can simply pip install:
-```{tip}
+```bash
 pip install -i https://pypi.org/ db-gpt==0.3.0
 ```
-Notice:make sure python>=3.10
 
+```{tip}
+Notice:make sure python>=3.10
+```
 
 ### Environment Setup
 
@@ -16,8 +18,11 @@ By default, if you use the EmbeddingEngine api
 
 you will prepare embedding models from huggingface
 
-Notice make sure you have install git-lfs
 ```{tip}
+Notice make sure you have install git-lfs
+```
+
+```bash
 git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
 
 git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
