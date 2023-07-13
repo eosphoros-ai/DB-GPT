@@ -41,7 +41,7 @@ class KnowledgeType(Enum):
 
 
 def get_knowledge_embedding(
-    knowledge_type, knowledge_source, vector_store_config, text_splitter
+    knowledge_type, knowledge_source, vector_store_config, source_reader, text_splitter
 ):
     match knowledge_type:
         case KnowledgeType.DOCUMENT.value:
@@ -51,6 +51,7 @@ def get_knowledge_embedding(
                 embedding = knowledge_class(
                     knowledge_source,
                     vector_store_config=vector_store_config,
+                    source_reader=source_reader,
                     text_splitter=text_splitter,
                     **knowledge_args,
                 )
@@ -60,6 +61,7 @@ def get_knowledge_embedding(
             embedding = URLEmbedding(
                 file_path=knowledge_source,
                 vector_store_config=vector_store_config,
+                source_reader=source_reader,
                 text_splitter=text_splitter,
             )
             return embedding
@@ -67,6 +69,7 @@ def get_knowledge_embedding(
             embedding = StringEmbedding(
                 file_path=knowledge_source,
                 vector_store_config=vector_store_config,
+                source_reader=source_reader,
                 text_splitter=text_splitter,
             )
             return embedding

@@ -124,7 +124,6 @@ class DBSummaryClient:
                 "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             }
             knowledge_embedding_client = EmbeddingEngine(
-                file_path="",
                 model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
                 vector_store_config=vector_store_config,
             )
