@@ -1,7 +1,11 @@
 from typing import List, Optional
 
 from langchain.schema import Document
-from langchain.text_splitter import TextSplitter, SpacyTextSplitter, RecursiveCharacterTextSplitter
+from langchain.text_splitter import (
+    TextSplitter,
+    SpacyTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 
 from pilot.embedding_engine import SourceEmbedding, register
 
@@ -17,7 +21,12 @@ class StringEmbedding(SourceEmbedding):
         text_splitter: Optional[TextSplitter] = None,
     ):
         """Initialize raw text word path."""
-        super().__init__(file_path=file_path, vector_store_config=vector_store_config, source_reader=None, text_splitter=None)
+        super().__init__(
+            file_path=file_path,
+            vector_store_config=vector_store_config,
+            source_reader=None,
+            text_splitter=None,
+        )
         self.file_path = file_path
         self.vector_store_config = vector_store_config
         self.source_reader = source_reader or None
@@ -32,16 +41,15 @@ class StringEmbedding(SourceEmbedding):
             try:
                 self.text_splitter = SpacyTextSplitter(
                     pipeline="zh_core_web_sm",
-                    chunk_size=100,
+                    chunk_size=500,
                     chunk_overlap=100,
                 )
             except Exception:
                 self.text_splitter = RecursiveCharacterTextSplitter(
                     chunk_size=100, chunk_overlap=50
                 )
-
-        return self.text_splitter.split_documents(docs)
-
+            return self.text_splitter.split_documents(docs)
+        return docs
 
     @register
     def data_process(self, documents: List[Document]):

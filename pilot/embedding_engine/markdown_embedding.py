@@ -28,7 +28,9 @@ class MarkdownEmbedding(SourceEmbedding):
         text_splitter: Optional[TextSplitter] = None,
     ):
         """Initialize raw text word path."""
-        super().__init__(file_path, vector_store_config, source_reader=None, text_splitter=None)
+        super().__init__(
+            file_path, vector_store_config, source_reader=None, text_splitter=None
+        )
         self.file_path = file_path
         self.vector_store_config = vector_store_config
         self.source_reader = source_reader or None
