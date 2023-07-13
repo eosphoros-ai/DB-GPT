@@ -4,13 +4,13 @@ Knowledge
 | As the knowledge base is currently the most significant user demand scenario, we natively support the construction and processing of knowledge bases. At the same time, we also provide multiple knowledge base management strategies in this project, such as pdf knowledge,md knowledge, txt knowledge, word knowledge, ppt knowledge:
 
 We currently support many document formats: raw text, txt, pdf, md, html, doc, ppt, and url.
-
+In the future, we will continue to support more types of knowledge, including audio, video, various databases, and big data sources. Of course, we look forward to your active participation in contributing code.
 
 **Create your own knowledge repository**
 
 1.prepare
 
-We currently support many document formats: raw text, txt, pdf, md, html, doc, ppt, and url.
+We currently support many document formats: TEXT(raw text), DOCUMENT(.txt, .pdf, .md, .doc, .ppt, .html), and URL.
 
 before execution:
 
@@ -72,12 +72,13 @@ eg: git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
                         vector_store_config=vector_store_config)
     embedding_engine.knowledge_embedding()
 
-If you want to add your text_splitter, do this:
+If you want to add your source_reader or text_splitter, do this:
 
 ::
 
     url = "https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html"
 
+    source_reader = WebBaseLoader(web_path=self.file_path)
     text_splitter = RecursiveCharacterTextSplitter(
                     chunk_size=100, chunk_overlap=50
                     )
@@ -86,6 +87,7 @@ If you want to add your text_splitter, do this:
                         knowledge_type=KnowledgeType.URL.value,
                         model_name=embedding_model,
                         vector_store_config=vector_store_config,
+                        source_reader=source_reader,
                         text_splitter=text_splitter
                         )
 
