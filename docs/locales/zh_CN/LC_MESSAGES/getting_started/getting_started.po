@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-05 17:51+0800\n"
+"POT-Creation-Date: 2023-07-13 15:39+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,29 +19,29 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../getting_started/getting_started.md:1 2e1519d628044c07b384e8bbe441863a
+#: ../../getting_started/getting_started.md:1 0b2e795438a3413c875fd80191e85bad
 msgid "Quickstart Guide"
 msgstr "使用指南"
 
-#: ../../getting_started/getting_started.md:3 00e8dc6e242d4f3b8b2fbc5e06f1f14e
+#: ../../getting_started/getting_started.md:3 7b84c9776f8a4f9fb55afc640f37f45c
 msgid ""
 "This tutorial gives you a quick walkthrough about use DB-GPT with you "
 "environment and data."
 msgstr "本教程为您提供了关于如何使用DB-GPT的使用指南。"
 
-#: ../../getting_started/getting_started.md:5 4b4473a5fbd64cef996d82fa36abe136
+#: ../../getting_started/getting_started.md:5 1b2880e1ef674bfdbf39ac9f330aeec9
 msgid "Installation"
 msgstr "安装"
 
-#: ../../getting_started/getting_started.md:7 5ab3187dd2134afe958d83a431c98f43
+#: ../../getting_started/getting_started.md:7 d0a8c6654bfe4bbdb0eb40ceb2ea3388
 msgid "To get started, install DB-GPT with the following steps."
 msgstr "请按照以下步骤安装DB-GPT"
 
-#: ../../getting_started/getting_started.md:9 7286e3a0da00450c9a6e9f29dbd27130
+#: ../../getting_started/getting_started.md:9 0a4e0b06c7fe49a9b2ca56ba2eb7b8ba
 msgid "1. Hardware Requirements"
 msgstr "1. 硬件要求"
 
-#: ../../getting_started/getting_started.md:10 3f3d279ca8a54c8c8ed16af3e0ffb281
+#: ../../getting_started/getting_started.md:10 2b42f6546ef141f696943ba2120584e5
 msgid ""
 "As our project has the ability to achieve ChatGPT performance of over "
 "85%, there are certain hardware requirements. However, overall, the "
@@ -49,62 +49,62 @@ msgid ""
 "specific hardware requirements for deployment are as follows:"
 msgstr "由于我们的项目有能力达到85%以上的ChatGPT性能，所以对硬件有一定的要求。但总体来说，我们在消费级的显卡上即可完成项目的部署使用，具体部署的硬件说明如下:"
 
-#: ../../getting_started/getting_started.md 6e1e882511254687bd46fe45447794d1
+#: ../../getting_started/getting_started.md 4df0c44eff8741f39ca0fdeff222f90c
 msgid "GPU"
 msgstr "GPU"
 
-#: ../../getting_started/getting_started.md f0ee9919e1254bcdbe6e489a5fbf450f
+#: ../../getting_started/getting_started.md b740a2991ce546cca43a426b760e9901
 msgid "VRAM Size"
 msgstr "显存大小"
 
-#: ../../getting_started/getting_started.md eed88601ef0b49b58d95b89928a3810e
+#: ../../getting_started/getting_started.md 222b91ff82f14d12acaac5aa238758c8
 msgid "Performance"
 msgstr "显存大小"
 
-#: ../../getting_started/getting_started.md 4f717383ef2d4e2da9ee2d1c148aa6c5
+#: ../../getting_started/getting_started.md c2d2ae6a4c964c4f90a9009160754782
 msgid "RTX 4090"
 msgstr "RTX 4090"
 
-#: ../../getting_started/getting_started.md d2d9bd1b57694404b39cdef49fd5b570
-#: d7d914b8d5e34ac192b94d48f0ee1781
+#: ../../getting_started/getting_started.md 529220ec6a294e449dc460ba2e8829a1
+#: 5e0c5900842e4d66b2064b13cc31a3ad
 msgid "24 GB"
 msgstr "24 GB"
 
-#: ../../getting_started/getting_started.md cb86730ab05e4172941c3e771384c4ba
+#: ../../getting_started/getting_started.md 84d29eef342f4d6282295c0e32487548
 msgid "Smooth conversation inference"
 msgstr "可以流畅的进行对话推理，无卡顿"
 
-#: ../../getting_started/getting_started.md 3e32d5c38bf6499cbfedb80944549114
+#: ../../getting_started/getting_started.md 5a10effe322e4afb8315415c04dc05a4
 msgid "RTX 3090"
 msgstr "RTX 3090"
 
-#: ../../getting_started/getting_started.md 1d3caa2a06844997ad55d20863559e9f
+#: ../../getting_started/getting_started.md 8924059525ab43329a8bb6659e034d5e
 msgid "Smooth conversation inference, better than V100"
 msgstr "可以流畅进行对话推理，有卡顿感，但好于V100"
 
-#: ../../getting_started/getting_started.md b80ec359bd004d5f801ec09ca3b2d0ff
+#: ../../getting_started/getting_started.md 10f5bc076f524127a956d7a23f3666ba
 msgid "V100"
 msgstr "V100"
 
-#: ../../getting_started/getting_started.md aed55a6b8c8d49d9b9c02bfd5c10b062
+#: ../../getting_started/getting_started.md 7d664e81984847c7accd08db93fad404
 msgid "16 GB"
 msgstr "16 GB"
 
-#: ../../getting_started/getting_started.md dcd6daab75fe4bf8b8dd19ea785f0bd6
+#: ../../getting_started/getting_started.md 86765bc9ab01409fb7f5edf04f9b32a5
 msgid "Conversation inference possible, noticeable stutter"
 msgstr "可以进行对话推理，有明显卡顿"
 
-#: ../../getting_started/getting_started.md:18 e39a4b763ed74cea88d54d163ea72ce0
+#: ../../getting_started/getting_started.md:18 a0ac5591c0ac4ac6a385e562353daf22
 msgid "2. Install"
 msgstr "2. 安装"
 
-#: ../../getting_started/getting_started.md:20 9beba274b78a46c6aafb30173372b334
+#: ../../getting_started/getting_started.md:20 a64a9a5945074ece872509f8cb425da9
 msgid ""
 "This project relies on a local MySQL database service, which you need to "
 "install locally. We recommend using Docker for installation."
 msgstr "本项目依赖一个本地的 MySQL 数据库服务，你需要本地安装，推荐直接使用 Docker 安装。"
 
-#: ../../getting_started/getting_started.md:25 3bce689bb49043eca5b9aa3c5525eaac
+#: ../../getting_started/getting_started.md:25 11e799a372ab4d0f8269cd7be98bebc6
 msgid ""
 "We use [Chroma embedding database](https://github.com/chroma-core/chroma)"
 " as the default for our vector database, so there is no need for special "
@@ -117,11 +117,11 @@ msgstr ""
 "向量数据库我们默认使用的是Chroma内存数据库，所以无需特殊安装，如果有需要连接其他的同学，可以按照我们的教程进行安装配置。整个DB-"
 "GPT的安装过程，我们使用的是miniconda3的虚拟环境。创建虚拟环境，并安装python依赖包"
 
-#: ../../getting_started/getting_started.md:34 61ad49740d0b49afa254cb2d10a0d2ae
+#: ../../getting_started/getting_started.md:34 dcab69c83d4c48b9bb19c4336ee74a66
 msgid "Before use DB-GPT Knowledge Management"
 msgstr "使用知识库管理功能之前"
 
-#: ../../getting_started/getting_started.md:40 656041e456f248a0a472be06357d7f89
+#: ../../getting_started/getting_started.md:40 735aeb6ae8aa4344b7ff679548279acc
 msgid ""
 "Once the environment is installed, we have to create a new folder "
 "\"models\" in the DB-GPT project, and then we can put all the models "
@@ -130,29 +130,33 @@ msgstr ""
 "环境安装完成后，我们必须在DB-"
 "GPT项目中创建一个新文件夹\"models\"，然后我们可以把从huggingface下载的所有模型放到这个目录下。"
 
-#: ../../getting_started/getting_started.md:42 4dfb7d63fdf544f2bf9dd8663efa8d31
+#: ../../getting_started/getting_started.md:43 7cbefe131b24488b9be39b3e8ed4f563
 #, fuzzy
 msgid "Notice make sure you have install git-lfs"
 msgstr "确保你已经安装了git-lfs"
 
-#: ../../getting_started/getting_started.md:50 a52c137b8ef54b7ead41a2d8ff81d457
+#: ../../getting_started/getting_started.md:53 54ec90ebb969475988451cd66e6ff412
 msgid ""
 "The model files are large and will take a long time to download. During "
 "the download, let's configure the .env file, which needs to be copied and"
 " created from the .env.template"
 msgstr "模型文件很大，需要很长时间才能下载。在下载过程中，让我们配置.env文件，它需要从。env.template中复制和创建。"
 
-#: ../../getting_started/getting_started.md:56 db87d872a47047dc8cd1de390d068ed4
+#: ../../getting_started/getting_started.md:56 9bdadbee88af4683a4eb7b4f221fb4b8
+msgid "cp .env.template .env"
+msgstr "cp .env.template .env"
+
+#: ../../getting_started/getting_started.md:59 6357c4a0154b4f08a079419ac408442d
 msgid ""
 "You can configure basic parameters in the .env file, for example setting "
 "LLM_MODEL to the model to be used"
 msgstr "您可以在.env文件中配置基本参数，例如将LLM_MODEL设置为要使用的模型。"
 
-#: ../../getting_started/getting_started.md:58 c8865a327b4b44daa55813479c743e3c
+#: ../../getting_started/getting_started.md:61 2f349f3ed3184b849ade2a15d5bf0c6c
 msgid "3. Run"
 msgstr "3. 运行"
 
-#: ../../getting_started/getting_started.md:59 e81dabe730134753a4daa05a7bdd44af
+#: ../../getting_started/getting_started.md:62 fe408e4405bd48288e2e746386615925
 msgid ""
 "You can refer to this document to obtain the Vicuna weights: "
 "[Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-"
@@ -161,7 +165,7 @@ msgstr ""
 "关于基础模型, 可以根据[Vicuna](https://github.com/lm-"
 "sys/FastChat/blob/main/README.md#model-weights) 合成教程进行合成。"
 
-#: ../../getting_started/getting_started.md:61 714cbc9485ea47d0a06aa1a31b9af3e3
+#: ../../getting_started/getting_started.md:64 c0acfe28007f459ca21174f968763fa3
 msgid ""
 "If you have difficulty with this step, you can also directly use the "
 "model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a "
@@ -170,11 +174,11 @@ msgstr ""
 "如果此步有困难的同学，也可以直接使用[此链接](https://huggingface.co/Tribbiani/vicuna-"
 "7b)上的模型进行替代。"
 
-#: ../../getting_started/getting_started.md:63 2b8f6985fe1a414e95d334d3ee9d0878
+#: ../../getting_started/getting_started.md:66 cc0f4c4e43f24b679f857a8d937528ee
 msgid "prepare server sql script"
 msgstr "准备db-gpt server sql脚本"
 
-#: ../../getting_started/getting_started.md:69 7cb9beb0e15a46759dbcb4606dcb6867
+#: ../../getting_started/getting_started.md:72 386948064fe646f2b9f51a262dd64bf2
 msgid ""
 "set .env configuration set your vector store type, "
 "eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > "
@@ -183,17 +187,17 @@ msgstr ""
 "在.env文件设置向量数据库环境变量，eg:VECTOR_STORE_TYPE=Chroma, 目前我们支持了 Chroma and "
 "Milvus(version >2.1) "
 
-#: ../../getting_started/getting_started.md:72 cdb7ef30e8c9441293e8b3fd95d621ed
+#: ../../getting_started/getting_started.md:75 e6f6b06459944f2d8509703af365c664
 #, fuzzy
 msgid "Run db-gpt server"
 msgstr "运行模型服务"
 
-#: ../../getting_started/getting_started.md:77 e7bb3001d46b458aa0c522c4a7a8d45b
+#: ../../getting_started/getting_started.md:80 489b595dc08a459ca2fd83b1389d3bbd
 #, fuzzy
 msgid "Open http://localhost:5000 with your browser to see the product."
 msgstr "打开浏览器访问http://localhost:5000"
 
-#: ../../getting_started/getting_started.md:79 68c55e3ecfc642f2869a9917ec65904c
+#: ../../getting_started/getting_started.md:82 699afb01c9f243ab837cdc73252f624c
 msgid ""
 "If you want to access an external LLM service, you need to 1.set the "
 "variables LLM_MODEL=YOUR_MODEL_NAME "
@@ -201,11 +205,11 @@ msgid ""
 "file. 2.execute dbgpt_server.py in light mode"
 msgstr "如果你想访问外部的大模型服务，1.需要在.env文件设置模型名和外部模型服务地址。2.使用light模式启动服务"
 
-#: ../../getting_started/getting_started.md:86 474aea4023bb44dd970773b110bbf0ee
+#: ../../getting_started/getting_started.md:89 7df7f3870e1140d3a17dc322a46d6476
 msgid ""
 "If you want to learn about dbgpt-webui, read https://github.com/csunny"
 "/DB-GPT/tree/new-page-framework/datacenter"
-msgstr "如果你想了解DB-GPT前端服务，访问https://github.com/csunny"
-"/DB-GPT/tree/new-page-framework/datacenter"
-
+msgstr ""
+"如果你想了解DB-GPT前端服务，访问https://github.com/csunny/DB-GPT/tree/new-page-"
+"framework/datacenter"
 

@@ -1,3 +1,4 @@
+import atexit
 import traceback
 import os
 import shutil
@@ -36,7 +37,7 @@ CFG = Config()
 logger = build_logger("webserver", LOGDIR + "webserver.log")
 
 
-def signal_handler(sig, frame):
+def signal_handler():
     print("in order to avoid chroma db atexit problem")
     os._exit(0)
 
@@ -96,7 +97,6 @@ if __name__ == "__main__":
         action="store_true",
         help="enable light mode",
     )
-    signal.signal(signal.SIGINT, signal_handler)
 
     # init server config
     args = parser.parse_args()
@@ -114,3 +114,4 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=args.port)
+    signal.signal(signal.SIGINT, signal_handler())
