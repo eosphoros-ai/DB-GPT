@@ -344,7 +344,14 @@ class Database:
         return [
             d[0]
             for d in results
-            if d[0] not in ["information_schema", "performance_schema", "sys", "mysql"]
+            if d[0]
+            not in [
+                "information_schema",
+                "performance_schema",
+                "sys",
+                "mysql",
+                "knowledge_management",
+            ]
         ]
 
     def convert_sql_write_to_select(self, write_sql):
@@ -421,7 +428,13 @@ class Database:
         session = self._db_sessions()
         cursor = session.execute(text(f"SHOW CREATE TABLE  {table_name}"))
         ans = cursor.fetchall()
-        return ans[0][1]
+        res = ans[0][1]
+        res = re.sub(r"\s*ENGINE\s*=\s*InnoDB\s*", " ", res, flags=re.IGNORECASE)
+        res = re.sub(
+            r"\s*DEFAULT\s*CHARSET\s*=\s*\w+\s*", " ", res, flags=re.IGNORECASE
+        )
+        res = re.sub(r"\s*COLLATE\s*=\s*\w+\s*", " ", res, flags=re.IGNORECASE)
+        return res
 
     def get_fields(self, table_name):
         """Get column fields about specified table."""
