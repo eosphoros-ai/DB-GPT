@@ -37,7 +37,7 @@ from pilot.conversation import (
 
 from pilot.server.gradio_css import code_highlight_css
 from pilot.server.gradio_patch import Chatbot as grChatbot
-from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 from pilot.utils import build_logger
 from pilot.vector_store.extract_tovec import (
     get_vector_storelist,
@@ -659,13 +659,14 @@ def knowledge_embedding_store(vs_id, files):
         shutil.move(
             file.name, os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename)
         )
-        knowledge_embedding_client = KnowledgeEmbedding(
+        knowledge_embedding_client = EmbeddingEngine(
             knowledge_source=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, vs_id, filename),
             knowledge_type=KnowledgeType.DOCUMENT.value,
             model_name=LLM_MODEL_CONFIG["text2vec"],
             vector_store_config={
                 "vector_store_name": vector_store_name["vs_name"],
-                "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+                "vector_store_type": CFG.VECTOR_STORE_TYPE,
+                "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             },
         )
         knowledge_embedding_client.knowledge_embedding()

@@ -15,8 +15,9 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import (
     DATASETS_DIR,
     LLM_MODEL_CONFIG,
+    KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
-from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 
 knowledge_space_service = KnowledgeService()
 
@@ -37,7 +38,7 @@ class LocalKnowledgeInit:
         for root, _, files in os.walk(file_path, topdown=False):
             for file in files:
                 filename = os.path.join(root, file)
-                ke = KnowledgeEmbedding(
+                ke = EmbeddingEngine(
                     knowledge_source=filename,
                     knowledge_type=KnowledgeType.DOCUMENT.value,
                     model_name=self.model_name,
@@ -68,7 +69,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     vector_name = args.vector_name
     store_type = CFG.VECTOR_STORE_TYPE
-    vector_store_config = {"vector_store_name": vector_name}
+    vector_store_config = {
+        "vector_store_name": vector_name,
+        "vector_store_type": CFG.VECTOR_STORE_TYPE,
+        "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+    }
     print(vector_store_config)
     kv = LocalKnowledgeInit(vector_store_config=vector_store_config)
     kv.knowledge_persist(file_path=DATASETS_DIR)

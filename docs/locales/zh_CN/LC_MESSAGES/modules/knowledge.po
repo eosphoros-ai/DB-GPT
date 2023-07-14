@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-14 15:12+0800\n"
+"POT-Creation-Date: 2023-07-13 15:39+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,12 +19,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../modules/knowledge.rst:2 ../../modules/knowledge.rst:30
-#: e98ef6095fc54f8f8dc045cfa1733dc2
+#: ../../modules/knowledge.rst:2 ../../modules/knowledge.rst:136
+#: 3cc8fa6e9fbd4d889603d99424e9529a
 msgid "Knowledge"
 msgstr "知识"
 
-#: ../../modules/knowledge.rst:4 51340dd2758e42ee8e96c3935de53438
+#: ../../modules/knowledge.rst:4 0465a393d9d541958c39c1d07c885d1f
 #, fuzzy
 msgid ""
 "As the knowledge base is currently the most significant user demand "
@@ -32,55 +32,90 @@ msgid ""
 "knowledge bases. At the same time, we also provide multiple knowledge "
 "base management strategies in this project, such as pdf knowledge,md "
 "knowledge, txt knowledge, word knowledge, ppt knowledge:"
-msgstr "由于知识库是当前用户需求最显著的场景，我们原生支持知识库的构建和处理。同时，我们还在本项目中提供了多种知识库管理策略，如:pdf,md "
-", txt, word, ppt"
+msgstr ""
+"由于知识库是当前用户需求最显著的场景，我们原生支持知识库的构建和处理。同时，我们还在本项目中提供了多种知识库管理策略，如:pdf,md , "
+"txt, word, ppt"
 
-#: ../../modules/knowledge.rst:7 25eeb187843a4d9baa4d0c0a404eec65
+#: ../../modules/knowledge.rst:6 e670cbe14d8e4da88ba935e4120c31e0
+msgid ""
+"We currently support many document formats: raw text, txt, pdf, md, html,"
+" doc, ppt, and url. In the future, we will continue to support more types"
+" of knowledge, including audio, video, various databases, and big data "
+"sources. Of course, we look forward to your active participation in "
+"contributing code."
+msgstr ""
+
+#: ../../modules/knowledge.rst:9 e0bf601a1a0c458297306db6ff79f931
 msgid "**Create your own knowledge repository**"
 msgstr "创建你自己的知识库"
 
-#: ../../modules/knowledge.rst:9 bed8a8f08c194ff59a31dc53f67561c1
-msgid ""
-"1.Place personal knowledge files or folders in the pilot/datasets "
-"directory."
-msgstr "1.将个人知识文件或文件夹放在pilot/datasets目录中。"
+#: ../../modules/knowledge.rst:11 bb26708135d44615be3c1824668010f6
+msgid "1.prepare"
+msgstr "准备"
 
-#: ../../modules/knowledge.rst:11 6e03e1a2799a432f8319c3aaf33e2867
+#: ../../modules/knowledge.rst:13 c150a0378f3e4625908fa0d8a25860e9
+#, fuzzy
 msgid ""
-"We currently support many document formats: txt, pdf, md, html, doc, ppt,"
-" and url."
+"We currently support many document formats: TEXT(raw text), "
+"DOCUMENT(.txt, .pdf, .md, .doc, .ppt, .html), and URL."
 msgstr "当前支持txt, pdf, md, html, doc, ppt, url文档格式"
 
-#: ../../modules/knowledge.rst:13 883ebf16fe7f4e1fbc73ef7430104e79
-msgid "before execution:  python -m spacy download zh_core_web_sm"
-msgstr "在执行之前请先执行python -m spacy download zh_core_web_sm"
+#: ../../modules/knowledge.rst:15 7f9f02a93d5d4325b3d2d976f4bb28a0
+msgid "before execution:"
+msgstr "开始前"
 
-#: ../../modules/knowledge.rst:15 59f4bfa8c1064391919ce2af69f2d4c9
-msgid ""
-"2.Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma "
-"(now only support Chroma and Milvus, if you set Milvus, please set "
-"MILVUS_URL and MILVUS_PORT)"
-msgstr "2.更新你的.env，设置你的向量存储类型，VECTOR_STORE_TYPE=Chroma(现在只支持Chroma和Milvus，如果你设置了Milvus，请设置MILVUS_URL和MILVUS_PORT)"
-
-#: ../../modules/knowledge.rst:18 be600a4d93094045b78a43307dfc8f5f
+#: ../../modules/knowledge.rst:24 59699a8385e04982a992cf0d71f6dcd5
 #, fuzzy
-msgid "2.Run the knowledge repository script in the tools directory."
-msgstr "3.在tools目录执行知识入库脚本"
-
-#: ../../modules/knowledge.rst:20 b27eddbbf6c74993a6653575f57fff18
 msgid ""
-"python tools/knowledge_init.py note : --vector_name : your vector store "
-"name  default_value:default"
+"2.prepare embedding model, you can download from https://huggingface.co/."
+" Notice you have installed git-lfs."
 msgstr ""
+"提前准备Embedding Model, 你可以在https://huggingface.co/进行下载，注意：你需要先安装git-lfs.eg:"
+" git clone https://huggingface.co/THUDM/chatglm2-6b"
 
-#: ../../modules/knowledge.rst:23 f32dc12aedc94ffc8fee77a4b6e0ec88
+#: ../../modules/knowledge.rst:27 2be1a17d0b54476b9dea080d244fd747
 msgid ""
-"3.Add the knowledge repository in the interface by entering the name of "
-"your knowledge repository (if not specified, enter \"default\") so you "
-"can use it for Q&A based on your knowledge base."
-msgstr "如果选择新增知识库，在界面上新增知识库输入你的知识库名"
+"eg: git clone https://huggingface.co/sentence-transformers/all-"
+"MiniLM-L6-v2"
+msgstr "eg: git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2"
 
-#: ../../modules/knowledge.rst:25 5b1412c8beb24784bd2a93fe5c487b7b
+#: ../../modules/knowledge.rst:33 d328f6e243624c9488ebd27c9324621b
+msgid ""
+"3.prepare vector_store instance and vector store config, now we support "
+"Chroma, Milvus and Weaviate."
+msgstr "提前准备向量数据库环境，目前支持Chroma, Milvus and Weaviate向量数据库"
+
+#: ../../modules/knowledge.rst:63 44f97154eff647d399fd30b6f9e3b867
+msgid ""
+"3.init Url Type EmbeddingEngine api and embedding your document into "
+"vector store in your code."
+msgstr "初始化 Url类型 EmbeddingEngine api， 将url文档embedding向量化到向量数据库 "
+
+#: ../../modules/knowledge.rst:75 e2581b414f0148bca88253c7af9cd591
+msgid "If you want to add your source_reader or text_splitter, do this:"
+msgstr "如果你想手动添加你自定义的source_reader和text_splitter, 请参考:"
+
+#: ../../modules/knowledge.rst:95 74c110414f924bbfa3d512e45ba2f30f
+#, fuzzy
+msgid ""
+"4.init Document Type EmbeddingEngine api and embedding your document into"
+" vector store in your code. Document type can be .txt, .pdf, .md, .doc, "
+".ppt."
+msgstr ""
+"初始化 文档型类型 EmbeddingEngine api， 将文档embedding向量化到向量数据库(文档可以是.txt, .pdf, "
+".md, .html, .doc, .ppt)"
+
+#: ../../modules/knowledge.rst:108 0afd40098d5f4dfd9e44fe1d8004da25
+msgid ""
+"5.init TEXT Type EmbeddingEngine api and embedding your document into "
+"vector store in your code."
+msgstr "初始化TEXT类型 EmbeddingEngine api， 将文档embedding向量化到向量数据库"
+
+#: ../../modules/knowledge.rst:120 a66961bf3efd41fa8ea938129446f5a5
+msgid "4.similar search based on your knowledge base. ::"
+msgstr "在知识库进行相似性搜索"
+
+#: ../../modules/knowledge.rst:126 b7066f408378450db26770f83fbd2716
 msgid ""
 "Note that the default vector model used is text2vec-large-chinese (which "
 "is a large model, so if your personal computer configuration is not "
@@ -90,9 +125,79 @@ msgstr ""
 "注意，这里默认向量模型是text2vec-large-chinese(模型比较大，如果个人电脑配置不够建议采用text2vec-base-"
 "chinese),因此确保需要将模型download下来放到models目录中。"
 
-#: ../../modules/knowledge.rst:27 67773e32b01c48628c80b6fab8c90146
+#: ../../modules/knowledge.rst:128 58481d55cab74936b6e84b24c39b1674
+#, fuzzy
 msgid ""
-"`pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf "
+"`pdf_embedding <./knowledge/pdf/pdf_embedding.html>`_: supported pdf "
 "embedding."
 msgstr "pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf embedding."
+
+#: ../../modules/knowledge.rst:129 fbb013c4f1bc46af910c91292f6690cf
+#, fuzzy
+msgid ""
+"`markdown_embedding <./knowledge/markdown/markdown_embedding.html>`_: "
+"supported markdown embedding."
+msgstr "pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf embedding."
+
+#: ../../modules/knowledge.rst:130 59d45732f4914d16b4e01aee0992edf7
+#, fuzzy
+msgid ""
+"`word_embedding <./knowledge/word/word_embedding.html>`_: supported word "
+"embedding."
+msgstr "pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf embedding."
+
+#: ../../modules/knowledge.rst:131 df0e6f311861423e885b38e020a7c0f0
+#, fuzzy
+msgid ""
+"`url_embedding <./knowledge/url/url_embedding.html>`_: supported url "
+"embedding."
+msgstr "pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf embedding."
+
+#: ../../modules/knowledge.rst:132 7c550c1f5bc34fe9986731fb465e12cd
+#, fuzzy
+msgid ""
+"`ppt_embedding <./knowledge/ppt/ppt_embedding.html>`_: supported ppt "
+"embedding."
+msgstr "pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf embedding."
+
+#: ../../modules/knowledge.rst:133 8648684cb191476faeeb548389f79050
+#, fuzzy
+msgid ""
+"`string_embedding <./knowledge/string/string_embedding.html>`_: supported"
+" raw text embedding."
+msgstr "pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf embedding."
+
+#~ msgid "before execution:  python -m spacy download zh_core_web_sm"
+#~ msgstr "在执行之前请先执行python -m spacy download zh_core_web_sm"
+
+#~ msgid "2.Run the knowledge repository script in the tools directory."
+#~ msgstr "3.在tools目录执行知识入库脚本"
+
+#~ msgid ""
+#~ "python tools/knowledge_init.py note : "
+#~ "--vector_name : your vector store name"
+#~ "  default_value:default"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "3.Add the knowledge repository in the"
+#~ " interface by entering the name of"
+#~ " your knowledge repository (if not "
+#~ "specified, enter \"default\") so you can"
+#~ " use it for Q&A based on your"
+#~ " knowledge base."
+#~ msgstr "如果选择新增知识库，在界面上新增知识库输入你的知识库名"
+
+#~ msgid ""
+#~ "1.Place personal knowledge files or "
+#~ "folders in the pilot/datasets directory."
+#~ msgstr "1.将个人知识文件或文件夹放在pilot/datasets目录中。"
+
+#~ msgid ""
+#~ "2.Update your .env, set your vector "
+#~ "store type, VECTOR_STORE_TYPE=Chroma (now only"
+#~ " support Chroma and Milvus, if you"
+#~ " set Milvus, please set MILVUS_URL "
+#~ "and MILVUS_PORT)"
+#~ msgstr "2.更新你的.env，设置你的向量存储类型，VECTOR_STORE_TYPE=Chroma(现在只支持Chroma和Milvus，如果你设置了Milvus，请设置MILVUS_URL和MILVUS_PORT)"
 
