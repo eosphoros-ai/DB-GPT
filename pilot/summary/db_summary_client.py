@@ -4,10 +4,10 @@ import uuid
 from langchain.embeddings import HuggingFaceEmbeddings, logger
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import LLM_MODEL_CONFIG
+from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.scene.base import ChatScene
 from pilot.scene.base_chat import BaseChat
-from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 from pilot.embedding_engine.string_embedding import StringEmbedding
 from pilot.summary.mysql_db_summary import MysqlSummary
 from pilot.scene.chat_factory import ChatFactory
@@ -33,6 +33,8 @@ class DBSummaryClient:
         )
         vector_store_config = {
             "vector_store_name": dbname + "_summary",
+            "vector_store_type": CFG.VECTOR_STORE_TYPE,
+            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             "embeddings": embeddings,
         }
         embedding = StringEmbedding(
@@ -60,6 +62,8 @@ class DBSummaryClient:
             ) in db_summary_client.get_table_summary().items():
                 table_vector_store_config = {
                     "vector_store_name": dbname + "_" + table_name + "_ts",
+                    "vector_store_type": CFG.VECTOR_STORE_TYPE,
+                    "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
                     "embeddings": embeddings,
                 }
                 embedding = StringEmbedding(
@@ -73,8 +77,10 @@ class DBSummaryClient:
     def get_db_summary(self, dbname, query, topk):
         vector_store_config = {
             "vector_store_name": dbname + "_profile",
+            "vector_store_type": CFG.VECTOR_STORE_TYPE,
+            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
-        knowledge_embedding_client = KnowledgeEmbedding(
+        knowledge_embedding_client = EmbeddingEngine(
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
         )
@@ -86,8 +92,11 @@ class DBSummaryClient:
         """get user query related tables info"""
         vector_store_config = {
             "vector_store_name": dbname + "_summary",
+            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+            "vector_store_type": CFG.VECTOR_STORE_TYPE,
+            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
-        knowledge_embedding_client = KnowledgeEmbedding(
+        knowledge_embedding_client = EmbeddingEngine(
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
         )
@@ -109,9 +118,11 @@ class DBSummaryClient:
         for table in related_tables:
             vector_store_config = {
                 "vector_store_name": dbname + "_" + table + "_ts",
+                "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+                "vector_store_type": CFG.VECTOR_STORE_TYPE,
+                "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             }
-            knowledge_embedding_client = KnowledgeEmbedding(
-                file_path="",
+            knowledge_embedding_client = EmbeddingEngine(
                 model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
                 vector_store_config=vector_store_config,
             )
@@ -128,6 +139,8 @@ class DBSummaryClient:
     def init_db_profile(self, db_summary_client, dbname, embeddings):
         profile_store_config = {
             "vector_store_name": dbname + "_profile",
+            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+            "vector_store_type": CFG.VECTOR_STORE_TYPE,
             "embeddings": embeddings,
         }
         embedding = StringEmbedding(

@@ -2,6 +2,11 @@ from typing import Dict, List, Optional
 
 from langchain.document_loaders import CSVLoader
 from langchain.schema import Document
+from langchain.text_splitter import (
+    TextSplitter,
+    SpacyTextSplitter,
+    RecursiveCharacterTextSplitter,
+)
 
 from pilot.embedding_engine import SourceEmbedding, register
 
@@ -13,19 +18,36 @@ class CSVEmbedding(SourceEmbedding):
         self,
         file_path,
         vector_store_config,
-        embedding_args: Optional[Dict] = None,
+        source_reader: Optional = None,
+        text_splitter: Optional[TextSplitter] = None,
     ):
         """Initialize with csv path."""
-        super().__init__(file_path, vector_store_config)
+        super().__init__(
+            file_path, vector_store_config, source_reader=None, text_splitter=None
+        )
         self.file_path = file_path
         self.vector_store_config = vector_store_config
-        self.embedding_args = embedding_args
+        self.source_reader = source_reader or None
+        self.text_splitter = text_splitter or None
 
     @register
     def read(self):
         """Load from csv path."""
-        loader = CSVLoader(file_path=self.file_path)
-        return loader.load()
+        if self.source_reader is None:
+            self.source_reader = CSVLoader(self.file_path)
+        if self.text_splitter is None:
+            try:
+                self.text_splitter = SpacyTextSplitter(
+                    pipeline="zh_core_web_sm",
+                    chunk_size=100,
+                    chunk_overlap=100,
+                )
+            except Exception:
+                self.text_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=100, chunk_overlap=50
+                )
+
+        return self.source_reader.load_and_split(self.text_splitter)
 
     @register
     def data_process(self, documents: List[Document]):

@@ -48,6 +48,7 @@ Getting Started
    :hidden:
 
    getting_started/getting_started.md
+   getting_started/installation.md
    getting_started/concepts.md
    getting_started/tutorials.md
 

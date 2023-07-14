@@ -1,9 +1,11 @@
 import threading
 from datetime import datetime
 
+from langchain.text_splitter import RecursiveCharacterTextSplitter, SpacyTextSplitter
+
 from pilot.configs.config import Config
-from pilot.configs.model_config import LLM_MODEL_CONFIG
-from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 from pilot.logs import logger
 from pilot.server.knowledge.chunk_db import (
     DocumentChunkEntity,
@@ -122,13 +124,34 @@ class KnowledgeService:
                 raise Exception(
                     f" doc:{doc.doc_name} status is {doc.status}, can not sync"
                 )
-            client = KnowledgeEmbedding(
+
+            if CFG.LANGUAGE == "en":
+                text_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
+                    chunk_overlap=20,
+                    length_function=len,
+                )
+            else:
+                try:
+                    text_splitter = SpacyTextSplitter(
+                        pipeline="zh_core_web_sm",
+                        chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
+                        chunk_overlap=100,
+                    )
+                except Exception:
+                    text_splitter = RecursiveCharacterTextSplitter(
+                        chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE, chunk_overlap=50
+                    )
+            client = EmbeddingEngine(
                 knowledge_source=doc.content,
                 knowledge_type=doc.doc_type.upper(),
                 model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
                 vector_store_config={
                     "vector_store_name": space_name,
+                    "vector_store_type": CFG.VECTOR_STORE_TYPE,
+                    "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
                 },
+                text_splitter=text_splitter,
             )
             chunk_docs = client.read()
             # update document status
