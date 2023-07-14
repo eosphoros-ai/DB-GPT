@@ -62,17 +62,6 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
   <img src="./assets/chat_knowledge.png" width="800px" />
 </p>
 
-## Releases 
-- [2023/07/12]🔥🔥🔥DB-GPT Python API 0.3.0 and Multi GPU Support [documents](https://db-gpt.readthedocs.io/en/latest/getting_started/installation.html) 
-- [2023/07/06]🔥🔥🔥Brand-new DB-GPT product with a brand-new web UI. [documents](https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html) 
-- [2023/06/25]🔥support chatglm2-6b model. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
-- [2023/06/14] support gpt4all model, which can run at M1/M2, or cpu machine. [documents](https://db-gpt.readthedocs.io/en/latest/modules/llms.html) 
-- [2023/06/01]🔥 On the basis of the Vicuna-13B basic model, task chain calls are implemented through plugins. For example, the implementation of creating a database with a single sentence.[demo](./assets/auto_plugin.gif)
-- [2023/06/01]🔥 QLoRA guanaco(7b, 13b, 33b) support.
-- [2023/05/28] Learning from crawling data from the Internet [demo](./assets/dbgpt_demo.gif)
-- [2023/05/21] Generate SQL and execute it automatically. [demo](./assets/chat-data.gif)
-- [2023/05/15] Chat with documents. [demo](./assets/new_knownledge_en.gif)
-- [2023/05/06] SQL generation and diagnosis. [demo](./assets/demo_en.gif)
 
 ## Features
 
