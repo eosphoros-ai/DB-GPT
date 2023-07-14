@@ -65,18 +65,6 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
   <img src="./assets/chat_knowledge.png" width="800px" />
 </p>
 
-## 最新发布
-- [2023/07/12]🔥🔥🔥DB-GPT Python API 0.3.0 and Multi GPU Support. [documents](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/installation.html)
-- [2023/07/06]🔥🔥🔥 全新的DB-GPT产品。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)
-- [2023/06/25]🔥 支持ChatGLM2-6B模型。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
-- [2023/06/14]🔥 支持gpt4all模型，可以在M1/M2 或者CPU机器上运行。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
-- [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.
-- [2023/06/01]🔥 QLoRA guanaco(原驼)支持, 支持4090运行33B
-- [2023/05/28]🔥根据URL进行对话 [演示](./assets/chat_url_zh.gif)
-- [2023/05/21] SQL生成与自动执行. [演示](./assets/auto_sql.gif)
-- [2023/05/15] 知识库对话 [演示](./assets/new_knownledge.gif)
-- [2023/05/06] SQL生成与诊断 [演示](./assets/演示.gif)
-
 ## 特性一览
 
 目前我们已经发布了多种关键的特性，这里一一列举展示一下当前发布的能力。
