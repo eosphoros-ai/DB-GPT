@@ -8,14 +8,12 @@ CFG = Config()
 
 
 class InnerChatDBSummary(BaseChat):
-    chat_scene: str = ChatScene.InnerChatDBSummary.value
+    chat_scene: str = ChatScene.InnerChatDBSummary.value()
 
     """Number of results to return from the query"""
 
     def __init__(
         self,
-        temperature,
-        max_new_tokens,
         chat_session_id,
         user_input,
         db_select,
@@ -23,8 +21,6 @@ class InnerChatDBSummary(BaseChat):
     ):
         """ """
         super().__init__(
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
             chat_mode=ChatScene.InnerChatDBSummary,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
@@ -39,9 +35,6 @@ class InnerChatDBSummary(BaseChat):
             "db_profile_summary": self.db_summary,
         }
         return input_values
-
-    def do_with_prompt_response(self, prompt_response):
-        return prompt_response
 
     @property
     def chat_type(self) -> str:

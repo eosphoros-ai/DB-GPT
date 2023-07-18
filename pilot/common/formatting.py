@@ -1,4 +1,5 @@
 """Utilities for formatting strings."""
+import json
 from string import Formatter
 from typing import Any, List, Mapping, Sequence, Union
 
@@ -36,3 +37,13 @@ class StrictFormatter(Formatter):
 
 
 formatter = StrictFormatter()
+
+
+class MyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, set):
+            return list(obj)
+        elif hasattr(obj, "__dict__"):
+            return obj.__dict__
+        else:
+            return json.JSONEncoder.default(self, obj)

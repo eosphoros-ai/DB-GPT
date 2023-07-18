@@ -1,3 +1,4 @@
+from pilot.embedding_engine.knowledge_type import KnowledgeType
 from pilot.scene.base_chat import BaseChat, logger, headers
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
@@ -17,21 +18,19 @@ from pilot.configs.model_config import (
 )
 
 from pilot.scene.chat_knowledge.url.prompt import prompt
-from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 
 CFG = Config()
 
 
 class ChatUrlKnowledge(BaseChat):
-    chat_scene: str = ChatScene.ChatUrlKnowledge.value
+    chat_scene: str = ChatScene.ChatUrlKnowledge.value()
 
     """Number of results to return from the query"""
 
-    def __init__(self, temperature, max_new_tokens, chat_session_id, user_input, url):
+    def __init__(self, chat_session_id, user_input, url):
         """ """
         super().__init__(
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
             chat_mode=ChatScene.ChatUrlKnowledge,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
@@ -39,13 +38,14 @@ class ChatUrlKnowledge(BaseChat):
         self.url = url
         vector_store_config = {
             "vector_store_name": url.replace(":", ""),
-            "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+            "vector_store_type": CFG.VECTOR_STORE_TYPE,
+            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
-        self.knowledge_embedding_client = KnowledgeEmbedding(
-            model_name=LLM_MODEL_CONFIG["text2vec"],
+        self.knowledge_embedding_client = EmbeddingEngine(
+            model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
-            file_type="url",
-            file_path=url,
+            knowledge_type=KnowledgeType.URL.value,
+            knowledge_source=url,
         )
 
         # url soruce in vector
@@ -61,9 +61,6 @@ class ChatUrlKnowledge(BaseChat):
         context = context[:2000]
         input_values = {"context": context, "question": self.current_user_input}
         return input_values
-
-    def do_with_prompt_response(self, prompt_response):
-        return prompt_response
 
     @property
     def chat_type(self) -> str:

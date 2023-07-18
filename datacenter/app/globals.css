@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+  margin: 0;
+  color: var(--joy-palette-text-primary, var(--joy-palette-neutral-800, #25252D));
+  font-family: var(--joy-fontFamily-body, var(--joy-Josefin Sans, sans-serif));
+  font-size: var(--joy-fontSize-md, 1rem);
+  line-height: var(--joy-lineHeight-md, 1.5);
+  background-color: var(--joy-palette-background-body);
+}
+
+body .ant-btn-primary {
+  background-color: #1677ff;
+}
+
+.ant-pagination .ant-pagination-prev * {
+  color: rgb(145, 35, 167) !important;
+}
+
+.ant-pagination .ant-pagination-next * {
+  color: rgb(145, 35, 167) !important;
+}
+
+.ant-pagination .ant-pagination-item {
+  border-color: rgb(145, 35, 167) !important;
+  background-color: rgb(145, 35, 167) !important;
+}
+
+.ant-pagination .ant-pagination-item.ant-pagination-item-active a {
+  color: white !important;
+}
