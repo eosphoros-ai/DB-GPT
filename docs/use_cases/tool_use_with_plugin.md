@@ -20,7 +20,7 @@ python /DB-GPT/pilot/webserver.py
 ```
 - Test Case: Use a histogram to analyze the total order amount of users in different cities.
 <p align="center">
-  <img src="../../assets/chart_db_city_users.png" width="680px" />
+  <img src="../../assets/dashboard.png" width="680px" />
 </p>
 
 - More detail see: [DB-DASHBOARD](https://github.com/csunny/DB-GPT-Plugins/blob/main/src/dbgpt_plugins/Readme.md)

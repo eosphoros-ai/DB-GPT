@@ -32,14 +32,9 @@ class BaseLLMAdaper:
         return True
 
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=False, trust_remote_code=True
-        )
+        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
         model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            low_cpu_mem_usage=True,
-            trust_remote_code=True,
-            **from_pretrained_kwargs,
+            model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
         )
         return model, tokenizer
 
@@ -62,7 +57,7 @@ def get_llm_model_adapter(model_path: str) -> BaseLLMAdaper:
     raise ValueError(f"Invalid model adapter for {model_path}")
 
 
-# TODO support cpu? for practice we support gpt4all or chatglm-6b-int4?
+# TODO support cpu? for practise we support gpt4all or chatglm-6b-int4?
 
 
 class VicunaLLMAdapater(BaseLLMAdaper):
@@ -79,13 +74,54 @@ class VicunaLLMAdapater(BaseLLMAdaper):
         return model, tokenizer
 
 
+def auto_configure_device_map(num_gpus):
+    """handling multi gpu calls"""
+    # transformer.word_embeddings occupying 1 floors
+    # transformer.final_layernorm and lm_head occupying 1 floors
+    # transformer.layers occupying 28 floors
+    # Allocate a total of 30 layers to number On gpus cards
+    num_trans_layers = 28
+    per_gpu_layers = 30 / num_gpus
+    # Bugfix: call torch.embedding in Linux and the incoming weight and input are not on the same device, resulting in a RuntimeError
+    # Under Windows, model. device will be set to transformer. word_ Embeddings. device
+    # Under Linux, model. device will be set to lm_ Head.device
+    # When calling chat or stream_ During chat, input_ IDS will be placed on model. device
+    # If transformer. word_ If embeddings. device and model. device are different, it will cause a RuntimeError
+    # Therefore, here we will transform. word_ Embeddings, transformer. final_ Layernorm, lm_ Put all the heads on the first card
+    device_map = {
+        "transformer.embedding.word_embeddings": 0,
+        "transformer.encoder.final_layernorm": 0,
+        "transformer.output_layer": 0,
+        "transformer.rotary_pos_emb": 0,
+        "lm_head": 0,
+    }
+
+    used = 2
+    gpu_target = 0
+    for i in range(num_trans_layers):
+        if used >= per_gpu_layers:
+            gpu_target += 1
+            used = 0
+        assert gpu_target < num_gpus
+        device_map[f"transformer.encoder.layers.{i}"] = gpu_target
+        used += 1
+
+    return device_map
+
+
 class ChatGLMAdapater(BaseLLMAdaper):
     """LLM Adatpter for THUDM/chatglm-6b"""
 
     def match(self, model_path: str):
         return "chatglm" in model_path
 
-    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+    def loader(
+        self,
+        model_path: str,
+        from_pretrained_kwargs: dict,
+        device_map=None,
+        num_gpus=CFG.NUM_GPUS,
+    ):
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
         if DEVICE != "cuda":
@@ -97,10 +133,19 @@ class ChatGLMAdapater(BaseLLMAdaper):
             model = (
                 AutoModel.from_pretrained(
                     model_path, trust_remote_code=True, **from_pretrained_kwargs
-                )
-                .half()
-                .cuda()
+                ).half()
+                # .cuda()
             )
+            from accelerate import dispatch_model
+
+            # model = AutoModel.from_pretrained(model_path, trust_remote_code=True,
+            #                                   **from_pretrained_kwargs).half()
+            #
+            if device_map is None:
+                device_map = auto_configure_device_map(num_gpus)
+
+            model = dispatch_model(model, device_map=device_map)
+
             return model, tokenizer
 
 
