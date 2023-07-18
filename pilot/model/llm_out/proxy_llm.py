@@ -39,7 +39,7 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
         elif "ai:" in message:
             history.append(
                 {
-                    "role": "ai",
+                    "role": "assistant",
                     "content": message.split("ai:")[1],
                 }
             )
@@ -57,6 +57,7 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
     for m in temp_his:
         if m["role"] == "user":
             last_user_input = m
+            break
     if last_user_input:
         history.remove(last_user_input)
         history.append(last_user_input)
@@ -76,11 +77,15 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
     text = ""
     for line in res.iter_lines():
         if line:
-            json_data = line.split(b": ", 1)[1]
-            decoded_line = json_data.decode("utf-8")
-            if decoded_line.lower() != "[DONE]".lower():
-                obj = json.loads(json_data)
-                if obj["choices"][0]["delta"].get("content") is not None:
-                    content = obj["choices"][0]["delta"]["content"]
-                    text += content
-            yield text
+            if not line.startswith(b"data: "):
+                error_message = line.decode("utf-8")
+                yield error_message
+            else:
+                json_data = line.split(b": ", 1)[1]
+                decoded_line = json_data.decode("utf-8")
+                if decoded_line.lower() != "[DONE]".lower():
+                    obj = json.loads(json_data)
+                    if obj["choices"][0]["delta"].get("content") is not None:
+                        content = obj["choices"][0]["delta"]["content"]
+                        text += content
+                yield text

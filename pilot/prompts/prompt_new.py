@@ -7,6 +7,7 @@ from pydantic import BaseModel, Extra, Field, root_validator
 from pilot.common.formatting import formatter
 from pilot.out_parser.base import BaseOutputParser
 from pilot.common.schema import SeparatorStyle
+from pilot.prompts.example_base import ExampleSelector
 
 
 def jinja2_formatter(template: str, **kwargs: Any) -> str:
@@ -32,7 +33,6 @@ class PromptTemplate(BaseModel, ABC):
     input_variables: List[str]
     """A list of the names of the variables the prompt template expects."""
     template_scene: Optional[str]
-
     template_define: Optional[str]
     """this template define"""
     template: Optional[str]
@@ -46,6 +46,13 @@ class PromptTemplate(BaseModel, ABC):
     output_parser: BaseOutputParser = None
     """"""
     sep: str = SeparatorStyle.SINGLE.value
+
+    example_selector: ExampleSelector = None
+
+    need_historical_messages: bool = False
+
+    temperature: float = 0.6
+    max_new_tokens: int = 1024
 
     class Config:
         """Configuration for this pydantic object."""

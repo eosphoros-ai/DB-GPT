@@ -1,7 +1,6 @@
 import os
 
 from langchain.vectorstores import Chroma
-from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.logs import logger
 from pilot.vector_store.vector_store_base import VectorStoreBase
 
@@ -13,7 +12,7 @@ class ChromaStore(VectorStoreBase):
         self.ctx = ctx
         self.embeddings = ctx["embeddings"]
         self.persist_dir = os.path.join(
-            KNOWLEDGE_UPLOAD_ROOT_PATH, ctx["vector_store_name"] + ".vectordb"
+            ctx["chroma_persist_path"], ctx["vector_store_name"] + ".vectordb"
         )
         self.vector_store_client = Chroma(
             persist_directory=self.persist_dir, embedding_function=self.embeddings
@@ -32,5 +31,10 @@ class ChromaStore(VectorStoreBase):
         logger.info("ChromaStore load document")
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
-        self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
+        ids = self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
         self.vector_store_client.persist()
+        return ids
+
+    def delete_by_ids(self, ids):
+        collection = self.vector_store_client._collection
+        collection.delete(ids=ids)

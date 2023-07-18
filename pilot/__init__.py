@@ -1,3 +1,4 @@
-from pilot.source_embedding import SourceEmbedding, register
+from pilot.embedding_engine import SourceEmbedding, register
+from pilot.embedding_engine import EmbeddingEngine, KnowledgeType
 
-__all__ = ["SourceEmbedding", "register"]
+__all__ = ["SourceEmbedding", "register", "EmbeddingEngine", "KnowledgeType"]

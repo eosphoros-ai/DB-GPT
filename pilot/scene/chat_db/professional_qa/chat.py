@@ -15,17 +15,13 @@ CFG = Config()
 
 
 class ChatWithDbQA(BaseChat):
-    chat_scene: str = ChatScene.ChatWithDbQA.value
+    chat_scene: str = ChatScene.ChatWithDbQA.value()
 
     """Number of results to return from the query"""
 
-    def __init__(
-        self, temperature, max_new_tokens, chat_session_id, db_name, user_input
-    ):
+    def __init__(self, chat_session_id, db_name, user_input):
         """ """
         super().__init__(
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
             chat_mode=ChatScene.ChatWithDbQA,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
@@ -65,6 +61,3 @@ class ChatWithDbQA(BaseChat):
             "table_info": table_info,
         }
         return input_values
-
-    def do_with_prompt_response(self, prompt_response):
-        return prompt_response
