@@ -105,6 +105,11 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 6. Prompt自动生成与优化：自动化生成高质量的Prompt，并进行优化，提高系统的响应效率。  
 7. 多端产品界面：支持多种不同的客户端产品，例如Web、移动应用和桌面应用等。
 
+### 子模块
+- [DB-GPT-Hub](https://github.com/csunny/DB-GPT-Hub) 使用 LLM 进行文本到 SQL 解析
+- [DB-GPT-Plugins](https://github.com/csunny/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
+- [DB-GPT-Web](https://github.com/csunny/DB-GPT-Web)  多端交互前端界面
+
 ## 安装
 [快速开始](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)
 
