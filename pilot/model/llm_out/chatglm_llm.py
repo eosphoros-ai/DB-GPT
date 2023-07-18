@@ -8,6 +8,11 @@ import copy
 import torch
 
 from pilot.conversation import ROLE_ASSISTANT, ROLE_USER
+from pilot.scene.base_message import ModelMessage, _parse_model_messages
+
+# TODO move sep to scene prompt of model
+_CHATGLM_SEP = "\n"
+_CHATGLM2_SEP = "\n\n"
 
 
 @torch.inference_mode()
@@ -32,42 +37,20 @@ def chatglm_generate_stream(
         generate_kwargs["temperature"] = temperature
 
     # TODO, Fix this
-    print(prompt)
-    messages = prompt.split(stop)
-    #
-    # # Add history conversation
-    hist = [HistoryEntry()]
-    system_messages = []
-    for message in messages[:-2]:
-        if len(message) <= 0:
-            continue
-        if "human:" in message:
-            hist[-1].add_question(message.split("human:")[1])
-        elif "system:" in message:
-            msg = message.split("system:")[1]
-            hist[-1].add_question(msg)
-            system_messages.append(msg)
-        elif "ai:" in message:
-            hist[-1].add_answer(message.split("ai:")[1])
-            hist.append(HistoryEntry())
-        else:
-            # TODO
-            # hist[-1].add_question(message.split("system:")[1])
-            # once_conversation.append(f"""###system:{message} """)
-            pass
-
-    try:
-        query = messages[-2].split("human:")[1]
-    except IndexError:
-        query = messages[-3].split("human:")[1]
-    hist = build_history(hist)
+    # print(prompt)
+    # messages = prompt.split(stop)
+    messages: List[ModelMessage] = params["messages"]
+    query, system_messages, hist = _parse_model_messages(messages)
+    system_messages_str = "".join(system_messages)
     if not hist:
         # No history conversation, but has system messages, merge to user`s query
-        query = prompt_adaptation(system_messages, query)
+        query = prompt_adaptation(system_messages_str, query)
+    else:
+        # history exist, add system message to head of history
+        hist[0][0] = system_messages_str + _CHATGLM2_SEP + hist[0][0]
+
     print("Query Message: ", query)
     print("hist: ", hist)
-    # output = ""
-    # i = 0
 
     for i, (response, new_hist) in enumerate(
         model.stream_chat(tokenizer, query, hist, **generate_kwargs)
@@ -103,10 +86,10 @@ def build_history(hist: List[HistoryEntry]) -> List[List[str]]:
     return list(filter(lambda hl: hl is not None, map(lambda h: h.to_list(), hist)))
 
 
-def prompt_adaptation(system_messages: List[str], human_message: str) -> str:
-    if not system_messages:
+def prompt_adaptation(system_messages_str: str, human_message: str) -> str:
+    if not system_messages_str or system_messages_str == "":
         return human_message
-    system_messages_str = " ".join(system_messages)
+    # TODO Multi-model prompt adaptation
     adaptation_rules = [
         r"Question:\s*{}\s*",  # chat_db scene
         r"Goals:\s*{}\s*",  # chat_execution
@@ -119,4 +102,4 @@ def prompt_adaptation(system_messages: List[str], human_message: str) -> str:
         if re.search(pattern, system_messages_str):
             return system_messages_str
     # https://huggingface.co/THUDM/chatglm2-6b/blob/e186c891cf64310ac66ef10a87e6635fa6c2a579/modeling_chatglm.py#L926
-    return f"{system_messages_str}\n\n问：{human_message}\n\n答："
+    return system_messages_str + _CHATGLM2_SEP + human_message
