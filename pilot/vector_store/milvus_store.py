@@ -3,11 +3,7 @@ from typing import Any, Iterable, List, Optional, Tuple
 from langchain.docstore.document import Document
 from pymilvus import Collection, DataType, connections, utility
 
-from pilot.configs.config import Config
 from pilot.vector_store.vector_store_base import VectorStoreBase
-
-
-CFG = Config()
 
 
 class MilvusStore(VectorStoreBase):
@@ -22,10 +18,10 @@ class MilvusStore(VectorStoreBase):
         # self.configure(cfg)
 
         connect_kwargs = {}
-        self.uri = CFG.MILVUS_URL
-        self.port = CFG.MILVUS_PORT
-        self.username = CFG.MILVUS_USERNAME
-        self.password = CFG.MILVUS_PASSWORD
+        self.uri = ctx.get("milvus_url", None)
+        self.port = ctx.get("milvus_port", None)
+        self.username = ctx.get("milvus_username", None)
+        self.password = ctx.get("milvus_password", None)
         self.collection_name = ctx.get("vector_store_name", None)
         self.secure = ctx.get("secure", None)
         self.embedding = ctx.get("embeddings", None)

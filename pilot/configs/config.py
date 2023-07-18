@@ -17,6 +17,9 @@ class Config(metaclass=Singleton):
     def __init__(self) -> None:
         """Initialize the Config class"""
 
+        self.NEW_SERVER_MODE = False
+        self.SERVER_LIGHT_MODE = False
+
         # Gradio language version: en, zh
         self.LANGUAGE = os.getenv("LANGUAGE", "en")
         self.WEB_SERVER_PORT = int(os.getenv("WEB_SERVER_PORT", 7860))
@@ -24,6 +27,8 @@ class Config(metaclass=Singleton):
         self.debug_mode = False
         self.skip_reprompt = False
         self.temperature = float(os.getenv("TEMPERATURE", 0.7))
+
+        self.NUM_GPUS = int(os.getenv("NUM_GPUS", 1))
 
         self.execute_local_commands = (
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
@@ -149,8 +154,6 @@ class Config(metaclass=Singleton):
         self.MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
         self.MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", None)
-
-        self.WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://127.0.0.1:8080")
 
         # QLoRA
         self.QLoRA = os.getenv("QUANTIZE_QLORA", "True")

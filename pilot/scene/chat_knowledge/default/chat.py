@@ -19,30 +19,29 @@ from pilot.configs.model_config import (
 )
 
 from pilot.scene.chat_knowledge.default.prompt import prompt
-from pilot.source_embedding.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 
 CFG = Config()
 
 
 class ChatDefaultKnowledge(BaseChat):
-    chat_scene: str = ChatScene.ChatKnowledge.value
+    chat_scene: str = ChatScene.ChatDefaultKnowledge.value()
 
     """Number of results to return from the query"""
 
-    def __init__(self, temperature, max_new_tokens, chat_session_id, user_input):
+    def __init__(self, chat_session_id, user_input):
         """ """
         super().__init__(
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
-            chat_mode=ChatScene.ChatKnowledge,
+            chat_mode=ChatScene.ChatDefaultKnowledge,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
         )
         vector_store_config = {
             "vector_store_name": "default",
-            "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+            "vector_store_type": CFG.VECTOR_STORE_TYPE,
+            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
-        self.knowledge_embedding_client = KnowledgeEmbedding(
+        self.knowledge_embedding_client = EmbeddingEngine(
             model_name=LLM_MODEL_CONFIG["text2vec"],
             vector_store_config=vector_store_config,
         )
@@ -61,9 +60,6 @@ class ChatDefaultKnowledge(BaseChat):
             )
         return input_values
 
-    def do_with_prompt_response(self, prompt_response):
-        return prompt_response
-
     @property
     def chat_type(self) -> str:
-        return ChatScene.ChatKnowledge.value
+        return ChatScene.ChatDefaultKnowledge.value

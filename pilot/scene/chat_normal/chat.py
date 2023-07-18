@@ -14,15 +14,13 @@ CFG = Config()
 
 
 class ChatNormal(BaseChat):
-    chat_scene: str = ChatScene.ChatNormal.value
+    chat_scene: str = ChatScene.ChatNormal.value()
 
     """Number of results to return from the query"""
 
-    def __init__(self, temperature, max_new_tokens, chat_session_id, user_input):
+    def __init__(self, chat_session_id, user_input):
         """ """
         super().__init__(
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
             chat_mode=ChatScene.ChatNormal,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
@@ -32,7 +30,7 @@ class ChatNormal(BaseChat):
         input_values = {"input": self.current_user_input}
         return input_values
 
-    def do_with_prompt_response(self, prompt_response):
+    def do_action(self, prompt_response):
         return prompt_response
 
     @property
