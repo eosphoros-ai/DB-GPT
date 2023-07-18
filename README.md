@@ -107,6 +107,10 @@ The core capabilities mainly consist of the following parts:
 6. Prompt generation and optimization: Automatically generates high-quality prompts and optimizes them to improve system response efficiency.
 7. Multi-platform product interface: Supports various client products, such as web, mobile applications, and desktop applications.
 
+### SubModule
+- [DB-GPT-Hub](https://github.com/csunny/DB-GPT-Hub) Text-to-SQL parsing with LLMs
+- [DB-GPT-Plugins](https://github.com/csunny/DB-GPT-Plugins) DB-GPT Plugins, Can run autogpt plugin directly
+- [DB-GPT-Web](https://github.com/csunny/DB-GPT-Web)  ChatUI for DB-GPT  
 
 
 ## Install 
@@ -153,7 +157,4 @@ This project is standing on the shoulders of giants and is not going to work wit
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/4BNdxm5d)
-
-
-
+We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/rBgtJW8U)
