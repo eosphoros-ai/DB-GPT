@@ -2,6 +2,7 @@ import time
 from abc import ABC, abstractmethod
 import datetime
 import traceback
+import warnings
 import json
 from pydantic import BaseModel, Field, root_validator, validator, Extra
 from typing import (
@@ -229,6 +230,7 @@ class BaseChat(ABC):
             return self.nostream_call()
 
     def generate_llm_text(self) -> str:
+        warnings.warn("This method is deprecated - please use `generate_llm_messages`.")
         text = ""
         ### Load scene setting or character definition
         if self.prompt_template.template_define:
