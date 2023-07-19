@@ -2,6 +2,7 @@ import time
 from abc import ABC, abstractmethod
 import datetime
 import traceback
+import warnings
 import json
 from pydantic import BaseModel, Field, root_validator, validator, Extra
 from typing import (
@@ -37,6 +38,7 @@ from pilot.scene.base_message import (
     HumanMessage,
     AIMessage,
     ViewMessage,
+    ModelMessage,
 )
 from pilot.configs.config import Config
 
@@ -116,6 +118,7 @@ class BaseChat(ABC):
         payload = {
             "model": self.llm_model,
             "prompt": self.generate_llm_text(),
+            "messages": self.generate_llm_messages(),
             "temperature": float(self.prompt_template.temperature),
             "max_new_tokens": int(self.prompt_template.max_new_tokens),
             "stop": self.prompt_template.sep,
@@ -227,6 +230,7 @@ class BaseChat(ABC):
             return self.nostream_call()
 
     def generate_llm_text(self) -> str:
+        warnings.warn("This method is deprecated - please use `generate_llm_messages`.")
         text = ""
         ### Load scene setting or character definition
         if self.prompt_template.template_define:
@@ -244,24 +248,62 @@ class BaseChat(ABC):
         text += self.__load_user_message()
         return text
 
-    def __load_system_message(self):
+    def generate_llm_messages(self) -> List[ModelMessage]:
+        """
+        Structured prompt messages interaction between dbgpt-server and llm-server
+        See https://github.com/csunny/DB-GPT/issues/328
+        """
+        messages = []
+        ### Load scene setting or character definition as system message
+        if self.prompt_template.template_define:
+            messages.append(
+                ModelMessage(
+                    role="system",
+                    content=self.prompt_template.template_define,
+                )
+            )
+        ### Load prompt
+        messages += self.__load_system_message(str_message=False)
+        ### Load examples
+        messages += self.__load_example_messages(str_message=False)
+
+        ### Load History
+        messages += self.__load_histroy_messages(str_message=False)
+
+        ### Load User Input
+        messages += self.__load_user_message(str_message=False)
+        return messages
+
+    def __load_system_message(self, str_message: bool = True):
         system_convs = self.current_message.get_system_conv()
         system_text = ""
+        system_messages = []
         for system_conv in system_convs:
             system_text += (
                 system_conv.type + ":" + system_conv.content + self.prompt_template.sep
             )
-        return system_text
+            system_messages.append(
+                ModelMessage(role=system_conv.type, content=system_conv.content)
+            )
+        return system_text if str_message else system_messages
 
-    def __load_user_message(self):
+    def __load_user_message(self, str_message: bool = True):
         user_conv = self.current_message.get_user_conv()
+        user_messages = []
         if user_conv:
-            return user_conv.type + ":" + user_conv.content + self.prompt_template.sep
+            user_text = (
+                user_conv.type + ":" + user_conv.content + self.prompt_template.sep
+            )
+            user_messages.append(
+                ModelMessage(role=user_conv.type, content=user_conv.content)
+            )
+            return user_text if str_message else user_messages
         else:
             raise ValueError("Hi! What do you want to talk about？")
 
-    def __load_example_messages(self):
+    def __load_example_messages(self, str_message: bool = True):
         example_text = ""
+        example_messages = []
         if self.prompt_template.example_selector:
             for round_conv in self.prompt_template.example_selector.examples():
                 for round_message in round_conv["messages"]:
@@ -269,16 +311,22 @@ class BaseChat(ABC):
                         SystemMessage.type,
                         ViewMessage.type,
                     ]:
+                        message_type = round_message["type"]
+                        message_content = round_message["data"]["content"]
                         example_text += (
-                            round_message["type"]
+                            message_type
                             + ":"
-                            + round_message["data"]["content"]
+                            + message_content
                             + self.prompt_template.sep
                         )
-        return example_text
+                        example_messages.append(
+                            ModelMessage(role=message_type, content=message_content)
+                        )
+        return example_text if str_message else example_messages
 
-    def __load_histroy_messages(self):
+    def __load_histroy_messages(self, str_message: bool = True):
         history_text = ""
+        history_messages = []
         if self.prompt_template.need_historical_messages:
             if self.history_message:
                 logger.info(
@@ -290,11 +338,16 @@ class BaseChat(ABC):
                         ViewMessage.type,
                         SystemMessage.type,
                     ]:
+                        message_type = first_message["type"]
+                        message_content = first_message["data"]["content"]
                         history_text += (
-                            first_message["type"]
+                            message_type
                             + ":"
-                            + first_message["data"]["content"]
+                            + message_content
                             + self.prompt_template.sep
+                        )
+                        history_messages.append(
+                            ModelMessage(role=message_type, content=message_content)
                         )
 
                 index = self.chat_retention_rounds - 1
@@ -304,11 +357,16 @@ class BaseChat(ABC):
                             SystemMessage.type,
                             ViewMessage.type,
                         ]:
+                            message_type = round_message["type"]
+                            message_content = round_message["data"]["content"]
                             history_text += (
-                                round_message["type"]
+                                message_type
                                 + ":"
-                                + round_message["data"]["content"]
+                                + message_content
                                 + self.prompt_template.sep
+                            )
+                            history_messages.append(
+                                ModelMessage(role=message_type, content=message_content)
                             )
 
             else:
@@ -320,14 +378,19 @@ class BaseChat(ABC):
                             SystemMessage.type,
                             ViewMessage.type,
                         ]:
+                            message_type = message["type"]
+                            message_content = message["data"]["content"]
                             history_text += (
-                                message["type"]
+                                message_type
                                 + ":"
-                                + message["data"]["content"]
+                                + message_content
                                 + self.prompt_template.sep
                             )
+                            history_messages.append(
+                                ModelMessage(role=message_type, content=message_content)
+                            )
 
-        return history_text
+        return history_text if str_message else history_messages
 
     def current_ai_response(self) -> str:
         for message in self.current_message.messages:
