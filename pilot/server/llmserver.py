@@ -77,6 +77,8 @@ class ModelWorker:
 
     def generate_stream_gate(self, params):
         try:
+            # params adaptation
+            params, model_context = self.llm_chat_adapter.model_adaptation(params)
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
@@ -84,10 +86,8 @@ class ModelWorker:
                 # The gpt4all thread shares stdout with the parent process,
                 # and opening it may affect the frontend output.
                 print("output: ", output)
-                ret = {
-                    "text": output,
-                    "error_code": 0,
-                }
+                # return some model context to dgt-server
+                ret = {"text": output, "error_code": 0, "model_context": model_context}
                 yield json.dumps(ret).encode() + b"\0"
 
         except torch.cuda.CudaError:
