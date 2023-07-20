@@ -39,6 +39,7 @@ from pilot.scene.base_message import (
     AIMessage,
     ViewMessage,
     ModelMessage,
+    ModelMessageRoleType,
 )
 from pilot.configs.config import Config
 
@@ -258,7 +259,7 @@ class BaseChat(ABC):
         if self.prompt_template.template_define:
             messages.append(
                 ModelMessage(
-                    role="system",
+                    role=ModelMessageRoleType.SYSTEM,
                     content=self.prompt_template.template_define,
                 )
             )
