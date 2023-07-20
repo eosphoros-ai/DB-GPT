@@ -263,12 +263,26 @@ class ProxyllmAdapter(BaseLLMAdaper):
         return "proxyllm", None
 
 
+class Llama2Adapter(BaseLLMAdaper):
+    """The model adapter for llama-2"""
+
+    def match(self, model_path: str):
+        return "llama-2" in model_path.lower()
+
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().loader(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+
 register_llm_model_adapters(VicunaLLMAdapater)
 register_llm_model_adapters(ChatGLMAdapater)
 register_llm_model_adapters(GuanacoAdapter)
 register_llm_model_adapters(FalconAdapater)
 register_llm_model_adapters(GorillaAdapter)
 register_llm_model_adapters(GPT4AllAdapter)
+register_llm_model_adapters(Llama2Adapter)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
 # just for test_py, remove this later

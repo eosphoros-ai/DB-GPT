@@ -89,6 +89,14 @@ class ModelMessage(BaseModel):
     content: str
 
 
+class ModelMessageRoleType:
+    """ "Type of ModelMessage role"""
+
+    SYSTEM = "system"
+    HUMAN = "human"
+    AI = "ai"
+
+
 class Generation(BaseModel):
     """Output of a single generation."""
 
