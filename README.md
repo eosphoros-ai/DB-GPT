@@ -112,7 +112,8 @@ The core capabilities mainly consist of the following parts:
 - [DB-GPT-Plugins](https://github.com/csunny/DB-GPT-Plugins) DB-GPT Plugins, Can run autogpt plugin directly
 - [DB-GPT-Web](https://github.com/csunny/DB-GPT-Web)  ChatUI for DB-GPT  
 
-
+## Image
+🌐 [AutoDL Image](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
 ## Install 
 [Quickstart](https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html)
 
