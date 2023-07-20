@@ -17,11 +17,15 @@ As our project has the ability to achieve ChatGPT performance of over 85%, there
 
 ### 2. Install
 
-This project relies on a local MySQL database service, which you need to install locally. We recommend using Docker for installation.
-
+1.This project relies on a local MySQL database service, which you need to install locally. We recommend using Docker for installation.
 ```bash
 $ docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
 ```
+2. prepare server sql script
+```bash
+$ mysql -h127.0.0.1 -uroot -paa12345678 < ./assets/schema/knowledge_management.sql
+```
+
 We use [Chroma embedding database](https://github.com/chroma-core/chroma) as the default for our vector database, so there is no need for special installation. If you choose to connect to other databases, you can follow our tutorial for installation and configuration. 
 For the entire installation process of DB-GPT, we use the miniconda3 virtual environment. Create a virtual environment and install the Python dependencies.
 
@@ -63,16 +67,10 @@ You can refer to this document to obtain the Vicuna weights: [Vicuna](https://gi
 
 If you have difficulty with this step, you can also directly use the model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a replacement.
 
-1. prepare server sql script
-```bash
-mysql> CREATE DATABASE knowledge_management;
-mysql> use knowledge_management;
-mysql> source ./assets/schema/knowledge_management.sql
-```
 set .env configuration set your vector store type, eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > 2.1)
 
 
-2. Run db-gpt server 
+1.Run db-gpt server 
 
 ```bash
 $ python pilot/server/dbgpt_server.py
