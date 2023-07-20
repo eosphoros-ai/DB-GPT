@@ -130,6 +130,18 @@ Reference
 
    ./reference.md
 
+FAQ
+-----------
+| DB-GPT FAQ.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: FAQ
+   :name: FAQ
+   :hidden:
+
+   ./faq.md
+
 Ecosystem
 ----------
 
