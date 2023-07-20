@@ -6,7 +6,7 @@ import requests
 from typing import List
 from pilot.configs.config import Config
 from pilot.conversation import ROLE_ASSISTANT, ROLE_USER
-from pilot.scene.base_message import ModelMessage
+from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 
 CFG = Config()
 
@@ -25,11 +25,11 @@ def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048)
     messages: List[ModelMessage] = params["messages"]
     # Add history conversation
     for message in messages:
-        if message.role == "human":
+        if message.role == ModelMessageRoleType.HUMAN:
             history.append({"role": "user", "content": message.content})
-        elif message.role == "system":
+        elif message.role == ModelMessageRoleType.SYSTEM:
             history.append({"role": "system", "content": message.content})
-        elif message.role == "ai":
+        elif message.role == ModelMessageRoleType.AI:
             history.append({"role": "assistant", "content": message.content})
         else:
             pass
