@@ -1,0 +1,100 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-07-20 10:53+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../faq.md:1 81cedd396b274db9b2a69448df98a28d
+msgid "FAQ"
+msgstr "FAQ"
+
+#: ../../faq.md:2 1a3f8c7661e34721a4465a34281416b1
+msgid "Q1: text2vec-large-chinese not found"
+msgstr "Q1: text2vec-large-chinese not found"
+
+#: ../../faq.md:4 5d2844bcbcc843fc97de41a491f914fe
+msgid ""
+"A1: make sure you have download text2vec-large-chinese embedding model in"
+" right way"
+msgstr "按照正确的姿势下载text2vec-large-chinese模型"
+
+#: ../../faq.md:16 82ade01884534030b81be7c3e06f1504
+msgid ""
+"Q2: execute `pip install -r requirements.txt` error, found some package "
+"cannot find correct version."
+msgstr "执行`pip install -r requirements.txt`报错"
+
+#: ../../faq.md:19 451ede833da642788e5224811a71ba0f
+msgid "A2: change the pip source."
+msgstr "修改pip源"
+
+#: ../../faq.md:26 ../../faq.md:33 0142abf1050d4fee9caf056322b52247
+#: 0adb87dd67fa4122997871f7ab064637
+msgid "or"
+msgstr "或"
+
+#: ../../faq.md:41 d6981160ecc6491284fd32e1098fc10e
+msgid "Q3:Access denied for user 'root@localhost'(using password :NO)"
+msgstr "或"
+
+#: ../../faq.md:43 e50b195057804f28b84d0d10859e4f1b
+msgid "A3: make sure you have installed mysql instance in right way"
+msgstr "按照正确姿势安装mysql"
+
+#: ../../faq.md:45 03ba25aa7bd241d3b32cc1916f858a3e
+msgid "Docker:"
+msgstr "Docker:"
+
+#: ../../faq.md:49 dd5336b44673459c93a1408097cb76f9
+msgid "Normal: [download mysql instance](https://dev.mysql.com/downloads/mysql/)"
+msgstr "[download mysql instance](https://dev.mysql.com/downloads/mysql/)"
+
+#: ../../faq.md:52 2b290c4653a2410c8d330ed5b0e9a821
+msgid "Q4:When I use openai(MODEL_SERVER=proxyllm) to chat"
+msgstr "使用openai-chatgpt模型时(MODEL_SERVER=proxyllm)"
+
+#: ../../faq.md:57 f4d0e8e8113f4ca4bc55f167b661fd6a
+msgid "A4: make sure your openapi API_KEY is available"
+msgstr "确认openapi API_KEY是否可用"
+
+#: ../../faq.md:59 092ca3dea0c5466ab6e22ab0049f166e
+msgid "Q5:When I Chat Data and Chat Meta Data, I found the error"
+msgstr "Chat Data and Chat Meta Data报如下错"
+
+#: ../../faq.md:64 dbf61e6ea2c64ecebfdbbde83cb74e3e
+msgid "A5: you have not create your database and table"
+msgstr "需要创建自己的数据库"
+
+#: ../../faq.md:65 0505bb716e6445c2a7960436d93cb407
+msgid "1.create your database."
+msgstr "1.先创建数据库"
+
+#: ../../faq.md:71 fd689b541ee549bd85385647c219b4cb
+msgid "2.create table {$your_table} and insert your data.  eg:"
+msgstr "然后创建数据表，模拟数据"
+
+#: ../../faq.md:85 de2d78db5fb6450cb08b0f15385ed525
+msgid "Q6:When I use vicuna-13b, found some illegal character like this."
+msgstr "使用vicuna-13b，知识库问答出现乱码"
+
+#: ../../faq.md:90 0cb1d0c2ec434763ae80e6f87d4a1665
+msgid ""
+"A6: set KNOWLEDGE_SEARCH_TOP_SIZE smaller or set KNOWLEDGE_CHUNK_SIZE "
+"smaller, and reboot server."
+msgstr "将KNOWLEDGE_SEARCH_TOP_SIZE和KNOWLEDGE_CHUNK_SIZE设置小点然后重启"
+
