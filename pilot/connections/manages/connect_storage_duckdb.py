@@ -46,12 +46,12 @@ class DuckdbConnectConfig:
         except Exception as e:
             raise "Unusable duckdb database path:" + path
 
-    def add_file_db(self, db_name, db_type, db_path: str):
+    def add_file_db(self, db_name, db_type, db_path: str, comment: str = ""):
         try:
             cursor = self.connect.cursor()
             cursor.execute(
                 "INSERT INTO connect_config(id, db_name, db_type, db_path, db_host, db_port, db_user, db_pwd, comment)VALUES(nextval('seq_id'),?,?,?,?,?,?,?,?)",
-                [db_name, db_type, db_path, "", "", "", "", ""],
+                [db_name, db_type, db_path, "", "", "", "", comment],
             )
             cursor.commit()
             self.connect.commit()
