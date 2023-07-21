@@ -17,8 +17,8 @@
     <a href="https://github.com/csunny/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
     </a>
-    <a href="https://discord.gg/rBgtJW8U">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/rBgtJW8U?compact=true&style=flat" />
+    <a href="https://discord.gg/jDD5FwHh">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/jDD5FwHh?compact=true&style=flat" />
     </a>
     <a href="https://codespaces.new/csunny/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
@@ -26,7 +26,7 @@
   </p>
 
 
-[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/rBgtJW8U) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
+[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/jDD5FwHh) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
 
 </div>
 
@@ -190,7 +190,8 @@ This project is standing on the shoulders of giants and is not going to work wit
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/rBgtJW8U)
+We are working on building a community, if you have any ideas about building the community, feel free to contact us. 
+[![](https://dcbadge.vercel.app/api/server/jDD5FwHh?compact=true&style=flat)](https://discord.gg/jDD5FwHh)
 
 <p align="center">
   <img src="./assets/wechat.jpg" width="300px" />
