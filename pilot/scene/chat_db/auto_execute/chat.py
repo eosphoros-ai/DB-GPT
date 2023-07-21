@@ -33,9 +33,8 @@ class ChatWithDbAutoExecute(BaseChat):
                 f"{ChatScene.ChatWithDbExecute.value} mode should chose db!"
             )
         self.db_name = db_name
-        self.database = CFG.local_db
-        # 准备DB信息(拿到指定库的链接)
-        self.db_connect = self.database.get_session(self.db_name)
+        self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+        self.db_connect = self.database.session
         self.top_k: int = 5
 
     def generate_input_values(self):

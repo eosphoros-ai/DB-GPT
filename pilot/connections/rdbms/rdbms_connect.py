@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import warnings
+import sqlparse
+import regex as re
+
 from typing import Any, Iterable, List, Optional
 from pydantic import BaseModel, Field, root_validator, validator, Extra
 from abc import ABC, abstractmethod
@@ -35,12 +38,12 @@ class RDBMSDatabase(BaseConnect):
     """SQLAlchemy wrapper around a database."""
 
     def __init__(
-        self,
-        engine,
-        schema: Optional[str] = None,
-        metadata: Optional[MetaData] = None,
-        ignore_tables: Optional[List[str]] = None,
-        include_tables: Optional[List[str]] = None,
+            self,
+            engine,
+            schema: Optional[str] = None,
+            metadata: Optional[MetaData] = None,
+            ignore_tables: Optional[List[str]] = None,
+            include_tables: Optional[List[str]] = None,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -48,58 +51,41 @@ class RDBMSDatabase(BaseConnect):
         if include_tables and ignore_tables:
             raise ValueError("Cannot specify both include_tables and ignore_tables")
 
-        self._inspector = inspect(self._engine)
+        self._inspector = inspect(engine)
         session_factory = sessionmaker(bind=engine)
-        Session = scoped_session(session_factory)
-
-        self._db_sessions = Session
-
-    @classmethod
-    def from_config(cls) -> RDBMSDatabase:
-        """
-        Todo password encryption
-        Returns:
-        """
-        return cls.from_uri_db(
-            cls,
-            CFG.LOCAL_DB_HOST,
-            CFG.LOCAL_DB_PORT,
-            CFG.LOCAL_DB_USER,
-            CFG.LOCAL_DB_PASSWORD,
-            engine_args={"pool_size": 10, "pool_recycle": 3600, "echo": True},
-        )
+        Session_Manages = scoped_session(session_factory)
+        self._db_sessions = Session_Manages
+        self.session = self.get_session()
 
     @classmethod
     def from_uri_db(
-        cls,
-        host: str,
-        port: int,
-        user: str,
-        pwd: str,
-        db_name: str = None,
-        engine_args: Optional[dict] = None,
-        **kwargs: Any,
+            cls,
+            host: str,
+            port: int,
+            user: str,
+            pwd: str,
+            db_name: str,
+            engine_args: Optional[dict] = None,
+            **kwargs: Any,
     ) -> RDBMSDatabase:
         db_url: str = (
-            cls.connect_driver
-            + "://"
-            + CFG.LOCAL_DB_USER
-            + ":"
-            + CFG.LOCAL_DB_PASSWORD
-            + "@"
-            + CFG.LOCAL_DB_HOST
-            + ":"
-            + str(CFG.LOCAL_DB_PORT)
+                cls.connect_driver
+                + "://"
+                + CFG.LOCAL_DB_USER
+                + ":"
+                + CFG.LOCAL_DB_PASSWORD
+                + "@"
+                + CFG.LOCAL_DB_HOST
+                + ":"
+                + str(CFG.LOCAL_DB_PORT)
+                + "/"
+                + db_name
         )
-        if cls.dialect:
-            db_url = cls.dialect + "+" + db_url
-        if db_name:
-            db_url = db_url + "/" + db_name
         return cls.from_uri(db_url, engine_args, **kwargs)
 
     @classmethod
     def from_uri(
-        cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
+            cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
     ) -> RDBMSDatabase:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
@@ -123,24 +109,17 @@ class RDBMSDatabase(BaseConnect):
         )
         return self.get_usable_table_names()
 
-    def get_session(self, db_name: str):
+    def get_session(self):
         session = self._db_sessions()
-
         self._metadata = MetaData()
-        # sql = f"use {db_name}"
-        sql = text(f"use `{db_name}`")
-        session.execute(sql)
-
-        # 处理表信息数据
-
-        self._metadata.reflect(bind=self._engine, schema=db_name)
+        self._metadata.reflect(bind=self._engine)
 
         # including view support by adding the views as well as tables to the all
         # tables list if view_support is True
         self._all_tables = set(
-            self._inspector.get_table_names(schema=db_name)
+            self._inspector.get_table_names()
             + (
-                self._inspector.get_view_names(schema=db_name)
+                self._inspector.get_view_names()
                 if self.view_support
                 else []
             )
@@ -148,14 +127,14 @@ class RDBMSDatabase(BaseConnect):
 
         return session
 
-    def get_current_db_name(self, session) -> str:
-        return session.execute(text("SELECT DATABASE()")).scalar()
+    def get_current_db_name(self) -> str:
+        return self.session.execute(text("SELECT DATABASE()")).scalar()
 
-    def table_simple_info(self, session):
+    def table_simple_info(self):
         _sql = f"""
-                select concat(table_name, "(" , group_concat(column_name), ")") as schema_info from information_schema.COLUMNS where table_schema="{self.get_current_db_name(session)}" group by TABLE_NAME;
+                select concat(table_name, "(" , group_concat(column_name), ")") as schema_info from information_schema.COLUMNS where table_schema="{self.get_current_db_name()}" group by TABLE_NAME;
             """
-        cursor = session.execute(text(_sql))
+        cursor = self.session.execute(text(_sql))
         results = cursor.fetchall()
         return results
 
@@ -185,7 +164,7 @@ class RDBMSDatabase(BaseConnect):
             tbl
             for tbl in self._metadata.sorted_tables
             if tbl.name in set(all_table_names)
-            and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
+               and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
         ]
 
         tables = []
@@ -198,7 +177,7 @@ class RDBMSDatabase(BaseConnect):
             create_table = str(CreateTable(table).compile(self._engine))
             table_info = f"{create_table.rstrip()}"
             has_extra_info = (
-                self._indexes_in_table_info or self._sample_rows_in_table_info
+                    self._indexes_in_table_info or self._sample_rows_in_table_info
             )
             if has_extra_info:
                 table_info += "\n\n/*"
@@ -255,9 +234,31 @@ class RDBMSDatabase(BaseConnect):
             """Format the error message"""
             return f"Error: {e}"
 
-    def run(self, session, command: str, fetch: str = "all") -> List:
-        """Execute a SQL command and return a string representing the results."""
-        cursor = session.execute(text(command))
+    def __write(self, session, write_sql):
+        print(f"Write[{write_sql}]")
+        db_cache = self.get_session_db(session)
+        result = session.execute(text(write_sql))
+        session.commit()
+        # TODO  Subsequent optimization of dynamically specified database submission loss target problem
+        session.execute(text(f"use `{db_cache}`"))
+        print(f"SQL[{write_sql}], result:{result.rowcount}")
+        return result.rowcount
+
+    def __query(self, session, query, fetch: str = "all"):
+        """
+        only for query
+        Args:
+            session:
+            query:
+            fetch:
+
+        Returns:
+
+        """
+        print(f"Query[{query}]")
+        if not query:
+            return []
+        cursor = session.execute(text(query))
         if cursor.returns_rows:
             if fetch == "all":
                 result = cursor.fetchall()
@@ -270,6 +271,62 @@ class RDBMSDatabase(BaseConnect):
             result = list(result)
             result.insert(0, field_names)
             return result
+
+    def query_ex(self, session, query, fetch: str = "all"):
+        """
+        only for query
+        Args:
+            session:
+            query:
+            fetch:
+        Returns:
+        """
+        print(f"Query[{query}]")
+        if not query:
+            return []
+        cursor = session.execute(text(query))
+        if cursor.returns_rows:
+            if fetch == "all":
+                result = cursor.fetchall()
+            elif fetch == "one":
+                result = cursor.fetchone()[0]  # type: ignore
+            else:
+                raise ValueError("Fetch parameter must be either 'one' or 'all'")
+            field_names = list(i[0:] for i in cursor.keys())
+
+            result = list(result)
+            return field_names, result
+
+    def run(self, session, command: str, fetch: str = "all") -> List:
+        """Execute a SQL command and return a string representing the results."""
+        print("SQL:" + command)
+        if not command:
+            return []
+        parsed, ttype, sql_type = self.__sql_parse(command)
+        if ttype == sqlparse.tokens.DML:
+            if sql_type == "SELECT":
+                return self.__query(session, command, fetch)
+            else:
+                self.__write(session, command)
+                select_sql = self.convert_sql_write_to_select(command)
+                print(f"write result query:{select_sql}")
+                return self.__query(session, select_sql)
+
+        else:
+            print(f"DDL execution determines whether to enable through configuration ")
+            cursor = session.execute(text(command))
+            session.commit()
+            if cursor.returns_rows:
+                result = cursor.fetchall()
+                field_names = tuple(i[0:] for i in cursor.keys())
+                result = list(result)
+                result.insert(0, field_names)
+                print("DDL Result:" + str(result))
+                if not result:
+                    return self.__query(session, "SHOW COLUMNS FROM test")
+                return result
+            else:
+                return self.__query(session, "SHOW COLUMNS FROM test")
 
     def run_no_throw(self, session, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results.
@@ -286,6 +343,155 @@ class RDBMSDatabase(BaseConnect):
             return f"Error: {e}"
 
     def get_database_list(self):
+        session = self._db_sessions()
+        cursor = session.execute(text(" show databases;"))
+        results = cursor.fetchall()
+        return [
+            d[0]
+            for d in results
+            if d[0] not in ["information_schema", "performance_schema", "sys", "mysql"]
+        ]
+
+    def convert_sql_write_to_select(self, write_sql):
+        """
+        SQL classification processing
+        author:xiangh8
+        Args:
+            sql:
+
+        Returns:
+
+        """
+        # 将SQL命令转换为小写，并按空格拆分
+        parts = write_sql.lower().split()
+        # 获取命令类型（insert, delete, update）
+        cmd_type = parts[0]
+
+        # 根据命令类型进行处理
+        if cmd_type == "insert":
+            match = re.match(
+                r"insert into (\w+) \((.*?)\) values \((.*?)\)", write_sql.lower()
+            )
+            if match:
+                table_name, columns, values = match.groups()
+                # 将字段列表和值列表分割为单独的字段和值
+                columns = columns.split(",")
+                values = values.split(",")
+                # 构造 WHERE 子句
+                where_clause = " AND ".join(
+                    [
+                        f"{col.strip()}={val.strip()}"
+                        for col, val in zip(columns, values)
+                    ]
+                )
+                return f"SELECT * FROM {table_name} WHERE {where_clause}"
+
+        elif cmd_type == "delete":
+            table_name = parts[2]  # delete from <table_name> ...
+            # 返回一个select语句，它选择该表的所有数据
+            return f"SELECT * FROM {table_name} "
+
+        elif cmd_type == "update":
+            table_name = parts[1]
+            set_idx = parts.index("set")
+            where_idx = parts.index("where")
+            # 截取 `set` 子句中的字段名
+            set_clause = parts[set_idx + 1: where_idx][0].split("=")[0].strip()
+            # 截取 `where` 之后的条件语句
+            where_clause = " ".join(parts[where_idx + 1:])
+            # 返回一个select语句，它选择更新的数据
+            return f"SELECT {set_clause} FROM {table_name} WHERE {where_clause}"
+        else:
+            raise ValueError(f"Unsupported SQL command type: {cmd_type}")
+
+    def __sql_parse(self, sql):
+        sql = sql.strip()
+        parsed = sqlparse.parse(sql)[0]
+        sql_type = parsed.get_type()
+
+        first_token = parsed.token_first(skip_ws=True, skip_cm=False)
+        ttype = first_token.ttype
+        print(f"SQL:{sql}, ttype:{ttype}, sql_type:{sql_type}")
+        return parsed, ttype, sql_type
+
+    def get_indexes(self, table_name):
+        """Get table indexes about specified table."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SHOW INDEXES FROM {table_name}"))
+        indexes = cursor.fetchall()
+        return [(index[2], index[4]) for index in indexes]
+
+    def get_show_create_table(self, table_name):
+        """Get table show create table about specified table."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SHOW CREATE TABLE  {table_name}"))
+        ans = cursor.fetchall()
+        return ans[0][1]
+
+    def get_fields(self, table_name):
+        """Get column fields about specified table."""
+        session = self._db_sessions()
+        cursor = session.execute(
+            text(
+                f"SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, IS_NULLABLE, COLUMN_COMMENT  from information_schema.COLUMNS where table_name='{table_name}'".format(
+                    table_name
+                )
+            )
+        )
+        fields = cursor.fetchall()
+        return [(field[0], field[1], field[2], field[3], field[4]) for field in fields]
+
+    def get_charset(self):
+        """Get character_set."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SELECT @@character_set_database"))
+        character_set = cursor.fetchone()[0]
+        return character_set
+
+    def get_collation(self):
+        """Get collation."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SELECT @@collation_database"))
+        collation = cursor.fetchone()[0]
+        return collation
+
+    def get_grants(self):
+        """Get grant info."""
+        session = self._db_sessions()
+        cursor = session.execute(text(f"SHOW GRANTS"))
+        grants = cursor.fetchall()
+        return grants
+
+    def get_users(self):
+        """Get user info."""
+        cursor = self.session.execute(text(f"SELECT user, host FROM mysql.user"))
+        users = cursor.fetchall()
+        return [(user[0], user[1]) for user in users]
+
+    def get_table_comments(self, db_name):
+        cursor = self.session.execute(
+            text(
+                f"""SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = '{db_name}'""".format(
+                    db_name
+                )
+            )
+        )
+        table_comments = cursor.fetchall()
+        return [
+            (table_comment[0], table_comment[1]) for table_comment in table_comments
+        ]
+
+    def get_database_list(self):
+        session = self._db_sessions()
+        cursor = session.execute(text(" show databases;"))
+        results = cursor.fetchall()
+        return [
+            d[0]
+            for d in results
+            if d[0] not in ["information_schema", "performance_schema", "sys", "mysql"]
+        ]
+
+    def get_database_names(self):
         session = self._db_sessions()
         cursor = session.execute(text(" show databases;"))
         results = cursor.fetchall()
