@@ -53,4 +53,4 @@ prompt = PromptTemplate(
     # example_selector=sql_data_example,
     temperature=PROMPT_TEMPERATURE,
 )
-CFG.prompt_templates.update({prompt.template_scene: prompt})
+CFG.prompt_template_registry.register(prompt, is_default=True)

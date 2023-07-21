@@ -56,4 +56,4 @@ prompt = PromptTemplate(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
     ),
 )
-CFG.prompt_templates.update({prompt.template_scene: prompt})
+CFG.prompt_template_registry.register(prompt, is_default=True)
