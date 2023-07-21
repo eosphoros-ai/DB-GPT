@@ -8,11 +8,25 @@
     <a href="https://github.com/csunny/DB-GPT">
         <img alt="forks" src="https://img.shields.io/github/forks/csunny/db-gpt?style=social" />
     </a>
+    <a href="https://opensource.org/licenses/MIT">
+      <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
+    </a>
+     <a href="https://github.com/csunny/DB-GPT/releases">
+      <img alt="Release Notes" src="https://img.shields.io/github/release/csunny/DB-GPT" />
+    </a>
+    <a href="https://github.com/csunny/DB-GPT/issues">
+      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
+    </a>
+    <a href="https://discord.gg/rBgtJW8U">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/rBgtJW8U?compact=true&style=flat" />
+    </a>
+    <a href="https://codespaces.new/csunny/DB-GPT">
+      <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
+    </a>
   </p>
 
 
 [**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/rBgtJW8U) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
-
 
 </div>
 
@@ -26,7 +40,7 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 - [demo](#demo)
 - [introduction](#introduction)
 - [features](#features)
-- [contributuin](#contribution)
+- [contribution](#contribution)
 - [acknowledgement](#acknowledgement)
 - [roadmap](#roadmap)
 - [contract](#contact-information)
