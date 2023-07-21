@@ -48,6 +48,7 @@ Getting Started
    :hidden:
 
    getting_started/getting_started.md
+   getting_started/installation.md
    getting_started/concepts.md
    getting_started/tutorials.md
 
@@ -128,6 +129,18 @@ Reference
    :hidden:
 
    ./reference.md
+
+FAQ
+-----------
+| DB-GPT FAQ.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: FAQ
+   :name: FAQ
+   :hidden:
+
+   ./faq.md
 
 Ecosystem
 ----------

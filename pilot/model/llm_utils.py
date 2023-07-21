@@ -10,7 +10,6 @@ from typing import List, Optional
 
 from pilot.configs.config import Config
 from pilot.model.base import Message
-from pilot.server.llmserver import generate_output
 
 
 def create_chat_completion(
@@ -115,3 +114,17 @@ class Iteratorize:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop_now = True
+
+
+def is_sentence_complete(output: str):
+    """Check whether the output is a complete sentence."""
+    end_symbols = (".", "?", "!", "...", "。", "？", "！", "…", '"', "'", "”")
+    return output.endswith(end_symbols)
+
+
+def is_partial_stop(output: str, stop_str: str):
+    """Check whether the output contains a partial stop str."""
+    for i in range(0, min(len(output), len(stop_str))):
+        if stop_str.startswith(output[-i:]):
+            return True
+    return False

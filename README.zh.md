@@ -7,11 +7,26 @@
     <a href="https://github.com/csunny/DB-GPT">
         <img alt="forks" src="https://img.shields.io/github/forks/csunny/db-gpt?style=social" />
     </a>
+    <a href="https://opensource.org/licenses/MIT">
+      <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
+    </a>
+     <a href="https://github.com/csunny/DB-GPT/releases">
+      <img alt="Release Notes" src="https://img.shields.io/github/release/csunny/DB-GPT" />
+    </a>
+    <a href="https://github.com/csunny/DB-GPT/issues">
+      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
+    </a>
+    <a href="https://discord.gg/jDD5FwHh">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/rBgtJW8U?compact=true&style=flat" />
+    </a>
+    <a href="https://codespaces.new/csunny/DB-GPT">
+      <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
+    </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/hmGPnMSb) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
-</div>
+[**English**](README.md)|[**Discord**](https://discord.gg/jDD5FwHh) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
 
+</div>
 
 ## DB-GPT 是什么？
 
@@ -19,19 +34,57 @@
 
 DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密
 
-[DB-GPT视频介绍](https://www.bilibili.com/video/BV1SM4y1a7Nj/?buvid=551b023900b290f9497610b2155a2668&is_story_h5=false&mid=%2BVyE%2Fwau5woPcUKieCWS0A%3D%3D&p=1&plat_id=116&share_from=ugc&share_medium=iphone&share_plat=ios&share_session_id=5D08B533-82A4-4D40-9615-7826065B4574&share_source=GENERIC&share_tag=s_i&timestamp=1686307943&unique_k=bhO3lgQ&up_id=31375446)  
+## 目录
+- [安装](#安装)
+- [效果演示](#效果演示)
+- [架构方案](#架构方案)
+- [特性简介](#特性一览)
+- [贡献](#贡献)
+- [感谢](#感谢)
+- [路线图](#路线图)
+- [联系我们](#联系我们)
+
+[DB-GPT视频介绍](https://www.bilibili.com/video/BV1au41157bj/)
+
+## 效果演示
+
+示例通过 RTX 4090 GPU 演示
 
 
-## 最新发布
-- [2023/06/30]🔥 DB-GPT产品。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
-- [2023/06/25]🔥 支持ChatGLM2-6B模型。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
-- [2023/06/14]🔥 支持gpt4all模型，可以在M1/M2 或者CPU机器上运行。 [使用文档](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
-- [2023/06/01]🔥 在Vicuna-13B基础模型的基础上，通过插件实现任务链调用。例如单句创建数据库的实现.
-- [2023/06/01]🔥 QLoRA guanaco(原驼)支持, 支持4090运行33B
-- [2023/05/28]🔥根据URL进行对话 [演示](./assets/chat_url_zh.gif)
-- [2023/05/21] SQL生成与自动执行. [演示](./assets/auto_sql.gif)
-- [2023/05/15] 知识库对话 [演示](./assets/new_knownledge.gif)
-- [2023/05/06] SQL生成与诊断 [演示](./assets/演示.gif)
+https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
+
+#### 根据自然语言对话生成分析图表
+
+<p align="left">
+  <img src="./assets/dashboard.png" width="800px" />
+</p>
+
+
+#### 根据自然语言对话生成SQL
+<p align="left">
+  <img src="./assets/chatSQL.png" width="800px" />
+</p>
+
+#### 与数据库元数据信息进行对话, 生成准确SQL语句
+<p align="left">
+  <img src="./assets/chatdb.png" width="800px" />
+</p>
+
+
+#### 与数据对话, 直接查看执行结果
+<p align="left">
+  <img src="./assets/chatdata.png" width="800px" />
+</p>
+
+#### 知识库管理
+<p align="left">
+  <img src="./assets/ks.png" width="800px" />
+</p>
+
+#### 根据知识库对话, 比如pdf、csv、txt、words等等.
+<p align="left">
+  <img src="./assets/chat_knowledge.png" width="800px" />
+</p>
 
 ## 特性一览
 
@@ -51,35 +104,14 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
   - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
 
 - 多模型支持
-  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b)
-  - TODO: codet5p, codegen2
-
-## 效果演示
-
-示例通过 RTX 4090 GPU 演示
-
-https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0
-
-<!-- <video id="video" controls="" preload="auto" poster="assets/exector_sql.png">
-      <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
-</videos> -->
-
-<p align="left">
-  <img src="./assets/auto_sql.gif" width="800px" />
-</p>
+  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b), 🔥 llama-2(7b, 13b, 70b) 
+  - TODO: baichuan(7b, 13b)
 
 
-<p align="left">
-  <img src="./assets/chat_url_zh.gif" width="800px" />
-</p>
-
-
-<p align="left">
-  <img src="./assets/new_knownledge.gif" width="800px" />
-</p>
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
 ## 架构方案
-DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。 
+DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。
 
 整个DB-GPT的架构，如下图所示
 
@@ -96,19 +128,28 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 6. Prompt自动生成与优化：自动化生成高质量的Prompt，并进行优化，提高系统的响应效率。  
 7. 多端产品界面：支持多种不同的客户端产品，例如Web、移动应用和桌面应用等。
 
+### 子模块
+- [DB-GPT-Hub](https://github.com/csunny/DB-GPT-Hub) 使用 LLM 进行文本到 SQL 解析
+- [DB-GPT-Plugins](https://github.com/csunny/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
+- [DB-GPT-Web](https://github.com/csunny/DB-GPT-Web)  多端交互前端界面
+
+## Image
+🌐 [AutoDL镜像](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
+
 ## 安装
 [快速开始](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)
 
 ### 多语言切换
   在.env 配置文件当中，修改LANGUAGE参数来切换使用不同的语言，默认是英文(中文zh, 英文en, 其他语言待补充)
 
+### 平台部署
+- autodl
+  [autodl镜像](https://www.codewithgpu.com/i/csunny/DB-GPT/csunny-db-gpt)，从头搭建可参考镜像说明，或通过`docker pull`获取共享镜像，按照文档中的说明操作即可，若有问题，欢迎评论。
+
 ## 使用说明
 
 ### 多模型使用
   [使用指南](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
-
-### 打造属于你的知识库
-- [参考手册](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/knowledge.html)
 
 
 如果在使用知识库时遇到与nltk相关的错误，您需要安装nltk工具包。更多详情，请参见：[nltk文档](https://www.nltk.org/data.html)
@@ -117,12 +158,6 @@ Run the Python interpreter and type the commands:
 >>> import nltk
 >>> nltk.download()
 ```
-
-我们提供了全新的的用户界面，可以通过我们的用户界面使用DB-GPT， 同时关于我们项目相关的一些代码跟原理介绍，我们也准备了以下几篇参考文章。
-1.  [大模型实战系列(1) —— 强强联合Langchain-Vicuna应用实战](https://zhuanlan.zhihu.com/p/628750042)
-2.  [大模型实战系列(2) —— DB-GPT 阿里云部署指南](https://zhuanlan.zhihu.com/p/629467580)
-3.  [大模型实战系列(3) —— DB-GPT插件模型原理与使用](https://zhuanlan.zhihu.com/p/629623125)
-
 
 ## 感谢
 
@@ -144,15 +179,21 @@ Run the Python interpreter and type the commands:
 
 这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布一些新的feature。如在使用当中有任何具体问题, 优先在项目下提issue, 如有需要, 请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
 
-## 联系我们
-微信群已超扫码加群上限, 进群请添加如下微信帮拉进群。
-
---------------
-|xy643854343|mingtian2635|chenB305|cfq1612784863|
-|-----------|----------|-----------|---------------|
 ## Licence
 
 The MIT License (MIT)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+# 路线图
+
+<p align="left">
+  <img src="./assets/roadmap.jpg" width="800px" />
+</p>
+
+## 联系我们
+
+<p align="center">
+  <img src="./assets/wechat.jpg" width="300px" />
+</p>
+
+
 
