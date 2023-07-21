@@ -36,6 +36,7 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
 
 class RDBMSDatabase(BaseConnect):
     """SQLAlchemy wrapper around a database."""
+    db_type: str = None
 
     def __init__(
             self,
@@ -69,7 +70,7 @@ class RDBMSDatabase(BaseConnect):
             **kwargs: Any,
     ) -> RDBMSDatabase:
         db_url: str = (
-                cls.connect_driver
+                cls.driver
                 + "://"
                 + CFG.LOCAL_DB_USER
                 + ":"
@@ -113,17 +114,6 @@ class RDBMSDatabase(BaseConnect):
         session = self._db_sessions()
         self._metadata = MetaData()
         self._metadata.reflect(bind=self._engine)
-
-        # including view support by adding the views as well as tables to the all
-        # tables list if view_support is True
-        self._all_tables = set(
-            self._inspector.get_table_names()
-            + (
-                self._inspector.get_view_names()
-                if self.view_support
-                else []
-            )
-        )
 
         return session
 

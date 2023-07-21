@@ -43,9 +43,10 @@ class ChatDashboard(BaseChat):
             )
         self.db_name = db_name
         self.report_name = report_name
+
         self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
-        # 准备DB信息(拿到指定库的链接)
-        self.db_connect = self.database.get_session(self.db_name)
+        self.db_connect = self.database.session
+
         self.top_k: int = 5
         self.dashboard_template = self.__load_dashboard_template(report_name)
 
@@ -64,13 +65,19 @@ class ChatDashboard(BaseChat):
             from pilot.summary.db_summary_client import DBSummaryClient
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
+
         client = DBSummaryClient()
+        try:
+            table_infos = client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
+            print("dashboard vector find tables:{}", table_infos)
+        except Exception as e:
+            print("db summary find error!" + str(e))
+
         input_values = {
             "input": self.current_user_input,
             "dialect": self.database.dialect,
-            "table_info": self.database.table_simple_info(self.db_connect),
+            "table_info": self.database.table_simple_info(),
             "supported_chat_type": self.dashboard_template['supported_chart_type']
-            # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
 
         return input_values
@@ -91,14 +98,16 @@ class ChatDashboard(BaseChat):
                     if not data_map[field_name]:
                         field_map.update({f"{field_name}": False})
                     else:
-                        field_map.update({f"{field_name}": all(isinstance(item, (int, float, Decimal)) for item in data_map[field_name])})
+                        field_map.update({f"{field_name}": all(
+                            isinstance(item, (int, float, Decimal)) for item in data_map[field_name])})
 
                 for field_name in field_names[1:]:
                     if not field_map[field_name]:
                         print("more than 2 non-numeric column")
                     else:
                         for data in datas:
-                            value_item = ValueItem(name=data[0], type=field_name, value=data[field_names.index(field_name)])
+                            value_item = ValueItem(name=data[0], type=field_name,
+                                                   value=data[field_names.index(field_name)])
                             values.append(value_item)
 
                 chart_datas.append(ChartData(chart_uid=str(uuid.uuid1()),

@@ -46,7 +46,7 @@ gradio==3.23
 gradio-client==0.0.8
 wandb
 llama-index==0.5.27
-pymysql
+
 unstructured==0.6.3
 grpcio==1.47.5
 gpt4all==0.3.0
@@ -67,6 +67,12 @@ playsound
 distro
 pypdf
 weaviate-client
+
+# databse
+
+pymysql
+duckdb
+duckdb-engine
 
 # Testing dependencies
 pytest

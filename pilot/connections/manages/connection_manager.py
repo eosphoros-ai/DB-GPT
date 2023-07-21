@@ -1,8 +1,11 @@
 from pilot.configs.config import Config
 from pilot.connections.manages.connect_storage_duckdb import DuckdbConnectConfig
 from pilot.common.schema import DBType
-from pilot.connections.rdbms.mysql import MySQLConnect
+from pilot.connections.rdbms.conn_mysql import MySQLConnect
 from pilot.connections.base import BaseConnect
+
+from pilot.connections.rdbms.conn_mysql import MySQLConnect
+from pilot.connections.rdbms.conn_duckdb import DuckDbConnect
 from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
 from pilot.singleton import Singleton
 from pilot.common.sql_database import Database
@@ -12,15 +15,22 @@ CFG = Config()
 
 class ConnectManager:
 
-    def get_instance_by_dbtype(db_type, **kwargs):
-        chat_classes = BaseConnect.__subclasses__()
-        implementation = None
+
+    def get_all_subclasses(self, cls):
+        subclasses = cls.__subclasses__()
+        for subclass in subclasses:
+            subclasses += self.get_all_subclasses(subclass)
+        return subclasses
+
+    def get_cls_by_dbtype(self, db_type):
+        chat_classes = self.get_all_subclasses(BaseConnect)
+        result = None
         for cls in chat_classes:
             if cls.db_type == db_type:
-                implementation = cls(**kwargs)
-        if implementation == None:
-            raise Exception(f"Invalid db connect implementation！DbType:{db_type}")
-        return implementation
+                result = cls
+        if not result:
+            raise ValueError("Unsupport Db Type！" + db_type)
+        return result
 
     def __init__(self):
         self.storage = DuckdbConnectConfig()
@@ -69,10 +79,10 @@ class ConnectManager:
     def get_connect(self, db_name):
         db_config = self.storage.get_db_config(db_name)
         db_type = DBType.of_db_type(db_config.get('db_type'))
-        connect_instance = self.get_instance_by_dbtype(db_type)
+        connect_instance = self.get_cls_by_dbtype(db_type.value())
         if db_type.is_file_db():
             db_path = db_config.get('db_path')
-            return connect_instance.from_file(db_path)
+            return connect_instance.from_file_path(db_path)
         else:
             db_host = db_config.get('db_host')
             db_port = db_config.get('db_port')
