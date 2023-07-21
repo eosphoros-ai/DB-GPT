@@ -10,10 +10,6 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 
 from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
-from pilot.configs.config import Config
-
-CFG = Config()
-Base = declarative_base()
 
 class DuckDbConnect(RDBMSDatabase):
     """Connect Duckdb Database fetch MetaData

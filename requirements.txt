@@ -73,6 +73,7 @@ weaviate-client
 pymysql
 duckdb
 duckdb-engine
+pymssql
 
 # Testing dependencies
 pytest

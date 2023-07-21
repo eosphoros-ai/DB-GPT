@@ -6,15 +6,16 @@ from pilot.connections.base import BaseConnect
 
 from pilot.connections.rdbms.conn_mysql import MySQLConnect
 from pilot.connections.rdbms.conn_duckdb import DuckDbConnect
+from pilot.connections.rdbms.conn_mssql import MSSQLConnect
 from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
 from pilot.singleton import Singleton
 from pilot.common.sql_database import Database
+from pilot.connections.db_conn_info import DBConfig
 
 CFG = Config()
 
 
 class ConnectManager:
-
 
     def get_all_subclasses(self, cls):
         subclasses = cls.__subclasses__()
@@ -93,5 +94,17 @@ class ConnectManager:
     def get_db_list(self):
         return self.storage.get_db_list()
 
+
     def get_db_names(self):
         return self.storage.get_db_names()
+
+    def delete_db(self, db_name: str):
+        return self.storage.delete_db(db_name)
+
+    def add_db(self, db_info: DBConfig):
+        db_type = DBType.of_db_type(db_info.db_type)
+        if db_type.is_file_db():
+            self.storage.add_file_db(db_info.db_name, db_info.db_type, db_info.file_path)
+        else:
+            self.storage.add_url_db(db_info.db_name, db_info.db_type, db_info.db_host, db_info.db_port, db_info.db_user, db_info.db_pwd, db_info.comment)
+        return True

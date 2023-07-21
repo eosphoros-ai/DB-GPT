@@ -23,8 +23,9 @@ from pilot.openapi.api_v1.api_view_model import (
     Result,
     ConversationVo,
     MessageVo,
-    ChatSceneVo,
+    ChatSceneVo
 )
+from pilot.connections.db_conn_info import DBConfig
 from pilot.configs.config import Config
 from pilot.server.knowledge.service import KnowledgeService
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
@@ -94,6 +95,25 @@ def knowledge_list():
         params.update({space.name: space.name})
     return params
 
+
+
+
+@router.get("/v1/chat/db/list", response_model=Result[DBConfig])
+async def dialogue_list():
+    return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list())
+
+@router.post("/v1/chat/db/add", response_model=Result[bool])
+async def dialogue_list(db_config: DBConfig = Body() ):
+    return Result.succ(CFG.LOCAL_DB_MANAGE.add_db(db_config))
+
+@router.post("/v1/chat/db/delete", response_model=Result[bool])
+async def dialogue_list(db_name: str = None):
+    return Result.succ(CFG.LOCAL_DB_MANAGE.delete_db(db_name))
+
+
+@router.get("/v1/chat/db/support/type", response_model=Result[str])
+async def db_support_types():
+    return Result[str].succ(["mysql", "mssql", "duckdb"])
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
 async def dialogue_list(user_id: str = None):
