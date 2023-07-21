@@ -78,9 +78,9 @@ class DuckdbConnectConfig:
 
             fields = [field[0] for field in cursor.description]
             row_dict = {}
-            for row in cursor.fetchall()[0]:
-                for i, field in enumerate(fields):
-                    row_dict[field] = row[i]
+            row_1 = list(cursor.fetchall()[0])
+            for i, field in enumerate(fields):
+                row_dict[field] = row_1[i]
             return row_dict
         return {}
 

@@ -74,7 +74,7 @@ def get_db_list():
     dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
     params: dict = {}
     for item in dbs:
-        params.update({item["db_name"]: item["comment"]})
+        params.update({item["db_name"]: item["db_name"]})
     return params
 
 

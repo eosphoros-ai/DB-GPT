@@ -36,7 +36,7 @@ class DBType(Enum):
 
     @staticmethod
     def of_db_type(db_type: str):
-        for item in DBType.__members__:
-            if item.value().name == db_type:
+        for item in DBType:
+            if item.value() == db_type:
                 return item
         return None
