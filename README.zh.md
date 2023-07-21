@@ -16,7 +16,7 @@
     <a href="https://github.com/csunny/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
     </a>
-    <a href="https://discord.gg/rBgtJW8U">
+    <a href="https://discord.gg/jDD5FwHh">
       <img alt="Discord" src="https://dcbadge.vercel.app/api/server/rBgtJW8U?compact=true&style=flat" />
     </a>
     <a href="https://codespaces.new/csunny/DB-GPT">
@@ -24,7 +24,7 @@
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/rBgtJW8U) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
+[**English**](README.md)|[**Discord**](https://discord.gg/jDD5FwHh) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
 
 </div>
 
@@ -179,7 +179,9 @@ Run the Python interpreter and type the commands:
 
 这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布一些新的feature。如在使用当中有任何具体问题, 优先在项目下提issue, 如有需要, 请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
 
+## Licence
 
+The MIT License (MIT)
 
 # 路线图
 
@@ -193,9 +195,5 @@ Run the Python interpreter and type the commands:
   <img src="./assets/wechat.jpg" width="300px" />
 </p>
 
-微信群已超扫码加群上限, 进群请添加如下微信帮拉进群。
 
-## Licence
-
-The MIT License (MIT)
 
