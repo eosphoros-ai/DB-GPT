@@ -118,11 +118,18 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 - [DB-GPT-Plugins](https://github.com/csunny/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
 - [DB-GPT-Web](https://github.com/csunny/DB-GPT-Web)  多端交互前端界面
 
+## Image
+🌐 [AutoDL镜像](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
+
 ## 安装
 [快速开始](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)
 
 ### 多语言切换
   在.env 配置文件当中，修改LANGUAGE参数来切换使用不同的语言，默认是英文(中文zh, 英文en, 其他语言待补充)
+
+### 平台部署
+- autodl
+  [autodl镜像](https://www.codewithgpu.com/i/csunny/DB-GPT/csunny-db-gpt)，从头搭建可参考镜像说明，或通过`docker pull`获取共享镜像，按照文档中的说明操作即可，若有问题，欢迎评论。
 
 ## 使用说明
 

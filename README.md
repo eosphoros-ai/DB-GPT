@@ -124,9 +124,16 @@ The core capabilities mainly consist of the following parts:
 - [DB-GPT-Plugins](https://github.com/csunny/DB-GPT-Plugins) DB-GPT Plugins, Can run autogpt plugin directly
 - [DB-GPT-Web](https://github.com/csunny/DB-GPT-Web)  ChatUI for DB-GPT  
 
-
+## Image
+🌐 [AutoDL Image](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
 ## Install 
 [Quickstart](https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html)
+
+### Language Switching
+    In the .env configuration file, modify the LANGUAGE parameter to switch to different languages. The default is English (Chinese: zh, English: en, other languages to be added later).
+### Platform Deployment
+- autodl
+    [autodl image](https://www.codewithgpu.com/i/csunny/DB-GPT/csunny-db-gpt). You can refer to the image instructions to build from scratch, or use `docker pull` to obtain the shared image, follow the instructions in the document to operate. If you have any questions, please leave a comment.
 
 ## Usage Instructions
 
