@@ -9,6 +9,7 @@ from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 from pilot.singleton import Singleton
 from pilot.common.sql_database import Database
+from pilot.prompts.prompt_registry import PromptTemplateRegistry
 
 
 class Config(metaclass=Singleton):
@@ -76,7 +77,7 @@ class Config(metaclass=Singleton):
         )
         self.speak_mode = False
 
-        self.prompt_templates = {}
+        self.prompt_template_registry = PromptTemplateRegistry()
         ### Related configuration of built-in commands
         self.command_registry = []
 
