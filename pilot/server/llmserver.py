@@ -5,6 +5,7 @@ import asyncio
 import json
 import os
 import sys
+from typing import List
 
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request
@@ -24,6 +25,7 @@ from pilot.configs.model_config import *
 from pilot.model.llm_out.vicuna_base_llm import get_embeddings
 from pilot.model.loader import ModelLoader
 from pilot.server.chat_adapter import get_llm_chat_adapter
+from pilot.scene.base_message import ModelMessage
 
 CFG = Config()
 
@@ -75,6 +77,8 @@ class ModelWorker:
 
     def generate_stream_gate(self, params):
         try:
+            # params adaptation
+            params, model_context = self.llm_chat_adapter.model_adaptation(params)
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
@@ -82,10 +86,8 @@ class ModelWorker:
                 # The gpt4all thread shares stdout with the parent process,
                 # and opening it may affect the frontend output.
                 print("output: ", output)
-                ret = {
-                    "text": output,
-                    "error_code": 0,
-                }
+                # return some model context to dgt-server
+                ret = {"text": output, "error_code": 0, "model_context": model_context}
                 yield json.dumps(ret).encode() + b"\0"
 
         except torch.cuda.CudaError:
@@ -128,6 +130,7 @@ app = FastAPI()
 
 
 class PromptRequest(BaseModel):
+    messages: List[ModelMessage]
     prompt: str
     temperature: float
     max_new_tokens: int
@@ -170,6 +173,7 @@ async def api_generate_stream(request: Request):
 @app.post("/generate")
 def generate(prompt_request: PromptRequest) -> str:
     params = {
+        "messages": prompt_request.messages,
         "prompt": prompt_request.prompt,
         "temperature": prompt_request.temperature,
         "max_new_tokens": prompt_request.max_new_tokens,
