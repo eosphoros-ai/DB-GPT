@@ -56,7 +56,7 @@ class MysqlSummary(DBSummary):
         self.vector_tables_info = []
         # self.tables_summary = {}
 
-        self.db = CFG.LOCAL_DB_MANAGE.get_connect()
+        self.db = CFG.LOCAL_DB_MANAGE.get_connect(name)
 
 
         self.metadata = """user info :{users}, grant info:{grant}, charset:{charset}, collation:{collation}""".format(

@@ -45,6 +45,10 @@ class RDBMSDatabase(BaseConnect):
             metadata: Optional[MetaData] = None,
             ignore_tables: Optional[List[str]] = None,
             include_tables: Optional[List[str]] = None,
+            sample_rows_in_table_info: int = 3,
+            indexes_in_table_info: bool = False,
+            custom_table_info: Optional[dict] = None,
+            view_support: bool = False,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -57,6 +61,18 @@ class RDBMSDatabase(BaseConnect):
         Session_Manages = scoped_session(session_factory)
         self._db_sessions = Session_Manages
         self.session = self.get_session()
+
+        self._all_tables = set()
+        self.view_support = False
+        self._usable_tables = set()
+        self._include_tables = set()
+        self._ignore_tables = set()
+        self._custom_table_info = set()
+        self._indexes_in_table_info = set()
+        self._usable_tables = set()
+        self._usable_tables = set()
+        self._sample_rows_in_table_info = set()
+        self._indexes_in_table_info = indexes_in_table_info
 
     @classmethod
     def from_uri_db(
