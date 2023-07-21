@@ -11,8 +11,8 @@ class MSSQLConnect(RDBMSDatabase):
     Usage:
     """
 
-    type: str = "MSSQL"
-    dialect: str = "mssql"
+    db_type: str = "mssql"
+    db_dialect: str = "mssql"
     driver: str = "pyodbc"
 
     default_db = ["master", "model", "msdb", "tempdb", "modeldb", "resource"]

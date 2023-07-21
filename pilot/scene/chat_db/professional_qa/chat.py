@@ -28,9 +28,8 @@ class ChatWithDbQA(BaseChat):
         )
         self.db_name = db_name
         if db_name:
-            self.database = CFG.local_db
-            # 准备DB信息(拿到指定库的链接)
-            self.db_connect = self.database.get_session(self.db_name)
+            self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+            self.db_connect = self.database.session
             self.tables = self.database.get_table_names()
 
         self.top_k = (

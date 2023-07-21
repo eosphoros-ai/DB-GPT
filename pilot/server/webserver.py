@@ -84,12 +84,6 @@ priority = {"vicuna-13b": "aaa"}
 
 CHAT_FACTORY = ChatFactory()
 
-DB_SETTINGS = {
-    "user": CFG.LOCAL_DB_USER,
-    "password": CFG.LOCAL_DB_PASSWORD,
-    "host": CFG.LOCAL_DB_HOST,
-    "port": CFG.LOCAL_DB_PORT,
-}
 
 llm_native_dialogue = get_lang_text("knowledge_qa_type_llm_native_dialogue")
 default_knowledge_base_dialogue = get_lang_text(
@@ -143,14 +137,6 @@ def get_simlar(q):
     contents = [dc.page_content for dc, _ in docs]
     return "\n".join(contents)
 
-
-def gen_sqlgen_conversation(dbname):
-    message = ""
-    db_connect = CFG.local_db.get_session(dbname)
-    schemas = CFG.local_db.table_simple_info(db_connect)
-    for s in schemas:
-        message += s + ";"
-    return get_lang_text("sql_schema_info").format(dbname, message)
 
 
 def plugins_select_info():
@@ -703,7 +689,7 @@ if __name__ == "__main__":
     # init server config
     args = parser.parse_args()
     server_init(args)
-    dbs = CFG.local_db.get_database_list()
+    dbs = CFG.LOCAL_DB_MANAGE.get_db_names()
     demo = build_webdemo()
     demo.queue(
         concurrency_count=args.concurrency_count,

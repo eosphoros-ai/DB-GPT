@@ -6,7 +6,7 @@ from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
 class OracleConnector(RDBMSDatabase):
     """OracleConnector"""
 
-    type: str = "ORACLE"
+    db_type: str = "oracle"
 
     driver: str = "oracle"
 

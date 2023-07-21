@@ -11,8 +11,8 @@ class MySQLConnect(RDBMSDatabase):
     Usage:
     """
 
-    type: str = "MySQL"
-    dialect: str = "mysql"
+    db_type: str = "mysql"
+    db_dialect: str = "mysql"
     driver: str = "pymysql"
 
     default_db = ["information_schema", "performance_schema", "sys", "mysql"]
