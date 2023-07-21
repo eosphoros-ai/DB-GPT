@@ -18,7 +18,7 @@ from pilot.configs.model_config import (
 )
 
 from pilot.scene.chat_knowledge.url.prompt import prompt
-from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 
 CFG = Config()
 
@@ -38,9 +38,10 @@ class ChatUrlKnowledge(BaseChat):
         self.url = url
         vector_store_config = {
             "vector_store_name": url.replace(":", ""),
-            "vector_store_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
+            "vector_store_type": CFG.VECTOR_STORE_TYPE,
+            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
-        self.knowledge_embedding_client = KnowledgeEmbedding(
+        self.knowledge_embedding_client = EmbeddingEngine(
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
             knowledge_type=KnowledgeType.URL.value,

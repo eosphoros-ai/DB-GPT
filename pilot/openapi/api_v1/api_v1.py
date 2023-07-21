@@ -137,7 +137,9 @@ async def dialogue_scenes():
 
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
-async def dialogue_new(chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None):
+async def dialogue_new(
+    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
+):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)
 

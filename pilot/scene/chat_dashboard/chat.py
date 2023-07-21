@@ -38,9 +38,7 @@ class ChatDashboard(BaseChat):
             current_user_input=user_input,
         )
         if not db_name:
-            raise ValueError(
-                f"{ChatScene.ChatDashboard.value} mode should chose db!"
-            )
+            raise ValueError(f"{ChatScene.ChatDashboard.value} mode should chose db!")
         self.db_name = db_name
         self.report_name = report_name
 
@@ -51,12 +49,11 @@ class ChatDashboard(BaseChat):
         self.dashboard_template = self.__load_dashboard_template(report_name)
 
     def __load_dashboard_template(self, template_name):
-
         current_dir = os.getcwd()
         print(current_dir)
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        with open(f"{current_dir}/template/{template_name}/dashboard.json", 'r') as f:
+        with open(f"{current_dir}/template/{template_name}/dashboard.json", "r") as f:
             data = f.read()
         return json.loads(data)
 
@@ -76,8 +73,9 @@ class ChatDashboard(BaseChat):
         input_values = {
             "input": self.current_user_input,
             "dialect": self.database.dialect,
-            "table_info": self.database.table_simple_info(),
+            "table_info": self.database.table_simple_info(self.db_connect),
             "supported_chat_type": self.dashboard_template['supported_chart_type']
+            # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
 
         return input_values

@@ -53,8 +53,15 @@ class BaseOutputParser(ABC):
 
         """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
         """
+        model_context = data.get("model_context")
+        if model_context and "prompt_echo_len_char" in model_context:
+            prompt_echo_len_char = int(model_context.get("prompt_echo_len_char", -1))
+            if prompt_echo_len_char != -1:
+                skip_echo_len = prompt_echo_len_char
+
         if data.get("error_code", 0) == 0:
-            if "vicuna" in CFG.LLM_MODEL:
+            if "vicuna" in CFG.LLM_MODEL or "llama-2" in CFG.LLM_MODEL:
+                # TODO Judging from model_context
                 # output = data["text"][skip_echo_len + 11:].strip()
                 output = data["text"][skip_echo_len:].strip()
             elif "guanaco" in CFG.LLM_MODEL:
@@ -130,7 +137,6 @@ class BaseOutputParser(ABC):
         return temp_json
 
     def __extract_json(self, s):
-
         temp_json = self.__json_interception(s, True)
         if not temp_json:
             temp_json = self.__json_interception(s)
@@ -143,10 +149,10 @@ class BaseOutputParser(ABC):
     def __json_interception(self, s, is_json_array: bool = False):
         if is_json_array:
             i = s.find("[")
-            if i <0:
+            if i < 0:
                 return None
             count = 1
-            for j, c in enumerate(s[i + 1:], start=i + 1):
+            for j, c in enumerate(s[i + 1 :], start=i + 1):
                 if c == "]":
                     count -= 1
                 elif c == "[":
@@ -154,13 +160,13 @@ class BaseOutputParser(ABC):
                 if count == 0:
                     break
             assert count == 0
-            return s[i: j + 1]
+            return s[i : j + 1]
         else:
             i = s.find("{")
-            if i <0:
+            if i < 0:
                 return None
             count = 1
-            for j, c in enumerate(s[i + 1:], start=i + 1):
+            for j, c in enumerate(s[i + 1 :], start=i + 1):
                 if c == "}":
                     count -= 1
                 elif c == "{":
@@ -168,7 +174,7 @@ class BaseOutputParser(ABC):
                 if count == 0:
                     break
             assert count == 0
-            return s[i: j + 1]
+            return s[i : j + 1]
 
     def parse_prompt_response(self, model_out_text) -> T:
         """
@@ -185,9 +191,9 @@ class BaseOutputParser(ABC):
         # if "```" in cleaned_output:
         #     cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json"):]
+            cleaned_output = cleaned_output[len("```json") :]
         if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```"):]
+            cleaned_output = cleaned_output[len("```") :]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
@@ -196,9 +202,9 @@ class BaseOutputParser(ABC):
             cleaned_output = self.__extract_json(cleaned_output)
         cleaned_output = (
             cleaned_output.strip()
-                .replace("\n", " ")
-                .replace("\\n", " ")
-                .replace("\\", " ")
+            .replace("\n", " ")
+            .replace("\\n", " ")
+            .replace("\\", " ")
         )
         cleaned_output = self.__illegal_json_ends(cleaned_output)
         return cleaned_output

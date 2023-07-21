@@ -10,7 +10,7 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 
 from pilot.openapi.api_v1.api_view_model import Result
-from pilot.embedding_engine.knowledge_embedding import KnowledgeEmbedding
+from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 
 from pilot.server.knowledge.service import KnowledgeService
 from pilot.server.knowledge.request.request import (
@@ -56,9 +56,11 @@ def space_list(request: KnowledgeSpaceRequest):
 def document_add(space_name: str, request: KnowledgeDocumentRequest):
     print(f"/document/add params: {space_name}, {request}")
     try:
-        return Result.succ(knowledge_space_service.create_knowledge_document(
-            space=space_name, request=request
-        ))
+        return Result.succ(
+            knowledge_space_service.create_knowledge_document(
+                space=space_name, request=request
+            )
+        )
         # return Result.succ([])
     except Exception as e:
         return Result.faild(code="E000X", msg=f"document add error {e}")
@@ -106,9 +108,11 @@ async def document_upload(
                         KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
                     ),
                 )
-                return Result.succ(knowledge_space_service.create_knowledge_document(
-                    space=space_name, request=request
-                ))
+                return Result.succ(
+                    knowledge_space_service.create_knowledge_document(
+                        space=space_name, request=request
+                    )
+                )
                 # return Result.succ([])
         return Result.faild(code="E000X", msg=f"doc_file is None")
     except Exception as e:
@@ -139,7 +143,7 @@ def document_list(space_name: str, query_request: ChunkQueryRequest):
 @router.post("/knowledge/{vector_name}/query")
 def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
     print(f"Received params: {space_name}, {query_request}")
-    client = KnowledgeEmbedding(
+    client = EmbeddingEngine(
         model_name=embeddings, vector_store_config={"vector_store_name": space_name}
     )
     docs = client.similar_search(query_request.query, query_request.top_k)

@@ -6,6 +6,7 @@ from typing import (
     Dict,
     Generic,
     List,
+    Tuple,
     NamedTuple,
     Optional,
     Sequence,
@@ -80,6 +81,22 @@ class SystemMessage(BaseMessage):
         return "system"
 
 
+class ModelMessage(BaseModel):
+    """Type of message that interaction between dbgpt-server and llm-server"""
+
+    """Similar to openai's message format"""
+    role: str
+    content: str
+
+
+class ModelMessageRoleType:
+    """ "Type of ModelMessage role"""
+
+    SYSTEM = "system"
+    HUMAN = "human"
+    AI = "ai"
+
+
 class Generation(BaseModel):
     """Output of a single generation."""
 
@@ -146,3 +163,35 @@ def _message_from_dict(message: dict) -> BaseMessage:
 
 def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
     return [_message_from_dict(m) for m in messages]
+
+
+def _parse_model_messages(
+    messages: List[ModelMessage],
+) -> Tuple[str, List[str], List[List[str, str]]]:
+    """ "
+    Parameters:
+        messages: List of message from base chat.
+    Returns:
+        A tuple contains user prompt, system message list and history message list
+        str: user prompt
+        List[str]: system messages
+        List[List[str]]: history message of user and assistant
+    """
+    user_prompt = ""
+    system_messages: List[str] = []
+    history_messages: List[List[str]] = [[]]
+
+    for message in messages[:-1]:
+        if message.role == "human":
+            history_messages[-1].append(message.content)
+        elif message.role == "system":
+            system_messages.append(message.content)
+        elif message.role == "ai":
+            history_messages[-1].append(message.content)
+            history_messages.append([])
+    if messages[-1].role != "human":
+        raise ValueError("Hi! What do you want to talk about？")
+    # Keep message pair of [user message, assistant message]
+    history_messages = list(filter(lambda x: len(x) == 2, history_messages))
+    user_prompt = messages[-1].content
+    return user_prompt, system_messages, history_messages

@@ -423,7 +423,13 @@ class Database:
         session = self._db_sessions()
         cursor = session.execute(text(f"SHOW CREATE TABLE  {table_name}"))
         ans = cursor.fetchall()
-        return ans[0][1]
+        res = ans[0][1]
+        res = re.sub(r"\s*ENGINE\s*=\s*InnoDB\s*", " ", res, flags=re.IGNORECASE)
+        res = re.sub(
+            r"\s*DEFAULT\s*CHARSET\s*=\s*\w+\s*", " ", res, flags=re.IGNORECASE
+        )
+        res = re.sub(r"\s*COLLATE\s*=\s*\w+\s*", " ", res, flags=re.IGNORECASE)
+        return res
 
     def get_fields(self, table_name):
         """Get column fields about specified table."""
@@ -479,5 +485,3 @@ class Database:
         return [
             (table_comment[0], table_comment[1]) for table_comment in table_comments
         ]
-
-

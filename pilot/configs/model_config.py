@@ -47,6 +47,9 @@ LLM_MODEL_CONFIG = {
     "gorilla-7b": os.path.join(MODEL_PATH, "gorilla-7b"),
     "gptj-6b": os.path.join(MODEL_PATH, "ggml-gpt4all-j-v1.3-groovy.bin"),
     "proxyllm": "proxyllm",
+    "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
+    "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
+    "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),
 }
 
 # Load model config

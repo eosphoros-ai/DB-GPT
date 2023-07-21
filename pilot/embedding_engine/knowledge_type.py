@@ -11,6 +11,7 @@ from pilot.embedding_engine.word_embedding import WordEmbedding
 DocumentEmbeddingType = {
     ".txt": (MarkdownEmbedding, {}),
     ".md": (MarkdownEmbedding, {}),
+    ".html": (MarkdownEmbedding, {}),
     ".pdf": (PDFEmbedding, {}),
     ".doc": (WordEmbedding, {}),
     ".docx": (WordEmbedding, {}),
@@ -25,10 +26,23 @@ class KnowledgeType(Enum):
     URL = "URL"
     TEXT = "TEXT"
     OSS = "OSS"
+    S3 = "S3"
     NOTION = "NOTION"
+    MYSQL = "MYSQL"
+    TIDB = "TIDB"
+    CLICKHOUSE = "CLICKHOUSE"
+    OCEANBASE = "OCEANBASE"
+    ELASTICSEARCH = "ELASTICSEARCH"
+    HIVE = "HIVE"
+    PRESTO = "PRESTO"
+    KAFKA = "KAFKA"
+    SPARK = "SPARK"
+    YOUTUBE = "YOUTUBE"
 
 
-def get_knowledge_embedding(knowledge_type, knowledge_source, vector_store_config):
+def get_knowledge_embedding(
+    knowledge_type, knowledge_source, vector_store_config, source_reader, text_splitter
+):
     match knowledge_type:
         case KnowledgeType.DOCUMENT.value:
             extension = "." + knowledge_source.rsplit(".", 1)[-1]
@@ -37,6 +51,8 @@ def get_knowledge_embedding(knowledge_type, knowledge_source, vector_store_confi
                 embedding = knowledge_class(
                     knowledge_source,
                     vector_store_config=vector_store_config,
+                    source_reader=source_reader,
+                    text_splitter=text_splitter,
                     **knowledge_args,
                 )
                 return embedding
@@ -45,18 +61,43 @@ def get_knowledge_embedding(knowledge_type, knowledge_source, vector_store_confi
             embedding = URLEmbedding(
                 file_path=knowledge_source,
                 vector_store_config=vector_store_config,
+                source_reader=source_reader,
+                text_splitter=text_splitter,
             )
             return embedding
         case KnowledgeType.TEXT.value:
             embedding = StringEmbedding(
                 file_path=knowledge_source,
                 vector_store_config=vector_store_config,
+                source_reader=source_reader,
+                text_splitter=text_splitter,
             )
             return embedding
         case KnowledgeType.OSS.value:
             raise Exception("OSS have not integrate")
+        case KnowledgeType.S3.value:
+            raise Exception("S3 have not integrate")
         case KnowledgeType.NOTION.value:
             raise Exception("NOTION have not integrate")
-
+        case KnowledgeType.MYSQL.value:
+            raise Exception("MYSQL have not integrate")
+        case KnowledgeType.TIDB.value:
+            raise Exception("TIDB have not integrate")
+        case KnowledgeType.CLICKHOUSE.value:
+            raise Exception("CLICKHOUSE have not integrate")
+        case KnowledgeType.OCEANBASE.value:
+            raise Exception("OCEANBASE have not integrate")
+        case KnowledgeType.ELASTICSEARCH.value:
+            raise Exception("ELASTICSEARCH have not integrate")
+        case KnowledgeType.HIVE.value:
+            raise Exception("HIVE have not integrate")
+        case KnowledgeType.PRESTO.value:
+            raise Exception("PRESTO have not integrate")
+        case KnowledgeType.KAFKA.value:
+            raise Exception("KAFKA have not integrate")
+        case KnowledgeType.SPARK.value:
+            raise Exception("SPARK have not integrate")
+        case KnowledgeType.YOUTUBE.value:
+            raise Exception("YOUTUBE have not integrate")
         case _:
             raise Exception("unknown knowledge type")

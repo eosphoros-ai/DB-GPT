@@ -9,6 +9,7 @@ from pilot.out_parser.base import BaseOutputParser, T
 from pilot.configs.model_config import LOGDIR
 from pilot.scene.base import ChatScene
 
+
 class ChartItem(NamedTuple):
     sql: str
     title: str
