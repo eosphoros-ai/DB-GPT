@@ -20,7 +20,16 @@
 
 DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+
+## Contents
+- [install](#install)
+- [demo](#demo)
+- [introduction](#introduction)
+- [features](#features)
+- [contributuin](#contribution)
+- [acknowledgement](#acknowledgement)
+- [roadmap](#roadmap)
+- [contract](#contact-information)
 
 ## Demo
 
@@ -84,8 +93,11 @@ Currently, we have released multiple key features, which are listed below to dem
   - Support for unstructured data such as PDF, TXT, Markdown, CSV, DOC, PPT, and WebURL
 
 - Multi LLMs Support
-  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b)
-  - TODO: codegen2, codet5p
+  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b), 🔥 llama-2(7b, 13b, 70b) 
+  - TODO: baichuan(7b, 13b)
+
+
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
 
 ## Introduction 
@@ -144,7 +156,7 @@ This project is standing on the shoulders of giants and is not going to work wit
 
 ## Contribution
 
-- Please run `black .` before submitting the code.
+- Please run `black .` before submitting the code. contributing guidelines, [how to contribution](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING.md)
 
 ## RoadMap
 
@@ -158,3 +170,7 @@ The MIT License (MIT)
 
 ## Contact Information
 We are working on building a community, if you have any ideas about building the community, feel free to contact us. [Discord](https://discord.gg/rBgtJW8U)
+
+<p align="center">
+  <img src="./assets/wechat.jpg" width="300px" />
+</p>
