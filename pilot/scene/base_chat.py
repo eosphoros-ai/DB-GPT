@@ -73,9 +73,14 @@ class BaseChat(ABC):
         self.memory = DuckdbHistoryMemory(chat_session_id)
 
         ### load prompt template
-        self.prompt_template: PromptTemplate = CFG.prompt_templates[
-            self.chat_mode.value()
-        ]
+        # self.prompt_template: PromptTemplate = CFG.prompt_templates[
+        #     self.chat_mode.value()
+        # ]
+        self.prompt_template: PromptTemplate = (
+            CFG.prompt_template_registry.get_prompt_template(
+                self.chat_mode.value(), language=CFG.LANGUAGE, model_name=CFG.LLM_MODEL
+            )
+        )
         self.history_message: List[OnceConversation] = self.memory.messages()
         self.current_message: OnceConversation = OnceConversation(chat_mode.value())
         self.current_tokens_used: int = 0
