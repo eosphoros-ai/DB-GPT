@@ -12,6 +12,8 @@ from transformers import (
     LlamaTokenizer,
     BitsAndBytesConfig,
 )
+from transformers.generation.utils import GenerationConfig
+
 from pilot.configs.model_config import DEVICE
 from pilot.configs.config import Config
 
