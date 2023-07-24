@@ -1,6 +1,6 @@
 {
-  "title": "Sales Report",
-  "name": "sale_report",
+  "title": "Report",
+  "name": "report",
   "introduce": "",
   "layout": "TODO",
   "supported_chart_type":[ "Table", "LineChart",  "BarChart", "IndicatorValue"],
