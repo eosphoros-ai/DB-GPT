@@ -120,7 +120,7 @@ class Config(metaclass=Singleton):
 
         ### default Local database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST", "127.0.0.1")
-        self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "xx.db")
+        self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "")
         self.LOCAL_DB_NAME = os.getenv("LOCAL_DB_NAME")
         self.LOCAL_DB_PORT = int(os.getenv("LOCAL_DB_PORT", 3306))
         self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
