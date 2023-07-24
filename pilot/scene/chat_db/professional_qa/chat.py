@@ -48,13 +48,13 @@ class ChatWithDbQA(BaseChat):
         if self.db_name:
             client = DBSummaryClient()
             try:
-                table_infos = client.get_similar_tables(dbname=self.db_name, query=self.current_user_input,
+                table_infos = client.get_db_summary(dbname=self.db_name, query=self.current_user_input,
                                                         topk=self.top_k)
             except Exception as e:
                 print("db summary find error!" + str(e))
                 table_infos = self.database.table_simple_info()
 
-            # table_info = self.database.table_simple_info(self.db_connect)
+            # table_infos = self.database.table_simple_info()
             dialect = self.database.dialect
 
         input_values = {
