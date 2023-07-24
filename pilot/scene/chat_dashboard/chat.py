@@ -41,9 +41,10 @@ class ChatDashboard(BaseChat):
             raise ValueError(f"{ChatScene.ChatDashboard.value} mode should chose db!")
         self.db_name = db_name
         self.report_name = report_name
-        self.database = CFG.local_db
-        # 准备DB信息(拿到指定库的链接)
-        self.db_connect = self.database.get_session(self.db_name)
+
+        self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+        self.db_connect = self.database.session
+
         self.top_k: int = 5
         self.dashboard_template = self.__load_dashboard_template(report_name)
 
@@ -61,11 +62,20 @@ class ChatDashboard(BaseChat):
             from pilot.summary.db_summary_client import DBSummaryClient
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
+
         client = DBSummaryClient()
+        try:
+            table_infos = client.get_similar_tables(
+                dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+            )
+            print("dashboard vector find tables:{}", table_infos)
+        except Exception as e:
+            print("db summary find error!" + str(e))
+
         input_values = {
             "input": self.current_user_input,
             "dialect": self.database.dialect,
-            "table_info": self.database.table_simple_info(self.db_connect),
+            "table_info": self.database.table_simple_info(),
             "supported_chat_type": self.dashboard_template["supported_chart_type"]
             # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }

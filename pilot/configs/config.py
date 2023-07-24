@@ -119,25 +119,15 @@ class Config(metaclass=Singleton):
             os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True") == "True"
         )
 
-        ### Local database connection configuration
+        ### default Local database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST", "127.0.0.1")
-        self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "xx.db")
+        self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "")
+        self.LOCAL_DB_NAME = os.getenv("LOCAL_DB_NAME")
         self.LOCAL_DB_PORT = int(os.getenv("LOCAL_DB_PORT", 3306))
         self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
 
-        ### TODO Adapt to multiple types of libraries
-        self.local_db = Database.from_uri(
-            "mysql+pymysql://"
-            + self.LOCAL_DB_USER
-            + ":"
-            + self.LOCAL_DB_PASSWORD
-            + "@"
-            + self.LOCAL_DB_HOST
-            + ":"
-            + str(self.LOCAL_DB_PORT),
-            engine_args={"pool_size": 10, "pool_recycle": 3600, "echo": True},
-        )
+        self.LOCAL_DB_MANAGE = None
 
         ### LLM Model Service Configuration
         self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b")
