@@ -52,7 +52,7 @@ class BaseChat(ABC):
     chat_scene: str = None
     llm_model: Any = None
     # By default, keep the last two rounds of conversation records as the context
-    chat_retention_rounds: int = 1
+    chat_retention_rounds: int = 0
 
     class Config:
         """Configuration for this pydantic object."""
