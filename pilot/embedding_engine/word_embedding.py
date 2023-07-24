@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 from typing import List, Optional
 
-from langchain.document_loaders import UnstructuredWordDocumentLoader
 from langchain.schema import Document
+from langchain.document_loaders import Docx2txtLoader
 from langchain.text_splitter import (
     SpacyTextSplitter,
     RecursiveCharacterTextSplitter,
@@ -36,7 +36,7 @@ class WordEmbedding(SourceEmbedding):
     def read(self):
         """Load from word path."""
         if self.source_reader is None:
-            self.source_reader = UnstructuredWordDocumentLoader(self.file_path)
+            self.source_reader = Docx2txtLoader(self.file_path)
         if self.text_splitter is None:
             try:
                 self.text_splitter = SpacyTextSplitter(
