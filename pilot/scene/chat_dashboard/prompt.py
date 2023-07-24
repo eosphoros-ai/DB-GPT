@@ -52,5 +52,3 @@ prompt = PromptTemplate(
     ),
 )
 CFG.prompt_template_registry.register(prompt, is_default=True)
-
-

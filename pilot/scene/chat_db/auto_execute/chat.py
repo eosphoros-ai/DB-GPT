@@ -44,16 +44,18 @@ class ChatWithDbAutoExecute(BaseChat):
             raise ValueError("Could not import DBSummaryClient. ")
         client = DBSummaryClient()
         try:
-            table_infos = client.get_db_summary(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
+            table_infos = client.get_db_summary(
+                dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+            )
         except Exception as e:
             print("db summary find error!" + str(e))
-            table_infos =  self.database.table_simple_info()
+            table_infos = self.database.table_simple_info()
 
         input_values = {
             "input": self.current_user_input,
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
-            "table_info": table_infos
+            "table_info": table_infos,
         }
         return input_values
 

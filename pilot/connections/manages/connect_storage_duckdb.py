@@ -26,7 +26,16 @@ class DuckdbConnectConfig:
             )
             self.connect.execute("CREATE SEQUENCE seq_id START 1;")
 
-    def add_url_db(self, db_name, db_type, db_host: str, db_port: int, db_user: str, db_pwd: str, comment: str = ""):
+    def add_url_db(
+        self,
+        db_name,
+        db_type,
+        db_host: str,
+        db_port: int,
+        db_user: str,
+        db_pwd: str,
+        comment: str = "",
+    ):
         try:
             cursor = self.connect.cursor()
             cursor.execute(
@@ -41,7 +50,7 @@ class DuckdbConnectConfig:
     def get_file_db_name(self, path):
         try:
             conn = duckdb.connect(path)
-            result = conn.execute('SELECT current_database()').fetchone()[0]
+            result = conn.execute("SELECT current_database()").fetchone()[0]
             return result
         except Exception as e:
             raise "Unusable duckdb database path:" + path
@@ -60,9 +69,7 @@ class DuckdbConnectConfig:
 
     def delete_db(self, db_name):
         cursor = self.connect.cursor()
-        cursor.execute(
-            "DELETE FROM connect_config where db_name=?", [db_name]
-        )
+        cursor.execute("DELETE FROM connect_config where db_name=?", [db_name])
         cursor.commit()
         return True
 
@@ -87,9 +94,7 @@ class DuckdbConnectConfig:
     def get_db_list(self):
         if os.path.isfile(duckdb_path):
             cursor = duckdb.connect(duckdb_path).cursor()
-            cursor.execute(
-                "SELECT db_name, db_type, comment FROM connect_config "
-            )
+            cursor.execute("SELECT db_name, db_type, comment FROM connect_config ")
 
             fields = [field[0] for field in cursor.description]
             data = []
@@ -102,13 +107,10 @@ class DuckdbConnectConfig:
 
         return []
 
-
     def get_db_names(self):
         if os.path.isfile(duckdb_path):
             cursor = duckdb.connect(duckdb_path).cursor()
-            cursor.execute(
-                "SELECT db_name FROM connect_config "
-            )
+            cursor.execute("SELECT db_name FROM connect_config ")
             data = []
             for row in cursor.fetchall():
                 data.append(row[0])

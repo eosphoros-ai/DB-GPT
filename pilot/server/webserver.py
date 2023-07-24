@@ -138,7 +138,6 @@ def get_simlar(q):
     return "\n".join(contents)
 
 
-
 def plugins_select_info():
     plugins_infos: dict = {}
     for plugin in CFG.plugins:
