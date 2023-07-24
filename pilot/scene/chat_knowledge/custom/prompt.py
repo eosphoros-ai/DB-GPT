@@ -49,5 +49,4 @@ prompt = PromptTemplate(
     ),
 )
 
-
-CFG.prompt_templates.update({prompt.template_scene: prompt})
+CFG.prompt_template_registry.register(prompt, language=CFG.LANGUAGE, is_default=True)

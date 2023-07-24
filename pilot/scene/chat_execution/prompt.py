@@ -52,4 +52,4 @@ prompt = PromptTemplate(
     example_selector=plugin_example,
 )
 
-CFG.prompt_templates.update({prompt.template_scene: prompt})
+CFG.prompt_template_registry.register(prompt, is_default=True)
