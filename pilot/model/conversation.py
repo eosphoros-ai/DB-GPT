@@ -2,6 +2,8 @@
 Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py
 
 Conversation prompt templates.
+
+
 """
 
 import dataclasses
@@ -302,6 +304,23 @@ register_conv_template(
         sep2=" </s><s>",
         stop_token_ids=[2],
         system_formatter=lambda msg: f"<s>[INST] <<SYS>>\n{msg}\n<</SYS>>\n\n",
+    )
+)
+
+# Baichuan-13B-Chat template
+register_conv_template(
+    # source: https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/f5f47be2adbbdceb784f334d6fa1ca2c73e65097/modeling_baichuan.py#L507
+    # https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/main/generation_config.json
+    Conversation(
+        name="baichuan-chat",
+        system="",
+        roles=(" <reserved_102> ", " <reserved_103> "),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="",
+        sep2="</s>",
+        stop_token_ids=[2, 195],
     )
 )
 

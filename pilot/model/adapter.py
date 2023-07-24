@@ -12,6 +12,8 @@ from transformers import (
     LlamaTokenizer,
     BitsAndBytesConfig,
 )
+from transformers.generation.utils import GenerationConfig
+
 from pilot.configs.model_config import DEVICE
 from pilot.configs.config import Config
 
@@ -276,6 +278,24 @@ class Llama2Adapter(BaseLLMAdaper):
         return model, tokenizer
 
 
+class BaichuanAdapter(BaseLLMAdaper):
+    """The model adapter for Baichuan models (e.g., baichuan-inc/Baichuan-13B-Chat)"""
+
+    def match(self, model_path: str):
+        return "baichuan" in model_path.lower()
+
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        # revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        )
+        return model, tokenizer
+
+
 register_llm_model_adapters(VicunaLLMAdapater)
 register_llm_model_adapters(ChatGLMAdapater)
 register_llm_model_adapters(GuanacoAdapter)
@@ -283,6 +303,7 @@ register_llm_model_adapters(FalconAdapater)
 register_llm_model_adapters(GorillaAdapter)
 register_llm_model_adapters(GPT4AllAdapter)
 register_llm_model_adapters(Llama2Adapter)
+register_llm_model_adapters(BaichuanAdapter)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
 # just for test_py, remove this later
