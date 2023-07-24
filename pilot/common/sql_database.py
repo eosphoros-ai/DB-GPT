@@ -419,14 +419,14 @@ class Database:
     def get_indexes(self, table_name):
         """Get table indexes about specified table."""
         session = self._db_sessions()
-        cursor = session.execute(text(f"SHOW INDEXES FROM {table_name}"))
+        cursor = session.execute(text(f"SHOW INDEXES FROM `{table_name}`"))
         indexes = cursor.fetchall()
         return [(index[2], index[4]) for index in indexes]
 
     def get_show_create_table(self, table_name):
         """Get table show create table about specified table."""
         session = self._db_sessions()
-        cursor = session.execute(text(f"SHOW CREATE TABLE  {table_name}"))
+        cursor = session.execute(text(f"SHOW CREATE TABLE  `{table_name}`"))
         ans = cursor.fetchall()
         res = ans[0][1]
         res = re.sub(r"\s*ENGINE\s*=\s*InnoDB\s*", " ", res, flags=re.IGNORECASE)
