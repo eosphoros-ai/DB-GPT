@@ -62,7 +62,12 @@ class BaseChatAdpter:
         # TODO remote bos token and eos token from tokenizer_config.json of model
         prompt_echo_len_char = len(new_prompt.replace("</s>", "").replace("<s>", ""))
         model_context["prompt_echo_len_char"] = prompt_echo_len_char
+        model_context["echo"] = params.get("echo", True)
         params["prompt"] = new_prompt
+
+        # Overwrite model params:
+        params["stop"] = conv.stop_str
+
         return params, model_context
 
 
@@ -195,6 +200,19 @@ class Llama2ChatAdapter(BaseChatAdpter):
         return generate_stream
 
 
+class BaichuanChatAdapter(BaseChatAdpter):
+    def match(self, model_path: str):
+        return "baichuan" in model_path.lower()
+
+    def get_conv_template(self) -> Conversation:
+        return get_conv_template("baichuan-chat")
+
+    def get_generate_stream_func(self):
+        from pilot.model.inference import generate_stream
+
+        return generate_stream
+
+
 register_llm_model_chat_adapter(VicunaChatAdapter)
 register_llm_model_chat_adapter(ChatGLMChatAdapter)
 register_llm_model_chat_adapter(GuanacoChatAdapter)
@@ -202,6 +220,7 @@ register_llm_model_chat_adapter(FalconChatAdapter)
 register_llm_model_chat_adapter(GorillaChatAdapter)
 register_llm_model_chat_adapter(GPT4AllChatAdapter)
 register_llm_model_chat_adapter(Llama2ChatAdapter)
+register_llm_model_chat_adapter(BaichuanChatAdapter)
 
 # Proxy model for test and develop, it's cheap for us now.
 register_llm_model_chat_adapter(ProxyllmChatAdapter)

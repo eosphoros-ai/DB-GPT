@@ -54,17 +54,19 @@ class BaseOutputParser(ABC):
         """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
         """
         model_context = data.get("model_context")
+        has_echo = True
         if model_context and "prompt_echo_len_char" in model_context:
             prompt_echo_len_char = int(model_context.get("prompt_echo_len_char", -1))
+            has_echo = bool(model_context.get("echo", True))
             if prompt_echo_len_char != -1:
                 skip_echo_len = prompt_echo_len_char
 
         if data.get("error_code", 0) == 0:
-            if "vicuna" in CFG.LLM_MODEL or "llama-2" in CFG.LLM_MODEL:
+            if has_echo and ("vicuna" in CFG.LLM_MODEL or "llama-2" in CFG.LLM_MODEL):
                 # TODO Judging from model_context
                 # output = data["text"][skip_echo_len + 11:].strip()
                 output = data["text"][skip_echo_len:].strip()
-            elif "guanaco" in CFG.LLM_MODEL:
+            elif has_echo and "guanaco" in CFG.LLM_MODEL:
                 # NO stream output
                 # output = data["text"][skip_echo_len + 2:].replace("<s>", "").strip()
 
