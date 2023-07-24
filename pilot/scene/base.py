@@ -3,12 +3,13 @@ from typing import List
 
 
 class Scene:
-    def __init__(self, code, name, describe, param_types: List = [], is_inner: bool = False):
+    def __init__(self, code, name, describe, param_types: List = [], is_inner: bool = False, show_disable=False):
         self.code = code
         self.name = name
         self.describe = describe
         self.param_types = param_types
         self.is_inner = is_inner
+        self.show_disable = show_disable
 
 
 class ChatScene(Enum):
@@ -29,6 +30,8 @@ class ChatScene(Enum):
         "Plugin",
         "Use tools through dialogue to accomplish your goals.",
         ["Plugin Select"],
+        False,
+        True
     )
     ChatDefaultKnowledge = Scene(
         "chat_default_knowledge",
@@ -82,3 +85,6 @@ class ChatScene(Enum):
 
     def param_types(self):
         return self._value_.param_types
+
+    def show_disable(self):
+        return self._value_.show_disable
