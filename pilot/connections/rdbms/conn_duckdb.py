@@ -11,11 +11,13 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
 
+
 class DuckDbConnect(RDBMSDatabase):
     """Connect Duckdb Database fetch MetaData
     Args:
     Usage:
     """
+
     db_type: str = "duckdb"
     db_dialect: str = "duckdb"
 
@@ -33,7 +35,7 @@ class DuckDbConnect(RDBMSDatabase):
             """
         cursor = self.session.execute(text(_tables_sql))
         tables_results = cursor.fetchall()
-        results =[]
+        results = []
         for row in tables_results:
             table_name = row[0]
             _sql = f"""
@@ -49,11 +51,18 @@ class DuckDbConnect(RDBMSDatabase):
             results.append(f"{table_name}({','.join(table_colums)});")
         return results
 
+
 if __name__ == "__main__":
-    engine = create_engine('duckdb:////Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/mock_datas/db-gpt-test.db')
+    engine = create_engine(
+        "duckdb:////Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/mock_datas/db-gpt-test.db"
+    )
     metadata = MetaData(engine)
 
-    results = engine.connect().execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    results = (
+        engine.connect()
+        .execute("SELECT name FROM sqlite_master WHERE type='table'")
+        .fetchall()
+    )
 
     print(str(results))
 

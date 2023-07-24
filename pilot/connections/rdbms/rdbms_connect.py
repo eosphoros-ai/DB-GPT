@@ -36,19 +36,20 @@ def _format_index(index: sqlalchemy.engine.interfaces.ReflectedIndex) -> str:
 
 class RDBMSDatabase(BaseConnect):
     """SQLAlchemy wrapper around a database."""
+
     db_type: str = None
 
     def __init__(
-            self,
-            engine,
-            schema: Optional[str] = None,
-            metadata: Optional[MetaData] = None,
-            ignore_tables: Optional[List[str]] = None,
-            include_tables: Optional[List[str]] = None,
-            sample_rows_in_table_info: int = 3,
-            indexes_in_table_info: bool = False,
-            custom_table_info: Optional[dict] = None,
-            view_support: bool = False,
+        self,
+        engine,
+        schema: Optional[str] = None,
+        metadata: Optional[MetaData] = None,
+        ignore_tables: Optional[List[str]] = None,
+        include_tables: Optional[List[str]] = None,
+        sample_rows_in_table_info: int = 3,
+        indexes_in_table_info: bool = False,
+        custom_table_info: Optional[dict] = None,
+        view_support: bool = False,
     ):
         """Create engine from database URI."""
         self._engine = engine
@@ -88,36 +89,35 @@ class RDBMSDatabase(BaseConnect):
             )
         )
 
-
     @classmethod
     def from_uri_db(
-            cls,
-            host: str,
-            port: int,
-            user: str,
-            pwd: str,
-            db_name: str,
-            engine_args: Optional[dict] = None,
-            **kwargs: Any,
+        cls,
+        host: str,
+        port: int,
+        user: str,
+        pwd: str,
+        db_name: str,
+        engine_args: Optional[dict] = None,
+        **kwargs: Any,
     ) -> RDBMSDatabase:
         db_url: str = (
-                cls.driver
-                + "://"
-                + CFG.LOCAL_DB_USER
-                + ":"
-                + CFG.LOCAL_DB_PASSWORD
-                + "@"
-                + CFG.LOCAL_DB_HOST
-                + ":"
-                + str(CFG.LOCAL_DB_PORT)
-                + "/"
-                + db_name
+            cls.driver
+            + "://"
+            + CFG.LOCAL_DB_USER
+            + ":"
+            + CFG.LOCAL_DB_PASSWORD
+            + "@"
+            + CFG.LOCAL_DB_HOST
+            + ":"
+            + str(CFG.LOCAL_DB_PORT)
+            + "/"
+            + db_name
         )
         return cls.from_uri(db_url, engine_args, **kwargs)
 
     @classmethod
     def from_uri(
-            cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
+        cls, database_uri: str, engine_args: Optional[dict] = None, **kwargs: Any
     ) -> RDBMSDatabase:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
@@ -140,7 +140,6 @@ class RDBMSDatabase(BaseConnect):
 
     def get_session(self):
         session = self._db_sessions()
-
 
         return session
 
@@ -181,7 +180,7 @@ class RDBMSDatabase(BaseConnect):
             tbl
             for tbl in self._metadata.sorted_tables
             if tbl.name in set(all_table_names)
-               and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
+            and not (self.dialect == "sqlite" and tbl.name.startswith("sqlite_"))
         ]
 
         tables = []
@@ -194,7 +193,7 @@ class RDBMSDatabase(BaseConnect):
             create_table = str(CreateTable(table).compile(self._engine))
             table_info = f"{create_table.rstrip()}"
             has_extra_info = (
-                    self._indexes_in_table_info or self._sample_rows_in_table_info
+                self._indexes_in_table_info or self._sample_rows_in_table_info
             )
             if has_extra_info:
                 table_info += "\n\n/*"
@@ -413,9 +412,9 @@ class RDBMSDatabase(BaseConnect):
             set_idx = parts.index("set")
             where_idx = parts.index("where")
             # 截取 `set` 子句中的字段名
-            set_clause = parts[set_idx + 1: where_idx][0].split("=")[0].strip()
+            set_clause = parts[set_idx + 1 : where_idx][0].split("=")[0].strip()
             # 截取 `where` 之后的条件语句
-            where_clause = " ".join(parts[where_idx + 1:])
+            where_clause = " ".join(parts[where_idx + 1 :])
             # 返回一个select语句，它选择更新的数据
             return f"SELECT {set_clause} FROM {table_name} WHERE {where_clause}"
         else:
