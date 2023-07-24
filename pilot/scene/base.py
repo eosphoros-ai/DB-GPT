@@ -20,7 +20,7 @@ class ChatScene(Enum):
     )
     ChatWithDbQA = Scene(
         "chat_with_db_qa",
-        "Chat Meta Data",
+        "Chat DB",
         "Have a Professional Conversation with Metadata.",
         ["DB Select"],
     )
