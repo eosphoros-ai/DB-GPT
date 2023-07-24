@@ -345,7 +345,14 @@ class Database:
         return [
             d[0]
             for d in results
-            if d[0] not in ["information_schema", "performance_schema", "sys", "mysql", "knowledge_management"]
+            if d[0]
+            not in [
+                "information_schema",
+                "performance_schema",
+                "sys",
+                "mysql",
+                "knowledge_management",
+            ]
         ]
 
     def convert_sql_write_to_select(self, write_sql):
