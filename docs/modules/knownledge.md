@@ -31,6 +31,8 @@ python tools/knowledge_init.py
 
 ```
 
+Optionally, you can run `python tools/knowledge_init.py -h` command to see more usage.
+
 3.Add the knowledge repository in the interface by entering the name of your knowledge repository (if not specified, enter "default") so you can use it for Q&A based on your knowledge base. 
 
 Note that the default vector model used is text2vec-large-chinese (which is a large model, so if your personal computer configuration is not enough, it is recommended to use text2vec-base-chinese). Therefore, ensure that you download the model and place it in the models directory.
