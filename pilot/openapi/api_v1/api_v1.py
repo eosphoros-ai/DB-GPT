@@ -151,6 +151,7 @@ async def dialogue_scenes():
             scene_name=scene.scene_name(),
             scene_describe=scene.describe(),
             param_title=",".join(scene.param_types()),
+            show_disable=scene.show_disable(),
         )
         scene_vos.append(scene_vo)
     return Result.succ(scene_vos)
