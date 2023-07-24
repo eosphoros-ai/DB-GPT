@@ -74,6 +74,21 @@ class RDBMSDatabase(BaseConnect):
         self._sample_rows_in_table_info = set()
         self._indexes_in_table_info = indexes_in_table_info
 
+        self._metadata = MetaData()
+        self._metadata.reflect(bind=self._engine)
+
+        # including view support by adding the views as well as tables to the all
+        # tables list if view_support is True
+        self._all_tables = set(
+            self._inspector.get_table_names(schema=self._engine.url.database)
+            + (
+                self._inspector.get_view_names(schema=self._engine.url.database)
+                if self.view_support
+                else []
+            )
+        )
+
+
     @classmethod
     def from_uri_db(
             cls,
@@ -121,15 +136,11 @@ class RDBMSDatabase(BaseConnect):
 
     def get_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
-        warnings.warn(
-            "This method is deprecated - please use `get_usable_table_names`."
-        )
         return self.get_usable_table_names()
 
     def get_session(self):
         session = self._db_sessions()
-        self._metadata = MetaData()
-        self._metadata.reflect(bind=self._engine)
+
 
         return session
 
