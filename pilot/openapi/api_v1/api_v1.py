@@ -25,6 +25,7 @@ from pilot.openapi.api_v1.api_view_model import (
     MessageVo,
     ChatSceneVo,
 )
+from pilot.connections.db_conn_info import DBConfig
 from pilot.configs.config import Config
 from pilot.server.knowledge.service import KnowledgeService
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
@@ -71,11 +72,10 @@ def __new_conversation(chat_mode, user_id) -> ConversationVo:
 
 
 def get_db_list():
-    db = CFG.local_db
-    dbs = db.get_database_list()
+    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
     params: dict = {}
-    for name in dbs:
-        params.update({name: name})
+    for item in dbs:
+        params.update({item["db_name"]: item["db_name"]})
     return params
 
 
@@ -94,6 +94,26 @@ def knowledge_list():
     for space in spaces:
         params.update({space.name: space.name})
     return params
+
+
+@router.get("/v1/chat/db/list", response_model=Result[DBConfig])
+async def dialogue_list():
+    return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list())
+
+
+@router.post("/v1/chat/db/add", response_model=Result[bool])
+async def dialogue_list(db_config: DBConfig = Body()):
+    return Result.succ(CFG.LOCAL_DB_MANAGE.add_db(db_config))
+
+
+@router.post("/v1/chat/db/delete", response_model=Result[bool])
+async def dialogue_list(db_name: str = None):
+    return Result.succ(CFG.LOCAL_DB_MANAGE.delete_db(db_name))
+
+
+@router.get("/v1/chat/db/support/type", response_model=Result[str])
+async def db_support_types():
+    return Result[str].succ(["mysql", "mssql", "duckdb"])
 
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
@@ -132,6 +152,7 @@ async def dialogue_scenes():
             scene_name=scene.scene_name(),
             scene_describe=scene.describe(),
             param_title=",".join(scene.param_types()),
+            show_disable=scene.show_disable(),
         )
         scene_vos.append(scene_vo)
     return Result.succ(scene_vos)
@@ -216,7 +237,7 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     elif ChatScene.ChatDashboard.value() == dialogue.chat_mode:
         chat_param.update({"db_name": dialogue.select_param})
         ## DEFAULT
-        chat_param.update({"report_name": "sales_report"})
+        chat_param.update({"report_name": "report"})
     elif ChatScene.ChatExecution.value() == dialogue.chat_mode:
         chat_param.update({"plugin_selector": dialogue.select_param})
     elif ChatScene.ChatKnowledge.value() == dialogue.chat_mode:

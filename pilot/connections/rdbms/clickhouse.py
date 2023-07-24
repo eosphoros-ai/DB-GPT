@@ -10,7 +10,7 @@ CFG = Config()
 class ClickHouseConnector(RDBMSDatabase):
     """ClickHouseConnector"""
 
-    type: str = "DUCKDB"
+    db_type: str = "duckdb"
 
     driver: str = "duckdb"
 

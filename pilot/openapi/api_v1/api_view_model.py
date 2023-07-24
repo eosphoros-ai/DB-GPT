@@ -28,6 +28,7 @@ class ChatSceneVo(BaseModel):
     scene_name: str = Field(..., description="chat_scene name show for user")
     scene_describe: str = Field("", description="chat_scene describe ")
     param_title: str = Field("", description="chat_scene required parameter title")
+    show_disable: bool = Field(False, description="chat_scene show disable")
 
 
 class ConversationVo(BaseModel):
