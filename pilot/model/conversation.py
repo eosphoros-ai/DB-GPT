@@ -2,8 +2,6 @@
 Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py
 
 Conversation prompt templates.
-
-
 """
 
 import dataclasses
@@ -285,6 +283,21 @@ def get_conv_template(name: str) -> Conversation:
     """Get a conversation template."""
     return conv_templates[name].copy()
 
+
+# A template similar to the "one_shot" template above but remove the example.
+register_conv_template(
+    Conversation(
+        name="zero_shot",
+        system="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("Human", "Assistant"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_SINGLE,
+        sep="\n### ",
+        stop_str="###",
+    )
+)
 
 # llama2 template
 # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212

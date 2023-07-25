@@ -79,7 +79,10 @@ class BaseChat(ABC):
         # ]
         self.prompt_template: PromptTemplate = (
             CFG.prompt_template_registry.get_prompt_template(
-                self.chat_mode.value(), language=CFG.LANGUAGE, model_name=CFG.LLM_MODEL
+                self.chat_mode.value(),
+                language=CFG.LANGUAGE,
+                model_name=CFG.LLM_MODEL,
+                proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
         self.history_message: List[OnceConversation] = self.memory.messages()

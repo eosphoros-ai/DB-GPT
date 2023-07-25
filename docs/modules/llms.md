@@ -11,7 +11,7 @@ cp .env.template .env
 LLM_MODEL=vicuna-13b
 MODEL_SERVER=http://127.0.0.1:8000
 ```
-now we support models vicuna-13b, vicuna-7b, chatglm-6b, flan-t5-base, guanaco-33b-merged, falcon-40b, gorilla-7b, llama-2-7b, llama-2-13b.
+now we support models vicuna-13b, vicuna-7b, chatglm-6b, flan-t5-base, guanaco-33b-merged, falcon-40b, gorilla-7b, llama-2-7b, llama-2-13b, baichuan-7b, baichuan-13b
 
 if you want use other model, such as chatglm-6b, you just need update .env config file.
 ```

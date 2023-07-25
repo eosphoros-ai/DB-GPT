@@ -78,7 +78,9 @@ class ModelWorker:
     def generate_stream_gate(self, params):
         try:
             # params adaptation
-            params, model_context = self.llm_chat_adapter.model_adaptation(params)
+            params, model_context = self.llm_chat_adapter.model_adaptation(
+                params, self.ml.model_path
+            )
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
