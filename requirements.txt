@@ -68,7 +68,7 @@ distro
 pypdf
 weaviate-client
 
-# databse
+# database
 
 pymysql
 duckdb
