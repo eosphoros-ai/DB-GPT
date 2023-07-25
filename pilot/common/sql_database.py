@@ -318,10 +318,11 @@ class Database:
                 result = list(result)
                 result.insert(0, field_names)
                 print("DDL Result:" + str(result))
-
+                if not result:
+                    return self.__query(session, "SHOW COLUMNS FROM test")
                 return result
             else:
-                return []
+                return self.__query(session, "SHOW COLUMNS FROM test")
 
     def run_no_throw(self, session, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results.
@@ -391,7 +392,7 @@ class Database:
         elif cmd_type == "delete":
             table_name = parts[2]  # delete from <table_name> ...
             # 返回一个select语句，它选择该表的所有数据
-            return f"SELECT * FROM {table_name}"
+            return f"SELECT * FROM {table_name} "
 
         elif cmd_type == "update":
             table_name = parts[1]
@@ -419,14 +420,14 @@ class Database:
     def get_indexes(self, table_name):
         """Get table indexes about specified table."""
         session = self._db_sessions()
-        cursor = session.execute(text(f"SHOW INDEXES FROM {table_name}"))
+        cursor = session.execute(text(f"SHOW INDEXES FROM `{table_name}`"))
         indexes = cursor.fetchall()
         return [(index[2], index[4]) for index in indexes]
 
     def get_show_create_table(self, table_name):
         """Get table show create table about specified table."""
         session = self._db_sessions()
-        cursor = session.execute(text(f"SHOW CREATE TABLE  {table_name}"))
+        cursor = session.execute(text(f"SHOW CREATE TABLE  `{table_name}`"))
         ans = cursor.fetchall()
         res = ans[0][1]
         res = re.sub(r"\s*ENGINE\s*=\s*InnoDB\s*", " ", res, flags=re.IGNORECASE)

@@ -33,9 +33,8 @@ class ChatWithDbAutoExecute(BaseChat):
                 f"{ChatScene.ChatWithDbExecute.value} mode should chose db!"
             )
         self.db_name = db_name
-        self.database = CFG.local_db
-        # 准备DB信息(拿到指定库的链接)
-        self.db_connect = self.database.get_session(self.db_name)
+        self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+        self.db_connect = self.database.session
         self.top_k: int = 5
 
     def generate_input_values(self):
@@ -44,12 +43,19 @@ class ChatWithDbAutoExecute(BaseChat):
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
         client = DBSummaryClient()
+        try:
+            table_infos = client.get_db_summary(
+                dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+            )
+        except Exception as e:
+            print("db summary find error!" + str(e))
+            table_infos = self.database.table_simple_info()
+
         input_values = {
             "input": self.current_user_input,
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
-            "table_info": self.database.table_simple_info(self.db_connect)
-            # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
+            "table_info": table_infos,
         }
         return input_values
 
