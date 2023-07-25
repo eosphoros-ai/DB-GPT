@@ -7,7 +7,7 @@ from pydantic import BaseModel, Extra, Field, root_validator
 from typing import Any, Iterable, List, Optional
 
 
-class BaseConnect( ABC):
+class BaseConnect(ABC):
     def get_connect(self, db_name: str):
         pass
 

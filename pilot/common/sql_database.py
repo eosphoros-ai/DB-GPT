@@ -293,7 +293,6 @@ class Database:
             result = list(result)
             return field_names, result
 
-
     def run(self, session, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""
         print("SQL:" + command)
@@ -346,7 +345,14 @@ class Database:
         return [
             d[0]
             for d in results
-            if d[0] not in ["information_schema", "performance_schema", "sys", "mysql"]
+            if d[0]
+            not in [
+                "information_schema",
+                "performance_schema",
+                "sys",
+                "mysql",
+                "knowledge_management",
+            ]
         ]
 
     def convert_sql_write_to_select(self, write_sql):

@@ -29,7 +29,7 @@ class DBType(Enum):
     Postgresql = DbInfo("postgresql")
 
     def value(self):
-        return self._value_.name;
+        return self._value_.name
 
     def is_file_db(self):
         return self._value_.is_file_db
