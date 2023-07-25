@@ -36,7 +36,19 @@ class StrictFormatter(Formatter):
         super().format(format_string, **dummy_inputs)
 
 
+class NoStrictFormatter(StrictFormatter):
+    def check_unused_args(
+        self,
+        used_args: Sequence[Union[int, str]],
+        args: Sequence,
+        kwargs: Mapping[str, Any],
+    ) -> None:
+        """Not check unused args"""
+        pass
+
+
 formatter = StrictFormatter()
+no_strict_formatter = NoStrictFormatter()
 
 
 class MyEncoder(json.JSONEncoder):

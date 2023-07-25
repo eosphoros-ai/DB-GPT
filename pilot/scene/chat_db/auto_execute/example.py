@@ -9,10 +9,7 @@ EXAMPLES = [
             {
                 "type": "ai",
                 "data": {
-                    "content": """{
-							\"thoughts\": \"thought text\",
-							\"sql\": \"SELECT city FROM user where user_name='test1'\",
-						}""",
+                    "content": """{\n\"thoughts\": \"直接查询用户表中用户名为'test1'的记录即可\",\n\"sql\": \"SELECT city FROM user where user_name='test1'\"}""",
                     "example": True,
                 },
             },
@@ -24,10 +21,7 @@ EXAMPLES = [
             {
                 "type": "ai",
                 "data": {
-                    "content": """{
-							\"thoughts\": \"thought text\",
-							\"sql\": \"SELECT b.* FROM user a  LEFT JOIN tran_order b ON a.user_name=b.user_name  where a.city='成都'\",
-						}""",
+                    "content": """{\n\"thoughts\": \"根据订单表的用户名和用户表的用户名关联用户表和订单表，再通过用户表的城市为'成都'的过滤即可\",\n\"sql\": \"SELECT b.* FROM user a  LEFT JOIN tran_order b ON a.user_name=b.user_name  where a.city='成都'\"}""",
                     "example": True,
                 },
             },

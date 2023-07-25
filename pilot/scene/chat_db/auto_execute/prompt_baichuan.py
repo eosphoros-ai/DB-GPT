@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import json
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.configs.config import Config
@@ -11,24 +14,24 @@ CFG = Config()
 PROMPT_SCENE_DEFINE = None
 
 _DEFAULT_TEMPLATE = """
-You are a SQL expert. Given an input question, create a syntactically correct {dialect} sql.
+你是一个 SQL 专家，给你一个用户的问题，你会生成一条对应的 {dialect} 语法的 SQL 语句。
 
-Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results. 
-Use as few tables as possible when querying.
-Only use the following tables schema to generate sql:
+如果用户没有在问题中指定 sql 返回多少条数据，那么你生成的 sql 最多返回 {top_k} 条数据。 
+你应该尽可能少地使用表。
+
+已知表结构信息如下：
 {table_info}
-Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
 
-Question: {input}
-
-Rrespond in JSON format as following format:
+注意：
+1. 只能使用表结构信息中提供的表来生成 sql，如果无法根据提供的表结构中生成 sql ，请说：“提供的表结构信息不足以生成 sql 查询。” 禁止随意捏造信息。
+2. 不要查询不存在的列，注意哪一列位于哪张表中。
+3. 使用 json 格式回答，确保你的回答是必须是正确的 json 格式，并且能被 python 语言的 `json.loads` 库解析, 格式如下：
 {response}
-Ensure the response is correct json and can be parsed by Python json.loads
 """
 
 RESPONSE_FORMAT_SIMPLE = {
-    "thoughts": "thoughts summary to say to user",
-    "sql": "SQL Query to run",
+    "thoughts": "对用户说的想法摘要",
+    "sql": "生成的将被执行的 SQL",
 }
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
@@ -44,6 +47,7 @@ prompt = PromptTemplate(
     template_scene=ChatScene.ChatWithDbExecute.value(),
     input_variables=["input", "table_info", "dialect", "top_k", "response"],
     response_format=json.dumps(RESPONSE_FORMAT_SIMPLE, ensure_ascii=False, indent=4),
+    template_is_strict=False,
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE,
     stream_out=PROMPT_NEED_NEED_STREAM_OUT,
@@ -53,5 +57,10 @@ prompt = PromptTemplate(
     # example_selector=sql_data_example,
     temperature=PROMPT_TEMPERATURE,
 )
-CFG.prompt_template_registry.register(prompt, is_default=True)
-from . import prompt_baichuan
+
+CFG.prompt_template_registry.register(
+    prompt,
+    language=CFG.LANGUAGE,
+    is_default=False,
+    model_names=["baichuan-13b", "baichuan-7b"],
+)
