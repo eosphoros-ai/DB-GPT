@@ -22,5 +22,7 @@ class DocxLoader(BaseLoader):
             para = doc.paragraphs[i]
             text = para.text
             content.append(text)
-        docs.append(Document(page_content=''.join(content), metadata={"source": self.file_path}))
+        docs.append(
+            Document(page_content="".join(content), metadata={"source": self.file_path})
+        )
         return docs
