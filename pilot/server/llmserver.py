@@ -78,7 +78,9 @@ class ModelWorker:
     def generate_stream_gate(self, params):
         try:
             # params adaptation
-            params, model_context = self.llm_chat_adapter.model_adaptation(params)
+            params, model_context = self.llm_chat_adapter.model_adaptation(
+                params, self.ml.model_path
+            )
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
@@ -136,6 +138,7 @@ class PromptRequest(BaseModel):
     max_new_tokens: int
     model: str
     stop: str = None
+    echo: bool = True
 
 
 class StreamRequest(BaseModel):
@@ -178,6 +181,7 @@ def generate(prompt_request: PromptRequest) -> str:
         "temperature": prompt_request.temperature,
         "max_new_tokens": prompt_request.max_new_tokens,
         "stop": prompt_request.stop,
+        "echo": prompt_request.echo,
     }
 
     rsp_str = ""

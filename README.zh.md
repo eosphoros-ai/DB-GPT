@@ -104,8 +104,7 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
   - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
 
 - 多模型支持
-  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b), 🔥 llama-2(7b, 13b, 70b) 
-  - TODO: baichuan(7b, 13b)
+  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4,int8), guanaco(7b,13b,33b), Gorilla(7b,13b), 🔥 llama-2(7b,13b,70b), baichuan(7b,13b)
 
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)

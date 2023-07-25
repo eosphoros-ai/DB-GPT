@@ -107,8 +107,7 @@ Currently, we have released multiple key features, which are listed below to dem
   - Support for unstructured data such as PDF, TXT, Markdown, CSV, DOC, PPT, and WebURL
 
 - Multi LLMs Support
-  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b), 🔥 llama-2(7b, 13b, 70b) 
-  - TODO: baichuan(7b, 13b)
+  - Supports multiple large language models, currently supporting Vicuna (7b,13b), ChatGLM-6b (int4,int8), guanaco(7b,13b,33b), Gorilla(7b,13b), 🔥 llama-2(7b,13b,70b), baichuan(7b,13b)
 
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
