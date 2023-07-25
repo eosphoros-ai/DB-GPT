@@ -3,7 +3,6 @@
 from typing import List, Optional
 
 from langchain.schema import Document
-from langchain.document_loaders import Docx2txtLoader
 from langchain.text_splitter import (
     SpacyTextSplitter,
     RecursiveCharacterTextSplitter,
@@ -11,6 +10,7 @@ from langchain.text_splitter import (
 )
 
 from pilot.embedding_engine import SourceEmbedding, register
+from pilot.embedding_engine.docx_loader import DocxLoader
 
 
 class WordEmbedding(SourceEmbedding):
@@ -36,7 +36,7 @@ class WordEmbedding(SourceEmbedding):
     def read(self):
         """Load from word path."""
         if self.source_reader is None:
-            self.source_reader = Docx2txtLoader(self.file_path)
+            self.source_reader = DocxLoader(self.file_path)
         if self.text_splitter is None:
             try:
                 self.text_splitter = SpacyTextSplitter(
