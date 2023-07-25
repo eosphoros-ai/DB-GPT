@@ -1,5 +1,4 @@
 import json
-import importlib
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.configs.config import Config
 from pilot.scene.base import ChatScene
@@ -8,27 +7,23 @@ from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = """You are a {dialect} data analysis expert, please provide a professional data analysis solution according to the following situations"""
+PROMPT_SCENE_DEFINE = "You are a data analysis expert, please provide a professional data analysis solution"
 
 _DEFAULT_TEMPLATE = """
-According to the structure definition in the following tables:
+According to the following table structure definition:
 {table_info}
-Provide professional data analysis to support the goal: 
+Provide professional data analysis to support users' goals:
 {input}
 
-Constraint:
-Provide multi-dimensional analysis as much as possible according to the target requirements, no less than three and no more than 8 dimensions.
-The data columns of the analysis output should not exceed 4.
-According to the characteristics of the analyzed data, choose the most suitable one from the charts provided below for display, chart type:
+Provide at least 4 and at most 8 dimensions of analysis according to user goals.
+The output data of the analysis cannot exceed 4 columns, and do not use columns such as pay_status in the SQL where condition for data filtering.
+According to the characteristics of the analyzed data, choose the most suitable one from the charts provided below for data display, chart type:
 {supported_chat_type}
 
 Pay attention to the length of the output content of the analysis result, do not exceed 4000tokens
-According to the characteristics of the analyzed data, choose the best one from the charts provided below to display, use different types of charts as much as possible，chart types:
-{supported_chat_type}
 
-Give {dialect} data analysis SQL, analysis title, display method and analytical thinking,respond in the following json format:
+Give the correct {dialect} analysis SQL (don't use unprovided values such as 'paid'), analysis title, display method and summary of brief analysis thinking, and respond in the following json format:
 {response}
-Do not use unprovided fields and value in the where condition of sql.
 Ensure the response is correct json and can be parsed by Python json.loads
 """
 

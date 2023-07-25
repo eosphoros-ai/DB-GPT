@@ -15,6 +15,7 @@ from pilot.configs.model_config import (
 )
 from pilot.common.plugins import scan_plugins, load_native_plugins
 from pilot.utils import build_logger
+from pilot.connections.manages.connection_manager import ConnectManager
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -38,6 +39,10 @@ def server_init(args):
 
     # init config
     cfg = Config()
+    # init connect manage
+    conn_manage = ConnectManager()
+    cfg.LOCAL_DB_MANAGE = conn_manage
+
     load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
     async_db_summery()

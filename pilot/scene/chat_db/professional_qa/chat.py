@@ -28,9 +28,8 @@ class ChatWithDbQA(BaseChat):
         )
         self.db_name = db_name
         if db_name:
-            self.database = CFG.local_db
-            # 准备DB信息(拿到指定库的链接)
-            self.db_connect = self.database.get_session(self.db_name)
+            self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+            self.db_connect = self.database.session
             self.tables = self.database.get_table_names()
 
         self.top_k = (
@@ -48,16 +47,21 @@ class ChatWithDbQA(BaseChat):
             raise ValueError("Could not import DBSummaryClient. ")
         if self.db_name:
             client = DBSummaryClient()
-            table_info = client.get_db_summary(
-                dbname=self.db_name, query=self.current_user_input, topk=self.top_k
-            )
-            # table_info = self.database.table_simple_info(self.db_connect)
+            try:
+                table_infos = client.get_db_summary(
+                    dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+                )
+            except Exception as e:
+                print("db summary find error!" + str(e))
+                table_infos = self.database.table_simple_info()
+
+            # table_infos = self.database.table_simple_info()
             dialect = self.database.dialect
 
         input_values = {
             "input": self.current_user_input,
             # "top_k": str(self.top_k),
             # "dialect": dialect,
-            "table_info": table_info,
+            "table_info": table_infos,
         }
         return input_values
