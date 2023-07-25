@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class DBConfig(BaseModel):
     db_type: str
     db_name: str

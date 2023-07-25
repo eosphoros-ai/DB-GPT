@@ -19,7 +19,7 @@ from pilot.scene.chat_dashboard.prompt import prompt
 from pilot.scene.chat_dashboard.data_preparation.report_schma import (
     ChartData,
     ReportData,
-    ValueItem
+    ValueItem,
 )
 
 CFG = Config()
@@ -65,7 +65,9 @@ class ChatDashboard(BaseChat):
 
         client = DBSummaryClient()
         try:
-            table_infos = client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
+            table_infos = client.get_similar_tables(
+                dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+            )
             print("dashboard vector find tables:{}", table_infos)
         except Exception as e:
             print("db summary find error!" + str(e))
@@ -74,7 +76,7 @@ class ChatDashboard(BaseChat):
             "input": self.current_user_input,
             "dialect": self.database.dialect,
             "table_info": self.database.table_simple_info(),
-            "supported_chat_type": self.dashboard_template['supported_chart_type']
+            "supported_chat_type": self.dashboard_template["supported_chart_type"]
             # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
 
@@ -85,7 +87,9 @@ class ChatDashboard(BaseChat):
         chart_datas: List[ChartData] = []
         for chart_item in prompt_response:
             try:
-                field_names, datas = self.database.query_ex(self.db_connect, chart_item.sql)
+                field_names, datas = self.database.query_ex(
+                    self.db_connect, chart_item.sql
+                )
                 values: List[ValueItem] = []
                 data_map = {}
                 field_map = {}
@@ -96,28 +100,45 @@ class ChatDashboard(BaseChat):
                     if not data_map[field_name]:
                         field_map.update({f"{field_name}": False})
                     else:
-                        field_map.update({f"{field_name}": all(
-                            isinstance(item, (int, float, Decimal)) for item in data_map[field_name])})
+                        field_map.update(
+                            {
+                                f"{field_name}": all(
+                                    isinstance(item, (int, float, Decimal))
+                                    for item in data_map[field_name]
+                                )
+                            }
+                        )
 
                 for field_name in field_names[1:]:
                     if not field_map[field_name]:
                         print("more than 2 non-numeric column")
                     else:
                         for data in datas:
-                            value_item = ValueItem(name=data[0], type=field_name,
-                                                   value=data[field_names.index(field_name)])
+                            value_item = ValueItem(
+                                name=data[0],
+                                type=field_name,
+                                value=data[field_names.index(field_name)],
+                            )
                             values.append(value_item)
 
-                chart_datas.append(ChartData(chart_uid=str(uuid.uuid1()),
-                                             chart_name=chart_item.title,
-                                             chart_type=chart_item.showcase,
-                                             chart_desc=chart_item.thoughts,
-                                             chart_sql=chart_item.sql,
-                                             column_name=field_names,
-                                             values=values))
+                chart_datas.append(
+                    ChartData(
+                        chart_uid=str(uuid.uuid1()),
+                        chart_name=chart_item.title,
+                        chart_type=chart_item.showcase,
+                        chart_desc=chart_item.thoughts,
+                        chart_sql=chart_item.sql,
+                        column_name=field_names,
+                        values=values,
+                    )
+                )
             except Exception as e:
                 # TODO 修复流程
                 print(str(e))
 
-        return ReportData(conv_uid=self.chat_session_id, template_name=self.report_name, template_introduce=None,
-                          charts=chart_datas)
+        return ReportData(
+            conv_uid=self.chat_session_id,
+            template_name=self.report_name,
+            template_introduce=None,
+            charts=chart_datas,
+        )
