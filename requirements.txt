@@ -55,7 +55,7 @@ diskcache==5.6.1
 auto-gpt-plugin-template
 pymdown-extensions
 gTTS==2.3.1
-langchain
+langchain==0.0.228
 nltk
 python-dotenv==1.0.0
 pymilvus==2.2.1
@@ -67,8 +67,9 @@ playsound
 distro
 pypdf
 weaviate-client
+docx2txt
 
-# databse
+# database
 
 pymysql
 duckdb
