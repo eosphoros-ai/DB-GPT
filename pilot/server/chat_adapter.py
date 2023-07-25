@@ -19,17 +19,20 @@ class BaseChatAdpter:
         """Return the generate stream handler func"""
         pass
 
-    def get_conv_template(self) -> Conversation:
+    def get_conv_template(self, model_path: str) -> Conversation:
         return None
 
-    def model_adaptation(self, params: Dict) -> Tuple[Dict, Dict]:
+    def model_adaptation(self, params: Dict, model_path: str) -> Tuple[Dict, Dict]:
         """Params adaptation"""
-        conv = self.get_conv_template()
+        conv = self.get_conv_template(model_path)
         messages = params.get("messages")
         # Some model scontext to dbgpt server
         model_context = {"prompt_echo_len_char": -1}
         if not conv or not messages:
             # Nothing to do
+            print(
+                f"No conv from model_path {model_path} or no messages in params, {self}"
+            )
             return params, model_context
         conv = conv.copy()
         system_messages = []
@@ -84,6 +87,7 @@ def get_llm_chat_adapter(model_path: str) -> BaseChatAdpter:
     """Get a chat generate func for a model"""
     for adapter in llm_model_chat_adapters:
         if adapter.match(model_path):
+            print(f"Get model path: {model_path} adapter {adapter}")
             return adapter
 
     raise ValueError(f"Invalid model for chat adapter {model_path}")
@@ -191,7 +195,7 @@ class Llama2ChatAdapter(BaseChatAdpter):
     def match(self, model_path: str):
         return "llama-2" in model_path.lower()
 
-    def get_conv_template(self) -> Conversation:
+    def get_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llama-2")
 
     def get_generate_stream_func(self):
@@ -204,8 +208,10 @@ class BaichuanChatAdapter(BaseChatAdpter):
     def match(self, model_path: str):
         return "baichuan" in model_path.lower()
 
-    def get_conv_template(self) -> Conversation:
-        return get_conv_template("baichuan-chat")
+    def get_conv_template(self, model_path: str) -> Conversation:
+        if "chat" in model_path.lower():
+            return get_conv_template("baichuan-chat")
+        return get_conv_template("zero_shot")
 
     def get_generate_stream_func(self):
         from pilot.model.inference import generate_stream

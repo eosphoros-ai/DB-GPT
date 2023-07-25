@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
 from pydantic import BaseModel, Extra, Field, root_validator
 
 
-from pilot.common.formatting import formatter
+from pilot.common.formatting import formatter, no_strict_formatter
 from pilot.out_parser.base import BaseOutputParser
 from pilot.common.schema import SeparatorStyle
 from pilot.prompts.example_base import ExampleSelector
@@ -24,8 +24,10 @@ def jinja2_formatter(template: str, **kwargs: Any) -> str:
 
 
 DEFAULT_FORMATTER_MAPPING: Dict[str, Callable] = {
-    "f-string": formatter.format,
-    "jinja2": jinja2_formatter,
+    "f-string": lambda is_strict: formatter.format
+    if is_strict
+    else no_strict_formatter.format,
+    "jinja2": lambda is_strict: jinja2_formatter,
 }
 
 
@@ -38,6 +40,8 @@ class PromptTemplate(BaseModel, ABC):
     template: Optional[str]
     """The prompt template."""
     template_format: str = "f-string"
+    """strict template will check template args"""
+    template_is_strict: bool = True
     """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
     response_format: Optional[str]
     """default use stream out"""
@@ -68,10 +72,12 @@ class PromptTemplate(BaseModel, ABC):
         """Format the prompt with the inputs."""
         if self.template:
             if self.response_format:
-                kwargs["response"] = json.dumps(self.response_format, indent=4)
+                kwargs["response"] = json.dumps(
+                    self.response_format, ensure_ascii=False, indent=4
+                )
             return DEFAULT_FORMATTER_MAPPING[self.template_format](
-                self.template, **kwargs
-            )
+                self.template_is_strict
+            )(self.template, **kwargs)
 
     def add_goals(self, goal: str) -> None:
         self.goals.append(goal)

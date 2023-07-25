@@ -12,8 +12,6 @@ from transformers import (
     LlamaTokenizer,
     BitsAndBytesConfig,
 )
-from transformers.generation.utils import GenerationConfig
-
 from pilot.configs.model_config import DEVICE
 from pilot.configs.config import Config
 
@@ -285,8 +283,9 @@ class BaichuanAdapter(BaseLLMAdaper):
         return "baichuan" in model_path.lower()
 
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
-        # revision = from_pretrained_kwargs.get("revision", "main")
-        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, use_fast=False
+        )
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             trust_remote_code=True,
