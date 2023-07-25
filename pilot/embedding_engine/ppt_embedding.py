@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from typing import List, Optional
 
-from langchain.document_loaders import UnstructuredPowerPointLoader
 from langchain.schema import Document
 from langchain.text_splitter import (
     SpacyTextSplitter,
@@ -11,6 +10,7 @@ from langchain.text_splitter import (
 )
 
 from pilot.embedding_engine import SourceEmbedding, register
+from pilot.embedding_engine.ppt_loader import PPTLoader
 
 
 class PPTEmbedding(SourceEmbedding):
@@ -36,7 +36,7 @@ class PPTEmbedding(SourceEmbedding):
     def read(self):
         """Load from ppt path."""
         if self.source_reader is None:
-            self.source_reader = UnstructuredPowerPointLoader(self.file_path)
+            self.source_reader = PPTLoader(self.file_path)
         if self.text_splitter is None:
             try:
                 self.text_splitter = SpacyTextSplitter(
