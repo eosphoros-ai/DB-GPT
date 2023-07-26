@@ -1,4 +1,10 @@
 # DB-GPT: 用私有化LLM技术定义数据库下一代交互方式
+
+<p align="left">
+  <img src="./assets/LOGO.png" width="100%" />
+</p>
+
+
 <div align="center">
   <p>
     <a href="https://github.com/csunny/DB-GPT">
@@ -96,6 +102,8 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
   - 知识库管理(目前支持 txt, pdf, md, html, doc, ppt, and url)
   - 数据库知识问答
   - 数据处理
+- 数据库对话
+- Chat2Dashboard
 - 插件模型
   - 支持自定义插件执行任务，原生支持Auto-GPT插件。如:
     - SQL自动执行，获取查询结果
