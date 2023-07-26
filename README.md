@@ -1,5 +1,10 @@
 # DB-GPT: Revolutionizing Database Interactions with Private LLM Technology
  
+<p align="left">
+  <img src="./assets/LOGO.png" width="100%" />
+</p>
+
+
 <div align="center">
   <p>
     <a href="https://github.com/csunny/DB-GPT">
@@ -99,6 +104,9 @@ Currently, we have released multiple key features, which are listed below to dem
   -   Knowledge Management(We currently support many document formats: txt, pdf, md, html, doc, ppt, and url.)
   -  Database knowledge Q&A
   - knowledge Embedding
+
+- ChatDB
+- ChatDashboard
 - Plugins
   -  Support custom plugin execution tasks and natively support the Auto-GPT plugin, such as:
     - Automatic execution of SQL and retrieval of query results
@@ -106,9 +114,14 @@ Currently, we have released multiple key features, which are listed below to dem
 - Unified vector storage/indexing of knowledge base
   - Support for unstructured data such as PDF, TXT, Markdown, CSV, DOC, PPT, and WebURL
 
-- Multi LLMs Support
-  - Supports multiple large language models, currently supporting Vicuna (7b,13b), ChatGLM-6b (int4,int8), guanaco(7b,13b,33b), Gorilla(7b,13b), 🔥 llama-2(7b,13b,70b), baichuan(7b,13b)
-
+- Multi LLMs Support, Supports multiple large language models, currently supporting
+  - 🔥 llama-2(7b,13b,70b)
+  - Vicuna (7b,13b)
+  - ChatGLM-6b (int4,int8)
+  - ChatGLM2-6b (int4,int8)
+  - guanaco(7b,13b,33b)
+  - Gorilla(7b,13b)
+  - baichuan(7b,13b)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
