@@ -1,0 +1,40 @@
+import bardapi
+from typing import List
+from pilot.configs.config import Config
+from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
+
+CFG = Config()
+
+
+def bard_generate_stream(model, tokenizer, params, device, context_len=2048):
+    token = CFG.proxy_api_key
+
+    history = []
+    messages: List[ModelMessage] = params["messages"]
+    for message in messages:
+        if message.role == ModelMessageRoleType.HUMAN:
+            history.append({"role": "user", "content": message.content})
+        elif message.role == ModelMessageRoleType.SYSTEM:
+            history.append({"role": "system", "content": message.content})
+        elif message.role == ModelMessageRoleType.AI:
+            history.append({"role": "assistant", "content": message.content})
+        else:
+            pass
+
+    temp_his = history[::-1]
+    last_user_input = None
+    for m in temp_his:
+        if m["role"] == "user":
+            last_user_input = m
+            break
+    if last_user_input:
+        history.remove(last_user_input)
+        history.append(last_user_input)
+
+    response = bardapi.core.Bard(token).get_answer(last_user_input)
+    if response is not None and response.get("content") is not None:
+        yield str(response["content"])
+    yield f"bard response error: {str(response)}"
+
+
+print(bard_generate_stream("bard_proxy_llm", None, {"input": "hi"}, None, 2048))

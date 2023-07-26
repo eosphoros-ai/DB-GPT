@@ -141,6 +141,7 @@ class Config(metaclass=Singleton):
 
         ### LLM Model Service Configuration
         self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b")
+        self.PROXY_MODEL = os.getenv("PROXY_MODEL", "chatgpt")
         self.LIMIT_MODEL_CONCURRENCY = int(os.getenv("LIMIT_MODEL_CONCURRENCY", 5))
         self.MAX_POSITION_EMBEDDINGS = int(os.getenv("MAX_POSITION_EMBEDDINGS", 4096))
         self.MODEL_PORT = os.getenv("MODEL_PORT", 8000)
