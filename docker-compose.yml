@@ -2,57 +2,45 @@ version: '3.10'
 
 services:
   db:
-    image: mysql:8.0.33
+    image: mysql/mysql-server
     environment:
-      MYSQL_DATABASE: 'db'
       MYSQL_USER: 'user'
       MYSQL_PASSWORD: 'password'
       MYSQL_ROOT_PASSWORD: 'aa123456'
     ports:
       - 3306:3306
     volumes:
-      - my-db:/var/lib/mysql
+      - dbgpt-myql-db:/var/lib/mysql
+      - ./docker/examples/my.cnf:/etc/my.cnf
+      - ./docker/examples/sqls:/docker-entrypoint-initdb.d
+      - ./assets/schema/knowledge_management.sql:/docker-entrypoint-initdb.d/knowledge_management.sql
     restart: unless-stopped
+    networks:
+      - dbgptnet
   webserver:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: python3 pilot/server/webserver.py
+    image: db-gpt:latest
+    command: python3 pilot/server/dbgpt_server.py
     environment:
-      - MODEL_SERVER=http://llmserver:8000
       - LOCAL_DB_HOST=db
-      - WEB_SERVER_PORT=7860
+      - LOCAL_DB_PASSWORD=aa123456
       - ALLOWLISTED_PLUGINS=db_dashboard
-    depends_on:
-      - db
-      - llmserver
-    volumes:
-      - ./models:/app/models
-      - ./plugins:/app/plugins
-      - data:/app/pilot/data
-    env_file:
-      - .env.template
-    ports:
-      - 7860:7860/tcp
-    expose:
-      - 7860/tcp
-    restart: unless-stopped
-  llmserver:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: python3 pilot/server/llmserver.py
-    environment:
-      - LOCAL_DB_HOST=db
+      - LLM_MODEL=vicuna-13b
     depends_on:
       - db
     volumes:
-      - ./models:/app/models
+      - /data:/data
+      # Please modify it to your own model directory
+      - /data/models:/app/models
+      - dbgpt-data:/app/pilot/data
+      - dbgpt-message:/app/pilot/message
     env_file:
       - .env.template
     ports:
-      - 8000:8000
+      - 5000:5000/tcp
+    # webserver may be failed, it must wait all sqls in /docker-entrypoint-initdb.d execute finish.
     restart: unless-stopped
+    networks:
+      - dbgptnet
     deploy:
       resources:
         reservations:
@@ -60,17 +48,11 @@ services:
             - driver: nvidia
               device_ids: ['0']
               capabilities: [gpu]
-  tunnel:
-    image: cloudflare/cloudflared:latest
-    container_name: cloudflared-tunnel
-    restart: unless-stopped
-    environment:
-      - TUNNEL_URL=http://webserver:7860
-    command: tunnel --no-autoupdate
-    depends_on:
-      - webserver
-
-
 volumes:
-  my-db:
-  data:
+  dbgpt-myql-db:
+  dbgpt-data:
+  dbgpt-message:
+networks:
+  dbgptnet:
+    driver: bridge
+    name: dbgptnet
