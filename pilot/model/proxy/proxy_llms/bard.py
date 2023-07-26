@@ -31,10 +31,9 @@ def bard_generate_stream(model, tokenizer, params, device, context_len=2048):
         history.remove(last_user_input)
         history.append(last_user_input)
 
-    response = bardapi.core.Bard(token).get_answer(last_user_input)
+    response = bardapi.core.Bard(token).get_answer(last_user_input["content"])
     if response is not None and response.get("content") is not None:
         yield str(response["content"])
     yield f"bard response error: {str(response)}"
 
 
-print(bard_generate_stream("bard_proxy_llm", None, {"input": "hi"}, None, 2048))
