@@ -31,7 +31,11 @@ def bard_generate_stream(model, tokenizer, params, device, context_len=2048):
         history.remove(last_user_input)
         history.append(last_user_input)
 
-    response = bardapi.core.Bard(token).get_answer(last_user_input["content"])
+    msgs = []
+    for msg in history:
+        if msg.get("content"):
+            msgs.append(msg["content"])
+    response = bardapi.core.Bard(token).get_answer("\n".join(msgs))
     if response is not None and response.get("content") is not None:
         yield str(response["content"])
     else:
