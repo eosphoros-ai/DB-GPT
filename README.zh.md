@@ -56,7 +56,6 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 示例通过 RTX 4090 GPU 演示
 
-
 https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
 
 #### 根据自然语言对话生成分析图表
@@ -112,10 +111,13 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
   - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
 
 - 多模型支持
-  - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4,int8), guanaco(7b,13b,33b), Gorilla(7b,13b), 🔥 llama-2(7b,13b,70b), baichuan(7b,13b)
-
-
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+  - 支持多种大语言模型, 当前已支持如下模型: 
+    - Vicuna(7b,13b)
+    - ChatGLM-6b(int4,int8)
+    - guanaco(7b,13b,33b)
+    - Gorilla(7b,13b)
+    - 🔥 llama-2(7b,13b,70b)
+    - baichuan(7b,13b)
 
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。
@@ -201,6 +203,4 @@ The MIT License (MIT)
 <p align="center">
   <img src="./assets/wechat.jpg" width="300px" />
 </p>
-
-
 
