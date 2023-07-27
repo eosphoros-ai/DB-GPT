@@ -7,7 +7,7 @@ CFG = Config()
 
 
 def bard_generate_stream(model, tokenizer, params, device, context_len=2048):
-    token = CFG.proxy_api_key
+    token = CFG.bard_proxy_api_key
 
     history = []
     messages: List[ModelMessage] = params["messages"]

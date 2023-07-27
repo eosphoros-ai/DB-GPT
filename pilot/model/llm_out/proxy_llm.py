@@ -16,17 +16,18 @@ CFG = Config()
 
 def proxyllm_generate_stream(model, tokenizer, params, device, context_len=2048):
     generator_mapping = {
-        "chatgpt": chatgpt_generate_stream,
-        "bard": bard_generate_stream,
-        "claude": claude_generate_stream,
-        "gpt4": gpt4_generate_stream,
-        "wenxin": wenxin_generate_stream,
-        "tongyi": tongyi_generate_stream,
+        "proxyllm": chatgpt_generate_stream,
+        "chatgpt_proxyllm": chatgpt_generate_stream,
+        "bard_proxyllm": bard_generate_stream,
+        "claude_proxyllm": claude_generate_stream,
+        "gpt4_proxyllm": gpt4_generate_stream,
+        "wenxin_proxyllm": wenxin_generate_stream,
+        "tongyi_proxyllm": tongyi_generate_stream,
     }
 
-    default_error_message = f"{CFG.PROXY_MODEL} LLM is not supported"
+    default_error_message = f"{CFG.LLM_MODEL} LLM is not supported"
     generator_function = generator_mapping.get(
-        CFG.PROXY_MODEL, lambda: default_error_message
+        CFG.LLM_MODEL, lambda: default_error_message
     )
 
     yield from generator_function(model, tokenizer, params, device, context_len)
