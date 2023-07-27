@@ -69,6 +69,7 @@ class BaseChat(ABC):
         self.chat_mode = chat_mode
         self.current_user_input: str = current_user_input
         self.llm_model = CFG.LLM_MODEL
+        self.llm_echo = False
         ### can configurable storage methods
         self.memory = DuckdbHistoryMemory(chat_session_id)
 
@@ -78,7 +79,10 @@ class BaseChat(ABC):
         # ]
         self.prompt_template: PromptTemplate = (
             CFG.prompt_template_registry.get_prompt_template(
-                self.chat_mode.value(), language=CFG.LANGUAGE, model_name=CFG.LLM_MODEL
+                self.chat_mode.value(),
+                language=CFG.LANGUAGE,
+                model_name=CFG.LLM_MODEL,
+                proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
         self.history_message: List[OnceConversation] = self.memory.messages()
@@ -128,6 +132,7 @@ class BaseChat(ABC):
             "temperature": float(self.prompt_template.temperature),
             "max_new_tokens": int(self.prompt_template.max_new_tokens),
             "stop": self.prompt_template.sep,
+            "echo": self.llm_echo,
         }
         return payload
 

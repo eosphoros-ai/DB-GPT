@@ -43,7 +43,7 @@ PROMPT_TEMPERATURE = 0.5
 prompt = PromptTemplate(
     template_scene=ChatScene.ChatWithDbExecute.value(),
     input_variables=["input", "table_info", "dialect", "top_k", "response"],
-    response_format=json.dumps(RESPONSE_FORMAT_SIMPLE, indent=4),
+    response_format=json.dumps(RESPONSE_FORMAT_SIMPLE, ensure_ascii=False, indent=4),
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE,
     stream_out=PROMPT_NEED_NEED_STREAM_OUT,
@@ -54,3 +54,4 @@ prompt = PromptTemplate(
     temperature=PROMPT_TEMPERATURE,
 )
 CFG.prompt_template_registry.register(prompt, is_default=True)
+from . import prompt_baichuan
