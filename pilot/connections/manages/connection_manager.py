@@ -117,6 +117,16 @@ class ConnectManager:
     def delete_db(self, db_name: str):
         return self.storage.delete_db(db_name)
 
+    def edit_db(self, db_info: DBConfig):
+        return self.storage.update_db_info(db_info.db_name,
+                                           db_info.db_type,
+                                           db_info.file_path,
+                                           db_info.db_host,
+                                           db_info.db_port,
+                                           db_info.db_user,
+                                           db_info.db_pwd,
+                                           db_info.comment)
+
     def add_db(self, db_info: DBConfig):
         db_type = DBType.of_db_type(db_info.db_type)
         if db_type.is_file_db():

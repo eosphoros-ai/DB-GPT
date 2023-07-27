@@ -47,6 +47,27 @@ class DuckdbConnectConfig:
         except Exception as e:
             print("add db connect info error1！" + str(e))
 
+    def update_db_info(self,
+        db_name,
+        db_type,
+        db_path,
+        db_host: str,
+        db_port: int,
+        db_user: str,
+        db_pwd: str,
+        comment: str ):
+        old_db_conf = self.get_db_config(db_name)
+        if old_db_conf:
+            try:
+                cursor = self.connect.cursor()
+                cursor.execute(f"UPDATE connect_config set db_type={db_type}, db_path={db_path}, db_host={db_host}, db_port={db_port}, db_user={db_user}, db_pwd={db_pwd}, comment={comment} where db_name={db_name}")
+                cursor.commit()
+                self.connect.commit()
+            except Exception as e:
+                print("edit db connect info error2！" + str(e))
+            return True
+        raise ValueError(f"{db_name} not have config info!")
+
     def get_file_db_name(self, path):
         try:
             conn = duckdb.connect(path)
@@ -54,6 +75,7 @@ class DuckdbConnectConfig:
             return result
         except Exception as e:
             raise "Unusable duckdb database path:" + path
+
 
     def add_file_db(self, db_name, db_type, db_path: str, comment: str = ""):
         try:
@@ -89,7 +111,7 @@ class DuckdbConnectConfig:
             for i, field in enumerate(fields):
                 row_dict[field] = row_1[i]
             return row_dict
-        return {}
+        return None
 
     def get_db_list(self):
         if os.path.isfile(duckdb_path):
