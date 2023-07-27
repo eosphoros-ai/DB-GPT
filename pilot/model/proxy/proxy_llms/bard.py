@@ -34,6 +34,5 @@ def bard_generate_stream(model, tokenizer, params, device, context_len=2048):
     response = bardapi.core.Bard(token).get_answer(last_user_input["content"])
     if response is not None and response.get("content") is not None:
         yield str(response["content"])
-    yield f"bard response error: {str(response)}"
-
-
+    else:
+        yield f"bard response error: {str(response)}"
