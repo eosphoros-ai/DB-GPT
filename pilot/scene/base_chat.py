@@ -125,10 +125,16 @@ class BaseChat(ABC):
             current_prompt = self.prompt_template.format(**input_values)
             self.current_message.add_system_message(current_prompt)
 
+        llm_messages = self.generate_llm_messages()
+        if not CFG.NEW_SERVER_MODE:
+            # Not new server mode, we convert the message format(List[ModelMessage]) to list of dict
+            # fix the error of "Object of type ModelMessage is not JSON serializable" when passing the payload to request.post
+            llm_messages = list(map(lambda m: m.dict(), llm_messages))
+
         payload = {
             "model": self.llm_model,
             "prompt": self.generate_llm_text(),
-            "messages": self.generate_llm_messages(),
+            "messages": llm_messages,
             "temperature": float(self.prompt_template.temperature),
             "max_new_tokens": int(self.prompt_template.max_new_tokens),
             "stop": self.prompt_template.sep,

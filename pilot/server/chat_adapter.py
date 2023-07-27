@@ -28,6 +28,15 @@ class BaseChatAdpter:
         messages = params.get("messages")
         # Some model scontext to dbgpt server
         model_context = {"prompt_echo_len_char": -1}
+
+        if messages:
+            # Dict message to ModelMessage
+            messages = [
+                m if isinstance(m, ModelMessage) else ModelMessage(**m)
+                for m in messages
+            ]
+            params["messages"] = messages
+
         if not conv or not messages:
             # Nothing to do
             print(
