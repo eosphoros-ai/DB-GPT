@@ -1,5 +1,10 @@
 # DB-GPT: Revolutionizing Database Interactions with Private LLM Technology
  
+<p align="left">
+  <img src="./assets/LOGO.png" width="100%" />
+</p>
+
+
 <div align="center">
   <p>
     <a href="https://github.com/csunny/DB-GPT">
@@ -55,39 +60,6 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
       <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
 </videos> -->
 
-
-#### Chat with data, and figure charts.
-
-<p align="left">
-  <img src="./assets/dashboard.png" width="800px" />
-</p>
-
-#### Text2SQL, generate SQL from chat
-<p align="left">
-  <img src="./assets/chatSQL.png" width="800px" />
-</p>
-
-#### Chat with database meta information.
-<p align="left">
-  <img src="./assets/chatdb.png" width="800px" />
-</p>
-
-#### Chat with data, and execute results.
-<p align="left">
-  <img src="./assets/chatdata.png" width="800px" />
-</p>
-
-#### Knownledge space to manage docs.
-<p align="left">
-  <img src="./assets/ks.png" width="800px" />
-</p>
-
-#### Chat with knowledge, such as txt、pdf、csv、words. etc
-<p align="left">
-  <img src="./assets/chat_knowledge.png" width="800px" />
-</p>
-
-
 ## Features
 
 Currently, we have released multiple key features, which are listed below to demonstrate our current capabilities:
@@ -99,6 +71,9 @@ Currently, we have released multiple key features, which are listed below to dem
   -   Knowledge Management(We currently support many document formats: txt, pdf, md, html, doc, ppt, and url.)
   -  Database knowledge Q&A
   - knowledge Embedding
+
+- ChatDB
+- ChatDashboard
 - Plugins
   -  Support custom plugin execution tasks and natively support the Auto-GPT plugin, such as:
     - Automatic execution of SQL and retrieval of query results
@@ -106,13 +81,14 @@ Currently, we have released multiple key features, which are listed below to dem
 - Unified vector storage/indexing of knowledge base
   - Support for unstructured data such as PDF, TXT, Markdown, CSV, DOC, PPT, and WebURL
 
-- Multi LLMs Support
-  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8), guanaco(7b,13b,33b), Gorilla(7b,13b), 🔥 llama-2(7b, 13b, 70b) 
-  - TODO: baichuan(7b, 13b)
-
-
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
-
+- Multi LLMs Support, Supports multiple large language models, currently supporting
+  - 🔥 llama-2(7b,13b,70b)
+  - Vicuna (7b,13b)
+  - ChatGLM-6b (int4,int8)
+  - ChatGLM2-6b (int4,int8)
+  - guanaco(7b,13b,33b)
+  - Gorilla(7b,13b)
+  - baichuan(7b,13b)
 
 ## Introduction 
 DB-GPT creates a vast model operating system using [FastChat](https://github.com/lm-sys/FastChat) and offers a large language model powered by [Vicuna](https://huggingface.co/Tribbiani/vicuna-7b). In addition, we provide private domain knowledge base question-answering capability. Furthermore, we also provide support for additional plugins, and our design natively supports the Auto-GPT plugin.Our vision is to make it easier and more convenient to build  applications around databases and llm.

@@ -50,6 +50,9 @@ LLM_MODEL_CONFIG = {
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
     "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
     "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),
+    "baichuan-13b": os.path.join(MODEL_PATH, "Baichuan-13B-Chat"),
+    # please rename "fireballoon/baichuan-vicuna-chinese-7b" to "baichuan-7b"
+    "baichuan-7b": os.path.join(MODEL_PATH, "baichuan-7b"),
 }
 
 # Load model config
