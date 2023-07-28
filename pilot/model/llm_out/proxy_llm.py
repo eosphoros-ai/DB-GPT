@@ -4,12 +4,12 @@ import time
 
 from pilot.configs.config import Config
 
-from pilot.model.proxy.proxy_llms.chatgpt import chatgpt_generate_stream
-from pilot.model.proxy.proxy_llms.bard import bard_generate_stream
-from pilot.model.proxy.proxy_llms.claude import claude_generate_stream
-from pilot.model.proxy.proxy_llms.wenxin import wenxin_generate_stream
-from pilot.model.proxy.proxy_llms.tongyi import tongyi_generate_stream
-from pilot.model.proxy.proxy_llms.gpt4 import gpt4_generate_stream
+from pilot.model.proxy.llms.chatgpt import chatgpt_generate_stream
+from pilot.model.proxy.llms.bard import bard_generate_stream
+from pilot.model.proxy.llms.claude import claude_generate_stream
+from pilot.model.proxy.llms.wenxin import wenxin_generate_stream
+from pilot.model.proxy.llms.tongyi import tongyi_generate_stream
+from pilot.model.proxy.llms.gpt4 import gpt4_generate_stream
 
 CFG = Config()
 
