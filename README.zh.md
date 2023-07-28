@@ -136,6 +136,8 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 ## Image
 🌐 [AutoDL镜像](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
 
+🌐 [阿里云镜像](https://www.zhihu.com/pin/1668226536363728896?utm_psn=1668228728445579265)
+
 ## 安装
 [快速开始](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)
 
