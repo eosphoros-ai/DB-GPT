@@ -68,6 +68,7 @@ playsound
 distro
 pypdf
 weaviate-client
+bardapi==0.1.29
 
 # database
 
