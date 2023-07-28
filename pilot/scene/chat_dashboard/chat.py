@@ -38,7 +38,7 @@ class ChatDashboard(BaseChat):
             current_user_input=user_input,
         )
         if not db_name:
-            raise ValueError(f"{ChatScene.ChatDashboard.value} mode should chose db!")
+            raise ValueError(f"{ChatScene.ChatDashboard.value} mode should choose db!")
         self.db_name = db_name
         self.report_name = report_name
 
