@@ -128,7 +128,7 @@ PROXY_SERVER_URL={your-openai-proxy-server/v1/chat/completions}
 ```
 
 ### 2. Bard Proxy
-- If your environment deploying DB-GPT has access to https://bard.google.com/, then modify the .env configuration file as below will work.
+- If your environment deploying DB-GPT has access to https://bard.google.com/ (F12-> application-> __Secure-1PSID), then modify the .env configuration file as below will work.
 ```
 LLM_MODEL=bard_proxyllm
 MODEL_SERVER=127.0.0.1:8000
