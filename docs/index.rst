@@ -162,7 +162,7 @@ Resources
 
 | Additional resources we think may be useful as you develop your application!
 
-- `Discord <https://discord.com/invite/twmZk3vv>`_: if your have some problem or ideas, you can talk from discord.
+- `Discord <https://discord.gg/eZHE94MN>`_: if your have some problem or ideas, you can talk from discord.
 
 .. toctree::
    :maxdepth: 1
