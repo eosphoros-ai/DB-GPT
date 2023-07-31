@@ -51,14 +51,14 @@ Normal:
 
 ##### Q4:When I use openai(MODEL_SERVER=proxyllm) to chat
 <p align="left">
-  <img src="../assets/faq/proxyerror.png" width="800px" />
+  <img src="../../assets/faq/proxyerror.png" width="800px" />
 </p>
 
 ##### A4: make sure your openapi API_KEY is available
 
 ##### Q5:When I Chat Data and Chat Meta Data, I found the error
 <p align="left">
-  <img src="../assets/faq/chatdataerror.png" width="800px" />
+  <img src="../../assets/faq/chatdataerror.png" width="800px" />
 </p>
 
 ##### A5: you have not create your database and table
@@ -103,7 +103,7 @@ VECTOR_STORE_TYPE=Chroma
 ```
 ##### Q7:When I use vicuna-13b, found some illegal character like this.
 <p align="left">
-  <img src="../assets/faq/illegal_character.png" width="800px" />
+  <img src="../../assets/faq/illegal_character.png" width="800px" />
 </p>
 
 ##### A7: set KNOWLEDGE_SEARCH_TOP_SIZE smaller or set KNOWLEDGE_CHUNK_SIZE smaller, and reboot server.
