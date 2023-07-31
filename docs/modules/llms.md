@@ -136,7 +136,7 @@ BARD_PROXY_API_KEY={your-bard-key}
 # PROXY_SERVER_URL={your-bard-proxy-server/v1/chat/completions}
 ```
 
-- If you want to use your own bard proxy server like <a href="https://github.com/xuyuan23/Bard-Proxy">Bard-Proxy</a>, so that you can deploy DB-GPT on your PC easily.
+- If you want to use your own bard proxy server like <a href="https://github.com/eosphoros-ai/Bard-Proxy">Bard-Proxy</a>, so that you can deploy DB-GPT on your PC easily.
 ```
 LLM_MODEL=bard_proxyllm
 MODEL_SERVER=127.0.0.1:8000
