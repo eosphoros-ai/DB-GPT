@@ -83,6 +83,21 @@ If you want to access an external LLM service, you need to 1.set the variables L
 ```bash
 $ python pilot/server/dbgpt_server.py --light
 ```
+#### 3.1 Steps for Starting ChatGLM-6B and ChatGLM2-6B with Multiple Cards
+
+Modify the. env.template or pilot/configurations/config.py file NUM_ Number of GPUS (quantity is the actual number of graphics cards required for startup)
+
+At the same time, it is necessary to specify the required gpu card ID before starting the command (note that the number of gpu cards specified is consistent with the number of NUM_GPUS), as shown below:
+
+````shell
+# Specify 1 gpu card
+NUM_GPUS = 1
+CUDA_VISIBLE_DEVICES=0 python3 pilot/server/dbgpt_server.py
+
+# Specify 4 gpus card
+NUM_GPUS = 4
+CUDA_VISIBLE_DEVICES=3,4,5,6 python3 pilot/server/dbgpt_server.py
+````
 
 If you want to learn about dbgpt-webui, read https://github.com/csunny/DB-GPT/tree/new-page-framework/datacenter
 
