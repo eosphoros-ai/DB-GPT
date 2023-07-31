@@ -14,7 +14,7 @@ from langchain.text_splitter import (
 )
 
 from pilot.embedding_engine import SourceEmbedding, register
-from pilot.embedding_engine.EncodeTextLoader import EncodeTextLoader
+from pilot.embedding_engine.encode_text_loader import EncodeTextLoader
 
 
 class MarkdownEmbedding(SourceEmbedding):

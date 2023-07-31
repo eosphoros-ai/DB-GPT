@@ -3,6 +3,7 @@ from typing import Any, Iterable, List, Optional, Tuple
 from langchain.docstore.document import Document
 from pymilvus import Collection, DataType, connections, utility
 
+from pilot.logs import logger
 from pilot.vector_store.vector_store_base import VectorStoreBase
 
 
@@ -318,6 +319,11 @@ class MilvusStore(VectorStoreBase):
     def vector_name_exists(self):
         """is vector store name exist."""
         return utility.has_collection(self.collection_name)
+
+    def delete_vector_name(self, vector_name):
+        logger.info(f"milvus vector_name:{vector_name} begin delete...")
+        self.vector_store_client.drop()
+        return True
 
     def close(self):
         connections.disconnect()
