@@ -7,7 +7,9 @@ vector knowledge base is a method of mapping words in language to a high-dimensi
 
 VectorConnector is a vector database connection adapter that allows you to connect different vector databases and abstracts away implementation differences and underlying details of different vector data. For example, it can be used to connect to databases such as Milvus, Chroma, Elasticsearch, and Weaviate.
 
-DB-GPT VectorConnector currently support milvus and chroma vector database
+DB-GPT VectorConnector currently support Chroma(Default), Milvus(>2.1), Weaviate vector database.
+
+If you want to change vector db, Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma (now only support Chroma, Milvus(>2.1) and Weaviate, if you set Milvus, please set MILVUS_URL and MILVUS_PORT)
 
 - `chroma <./vector/chroma.html>`_: supported chroma vector database.
 - `milvus <./vector/milvus.html>`_: supported milvus vector database.

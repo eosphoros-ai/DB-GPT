@@ -82,12 +82,31 @@ mysql>CREATE TABLE `users` (
 ) ENGINE=InnoDB AUTO_INCREMENT=101 DEFAULT CHARSET=utf8mb4 COMMENT='聊天用户表'
 ```
 
-##### Q6:When I use vicuna-13b, found some illegal character like this.
+##### Q6:How to change Vector DB Type in DB-GPT.
+
+##### A6: Update .env file and set VECTOR_STORE_TYPE.
+DB-GPT currently support Chroma(Default), Milvus(>2.1), Weaviate vector database.
+If you want to change vector db, Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma (now only support Chroma and Milvus(>2.1), if you set Milvus, please set MILVUS_URL and MILVUS_PORT)
+If you want to support more vector db, you can integrate yourself.[how to integrate](https://db-gpt.readthedocs.io/en/latest/modules/vector.html)
+```commandline
+#*******************************************************************#
+#**                  VECTOR STORE SETTINGS                       **#
+#*******************************************************************#
+VECTOR_STORE_TYPE=Chroma
+#MILVUS_URL=127.0.0.1
+#MILVUS_PORT=19530
+#MILVUS_USERNAME
+#MILVUS_PASSWORD
+#MILVUS_SECURE=
+
+#WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.network
+```
+##### Q7:When I use vicuna-13b, found some illegal character like this.
 <p align="left">
   <img src="../assets/faq/illegal_character.png" width="800px" />
 </p>
 
-##### A6: set KNOWLEDGE_SEARCH_TOP_SIZE smaller or set KNOWLEDGE_CHUNK_SIZE smaller, and reboot server.
+##### A7: set KNOWLEDGE_SEARCH_TOP_SIZE smaller or set KNOWLEDGE_CHUNK_SIZE smaller, and reboot server.
 
 
 
