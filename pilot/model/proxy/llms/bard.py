@@ -41,7 +41,7 @@ def bard_generate_stream(model, tokenizer, params, device, context_len=2048):
         response = requests.post(
             CFG.proxy_server_url, headers=headers, json=payloads, stream=False
         )
-        if response.ok is True:
+        if response.ok:
             yield response.text
         else:
             yield f"bard proxy url request failed!, response = {str(response)}"
