@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-20 10:53+0800\n"
+"POT-Creation-Date: 2023-07-31 17:04+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,29 +19,29 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../getting_started/getting_started.md:1 7c12b6d7d5be4528be005cdadec568db
+#: ../../getting_started/getting_started.md:1 7cfda7573f014955a3d1860a8944c3cd
 msgid "Quickstart Guide"
 msgstr "使用指南"
 
-#: ../../getting_started/getting_started.md:3 ba312f5a132541be89dcc09012076784
+#: ../../getting_started/getting_started.md:3 65d35e746cdc4fcdb8e712cd675081c6
 msgid ""
 "This tutorial gives you a quick walkthrough about use DB-GPT with you "
 "environment and data."
 msgstr "本教程为您提供了关于如何使用DB-GPT的使用指南。"
 
-#: ../../getting_started/getting_started.md:5 8e56b3f0726740abaaafa57415b10bea
+#: ../../getting_started/getting_started.md:5 dd221eaa459044bd805725f4d89fdde2
 msgid "Installation"
 msgstr "安装"
 
-#: ../../getting_started/getting_started.md:7 3af8fe74db1043349e8f784c109b0417
+#: ../../getting_started/getting_started.md:7 4736b4728e4f43409162371955e42987
 msgid "To get started, install DB-GPT with the following steps."
 msgstr "请按照以下步骤安装DB-GPT"
 
-#: ../../getting_started/getting_started.md:9 0b33cf4604f846e781a63d857dde72b2
+#: ../../getting_started/getting_started.md:9 550d49c0d50a4a93867840a15e624912
 msgid "1. Hardware Requirements"
 msgstr "1. 硬件要求"
 
-#: ../../getting_started/getting_started.md:10 f1d4abb176494bcb85cead7f3f8b719d
+#: ../../getting_started/getting_started.md:10 695be3b79d4d4f56b5c8de62646a8c41
 msgid ""
 "As our project has the ability to achieve ChatGPT performance of over "
 "85%, there are certain hardware requirements. However, overall, the "
@@ -49,67 +49,67 @@ msgid ""
 "specific hardware requirements for deployment are as follows:"
 msgstr "由于我们的项目有能力达到85%以上的ChatGPT性能，所以对硬件有一定的要求。但总体来说，我们在消费级的显卡上即可完成项目的部署使用，具体部署的硬件说明如下:"
 
-#: ../../getting_started/getting_started.md e8516902f29d4ca2bb46f19b5e3deb81
+#: ../../getting_started/getting_started.md 1bfd2621414b4ea780167151df2f80ff
 msgid "GPU"
 msgstr "GPU"
 
-#: ../../getting_started/getting_started.md a951ccca67364cf7ad5f0af2ec0ece8d
+#: ../../getting_started/getting_started.md 1a0fc8a2721d46dbb59eb7629c02c480
 msgid "VRAM Size"
 msgstr "显存大小"
 
-#: ../../getting_started/getting_started.md 01b7e055ee4543bdb619fbc14fea4d86
+#: ../../getting_started/getting_started.md 0cc7f0bf931340a1851aa376df8a4a99
 msgid "Performance"
 msgstr "显存大小"
 
-#: ../../getting_started/getting_started.md 0b20b224ff8a4e2c890a8b4ff43b6045
+#: ../../getting_started/getting_started.md dfb52838915146bd906b04383c9a65b7
 msgid "RTX 4090"
 msgstr "RTX 4090"
 
-#: ../../getting_started/getting_started.md 17a343c4359d45c987f29de1c73760b4
-#: c9daaf0578434a7e812a8d3f3edde3f0
+#: ../../getting_started/getting_started.md 9477f857f6df45f0843139ba5c23f263
+#: d14dfe72732c462d8d8073a7804af548
 msgid "24 GB"
 msgstr "24 GB"
 
-#: ../../getting_started/getting_started.md 6a35be039a0a43eaaf7d1aa40aece6f7
+#: ../../getting_started/getting_started.md c76a371ed992440a8b7b16ad405c273d
 msgid "Smooth conversation inference"
 msgstr "可以流畅的进行对话推理，无卡顿"
 
-#: ../../getting_started/getting_started.md a414f5ae7bdd450f8d171d1f075d6b66
+#: ../../getting_started/getting_started.md 27fea237ff004247a6f5aa4593a5aabc
 msgid "RTX 3090"
 msgstr "RTX 3090"
 
-#: ../../getting_started/getting_started.md 109ed9bda6e541b88eb3400a44e15df7
+#: ../../getting_started/getting_started.md 843f16d5af974b82beabba7d0afceae5
 msgid "Smooth conversation inference, better than V100"
 msgstr "可以流畅进行对话推理，有卡顿感，但好于V100"
 
-#: ../../getting_started/getting_started.md 3f2a05dc610f461faa989f3c12750d00
+#: ../../getting_started/getting_started.md c1ddf9dc9e384a44b988a83bb209814c
 msgid "V100"
 msgstr "V100"
 
-#: ../../getting_started/getting_started.md 90e24795876546ecbb4796ca5d313514
+#: ../../getting_started/getting_started.md 94cc69a3ce8a4ea58a0b5c28fb972a41
 msgid "16 GB"
 msgstr "16 GB"
 
-#: ../../getting_started/getting_started.md 34061757e69e4691b7a5ff3c2953f1e3
+#: ../../getting_started/getting_started.md 9a8a3304aab84a2687db2185361e2fe0
 msgid "Conversation inference possible, noticeable stutter"
 msgstr "可以进行对话推理，有明显卡顿"
 
-#: ../../getting_started/getting_started.md:18 61d59cb27daf43eb9aa2775fa6dac820
+#: ../../getting_started/getting_started.md:18 8c83ffd018b242dbb626312ac0c69b79
 msgid "2. Install"
 msgstr "2. 安装"
 
-#: ../../getting_started/getting_started.md:20 28a6b66c92464929bed8f04d5b841e8c
+#: ../../getting_started/getting_started.md:20 bab57fbe66814f51959c77a55a24005e
 #, fuzzy
 msgid ""
 "1.This project relies on a local MySQL database service, which you need "
 "to install locally. We recommend using Docker for installation."
 msgstr "本项目依赖一个本地的 MySQL 数据库服务，你需要本地安装，推荐直接使用 Docker 安装。"
 
-#: ../../getting_started/getting_started.md:24 7793b19e96b44ba481b527a877c81170
+#: ../../getting_started/getting_started.md:24 f0033070a3d5412a94d69deaca81a8a8
 msgid "prepare server sql script"
 msgstr "准备db-gpt server sql脚本"
 
-#: ../../getting_started/getting_started.md:29 e3743699e95e45eab3e140df266bb3b5
+#: ../../getting_started/getting_started.md:29 2d4c2ea402c1448e8372168ee81c7fb7
 msgid ""
 "We use [Chroma embedding database](https://github.com/chroma-core/chroma)"
 " as the default for our vector database, so there is no need for special "
@@ -122,11 +122,11 @@ msgstr ""
 "向量数据库我们默认使用的是Chroma内存数据库，所以无需特殊安装，如果有需要连接其他的同学，可以按照我们的教程进行安装配置。整个DB-"
 "GPT的安装过程，我们使用的是miniconda3的虚拟环境。创建虚拟环境，并安装python依赖包"
 
-#: ../../getting_started/getting_started.md:38 be9f388e255c4bc7837029ce8237ef0b
+#: ../../getting_started/getting_started.md:38 125c03f282f3449b9f17f025857b10e2
 msgid "Before use DB-GPT Knowledge Management"
 msgstr "使用知识库管理功能之前"
 
-#: ../../getting_started/getting_started.md:44 9175b34ed78c4310b048f53ac07b13cb
+#: ../../getting_started/getting_started.md:44 4d1d8f2d4f044fdeb1b622fabb87a0ea
 msgid ""
 "Once the environment is installed, we have to create a new folder "
 "\"models\" in the DB-GPT project, and then we can put all the models "
@@ -135,33 +135,33 @@ msgstr ""
 "环境安装完成后，我们必须在DB-"
 "GPT项目中创建一个新文件夹\"models\"，然后我们可以把从huggingface下载的所有模型放到这个目录下。"
 
-#: ../../getting_started/getting_started.md:47 40715051bd844b0187265d425debfbee
+#: ../../getting_started/getting_started.md:47 00b27ca566f242cfbc3d0fac77654063
 #, fuzzy
 msgid "Notice make sure you have install git-lfs"
 msgstr "确保你已经安装了git-lfs"
 
-#: ../../getting_started/getting_started.md:57 7d7e7b1fe72b4e0c96eba721a8aa2113
+#: ../../getting_started/getting_started.md:57 b8c136cbdbc34f90b09a52362b785563
 msgid ""
 "The model files are large and will take a long time to download. During "
 "the download, let's configure the .env file, which needs to be copied and"
 " created from the .env.template"
 msgstr "模型文件很大，需要很长时间才能下载。在下载过程中，让我们配置.env文件，它需要从。env.template中复制和创建。"
 
-#: ../../getting_started/getting_started.md:60 6a25e5307bdb49a0afc69b9d17395a5a
+#: ../../getting_started/getting_started.md:60 a15420a447c443dabb9f60e460a9ab97
 msgid "cp .env.template .env"
 msgstr "cp .env.template .env"
 
-#: ../../getting_started/getting_started.md:63 14567647544f4036beaae158b59833f6
+#: ../../getting_started/getting_started.md:63 134bf228f94c4aec89c34e69e006af35
 msgid ""
 "You can configure basic parameters in the .env file, for example setting "
 "LLM_MODEL to the model to be used"
 msgstr "您可以在.env文件中配置基本参数，例如将LLM_MODEL设置为要使用的模型。"
 
-#: ../../getting_started/getting_started.md:65 1b459d413a4d4b7e883d1ec17384ca30
+#: ../../getting_started/getting_started.md:65 c25744934b7142449e09dd57e0c98cc6
 msgid "3. Run"
 msgstr "3. 运行"
 
-#: ../../getting_started/getting_started.md:66 ed15ee15450e4a028bf5aa05a9309697
+#: ../../getting_started/getting_started.md:66 e2bd77426e054a99801faa76ffa1046a
 msgid ""
 "You can refer to this document to obtain the Vicuna weights: "
 "[Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-"
@@ -170,7 +170,7 @@ msgstr ""
 "关于基础模型, 可以根据[Vicuna](https://github.com/lm-"
 "sys/FastChat/blob/main/README.md#model-weights) 合成教程进行合成。"
 
-#: ../../getting_started/getting_started.md:68 de15a70920a94192a1f2017cbe3cdb55
+#: ../../getting_started/getting_started.md:68 794d5f1a8afc4667bbc848cc7192e9bd
 msgid ""
 "If you have difficulty with this step, you can also directly use the "
 "model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a "
@@ -179,7 +179,7 @@ msgstr ""
 "如果此步有困难的同学，也可以直接使用[此链接](https://huggingface.co/Tribbiani/vicuna-"
 "7b)上的模型进行替代。"
 
-#: ../../getting_started/getting_started.md:70 763aaed45fd948fab761552a7e06061a
+#: ../../getting_started/getting_started.md:70 72be6fe338304f9e8639e16b75859343
 msgid ""
 "set .env configuration set your vector store type, "
 "eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > "
@@ -188,17 +188,21 @@ msgstr ""
 "在.env文件设置向量数据库环境变量，eg:VECTOR_STORE_TYPE=Chroma, 目前我们支持了 Chroma and "
 "Milvus(version >2.1) "
 
-#: ../../getting_started/getting_started.md:73 a8f0dc3546c54a1098ff10157f980cef
+#: ../../getting_started/getting_started.md:73 e36089f05a5a41a2affcea15ecd1ac3d
 #, fuzzy
 msgid "1.Run db-gpt server"
 msgstr "运行模型服务"
 
-#: ../../getting_started/getting_started.md:78 1715948545154c10af585de8960bf853
+#: ../../getting_started/getting_started.md:78
+#: ../../getting_started/getting_started.md:127
+#: ../../getting_started/getting_started.md:181
+#: 4136b297d88e4dedb1616f28885a8cd6 eec0acd695454df59c67358889f971fb
+#: f4f47ac8b1c549e0b2a68f16774fac64
 #, fuzzy
 msgid "Open http://localhost:5000 with your browser to see the product."
 msgstr "打开浏览器访问http://localhost:5000"
 
-#: ../../getting_started/getting_started.md:80 8ea9964df477473e866fe844dcf4be54
+#: ../../getting_started/getting_started.md:80 ef391125ac0d43358e4701bafe780b4a
 msgid ""
 "If you want to access an external LLM service, you need to 1.set the "
 "variables LLM_MODEL=YOUR_MODEL_NAME "
@@ -206,11 +210,92 @@ msgid ""
 "file. 2.execute dbgpt_server.py in light mode"
 msgstr "如果你想访问外部的大模型服务，1.需要在.env文件设置模型名和外部模型服务地址。2.使用light模式启动服务"
 
-#: ../../getting_started/getting_started.md:87 4c409a0e2a994f428712ab94b475e9bd
+#: ../../getting_started/getting_started.md:87 eb22acf6142b4a81bbab0bf1192f577c
 msgid ""
 "If you want to learn about dbgpt-webui, read https://github.com/csunny"
 "/DB-GPT/tree/new-page-framework/datacenter"
 msgstr ""
 "如果你想了解DB-GPT前端服务，访问https://github.com/csunny/DB-GPT/tree/new-page-"
 "framework/datacenter"
+
+#: ../../getting_started/getting_started.md:89 bc58c998b37242f8b4a37588bccc612b
+msgid "4. Docker (Experimental)"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:91 3c95ec21279b43ba83e3a4e845511f26
+msgid "4.1 Building Docker image"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:97 01be8cbb915f4d02a84b25be3005a200
+msgid "Review images by listing them:"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:103
+#: ../../getting_started/getting_started.md:167
+#: 8664141a7b2f4a6a8f770ae72bc5a815 f1be761680804bb9b6a4928b46dfe598
+msgid "Output should look something like the following:"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:110
+#: 5fff19374f1d4b3ba3bb642f987e8b66
+msgid "4.2. Run all in one docker container"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:112
+#: 5b0137ca2d0345bea0a005fdf4037702
+msgid "**Run with local model**"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:130
+#: 51495a6801e94901935481d57399ed20
+msgid ""
+"`-e LLM_MODEL=vicuna-13b`, means we use vicuna-13b as llm model, see "
+"/pilot/configs/model_config.LLM_MODEL_CONFIG"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:131
+#: 753a8cf0ebbd4c62be9d5fbb7e5cf691
+msgid ""
+"`-v /data/models:/app/models`, means we mount the local model file "
+"directory `/data/models` to the docker container directory `/app/models`,"
+" please replace it with your model file directory."
+msgstr ""
+
+#: ../../getting_started/getting_started.md:133
+#: ../../getting_started/getting_started.md:175
+#: 043b3966baf045aca5615214d9be632a 328b58e3a9ba46a39f0511970f43743c
+msgid "You can see log with command:"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:139
+#: f6a0a66509f343d4a3306cd884a49dbc
+msgid "**Run with openai interface**"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:158
+#: 65fabfc317ac41c6aaeb80e6f2e1d379
+msgid ""
+"`-e LLM_MODEL=proxyllm`, means we use proxy llm(openai interface, "
+"fastchat interface...)"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:159
+#: fb2230ca032b4a4d9cdab8d37b3ad02c
+msgid ""
+"`-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-"
+"chinese`, means we mount the local text2vec model to the docker "
+"container."
+msgstr ""
+
+#: ../../getting_started/getting_started.md:161
+#: 12c7a94038274324a2996873df60db93
+msgid "4.2. Run with docker compose"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:183
+#: 6ec270a68a094d4894abd2ef02739229
+msgid ""
+"You can open docker-compose.yml in the project root directory to see more"
+" details."
+msgstr ""
 
