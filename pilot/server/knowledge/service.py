@@ -2,6 +2,7 @@ import threading
 from datetime import datetime
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter, SpacyTextSplitter
+from pilot.vector_store.connector import VectorStoreConnector
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
@@ -89,7 +90,23 @@ class KnowledgeService:
         query = KnowledgeSpaceEntity(
             name=request.name, vector_type=request.vector_type, owner=request.owner
         )
-        return knowledge_space_dao.get_knowledge_space(query)
+        responses = []
+        spaces = knowledge_space_dao.get_knowledge_space(query)
+        for space in spaces:
+            res = SpaceQueryResponse()
+            res.id = space.id
+            res.name = space.name
+            res.vector_type = space.vector_type
+            res.desc = space.desc
+            res.owner = space.owner
+            res.gmt_created = space.gmt_created
+            res.gmt_modified = space.gmt_modified
+            res.owner = space.owner
+            query = KnowledgeDocumentEntity(space=space.name)
+            doc_count = knowledge_document_dao.get_knowledge_documents_count(query)
+            res.docs = doc_count
+            responses.append(res)
+        return responses
 
     """get knowledge get_knowledge_documents"""
 
@@ -191,8 +208,51 @@ class KnowledgeService:
 
     """delete knowledge space"""
 
-    def delete_knowledge_space(self, space_id: int):
-        return knowledge_space_dao.delete_knowledge_space(space_id)
+    def delete_space(self, space_name: str):
+        query = KnowledgeSpaceEntity(name=space_name)
+        spaces = knowledge_space_dao.get_knowledge_space(query)
+        if len(spaces) == 0:
+            raise Exception(f"delete error, no space name:{space_name} in database")
+        space = spaces[0]
+        vector_config = {}
+        vector_config["vector_store_name"] = space.name
+        vector_config["vector_store_type"] = CFG.VECTOR_STORE_TYPE
+        vector_config["chroma_persist_path"] = KNOWLEDGE_UPLOAD_ROOT_PATH
+        vector_client = VectorStoreConnector(
+            vector_store_type=CFG.VECTOR_STORE_TYPE, ctx=vector_config
+        )
+        # delete vectors
+        vector_client.delete_vector_name(space.name)
+        document_query = KnowledgeDocumentEntity(space=space.name)
+        # delete chunks
+        documents = knowledge_document_dao.get_documents(document_query)
+        for document in documents:
+            document_chunk_dao.delete(document.id)
+        # delete documents
+        knowledge_document_dao.delete(document_query)
+        # delete space
+        return knowledge_space_dao.delete_knowledge_space(space)
+
+    def delete_document(self, space_name: str, doc_name: str):
+        document_query = KnowledgeDocumentEntity(doc_name=doc_name, space=space_name)
+        documents = knowledge_document_dao.get_documents(document_query)
+        if len(documents) != 1:
+            raise Exception(f"there are no or more than one document called {doc_name}")
+        vector_ids = documents[0].vector_ids
+        if vector_ids is not None:
+            vector_config = {}
+            vector_config["vector_store_name"] = space_name
+            vector_config["vector_store_type"] = CFG.VECTOR_STORE_TYPE
+            vector_config["chroma_persist_path"] = KNOWLEDGE_UPLOAD_ROOT_PATH
+            vector_client = VectorStoreConnector(
+                vector_store_type=CFG.VECTOR_STORE_TYPE, ctx=vector_config
+            )
+            # delete vector by ids
+            vector_client.delete_by_ids(vector_ids)
+        # delete chunks
+        document_chunk_dao.delete(documents[0].id)
+        # delete document
+        return knowledge_document_dao.delete(document_query)
 
     """get document chunks"""
 

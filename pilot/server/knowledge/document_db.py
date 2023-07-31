@@ -91,6 +91,38 @@ class KnowledgeDocumentDao:
             page_size
         )
         result = knowledge_documents.all()
+        session.close()
+        return result
+
+    def get_documents(self, query):
+        session = self.Session()
+        knowledge_documents = session.query(KnowledgeDocumentEntity)
+        if query.id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.id == query.id
+            )
+        if query.doc_name is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.doc_name == query.doc_name
+            )
+        if query.doc_type is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.doc_type == query.doc_type
+            )
+        if query.space is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space == query.space
+            )
+        if query.status is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.status == query.status
+            )
+
+        knowledge_documents = knowledge_documents.order_by(
+            KnowledgeDocumentEntity.id.desc()
+        )
+        result = knowledge_documents.all()
+        session.close()
         return result
 
     def get_knowledge_documents_count(self, query):
@@ -117,18 +149,32 @@ class KnowledgeDocumentDao:
                 KnowledgeDocumentEntity.status == query.status
             )
         count = knowledge_documents.scalar()
+        session.close()
         return count
 
     def update_knowledge_document(self, document: KnowledgeDocumentEntity):
         session = self.Session()
         updated_space = session.merge(document)
         session.commit()
+        session.close()
         return updated_space.id
 
     #
-    # def delete_knowledge_document(self, document_id: int):
-    #     cursor = self.conn.cursor()
-    #     query = "DELETE FROM knowledge_document WHERE id = %s"
-    #     cursor.execute(query, (document_id,))
-    #     self.conn.commit()
-    #     cursor.close()
+    def delete(self, query: KnowledgeDocumentEntity):
+        session = self.Session()
+        knowledge_documents = session.query(KnowledgeDocumentEntity)
+        if query.id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.id == query.id
+            )
+        if query.doc_name is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.doc_name == query.doc_name
+            )
+        if query.space is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.doc_name == query.doc_name
+            )
+        knowledge_documents.delete()
+        session.commit()
+        session.close()
