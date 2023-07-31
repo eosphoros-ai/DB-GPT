@@ -11,6 +11,20 @@ DB-GPT VectorConnector currently support Chroma(Default), Milvus(>2.1), Weaviate
 
 If you want to change vector db, Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma (now only support Chroma, Milvus(>2.1) and Weaviate, if you set Milvus, please set MILVUS_URL and MILVUS_PORT)
 
+::
+
+    #*******************************************************************#
+    #**                  VECTOR STORE SETTINGS                       **#
+    #*******************************************************************#
+    VECTOR_STORE_TYPE=Chroma
+    #MILVUS_URL=127.0.0.1
+    #MILVUS_PORT=19530
+    #MILVUS_USERNAME
+    #MILVUS_PASSWORD
+    #MILVUS_SECURE=
+    #WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.network
+
+
 - `chroma <./vector/chroma.html>`_: supported chroma vector database.
 - `milvus <./vector/milvus.html>`_: supported milvus vector database.
 - `weaviate <./vector/weaviate.html>`_: supported weaviate vector database.
