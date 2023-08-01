@@ -3,7 +3,7 @@ import os
 from chromadb.config import Settings
 from langchain.vectorstores import Chroma
 from pilot.logs import logger
-from pilot.vector_store.vector_store_base import VectorStoreBase
+from pilot.vector_store.base import VectorStoreBase
 
 
 class ChromaStore(VectorStoreBase):
