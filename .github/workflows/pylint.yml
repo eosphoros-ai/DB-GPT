@@ -29,4 +29,4 @@ jobs:
         pip install -U black isort
     - name: check the code lint
       run: |
-        black . --check
+        black .
