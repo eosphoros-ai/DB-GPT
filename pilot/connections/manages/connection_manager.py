@@ -122,14 +122,16 @@ class ConnectManager:
         return self.storage.delete_db(db_name)
 
     def edit_db(self, db_info: DBConfig):
-        return self.storage.update_db_info(db_info.db_name,
-                                           db_info.db_type,
-                                           db_info.file_path,
-                                           db_info.db_host,
-                                           db_info.db_port,
-                                           db_info.db_user,
-                                           db_info.db_pwd,
-                                           db_info.comment)
+        return self.storage.update_db_info(
+            db_info.db_name,
+            db_info.db_type,
+            db_info.file_path,
+            db_info.db_host,
+            db_info.db_port,
+            db_info.db_user,
+            db_info.db_pwd,
+            db_info.comment,
+        )
 
     def add_db(self, db_info: DBConfig):
         print(f"add_db:{db_info.__dict__}")
@@ -140,7 +142,6 @@ class ConnectManager:
                     db_info.db_name, db_info.db_type, db_info.file_path
                 )
             else:
-
                 self.storage.add_url_db(
                     db_info.db_name,
                     db_info.db_type,
@@ -151,7 +152,11 @@ class ConnectManager:
                     db_info.comment,
                 )
             # async embedding
-            thread = threading.Thread(target=self.db_summary_client.db_summary_embedding(db_info.db_name, db_info.db_type))
+            thread = threading.Thread(
+                target=self.db_summary_client.db_summary_embedding(
+                    db_info.db_name, db_info.db_type
+                )
+            )
             thread.start()
         except Exception as e:
             raise ValueError("Add db connect info error！" + str(e))

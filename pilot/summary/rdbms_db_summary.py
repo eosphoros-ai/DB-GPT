@@ -5,12 +5,13 @@ from pilot.summary.db_summary import DBSummary, TableSummary, FieldSummary, Inde
 
 CFG = Config()
 
+
 class RdbmsSummary(DBSummary):
     """Get mysql summary template."""
 
     def __init__(self, name, type):
         self.name = name
-        self.type =  type
+        self.type = type
         self.summery = """{{"database_name": "{name}", "type": "{type}", "tables": "{tables}", "qps": "{qps}", "tps": {tps}}}"""
         self.tables = {}
         self.tables_info = []
@@ -177,4 +178,3 @@ class RdbmsIndexSummary(IndexSummary):
         return self.summery_template.format(
             name=self.name, bind_fields=self.bind_fields
         )
-

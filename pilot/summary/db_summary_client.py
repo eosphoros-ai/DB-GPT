@@ -58,8 +58,8 @@ class DBSummaryClient:
                 )
                 embedding.source_embedding()
             for (
-                    table_name,
-                    table_summary,
+                table_name,
+                table_summary,
             ) in db_summary_client.get_table_summary().items():
                 table_vector_store_config = {
                     "vector_store_name": dbname + "_" + table_name + "_ts",

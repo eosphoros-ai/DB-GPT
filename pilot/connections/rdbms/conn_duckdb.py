@@ -30,7 +30,11 @@ class DuckDbConnect(RDBMSDatabase):
         return cls(create_engine("duckdb:///" + file_path, **_engine_args), **kwargs)
 
     def get_users(self):
-        cursor = self.session.execute(text(f"SELECT * FROM sqlite_master WHERE type = 'table' AND name = 'duckdb_sys_users';"))
+        cursor = self.session.execute(
+            text(
+                f"SELECT * FROM sqlite_master WHERE type = 'table' AND name = 'duckdb_sys_users';"
+            )
+        )
         users = cursor.fetchall()
         return [(user[0], user[1]) for user in users]
 
@@ -40,6 +44,7 @@ class DuckDbConnect(RDBMSDatabase):
     def get_collation(self):
         """Get collation."""
         return "UTF-8"
+
     def get_charset(self):
         return "UTF-8"
 
