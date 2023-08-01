@@ -10,3 +10,8 @@ class DBConfig(BaseModel):
     db_user: str = ""
     db_pwd: str = ""
     comment: str = ""
+
+class DbTypeInfo(BaseModel):
+    db_type:str
+    is_file_db: bool = False
+
