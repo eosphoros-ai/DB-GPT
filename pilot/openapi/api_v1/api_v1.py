@@ -97,22 +97,22 @@ def knowledge_list():
 
 
 @router.get("/v1/chat/db/list", response_model=Result[DBConfig])
-async def dialogue_list():
+async def db_connect_list():
     return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list())
 
 
 @router.post("/v1/chat/db/add", response_model=Result[bool])
-async def dialogue_list(db_config: DBConfig = Body()):
+async def db_connect_add(db_config: DBConfig = Body()):
     return Result.succ(CFG.LOCAL_DB_MANAGE.add_db(db_config))
 
 
 @router.post("/v1/chat/db/edit", response_model=Result[bool])
-async def dialogue_list(db_config: DBConfig = Body()):
+async def db_connect_edit(db_config: DBConfig = Body()):
     return Result.succ(CFG.LOCAL_DB_MANAGE.edit_db(db_config))
 
 
 @router.post("/v1/chat/db/delete", response_model=Result[bool])
-async def dialogue_list(db_name: str = None):
+async def db_connect_delete(db_name: str = None):
     return Result.succ(CFG.LOCAL_DB_MANAGE.delete_db(db_name))
 
 
@@ -121,7 +121,7 @@ async def db_support_types():
     support_types = [DBType.Mysql, DBType.MSSQL, DBType.DuckDb]
     db_type_infos = []
     for type in support_types:
-        db_type_infos.append(DbTypeInfo(type.value(), type.is_file_db()))
+        db_type_infos.append(DbTypeInfo(db_type=type.value(), is_file_db=type.is_file_db()))
     return Result[DbTypeInfo].succ(db_type_infos)
 
 
