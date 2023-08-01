@@ -55,7 +55,7 @@ async def get_editor_sql_rounds(con_uid: str):
     return Result.succ(None)
 
 
-@router.post("/v1/editor/chart", response_model=Result[ChartDetail])
+@router.get("/v1/editor/chart", response_model=Result[ChartDetail])
 async def get_editor_chart(con_uid: str, chart_uid: str):
     return Result.succ(None)
 

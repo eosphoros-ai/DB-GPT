@@ -30,7 +30,7 @@ from pilot.server.knowledge.api import router as knowledge_router
 
 
 from pilot.openapi.api_v1.api_v1 import router as api_v1, validation_exception_handler
-
+from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
 
 logging.basicConfig(level=logging.INFO)
 
@@ -70,11 +70,13 @@ app.add_middleware(
 )
 
 
-app.include_router(api_v1, prefix="/api")
-app.include_router(knowledge_router, prefix="/api")
+# app.include_router(api_v1, prefix="/api")
+# app.include_router(knowledge_router, prefix="/api")
+# app.include_router(api_editor_route_v1, prefix="/api")
 
 app.include_router(api_v1)
 app.include_router(knowledge_router)
+app.include_router(api_editor_route_v1)
 
 app.mount("/_next/static", StaticFiles(directory=static_file_path + "/_next/static"))
 app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
