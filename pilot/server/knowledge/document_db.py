@@ -156,7 +156,6 @@ class KnowledgeDocumentDao:
         session = self.Session()
         updated_space = session.merge(document)
         session.commit()
-        session.close()
         return updated_space.id
 
     #
