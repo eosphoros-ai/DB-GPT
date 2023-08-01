@@ -7,7 +7,7 @@ from pilot.connections.base import BaseConnect
 from pilot.connections.rdbms.conn_mysql import MySQLConnect
 from pilot.connections.rdbms.conn_duckdb import DuckDbConnect
 from pilot.connections.rdbms.conn_mssql import MSSQLConnect
-from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
+from pilot.connections.rdbms.base import RDBMSDatabase
 from pilot.singleton import Singleton
 from pilot.common.sql_database import Database
 from pilot.connections.db_conn_info import DBConfig

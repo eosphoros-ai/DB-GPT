@@ -9,10 +9,9 @@ from pilot.scene.base import ChatScene
 from pilot.scene.base_chat import BaseChat
 from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 from pilot.embedding_engine.string_embedding import StringEmbedding
-from pilot.summary.mysql_db_summary import MysqlSummary
+from pilot.summary.rdbms_db_summary import RdbmsSummary
 from pilot.scene.chat_factory import ChatFactory
 from pilot.common.schema import DBType
-
 
 CFG = Config()
 chat_factory = ChatFactory()
@@ -28,11 +27,8 @@ class DBSummaryClient:
 
     def db_summary_embedding(self, dbname, db_type):
         """put db profile and table profile summary into vector store"""
-        if DBType.Mysql.value() == db_type:
-            db_summary_client = MysqlSummary(dbname)
-        else:
-            raise ValueError("Unsupport summary DbType！" + db_type)
 
+        db_summary_client = RdbmsSummary(dbname, db_type)
         embeddings = HuggingFaceEmbeddings(
             model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
@@ -62,8 +58,8 @@ class DBSummaryClient:
                 )
                 embedding.source_embedding()
             for (
-                table_name,
-                table_summary,
+                    table_name,
+                    table_summary,
             ) in db_summary_client.get_table_summary().items():
                 table_vector_store_config = {
                     "vector_store_name": dbname + "_" + table_name + "_ts",
