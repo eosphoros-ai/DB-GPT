@@ -4,7 +4,7 @@ from langchain.docstore.document import Document
 from pymilvus import Collection, DataType, connections, utility
 
 from pilot.logs import logger
-from pilot.vector_store.vector_store_base import VectorStoreBase
+from pilot.vector_store.base import VectorStoreBase
 
 
 class MilvusStore(VectorStoreBase):
