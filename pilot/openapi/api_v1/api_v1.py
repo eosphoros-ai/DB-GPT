@@ -1,25 +1,18 @@
 import uuid
-import json
 import asyncio
-import time
 import os
 from fastapi import (
     APIRouter,
     Request,
     Body,
-    status,
-    HTTPException,
-    Response,
     BackgroundTasks,
 )
 
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.responses import StreamingResponse, FileResponse
-from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 from fastapi.exceptions import RequestValidationError
 from typing import List
 
-from pilot.openapi.api_v1.api_view_model import (
+from pilot.openapi.api_view_model import (
     Result,
     ConversationVo,
     MessageVo,
@@ -38,6 +31,8 @@ from pilot.utils import build_logger
 from pilot.common.schema import DBType
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.scene.message import OnceConversation
+from pilot.openapi.base import validation_exception_handler
+
 
 router = APIRouter()
 CFG = Config()
@@ -47,14 +42,6 @@ knowledge_service = KnowledgeService()
 
 model_semaphore = None
 global_counter = 0
-static_file_path = os.path.join(os.getcwd(), "server/static")
-
-
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    message = ""
-    for error in exc.errors():
-        message += ".".join(error.get("loc")) + ":" + error.get("msg") + ";"
-    return Result.faild(code="E0001", msg=message)
 
 
 def __get_conv_user_message(conversations: dict):
@@ -121,7 +108,9 @@ async def db_support_types():
     support_types = [DBType.Mysql, DBType.MSSQL, DBType.DuckDb]
     db_type_infos = []
     for type in support_types:
-        db_type_infos.append(DbTypeInfo(db_type=type.value(), is_file_db=type.is_file_db()))
+        db_type_infos.append(
+            DbTypeInfo(db_type=type.value(), is_file_db=type.is_file_db())
+        )
     return Result[DbTypeInfo].succ(db_type_infos)
 
 
@@ -169,7 +158,7 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-        chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
+    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
 ):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)

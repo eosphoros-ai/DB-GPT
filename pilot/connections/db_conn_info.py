@@ -11,7 +11,7 @@ class DBConfig(BaseModel):
     db_pwd: str = ""
     comment: str = ""
 
-class DbTypeInfo(BaseModel):
-    db_type:str
-    is_file_db: bool = False
 
+class DbTypeInfo(BaseModel):
+    db_type: str
+    is_file_db: bool = False
