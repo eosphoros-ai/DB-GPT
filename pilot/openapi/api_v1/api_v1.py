@@ -25,7 +25,7 @@ from pilot.openapi.api_v1.api_view_model import (
     MessageVo,
     ChatSceneVo,
 )
-from pilot.connections.db_conn_info import DBConfig
+from pilot.connections.db_conn_info import DBConfig, DbTypeInfo
 from pilot.configs.config import Config
 from pilot.server.knowledge.service import KnowledgeService
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
@@ -35,7 +35,7 @@ from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
 from pilot.configs.model_config import LOGDIR
 from pilot.utils import build_logger
-from pilot.scene.base_message import BaseMessage
+from pilot.common.schema import DBType
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.scene.message import OnceConversation
 
@@ -97,23 +97,34 @@ def knowledge_list():
 
 
 @router.get("/v1/chat/db/list", response_model=Result[DBConfig])
-async def dialogue_list():
+async def db_connect_list():
     return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list())
 
 
 @router.post("/v1/chat/db/add", response_model=Result[bool])
-async def dialogue_list(db_config: DBConfig = Body()):
+async def db_connect_add(db_config: DBConfig = Body()):
     return Result.succ(CFG.LOCAL_DB_MANAGE.add_db(db_config))
 
 
+@router.post("/v1/chat/db/edit", response_model=Result[bool])
+async def db_connect_edit(db_config: DBConfig = Body()):
+    return Result.succ(CFG.LOCAL_DB_MANAGE.edit_db(db_config))
+
+
 @router.post("/v1/chat/db/delete", response_model=Result[bool])
-async def dialogue_list(db_name: str = None):
+async def db_connect_delete(db_name: str = None):
     return Result.succ(CFG.LOCAL_DB_MANAGE.delete_db(db_name))
 
 
-@router.get("/v1/chat/db/support/type", response_model=Result[str])
+@router.get("/v1/chat/db/support/type", response_model=Result[DbTypeInfo])
 async def db_support_types():
-    return Result[str].succ(["mysql", "mssql", "duckdb"])
+    support_types = [DBType.Mysql, DBType.MSSQL, DBType.DuckDb]
+    db_type_infos = []
+    for type in support_types:
+        db_type_infos.append(
+            DbTypeInfo(db_type=type.value(), is_file_db=type.is_file_db())
+        )
+    return Result[DbTypeInfo].succ(db_type_infos)
 
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])

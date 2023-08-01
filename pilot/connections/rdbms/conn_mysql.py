@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from typing import Optional, Any
 
-from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
+from pilot.connections.rdbms.base import RDBMSDatabase
 
 
 class MySQLConnect(RDBMSDatabase):

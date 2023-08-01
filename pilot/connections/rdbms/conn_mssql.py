@@ -10,7 +10,7 @@ from sqlalchemy import (
     select,
     text,
 )
-from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
+from pilot.connections.rdbms.base import RDBMSDatabase
 
 
 class MSSQLConnect(RDBMSDatabase):

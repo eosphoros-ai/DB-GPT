@@ -1,3 +1,5 @@
+import threading
+
 from pilot.configs.config import Config
 from pilot.connections.manages.connect_storage_duckdb import DuckdbConnectConfig
 from pilot.common.schema import DBType
@@ -7,10 +9,11 @@ from pilot.connections.base import BaseConnect
 from pilot.connections.rdbms.conn_mysql import MySQLConnect
 from pilot.connections.rdbms.conn_duckdb import DuckDbConnect
 from pilot.connections.rdbms.conn_mssql import MSSQLConnect
-from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
+from pilot.connections.rdbms.base import RDBMSDatabase
 from pilot.singleton import Singleton
 from pilot.common.sql_database import Database
 from pilot.connections.db_conn_info import DBConfig
+from pilot.summary.db_summary_client import DBSummaryClient
 
 CFG = Config()
 
@@ -34,6 +37,7 @@ class ConnectManager:
 
     def __init__(self):
         self.storage = DuckdbConnectConfig()
+        self.db_summary_client = DBSummaryClient()
         self.__load_config_db()
 
     def __load_config_db(self):
@@ -117,20 +121,44 @@ class ConnectManager:
     def delete_db(self, db_name: str):
         return self.storage.delete_db(db_name)
 
+    def edit_db(self, db_info: DBConfig):
+        return self.storage.update_db_info(
+            db_info.db_name,
+            db_info.db_type,
+            db_info.file_path,
+            db_info.db_host,
+            db_info.db_port,
+            db_info.db_user,
+            db_info.db_pwd,
+            db_info.comment,
+        )
+
     def add_db(self, db_info: DBConfig):
-        db_type = DBType.of_db_type(db_info.db_type)
-        if db_type.is_file_db():
-            self.storage.add_file_db(
-                db_info.db_name, db_info.db_type, db_info.file_path
+        print(f"add_db:{db_info.__dict__}")
+        try:
+            db_type = DBType.of_db_type(db_info.db_type)
+            if db_type.is_file_db():
+                self.storage.add_file_db(
+                    db_info.db_name, db_info.db_type, db_info.file_path
+                )
+            else:
+                self.storage.add_url_db(
+                    db_info.db_name,
+                    db_info.db_type,
+                    db_info.db_host,
+                    db_info.db_port,
+                    db_info.db_user,
+                    db_info.db_pwd,
+                    db_info.comment,
+                )
+            # async embedding
+            thread = threading.Thread(
+                target=self.db_summary_client.db_summary_embedding(
+                    db_info.db_name, db_info.db_type
+                )
             )
-        else:
-            self.storage.add_url_db(
-                db_info.db_name,
-                db_info.db_type,
-                db_info.db_host,
-                db_info.db_port,
-                db_info.db_user,
-                db_info.db_pwd,
-                db_info.comment,
-            )
+            thread.start()
+        except Exception as e:
+            raise ValueError("Add db connect info error！" + str(e))
+
         return True

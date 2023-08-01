@@ -23,7 +23,7 @@
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
     </a>
     <a href="https://discord.gg/eZHE94MN">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/jDD5FwHh?compact=true&style=flat" />
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/eZHE94MN?compact=true&style=flat" />
     </a>
     <a href="https://codespaces.new/csunny/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
@@ -167,7 +167,7 @@ The MIT License (MIT)
 
 ## Contact Information
 We are working on building a community, if you have any ideas about building the community, feel free to contact us. 
-[![](https://dcbadge.vercel.app/api/server/jDD5FwHh?compact=true&style=flat)](https://discord.gg/eZHE94MN)
+[![](https://dcbadge.vercel.app/api/server/eZHE94MN?compact=true&style=flat)](https://discord.gg/eZHE94MN)
 
 <p align="center">
   <img src="./assets/wechat.jpg" width="300px" />
