@@ -43,7 +43,7 @@ def server_init(args):
     conn_manage = ConnectManager()
     cfg.LOCAL_DB_MANAGE = conn_manage
 
-    load_native_plugins(cfg)
+    # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
     async_db_summery()
     cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
