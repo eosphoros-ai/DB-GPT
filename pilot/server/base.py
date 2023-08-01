@@ -7,6 +7,7 @@ import sys
 from pilot.summary.db_summary_client import DBSummaryClient
 from pilot.commands.command_mange import CommandRegistry
 from pilot.configs.config import Config
+
 # from pilot.configs.model_config import (
 #     DATASETS_DIR,
 #     KNOWLEDGE_UPLOAD_ROOT_PATH,

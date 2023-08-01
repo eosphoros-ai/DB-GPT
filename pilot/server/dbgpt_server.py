@@ -5,10 +5,12 @@ import shutil
 import argparse
 import sys
 import logging
+
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 import signal
 from pilot.configs.config import Config
+
 # from pilot.configs.model_config import (
 #     DATASETS_DIR,
 #     KNOWLEDGE_UPLOAD_ROOT_PATH,
@@ -17,7 +19,7 @@ from pilot.configs.config import Config
 # )
 from pilot.utils import build_logger
 
-from pilot.server.webserver_base import server_init
+from pilot.server.base import server_init
 
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, applications

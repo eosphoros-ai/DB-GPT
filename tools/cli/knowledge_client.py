@@ -5,11 +5,10 @@ import json
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from pilot.openapi.api_v1.api_view_model import Result
+from pilot.openapi.api_view_model import Result
 from pilot.server.knowledge.request.request import (
     KnowledgeQueryRequest,
     KnowledgeDocumentRequest,
-    DocumentSyncRequest,
     ChunkQueryRequest,
     DocumentQueryRequest,
 )

@@ -43,8 +43,6 @@ pycocoevalcap
 cpm_kernels
 umap-learn
 notebook
-gradio==3.23
-gradio-client==0.0.8
 wandb
 llama-index==0.5.27
 
