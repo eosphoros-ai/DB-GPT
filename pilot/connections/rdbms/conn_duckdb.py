@@ -9,7 +9,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 
-from pilot.connections.rdbms.rdbms_connect import RDBMSDatabase
+from pilot.connections.rdbms.base import RDBMSDatabase
 
 
 class DuckDbConnect(RDBMSDatabase):
@@ -28,6 +28,33 @@ class DuckDbConnect(RDBMSDatabase):
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
         return cls(create_engine("duckdb:///" + file_path, **_engine_args), **kwargs)
+
+    def get_users(self):
+        cursor = self.session.execute(text(f"SELECT * FROM sqlite_master WHERE type = 'table' AND name = 'duckdb_sys_users';"))
+        users = cursor.fetchall()
+        return [(user[0], user[1]) for user in users]
+
+    def get_grants(self):
+        return []
+
+    def get_collation(self):
+        """Get collation."""
+        return "UTF-8"
+    def get_charset(self):
+        return "UTF-8"
+
+    def get_table_comments(self, db_name):
+        cursor = self.session.execute(
+            text(
+                f"""
+                SELECT name, sql FROM sqlite_master WHERE type='table'
+                """
+            )
+        )
+        table_comments = cursor.fetchall()
+        return [
+            (table_comment[0], table_comment[1]) for table_comment in table_comments
+        ]
 
     def table_simple_info(self) -> Iterable[str]:
         _tables_sql = f"""

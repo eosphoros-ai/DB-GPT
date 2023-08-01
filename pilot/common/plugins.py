@@ -131,8 +131,6 @@ def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate
     # Generic plugins
     plugins_path_path = Path(PLUGINS_DIR)
 
-    logger.debug(f"Allowlisted Plugins: {cfg.plugins_allowlist}")
-    logger.debug(f"Denylisted Plugins: {cfg.plugins_denylist}")
 
     for plugin in plugins_path_path.glob("*.zip"):
         if moduleList := inspect_zip_for_modules(str(plugin), debug):
