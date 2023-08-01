@@ -121,7 +121,9 @@ async def db_support_types():
     support_types = [DBType.Mysql, DBType.MSSQL, DBType.DuckDb]
     db_type_infos = []
     for type in support_types:
-        db_type_infos.append(DbTypeInfo(db_type=type.value(), is_file_db=type.is_file_db()))
+        db_type_infos.append(
+            DbTypeInfo(db_type=type.value(), is_file_db=type.is_file_db())
+        )
     return Result[DbTypeInfo].succ(db_type_infos)
 
 
@@ -169,7 +171,7 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-        chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
+    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
 ):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)
