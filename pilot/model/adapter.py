@@ -118,13 +118,7 @@ class ChatGLMAdapater(BaseLLMAdaper):
     def match(self, model_path: str):
         return "chatglm" in model_path
 
-    def loader(
-        self,
-        model_path: str,
-        from_pretrained_kwargs: dict,
-        device_map=None,
-        num_gpus=CFG.NUM_GPUS,
-    ):
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
         if DEVICE != "cuda":
@@ -133,6 +127,8 @@ class ChatGLMAdapater(BaseLLMAdaper):
             ).float()
             return model, tokenizer
         else:
+            device_map = None
+            num_gpus = torch.cuda.device_count()
             model = (
                 AutoModel.from_pretrained(
                     model_path, trust_remote_code=True, **from_pretrained_kwargs
@@ -141,9 +137,6 @@ class ChatGLMAdapater(BaseLLMAdaper):
             )
             from accelerate import dispatch_model
 
-            # model = AutoModel.from_pretrained(model_path, trust_remote_code=True,
-            #                                   **from_pretrained_kwargs).half()
-            #
             if device_map is None:
                 device_map = auto_configure_device_map(num_gpus)
 

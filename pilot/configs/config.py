@@ -29,7 +29,7 @@ class Config(metaclass=Singleton):
         self.skip_reprompt = False
         self.temperature = float(os.getenv("TEMPERATURE", 0.7))
 
-        self.NUM_GPUS = int(os.getenv("NUM_GPUS", 1))
+        # self.NUM_GPUS = int(os.getenv("NUM_GPUS", 1))
 
         self.execute_local_commands = (
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
@@ -145,7 +145,6 @@ class Config(metaclass=Singleton):
         self.MODEL_SERVER = os.getenv(
             "MODEL_SERVER", "http://127.0.0.1" + ":" + str(self.MODEL_PORT)
         )
-        self.ISLOAD_8BIT = os.getenv("ISLOAD_8BIT", "True") == "True"
 
         ### Vector Store Configuration
         self.VECTOR_STORE_TYPE = os.getenv("VECTOR_STORE_TYPE", "Chroma")
@@ -156,6 +155,10 @@ class Config(metaclass=Singleton):
 
         # QLoRA
         self.QLoRA = os.getenv("QUANTIZE_QLORA", "True")
+        self.IS_LOAD_8BIT = bool(os.getenv("QUANTIZE_8bit", "True"))
+        self.IS_LOAD_4BIT = bool(os.getenv("QUANTIZE_4bit", "False"))
+        if self.IS_LOAD_8BIT and self.IS_LOAD_4BIT:
+            self.IS_LOAD_8BIT = False
 
         ### EMBEDDING Configuration
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text2vec")
@@ -163,6 +166,8 @@ class Config(metaclass=Singleton):
         self.KNOWLEDGE_SEARCH_TOP_SIZE = int(os.getenv("KNOWLEDGE_SEARCH_TOP_SIZE", 5))
         ### SUMMARY_CONFIG Configuration
         self.SUMMARY_CONFIG = os.getenv("SUMMARY_CONFIG", "FAST")
+
+        self.MAX_GPU_MEMORY = os.getenv("MAX_GPU_MEMORY", None)
 
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
