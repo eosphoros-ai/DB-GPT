@@ -28,6 +28,9 @@ class BaseLLMAdaper:
     """The Base class for multi model, in our project.
     We will support those model, which performance resemble ChatGPT"""
 
+    def use_fast_tokenizer(self) -> bool:
+        return False
+
     def match(self, model_path: str):
         return True
 
