@@ -70,13 +70,13 @@ app.add_middleware(
 )
 
 
-# app.include_router(api_v1, prefix="/api")
-# app.include_router(knowledge_router, prefix="/api")
-# app.include_router(api_editor_route_v1, prefix="/api")
+app.include_router(api_v1, prefix="/api")
+app.include_router(knowledge_router, prefix="/api")
+app.include_router(api_editor_route_v1, prefix="/api")
 
-app.include_router(api_v1)
-app.include_router(knowledge_router)
-app.include_router(api_editor_route_v1)
+# app.include_router(api_v1)
+# app.include_router(knowledge_router)
+# app.include_router(api_editor_route_v1)
 
 app.mount("/_next/static", StaticFiles(directory=static_file_path + "/_next/static"))
 app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")

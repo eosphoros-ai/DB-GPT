@@ -28,6 +28,7 @@ from pilot.openapi.editor_view_model import (
     ChartDetail,
     ChatChartEditContext,
     ChatSqlEditContext,
+    DbTable
 )
 
 from pilot.scene.chat_dashboard.data_preparation.report_schma import ChartData
@@ -38,6 +39,13 @@ router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()
 logger = build_logger("api_editor_v1", LOGDIR + "api_editor_v1.log")
+
+
+@router.get("/v1/editor/db/tables", response_model=Result[DbTable])
+async def get_editor_tables(db_name: str, page_index: int, page_size: int, search_str: str= ""):
+    return Result.succ(None)
+
+
 
 
 @router.get("/v1/editor/sql/rounds", response_model=Result[ChatDbRounds])
