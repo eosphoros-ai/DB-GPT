@@ -2,6 +2,19 @@ from pydantic import BaseModel, Field
 from typing import TypeVar, Union, List, Generic, Any
 
 
+class DbField(BaseModel):
+    colunm_name: str
+    type: str
+    colunm_len: str
+    can_null: bool = True
+    default_value: str = ""
+    comment: str = ""
+
+class DbTable(BaseModel):
+    table_name: str
+    comment: str
+    colunm: List[DbField]
+
 class ChatDbRounds(BaseModel):
     round: int
     db_name: str
