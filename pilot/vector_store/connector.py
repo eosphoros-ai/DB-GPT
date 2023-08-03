@@ -33,5 +33,10 @@ class VectorStoreConnector:
         """is vector store name exist."""
         return self.client.vector_name_exists()
 
+    def delete_vector_name(self, vector_name):
+        """vector store delete"""
+        return self.client.delete_vector_name(vector_name)
+
     def delete_by_ids(self, ids):
-        self.client.delete_by_ids(ids=ids)
+        """vector store delete by ids."""
+        return self.client.delete_by_ids(ids=ids)
