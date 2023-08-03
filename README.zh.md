@@ -23,7 +23,7 @@
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
     </a>
     <a href="https://discord.gg/eZHE94MN">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/rBgtJW8U?compact=true&style=flat" />
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/eZHE94MN?compact=true&style=flat" />
     </a>
     <a href="https://codespaces.new/csunny/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
@@ -50,7 +50,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 - [路线图](#路线图)
 - [联系我们](#联系我们)
 
-[DB-GPT视频介绍](https://www.bilibili.com/video/BV1au41157bj/)
+[DB-GPT视频介绍](https://www.bilibili.com/video/BV1au41157bj/?spm_id_from=333.337.search-card.all.click&vd_source=7792e22c03b7da3c556a450eb42c8a0f)
 
 ## 效果演示
 
@@ -88,7 +88,7 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
 
 #### 根据知识库对话, 比如pdf、csv、txt、words等等.
 <p align="left">
-  <img src="./assets/chat_knowledge.png" width="800px" />
+  <img src="./assets/chat_knowledge_zh.png" width="800px" />
 </p>
 
 ## 特性一览
@@ -122,6 +122,8 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
   - Gorilla(7b,13b)
   - baichuan(7b,13b)
 
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
+
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。
 
@@ -148,7 +150,7 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 ## Image
 🌐 [AutoDL镜像](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
 
-🌐 [阿里云镜像](https://www.zhihu.com/pin/1668226536363728896?utm_psn=1668228728445579265)
+🌐 [阿里云镜像](http://dbgpt.site/web/#/p/dc4bb97e0bc15302dbf3a5d5571142dd)
 
 ## 安装
 [快速开始](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)

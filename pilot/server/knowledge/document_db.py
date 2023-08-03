@@ -172,7 +172,7 @@ class KnowledgeDocumentDao:
             )
         if query.space is not None:
             knowledge_documents = knowledge_documents.filter(
-                KnowledgeDocumentEntity.doc_name == query.doc_name
+                KnowledgeDocumentEntity.space == query.space
             )
         knowledge_documents.delete()
         session.commit()
