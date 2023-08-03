@@ -48,6 +48,7 @@ Notice make sure you have install git-lfs
 ```
 
 ```bash
+git clone https://huggingface.co/lmsys/vicuna-13b-v1.5
 git clone https://huggingface.co/Tribbiani/vicuna-13b 
 git clone https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
 git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
@@ -61,6 +62,8 @@ cp .env.template .env
 ```
 
 You can configure basic parameters in the .env file, for example setting LLM_MODEL to the model to be used
+
+([Vicuna-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5) based on llama-2 has been released, we recommend you set `LLM_MODEL=vicuna-13b-v1.5` to try this model)
 
 ### 3. Run
 You can refer to this document to obtain the Vicuna weights: [Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-weights) .
@@ -106,6 +109,16 @@ Output should look something like the following:
 db-gpt-allinone    latest     e1ffd20b85ac   45 minutes ago   14.5GB
 db-gpt             latest     e36fb0cca5d9   3 hours ago      14GB
 ```
+
+You can pass some parameters to docker/build_all_images.sh.
+```bash
+$ bash docker/build_all_images.sh \
+--base-image nvidia/cuda:11.8.0-devel-ubuntu22.04 \
+--pip-index-url https://pypi.tuna.tsinghua.edu.cn/simple \
+--language zh
+```
+
+You can execute the command `bash docker/build_all_images.sh --help` to see more usage.
 
 #### 4.2. Run all in one docker container
 
@@ -158,7 +171,7 @@ $ docker run --gpus "device=0" -d -p 3306:3306 \
 - `-e LLM_MODEL=proxyllm`, means we use proxy llm(openai interface, fastchat interface...)
 - `-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-chinese`, means we mount the local text2vec model to the docker container.
 
-#### 4.2. Run with docker compose
+#### 4.3. Run with docker compose
 
 ```bash
 $ docker compose up -d
@@ -197,6 +210,8 @@ CUDA_VISIBLE_DEVICES=0 python3 pilot/server/dbgpt_server.py
 CUDA_VISIBLE_DEVICES=3,4,5,6 python3 pilot/server/dbgpt_server.py
 ````
 
+You can modify the setting `MAX_GPU_MEMORY=xxGib` in `.env` file to configure the maximum memory used by each GPU.
+
 ### 6. Not Enough Memory
 
 DB-GPT supported 8-bit quantization and 4-bit quantization.
@@ -206,3 +221,23 @@ You can modify the setting `QUANTIZE_8bit=True` or `QUANTIZE_4bit=True` in `.env
 Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit quantization can run with 48 GB of VRAM.
 
 Note: you need to install the latest dependencies according to [requirements.txt](https://github.com/eosphoros-ai/DB-GPT/blob/main/requirements.txt).
+
+
+Here are some of the VRAM size usage of the models we tested in some common scenarios.
+
+| Model     |  Quantize | VRAM Size |
+| --------- | --------- | --------- |
+| vicuna-7b-v1.5  | 4-bit  | 8 GB     |
+| vicuna-7b-v1.5  | 8-bit  | 12 GB     |
+| vicuna-13b-v1.5  | 4-bit  | 12 GB     |
+| vicuna-13b-v1.5  | 8-bit  | 20 GB     |
+| llama-2-7b  | 4-bit  | 8 GB     |
+| llama-2-7b  | 8-bit  | 12 GB     |
+| llama-2-13b  | 4-bit  | 12 GB     | 
+| llama-2-13b  | 8-bit  | 20 GB     |
+| llama-2-70b  | 4-bit  | 48 GB     |
+| llama-2-70b  | 8-bit  | 80 GB     |
+| baichuan-7b  | 4-bit  | 8 GB     |
+| baichuan-7b  | 8-bit  | 12 GB     |
+| baichuan-13b  | 4-bit  | 12 GB     |
+| baichuan-13b  | 8-bit  | 20 GB     |

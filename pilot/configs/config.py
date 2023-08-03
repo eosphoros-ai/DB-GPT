@@ -155,8 +155,8 @@ class Config(metaclass=Singleton):
 
         # QLoRA
         self.QLoRA = os.getenv("QUANTIZE_QLORA", "True")
-        self.IS_LOAD_8BIT = bool(os.getenv("QUANTIZE_8bit", "True"))
-        self.IS_LOAD_4BIT = bool(os.getenv("QUANTIZE_4bit", "False"))
+        self.IS_LOAD_8BIT = os.getenv("QUANTIZE_8bit", "True") == "True"
+        self.IS_LOAD_4BIT = os.getenv("QUANTIZE_4bit", "False") == "True"
         if self.IS_LOAD_8BIT and self.IS_LOAD_4BIT:
             self.IS_LOAD_8BIT = False
 

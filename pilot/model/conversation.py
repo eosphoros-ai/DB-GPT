@@ -299,6 +299,21 @@ register_conv_template(
     )
 )
 
+# Vicuna v1.1 template
+register_conv_template(
+    Conversation(
+        name="vicuna_v1.1",
+        system="A chat between a curious user and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the user's questions.",
+        roles=("USER", "ASSISTANT"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep=" ",
+        sep2="</s>",
+    )
+)
+
 # llama2 template
 # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
 register_conv_template(
