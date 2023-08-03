@@ -37,9 +37,13 @@ class ModelWorker:
         self.model_name = model_name or model_path.split("/")[-1]
         self.device = device
         print(f"Loading {model_name} LLM ModelServer in {device}! Please Wait......")
-        self.ml = ModelLoader(model_path=model_path)
+        self.ml = ModelLoader(model_path=model_path, model_name=self.model_name)
         self.model, self.tokenizer = self.ml.loader(
-            num_gpus, load_8bit=ISLOAD_8BIT, debug=ISDEBUG
+            num_gpus,
+            load_8bit=CFG.IS_LOAD_8BIT,
+            load_4bit=CFG.IS_LOAD_4BIT,
+            debug=ISDEBUG,
+            max_gpu_memory=CFG.MAX_GPU_MEMORY,
         )
 
         if not isinstance(self.model, str):

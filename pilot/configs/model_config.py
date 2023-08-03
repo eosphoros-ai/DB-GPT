@@ -62,7 +62,6 @@ LLM_MODEL_CONFIG = {
 }
 
 # Load model config
-ISLOAD_8BIT = True
 ISDEBUG = False
 
 VECTOR_SEARCH_TOP_K = 10

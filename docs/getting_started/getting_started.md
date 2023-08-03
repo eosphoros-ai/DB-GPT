@@ -80,26 +80,11 @@ Open http://localhost:5000 with your browser to see the product.
 If you want to access an external LLM service, you need to 1.set the variables LLM_MODEL=YOUR_MODEL_NAME MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env file.
 2.execute dbgpt_server.py in light mode
 
+If you want to learn about dbgpt-webui, read https://github./csunny/DB-GPT/tree/new-page-framework/datacenter
+
 ```bash
 $ python pilot/server/dbgpt_server.py --light
 ```
-#### 3.1 Steps for Starting ChatGLM-6B and ChatGLM2-6B with Multiple Cards
-
-Modify the. env.template or pilot/configurations/config.py file NUM_ Number of GPUS (quantity is the actual number of graphics cards required for startup)
-
-At the same time, it is necessary to specify the required gpu card ID before starting the command (note that the number of gpu cards specified is consistent with the number of NUM_GPUS), as shown below:
-
-````shell
-# Specify 1 gpu card
-NUM_GPUS = 1
-CUDA_VISIBLE_DEVICES=0 python3 pilot/server/dbgpt_server.py
-
-# Specify 4 gpus card
-NUM_GPUS = 4
-CUDA_VISIBLE_DEVICES=3,4,5,6 python3 pilot/server/dbgpt_server.py
-````
-
-If you want to learn about dbgpt-webui, read https://github.com/csunny/DB-GPT/tree/new-page-framework/datacenter
 
 ### 4. Docker (Experimental)
 
@@ -196,3 +181,28 @@ $ docker logs db-gpt-webserver-1 -f
 Open http://localhost:5000 with your browser to see the product.
 
 You can open docker-compose.yml in the project root directory to see more details.
+
+
+### 5. Multiple GPUs
+
+DB-GPT will use all available gpu by default. And you can modify the setting `CUDA_VISIBLE_DEVICES=0,1` in `.env` file to use the specific gpu IDs.
+
+Optionally, you can also specify the gpu ID to use before the starting command, as shown below:
+
+````shell
+# Specify 1 gpu
+CUDA_VISIBLE_DEVICES=0 python3 pilot/server/dbgpt_server.py
+
+# Specify 4 gpus
+CUDA_VISIBLE_DEVICES=3,4,5,6 python3 pilot/server/dbgpt_server.py
+````
+
+### 6. Not Enough Memory
+
+DB-GPT supported 8-bit quantization and 4-bit quantization.
+
+You can modify the setting `QUANTIZE_8bit=True` or `QUANTIZE_4bit=True` in `.env` file to use quantization(8-bit quantization is enabled by default).
+
+Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit quantization can run with 48 GB of VRAM.
+
+Note: you need to install the latest dependencies according to [requirements.txt](https://github.com/eosphoros-ai/DB-GPT/blob/main/requirements.txt).
