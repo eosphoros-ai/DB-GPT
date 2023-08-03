@@ -247,7 +247,7 @@ def remove_color_codes(s: str) -> str:
     return ansi_escape.sub("", s)
 
 
-logger = Logger()
+logger: Logger = Logger()
 
 
 def print_assistant_thoughts(
