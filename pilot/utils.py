@@ -77,7 +77,7 @@ def build_logger(logger_name, logger_filename):
         for name, item in logging.root.manager.loggerDict.items():
             if isinstance(item, logging.Logger):
                 item.addHandler(handler)
-
+    logging.basicConfig(level=logging.INFO)
     return logger
 
 
