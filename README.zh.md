@@ -112,12 +112,15 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
 
 - 多模型支持
   - 支持多种大语言模型, 当前已支持如下模型: 
-    - Vicuna(7b,13b)
-    - ChatGLM-6b(int4,int8)
-    - guanaco(7b,13b,33b)
-    - Gorilla(7b,13b)
-    - 🔥 llama-2(7b,13b,70b)
-    - baichuan(7b,13b)
+  - 🔥 Vicuna-v1.5(7b,13b)
+  - 🔥 llama-2(7b,13b,70b)
+  - WizardLM-v1.2(13b)
+  - Vicuna (7b,13b)
+  - ChatGLM-6b (int4,int8)
+  - ChatGLM2-6b (int4,int8)
+  - guanaco(7b,13b,33b)
+  - Gorilla(7b,13b)
+  - baichuan(7b,13b)
 
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。

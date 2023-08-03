@@ -44,6 +44,8 @@ class ModelParams:
 
 
 def _check_multi_gpu_or_4bit_quantization(model_params: ModelParams):
+    # TODO: vicuna-v1.5 8-bit quantization info is slow
+    # TODO: support wizardlm quantization, see: https://huggingface.co/WizardLM/WizardLM-13B-V1.2/discussions/5
     model_name = model_params.model_name.lower()
     supported_models = ["llama", "baichuan", "vicuna"]
     return any(m in model_name for m in supported_models)
@@ -89,7 +91,6 @@ class ModelLoader(metaclass=Singleton):
     # TODO multi gpu support
     def loader(
         self,
-        num_gpus,
         load_8bit=False,
         load_4bit=False,
         debug=False,
@@ -100,14 +101,13 @@ class ModelLoader(metaclass=Singleton):
             device=self.device,
             model_path=self.model_path,
             model_name=self.model_name,
-            num_gpus=num_gpus,
             max_gpu_memory=max_gpu_memory,
             cpu_offloading=cpu_offloading,
             load_8bit=load_8bit,
             load_4bit=load_4bit,
             debug=debug,
         )
-
+        logger.info(f"model_params:\n{model_params}")
         llm_adapter = get_llm_model_adapter(model_params.model_path)
         return huggingface_loader(llm_adapter, model_params)
 
@@ -126,13 +126,14 @@ def huggingface_loader(llm_adapter: BaseLLMAdaper, model_params: ModelParams):
         }
         if num_gpus != 1:
             kwargs["device_map"] = "auto"
-            kwargs["max_memory"] = max_memory
-        elif model_params.max_gpu_memory:
-            logger.info(
-                f"There has max_gpu_memory from config: {model_params.max_gpu_memory}"
-            )
-            max_memory = {i: model_params.max_gpu_memory for i in range(num_gpus)}
-            kwargs["max_memory"] = max_memory
+            if model_params.max_gpu_memory:
+                logger.info(
+                    f"There has max_gpu_memory from config: {model_params.max_gpu_memory}"
+                )
+                max_memory = {i: model_params.max_gpu_memory for i in range(num_gpus)}
+                kwargs["max_memory"] = max_memory
+            else:
+                kwargs["max_memory"] = max_memory
         logger.debug(f"max_memory: {max_memory}")
 
     elif device == "mps":
@@ -282,6 +283,9 @@ def load_huggingface_quantization_model(
 
     # Loading the tokenizer
     if type(model) is LlamaForCausalLM:
+        logger.info(
+            f"Current model is type of: LlamaForCausalLM, load tokenizer by LlamaTokenizer"
+        )
         tokenizer = LlamaTokenizer.from_pretrained(
             model_params.model_path, clean_up_tokenization_spaces=True
         )
@@ -294,6 +298,9 @@ def load_huggingface_quantization_model(
         except Exception as e:
             logger.warn(f"{str(e)}")
     else:
+        logger.info(
+            f"Current model type is not LlamaForCausalLM, load tokenizer by AutoTokenizer"
+        )
         tokenizer = AutoTokenizer.from_pretrained(
             model_params.model_path,
             trust_remote_code=model_params.trust_remote_code,

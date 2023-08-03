@@ -82,7 +82,9 @@ Currently, we have released multiple key features, which are listed below to dem
   - Support for unstructured data such as PDF, TXT, Markdown, CSV, DOC, PPT, and WebURL
 
 - Multi LLMs Support, Supports multiple large language models, currently supporting
+  - 🔥 Vicuna-v1.5(7b,13b)
   - 🔥 llama-2(7b,13b,70b)
+  - WizardLM-v1.2(13b)
   - Vicuna (7b,13b)
   - ChatGLM-6b (int4,int8)
   - ChatGLM2-6b (int4,int8)
