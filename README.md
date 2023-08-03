@@ -50,6 +50,9 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 - [roadmap](#roadmap)
 - [contract](#contact-information)
 
+[DB-GPT Youtube Video](https://www.youtube.com/watch?v=f5_g0OObZBQ)
+
+
 ## Demo
 
 Run on an RTX 4090 GPU.
