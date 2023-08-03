@@ -12,9 +12,10 @@ vector_store_config = {
 # it can be .md,.pdf,.docx, .csv, .html
 document_path = "your_path/test.md"
 embedding_engine = EmbeddingEngine(
-                    knowledge_source=document_path,
-                    knowledge_type=KnowledgeType.DOCUMENT.value,
-                    model_name=embedding_model,
-                    vector_store_config=vector_store_config)
+    knowledge_source=document_path,
+    knowledge_type=KnowledgeType.DOCUMENT.value,
+    model_name=embedding_model,
+    vector_store_config=vector_store_config,
+)
 # embedding document content to vector store
 embedding_engine.knowledge_embedding()
