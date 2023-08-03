@@ -1,6 +1,5 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 
-from langchain.document_loaders import CSVLoader
 from langchain.schema import Document
 from langchain.text_splitter import (
     TextSplitter,
@@ -9,6 +8,7 @@ from langchain.text_splitter import (
 )
 
 from pilot.embedding_engine import SourceEmbedding, register
+from pilot.embedding_engine.loader.csv_loader import NewCSVLoader
 
 
 class CSVEmbedding(SourceEmbedding):
@@ -34,7 +34,7 @@ class CSVEmbedding(SourceEmbedding):
     def read(self):
         """Load from csv path."""
         if self.source_reader is None:
-            self.source_reader = CSVLoader(self.file_path)
+            self.source_reader = NewCSVLoader(self.file_path)
         if self.text_splitter is None:
             try:
                 self.text_splitter = SpacyTextSplitter(

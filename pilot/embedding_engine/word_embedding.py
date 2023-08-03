@@ -10,7 +10,7 @@ from langchain.text_splitter import (
 )
 
 from pilot.embedding_engine import SourceEmbedding, register
-from pilot.embedding_engine.docx_loader import DocxLoader
+from pilot.embedding_engine.loader.docx_loader import DocxLoader
 
 
 class WordEmbedding(SourceEmbedding):
