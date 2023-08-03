@@ -117,8 +117,8 @@ def huggingface_loader(llm_adapter: BaseLLMAdaper, model_params: ModelParams):
     max_memory = None
 
     # if device is cpu or mps. gpu need to be zero
-    num_gpus = 0 
-    
+    num_gpus = 0
+
     if device == "cpu":
         kwargs = {"torch_dtype": torch.float32}
     elif device == "cuda":
