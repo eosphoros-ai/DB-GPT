@@ -39,7 +39,7 @@ class KnowledgeSpaceDao:
         session = self.Session()
         knowledge_space = KnowledgeSpaceEntity(
             name=space.name,
-            vector_type=space.vector_type,
+            vector_type=CFG.VECTOR_STORE_TYPE,
             desc=space.desc,
             owner=space.owner,
             gmt_created=datetime.now(),
@@ -47,7 +47,6 @@ class KnowledgeSpaceDao:
         )
         session.add(knowledge_space)
         session.commit()
-
         session.close()
 
     def get_knowledge_space(self, query: KnowledgeSpaceEntity):
@@ -86,6 +85,7 @@ class KnowledgeSpaceDao:
             KnowledgeSpaceEntity.gmt_created.desc()
         )
         result = knowledge_spaces.all()
+        session.close()
         return result
 
     def update_knowledge_space(self, space_id: int, space: KnowledgeSpaceEntity):
@@ -97,9 +97,9 @@ class KnowledgeSpaceDao:
         self.conn.commit()
         cursor.close()
 
-    def delete_knowledge_space(self, space_id: int):
-        cursor = self.conn.cursor()
-        query = "DELETE FROM knowledge_space WHERE id = %s"
-        cursor.execute(query, (space_id,))
-        self.conn.commit()
-        cursor.close()
+    def delete_knowledge_space(self, space: KnowledgeSpaceEntity):
+        session = self.Session()
+        if space:
+            session.delete(space)
+            session.commit()
+        session.close()

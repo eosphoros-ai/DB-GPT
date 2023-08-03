@@ -81,6 +81,7 @@ class DocumentChunkDao:
             page_size
         )
         result = document_chunks.all()
+        session.close()
         return result
 
     def get_document_chunks_count(self, query: DocumentChunkEntity):
@@ -105,6 +106,7 @@ class DocumentChunkDao:
                 DocumentChunkEntity.meta_info == query.meta_info
             )
         count = document_chunks.scalar()
+        session.close()
         return count
 
     # def update_knowledge_document(self, document:KnowledgeDocumentEntity):
@@ -113,9 +115,16 @@ class DocumentChunkDao:
     #     session.commit()
     #     return updated_space.id
 
-    # def delete_knowledge_document(self, document_id:int):
-    #     cursor = self.conn.cursor()
-    #     query = "DELETE FROM knowledge_document WHERE id = %s"
-    #     cursor.execute(query, (document_id,))
-    #     self.conn.commit()
-    #     cursor.close()
+    def delete(self, document_id: int):
+        session = self.Session()
+        if document_id is None:
+            raise Exception("document_id is None")
+        query = DocumentChunkEntity(document_id=document_id)
+        knowledge_documents = session.query(DocumentChunkEntity)
+        if query.document_id is not None:
+            chunks = knowledge_documents.filter(
+                DocumentChunkEntity.document_id == query.document_id
+            )
+        chunks.delete()
+        session.commit()
+        session.close()
