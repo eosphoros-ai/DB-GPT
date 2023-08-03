@@ -19,7 +19,7 @@ def parse_requirements(file_name: str) -> List[str]:
 setuptools.setup(
     name="db-gpt",
     packages=find_packages(),
-    version="0.3.2",
+    version="0.3.4",
     author="csunny",
     author_email="cfqcsunny@gmail.com",
     description="DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment."
