@@ -291,6 +291,11 @@ class BaichuanAdapter(BaseLLMAdaper):
         return model, tokenizer
 
 
+class WizardLMAdapter(BaseLLMAdaper):
+    def match(self, model_path: str):
+        return "wizardlm" in model_path.lower()
+
+
 register_llm_model_adapters(VicunaLLMAdapater)
 register_llm_model_adapters(ChatGLMAdapater)
 register_llm_model_adapters(GuanacoAdapter)
@@ -299,6 +304,7 @@ register_llm_model_adapters(GorillaAdapter)
 register_llm_model_adapters(GPT4AllAdapter)
 register_llm_model_adapters(Llama2Adapter)
 register_llm_model_adapters(BaichuanAdapter)
+register_llm_model_adapters(WizardLMAdapter)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
 # just for test_py, remove this later
