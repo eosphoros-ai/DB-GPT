@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime, create_engine
+from sqlalchemy import Column, Integer, Text, String, DateTime, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 
 from pilot.configs.config import Config
@@ -19,11 +19,12 @@ class KnowledgeSpaceEntity(Base):
     vector_type = Column(String(100))
     desc = Column(String(100))
     owner = Column(String(100))
+    context = Column(Text)
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
 
     def __repr__(self):
-        return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', desc='{self.desc}', owner='{self.owner}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+        return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', desc='{self.desc}', owner='{self.owner}' context='{self.context}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
 class KnowledgeSpaceDao:
@@ -88,14 +89,12 @@ class KnowledgeSpaceDao:
         session.close()
         return result
 
-    def update_knowledge_space(self, space_id: int, space: KnowledgeSpaceEntity):
-        cursor = self.conn.cursor()
-        query = "UPDATE knowledge_space SET name = %s, vector_type = %s, desc = %s, owner = %s WHERE id = %s"
-        cursor.execute(
-            query, (space.name, space.vector_type, space.desc, space.owner, space_id)
-        )
-        self.conn.commit()
-        cursor.close()
+    def update_knowledge_space(self, space: KnowledgeSpaceEntity):
+        session = self.Session()
+        session.merge(space)
+        session.commit()
+        session.close()
+        return True
 
     def delete_knowledge_space(self, space: KnowledgeSpaceEntity):
         session = self.Session()
