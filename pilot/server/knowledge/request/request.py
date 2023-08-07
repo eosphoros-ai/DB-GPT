@@ -83,3 +83,9 @@ class KnowledgeQueryResponse:
     score: float = 0.0
     """text: raw text info"""
     text: str
+
+
+class SpaceArgumentRequest(BaseModel):
+    """argument: argument"""
+
+    argument: str

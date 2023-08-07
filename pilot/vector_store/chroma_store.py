@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from chromadb.config import Settings
 from langchain.vectorstores import Chroma
@@ -20,13 +21,15 @@ class ChromaStore(VectorStoreBase):
             persist_directory=self.persist_dir,
             anonymized_telemetry=False,
         )
+        collection_metadata = {"hnsw:space": "cosine"}
         self.vector_store_client = Chroma(
             persist_directory=self.persist_dir,
             embedding_function=self.embeddings,
             client_settings=chroma_settings,
+            collection_metadata=collection_metadata
         )
 
-    def similar_search(self, text, topk) -> None:
+    def similar_search(self, text, topk,  **kwargs: Any) -> None:
         logger.info("ChromaStore similar search")
         return self.vector_store_client.similarity_search(text, topk)
 
