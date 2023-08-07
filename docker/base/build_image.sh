@@ -36,7 +36,7 @@ while [[ $# -gt 0 ]]; do
         shift # past value
         ;;
         -i|--pip-index-url)
-        PIP_INDEX="$2"
+        PIP_INDEX_URL="$2"
         shift
         shift
         ;;
