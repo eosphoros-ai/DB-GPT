@@ -163,7 +163,11 @@ class Config(metaclass=Singleton):
         ### EMBEDDING Configuration
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text2vec")
         self.KNOWLEDGE_CHUNK_SIZE = int(os.getenv("KNOWLEDGE_CHUNK_SIZE", 100))
+        self.KNOWLEDGE_CHUNK_OVERLAP = int(os.getenv("KNOWLEDGE_CHUNK_OVERLAP", 100))
         self.KNOWLEDGE_SEARCH_TOP_SIZE = int(os.getenv("KNOWLEDGE_SEARCH_TOP_SIZE", 5))
+        self.KNOWLEDGE_SEARCH_MAX_TOKEN = int(
+            os.getenv("KNOWLEDGE_SEARCH_MAX_TOKEN", 2000)
+        )
         ### SUMMARY_CONFIG Configuration
         self.SUMMARY_CONFIG = os.getenv("SUMMARY_CONFIG", "FAST")
 

@@ -1,3 +1,4 @@
+import json
 import threading
 from datetime import datetime
 
@@ -25,6 +26,7 @@ from pilot.server.knowledge.request.request import (
     KnowledgeDocumentRequest,
     DocumentQueryRequest,
     ChunkQueryRequest,
+    SpaceArgumentRequest,
 )
 from enum import Enum
 
@@ -102,11 +104,33 @@ class KnowledgeService:
             res.gmt_created = space.gmt_created
             res.gmt_modified = space.gmt_modified
             res.owner = space.owner
+            res.context = space.context
             query = KnowledgeDocumentEntity(space=space.name)
             doc_count = knowledge_document_dao.get_knowledge_documents_count(query)
             res.docs = doc_count
             responses.append(res)
         return responses
+
+    def arguments(self, space_name):
+        query = KnowledgeSpaceEntity(name=space_name)
+        spaces = knowledge_space_dao.get_knowledge_space(query)
+        if len(spaces) != 1:
+            raise Exception(f"there are no or more than one space called {space_name}")
+        space = spaces[0]
+        if space.context is None:
+            context = self._build_default_context()
+        else:
+            context = space.context
+        return json.loads(context)
+
+    def argument_save(self, space_name, argument_request: SpaceArgumentRequest):
+        query = KnowledgeSpaceEntity(name=space_name)
+        spaces = knowledge_space_dao.get_knowledge_space(query)
+        if len(spaces) != 1:
+            raise Exception(f"there are no or more than one space called {space_name}")
+        space = spaces[0]
+        space.context = argument_request.argument
+        return knowledge_space_dao.update_knowledge_space(space)
 
     """get knowledge get_knowledge_documents"""
 
@@ -142,22 +166,34 @@ class KnowledgeService:
                     f" doc:{doc.doc_name} status is {doc.status}, can not sync"
                 )
 
+            space_context = self.get_space_context(space_name)
+            chunk_size = (
+                CFG.KNOWLEDGE_CHUNK_SIZE
+                if space_context is None
+                else int(space_context["embedding"]["chunk_size"])
+            )
+            chunk_overlap = (
+                CFG.KNOWLEDGE_CHUNK_OVERLAP
+                if space_context is None
+                else int(space_context["embedding"]["chunk_overlap"])
+            )
             if CFG.LANGUAGE == "en":
                 text_splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
-                    chunk_overlap=20,
+                    chunk_size=chunk_size,
+                    chunk_overlap=chunk_overlap,
                     length_function=len,
                 )
             else:
                 try:
                     text_splitter = SpacyTextSplitter(
                         pipeline="zh_core_web_sm",
-                        chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
-                        chunk_overlap=100,
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
                     )
                 except Exception:
                     text_splitter = RecursiveCharacterTextSplitter(
-                        chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE, chunk_overlap=50
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
                     )
             client = EmbeddingEngine(
                 knowledge_source=doc.content,
@@ -287,3 +323,40 @@ class KnowledgeService:
             doc.result = "document embedding failed" + str(e)
             logger.error(f"document embedding, failed:{doc.doc_name}, {str(e)}")
         return knowledge_document_dao.update_knowledge_document(doc)
+
+    def _build_default_context(self):
+        from pilot.scene.chat_knowledge.v1.prompt import (
+            PROMPT_SCENE_DEFINE,
+            _DEFAULT_TEMPLATE,
+        )
+
+        context_template = {
+            "embedding": {
+                "topk": CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
+                "recall_score": 0.0,
+                "recall_type": "TopK",
+                "model": LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL].rsplit("/", 1)[-1],
+                "chunk_size": CFG.KNOWLEDGE_CHUNK_SIZE,
+                "chunk_overlap": CFG.KNOWLEDGE_CHUNK_OVERLAP,
+            },
+            "prompt": {
+                "max_token": 2000,
+                "scene": PROMPT_SCENE_DEFINE,
+                "template": _DEFAULT_TEMPLATE,
+            },
+        }
+        context_template_string = json.dumps(context_template, indent=4)
+        return context_template_string
+
+    def get_space_context(self, space_name):
+        request = KnowledgeSpaceRequest()
+        request.name = space_name
+        spaces = self.get_knowledge_space(request)
+        if len(spaces) != 1:
+            raise Exception(
+                f"have not found {space_name} space or found more than one space called {space_name}"
+            )
+        space = spaces[0]
+        if space.context is not None:
+            return json.loads(spaces[0].context)
+        return None

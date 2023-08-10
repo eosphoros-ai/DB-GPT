@@ -20,6 +20,7 @@ from pilot.server.knowledge.request.request import (
     DocumentSyncRequest,
     ChunkQueryRequest,
     DocumentQueryRequest,
+    SpaceArgumentRequest,
 )
 
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
@@ -54,9 +55,29 @@ def space_list(request: KnowledgeSpaceRequest):
 
 @router.post("/knowledge/space/delete")
 def space_delete(request: KnowledgeSpaceRequest):
-    print(f"/space/list params:")
+    print(f"/space/delete params:")
     try:
         return Result.succ(knowledge_space_service.delete_space(request.name))
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"space list error {e}")
+
+
+@router.post("/knowledge/{space_name}/arguments")
+def arguments(space_name: str):
+    print(f"/knowledge/space/arguments params:")
+    try:
+        return Result.succ(knowledge_space_service.arguments(space_name))
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"space list error {e}")
+
+
+@router.post("/knowledge/{space_name}/argument/save")
+def arguments_save(space_name: str, argument_request: SpaceArgumentRequest):
+    print(f"/knowledge/space/argument/save params:")
+    try:
+        return Result.succ(
+            knowledge_space_service.argument_save(space_name, argument_request)
+        )
     except Exception as e:
         return Result.faild(code="E000X", msg=f"space list error {e}")
 
