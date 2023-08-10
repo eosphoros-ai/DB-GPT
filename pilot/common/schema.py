@@ -1,5 +1,6 @@
 from enum import auto, Enum
 from typing import List, Any
+import os
 
 
 class SeparatorStyle(Enum):
@@ -24,6 +25,7 @@ class DBType(Enum):
     Mysql = DbInfo("mysql")
     OCeanBase = DbInfo("oceanbase")
     DuckDb = DbInfo("duckdb", True)
+    SQLite = DbInfo("sqlite", True)
     Oracle = DbInfo("oracle")
     MSSQL = DbInfo("mssql")
     Postgresql = DbInfo("postgresql")
@@ -40,3 +42,12 @@ class DBType(Enum):
             if item.value() == db_type:
                 return item
         return None
+
+    @staticmethod
+    def parse_file_db_name_from_path(db_type: str, local_db_path: str):
+        """Parse out the database name of the embedded database from the file path"""
+        base_name = os.path.basename(local_db_path)
+        db_name = os.path.splitext(base_name)[0]
+        if "." in db_name:
+            db_name = os.path.splitext(db_name)[0]
+        return db_type + "_" + db_name
