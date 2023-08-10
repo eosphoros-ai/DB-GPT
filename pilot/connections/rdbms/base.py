@@ -21,6 +21,7 @@ from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.orm import sessionmaker, scoped_session
 
+from pilot.common.schema import DBType
 from pilot.connections.base import BaseConnect
 from pilot.configs.config import Config
 
@@ -78,16 +79,7 @@ class RDBMSDatabase(BaseConnect):
         self._metadata = MetaData()
         self._metadata.reflect(bind=self._engine)
 
-        # including view support by adding the views as well as tables to the all
-        # tables list if view_support is True
-        self._all_tables = set(
-            self._inspector.get_table_names(schema=self._engine.url.database)
-            + (
-                self._inspector.get_view_names(schema=self._engine.url.database)
-                if self.view_support
-                else []
-            )
-        )
+        self._all_tables = self._sync_tables_from_db()
 
     @classmethod
     def from_uri_db(
@@ -127,6 +119,26 @@ class RDBMSDatabase(BaseConnect):
     def dialect(self) -> str:
         """Return string representation of dialect to use."""
         return self._engine.dialect.name
+
+    def _sync_tables_from_db(self) -> Iterable[str]:
+        """Read table information from database"""
+        # TODO Use a background thread to refresh periodically
+
+        # SQL will raise error with schema
+        _schema = (
+            None if self.db_type == DBType.SQLite.value() else self._engine.url.database
+        )
+        # including view support by adding the views as well as tables to the all
+        # tables list if view_support is True
+        self._all_tables = set(
+            self._inspector.get_table_names(schema=_schema)
+            + (
+                self._inspector.get_view_names(schema=_schema)
+                if self.view_support
+                else []
+            )
+        )
+        return self._all_tables
 
     def get_usable_table_names(self) -> Iterable[str]:
         """Get names of tables available."""
@@ -250,7 +262,7 @@ class RDBMSDatabase(BaseConnect):
             """Format the error message"""
             return f"Error: {e}"
 
-    def __write(self, session, write_sql):
+    def _write(self, session, write_sql):
         print(f"Write[{write_sql}]")
         db_cache = self._engine.url.database
         result = session.execute(text(write_sql))
@@ -279,7 +291,7 @@ class RDBMSDatabase(BaseConnect):
             if fetch == "all":
                 result = cursor.fetchall()
             elif fetch == "one":
-                result = cursor.fetchone()[0]  # type: ignore
+                result = result = [cursor.fetchone()]  # type: ignore
             else:
                 raise ValueError("Fetch parameter must be either 'one' or 'all'")
             field_names = tuple(i[0:] for i in cursor.keys())
@@ -305,11 +317,10 @@ class RDBMSDatabase(BaseConnect):
             if fetch == "all":
                 result = cursor.fetchall()
             elif fetch == "one":
-                result = cursor.fetchone()[0]  # type: ignore
+                result = [cursor.fetchone()]  # type: ignore
             else:
                 raise ValueError("Fetch parameter must be either 'one' or 'all'")
             field_names = list(i[0:] for i in cursor.keys())
-
             result = list(result)
             return field_names, result
 
@@ -323,7 +334,7 @@ class RDBMSDatabase(BaseConnect):
             if sql_type == "SELECT":
                 return self.__query(session, command, fetch)
             else:
-                self.__write(session, command)
+                self._write(session, command)
                 select_sql = self.convert_sql_write_to_select(command)
                 print(f"write result query:{select_sql}")
                 return self.__query(session, select_sql)
@@ -332,6 +343,11 @@ class RDBMSDatabase(BaseConnect):
             print(f"DDL execution determines whether to enable through configuration ")
             cursor = session.execute(text(command))
             session.commit()
+            _show_columns_sql = (
+                f"PRAGMA table_info({table_name})"
+                if self.db_type == "sqlite"
+                else f"SHOW COLUMNS FROM {table_name}"
+            )
             if cursor.returns_rows:
                 result = cursor.fetchall()
                 field_names = tuple(i[0:] for i in cursor.keys())
@@ -339,10 +355,10 @@ class RDBMSDatabase(BaseConnect):
                 result.insert(0, field_names)
                 print("DDL Result:" + str(result))
                 if not result:
-                    return self.__query(session, f"SHOW COLUMNS FROM {table_name}")
+                    return self.__query(session, _show_columns_sql)
                 return result
             else:
-                return self.__query(session, f"SHOW COLUMNS FROM {table_name}")
+                return self.__query(session, _show_columns_sql)
 
     def run_no_throw(self, session, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results.

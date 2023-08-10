@@ -145,6 +145,7 @@ nltk_data
 .vectordb
 pilot/data/
 pilot/nltk_data
+pilot/mock_datas/db-gpt-test.db.wal
 
 logswebserver.log.*
 .history/*

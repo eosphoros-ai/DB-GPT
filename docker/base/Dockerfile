@@ -3,7 +3,7 @@ ARG BASE_IMAGE="nvidia/cuda:11.8.0-devel-ubuntu22.04"
 FROM ${BASE_IMAGE}
 ARG BASE_IMAGE
 
-RUN apt-get update && apt-get install -y git python3 pip wget \
+RUN apt-get update && apt-get install -y git python3 pip wget sqlite3 \
     && apt-get clean
 
 ARG BUILD_LOCAL_CODE="false"
