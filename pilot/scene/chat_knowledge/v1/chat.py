@@ -62,7 +62,9 @@ class ChatKnowledge(BaseChat):
     def generate_input_values(self):
         try:
             if self.space_context:
-                self.prompt_template.template_define = self.space_context["prompt"]["scene"]
+                self.prompt_template.template_define = self.space_context["prompt"][
+                    "scene"
+                ]
                 self.prompt_template.template = self.space_context["prompt"]["template"]
             docs = self.knowledge_embedding_client.similar_search(
                 self.current_user_input, self.top_k
