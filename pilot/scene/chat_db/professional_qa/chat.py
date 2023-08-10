@@ -25,6 +25,7 @@ class ChatWithDbQA(BaseChat):
             chat_mode=ChatScene.ChatWithDbQA,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
+            select_param=db_name,
         )
         self.db_name = db_name
         if db_name:

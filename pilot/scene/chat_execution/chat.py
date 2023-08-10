@@ -30,6 +30,7 @@ class ChatWithPlugin(BaseChat):
             chat_mode=ChatScene.ChatExecution,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
+            select_param=plugin_selector,
         )
         self.plugins_prompt_generator = PluginPromptGenerator()
         self.plugins_prompt_generator.command_registry = CFG.command_registry

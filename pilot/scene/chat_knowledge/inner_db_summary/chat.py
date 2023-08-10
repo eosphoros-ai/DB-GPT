@@ -24,6 +24,7 @@ class InnerChatDBSummary(BaseChat):
             chat_mode=ChatScene.InnerChatDBSummary,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
+            select_param=db_select,
         )
 
         self.db_input = db_select
