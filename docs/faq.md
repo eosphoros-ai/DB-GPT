@@ -108,6 +108,25 @@ VECTOR_STORE_TYPE=Chroma
 
 ##### A7: set KNOWLEDGE_SEARCH_TOP_SIZE smaller or set KNOWLEDGE_CHUNK_SIZE smaller, and reboot server.
 
+##### Q8:space add error (pymysql.err.OperationalError) (1054, "Unknown column 'knowledge_space.context' in 'field list'")
+
+
+##### A8: 
+1.shutdown dbgpt_server(ctrl c)
+
+2.add column context for table knowledge_space
+```commandline
+mysql -h127.0.0.1 -uroot -paa12345678
+```
+3.execute sql ddl
+```commandline
+mysql> use knowledge_management;
+mysql> ALTER TABLE knowledge_space ADD COLUMN context TEXT COMMENT "arguments context";
+```
+4.restart dbgpt server
+
+
+
 
 
 
