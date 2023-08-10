@@ -6,6 +6,7 @@ CREATE TABLE `knowledge_space` (
   `vector_type` varchar(50) NOT NULL COMMENT 'vector type',
   `desc` varchar(500) NOT NULL COMMENT 'description',
   `owner` varchar(100) DEFAULT NULL COMMENT 'owner',
+  `context` TEXT DEFAULT NULL COMMENT 'context argument',
   `gmt_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
   `gmt_modified` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`),
