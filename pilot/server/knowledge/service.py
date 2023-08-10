@@ -335,7 +335,7 @@ class KnowledgeService:
                 "topk": CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
                 "recall_score": 0.0,
                 "recall_type": "TopK",
-                "model": CFG.EMBEDDING_MODEL,
+                "model": LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL].rsplit("/", 1)[-1],
                 "chunk_size": CFG.KNOWLEDGE_CHUNK_SIZE,
                 "chunk_overlap": CFG.KNOWLEDGE_CHUNK_OVERLAP,
             },
