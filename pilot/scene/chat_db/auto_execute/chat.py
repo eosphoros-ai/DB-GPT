@@ -22,11 +22,13 @@ class ChatWithDbAutoExecute(BaseChat):
     """Number of results to return from the query"""
 
     def __init__(self, chat_session_id, db_name, user_input):
+        chat_mode = ChatScene.ChatWithDbExecute
         """ """
         super().__init__(
-            chat_mode=ChatScene.ChatWithDbExecute,
+            chat_mode=chat_mode,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
+            select_param=db_name,
         )
         if not db_name:
             raise ValueError(
@@ -35,7 +37,7 @@ class ChatWithDbAutoExecute(BaseChat):
         self.db_name = db_name
         self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
         self.db_connect = self.database.session
-        self.top_k: int = 5
+        self.top_k: int = 200
 
     def generate_input_values(self):
         try:

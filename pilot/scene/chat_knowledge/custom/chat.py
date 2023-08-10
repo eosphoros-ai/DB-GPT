@@ -33,6 +33,7 @@ class ChatNewKnowledge(BaseChat):
             chat_mode=ChatScene.ChatNewKnowledge,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
+            select_param=knowledge_name,
         )
         self.knowledge_name = knowledge_name
         vector_store_config = {

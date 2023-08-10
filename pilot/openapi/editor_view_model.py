@@ -24,10 +24,12 @@ class ChatDbRounds(BaseModel):
 class ChartDetail(BaseModel):
     chart_uid: str
     chart_type: str
+    chart_desc: str
+    chart_sql: str
     db_name: str
     chart_name: str
-    chart_value: str
-    chat_round: int  # defualt last round
+    chart_value: Any
+    table_value: Any
 
 
 class ChatChartEditContext(BaseModel):
