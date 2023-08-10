@@ -26,10 +26,10 @@ class ChromaStore(VectorStoreBase):
             persist_directory=self.persist_dir,
             embedding_function=self.embeddings,
             client_settings=chroma_settings,
-            collection_metadata=collection_metadata
+            collection_metadata=collection_metadata,
         )
 
-    def similar_search(self, text, topk,  **kwargs: Any) -> None:
+    def similar_search(self, text, topk, **kwargs: Any) -> None:
         logger.info("ChromaStore similar search")
         return self.vector_store_client.similarity_search(text, topk)
 

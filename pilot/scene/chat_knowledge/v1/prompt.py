@@ -12,7 +12,7 @@ from pilot.scene.chat_normal.out_parser import NormalChatOutputParser
 CFG = Config()
 
 PROMPT_SCENE_DEFINE = """A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. 
-    The assistant gives helpful, detailed, professional and polite answers to the user's questions. """
+The assistant gives helpful, detailed, professional and polite answers to the user's questions. """
 
 
 _DEFAULT_TEMPLATE_ZH = """ 基于以下已知的信息, 专业、简要的回答用户的问题,
