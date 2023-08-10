@@ -188,7 +188,7 @@ class KnowledgeService:
                     text_splitter = SpacyTextSplitter(
                         pipeline="zh_core_web_sm",
                         chunk_size=chunk_size,
-                        chunk_overlap=chunk_overlap
+                        chunk_overlap=chunk_overlap,
                     )
                 except Exception:
                     text_splitter = RecursiveCharacterTextSplitter(
