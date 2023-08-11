@@ -31,7 +31,7 @@
   </p>
 
 
-[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/eZHE94MN) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
+[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/erwfqcMP) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
 
 </div>
 
@@ -196,7 +196,7 @@ The MIT License (MIT)
 
 ## Contact Information
 We are working on building a community, if you have any ideas about building the community, feel free to contact us. 
-[![](https://dcbadge.vercel.app/api/server/eZHE94MN?compact=true&style=flat)](https://discord.gg/eZHE94MN)
+[![](https://dcbadge.vercel.app/api/server/erwfqcMP?compact=true&style=flat)](https://discord.gg/erwfqcMP)
 
 <p align="center">
   <img src="./assets/wechat.jpg" width="300px" />
