@@ -93,18 +93,25 @@ class ConnectManager:
             db_name = CFG.LOCAL_DB_NAME
             db_type = CFG.LOCAL_DB_TYPE
             db_path = CFG.LOCAL_DB_PATH
+            if not db_type:
+                # Default file database type
+                db_type = DBType.DuckDb.value()
             if not db_name:
-                if db_type is None or db_type == DBType.DuckDb.value():
-                    # file db is duckdb
-                    db_name = self.storage.get_file_db_name(db_path)
-                    db_type = DBType.DuckDb.value()
-                else:
-                    db_name = DBType.parse_file_db_name_from_path(db_type, db_path)
+                db_type, db_name = self._parse_file_db_info(db_type, db_path)
             if db_name:
                 print(
                     f"Add file db, db_name: {db_name}, db_type: {db_type}, db_path: {db_path}"
                 )
                 self.storage.add_file_db(db_name, db_type, db_path)
+
+    def _parse_file_db_info(self, db_type: str, db_path: str):
+        if db_type is None or db_type == DBType.DuckDb.value():
+            # file db is duckdb
+            db_name = self.storage.get_file_db_name(db_path)
+            db_type = DBType.DuckDb.value()
+        else:
+            db_name = DBType.parse_file_db_name_from_path(db_type, db_path)
+        return db_type, db_name
 
     def get_connect(self, db_name):
         db_config = self.storage.get_db_config(db_name)

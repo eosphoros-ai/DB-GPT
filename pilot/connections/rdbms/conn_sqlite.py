@@ -22,6 +22,8 @@ class SQLiteConnect(RDBMSDatabase):
     ) -> RDBMSDatabase:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
+        _engine_args["connect_args"] = {"check_same_thread": False}
+        # _engine_args["echo"] = True
         return cls(create_engine("sqlite:///" + file_path, **_engine_args), **kwargs)
 
     def get_indexes(self, table_name):

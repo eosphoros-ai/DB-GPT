@@ -144,10 +144,8 @@ async def document_upload(
                 request = KnowledgeDocumentRequest()
                 request.doc_name = doc_name
                 request.doc_type = doc_type
-                request.content = (
-                    os.path.join(
-                        KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
-                    ),
+                request.content = os.path.join(
+                    KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
                 )
                 return Result.succ(
                     knowledge_space_service.create_knowledge_document(
