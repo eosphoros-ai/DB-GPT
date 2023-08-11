@@ -21,6 +21,12 @@ class ChatDbRounds(BaseModel):
     round_name: str
 
 
+class ChartList(BaseModel):
+    round: int
+    db_name: str
+    charts: List
+
+
 class ChartDetail(BaseModel):
     chart_uid: str
     chart_type: str
@@ -34,24 +40,25 @@ class ChartDetail(BaseModel):
 
 class ChatChartEditContext(BaseModel):
     conv_uid: str
-    conv_round: int
-    chart_uid: str
-
+    chart_title: str
+    db_name: str
     old_sql: str
-    new_sql: str
-    comment: str
-    gmt_create: int
 
-    new_view_info: str
+    new_chart_type: str
+    new_sql: str
+    new_comment: str
+    gmt_create: int
 
 
 class ChatSqlEditContext(BaseModel):
     conv_uid: str
+    db_name: str
     conv_round: int
 
     old_sql: str
-    new_sql: str
-    comment: str
+    old_speak: str
     gmt_create: int
 
+    new_sql: str
+    new_speak: str
     new_view_info: str

@@ -10,6 +10,7 @@ from pilot.scene.chat_dashboard.data_preparation.report_schma import (
     ChartData,
     ReportData,
 )
+from pilot.scene.chat_dashboard.prompt import prompt
 from pilot.scene.chat_dashboard.data_loader import DashboardDataLoader
 
 CFG = Config()
@@ -26,6 +27,7 @@ class ChatDashboard(BaseChat):
             chat_mode=ChatScene.ChatDashboard,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
+            select_param=db_name,
         )
         if not db_name:
             raise ValueError(f"{ChatScene.ChatDashboard.value} mode should choose db!")
@@ -33,7 +35,6 @@ class ChatDashboard(BaseChat):
         self.report_name = report_name
 
         self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
-        self.db_connect = self.database.session
 
         self.top_k: int = 5
         self.dashboard_template = self.__load_dashboard_template(report_name)
@@ -78,7 +79,7 @@ class ChatDashboard(BaseChat):
         dashboard_data_loader = DashboardDataLoader()
         for chart_item in prompt_response:
             try:
-                field_names, values = dashboard_data_loader.get_chart_values_by_conn(self.db_connect, chart_item.sql)
+                field_names, values = dashboard_data_loader.get_chart_values_by_conn(self.database, chart_item.sql)
                 chart_datas.append(
                     ChartData(
                         chart_uid=str(uuid.uuid1()),

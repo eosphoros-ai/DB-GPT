@@ -36,7 +36,6 @@ class ChatWithDbAutoExecute(BaseChat):
             )
         self.db_name = db_name
         self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
-        self.db_connect = self.database.session
         self.top_k: int = 200
 
     def generate_input_values(self):
@@ -63,4 +62,4 @@ class ChatWithDbAutoExecute(BaseChat):
 
     def do_action(self, prompt_response):
         print(f"do_action:{prompt_response}")
-        return self.database.run(self.db_connect, prompt_response.sql)
+        return self.database.run( prompt_response.sql)
