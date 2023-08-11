@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, DateTime, Integer, Text, create_engine, f
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from pilot.configs.config import Config
-
+from pilot.connections.rdbms.base_dao import BaseDao
 
 CFG = Config()
 
@@ -19,7 +19,7 @@ class KnowledgeDocumentEntity(Base):
     space = Column(String(100))
     chunk_size = Column(Integer)
     status = Column(String(100))
-    last_sync = Column(String(100))
+    last_sync = Column(DateTime)
     content = Column(Text)
     result = Column(Text)
     vector_ids = Column(Text)
@@ -30,14 +30,11 @@ class KnowledgeDocumentEntity(Base):
         return f"KnowledgeDocumentEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
-class KnowledgeDocumentDao:
+class KnowledgeDocumentDao(BaseDao):
     def __init__(self):
-        database = "knowledge_management"
-        self.db_engine = create_engine(
-            f"mysql+pymysql://{CFG.LOCAL_DB_USER}:{CFG.LOCAL_DB_PASSWORD}@{CFG.LOCAL_DB_HOST}:{CFG.LOCAL_DB_PORT}/{database}",
-            echo=True,
+        super().__init__(
+            database="knowledge_management", orm_base=Base, create_not_exist_table=True
         )
-        self.Session = sessionmaker(bind=self.db_engine)
 
     def create_knowledge_document(self, document: KnowledgeDocumentEntity):
         session = self.Session()

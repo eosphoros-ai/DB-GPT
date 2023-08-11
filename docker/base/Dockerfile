@@ -45,4 +45,14 @@ RUN (if [ "${BUILD_LOCAL_CODE}" = "true" ]; \
     else rm -rf /tmp/app; \
     fi;)
 
+ARG LOAD_EXAMPLES="true"
+
+RUN (if [ "${LOAD_EXAMPLES}" = "true" ]; \
+    then mkdir -p /app/pilot/data && sqlite3 /app/pilot/data/default_sqlite.db < /app/docker/examples/sqls/case_1_student_manager_sqlite.sql \
+    && sqlite3 /app/pilot/data/default_sqlite.db < /app/docker/examples/sqls/case_2_ecom_sqlite.sql \
+    && sqlite3 /app/pilot/data/default_sqlite.db < /app/docker/examples/sqls/test_case_info_sqlite.sql; \
+    fi;)
+
 EXPOSE 5000
+
+CMD ["python3", "pilot/server/dbgpt_server.py"]

@@ -5,7 +5,7 @@ from sqlalchemy import Column, String, DateTime, Integer, Text, create_engine, f
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from pilot.configs.config import Config
-
+from pilot.connections.rdbms.base_dao import BaseDao
 
 CFG = Config()
 
@@ -27,14 +27,11 @@ class DocumentChunkEntity(Base):
         return f"DocumentChunkEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', document_id='{self.document_id}', content='{self.content}', meta_info='{self.meta_info}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
-class DocumentChunkDao:
+class DocumentChunkDao(BaseDao):
     def __init__(self):
-        database = "knowledge_management"
-        self.db_engine = create_engine(
-            f"mysql+pymysql://{CFG.LOCAL_DB_USER}:{CFG.LOCAL_DB_PASSWORD}@{CFG.LOCAL_DB_HOST}:{CFG.LOCAL_DB_PORT}/{database}",
-            echo=True,
+        super().__init__(
+            database="knowledge_management", orm_base=Base, create_not_exist_table=True
         )
-        self.Session = sessionmaker(bind=self.db_engine)
 
     def create_documents_chunks(self, documents: List):
         session = self.Session()

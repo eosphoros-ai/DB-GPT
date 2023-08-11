@@ -2,11 +2,11 @@ from datetime import datetime
 
 from sqlalchemy import Column, Integer, Text, String, DateTime, create_engine
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 from pilot.configs.config import Config
-
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
-from sqlalchemy.orm import sessionmaker
+from pilot.connections.rdbms.base_dao import BaseDao
 
 CFG = Config()
 Base = declarative_base()
@@ -27,14 +27,11 @@ class KnowledgeSpaceEntity(Base):
         return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', desc='{self.desc}', owner='{self.owner}' context='{self.context}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
-class KnowledgeSpaceDao:
+class KnowledgeSpaceDao(BaseDao):
     def __init__(self):
-        database = "knowledge_management"
-        self.db_engine = create_engine(
-            f"mysql+pymysql://{CFG.LOCAL_DB_USER}:{CFG.LOCAL_DB_PASSWORD}@{CFG.LOCAL_DB_HOST}:{CFG.LOCAL_DB_PORT}/{database}",
-            echo=True,
+        super().__init__(
+            database="knowledge_management", orm_base=Base, create_not_exist_table=True
         )
-        self.Session = sessionmaker(bind=self.db_engine)
 
     def create_knowledge_space(self, space: KnowledgeSpaceRequest):
         session = self.Session()

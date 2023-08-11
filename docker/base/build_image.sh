@@ -5,12 +5,13 @@ cd "$(dirname "$SCRIPT_LOCATION")"
 WORK_DIR=$(pwd)
 
 BASE_IMAGE="nvidia/cuda:11.8.0-devel-ubuntu22.04"
-IMAGE_NAME="db-gpt"
+IMAGE_NAME="eosphorosai/dbgpt"
 # zh: https://pypi.tuna.tsinghua.edu.cn/simple
 PIP_INDEX_URL="https://pypi.org/simple"
 # en or zh
 LANGUAGE="en"
 BUILD_LOCAL_CODE="false"
+LOAD_EXAMPLES="true"
 
 usage () {
     echo "USAGE: $0 [--base-image nvidia/cuda:11.8.0-devel-ubuntu22.04] [--image-name db-gpt]"
@@ -19,6 +20,7 @@ usage () {
     echo "  [-i|--pip-index-url pip index url] Pip index url, default: https://pypi.org/simple"
     echo "  [--language en or zh] You language, default: en"
     echo "  [--build-local-code true or false] Whether to use the local project code to package the image, default: false"
+    echo "  [--load-examples true or false] Whether to load examples to default database default: true"
     echo "  [-h|--help] Usage message"
 }
 
@@ -50,6 +52,11 @@ while [[ $# -gt 0 ]]; do
         shift
         shift
         ;;
+        --load-examples)
+        LOAD_EXAMPLES="$2"
+        shift
+        shift
+        ;;
         -h|--help)
         help="true"
         shift
@@ -71,5 +78,6 @@ docker build \
     --build-arg PIP_INDEX_URL=$PIP_INDEX_URL \
     --build-arg LANGUAGE=$LANGUAGE \
     --build-arg BUILD_LOCAL_CODE=$BUILD_LOCAL_CODE \
+    --build-arg LOAD_EXAMPLES=$LOAD_EXAMPLES \
     -f Dockerfile \
     -t $IMAGE_NAME $WORK_DIR/../../

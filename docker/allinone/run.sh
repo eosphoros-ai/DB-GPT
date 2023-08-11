@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker run --gpus "device=0" -d -p 3306:3306 \
+docker run --gpus all -d -p 3306:3306 \
     -p 5000:5000 \
     -e LOCAL_DB_HOST=127.0.0.1 \
     -e LOCAL_DB_PASSWORD=aa123456 \
@@ -9,5 +9,5 @@ docker run --gpus "device=0" -d -p 3306:3306 \
     -e LANGUAGE=zh \
     -v /data:/data \
     -v /data/models:/app/models \
-    --name db-gpt-allinone \
-    db-gpt-allinone
+    --name dbgpt-allinone \
+    eosphorosai/dbgpt-allinone
