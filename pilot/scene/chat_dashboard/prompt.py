@@ -22,7 +22,7 @@ According to the characteristics of the analyzed data, choose the most suitable 
 
 Pay attention to the length of the output content of the analysis result, do not exceed 4000tokens
 
-Give the correct {dialect} analysis SQL (don't use unprovided values such as 'paid'), analysis title, display method and summary of brief analysis thinking, and respond in the following json format:
+Give the correct {dialect} analysis SQL (don't use unprovided values such as 'paid'), analysis title(don't exist the same), display method and summary of brief analysis thinking, and respond in the following json format:
 {response}
 Ensure the response is correct json and can be parsed by Python json.loads
 """
