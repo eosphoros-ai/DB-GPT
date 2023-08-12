@@ -8,6 +8,7 @@ from pilot.connections.base import BaseConnect
 
 from pilot.connections.rdbms.conn_mysql import MySQLConnect
 from pilot.connections.rdbms.conn_duckdb import DuckDbConnect
+from pilot.connections.rdbms.conn_sqlite import SQLiteConnect
 from pilot.connections.rdbms.conn_mssql import MSSQLConnect
 from pilot.connections.rdbms.base import RDBMSDatabase
 from pilot.singleton import Singleton
@@ -89,12 +90,28 @@ class ConnectManager:
                         "",
                     )
         if CFG.LOCAL_DB_PATH:
-            # default file db is duckdb
-            db_name = self.storage.get_file_db_name(CFG.LOCAL_DB_PATH)
+            db_name = CFG.LOCAL_DB_NAME
+            db_type = CFG.LOCAL_DB_TYPE
+            db_path = CFG.LOCAL_DB_PATH
+            if not db_type:
+                # Default file database type
+                db_type = DBType.DuckDb.value()
+            if not db_name:
+                db_type, db_name = self._parse_file_db_info(db_type, db_path)
             if db_name:
-                self.storage.add_file_db(
-                    db_name, DBType.DuckDb.value(), CFG.LOCAL_DB_PATH
+                print(
+                    f"Add file db, db_name: {db_name}, db_type: {db_type}, db_path: {db_path}"
                 )
+                self.storage.add_file_db(db_name, db_type, db_path)
+
+    def _parse_file_db_info(self, db_type: str, db_path: str):
+        if db_type is None or db_type == DBType.DuckDb.value():
+            # file db is duckdb
+            db_name = self.storage.get_file_db_name(db_path)
+            db_type = DBType.DuckDb.value()
+        else:
+            db_name = DBType.parse_file_db_name_from_path(db_type, db_path)
+        return db_type, db_name
 
     def get_connect(self, db_name):
         db_config = self.storage.get_db_config(db_name)
