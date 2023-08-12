@@ -17,16 +17,7 @@ As our project has the ability to achieve ChatGPT performance of over 85%, there
 
 ### 2. Install
 
-1.This project relies on a local MySQL database service, which you need to install locally. We recommend using Docker for installation.
-```bash
-$ docker run --name=mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=aa12345678 -dit mysql:latest
-```
-2. prepare server sql script
-```bash
-$ mysql -h127.0.0.1 -uroot -paa12345678 < ./assets/schema/knowledge_management.sql
-```
-
-We use [Chroma embedding database](https://github.com/chroma-core/chroma) as the default for our vector database, so there is no need for special installation. If you choose to connect to other databases, you can follow our tutorial for installation and configuration. 
+We use [Chroma embedding database](https://github.com/chroma-core/chroma) as the default for our vector database and use SQLite as the default for our database, so there is no need for special installation. If you choose to connect to other databases, you can follow our tutorial for installation and configuration. 
 For the entire installation process of DB-GPT, we use the miniconda3 virtual environment. Create a virtual environment and install the Python dependencies.
 
 ```bash
@@ -38,7 +29,6 @@ pip install -r requirements.txt
 Before use DB-GPT Knowledge Management
 ```bash
 python -m spacy download zh_core_web_sm
-
 ```
 
 Once the environment is installed, we have to create a new folder "models" in the DB-GPT project, and then we can put all the models downloaded from huggingface in this directory
@@ -100,15 +90,17 @@ $ bash docker/build_all_images.sh
 Review images by listing them:
 
 ```bash
-$ docker images|grep db-gpt
+$ docker images|grep "eosphorosai/dbgpt"
 ```
 
 Output should look something like the following:
 
 ```
-db-gpt-allinone    latest     e1ffd20b85ac   45 minutes ago   14.5GB
-db-gpt             latest     e36fb0cca5d9   3 hours ago      14GB
+eosphorosai/dbgpt-allinone       latest    349d49726588   27 seconds ago       15.1GB
+eosphorosai/dbgpt                latest    eb3cdc5b4ead   About a minute ago   14.5GB
 ```
+
+`eosphorosai/dbgpt` is the base image, which contains the project's base dependencies and a sqlite database. `eosphorosai/dbgpt-allinone` build from `eosphorosai/dbgpt`, which contains a mysql database.
 
 You can pass some parameters to docker/build_all_images.sh.
 ```bash
@@ -122,19 +114,18 @@ You can execute the command `bash docker/build_all_images.sh --help` to see more
 
 #### 4.2. Run all in one docker container
 
-**Run with local model**
+**Run with local model and SQLite database**
 
 ```bash
-$ docker run --gpus "device=0" -d -p 3306:3306 \
+$ docker run --gpus all -d \
     -p 5000:5000 \
-    -e LOCAL_DB_HOST=127.0.0.1 \
-    -e LOCAL_DB_PASSWORD=aa123456 \
-    -e MYSQL_ROOT_PASSWORD=aa123456 \
+    -e LOCAL_DB_TYPE=sqlite \
+    -e LOCAL_DB_PATH=data/default_sqlite.db \
     -e LLM_MODEL=vicuna-13b \
     -e LANGUAGE=zh \
     -v /data/models:/app/models \
-    --name db-gpt-allinone \
-    db-gpt-allinone
+    --name dbgpt \
+    eosphorosai/dbgpt
 ```
 
 Open http://localhost:5000 with your browser to see the product.
@@ -146,7 +137,22 @@ Open http://localhost:5000 with your browser to see the product.
 You can see log with command:
 
 ```bash
-$ docker logs db-gpt-allinone -f
+$ docker logs dbgpt -f
+```
+
+**Run with local model and MySQL database**
+
+```bash
+$ docker run --gpus all -d -p 3306:3306 \
+    -p 5000:5000 \
+    -e LOCAL_DB_HOST=127.0.0.1 \
+    -e LOCAL_DB_PASSWORD=aa123456 \
+    -e MYSQL_ROOT_PASSWORD=aa123456 \
+    -e LLM_MODEL=vicuna-13b \
+    -e LANGUAGE=zh \
+    -v /data/models:/app/models \
+    --name dbgpt \
+    eosphorosai/dbgpt-allinone
 ```
 
 **Run with openai interface**
@@ -154,7 +160,7 @@ $ docker logs db-gpt-allinone -f
 ```bash
 $ PROXY_API_KEY="You api key"
 $ PROXY_SERVER_URL="https://api.openai.com/v1/chat/completions"
-$ docker run --gpus "device=0" -d -p 3306:3306 \
+$ docker run --gpus all -d -p 3306:3306 \
     -p 5000:5000 \
     -e LOCAL_DB_HOST=127.0.0.1 \
     -e LOCAL_DB_PASSWORD=aa123456 \
@@ -164,8 +170,8 @@ $ docker run --gpus "device=0" -d -p 3306:3306 \
     -e PROXY_SERVER_URL=$PROXY_SERVER_URL \
     -e LANGUAGE=zh \
     -v /data/models/text2vec-large-chinese:/app/models/text2vec-large-chinese \
-    --name db-gpt-allinone \
-    db-gpt-allinone
+    --name dbgpt \
+    eosphorosai/dbgpt-allinone
 ```
 
 - `-e LLM_MODEL=proxyllm`, means we use proxy llm(openai interface, fastchat interface...)
