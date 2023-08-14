@@ -84,13 +84,17 @@ async def get_editor_sql(con_uid: str, round: int):
             if int(once["chat_order"]) == round:
                 for element in once["messages"]:
                     if element["type"] == "ai":
-                        return Result.succ(json.loads(element["data"]["content"]))
+                        return Result.succ(json.loads(element["data"]["content"], ensure_ascii=False))
     return Result.faild(msg="not have sql!")
 
 
 @router.post("/v1/editor/sql/run", response_model=Result[SqlRunData])
-async def editor_sql_run(db_name: str, sql: str):
-    logger.info("get_editor_sql_run:{},{}", db_name, sql)
+async def editor_sql_run(run_param: dict = Body()):
+    logger.info("get_editor_sql_run:{}", run_param)
+    db_name = run_param['db_name']
+    sql = run_param['sql']
+    if not db_name and not sql:
+        return Result.faild("SQL run param error！")
     conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
 
     start_time = time.time() * 1000
@@ -215,7 +219,8 @@ async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body())
                     if element["type"] == "view":
                         view_data: dict = json.loads(element["data"]["content"]);
                         charts: List = view_data.get("charts")
-                        find_chart = list(filter(lambda x: x['chart_name'] == chart_edit_context.chart_title, charts))[0]
+                        find_chart = list(filter(lambda x: x['chart_name'] == chart_edit_context.chart_title, charts))[
+                            0]
                         if chart_edit_context.new_chart_type:
                             find_chart['chart_type'] = chart_edit_context.new_chart_type
                         if chart_edit_context.new_comment:
@@ -237,7 +242,7 @@ async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body())
                         edit_item["thoughts"] = chart_edit_context.new_comment
                         element["data"]["content"] = json.dumps(ai_resp, ensure_ascii=False)
             except Exception as e:
-                logger.error(f"edit chart exception!{str(e)}" ,e)
+                logger.error(f"edit chart exception!{str(e)}", e)
                 return Result.faild(msg=f"Edit chart exception!{str(e)}")
             history_mem.update(history_messages)
             return Result.succ(None)
