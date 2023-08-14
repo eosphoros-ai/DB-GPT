@@ -84,13 +84,13 @@ async def get_editor_sql(con_uid: str, round: int):
             if int(once["chat_order"]) == round:
                 for element in once["messages"]:
                     if element["type"] == "ai":
-                        return Result.succ(json.loads(element["data"]["content"], ensure_ascii=False))
+                        return Result.succ(json.loads(element["data"]["content"]))
     return Result.faild(msg="not have sql!")
 
 
 @router.post("/v1/editor/sql/run", response_model=Result[SqlRunData])
 async def editor_sql_run(run_param: dict = Body()):
-    logger.info("get_editor_sql_run:{}", run_param)
+    logger.info("editor_sql_run:{}", run_param)
     db_name = run_param['db_name']
     sql = run_param['sql']
     if not db_name and not sql:
