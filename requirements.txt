@@ -46,6 +46,7 @@ gradio-client==0.0.8
 wandb
 llama-index==0.5.27
 
+# TODO move bitsandbytes to optional
 bitsandbytes
 accelerate>=0.20.3
 
