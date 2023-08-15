@@ -39,7 +39,7 @@ logger = build_logger("api_editor_v1", LOGDIR + "api_editor_v1.log")
 
 @router.get("/v1/editor/db/tables", response_model=Result[DbTable])
 async def get_editor_tables(db_name: str, page_index: int, page_size: int, search_str: str = ""):
-    logger.info("get_editor_tables:{},{},{},{}", db_name, page_index, page_size, search_str)
+    logger.info(f"get_editor_tables:{db_name},{page_index},{page_size},{search_str}")
     db_conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
     tables = db_conn.get_table_names()
     db_node: DataNode = DataNode(title=db_name, key=db_name, type="db")
@@ -57,7 +57,7 @@ async def get_editor_tables(db_name: str, page_index: int, page_size: int, searc
 
 @router.get("/v1/editor/sql/rounds", response_model=Result[ChatDbRounds])
 async def get_editor_sql_rounds(con_uid: str):
-    logger.info("get_editor_sql_rounds:{}", con_uid)
+    logger.info("get_editor_sql_rounds:{con_uid}")
     history_mem = DuckdbHistoryMemory(con_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
@@ -76,7 +76,7 @@ async def get_editor_sql_rounds(con_uid: str):
 
 @router.get("/v1/editor/sql", response_model=Result[dict])
 async def get_editor_sql(con_uid: str, round: int):
-    logger.info("get_editor_sql:{},{}", con_uid, round)
+    logger.info(f"get_editor_sql:{con_uid},{round}")
     history_mem = DuckdbHistoryMemory(con_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
@@ -90,26 +90,33 @@ async def get_editor_sql(con_uid: str, round: int):
 
 @router.post("/v1/editor/sql/run", response_model=Result[SqlRunData])
 async def editor_sql_run(run_param: dict = Body()):
-    logger.info("editor_sql_run:{}", run_param)
+    logger.info(f"editor_sql_run:{run_param}")
     db_name = run_param['db_name']
     sql = run_param['sql']
     if not db_name and not sql:
         return Result.faild("SQL run param error！")
     conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
 
-    start_time = time.time() * 1000
-    colunms, sql_result = conn.query_ex(sql)
-    # 计算执行耗时
-    end_time = time.time() * 1000
-    sql_run_data: SqlRunData = SqlRunData(result_info="",
-                                          run_cost=(end_time - start_time) / 1000,
-                                          colunms=colunms,
-                                          values=sql_result
-                                          )
-    return Result.succ(sql_run_data)
+    try:
+        start_time = time.time() * 1000
+        colunms, sql_result = conn.query_ex(sql)
+        # 计算执行耗时
+        end_time = time.time() * 1000
+        sql_run_data: SqlRunData = SqlRunData(result_info="",
+                                              run_cost=(end_time - start_time) / 1000,
+                                              colunms=colunms,
+                                              values=sql_result
+                                              )
+        return Result.succ(sql_run_data)
+    except Exception as e:
+        return Result.succ(SqlRunData(result_info=str(e),
+                                      run_cost=0,
+                                      colunms=[],
+                                      values=[]
+                                      ))
 
 
-@router.post("/v1/sql/editor/submit", response_model=Result)
+@router.post("/v1/sql/editor/submit")
 async def sql_editor_submit(sql_edit_context: ChatSqlEditContext = Body()):
     logger.info(f"sql_editor_submit:{sql_edit_context.__dict__}")
     history_mem = DuckdbHistoryMemory(sql_edit_context.conv_uid)
@@ -136,7 +143,7 @@ async def sql_editor_submit(sql_edit_context: ChatSqlEditContext = Body()):
 
 @router.get("/v1/editor/chart/list", response_model=Result[ChartList])
 async def get_editor_chart_list(con_uid: str):
-    logger.info("get_editor_sql_rounds:{}", con_uid)
+    logger.info(f"get_editor_sql_rounds:{con_uid}", )
     history_mem = DuckdbHistoryMemory(con_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
@@ -152,8 +159,7 @@ async def get_editor_chart_list(con_uid: str):
 
 @router.get("/v1/editor/chart/info", response_model=Result[ChartDetail])
 async def get_editor_chart_info(con_uid: str, chart_title: str):
-    logger.info(f"get_editor_sql_rounds:{con_uid}")
-    logger.info("get_editor_sql_rounds:{}", con_uid)
+    logger.info(f"get_editor_chart_info:{con_uid},{chart_title}")
     history_mem = DuckdbHistoryMemory(con_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
@@ -184,24 +190,34 @@ async def get_editor_chart_info(con_uid: str, chart_title: str):
 
 
 @router.post("/v1/editor/chart/run", response_model=Result[ChartRunData])
-async def editor_chart_run(db_name: str, sql: str):
-    logger.info(f"editor_chart_run:{db_name},{sql}")
+async def editor_chart_run(run_param: dict = Body()):
+    logger.info(f"editor_chart_run:{run_param}")
+    db_name = run_param['db_name']
+    sql = run_param['sql']
+    if not db_name and not sql:
+        return Result.faild("SQL run param error！")
     dashboard_data_loader: DashboardDataLoader = DashboardDataLoader()
     db_conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
 
     field_names, chart_values = dashboard_data_loader.get_chart_values_by_conn(db_conn, sql)
 
-    start_time = time.time() * 1000
-    colunms, sql_result = db_conn.query_ex(sql)
-    # 计算执行耗时
-    end_time = time.time() * 1000
-    sql_run_data: SqlRunData = SqlRunData(result_info="",
-                                          run_cost=(end_time - start_time) / 1000,
-                                          colunms=colunms,
-                                          values=sql_result
-                                          )
-    return Result.succ(ChartRunData(sql_data=sql_run_data, chart_values=chart_values))
-
+    try:
+        start_time = time.time() * 1000
+        colunms, sql_result = db_conn.query_ex(sql)
+        # 计算执行耗时
+        end_time = time.time() * 1000
+        sql_run_data: SqlRunData = SqlRunData(result_info="",
+                                              run_cost=(end_time - start_time) / 1000,
+                                              colunms=colunms,
+                                              values=sql_result
+                                              )
+        return Result.succ(ChartRunData(sql_data=sql_run_data, chart_values=chart_values))
+    except Exception as e:
+        return Result.succ(SqlRunData(result_info=str(e),
+                                      run_cost=0,
+                                      colunms=[],
+                                      values=[]
+                                      ))
 
 @router.post("/v1/chart/editor/submit", response_model=Result[bool])
 async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body()):

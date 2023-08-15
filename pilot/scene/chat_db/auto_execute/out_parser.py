@@ -52,7 +52,3 @@ class DbChatOutputParser(BaseOutputParser):
            return data_loader.get_table_view_by_conn(data, speak)
 
 
-
-    @property
-    def _type(self) -> str:
-        return "sql_chat"
