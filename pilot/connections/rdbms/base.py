@@ -78,16 +78,7 @@ class RDBMSDatabase(BaseConnect):
         self._metadata = MetaData()
         self._metadata.reflect(bind=self._engine)
 
-        # including view support by adding the views as well as tables to the all
-        # tables list if view_support is True
-        self._all_tables = set(
-            self._inspector.get_table_names(schema=self._engine.url.database)
-            + (
-                self._inspector.get_view_names(schema=self._engine.url.database)
-                if self.view_support
-                else []
-            )
-        )
+        self._all_tables = self._sync_tables_from_db()
 
     @classmethod
     def from_uri_db(
@@ -127,6 +118,26 @@ class RDBMSDatabase(BaseConnect):
     def dialect(self) -> str:
         """Return string representation of dialect to use."""
         return self._engine.dialect.name
+
+    def _sync_tables_from_db(self) -> Iterable[str]:
+        """Read table information from database"""
+        # TODO Use a background thread to refresh periodically
+
+        # SQL will raise error with schema
+        _schema = (
+            None if self.db_type == DBType.SQLite.value() else self._engine.url.database
+        )
+        # including view support by adding the views as well as tables to the all
+        # tables list if view_support is True
+        self._all_tables = set(
+            self._inspector.get_table_names(schema=_schema)
+            + (
+                self._inspector.get_view_names(schema=_schema)
+                if self.view_support
+                else []
+            )
+        )
+        return self._all_tables
 
     def get_usable_table_names(self) -> Iterable[str]:
         """Get names of tables available."""

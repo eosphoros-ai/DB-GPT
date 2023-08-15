@@ -18,13 +18,13 @@ services:
     networks:
       - dbgptnet
   webserver:
-    image: db-gpt:latest
+    image: eosphorosai/dbgpt-allinone:latest
     command: python3 pilot/server/dbgpt_server.py
     environment:
       - LOCAL_DB_HOST=db
       - LOCAL_DB_PASSWORD=aa123456
       - ALLOWLISTED_PLUGINS=db_dashboard
-      - LLM_MODEL=vicuna-13b
+      - LLM_MODEL=vicuna-13b-v1.5
     depends_on:
       - db
     volumes:

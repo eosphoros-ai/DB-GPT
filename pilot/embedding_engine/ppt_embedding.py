@@ -10,7 +10,7 @@ from langchain.text_splitter import (
 )
 
 from pilot.embedding_engine import SourceEmbedding, register
-from pilot.embedding_engine.ppt_loader import PPTLoader
+from pilot.embedding_engine.loader.ppt_loader import PPTLoader
 
 
 class PPTEmbedding(SourceEmbedding):
