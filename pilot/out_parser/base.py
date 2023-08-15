@@ -226,13 +226,13 @@ class BaseOutputParser(ABC):
         """Instructions on how the LLM output should be formatted."""
         raise NotImplementedError
 
-    @property
-    def _type(self) -> str:
-        """Return the type key."""
-        raise NotImplementedError(
-            f"_type property is not implemented in class {self.__class__.__name__}."
-            " This is required for serialization."
-        )
+    # @property
+    # def _type(self) -> str:
+    #     """Return the type key."""
+    #     raise NotImplementedError(
+    #         f"_type property is not implemented in class {self.__class__.__name__}."
+    #         " This is required for serialization."
+    #     )
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of output parser."""

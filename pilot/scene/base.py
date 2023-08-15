@@ -27,6 +27,21 @@ class ChatScene(Enum):
         "Dialogue with your private data through natural language.",
         ["DB Select"],
     )
+    ExcelLearning = Scene(
+        "excel_learning",
+        "Excel Learning",
+        "Analyze and summarize your excel files.",
+        [],
+        True,
+        True
+    )
+    ChatExcel = Scene(
+        "chat_excel",
+        "Chat Excel",
+        "Dialogue with your excel, use natural language.",
+        ["File Select"],
+    )
+
     ChatWithDbQA = Scene(
         "chat_with_db_qa",
         "Chat DB",

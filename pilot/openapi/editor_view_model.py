@@ -57,8 +57,8 @@ class ChatSqlEditContext(BaseModel):
 
     old_sql: str
     old_speak: str
-    gmt_create: int
+    gmt_create: int = 0
 
     new_sql: str
-    new_speak: str
-    new_view_info: str
+    new_speak: str = ""
+    new_view_info: str = ""
