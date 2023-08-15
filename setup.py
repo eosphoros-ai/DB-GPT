@@ -117,8 +117,28 @@ def llama_cpp_python_cuda_requires():
 
 
 def llama_cpp_requires():
+    """
+    pip install "db-gpt[llama_cpp]"
+    """
     setup_spec.extras["llama_cpp"] = ["llama-cpp-python"]
     llama_cpp_python_cuda_requires()
+
+
+def all_vector_store_requires():
+    """
+    pip install "db-gpt[vstore]"
+    """
+    setup_spec.extras["vstore"] = [
+        "grpcio==1.47.5",  # maybe delete it
+        "pymilvus==2.2.1",
+    ]
+
+
+def all_datasource_requires():
+    """
+    pip install "db-gpt[datasource]"
+    """
+    setup_spec.extras["datasource"] = ["pymssql", "pymysql"]
 
 
 def all_requires():
@@ -130,11 +150,15 @@ def all_requires():
 
 
 llama_cpp_requires()
+all_vector_store_requires()
+all_datasource_requires()
+
+# must be last
 all_requires()
 
 setuptools.setup(
     name="db-gpt",
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests", "*.tests", "*.tests.*", "examples")),
     version="0.3.5",
     author="csunny",
     author_email="cfqcsunny@gmail.com",
