@@ -2,48 +2,24 @@
 # -*- coding: utf-8 -*-
 
 from typing import Optional, Dict
-import dataclasses
 import torch
 
 from pilot.configs.model_config import DEVICE
-from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper
+from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper, ModelType
 from pilot.model.compression import compress_module
+from pilot.model.parameter import (
+    EnvArgumentParser,
+    ModelParameters,
+    LlamaCppModelParameters,
+    _genenv_ignoring_key_case,
+)
 from pilot.model.llm.monkey_patch import replace_llama_attn_with_non_inplace_operations
 from pilot.singleton import Singleton
 from pilot.utils import get_gpu_memory
 from pilot.logs import logger
 
 
-class ModelType:
-    """ "Type of model"""
-
-    HF = "huggingface"
-    LLAMA_CPP = "llama.cpp"
-    # TODO, support more model type
-
-
-@dataclasses.dataclass
-class ModelParams:
-    device: str
-    model_name: str
-    model_path: str
-    model_type: Optional[str] = ModelType.HF
-    num_gpus: Optional[int] = None
-    max_gpu_memory: Optional[str] = None
-    cpu_offloading: Optional[bool] = False
-    load_8bit: Optional[bool] = True
-    load_4bit: Optional[bool] = False
-    # quantization datatypes, `fp4` (four bit float) and `nf4` (normal four bit float)
-    quant_type: Optional[str] = "nf4"
-    # Nested quantization is activated through `use_double_quant``
-    use_double_quant: Optional[bool] = True
-    # "bfloat16", "float16", "float32"
-    compute_dtype: Optional[str] = None
-    debug: Optional[bool] = False
-    trust_remote_code: Optional[bool] = True
-
-
-def _check_multi_gpu_or_4bit_quantization(model_params: ModelParams):
+def _check_multi_gpu_or_4bit_quantization(model_params: ModelParameters):
     # TODO: vicuna-v1.5 8-bit quantization info is slow
     # TODO: support wizardlm quantization, see: https://huggingface.co/WizardLM/WizardLM-13B-V1.2/discussions/5
     model_name = model_params.model_name.lower()
@@ -51,7 +27,7 @@ def _check_multi_gpu_or_4bit_quantization(model_params: ModelParams):
     return any(m in model_name for m in supported_models)
 
 
-def _check_quantization(model_params: ModelParams):
+def _check_quantization(model_params: ModelParameters):
     model_name = model_params.model_name.lower()
     has_quantization = any([model_params.load_8bit or model_params.load_4bit])
     if has_quantization:
@@ -69,6 +45,21 @@ def _check_quantization(model_params: ModelParams):
     return has_quantization
 
 
+def _get_model_real_path(model_name, default_model_path) -> str:
+    """Get model real path by model name
+    priority from high to low:
+    1. environment variable with key: {model_name}_model_path
+    2. environment variable with key: model_path
+    3. default_model_path
+    """
+    env_prefix = model_name + "_"
+    env_prefix = env_prefix.replace("-", "_")
+    env_model_path = _genenv_ignoring_key_case("model_path", env_prefix=env_prefix)
+    if env_model_path:
+        return env_model_path
+    return _genenv_ignoring_key_case("model_path", default_value=default_model_path)
+
+
 class ModelLoader(metaclass=Singleton):
     """Model loader is a class for model load
 
@@ -83,6 +74,7 @@ class ModelLoader(metaclass=Singleton):
         self.device = DEVICE
         self.model_path = model_path
         self.model_name = model_name
+        self.prompt_template: str = None
         self.kwargs = {
             "torch_dtype": torch.float16,
             "device_map": "auto",
@@ -97,7 +89,18 @@ class ModelLoader(metaclass=Singleton):
         cpu_offloading=False,
         max_gpu_memory: Optional[str] = None,
     ):
-        model_params = ModelParams(
+        llm_adapter = get_llm_model_adapter(self.model_name, self.model_path)
+        model_type = llm_adapter.model_type()
+        param_cls = llm_adapter.model_param_class(model_type)
+
+        args_parser = EnvArgumentParser()
+        # Read the parameters of the model from the environment variable according to the model name prefix, which currently has the highest priority
+        # vicuna_13b_max_gpu_memory=13Gib or VICUNA_13B_MAX_GPU_MEMORY=13Gib
+        env_prefix = self.model_name + "_"
+        env_prefix = env_prefix.replace("-", "_")
+        model_params = args_parser.parse_args_into_dataclass(
+            param_cls,
+            env_prefix=env_prefix,
             device=self.device,
             model_path=self.model_path,
             model_name=self.model_name,
@@ -105,14 +108,21 @@ class ModelLoader(metaclass=Singleton):
             cpu_offloading=cpu_offloading,
             load_8bit=load_8bit,
             load_4bit=load_4bit,
-            debug=debug,
+            verbose=debug,
         )
+        self.prompt_template = model_params.prompt_template
+
         logger.info(f"model_params:\n{model_params}")
-        llm_adapter = get_llm_model_adapter(model_params.model_path)
-        return huggingface_loader(llm_adapter, model_params)
+
+        if model_type == ModelType.HF:
+            return huggingface_loader(llm_adapter, model_params)
+        elif model_type == ModelType.LLAMA_CPP:
+            return llamacpp_loader(llm_adapter, model_params)
+        else:
+            raise Exception(f"Unkown model type {model_type}")
 
 
-def huggingface_loader(llm_adapter: BaseLLMAdaper, model_params: ModelParams):
+def huggingface_loader(llm_adapter: BaseLLMAdaper, model_params: ModelParameters):
     device = model_params.device
     max_memory = None
 
@@ -175,14 +185,14 @@ def huggingface_loader(llm_adapter: BaseLLMAdaper, model_params: ModelParams):
             pass
         except AttributeError:
             pass
-    if model_params.debug:
+    if model_params.verbose:
         print(model)
     return model, tokenizer
 
 
 def load_huggingface_quantization_model(
     llm_adapter: BaseLLMAdaper,
-    model_params: ModelParams,
+    model_params: ModelParameters,
     kwargs: Dict,
     max_memory: Dict[int, str],
 ):
@@ -311,4 +321,18 @@ def load_huggingface_quantization_model(
             use_fast=llm_adapter.use_fast_tokenizer(),
         )
 
+    return model, tokenizer
+
+
+def llamacpp_loader(llm_adapter: BaseLLMAdaper, model_params: LlamaCppModelParameters):
+    try:
+        from pilot.model.llm.llama_cpp.llama_cpp import LlamaCppModel
+    except ImportError as exc:
+        raise ValueError(
+            "Could not import python package: llama-cpp-python "
+            "Please install db-gpt llama support with `cd $DB-GPT-DIR && pip install .[llama_cpp]` "
+            "or install llama-cpp-python with `pip install llama-cpp-python`"
+        ) from exc
+    model_path = model_params.model_path
+    model, tokenizer = LlamaCppModel.from_pretrained(model_path, model_params)
     return model, tokenizer
