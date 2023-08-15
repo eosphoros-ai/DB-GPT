@@ -31,15 +31,20 @@ CFG = Config()
 
 
 class ModelWorker:
-    def __init__(self, model_path, model_name, device, num_gpus=1):
+    def __init__(self, model_path, model_name, device):
         if model_path.endswith("/"):
             model_path = model_path[:-1]
         self.model_name = model_name or model_path.split("/")[-1]
         self.device = device
         print(f"Loading {model_name} LLM ModelServer in {device}! Please Wait......")
-        self.ml = ModelLoader(model_path=model_path)
+        self.ml: ModelLoader = ModelLoader(
+            model_path=model_path, model_name=self.model_name
+        )
         self.model, self.tokenizer = self.ml.loader(
-            num_gpus, load_8bit=ISLOAD_8BIT, debug=ISDEBUG
+            load_8bit=CFG.IS_LOAD_8BIT,
+            load_4bit=CFG.IS_LOAD_4BIT,
+            debug=ISDEBUG,
+            max_gpu_memory=CFG.MAX_GPU_MEMORY,
         )
 
         if not isinstance(self.model, str):
@@ -56,7 +61,9 @@ class ModelWorker:
             self.context_len = 2048
 
         self.llm_chat_adapter = get_llm_chat_adapter(model_path)
-        self.generate_stream_func = self.llm_chat_adapter.get_generate_stream_func()
+        self.generate_stream_func = self.llm_chat_adapter.get_generate_stream_func(
+            model_path
+        )
 
     def start_check(self):
         print("LLM Model Loading Success！")
@@ -107,9 +114,7 @@ class ModelWorker:
 
 
 model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
-worker = ModelWorker(
-    model_path=model_path, model_name=CFG.LLM_MODEL, device=DEVICE, num_gpus=1
-)
+worker = ModelWorker(model_path=model_path, model_name=CFG.LLM_MODEL, device=DEVICE)
 
 app = FastAPI()
 # from pilot.openapi.knowledge.knowledge_controller import router

@@ -20,6 +20,7 @@ from pilot.server.knowledge.request.request import (
     DocumentSyncRequest,
     ChunkQueryRequest,
     DocumentQueryRequest,
+    SpaceArgumentRequest,
 )
 
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
@@ -52,6 +53,35 @@ def space_list(request: KnowledgeSpaceRequest):
         return Result.faild(code="E000X", msg=f"space list error {e}")
 
 
+@router.post("/knowledge/space/delete")
+def space_delete(request: KnowledgeSpaceRequest):
+    print(f"/space/delete params:")
+    try:
+        return Result.succ(knowledge_space_service.delete_space(request.name))
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"space list error {e}")
+
+
+@router.post("/knowledge/{space_name}/arguments")
+def arguments(space_name: str):
+    print(f"/knowledge/space/arguments params:")
+    try:
+        return Result.succ(knowledge_space_service.arguments(space_name))
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"space list error {e}")
+
+
+@router.post("/knowledge/{space_name}/argument/save")
+def arguments_save(space_name: str, argument_request: SpaceArgumentRequest):
+    print(f"/knowledge/space/argument/save params:")
+    try:
+        return Result.succ(
+            knowledge_space_service.argument_save(space_name, argument_request)
+        )
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"space list error {e}")
+
+
 @router.post("/knowledge/{space_name}/document/add")
 def document_add(space_name: str, request: KnowledgeDocumentRequest):
     print(f"/document/add params: {space_name}, {request}")
@@ -72,6 +102,17 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
     try:
         return Result.succ(
             knowledge_space_service.get_knowledge_documents(space_name, query_request)
+        )
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"document list error {e}")
+
+
+@router.post("/knowledge/{space_name}/document/delete")
+def document_delete(space_name: str, query_request: DocumentQueryRequest):
+    print(f"/document/list params: {space_name}, {query_request}")
+    try:
+        return Result.succ(
+            knowledge_space_service.delete_document(space_name, query_request.doc_name)
         )
     except Exception as e:
         return Result.faild(code="E000X", msg=f"document list error {e}")
@@ -103,10 +144,8 @@ async def document_upload(
                 request = KnowledgeDocumentRequest()
                 request.doc_name = doc_name
                 request.doc_type = doc_type
-                request.content = (
-                    os.path.join(
-                        KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
-                    ),
+                request.content = os.path.join(
+                    KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
                 )
                 return Result.succ(
                     knowledge_space_service.create_knowledge_document(

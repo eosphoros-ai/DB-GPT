@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-31 17:04+0800\n"
+"POT-Creation-Date: 2023-08-10 16:38+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,29 +19,29 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../getting_started/getting_started.md:1 7cfda7573f014955a3d1860a8944c3cd
+#: ../../getting_started/getting_started.md:1 b5ce6e0075114e669c78cda63f22dfe6
 msgid "Quickstart Guide"
 msgstr "使用指南"
 
-#: ../../getting_started/getting_started.md:3 65d35e746cdc4fcdb8e712cd675081c6
+#: ../../getting_started/getting_started.md:3 caf6a35c0ddc43199750b2faae2bf95d
 msgid ""
 "This tutorial gives you a quick walkthrough about use DB-GPT with you "
 "environment and data."
 msgstr "本教程为您提供了关于如何使用DB-GPT的使用指南。"
 
-#: ../../getting_started/getting_started.md:5 dd221eaa459044bd805725f4d89fdde2
+#: ../../getting_started/getting_started.md:5 338aae168e63461f84c8233c4cbf4bcc
 msgid "Installation"
 msgstr "安装"
 
-#: ../../getting_started/getting_started.md:7 4736b4728e4f43409162371955e42987
+#: ../../getting_started/getting_started.md:7 62519550906f4fdb99aad61502e7a5e6
 msgid "To get started, install DB-GPT with the following steps."
 msgstr "请按照以下步骤安装DB-GPT"
 
-#: ../../getting_started/getting_started.md:9 550d49c0d50a4a93867840a15e624912
+#: ../../getting_started/getting_started.md:9 f9072092ebf24ebc893604ca86116cd3
 msgid "1. Hardware Requirements"
 msgstr "1. 硬件要求"
 
-#: ../../getting_started/getting_started.md:10 695be3b79d4d4f56b5c8de62646a8c41
+#: ../../getting_started/getting_started.md:10 071c54f9a38e4ef5bb5dcfbf7d4a6004
 msgid ""
 "As our project has the ability to achieve ChatGPT performance of over "
 "85%, there are certain hardware requirements. However, overall, the "
@@ -49,67 +49,69 @@ msgid ""
 "specific hardware requirements for deployment are as follows:"
 msgstr "由于我们的项目有能力达到85%以上的ChatGPT性能，所以对硬件有一定的要求。但总体来说，我们在消费级的显卡上即可完成项目的部署使用，具体部署的硬件说明如下:"
 
-#: ../../getting_started/getting_started.md 1bfd2621414b4ea780167151df2f80ff
+#: ../../getting_started/getting_started.md 4757df7812c64eb4b511aa3b8950c899
 msgid "GPU"
 msgstr "GPU"
 
-#: ../../getting_started/getting_started.md 1a0fc8a2721d46dbb59eb7629c02c480
+#: ../../getting_started/getting_started.md
+#: ../../getting_started/getting_started.md:60 8f316fbd032f474b88d823978d134328
+#: cb3d34d1ed074e1187b60c6f74cf1468
 msgid "VRAM Size"
 msgstr "显存大小"
 
-#: ../../getting_started/getting_started.md 0cc7f0bf931340a1851aa376df8a4a99
+#: ../../getting_started/getting_started.md ac41e6ccf820424b9c497156a317287d
 msgid "Performance"
 msgstr "显存大小"
 
-#: ../../getting_started/getting_started.md dfb52838915146bd906b04383c9a65b7
+#: ../../getting_started/getting_started.md 3ca06ce116754dde958ba21beaedac6f
 msgid "RTX 4090"
 msgstr "RTX 4090"
 
-#: ../../getting_started/getting_started.md 9477f857f6df45f0843139ba5c23f263
-#: d14dfe72732c462d8d8073a7804af548
+#: ../../getting_started/getting_started.md 54e3410cc9a241098ae4412356a89f02
+#: e3f31b30c4c84b45bc63b0ea193d0ed1
 msgid "24 GB"
 msgstr "24 GB"
 
-#: ../../getting_started/getting_started.md c76a371ed992440a8b7b16ad405c273d
+#: ../../getting_started/getting_started.md ff0c37e041a848899b1c3a63bab43404
 msgid "Smooth conversation inference"
 msgstr "可以流畅的进行对话推理，无卡顿"
 
-#: ../../getting_started/getting_started.md 27fea237ff004247a6f5aa4593a5aabc
+#: ../../getting_started/getting_started.md 09120e60cfc640e182e8069a372038cc
 msgid "RTX 3090"
 msgstr "RTX 3090"
 
-#: ../../getting_started/getting_started.md 843f16d5af974b82beabba7d0afceae5
+#: ../../getting_started/getting_started.md 0545dfec3b6d47e1bffc87301a0f05b3
 msgid "Smooth conversation inference, better than V100"
 msgstr "可以流畅进行对话推理，有卡顿感，但好于V100"
 
-#: ../../getting_started/getting_started.md c1ddf9dc9e384a44b988a83bb209814c
+#: ../../getting_started/getting_started.md d41078c0561f47a981a488eb4b9c7a54
 msgid "V100"
 msgstr "V100"
 
-#: ../../getting_started/getting_started.md 94cc69a3ce8a4ea58a0b5c28fb972a41
+#: ../../getting_started/getting_started.md 6aefb19420f4452999544a0da646f067
 msgid "16 GB"
 msgstr "16 GB"
 
-#: ../../getting_started/getting_started.md 9a8a3304aab84a2687db2185361e2fe0
+#: ../../getting_started/getting_started.md 8e06966b88234f4898729750d724e272
 msgid "Conversation inference possible, noticeable stutter"
 msgstr "可以进行对话推理，有明显卡顿"
 
-#: ../../getting_started/getting_started.md:18 8c83ffd018b242dbb626312ac0c69b79
+#: ../../getting_started/getting_started.md:18 113957ae638e4799a47e58a2ca259ce8
 msgid "2. Install"
 msgstr "2. 安装"
 
-#: ../../getting_started/getting_started.md:20 bab57fbe66814f51959c77a55a24005e
+#: ../../getting_started/getting_started.md:20 e068b950171f4c48a9e125ece31f75b9
 #, fuzzy
 msgid ""
 "1.This project relies on a local MySQL database service, which you need "
 "to install locally. We recommend using Docker for installation."
 msgstr "本项目依赖一个本地的 MySQL 数据库服务，你需要本地安装，推荐直接使用 Docker 安装。"
 
-#: ../../getting_started/getting_started.md:24 f0033070a3d5412a94d69deaca81a8a8
+#: ../../getting_started/getting_started.md:24 f115b61438ad403aaaae0fc4970a982b
 msgid "prepare server sql script"
 msgstr "准备db-gpt server sql脚本"
 
-#: ../../getting_started/getting_started.md:29 2d4c2ea402c1448e8372168ee81c7fb7
+#: ../../getting_started/getting_started.md:29 c5f707269582464e92e5fd57365f5a51
 msgid ""
 "We use [Chroma embedding database](https://github.com/chroma-core/chroma)"
 " as the default for our vector database, so there is no need for special "
@@ -122,11 +124,11 @@ msgstr ""
 "向量数据库我们默认使用的是Chroma内存数据库，所以无需特殊安装，如果有需要连接其他的同学，可以按照我们的教程进行安装配置。整个DB-"
 "GPT的安装过程，我们使用的是miniconda3的虚拟环境。创建虚拟环境，并安装python依赖包"
 
-#: ../../getting_started/getting_started.md:38 125c03f282f3449b9f17f025857b10e2
+#: ../../getting_started/getting_started.md:38 377381c76f32409298f4184f23653205
 msgid "Before use DB-GPT Knowledge Management"
 msgstr "使用知识库管理功能之前"
 
-#: ../../getting_started/getting_started.md:44 4d1d8f2d4f044fdeb1b622fabb87a0ea
+#: ../../getting_started/getting_started.md:44 62e7e96a18ca495595b3dfab97ca387e
 msgid ""
 "Once the environment is installed, we have to create a new folder "
 "\"models\" in the DB-GPT project, and then we can put all the models "
@@ -135,33 +137,40 @@ msgstr ""
 "环境安装完成后，我们必须在DB-"
 "GPT项目中创建一个新文件夹\"models\"，然后我们可以把从huggingface下载的所有模型放到这个目录下。"
 
-#: ../../getting_started/getting_started.md:47 00b27ca566f242cfbc3d0fac77654063
+#: ../../getting_started/getting_started.md:47 e34d946ab06e47dba81cf50348987594
 #, fuzzy
 msgid "Notice make sure you have install git-lfs"
 msgstr "确保你已经安装了git-lfs"
 
-#: ../../getting_started/getting_started.md:57 b8c136cbdbc34f90b09a52362b785563
+#: ../../getting_started/getting_started.md:58 07149cfac5314daabbd37dc1cef82905
 msgid ""
 "The model files are large and will take a long time to download. During "
 "the download, let's configure the .env file, which needs to be copied and"
 " created from the .env.template"
 msgstr "模型文件很大，需要很长时间才能下载。在下载过程中，让我们配置.env文件，它需要从。env.template中复制和创建。"
 
-#: ../../getting_started/getting_started.md:60 a15420a447c443dabb9f60e460a9ab97
+#: ../../getting_started/getting_started.md:61 b8da240286e04573a2d731d228fbdb1e
 msgid "cp .env.template .env"
 msgstr "cp .env.template .env"
 
-#: ../../getting_started/getting_started.md:63 134bf228f94c4aec89c34e69e006af35
+#: ../../getting_started/getting_started.md:64 c2b05910bba14e5b9b49f8ad8c436412
 msgid ""
 "You can configure basic parameters in the .env file, for example setting "
 "LLM_MODEL to the model to be used"
 msgstr "您可以在.env文件中配置基本参数，例如将LLM_MODEL设置为要使用的模型。"
 
-#: ../../getting_started/getting_started.md:65 c25744934b7142449e09dd57e0c98cc6
+#: ../../getting_started/getting_started.md:66 4af57c4cbf4744a8af83083d051098b3
+msgid ""
+"([Vicuna-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5) based on "
+"llama-2 has been released, we recommend you set `LLM_MODEL=vicuna-"
+"13b-v1.5` to try this model)"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:68 62287c3828ba48c4871dd831af7d819a
 msgid "3. Run"
 msgstr "3. 运行"
 
-#: ../../getting_started/getting_started.md:66 e2bd77426e054a99801faa76ffa1046a
+#: ../../getting_started/getting_started.md:69 7a04f6c514c34d87a03b105de8a03f0b
 msgid ""
 "You can refer to this document to obtain the Vicuna weights: "
 "[Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-"
@@ -170,7 +179,7 @@ msgstr ""
 "关于基础模型, 可以根据[Vicuna](https://github.com/lm-"
 "sys/FastChat/blob/main/README.md#model-weights) 合成教程进行合成。"
 
-#: ../../getting_started/getting_started.md:68 794d5f1a8afc4667bbc848cc7192e9bd
+#: ../../getting_started/getting_started.md:71 72c9ad9d95c34b42807ed0a1e46adb73
 msgid ""
 "If you have difficulty with this step, you can also directly use the "
 "model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a "
@@ -179,7 +188,7 @@ msgstr ""
 "如果此步有困难的同学，也可以直接使用[此链接](https://huggingface.co/Tribbiani/vicuna-"
 "7b)上的模型进行替代。"
 
-#: ../../getting_started/getting_started.md:70 72be6fe338304f9e8639e16b75859343
+#: ../../getting_started/getting_started.md:73 889cf1a4dbd2422580fe59d9f3eab6bf
 msgid ""
 "set .env configuration set your vector store type, "
 "eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > "
@@ -188,21 +197,21 @@ msgstr ""
 "在.env文件设置向量数据库环境变量，eg:VECTOR_STORE_TYPE=Chroma, 目前我们支持了 Chroma and "
 "Milvus(version >2.1) "
 
-#: ../../getting_started/getting_started.md:73 e36089f05a5a41a2affcea15ecd1ac3d
+#: ../../getting_started/getting_started.md:76 28a2ec60d35c43edab71bac103ccb0e0
 #, fuzzy
 msgid "1.Run db-gpt server"
 msgstr "运行模型服务"
 
-#: ../../getting_started/getting_started.md:78
-#: ../../getting_started/getting_started.md:127
-#: ../../getting_started/getting_started.md:181
-#: 4136b297d88e4dedb1616f28885a8cd6 eec0acd695454df59c67358889f971fb
-#: f4f47ac8b1c549e0b2a68f16774fac64
+#: ../../getting_started/getting_started.md:81
+#: ../../getting_started/getting_started.md:140
+#: ../../getting_started/getting_started.md:194
+#: 04ed6e8729604ee59edd16995301f0d5 225139430ee947cb8a191f1641f581b3
+#: b33473644c124fdf9fe9912307cb6a9d
 #, fuzzy
 msgid "Open http://localhost:5000 with your browser to see the product."
 msgstr "打开浏览器访问http://localhost:5000"
 
-#: ../../getting_started/getting_started.md:80 ef391125ac0d43358e4701bafe780b4a
+#: ../../getting_started/getting_started.md:83 8068aef8a84e46b59caf59de32ad6e2b
 msgid ""
 "If you want to access an external LLM service, you need to 1.set the "
 "variables LLM_MODEL=YOUR_MODEL_NAME "
@@ -210,92 +219,277 @@ msgid ""
 "file. 2.execute dbgpt_server.py in light mode"
 msgstr "如果你想访问外部的大模型服务，1.需要在.env文件设置模型名和外部模型服务地址。2.使用light模式启动服务"
 
-#: ../../getting_started/getting_started.md:87 eb22acf6142b4a81bbab0bf1192f577c
+#: ../../getting_started/getting_started.md:86 4a11e53950ac489a891ca8dc67c26ca0
+#, fuzzy
 msgid ""
-"If you want to learn about dbgpt-webui, read https://github.com/csunny"
-"/DB-GPT/tree/new-page-framework/datacenter"
+"If you want to learn about dbgpt-webui, read https://github./csunny/DB-"
+"GPT/tree/new-page-framework/datacenter"
 msgstr ""
 "如果你想了解DB-GPT前端服务，访问https://github.com/csunny/DB-GPT/tree/new-page-"
 "framework/datacenter"
 
-#: ../../getting_started/getting_started.md:89 bc58c998b37242f8b4a37588bccc612b
+#: ../../getting_started/getting_started.md:92 6a2b09ea9ba64c879d3e7ca154d95095
 msgid "4. Docker (Experimental)"
-msgstr ""
+msgstr "4. Docker (Experimental)"
 
-#: ../../getting_started/getting_started.md:91 3c95ec21279b43ba83e3a4e845511f26
+#: ../../getting_started/getting_started.md:94 5cef89f829ce4da299f9b430fd52c446
 msgid "4.1 Building Docker image"
-msgstr ""
+msgstr "4.1 Building Docker image"
 
-#: ../../getting_started/getting_started.md:97 01be8cbb915f4d02a84b25be3005a200
+#: ../../getting_started/getting_started.md:100
+#: b3999a9169694b209bd4848c6458ff41
 msgid "Review images by listing them:"
-msgstr ""
+msgstr "Review images by listing them:"
 
-#: ../../getting_started/getting_started.md:103
-#: ../../getting_started/getting_started.md:167
-#: 8664141a7b2f4a6a8f770ae72bc5a815 f1be761680804bb9b6a4928b46dfe598
+#: ../../getting_started/getting_started.md:106
+#: ../../getting_started/getting_started.md:180
+#: 10486e7f872f4c13a384b75e564e37fe 5b142d0a103848fa82fafd40a557f998
 msgid "Output should look something like the following:"
-msgstr ""
+msgstr "Output should look something like the following:"
 
-#: ../../getting_started/getting_started.md:110
-#: 5fff19374f1d4b3ba3bb642f987e8b66
+#: ../../getting_started/getting_started.md:113
+#: 83dd5525d0f7481fac57e5898605e7f3
+msgid "You can pass some parameters to docker/build_all_images.sh."
+msgstr "You can pass some parameters to docker/build_all_images.sh."
+
+#: ../../getting_started/getting_started.md:121
+#: d5b916efd7b84972b68a4aa50ebc047c
+msgid ""
+"You can execute the command `bash docker/build_all_images.sh --help` to "
+"see more usage."
+msgstr "You can execute the command `bash docker/build_all_images.sh --help` to "
+"see more usage."
+
+#: ../../getting_started/getting_started.md:123
+#: 0d01cafcfde04c92b4115d804dd9e912
 msgid "4.2. Run all in one docker container"
-msgstr ""
+msgstr "4.2. Run all in one docker container"
 
-#: ../../getting_started/getting_started.md:112
-#: 5b0137ca2d0345bea0a005fdf4037702
+#: ../../getting_started/getting_started.md:125
+#: 90d49baea1d34f01a0db696fd567bfba
 msgid "**Run with local model**"
-msgstr ""
+msgstr "**Run with local model**"
 
-#: ../../getting_started/getting_started.md:130
-#: 51495a6801e94901935481d57399ed20
+#: ../../getting_started/getting_started.md:143
+#: 422a237241014cac9917832ac053aed5
 msgid ""
 "`-e LLM_MODEL=vicuna-13b`, means we use vicuna-13b as llm model, see "
 "/pilot/configs/model_config.LLM_MODEL_CONFIG"
-msgstr ""
+msgstr "`-e LLM_MODEL=vicuna-13b`, means we use vicuna-13b as llm model, see /pilot/configs/model_config.LLM_MODEL_CONFIG"
 
-#: ../../getting_started/getting_started.md:131
-#: 753a8cf0ebbd4c62be9d5fbb7e5cf691
+#: ../../getting_started/getting_started.md:144
+#: af5fb303a0c64567b9c82a3ce3b00aaa
 msgid ""
 "`-v /data/models:/app/models`, means we mount the local model file "
 "directory `/data/models` to the docker container directory `/app/models`,"
 " please replace it with your model file directory."
-msgstr ""
+msgstr "`-v /data/models:/app/models`, means we mount the local model file "
+"directory `/data/models` to the docker container directory `/app/models`,"
+" please replace it with your model file directory."
 
-#: ../../getting_started/getting_started.md:133
-#: ../../getting_started/getting_started.md:175
-#: 043b3966baf045aca5615214d9be632a 328b58e3a9ba46a39f0511970f43743c
+#: ../../getting_started/getting_started.md:146
+#: ../../getting_started/getting_started.md:188
+#: 05652e117c3f4d3aaea0269f980cf975 3844ae7eeec54804b05bc8aea01c3e36
 msgid "You can see log with command:"
-msgstr ""
+msgstr "You can see log with command:"
 
-#: ../../getting_started/getting_started.md:139
-#: f6a0a66509f343d4a3306cd884a49dbc
+#: ../../getting_started/getting_started.md:152
+#: 665aa47936aa40458fe33dd73c76513d
 msgid "**Run with openai interface**"
-msgstr ""
+msgstr "**Run with openai interface**"
 
-#: ../../getting_started/getting_started.md:158
-#: 65fabfc317ac41c6aaeb80e6f2e1d379
+#: ../../getting_started/getting_started.md:171
+#: 98d627b0f7f149dfb9c7365e3ba082a1
 msgid ""
 "`-e LLM_MODEL=proxyllm`, means we use proxy llm(openai interface, "
 "fastchat interface...)"
-msgstr ""
+msgstr "`-e LLM_MODEL=proxyllm`, means we use proxy llm(openai interface, "
+"fastchat interface...)"
 
-#: ../../getting_started/getting_started.md:159
-#: fb2230ca032b4a4d9cdab8d37b3ad02c
+#: ../../getting_started/getting_started.md:172
+#: b293dedb88034aaab9a3b740e82d7adc
 msgid ""
 "`-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-"
 "chinese`, means we mount the local text2vec model to the docker "
 "container."
+msgstr "`-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-"
+"chinese`, means we mount the local text2vec model to the docker "
+"container."
+
+#: ../../getting_started/getting_started.md:174
+#: e48085324a324749af8a21bad8e7ca0e
+msgid "4.3. Run with docker compose"
 msgstr ""
 
-#: ../../getting_started/getting_started.md:161
-#: 12c7a94038274324a2996873df60db93
-msgid "4.2. Run with docker compose"
-msgstr ""
-
-#: ../../getting_started/getting_started.md:183
-#: 6ec270a68a094d4894abd2ef02739229
+#: ../../getting_started/getting_started.md:196
+#: a356d9ae292f4dc3913c5999e561d533
 msgid ""
 "You can open docker-compose.yml in the project root directory to see more"
 " details."
+msgstr "You can open docker-compose.yml in the project root directory to see more"
+" details."
+
+#: ../../getting_started/getting_started.md:199
+#: 0c644409bce34bf4b898c26e24f7a1ac
+msgid "5. Multiple GPUs"
+msgstr "5. Multiple GPUs"
+
+#: ../../getting_started/getting_started.md:201
+#: af435b17984341e5abfd2d9b64fbde20
+msgid ""
+"DB-GPT will use all available gpu by default. And you can modify the "
+"setting `CUDA_VISIBLE_DEVICES=0,1` in `.env` file to use the specific gpu"
+" IDs."
+msgstr "DB-GPT will use all available gpu by default. And you can modify the "
+"setting `CUDA_VISIBLE_DEVICES=0,1` in `.env` file to use the specific gpu"
+" IDs."
+
+#: ../../getting_started/getting_started.md:203
+#: aac3e9cec74344fd963e2136a26384af
+msgid ""
+"Optionally, you can also specify the gpu ID to use before the starting "
+"command, as shown below:"
+msgstr "Optionally, you can also specify the gpu ID to use before the starting "
+"command, as shown below:"
+
+#: ../../getting_started/getting_started.md:213
+#: 3351daf4f5a04b76bae2e9cd8740549e
+msgid ""
+"You can modify the setting `MAX_GPU_MEMORY=xxGib` in `.env` file to "
+"configure the maximum memory used by each GPU."
 msgstr ""
+
+#: ../../getting_started/getting_started.md:215
+#: fabf9090b7c649b59b91742ba761339c
+msgid "6. Not Enough Memory"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:217
+#: d23322783fd34364acebe1679d7ca554
+msgid "DB-GPT supported 8-bit quantization and 4-bit quantization."
+msgstr ""
+
+#: ../../getting_started/getting_started.md:219
+#: 8699aa0b5fe049099fb1e8038f9ad1ee
+msgid ""
+"You can modify the setting `QUANTIZE_8bit=True` or `QUANTIZE_4bit=True` "
+"in `.env` file to use quantization(8-bit quantization is enabled by "
+"default)."
+msgstr ""
+
+#: ../../getting_started/getting_started.md:221
+#: b115800c207b49b39de5e1a548feff58
+msgid ""
+"Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit"
+" quantization can run with 48 GB of VRAM."
+msgstr "Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit"
+" quantization can run with 48 GB of VRAM."
+
+#: ../../getting_started/getting_started.md:223
+#: ae7146f0995d4eca9f775c39898d5313
+msgid ""
+"Note: you need to install the latest dependencies according to "
+"[requirements.txt](https://github.com/eosphoros-ai/DB-"
+"GPT/blob/main/requirements.txt)."
+msgstr "Note: you need to install the latest dependencies according to "
+"[requirements.txt](https://github.com/eosphoros-ai/DB-"
+"GPT/blob/main/requirements.txt)."
+
+#: ../../getting_started/getting_started.md:226
+#: 58987c486d2641cda3180a77af26c56d
+msgid ""
+"Here are some of the VRAM size usage of the models we tested in some "
+"common scenarios."
+msgstr "Here are some of the VRAM size usage of the models we tested in some "
+"common scenarios."
+
+#: ../../getting_started/getting_started.md:60 4ca1a7e65f7e46c08ef12a1357f68817
+msgid "Model"
+msgstr "Model"
+
+#: ../../getting_started/getting_started.md:60 21ab5b38f81a49aeacadbcde55082adf
+msgid "Quantize"
+msgstr "Quantize"
+
+#: ../../getting_started/getting_started.md:60 a2ad84e7807c4d3ebc9d2f9aec323962
+#: b4e2d7a107074e58b91b263d815b2936
+msgid "vicuna-7b-v1.5"
+msgstr "vicuna-7b-v1.5"
+
+#: ../../getting_started/getting_started.md:60 0134b7564c3f4cd9a605c3e7dabf5c78
+#: 12a931b938ee4e938a4ed166532946e9 9cc80bc860c7430cbc2b4aff3c4c67d2
+#: b34fb93b644a419d8073203a1a0091fc bb61c197b1c74eb2bf4e7e42ad05850d
+#: e3ab5cabd6f54faa9de0ec6c334c0d44 f942635d6f5e483293833ac5f92b6ab9
+msgid "4-bit"
+msgstr "4-bit"
+
+#: ../../getting_started/getting_started.md:60 a8556b0ec7b3488585efcdc2ba5e8565
+#: afb4365dab1e4be18f486fafbd5c6256 b50b8bc0e8084e6ebe4f9678d1f2af9d
+#, fuzzy
+msgid "8 GB"
+msgstr "24 GB"
+
+#: ../../getting_started/getting_started.md:60 259b43952ea5424a970dfa29c84cc83d
+#: 64c6a8282eaf4e229d4196ccdbc2527f 7a426b8af2a6406fa4144142450e392e
+#: 8e5742b0c4b44bf6bd0536aade037671 a96071a0c713493fae2b381408ceaad3
+#: dcd6861abd2049a38f32957dd16408ab f334903a72934a2a86c3b24920f8cfdb
+msgid "8-bit"
+msgstr "8-bit"
+
+#: ../../getting_started/getting_started.md:60 09c7435ba68248bd885a41366a08f557
+#: 328ad98c8cb94f9083e8b5f158d7c14e 633e1f6d17404732a0c2f1cdf04f6591
+#: c351117229304ae88561cdd284a77f55 c77a5a73cde34e3195a6389fdd81deda
+#: f28704154fad48a8a08e16e136877ca7
+#, fuzzy
+msgid "12 GB"
+msgstr "24 GB"
+
+#: ../../getting_started/getting_started.md:60 63564bdcfa4249438d0245922068924f
+#: 9ad1bc9af45b4f52a1a0a9e7c8d14cce
+msgid "vicuna-13b-v1.5"
+msgstr "vicuna-13b-v1.5"
+
+#: ../../getting_started/getting_started.md:60 0e05753ff4ec4c1a94fc68b63254115b
+#: 68a9e76f2089461692c8f396774e7634 a3136e5685cf49c4adbf79224cb0eb7d
+#, fuzzy
+msgid "20 GB"
+msgstr "24 GB"
+
+#: ../../getting_started/getting_started.md:60 173b58152fde49f4b3e03103323c4dd7
+#: 7ab8309661024d1cb656911acb7b0d58
+msgid "llama-2-7b"
+msgstr "llama-2-7b"
+
+#: ../../getting_started/getting_started.md:60 069459a955274376a3d9a4021a032424
+#: 619257e4671141488feb6e71bd002880
+msgid "llama-2-13b"
+msgstr "llama-2-13b"
+
+#: ../../getting_started/getting_started.md:60 ce39526cfbcc4c8c910928dc69293720
+#: f5e3fb53bd964e328aac908ae6fc06a4
+msgid "llama-2-70b"
+msgstr "llama-2-70b"
+
+#: ../../getting_started/getting_started.md:60 c09fb995952048d290dde484a0e09478
+#, fuzzy
+msgid "48 GB"
+msgstr "24 GB"
+
+#: ../../getting_started/getting_started.md:60 4d9bc275dbc548918cda210f5f5d7722
+#, fuzzy
+msgid "80 GB"
+msgstr "24 GB"
+
+#: ../../getting_started/getting_started.md:60 962d13ed427041a19f20d9a1c8ca26ff
+#: dedfece8bc8c4ffabf9cc7166e4ca4db
+msgid "baichuan-7b"
+msgstr ""
+
+#: ../../getting_started/getting_started.md:60 43f629be73914d4cbb1d75c7a06f88e8
+#: 5cba8d23c6e847579986b7019e073eaf
+msgid "baichuan-13b"
+msgstr "baichuan-13b"
+
+#~ msgid "4.2. Run with docker compose"
+#~ msgstr "4.2. Run with docker compose"
 

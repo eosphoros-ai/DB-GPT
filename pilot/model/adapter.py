@@ -28,6 +28,9 @@ class BaseLLMAdaper:
     """The Base class for multi model, in our project.
     We will support those model, which performance resemble ChatGPT"""
 
+    def use_fast_tokenizer(self) -> bool:
+        return False
+
     def match(self, model_path: str):
         return True
 
@@ -115,13 +118,7 @@ class ChatGLMAdapater(BaseLLMAdaper):
     def match(self, model_path: str):
         return "chatglm" in model_path
 
-    def loader(
-        self,
-        model_path: str,
-        from_pretrained_kwargs: dict,
-        device_map=None,
-        num_gpus=CFG.NUM_GPUS,
-    ):
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
         if DEVICE != "cuda":
@@ -130,6 +127,8 @@ class ChatGLMAdapater(BaseLLMAdaper):
             ).float()
             return model, tokenizer
         else:
+            device_map = None
+            num_gpus = torch.cuda.device_count()
             model = (
                 AutoModel.from_pretrained(
                     model_path, trust_remote_code=True, **from_pretrained_kwargs
@@ -138,9 +137,6 @@ class ChatGLMAdapater(BaseLLMAdaper):
             )
             from accelerate import dispatch_model
 
-            # model = AutoModel.from_pretrained(model_path, trust_remote_code=True,
-            #                                   **from_pretrained_kwargs).half()
-            #
             if device_map is None:
                 device_map = auto_configure_device_map(num_gpus)
 
@@ -295,6 +291,11 @@ class BaichuanAdapter(BaseLLMAdaper):
         return model, tokenizer
 
 
+class WizardLMAdapter(BaseLLMAdaper):
+    def match(self, model_path: str):
+        return "wizardlm" in model_path.lower()
+
+
 register_llm_model_adapters(VicunaLLMAdapater)
 register_llm_model_adapters(ChatGLMAdapater)
 register_llm_model_adapters(GuanacoAdapter)
@@ -303,6 +304,7 @@ register_llm_model_adapters(GorillaAdapter)
 register_llm_model_adapters(GPT4AllAdapter)
 register_llm_model_adapters(Llama2Adapter)
 register_llm_model_adapters(BaichuanAdapter)
+register_llm_model_adapters(WizardLMAdapter)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
 # just for test_py, remove this later

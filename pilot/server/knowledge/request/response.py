@@ -26,12 +26,17 @@ class DocumentQueryResponse(BaseModel):
 class SpaceQueryResponse(BaseModel):
     """data: data"""
 
+    id: int = None
     name: str = None
     """vector_type: vector type"""
     vector_type: str = None
     """desc: description"""
     desc: str = None
+    """context: context"""
+    context: str = None
     """owner: owner"""
     owner: str = None
+    gmt_created: str = None
+    gmt_modified: str = None
     """doc_count: doc_count"""
-    doc_count: int = None
+    docs: int = None

@@ -33,6 +33,9 @@ LLM_MODEL_CONFIG = {
     "flan-t5-base": os.path.join(MODEL_PATH, "flan-t5-base"),
     "vicuna-13b": os.path.join(MODEL_PATH, "vicuna-13b"),
     "vicuna-7b": os.path.join(MODEL_PATH, "vicuna-7b"),
+    # (Llama2 based) see https://huggingface.co/lmsys/vicuna-13b-v1.5
+    "vicuna-13b-v1.5": os.path.join(MODEL_PATH, "vicuna-13b-v1.5"),
+    "vicuna-7b-v1.5": os.path.join(MODEL_PATH, "vicuna-7b-v1.5"),
     "text2vec": os.path.join(MODEL_PATH, "text2vec-large-chinese"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
     "codegen2-1b": os.path.join(MODEL_PATH, "codegen2-1B"),
@@ -59,10 +62,11 @@ LLM_MODEL_CONFIG = {
     "baichuan-13b": os.path.join(MODEL_PATH, "Baichuan-13B-Chat"),
     # please rename "fireballoon/baichuan-vicuna-chinese-7b" to "baichuan-7b"
     "baichuan-7b": os.path.join(MODEL_PATH, "baichuan-7b"),
+    # (Llama2 based) We only support WizardLM-13B-V1.2 for now, which is trained from Llama-2 13b, see https://huggingface.co/WizardLM/WizardLM-13B-V1.2
+    "wizardlm-13b": os.path.join(MODEL_PATH, "WizardLM-13B-V1.2"),
 }
 
 # Load model config
-ISLOAD_8BIT = True
 ISDEBUG = False
 
 VECTOR_SEARCH_TOP_K = 10

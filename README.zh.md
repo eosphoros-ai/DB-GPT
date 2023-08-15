@@ -22,15 +22,15 @@
     <a href="https://github.com/csunny/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
     </a>
-    <a href="https://discord.gg/eZHE94MN">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/rBgtJW8U?compact=true&style=flat" />
+    <a href="https://discord.gg/erwfqcMP">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/erwfqcMP?compact=true&style=flat" />
     </a>
     <a href="https://codespaces.new/csunny/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/eZHE94MN) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
+[**English**](README.md)|[**Discord**](https://discord.gg/erwfqcMP) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
 
 </div>
 
@@ -50,7 +50,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 - [路线图](#路线图)
 - [联系我们](#联系我们)
 
-[DB-GPT视频介绍](https://www.bilibili.com/video/BV1au41157bj/)
+[DB-GPT视频介绍](https://www.bilibili.com/video/BV1au41157bj/?spm_id_from=333.337.search-card.all.click&vd_source=7792e22c03b7da3c556a450eb42c8a0f)
 
 ## 效果演示
 
@@ -88,7 +88,7 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
 
 #### 根据知识库对话, 比如pdf、csv、txt、words等等.
 <p align="left">
-  <img src="./assets/chat_knowledge.png" width="800px" />
+  <img src="./assets/chat_knowledge_zh.png" width="800px" />
 </p>
 
 ## 特性一览
@@ -112,12 +112,17 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
 
 - 多模型支持
   - 支持多种大语言模型, 当前已支持如下模型: 
-    - Vicuna(7b,13b)
-    - ChatGLM-6b(int4,int8)
-    - guanaco(7b,13b,33b)
-    - Gorilla(7b,13b)
-    - 🔥 llama-2(7b,13b,70b)
-    - baichuan(7b,13b)
+  - 🔥 Vicuna-v1.5(7b,13b)
+  - 🔥 llama-2(7b,13b,70b)
+  - WizardLM-v1.2(13b)
+  - Vicuna (7b,13b)
+  - ChatGLM-6b (int4,int8)
+  - ChatGLM2-6b (int4,int8)
+  - guanaco(7b,13b,33b)
+  - Gorilla(7b,13b)
+  - baichuan(7b,13b)
+
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。
@@ -145,7 +150,7 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 ## Image
 🌐 [AutoDL镜像](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
 
-🌐 [阿里云镜像](https://www.zhihu.com/pin/1668226536363728896?utm_psn=1668228728445579265)
+🌐 [阿里云镜像](http://dbgpt.site/web/#/p/dc4bb97e0bc15302dbf3a5d5571142dd)
 
 ## 安装
 [快速开始](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/getting_started.html)

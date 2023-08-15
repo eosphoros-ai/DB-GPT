@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, DateTime, Integer, Text, create_engine, f
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from pilot.configs.config import Config
-
+from pilot.connections.rdbms.base_dao import BaseDao
 
 CFG = Config()
 
@@ -19,7 +19,7 @@ class KnowledgeDocumentEntity(Base):
     space = Column(String(100))
     chunk_size = Column(Integer)
     status = Column(String(100))
-    last_sync = Column(String(100))
+    last_sync = Column(DateTime)
     content = Column(Text)
     result = Column(Text)
     vector_ids = Column(Text)
@@ -30,14 +30,11 @@ class KnowledgeDocumentEntity(Base):
         return f"KnowledgeDocumentEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
-class KnowledgeDocumentDao:
+class KnowledgeDocumentDao(BaseDao):
     def __init__(self):
-        database = "knowledge_management"
-        self.db_engine = create_engine(
-            f"mysql+pymysql://{CFG.LOCAL_DB_USER}:{CFG.LOCAL_DB_PASSWORD}@{CFG.LOCAL_DB_HOST}:{CFG.LOCAL_DB_PORT}/{database}",
-            echo=True,
+        super().__init__(
+            database="knowledge_management", orm_base=Base, create_not_exist_table=True
         )
-        self.Session = sessionmaker(bind=self.db_engine)
 
     def create_knowledge_document(self, document: KnowledgeDocumentEntity):
         session = self.Session()
@@ -91,6 +88,38 @@ class KnowledgeDocumentDao:
             page_size
         )
         result = knowledge_documents.all()
+        session.close()
+        return result
+
+    def get_documents(self, query):
+        session = self.Session()
+        knowledge_documents = session.query(KnowledgeDocumentEntity)
+        if query.id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.id == query.id
+            )
+        if query.doc_name is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.doc_name == query.doc_name
+            )
+        if query.doc_type is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.doc_type == query.doc_type
+            )
+        if query.space is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space == query.space
+            )
+        if query.status is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.status == query.status
+            )
+
+        knowledge_documents = knowledge_documents.order_by(
+            KnowledgeDocumentEntity.id.desc()
+        )
+        result = knowledge_documents.all()
+        session.close()
         return result
 
     def get_knowledge_documents_count(self, query):
@@ -117,6 +146,7 @@ class KnowledgeDocumentDao:
                 KnowledgeDocumentEntity.status == query.status
             )
         count = knowledge_documents.scalar()
+        session.close()
         return count
 
     def update_knowledge_document(self, document: KnowledgeDocumentEntity):
@@ -126,9 +156,21 @@ class KnowledgeDocumentDao:
         return updated_space.id
 
     #
-    # def delete_knowledge_document(self, document_id: int):
-    #     cursor = self.conn.cursor()
-    #     query = "DELETE FROM knowledge_document WHERE id = %s"
-    #     cursor.execute(query, (document_id,))
-    #     self.conn.commit()
-    #     cursor.close()
+    def delete(self, query: KnowledgeDocumentEntity):
+        session = self.Session()
+        knowledge_documents = session.query(KnowledgeDocumentEntity)
+        if query.id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.id == query.id
+            )
+        if query.doc_name is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.doc_name == query.doc_name
+            )
+        if query.space is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space == query.space
+            )
+        knowledge_documents.delete()
+        session.commit()
+        session.close()

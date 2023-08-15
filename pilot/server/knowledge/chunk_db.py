@@ -5,7 +5,7 @@ from sqlalchemy import Column, String, DateTime, Integer, Text, create_engine, f
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from pilot.configs.config import Config
-
+from pilot.connections.rdbms.base_dao import BaseDao
 
 CFG = Config()
 
@@ -27,14 +27,11 @@ class DocumentChunkEntity(Base):
         return f"DocumentChunkEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', document_id='{self.document_id}', content='{self.content}', meta_info='{self.meta_info}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
-class DocumentChunkDao:
+class DocumentChunkDao(BaseDao):
     def __init__(self):
-        database = "knowledge_management"
-        self.db_engine = create_engine(
-            f"mysql+pymysql://{CFG.LOCAL_DB_USER}:{CFG.LOCAL_DB_PASSWORD}@{CFG.LOCAL_DB_HOST}:{CFG.LOCAL_DB_PORT}/{database}",
-            echo=True,
+        super().__init__(
+            database="knowledge_management", orm_base=Base, create_not_exist_table=True
         )
-        self.Session = sessionmaker(bind=self.db_engine)
 
     def create_documents_chunks(self, documents: List):
         session = self.Session()
@@ -81,6 +78,7 @@ class DocumentChunkDao:
             page_size
         )
         result = document_chunks.all()
+        session.close()
         return result
 
     def get_document_chunks_count(self, query: DocumentChunkEntity):
@@ -105,6 +103,7 @@ class DocumentChunkDao:
                 DocumentChunkEntity.meta_info == query.meta_info
             )
         count = document_chunks.scalar()
+        session.close()
         return count
 
     # def update_knowledge_document(self, document:KnowledgeDocumentEntity):
@@ -113,9 +112,16 @@ class DocumentChunkDao:
     #     session.commit()
     #     return updated_space.id
 
-    # def delete_knowledge_document(self, document_id:int):
-    #     cursor = self.conn.cursor()
-    #     query = "DELETE FROM knowledge_document WHERE id = %s"
-    #     cursor.execute(query, (document_id,))
-    #     self.conn.commit()
-    #     cursor.close()
+    def delete(self, document_id: int):
+        session = self.Session()
+        if document_id is None:
+            raise Exception("document_id is None")
+        query = DocumentChunkEntity(document_id=document_id)
+        knowledge_documents = session.query(DocumentChunkEntity)
+        if query.document_id is not None:
+            chunks = knowledge_documents.filter(
+                DocumentChunkEntity.document_id == query.document_id
+            )
+        chunks.delete()
+        session.commit()
+        session.close()
