@@ -1,9 +1,15 @@
 from pilot.vector_store.chroma_store import ChromaStore
 
-from pilot.vector_store.milvus_store import MilvusStore
 from pilot.vector_store.weaviate_store import WeaviateStore
 
-connector = {"Chroma": ChromaStore, "Milvus": MilvusStore, "Weaviate": WeaviateStore}
+connector = {"Chroma": ChromaStore, "Weaviate": WeaviateStore}
+
+try:
+    from pilot.vector_store.milvus_store import MilvusStore
+
+    connector["Milvus"] = MilvusStore
+except:
+    pass
 
 
 class VectorStoreConnector:
