@@ -1,0 +1,318 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-16 18:31+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/application/kbqa/kbqa.md:1
+#: a06d9329c98f44ffaaf6fc09ba53d97e
+msgid "KBQA"
+msgstr ""
+
+#: ../../getting_started/application/kbqa/kbqa.md:3
+#: bb6943c115754b1fafb7467313100753
+msgid ""
+"DB-GPT supports a knowledge question-answering module, which aims to "
+"create an intelligent expert in the field of databases and provide "
+"professional knowledge-based answers to database practitioners."
+msgstr " DB-GPT支持知识问答模块，知识问答的初衷是打造DB领域的智能专家，为数据库从业人员解决专业的知识问题回答"
+
+#: ../../getting_started/application/kbqa/kbqa.md:5
+#: a13ac963479e4d4fbcbcc4fec7863274
+msgid "![chat_knowledge](../../../../assets/chat_knowledge.png)"
+msgstr "![chat_knowledge](../../../../assets/chat_knowledge.png)"
+
+#: ../../getting_started/application/kbqa/kbqa.md:5
+#: f4db3a8d04634059a74be1b2b3c948ef
+msgid "chat_knowledge"
+msgstr "chat_knowledge"
+
+#: ../../getting_started/application/kbqa/kbqa.md:7
+#: ../../getting_started/application/kbqa/kbqa.md:10
+#: 86856cce95c845eb83ed44d8713b0ef6 f787e9ad9f7444a5923fe3476ab4d287
+msgid "KBQA abilities"
+msgstr "KBQA现有能力"
+
+#: ../../getting_started/application/kbqa/kbqa.md:11
+#: df1c88b28a2d46b2b3f5fae1caec000e
+msgid "Knowledge Space."
+msgstr "知识空间"
+
+#: ../../getting_started/application/kbqa/kbqa.md:12
+#: 7f6c99d0c1394f08b246daa1343c24b2
+msgid "Multi Source Knowledge Source Embedding."
+msgstr "多数据源Embedding"
+
+#: ../../getting_started/application/kbqa/kbqa.md:13
+#: 3c1274c3e65f426bbee219227f681e27
+msgid "Embedding Argument Adjust"
+msgstr "Embedding参数自定义"
+
+#: ../../getting_started/application/kbqa/kbqa.md:14
+#: 52fb29f7ee8745e6b78145f5be23b8ce
+msgid "Chat Knowledge"
+msgstr "知识问答"
+
+#: ../../getting_started/application/kbqa/kbqa.md:15
+#: 83e427c46d844c6a9bb5954342ae7c42
+msgid "Multi Vector DB"
+msgstr "多向量数据库管理"
+
+#: ../../getting_started/application/kbqa/kbqa.md:19
+#: 07c1e189d0f84db69b6a51cf23ede7dc
+msgid "Steps to KBQA In DB-GPT"
+msgstr "怎样一步一步使用KBQA"
+
+#: ../../getting_started/application/kbqa/kbqa.md:21
+#: 36e4195e5c3a4bedb7d11243e5705f0a
+msgid "1.Create Knowledge Space"
+msgstr "1.首先创建知识空间"
+
+#: ../../getting_started/application/kbqa/kbqa.md:22
+#: 5c92d41df2b04374a6c7ce40308f738b
+msgid ""
+"If you are using Knowledge Space for the first time, you need to create a"
+" Knowledge Space and set your name, owner, description. "
+"![create_space](../../../../assets/kbqa/create_space.png)"
+msgstr "如果你是第一次使用，先创建知识空间，指定名字,拥有者和描述信息"
+
+#: ../../getting_started/application/kbqa/kbqa.md:22
+#: c5f6e842be384977be1bd667b1e0ab5d
+msgid "create_space"
+msgstr "create_space"
+
+#: ../../getting_started/application/kbqa/kbqa.md:27
+#: c98434920955416ca5273892f9086bc5
+msgid "2.Create Knowledge Document"
+msgstr "2.上传知识"
+
+#: ../../getting_started/application/kbqa/kbqa.md:28
+#: d63f798e8270455587d1afd98c72e995
+msgid ""
+"DB-GPT now support Multi Knowledge Source, including Text, WebUrl, and "
+"Document(PDF, Markdown, Word, PPT, HTML and CSV). After successfully "
+"uploading a document for translation, the backend system will "
+"automatically read and split and chunk the document, and then import it "
+"into the vector database. Alternatively, you can manually synchronize the"
+" document. You can also click on details to view the specific document "
+"slicing content."
+msgstr "DB-GPT支持多数据源，包括Text纯文本, WebUrl和Document(PDF, Markdown, Word, PPT, HTML and CSV)。上传文档成功后后台会自动将文档内容进行读取，切片，然后导入到向量数据库中，当然你也可以手动进行同步，你也可以点击详情查看具体的文档切片内容"
+
+#: ../../getting_started/application/kbqa/kbqa.md:30
+#: 18becde7bdc34e9cb7017ff7711d1634
+msgid "2.1 Choose Knowledge Type:"
+msgstr "2.1 选择知识类型"
+
+#: ../../getting_started/application/kbqa/kbqa.md:31
+#: 755dfd18812249e591647d233ec9253b
+msgid "![document](../../../../assets/kbqa/document.jpg)"
+msgstr "![document](../../../../assets/kbqa/document.jpg)"
+
+#: ../../getting_started/application/kbqa/kbqa.md:31
+#: 10faa2236fa84dc284f7ce6d68acc43c
+msgid "document"
+msgstr "document"
+
+#: ../../getting_started/application/kbqa/kbqa.md:33
+#: 04449bfa78b14d1cb42c1259f67531d1
+msgid "2.2 Upload Document:"
+msgstr "2.2上传文档"
+
+#: ../../getting_started/application/kbqa/kbqa.md:34
+#: de14e2d7a6c54623bfc8af2fc6e20c62
+msgid "![upload](../../../../assets/kbqa/upload.jpg)"
+msgstr "![upload](../../../../assets/kbqa/upload.jpg)"
+
+#: ../../getting_started/application/kbqa/kbqa.md:34
+#: ../../getting_started/application/kbqa/kbqa.md:38
+#: ../../getting_started/application/kbqa/kbqa.md:43
+#: ../../getting_started/application/kbqa/kbqa.md:56
+#: 0e3ab13b9d064b238fba283d6f466051 65ea0b9b43ef4c64897a6e65781129c7
+#: cb65cb968a91492d9526f47e74b179e1 f0ff29911159497fb542942b6deb6972
+msgid "upload"
+msgstr "upload"
+
+#: ../../getting_started/application/kbqa/kbqa.md:37
+#: 77d936d2502f41feb2721da86cc1ebb1
+msgid "3.Chat With Knowledge"
+msgstr "3.知识问答"
+
+#: ../../getting_started/application/kbqa/kbqa.md:38
+#: ae72c3236e564949b142a945f3474425
+msgid "![upload](../../../../assets/kbqa/begin_chat.jpg)"
+msgstr "![upload](../../../../assets/kbqa/begin_chat.jpg)"
+
+#: ../../getting_started/application/kbqa/kbqa.md:40
+#: b9d701985d404a9196bb896718f41e36
+msgid "4.Adjust Space arguments"
+msgstr "4.调整知识参数"
+
+#: ../../getting_started/application/kbqa/kbqa.md:41
+#: 6155bbf401ef44ea8d761c83ae5ceb9a
+msgid ""
+"Each knowledge space supports argument customization, including the "
+"relevant arguments for vector retrieval and the arguments for knowledge "
+"question-answering prompts."
+msgstr "每一个知识空间都支持参数自定义, 包括向量召回的相关参数以及知识问答Promp参数"
+
+#: ../../getting_started/application/kbqa/kbqa.md:42
+#: b9ac70b5ee99435a962dcb040b5ba4fc
+msgid "4.1 Embedding"
+msgstr "4.1 Embedding"
+
+#: ../../getting_started/application/kbqa/kbqa.md:43
+#: 0ca2398756924828a904921456b863b5
+msgid "Embedding Argument ![upload](../../../../assets/kbqa/embedding.png)"
+msgstr "Embedding Argument ![upload](../../../../assets/kbqa/embedding.png)"
+
+#: ../../getting_started/application/kbqa/kbqa.md:47
+#: e8b3e973e3b940e4bbf3180b7d6057ec
+msgid "Embedding arguments"
+msgstr "Embedding arguments"
+
+#: ../../getting_started/application/kbqa/kbqa.md:48
+#: 1cff4790d546455abeca725ae8b53c0d
+msgid "topk:the top k vectors based on similarity score."
+msgstr "topk:相似性检索出tok条文档"
+
+#: ../../getting_started/application/kbqa/kbqa.md:49
+#: 525aaa02028b4900919526290b6da9ef
+msgid "recall_score:set a threshold score for the retrieval of similar vectors."
+msgstr "recall_score:向量检索相关度衡量指标分数"
+
+#: ../../getting_started/application/kbqa/kbqa.md:50
+#: dead3b559b134e52a3cf38e29b1982e1
+msgid "recall_type:recall type."
+msgstr "recall_type:召回类型"
+
+#: ../../getting_started/application/kbqa/kbqa.md:51
+#: 7c48de3186a14fcf96ee2bc6d715bd4c
+msgid "model:A model used to create vector representations of text or other data."
+msgstr "model:embdding模型"
+
+#: ../../getting_started/application/kbqa/kbqa.md:52
+#: 875ba3d051b847a5b3357a4eef583c0a
+msgid "chunk_size:The size of the data chunks used in processing."
+msgstr "chunk_size:文档切片阈值大小"
+
+#: ../../getting_started/application/kbqa/kbqa.md:53
+#: e43f2bb091594532ba69ed3e3a385cdd
+msgid "chunk_overlap:The amount of overlap between adjacent data chunks."
+msgstr "chunk_overlap:文本块之间的最大重叠量。保留一些重叠可以保持文本块之间的连续性（例如使用滑动窗口）"
+
+#: ../../getting_started/application/kbqa/kbqa.md:55
+#: e21e19688fa042a4b60860ffa6bcf119
+msgid "4.2 Prompt"
+msgstr "4.2 Prompt"
+
+#: ../../getting_started/application/kbqa/kbqa.md:56
+#: 00f0bddcd9174b7a84a25b7fe6d286e9
+msgid "Prompt Argument ![upload](../../../../assets/kbqa/prompt.png)"
+msgstr "Prompt Argument ![upload](../../../../assets/kbqa/prompt.png)"
+
+#: ../../getting_started/application/kbqa/kbqa.md:60
+#: d5ff2b76a04949708b3c9050db647927
+msgid "Prompt arguments"
+msgstr "Prompt arguments"
+
+#: ../../getting_started/application/kbqa/kbqa.md:61
+#: 817a8744378546a2b049f44793b4554b
+msgid ""
+"scene:A contextual parameter used to define the setting or environment in"
+" which the prompt is being used."
+msgstr "scene:上下文环境的场景定义"
+
+#: ../../getting_started/application/kbqa/kbqa.md:62
+#: 5330c26a4fc34ff6ba5fea1910cfbdc0
+msgid ""
+"template:A pre-defined structure or format for the prompt, which can help"
+" ensure that the AI system generates responses that are consistent with "
+"the desired style or tone."
+msgstr ""
+"template:预定义的提示结构或格式，可以帮助确保AI系统生成与所期望的风格或语气一致的回复。"
+
+#: ../../getting_started/application/kbqa/kbqa.md:63
+#: a34cd8248e6b44228868c2a02e12466f
+msgid "max_token:The maximum number of tokens or words allowed in a prompt."
+msgstr "max_token: prompt token最大值"
+
+#: ../../getting_started/application/kbqa/kbqa.md:65
+#: 7da49aac293f462b9e3968fa1493dba1
+msgid "5.Change Vector Database"
+msgstr "5.Change Vector Database"
+
+#: ../../getting_started/application/kbqa/kbqa.md:67
+#: 680bfb451eb040e0aa55f8faa12bb75a
+msgid "Vector Store SETTINGS"
+msgstr "Vector Store SETTINGS"
+
+#: ../../getting_started/application/kbqa/kbqa.md:68
+#: 32820ae6807840119a786e92124ad209
+msgid "Chroma"
+msgstr "Chroma"
+
+#: ../../getting_started/application/kbqa/kbqa.md:69
+#: 7573aa05bc914fc2993b2531475b3b99
+msgid "VECTOR_STORE_TYPE=Chroma"
+msgstr "VECTOR_STORE_TYPE=Chroma"
+
+#: ../../getting_started/application/kbqa/kbqa.md:70
+#: cc2c5521ba6e417eb5b3cf96375c2a08
+msgid "MILVUS"
+msgstr "MILVUS"
+
+#: ../../getting_started/application/kbqa/kbqa.md:71
+#: fc5dfa54c8a24b069e2709c309e43faa
+msgid "VECTOR_STORE_TYPE=Milvus"
+msgstr "VECTOR_STORE_TYPE=Milvus"
+
+#: ../../getting_started/application/kbqa/kbqa.md:72
+#: 8661384f0c4a40a0b79fad94bbee1792
+msgid "MILVUS_URL=127.0.0.1"
+msgstr "MILVUS_URL=127.0.0.1"
+
+#: ../../getting_started/application/kbqa/kbqa.md:73
+#: 2035d343d34f47fa9fa84eb841afa2f8
+msgid "MILVUS_PORT=19530"
+msgstr "MILVUS_PORT=19530"
+
+#: ../../getting_started/application/kbqa/kbqa.md:74
+#: e0d8bd8d1dfb425bb50d5c8bf4a134ab
+msgid "MILVUS_USERNAME"
+msgstr "MILVUS_USERNAME"
+
+#: ../../getting_started/application/kbqa/kbqa.md:75
+#: dec547e6b4354c71857fa7c92c08bfa6
+msgid "MILVUS_PASSWORD"
+msgstr "MILVUS_PASSWORD"
+
+#: ../../getting_started/application/kbqa/kbqa.md:76
+#: 9ad3f325f79e49309bd3419f48015e90
+msgid "MILVUS_SECURE="
+msgstr "MILVUS_SECURE="
+
+#: ../../getting_started/application/kbqa/kbqa.md:78
+#: f6e15bf479da496fbcdf7621bad4dda8
+msgid "WEAVIATE"
+msgstr "WEAVIATE"
+
+#: ../../getting_started/application/kbqa/kbqa.md:79
+#: f7838d5de0a9452486adceb3a26369ee
+msgid "WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.network"
+msgstr "WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.networkc"
+

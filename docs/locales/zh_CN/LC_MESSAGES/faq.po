@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-10 16:40+0800\n"
+"POT-Creation-Date: 2023-08-16 18:31+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,135 +19,123 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../faq.md:1 c4b5b298c447462ba7aaffd954549def
-msgid "FAQ"
-msgstr "FAQ"
-
-#: ../../faq.md:2 533e388b78594244aa0acbf2b0263f60
-msgid "Q1: text2vec-large-chinese not found"
-msgstr "Q1: text2vec-large-chinese not found"
-
-#: ../../faq.md:4 e1c7e28c60f24f7a983f30ee43bad32e
-msgid ""
-"A1: make sure you have download text2vec-large-chinese embedding model in"
-" right way"
-msgstr "按照正确的姿势下载text2vec-large-chinese模型"
-
-#: ../../faq.md:16 7cbfd6629267423a879735dd0dbba24e
-msgid ""
-"Q2: execute `pip install -r requirements.txt` error, found some package "
-"cannot find correct version."
-msgstr "执行`pip install -r requirements.txt`报错"
-
-#: ../../faq.md:19 a2bedf7cf2984d35bc9e3edffd9cb991
-msgid "A2: change the pip source."
-msgstr "修改pip源"
-
-#: ../../faq.md:26 ../../faq.md:33 307385dc581841148bad0dfa95541722
-#: 55a9cd0665e74b47bac71e652a80c8bd
-msgid "or"
-msgstr "或"
-
-#: ../../faq.md:41 8ec34a9f22744313825bd53e90e86695
-msgid "Q3:Access denied for user 'root@localhost'(using password :NO)"
-msgstr "或"
-
-#: ../../faq.md:43 85d67326827145859f5af707c96c852f
-msgid "A3: make sure you have installed mysql instance in right way"
-msgstr "按照正确姿势安装mysql"
-
-#: ../../faq.md:45 c51cffb2777c49c6b15485e6151f8b70
-msgid "Docker:"
-msgstr "Docker:"
-
-#: ../../faq.md:49 09f16d57dbeb4f34a1274b2ac52aacf5
-msgid "Normal: [download mysql instance](https://dev.mysql.com/downloads/mysql/)"
-msgstr "[download mysql instance](https://dev.mysql.com/downloads/mysql/)"
-
-#: ../../faq.md:52 ab730de8f02f4cb895510a52ca90c02f
-msgid "Q4:When I use openai(MODEL_SERVER=proxyllm) to chat"
-msgstr "使用openai-chatgpt模型时(MODEL_SERVER=proxyllm)"
-
-#: ../../faq.md:57 8308cf21e0654e5798c9a2638b8565ec
-msgid "A4: make sure your openapi API_KEY is available"
-msgstr "确认openapi API_KEY是否可用"
-
-#: ../../faq.md:59 ff6361a5438943c2b9e613aa9e2322bf
+#: ../../faq.md:8 ded9afcc91594bce8950aa688058a5b6
 msgid "Q5:When I Chat Data and Chat Meta Data, I found the error"
 msgstr "Chat Data and Chat Meta Data报如下错"
 
-#: ../../faq.md:64 1a89acc3bf074b77b9e44d20f9b9c3cb
+#: ../../faq.md:13 25237221f65c47a2b62f5afbe637d6e7
 msgid "A5: you have not create your database and table"
 msgstr "需要创建自己的数据库"
 
-#: ../../faq.md:65 e7d63e2aa0d24c5d90dd1865753c7d52
+#: ../../faq.md:14 8c9024f1f4d7414499587e3bdf7d56d1
 msgid "1.create your database."
 msgstr "1.先创建数据库"
 
-#: ../../faq.md:71 8b0de08106a144b98538b12bc671cbb2
+#: ../../faq.md:20 afc7299d3b4e4d98b17fd6157d440970
 msgid "2.create table {$your_table} and insert your data.  eg:"
 msgstr "然后创建数据表，模拟数据"
 
-#: ../../faq.md:85 abb226843354448a925de4deb52db555
-msgid "Q6:How to change Vector DB Type in DB-GPT."
-msgstr ""
+#~ msgid "FAQ"
+#~ msgstr "FAQ"
 
-#: ../../faq.md:87 cc80165e2f6b46a28e53359ea7b3e0af
-msgid "A6: Update .env file and set VECTOR_STORE_TYPE."
-msgstr ""
+#~ msgid "Q1: text2vec-large-chinese not found"
+#~ msgstr "Q1: text2vec-large-chinese not found"
 
-#: ../../faq.md:88 d30fa1e2fdd94e00a72ef247af41fb43
-#, fuzzy
-msgid ""
-"DB-GPT currently support Chroma(Default), Milvus(>2.1), Weaviate vector "
-"database. If you want to change vector db, Update your .env, set your "
-"vector store type, VECTOR_STORE_TYPE=Chroma (now only support Chroma and "
-"Milvus(>2.1), if you set Milvus, please set MILVUS_URL and MILVUS_PORT) "
-"If you want to support more vector db, you can integrate yourself.[how to"
-" integrate](https://db-gpt.readthedocs.io/en/latest/modules/vector.html)"
-msgstr ""
-"DB-GPT当前支持Chroma(默认)，如果你想替换向量数据库，需要更新.env文件，VECTOR_STORE_TYPE=Chroma (now"
-" only support Chroma, Milvus Weaviate, if you set Milvus(>2.1), please "
-"set MILVUS_URL and "
-"MILVUS_PORT)。如果当前支持向量数据库无法满足你的需求，可以集成使用自己的向量数据库。[怎样集成](https://db-"
-"gpt.readthedocs.io/en/latest/modules/vector.html)"
+#~ msgid ""
+#~ "A1: make sure you have download "
+#~ "text2vec-large-chinese embedding model in"
+#~ " right way"
+#~ msgstr "按照正确的姿势下载text2vec-large-chinese模型"
 
-#: ../../faq.md:104 bed01b4f96e04f61aa536cf615254c87
-#, fuzzy
-msgid "Q7:When I use vicuna-13b, found some illegal character like this."
-msgstr "使用vicuna-13b，知识库问答出现乱码"
+#~ msgid ""
+#~ "Q2: execute `pip install -r "
+#~ "requirements.txt` error, found some package"
+#~ " cannot find correct version."
+#~ msgstr "执行`pip install -r requirements.txt`报错"
 
-#: ../../faq.md:109 1ea68292da6d46a89944212948d1719d
-#, fuzzy
-msgid ""
-"A7: set KNOWLEDGE_SEARCH_TOP_SIZE smaller or set KNOWLEDGE_CHUNK_SIZE "
-"smaller, and reboot server."
-msgstr "将KNOWLEDGE_SEARCH_TOP_SIZE和KNOWLEDGE_CHUNK_SIZE设置小点然后重启"
+#~ msgid "A2: change the pip source."
+#~ msgstr "修改pip源"
 
-#: ../../faq.md:111 256b58e3749a4a17acbc456c71581597
-msgid ""
-"Q8:space add error (pymysql.err.OperationalError) (1054, \"Unknown column"
-" 'knowledge_space.context' in 'field list'\")"
-msgstr "Q8:space add error (pymysql.err.OperationalError) (1054, \"Unknown column"
-" 'knowledge_space.context' in 'field list'\")"
+#~ msgid "or"
+#~ msgstr "或"
 
-#: ../../faq.md:114 febe9ec0c51b4e10b3a2bb0aece94e7c
-msgid "A8:"
-msgstr "A8:"
+#~ msgid "Q3:Access denied for user 'root@localhost'(using password :NO)"
+#~ msgstr "或"
 
-#: ../../faq.md:115 d713a368fe8147feb6db8f89938f3dcd
-msgid "1.shutdown dbgpt_server(ctrl c)"
-msgstr ""
+#~ msgid "A3: make sure you have installed mysql instance in right way"
+#~ msgstr "按照正确姿势安装mysql"
 
-#: ../../faq.md:117 4c6ad307caff4b57bb6c7085cc42fb64
-msgid "2.add column context for table knowledge_space"
-msgstr "2.add column context for table knowledge_space"
+#~ msgid "Docker:"
+#~ msgstr "Docker:"
 
-#: ../../faq.md:121 a3f955c090be4163bdb934eb32c25fd5
-msgid "3.execute sql ddl"
-msgstr "3.执行 sql ddl"
+#~ msgid ""
+#~ "Normal: [download mysql "
+#~ "instance](https://dev.mysql.com/downloads/mysql/)"
+#~ msgstr "[download mysql instance](https://dev.mysql.com/downloads/mysql/)"
 
-#: ../../faq.md:126 1861332d1c0342e2b968732fba55fa54
-msgid "4.restart dbgpt server"
-msgstr "4.重启 dbgpt server"
+#~ msgid "Q4:When I use openai(MODEL_SERVER=proxyllm) to chat"
+#~ msgstr "使用openai-chatgpt模型时(MODEL_SERVER=proxyllm)"
+
+#~ msgid "A4: make sure your openapi API_KEY is available"
+#~ msgstr "确认openapi API_KEY是否可用"
+
+#~ msgid "Q6:How to change Vector DB Type in DB-GPT."
+#~ msgstr ""
+
+#~ msgid "A6: Update .env file and set VECTOR_STORE_TYPE."
+#~ msgstr ""
+
+#~ msgid ""
+#~ "DB-GPT currently support Chroma(Default), "
+#~ "Milvus(>2.1), Weaviate vector database. If "
+#~ "you want to change vector db, "
+#~ "Update your .env, set your vector "
+#~ "store type, VECTOR_STORE_TYPE=Chroma (now only"
+#~ " support Chroma and Milvus(>2.1), if "
+#~ "you set Milvus, please set MILVUS_URL"
+#~ " and MILVUS_PORT) If you want to "
+#~ "support more vector db, you can "
+#~ "integrate yourself.[how to integrate](https://db-"
+#~ "gpt.readthedocs.io/en/latest/modules/vector.html)"
+#~ msgstr ""
+#~ "DB-"
+#~ "GPT当前支持Chroma(默认)，如果你想替换向量数据库，需要更新.env文件，VECTOR_STORE_TYPE=Chroma "
+#~ "(now only support Chroma, Milvus "
+#~ "Weaviate, if you set Milvus(>2.1), "
+#~ "please set MILVUS_URL and "
+#~ "MILVUS_PORT)。如果当前支持向量数据库无法满足你的需求，可以集成使用自己的向量数据库。[怎样集成](https://db-"
+#~ "gpt.readthedocs.io/en/latest/modules/vector.html)"
+
+#~ msgid "Q7:When I use vicuna-13b, found some illegal character like this."
+#~ msgstr "使用vicuna-13b，知识库问答出现乱码"
+
+#~ msgid ""
+#~ "A7: set KNOWLEDGE_SEARCH_TOP_SIZE smaller or"
+#~ " set KNOWLEDGE_CHUNK_SIZE smaller, and "
+#~ "reboot server."
+#~ msgstr "将KNOWLEDGE_SEARCH_TOP_SIZE和KNOWLEDGE_CHUNK_SIZE设置小点然后重启"
+
+#~ msgid ""
+#~ "Q8:space add error (pymysql.err.OperationalError)"
+#~ " (1054, \"Unknown column "
+#~ "'knowledge_space.context' in 'field list'\")"
+#~ msgstr ""
+#~ "Q8:space add error (pymysql.err.OperationalError)"
+#~ " (1054, \"Unknown column "
+#~ "'knowledge_space.context' in 'field list'\")"
+
+#~ msgid "A8:"
+#~ msgstr "A8:"
+
+#~ msgid "1.shutdown dbgpt_server(ctrl c)"
+#~ msgstr ""
+
+#~ msgid "2.add column context for table knowledge_space"
+#~ msgstr "2.add column context for table knowledge_space"
+
+#~ msgid "3.execute sql ddl"
+#~ msgstr "3.执行 sql ddl"
+
+#~ msgid "4.restart dbgpt server"
+#~ msgstr "4.重启 dbgpt server"
 

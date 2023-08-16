@@ -47,10 +47,12 @@ Getting Started
    :caption: Getting Started
    :hidden:
 
-   getting_started/getting_started.md
+   getting_started/install.rst
+   getting_started/application.md
    getting_started/installation.md
    getting_started/concepts.md
    getting_started/tutorials.md
+   getting_started/faq.rst
 
 
 Modules

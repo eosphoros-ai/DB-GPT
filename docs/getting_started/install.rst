@@ -1,0 +1,24 @@
+Install
+==================================
+DB-GPT product is a Web application that you can chat database, chat knowledge, text2dashboard.
+
+.. image:: ./assets/DB-GPT-Product.jpg
+
+
+- deploy
+- docker
+- docker_compose
+- environment
+- deploy_faq
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Install
+   :name: deploy
+   :hidden:
+
+   ./install/deploy/deploy.md
+   ./install/docker/docker.md
+   ./install/docker_compose/docker_compose.md
+   ./install/environment/environment.md
+   ./install/faq/deploy_faq.md
