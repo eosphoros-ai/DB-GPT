@@ -97,8 +97,6 @@ You can refer to this document to obtain the Vicuna weights: [Vicuna](https://gi
 
 If you have difficulty with this step, you can also directly use the model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a replacement.
 
-set .env configuration set your vector store type, eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > 2.1)
-
 
 1.Run db-gpt server 
 
