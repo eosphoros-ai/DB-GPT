@@ -274,7 +274,8 @@ msgstr "模型文件很大，需要很长时间才能下载。在下载过程中
 msgid ""
 "if you want to use openai llm service, see [LLM Use FAQ](https://db-"
 "gpt.readthedocs.io/en/latest/getting_started/faq/llm/llm_faq.html)"
-msgstr ""
+msgstr "如果想使用openai大模型服务, 可以参考[LLM Use FAQ](https://db-"
+"gpt.readthedocs.io/en/latest/getting_started/faq/llm/llm_faq.html)"
 
 #: ../../getting_started/install/deploy/deploy.md:88
 #: 2009fcaad7c34ebfaa900215650256fc
@@ -310,7 +311,8 @@ msgid ""
 "You can refer to this document to obtain the Vicuna weights: "
 "[Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-"
 "weights) ."
-msgstr ""
+msgstr "你可以参考如何获取Vicuna weights文档[Vicuna](https://github.com/lm-sys/FastChat/blob/main/README.md#model-"
+"weights) ."
 
 #: ../../getting_started/install/deploy/deploy.md:98
 #: e0ffb578c7894520bbb850b257e7773c
@@ -318,15 +320,8 @@ msgid ""
 "If you have difficulty with this step, you can also directly use the "
 "model from [this link](https://huggingface.co/Tribbiani/vicuna-7b) as a "
 "replacement."
-msgstr ""
+msgstr "如果觉得模型太大你也可以下载vicuna-7b [this link](https://huggingface.co/Tribbiani/vicuna-7b) "
 
-#: ../../getting_started/install/deploy/deploy.md:100
-#: 2a32ee94d4404dc2bf4c57aae21b5ec3
-msgid ""
-"set .env configuration set your vector store type, "
-"eg:VECTOR_STORE_TYPE=Chroma, now we support Chroma and Milvus(version > "
-"2.1)"
-msgstr ""
 
 #: ../../getting_started/install/deploy/deploy.md:103
 #: 590c7c07cf5347b4aeee0809185c7f45
