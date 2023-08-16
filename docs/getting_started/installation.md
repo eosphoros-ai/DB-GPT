@@ -1,4 +1,4 @@
-# Installation
+# Python SDK
 DB-GPT provides a third-party Python API package that you can integrate into your own code.
 
 ### Installation from Pip
