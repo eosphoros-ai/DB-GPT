@@ -21,31 +21,31 @@ msgstr ""
 
 #: ../../getting_started/application.rst:13
 msgid "Application"
-msgstr ""
+msgstr "应用"
 
 #: ../../getting_started/application.rst:2 4de9609785bc406aa6f3965f057f90d8
 msgid "Applications"
-msgstr ""
+msgstr "应用"
 
 #: ../../getting_started/application.rst:3 1ef4f6d81f7c4a2f9ee330fc890017dd
 msgid ""
 "DB-GPT product is a Web application that you can chat database, chat "
 "knowledge, text2dashboard."
-msgstr ""
+msgstr "DB-GPT是一个可以和数据库对话，知识问答，智能报表的web应用"
 
 #: ../../getting_started/application.rst:8 0451376d435b47bfa7b3f81c87683610
 msgid "Chat DB"
-msgstr ""
+msgstr "Chat DB"
 
 #: ../../getting_started/application.rst:9 4b1372dd4ae34881891c1dbcd83b92bf
 msgid "Chat Knowledge"
-msgstr ""
+msgstr "知识问答"
 
 #: ../../getting_started/application.rst:10 d8807a357f1144ccba933338cd0f619a
 msgid "Dashboard"
-msgstr ""
+msgstr "Dashboard"
 
 #: ../../getting_started/application.rst:11 f6a5806d4f0d4271bb0964935d9c2ff3
 msgid "Plugins"
-msgstr ""
+msgstr "Plugins"
 
