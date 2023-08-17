@@ -1,0 +1,322 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-17 21:23+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:1
+#: 911085eb102a47c1832411ada8b8b906
+msgid "llama.cpp"
+msgstr "llama.cpp"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:3
+#: 8099fe03f2204c7f90968ae5c0cae117
+msgid ""
+"DB-GPT is now supported by [llama-cpp-python](https://github.com/abetlen"
+"/llama-cpp-python) through "
+"[llama.cpp](https://github.com/ggerganov/llama.cpp)."
+msgstr "DB-GPT is now supported by [llama-cpp-python](https://github.com/abetlen"
+"/llama-cpp-python) through "
+"[llama.cpp](https://github.com/ggerganov/llama.cpp)."
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:5
+#: 79c33615ad6d44859b33ed0d05fdb1a5
+msgid "Running llama.cpp"
+msgstr "运行 llama.cpp"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:7
+#: 3111bf827639484fb5e5f72a42b1b4e7
+msgid "Preparing Model Files"
+msgstr "准备模型文件"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:9
+#: 823f04ec193946d080b203a19c4ed96f
+msgid ""
+"To use llama.cpp, you need to prepare a ggml format model file, and there"
+" are two common ways to obtain it, you can choose either:"
+msgstr "使用llama.cpp, 你需要准备ggml格式的文件，你可以通过以下两种方法获取"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:11
+#: c631f3c1a1db429c801c24fa7799b2e1
+msgid "Download a pre-converted model file."
+msgstr "Download a pre-converted model file."
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:13
+#: 1ac7d5845ca241519ec15236e9802af6
+msgid ""
+"Suppose you want to use [Vicuna 7B v1.5](https://huggingface.co/lmsys"
+"/vicuna-7b-v1.5), you can download the file already converted from "
+"[TheBloke/vicuna-7B-v1.5-GGML](https://huggingface.co/TheBloke/vicuna-"
+"7B-v1.5-GGML), only one file is needed. Download it to the `models` "
+"directory and rename it to `ggml-model-q4_0.bin`."
+msgstr "假设您想使用[Vicuna 7B v1.5](https://huggingface.co/lmsys"
+"/vicuna-7b-v1.5)您可以从[TheBloke/vicuna-7B-v1.5-GGML](https://huggingface.co/TheBloke/vicuna-"
+"7B-v1.5-GGML)下载已转换的文件，只需要一个文件。将其下载到models目录并将其重命名为ggml-model-q4_0.bin。"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:19
+#: 65344fafdaa1469797592e454ebee7b5
+msgid "Convert It Yourself"
+msgstr "Convert It Yourself"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:21
+#: 8da2bda172884c9fb2d64901d8b9178c
+msgid ""
+"You can convert the model file yourself according to the instructions in "
+"[llama.cpp#prepare-data--run](https://github.com/ggerganov/llama.cpp"
+"#prepare-data--run), and put the converted file in the models directory "
+"and rename it to `ggml-model-q4_0.bin`."
+msgstr "您可以根据[llama.cpp#prepare-data--run](https://github.com/ggerganov/llama.cpp"
+"#prepare-data--run)中的说明自己转换模型文件，然后将转换后的文件放入models目录中，并将其重命名为ggml-model-q4_0.bin。"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:23
+#: d30986c0a84448ff89bc4bb84e3d0deb
+msgid "Installing Dependencies"
+msgstr "安装依赖"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:25
+#: b91ca009587b45679c54f4dce07c2eb3
+msgid ""
+"llama.cpp is an optional dependency in DB-GPT, and you can manually "
+"install it using the following command:"
+msgstr "llama.cpp在DB-GPT中是可选安装项, 你可以通过一下命令进行安装"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:31
+#: 2c89087ba2214d97bc01a286826042bc
+msgid "Modifying the Configuration File"
+msgstr "修改配置文件"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:33
+#: e4ebd4dac0cd4fb4a8e3c1f6edde7ea8
+msgid "Next, you can directly modify your `.env` file to enable llama.cpp."
+msgstr "修改`.env`文件使用llama.cpp"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:40
+#: 2fce7ec613784c8e96f19e9f4c4fb818
+msgid ""
+"Then you can run it according to [Run](https://db-"
+"gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html#run)."
+msgstr "然后你可以通过[Run](https://db-"
+"gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html#run).来运行"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:43
+#: 9bbaa16512d2420aa368ba34825cc024
+msgid "More Configurations"
+msgstr "更多配置文件"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:45
+#: 5ce014aa175d4a119150cf184098a0c3
+msgid ""
+"In DB-GPT, the model configuration can be done through  `{model "
+"name}_{config key}`."
+msgstr "In DB-GPT, the model configuration can be done through  `{model "
+"name}_{config key}`."
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 09d1f9eaf6cc4267b1eb94e4a8e78ba9
+msgid "Environment Variable Key"
+msgstr "Environment Variable Key"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 6650b3f2495e41588e23d8a2647e7ce3
+msgid "default"
+msgstr "default"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 8f33e692a7fc41e1a42663535b95a08c
+msgid "Prompt Template Name"
+msgstr "Prompt Template Name"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 2f8ca1f267694949a2b251d0ef576fd8
+msgid "llama_cpp_prompt_template"
+msgstr "llama_cpp_prompt_template"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 9b6d310d3f3c454488f76062c8bcda67 c80abec11c3240cf9d0122543e9401c3
+#: ed439c9374d74543a8d2a4f88f4db958 f49b3e4281b14f1b8909cd13159d406a
+#: ffa824cc22a946ab851124b58cf7441a
+msgid "None"
+msgstr "None"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: f41bd292bcb9491096c39b36bceb3816
+msgid ""
+"Prompt template name, now support: `zero_shot, vicuna_v1.1, llama-2"
+",baichuan-chat`, If None, the prompt template is automatically determined"
+" from model path。"
+msgstr "Prompt template 现在可以支持`zero_shot, vicuna_v1.1, llama-2"
+",baichuan-chat`, 如果是None, the prompt template可以自动选择模型路径"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 8125df74f1a7429eb0c5ce350edc9315
+msgid "llama_cpp_model_path"
+msgstr "llama_cpp_model_path"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 28ad71d410fb4757821bf8cc1c232357
+msgid "Model path"
+msgstr "Model path"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: b7133f115d79477ab416dc63c64d8aa7
+msgid "llama_cpp_n_gpu_layers"
+msgstr "llama_cpp_n_gpu_layers"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 7cdd27333a464ebeab6bf41bca709816
+msgid "1000000000"
+msgstr "1000000000"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 667ec37bc6824eba999f39f4e6072999
+msgid "Number of layers to offload to the GPU, Set this to 1000000000 to offload"
+" all layers to the GPU. If your GPU VRAM is not enough, you can set a low"
+" number, eg: `10`"
+msgstr "要将层数转移到GPU上，将其设置为1000000000以将所有层转移到GPU上。如果您的GPU VRAM不足，可以设置较低的数字，例如：10。"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: edae6c77475d4958a96d59b4bd165916
+msgid "llama_cpp_n_threads"
+msgstr "llama_cpp_n_threads"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 8fef1cdd4b0b42faadc717a58b9434a4
+msgid ""
+"Number of threads to use. If None, the number of threads is automatically"
+" determined"
+msgstr "要使用的线程数量。如果为None，则线程数量将自动确定。"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: ef5f27f600aa4eaf8080d6dca46ad434
+msgid "llama_cpp_n_batch"
+msgstr "llama_cpp_n_batch"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: be999101e5f84b83bde0d8e801083c52
+msgid "512"
+msgstr "512"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: cdc7a51c720a4fe38323eb7a1cfa6bd1
+msgid "Maximum number of prompt tokens to batch together when calling llama_eval"
+msgstr "在调用llama_eval时，批处理在一起的prompt tokens的最大数量。
+
+"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 26d08360c2df4d018b2416cf8e4b3f48
+msgid "llama_cpp_n_gqa"
+msgstr "llama_cpp_n_gqa"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 4d22c4f8e285445f9c26d181cf350cb7
+msgid "Grouped-query attention. Must be 8 for llama-2 70b."
+msgstr "对于llama-2 70b模型，Grouped-query attention必须为8。"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 18e5e5ba6ac64e818546742458fb4c84
+msgid "llama_cpp_rms_norm_eps"
+msgstr "llama_cpp_rms_norm_eps"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: fc85743d71e1428fa2aa0423ff9d9170
+msgid "5e-06"
+msgstr "5e-06"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: bfc53bec0df94d9e8e9cc7d3333a69c1
+msgid "5e-6 is a good value for llama-2 models."
+msgstr "对于llama-2模型来说，5e-6是一个不错的值。"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 81fc8f37787d48b0b1da826a2f887886
+msgid "llama_cpp_cache_capacity"
+msgstr "llama_cpp_cache_capacity"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 125e3285249449cb90bbff063868d4d4
+msgid "Maximum cache capacity. Examples: 2000MiB, 2GiB"
+msgstr "cache capacity最大值. Examples: 2000MiB, 2GiB"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: 31ed49d49f574d4983738d91bed95fc9
+msgid "llama_cpp_prefer_cpu"
+msgstr "llama_cpp_prefer_cpu"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: b6ed0d5394874bb38c7468216b8bca88
+msgid "False"
+msgstr "False"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md
+#: d148d6b130454666a601b65b444c7e51
+msgid ""
+"If a GPU is available, it will be preferred by default, unless "
+"prefer_cpu=False is configured."
+msgstr "如果有可用的GPU，默认情况下会优先使用GPU，除非配置了prefer_cpu=False。"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:59
+#: 75bd31d245b148569bcf9eca6c8bec9c
+msgid "GPU Acceleration"
+msgstr "GPU 加速"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:61
+#: 1cf5538f9d39457e901f4120f76d54c1
+msgid ""
+"GPU acceleration is supported by default. If you encounter any issues, "
+"you can uninstall the dependent packages with the following command:"
+msgstr "默认情况下支持GPU加速。如果遇到任何问题，您可以使用以下命令卸载相关的依赖包"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:66
+#: 08f8eea38e5e44fa80b528b75a379acf
+msgid ""
+"Then install `llama-cpp-python` according to the instructions in [llama-"
+"cpp-python](https://github.com/abetlen/llama-cpp-"
+"python/blob/main/README.md)."
+msgstr "然后通过指令[llama-"
+"cpp-python](https://github.com/abetlen/llama-cpp-"
+"python/blob/main/README.md).安装`llama-cpp-python`"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:69
+#: abea5d4418c54657981640d6227b7be2
+msgid "Mac Usage"
+msgstr "Mac Usage"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:71
+#: be9fb5ecbdd5495b98007decccbd0372
+msgid ""
+"Special attention, if you are using Apple Silicon (M1) Mac, it is highly "
+"recommended to install arm64 architecture python support, for example:"
+msgstr "特别注意：如果您正在使用苹果芯片（M1）的Mac电脑，强烈建议安装arm64架构的Python支持，例如："
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:78
+#: efd6dfd4e9e24bf884803143e2b123f2
+msgid "Windows Usage"
+msgstr "Windows使用"
+
+#: ../../getting_started/install/llm/llama/llama_cpp.md:80
+#: 27ecf054aa294a2eaed701c46edf27a7
+msgid ""
+"The use under the Windows platform has not been rigorously tested and "
+"verified, and you are welcome to use it. If you have any problems, you "
+"can create an [issue](https://github.com/eosphoros-ai/DB-GPT/issues) or "
+"[contact us](https://github.com/eosphoros-ai/DB-GPT/tree/main#contact-"
+"information) directly."
+msgstr "在Windows平台上的使用尚未经过严格的测试和验证，欢迎您使用。如果您有任何问题，可以创建一个[issue](https://github.com/eosphoros-ai/DB-GPT/issues)或者[contact us](https://github.com/eosphoros-ai/DB-GPT/tree/main#contact-"
+"information) directly."
+

@@ -37,6 +37,10 @@ LLM_MODEL_CONFIG = {
     "vicuna-13b-v1.5": os.path.join(MODEL_PATH, "vicuna-13b-v1.5"),
     "vicuna-7b-v1.5": os.path.join(MODEL_PATH, "vicuna-7b-v1.5"),
     "text2vec": os.path.join(MODEL_PATH, "text2vec-large-chinese"),
+    # https://huggingface.co/moka-ai/m3e-large
+    "m3e-base": os.path.join(MODEL_PATH, "m3e-base"),
+    # https://huggingface.co/moka-ai/m3e-base
+    "m3e-large": os.path.join(MODEL_PATH, "m3e-large"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
     "codegen2-1b": os.path.join(MODEL_PATH, "codegen2-1B"),
     "codet5p-2b": os.path.join(MODEL_PATH, "codet5p-2b"),
