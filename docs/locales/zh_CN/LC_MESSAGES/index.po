@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-20 10:53+0800\n"
+"POT-Creation-Date: 2023-08-17 21:58+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,35 +19,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../index.rst:34 ../../index.rst:45 5bab1511780c442e9dd9e18519ad7ef3
+#: ../../index.rst:34 ../../index.rst:45 3566ae9872dd4f97844f9e0680de5f5d
 msgid "Getting Started"
 msgstr "开始"
 
-#: ../../index.rst:57 ../../index.rst:78 dbdeae6c9a344e7889d399a5dbbca872
+#: ../../index.rst:59 ../../index.rst:80 6845a928056940b28be8c13d766009f8
 msgid "Modules"
 msgstr "模块"
 
-#: ../../index.rst:92 ../../index.rst:108 43594aec45bf49609d7c7435c6472a9b
+#: ../../index.rst:94 ../../index.rst:110 ef3bcf6f837345fca8539d51434e3c2c
 msgid "Use Cases"
 msgstr "示例"
 
-#: ../../index.rst:122 ../../index.rst:125 013a0e5d909e4332ac49f6200924043e
+#: ../../index.rst:124 ../../index.rst:127 b10b8b49e4f5459f8bea881ffc9259d5
 msgid "Reference"
 msgstr "参考"
 
-#: ../../index.rst:134 ../../index.rst:137 42907cf1d1bb491bae2fcd7ede06e421
-msgid "FAQ"
-msgstr ""
-
-#: ../../index.rst:161 ../../index.rst:167 64f4a587bc1f4ca9a456b97fac5d6def
+#: ../../index.rst:137 ../../index.rst:143 12e75881253a4c4383ac7364c1103348
 msgid "Resources"
 msgstr "资源"
 
-#: ../../index.rst:7 df1ad6da308f49debd4053e5899a4c8d
+#: ../../index.rst:7 f1a30af655744c0b8fb7197a5fc3a45b
 msgid "Welcome to DB-GPT!"
 msgstr "欢迎来到DB-GPT中文文档"
 
-#: ../../index.rst:8 cc5b388ea2924968b2769e4b4a159761
+#: ../../index.rst:8 426686c829a342798eaae9f789260621
 msgid ""
 "As large models are released and iterated upon, they are becoming "
 "increasingly intelligent. However, in the process of using large models, "
@@ -65,7 +61,7 @@ msgstr ""
 "，我们启动了DB-"
 "GPT项目，为所有基于数据库的场景构建一个完整的私有大模型解决方案。该方案“”支持本地部署，既可应用于“独立私有环境”，又可根据业务模块进行“独立部署”和“隔离”，确保“大模型”的能力绝对私有、安全、可控。"
 
-#: ../../index.rst:10 b831cd62a1ba46108dcf343792e8d67a
+#: ../../index.rst:10 0a7fbd17ecfd48cb8e0593e35a225e1b
 msgid ""
 "**DB-GPT** is an experimental open-source project that uses localized GPT"
 " large models to interact with your data and environment. With this "
@@ -75,102 +71,102 @@ msgstr ""
 "DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险100% 私密，100%"
 " 安全。"
 
-#: ../../index.rst:12 3baac7e36a824395a57c246e05560c67
+#: ../../index.rst:12 50e02964b1e24c4fa598f820796aec61
 msgid "**Features**"
 msgstr "特性"
 
-#: ../../index.rst:13 6638568ff94e47f6a0b04a6775ca45d1
+#: ../../index.rst:13 62b74478b9b046dfa7606785939ca70e
 msgid ""
 "Currently, we have released multiple key features, which are listed below"
 " to demonstrate our current capabilities:"
 msgstr "目前我们已经发布了多种关键的特性，这里一一列举展示一下当前发布的能力。"
 
-#: ../../index.rst:15 b49710ac36ed4a188280aeb3589f11fe
+#: ../../index.rst:15 f593159ba8dd4388bd2ba189f9efd5ea
 msgid "SQL language capabilities - SQL generation - SQL diagnosis"
 msgstr "SQL语言能力 - SQL生成 - SQL诊断"
 
-#: ../../index.rst:19 6bd495632b39477e8948677aeb4ab1ee
+#: ../../index.rst:19 b829655a3ef146528beb9c50538be84e
 msgid ""
 "Private domain Q&A and data processing - Database knowledge Q&A - Data "
 "processing"
 msgstr "私有领域问答与数据处理 - 数据库知识问答 - 数据处理"
 
-#: ../../index.rst:23 d1d3665a412246b9814139a938a29d1b
+#: ../../index.rst:23 43e988a100a740358f1a0be1710d7960
 msgid ""
 "Plugins - Support custom plugin execution tasks and natively support the "
 "Auto-GPT plugin, such as:"
 msgstr "插件模型 - 支持自定义插件执行任务，并原生支持Auto-GPT插件，例如:* SQL自动执行，获取查询结果 * 自动爬取学习知识"
 
-#: ../../index.rst:26 41e37b63a8f44fc09a4da3574b25fcd3
+#: ../../index.rst:26 888186524aef4fe5a0ba643d55783fd9
 msgid ""
 "Unified vector storage/indexing of knowledge base - Support for "
 "unstructured data such as PDF, Markdown, CSV, and WebURL"
 msgstr "知识库统一向量存储/索引 - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL"
 
-#: ../../index.rst:29 1acac8a6cbe54f7b8c31135189d726d6
+#: ../../index.rst:29 fab4f961fe1746dca3d5e369de714108
 msgid ""
 "Milti LLMs Support - Supports multiple large language models, currently "
 "supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8) - TODO: codegen2, "
 "codet5p"
 msgstr "多模型支持 - 支持多种大语言模型, 当前已支持Vicuna(7b,13b), ChatGLM-6b(int4, int8)"
 
-#: ../../index.rst:35 481edf63bcd348b4b3e14353dc5be952
+#: ../../index.rst:35 7bc21f280364448da0edc046378be622
 msgid ""
 "How to get started using DB-GPT to interact with your data and "
 "environment."
 msgstr "开始使用DB-GPT与您的数据环境进行交互。"
 
-#: ../../index.rst:36 6b26a04661f7445198b3797442d3f178
+#: ../../index.rst:36 5362221ecdf5427faa51df83d4a939ee
 #, fuzzy
 msgid "`Quickstart Guide <./getting_started/getting_started.html>`_"
 msgstr "`使用指南 <./getting_started/getting_started.html>`_"
 
-#: ../../index.rst:38 ff435ef9964d44508ad840de2950c1c8
+#: ../../index.rst:38 e028ed5afce842fbb76a6ce825d5a8e2
 msgid "Concepts and terminology"
 msgstr "相关概念"
 
-#: ../../index.rst:40 db9dfacbe93e4f858843c4d2a0e2dd25
+#: ../../index.rst:40 f773ac5e50054c308920c0b95a44b0cb
 #, fuzzy
 msgid "`Concepts and Terminology  <./getting_started/concepts.html>`_"
 msgstr "`相关概念 <./getting_started/concepts.html>`_"
 
-#: ../../index.rst:42 50faf8302ba140ce84897daef2c90ca2
+#: ../../index.rst:42 afeee818ec45454da12b80161b5f1de0
 msgid "Coming soon..."
 msgstr ""
 
-#: ../../index.rst:44 547bb007f90e43c096f25647cebefd7b
+#: ../../index.rst:44 cb4f911316234b86aad88b83d2784ad3
 msgid "`Tutorials <.getting_started/tutorials.html>`_"
 msgstr "`教程 <.getting_started/tutorials.html>`_"
 
-#: ../../index.rst:59 89bc50c752b84e3fb789ce5da1b654dc
+#: ../../index.rst:61 de365722d61442b99f44fcde8a8c9efb
 msgid ""
 "These modules are the core abstractions with which we can interact with "
 "data and environment smoothly."
 msgstr "这些模块是我们可以与数据和环境顺利地进行交互的核心组成。"
 
-#: ../../index.rst:60 81f3860920964720958c62b3a6769f12
+#: ../../index.rst:62 8fbb6303d3cd4fcc956815f44ef1fa8d
 msgid ""
 "It's very important for DB-GPT, DB-GPT also provide standard, extendable "
 "interfaces."
 msgstr "DB-GPT还提供了标准的、可扩展的接口。"
 
-#: ../../index.rst:62 15faf914d05544df86359e50fdc70483
+#: ../../index.rst:64 797ac43f459b4662a5097c8cb783c4ba
 msgid ""
 "The docs for each module contain quickstart examples, how to guides, "
 "reference docs, and conceptual guides."
 msgstr "每个模块的文档都包含快速入门的例子、操作指南、参考文档和相关概念等内容。"
 
-#: ../../index.rst:64 18a673690afa47df8e6dd3d065b2580f
+#: ../../index.rst:66 70d7b89c1c154c65aabedbb3c94c8771
 msgid "The modules are as follows"
 msgstr "组成模块如下："
 
-#: ../../index.rst:66 d2c20ed1b6ba4aa697090453b0f775a1
+#: ../../index.rst:68 794d8a939e274894910fcdbb3ee52429
 msgid ""
 "`LLMs <./modules/llms.html>`_: Supported multi models management and "
 "integrations."
 msgstr "`LLMs <./modules/llms.html>`_:基于FastChat提供大模型的运行环境。支持多模型管理和集成。 "
 
-#: ../../index.rst:68 d6c72e6fee3348e89422f9ff45804e3a
+#: ../../index.rst:70 58b0d2fcac2c471494fe2b6b5b3f1b49
 msgid ""
 "`Prompts <./modules/prompts.html>`_: Prompt management, optimization, and"
 " serialization for multi database."
@@ -178,59 +174,59 @@ msgstr ""
 "`Prompt自动生成与优化 <./modules/prompts.html>`_: 自动化生成高质量的Prompt "
 "，并进行优化，提高系统的响应效率"
 
-#: ../../index.rst:70 1756de47335d4eb7916a6c8b8b5ab70b
+#: ../../index.rst:72 d433b62e11f64e18995bd334f93992a6
 msgid "`Plugins <./modules/plugins.html>`_: Plugins management, scheduler."
 msgstr "`Agent与插件： <./modules/plugins.html>`_:提供Agent和插件机制，使得用户可以自定义并增强系统的行为。"
 
-#: ../../index.rst:72 542efb88411f4cc192a08e7d28c84863
+#: ../../index.rst:74 3e7eb10f64274c07ace90b84ffc904b4
 #, fuzzy
 msgid ""
 "`Knowledge <./modules/knowledge.html>`_: Knowledge management, embedding,"
 " and search."
 msgstr "`知识库能力： <./modules/knowledge.html>`_: 支持私域知识库问答能力, "
 
-#: ../../index.rst:74 0204630cd5f14c68ada3bf11e0b0fbf5
+#: ../../index.rst:76 3af796f287f54de0869a086cfa24b568
 msgid ""
 "`Connections <./modules/connections.html>`_: Supported multi databases "
 "connection. management connections and interact with this."
 msgstr "`连接模块 <./modules/connections.html>`_: 用于连接不同的模块和数据源，实现数据的流转和交互 "
 
-#: ../../index.rst:76 f9363a963be44d0ea01bb5d65b69d0f8
+#: ../../index.rst:78 27273a4020a540f4b28e7c54ea9c9232
 #, fuzzy
 msgid "`Vector <./modules/vector.html>`_: Supported multi vector database."
 msgstr "`LLMs <./modules/llms.html>`_:基于FastChat提供大模型的运行环境。支持多模型管理和集成。 "
 
-#: ../../index.rst:94 7223c3b95e9446bcae40a355e6b02324
+#: ../../index.rst:96 d887747669d1429f950c56131cd35a62
 msgid "Best Practices and built-in implementations for common DB-GPT use cases:"
 msgstr "DB-GPT用例的最佳实践和内置方法:"
 
-#: ../../index.rst:96 c088f2ab9f2247ac9a8c9af31d0da7a6
+#: ../../index.rst:98 63ea6a449012432baeeef975db5c3ac1
 msgid ""
 "`Sql generation and diagnosis "
 "<./use_cases/sql_generation_and_diagnosis.html>`_: SQL generation and "
 "diagnosis."
 msgstr "`Sql生成和诊断 <./use_cases/sql_generation_and_diagnosis.html>`_: Sql生成和诊断。"
 
-#: ../../index.rst:98 23973b07c6ba42088a714b048d4b43c4
+#: ../../index.rst:100 c7388a2147af48d1a6619492a3b926db
 msgid ""
 "`knownledge Based QA <./use_cases/knownledge_based_qa.html>`_: A "
 "important scene for user to chat with database documents, codes, bugs and"
 " schemas."
 msgstr "`知识库问答 <./use_cases/knownledge_based_qa.html>`_:  用户与数据库文档、代码和bug聊天的重要场景\""
 
-#: ../../index.rst:100 6a1d77bc56a14803b66ebc9f2b6c4b7b
+#: ../../index.rst:102 f5a459f5a84241648a6a05f7ba3026c0
 msgid ""
 "`Chatbots <./use_cases/chatbots.html>`_: Language model love to chat, use"
 " multi models to chat."
 msgstr "`聊天机器人 <./use_cases/chatbots.html>`_: 使用多模型进行对话"
 
-#: ../../index.rst:102 621774a68cba46daa7112f865e6e3af9
+#: ../../index.rst:104 d566174db6eb4834854c00ce7295c297
 msgid ""
 "`Querying Database Data <./use_cases/query_database_data.html>`_: Query "
 "and Analysis data from databases and give charts."
 msgstr "`查询数据库数据 <./use_cases/query_database_data.html>`_:从数据库中查询和分析数据并给出图表。"
 
-#: ../../index.rst:104 9f379fbe8aac47f4a1a53d84ab2a2f51
+#: ../../index.rst:106 89aac5a738ae4aeb84bc324803ada354
 msgid ""
 "`Interacting with apis <./use_cases/interacting_with_api.html>`_: "
 "Interact with apis, such as create a table, deploy a database cluster, "
@@ -239,39 +235,39 @@ msgstr ""
 "`API交互 <./use_cases/interacting_with_api.html>`_: "
 "与API交互，例如创建表、部署数据库集群、创建数据库等。"
 
-#: ../../index.rst:106 3dbb717e1b024a20bb6049facb616b1b
+#: ../../index.rst:108 f100fb0cdd264cf186bf554771488aa1
 msgid ""
 "`Tool use with plugins <./use_cases/tool_use_with_plugin>`_: According to"
 " Plugin use tools to manage databases autonomoly."
 msgstr "`插件工具 <./use_cases/tool_use_with_plugin>`_: 根据插件使用工具自主管理数据库。"
 
-#: ../../index.rst:123 4acedc39ccf34e79b805189a11285a3a
+#: ../../index.rst:125 93809b95cc4a41249d7ab6b264981167
 msgid ""
 "Full documentation on all methods, classes, installation methods, and "
 "integration setups for DB-GPT."
 msgstr "关于DB-GPT的所有方法、类、安装方法和集成设置的完整文档。"
 
-#: ../../index.rst:135 622112f3cce34461ba7e0d52fa81d438
-msgid "DB-GPT FAQ."
-msgstr ""
-
-#: ../../index.rst:146 a989256fd69f4bbfae73191b505c59fa
-msgid "Ecosystem"
-msgstr "环境系统"
-
-#: ../../index.rst:148 1b5c410dd94842f2801f08540dd57647
-msgid "Guides for how other companies/products can be used with DB-GPT"
-msgstr "其他公司/产品如何与DB-GPT一起使用的方法指南"
-
-#: ../../index.rst:163 8368b4c62ebe41ad91551e241dbcc4df
+#: ../../index.rst:139 4a95e65e128e4fc0907a3f51f1f2611b
 msgid ""
 "Additional resources we think may be useful as you develop your "
 "application!"
 msgstr "“我们认为在您开发应用程序时可能有用的其他资源!”"
 
-#: ../../index.rst:165 2a4cd897b20c4683979b44fb9d7470e6
+#: ../../index.rst:141 4934fbae909644769dd83c7f99c0fcd0
 msgid ""
-"`Discord <https://discord.gg/eZHE94MN>`_: if your have some "
-"problem or ideas, you can talk from discord."
+"`Discord <https://discord.gg/eZHE94MN>`_: if your have some problem or "
+"ideas, you can talk from discord."
 msgstr "`Discord <https://discord.gg/eZHE94MN>`_:如果您有任何问题，可以到discord中进行交流。"
+
+#~ msgid "FAQ"
+#~ msgstr ""
+
+#~ msgid "DB-GPT FAQ."
+#~ msgstr ""
+
+#~ msgid "Ecosystem"
+#~ msgstr "环境系统"
+
+#~ msgid "Guides for how other companies/products can be used with DB-GPT"
+#~ msgstr "其他公司/产品如何与DB-GPT一起使用的方法指南"
 
