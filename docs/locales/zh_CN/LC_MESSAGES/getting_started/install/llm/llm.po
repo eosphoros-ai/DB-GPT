@@ -1,0 +1,41 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-17 13:07+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/install/llm/llm.rst:2
+#: ../../getting_started/install/llm/llm.rst:11
+#: 93825fe9ba84497c8cdae74ab13a27ef
+msgid "LLM Usage"
+msgstr "LLM Usage"
+
+#: ../../getting_started/install/llm/llm.rst:3 dc05eed3ffab448d971e7224829e0c3a
+msgid ""
+"DB-GPT provides a management and deployment solution for multiple models."
+" This chapter mainly discusses how to deploy different models."
+msgstr "DB-GPT提供了多模型的管理和部署方案，本章主要讲解针对不同的模型该怎么部署"
+
+#: ../../getting_started/install/llm/llm.rst:8 e99cff5c2dc84e53ab8adc626851825b
+msgid "llama_cpp"
+msgstr "llama_cpp"
+
+#: ../../getting_started/install/llm/llm.rst:9 6ed72b9ee02644bfb9a69219afdda01f
+msgid "quantization"
+msgstr "quantization"
+
