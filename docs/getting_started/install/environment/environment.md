@@ -1,4 +1,4 @@
-Env Parameter
+Environment Parameter
 ==================================
 
 ```{admonition} LLM MODEL Config
