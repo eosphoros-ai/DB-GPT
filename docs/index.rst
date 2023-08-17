@@ -132,32 +132,6 @@ Reference
 
    ./reference.md
 
-FAQ
------------
-| DB-GPT FAQ.
-
-.. toctree::
-   :maxdepth: 1
-   :caption: FAQ
-   :name: FAQ
-   :hidden:
-
-   ./faq.md
-
-Ecosystem
-----------
-
-| Guides for how other companies/products can be used with DB-GPT
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-   :caption: Ecosystem
-   :name: ecosystem
-   :hidden
-
-   ./ecosystem.md
-
 
 Resources
 ----------
