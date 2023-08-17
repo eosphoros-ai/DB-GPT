@@ -1,0 +1,86 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-16 23:15+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:1
+#: 6aa73265a43d4e6ea287e6265ef4efe5
+msgid "Installation FAQ"
+msgstr "Installation FAQ"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:5
+#: 4efe241d5e724db5ab22548cfb88f8b6
+msgid ""
+"Q1: execute `pip install -r requirements.txt` error, found some package "
+"cannot find correct version."
+msgstr "Q1: execute `pip install -r requirements.txt` error, found some package "
+"cannot find correct version."
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:6
+#: e837e10bdcfa49cebb71b32eece4831b
+msgid "change the pip source."
+msgstr "替换pip源."
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:13
+#: ../../getting_started/faq/deploy/deploy_faq.md:20
+#: 84310ec0c54e4a02949da2e0b35c8c7d e8a7a8b38b7849b88c14fb6d647f9b63
+msgid "or"
+msgstr "或者"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:27
+#: 87797a5dafef47c8884f6f1be9a1fbd2
+msgid ""
+"Q2: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to"
+" open database file"
+msgstr "Q2: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to"
+" open database file"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:29
+#: bc96b22e201c47ec999c8d98227a956d
+msgid "make sure you pull latest code or create directory with mkdir pilot/data"
+msgstr "make sure you pull latest code or create directory with mkdir pilot/data"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:31
+#: d7938f1c70a64efa9948080a6d416964
+msgid "Q3: The model keeps getting killed."
+msgstr "Q3: The model keeps getting killed."
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:32
+#: b072386586a64b2289c0fcdf6857b2b7
+msgid ""
+"your GPU VRAM size is not enough, try replace your hardware or replace "
+"other llms."
+msgstr "GPU显存不够, 增加显存或者换一个显存小的模型"
+
+#~ msgid ""
+#~ "Q2: When use Mysql, Access denied "
+#~ "for user 'root@localhost'(using password :NO)"
+#~ msgstr ""
+
+#~ msgid "A3: make sure you have installed mysql instance in right way"
+#~ msgstr ""
+
+#~ msgid "Docker:"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Normal: [download mysql "
+#~ "instance](https://dev.mysql.com/downloads/mysql/)"
+#~ msgstr ""
+

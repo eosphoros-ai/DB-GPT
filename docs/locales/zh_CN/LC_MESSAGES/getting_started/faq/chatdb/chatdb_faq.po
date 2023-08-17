@@ -1,0 +1,61 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-16 23:15+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/faq/chatdb/chatdb_faq.md:1
+#: ffd1abb6b8f34e53a8ed83ede845b141
+msgid "Chat DB FAQ"
+msgstr ""
+
+#: ../../getting_started/faq/chatdb/chatdb_faq.md:3
+#: 2467f6603ab341bbb1ce17f75dc06e5e
+msgid "Q1: What difference between ChatData and ChatDB"
+msgstr ""
+
+#: ../../getting_started/faq/chatdb/chatdb_faq.md:4
+#: 6e47803e92064e379a1bb74e2b3d347a
+msgid ""
+"ChatData generates SQL from natural language and executes it. ChatDB "
+"involves conversing with metadata from the Database, including metadata "
+"about databases, tables, and fields."
+msgstr ""
+
+#: ../../getting_started/faq/chatdb/chatdb_faq.md:6
+#: fa3eef15697f43db963f6c875e85323b
+msgid "Q2: The suitable llm model currently supported for text-to-SQL is?"
+msgstr ""
+
+#: ../../getting_started/faq/chatdb/chatdb_faq.md:7
+#: 47f36a0a48c045269bcf790873d55f8c
+msgid "Now vicunna-13b-1.5 and llama2-70b is more suitable for text-to-SQL."
+msgstr ""
+
+#: ../../getting_started/faq/chatdb/chatdb_faq.md:9
+#: 9f5ef9a05fac4eb3b27875171ec4e763
+msgid "Q3: How to fine-tune Text-to-SQL in DB-GPT"
+msgstr ""
+
+#: ../../getting_started/faq/chatdb/chatdb_faq.md:10
+#: c9b6f6e969e04805a59d9ccabc03c0b8
+msgid ""
+"there is another github project for Text-to-SQL fine-tune "
+"(https://github.com/eosphoros-ai/DB-GPT-Hub)"
+msgstr ""
+
