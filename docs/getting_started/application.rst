@@ -2,7 +2,7 @@ Applications
 ==================================
 DB-GPT product is a Web application that you can chat database, chat knowledge, text2dashboard.
 
-.. image:: ./assets/DB-GPT-Product.jpg
+.. image:: https://github.com/eosphoros-ai/DB-GPT/assets/13723926/f6564da2-bed3-43ad-9659-d00e0eeb255b
 
 
 - Chat DB

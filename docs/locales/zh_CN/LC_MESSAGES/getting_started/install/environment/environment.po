@@ -23,12 +23,12 @@ msgstr ""
 #: be341d16f7b24bf4ad123ab78a6d855a
 #, fuzzy
 msgid "Environment Parameter"
-msgstr "Env Parameter"
+msgstr "环境变量说明"
 
 #: ../../getting_started/install/environment/environment.md:4
 #: 46eddb27c90f41548ea9a724bbcebd37
 msgid "LLM MODEL Config"
-msgstr "LLM MODEL Config"
+msgstr "模型配置"
 
 #: ../../getting_started/install/environment/environment.md:5
 #: 7deaa85df4a04fb098f5994547a8724f
