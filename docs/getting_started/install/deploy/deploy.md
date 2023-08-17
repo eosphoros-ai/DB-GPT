@@ -61,8 +61,11 @@ Once the environment is installed, we have to create a new folder "models" in th
 
 ```{tip}
 Notice make sure you have install git-lfs
+
 centos:yum install git-lfs
+
 ubuntu:app-get install git-lfs
+
 macos:brew install git-lfs
 ```
 
@@ -99,10 +102,16 @@ You can configure basic parameters in the .env file, for example setting LLM_MOD
 ```bash
 $ python pilot/server/dbgpt_server.py
 ```
+
 Open http://localhost:5000 with your browser to see the product.
 
-If you want to access an external LLM service, you need to 1.set the variables LLM_MODEL=YOUR_MODEL_NAME MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env file.
+```tip
+If you want to access an external LLM service, you need to
+
+1.set the variables LLM_MODEL=YOUR_MODEL_NAME, MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env file.
+
 2.execute dbgpt_server.py in light mode
+```
 
 If you want to learn about dbgpt-webui, read https://github./csunny/DB-GPT/tree/new-page-framework/datacenter
 
@@ -110,8 +119,7 @@ If you want to learn about dbgpt-webui, read https://github./csunny/DB-GPT/tree/
 $ python pilot/server/dbgpt_server.py --light
 ```
 
-
-### 4. Multiple GPUs
+### Multiple GPUs
 
 DB-GPT will use all available gpu by default. And you can modify the setting `CUDA_VISIBLE_DEVICES=0,1` in `.env` file to use the specific gpu IDs.
 
@@ -127,7 +135,7 @@ CUDA_VISIBLE_DEVICES=3,4,5,6 python3 pilot/server/dbgpt_server.py
 
 You can modify the setting `MAX_GPU_MEMORY=xxGib` in `.env` file to configure the maximum memory used by each GPU.
 
-### 5. Not Enough Memory
+### Not Enough Memory
 
 DB-GPT supported 8-bit quantization and 4-bit quantization.
 
