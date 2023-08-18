@@ -1,6 +1,8 @@
-### llama.cpp
+llama.cpp
+==================================
 
-DB-GPT is now supported by [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) through [llama.cpp](https://github.com/ggerganov/llama.cpp).
+
+DB-GPT already supports [llama.cpp](https://github.com/ggerganov/llama.cpp) via [llama-cpp-python](https://github.com/abetlen/llama-cpp-python).
 
 ## Running llama.cpp
 

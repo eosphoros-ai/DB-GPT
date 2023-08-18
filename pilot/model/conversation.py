@@ -335,6 +335,20 @@ register_conv_template(
     )
 )
 
+# Alpaca default template
+register_conv_template(
+    Conversation(
+        name="alpaca",
+        system="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
+        roles=("### Instruction", "### Response"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="\n\n",
+        sep2="</s>",
+    )
+)
+
 # Baichuan-13B-Chat template
 register_conv_template(
     # source: https://huggingface.co/baichuan-inc/Baichuan-13B-Chat/blob/f5f47be2adbbdceb784f334d6fa1ca2c73e65097/modeling_baichuan.py#L507
