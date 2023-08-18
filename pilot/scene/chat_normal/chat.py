@@ -18,7 +18,7 @@ class ChatNormal(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, user_input):
+    def __init__(self, chat_session_id, user_input, select_param: str = None):
         """ """
         super().__init__(
             chat_mode=ChatScene.ChatNormal,
@@ -30,8 +30,6 @@ class ChatNormal(BaseChat):
         input_values = {"input": self.current_user_input}
         return input_values
 
-    def do_action(self, prompt_response):
-        return prompt_response
 
     @property
     def chat_type(self) -> str:

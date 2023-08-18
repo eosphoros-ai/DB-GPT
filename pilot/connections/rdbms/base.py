@@ -21,6 +21,7 @@ from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.orm import sessionmaker, scoped_session
 
+from pilot.common.schema import DBType
 from pilot.connections.base import BaseConnect
 from pilot.configs.config import Config
 
@@ -323,7 +324,7 @@ class RDBMSDatabase(BaseConnect):
 
             result = list(result)
             return field_names, result
-
+        return []
     def run(self, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""
         print("SQL:" + command)

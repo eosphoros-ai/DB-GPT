@@ -46,7 +46,7 @@ class StringEmbedding(SourceEmbedding):
                 )
             except Exception:
                 self.text_splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=100, chunk_overlap=50
+                    chunk_size=500, chunk_overlap=100
                 )
             return self.text_splitter.split_documents(docs)
         return docs

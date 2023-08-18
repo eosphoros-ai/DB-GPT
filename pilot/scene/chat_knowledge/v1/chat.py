@@ -30,14 +30,15 @@ class ChatKnowledge(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, user_input, knowledge_space):
+    def __init__(self, chat_session_id, user_input,  select_param: str = None):
         """ """
+        self.knowledge_space = select_param
         super().__init__(
             chat_mode=ChatScene.ChatKnowledge,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
         )
-        self.space_context = self.get_space_context(knowledge_space)
+        self.space_context = self.get_space_context(self.knowledge_space)
         self.top_k = (
             CFG.KNOWLEDGE_SEARCH_TOP_SIZE
             if self.space_context is None
@@ -50,7 +51,7 @@ class ChatKnowledge(BaseChat):
             else int(self.space_context["prompt"]["max_token"])
         )
         vector_store_config = {
-            "vector_store_name": knowledge_space,
+            "vector_store_name": self.knowledge_space,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }

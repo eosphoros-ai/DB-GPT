@@ -19,17 +19,18 @@ class ChatWithDbQA(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, db_name, user_input):
+    def __init__(self, chat_session_id, user_input, select_param:str = ""):
         """ """
+        self.db_name = select_param
         super().__init__(
             chat_mode=ChatScene.ChatWithDbQA,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
-            select_param=db_name,
+            select_param=self.db_name,
         )
-        self.db_name = db_name
-        if db_name:
-            self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+
+        if self.db_name:
+            self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
             self.db_connect = self.database.session
             self.tables = self.database.get_table_names()
 

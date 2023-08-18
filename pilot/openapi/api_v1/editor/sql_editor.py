@@ -24,3 +24,4 @@ class SqlRunData(BaseModel):
 class ChartRunData(BaseModel):
     sql_data: SqlRunData
     chart_values: List[ValueItem]
+    chart_type: str

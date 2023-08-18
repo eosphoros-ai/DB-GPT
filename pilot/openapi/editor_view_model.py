@@ -61,4 +61,4 @@ class ChatSqlEditContext(BaseModel):
 
     new_sql: str
     new_speak: str = ""
-    new_view_info: str = ""
+
