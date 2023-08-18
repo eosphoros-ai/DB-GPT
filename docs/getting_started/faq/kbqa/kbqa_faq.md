@@ -47,12 +47,24 @@ Set KNOWLEDGE_SEARCH_TOP_SIZE smaller or set KNOWLEDGE_CHUNK_SIZE smaller, and r
 1.shutdown dbgpt_server(ctrl c)
 
 2.add column context for table knowledge_space
+
 ```commandline
 mysql -h127.0.0.1 -uroot -paa12345678
 ```
+
 3.execute sql ddl
+
 ```commandline
 mysql> use knowledge_management;
 mysql> ALTER TABLE knowledge_space ADD COLUMN context TEXT COMMENT "arguments context";
 ```
+
 4.restart dbgpt serve
+
+##### Q5:Use Mysql, how to use DB-GPT KBQA
+
+build Mysql KBQA system database schema.
+
+```bash
+$ mysql -h127.0.0.1 -uroot -paa12345678 < ./assets/schema/knowledge_management.sql
+```
