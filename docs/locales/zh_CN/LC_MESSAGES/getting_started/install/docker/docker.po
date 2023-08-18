@@ -22,7 +22,7 @@ msgstr ""
 #: ../../getting_started/install/docker/docker.md:1
 #: ea5d6b95dea844b89d2f5d0e8f6ebfd3
 msgid "Docker Install"
-msgstr "Docker Install"
+msgstr "Docker 安装"
 
 #: ../../getting_started/install/docker/docker.md:4
 #: c1125facb7334346a8e5b66bab892b1c
