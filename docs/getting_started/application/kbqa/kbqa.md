@@ -15,6 +15,18 @@ DB-GPT supports a knowledge question-answering module, which aims to create an i
 * Multi Vector DB
 ```
 
+```{note}
+If your DB type is Sqlite, there is nothing to do to build KBQA service database schema.
+
+If your DB type is Mysql or other DBTYPE, you will build kbqa service database schema.
+
+### Mysql
+$ mysql -h127.0.0.1 -uroot -paa12345678 < ./assets/schema/knowledge_management.sql
+
+or 
+
+execute DBGPT/assets/schema/knowledge_management.sql
+```
 
 ## Steps to KBQA In DB-GPT
 

@@ -2,7 +2,7 @@ Install
 ==================================
 DB-GPT product is a Web application that you can chat database, chat knowledge, text2dashboard.
 
-.. image:: ./assets/DB-GPT-Product.jpg
+.. image:: https://github.com/eosphoros-ai/DB-GPT/assets/13723926/13d68dd5-d052-4976-9aeb-60ae13d63d02
 
 
 - deploy
