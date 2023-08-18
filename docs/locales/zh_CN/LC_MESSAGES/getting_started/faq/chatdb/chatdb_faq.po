@@ -22,7 +22,7 @@ msgstr ""
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:1
 #: ffd1abb6b8f34e53a8ed83ede845b141
 msgid "Chat DB FAQ"
-msgstr ""
+msgstr "Chat DB FAQ"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:3
 #: 2467f6603ab341bbb1ce17f75dc06e5e
@@ -35,27 +35,28 @@ msgid ""
 "ChatData generates SQL from natural language and executes it. ChatDB "
 "involves conversing with metadata from the Database, including metadata "
 "about databases, tables, and fields."
-msgstr ""
+msgstr "ChatData 是将自然语言转换成SQL并执行获取结果，ChatDB主要是和数据库元数据信息（包括表、字段、索引信息）， 用于db诊断和数据库答疑"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:6
 #: fa3eef15697f43db963f6c875e85323b
 msgid "Q2: The suitable llm model currently supported for text-to-SQL is?"
-msgstr ""
+msgstr "Q2: 目前DB-GPT最适合text-to-SQL的开源模型是什么"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:7
 #: 47f36a0a48c045269bcf790873d55f8c
 msgid "Now vicunna-13b-1.5 and llama2-70b is more suitable for text-to-SQL."
-msgstr ""
+msgstr "vicunna-13b-1.5 和 llama2-70b"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:9
 #: 9f5ef9a05fac4eb3b27875171ec4e763
 msgid "Q3: How to fine-tune Text-to-SQL in DB-GPT"
-msgstr ""
+msgstr "Q3: 我想fine-tune Text-to-SQL in DB-GPT"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:10
 #: c9b6f6e969e04805a59d9ccabc03c0b8
 msgid ""
 "there is another github project for Text-to-SQL fine-tune "
 "(https://github.com/eosphoros-ai/DB-GPT-Hub)"
-msgstr ""
+msgstr "参与另外一个项目 Text-to-SQL fine-tune "
+"(https://github.com/eosphoros-ai/DB-GPT-Hub)"
 
