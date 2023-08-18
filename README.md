@@ -151,7 +151,7 @@ The core capabilities mainly consist of the following parts:
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 
-[**Quickstart**](https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html)
+[**Quickstart**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
 
 ### Language Switching
     In the .env configuration file, modify the LANGUAGE parameter to switch to different languages. The default is English (Chinese: zh, English: en, other languages to be added later).
