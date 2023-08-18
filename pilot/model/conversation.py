@@ -339,7 +339,7 @@ register_conv_template(
 register_conv_template(
     Conversation(
         name="alpaca",
-        system_message="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
+        system="Below is an instruction that describes a task. Write a response that appropriately completes the request.",
         roles=("### Instruction", "### Response"),
         messages=(),
         offset=0,
