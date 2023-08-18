@@ -10,7 +10,7 @@ class Scene:
         describe,
         param_types: List = [],
         is_inner: bool = False,
-        show_disable=True,
+        show_disable=False,
         prepare_scene_code: str = None,
 
     ):
