@@ -1,0 +1,92 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-16 18:31+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/faq/llm/llm_faq.md:1 f79c82f385904385b08618436e600d9f
+msgid "LLM USE FAQ"
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:3 1fc802fa69224062b02403bc35084c18
+msgid "Q1:how to use openai chatgpt service"
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:4 9094902d148a4cc99fe72aa0e41062ae
+msgid "change your LLM_MODEL"
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:9 07073eb8d9eb4988a3b035666c63d3fb
+msgid "set your OPENAPI KEY"
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:15 a71bb0d1181e47368a286b5694a00056
+msgid "make sure your openapi API_KEY is available"
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:17 789b003864824970923bac474a9ab0cd
+msgid "Q2 how to use MultiGPUs"
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:18 4be3dd71a8654202a210bcb11c50cc79
+msgid ""
+"DB-GPT will use all available gpu by default. And you can modify the "
+"setting `CUDA_VISIBLE_DEVICES=0,1` in `.env` file to use the specific gpu"
+" IDs."
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:20 3a00c5fff666451cacda7f9af37564b9
+msgid ""
+"Optionally, you can also specify the gpu ID to use before the starting "
+"command, as shown below:"
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:30 7fef386f3a3443569042e7d8b9a3ff15
+msgid ""
+"You can modify the setting `MAX_GPU_MEMORY=xxGib` in `.env` file to "
+"configure the maximum memory used by each GPU."
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:32 d75d440da8ab49a3944c3a456db25bee
+msgid "Q3 Not Enough Memory"
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:34 2a2cd59382e149ffb623cb3d42754dca
+msgid "DB-GPT supported 8-bit quantization and 4-bit quantization."
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:36 755131812baa4f5a99b706849459e10a
+msgid ""
+"You can modify the setting `QUANTIZE_8bit=True` or `QUANTIZE_4bit=True` "
+"in `.env` file to use quantization(8-bit quantization is enabled by "
+"default)."
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:38 b85424bc11134af985f687d8ee8d2c9f
+msgid ""
+"Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit"
+" quantization can run with 48 GB of VRAM."
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:40 b6e4db679636492c9e4170a33fd6f638
+msgid ""
+"Note: you need to install the latest dependencies according to "
+"[requirements.txt](https://github.com/eosphoros-ai/DB-"
+"GPT/blob/main/requirements.txt)."
+msgstr ""
+

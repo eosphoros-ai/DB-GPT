@@ -3,7 +3,9 @@
 
 import torch
 import os
-from typing import List
+import re
+from pathlib import Path
+from typing import List, Tuple
 from functools import cache
 from transformers import (
     AutoModel,
@@ -12,8 +14,10 @@ from transformers import (
     LlamaTokenizer,
     BitsAndBytesConfig,
 )
+from pilot.model.parameter import ModelParameters, LlamaCppModelParameters
 from pilot.configs.model_config import DEVICE
 from pilot.configs.config import Config
+from pilot.logs import logger
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
@@ -24,6 +28,14 @@ bnb_config = BitsAndBytesConfig(
 CFG = Config()
 
 
+class ModelType:
+    """ "Type of model"""
+
+    HF = "huggingface"
+    LLAMA_CPP = "llama.cpp"
+    # TODO, support more model type
+
+
 class BaseLLMAdaper:
     """The Base class for multi model, in our project.
     We will support those model, which performance resemble ChatGPT"""
@@ -31,8 +43,17 @@ class BaseLLMAdaper:
     def use_fast_tokenizer(self) -> bool:
         return False
 
+    def model_type(self) -> str:
+        return ModelType.HF
+
+    def model_param_class(self, model_type: str = None) -> ModelParameters:
+        model_type = model_type if model_type else self.model_type()
+        if model_type == ModelType.LLAMA_CPP:
+            return LlamaCppModelParameters
+        return ModelParameters
+
     def match(self, model_path: str):
-        return True
+        return False
 
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
         tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
@@ -52,12 +73,25 @@ def register_llm_model_adapters(cls):
 
 
 @cache
-def get_llm_model_adapter(model_path: str) -> BaseLLMAdaper:
+def get_llm_model_adapter(model_name: str, model_path: str) -> BaseLLMAdaper:
+    # Prefer using model name matching
     for adapter in llm_model_adapters:
-        if adapter.match(model_path):
+        if adapter.match(model_name):
+            logger.info(
+                f"Found llm model adapter with model name: {model_name}, {adapter}"
+            )
             return adapter
 
-    raise ValueError(f"Invalid model adapter for {model_path}")
+    for adapter in llm_model_adapters:
+        if adapter.match(model_path):
+            logger.info(
+                f"Found llm model adapter with model path: {model_path}, {adapter}"
+            )
+            return adapter
+
+    raise ValueError(
+        f"Invalid model adapter for model name {model_name} and model path {model_path}"
+    )
 
 
 # TODO support cpu? for practise we support gpt4all or chatglm-6b-int4?
@@ -296,6 +330,52 @@ class WizardLMAdapter(BaseLLMAdaper):
         return "wizardlm" in model_path.lower()
 
 
+class LlamaCppAdapater(BaseLLMAdaper):
+    @staticmethod
+    def _parse_model_path(model_path: str) -> Tuple[bool, str]:
+        path = Path(model_path)
+        if not path.exists():
+            # Just support local model
+            return False, None
+        if not path.is_file():
+            model_paths = list(path.glob("*ggml*.bin"))
+            if not model_paths:
+                return False
+            model_path = str(model_paths[0])
+            logger.warn(
+                f"Model path {model_path} is not single file, use first *gglm*.bin model file: {model_path}"
+            )
+        if not re.fullmatch(".*ggml.*\.bin", model_path):
+            return False, None
+        return True, model_path
+
+    def model_type(self) -> ModelType:
+        return ModelType.LLAMA_CPP
+
+    def match(self, model_path: str):
+        """
+        https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGML
+        """
+        if "llama-cpp" == model_path:
+            return True
+        is_match, _ = LlamaCppAdapater._parse_model_path(model_path)
+        return is_match
+
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        # TODO not support yet
+        _, model_path = LlamaCppAdapater._parse_model_path(model_path)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True, use_fast=False
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            low_cpu_mem_usage=True,
+            **from_pretrained_kwargs,
+        )
+        return model, tokenizer
+
+
 register_llm_model_adapters(VicunaLLMAdapater)
 register_llm_model_adapters(ChatGLMAdapater)
 register_llm_model_adapters(GuanacoAdapter)
@@ -305,6 +385,7 @@ register_llm_model_adapters(GPT4AllAdapter)
 register_llm_model_adapters(Llama2Adapter)
 register_llm_model_adapters(BaichuanAdapter)
 register_llm_model_adapters(WizardLMAdapter)
+register_llm_model_adapters(LlamaCppAdapater)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
 # just for test_py, remove this later

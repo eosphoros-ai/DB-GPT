@@ -121,3 +121,17 @@ def test_get_database_list(db):
 
 def test_get_database_names(db):
     db.get_database_names() == []
+
+
+def test_db_dir_exist_dir():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        new_dir = os.path.join(temp_dir, "new_dir")
+        file_path = os.path.join(new_dir, "sqlite.db")
+        db = SQLiteConnect.from_file_path(file_path)
+        assert os.path.exists(new_dir) == True
+        assert list(db.get_table_names()) == []
+    with tempfile.TemporaryDirectory() as existing_dir:
+        file_path = os.path.join(existing_dir, "sqlite.db")
+        db = SQLiteConnect.from_file_path(file_path)
+        assert os.path.exists(existing_dir) == True
+        assert list(db.get_table_names()) == []

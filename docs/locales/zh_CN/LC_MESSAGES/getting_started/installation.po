@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-13 15:39+0800\n"
+"POT-Creation-Date: 2023-08-16 18:31+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,67 +19,76 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../getting_started/installation.md:1 bc5bfc8ebfc847c5a22f2346357cf747
-msgid "Installation"
-msgstr "安装dbgpt包指南"
+#: ../../getting_started/installation.md:1 f9e65f84d13249098aa2768bb7cc69ed
+msgid "Python SDK"
+msgstr ""
 
-#: ../../getting_started/installation.md:2 1aaef0db5ee9426aa337021d782666af
+#: ../../getting_started/installation.md:2 1902cffb20fe4994aecb577c1a3fa8bf
 msgid ""
 "DB-GPT provides a third-party Python API package that you can integrate "
 "into your own code."
 msgstr "DB-GPT提供了python第三方包，你可以在你的代码中引入"
 
-#: ../../getting_started/installation.md:4 de542f259e20441991a0e5a7d52769b8
+#: ../../getting_started/installation.md:4 908a7c1971d04e37bd5e88171bd93d3b
 msgid "Installation from Pip"
 msgstr "使用pip安装"
 
-#: ../../getting_started/installation.md:6 3357f019aa8249b292162de92757eec4
+#: ../../getting_started/installation.md:6 0eff7cb3c9c643e0884209daddf5d709
 msgid "You can simply pip install:"
 msgstr "你可以使用pip install"
 
-#: ../../getting_started/installation.md:12 9c610d593608452f9d7d8d7e462251e3
+#: ../../getting_started/installation.md:12 1b0f308412cd44bda55efff5830b99f3
 msgid "Notice:make sure python>=3.10"
 msgstr "注意:确保你的python版本>=3.10"
 
-#: ../../getting_started/installation.md:15 b2ed238c29bb40cba990068e8d7ceae7
+#: ../../getting_started/installation.md:15 bec8afbfa9af4594bb09307f92c617a4
 msgid "Environment Setup"
 msgstr "环境设置"
 
-#: ../../getting_started/installation.md:17 4804ad4d8edf44f49b1d35b271635fad
+#: ../../getting_started/installation.md:17 61f60acc7a6449ac974593bd5f164e3e
 msgid "By default, if you use the EmbeddingEngine api"
 msgstr "如果你想使用EmbeddingEngine api"
 
-#: ../../getting_started/installation.md:19 2205f69ec60d4f73bb3a93a583928455
+#: ../../getting_started/installation.md:19 f31d9989e0514881baed8c690bc8035a
 msgid "you will prepare embedding models from huggingface"
 msgstr "你需要从huggingface下载embedding models"
 
-#: ../../getting_started/installation.md:22 693c18a83f034dcc8c263674418bcde2
+#: ../../getting_started/installation.md:22 02eb7897412c4223a013e7921eaed253
 msgid "Notice make sure you have install git-lfs"
 msgstr "确保你已经安装了git-lfs"
 
-#: ../../getting_started/installation.md:30 dd8d0880b55e4c48bfc414f8cbdda268
+#: ../../getting_started/installation.md:30 ced612323d5b47d3b93febbc637515bd
 msgid "version:"
 msgstr "版本:"
 
-#: ../../getting_started/installation.md:31 731e634b96164efbbc1ce9fa88361b12
+#: ../../getting_started/installation.md:31 4c168bdddb664c76ad4c2be177ef01a0
 msgid "db-gpt0.3.0"
 msgstr "db-gpt0.3.0"
 
-#: ../../getting_started/installation.md:32 38fb635be4554d94b527c6762253d46d
+#: ../../getting_started/installation.md:32 9bc5bb66e7214ca0b945b6b46a989307
 msgid ""
 "[embedding_engine api](https://db-"
 "gpt.readthedocs.io/en/latest/modules/knowledge.html)"
-msgstr "[embedding_engine api](https://db-gpt.readthedocs.io/en/latest/modules/knowledge.html)"
+msgstr ""
+"[embedding_engine api](https://db-"
+"gpt.readthedocs.io/en/latest/modules/knowledge.html)"
 
-#: ../../getting_started/installation.md:33 a60b0ffe21a74ebca05529dc1dd1ba99
+#: ../../getting_started/installation.md:33 52e656e2f0ae46688a6456a441f9c1e5
 msgid ""
 "[multi source embedding](https://db-"
 "gpt.readthedocs.io/en/latest/modules/knowledge/pdf/pdf_embedding.html)"
-msgstr "[multi source embedding](https://db-gpt.readthedocs.io/en/latest/modules/knowledge/pdf/pdf_embedding.html)"
+msgstr ""
+"[multi source embedding](https://db-"
+"gpt.readthedocs.io/en/latest/modules/knowledge/pdf/pdf_embedding.html)"
 
-#: ../../getting_started/installation.md:34 3c752c9305414719bc3f561cf18a75af
+#: ../../getting_started/installation.md:34 726c87e53d8e4cd799d422aaf562fa29
 msgid ""
 "[vector connector](https://db-"
 "gpt.readthedocs.io/en/latest/modules/vector.html)"
-msgstr "[vector connector](https://db-gpt.readthedocs.io/en/latest/modules/vector.html)"
+msgstr ""
+"[vector connector](https://db-"
+"gpt.readthedocs.io/en/latest/modules/vector.html)"
+
+#~ msgid "Installation"
+#~ msgstr "安装dbgpt包指南"
 

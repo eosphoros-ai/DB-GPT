@@ -13,7 +13,7 @@ class BaseChatAdpter:
     and fetch output from model"""
 
     def match(self, model_path: str):
-        return True
+        return False
 
     def get_generate_stream_func(self, model_path: str):
         """Return the generate stream handler func"""
@@ -24,7 +24,9 @@ class BaseChatAdpter:
     def get_conv_template(self, model_path: str) -> Conversation:
         return None
 
-    def model_adaptation(self, params: Dict, model_path: str) -> Tuple[Dict, Dict]:
+    def model_adaptation(
+        self, params: Dict, model_path: str, prompt_template: str = None
+    ) -> Tuple[Dict, Dict]:
         """Params adaptation"""
         conv = self.get_conv_template(model_path)
         messages = params.get("messages")
@@ -38,6 +40,10 @@ class BaseChatAdpter:
                 for m in messages
             ]
             params["messages"] = messages
+
+        if prompt_template:
+            print(f"Use prompt template {prompt_template} from config")
+            conv = get_conv_template(prompt_template)
 
         if not conv or not messages:
             # Nothing to do
@@ -94,14 +100,19 @@ def register_llm_model_chat_adapter(cls):
 
 
 @cache
-def get_llm_chat_adapter(model_path: str) -> BaseChatAdpter:
+def get_llm_chat_adapter(model_name: str, model_path: str) -> BaseChatAdpter:
     """Get a chat generate func for a model"""
     for adapter in llm_model_chat_adapters:
-        if adapter.match(model_path):
-            print(f"Get model path: {model_path} adapter {adapter}")
+        if adapter.match(model_name):
+            print(f"Get model chat adapter with model name {model_name}, {adapter}")
             return adapter
-
-    raise ValueError(f"Invalid model for chat adapter {model_path}")
+    for adapter in llm_model_chat_adapters:
+        if adapter.match(model_path):
+            print(f"Get model chat adapter with model path {model_path}, {adapter}")
+            return adapter
+    raise ValueError(
+        f"Invalid model for chat adapter with model name {model_name} and model path {model_path}"
+    )
 
 
 class VicunaChatAdapter(BaseChatAdpter):
@@ -239,6 +250,24 @@ class WizardLMChatAdapter(BaseChatAdpter):
         return get_conv_template("vicuna_v1.1")
 
 
+class LlamaCppChatAdapter(BaseChatAdpter):
+    def match(self, model_path: str):
+        from pilot.model.adapter import LlamaCppAdapater
+
+        if "llama-cpp" == model_path:
+            return True
+        is_match, _ = LlamaCppAdapater._parse_model_path(model_path)
+        return is_match
+
+    def get_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("llama-2")
+
+    def get_generate_stream_func(self, model_path: str):
+        from pilot.model.llm_out.llama_cpp_llm import generate_stream
+
+        return generate_stream
+
+
 register_llm_model_chat_adapter(VicunaChatAdapter)
 register_llm_model_chat_adapter(ChatGLMChatAdapter)
 register_llm_model_chat_adapter(GuanacoChatAdapter)
@@ -248,6 +277,7 @@ register_llm_model_chat_adapter(GPT4AllChatAdapter)
 register_llm_model_chat_adapter(Llama2ChatAdapter)
 register_llm_model_chat_adapter(BaichuanChatAdapter)
 register_llm_model_chat_adapter(WizardLMChatAdapter)
+register_llm_model_chat_adapter(LlamaCppChatAdapter)
 
 # Proxy model for test and develop, it's cheap for us now.
 register_llm_model_chat_adapter(ProxyllmChatAdapter)

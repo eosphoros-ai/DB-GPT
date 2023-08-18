@@ -29,6 +29,8 @@ class ChatDashboardOutputParser(BaseOutputParser):
         print("clean prompt response:", clean_str)
         response = json.loads(clean_str)
         chart_items: List[ChartItem] = []
+        if not isinstance(response, list):
+            response = [response]
         for item in response:
             chart_items.append(
                 ChartItem(

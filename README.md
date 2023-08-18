@@ -145,19 +145,19 @@ The core capabilities mainly consist of the following parts:
 
 ## Image
 🌐 [AutoDL Image](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
+
 ## Install 
-[Quickstart](https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
+
+[**Quickstart**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
 
 ### Language Switching
     In the .env configuration file, modify the LANGUAGE parameter to switch to different languages. The default is English (Chinese: zh, English: en, other languages to be added later).
-### Platform Deployment
-- autodl
-    [autodl image](https://www.codewithgpu.com/i/csunny/DB-GPT/csunny-db-gpt). You can refer to the image instructions to build from scratch, or use `docker pull` to obtain the shared image, follow the instructions in the document to operate. If you have any questions, please leave a comment.
 
 ## Usage Instructions
 
-- [Multi LLMs Usage](https://db-gpt.readthedocs.io/en/latest/modules/llms.html)
-- [Create your own knowledge repository](https://db-gpt.readthedocs.io/en/latest/modules/knowledge.html)
 
 If nltk-related errors occur during the use of the knowledge base, you need to install the nltk toolkit. For more details, please refer to: [nltk documents](https://www.nltk.org/data.html)
 Run the Python interpreter and type the commands:
