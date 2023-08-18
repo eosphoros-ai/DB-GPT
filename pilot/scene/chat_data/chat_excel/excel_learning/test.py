@@ -25,12 +25,12 @@ if __name__ == "__main__":
     # 读取 Excel 文件为 Pandas DataFrame
     df = pd.read_excel('/Users/tuyang.yhj/Downloads/example.xlsx', converters={i: csv_colunm_foramt for i in range(df.shape[1])})
 
-    d = df.values
-    print(d.shape[0])
-    for row in d:
-        print(row[0])
-        print(len(row))
-    r = df.iterrows()
+    # d = df.values
+    # print(d.shape[0])
+    # for row in d:
+    #     print(row[0])
+    #     print(len(row))
+    # r = df.iterrows()
 
     # 获取当前时间戳，作为代码结束的时间
     end_time = int(time.time() * 1000)
@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     # 查询 DuckDB 数据库中的表
     conn  = con.cursor()
-    results = con.execute('SELECT * FROM example limit 5 ')
+    results = con.execute('SELECT Country, SUM(Profit) AS Total_Profit FROM example GROUP BY Country ORDER BY Total_Profit DESC LIMIT 1;')
     colunms = []
     for descrip in results.description:
         colunms.append(descrip[0])

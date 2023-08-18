@@ -46,7 +46,7 @@ async def get_editor_tables(db_name: str, page_index: int, page_size: int, searc
     for table in tables:
         table_node: DataNode = DataNode(title=table, key=table, type="table")
         db_node.children.append(table_node)
-        fields = db_conn.get_fields("transaction_order")
+        fields = db_conn.get_fields(table)
         for field in fields:
             table_node.children.append(
                 DataNode(title=field[0], key=field[0], type=field[1], default_value=field[2], can_null=field[3],
@@ -151,16 +151,19 @@ async def get_editor_chart_list(con_uid: str):
         db_name = last_round["param_value"]
         for element in last_round["messages"]:
             if element["type"] == "ai":
-                chart_list: ChartList = ChartList(round=last_round, db_name=db_name,
+                chart_list: ChartList = ChartList(round=last_round['chat_order'], db_name=db_name,
                                                   charts=json.loads(element["data"]["content"]))
                 return Result.succ(chart_list)
     return Result.faild(msg="Not have charts!")
 
 
-@router.get("/v1/editor/chart/info", response_model=Result[ChartDetail])
-async def get_editor_chart_info(con_uid: str, chart_title: str):
-    logger.info(f"get_editor_chart_info:{con_uid},{chart_title}")
-    history_mem = DuckdbHistoryMemory(con_uid)
+@router.post("/v1/editor/chart/info", response_model=Result[ChartDetail])
+async def get_editor_chart_info(param: dict = Body()):
+    logger.info(f"get_editor_chart_info:{param}")
+    conv_uid = param['con_uid']
+    chart_title = param['chart_title']
+
+    history_mem = DuckdbHistoryMemory(conv_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         last_round = max(history_messages, key=lambda x: x['chat_order'])
@@ -194,16 +197,16 @@ async def editor_chart_run(run_param: dict = Body()):
     logger.info(f"editor_chart_run:{run_param}")
     db_name = run_param['db_name']
     sql = run_param['sql']
+    chart_type = run_param['chart_type']
     if not db_name and not sql:
         return Result.faild("SQL run param error！")
-    dashboard_data_loader: DashboardDataLoader = DashboardDataLoader()
-    db_conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
-
-    field_names, chart_values = dashboard_data_loader.get_chart_values_by_conn(db_conn, sql)
-
     try:
-        start_time = time.time() * 1000
+        dashboard_data_loader: DashboardDataLoader = DashboardDataLoader()
+        db_conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
         colunms, sql_result = db_conn.query_ex(sql)
+        field_names, chart_values = dashboard_data_loader.get_chart_values_by_data(colunms, sql_result, sql)
+
+        start_time = time.time() * 1000
         # 计算执行耗时
         end_time = time.time() * 1000
         sql_run_data: SqlRunData = SqlRunData(result_info="",
@@ -211,13 +214,17 @@ async def editor_chart_run(run_param: dict = Body()):
                                               colunms=colunms,
                                               values=sql_result
                                               )
-        return Result.succ(ChartRunData(sql_data=sql_run_data, chart_values=chart_values))
+        return Result.succ(ChartRunData(sql_data=sql_run_data, chart_values=chart_values,  chart_type = chart_type))
     except Exception as e:
-        return Result.succ(SqlRunData(result_info=str(e),
+        sql_result = SqlRunData(result_info=str(e),
                                       run_cost=0,
                                       colunms=[],
                                       values=[]
-                                      ))
+                                      )
+        return Result.succ(ChartRunData(sql_data = sql_result,
+                                        chart_values=[],
+                                        chart_type = chart_type
+                                    ))
 
 @router.post("/v1/chart/editor/submit", response_model=Result[bool])
 async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body()):

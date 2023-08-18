@@ -12,10 +12,16 @@ logger = build_logger("dashboard_data", LOGDIR + "dashboard_data.log")
 
 class DashboardDataLoader:
 
+    def get_sql_value(self, db_conn, chart_sql: str):
+        return    db_conn.query_ex(chart_sql)
+
     def get_chart_values_by_conn(self, db_conn, chart_sql: str) :
+        field_names, datas =  db_conn.query_ex(chart_sql)
+        return  self.get_chart_values_by_data(field_names, datas, chart_sql)
+
+    def get_chart_values_by_data(self, field_names, datas, chart_sql: str) :
         logger.info(f"get_chart_values_by_conn:{chart_sql}")
         try:
-            field_names, datas = db_conn.query_ex(chart_sql)
             values: List[ValueItem] = []
             data_map = {}
             field_map = {}

@@ -202,21 +202,13 @@ async def dialogue_history_messages(con_uid: str):
             message_vos.extend(once_message_vos)
     return Result.succ(message_vos)
 
-
-@router.post("/v1/chat/completions")
-async def chat_completions(dialogue: ConversationVo = Body()):
-    print(f"chat_completions:{dialogue.chat_mode},{dialogue.select_param}")
+def get_chat_instance(dialogue: ConversationVo = Body())-> BaseChat:
+    logger.info(f"get_chat_instance:{dialogue}")
     if not dialogue.chat_mode:
         dialogue.chat_mode = ChatScene.ChatNormal.value()
     if not dialogue.conv_uid:
         conv_vo = __new_conversation(dialogue.chat_mode, dialogue.user_name)
         dialogue.conv_uid = conv_vo.conv_uid
-
-    global model_semaphore, global_counter
-    global_counter += 1
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(CFG.LIMIT_MODEL_CONCURRENCY)
-    await model_semaphore.acquire()
 
     if not ChatScene.is_valid_mode(dialogue.chat_mode):
         raise StopAsyncIteration(
@@ -226,29 +218,33 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     chat_param = {
         "chat_session_id": dialogue.conv_uid,
         "user_input": dialogue.user_input,
+        "select_param": dialogue.select_param
     }
-
-    if ChatScene.ChatWithDbQA.value() == dialogue.chat_mode:
-        chat_param.update({"db_name": dialogue.select_param})
-    elif ChatScene.ChatWithDbExecute.value() == dialogue.chat_mode:
-        chat_param.update({"db_name": dialogue.select_param})
-    elif ChatScene.ChatDashboard.value() == dialogue.chat_mode:
-        chat_param.update({"db_name": dialogue.select_param})
-        ## DEFAULT
-        chat_param.update({"report_name": "report"})
-    elif ChatScene.ChatExecution.value() == dialogue.chat_mode:
-        chat_param.update({"plugin_selector": dialogue.select_param})
-    elif ChatScene.ChatKnowledge.value() == dialogue.chat_mode:
-        chat_param.update({"knowledge_space": dialogue.select_param})
-
     chat: BaseChat = CHAT_FACTORY.get_implementation(dialogue.chat_mode, **chat_param)
-    background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_model_semaphore)
+    return chat
+
+
+@router.post("/v1/chat/prepare")
+async def chat_prepare(dialogue: ConversationVo = Body()):
+    logger.info(f"chat_prepare:{dialogue}")
+    ## check conv_uid
+    chat: BaseChat = get_chat_instance(dialogue)
+    if not chat.history_message:
+        return Result.succ(None)
+    return Result.succ(chat.prepare())
+
+
+@router.post("/v1/chat/completions")
+async def chat_completions(dialogue: ConversationVo = Body()):
+    print(f"chat_completions:{dialogue.chat_mode},{dialogue.select_param}")
+    chat: BaseChat = get_chat_instance(dialogue)
+    # background_tasks = BackgroundTasks()
+    # background_tasks.add_task(release_model_semaphore)
     headers = {
-        # "Content-Type": "text/event-stream",
+        "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
-        # "Transfer-Encoding": "chunked",
+        "Transfer-Encoding": "chunked",
     }
 
     if not chat.prompt_template.stream_out:
@@ -256,19 +252,14 @@ async def chat_completions(dialogue: ConversationVo = Body()):
             no_stream_generator(chat),
             headers=headers,
             media_type="text/event-stream",
-            background=background_tasks,
         )
     else:
         return StreamingResponse(
             stream_generator(chat),
             headers=headers,
             media_type="text/plain",
-            background=background_tasks,
         )
 
-
-def release_model_semaphore():
-    model_semaphore.release()
 
 
 async def no_stream_generator(chat):

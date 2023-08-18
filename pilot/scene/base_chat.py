@@ -71,8 +71,7 @@ class BaseChat(ABC):
         self.current_user_input: str = current_user_input
         self.llm_model = CFG.LLM_MODEL
         self.llm_echo = False
-        ### can configurable storage methods
-        self.memory = DuckdbHistoryMemory(chat_session_id)
+
 
         ### load prompt template
         # self.prompt_template: PromptTemplate = CFG.prompt_templates[
@@ -86,23 +85,22 @@ class BaseChat(ABC):
                 proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
-        self.history_message: List[OnceConversation] = self.memory.messages()
-        self.current_message: OnceConversation = OnceConversation(chat_mode.value())
-        if select_param:
-            self.current_message.param_type = chat_mode.param_types()[0]
-            self.current_message.param_value = select_param
-        self.current_tokens_used: int = 0
+        if not chat_mode.is_inner():
+            ### can configurable storage methods
+            self.memory = DuckdbHistoryMemory(chat_session_id)
+
+            self.history_message: List[OnceConversation] = self.memory.messages()
+            self.current_message: OnceConversation = OnceConversation(chat_mode.value())
+            if select_param:
+                self.current_message.param_type = chat_mode.param_types()[0]
+                self.current_message.param_value = select_param
+            self.current_tokens_used: int = 0
 
     class Config:
         """Configuration for this pydantic object."""
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
-
-    def __init_history_message(self):
-        self.history_message == self.memory.messages()
-        if not self.history_message:
-            self.memory.create(self.current_user_input, "")
 
     @property
     def chat_type(self) -> str:
@@ -231,7 +229,7 @@ class BaseChat(ABC):
                     ai_response_text
                 )
             )
-            ### sql run
+            ###  run
             result = self.do_action(prompt_define_response)
 
             ### llm speaker
@@ -254,6 +252,11 @@ class BaseChat(ABC):
             yield self.stream_call()
         else:
             return self.nostream_call()
+
+
+    def prepare(self):
+       pass
+
 
     def generate_llm_text(self) -> str:
         warnings.warn("This method is deprecated - please use `generate_llm_messages`.")

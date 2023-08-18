@@ -3,7 +3,7 @@ import os
 import uuid
 from typing import List
 
-from pilot.scene.base_chat import BaseChat
+from pilot.scene.base_chat import BaseChat, logger
 from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
 from pilot.scene.chat_dashboard.data_preparation.report_schma import (
@@ -21,20 +21,21 @@ class ChatDashboard(BaseChat):
     report_name: str
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, db_name, user_input, report_name):
+    def __init__(self, chat_session_id, user_input, select_param:str = "",  report_name:str="report"):
         """ """
+        self.db_name=select_param
         super().__init__(
             chat_mode=ChatScene.ChatDashboard,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
-            select_param=db_name,
+            select_param=self.db_name,
         )
-        if not db_name:
+        if not self.db_name:
             raise ValueError(f"{ChatScene.ChatDashboard.value} mode should choose db!")
-        self.db_name = db_name
+        self.db_name = self.db_name
         self.report_name = report_name
 
-        self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+        self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
 
         self.top_k: int = 5
         self.dashboard_template = self.__load_dashboard_template(report_name)
@@ -100,3 +101,5 @@ class ChatDashboard(BaseChat):
             template_introduce=None,
             charts=chart_datas,
         )
+
+

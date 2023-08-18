@@ -10,20 +10,23 @@ CFG = Config()
 PROMPT_SCENE_DEFINE = "You are a data analysis expert. "
 
 _DEFAULT_TEMPLATE = """
-This is an example data，please learn to understand the structure and content of this data:
-    {data_example}
-Explain the meaning and function of each column, and give a simple and clear explanation of the technical terms.  
-Provide some analysis options,please think step by step.
+Please give data analysis SQL based on the following user goals: {user_input}
+Display type: 
+    {disply_type}
 
-Please return your answer in JSON format, the return format is as follows:
+According to the analysis SQL obtained by the user's goal, select the best one from the following display forms, if it cannot be determined, use Text  as the display.
+Respond in the following json format:
     {response}
+Ensure the response is correct json and can be parsed by Python json.loads
+
 """
 
-RESPONSE_FORMAT_SIMPLE =     {
-    "Data Analysis": "数据内容分析总结",
-    "Colunm Analysis": [{"colunm name": "字段介绍，专业术语解释(请尽量简单明了)"}],
-    "Analysis Program": ["1.分析方案1，图表展示方式1", "2.分析方案2，图表展示方式2"],
+RESPONSE_FORMAT_SIMPLE = {
+	"sql": "analysis SQL",
+	"thoughts": "Current thinking and value of data analysis",
+	"display": "display type name"
 }
+
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
@@ -32,11 +35,11 @@ PROMPT_NEED_NEED_STREAM_OUT = False
 # Temperature is a configuration hyperparameter that controls the randomness of language model output.
 # A high temperature produces more unpredictable and creative results, while a low temperature produces more common and conservative output.
 # For example, if you adjust the temperature to 0.5, the model will usually generate text that is more predictable and less creative than if you set the temperature to 1.0.
-PROMPT_TEMPERATURE = 0.5
+PROMPT_TEMPERATURE = 0.8
 
 prompt = PromptTemplate(
     template_scene=ChatScene.ChatExcel.value(),
-    input_variables=["data_example"],
+    input_variables=["user_input", "disply_type"],
     response_format=json.dumps(RESPONSE_FORMAT_SIMPLE, ensure_ascii=False, indent=4),
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE,

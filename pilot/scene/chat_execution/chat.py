@@ -24,21 +24,22 @@ class ChatWithPlugin(BaseChat):
         self,
         chat_session_id,
         user_input,
-        plugin_selector: str = None,
+        select_param: str = None
     ):
+        self.plugin_selector = select_param
         super().__init__(
             chat_mode=ChatScene.ChatExecution,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
-            select_param=plugin_selector,
+            select_param=self.plugin_selector,
         )
         self.plugins_prompt_generator = PluginPromptGenerator()
         self.plugins_prompt_generator.command_registry = CFG.command_registry
         # 加载插件中可用命令
-        self.select_plugin = plugin_selector
+        self.select_plugin = self.plugin_selector
         if self.select_plugin:
             for plugin in CFG.plugins:
-                if plugin._name == plugin_selector:
+                if plugin._name == self.plugin_selector:
                     if not plugin.can_handle_post_prompt():
                         continue
                     self.plugins_prompt_generator = plugin.post_prompt(

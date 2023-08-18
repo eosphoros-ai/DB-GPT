@@ -25,6 +25,8 @@ RESPONSE_FORMAT_SIMPLE =     {
     "Analysis Program": ["1.分析方案1，图表展示方式1", "2.分析方案2，图表展示方式2"],
 }
 
+
+
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
 PROMPT_NEED_NEED_STREAM_OUT = False
