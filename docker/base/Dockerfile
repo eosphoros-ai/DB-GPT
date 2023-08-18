@@ -1,4 +1,4 @@
-ARG BASE_IMAGE="nvidia/cuda:11.8.0-devel-ubuntu22.04"
+ARG BASE_IMAGE="nvidia/cuda:11.8.0-runtime-ubuntu22.04"
 
 FROM ${BASE_IMAGE}
 ARG BASE_IMAGE
@@ -11,16 +11,6 @@ ARG LANGUAGE="en"
 ARG PIP_INDEX_URL="https://pypi.org/simple"
 ENV PIP_INDEX_URL=$PIP_INDEX_URL
 
-RUN pip3 install --upgrade pip -i $PIP_INDEX_URL \
-    && (if [ "${LANGUAGE}" = "zh" ]; \
-        # language is zh, download zh_core_web_sm from github
-        then wget https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.5.0/zh_core_web_sm-3.5.0-py3-none-any.whl -O /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl \
-        && pip3 install /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl -i $PIP_INDEX_URL \
-        && rm /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl; \
-        # not zh, download directly
-        else python3 -m spacy download zh_core_web_sm; \
-    fi;)
-
 RUN mkdir -p /app
 
 # COPY only requirements.txt first to leverage Docker cache
@@ -30,20 +20,22 @@ COPY ./README.md /app/README.md
 
 WORKDIR /app
 
-# RUN pip3 install --upgrade pip -i $PIP_INDEX_URL \
-#     && (if [ "${BUILD_LOCAL_CODE}" = "false" ]; \
-#         # if not build local code, clone latest code from git, and rename to /app, TODO: download by version, like: https://github.com/eosphoros-ai/DB-GPT/archive/refs/tags/$DBGPT_VERSION.zip
-#         then git clone https://github.com/eosphoros-ai/DB-GPT.git /app \
-#         && cp /app/requirements.txt /tmp/requirements.txt; \
-#     fi;) \
-#     && pip3 install -r /tmp/requirements.txt -i $PIP_INDEX_URL --no-cache-dir \
-#     && rm /tmp/requirements.txt
-
-RUN pip3 install -i $PIP_INDEX_URL .
-
 # ENV CMAKE_ARGS="-DLLAMA_CUBLAS=ON -DLLAMA_AVX2=OFF -DLLAMA_F16C=OFF -DLLAMA_FMA=OFF"
 # ENV FORCE_CMAKE=1
-RUN pip3 install -i $PIP_INDEX_URL .[llama_cpp] \
+# Install all
+# RUN pip3 install -i $PIP_INDEX_URL ".[all]"
+
+RUN pip3 install --upgrade pip -i $PIP_INDEX_URL \
+    && pip3 install -i $PIP_INDEX_URL . \
+    # && pip3 install -i $PIP_INDEX_URL ".[llama_cpp]" \
+    && (if [ "${LANGUAGE}" = "zh" ]; \
+        # language is zh, download zh_core_web_sm from github
+        then wget https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.5.0/zh_core_web_sm-3.5.0-py3-none-any.whl -O /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl \
+        && pip3 install /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl -i $PIP_INDEX_URL \
+        && rm /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl; \
+        # not zh, download directly
+        else python3 -m spacy download zh_core_web_sm; \
+    fi;) \
     && rm -rf `pip3 cache dir`
 
 ARG BUILD_LOCAL_CODE="false"
