@@ -389,8 +389,8 @@ msgid ""
 "Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit"
 " quantization can run with 48 GB of VRAM."
 msgstr ""
-"Llama-2-70b with 8-bit quantization 可以运行在 80 GB VRAM机器， 4-bit "
-"quantization 可以运行在 48 GB  VRAM"
+"Llama-2-70b with 8-bit quantization 可以运行在80GB VRAM机器， 4-bit "
+"quantization可以运行在 48 GB  VRAM"
 
 #: ../../getting_started/install/deploy/deploy.md:147
 #: 9b6085c41b5c4b96ac3e917dc5002fc2
