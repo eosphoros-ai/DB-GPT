@@ -20,7 +20,7 @@ The output data of the analysis cannot exceed 4 columns, and do not use columns 
 According to the characteristics of the analyzed data, choose the most suitable one from the charts provided below for data display, chart type:
 {supported_chat_type}
 
-Pay attention to the length of the output content of the analysis result, do not exceed 4000tokens
+Pay attention to the length of the output content of the analysis result, do not exceed 4000 tokens
 
 Give the correct {dialect} analysis SQL (don't use unprovided values such as 'paid'), analysis title(don't exist the same), display method and summary of brief analysis thinking, and respond in the following json format:
 {response}

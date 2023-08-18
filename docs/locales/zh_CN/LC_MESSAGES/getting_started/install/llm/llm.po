@@ -1,0 +1,99 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-17 23:29+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/install/llm/llm.rst:2
+#: ../../getting_started/install/llm/llm.rst:23
+#: 9e4baaff732b49f1baded5fd1bde4bd5
+msgid "LLM Usage"
+msgstr "LLM使用"
+
+#: ../../getting_started/install/llm/llm.rst:3 d80e7360f17c4be889f220e2a846a81e
+msgid ""
+"DB-GPT provides a management and deployment solution for multiple models."
+" This chapter mainly discusses how to deploy different models."
+msgstr "DB-GPT提供了多模型的管理和部署方案，本章主要讲解针对不同的模型该怎么部署"
+
+#: ../../getting_started/install/llm/llm.rst:18
+#: 1cebd6c84b924eeb877ba31bd520328f
+msgid ""
+"Multi LLMs Support, Supports multiple large language models, currently "
+"supporting"
+msgstr "目前DB-GPT已适配如下模型"
+
+#: ../../getting_started/install/llm/llm.rst:9 1163d5d3a8834b24bb6a5716d4fcc680
+msgid "🔥 Vicuna-v1.5(7b,13b)"
+msgstr "🔥 Vicuna-v1.5(7b,13b)"
+
+#: ../../getting_started/install/llm/llm.rst:10
+#: 318dbc8e8de64bfb9cbc65343d050500
+msgid "🔥 llama-2(7b,13b,70b)"
+msgstr "🔥 llama-2(7b,13b,70b)"
+
+#: ../../getting_started/install/llm/llm.rst:11
+#: f2b1ef2bfbde46889131b6852d1211e8
+msgid "WizardLM-v1.2(13b)"
+msgstr "WizardLM-v1.2(13b)"
+
+#: ../../getting_started/install/llm/llm.rst:12
+#: 2462160e5928434aaa6f58074b585c14
+msgid "Vicuna (7b,13b)"
+msgstr "Vicuna (7b,13b)"
+
+#: ../../getting_started/install/llm/llm.rst:13
+#: 61cc1b9ed1914e379dee87034e9fbaea
+msgid "ChatGLM-6b (int4,int8)"
+msgstr "ChatGLM-6b (int4,int8)"
+
+#: ../../getting_started/install/llm/llm.rst:14
+#: 653f5fd3b6ab4c508a2ce449231b5a17
+msgid "ChatGLM2-6b (int4,int8)"
+msgstr "ChatGLM2-6b (int4,int8)"
+
+#: ../../getting_started/install/llm/llm.rst:15
+#: 6a1cf7a271f6496ba48d593db1f756f1
+msgid "guanaco(7b,13b,33b)"
+msgstr "guanaco(7b,13b,33b)"
+
+#: ../../getting_started/install/llm/llm.rst:16
+#: f15083886362437ba96e1cb9ade738aa
+msgid "Gorilla(7b,13b)"
+msgstr "Gorilla(7b,13b)"
+
+#: ../../getting_started/install/llm/llm.rst:17
+#: 5e1ded19d1b24ba485e5d2bf22ce2db7
+msgid "Baichuan(7b,13b)"
+msgstr "Baichuan(7b,13b)"
+
+#: ../../getting_started/install/llm/llm.rst:18
+#: 30f6f71dd73b48d29a3647d58a9cdcaf
+msgid "OpenAI"
+msgstr "OpenAI"
+
+#: ../../getting_started/install/llm/llm.rst:20
+#: 9ad21acdaccb41c1bbfa30b5ce114732
+msgid "llama_cpp"
+msgstr "llama_cpp"
+
+#: ../../getting_started/install/llm/llm.rst:21
+#: b5064649f7c9443c9b9f15ec7fc02434
+msgid "quantization"
+msgstr "quantization"
+

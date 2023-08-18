@@ -1,0 +1,118 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-16 18:31+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/install/docker/docker.md:1
+#: ea5d6b95dea844b89d2f5d0e8f6ebfd3
+msgid "Docker Install"
+msgstr "Docker 安装"
+
+#: ../../getting_started/install/docker/docker.md:4
+#: c1125facb7334346a8e5b66bab892b1c
+msgid "Docker (Experimental)"
+msgstr "Docker (Experimental)"
+
+#: ../../getting_started/install/docker/docker.md:6
+#: 33a64984d0694ec9aee272f8a7ecd4cf
+msgid "1. Building Docker image"
+msgstr "1.构建Docker镜像"
+
+#: ../../getting_started/install/docker/docker.md:12
+#: 656beee32e6f4a49ad48a219910ba36c
+msgid "Review images by listing them:"
+msgstr "Review images by listing them:"
+
+#: ../../getting_started/install/docker/docker.md:18
+#: a8fd727500de480299e5bdfc86151473
+msgid "Output should look something like the following:"
+msgstr "输出日志应该长这样:"
+
+#: ../../getting_started/install/docker/docker.md:25
+#: 965edb9fe5184571b8afc5232cfd2773
+msgid "You can pass some parameters to docker/build_all_images.sh."
+msgstr "你也可以docker/build_all_images.sh构建的时候指定参数"
+
+#: ../../getting_started/install/docker/docker.md:33
+#: a1743c21a4db468db108a60540dd4754
+msgid ""
+"You can execute the command `bash docker/build_all_images.sh --help` to "
+"see more usage."
+msgstr "可以指定命令`bash docker/build_all_images.sh --help`查看如何使用"
+
+#: ../../getting_started/install/docker/docker.md:35
+#: cb7f05675c674fcf931a6afa6fb7d24c
+msgid "2. Run all in one docker container"
+msgstr "2. Run all in one docker container"
+
+#: ../../getting_started/install/docker/docker.md:37
+#: 2b2d95e668ed428e97eac851c604a74c
+msgid "**Run with local model**"
+msgstr "**Run with local model**"
+
+#: ../../getting_started/install/docker/docker.md:52
+#: ../../getting_started/install/docker/docker.md:87
+#: 731540ca95004dd2bb2c3a9871ddb404 e3ab41d312ea40d492b48cf8629553fe
+msgid "Open http://localhost:5000 with your browser to see the product."
+msgstr "打开浏览器访问http://localhost:5000"
+
+#: ../../getting_started/install/docker/docker.md:55
+#: 2cbab25caaa749f5b753c58947332cb2
+msgid ""
+"`-e LLM_MODEL=vicuna-13b`, means we use vicuna-13b as llm model, see "
+"/pilot/configs/model_config.LLM_MODEL_CONFIG"
+msgstr "`-e LLM_MODEL=vicuna-13b` 指定llm model is vicuna-13b "
+
+#: ../../getting_started/install/docker/docker.md:56
+#: ed7e79d43ee940dca788f15d520850a3
+msgid ""
+"`-v /data/models:/app/models`, means we mount the local model file "
+"directory `/data/models` to the docker container directory `/app/models`,"
+" please replace it with your model file directory."
+msgstr "`-v /data/models:/app/models`, 指定挂载的模型文件 "
+"directory `/data/models` to the docker container directory `/app/models`,"
+" 你也可以替换成你自己的模型."
+
+#: ../../getting_started/install/docker/docker.md:58
+#: 98e7bff5dab04979a0bb15abdf2ac1e0
+msgid "You can see log with command:"
+msgstr "你也可以通过命令查看日志"
+
+#: ../../getting_started/install/docker/docker.md:64
+#: 7ce23cecd6f24a6b8d3e4708d5f6265d
+msgid "**Run with openai interface**"
+msgstr "**Run with openai interface**"
+
+#: ../../getting_started/install/docker/docker.md:83
+#: bdf315780f454aaf9ead6414723f34c7
+msgid ""
+"`-e LLM_MODEL=proxyllm`, means we use proxy llm(openai interface, "
+"fastchat interface...)"
+msgstr "`-e LLM_MODEL=proxyllm`, 通过设置模型为第三方模型服务API， 可以是openai, 也可以是fastchat interface..."
+
+#: ../../getting_started/install/docker/docker.md:84
+#: 12b3e78d3ebd47288a8d081eea278b45
+msgid ""
+"`-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-"
+"chinese`, means we mount the local text2vec model to the docker "
+"container."
+msgstr "`-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-"
+"chinese`, 设置知识库embedding模型为text2vec. "
+"container.""
+

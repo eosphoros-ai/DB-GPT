@@ -1,0 +1,361 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-17 13:07+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/install/environment/environment.md:1
+#: be341d16f7b24bf4ad123ab78a6d855a
+#, fuzzy
+msgid "Environment Parameter"
+msgstr "环境变量说明"
+
+#: ../../getting_started/install/environment/environment.md:4
+#: 46eddb27c90f41548ea9a724bbcebd37
+msgid "LLM MODEL Config"
+msgstr "模型配置"
+
+#: ../../getting_started/install/environment/environment.md:5
+#: 7deaa85df4a04fb098f5994547a8724f
+msgid "LLM Model Name, see /pilot/configs/model_config.LLM_MODEL_CONFIG"
+msgstr "LLM Model Name, see /pilot/configs/model_config.LLM_MODEL_CONFIG"
+
+#: ../../getting_started/install/environment/environment.md:6
+#: 3902801c546547b3a4009df681ef7d52
+msgid "LLM_MODEL=vicuna-13b"
+msgstr "LLM_MODEL=vicuna-13b"
+
+#: ../../getting_started/install/environment/environment.md:8
+#: 84b0fdbfa1544ec28751e9b69b00cc02
+msgid "MODEL_SERVER_ADDRESS"
+msgstr "MODEL_SERVER_ADDRESS"
+
+#: ../../getting_started/install/environment/environment.md:9
+#: 0b430bfab77d405989470d00ca3f6fe0
+msgid "MODEL_SERVER=http://127.0.0.1:8000  LIMIT_MODEL_CONCURRENCY"
+msgstr "MODEL_SERVER=http://127.0.0.1:8000  LIMIT_MODEL_CONCURRENCY"
+
+#: ../../getting_started/install/environment/environment.md:12
+#: b477a25586c546729a93fb6785b7b2ec
+msgid "LIMIT_MODEL_CONCURRENCY=5"
+msgstr "LIMIT_MODEL_CONCURRENCY=5"
+
+#: ../../getting_started/install/environment/environment.md:14
+#: 1d6ea800af384fff9c265610f71cc94e
+msgid "MAX_POSITION_EMBEDDINGS"
+msgstr "MAX_POSITION_EMBEDDINGS"
+
+#: ../../getting_started/install/environment/environment.md:16
+#: 388e758ce4ea4692a4c34294cebce7f2
+msgid "MAX_POSITION_EMBEDDINGS=4096"
+msgstr "MAX_POSITION_EMBEDDINGS=4096"
+
+#: ../../getting_started/install/environment/environment.md:18
+#: 16a307dce1294ceba892ff93ae4e81c0
+msgid "QUANTIZE_QLORA"
+msgstr "QUANTIZE_QLORA"
+
+#: ../../getting_started/install/environment/environment.md:20
+#: 93ceb2b2fcd5454b82eefb0ae8c7ae77
+msgid "QUANTIZE_QLORA=True"
+msgstr "QUANTIZE_QLORA=True"
+
+#: ../../getting_started/install/environment/environment.md:22
+#: 15ffa35d023a4530b02a85ee6168dd4b
+msgid "QUANTIZE_8bit"
+msgstr "QUANTIZE_8bit"
+
+#: ../../getting_started/install/environment/environment.md:24
+#: 81df248ac5cb4ab0b13a711505f6a177
+msgid "QUANTIZE_8bit=True"
+msgstr "QUANTIZE_8bit=True"
+
+#: ../../getting_started/install/environment/environment.md:27
+#: 15cc7b7d41ad44f0891c1189709f00f1
+msgid "LLM PROXY Settings"
+msgstr "LLM PROXY Settings"
+
+#: ../../getting_started/install/environment/environment.md:28
+#: e6c1115a39404f11b193a1593bc51a22
+msgid "OPENAI Key"
+msgstr "OPENAI Key"
+
+#: ../../getting_started/install/environment/environment.md:30
+#: 8157e0a831fe4506a426822b7565e4f6
+msgid "PROXY_API_KEY={your-openai-sk}"
+msgstr "PROXY_API_KEY={your-openai-sk}"
+
+#: ../../getting_started/install/environment/environment.md:31
+#: 89b34d00bdb64e738bd9bc8c086b1f02
+msgid "PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions"
+msgstr "PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions"
+
+#: ../../getting_started/install/environment/environment.md:33
+#: 7a97df730aeb484daf19c8172e61a290
+msgid "from https://bard.google.com/     f12-> application-> __Secure-1PSID"
+msgstr "from https://bard.google.com/     f12-> application-> __Secure-1PSID"
+
+#: ../../getting_started/install/environment/environment.md:35
+#: d430ddf726a049c0a9e0a9bfd5a6fe0e
+msgid "BARD_PROXY_API_KEY={your-bard-token}"
+msgstr "BARD_PROXY_API_KEY={your-bard-token}"
+
+#: ../../getting_started/install/environment/environment.md:38
+#: 23d6b0da3e7042abb55f6181c4a382d2
+msgid "DATABASE SETTINGS"
+msgstr "DATABASE SETTINGS"
+
+#: ../../getting_started/install/environment/environment.md:39
+#: dbae0a2d847f41f5be9396a160ef88d0
+msgid "SQLite database (Current default database)"
+msgstr "SQLite database (Current default database)"
+
+#: ../../getting_started/install/environment/environment.md:40
+#: bdb55b7280c341a981e9d338cce53345
+msgid "LOCAL_DB_PATH=data/default_sqlite.db"
+msgstr "LOCAL_DB_PATH=data/default_sqlite.db"
+
+#: ../../getting_started/install/environment/environment.md:41
+#: 739d67927a9d46b28500deba1917916b
+msgid "LOCAL_DB_TYPE=sqlite # Database Type default:sqlite"
+msgstr "LOCAL_DB_TYPE=sqlite # Database Type default:sqlite"
+
+#: ../../getting_started/install/environment/environment.md:43
+#: eb4717bce6a6483b86d9780d924c5ff1
+msgid "MYSQL database"
+msgstr "MYSQL database"
+
+#: ../../getting_started/install/environment/environment.md:44
+#: 0f4cdf0ff5dd4ff0b397dfa88541a2e1
+msgid "LOCAL_DB_TYPE=mysql"
+msgstr "LOCAL_DB_TYPE=mysql"
+
+#: ../../getting_started/install/environment/environment.md:45
+#: c971ead492c34487bd766300730a9cba
+msgid "LOCAL_DB_USER=root"
+msgstr "LOCAL_DB_USER=root"
+
+#: ../../getting_started/install/environment/environment.md:46
+#: 02828b29ad044eeab890a2f8af0e5907
+msgid "LOCAL_DB_PASSWORD=aa12345678"
+msgstr "LOCAL_DB_PASSWORD=aa12345678"
+
+#: ../../getting_started/install/environment/environment.md:47
+#: 53dc7f15b3934987b1f4c2e2d0b11299
+msgid "LOCAL_DB_HOST=127.0.0.1"
+msgstr "LOCAL_DB_HOST=127.0.0.1"
+
+#: ../../getting_started/install/environment/environment.md:48
+#: 1ac95fc482934247a118bab8dcebeb57
+msgid "LOCAL_DB_PORT=3306"
+msgstr "LOCAL_DB_PORT=3306"
+
+#: ../../getting_started/install/environment/environment.md:51
+#: 34e46aa926844be19c7196759b03af63
+msgid "EMBEDDING SETTINGS"
+msgstr "EMBEDDING SETTINGS"
+
+#: ../../getting_started/install/environment/environment.md:52
+#: 2b5aa08cc995495e85a1f7dc4f97b5d7
+msgid "EMBEDDING MODEL Name, see /pilot/configs/model_config.LLM_MODEL_CONFIG"
+msgstr "EMBEDDING模型, 参考see /pilot/configs/model_config.LLM_MODEL_CONFIG"
+
+#: ../../getting_started/install/environment/environment.md:53
+#: 0de0ca551ed040248406f848feca541d
+msgid "EMBEDDING_MODEL=text2vec"
+msgstr "EMBEDDING_MODEL=text2vec"
+
+#: ../../getting_started/install/environment/environment.md:55
+#: 43019fb570904c9981eb68f33e64569c
+msgid "Embedding Chunk size, default 500"
+msgstr "Embedding 切片大小, 默认500"
+
+#: ../../getting_started/install/environment/environment.md:57
+#: 7e3f93854873461286e96887e04167aa
+msgid "KNOWLEDGE_CHUNK_SIZE=500"
+msgstr "KNOWLEDGE_CHUNK_SIZE=500"
+
+#: ../../getting_started/install/environment/environment.md:59
+#: 9504f4a59ae74352a524b7741113e2d6
+msgid "Embedding Chunk Overlap, default 100"
+msgstr "Embedding chunk Overlap, 文本块之间的最大重叠量。保留一些重叠可以保持文本块之间的连续性（例如使用滑动窗口）,默认100"
+
+#: ../../getting_started/install/environment/environment.md:60
+#: 24e6119c2051479bbd9dba71a9c23dbe
+msgid "KNOWLEDGE_CHUNK_OVERLAP=100"
+msgstr "KNOWLEDGE_CHUNK_OVERLAP=100"
+
+#: ../../getting_started/install/environment/environment.md:62
+#: 0d180d7f2230442abee901c19526e442
+msgid "embeding recall top k,5"
+msgstr "embedding 召回topk, 默认5"
+
+#: ../../getting_started/install/environment/environment.md:64
+#: a5bb9ab2ba50411cbbe87f7836bfbb6d
+msgid "KNOWLEDGE_SEARCH_TOP_SIZE=5"
+msgstr "KNOWLEDGE_SEARCH_TOP_SIZE=5"
+
+#: ../../getting_started/install/environment/environment.md:66
+#: 183b8dd78cba4ae19bd2e08d69d21e0b
+msgid "embeding recall max token ,2000"
+msgstr "embedding向量召回最大token, 默认2000"
+
+#: ../../getting_started/install/environment/environment.md:68
+#: ce0c711febcb44c18ae0fc858c3718d1
+msgid "KNOWLEDGE_SEARCH_MAX_TOKEN=5"
+msgstr "KNOWLEDGE_SEARCH_MAX_TOKEN=5"
+
+#: ../../getting_started/install/environment/environment.md:71
+#: ../../getting_started/install/environment/environment.md:87
+#: 4cab1f399cc245b4a1a1976d2c4fc926 ec9cec667a1c4473bf9a796a26e1ce20
+msgid "Vector Store SETTINGS"
+msgstr "Vector Store SETTINGS"
+
+#: ../../getting_started/install/environment/environment.md:72
+#: ../../getting_started/install/environment/environment.md:88
+#: 4dd04aadd46948a5b1dcf01fdb0ef074 bab7d512f33e40cf9e10f0da67e699c8
+msgid "Chroma"
+msgstr "Chroma"
+
+#: ../../getting_started/install/environment/environment.md:73
+#: ../../getting_started/install/environment/environment.md:89
+#: 13eec36741b14e028e2d3859a320826e ab3ffbcf9358401993af636ba9ab2e2d
+msgid "VECTOR_STORE_TYPE=Chroma"
+msgstr "VECTOR_STORE_TYPE=Chroma"
+
+#: ../../getting_started/install/environment/environment.md:74
+#: ../../getting_started/install/environment/environment.md:90
+#: d15b91e2a2884f23a1dd2d54783b0638 d1f856d571b547098bb0c2a18f9f1979
+msgid "MILVUS"
+msgstr "MILVUS"
+
+#: ../../getting_started/install/environment/environment.md:75
+#: ../../getting_started/install/environment/environment.md:91
+#: 1e165f6c934343c7808459cc7a65bc70 985dd60c2b7d4baaa6601a810a6522d7
+msgid "VECTOR_STORE_TYPE=Milvus"
+msgstr "VECTOR_STORE_TYPE=Milvus"
+
+#: ../../getting_started/install/environment/environment.md:76
+#: ../../getting_started/install/environment/environment.md:92
+#: a1a53f051cee40ed886346a94babd75a d263e8eaee684935a58f0a4fe61c6f0e
+msgid "MILVUS_URL=127.0.0.1"
+msgstr "MILVUS_URL=127.0.0.1"
+
+#: ../../getting_started/install/environment/environment.md:77
+#: ../../getting_started/install/environment/environment.md:93
+#: 2741a312db1a4c6a8a1c1d62415c5fba d03bbf921ddd4f4bb715fe5610c3d0aa
+msgid "MILVUS_PORT=19530"
+msgstr "MILVUS_PORT=19530"
+
+#: ../../getting_started/install/environment/environment.md:78
+#: ../../getting_started/install/environment/environment.md:94
+#: d0786490d38c4e4f971cc14f62fe1fc8 e9e0854873dc4c209861ee4eb77d25cd
+msgid "MILVUS_USERNAME"
+msgstr "MILVUS_USERNAME"
+
+#: ../../getting_started/install/environment/environment.md:79
+#: ../../getting_started/install/environment/environment.md:95
+#: 9a82d07153cc432ebe754b5bc02fde0d a6485c1cfa7d4069a6894c43674c8c2b
+msgid "MILVUS_PASSWORD"
+msgstr "MILVUS_PASSWORD"
+
+#: ../../getting_started/install/environment/environment.md:80
+#: ../../getting_started/install/environment/environment.md:96
+#: 2f233f32b8ba408a9fbadb21fabb99ec 809b3219dd824485bc2cfc898530d708
+msgid "MILVUS_SECURE="
+msgstr "MILVUS_SECURE="
+
+#: ../../getting_started/install/environment/environment.md:82
+#: ../../getting_started/install/environment/environment.md:98
+#: f00603661f2b42e1bd2bca74ad1e3c31 f378e16fdec44c559e34c6929de812e8
+msgid "WEAVIATE"
+msgstr "WEAVIATE"
+
+#: ../../getting_started/install/environment/environment.md:83
+#: da2049ebc6874cf0a6b562e0e2fd9ec7
+msgid "VECTOR_STORE_TYPE=Weaviate"
+msgstr "VECTOR_STORE_TYPE=Weaviate"
+
+#: ../../getting_started/install/environment/environment.md:84
+#: ../../getting_started/install/environment/environment.md:99
+#: 25f1246629934289aad7ef01c7304097 c9fe0e413d9a4fc8abf86b3ed99e0581
+msgid "WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.network"
+msgstr "WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.network"
+
+#: ../../getting_started/install/environment/environment.md:102
+#: ba7c9e707f6a4cd6b99e52b58da3ab2d
+msgid "Multi-GPU Setting"
+msgstr "Multi-GPU Setting"
+
+#: ../../getting_started/install/environment/environment.md:103
+#: 5ca75fdf2c264b2c844d77f659b4f0b3
+msgid ""
+"See https://developer.nvidia.com/blog/cuda-pro-tip-control-gpu-"
+"visibility-cuda_visible_devices/ If CUDA_VISIBLE_DEVICES is not "
+"configured, all available gpus will be used"
+msgstr ""
+"参考 https://developer.nvidia.com/blog/cuda-pro-tip-control-gpu-visibility-"
+"cuda_visible_devices/ 如果 CUDA_VISIBLE_DEVICES没有设置, 会使用所有可用的gpu"
+
+#: ../../getting_started/install/environment/environment.md:106
+#: de92eb310aff43fbbbf3c5a116c3b2c6
+msgid "CUDA_VISIBLE_DEVICES=0"
+msgstr "CUDA_VISIBLE_DEVICES=0"
+
+#: ../../getting_started/install/environment/environment.md:108
+#: d2641df6123a442b8e4444ad5f01a9aa
+msgid ""
+"Optionally, you can also specify the gpu ID to use before the starting "
+"command"
+msgstr "你也可以通过启动命令设置gpu ID"
+
+#: ../../getting_started/install/environment/environment.md:110
+#: 76c66179d11a4e5fa369421378609aae
+msgid "CUDA_VISIBLE_DEVICES=3,4,5,6"
+msgstr "CUDA_VISIBLE_DEVICES=3,4,5,6"
+
+#: ../../getting_started/install/environment/environment.md:112
+#: 29bd0f01fdf540ad98385ea8473f7647
+msgid "You can configure the maximum memory used by each GPU."
+msgstr "可以设置GPU的最大内存"
+
+#: ../../getting_started/install/environment/environment.md:114
+#: 31e5e23838734ba7a2810e2387e6d6a0
+msgid "MAX_GPU_MEMORY=16Gib"
+msgstr "MAX_GPU_MEMORY=16Gib"
+
+#: ../../getting_started/install/environment/environment.md:117
+#: 99aa63ab1ae049d9b94536d6a96f3443
+msgid "Other Setting"
+msgstr "Other Setting"
+
+#: ../../getting_started/install/environment/environment.md:118
+#: 3168732183874bffb59a3575d3473d62
+msgid "Language Settings(influence prompt language)"
+msgstr "Language Settings(涉及prompt语言以及知识切片方式)"
+
+#: ../../getting_started/install/environment/environment.md:119
+#: 73eb0a96f29b4739bd456faa9cb5033d
+msgid "LANGUAGE=en"
+msgstr "LANGUAGE=en"
+
+#: ../../getting_started/install/environment/environment.md:120
+#: c6646b78c6cf4d25a13108232f5b2046
+msgid "LANGUAGE=zh"
+msgstr "LANGUAGE=zh"
+

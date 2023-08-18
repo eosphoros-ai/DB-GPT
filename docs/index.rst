@@ -47,10 +47,12 @@ Getting Started
    :caption: Getting Started
    :hidden:
 
-   getting_started/getting_started.md
+   getting_started/install.rst
+   getting_started/application.md
    getting_started/installation.md
    getting_started/concepts.md
    getting_started/tutorials.md
+   getting_started/faq.rst
 
 
 Modules
@@ -129,32 +131,6 @@ Reference
    :hidden:
 
    ./reference.md
-
-FAQ
------------
-| DB-GPT FAQ.
-
-.. toctree::
-   :maxdepth: 1
-   :caption: FAQ
-   :name: FAQ
-   :hidden:
-
-   ./faq.md
-
-Ecosystem
-----------
-
-| Guides for how other companies/products can be used with DB-GPT
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-   :caption: Ecosystem
-   :name: ecosystem
-   :hidden
-
-   ./ecosystem.md
 
 
 Resources

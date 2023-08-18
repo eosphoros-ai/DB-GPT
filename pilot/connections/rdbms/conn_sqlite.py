@@ -70,10 +70,10 @@ class SQLiteConnect(RDBMSDatabase):
 
     def _sync_tables_from_db(self) -> Iterable[str]:
         table_results = self.session.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
+            text("SELECT name FROM sqlite_master WHERE type='table'")
         )
         view_results = self.session.execute(
-            "SELECT name FROM sqlite_master WHERE type='view'"
+            text("SELECT name FROM sqlite_master WHERE type='view'")
         )
         table_results = set(row[0] for row in table_results)
         view_results = set(row[0] for row in view_results)

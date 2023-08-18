@@ -1,0 +1,98 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-16 18:31+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:1
+#: bce4fd8751dd49bb8ab89a651094cfe1
+msgid "KBQA FAQ"
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:4
+#: c9714f70a03f422fae7bdb2b3b3c8be5
+msgid "Q1: text2vec-large-chinese not found"
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:6
+#: 1c56b9081adb46b29063947659e67083
+msgid ""
+"make sure you have download text2vec-large-chinese embedding model in "
+"right way"
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:18
+#: 39763bdbc6824675b293f0f219fc05bb
+msgid "Q2:How to change Vector DB Type in DB-GPT."
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:20
+#: 225cc6e5b6944ce3b675845aa93afb66
+msgid "Update .env file and set VECTOR_STORE_TYPE."
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:22
+#: 5ad12db4aed44f4890911b5aea9529ce
+msgid ""
+"DB-GPT currently support Chroma(Default), Milvus(>2.1), Weaviate vector "
+"database. If you want to change vector db, Update your .env, set your "
+"vector store type, VECTOR_STORE_TYPE=Chroma (now only support Chroma and "
+"Milvus(>2.1), if you set Milvus, please set MILVUS_URL and MILVUS_PORT) "
+"If you want to support more vector db, you can integrate yourself.[how to"
+" integrate](https://db-gpt.readthedocs.io/en/latest/modules/vector.html)"
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:38
+#: f8dd19ff86244cc7be91b7ab9190baeb
+msgid "Q3:When I use vicuna-13b, found some illegal character like this."
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:43
+#: ec4a69476d4e4e4d92619ade829c2b39
+msgid ""
+"Set KNOWLEDGE_SEARCH_TOP_SIZE smaller or set KNOWLEDGE_CHUNK_SIZE "
+"smaller, and reboot server."
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:45
+#: 5b039a860c0b4cb088d042467ad2a49c
+msgid ""
+"Q4:space add error (pymysql.err.OperationalError) (1054, \"Unknown column"
+" 'knowledge_space.context' in 'field list'\")"
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:47
+#: bafac5e248894263a77ab688922df520
+msgid "1.shutdown dbgpt_server(ctrl c)"
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:49
+#: 8ff5ca901f684e8ebe951f8c053ab925
+msgid "2.add column context for table knowledge_space"
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:53
+#: ea9f945678aa426894f0a12013f8fe5c
+msgid "3.execute sql ddl"
+msgstr ""
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:58
+#: 1a7941f2f1e94d359095e92b470ee02c
+msgid "4.restart dbgpt serve"
+msgstr ""
+
