@@ -7,30 +7,30 @@
 
 <div align="center">
   <p>
-    <a href="https://github.com/csunny/DB-GPT">
+    <a href="https://github.com/eosphoros-ai/DB-GPT">
         <img alt="stars" src="https://img.shields.io/github/stars/csunny/db-gpt?style=social" />
     </a>
-    <a href="https://github.com/csunny/DB-GPT">
+    <a href="https://github.com/eosphoros-ai/DB-GPT">
         <img alt="forks" src="https://img.shields.io/github/forks/csunny/db-gpt?style=social" />
     </a>
     <a href="https://opensource.org/licenses/MIT">
       <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
     </a>
-     <a href="https://github.com/csunny/DB-GPT/releases">
+     <a href="https://github.com/eosphoros-ai/DB-GPT/releases">
       <img alt="Release Notes" src="https://img.shields.io/github/release/csunny/DB-GPT" />
     </a>
-    <a href="https://github.com/csunny/DB-GPT/issues">
+    <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
     </a>
-    <a href="https://discord.gg/erwfqcMP">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/erwfqcMP?compact=true&style=flat" />
+    <a href="https://discord.gg/Y5rbqj4U">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/Y5rbqj4U?compact=true&style=flat" />
     </a>
-    <a href="https://codespaces.new/csunny/DB-GPT">
+    <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/erwfqcMP) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
+[**English**](README.md)|[**Discord**](https://discord.gg/erwfqcMP) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community**](https://github.com/eosphoros-ai/community)
 
 </div>
 
