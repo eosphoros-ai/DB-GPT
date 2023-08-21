@@ -17,7 +17,7 @@ CFG = Config()
 logger = build_logger("show_chart_gen", LOGDIR + "show_chart_gen.log")
 
 
-@command("response_line_chart", "Use line chart to display SQL data", '"speak": "<speak>", "df":"<data frame>"')
+@command("response_line_chart", "Line chart display, used to display comparative trend analysis data", '"speak": "<speak>", "df":"<data frame>"')
 def response_line_chart(speak: str,  df: DataFrame) -> str:
     logger.info(f"response_line_chart:{speak},")
 
@@ -27,9 +27,10 @@ def response_line_chart(speak: str,  df: DataFrame) -> str:
         raise ValueError("No Data！")
     plt.rcParams["font.family"] = ["sans-serif"]
     rc = {"font.sans-serif": "SimHei", "axes.unicode_minus": False}
+    sns.set_style(rc={'font.sans-serif': "Microsoft Yahei"})
     sns.set(context="notebook", style="ticks", color_codes=True, rc=rc)
     plt.subplots(figsize=(8, 5), dpi=100)
-    sns.barplot(df, x=columns[0], y=columns[1])
+    sns.lineplot(df, x=columns[0], y=columns[1])
     plt.title("")
 
     buf = io.BytesIO()
@@ -37,20 +38,54 @@ def response_line_chart(speak: str,  df: DataFrame) -> str:
     buf.seek(0)
     data = base64.b64encode(buf.getvalue()).decode("ascii")
 
-    html_img = f"""<h5>{speak}</h5><img style='max-width: 120%; max-height: 80%;'  src="data:image/png;base64,{data}" />"""
+    html_img = f"""<h5>{speak}</h5><img style='max-width: 100%; max-height: 70%;'  src="data:image/png;base64,{data}" />"""
     return html_img
 
 
 
-# @command("response_bar_chart", "Use bar chart to display SQL data", '"speak": "<speak>", "sql":"<sql>","db_name":"<db_name>"')
-# def response_bar_chart(speak: str, sql: str, db_name: str) -> str:
-#     """
-#     """
-#     pass
-#
-#
-# @command("response_pie_chart", "Use pie chart to display SQL data", '"speak": "<speak>", "sql":"<sql>","db_name":"<db_name>"')
-# def response_pie_chart(speak: str, sql: str, db_name: str) -> str:
-#     """
-#     """
-#     pass
+@command("response_bar_chart", "Histogram, suitable for comparative analysis of multiple target values",  '"speak": "<speak>", "df":"<data frame>"')
+def response_bar_chart(speak: str,  df: DataFrame) -> str:
+    logger.info(f"response_bar_chart:{speak},")
+    columns = df.columns.tolist()
+    if df.size <= 0:
+        raise ValueError("No Data！")
+    plt.rcParams["font.family"] = ["sans-serif"]
+    rc = {"font.sans-serif": "SimHei", "axes.unicode_minus": False}
+    sns.set_style(rc={'font.sans-serif': "Microsoft Yahei"})
+    sns.set(context="notebook", style="ticks", color_codes=True, rc=rc)
+    plt.subplots(figsize=(8, 5), dpi=100)
+    sns.barplot(df, x=df[columns[0]], y=df[columns[1]])
+    plt.title("")
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", dpi=100)
+    buf.seek(0)
+    data = base64.b64encode(buf.getvalue()).decode("ascii")
+
+    html_img = f"""<h5>{speak}</h5><img style='max-width: 100%; max-height: 70%;'  src="data:image/png;base64,{data}" />"""
+    return html_img
+
+
+
+@command("response_pie_chart", "Pie chart, suitable for scenarios such as proportion and distribution statistics",  '"speak": "<speak>", "df":"<data frame>"')
+def response_pie_chart(speak: str,  df: DataFrame) -> str:
+    logger.info(f"response_pie_chart:{speak},")
+    columns = df.columns.tolist()
+    if df.size <= 0:
+        raise ValueError("No Data！")
+    plt.rcParams["font.family"] = ["sans-serif"]
+    rc = {"font.sans-serif": "SimHei", "axes.unicode_minus": False}
+    sns.set_style(rc={'font.sans-serif': "Microsoft Yahei"})
+    sns.set(context="notebook", style="ticks", color_codes=True, rc=rc)
+    sns.set_palette("Set3")  # 设置颜色主题
+    plt.pie(columns[1], labels=columns[0], autopct='%1.1f%%', startangle=90)
+    plt.axis('equal')  # 使饼图为正圆形
+    plt.title(columns[0])
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", dpi=100)
+    buf.seek(0)
+    data = base64.b64encode(buf.getvalue()).decode("ascii")
+
+    html_img = f"""<h5>{speak}</h5><img style='max-width: 100%; max-height: 70%;'  src="data:image/png;base64,{data}" />"""
+    return html_img

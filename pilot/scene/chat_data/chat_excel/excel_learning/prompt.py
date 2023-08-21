@@ -2,7 +2,7 @@ import json
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.configs.config import Config
 from pilot.scene.base import ChatScene
-from pilot.scene.chat_db.auto_execute.out_parser import DbChatOutputParser, SqlAction
+from pilot.scene.chat_data.chat_excel.excel_learning.out_parser import LearningExcelOutputParser
 from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
@@ -20,9 +20,9 @@ Please return your answer in JSON format, the return format is as follows:
 """
 
 RESPONSE_FORMAT_SIMPLE =     {
-    "Data Analysis": "数据内容分析总结",
-    "Colunm Analysis": [{"colunm name": "字段介绍，专业术语解释(请尽量简单明了)"}],
-    "Analysis Program": ["1.分析方案1，图表展示方式1", "2.分析方案2，图表展示方式2"],
+    "DataAnalysis": "数据内容分析总结",
+    "ColumnAnalysis": [{"column name1": "字段1介绍，专业术语解释(请尽量简单明了)"}],
+    "AnalysisProgram": ["1.分析方案1，图表展示方式1", "2.分析方案2，图表展示方式2"],
 }
 
 
@@ -43,7 +43,7 @@ prompt = PromptTemplate(
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE,
     stream_out=PROMPT_NEED_NEED_STREAM_OUT,
-    output_parser=DbChatOutputParser(
+    output_parser=LearningExcelOutputParser(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
     ),
     # example_selector=sql_data_example,

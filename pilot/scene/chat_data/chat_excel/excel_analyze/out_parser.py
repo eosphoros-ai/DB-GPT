@@ -33,9 +33,9 @@ class ChatExcelOutputParser(BaseOutputParser):
                 sql = response[key]
             if key.strip() == "thoughts":
                 thoughts = response[key]
-            if key.strip() == "disply":
-                disply = response[key]
-        return ExcelAnalyzeResponse(sql, thoughts, disply)
+            if key.strip() == "display":
+                display = response[key]
+        return ExcelAnalyzeResponse(sql, thoughts, display)
 
     def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view

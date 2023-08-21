@@ -95,13 +95,13 @@ class RDBMSDatabase(BaseConnect):
         db_url: str = (
             cls.driver
             + "://"
-            + CFG.LOCAL_DB_USER
+            + user
             + ":"
-            + CFG.LOCAL_DB_PASSWORD
+            + pwd
             + "@"
-            + CFG.LOCAL_DB_HOST
+            + host
             + ":"
-            + str(CFG.LOCAL_DB_PORT)
+            + str(port)
             + "/"
             + db_name
         )

@@ -2,7 +2,7 @@ import json
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.configs.config import Config
 from pilot.scene.base import ChatScene
-from pilot.scene.chat_db.auto_execute.out_parser import DbChatOutputParser, SqlAction
+from pilot.scene.chat_data.chat_excel.excel_analyze.out_parser import ChatExcelOutputParser
 from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
@@ -10,11 +10,14 @@ CFG = Config()
 PROMPT_SCENE_DEFINE = "You are a data analysis expert. "
 
 _DEFAULT_TEMPLATE = """
-Please give data analysis SQL based on the following user goals: {user_input}
-Display type: 
-    {disply_type}
+Please use the data structure information of the above historical dialogue, make sure not to use column names that are not in the data structure.
+According to the user goal: {user_input}，give the correct duckdb SQL for data analysis.
+Use the table name: {table_name}
 
 According to the analysis SQL obtained by the user's goal, select the best one from the following display forms, if it cannot be determined, use Text  as the display.
+Display type: 
+    {disply_type}
+    
 Respond in the following json format:
     {response}
 Ensure the response is correct json and can be parsed by Python json.loads
@@ -39,14 +42,15 @@ PROMPT_TEMPERATURE = 0.8
 
 prompt = PromptTemplate(
     template_scene=ChatScene.ChatExcel.value(),
-    input_variables=["user_input", "disply_type"],
+    input_variables=["user_input", "table_name", "disply_type"],
     response_format=json.dumps(RESPONSE_FORMAT_SIMPLE, ensure_ascii=False, indent=4),
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE,
     stream_out=PROMPT_NEED_NEED_STREAM_OUT,
-    output_parser=DbChatOutputParser(
+    output_parser=ChatExcelOutputParser(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
     ),
+    need_historical_messages = True,
     # example_selector=sql_data_example,
     temperature=PROMPT_TEMPERATURE,
 )
