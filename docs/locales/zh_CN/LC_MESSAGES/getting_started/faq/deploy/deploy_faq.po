@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-16 23:15+0800\n"
+"POT-Creation-Date: 2023-08-21 16:59+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,53 +20,73 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:1
-#: 6aa73265a43d4e6ea287e6265ef4efe5
+#: 4466dae5cd1048cd9c22450be667b05a
 msgid "Installation FAQ"
 msgstr "Installation FAQ"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:5
-#: 4efe241d5e724db5ab22548cfb88f8b6
+#: dfa13f5fdf1e4fb9af92b58a5bae2ae9
+#, fuzzy
 msgid ""
+"Q1: execute `pip install -e .` error, found some package cannot find "
+"correct version."
+msgstr ""
 "Q1: execute `pip install -r requirements.txt` error, found some package "
-"cannot find correct version."
-msgstr "Q1: execute `pip install -r requirements.txt` error, found some package "
 "cannot find correct version."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:6
-#: e837e10bdcfa49cebb71b32eece4831b
+#: c694387b681149d18707be047b46fa87
 msgid "change the pip source."
 msgstr "替换pip源."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:13
 #: ../../getting_started/faq/deploy/deploy_faq.md:20
-#: 84310ec0c54e4a02949da2e0b35c8c7d e8a7a8b38b7849b88c14fb6d647f9b63
+#: 5423bc84710c42ee8ba07e95467ce3ac 99aa6bb16764443f801a342eb8f212ce
 msgid "or"
 msgstr "或者"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:27
-#: 87797a5dafef47c8884f6f1be9a1fbd2
+#: 6cc878fe282f4a9ab024d0b884c57894
 msgid ""
 "Q2: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to"
 " open database file"
-msgstr "Q2: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to"
+msgstr ""
+"Q2: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to"
 " open database file"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:29
-#: bc96b22e201c47ec999c8d98227a956d
+#: 18a71bc1062a4b1c8247068d4d49e25d
 msgid "make sure you pull latest code or create directory with mkdir pilot/data"
 msgstr "make sure you pull latest code or create directory with mkdir pilot/data"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:31
-#: d7938f1c70a64efa9948080a6d416964
+#: 0987d395af24440a95dd9367e3004a0b
 msgid "Q3: The model keeps getting killed."
 msgstr "Q3: The model keeps getting killed."
 
-#: ../../getting_started/faq/deploy/deploy_faq.md:32
-#: b072386586a64b2289c0fcdf6857b2b7
+#: ../../getting_started/faq/deploy/deploy_faq.md:33
+#: bfd90cb8f2914bba84a44573a9acdd6d
 msgid ""
 "your GPU VRAM size is not enough, try replace your hardware or replace "
 "other llms."
 msgstr "GPU显存不够, 增加显存或者换一个显存小的模型"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:35
+#: 09a9baca454d4b868fedffa4febe7c5c
+msgid "Q4: How to access website on the public network"
+msgstr ""
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:37
+#: 3ad8d2cf2b4348a6baed5f3e302cd58c
+msgid ""
+"You can try to use gradio's [network](https://github.com/gradio-"
+"app/gradio/blob/main/gradio/networking.py) to achieve."
+msgstr ""
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:48
+#: 90b35959c5854b69acad9b701e21e65f
+msgid "Open `url` with your browser to see the website."
+msgstr ""
 
 #~ msgid ""
 #~ "Q2: When use Mysql, Access denied "
