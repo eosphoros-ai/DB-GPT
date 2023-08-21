@@ -139,6 +139,7 @@ async def dialogue_scenes():
     scene_vos: List[ChatSceneVo] = []
     new_modes: List[ChatScene] = [
         ChatScene.ChatWithDbExecute,
+        ChatScene.ChatExcel,
         ChatScene.ChatWithDbQA,
         ChatScene.ChatKnowledge,
         ChatScene.ChatDashboard,
@@ -229,9 +230,10 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
     logger.info(f"chat_prepare:{dialogue}")
     ## check conv_uid
     chat: BaseChat = get_chat_instance(dialogue)
-    if not chat.history_message:
+    if len(chat.history_message) >0:
         return Result.succ(None)
-    return Result.succ(chat.prepare())
+    resp = chat.prepare()
+    return Result.succ(resp)
 
 
 @router.post("/v1/chat/completions")

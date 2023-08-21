@@ -85,16 +85,16 @@ class BaseChat(ABC):
                 proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
-        if not chat_mode.is_inner():
-            ### can configurable storage methods
-            self.memory = DuckdbHistoryMemory(chat_session_id)
 
-            self.history_message: List[OnceConversation] = self.memory.messages()
-            self.current_message: OnceConversation = OnceConversation(chat_mode.value())
-            if select_param:
-                self.current_message.param_type = chat_mode.param_types()[0]
-                self.current_message.param_value = select_param
-            self.current_tokens_used: int = 0
+        ### can configurable storage methods
+        self.memory = DuckdbHistoryMemory(chat_session_id)
+
+        self.history_message: List[OnceConversation] = self.memory.messages()
+        self.current_message: OnceConversation = OnceConversation(chat_mode.value())
+        if select_param:
+            self.current_message.param_type = chat_mode.param_types()[0]
+            self.current_message.param_value = select_param
+        self.current_tokens_used: int = 0
 
     class Config:
         """Configuration for this pydantic object."""
@@ -181,7 +181,6 @@ class BaseChat(ABC):
                 return response
             else:
                 from pilot.server.llmserver import worker
-
                 return worker.generate_stream_gate(payload)
         except Exception as e:
             print(traceback.format_exc())

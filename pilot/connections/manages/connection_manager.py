@@ -126,7 +126,7 @@ class ConnectManager:
             db_user = db_config.get("db_user")
             db_pwd = db_config.get("db_pwd")
             return connect_instance.from_uri_db(
-                db_host, db_port, db_user, db_pwd, db_name
+                host=db_host, port=db_port, user=db_user, pwd=db_pwd, db_name=db_name
             )
 
     def get_db_list(self):

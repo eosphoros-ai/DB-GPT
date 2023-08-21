@@ -20,7 +20,7 @@ class ExcelResponse(NamedTuple):
 logger = build_logger("chat_excel", LOGDIR + "ChatExcel.log")
 
 
-class ChatExcelOutputParser(BaseOutputParser):
+class LearningExcelOutputParser(BaseOutputParser):
     def __init__(self, sep: str, is_stream_out: bool):
         super().__init__(sep=sep, is_stream_out=is_stream_out)
 
@@ -29,37 +29,25 @@ class ChatExcelOutputParser(BaseOutputParser):
         print("clean prompt response:", clean_str)
         response = json.loads(clean_str)
         for key in sorted(response):
-            if key.strip() == "Data Analysis":
+            if key.strip() == "DataAnalysis":
                 desciption = response[key]
-            if key.strip() == "Column Analysis":
+            if key.strip() == "ColumnAnalysis":
                 clounms = response[key]
-            if key.strip() == "Analysis Program":
+            if key.strip() == "AnalysisProgram":
                 plans = response[key]
-        return ExcelResponse(desciption=desciption, clounms=clounms,plans=plans)
+        return ExcelResponse(desciption=desciption, clounms=clounms, plans=plans)
 
     def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view
-
-
-
-        html_title= data["desciption"]
-        html_colunms= f"<h5>数据结构</h5><ul>"
-        for item in data["clounms"]:
-            html_colunms = html_colunms + "<li>"
+        html_title = f"### **数据简介:**\n{data.desciption} \n"
+        html_colunms = f"### **数据结构:**\n"
+        for item in data.clounms:
             keys = item.keys()
             for key in keys:
-                html_colunms = html_colunms + f"{key}:{item[key]}"
-            html_colunms = html_colunms + "</li>"
-        html_colunms= html_colunms + "</ul>"
+                html_colunms = html_colunms + f"-   **{key}**:{item[key]} \n"
 
-        html_plans="<ol>"
-        for item in data["plans"]:
-            html_plans = html_plans + f"<li>{item}</li>"
-        html = f"""
-                <div>
-                   <h4>{html_title}</h4>  
-                   <div>{html_colunms}</div>
-                   <div>{html_plans}</div>
-               <div>
-                """
+        html_plans = f"\n ### **分析计划:** \n"
+        for item in data.plans:
+            html_plans = html_plans + f"-   {item} \n"
+        html = f"""{html_title}{html_colunms}{html_plans}"""
         return html

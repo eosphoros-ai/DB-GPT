@@ -9,6 +9,7 @@ from pilot.scene.chat_db.auto_execute.chat import ChatWithDbAutoExecute
 from pilot.scene.chat_dashboard.chat import ChatDashboard
 from pilot.scene.chat_knowledge.v1.chat import ChatKnowledge
 from pilot.scene.chat_knowledge.inner_db_summary.chat import InnerChatDBSummary
+from pilot.scene.chat_data.chat_excel.excel_analyze.chat import ChatExcel
 
 
 class ChatFactory(metaclass=Singleton):
