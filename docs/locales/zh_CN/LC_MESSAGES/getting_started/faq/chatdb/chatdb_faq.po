@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-16 23:15+0800\n"
+"POT-Creation-Date: 2023-08-22 13:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,17 +20,17 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:1
-#: ffd1abb6b8f34e53a8ed83ede845b141
+#: 371f153c45484caea125cc4841a3ab7c
 msgid "Chat DB FAQ"
 msgstr "Chat DB FAQ"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:3
-#: 2467f6603ab341bbb1ce17f75dc06e5e
+#: f5d4e14316ef4d6db20b76872768b012
 msgid "Q1: What difference between ChatData and ChatDB"
 msgstr ""
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:4
-#: 6e47803e92064e379a1bb74e2b3d347a
+#: ee16d1c26d54456ba5cc51f0f5fb82fe
 msgid ""
 "ChatData generates SQL from natural language and executes it. ChatDB "
 "involves conversing with metadata from the Database, including metadata "
@@ -38,25 +38,39 @@ msgid ""
 msgstr "ChatData 是将自然语言转换成SQL并执行获取结果，ChatDB主要是和数据库元数据信息（包括表、字段、索引信息）， 用于db诊断和数据库答疑"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:6
-#: fa3eef15697f43db963f6c875e85323b
+#: a65f2f4603e44a8396d84daa78ba337d
 msgid "Q2: The suitable llm model currently supported for text-to-SQL is?"
 msgstr "Q2: 目前DB-GPT最适合text-to-SQL的开源模型是什么"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:7
-#: 47f36a0a48c045269bcf790873d55f8c
+#: 77763b99ef924e2b90961e550f5c3d88
 msgid "Now vicunna-13b-1.5 and llama2-70b is more suitable for text-to-SQL."
 msgstr "vicunna-13b-1.5 和 llama2-70b"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:9
-#: 9f5ef9a05fac4eb3b27875171ec4e763
+#: 776a487a2c624cfdbf59fdb64a5649f5
 msgid "Q3: How to fine-tune Text-to-SQL in DB-GPT"
 msgstr "Q3: 我想fine-tune Text-to-SQL in DB-GPT"
 
 #: ../../getting_started/faq/chatdb/chatdb_faq.md:10
-#: c9b6f6e969e04805a59d9ccabc03c0b8
+#: 17ae1a5ee4234d3b86940d179262f37b
 msgid ""
 "there is another github project for Text-to-SQL fine-tune "
 "(https://github.com/eosphoros-ai/DB-GPT-Hub)"
-msgstr "参与另外一个项目 Text-to-SQL fine-tune "
-"(https://github.com/eosphoros-ai/DB-GPT-Hub)"
+msgstr ""
+"参与另外一个项目 Text-to-SQL fine-tune (https://github.com/eosphoros-ai/DB-GPT-"
+"Hub)"
+
+#: ../../getting_started/faq/chatdb/chatdb_faq.md:12
+#: d34324bce192484a8afe066f22854801
+msgid ""
+"Q4: chatdata with clickhouse clickhouse-sqlalchemy 0.2.4 requires "
+"sqlalchemy<1.5,>=1.4.24, but you have sqlalchemy 2.0.20 which is "
+"incompatible"
+msgstr "chatData 使用clickhouse时发现driver与clickhouse-sqlalchemy不兼容"
+
+#: ../../getting_started/faq/chatdb/chatdb_faq.md:13
+#: e3746b0538b045e883cfbb17b0177f04
+msgid "Just set sqlalchemy<1.5,>=1.4.24"
+msgstr "调整下版本 sqlalchemy<1.5,>=1.4.24"
 
