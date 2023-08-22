@@ -25,6 +25,8 @@ class ChatExcel(BaseChat):
     chat_retention_rounds = 2
     def __init__(self, chat_session_id, user_input, select_param: str = ""):
         chat_mode = ChatScene.ChatExcel
+        ## TODO TEST
+        select_param = "/Users/tuyang.yhj/Downloads/example.xlsx"
 
         self.excel_file_path = select_param
         self.excel_reader = ExcelReader(select_param)
@@ -75,9 +77,11 @@ class ChatExcel(BaseChat):
 
     def prepare(self):
         logger.info(f"{self.chat_mode} prepare start!")
+        if len(self.history_message) > 0:
+            return None
         chat_param = {
             "chat_session_id": self.chat_session_id,
-            "user_input": self.excel_reader.excel_file_name + " analysis！",
+            "user_input": "[" + self.excel_reader.excel_file_name +"]" + self.excel_reader.extension + " analysis！",
             "select_param": self.excel_file_path
         }
         learn_chat = ExcelLearning(**chat_param)

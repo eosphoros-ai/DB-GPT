@@ -28,7 +28,10 @@ class ExcelReader:
         file_name = os.path.basename(file_path)
         file_name_without_extension = os.path.splitext(file_name)[0]
 
+
         self.excel_file_name = file_name_without_extension
+        self.extension = os.path.splitext(file_name)[1]
+
         self.table_name = file_name_without_extension
         # write data in duckdb
         self.db.register(self.table_name, self.df)
@@ -49,3 +52,4 @@ class ExcelReader:
 
     def get_sample_data(self):
         return self.run(f'SELECT * FROM {self.table_name} LIMIT 5;')
+
