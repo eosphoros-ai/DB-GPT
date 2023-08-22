@@ -20,27 +20,27 @@ class ClickhouseConnect(RDBMSDatabase):
 
     @classmethod
     def from_uri_db(
-            cls,
-            host: str,
-            port: int,
-            user: str,
-            pwd: str,
-            db_name: str,
-            engine_args: Optional[dict] = None,
-            **kwargs: Any,
+        cls,
+        host: str,
+        port: int,
+        user: str,
+        pwd: str,
+        db_name: str,
+        engine_args: Optional[dict] = None,
+        **kwargs: Any,
     ) -> RDBMSDatabase:
         db_url: str = (
-                cls.driver
-                + "://"
-                + user
-                + ":"
-                + pwd
-                + "@"
-                + host
-                + ":"
-                + str(port)
-                + "/"
-                + db_name
+            cls.driver
+            + "://"
+            + user
+            + ":"
+            + pwd
+            + "@"
+            + host
+            + ":"
+            + str(port)
+            + "/"
+            + db_name
         )
         return cls.from_uri(db_url, engine_args, **kwargs)
 
