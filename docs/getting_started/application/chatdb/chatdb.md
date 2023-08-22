@@ -27,6 +27,15 @@ you can execute sql script to generate data.
 
 ![db plugins demonstration](../../../../assets/chat_data/add_datasource.png)
 
+```{note}
+now DB-GPT support Datasource Type
+
+* Mysql
+* Sqlite
+* DuckDB
+* Clickhouse
+```
+
 ### 2.ChatData
 
 After successfully setting up the data source, you can start conversing with the database. You can ask it to generate
@@ -34,6 +43,7 @@ SQL for you or inquire about relevant information on the database's metadata.
 ![db plugins demonstration](../../../../assets/chat_data/chatdata_eg.png)
 
 ### 3.ChatDB
+
 ![db plugins demonstration](../../../../assets/chat_data/chatdb_eg.png)
 
 
