@@ -29,6 +29,7 @@ class DBType(Enum):
     Oracle = DbInfo("oracle")
     MSSQL = DbInfo("mssql")
     Postgresql = DbInfo("postgresql")
+    Clickhouse = DbInfo("clickhouse")
 
     def value(self):
         return self._value_.name
