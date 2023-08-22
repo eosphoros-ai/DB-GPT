@@ -50,11 +50,11 @@ def response_bar_chart(speak: str,  df: DataFrame) -> str:
     if df.size <= 0:
         raise ValueError("No Data！")
     plt.rcParams["font.family"] = ["sans-serif"]
-    rc = {"font.sans-serif": "SimHei", "axes.unicode_minus": False}
-    sns.set_style(rc={'font.sans-serif': "Microsoft Yahei"})
-    sns.set(context="notebook", style="ticks", color_codes=True, rc=rc)
+    rc = {'font.sans-serif': "Microsoft Yahei"}
+    sns.set(context="notebook", style="whitegrid", color_codes=True, rc=rc)
     plt.subplots(figsize=(8, 5), dpi=100)
     sns.barplot(df, x=df[columns[0]], y=df[columns[1]])
+
     plt.title("")
 
     buf = io.BytesIO()

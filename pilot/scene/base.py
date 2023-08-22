@@ -33,7 +33,6 @@ class ChatScene(Enum):
         code = "excel_learning",
         name = "Excel Learning",
         describe = "Analyze and summarize your excel files.",
-        param_types=["File Select"],
         is_inner = True,
     )
     ChatExcel = Scene(

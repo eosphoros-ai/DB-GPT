@@ -1,9 +1,13 @@
 import uuid
 import asyncio
 import os
+import shutil
 from fastapi import (
     APIRouter,
     Request,
+    File,
+    UploadFile,
+    Form,
     Body,
     BackgroundTasks,
 )
@@ -11,6 +15,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from fastapi.exceptions import RequestValidationError
 from typing import List
+from tempfile import NamedTemporaryFile
 
 from pilot.openapi.api_view_model import (
     Result,
@@ -31,8 +36,7 @@ from pilot.utils import build_logger
 from pilot.common.schema import DBType
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.scene.message import OnceConversation
-from pilot.openapi.base import validation_exception_handler
-
+from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 
 router = APIRouter()
 CFG = Config()
@@ -159,7 +163,7 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
+        chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
 ):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)
@@ -179,6 +183,37 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
         return Result.succ(knowledge_list())
     else:
         return Result.succ(None)
+
+
+@router.post("/v1/chat/mode/params/file/load")
+async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File(...)):
+    print(f"params_load: {conv_uid},{chat_mode}")
+    try:
+        if doc_file:
+            ## file save
+            if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)):
+                os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode))
+            with NamedTemporaryFile(
+                    dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode), delete=False
+            ) as tmp:
+                tmp.write(await doc_file.read())
+                tmp_path = tmp.name
+                shutil.move(
+                    tmp_path,
+                    os.path.join(
+                        KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode, doc_file.filename
+                    ),
+                )
+            ## chat prepare
+            dialogue = ConversationVo(conv_uid=conv_uid, chat_mode=chat_mode, select_param=doc_file.filename)
+            chat: BaseChat = get_chat_instance(dialogue)
+            resp = chat.prepare()
+
+        ### refresh messages
+        return dialogue_history_messages(conv_uid)
+
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"File Load Error {e}")
 
 
 @router.post("/v1/chat/dialogue/delete")
@@ -203,7 +238,8 @@ async def dialogue_history_messages(con_uid: str):
             message_vos.extend(once_message_vos)
     return Result.succ(message_vos)
 
-def get_chat_instance(dialogue: ConversationVo = Body())-> BaseChat:
+
+def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
     logger.info(f"get_chat_instance:{dialogue}")
     if not dialogue.chat_mode:
         dialogue.chat_mode = ChatScene.ChatNormal.value()
@@ -230,7 +266,7 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
     logger.info(f"chat_prepare:{dialogue}")
     ## check conv_uid
     chat: BaseChat = get_chat_instance(dialogue)
-    if len(chat.history_message) >0:
+    if len(chat.history_message) > 0:
         return Result.succ(None)
     resp = chat.prepare()
     return Result.succ(resp)
@@ -261,7 +297,6 @@ async def chat_completions(dialogue: ConversationVo = Body()):
             headers=headers,
             media_type="text/plain",
         )
-
 
 
 async def no_stream_generator(chat):

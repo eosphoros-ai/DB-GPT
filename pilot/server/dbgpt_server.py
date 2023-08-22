@@ -29,7 +29,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pilot.server.knowledge.api import router as knowledge_router
 
 
-from pilot.openapi.api_v1.api_v1 import router as api_v1, validation_exception_handler
+from pilot.openapi.api_v1.api_v1 import router as api_v1
+from pilot.openapi.base import validation_exception_handler
 from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
 
 logging.basicConfig(level=logging.INFO)
