@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-21 16:59+0800\n"
+"POT-Creation-Date: 2023-08-22 13:28+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -33,121 +33,125 @@ msgid ""
 " language and gain insights into their respective areas of business."
 msgstr "DB-GPT Dashboard目的是赋能数据分析人员。DB-GPT通过提供智能报表技术，使得业务分析人员可以直接使用简单的自然语言进行自助分析。"
 
-#: ../../getting_started/application/dashboard/dashboard.md:6
+#: ../../getting_started/application/dashboard/dashboard.md:8
 #: 48604cca2b3f482692bb65a01f0297a7
 msgid "Dashboard now support Datasource Type"
 msgstr "Dashboard目前支持的数据源类型"
 
-#: ../../getting_started/application/dashboard/dashboard.md:7
+#: ../../getting_started/application/dashboard/dashboard.md:9
 #: e4371bc220be46f0833dc7d0c804f263
 msgid "Mysql"
 msgstr "Mysql"
 
-#: ../../getting_started/application/dashboard/dashboard.md:8
+#: ../../getting_started/application/dashboard/dashboard.md:10
 #: 719c578796fa44a3ad062289aa4650d7
 msgid "Sqlite"
 msgstr "Sqlite"
 
-#: ../../getting_started/application/dashboard/dashboard.md:9
+#: ../../getting_started/application/dashboard/dashboard.md:11
 #: c7817904bbf34dfca56a19a004937146
 msgid "DuckDB"
 msgstr "DuckDB"
 
-#: ../../getting_started/application/dashboard/dashboard.md:11
+#: ../../getting_started/application/dashboard/dashboard.md:13
 #: 1cebeafe853d43809e6ced45d2b68812
 msgid "Steps to Dashboard In DB-GPT"
 msgstr "Dashboard使用步骤"
 
-#: ../../getting_started/application/dashboard/dashboard.md:14
+#: ../../getting_started/application/dashboard/dashboard.md:15
 #: 977520bbea44423ea290617712482148
 msgid "1 add datasource"
 msgstr "1.添加数据源"
 
-#: ../../getting_started/application/dashboard/dashboard.md:15
+#: ../../getting_started/application/dashboard/dashboard.md:17
 #: a8fcef153c68498fa9886051e8d7b072
+#, fuzzy
 msgid ""
 "If you are using Dashboard for the first time, you need to mock some data"
 " to test. DB-GPT provide some dashboard test data in pilot/mock_datas/, "
 "you should follow the steps. ![add_datasource](https://github.com"
-"/eosphoros-ai/DB-"
-"GPT/assets/13723926/043da0c1-70a0-4a26-9aa0-5aa34fd07a5c)"
+"/eosphoros-ai/DB-GPT/assets/13723926/0afc72ea-83c8-45ff-"
+"8c36-213b1c6fb5dd)"
 msgstr "如果你是第一次使用Dashboard，需要构造测试数据，DB-GPT在pilot/mock_datas/提供了测试数据，只需要将数据源进行添加即可"
 
-#: ../../getting_started/application/dashboard/dashboard.md:15
+#: ../../getting_started/application/dashboard/dashboard.md:17
 #: 1abcaa9d7fad4b53a0622ab3e982e6d5
 msgid "add_datasource"
 msgstr "添加数据源"
 
-#: ../../getting_started/application/dashboard/dashboard.md:19
+#: ../../getting_started/application/dashboard/dashboard.md:21
 #: 21ebb5bf568741a9b3d7a4275dde69fa
 msgid "2.Choose Dashboard Mode"
 msgstr "2.进入Dashboard"
 
-#: ../../getting_started/application/dashboard/dashboard.md:20
+#: ../../getting_started/application/dashboard/dashboard.md:23
 #: 1b55d97634b44543acf8f367f77d8436
 msgid ""
 "![create_space](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/5e888880-0e97-4b60-8e5c-b7e7224197f0)"
-msgstr "![create_space](https://github.com/eosphoros-ai/DB-"
+msgstr ""
+"![create_space](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/5e888880-0e97-4b60-8e5c-b7e7224197f0)"
 
-#: ../../getting_started/application/dashboard/dashboard.md:20
+#: ../../getting_started/application/dashboard/dashboard.md:23
 #: 6c97d2aa26fa401cb3c4172bfe4aea6a
 msgid "create_space"
 msgstr "create_space"
 
-#: ../../getting_started/application/dashboard/dashboard.md:23
+#: ../../getting_started/application/dashboard/dashboard.md:25
 #: ff8e96f78698428a9a578b4f90e0feb4
 msgid "3.Select Datasource"
 msgstr "3.选择数据源"
 
-#: ../../getting_started/application/dashboard/dashboard.md:24
+#: ../../getting_started/application/dashboard/dashboard.md:27
 #: 277c924a6f2b49f98414cde95310384f
 msgid ""
 "![document](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/da2ac8b5-eca4-48ef-938f-f9dc1ca711b3)"
-msgstr "![document](https://github.com/eosphoros-ai/DB-"
+msgstr ""
+"![document](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/da2ac8b5-eca4-48ef-938f-f9dc1ca711b3)"
 
-#: ../../getting_started/application/dashboard/dashboard.md:24
 #: ../../getting_started/application/dashboard/dashboard.md:27
+#: ../../getting_started/application/dashboard/dashboard.md:31
 #: 33164f10fb38452fbf98be5aabaeeb91 3a46cb4427cf4ba386230dff47cf7647
 #: d0093988bb414c41a93e8ad6f88e8404
 msgid "document"
 msgstr "document"
 
-#: ../../getting_started/application/dashboard/dashboard.md:26
+#: ../../getting_started/application/dashboard/dashboard.md:29
 #: 6a57e48482724d23adf51e888d126562
 msgid "4.Input your analysis goals"
 msgstr "4.输入分析目标"
 
-#: ../../getting_started/application/dashboard/dashboard.md:27
+#: ../../getting_started/application/dashboard/dashboard.md:31
 #: cb96df3f9135450fbf71177978c50141
 msgid ""
 "![document](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/3f427350-5bd5-4675-8f89-1bd5c63ff2c6) "
 "![document](https://github.com/eosphoros-ai/DB-GPT/assets/13723926"
 "/3d14a2da-165e-4b2f-a921-325c20fe5ae9)"
-msgstr "![document](https://github.com/eosphoros-ai/DB-"
+msgstr ""
+"![document](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/3f427350-5bd5-4675-8f89-1bd5c63ff2c6) "
 "![document](https://github.com/eosphoros-ai/DB-GPT/assets/13723926"
 "/3d14a2da-165e-4b2f-a921-325c20fe5ae9)"
 
-#: ../../getting_started/application/dashboard/dashboard.md:31
+#: ../../getting_started/application/dashboard/dashboard.md:34
 #: ed0f008525334a36a900b82339591095
 msgid "5.Adjust and modify your report"
 msgstr "5.调整"
 
-
-#: ../../getting_started/application/dashboard/dashboard.md:34
+#: ../../getting_started/application/dashboard/dashboard.md:36
 #: 8fc26117a2e1484b9452cfaf8c7f208b
 msgid ""
 "![upload](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/cb802b94"
 "-041b-44b4-b6ec-891bf8da52a4)"
-msgstr "![upload](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/cb802b94"
+msgstr ""
+"![upload](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/cb802b94"
 "-041b-44b4-b6ec-891bf8da52a4)"
 
-#: ../../getting_started/application/dashboard/dashboard.md:34
+#: ../../getting_started/application/dashboard/dashboard.md:36
 #: 6d12166c3c574651a854534cc8c7e997
 msgid "upload"
 msgstr "upload"
