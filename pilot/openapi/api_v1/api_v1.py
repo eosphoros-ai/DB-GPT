@@ -210,8 +210,7 @@ async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File
             resp = chat.prepare()
 
         ### refresh messages
-        return dialogue_history_messages(conv_uid)
-
+        return Result.succ(get_hist_messages(conv_uid))
     except Exception as e:
         return Result.faild(code="E000X", msg=f"File Load Error {e}")
 
@@ -222,13 +221,9 @@ async def dialogue_delete(con_uid: str):
     history_mem.delete()
     return Result.succ(None)
 
-
-@router.get("/v1/chat/dialogue/messages/history", response_model=Result[MessageVo])
-async def dialogue_history_messages(con_uid: str):
-    print(f"dialogue_history_messages:{con_uid}")
+def get_hist_messages(conv_uid:str):
     message_vos: List[MessageVo] = []
-
-    history_mem = DuckdbHistoryMemory(con_uid)
+    history_mem = DuckdbHistoryMemory(conv_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:
@@ -236,7 +231,13 @@ async def dialogue_history_messages(con_uid: str):
                 message2Vo(element, once["chat_order"]) for element in once["messages"]
             ]
             message_vos.extend(once_message_vos)
-    return Result.succ(message_vos)
+    return message_vos
+
+
+@router.get("/v1/chat/dialogue/messages/history", response_model=Result[MessageVo])
+async def dialogue_history_messages(con_uid: str):
+    print(f"dialogue_history_messages:{con_uid}")
+    return Result.succ(get_hist_messages(con_uid))
 
 
 def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:

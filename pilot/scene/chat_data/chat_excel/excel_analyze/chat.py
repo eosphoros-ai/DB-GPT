@@ -81,7 +81,7 @@ class ChatExcel(BaseChat):
             return None
         chat_param = {
             "chat_session_id": self.chat_session_id,
-            "user_input": "[" + self.excel_reader.excel_file_name +"]" + self.excel_reader.extension + " analysis！",
+            "user_input": "[" + self.excel_reader.excel_file_name + self.excel_reader.extension +"]" + " analysis！",
             "select_param": self.excel_file_path
         }
         learn_chat = ExcelLearning(**chat_param)
