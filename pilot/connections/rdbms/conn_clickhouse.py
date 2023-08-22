@@ -94,7 +94,7 @@ class ClickhouseConnect(RDBMSDatabase):
         session = self._db_sessions()
         cursor = session.execute(
             text(
-                f"""SELECT table, comment FROM system.tables   WHERE database = '{db_name}'""".format(
+                f"""SELECT table, comment FROM system.tables WHERE database = '{db_name}'""".format(
                     db_name
                 )
             )
@@ -103,38 +103,3 @@ class ClickhouseConnect(RDBMSDatabase):
         return [
             (table_comment[0], table_comment[1]) for table_comment in table_comments
         ]
-
-    # def get_table_comments(self, db_name=None):
-    #     cursor = self.session.execute(
-    #         text(
-    #             f"""
-    #             SELECT name, sql FROM sqlite_master WHERE type='table'
-    #             """
-    #         )
-    #     )
-    #     table_comments = cursor.fetchall()
-    #     return [
-    #         (table_comment[0], table_comment[1]) for table_comment in table_comments
-    #     ]
-    #
-    # def table_simple_info(self) -> Iterable[str]:
-    #     _tables_sql = f"""
-    #             SELECT name FROM sqlite_master WHERE type='table'
-    #         """
-    #     cursor = self.session.execute(text(_tables_sql))
-    #     tables_results = cursor.fetchall()
-    #     results = []
-    #     for row in tables_results:
-    #         table_name = row[0]
-    #         _sql = f"""
-    #             PRAGMA  table_info({table_name})
-    #         """
-    #         cursor_colums = self.session.execute(text(_sql))
-    #         colum_results = cursor_colums.fetchall()
-    #         table_colums = []
-    #         for row_col in colum_results:
-    #             field_info = list(row_col)
-    #             table_colums.append(field_info[1])
-    #
-    #         results.append(f"{table_name}({','.join(table_colums)});")
-    #     return results
