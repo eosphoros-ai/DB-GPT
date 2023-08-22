@@ -11,8 +11,11 @@ class ClickhouseConnect(RDBMSDatabase):
     Usage:
     """
 
+    """db type"""
     db_type: str = "clickhouse"
+    """db driver"""
     driver: str = "clickhouse"
+    """db dialect"""
     db_dialect: str = "clickhouse"
 
     @classmethod
