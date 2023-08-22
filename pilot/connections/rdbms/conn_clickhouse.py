@@ -46,7 +46,7 @@ class ClickhouseConnect(RDBMSDatabase):
 
     def get_indexes(self, table_name):
         """Get table indexes about specified table."""
-        return """"""
+        return ""
 
     def get_show_create_table(self, table_name):
         """Get table show create table about specified table."""
