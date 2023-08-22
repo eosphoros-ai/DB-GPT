@@ -1,5 +1,6 @@
 import os
 import shutil
+import tempfile
 from tempfile import NamedTemporaryFile
 
 from fastapi import APIRouter, File, UploadFile, Form
@@ -130,29 +131,28 @@ async def document_upload(
         if doc_file:
             if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name)):
                 os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name))
-            with NamedTemporaryFile(
-                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name), delete=False
-            ) as tmp:
+            # We can not move temp file in windows system when we open file in context of `with`
+            tmp_fd, tmp_path = tempfile.mkstemp(
+                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name)
+            )
+            with os.fdopen(tmp_fd, "wb") as tmp:
                 tmp.write(await doc_file.read())
-                tmp_path = tmp.name
-                shutil.move(
-                    tmp_path,
-                    os.path.join(
-                        KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
-                    ),
+            shutil.move(
+                tmp_path,
+                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename),
+            )
+            request = KnowledgeDocumentRequest()
+            request.doc_name = doc_name
+            request.doc_type = doc_type
+            request.content = os.path.join(
+                KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
+            )
+            return Result.succ(
+                knowledge_space_service.create_knowledge_document(
+                    space=space_name, request=request
                 )
-                request = KnowledgeDocumentRequest()
-                request.doc_name = doc_name
-                request.doc_type = doc_type
-                request.content = os.path.join(
-                    KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
-                )
-                return Result.succ(
-                    knowledge_space_service.create_knowledge_document(
-                        space=space_name, request=request
-                    )
-                )
-                # return Result.succ([])
+            )
+            # return Result.succ([])
         return Result.faild(code="E000X", msg=f"doc_file is None")
     except Exception as e:
         return Result.faild(code="E000X", msg=f"document add error {e}")

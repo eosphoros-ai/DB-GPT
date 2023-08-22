@@ -1,4 +1,4 @@
-torch==2.0.0
+# torch==2.0.0
 aiohttp==3.8.4
 aiosignal==1.3.1
 async-timeout==4.0.2
@@ -47,7 +47,7 @@ gradio-client==0.0.8
 # llama-index==0.5.27
 
 # TODO move bitsandbytes to optional
-bitsandbytes
+# bitsandbytes
 accelerate>=0.20.3
 
 unstructured==0.6.3

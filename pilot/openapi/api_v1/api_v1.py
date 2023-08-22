@@ -292,6 +292,7 @@ async def no_stream_generator(chat):
 
 async def stream_generator(chat):
     model_response = chat.stream_call()
+    msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
     if not CFG.NEW_SERVER_MODE:
         for chunk in model_response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
