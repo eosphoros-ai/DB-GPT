@@ -159,11 +159,11 @@ all_requires()
 setuptools.setup(
     name="db-gpt",
     packages=find_packages(exclude=("tests", "*.tests", "*.tests.*", "examples")),
-    version="0.3.5",
+    version="0.3.6",
     author="csunny",
     author_email="cfqcsunny@gmail.com",
     description="DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment."
-    " With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.",
+                " With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=parse_requirements("requirements.txt"),
