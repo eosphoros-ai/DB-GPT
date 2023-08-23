@@ -4,7 +4,7 @@ SCRIPT_LOCATION=$0
 cd "$(dirname "$SCRIPT_LOCATION")"
 WORK_DIR=$(pwd)
 
-BASE_IMAGE="nvidia/cuda:11.8.0-devel-ubuntu22.04"
+BASE_IMAGE="nvidia/cuda:11.8.0-runtime-ubuntu22.04"
 IMAGE_NAME="eosphorosai/dbgpt"
 # zh: https://pypi.tuna.tsinghua.edu.cn/simple
 PIP_INDEX_URL="https://pypi.org/simple"
@@ -14,7 +14,7 @@ BUILD_LOCAL_CODE="false"
 LOAD_EXAMPLES="true"
 
 usage () {
-    echo "USAGE: $0 [--base-image nvidia/cuda:11.8.0-devel-ubuntu22.04] [--image-name db-gpt]"
+    echo "USAGE: $0 [--base-image nvidia/cuda:11.8.0-runtime-ubuntu22.04] [--image-name db-gpt]"
     echo "  [-b|--base-image base image name] Base image name"
     echo "  [-n|--image-name image name] Current image name, default: db-gpt"
     echo "  [-i|--pip-index-url pip index url] Pip index url, default: https://pypi.org/simple"
