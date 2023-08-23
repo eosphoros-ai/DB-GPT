@@ -29,7 +29,7 @@ class ExcelReader:
         file_name_without_extension = os.path.splitext(file_name)[0]
 
 
-        self.excel_file_name = file_name_without_extension
+        self.excel_file_name = file_name
         self.extension = os.path.splitext(file_name)[1]
 
         self.table_name = file_name_without_extension
