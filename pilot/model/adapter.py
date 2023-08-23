@@ -232,6 +232,7 @@ class GorillaAdapter(BaseLLMAdaper):
         )
         return model, tokenizer
 
+
 class StarCoderAdapter(BaseLLMAdaper):
     pass
 

@@ -191,6 +191,7 @@ class GorillaChatAdapter(BaseChatAdpter):
 
         return generate_stream
 
+
 class GPT4AllChatAdapter(BaseChatAdpter):
     def match(self, model_path: str):
         return "gptj-6b" in model_path
@@ -199,7 +200,7 @@ class GPT4AllChatAdapter(BaseChatAdpter):
         from pilot.model.llm_out.gpt4all_llm import gpt4all_generate_stream
 
         return gpt4all_generate_stream
-    
+
 
 class Llama2ChatAdapter(BaseChatAdpter):
     def match(self, model_path: str):
