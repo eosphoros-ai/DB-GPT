@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Any
 
 from pilot.scene.base_message import (
     HumanMessage,
@@ -22,18 +23,19 @@ CFG = Config()
 class ExcelLearning(BaseChat):
     chat_scene: str = ChatScene.ExcelLearning.value()
 
-    def __init__(self, chat_session_id, user_input, select_param:str=None):
+    def __init__(self, chat_session_id, user_input, parent_mode: Any=None, select_param:str=None, excel_reader:Any=None):
         chat_mode = ChatScene.ExcelLearning
         """ """
         self.excel_file_path = select_param
-        self.excel_reader = ExcelReader(select_param)
+        self.excel_reader = excel_reader
         super().__init__(
             chat_mode=chat_mode,
             chat_session_id=chat_session_id,
             current_user_input = user_input,
             select_param=select_param,
         )
-
+        if parent_mode:
+            self.current_message.chat_mode = parent_mode.value()
 
     def generate_input_values(self):
 
