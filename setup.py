@@ -216,8 +216,8 @@ def torch_requires(
         cuda_version = get_cuda_version()
         if not cuda_version:
             torch_pkgs = [
-                f"torch=={torch_version}+cpu",
-                f"torchvision=={torchvision_version}+cpu",
+                f"torch=={torch_version}",
+                f"torchvision=={torchvision_version}",
                 f"torchaudio=={torchaudio_version}",
             ]
         else:
