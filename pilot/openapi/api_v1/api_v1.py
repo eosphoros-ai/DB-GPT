@@ -1,3 +1,4 @@
+import json
 import uuid
 import asyncio
 import os
@@ -122,16 +123,20 @@ async def db_support_types():
 async def dialogue_list(user_id: str = None):
     dialogues: List = []
     datas = DuckdbHistoryMemory.conv_list(user_id)
-
     for item in datas:
         conv_uid = item.get("conv_uid")
         summary = item.get("summary")
         chat_mode = item.get("chat_mode")
 
+        messages = json.loads(item.get("messages"))
+        last_round = max(messages, key=lambda x: x['chat_order'])
+        select_param = last_round["param_value"]
+
         conv_vo: ConversationVo = ConversationVo(
             conv_uid=conv_uid,
             user_input=summary,
             chat_mode=chat_mode,
+            select_param=select_param
         )
         dialogues.append(conv_vo)
 
