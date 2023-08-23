@@ -17,6 +17,10 @@ from pilot.common.markdown_text import (
 from pilot.scene.chat_data.chat_excel.excel_analyze.prompt import prompt
 from pilot.scene.chat_data.chat_excel.excel_reader import ExcelReader
 from pilot.scene.chat_data.chat_excel.excel_learning.chat import ExcelLearning
+from pilot.common.path_utils import has_path
+from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
+
+
 CFG = Config()
 
 
@@ -25,11 +29,14 @@ class ChatExcel(BaseChat):
     chat_retention_rounds = 2
     def __init__(self, chat_session_id, user_input, select_param: str = ""):
         chat_mode = ChatScene.ChatExcel
-        ## TODO TEST
-        select_param = "/Users/tuyang.yhj/Downloads/example.xlsx"
 
-        self.excel_file_path = select_param
-        self.excel_reader = ExcelReader(select_param)
+        self.select_param = select_param
+        if has_path(select_param):
+            self.excel_reader = ExcelReader(select_param)
+        else:
+            self.excel_reader = ExcelReader(os.path.join(
+                        KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode.value(), select_param
+                    ))
 
         super().__init__(
             chat_mode=chat_mode,
@@ -37,7 +44,6 @@ class ChatExcel(BaseChat):
             current_user_input=user_input,
             select_param=select_param,
         )
-
 
     def _generate_command_string(self, command: Dict[str, Any]) -> str:
         """
@@ -82,7 +88,9 @@ class ChatExcel(BaseChat):
         chat_param = {
             "chat_session_id": self.chat_session_id,
             "user_input": "[" + self.excel_reader.excel_file_name + self.excel_reader.extension +"]" + " analysis！",
-            "select_param": self.excel_file_path
+            "parent_mode": self.chat_mode,
+            "select_param": self.select_param,
+            "excel_reader": self.excel_reader
         }
         learn_chat = ExcelLearning(**chat_param)
         result = learn_chat.nostream_call()
