@@ -148,28 +148,6 @@ class ChatGLMChatAdapter(BaseChatAdpter):
         return chatglm_generate_stream
 
 
-class CodeT5ChatAdapter(BaseChatAdpter):
-    """Model chat adapter for CodeT5"""
-
-    def match(self, model_path: str):
-        return "codet5" in model_path
-
-    def get_generate_stream_func(self, model_path: str):
-        # TODO
-        pass
-
-
-class CodeGenChatAdapter(BaseChatAdpter):
-    """Model chat adapter for CodeGen"""
-
-    def match(self, model_path: str):
-        return "codegen" in model_path
-
-    def get_generate_stream_func(self, model_path: str):
-        # TODO
-        pass
-
-
 class GuanacoChatAdapter(BaseChatAdpter):
     """Model chat adapter for Guanaco"""
 
@@ -213,16 +191,15 @@ class GorillaChatAdapter(BaseChatAdpter):
 
         return generate_stream
 
-
 class GPT4AllChatAdapter(BaseChatAdpter):
     def match(self, model_path: str):
-        return "gpt4all" in model_path
+        return "gptj-6b" in model_path
 
     def get_generate_stream_func(self, model_path: str):
         from pilot.model.llm_out.gpt4all_llm import gpt4all_generate_stream
 
         return gpt4all_generate_stream
-
+    
 
 class Llama2ChatAdapter(BaseChatAdpter):
     def match(self, model_path: str):
