@@ -90,6 +90,7 @@ class ModelWorker:
             params, model_context = self.llm_chat_adapter.model_adaptation(
                 params, self.ml.model_path, prompt_template=self.ml.prompt_template
             )
+
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
