@@ -130,8 +130,10 @@ async def dialogue_list(user_id: str = None):
 
         messages = json.loads(item.get("messages"))
         last_round = max(messages, key=lambda x: x['chat_order'])
-        select_param = last_round["param_value"]
-
+        if "param_value" in last_round:
+            select_param = last_round["param_value"]
+        else:
+            select_param = ""
         conv_vo: ConversationVo = ConversationVo(
             conv_uid=conv_uid,
             user_input=summary,

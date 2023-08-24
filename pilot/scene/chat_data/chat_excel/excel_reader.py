@@ -12,11 +12,22 @@ def excel_colunm_format(old_name:str)->str:
 class ExcelReader:
 
     def __init__(self, file_path):
-        # read excel filt
-        df_tmp = pd.read_excel(file_path)
 
+        file_name = os.path.basename(file_path)
+        file_name_without_extension = os.path.splitext(file_name)[0]
 
-        self.df = pd.read_excel(file_path, converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])})
+        self.excel_file_name = file_name
+        self.extension = os.path.splitext(file_name)[1]
+        # read excel file
+        if file_path.endswith('.xlsx') or file_path.endswith('.xls'):
+            df_tmp = pd.read_excel(file_path)
+            self.df = pd.read_excel(file_path, converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])})
+        elif file_path.endswith('.csv'):
+            df_tmp = pd.read_csv(file_path)
+            self.df = pd.read_csv(file_path, converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])})
+        else:
+            raise ValueError("Unsupported file format.")
+
         self.columns_map = {}
         for column_name in df_tmp.columns:
             self.columns_map.update({column_name: excel_colunm_format(column_name)})
@@ -25,12 +36,7 @@ class ExcelReader:
 
         # connect DuckDB
         self.db = duckdb.connect(database=':memory:', read_only=False)
-        file_name = os.path.basename(file_path)
-        file_name_without_extension = os.path.splitext(file_name)[0]
 
-
-        self.excel_file_name = file_name
-        self.extension = os.path.splitext(file_name)[1]
 
         self.table_name = file_name_without_extension
         # write data in duckdb
@@ -42,9 +48,6 @@ class ExcelReader:
         for descrip in results.description:
             colunms.append(descrip[0])
         return colunms, results.fetchall()
-
-    def get_df_by_sql(self, sql):
-        return pd.read_sql(sql, self.db)
 
     def get_df_by_sql_ex(self, sql):
         colunms, values = self.run(sql)
