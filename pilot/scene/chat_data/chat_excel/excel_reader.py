@@ -1,6 +1,9 @@
 import duckdb
 import os
+import re
+import sqlparse
 import pandas as pd
+import numpy as np
 
 from pilot.common.pd_utils import csv_colunm_foramt
 
@@ -8,6 +11,31 @@ def excel_colunm_format(old_name:str)->str:
     new_column = old_name.strip()
     new_column = new_column.replace(" ", "_")
     return new_column
+
+def add_quotes(sql, column_names=[]):
+    parsed = sqlparse.parse(sql)
+    for stmt in parsed:
+        for token in stmt.tokens:
+            deep_quotes(token, column_names)
+    return str(parsed[0])
+
+def deep_quotes(token, column_names=[]):
+    if hasattr(token, "tokens") :
+        for token_child in token.tokens:
+            deep_quotes(token_child, column_names)
+    else:
+        if token.ttype == sqlparse.tokens.Name:
+            if len(column_names) >0:
+                if token.value in column_names:
+                    token.value = f'"{token.value}"'
+            else:
+                token.value = f'"{token.value}"'
+
+def is_chinese(string):
+    # 使用正则表达式匹配中文字符
+    pattern = re.compile(r'[一-龥]')
+    match = re.search(pattern, string)
+    return match is not None
 
 class ExcelReader:
 
@@ -28,9 +56,14 @@ class ExcelReader:
         else:
             raise ValueError("Unsupported file format.")
 
+        self.df.replace('', np.nan, inplace=True)
         self.columns_map = {}
         for column_name in df_tmp.columns:
             self.columns_map.update({column_name: excel_colunm_format(column_name)})
+            try:
+                self.df[column_name] = self.df[column_name].astype(float)
+            except Exception as e:
+                print("transfor column error！" + column_name)
 
         self.df = self.df.rename(columns=lambda x: x.strip().replace(' ', '_'))
 
@@ -43,6 +76,8 @@ class ExcelReader:
         self.db.register(self.table_name, self.df)
 
     def run(self, sql):
+        sql = sql.replace(self.table_name, f'"{self.table_name}"')
+        sql = add_quotes(sql, self.columns_map.values())
         results = self.db.execute(sql)
         colunms = []
         for descrip in results.description:
