@@ -17,7 +17,8 @@ def response_data_text(speak: str,  df: DataFrame) -> str:
     data = df.values
 
     row_size = data.shape[0]
-    value_str, text_info = ""
+    value_str = ""
+    text_info = ""
     if row_size > 1:
         html_table = df.to_html(index=False, escape=False, sparsify=False)
         table_str = "".join(html_table.split())
@@ -26,7 +27,10 @@ def response_data_text(speak: str,  df: DataFrame) -> str:
     elif row_size == 1:
         row = data[0]
         for value in row:
-            value_str = value_str + f", ** {value} **"
+            if value_str:
+                value_str = value_str + f", ** {value} **"
+            else:
+                value_str = f" ** {value} **"
             text_info = f"{speak}: {value_str}"
     else:
         text_info = f"##### {speak}: _没有找到可用的数据_"

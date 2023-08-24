@@ -84,9 +84,15 @@ def response_pie_chart(speak: str,  df: DataFrame) -> str:
     sns.set_style(rc={'font.sans-serif': "Microsoft Yahei"})
     sns.set(context="notebook", style="ticks", color_codes=True, rc=rc)
     sns.set_palette("Set3")  # 设置颜色主题
-    fig, ax = plt.pie(columns[1], labels=columns[0], autopct='%1.1f%%', startangle=90)
+
+    # fig, ax = plt.pie(df[columns[1]], labels=df[columns[0]], autopct='%1.1f%%', startangle=90)
+    fig, ax = plt.subplots(figsize=(8, 5), dpi=100)
+    ax = df.plot(kind='pie', y=columns[1], ax=ax,  labels=df[columns[0]].values,  startangle=90, autopct='%1.1f%%')
+    # 手动设置 labels 的位置和大小
+    ax.legend(loc='upper right', bbox_to_anchor=(1, 1, 1, 1), labels=df[columns[0]].values, fontsize=10)
+
     plt.axis('equal')  # 使饼图为正圆形
-    plt.title(columns[0])
+    # plt.title(columns[0])
 
     buf = io.BytesIO()
     ax.set_facecolor("lightgray")
