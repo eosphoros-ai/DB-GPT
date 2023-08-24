@@ -18,7 +18,7 @@ if __name__ == "__main__":
     excel_reader = ExcelReader("/Users/tuyang.yhj/Downloads/example.xlsx")
 
     # colunms, datas = excel_reader.run( "SELECT CONCAT(Year, '-', Quarter) AS QuarterYear, SUM(Sales) AS TotalSales FROM example GROUP BY QuarterYear ORDER BY QuarterYear")
-    # colunms, datas = excel_reader.run( """ SELECT Country, SUM(Profit) AS Total_Profit FROM example GROUP BY Country; """)
+    colunms, datas = excel_reader.run( """ SELECT Year, SUM(Sales) AS Total_Sales FROM example GROUP BY Year ORDER BY Year; """)
     df = excel_reader.get_df_by_sql_ex("SELECT Country, SUM(Profit) AS Total_Profit FROM example GROUP BY Country;")
     columns = df.columns.tolist()
     plt.rcParams["font.family"] = ["sans-serif"]
