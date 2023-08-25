@@ -27,9 +27,9 @@ def deep_quotes(token, column_names=[]):
         if token.ttype == sqlparse.tokens.Name:
             if len(column_names) >0:
                 if token.value in column_names:
-                    token.value = f'"{token.value}"'
+                    token.value = f'"{token.value.replace("`", "")}"'
             else:
-                token.value = f'"{token.value}"'
+                token.value = f'"{token.value.replace("`", "")}"'
 
 def is_chinese(string):
     # 使用正则表达式匹配中文字符

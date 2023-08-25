@@ -337,8 +337,8 @@ class BaseChat(ABC):
             for round_conv in self.prompt_template.example_selector.examples():
                 for round_message in round_conv["messages"]:
                     if not round_message["type"] in [
-                        SystemMessage.type,
-                        ViewMessage.type,
+                        ModelMessageRoleType.VIEW,
+                        ModelMessageRoleType.SYSTEM,
                     ]:
                         message_type = round_message["type"]
                         message_content = round_message["data"]["content"]
@@ -364,8 +364,7 @@ class BaseChat(ABC):
             if len(self.history_message) > self.chat_retention_rounds:
                 for first_message in self.history_message[0]["messages"]:
                     if not first_message["type"] in [
-                        ViewMessage.type,
-                        SystemMessage.type,
+                        ModelMessageRoleType.VIEW
                     ]:
                         message_type = first_message["type"]
                         message_content = first_message["data"]["content"]
@@ -378,25 +377,25 @@ class BaseChat(ABC):
                         history_messages.append(
                             ModelMessage(role=message_type, content=message_content)
                         )
-
-                index = self.chat_retention_rounds - 1
-                for round_conv in self.history_message[-index:]:
-                    for round_message in round_conv["messages"]:
-                        if not round_message["type"] in [
-                            SystemMessage.type,
-                            ViewMessage.type,
-                        ]:
-                            message_type = round_message["type"]
-                            message_content = round_message["data"]["content"]
-                            history_text += (
-                                    message_type
-                                    + ":"
-                                    + message_content
-                                    + self.prompt_template.sep
-                            )
-                            history_messages.append(
-                                ModelMessage(role=message_type, content=message_content)
-                            )
+                if self.chat_retention_rounds > 1:
+                    index = self.chat_retention_rounds - 1
+                    for round_conv in self.history_message[-index:]:
+                        for round_message in round_conv["messages"]:
+                            if not round_message["type"] in [
+                                ModelMessageRoleType.VIEW,
+                                ModelMessageRoleType.SYSTEM,
+                            ]:
+                                message_type = round_message["type"]
+                                message_content = round_message["data"]["content"]
+                                history_text += (
+                                        message_type
+                                        + ":"
+                                        + message_content
+                                        + self.prompt_template.sep
+                                )
+                                history_messages.append(
+                                    ModelMessage(role=message_type, content=message_content)
+                                )
 
             else:
                 ### user all history
@@ -404,8 +403,8 @@ class BaseChat(ABC):
                     for message in conversation["messages"]:
                         ### histroy message not have promot and view info
                         if not message["type"] in [
-                            SystemMessage.type,
-                            ViewMessage.type,
+                            ModelMessageRoleType.VIEW,
+                            ModelMessageRoleType.SYSTEM,
                         ]:
                             message_type = message["type"]
                             message_content = message["data"]["content"]

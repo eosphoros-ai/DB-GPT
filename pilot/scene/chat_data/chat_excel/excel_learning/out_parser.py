@@ -48,7 +48,7 @@ class LearningExcelOutputParser(BaseOutputParser):
             column_index +=1
             keys = item.keys()
             for key in keys:
-                html_colunms = html_colunms + f"- **[{key}]**   _{item[key]}_\n"
+                html_colunms = html_colunms + f"- **{column_index}.[{key}]**   _{item[key]}_\n"
 
         html_plans = f"### **分析计划**\n"
         index = 0

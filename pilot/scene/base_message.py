@@ -63,7 +63,6 @@ class AIMessage(BaseMessage):
 
 class ViewMessage(BaseMessage):
     """Type of message that is spoken by the AI."""
-
     example: bool = False
 
     @property
@@ -74,7 +73,6 @@ class ViewMessage(BaseMessage):
 
 class SystemMessage(BaseMessage):
     """Type of message that is a system message."""
-
     @property
     def type(self) -> str:
         """Type of the message, used for serialization."""
