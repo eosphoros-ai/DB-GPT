@@ -26,7 +26,7 @@ CFG = Config()
 
 class ChatExcel(BaseChat):
     chat_scene: str = ChatScene.ChatExcel.value()
-    chat_retention_rounds = 2
+    chat_retention_rounds = 1
     def __init__(self, chat_session_id, user_input, select_param: str = ""):
         chat_mode = ChatScene.ChatExcel
 
