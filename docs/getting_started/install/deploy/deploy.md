@@ -49,7 +49,7 @@ For the entire installation process of DB-GPT, we use the miniconda3 virtual env
 python>=3.10
 conda create -n dbgpt_env python=3.10
 conda activate dbgpt_env
-pip install -r requirements.txt
+pip install -e .
 ```
 Before use DB-GPT Knowledge
 ```bash
@@ -97,15 +97,25 @@ You can configure basic parameters in the .env file, for example setting LLM_MOD
 
 ### 3. Run
 
+**(Optional) load examples into SQLlite**
+```bash
+bash ./scripts/examples/load_examples.sh
+```
+
+On windows platform:
+```PowerShell
+.\scripts\examples\load_examples.bat
+```
+
 1.Run db-gpt server 
 
 ```bash
-$ python pilot/server/dbgpt_server.py
+python pilot/server/dbgpt_server.py
 ```
 
 Open http://localhost:5000 with your browser to see the product.
 
-```tip
+```{tip}
 If you want to access an external LLM service, you need to
 
 1.set the variables LLM_MODEL=YOUR_MODEL_NAME, MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env file.
@@ -116,7 +126,7 @@ If you want to access an external LLM service, you need to
 If you want to learn about dbgpt-webui, read https://github./csunny/DB-GPT/tree/new-page-framework/datacenter
 
 ```bash
-$ python pilot/server/dbgpt_server.py --light
+python pilot/server/dbgpt_server.py --light
 ```
 
 ### Multiple GPUs
@@ -142,5 +152,3 @@ DB-GPT supported 8-bit quantization and 4-bit quantization.
 You can modify the setting `QUANTIZE_8bit=True` or `QUANTIZE_4bit=True` in `.env` file to use quantization(8-bit quantization is enabled by default).
 
 Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit quantization can run with 48 GB of VRAM.
-
-Note: you need to install the latest dependencies according to [requirements.txt](https://github.com/eosphoros-ai/DB-GPT/blob/main/requirements.txt).

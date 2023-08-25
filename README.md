@@ -7,32 +7,34 @@
 
 <div align="center">
   <p>
-    <a href="https://github.com/csunny/DB-GPT">
-        <img alt="stars" src="https://img.shields.io/github/stars/csunny/db-gpt?style=social" />
+    <a href="https://github.com/eosphoros-ai/DB-GPT">
+        <img alt="stars" src="https://img.shields.io/github/stars/eosphoros-ai/db-gpt?style=social" />
     </a>
-    <a href="https://github.com/csunny/DB-GPT">
-        <img alt="forks" src="https://img.shields.io/github/forks/csunny/db-gpt?style=social" />
+    <a href="https://github.com/eosphoros-ai/DB-GPT">
+        <img alt="forks" src="https://img.shields.io/github/forks/eosphoros-ai/db-gpt?style=social" />
     </a>
     <a href="https://opensource.org/licenses/MIT">
       <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
     </a>
-     <a href="https://github.com/csunny/DB-GPT/releases">
-      <img alt="Release Notes" src="https://img.shields.io/github/release/csunny/DB-GPT" />
+    <a href="https://opensource.org/licenses/MIT">
+      <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
     </a>
-    <a href="https://github.com/csunny/DB-GPT/issues">
-      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
+     <a href="https://github.com/eosphoros-ai/DB-GPT/releases">
+      <img alt="Release Notes" src="https://img.shields.io/github/release/eosphoros-ai/DB-GPT" />
     </a>
-    <a href="https://discord.gg/erwfqcMP">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/erwfqcMP?compact=true&style=flat" />
+    <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
+      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/DB-GPT" />
     </a>
-    <a href="https://codespaces.new/csunny/DB-GPT">
+    <a href="https://discord.gg/Y5rbqj4U">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/Y5rbqj4U?compact=true&style=flat" />
+    </a>
+    <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
 
-[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/erwfqcMP) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) 
-
+[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/Y5rbqj4U) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community**](https://github.com/eosphoros-ai/community)
 </div>
 
 ## What is DB-GPT?
@@ -57,7 +59,7 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 
 Run on an RTX 4090 GPU.
 
-https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
+https://github.com/eosphoros-ai/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
 
 <!-- <video id="video" controls="" preload="auto" poster="assets/exector_sql.png">
       <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
@@ -139,9 +141,9 @@ The core capabilities mainly consist of the following parts:
 7. Multi-platform product interface: Supports various client products, such as web, mobile applications, and desktop applications.
 
 ### SubModule
-- [DB-GPT-Hub](https://github.com/csunny/DB-GPT-Hub) Text-to-SQL parsing with LLMs
-- [DB-GPT-Plugins](https://github.com/csunny/DB-GPT-Plugins) DB-GPT Plugins, Can run autogpt plugin directly
-- [DB-GPT-Web](https://github.com/csunny/DB-GPT-Web)  ChatUI for DB-GPT  
+- [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL parsing with LLMs
+- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT Plugins, Can run autogpt plugin directly
+- [DB-GPT-Web](https://github.com/eosphoros-ai/DB-GPT-Web)  ChatUI for DB-GPT  
 
 ## Image
 🌐 [AutoDL Image](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
@@ -150,6 +152,7 @@ The core capabilities mainly consist of the following parts:
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
 [**Quickstart**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
 
@@ -196,7 +199,7 @@ The MIT License (MIT)
 
 ## Contact Information
 We are working on building a community, if you have any ideas about building the community, feel free to contact us. 
-[![](https://dcbadge.vercel.app/api/server/erwfqcMP?compact=true&style=flat)](https://discord.gg/erwfqcMP)
+[![](https://dcbadge.vercel.app/api/server/Y5rbqj4U?compact=true&style=flat)](https://discord.gg/Y5rbqj4U)
 
 <p align="center">
   <img src="./assets/wechat.jpg" width="300px" />

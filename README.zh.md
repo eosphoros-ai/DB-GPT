@@ -7,30 +7,30 @@
 
 <div align="center">
   <p>
-    <a href="https://github.com/csunny/DB-GPT">
+    <a href="https://github.com/eosphoros-ai/DB-GPT">
         <img alt="stars" src="https://img.shields.io/github/stars/csunny/db-gpt?style=social" />
     </a>
-    <a href="https://github.com/csunny/DB-GPT">
+    <a href="https://github.com/eosphoros-ai/DB-GPT">
         <img alt="forks" src="https://img.shields.io/github/forks/csunny/db-gpt?style=social" />
     </a>
     <a href="https://opensource.org/licenses/MIT">
       <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
     </a>
-     <a href="https://github.com/csunny/DB-GPT/releases">
+     <a href="https://github.com/eosphoros-ai/DB-GPT/releases">
       <img alt="Release Notes" src="https://img.shields.io/github/release/csunny/DB-GPT" />
     </a>
-    <a href="https://github.com/csunny/DB-GPT/issues">
+    <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
     </a>
-    <a href="https://discord.gg/erwfqcMP">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/erwfqcMP?compact=true&style=flat" />
+    <a href="https://discord.gg/Y5rbqj4U">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/Y5rbqj4U?compact=true&style=flat" />
     </a>
-    <a href="https://codespaces.new/csunny/DB-GPT">
+    <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/erwfqcMP) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)
+[**English**](README.md)|[**Discord**](https://discord.gg/erwfqcMP) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community**](https://github.com/eosphoros-ai/community)
 
 </div>
 
@@ -158,6 +158,7 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
 [**快速开始
 **](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/deploy/deploy.html)
