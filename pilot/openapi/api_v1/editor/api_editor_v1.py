@@ -84,7 +84,9 @@ async def get_editor_sql(con_uid: str, round: int):
             if int(once["chat_order"]) == round:
                 for element in once["messages"]:
                     if element["type"] == "ai":
-                        return Result.succ(json.loads(element["data"]["content"]))
+                        logger.info(f'history ai json resp:{element["data"]["content"]}')
+                        context = element["data"]["content"].replace("\\n", " ").replace("\n", " ")
+                        return Result.succ(json.loads(context))
     return Result.faild(msg="not have sql!")
 
 
