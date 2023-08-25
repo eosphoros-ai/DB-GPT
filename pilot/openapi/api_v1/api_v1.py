@@ -110,13 +110,8 @@ async def db_connect_delete(db_name: str = None):
 
 @router.get("/v1/chat/db/support/type", response_model=Result[DbTypeInfo])
 async def db_support_types():
-    support_types = [
-        DBType.Mysql,
-        DBType.MSSQL,
-        DBType.DuckDb,
-        DBType.SQLite,
-        DBType.Clickhouse,
-    ]
+
+    support_types = CFG.LOCAL_DB_MANAGE.get_all_completed_types()
     db_type_infos = []
     for type in support_types:
         db_type_infos.append(
