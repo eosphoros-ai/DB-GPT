@@ -34,7 +34,6 @@ def response_line_chart(speak: str,  df: DataFrame) -> str:
     plt.title("")
 
     buf = io.BytesIO()
-    ax.set_facecolor("lightgray")
     plt.savefig(buf, format="png", dpi=100)
     buf.seek(0)
     data = base64.b64encode(buf.getvalue()).decode("ascii")
@@ -63,7 +62,6 @@ def response_bar_chart(speak: str,  df: DataFrame) -> str:
     plt.title("")
 
     buf = io.BytesIO()
-    ax.set_facecolor("lightgray")
     plt.savefig(buf, format="png", dpi=100)
     buf.seek(0)
     data = base64.b64encode(buf.getvalue()).decode("ascii")
@@ -95,7 +93,6 @@ def response_pie_chart(speak: str,  df: DataFrame) -> str:
     # plt.title(columns[0])
 
     buf = io.BytesIO()
-    ax.set_facecolor("lightgray")
     plt.savefig(buf, format="png", dpi=100)
     buf.seek(0)
     data = base64.b64encode(buf.getvalue()).decode("ascii")
