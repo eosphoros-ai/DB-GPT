@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 from typing import Optional, Any, Iterable
 from sqlalchemy import create_engine, text
 
@@ -24,6 +25,9 @@ class SQLiteConnect(RDBMSDatabase):
         _engine_args = engine_args or {}
         _engine_args["connect_args"] = {"check_same_thread": False}
         # _engine_args["echo"] = True
+        directory = os.path.dirname(file_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
         return cls(create_engine("sqlite:///" + file_path, **_engine_args), **kwargs)
 
     def get_indexes(self, table_name):

@@ -14,7 +14,7 @@ project = "DB-GPT"
 copyright = "2023, csunny"
 author = "csunny"
 
-version = "👏👏 0.3.5"
+version = "👏👏 0.3.6"
 html_title = project + " " + version
 
 # -- General configuration ---------------------------------------------------
@@ -56,5 +56,5 @@ gettext_uuid = True
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_book_theme"
+html_theme = "furo"
 html_static_path = ["_static"]

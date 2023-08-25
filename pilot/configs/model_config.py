@@ -41,6 +41,12 @@ LLM_MODEL_CONFIG = {
     "m3e-base": os.path.join(MODEL_PATH, "m3e-base"),
     # https://huggingface.co/moka-ai/m3e-base
     "m3e-large": os.path.join(MODEL_PATH, "m3e-large"),
+    # https://huggingface.co/BAAI/bge-large-en
+    "bge-large-en": os.path.join(MODEL_PATH, "bge-large-en"),
+    "bge-base-en": os.path.join(MODEL_PATH, "bge-base-en"),
+    # https://huggingface.co/BAAI/bge-large-zh
+    "bge-large-zh": os.path.join(MODEL_PATH, "bge-large-zh"),
+    "bge-base-zh": os.path.join(MODEL_PATH, "bge-base-zh"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
     "codegen2-1b": os.path.join(MODEL_PATH, "codegen2-1B"),
     "codet5p-2b": os.path.join(MODEL_PATH, "codet5p-2b"),

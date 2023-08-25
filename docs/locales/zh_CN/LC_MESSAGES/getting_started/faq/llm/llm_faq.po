@@ -21,67 +21,68 @@ msgstr ""
 
 #: ../../getting_started/faq/llm/llm_faq.md:1 f79c82f385904385b08618436e600d9f
 msgid "LLM USE FAQ"
-msgstr ""
+msgstr "LLM模型使用FAQ"
 
 #: ../../getting_started/faq/llm/llm_faq.md:3 1fc802fa69224062b02403bc35084c18
 msgid "Q1:how to use openai chatgpt service"
-msgstr ""
+msgstr "我怎么使用OPENAI服务"
 
 #: ../../getting_started/faq/llm/llm_faq.md:4 9094902d148a4cc99fe72aa0e41062ae
 msgid "change your LLM_MODEL"
-msgstr ""
+msgstr "通过在.env文件设置LLM_MODEL"
 
 #: ../../getting_started/faq/llm/llm_faq.md:9 07073eb8d9eb4988a3b035666c63d3fb
 msgid "set your OPENAPI KEY"
-msgstr ""
+msgstr "set your OPENAPI KEY"
 
 #: ../../getting_started/faq/llm/llm_faq.md:15 a71bb0d1181e47368a286b5694a00056
 msgid "make sure your openapi API_KEY is available"
-msgstr ""
+msgstr "确认openapi API_KEY是否可用"
 
 #: ../../getting_started/faq/llm/llm_faq.md:17 789b003864824970923bac474a9ab0cd
 msgid "Q2 how to use MultiGPUs"
-msgstr ""
+msgstr "Q2 怎么使用 MultiGPUs"
 
 #: ../../getting_started/faq/llm/llm_faq.md:18 4be3dd71a8654202a210bcb11c50cc79
 msgid ""
 "DB-GPT will use all available gpu by default. And you can modify the "
 "setting `CUDA_VISIBLE_DEVICES=0,1` in `.env` file to use the specific gpu"
 " IDs."
-msgstr ""
+msgstr "DB-GPT默认加载可利用的gpu，你也可以通过修改 在`.env`文件 `CUDA_VISIBLE_DEVICES=0,1`来指定gpu IDs"
 
 #: ../../getting_started/faq/llm/llm_faq.md:20 3a00c5fff666451cacda7f9af37564b9
 msgid ""
 "Optionally, you can also specify the gpu ID to use before the starting "
 "command, as shown below:"
-msgstr ""
+msgstr "你也可以指定gpu ID启动"
 
 #: ../../getting_started/faq/llm/llm_faq.md:30 7fef386f3a3443569042e7d8b9a3ff15
 msgid ""
 "You can modify the setting `MAX_GPU_MEMORY=xxGib` in `.env` file to "
 "configure the maximum memory used by each GPU."
-msgstr ""
+msgstr "同时你可以通过在.env文件设置`MAX_GPU_MEMORY=xxGib`修改每个GPU的最大使用内存"
 
 #: ../../getting_started/faq/llm/llm_faq.md:32 d75d440da8ab49a3944c3a456db25bee
 msgid "Q3 Not Enough Memory"
-msgstr ""
+msgstr "Q3 机器显存不够 "
 
 #: ../../getting_started/faq/llm/llm_faq.md:34 2a2cd59382e149ffb623cb3d42754dca
 msgid "DB-GPT supported 8-bit quantization and 4-bit quantization."
-msgstr ""
+msgstr "DB-GPT 支持 8-bit quantization 和 4-bit quantization."
 
 #: ../../getting_started/faq/llm/llm_faq.md:36 755131812baa4f5a99b706849459e10a
 msgid ""
 "You can modify the setting `QUANTIZE_8bit=True` or `QUANTIZE_4bit=True` "
 "in `.env` file to use quantization(8-bit quantization is enabled by "
 "default)."
-msgstr ""
+msgstr "你可以通过在.env文件设置`QUANTIZE_8bit=True` or `QUANTIZE_4bit=True`"
 
 #: ../../getting_started/faq/llm/llm_faq.md:38 b85424bc11134af985f687d8ee8d2c9f
 msgid ""
 "Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit"
 " quantization can run with 48 GB of VRAM."
-msgstr ""
+msgstr "Llama-2-70b with 8-bit quantization 可以运行在 80 GB VRAM机器， 4-bit "
+"quantization可以运行在 48 GB VRAM"
 
 #: ../../getting_started/faq/llm/llm_faq.md:40 b6e4db679636492c9e4170a33fd6f638
 msgid ""

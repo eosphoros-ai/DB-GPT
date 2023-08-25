@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-16 18:31+0800\n"
+"POT-Creation-Date: 2023-08-18 14:11+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,34 +20,34 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:1
-#: bce4fd8751dd49bb8ab89a651094cfe1
+#: 348b327c869643c8baaafaddb9e7e6d4
 msgid "KBQA FAQ"
-msgstr ""
+msgstr "KBQA FAQ"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:4
-#: c9714f70a03f422fae7bdb2b3b3c8be5
+#: b2d05eeaec0b445ab3283e0e4eee028a
 msgid "Q1: text2vec-large-chinese not found"
-msgstr ""
+msgstr "Q1: text2vec-large-chinese not found"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:6
-#: 1c56b9081adb46b29063947659e67083
+#: d64bad7091de4b439ab80cd754b3e68f
 msgid ""
 "make sure you have download text2vec-large-chinese embedding model in "
 "right way"
-msgstr ""
+msgstr "确认下载text2vec-large-chinese模型姿势以及路径正确"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:18
-#: 39763bdbc6824675b293f0f219fc05bb
+#: 15a4987b681241cfa6dc4fc08dbebce3
 msgid "Q2:How to change Vector DB Type in DB-GPT."
-msgstr ""
+msgstr "怎么修改向量数据库类型"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:20
-#: 225cc6e5b6944ce3b675845aa93afb66
+#: 6566d91820334c8fac964fe7e012acc7
 msgid "Update .env file and set VECTOR_STORE_TYPE."
-msgstr ""
+msgstr "怎样在.env文件设置VECTOR_STORE_TYPE"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:22
-#: 5ad12db4aed44f4890911b5aea9529ce
+#: 124dfe106c4b4afeadf0f2bc4b146f50
 msgid ""
 "DB-GPT currently support Chroma(Default), Milvus(>2.1), Weaviate vector "
 "database. If you want to change vector db, Update your .env, set your "
@@ -55,44 +55,57 @@ msgid ""
 "Milvus(>2.1), if you set Milvus, please set MILVUS_URL and MILVUS_PORT) "
 "If you want to support more vector db, you can integrate yourself.[how to"
 " integrate](https://db-gpt.readthedocs.io/en/latest/modules/vector.html)"
-msgstr ""
+msgstr "DB-GPT当前支持向量数据库有Chroma(Default), Milvus(>2.1), Weaviate. 可以在在.env文件设置VECTOR_STORE_TYP，如果你想支持更多向量数据库， 参考[how to"
+" integrate](https://db-gpt.readthedocs.io/en/latest/modules/vector.html)"
+
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:38
-#: f8dd19ff86244cc7be91b7ab9190baeb
+#: 5da7eb1fda5d43268eda0fab9d387dbb
 msgid "Q3:When I use vicuna-13b, found some illegal character like this."
-msgstr ""
+msgstr "当使用vicuna系列模型时出现乱码。"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:43
-#: ec4a69476d4e4e4d92619ade829c2b39
+#: 80f9785ca43f4f8a9475556bffab28a7
 msgid ""
 "Set KNOWLEDGE_SEARCH_TOP_SIZE smaller or set KNOWLEDGE_CHUNK_SIZE "
 "smaller, and reboot server."
-msgstr ""
+msgstr "通过在.env文件将KNOWLEDGE_SEARCH_TOP_SIZE设置更小点或者在文档界面点击参数设置，将topk设置更小点"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:45
-#: 5b039a860c0b4cb088d042467ad2a49c
+#: 7627f9349fbb40968537866075e53541
 msgid ""
 "Q4:space add error (pymysql.err.OperationalError) (1054, \"Unknown column"
 " 'knowledge_space.context' in 'field list'\")"
-msgstr ""
+msgstr "space add error (pymysql.err.OperationalError) (1054, \"Unknown column"
+" 'knowledge_space.context' in 'field list'\")"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:47
-#: bafac5e248894263a77ab688922df520
+#: e4c8bc526f1744ca880fd0f5faaa18c6
 msgid "1.shutdown dbgpt_server(ctrl c)"
-msgstr ""
+msgstr "1.终止 dbgpt_server(ctrl c)"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:49
-#: 8ff5ca901f684e8ebe951f8c053ab925
+#: 25762770ad7b4e52aa60c1b8a274331b
 msgid "2.add column context for table knowledge_space"
-msgstr ""
+msgstr "2.新增列 `context` for table knowledge_space"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:53
-#: ea9f945678aa426894f0a12013f8fe5c
+#: b025ea011b704eaab5413514a00ada4a
 msgid "3.execute sql ddl"
-msgstr ""
+msgstr "3.执行ddl"
 
 #: ../../getting_started/faq/kbqa/kbqa_faq.md:58
-#: 1a7941f2f1e94d359095e92b470ee02c
+#: 2c25d510b7cc4386a962be130232f39c
 msgid "4.restart dbgpt serve"
-msgstr ""
+msgstr "4.重启dbgpt server"
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:60
+#: 36aedd2404e84caf90fa6565fc05ee1f
+msgid "Q5:Use Mysql, how to use DB-GPT KBQA"
+msgstr "Q5:当使用 Mysql数据库时, 使用DB-GPT怎么初始化 KBQA service database schema"
+
+#: ../../getting_started/faq/kbqa/kbqa_faq.md:61
+#: bb01d8d145f64038bbacde1f05e69be1
+msgid "build Mysql KBQA system database schema."
+msgstr "构建Mysql KBQA system database schema"
 
