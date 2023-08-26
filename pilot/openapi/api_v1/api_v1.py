@@ -36,7 +36,7 @@ from pilot.scene.chat_factory import ChatFactory
 from pilot.configs.model_config import LOGDIR
 from pilot.utils import build_logger
 from pilot.common.schema import DBType
-from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
+from pilot.memory.chat_history.mysql_history import MysqlHistoryMemory
 from pilot.scene.message import OnceConversation
 
 router = APIRouter()
@@ -79,6 +79,16 @@ def get_db_list():
     return params
 
 
+def get_db_list_info():
+    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+    params: dict = {}
+    for item in dbs:
+        comment = item["comment"]
+        if comment is not None and len(comment) > 0:
+            params.update({item["db_name"]: comment})
+    return params
+
+
 def plugins_select_info():
     plugins_infos: dict = {}
     for plugin in CFG.plugins:
@@ -93,6 +103,16 @@ def knowledge_list():
     spaces = knowledge_service.get_knowledge_space(request)
     for space in spaces:
         params.update({space.name: space.name})
+    return params
+
+
+def knowledge_list_info():
+    """return knowledge space list"""
+    params: dict = {}
+    request = KnowledgeSpaceRequest()
+    spaces = knowledge_service.get_knowledge_space(request)
+    for space in spaces:
+        params.update({space.name: space.desc})
     return params
 
 
@@ -136,7 +156,7 @@ async def db_support_types():
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
 async def dialogue_list(user_id: str = None):
     dialogues: List = []
-    datas = DuckdbHistoryMemory.conv_list(user_id)
+    datas = MysqlHistoryMemory.conv_list(user_id)
 
     for item in datas:
         conv_uid = item.get("conv_uid")
@@ -199,9 +219,25 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
         return Result.succ(None)
 
 
+@router.post("/v1/chat/mode/params/info", response_model=Result[dict])
+async def params_list_info(chat_mode: str = ChatScene.ChatNormal.value()):
+    if ChatScene.ChatWithDbQA.value() == chat_mode:
+        return Result.succ(get_db_list_info())
+    elif ChatScene.ChatWithDbExecute.value() == chat_mode:
+        return Result.succ(get_db_list_info())
+    elif ChatScene.ChatDashboard.value() == chat_mode:
+        return Result.succ(get_db_list_info())
+    elif ChatScene.ChatExecution.value() == chat_mode:
+        return Result.succ(plugins_select_info())
+    elif ChatScene.ChatKnowledge.value() == chat_mode:
+        return Result.succ(knowledge_list_info())
+    else:
+        return Result.succ(None)
+
+
 @router.post("/v1/chat/dialogue/delete")
 async def dialogue_delete(con_uid: str):
-    history_mem = DuckdbHistoryMemory(con_uid)
+    history_mem = MysqlHistoryMemory(con_uid)
     history_mem.delete()
     return Result.succ(None)
 
@@ -211,7 +247,7 @@ async def dialogue_history_messages(con_uid: str):
     print(f"dialogue_history_messages:{con_uid}")
     message_vos: List[MessageVo] = []
 
-    history_mem = DuckdbHistoryMemory(con_uid)
+    history_mem = MysqlHistoryMemory(con_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:

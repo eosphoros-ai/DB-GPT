@@ -22,10 +22,7 @@ from urllib.parse import urljoin
 import pilot.configs.config
 from pilot.scene.message import OnceConversation
 from pilot.prompts.prompt_new import PromptTemplate
-from pilot.memory.chat_history.base import BaseChatHistoryMemory
-from pilot.memory.chat_history.file_history import FileHistoryMemory
-from pilot.memory.chat_history.mem_history import MemHistoryMemory
-from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
+from pilot.memory.chat_history.mysql_history import MysqlHistoryMemory
 
 from pilot.configs.model_config import LOGDIR, DATASETS_DIR
 from pilot.utils import (
@@ -71,7 +68,7 @@ class BaseChat(ABC):
         self.llm_model = CFG.LLM_MODEL
         self.llm_echo = False
         ### can configurable storage methods
-        self.memory = DuckdbHistoryMemory(chat_session_id)
+        self.memory = MysqlHistoryMemory(chat_session_id)
 
         ### load prompt template
         # self.prompt_template: PromptTemplate = CFG.prompt_templates[
@@ -139,6 +136,7 @@ class BaseChat(ABC):
             "max_new_tokens": int(self.prompt_template.max_new_tokens),
             "stop": self.prompt_template.sep,
             "echo": self.llm_echo,
+            "relations": input_values.get("relations"),
         }
         return payload
 

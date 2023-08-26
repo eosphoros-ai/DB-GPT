@@ -77,6 +77,10 @@ class BaseOutputParser(ABC):
             else:
                 output = data["text"].strip()
 
+            relations = data.get("relations")
+            if type(relations) == list and len(relations) > 0:
+                output = output + "\trelations:" + ",".join(relations)
+
             output = self.__post_process_code(output)
             return output
         else:

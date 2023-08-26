@@ -103,7 +103,8 @@ class ModelWorker:
                 else:
                     print("output: ", output)
                 # return some model context to dgt-server
-                ret = {"text": output, "error_code": 0, "model_context": model_context}
+                ret = {"text": output, "error_code": 0, "model_context": model_context,
+                       "relations": params.get("relations")}
                 yield json.dumps(ret).encode() + b"\0"
 
         except torch.cuda.CudaError:
