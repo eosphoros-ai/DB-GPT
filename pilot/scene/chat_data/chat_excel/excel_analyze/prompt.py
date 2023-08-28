@@ -9,7 +9,7 @@ CFG = Config()
 
 PROMPT_SCENE_DEFINE = "You are a data analysis expert. "
 
-_DEFAULT_TEMPLATE = """
+_DEFAULT_TEMPLATE_EN = """
 Please use the data structure information of the above historical dialogue, make sure not to use column names that are not in the data structure.
 According to the user goal: {user_input}，give the correct duckdb SQL for data analysis.
 Use the table name: {table_name}
@@ -24,12 +24,29 @@ Ensure the response is correct json and can be parsed by Python json.loads
 
 """
 
+_DEFAULT_TEMPLATE_ZH = """
+请使用上述历史对话中的数据结构和列信息，根据用户目标：{user_input}，给出正确的duckdb SQL进行数据分析和问题回答。
+请确保不要使用不在数据结构中的列名。
+SQL中需要使用的表名是: {table_name}
+
+根据用户目标得到的分析SQL，请从以下显示类型中选择最合适的一种用来展示结果数据，如果无法确定，则使用'Text'作为显示。
+显示类型如下: 
+    {disply_type}
+
+以以下 json 格式响应：:
+    {response}
+确保响应是正确的json,并且可以被Python的json.loads方法解析.
+"""
+
 RESPONSE_FORMAT_SIMPLE = {
 	"sql": "analysis SQL",
 	"thoughts": "Current thinking and value of data analysis",
 	"display": "display type name"
 }
 
+_DEFAULT_TEMPLATE = (
+    _DEFAULT_TEMPLATE_EN if CFG.LANGUAGE == "en" else _DEFAULT_TEMPLATE_ZH
+)
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
