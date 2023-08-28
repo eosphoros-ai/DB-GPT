@@ -13,6 +13,7 @@ def excel_colunm_format(old_name:str)->str:
     return new_column
 
 def add_quotes(sql, column_names=[]):
+    sql = sql.replace("`", "")
     parsed = sqlparse.parse(sql)
     for stmt in parsed:
         for token in stmt.tokens:
@@ -76,8 +77,10 @@ class ExcelReader:
         self.db.register(self.table_name, self.df)
 
     def run(self, sql):
-        sql = sql.replace(self.table_name, f'"{self.table_name}"')
+        if f'"{self.table_name}"'  not in sql:
+            sql = sql.replace(self.table_name, f'"{self.table_name}"')
         sql = add_quotes(sql, self.columns_map.values())
+        print(f"excute sql:{sql}")
         results = self.db.execute(sql)
         colunms = []
         for descrip in results.description:

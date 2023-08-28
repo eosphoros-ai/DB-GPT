@@ -9,7 +9,7 @@ CFG = Config()
 
 PROMPT_SCENE_DEFINE = "You are a data analysis expert. "
 
-_DEFAULT_TEMPLATE = """
+_DEFAULT_TEMPLATE_EN = """
 This is an example data，please learn to understand the structure and content of this data:
     {data_example}
 Explain the meaning and function of each column, and give a simple and clear explanation of the technical terms.  
@@ -19,12 +19,25 @@ Please return your answer in JSON format, the return format is as follows:
     {response}
 """
 
+_DEFAULT_TEMPLATE_ZH = """
+下面是一份示例数据，请学习理解该数据的结构和内容:
+    {data_example}
+分析各列数据的含义和作用，并对专业术语进行简单明了的解释。
+提供一些分析方案思路，请一步一步思考。
+
+请以JSON格式返回您的答案，返回格式如下：
+    {response}
+"""
+
 RESPONSE_FORMAT_SIMPLE =     {
     "DataAnalysis": "数据内容分析总结",
     "ColumnAnalysis": [{"column name1": "字段1介绍，专业术语解释(请尽量简单明了)"}],
     "AnalysisProgram": ["1.分析方案1，图表展示方式1", "2.分析方案2，图表展示方式2"],
 }
 
+_DEFAULT_TEMPLATE = (
+    _DEFAULT_TEMPLATE_EN if CFG.LANGUAGE == "en" else _DEFAULT_TEMPLATE_ZH
+)
 
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
@@ -50,4 +63,5 @@ prompt = PromptTemplate(
     temperature=PROMPT_TEMPERATURE,
 )
 CFG.prompt_template_registry.register(prompt, is_default=True)
+
 

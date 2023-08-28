@@ -32,6 +32,7 @@ from pilot.server.knowledge.api import router as knowledge_router
 from pilot.openapi.api_v1.api_v1 import router as api_v1
 from pilot.openapi.base import validation_exception_handler
 from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
+from pilot.commands.disply_type.show_chart_gen import static_message_img_path
 
 logging.basicConfig(level=logging.INFO)
 
@@ -79,10 +80,9 @@ app.include_router(api_editor_route_v1, prefix="/api")
 app.include_router(knowledge_router)
 # app.include_router(api_editor_route_v1)
 
+app.mount("/images", StaticFiles(directory=static_message_img_path, html=True), name="static2")
 app.mount("/_next/static", StaticFiles(directory=static_file_path + "/_next/static"))
 app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
-# app.mount("/chat", StaticFiles(directory=static_file_path + "/chat.html", html=True), name="chat")
-
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
