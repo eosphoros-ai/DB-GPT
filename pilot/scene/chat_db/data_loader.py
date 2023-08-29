@@ -1,8 +1,7 @@
 import pandas as pd
 
+
 class DbDataLoader:
-
-
     def get_table_view_by_conn(self, data, speak):
         ### tool out data to table view
         if len(data) <= 1:

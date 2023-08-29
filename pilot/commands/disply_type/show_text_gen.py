@@ -10,9 +10,12 @@ CFG = Config()
 logger = build_logger("show_table_gen", LOGDIR + "show_table_gen.log")
 
 
-@command("response_data_text", "Text display, the default display method, suitable for single-line or simple content display",
-         '"speak": "<speak>", "df":"<data frame>"')
-def response_data_text(speak: str,  df: DataFrame) -> str:
+@command(
+    "response_data_text",
+    "Text display, the default display method, suitable for single-line or simple content display",
+    '"speak": "<speak>", "df":"<data frame>"',
+)
+def response_data_text(speak: str, df: DataFrame) -> str:
     logger.info(f"response_data_text:{speak}")
     data = df.values
 

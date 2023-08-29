@@ -94,8 +94,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         cursor.commit()
         self.connect.commit()
 
-
-    def update(self, messages:List[OnceConversation]) -> None:
+    def update(self, messages: List[OnceConversation]) -> None:
         cursor = self.connect.cursor()
         cursor.execute(
             "UPDATE chat_history set messages=? where conv_uid=?",
@@ -160,7 +159,6 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
             return row_dict
 
         return {}
-
 
     def get_messages(self) -> List[OnceConversation]:
         cursor = self.connect.cursor()

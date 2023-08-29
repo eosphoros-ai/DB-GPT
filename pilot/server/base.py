@@ -64,16 +64,12 @@ def server_init(args):
 
     cfg.command_registry = command_registry
 
-
     command_disply_commands = [
         "pilot.commands.disply_type.show_chart_gen",
         "pilot.commands.disply_type.show_table_gen",
         "pilot.commands.disply_type.show_text_gen",
     ]
-    command_disply_registry =  CommandRegistry()
+    command_disply_registry = CommandRegistry()
     for command in command_disply_commands:
         command_disply_registry.import_commands(command)
     cfg.command_disply = command_disply_registry
-
-
-
