@@ -19,3 +19,4 @@ DB-GPT product is a Web application that you can chat database, chat knowledge, 
    ./application/chatdb/chatdb.md
    ./application/kbqa/kbqa.md
    ./application/dashboard/dashboard.md
+   ./application/chatexcel/chatexcel.md
