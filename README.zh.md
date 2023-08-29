@@ -30,7 +30,10 @@
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/erwfqcMP) |[**Documents**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community**](https://github.com/eosphoros-ai/community)
+[**English**](README.md)|[**Discord**](https://discord.gg/FMGwbRQrM) |[**Documents
+**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信
+**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community
+**](https://github.com/eosphoros-ai/community)
 
 </div>
 

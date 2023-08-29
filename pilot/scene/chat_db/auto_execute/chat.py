@@ -21,21 +21,23 @@ class ChatWithDbAutoExecute(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, db_name, user_input):
+    def __init__(self, chat_session_id, user_input, select_param: str = ""):
+        chat_mode = ChatScene.ChatWithDbExecute
+        self.db_name = select_param
         """ """
         super().__init__(
-            chat_mode=ChatScene.ChatWithDbExecute,
+            chat_mode=chat_mode,
             chat_session_id=chat_session_id,
             current_user_input=user_input,
+            select_param=self.db_name,
         )
-        if not db_name:
+        if not self.db_name:
             raise ValueError(
                 f"{ChatScene.ChatWithDbExecute.value} mode should chose db!"
             )
-        self.db_name = db_name
-        self.database = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
-        self.db_connect = self.database.session
-        self.top_k: int = 5
+
+        self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
+        self.top_k: int = 200
 
     def generate_input_values(self):
         try:
@@ -45,11 +47,15 @@ class ChatWithDbAutoExecute(BaseChat):
         client = DBSummaryClient()
         try:
             table_infos = client.get_db_summary(
-                dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+                dbname=self.db_name,
+                query=self.current_user_input,
+                topk=CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
             )
         except Exception as e:
             print("db summary find error!" + str(e))
             table_infos = self.database.table_simple_info()
+
+        # table_infos = self.database.table_simple_info()
 
         input_values = {
             "input": self.current_user_input,
@@ -61,4 +67,4 @@ class ChatWithDbAutoExecute(BaseChat):
 
     def do_action(self, prompt_response):
         print(f"do_action:{prompt_response}")
-        return self.database.run(self.db_connect, prompt_response.sql)
+        return self.database.run(prompt_response.sql)

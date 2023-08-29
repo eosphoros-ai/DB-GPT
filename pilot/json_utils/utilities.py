@@ -2,6 +2,8 @@
 import json
 import os.path
 import re
+import json
+from datetime import datetime
 
 from jsonschema import Draft7Validator
 
@@ -79,3 +81,10 @@ def is_string_valid_json(json_string: str, schema_name: str) -> bool:
     """
 
     return validate_json_string(json_string, schema_name) is not None
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)

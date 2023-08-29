@@ -19,7 +19,7 @@ from pilot.configs.config import Config
 # )
 from pilot.utils import build_logger
 
-from pilot.server.webserver_base import server_init
+from pilot.server.base import server_init
 
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, applications
@@ -29,8 +29,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pilot.server.knowledge.api import router as knowledge_router
 
 
-from pilot.openapi.api_v1.api_v1 import router as api_v1, validation_exception_handler
-
+from pilot.openapi.api_v1.api_v1 import router as api_v1
+from pilot.openapi.base import validation_exception_handler
+from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
+from pilot.commands.disply_type.show_chart_gen import static_message_img_path
 
 logging.basicConfig(level=logging.INFO)
 
@@ -72,14 +74,18 @@ app.add_middleware(
 
 app.include_router(api_v1, prefix="/api")
 app.include_router(knowledge_router, prefix="/api")
+app.include_router(api_editor_route_v1, prefix="/api")
 
-app.include_router(api_v1)
+# app.include_router(api_v1)
 app.include_router(knowledge_router)
+# app.include_router(api_editor_route_v1)
 
+os.makedirs(static_message_img_path, exist_ok=True)
+app.mount(
+    "/images", StaticFiles(directory=static_message_img_path, html=True), name="static2"
+)
 app.mount("/_next/static", StaticFiles(directory=static_file_path + "/_next/static"))
 app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
-# app.mount("/chat", StaticFiles(directory=static_file_path + "/chat.html", html=True), name="chat")
-
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 

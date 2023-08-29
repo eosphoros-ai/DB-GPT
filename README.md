@@ -34,10 +34,7 @@
   </p>
 
 
-[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/FMGwbRQrM) |[**Documents
-**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat
-**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community
-**](https://github.com/eosphoros-ai/community)
+[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/FMGwbRQrM) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community**](https://github.com/eosphoros-ai/community)
 </div>
 
 ## What is DB-GPT?

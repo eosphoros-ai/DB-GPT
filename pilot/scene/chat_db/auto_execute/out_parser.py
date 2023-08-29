@@ -7,6 +7,7 @@ from pilot.utils import build_logger
 from pilot.out_parser.base import BaseOutputParser, T
 from pilot.configs.model_config import LOGDIR
 from pilot.configs.config import Config
+from pilot.scene.chat_db.data_loader import DbDataLoader
 
 CFG = Config()
 
@@ -36,6 +37,7 @@ class DbChatOutputParser(BaseOutputParser):
 
     def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view
+        data_loader = DbDataLoader()
         if len(data) <= 1:
             data.insert(0, ["result"])
         df = pd.DataFrame(data[1:], columns=data[0])
@@ -45,14 +47,7 @@ class DbChatOutputParser(BaseOutputParser):
              </style>"""
             html_table = df.to_html(index=False, escape=False)
             html = f"<html><head>{table_style}</head><body>{html_table}</body></html>"
+            view_text = f"##### {str(speak)}" + "\n" + html.replace("\n", " ")
+            return view_text
         else:
-            html_table = df.to_html(index=False, escape=False, sparsify=False)
-            table_str = "".join(html_table.split())
-            html = f"""<div class="w-full overflow-auto">{table_str}</div>"""
-
-        view_text = f"##### {str(speak)}" + "\n" + html.replace("\n", " ")
-        return view_text
-
-    @property
-    def _type(self) -> str:
-        return "sql_chat"
+            return data_loader.get_table_view_by_conn(data, speak)
