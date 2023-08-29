@@ -24,12 +24,12 @@ class ExcelLearning(BaseChat):
     chat_scene: str = ChatScene.ExcelLearning.value()
 
     def __init__(
-            self,
-            chat_session_id,
-            user_input,
-            parent_mode: Any = None,
-            select_param: str = None,
-            excel_reader: Any = None,
+        self,
+        chat_session_id,
+        user_input,
+        parent_mode: Any = None,
+        select_param: str = None,
+        excel_reader: Any = None,
     ):
         chat_mode = ChatScene.ExcelLearning
         """ """

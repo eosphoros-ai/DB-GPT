@@ -60,7 +60,7 @@ class BaseChat(ABC):
         arbitrary_types_allowed = True
 
     def __init__(
-            self, chat_mode, chat_session_id, current_user_input, select_param: Any = None
+        self, chat_mode, chat_session_id, current_user_input, select_param: Any = None
     ):
         self.chat_session_id = chat_session_id
         self.chat_mode = chat_mode
@@ -305,7 +305,7 @@ class BaseChat(ABC):
         system_messages = []
         for system_conv in system_convs:
             system_text += (
-                    system_conv.type + ":" + system_conv.content + self.prompt_template.sep
+                system_conv.type + ":" + system_conv.content + self.prompt_template.sep
             )
             system_messages.append(
                 ModelMessage(role=system_conv.type, content=system_conv.content)
@@ -317,7 +317,7 @@ class BaseChat(ABC):
         user_messages = []
         if user_conv:
             user_text = (
-                    user_conv.type + ":" + user_conv.content + self.prompt_template.sep
+                user_conv.type + ":" + user_conv.content + self.prompt_template.sep
             )
             user_messages.append(
                 ModelMessage(role=user_conv.type, content=user_conv.content)
@@ -339,10 +339,10 @@ class BaseChat(ABC):
                         message_type = round_message["type"]
                         message_content = round_message["data"]["content"]
                         example_text += (
-                                message_type
-                                + ":"
-                                + message_content
-                                + self.prompt_template.sep
+                            message_type
+                            + ":"
+                            + message_content
+                            + self.prompt_template.sep
                         )
                         example_messages.append(
                             ModelMessage(role=message_type, content=message_content)
@@ -363,10 +363,10 @@ class BaseChat(ABC):
                         message_type = first_message["type"]
                         message_content = first_message["data"]["content"]
                         history_text += (
-                                message_type
-                                + ":"
-                                + message_content
-                                + self.prompt_template.sep
+                            message_type
+                            + ":"
+                            + message_content
+                            + self.prompt_template.sep
                         )
                         history_messages.append(
                             ModelMessage(role=message_type, content=message_content)
@@ -382,10 +382,10 @@ class BaseChat(ABC):
                                 message_type = round_message["type"]
                                 message_content = round_message["data"]["content"]
                                 history_text += (
-                                        message_type
-                                        + ":"
-                                        + message_content
-                                        + self.prompt_template.sep
+                                    message_type
+                                    + ":"
+                                    + message_content
+                                    + self.prompt_template.sep
                                 )
                                 history_messages.append(
                                     ModelMessage(
@@ -405,10 +405,10 @@ class BaseChat(ABC):
                             message_type = message["type"]
                             message_content = message["data"]["content"]
                             history_text += (
-                                    message_type
-                                    + ":"
-                                    + message_content
-                                    + self.prompt_template.sep
+                                message_type
+                                + ":"
+                                + message_content
+                                + self.prompt_template.sep
                             )
                             history_messages.append(
                                 ModelMessage(role=message_type, content=message_content)

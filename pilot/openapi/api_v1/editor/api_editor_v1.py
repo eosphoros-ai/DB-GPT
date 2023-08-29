@@ -39,7 +39,7 @@ logger = build_logger("api_editor_v1", LOGDIR + "api_editor_v1.log")
 
 @router.get("/v1/editor/db/tables", response_model=Result[DbTable])
 async def get_editor_tables(
-        db_name: str, page_index: int, page_size: int, search_str: str = ""
+    db_name: str, page_index: int, page_size: int, search_str: str = ""
 ):
     logger.info(f"get_editor_tables:{db_name},{page_index},{page_size},{search_str}")
     db_conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
@@ -285,7 +285,7 @@ async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body())
                         find_chart = list(
                             filter(
                                 lambda x: x["chart_name"]
-                                          == chart_edit_context.chart_title,
+                                == chart_edit_context.chart_title,
                                 charts,
                             )
                         )[0]
