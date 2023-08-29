@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-16 18:31+0800\n"
+"POT-Creation-Date: 2023-08-29 20:30+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,99 +20,136 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/install/docker/docker.md:1
-#: ea5d6b95dea844b89d2f5d0e8f6ebfd3
+#: 6330986214f9407b89928b1fbce7c0e6
 msgid "Docker Install"
 msgstr "Docker 安装"
 
 #: ../../getting_started/install/docker/docker.md:4
-#: c1125facb7334346a8e5b66bab892b1c
+#: bddc5010a8cf437eaaf8bf56a65e8cf7
 msgid "Docker (Experimental)"
 msgstr "Docker (Experimental)"
 
 #: ../../getting_started/install/docker/docker.md:6
-#: 33a64984d0694ec9aee272f8a7ecd4cf
-msgid "1. Building Docker image"
+#: c6ee3554954f44da81d89038f4b04d2f
+#, fuzzy
+msgid "1. Preparing docker images"
 msgstr "1.构建Docker镜像"
 
-#: ../../getting_started/install/docker/docker.md:12
-#: 656beee32e6f4a49ad48a219910ba36c
+#: ../../getting_started/install/docker/docker.md:8
+#: 868f0199d9054609a545fdc75171560d
+msgid ""
+"**Pull docker image from the [Eosphoros AI Docker "
+"Hub](https://hub.docker.com/u/eosphorosai)**"
+msgstr ""
+
+#: ../../getting_started/install/docker/docker.md:14
+#: c6ee3554954f44da81d89038f4b04d2f
+#, fuzzy
+msgid "**(Optional) Building Docker image**"
+msgstr "1.构建Docker镜像"
+
+#: ../../getting_started/install/docker/docker.md:20
+#: 7d10f8ae3cba4f13a011c7f0dc2ef479
 msgid "Review images by listing them:"
 msgstr "Review images by listing them:"
 
-#: ../../getting_started/install/docker/docker.md:18
-#: a8fd727500de480299e5bdfc86151473
+#: ../../getting_started/install/docker/docker.md:26
+#: 9116b39c10394d4fb0dee3a0ed431eca
 msgid "Output should look something like the following:"
 msgstr "输出日志应该长这样:"
 
-#: ../../getting_started/install/docker/docker.md:25
-#: 965edb9fe5184571b8afc5232cfd2773
+#: ../../getting_started/install/docker/docker.md:33
+#: 80faced8a2fb482ab12baddec9ac21b8
+msgid ""
+"`eosphorosai/dbgpt` is the base image, which contains the project's base "
+"dependencies and a sqlite database. `eosphorosai/dbgpt-allinone` build "
+"from `eosphorosai/dbgpt`, which contains a mysql database."
+msgstr ""
+
+#: ../../getting_started/install/docker/docker.md:35
+#: 50e3fa230dbf474fbd756a52169ce1c4
 msgid "You can pass some parameters to docker/build_all_images.sh."
 msgstr "你也可以docker/build_all_images.sh构建的时候指定参数"
 
-#: ../../getting_started/install/docker/docker.md:33
-#: a1743c21a4db468db108a60540dd4754
+#: ../../getting_started/install/docker/docker.md:43
+#: 83eb1b3c3f8f4158879e32ef4e4046ba
 msgid ""
 "You can execute the command `bash docker/build_all_images.sh --help` to "
 "see more usage."
 msgstr "可以指定命令`bash docker/build_all_images.sh --help`查看如何使用"
 
-#: ../../getting_started/install/docker/docker.md:35
-#: cb7f05675c674fcf931a6afa6fb7d24c
-msgid "2. Run all in one docker container"
+#: ../../getting_started/install/docker/docker.md:45
+#: 893ed5c6fe854265a3d9a3a77a0c385f
+#, fuzzy
+msgid "2. Run docker container"
 msgstr "2. Run all in one docker container"
 
-#: ../../getting_started/install/docker/docker.md:37
-#: 2b2d95e668ed428e97eac851c604a74c
-msgid "**Run with local model**"
+#: ../../getting_started/install/docker/docker.md:47
+#: e18a4483b9c242b187a9bc61746f2d24
+#, fuzzy
+msgid "**Run with local model and SQLite database**"
 msgstr "**Run with local model**"
 
-#: ../../getting_started/install/docker/docker.md:52
-#: ../../getting_started/install/docker/docker.md:87
-#: 731540ca95004dd2bb2c3a9871ddb404 e3ab41d312ea40d492b48cf8629553fe
+#: ../../getting_started/install/docker/docker.md:61
+#: ../../getting_started/install/docker/docker.md:88
+#: ../../getting_started/install/docker/docker.md:123
+#: 90fda1321aa2468aa681431e36800913
 msgid "Open http://localhost:5000 with your browser to see the product."
 msgstr "打开浏览器访问http://localhost:5000"
 
-#: ../../getting_started/install/docker/docker.md:55
-#: 2cbab25caaa749f5b753c58947332cb2
+#: ../../getting_started/install/docker/docker.md:64
+#: ../../getting_started/install/docker/docker.md:91
+#: d9ced1b042494210b961204d5f0a5dea
+#, fuzzy
 msgid ""
-"`-e LLM_MODEL=vicuna-13b`, means we use vicuna-13b as llm model, see "
-"/pilot/configs/model_config.LLM_MODEL_CONFIG"
+"`-e LLM_MODEL=vicuna-13b-v1.5`, means we use vicuna-13b-v1.5 as llm "
+"model, see /pilot/configs/model_config.LLM_MODEL_CONFIG"
 msgstr "`-e LLM_MODEL=vicuna-13b` 指定llm model is vicuna-13b "
 
-#: ../../getting_started/install/docker/docker.md:56
-#: ed7e79d43ee940dca788f15d520850a3
+#: ../../getting_started/install/docker/docker.md:65
+#: ../../getting_started/install/docker/docker.md:92
+#: 1e7e2121ae6047eea27f6f3e8a2c730b
 msgid ""
 "`-v /data/models:/app/models`, means we mount the local model file "
 "directory `/data/models` to the docker container directory `/app/models`,"
 " please replace it with your model file directory."
-msgstr "`-v /data/models:/app/models`, 指定挂载的模型文件 "
-"directory `/data/models` to the docker container directory `/app/models`,"
-" 你也可以替换成你自己的模型."
+msgstr ""
+"`-v /data/models:/app/models`, 指定挂载的模型文件 directory `/data/models` to the "
+"docker container directory `/app/models`, 你也可以替换成你自己的模型."
 
-#: ../../getting_started/install/docker/docker.md:58
-#: 98e7bff5dab04979a0bb15abdf2ac1e0
+#: ../../getting_started/install/docker/docker.md:67
+#: ../../getting_started/install/docker/docker.md:94
+#: 77b7fa4ee51b44718145d8d3bf65e59e
 msgid "You can see log with command:"
 msgstr "你也可以通过命令查看日志"
 
-#: ../../getting_started/install/docker/docker.md:64
-#: 7ce23cecd6f24a6b8d3e4708d5f6265d
+#: ../../getting_started/install/docker/docker.md:73
+#: 23495e4399574a91bd04f7cca44748db
+#, fuzzy
+msgid "**Run with local model and MySQL database**"
+msgstr "**Run with local model**"
+
+#: ../../getting_started/install/docker/docker.md:100
+#: 2a8088830699426c9ab4cc890ab8d7bd
 msgid "**Run with openai interface**"
 msgstr "**Run with openai interface**"
 
-#: ../../getting_started/install/docker/docker.md:83
-#: bdf315780f454aaf9ead6414723f34c7
+#: ../../getting_started/install/docker/docker.md:119
+#: fd5f1772a3db4fa0929d84ea3451ce4e
 msgid ""
 "`-e LLM_MODEL=proxyllm`, means we use proxy llm(openai interface, "
 "fastchat interface...)"
-msgstr "`-e LLM_MODEL=proxyllm`, 通过设置模型为第三方模型服务API， 可以是openai, 也可以是fastchat interface..."
+msgstr ""
+"`-e LLM_MODEL=proxyllm`, 通过设置模型为第三方模型服务API， 可以是openai, 也可以是fastchat "
+"interface..."
 
-#: ../../getting_started/install/docker/docker.md:84
-#: 12b3e78d3ebd47288a8d081eea278b45
+#: ../../getting_started/install/docker/docker.md:120
+#: 7c9b301bd1a145b1ab622c18df7e7310
 msgid ""
 "`-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-"
 "chinese`, means we mount the local text2vec model to the docker "
 "container."
-msgstr "`-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-"
-"chinese`, 设置知识库embedding模型为text2vec. "
-"container.""
+msgstr ""
+"`-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-"
+"chinese`, 设置知识库embedding模型为text2vec. container.\""
 
