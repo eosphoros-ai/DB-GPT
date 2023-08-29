@@ -2,7 +2,9 @@ import json
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.configs.config import Config
 from pilot.scene.base import ChatScene
-from pilot.scene.chat_data.chat_excel.excel_learning.out_parser import LearningExcelOutputParser
+from pilot.scene.chat_data.chat_excel.excel_learning.out_parser import (
+    LearningExcelOutputParser,
+)
 from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
@@ -29,7 +31,7 @@ _DEFAULT_TEMPLATE_ZH = """
     {response}
 """
 
-RESPONSE_FORMAT_SIMPLE =     {
+RESPONSE_FORMAT_SIMPLE = {
     "DataAnalysis": "数据内容分析总结",
     "ColumnAnalysis": [{"column name1": "字段1介绍，专业术语解释(请尽量简单明了)"}],
     "AnalysisProgram": ["1.分析方案1，图表展示方式1", "2.分析方案2，图表展示方式2"],
@@ -63,5 +65,3 @@ prompt = PromptTemplate(
     temperature=PROMPT_TEMPERATURE,
 )
 CFG.prompt_template_registry.register(prompt, is_default=True)
-
-

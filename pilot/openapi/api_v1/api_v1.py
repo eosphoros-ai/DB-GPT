@@ -110,7 +110,6 @@ async def db_connect_delete(db_name: str = None):
 
 @router.get("/v1/chat/db/support/type", response_model=Result[DbTypeInfo])
 async def db_support_types():
-
     support_types = CFG.LOCAL_DB_MANAGE.get_all_completed_types()
     db_type_infos = []
     for type in support_types:
@@ -130,7 +129,7 @@ async def dialogue_list(user_id: str = None):
         chat_mode = item.get("chat_mode")
 
         messages = json.loads(item.get("messages"))
-        last_round = max(messages, key=lambda x: x['chat_order'])
+        last_round = max(messages, key=lambda x: x["chat_order"])
         if "param_value" in last_round:
             select_param = last_round["param_value"]
         else:
@@ -139,7 +138,7 @@ async def dialogue_list(user_id: str = None):
             conv_uid=conv_uid,
             user_input=summary,
             chat_mode=chat_mode,
-            select_param=select_param
+            select_param=select_param,
         )
         dialogues.append(conv_vo)
 
@@ -213,7 +212,9 @@ async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File
                     ),
                 )
             ## chat prepare
-            dialogue = ConversationVo(conv_uid=conv_uid, chat_mode=chat_mode, select_param=doc_file.filename)
+            dialogue = ConversationVo(
+                conv_uid=conv_uid, chat_mode=chat_mode, select_param=doc_file.filename
+            )
             chat: BaseChat = get_chat_instance(dialogue)
             resp = chat.prepare()
 
@@ -229,7 +230,8 @@ async def dialogue_delete(con_uid: str):
     history_mem.delete()
     return Result.succ(None)
 
-def get_hist_messages(conv_uid:str):
+
+def get_hist_messages(conv_uid: str):
     message_vos: List[MessageVo] = []
     history_mem = DuckdbHistoryMemory(conv_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
@@ -264,7 +266,7 @@ def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
     chat_param = {
         "chat_session_id": dialogue.conv_uid,
         "user_input": dialogue.user_input,
-        "select_param": dialogue.select_param
+        "select_param": dialogue.select_param,
     }
     chat: BaseChat = CHAT_FACTORY.get_implementation(dialogue.chat_mode, **chat_param)
     return chat

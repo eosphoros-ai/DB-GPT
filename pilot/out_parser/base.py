@@ -123,11 +123,7 @@ class BaseOutputParser(ABC):
             ai_response = ai_response.replace("\*", "*")
             ai_response = ai_response.replace("\t", "")
 
-            ai_response = (
-                ai_response.strip()
-                    .replace("\\n", " ")
-                    .replace("\n", " ")
-            )
+            ai_response = ai_response.strip().replace("\\n", " ").replace("\n", " ")
             print("un_stream ai response:", ai_response)
             return ai_response
         else:
@@ -209,9 +205,9 @@ class BaseOutputParser(ABC):
             cleaned_output = self.__extract_json(cleaned_output)
         cleaned_output = (
             cleaned_output.strip()
-                .replace("\\n", " ")
-                .replace("\n", " ")
-                .replace("\\", " ")
+            .replace("\\n", " ")
+            .replace("\n", " ")
+            .replace("\\", " ")
         )
         cleaned_output = self.__illegal_json_ends(cleaned_output)
         return cleaned_output

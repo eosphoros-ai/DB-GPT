@@ -21,9 +21,15 @@ class ChatDashboard(BaseChat):
     report_name: str
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, user_input, select_param:str = "",  report_name:str="report"):
+    def __init__(
+            self,
+            chat_session_id,
+            user_input,
+            select_param: str = "",
+            report_name: str = "report",
+    ):
         """ """
-        self.db_name=select_param
+        self.db_name = select_param
         super().__init__(
             chat_mode=ChatScene.ChatDashboard,
             chat_session_id=chat_session_id,
@@ -80,7 +86,9 @@ class ChatDashboard(BaseChat):
         dashboard_data_loader = DashboardDataLoader()
         for chart_item in prompt_response:
             try:
-                field_names, values = dashboard_data_loader.get_chart_values_by_conn(self.database, chart_item.sql)
+                field_names, values = dashboard_data_loader.get_chart_values_by_conn(
+                    self.database, chart_item.sql
+                )
                 chart_datas.append(
                     ChartData(
                         chart_uid=str(uuid.uuid1()),
@@ -101,5 +109,3 @@ class ChatDashboard(BaseChat):
             template_introduce=None,
             charts=chart_datas,
         )
-
-

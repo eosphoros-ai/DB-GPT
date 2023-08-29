@@ -30,7 +30,7 @@ class ChatKnowledge(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, user_input,  select_param: str = None):
+    def __init__(self, chat_session_id, user_input, select_param: str = None):
         """ """
         self.knowledge_space = select_param
         super().__init__(

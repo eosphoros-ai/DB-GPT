@@ -60,18 +60,13 @@ class BaseChat(ABC):
         arbitrary_types_allowed = True
 
     def __init__(
-            self,
-            chat_mode,
-            chat_session_id,
-            current_user_input,
-            select_param: Any = None
+            self, chat_mode, chat_session_id, current_user_input, select_param: Any = None
     ):
         self.chat_session_id = chat_session_id
         self.chat_mode = chat_mode
         self.current_user_input: str = current_user_input
         self.llm_model = CFG.LLM_MODEL
         self.llm_echo = False
-
 
         ### load prompt template
         # self.prompt_template: PromptTemplate = CFG.prompt_templates[
@@ -182,6 +177,7 @@ class BaseChat(ABC):
                 return response
             else:
                 from pilot.server.llmserver import worker
+
                 return worker.generate_stream_gate(payload)
         except Exception as e:
             print(traceback.format_exc())
@@ -235,7 +231,9 @@ class BaseChat(ABC):
             ### llm speaker
             speak_to_user = self.get_llm_speak(prompt_define_response)
 
-            view_message = self.prompt_template.output_parser.parse_view_response(speak_to_user, result)
+            view_message = self.prompt_template.output_parser.parse_view_response(
+                speak_to_user, result
+            )
             self.current_message.add_view_message(view_message)
         except Exception as e:
             print(traceback.format_exc())
@@ -253,10 +251,8 @@ class BaseChat(ABC):
         else:
             return self.nostream_call()
 
-
     def prepare(self):
-       pass
-
+        pass
 
     def generate_llm_text(self) -> str:
         warnings.warn("This method is deprecated - please use `generate_llm_messages`.")
@@ -363,9 +359,7 @@ class BaseChat(ABC):
                 )
             if len(self.history_message) > self.chat_retention_rounds:
                 for first_message in self.history_message[0]["messages"]:
-                    if not first_message["type"] in [
-                        ModelMessageRoleType.VIEW
-                    ]:
+                    if not first_message["type"] in [ModelMessageRoleType.VIEW]:
                         message_type = first_message["type"]
                         message_content = first_message["data"]["content"]
                         history_text += (
@@ -394,7 +388,9 @@ class BaseChat(ABC):
                                         + self.prompt_template.sep
                                 )
                                 history_messages.append(
-                                    ModelMessage(role=message_type, content=message_content)
+                                    ModelMessage(
+                                        role=message_type, content=message_content
+                                    )
                                 )
 
             else:

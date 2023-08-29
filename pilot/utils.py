@@ -75,7 +75,6 @@ def build_logger(logger_name, logger_filename):
                 item.addHandler(handler)
     logging.basicConfig(level=logging.INFO)
 
-
     # Get logger
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
