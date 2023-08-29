@@ -184,5 +184,5 @@ def _get_llm_response(query, db_input, dbsummary):
     chat: BaseChat = chat_factory.get_implementation(
         ChatScene.InnerChatDBSummary.value, **chat_param
     )
-    res = chat.nostream_call()
+    res = chat._blocking_nostream_call()
     return json.loads(res)["table"]
