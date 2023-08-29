@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-21 16:59+0800\n"
+"POT-Creation-Date: 2023-08-29 20:50+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,12 +20,12 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:1
-#: 4466dae5cd1048cd9c22450be667b05a
+#: 0baefc753798469588ea011c12a0bfd3
 msgid "Installation FAQ"
 msgstr "Installation FAQ"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:5
-#: dfa13f5fdf1e4fb9af92b58a5bae2ae9
+#: 013bf01a02c842ee8bc576f85d127e22
 #, fuzzy
 msgid ""
 "Q1: execute `pip install -e .` error, found some package cannot find "
@@ -35,18 +35,18 @@ msgstr ""
 "cannot find correct version."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:6
-#: c694387b681149d18707be047b46fa87
+#: 2729928139484def827143c17f2d968c
 msgid "change the pip source."
 msgstr "替换pip源."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:13
 #: ../../getting_started/faq/deploy/deploy_faq.md:20
-#: 5423bc84710c42ee8ba07e95467ce3ac 99aa6bb16764443f801a342eb8f212ce
+#: 6e8bf02d7117454fbcc28c7ec27e055a acd2186c0320466f95b500dade75591b
 msgid "or"
 msgstr "或者"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:27
-#: 6cc878fe282f4a9ab024d0b884c57894
+#: c5aab9455827416084a1ea6792263add
 msgid ""
 "Q2: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to"
 " open database file"
@@ -55,37 +55,71 @@ msgstr ""
 " open database file"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:29
-#: 18a71bc1062a4b1c8247068d4d49e25d
+#: 29880cfc6c7f4f6fb14a9cbb9eed07ad
 msgid "make sure you pull latest code or create directory with mkdir pilot/data"
 msgstr "make sure you pull latest code or create directory with mkdir pilot/data"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:31
-#: 0987d395af24440a95dd9367e3004a0b
+#: 36264030f5cd41bebd17beae12d9be51
 msgid "Q3: The model keeps getting killed."
 msgstr "Q3: The model keeps getting killed."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:33
-#: bfd90cb8f2914bba84a44573a9acdd6d
+#: 0cbf6ae0fee14d239cb1cc6ddba134d7
 msgid ""
 "your GPU VRAM size is not enough, try replace your hardware or replace "
 "other llms."
 msgstr "GPU显存不够, 增加显存或者换一个显存小的模型"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:35
-#: 09a9baca454d4b868fedffa4febe7c5c
+#: 6f4ce365d20843529195aa6970d6074e
 msgid "Q4: How to access website on the public network"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:37
-#: 3ad8d2cf2b4348a6baed5f3e302cd58c
+#: 9f4a119e64c74a0693fa067cd35cd833
 msgid ""
 "You can try to use gradio's [network](https://github.com/gradio-"
 "app/gradio/blob/main/gradio/networking.py) to achieve."
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:48
-#: 90b35959c5854b69acad9b701e21e65f
+#: 4c09cfb493ba41fb8590954b986e949d
 msgid "Open `url` with your browser to see the website."
+msgstr ""
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:50
+#: 7d905a99d1c547eb95d9c619c70bf221
+msgid "Q5: (Windows) execute `pip install -e .` error"
+msgstr ""
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:52
+#: fe26218168c4447a8dc89e436cdd1000
+msgid "The error log like the following:"
+msgstr ""
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:71
+#: d15615f7798d4dc0ad49d9b28926fe32
+msgid ""
+"Download and install `Microsoft C++ Build Tools` from [visual-cpp-build-"
+"tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)"
+msgstr ""
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:75
+#: 60ef06d3f99c44c1b568ec7c652905ee
+msgid "Q6: `Torch not compiled with CUDA enabled`"
+msgstr ""
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:82
+#: 830e63627d2c48b8987ed20db3405c41
+msgid "Install [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit-archive)"
+msgstr ""
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:83
+#: 50a1c244ddf747d797825158550026b9
+msgid ""
+"Reinstall PyTorch [start-locally](https://pytorch.org/get-started/locally"
+"/#start-locally) with CUDA support."
 msgstr ""
 
 #~ msgid ""
