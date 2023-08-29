@@ -127,7 +127,6 @@ class BaseOutputParser(ABC):
                 ai_response.strip()
                     .replace("\\n", " ")
                     .replace("\n", " ")
-                    .replace("\\", " ")
             )
             print("un_stream ai response:", ai_response)
             return ai_response
