@@ -22,8 +22,8 @@
     <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
     </a>
-    <a href="https://discord.gg/Y5rbqj4U">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/Y5rbqj4U?compact=true&style=flat" />
+    <a href="https://discord.gg/FMGwbRQrM">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/FMGwbRQrM?compact=true&style=flat" />
     </a>
     <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
