@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-23 17:00+0800\n"
+"POT-Creation-Date: 2023-08-28 15:05+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,15 +19,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../getting_started/getting_started.md:1 f5e3f55f96de414183847de3e1eb0a75
+#: ../../getting_started/getting_started.md:1 da78e5535cec40a5af378654db5bdd95
 msgid "Quickstart Guide"
 msgstr "使用指南"
 
-#: ../../getting_started/getting_started.md:3 39ac3167d0044868b9d9efca953e73c5
+#: ../../getting_started/getting_started.md:3 7e54f808055c44578a2364e9a6c95f69
 msgid "Welcome to DB-GPT!"
 msgstr "欢迎来到DB-GPT!"
 
-#: ../../getting_started/getting_started.md:5 bdc699f3da554c6eb46eba0636fe7bda
+#: ../../getting_started/getting_started.md:5 3d46f319cc404984a9f3fbf36e3e14f7
 msgid ""
 "DB-GPT is an experimental open-source project that uses localized GPT "
 "large models to interact with your data and environment. With this "
@@ -38,33 +38,33 @@ msgstr ""
 "，我们发起了DB-GPT项目，为所有以数据库为基础的场景，构建一套完整的私有大模型解决方案。 "
 "此方案因为支持本地部署，所以不仅仅可以应用于独立私有环境，而且还可以根据业务模块独立部署隔离，让大模型的能力绝对私有、安全、可控。"
 
-#: ../../getting_started/getting_started.md:7 7d1a79640331431e85d5c54075dca1fd
+#: ../../getting_started/getting_started.md:9 777caeb99fb9458f89b7699f9b790dbf
 msgid ""
 "Our vision is to make it easier and more convenient to build applications"
 " around databases and llm."
 msgstr "我们的愿景是让围绕数据库构建大模型应用更简单，更方便。"
 
-#: ../../getting_started/getting_started.md:9 f400d65e13e0405d8aea576c02a7b02a
+#: ../../getting_started/getting_started.md:11 02310b9fc7934df093a2b7f53d82b809
 msgid "What can I do with DB-GPT?"
 msgstr "通过DB-GPT我能做什么"
 
-#: ../../getting_started/getting_started.md:10 2b161262a21b474ca7c191ed0f9ab6b0
+#: ../../getting_started/getting_started.md:13 ec30099749e94de085ac9d45edc35019
 msgid "Chat Data with your Datasource."
 msgstr "和自己的数据聊天，进行数据分析"
 
-#: ../../getting_started/getting_started.md:11 0f1322f19cea45768b5bde4448dfea5e
+#: ../../getting_started/getting_started.md:14 cf5e7961b73447abb788388d843889d7
 msgid "Private domain knowledge question answering."
 msgstr "私有领域的知识问答"
 
-#: ../../getting_started/getting_started.md:12 9dc0e76f46c64304aabb80fcf4a2a3f2
+#: ../../getting_started/getting_started.md:15 60b5ab4b672e4d0589c765843243c66f
 msgid "Quickly provide private LLM Model deployment."
 msgstr "快速构建私有大模型部署"
 
-#: ../../getting_started/getting_started.md:14 ad5daeae9621455ba447735fd55648cc
+#: ../../getting_started/getting_started.md:17 a5f7f27e3b904eb3b8ad3d457d683c10
 msgid "Usage with DB-GPT."
 msgstr "DB-GPT使用姿势."
 
-#: ../../getting_started/getting_started.md:15 870d82fd402444aab3028764607ff468
+#: ../../getting_started/getting_started.md:19 5d1914c6fd6d43a59b83412383706fb5
 msgid ""
 "Follow DB-GPT application [install tutorial](https://db-"
 "gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)."
@@ -72,7 +72,7 @@ msgstr ""
 "先安装部署应用[安装教程](https://db-"
 "gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)."
 
-#: ../../getting_started/getting_started.md:16 c7806bcd1b9a43eda8a86402f9903dfe
+#: ../../getting_started/getting_started.md:21 9d9ed9a6cdbc4dbdbb2d4009b446c392
 #, fuzzy
 msgid ""
 "Follow DB-GPT [application usage](https://db-"
@@ -81,7 +81,7 @@ msgstr ""
 "先安装部署应用[安装教程](https://db-"
 "gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)."
 
-#: ../../getting_started/getting_started.md:18 5dd30b81ed39476f871ed31edd01c043
+#: ../../getting_started/getting_started.md:24 319b71993fcc499a89f477b499a21a84
 msgid ""
 "If you encounter any issues while using DB-GPT (whether it's during "
 "installation or usage), you can refer to the [FAQ](https://db-"
@@ -91,44 +91,48 @@ msgstr ""
 "如果你在使用DB-GPT过程中遇到什么问题(无论是安装还是使用)，可以查看[FAQ](https://db-"
 "gpt.readthedocs.io/en/latest/getting_started/faq/deploy/deploy_faq.html)\""
 
-#: ../../getting_started/getting_started.md:21 c6202be38f3641098eedca1ef31665b3
-msgid "🗺️ 生态"
-msgstr "🗺️ 生态"
+#: ../../getting_started/getting_started.md:27 7cb0e2f7384c473e9626e59052c114e1
+msgid "🗺️ Ecosystem"
+msgstr ""
 
-#: ../../getting_started/getting_started.md:23 d55c843f8a044e099e61a86ef5a70eaf
+#: ../../getting_started/getting_started.md:29 6067623edfda45c5a7fdfa80ffd886f4
 msgid "Github: https://github.com/eosphoros-ai/DB-GPT"
 msgstr "Github: https://github.com/eosphoros-ai/DB-GPT"
 
-#: ../../getting_started/getting_started.md:24 7e279ce6cce346ecb3e58537f2d8ca24
+#: ../../getting_started/getting_started.md:30 2eb9498deaac4a928e1df453d71fcddf
 msgid "PyPi:"
 msgstr "PyPi:"
 
-#: ../../getting_started/getting_started.md:25 ca92a6bc95c94996b4e672be7ee43f1b
+#: ../../getting_started/getting_started.md:31 f321d5c1e4bd4556959cd947a23055b9
 msgid "DB-GPT: https://pypi.org/simple/db-gpt."
 msgstr "DB-GPT: https://pypi.org/simple/db-gpt."
 
-#: ../../getting_started/getting_started.md:27 cc44973d1a78434fa3dfe511618b08d9
+#: ../../getting_started/getting_started.md:33 b31a2fa10f0d4c28b8068b44654dfbf9
 msgid "Associated projects"
 msgstr "关联的项目"
 
-#: ../../getting_started/getting_started.md:30 93b80349645943b38d16afd80ee076da
+#: ../../getting_started/getting_started.md:35 c8b6d0da11fc471a9fefcef8f85500e1
 msgid ""
 "🧪 DB-GPT-Hub: https://github.com/eosphoros-ai/DB-GPT-Hub | an "
 "experimental project to implement Text-to-SQL parsing using LLMs"
-msgstr "🧪 DB-GPT-Hub: https://github.com/eosphoros-ai/DB-GPT-Hub | 基于开源大模型的Text-to-SQL实验性项目"
+msgstr ""
+"🧪 DB-GPT-Hub: https://github.com/eosphoros-ai/DB-GPT-Hub | 基于开源大模型的Text-"
+"to-SQL实验性项目"
 
-#: ../../getting_started/getting_started.md:31 2c061d9eee624a4b994bb6af3361591b
+#: ../../getting_started/getting_started.md:37 a76faff98a9a49d893a3e15f920c054a
 msgid ""
 "🏡 DB-GPT-Web: https://github.com/eosphoros-ai/DB-GPT-Web | Web "
 "application for DB-GPT."
-msgstr "🏡 DB-GPT-Web: https://github.com/eosphoros-ai/DB-GPT-Web | Web "
-"应用 for DB-GPT."
+msgstr ""
+"🏡 DB-GPT-Web: https://github.com/eosphoros-ai/DB-GPT-Web | Web 应用 for DB-"
+"GPT."
 
-#: ../../getting_started/getting_started.md:32 6564f208ecd04a3fae6dd5f12cfbad12
+#: ../../getting_started/getting_started.md:38 be54eeb941564d799cd68a6cfe1bfffc
 msgid ""
 "🚀 DB-GPT-Plugins: https://github.com/eosphoros-ai/DB-GPT-Web | DB-GPT "
 "Plugins Repo, Which support AutoGPT plugin."
-msgstr "🚀 DB-GPT-Plugins: https://github.com/eosphoros-ai/DB-GPT-Web | DB-GPT "
+msgstr ""
+"🚀 DB-GPT-Plugins: https://github.com/eosphoros-ai/DB-GPT-Web | DB-GPT "
 "Plugins Repo, Which support AutoGPT plugin."
 
 #~ msgid "4.2. Run with docker compose"
@@ -551,4 +555,7 @@ msgstr "🚀 DB-GPT-Plugins: https://github.com/eosphoros-ai/DB-GPT-Web | DB-GPT
 #~ "[应用使用教程](https://db-"
 #~ "gpt.readthedocs.io/en/latest/getting_started/application/chatdb/chatdb.html)."
 #~ msgstr ""
+
+#~ msgid "🗺️ 生态"
+#~ msgstr "🗺️ 生态"
 
