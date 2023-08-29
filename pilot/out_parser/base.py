@@ -1,26 +1,19 @@
 from __future__ import annotations
+
 import json
-
-from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-)
-from pilot.utils import build_logger
 import re
+from abc import ABC, abstractmethod
+from dataclasses import asdict
+from typing import Any, Dict, TypeVar, Union
 
-from pydantic import BaseModel, Extra, Field, root_validator
-from pilot.configs.model_config import LOGDIR
 from pilot.configs.config import Config
+from pilot.configs.model_config import LOGDIR
+from pilot.model.base import ModelOutput
+from pilot.utils import build_logger
 
 T = TypeVar("T")
+ResponseTye = Union[str, bytes, ModelOutput]
+
 logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
 
 CFG = Config()
@@ -46,11 +39,8 @@ class BaseOutputParser(ABC):
             code = sep.join(blocks)
         return code
 
-    def parse_model_stream_resp_ex(self, chunk, skip_echo_len):
-        if b"\0" in chunk:
-            chunk = chunk.replace(b"\0", b"")
-        data = json.loads(chunk.decode())
-
+    def parse_model_stream_resp_ex(self, chunk: ResponseTye, skip_echo_len):
+        data = _parse_model_response(chunk)
         """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
         """
         model_context = data.get("model_context")
@@ -103,8 +93,8 @@ class BaseOutputParser(ABC):
                     output = data["text"] + f" (error_code: {data['error_code']})"
                     yield output
 
-    def parse_model_nostream_resp(self, response, sep: str):
-        resp_obj_ex = json.loads(response)
+    def parse_model_nostream_resp(self, response: ResponseTye, sep: str):
+        resp_obj_ex = _parse_model_response(response)
         if isinstance(resp_obj_ex, str):
             resp_obj_ex = json.loads(resp_obj_ex)
         if resp_obj_ex["error_code"] == 0:
@@ -240,3 +230,17 @@ class BaseOutputParser(ABC):
         output_parser_dict = super().dict()
         output_parser_dict["_type"] = self._type
         return output_parser_dict
+
+
+def _parse_model_response(response: ResponseTye):
+    if isinstance(response, ModelOutput):
+        resp_obj_ex = asdict(response)
+    elif isinstance(response, str):
+        resp_obj_ex = json.loads(response)
+    elif isinstance(response, bytes):
+        if b"\0" in response:
+            response = response.replace(b"\0", b"")
+        resp_obj_ex = json.loads(response.decode())
+    else:
+        raise ValueError(f"Unsupported response type {type(response)}")
+    return resp_obj_ex

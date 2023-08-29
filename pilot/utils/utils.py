@@ -6,9 +6,7 @@ import logging.handlers
 import os
 import sys
 
-import requests
 import torch
-
 from pilot.configs.model_config import LOGDIR
 
 server_error_msg = (
@@ -73,7 +71,7 @@ def build_logger(logger_name, logger_filename):
         for name, item in logging.root.manager.loggerDict.items():
             if isinstance(item, logging.Logger):
                 item.addHandler(handler)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, encoding="utf-8")
 
     # Get logger
     logger = logging.getLogger(logger_name)
