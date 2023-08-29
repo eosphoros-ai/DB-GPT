@@ -25,8 +25,8 @@
     <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/DB-GPT" />
     </a>
-    <a href="https://discord.gg/Y5rbqj4U">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/Y5rbqj4U?compact=true&style=flat" />
+    <a href="https://discord.gg/FMGwbRQrM">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/FMGwbRQrM?compact=true&style=flat" />
     </a>
     <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
@@ -34,7 +34,10 @@
   </p>
 
 
-[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/Y5rbqj4U) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community**](https://github.com/eosphoros-ai/community)
+[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/FMGwbRQrM) |[**Documents
+**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat
+**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community
+**](https://github.com/eosphoros-ai/community)
 </div>
 
 ## What is DB-GPT?
@@ -198,8 +201,8 @@ This project is standing on the shoulders of giants and is not going to work wit
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us. 
-[![](https://dcbadge.vercel.app/api/server/Y5rbqj4U?compact=true&style=flat)](https://discord.gg/Y5rbqj4U)
+We are working on building a community, if you have any ideas about building the community, feel free to contact us.
+[![](https://dcbadge.vercel.app/api/server/FMGwbRQrM?compact=true&style=flat)](https://discord.gg/FMGwbRQrM)
 
 <p align="center">
   <img src="./assets/wechat.jpg" width="300px" />
