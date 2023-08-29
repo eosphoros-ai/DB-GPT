@@ -9,7 +9,7 @@ import os
 import matplotlib
 import seaborn as sns
 
-# matplotlib.use("Agg")
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontManager
 

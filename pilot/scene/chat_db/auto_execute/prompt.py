@@ -21,7 +21,7 @@ Be careful to not query for columns that do not exist. Also, pay attention to wh
 
 Question: {input}
 
-Rrespond in JSON format as following format:
+Respond in JSON format as following format:
 {response}
 Ensure the response is correct json and can be parsed by Python json.loads
 """

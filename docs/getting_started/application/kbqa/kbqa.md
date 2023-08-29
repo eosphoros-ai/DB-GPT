@@ -1,5 +1,7 @@
 KBQA
 ==================================
+![chat_knowledge](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/bc343c94-df3e-41e5-90d5-23b68c768c59)
+
 DB-GPT supports a knowledge question-answering module, which aims to create an intelligent expert in the field of databases and provide professional knowledge-based answers to database practitioners.
 
 ![chat_knowledge](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/6e55f2e5-94f7-4906-aed6-097db5c6c721)
