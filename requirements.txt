@@ -53,7 +53,7 @@ accelerate>=0.20.3
 unstructured==0.6.3
 gpt4all==0.3.0
 diskcache==5.6.1
-
+seaborn
 auto-gpt-plugin-template
 pymdown-extensions
 gTTS==2.3.1
