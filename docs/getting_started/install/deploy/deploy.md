@@ -102,6 +102,11 @@ You can configure basic parameters in the .env file, for example setting LLM_MOD
 bash ./scripts/examples/load_examples.sh
 ```
 
+On windows platform:
+```PowerShell
+.\scripts\examples\load_examples.bat
+```
+
 1.Run db-gpt server 
 
 ```bash

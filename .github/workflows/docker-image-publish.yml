@@ -32,4 +32,4 @@ jobs:
           file: ./docker/base/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: eosphorosai/dbgpt:${{ github.ref_name }}
+          tags: eosphorosai/dbgpt:${{ github.ref_name }},eosphorosai/dbgpt:latest

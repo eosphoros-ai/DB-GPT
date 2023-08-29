@@ -27,6 +27,14 @@ class ConnectManager:
             subclasses += self.get_all_subclasses(subclass)
         return subclasses
 
+    def get_all_completed_types(self):
+        chat_classes = self.get_all_subclasses(BaseConnect)
+        support_types = []
+        for cls in chat_classes:
+            if cls.db_type:
+                support_types.append(DBType.of_db_type(cls.db_type))
+        return support_types
+
     def get_cls_by_dbtype(self, db_type):
         chat_classes = self.get_all_subclasses(BaseConnect)
         result = None
@@ -127,7 +135,7 @@ class ConnectManager:
             db_user = db_config.get("db_user")
             db_pwd = db_config.get("db_pwd")
             return connect_instance.from_uri_db(
-                db_host, db_port, db_user, db_pwd, db_name
+                host=db_host, port=db_port, user=db_user, pwd=db_pwd, db_name=db_name
             )
 
     def get_db_list(self):
