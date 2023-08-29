@@ -170,7 +170,7 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-        chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
+    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
 ):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)
@@ -201,7 +201,7 @@ async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File
             if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)):
                 os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode))
             with NamedTemporaryFile(
-                    dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode), delete=False
+                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode), delete=False
             ) as tmp:
                 tmp.write(await doc_file.read())
                 tmp_path = tmp.name

@@ -22,11 +22,11 @@ class ChatDashboard(BaseChat):
     """Number of results to return from the query"""
 
     def __init__(
-            self,
-            chat_session_id,
-            user_input,
-            select_param: str = "",
-            report_name: str = "report",
+        self,
+        chat_session_id,
+        user_input,
+        select_param: str = "",
+        report_name: str = "report",
     ):
         """ """
         self.db_name = select_param
