@@ -233,15 +233,7 @@ class GorillaAdapter(BaseLLMAdaper):
         return model, tokenizer
 
 
-class CodeGenAdapter(BaseLLMAdaper):
-    pass
-
-
 class StarCoderAdapter(BaseLLMAdaper):
-    pass
-
-
-class T5CodeAdapter(BaseLLMAdaper):
     pass
 
 
@@ -270,7 +262,7 @@ class GPT4AllAdapter(BaseLLMAdaper):
     """
 
     def match(self, model_path: str):
-        return "gpt4all" in model_path
+        return "gptj-6b" in model_path
 
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
         import gpt4all

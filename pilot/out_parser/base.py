@@ -119,10 +119,16 @@ class BaseOutputParser(ABC):
             ai_response = ai_response.replace("assistant:", "")
             ai_response = ai_response.replace("Assistant:", "")
             ai_response = ai_response.replace("ASSISTANT:", "")
-            ai_response = ai_response.replace("\n", " ")
             ai_response = ai_response.replace("\_", "_")
             ai_response = ai_response.replace("\*", "*")
             ai_response = ai_response.replace("\t", "")
+
+            ai_response = (
+                ai_response.strip()
+                    .replace("\\n", " ")
+                    .replace("\n", " ")
+                    .replace("\\", " ")
+            )
             print("un_stream ai response:", ai_response)
             return ai_response
         else:
@@ -154,7 +160,7 @@ class BaseOutputParser(ABC):
             if i < 0:
                 return None
             count = 1
-            for j, c in enumerate(s[i + 1 :], start=i + 1):
+            for j, c in enumerate(s[i + 1:], start=i + 1):
                 if c == "]":
                     count -= 1
                 elif c == "[":
@@ -162,13 +168,13 @@ class BaseOutputParser(ABC):
                 if count == 0:
                     break
             assert count == 0
-            return s[i : j + 1]
+            return s[i: j + 1]
         else:
             i = s.find("{")
             if i < 0:
                 return None
             count = 1
-            for j, c in enumerate(s[i + 1 :], start=i + 1):
+            for j, c in enumerate(s[i + 1:], start=i + 1):
                 if c == "}":
                     count -= 1
                 elif c == "{":
@@ -176,7 +182,7 @@ class BaseOutputParser(ABC):
                 if count == 0:
                     break
             assert count == 0
-            return s[i : j + 1]
+            return s[i: j + 1]
 
     def parse_prompt_response(self, model_out_text) -> T:
         """
@@ -193,9 +199,9 @@ class BaseOutputParser(ABC):
         # if "```" in cleaned_output:
         #     cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json") :]
+            cleaned_output = cleaned_output[len("```json"):]
         if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```") :]
+            cleaned_output = cleaned_output[len("```"):]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
@@ -204,9 +210,9 @@ class BaseOutputParser(ABC):
             cleaned_output = self.__extract_json(cleaned_output)
         cleaned_output = (
             cleaned_output.strip()
-            .replace("\n", " ")
-            .replace("\\n", " ")
-            .replace("\\", " ")
+                .replace("\\n", " ")
+                .replace("\n", " ")
+                .replace("\\", " ")
         )
         cleaned_output = self.__illegal_json_ends(cleaned_output)
         return cleaned_output
@@ -226,13 +232,13 @@ class BaseOutputParser(ABC):
         """Instructions on how the LLM output should be formatted."""
         raise NotImplementedError
 
-    @property
-    def _type(self) -> str:
-        """Return the type key."""
-        raise NotImplementedError(
-            f"_type property is not implemented in class {self.__class__.__name__}."
-            " This is required for serialization."
-        )
+    # @property
+    # def _type(self) -> str:
+    #     """Return the type key."""
+    #     raise NotImplementedError(
+    #         f"_type property is not implemented in class {self.__class__.__name__}."
+    #         " This is required for serialization."
+    #     )
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of output parser."""

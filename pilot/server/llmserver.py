@@ -6,6 +6,7 @@ import json
 import os
 import sys
 from typing import List
+import platform
 
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request
@@ -89,13 +90,18 @@ class ModelWorker:
             params, model_context = self.llm_chat_adapter.model_adaptation(
                 params, self.ml.model_path, prompt_template=self.ml.prompt_template
             )
+
             for output in self.generate_stream_func(
                 self.model, self.tokenizer, params, DEVICE, CFG.MAX_POSITION_EMBEDDINGS
             ):
                 # Please do not open the output in production!
                 # The gpt4all thread shares stdout with the parent process,
                 # and opening it may affect the frontend output.
-                print("output: ", output)
+                if "windows" in platform.platform().lower():
+                    # Do not print the model output, because it may contain Emoji, there is a problem with the GBK encoding
+                    pass
+                else:
+                    print("output: ", output)
                 # return some model context to dgt-server
                 ret = {"text": output, "error_code": 0, "model_context": model_context}
                 yield json.dumps(ret).encode() + b"\0"

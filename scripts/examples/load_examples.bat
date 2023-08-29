@@ -49,12 +49,13 @@ goto printUsage
 
 :printUsage
 echo USAGE: %0 [--db-file sqlite db file] [--sql-file sql file path to run]
-echo   [-d|--db-file sqlite db file path] default: %DEFAULT_DB_FILE%
-echo   [-f|--sql-file sqlite file to run] default: %DEFAULT_SQL_FILE%
-echo   [-h|--help] Usage message
+echo   [-d^|--db-file sqlite db file path] default: %DEFAULT_DB_FILE%
+echo   [-f^|--sql-file sqlite file to run] default: %DEFAULT_SQL_FILE%
+echo   [-h^|--help] Usage message
 exit /b 0
 
 :argDone
+
 
 if "%SQL_FILE%"=="" (
     if not exist "%WORK_DIR%\pilot\data" mkdir "%WORK_DIR%\pilot\data"

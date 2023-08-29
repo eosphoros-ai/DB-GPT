@@ -63,7 +63,6 @@ class AIMessage(BaseMessage):
 
 class ViewMessage(BaseMessage):
     """Type of message that is spoken by the AI."""
-
     example: bool = False
 
     @property
@@ -74,7 +73,6 @@ class ViewMessage(BaseMessage):
 
 class SystemMessage(BaseMessage):
     """Type of message that is a system message."""
-
     @property
     def type(self) -> str:
         """Type of the message, used for serialization."""
@@ -95,6 +93,7 @@ class ModelMessageRoleType:
     SYSTEM = "system"
     HUMAN = "human"
     AI = "ai"
+    VIEW = "view"
 
 
 class Generation(BaseModel):
@@ -166,7 +165,7 @@ def messages_from_dict(messages: List[dict]) -> List[BaseMessage]:
 
 
 def _parse_model_messages(
-    messages: List[ModelMessage],
+        messages: List[ModelMessage],
 ) -> Tuple[str, List[str], List[List[str, str]]]:
     """ "
     Parameters:

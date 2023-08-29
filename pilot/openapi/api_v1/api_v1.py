@@ -1,25 +1,24 @@
-import uuid
 import json
+import uuid
 import asyncio
-import time
 import os
+import shutil
 from fastapi import (
     APIRouter,
     Request,
+    File,
+    UploadFile,
+    Form,
     Body,
-    status,
-    HTTPException,
-    Response,
     BackgroundTasks,
 )
 
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.responses import StreamingResponse, FileResponse
-from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
 from fastapi.exceptions import RequestValidationError
 from typing import List
+from tempfile import NamedTemporaryFile
 
-from pilot.openapi.api_v1.api_view_model import (
+from pilot.openapi.api_view_model import (
     Result,
     ConversationVo,
     MessageVo,
@@ -38,6 +37,7 @@ from pilot.utils import build_logger
 from pilot.common.schema import DBType
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.scene.message import OnceConversation
+from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 
 router = APIRouter()
 CFG = Config()
@@ -47,14 +47,6 @@ knowledge_service = KnowledgeService()
 
 model_semaphore = None
 global_counter = 0
-static_file_path = os.path.join(os.getcwd(), "server/static")
-
-
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    message = ""
-    for error in exc.errors():
-        message += ".".join(error.get("loc")) + ":" + error.get("msg") + ";"
-    return Result.faild(code="E0001", msg=message)
 
 
 def __get_conv_user_message(conversations: dict):
@@ -118,13 +110,8 @@ async def db_connect_delete(db_name: str = None):
 
 @router.get("/v1/chat/db/support/type", response_model=Result[DbTypeInfo])
 async def db_support_types():
-    support_types = [
-        DBType.Mysql,
-        DBType.MSSQL,
-        DBType.DuckDb,
-        DBType.SQLite,
-        DBType.Clickhouse,
-    ]
+
+    support_types = CFG.LOCAL_DB_MANAGE.get_all_completed_types()
     db_type_infos = []
     for type in support_types:
         db_type_infos.append(
@@ -137,16 +124,22 @@ async def db_support_types():
 async def dialogue_list(user_id: str = None):
     dialogues: List = []
     datas = DuckdbHistoryMemory.conv_list(user_id)
-
     for item in datas:
         conv_uid = item.get("conv_uid")
         summary = item.get("summary")
         chat_mode = item.get("chat_mode")
 
+        messages = json.loads(item.get("messages"))
+        last_round = max(messages, key=lambda x: x['chat_order'])
+        if "param_value" in last_round:
+            select_param = last_round["param_value"]
+        else:
+            select_param = ""
         conv_vo: ConversationVo = ConversationVo(
             conv_uid=conv_uid,
             user_input=summary,
             chat_mode=chat_mode,
+            select_param=select_param
         )
         dialogues.append(conv_vo)
 
@@ -158,6 +151,7 @@ async def dialogue_scenes():
     scene_vos: List[ChatSceneVo] = []
     new_modes: List[ChatScene] = [
         ChatScene.ChatWithDbExecute,
+        ChatScene.ChatExcel,
         ChatScene.ChatWithDbQA,
         ChatScene.ChatKnowledge,
         ChatScene.ChatDashboard,
@@ -177,7 +171,7 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
+        chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
 ):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)
@@ -199,19 +193,45 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
         return Result.succ(None)
 
 
+@router.post("/v1/chat/mode/params/file/load")
+async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File(...)):
+    print(f"params_load: {conv_uid},{chat_mode}")
+    try:
+        if doc_file:
+            ## file save
+            if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)):
+                os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode))
+            with NamedTemporaryFile(
+                    dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode), delete=False
+            ) as tmp:
+                tmp.write(await doc_file.read())
+                tmp_path = tmp.name
+                shutil.move(
+                    tmp_path,
+                    os.path.join(
+                        KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode, doc_file.filename
+                    ),
+                )
+            ## chat prepare
+            dialogue = ConversationVo(conv_uid=conv_uid, chat_mode=chat_mode, select_param=doc_file.filename)
+            chat: BaseChat = get_chat_instance(dialogue)
+            resp = chat.prepare()
+
+        ### refresh messages
+        return Result.succ(get_hist_messages(conv_uid))
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"File Load Error {e}")
+
+
 @router.post("/v1/chat/dialogue/delete")
 async def dialogue_delete(con_uid: str):
     history_mem = DuckdbHistoryMemory(con_uid)
     history_mem.delete()
     return Result.succ(None)
 
-
-@router.get("/v1/chat/dialogue/messages/history", response_model=Result[MessageVo])
-async def dialogue_history_messages(con_uid: str):
-    print(f"dialogue_history_messages:{con_uid}")
+def get_hist_messages(conv_uid:str):
     message_vos: List[MessageVo] = []
-
-    history_mem = DuckdbHistoryMemory(con_uid)
+    history_mem = DuckdbHistoryMemory(conv_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:
@@ -219,23 +239,22 @@ async def dialogue_history_messages(con_uid: str):
                 message2Vo(element, once["chat_order"]) for element in once["messages"]
             ]
             message_vos.extend(once_message_vos)
-    return Result.succ(message_vos)
+    return message_vos
 
 
-@router.post("/v1/chat/completions")
-async def chat_completions(dialogue: ConversationVo = Body()):
-    print(f"chat_completions:{dialogue.chat_mode},{dialogue.select_param}")
+@router.get("/v1/chat/dialogue/messages/history", response_model=Result[MessageVo])
+async def dialogue_history_messages(con_uid: str):
+    print(f"dialogue_history_messages:{con_uid}")
+    return Result.succ(get_hist_messages(con_uid))
+
+
+def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
+    logger.info(f"get_chat_instance:{dialogue}")
     if not dialogue.chat_mode:
         dialogue.chat_mode = ChatScene.ChatNormal.value()
     if not dialogue.conv_uid:
         conv_vo = __new_conversation(dialogue.chat_mode, dialogue.user_name)
         dialogue.conv_uid = conv_vo.conv_uid
-
-    global model_semaphore, global_counter
-    global_counter += 1
-    if model_semaphore is None:
-        model_semaphore = asyncio.Semaphore(CFG.LIMIT_MODEL_CONCURRENCY)
-    await model_semaphore.acquire()
 
     if not ChatScene.is_valid_mode(dialogue.chat_mode):
         raise StopAsyncIteration(
@@ -245,29 +264,34 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     chat_param = {
         "chat_session_id": dialogue.conv_uid,
         "user_input": dialogue.user_input,
+        "select_param": dialogue.select_param
     }
-
-    if ChatScene.ChatWithDbQA.value() == dialogue.chat_mode:
-        chat_param.update({"db_name": dialogue.select_param})
-    elif ChatScene.ChatWithDbExecute.value() == dialogue.chat_mode:
-        chat_param.update({"db_name": dialogue.select_param})
-    elif ChatScene.ChatDashboard.value() == dialogue.chat_mode:
-        chat_param.update({"db_name": dialogue.select_param})
-        ## DEFAULT
-        chat_param.update({"report_name": "report"})
-    elif ChatScene.ChatExecution.value() == dialogue.chat_mode:
-        chat_param.update({"plugin_selector": dialogue.select_param})
-    elif ChatScene.ChatKnowledge.value() == dialogue.chat_mode:
-        chat_param.update({"knowledge_space": dialogue.select_param})
-
     chat: BaseChat = CHAT_FACTORY.get_implementation(dialogue.chat_mode, **chat_param)
-    background_tasks = BackgroundTasks()
-    background_tasks.add_task(release_model_semaphore)
+    return chat
+
+
+@router.post("/v1/chat/prepare")
+async def chat_prepare(dialogue: ConversationVo = Body()):
+    logger.info(f"chat_prepare:{dialogue}")
+    ## check conv_uid
+    chat: BaseChat = get_chat_instance(dialogue)
+    if len(chat.history_message) > 0:
+        return Result.succ(None)
+    resp = chat.prepare()
+    return Result.succ(resp)
+
+
+@router.post("/v1/chat/completions")
+async def chat_completions(dialogue: ConversationVo = Body()):
+    print(f"chat_completions:{dialogue.chat_mode},{dialogue.select_param}")
+    chat: BaseChat = get_chat_instance(dialogue)
+    # background_tasks = BackgroundTasks()
+    # background_tasks.add_task(release_model_semaphore)
     headers = {
-        # "Content-Type": "text/event-stream",
+        "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
-        # "Transfer-Encoding": "chunked",
+        "Transfer-Encoding": "chunked",
     }
 
     if not chat.prompt_template.stream_out:
@@ -275,19 +299,13 @@ async def chat_completions(dialogue: ConversationVo = Body()):
             no_stream_generator(chat),
             headers=headers,
             media_type="text/event-stream",
-            background=background_tasks,
         )
     else:
         return StreamingResponse(
             stream_generator(chat),
             headers=headers,
             media_type="text/plain",
-            background=background_tasks,
         )
-
-
-def release_model_semaphore():
-    model_semaphore.release()
 
 
 async def no_stream_generator(chat):
@@ -298,6 +316,7 @@ async def no_stream_generator(chat):
 
 async def stream_generator(chat):
     model_response = chat.stream_call()
+    msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
     if not CFG.NEW_SERVER_MODE:
         for chunk in model_response.iter_lines(decode_unicode=False, delimiter=b"\0"):
             if chunk:
