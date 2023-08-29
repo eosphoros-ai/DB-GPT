@@ -10,7 +10,7 @@ from langchain.embeddings import HuggingFaceEmbeddings
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 
-from pilot.openapi.api_v1.api_view_model import Result
+from pilot.openapi.api_view_model import Result
 from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 
 from pilot.server.knowledge.service import KnowledgeService

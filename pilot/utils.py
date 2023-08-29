@@ -51,19 +51,15 @@ def build_logger(logger_name, logger_filename):
     logging.getLogger().handlers[0].setFormatter(formatter)
 
     # Redirect stdout and stderr to loggers
-    stdout_logger = logging.getLogger("stdout")
-    stdout_logger.setLevel(logging.INFO)
-    sl = StreamToLogger(stdout_logger, logging.INFO)
-    sys.stdout = sl
-
-    stderr_logger = logging.getLogger("stderr")
-    stderr_logger.setLevel(logging.ERROR)
-    sl = StreamToLogger(stderr_logger, logging.ERROR)
-    sys.stderr = sl
-
-    # Get logger
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.INFO)
+    # stdout_logger = logging.getLogger("stdout")
+    # stdout_logger.setLevel(logging.INFO)
+    # sl_1 = StreamToLogger(stdout_logger, logging.INFO)
+    # sys.stdout = sl_1
+    #
+    # stderr_logger = logging.getLogger("stderr")
+    # stderr_logger.setLevel(logging.ERROR)
+    # sl = StreamToLogger(stderr_logger, logging.ERROR)
+    # sys.stderr = sl
 
     # Add a file handler for all loggers
     if handler is None:
@@ -78,6 +74,11 @@ def build_logger(logger_name, logger_filename):
             if isinstance(item, logging.Logger):
                 item.addHandler(handler)
     logging.basicConfig(level=logging.INFO)
+
+    # Get logger
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.INFO)
+
     return logger
 
 

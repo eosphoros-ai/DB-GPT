@@ -119,10 +119,11 @@ class BaseOutputParser(ABC):
             ai_response = ai_response.replace("assistant:", "")
             ai_response = ai_response.replace("Assistant:", "")
             ai_response = ai_response.replace("ASSISTANT:", "")
-            ai_response = ai_response.replace("\n", " ")
             ai_response = ai_response.replace("\_", "_")
             ai_response = ai_response.replace("\*", "*")
             ai_response = ai_response.replace("\t", "")
+
+            ai_response = ai_response.strip().replace("\\n", " ").replace("\n", " ")
             print("un_stream ai response:", ai_response)
             return ai_response
         else:
@@ -204,8 +205,8 @@ class BaseOutputParser(ABC):
             cleaned_output = self.__extract_json(cleaned_output)
         cleaned_output = (
             cleaned_output.strip()
-            .replace("\n", " ")
             .replace("\\n", " ")
+            .replace("\n", " ")
             .replace("\\", " ")
         )
         cleaned_output = self.__illegal_json_ends(cleaned_output)
@@ -226,13 +227,13 @@ class BaseOutputParser(ABC):
         """Instructions on how the LLM output should be formatted."""
         raise NotImplementedError
 
-    @property
-    def _type(self) -> str:
-        """Return the type key."""
-        raise NotImplementedError(
-            f"_type property is not implemented in class {self.__class__.__name__}."
-            " This is required for serialization."
-        )
+    # @property
+    # def _type(self) -> str:
+    #     """Return the type key."""
+    #     raise NotImplementedError(
+    #         f"_type property is not implemented in class {self.__class__.__name__}."
+    #         " This is required for serialization."
+    #     )
 
     def dict(self, **kwargs: Any) -> Dict:
         """Return dictionary representation of output parser."""

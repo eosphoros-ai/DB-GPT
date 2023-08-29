@@ -11,6 +11,7 @@ class Scene:
         param_types: List = [],
         is_inner: bool = False,
         show_disable=False,
+        prepare_scene_code: str = None,
     ):
         self.code = code
         self.name = name
@@ -18,46 +19,43 @@ class Scene:
         self.param_types = param_types
         self.is_inner = is_inner
         self.show_disable = show_disable
+        self.prepare_scene_code = prepare_scene_code
 
 
 class ChatScene(Enum):
     ChatWithDbExecute = Scene(
-        "chat_with_db_execute",
-        "Chat Data",
-        "Dialogue with your private data through natural language.",
-        ["DB Select"],
+        code="chat_with_db_execute",
+        name="Chat Data",
+        describe="Dialogue with your private data through natural language.",
+        param_types=["DB Select"],
     )
+    ExcelLearning = Scene(
+        code="excel_learning",
+        name="Excel Learning",
+        describe="Analyze and summarize your excel files.",
+        is_inner=True,
+    )
+    ChatExcel = Scene(
+        code="chat_excel",
+        name="Chat Excel",
+        describe="Dialogue with your excel, use natural language.",
+        param_types=["File Select"],
+        prepare_scene_code="excel_learning",
+    )
+
     ChatWithDbQA = Scene(
-        "chat_with_db_qa",
-        "Chat DB",
-        "Have a Professional Conversation with Metadata.",
-        ["DB Select"],
+        code="chat_with_db_qa",
+        name="Chat DB",
+        describe="Have a Professional Conversation with Metadata.",
+        param_types=["DB Select"],
     )
     ChatExecution = Scene(
-        "chat_execution",
-        "Plugin",
-        "Use tools through dialogue to accomplish your goals.",
-        ["Plugin Select"],
-        False,
-        True,
+        code="chat_execution",
+        name="Use Plugin",
+        describe="Use tools through dialogue to accomplish your goals.",
+        param_types=["Plugin Select"],
     )
-    ChatDefaultKnowledge = Scene(
-        "chat_default_knowledge",
-        "Chat Default Knowledge",
-        "Dialogue through natural language and private documents and knowledge bases.",
-    )
-    ChatNewKnowledge = Scene(
-        "chat_new_knowledge",
-        "Chat New Knowledge",
-        "Dialogue through natural language and private documents and knowledge bases.",
-        ["Knowledge Select"],
-    )
-    ChatUrlKnowledge = Scene(
-        "chat_url_knowledge",
-        "Chat URL",
-        "Dialogue through natural language and private documents and knowledge bases.",
-        ["Url Input"],
-    )
+
     InnerChatDBSummary = Scene(
         "inner_chat_db_summary", "DB Summary", "Db Summary.", True
     )
@@ -79,6 +77,10 @@ class ChatScene(Enum):
     )
 
     @staticmethod
+    def of_mode(mode):
+        return [x for x in ChatScene._value_ if x.code == mode][0]
+
+    @staticmethod
     def is_valid_mode(mode):
         return any(mode == item.value() for item in ChatScene)
 
@@ -96,3 +98,6 @@ class ChatScene(Enum):
 
     def show_disable(self):
         return self._value_.show_disable
+
+    def is_inner(self):
+        return self._value_.is_inner

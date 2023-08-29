@@ -94,6 +94,15 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         cursor.commit()
         self.connect.commit()
 
+    def update(self, messages: List[OnceConversation]) -> None:
+        cursor = self.connect.cursor()
+        cursor.execute(
+            "UPDATE chat_history set messages=? where conv_uid=?",
+            [json.dumps(messages, ensure_ascii=False), self.chat_seesion_id],
+        )
+        cursor.commit()
+        self.connect.commit()
+
     def clear(self) -> None:
         cursor = self.connect.cursor()
         cursor.execute(
@@ -133,6 +142,23 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
             return data
 
         return []
+
+    def conv_info(self, conv_uid: str = None) -> None:
+        cursor = self.connect.cursor()
+        cursor.execute(
+            "SELECT * FROM chat_history where conv_uid=? ",
+            [conv_uid],
+        )
+        # 获取查询结果字段名
+        fields = [field[0] for field in cursor.description]
+
+        for row in cursor.fetchone():
+            row_dict = {}
+            for i, field in enumerate(fields):
+                row_dict[field] = row[i]
+            return row_dict
+
+        return {}
 
     def get_messages(self) -> List[OnceConversation]:
         cursor = self.connect.cursor()

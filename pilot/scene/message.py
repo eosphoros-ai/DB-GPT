@@ -30,6 +30,8 @@ class OnceConversation:
         self.messages: List[BaseMessage] = []
         self.start_date: str = ""
         self.chat_order: int = 0
+        self.param_type: str = ""
+        self.param_value: str = ""
         self.cost: int = 0
         self.tokens: int = 0
 
@@ -114,6 +116,8 @@ def _conversation_to_dic(once: OnceConversation) -> dict:
         "cost": once.cost if once.cost else 0,
         "tokens": once.tokens if once.tokens else 0,
         "messages": messages_to_dict(once.messages),
+        "param_type": once.param_type,
+        "param_value": once.param_value,
     }
 
 
@@ -128,6 +132,8 @@ def conversation_from_dict(once: dict) -> OnceConversation:
     conversation.tokens = once.get("tokens", 0)
     conversation.start_date = once.get("start_date", "")
     conversation.chat_order = int(once.get("chat_order"))
+    conversation.param_type = once.get("param_type", "")
+    conversation.param_value = once.get("param_value", "")
     print(once.get("messages"))
     conversation.messages = messages_from_dict(once.get("messages", []))
     return conversation

@@ -60,18 +60,13 @@ class BaseChat(ABC):
         arbitrary_types_allowed = True
 
     def __init__(
-        self,
-        chat_mode,
-        chat_session_id,
-        current_user_input,
+        self, chat_mode, chat_session_id, current_user_input, select_param: Any = None
     ):
         self.chat_session_id = chat_session_id
         self.chat_mode = chat_mode
         self.current_user_input: str = current_user_input
         self.llm_model = CFG.LLM_MODEL
         self.llm_echo = False
-        ### can configurable storage methods
-        self.memory = DuckdbHistoryMemory(chat_session_id)
 
         ### load prompt template
         # self.prompt_template: PromptTemplate = CFG.prompt_templates[
@@ -85,8 +80,16 @@ class BaseChat(ABC):
                 proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
+
+        ### can configurable storage methods
+        self.memory = DuckdbHistoryMemory(chat_session_id)
+
         self.history_message: List[OnceConversation] = self.memory.messages()
         self.current_message: OnceConversation = OnceConversation(chat_mode.value())
+        if select_param:
+            if len(chat_mode.param_types()) > 0:
+                self.current_message.param_type = chat_mode.param_types()[0]
+            self.current_message.param_value = select_param
         self.current_tokens_used: int = 0
 
     class Config:
@@ -94,11 +97,6 @@ class BaseChat(ABC):
 
         extra = Extra.forbid
         arbitrary_types_allowed = True
-
-    def __init_history_message(self):
-        self.history_message == self.memory.messages()
-        if not self.history_message:
-            self.memory.create(self.current_user_input, "")
 
     @property
     def chat_type(self) -> str:
@@ -110,6 +108,24 @@ class BaseChat(ABC):
 
     def do_action(self, prompt_response):
         return prompt_response
+
+    def get_llm_speak(self, prompt_define_response):
+        if hasattr(prompt_define_response, "thoughts"):
+            if isinstance(prompt_define_response.thoughts, dict):
+                if "speak" in prompt_define_response.thoughts:
+                    speak_to_user = prompt_define_response.thoughts.get("speak")
+                else:
+                    speak_to_user = str(prompt_define_response.thoughts)
+            else:
+                if hasattr(prompt_define_response.thoughts, "speak"):
+                    speak_to_user = prompt_define_response.thoughts.get("speak")
+                elif hasattr(prompt_define_response.thoughts, "reasoning"):
+                    speak_to_user = prompt_define_response.thoughts.get("reasoning")
+                else:
+                    speak_to_user = prompt_define_response.thoughts
+        else:
+            speak_to_user = prompt_define_response
+        return speak_to_user
 
     def __call_base(self):
         input_values = self.generate_input_values()
@@ -209,23 +225,12 @@ class BaseChat(ABC):
                     ai_response_text
                 )
             )
+            ###  run
             result = self.do_action(prompt_define_response)
 
-            if hasattr(prompt_define_response, "thoughts"):
-                if isinstance(prompt_define_response.thoughts, dict):
-                    if "speak" in prompt_define_response.thoughts:
-                        speak_to_user = prompt_define_response.thoughts.get("speak")
-                    else:
-                        speak_to_user = str(prompt_define_response.thoughts)
-                else:
-                    if hasattr(prompt_define_response.thoughts, "speak"):
-                        speak_to_user = prompt_define_response.thoughts.get("speak")
-                    elif hasattr(prompt_define_response.thoughts, "reasoning"):
-                        speak_to_user = prompt_define_response.thoughts.get("reasoning")
-                    else:
-                        speak_to_user = prompt_define_response.thoughts
-            else:
-                speak_to_user = prompt_define_response
+            ### llm speaker
+            speak_to_user = self.get_llm_speak(prompt_define_response)
+
             view_message = self.prompt_template.output_parser.parse_view_response(
                 speak_to_user, result
             )
@@ -245,6 +250,9 @@ class BaseChat(ABC):
             yield self.stream_call()
         else:
             return self.nostream_call()
+
+    def prepare(self):
+        pass
 
     def generate_llm_text(self) -> str:
         warnings.warn("This method is deprecated - please use `generate_llm_messages`.")
@@ -325,8 +333,8 @@ class BaseChat(ABC):
             for round_conv in self.prompt_template.example_selector.examples():
                 for round_message in round_conv["messages"]:
                     if not round_message["type"] in [
-                        SystemMessage.type,
-                        ViewMessage.type,
+                        ModelMessageRoleType.VIEW,
+                        ModelMessageRoleType.SYSTEM,
                     ]:
                         message_type = round_message["type"]
                         message_content = round_message["data"]["content"]
@@ -351,10 +359,7 @@ class BaseChat(ABC):
                 )
             if len(self.history_message) > self.chat_retention_rounds:
                 for first_message in self.history_message[0]["messages"]:
-                    if not first_message["type"] in [
-                        ViewMessage.type,
-                        SystemMessage.type,
-                    ]:
+                    if not first_message["type"] in [ModelMessageRoleType.VIEW]:
                         message_type = first_message["type"]
                         message_content = first_message["data"]["content"]
                         history_text += (
@@ -366,25 +371,27 @@ class BaseChat(ABC):
                         history_messages.append(
                             ModelMessage(role=message_type, content=message_content)
                         )
-
-                index = self.chat_retention_rounds - 1
-                for round_conv in self.history_message[-index:]:
-                    for round_message in round_conv["messages"]:
-                        if not round_message["type"] in [
-                            SystemMessage.type,
-                            ViewMessage.type,
-                        ]:
-                            message_type = round_message["type"]
-                            message_content = round_message["data"]["content"]
-                            history_text += (
-                                message_type
-                                + ":"
-                                + message_content
-                                + self.prompt_template.sep
-                            )
-                            history_messages.append(
-                                ModelMessage(role=message_type, content=message_content)
-                            )
+                if self.chat_retention_rounds > 1:
+                    index = self.chat_retention_rounds - 1
+                    for round_conv in self.history_message[-index:]:
+                        for round_message in round_conv["messages"]:
+                            if not round_message["type"] in [
+                                ModelMessageRoleType.VIEW,
+                                ModelMessageRoleType.SYSTEM,
+                            ]:
+                                message_type = round_message["type"]
+                                message_content = round_message["data"]["content"]
+                                history_text += (
+                                    message_type
+                                    + ":"
+                                    + message_content
+                                    + self.prompt_template.sep
+                                )
+                                history_messages.append(
+                                    ModelMessage(
+                                        role=message_type, content=message_content
+                                    )
+                                )
 
             else:
                 ### user all history
@@ -392,8 +399,8 @@ class BaseChat(ABC):
                     for message in conversation["messages"]:
                         ### histroy message not have promot and view info
                         if not message["type"] in [
-                            SystemMessage.type,
-                            ViewMessage.type,
+                            ModelMessageRoleType.VIEW,
+                            ModelMessageRoleType.SYSTEM,
                         ]:
                             message_type = message["type"]
                             message_content = message["data"]["content"]
