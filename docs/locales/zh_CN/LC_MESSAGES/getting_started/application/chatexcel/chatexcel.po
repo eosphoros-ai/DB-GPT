@@ -1,0 +1,102 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.6\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-08-29 21:14+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:1
+#: ../../getting_started/application/chatexcel/chatexcel.md:9
+#: 6efcbf4652954b27beb55f600cfe75c7 eefb0c3bc131439fb2dd4045761f1ae9
+msgid "ChatExcel"
+msgstr ""
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:3
+#: 5fc4ddd2690f46658df1e09c601d81ad
+#, fuzzy
+msgid ""
+"![db plugins demonstration](https://github.com/eosphoros-ai/DB-"
+"GPT/assets/13723926/4113ac15-83c2-4350-86c0-5fc795677abd) ChatExcel uses "
+"natural language to analyze and query Excel data.![db plugins "
+"demonstration](../../../../assets/chat_excel/chat_excel_1.png)"
+msgstr "使用自然语言进行Excel数据的分析处理"
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:3
+#: ../../getting_started/application/chatexcel/chatexcel.md:13
+#: ../../getting_started/application/chatexcel/chatexcel.md:17
+#: ../../getting_started/application/chatexcel/chatexcel.md:21
+#: 4c91baf5f0b244abb021f461851674cc 4eead9a4f81e4855a5c362774696999c
+#: 5f309a06170946108ae70806dff157ea 790016c9c68f4a29a84b7ef8e14d6dc2
+#: 93db1eb6af69452982f6028eff626a57 e758c8b320894e2b93f8db78459b7a1f
+#: ea3c99f7eafc4ae0a19706a47e4c7bf6 f18d2b88de244173ab2673f2a5e828c0
+msgid "db plugins demonstration"
+msgstr ""
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:6
+#: 45f137031025409ba2ada9c8f7c5f1e4
+msgid "1.Select And Upload Excel or CSV File"
+msgstr ""
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:7
+#: cd282be2b4ef49ea8b0eaa3d53042f22
+msgid "Select your excel or csv file to upload and start the conversation."
+msgstr "选择你的Excel或者CSV文件上传开始对话"
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:11
+#: a5ebc8643eff4b44a951b28d85488143
+msgid ""
+"The ChatExcel function supports Excel and CSV format files, select the "
+"corresponding file to use."
+msgstr "ChatExcel功能支持Excel和CSV格式的文件，选择对应格式的文件开始使用"
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:13
+#: d52927be09654c8daf29e2ef0c60a671
+msgid ""
+"![db plugins "
+"demonstration](../../../../assets/chat_excel/chat_excel_2.png) ![db "
+"plugins demonstration](../../../../assets/chat_excel/chat_excel_3.png)"
+msgstr ""
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:16
+#: d86202165fdc4da6be06024b45f9af55
+msgid "2.Wait for Data Processing"
+msgstr "等待数据处理"
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:17
+#: 3de7205fbdc741e2b79996d67264c058
+msgid ""
+"After the data is uploaded, it will first learn and process the data "
+"structure and field meaning. ![db plugins "
+"demonstration](../../../../assets/chat_excel/chat_excel_4.png)"
+msgstr "等待数据上传完成，会自动进行数据结构的学习和处理"
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:20
+#: fb0620dec5a24b469ceccf86e918fe54
+msgid "3.Use Data Analysis Calculation"
+msgstr "开始使用数据分析计算"
+
+#: ../../getting_started/application/chatexcel/chatexcel.md:21
+#: 221733f01fe04e38b19f191d4001c7a7
+msgid ""
+"Now you can use natural language to analyze and query data in the dialog "
+"box. ![db plugins "
+"demonstration](../../../../assets/chat_excel/chat_excel_5.png) ![db "
+"plugins demonstration](../../../../assets/chat_excel/chat_excel_6.png) "
+"![db plugins "
+"demonstration](../../../../assets/chat_excel/chat_excel_7.png)"
+msgstr "现在可以开始进行自然语言进行数据的分析查询对话了"
+

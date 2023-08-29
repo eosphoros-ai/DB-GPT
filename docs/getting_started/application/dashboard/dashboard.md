@@ -29,9 +29,8 @@ data in pilot/mock_datas/, you should follow the steps.
 #### 4.Input your analysis goals
 
 ![document](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/3f427350-5bd5-4675-8f89-1bd5c63ff2c6)
-![document](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/3d14a2da-165e-4b2f-a921-325c20fe5ae9)
+![db plugins demonstration](../../../../assets/chat_dashboard/chat_dashboard_1.png)
 
 #### 5.Adjust and modify your report
-
-![upload](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/cb802b94-041b-44b4-b6ec-891bf8da52a4)
+![db plugins demonstration](../../../../assets/chat_dashboard/chat_dashboard_2.png)
 

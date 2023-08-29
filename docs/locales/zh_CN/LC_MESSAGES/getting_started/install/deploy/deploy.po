@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-29 20:30+0800\n"
+"POT-Creation-Date: 2023-08-29 20:50+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,34 +20,34 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/install/deploy/deploy.md:1
-#: 963de2c147e4491085e40a367ede1cb3
+#: b4f766ca21d241e2849ee0a277a0e8f0
 msgid "Installation From Source"
 msgstr "源码安装"
 
 #: ../../getting_started/install/deploy/deploy.md:3
-#: 3597fef8c1c24663ba9ddf0240dd8a1e
+#: 9cf72ef201ba4c7a99da8d7de9249cf4
 msgid ""
 "This tutorial gives you a quick walkthrough about use DB-GPT with you "
 "environment and data."
 msgstr "本教程为您提供了关于如何使用DB-GPT的使用指南。"
 
 #: ../../getting_started/install/deploy/deploy.md:5
-#: e9bd2165f24e41c2bebb4fed1672fd54
+#: b488acb9552043df96e9f01277375b56
 msgid "Installation"
 msgstr "安装"
 
 #: ../../getting_started/install/deploy/deploy.md:7
-#: 7a52cf49d60a4e76a43d8e534dcac6b8
+#: e1eb3aafea0c4b82b8d8163b947677dd
 msgid "To get started, install DB-GPT with the following steps."
 msgstr "请按照以下步骤安装DB-GPT"
 
 #: ../../getting_started/install/deploy/deploy.md:9
-#: 4dbc9d0146bb4574b31222a14c45eb46
+#: 4139c4e62e874dc58136b1f8fe0715fe
 msgid "1. Hardware Requirements"
 msgstr "1. 硬件要求"
 
 #: ../../getting_started/install/deploy/deploy.md:10
-#: eee7223178704420a179781df476e855
+#: c34a204cfa6e4973bfd94e683195c17b
 msgid ""
 "As our project has the ability to achieve ChatGPT performance of over "
 "85%, there are certain hardware requirements. However, overall, the "
@@ -56,176 +56,176 @@ msgid ""
 msgstr "由于我们的项目有能力达到85%以上的ChatGPT性能，所以对硬件有一定的要求。但总体来说，我们在消费级的显卡上即可完成项目的部署使用，具体部署的硬件说明如下:"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 21613161531642fb8d62d589b8d4feaa
+#: 3a92203e861b42c9af3d4b687d83de5e
 msgid "GPU"
 msgstr "GPU"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: cf5a8b7a75034011b7305d8bd09cf69c e8b55944bb9d4b91976027b3a2ae09d0
+#: 6050741571574eb8b9e498a5b3a7e347 c0a7e2aecb4b48949c3e5a4d479ee7b5
 msgid "VRAM Size"
 msgstr "显存"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 36641aaf9b81420fae3c2a2d89816d8a
+#: 247159f568e4476ca6c5e78015c7a8f0
 msgid "Performance"
 msgstr "Performance"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: ebc46f5c3f944ca6944774ac264ac801
+#: 871113cbc58743ef989a366b76e8c645
 msgid "RTX 4090"
 msgstr "RTX 4090"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: c387fa1e47ec4ae4bb145fbd4c18cd99 efbe071097b4421dbf06080d4ab1ec70
+#: 81327b7e9a984ec99cae779743d174df c237f392162c42d28ec694d17c3f281c
 msgid "24 GB"
 msgstr "24 GB"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 48d5632d53e0413d937bd4c13716591a
+#: 6e19f23bae05467ba03f1ebb194e0c03
 msgid "Smooth conversation inference"
 msgstr "Smooth conversation inference"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 5d7a590b885c4f128716da6347d91304
+#: 714a48b2c4a943819819a6af034f1998
 msgid "RTX 3090"
 msgstr "RTX 3090"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 93a35c5359e9432b9fac149e67087b4b
+#: 06dae55d443c48b1b3fbab85222c3adb
 msgid "Smooth conversation inference, better than V100"
 msgstr "Smooth conversation inference, better than V100"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: ec6d393791ae49eea9b2ff79f803e76c
+#: 5d50db167b244d65a8be1dab4acda37d
 msgid "V100"
 msgstr "V100"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 7da6411bc1c642e9a1063e988044e9f2 852dac8854514958b45f7f125c11f625
+#: 0d72262c85d148d8b1680d1d9f8fa2c9 e10db632889444a78e123773a30f23cf
 msgid "16 GB"
 msgstr "16 GB"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 1a3c78ad04114d5ebf25edba7ebdfcb7 b8ed26b4da564660bd70f0a3af1282a8
+#: 1c0379e653cf46f19d83535c568c54c8 aee8eb48e7804572af351dcfaea5b0fb
 msgid "Conversation inference possible, noticeable stutter"
 msgstr "Conversation inference possible, noticeable stutter"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 36603d7af55742eebc2f023fdf798f43
+#: 5bc90343dcef48c197438f01efe52bfc
 msgid "T4"
 msgstr "T4"
 
 #: ../../getting_started/install/deploy/deploy.md:19
-#: 0a4d0daf5d44421893db967825c0e158
+#: c9b5f973d19645d39b1892c00526afa7
 msgid ""
 "if your VRAM Size is not enough, DB-GPT supported 8-bit quantization and "
 "4-bit quantization."
 msgstr "如果你的显存不够，DB-GPT支持8-bit和4-bit量化版本"
 
 #: ../../getting_started/install/deploy/deploy.md:21
-#: 3523d76dc2a8414495ad46f72c304226
+#: 5e488271eede411d882f62ec8524dd4a
 msgid ""
 "Here are some of the VRAM size usage of the models we tested in some "
 "common scenarios."
 msgstr "这里是量化版本的相关说明"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 8ff21b833bf64962901e2e7a52e1322a
+#: 2cc65f16fa364088bedd0e58b6871ec8
 msgid "Model"
 msgstr "Model"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: be429d17a47643c797d989148d62583a
+#: d0e1a0d418f74e4b9f5922b17f0c8fcf
 msgid "Quantize"
 msgstr "Quantize"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 2ec73c552480461dada4f44763c4623e c51b0f85b34845798d926db31eaf720c
+#: 460b418ab7eb402eae7a0f86d1fda4bf 5e456423a9fa4c0392b08d32f3082f6f
 msgid "vicuna-7b-v1.5"
 msgstr "vicuna-7b-v1.5"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 2550147d36074525b23021a14dc55b24 5200cf5ca316459184cd247285adeb9c
-#: 9698f16cfa3d4ac589e7741e2371766c a3c90ef3728240a9927da25688ca500b
-#: c197d7bfe2be4f29995d6e6882a73c36 c8742a66fae049f9b2c6d333dd3fc209
-#: ed4e5c0cc67c4cd3acbb45def0dbac67
+#: 0f290c12b9324a07affcfd66804b82d7 29c81ce163e749b99035942a3b18582a
+#: 3a4f4325774d452f8c174cac5fe8de47 584f986a1afb4086a0382a9f7e79c55f
+#: 994c744ac67249f4a43b3bba360c0bbf aa9c82f660454143b9212842ffe0e0d6
+#: ac7b00313284410b9253c4a768a30f0c
 msgid "4-bit"
 msgstr "4-bit"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 1985bf309e324843aa849c38c9819b03 998c11e1c9b846d596c4423a22a438c8
-#: ffe2badbf75b4f119e22481b47866cc5
+#: 27401cbb0f2542e2aaa449a586aad2d1 2a1d2d10001f4d9f9b9961c28c592280
+#: b69a59c6e4a7458c91be814a98502632
 msgid "8 GB"
 msgstr "8 GB"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 23fed1f7361b46139294f979144f55b9 44b5316ad4be45acaca850ac350613dd
-#: 5d2642a53e444757b176c8ff86504f45 5e9a0cf9bab54b6ea805dd4c9b209b51
-#: 6a2ffb34d35a4d64bcb18d88b6ed3e83 b70e17fc9a184074ac4bc641312fc8e8
-#: bb6bd13b7d09417ea26949cf385d037c
+#: 0a15518df1b94492b610e47f3c7bb4f6 1f1852ceae0b4c21a020dc9ef4f8b20b
+#: 89ad803f6bd24b5d9708a6d4bd48a54f ac7c222678d34637a03546dcb5949668
+#: b12e1599bdcb4d27ad4e4a83f12de916 c80ba4ddc1634093842a6f284b7b22bb
+#: f63b900e4b844b3196c4c221b36d31f7
 msgid "8-bit"
 msgstr "8-bit"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 0718757036b04690bd6fa98959ae41d3 2401f442291c4fd8a7fdf69d1745b604
-#: 3c3af4923aa5498ca85d87610712f9ff 620ef43ffb5441a7ac0bfcd920729518
-#: bf626548d1624794ad4e16f0acbdf59f e24c281f31b44b89bb1a9151b7e0ba9a
+#: 02f72ed48b784b05b2fcaf4ea33fcba8 17285314376044bf9d9a82f9001f39dc
+#: 403178173a784bdf8d02fe856849a434 4875c6b595484091b622602d9ef0d3e8
+#: 4b11125d4b0c40c488bffb130f4f2b9f e2418c76e7e04101821f29650d111a4a
 msgid "12 GB"
 msgstr "12 GB"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 685bc5ce8e4a411a8f59026674b5967d 8223632d5da5462b977c3bd9cb2731a2
+#: 01dfd16f70cf4128a49ca7bc79f77042 a615efffecb24addba759d05ef61a1c0
 msgid "vicuna-13b-v1.5"
 msgstr "vicuna-13b-v1.5"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 09e37f82a825411191ab74a634706866 80138163ba034d819eeb165384392655
-#: da076416fa8c4fb7b28939ca7c76d06b
+#: 412ddfa6e6fb4567984f757cf74b3bfc 529650341d96466a93153d58ddef0ec9
+#: 6176929d59bb4e31a37cbba8a81a489f
 msgid "20 GB"
 msgstr "20 GB"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 4551174e7f8449bd93fb14de039ed400 9879cd654383482784992f410ba478aa
+#: 566b7aa7bc88421a9364cef6bfbeae48 ae32a218d07e44c796ca511972ea2cb0
 msgid "llama-2-7b"
 msgstr "llama-2-7b"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 0a74ee29547445e4a1389386249528a4 af6fa6d9dec54179808820fda8b8210b
+#: 1ac748eb518b4017accb98873fe1a8e5 528109c765e54b3caf284e7794abd468
 msgid "llama-2-13b"
 msgstr "llama-2-13b"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 1aadc9ec7645467596e991f770e5bce5 32aa71dcf6d9497ba48af4c2c192e3ef
+#: dfb5c0fa9e82423ab1de9256b3b3f215 f861be75871d40849f896859d0b8be4c
 msgid "llama-2-70b"
 msgstr "llama-2-70b"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 1e63e7f32ec74f4e8290254ce348c50d
+#: 5568529a82cd4c49812ab2fd46ff9bf0
 msgid "48 GB"
 msgstr "48 GB"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: d5416570171e49a88a75161f4e5f0c77
+#: 4ba730f4faa64df9a0a9f72cb3eb0c88
 msgid "80 GB"
 msgstr "80 GB"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 598393baadb7468ca649db8de42fd413 f6aaa22133ac4721b6740ab75c43819d
+#: 47221748d6d5417abc25e28b6905bc6f 6023d535095a4cb9a99343c2dfddc927
 msgid "baichuan-7b"
 msgstr "baichuan-7b"
 
 #: ../../getting_started/install/deploy/deploy.md
-#: 454e6b05fc2f4f318afc7d7e5f4477b9 ebd9204f511949d695b20caa8d2b5701
+#: 55011d4e0bed451dbdda75cb8b258fa5 bc296e4bd582455ca64afc74efb4ebc8
 msgid "baichuan-13b"
 msgstr "baichuan-13b"
 
 #: ../../getting_started/install/deploy/deploy.md:40
-#: a74a45bb031c41a9a88fab4023791430
+#: 4bfd52634a974776933c93227f419cdb
 msgid "2. Install"
 msgstr "2. Install"
 
 #: ../../getting_started/install/deploy/deploy.md:45
-#: 480a54d6f3b944b2a26414561ccd5cf4
+#: 647f09001d4c4124bed11da272306946
 msgid ""
 "We use Sqlite as default database, so there is no need for database "
 "installation.  If you choose to connect to other databases, you can "
@@ -240,12 +240,12 @@ msgstr ""
 " Miniconda](https://docs.conda.io/en/latest/miniconda.html)"
 
 #: ../../getting_started/install/deploy/deploy.md:54
-#: 8d9d99b9b3f6444f8e2b289ff0b3d1cf
+#: bf9fcf320ca94dbd855016088800b1a9
 msgid "Before use DB-GPT Knowledge"
 msgstr "在使用知识库之前"
 
 #: ../../getting_started/install/deploy/deploy.md:60
-#: 3ba68f5b12134958ad3495fc03e6261f
+#: e0cb6cb46a474c4ca16edf73c82b58ca
 msgid ""
 "Once the environment is installed, we have to create a new folder "
 "\"models\" in the DB-GPT project, and then we can put all the models "
@@ -253,27 +253,27 @@ msgid ""
 msgstr "如果你已经安装好了环境需要创建models, 然后到huggingface官网下载模型"
 
 #: ../../getting_started/install/deploy/deploy.md:63
-#: ae6612ce4b6845cfa9396fcad5549bd0
+#: 03b1bf35528d4cdeb735047aa840d6fe
 msgid "Notice make sure you have install git-lfs"
 msgstr ""
 
 #: ../../getting_started/install/deploy/deploy.md:65
-#: fbfa0caf0615484bbe861b327a67c847
+#: f8183907e7c044f695f86943b412d84a
 msgid "centos:yum install git-lfs"
 msgstr ""
 
 #: ../../getting_started/install/deploy/deploy.md:67
-#: ca10fedecab243fba8a0d11b14ccddde
+#: 3bc042bd5cac4007afc9f68e7b5044fe
 msgid "ubuntu:app-get install git-lfs"
 msgstr ""
 
 #: ../../getting_started/install/deploy/deploy.md:69
-#: a3026601a2304ce3a38e162cb7f44d2f
+#: 5915ed1290e84ed9b6782c6733d88891
 msgid "macos:brew install git-lfs"
 msgstr ""
 
 #: ../../getting_started/install/deploy/deploy.md:86
-#: ffda61cebb534429bfa1d3a375647077
+#: 104f1e75b0a54300af440ca3b64217a3
 msgid ""
 "The model files are large and will take a long time to download. During "
 "the download, let's configure the .env file, which needs to be copied and"
@@ -281,7 +281,7 @@ msgid ""
 msgstr "模型文件很大，需要很长时间才能下载。在下载过程中，让我们配置.env文件，它需要从。env.template中复制和创建。"
 
 #: ../../getting_started/install/deploy/deploy.md:88
-#: f30593a4496c498d807bc1bf48fc333e
+#: 228c6729c23f4e17b0475b834d7edb01
 msgid ""
 "if you want to use openai llm service, see [LLM Use FAQ](https://db-"
 "gpt.readthedocs.io/en/latest/getting_started/faq/llm/llm_faq.html)"
@@ -290,19 +290,19 @@ msgstr ""
 "gpt.readthedocs.io/en/latest/getting_started/faq/llm/llm_faq.html)"
 
 #: ../../getting_started/install/deploy/deploy.md:91
-#: adbf4130afb442e0b2ebe9ecadc27927
+#: c444514ba77b46468721888fe7df9e74
 msgid "cp .env.template .env"
 msgstr "cp .env.template .env"
 
 #: ../../getting_started/install/deploy/deploy.md:94
-#: 67a0efdf4138465b84f50946c50aef33
+#: 1514e937757e461189b369da73884a6c
 msgid ""
 "You can configure basic parameters in the .env file, for example setting "
 "LLM_MODEL to the model to be used"
 msgstr "您可以在.env文件中配置基本参数，例如将LLM_MODEL设置为要使用的模型。"
 
 #: ../../getting_started/install/deploy/deploy.md:96
-#: ec7328fea11344b8ac6b821a1cd10531
+#: 4643cdf76bd947fdb86fc4691b98935c
 msgid ""
 "([Vicuna-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5) based on "
 "llama-2 has been released, we recommend you set `LLM_MODEL=vicuna-"
@@ -313,37 +313,37 @@ msgstr ""
 "目前Vicuna-v1.5模型(基于llama2)已经开源了，我们推荐你使用这个模型通过设置LLM_MODEL=vicuna-13b-v1.5"
 
 #: ../../getting_started/install/deploy/deploy.md:98
-#: 386d91268dc54f3a92172758afe25d3e
+#: acf91810f12b4ad0bd830299eb24850f
 msgid "3. Run"
 msgstr "3. Run"
 
 #: ../../getting_started/install/deploy/deploy.md:100
-#: 4672d31b78dc44719ad41f05fe0bf103
+#: ea82d67451724c2399f8903ea3c52dff
 msgid "**(Optional) load examples into SQLlite**"
 msgstr ""
 
 #: ../../getting_started/install/deploy/deploy.md:105
-#: 174bb3d5c82c41ad92fa2147dbfe0bdc
+#: a00987ec21364389b7feec58b878c2a1
 msgid "On windows platform:"
 msgstr ""
 
 #: ../../getting_started/install/deploy/deploy.md:110
-#: aa25742904354373a10b8aaa62fa6005
+#: db5c000e6abe4e1cb94e6f4f14247eb7
 msgid "1.Run db-gpt server"
 msgstr "1.Run db-gpt server"
 
 #: ../../getting_started/install/deploy/deploy.md:116
-#: 86a196e04cd1459ab83c0402b6c73c25
+#: dbeecff230174132b85d1d4549d3c07e
 msgid "Open http://localhost:5000 with your browser to see the product."
 msgstr "打开浏览器访问http://localhost:5000"
 
 #: ../../getting_started/install/deploy/deploy.md:119
-#: e53c6021747e48298a9a94b33161aba2
+#: 22d6321e6226472e878a95d3c8a9aad8
 msgid "If you want to access an external LLM service, you need to"
 msgstr ""
 
 #: ../../getting_started/install/deploy/deploy.md:121
-#: a5d7891ca43a4da8a60e925cfdff829b
+#: 561dfe9a864540d6ac582f0977b2c9ad
 msgid ""
 "1.set the variables LLM_MODEL=YOUR_MODEL_NAME, "
 "MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env "
@@ -351,12 +351,12 @@ msgid ""
 msgstr ""
 
 #: ../../getting_started/install/deploy/deploy.md:123
-#: adc8ccbdda9743aab58a3fdb8aa593fd
+#: 55ceca48e40147a99ab4d23392349156
 msgid "2.execute dbgpt_server.py in light mode"
 msgstr ""
 
 #: ../../getting_started/install/deploy/deploy.md:126
-#: 29fb5c398fd94f5eaed6382ec7332097
+#: 02d42956a2734c739ad1cb9ce59142ce
 msgid ""
 "If you want to learn about dbgpt-webui, read https://github./csunny/DB-"
 "GPT/tree/new-page-framework/datacenter"
@@ -365,13 +365,13 @@ msgstr ""
 "framework/datacenter"
 
 #: ../../getting_started/install/deploy/deploy.md:132
-#: d5a6113dc2844430bde6d1e62ae70eb9
+#: d813eb43b97445a08e058d336249e6f6
 #, fuzzy
 msgid "Multiple GPUs"
 msgstr "4. Multiple GPUs"
 
 #: ../../getting_started/install/deploy/deploy.md:134
-#: 15d02416586344d19adfc39f6d05ee9f
+#: 0ac795f274d24de7b37f9584763e113d
 msgid ""
 "DB-GPT will use all available gpu by default. And you can modify the "
 "setting `CUDA_VISIBLE_DEVICES=0,1` in `.env` file to use the specific gpu"
@@ -379,32 +379,32 @@ msgid ""
 msgstr "DB-GPT默认加载可利用的gpu，你也可以通过修改 在`.env`文件 `CUDA_VISIBLE_DEVICES=0,1`来指定gpu IDs"
 
 #: ../../getting_started/install/deploy/deploy.md:136
-#: d6875130c3ba4bbf80a046a77c815f26
+#: 2be557e2b5414d478d375bce0474558d
 msgid ""
 "Optionally, you can also specify the gpu ID to use before the starting "
 "command, as shown below:"
 msgstr "你也可以指定gpu ID启动"
 
 #: ../../getting_started/install/deploy/deploy.md:146
-#: b2d5855d7cf946a1a00ec55e0328b1a6
+#: 222f1ebb5cb64675a0c319552d14303e
 msgid ""
 "You can modify the setting `MAX_GPU_MEMORY=xxGib` in `.env` file to "
 "configure the maximum memory used by each GPU."
 msgstr "同时你可以通过在.env文件设置`MAX_GPU_MEMORY=xxGib`修改每个GPU的最大使用内存"
 
 #: ../../getting_started/install/deploy/deploy.md:148
-#: 385caf97c7d149b1bb1852198c8e04de
+#: fb92349f9fe049d5b23b9ead17caf895
 #, fuzzy
 msgid "Not Enough Memory"
 msgstr "5. Not Enough Memory"
 
 #: ../../getting_started/install/deploy/deploy.md:150
-#: 30ec48dfe9f44ef88e55f7218b2d3967
+#: 30a1105d728a474c9cd14638feab4b59
 msgid "DB-GPT supported 8-bit quantization and 4-bit quantization."
 msgstr "DB-GPT 支持 8-bit quantization 和 4-bit quantization."
 
 #: ../../getting_started/install/deploy/deploy.md:152
-#: dad6fbec89104dd9b11ae6778942bf69
+#: eb2e576379434bfa828c98ee374149f5
 msgid ""
 "You can modify the setting `QUANTIZE_8bit=True` or `QUANTIZE_4bit=True` "
 "in `.env` file to use quantization(8-bit quantization is enabled by "
@@ -412,7 +412,7 @@ msgid ""
 msgstr "你可以通过在.env文件设置`QUANTIZE_8bit=True` or `QUANTIZE_4bit=True`"
 
 #: ../../getting_started/install/deploy/deploy.md:154
-#: d6eebf82de5b410a979e978e489d5317
+#: eeaecfd77d8546a6afc1357f9f1684bf
 msgid ""
 "Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit"
 " quantization can run with 48 GB of VRAM."
