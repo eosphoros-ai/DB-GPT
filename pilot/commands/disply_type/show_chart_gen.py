@@ -118,7 +118,8 @@ def response_line_chart(speak: str, df: DataFrame) -> str:
     else:
         sns.lineplot(data=df, x=x, y=y, ax=ax,  palette="Set2")
 
-    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: '{:,.0f}'.format(y)))
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda y, _: '{:,.0f}'.format(y)))
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: '{:,.0f}'.format(x)))
 
     chart_name = "line_" + str(uuid.uuid1()) + ".png"
     chart_path = static_message_img_path + "/" + chart_name
@@ -185,7 +186,8 @@ def response_bar_chart(speak: str, df: DataFrame) -> str:
         sns.barplot(data=df, x=x, y=y, hue=hue, palette="Set2", ax=ax)
 
     # 设置 y 轴刻度格式为普通数字格式
-    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: '{:,.0f}'.format(y)))
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda y, _: '{:,.0f}'.format(y)))
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: '{:,.0f}'.format(x)))
 
     chart_name = "bar_" + str(uuid.uuid1()) + ".png"
     chart_path = static_message_img_path + "/" + chart_name
