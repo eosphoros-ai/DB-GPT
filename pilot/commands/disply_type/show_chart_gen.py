@@ -155,6 +155,7 @@ def response_bar_chart(speak: str, df: DataFrame) -> str:
 
     fig, ax = plt.subplots(figsize=(8, 5), dpi=100)
 
+    hue = None
     x,y, non_num_columns, num_colmns =data_pre_classification(df)
     if len(non_num_columns) >= 1:
         hue = non_num_columns[0]
