@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
+import itertools
 
 from pilot.model.base import ModelInstance
 
@@ -55,6 +56,15 @@ class ModelRegistry(ABC):
 
         Returns:
         - List[ModelInstance]: A list of instances for the given model.
+        """
+
+    @abstractmethod
+    async def get_all_model_instances(self) -> List[ModelInstance]:
+        """
+        Fetch all instances of all models
+
+        Returns:
+        - List[ModelInstance]: A list of instances for the all models.
         """
 
     async def select_one_health_instance(self, model_name: str) -> ModelInstance:
@@ -154,11 +164,14 @@ class EmbeddedModelRegistry(ModelRegistry):
     async def get_all_instances(
         self, model_name: str, healthy_only: bool = False
     ) -> List[ModelInstance]:
-        print(self.registry)
         instances = self.registry[model_name]
         if healthy_only:
             instances = [ins for ins in instances if ins.healthy == True]
         return instances
+
+    async def get_all_model_instances(self) -> List[ModelInstance]:
+        print(self.registry)
+        return list(itertools.chain(*self.registry.values()))
 
     async def send_heartbeat(self, instance: ModelInstance) -> bool:
         _, exist_ins = self._get_instances(
@@ -192,6 +205,10 @@ class ModelRegistryClient(ModelRegistry):
     async def get_all_instances(
         self, model_name: str, healthy_only: bool = False
     ) -> List[ModelInstance]:
+        pass
+
+    @api_remote(path="/api/controller/models")
+    async def get_all_model_instances(self) -> List[ModelInstance]:
         pass
 
     @api_remote(path="/api/controller/models")

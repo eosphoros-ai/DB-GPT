@@ -5,8 +5,8 @@ import logging
 import logging.handlers
 import os
 import sys
+import asyncio
 
-import torch
 from pilot.configs.model_config import LOGDIR
 
 server_error_msg = (
@@ -17,6 +17,8 @@ handler = None
 
 
 def get_gpu_memory(max_gpus=None):
+    import torch
+
     gpu_memory = []
     num_gpus = (
         torch.cuda.device_count()
@@ -130,3 +132,15 @@ def pretty_print_semaphore(semaphore):
     if semaphore is None:
         return "None"
     return f"Semaphore(value={semaphore._value}, locked={semaphore.locked()})"
+
+
+def get_or_create_event_loop() -> asyncio.BaseEventLoop:
+    try:
+        loop = asyncio.get_event_loop()
+    except Exception as e:
+        if not "no running event loop" in str(e):
+            raise e
+        logging.warning("Cant not get running event loop, create new event loop now")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop

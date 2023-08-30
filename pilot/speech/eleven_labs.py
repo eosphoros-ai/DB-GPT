@@ -2,7 +2,6 @@
 import os
 
 import requests
-from playsound import playsound
 
 from pilot.configs.config import Config
 from pilot.speech.base import VoiceBase
@@ -70,6 +69,7 @@ class ElevenLabsSpeech(VoiceBase):
             bool: True if the request was successful, False otherwise
         """
         from pilot.logs import logger
+        from playsound import playsound
 
         tts_url = (
             f"https://api.elevenlabs.io/v1/text-to-speech/{self._voices[voice_index]}"

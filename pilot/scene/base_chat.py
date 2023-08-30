@@ -28,10 +28,7 @@ from pilot.memory.chat_history.mem_history import MemHistoryMemory
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 
 from pilot.configs.model_config import LOGDIR, DATASETS_DIR
-from pilot.utils import (
-    build_logger,
-    server_error_msg,
-)
+from pilot.utils import build_logger, server_error_msg, get_or_create_event_loop
 from pilot.scene.base_message import (
     BaseMessage,
     SystemMessage,
@@ -222,13 +219,10 @@ class BaseChat(ABC):
         return self.current_ai_response()
 
     def _blocking_stream_call(self):
-        import asyncio
-
         logger.warn(
             "_blocking_stream_call is only temporarily used in webserver and will be deleted soon, please use stream_call to replace it for higher performance"
         )
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        loop = get_or_create_event_loop()
         async_gen = self.stream_call()
         while True:
             try:
@@ -238,13 +232,10 @@ class BaseChat(ABC):
                 break
 
     def _blocking_nostream_call(self):
-        import asyncio
-
         logger.warn(
             "_blocking_nostream_call is only temporarily used in webserver and will be deleted soon, please use nostream_call to replace it for higher performance"
         )
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        loop = get_or_create_event_loop()
         return loop.run_until_complete(self.nostream_call())
 
     def call(self):

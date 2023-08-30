@@ -184,6 +184,19 @@ class BaseParameters:
 
         return updated
 
+    def __str__(self) -> str:
+        class_name = self.__class__.__name__
+        parameters = [
+            f"\n\n=========================== {class_name} ===========================\n"
+        ]
+        for field_info in fields(self):
+            value = getattr(self, field_info.name)
+            parameters.append(f"{field_info.name}: {value}")
+        parameters.append(
+            "\n======================================================================\n\n"
+        )
+        return "\n".join(parameters)
+
 
 @dataclass
 class ModelWorkerParameters(BaseParameters):

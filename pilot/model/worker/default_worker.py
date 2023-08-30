@@ -4,12 +4,12 @@ from typing import Dict, Iterator, List
 
 import torch
 from pilot.configs.model_config import DEVICE
-from pilot.model.adapter import get_llm_model_adapter
+from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper
 from pilot.model.base import ModelOutput
 from pilot.model.loader import ModelLoader, _get_model_real_path
 from pilot.model.parameter import EnvArgumentParser, ModelParameters
 from pilot.model.worker.base import ModelWorker
-from pilot.server.chat_adapter import get_llm_chat_adapter
+from pilot.server.chat_adapter import get_llm_chat_adapter, BaseChatAdpter
 from pilot.utils.model_utils import _clear_torch_cache
 
 logger = logging.getLogger("model_worker")
@@ -20,6 +20,8 @@ class DefaultModelWorker(ModelWorker):
         self.model = None
         self.tokenizer = None
         self._model_params = None
+        self.llm_adapter: BaseLLMAdaper = None
+        self.llm_chat_adapter: BaseChatAdpter = None
 
     def load_worker(self, model_name: str, model_path: str, **kwargs) -> None:
         if model_path.endswith("/"):
@@ -28,9 +30,9 @@ class DefaultModelWorker(ModelWorker):
         self.model_name = model_name
         self.model_path = model_path
 
-        llm_adapter = get_llm_model_adapter(self.model_name, self.model_path)
-        model_type = llm_adapter.model_type()
-        self.param_cls = llm_adapter.model_param_class(model_type)
+        self.llm_adapter = get_llm_model_adapter(self.model_name, self.model_path)
+        model_type = self.llm_adapter.model_type()
+        self.param_cls = self.llm_adapter.model_param_class(model_type)
 
         self.llm_chat_adapter = get_llm_chat_adapter(self.model_name, self.model_path)
         self.generate_stream_func = self.llm_chat_adapter.get_generate_stream_func(
@@ -50,12 +52,14 @@ class DefaultModelWorker(ModelWorker):
         param_cls = self.model_param_class()
         model_args = EnvArgumentParser()
         env_prefix = EnvArgumentParser.get_env_prefix(self.model_name)
+        model_type = self.llm_adapter.model_type()
         model_params: ModelParameters = model_args.parse_args_into_dataclass(
             param_cls,
             env_prefix=env_prefix,
             command_args=command_args,
             model_name=self.model_name,
             model_path=self.model_path,
+            model_type=model_type,
         )
         if not model_params.device:
             model_params.device = DEVICE

@@ -75,13 +75,19 @@ app.include_router(api_editor_route_v1, prefix="/api")
 app.include_router(knowledge_router)
 # app.include_router(api_editor_route_v1)
 
+
 def mount_static_files(app):
     os.makedirs(static_message_img_path, exist_ok=True)
     app.mount(
-        "/images", StaticFiles(directory=static_message_img_path, html=True), name="static2"
+        "/images",
+        StaticFiles(directory=static_message_img_path, html=True),
+        name="static2",
     )
-    app.mount("/_next/static", StaticFiles(directory=static_file_path + "/_next/static"))
+    app.mount(
+        "/_next/static", StaticFiles(directory=static_file_path + "/_next/static")
+    )
     app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
+
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 

@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 import itertools
 import json
 import os
@@ -147,7 +148,7 @@ class LocalWorkerManager(WorkerManager):
         self.model_registry = model_registry
 
     def _worker_key(self, worker_type: str, model_name: str) -> str:
-        return f"$${worker_type}_$$_{model_name}"
+        return f"{model_name}@{worker_type}"
 
     def add_worker(
         self,
@@ -311,7 +312,9 @@ class LocalWorkerManager(WorkerManager):
             # Apply to all workers
             worker_instances = list(itertools.chain(*self.workers.values()))
             logger.info(f"Apply to all workers: {worker_instances}")
-        await asyncio.gather(*(apply_func(worker) for worker in worker_instances))
+        return await asyncio.gather(
+            *(apply_func(worker) for worker in worker_instances)
+        )
 
     async def _start_all_worker(
         self, apply_req: WorkerApplyRequest
@@ -422,6 +425,28 @@ class RemoteWorkerManager(LocalWorkerManager):
             )
             worker_instances.append(wr)
         return worker_instances
+
+    async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:
+        async def _remote_apply_func(worker_run_data: WorkerRunData):
+            worker_addr = worker_run_data.worker.worker_addr
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    worker_addr + "/apply",
+                    headers=worker_run_data.worker.headers,
+                    json=apply_req.dict(),
+                    timeout=worker_run_data.worker.timeout,
+                )
+                if response.status_code == 200:
+                    output = WorkerApplyOutput(**response.json())
+                    logger.info(f"worker_apply success: {output}")
+                else:
+                    output = WorkerApplyOutput(message=response.text)
+                    logger.warn(f"worker_apply failed: {output}")
+                return output
+
+        results = await self._apply_worker(apply_req, _remote_apply_func)
+        if results:
+            return results[0]
 
 
 class WorkerManagerAdapter(WorkerManager):

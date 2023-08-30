@@ -1,6 +1,7 @@
 import httpx
 from inspect import signature
 import typing_inspect
+import logging
 from typing import get_type_hints, List, Type, TypeVar, Union, Optional, Tuple
 from dataclasses import is_dataclass, asdict
 
@@ -21,7 +22,9 @@ def _api_remote(path, method="GET"):
             raise TypeError("Return type must be annotated in the decorated function.")
 
         actual_dataclass = _extract_dataclass_from_generic(return_type)
-        print(f"return_type: {return_type}, actual_dataclass: {actual_dataclass}")
+        logging.debug(
+            f"return_type: {return_type}, actual_dataclass: {actual_dataclass}"
+        )
         if not actual_dataclass:
             actual_dataclass = return_type
         sig = signature(func)
@@ -57,7 +60,9 @@ def _api_remote(path, method="GET"):
             else:  # For GET, DELETE, etc.
                 request_params["params"] = request_data
 
-            print(f"request_params: {request_params}, args: {args}, kwargs: {kwargs}")
+            logging.info(
+                f"request_params: {request_params}, args: {args}, kwargs: {kwargs}"
+            )
 
             async with httpx.AsyncClient() as client:
                 response = await client.request(**request_params)

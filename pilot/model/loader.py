@@ -118,7 +118,6 @@ class ModelLoader:
     def loader_with_params(self, model_params: ModelParameters):
         llm_adapter = get_llm_model_adapter(self.model_name, self.model_path)
         model_type = llm_adapter.model_type()
-        param_cls = llm_adapter.model_param_class(model_type)
         self.prompt_template = model_params.prompt_template
         logger.info(f"model_params:\n{model_params}")
         if model_type == ModelType.HF:
