@@ -2,7 +2,6 @@ import logging
 import os
 
 import requests
-from playsound import playsound
 
 from pilot.speech.base import VoiceBase
 
@@ -23,6 +22,8 @@ class BrianSpeech(VoiceBase):
         Returns:
             bool: True if the request was successful, False otherwise
         """
+        from playsound import playsound
+
         tts_url = (
             f"https://api.streamelements.com/kappa/v2/speech?voice=Brian&text={text}"
         )

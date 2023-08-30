@@ -27,6 +27,9 @@ class ModelController:
         )
         return await self.registry.get_all_instances(model_name, healthy_only)
 
+    async def get_all_model_instances(self) -> List[ModelInstance]:
+        return await self.registry.get_all_model_instances()
+
     async def send_heartbeat(self, instance: ModelInstance) -> bool:
         return await self.registry.send_heartbeat(instance)
 
@@ -51,10 +54,12 @@ async def api_deregister_instance(request: ModelInstance):
 
 
 @router.get("/controller/models")
-async def api_get_all_instances(model_name: str, healthy_only: bool = False):
+async def api_get_all_instances(model_name: str = None, healthy_only: bool = False):
+    if not model_name:
+        return await controller.get_all_model_instances()
     return await controller.get_all_instances(model_name, healthy_only=healthy_only)
 
 
 @router.post("/controller/heartbeat")
-async def api_get_all_instances(request: ModelInstance):
+async def api_model_heartbeat(request: ModelInstance):
     return await controller.send_heartbeat(request)
