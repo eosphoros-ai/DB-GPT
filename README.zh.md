@@ -49,7 +49,6 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 - [架构方案](#架构方案)
 - [特性简介](#特性一览)
 - [贡献](#贡献)
-- [感谢](#感谢)
 - [路线图](#路线图)
 - [联系我们](#联系我们)
 
@@ -166,8 +165,7 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-[**快速开始
-**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/deploy/deploy.html)
+[**快速开始**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/deploy/deploy.html)
 
 ### 多语言切换
 
@@ -179,15 +177,8 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 
 [使用指南](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
 
-如果在使用知识库时遇到与nltk相关的错误，您需要安装nltk工具包。更多详情，请参见：[nltk文档](https://www.nltk.org/data.html)
-Run the Python interpreter and type the commands:
-```bash
->>> import nltk
->>> nltk.download()
-```
-
 # 贡献
-提交代码前请先执行 `black .`
+> 提交代码前请先执行 `black .`
 
 这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布一些新的feature。如在使用当中有任何具体问题, 优先在项目下提issue, 如有需要, 请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
 
