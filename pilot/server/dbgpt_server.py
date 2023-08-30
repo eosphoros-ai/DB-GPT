@@ -10,13 +10,7 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 sys.path.append(ROOT_PATH)
 import signal
 from pilot.configs.config import Config
-
-# from pilot.configs.model_config import (
-#     DATASETS_DIR,
-#     KNOWLEDGE_UPLOAD_ROOT_PATH,
-#     LLM_MODEL_CONFIG,
-#     LOGDIR,
-# )
+from pilot.configs.model_config import LLM_MODEL_CONFIG
 from pilot.utils import build_logger
 
 from pilot.server.base import server_init
@@ -33,8 +27,9 @@ from pilot.openapi.api_v1.api_v1 import router as api_v1
 from pilot.openapi.base import validation_exception_handler
 from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
 from pilot.commands.disply_type.show_chart_gen import static_message_img_path
+from pilot.model.worker.manager import initialize_worker_manager_in_client
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, encoding="utf-8")
 
 static_file_path = os.path.join(os.getcwd(), "server/static")
 
@@ -80,12 +75,19 @@ app.include_router(api_editor_route_v1, prefix="/api")
 app.include_router(knowledge_router)
 # app.include_router(api_editor_route_v1)
 
-os.makedirs(static_message_img_path, exist_ok=True)
-app.mount(
-    "/images", StaticFiles(directory=static_message_img_path, html=True), name="static2"
-)
-app.mount("/_next/static", StaticFiles(directory=static_file_path + "/_next/static"))
-app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
+
+def mount_static_files(app):
+    os.makedirs(static_message_img_path, exist_ok=True)
+    app.mount(
+        "/images",
+        StaticFiles(directory=static_message_img_path, html=True),
+        name="static2",
+    )
+    app.mount(
+        "/_next/static", StaticFiles(directory=static_file_path + "/_next/static")
+    )
+    app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
+
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
@@ -100,6 +102,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument("--share", default=False, action="store_true")
+    parser.add_argument("--log-level", type=str, default="info")
     parser.add_argument(
         "-light",
         "--light",
@@ -112,17 +115,28 @@ if __name__ == "__main__":
     args = parser.parse_args()
     server_init(args)
 
+    model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
     if not args.light:
         print("Model Unified Deployment Mode!")
-        from pilot.server.llmserver import worker
+        initialize_worker_manager_in_client(
+            app=app, model_name=CFG.LLM_MODEL, model_path=model_path
+        )
 
-        worker.start_check()
         CFG.NEW_SERVER_MODE = True
     else:
+        # MODEL_SERVER is controller address now
+        initialize_worker_manager_in_client(
+            app=app,
+            model_name=CFG.LLM_MODEL,
+            model_path=model_path,
+            run_locally=False,
+            controller_addr=CFG.MODEL_SERVER,
+        )
         CFG.SERVER_LIGHT_MODE = True
 
+    mount_static_files(app)
     import uvicorn
 
-    logging.basicConfig(level=logging.INFO)
-    uvicorn.run(app, host="0.0.0.0", port=args.port, log_level=0)
+    logging.basicConfig(level=logging.INFO, encoding="utf-8")
+    uvicorn.run(app, host="0.0.0.0", port=args.port, log_level=args.log_level)
     signal.signal(signal.SIGINT, signal_handler())

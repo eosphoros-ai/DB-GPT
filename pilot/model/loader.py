@@ -60,7 +60,7 @@ def _get_model_real_path(model_name, default_model_path) -> str:
     return _genenv_ignoring_key_case("model_path", default_value=default_model_path)
 
 
-class ModelLoader(metaclass=Singleton):
+class ModelLoader:
     """Model loader is a class for model load
 
       Args: model_path
@@ -68,17 +68,11 @@ class ModelLoader(metaclass=Singleton):
     TODO: multi model support.
     """
 
-    kwargs = {}
-
     def __init__(self, model_path: str, model_name: str = None) -> None:
         self.device = DEVICE
         self.model_path = model_path
         self.model_name = model_name
         self.prompt_template: str = None
-        self.kwargs = {
-            "torch_dtype": torch.float16,
-            "device_map": "auto",
-        }
 
     # TODO multi gpu support
     def loader(
@@ -114,6 +108,18 @@ class ModelLoader(metaclass=Singleton):
 
         logger.info(f"model_params:\n{model_params}")
 
+        if model_type == ModelType.HF:
+            return huggingface_loader(llm_adapter, model_params)
+        elif model_type == ModelType.LLAMA_CPP:
+            return llamacpp_loader(llm_adapter, model_params)
+        else:
+            raise Exception(f"Unkown model type {model_type}")
+
+    def loader_with_params(self, model_params: ModelParameters):
+        llm_adapter = get_llm_model_adapter(self.model_name, self.model_path)
+        model_type = llm_adapter.model_type()
+        self.prompt_template = model_params.prompt_template
+        logger.info(f"model_params:\n{model_params}")
         if model_type == ModelType.HF:
             return huggingface_loader(llm_adapter, model_params)
         elif model_type == ModelType.LLAMA_CPP:

@@ -267,7 +267,7 @@ def llama_cpp_python_cuda_requires():
     llama_cpp_version = "0.1.77"
     py_version = "cp310"
     os_pkg_name = "linux_x86_64" if os_type == OSType.LINUX else "win_amd64"
-    extra_index_url = f"{base_url}/llama_cpp_python_cuda-{llama_cpp_version}+{device}{cpu_avx}-{py_version}-{py_version}-{os_pkg_name}.whl"
+    extra_index_url = f"{base_url}/llama_cpp_python_cuda-{llama_cpp_version}+{device}-{py_version}-{py_version}-{os_pkg_name}.whl"
     extra_index_url, _ = encode_url(extra_index_url)
     print(f"Install llama_cpp_python_cuda from {extra_index_url}")
 
@@ -361,7 +361,7 @@ setuptools.setup(
     extras_require=setup_spec.extras,
     entry_points={
         "console_scripts": [
-            "dbgpt_server=pilot.server:webserver",
+            "dbgpt=pilot.scripts.cli_scripts:main",
         ],
     },
 )
