@@ -71,7 +71,8 @@ class ExcelReader:
         for column_name in df_tmp.columns:
             self.columns_map.update({column_name: excel_colunm_format(column_name)})
             try:
-                self.df[column_name] = self.df[column_name].astype(float)
+                self.df[column_name] = pd.to_numeric(self.df[column_name])
+                self.df[column_name] = self.df[column_name].fillna(0)
             except Exception as e:
                 print("transfor column error！" + column_name)
 

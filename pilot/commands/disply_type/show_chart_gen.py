@@ -4,13 +4,13 @@ from pilot.commands.command_mange import command
 from pilot.configs.config import Config
 import pandas as pd
 import uuid
-import io
 import os
 import matplotlib
 import seaborn as sns
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 from matplotlib.font_manager import FontManager
 
 from pilot.configs.model_config import LOGDIR
@@ -19,6 +19,54 @@ from pilot.utils import build_logger
 CFG = Config()
 logger = build_logger("show_chart_gen", LOGDIR + "show_chart_gen.log")
 static_message_img_path = os.path.join(os.getcwd(), "message/img")
+
+
+def data_pre_classification(df: DataFrame):
+    ## Data pre-classification
+    columns = df.columns.tolist()
+
+    number_columns = []
+    non_numeric_colums = []
+
+    # 收集数据分类小于10个的列
+    non_numeric_colums_value_map = {}
+    numeric_colums_value_map = {}
+    for column_name in columns:
+        if pd.api.types.is_numeric_dtype(df[column_name].dtypes):
+            number_columns.append(column_name)
+            unique_values = df[column_name].unique()
+            numeric_colums_value_map.update({column_name: len(unique_values)})
+        else:
+            non_numeric_colums.append(column_name)
+            unique_values = df[column_name].unique()
+            non_numeric_colums_value_map.update({column_name: len(unique_values)})
+
+    sorted_numeric_colums_value_map = dict(
+        sorted(numeric_colums_value_map.items(), key=lambda x: x[1])
+    )
+    numeric_colums_sort_list = list(sorted_numeric_colums_value_map.keys())
+
+    sorted_colums_value_map = dict(
+        sorted(non_numeric_colums_value_map.items(), key=lambda x: x[1])
+    )
+    non_numeric_colums_sort_list = list(sorted_colums_value_map.keys())
+
+    #  Analyze x-coordinate
+    if len(non_numeric_colums_sort_list) > 0:
+        x_cloumn = non_numeric_colums_sort_list[-1]
+        non_numeric_colums_sort_list.remove(x_cloumn)
+    else:
+        x_cloumn = number_columns[0]
+        numeric_colums_sort_list.remove(x_cloumn)
+
+    #  Analyze y-coordinate
+    if len(numeric_colums_sort_list) > 0:
+        y_column = numeric_colums_sort_list[0]
+        numeric_colums_sort_list.remove(y_column)
+    else:
+        raise ValueError("Not enough numeric columns for chart！")
+
+    return x_cloumn, y_column, non_numeric_colums_sort_list, numeric_colums_sort_list
 
 
 def zh_font_set():
@@ -48,9 +96,6 @@ def zh_font_set():
 )
 def response_line_chart(speak: str, df: DataFrame) -> str:
     logger.info(f"response_line_chart:{speak},")
-
-    columns = df.columns.tolist()
-
     if df.size <= 0:
         raise ValueError("No Data！")
 
@@ -85,7 +130,19 @@ def response_line_chart(speak: str, df: DataFrame) -> str:
     sns.set(context="notebook", style="ticks", rc=rc)
 
     fig, ax = plt.subplots(figsize=(8, 5), dpi=100)
-    sns.lineplot(df, x=columns[0], y=columns[1], ax=ax)
+    x, y, non_num_columns, num_colmns = data_pre_classification(df)
+    # ## 复杂折线图实现
+    if len(num_colmns) > 0:
+        num_colmns.append(y)
+        df_melted = pd.melt(
+            df, id_vars=x, value_vars=num_colmns, var_name="line", value_name="Value"
+        )
+        sns.lineplot(data=df_melted, x=x, y="Value", hue="line", ax=ax, palette="Set2")
+    else:
+        sns.lineplot(data=df, x=x, y=y, ax=ax, palette="Set2")
+
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda y, _: "{:,.0f}".format(y)))
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: "{:,.0f}".format(x)))
 
     chart_name = "line_" + str(uuid.uuid1()) + ".png"
     chart_path = static_message_img_path + "/" + chart_name
@@ -102,7 +159,6 @@ def response_line_chart(speak: str, df: DataFrame) -> str:
 )
 def response_bar_chart(speak: str, df: DataFrame) -> str:
     logger.info(f"response_bar_chart:{speak},")
-    columns = df.columns.tolist()
     if df.size <= 0:
         raise ValueError("No Data！")
 
@@ -136,9 +192,44 @@ def response_bar_chart(speak: str, df: DataFrame) -> str:
     sns.set(context="notebook", style="ticks", rc=rc)
 
     fig, ax = plt.subplots(figsize=(8, 5), dpi=100)
-    sns.barplot(df, x=df[columns[0]], y=df[columns[1]], ax=ax)
 
-    chart_name = "pie_" + str(uuid.uuid1()) + ".png"
+    hue = None
+    x, y, non_num_columns, num_colmns = data_pre_classification(df)
+    if len(non_num_columns) >= 1:
+        hue = non_num_columns[0]
+
+    if len(num_colmns) >= 1:
+        if hue:
+            if len(num_colmns) >= 2:
+                can_use_columns = num_colmns[:2]
+            else:
+                can_use_columns = num_colmns
+            sns.barplot(data=df, x=x, y=y, hue=hue, palette="Set2", ax=ax)
+            for sub_y_column in can_use_columns:
+                sns.barplot(
+                    data=df, x=x, y=sub_y_column, hue=hue, palette="Set2", ax=ax
+                )
+        else:
+            if len(num_colmns) >= 3:
+                can_use_columns = num_colmns[:3]
+            else:
+                can_use_columns = num_colmns
+            sns.barplot(
+                data=df, x=x, y=y, hue=can_use_columns[0], palette="Set2", ax=ax
+            )
+
+            for sub_y_column in can_use_columns[1:]:
+                sns.barplot(
+                    data=df, x=x, y=sub_y_column, hue=hue, palette="Set2", ax=ax
+                )
+    else:
+        sns.barplot(data=df, x=x, y=y, hue=hue, palette="Set2", ax=ax)
+
+    # 设置 y 轴刻度格式为普通数字格式
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda y, _: "{:,.0f}".format(y)))
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: "{:,.0f}".format(x)))
+
+    chart_name = "bar_" + str(uuid.uuid1()) + ".png"
     chart_path = static_message_img_path + "/" + chart_name
     plt.savefig(chart_path, bbox_inches="tight", dpi=100)
     html_img = f"""<h5>{speak}</h5><img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
@@ -187,13 +278,6 @@ def response_pie_chart(speak: str, df: DataFrame) -> str:
         labels=df[columns[0]].values,
         startangle=90,
         autopct="%1.1f%%",
-    )
-    # 手动设置 labels 的位置和大小
-    ax.legend(
-        loc="upper right",
-        bbox_to_anchor=(0, 0, 1, 1),
-        labels=df[columns[0]].values,
-        fontsize=10,
     )
 
     plt.axis("equal")  # 使饼图为正圆形
