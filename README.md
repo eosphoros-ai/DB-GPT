@@ -48,65 +48,43 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 - [introduction](#introduction)
 - [features](#features)
 - [contribution](#contribution)
-- [acknowledgement](#acknowledgement)
 - [roadmap](#roadmap)
 - [contract](#contact-information)
 
 [DB-GPT Youtube Video](https://www.youtube.com/watch?v=f5_g0OObZBQ)
 
-
 ## Demo
-
 Run on an RTX 4090 GPU.
 
 https://github.com/eosphoros-ai/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
 
-<!-- <video id="video" controls="" preload="auto" poster="assets/exector_sql.png">
-      <source id="mp4" src="https://github.com/csunny/DB-GPT/assets/17919400/654b5a49-5ea4-4c02-b5b2-72d089dcc1f0" type="video/mp4">
-</videos> -->
-
 #### Chat with data, and figure charts.
 
+![db plugins demonstration](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/4113ac15-83c2-4350-86c0-5fc795677abd)
+
 <p align="left">
-  <img src="./assets/dashboard.png" width="800px" />
+  <img src="./assets/chat_excel/chat_excel_6.png" width="800px" />
 </p>
 
-#### Text2SQL, generate SQL from chat
 <p align="left">
-  <img src="./assets/chatdata.png" width="800px" />
+  <img src="./assets/chat_dashboard/chat_dashboard_2.png" width="800px" />
 </p>
 
-#### Knowledge space to manage docs.
-<p align="left">
-  <img src="./assets/ks.png" width="800px" />
-</p>
-
-#### Chat with knowledge, such as url, pdf, csv, word. etc
-<p align="left">
-  <img src="./assets/chat_knowledge.png" width="800px" />
-</p>
 
 ## Features
 
 Currently, we have released multiple key features, which are listed below to demonstrate our current capabilities:
-
 - SQL language capabilities
   - SQL generation
   - SQL diagnosis
 - Private domain Q&A and data processing
-  -   Knowledge Management(We currently support many document formats: txt, pdf, md, html, doc, ppt, and url.)
-  -  Database knowledge Q&A
-  - knowledge Embedding
-
+  - Knowledge Management(We currently support many document formats: txt, pdf, md, html, doc, ppt, and url.)
 - ChatDB
+- ChatExcel
 - ChatDashboard
-- Plugins
-  -  Support custom plugin execution tasks and natively support the Auto-GPT plugin, such as:
-    - Automatic execution of SQL and retrieval of query results
-    - Automatic crawling and learning of knowledge
+- Multi-Agents&Plugins
 - Unified vector storage/indexing of knowledge base
   - Support for unstructured data such as PDF, TXT, Markdown, CSV, DOC, PPT, and WebURL
-
 - Multi LLMs Support, Supports multiple large language models, currently supporting
   - 🔥 Vicuna-v1.5(7b,13b)
   - 🔥 llama-2(7b,13b,70b)
@@ -118,12 +96,8 @@ Currently, we have released multiple key features, which are listed below to dem
   - Gorilla(7b,13b)
   - baichuan(7b,13b)
 
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
-
-
 ## Introduction 
-DB-GPT creates a vast model operating system using [FastChat](https://github.com/lm-sys/FastChat) and offers a large language model powered by [Vicuna](https://huggingface.co/Tribbiani/vicuna-7b). In addition, we provide private domain knowledge base question-answering capability. Furthermore, we also provide support for additional plugins, and our design natively supports the Auto-GPT plugin.Our vision is to make it easier and more convenient to build  applications around databases and llm.
-
+DB-GPT creates a vast model operating system using [FastChat](https://github.com/lm-sys/FastChat) and offers a large language model powered by vicuna. In addition, we provide private domain knowledge base question-answering capability. Furthermore, we also provide support for additional plugins, and our design natively supports the Auto-GPT plugin.Our vision is to make it easier and more convenient to build  applications around databases and llm.
 
 Is the architecture of the entire DB-GPT shown in the following figure:
 
@@ -158,30 +132,6 @@ The core capabilities mainly consist of the following parts:
 
 ### Language Switching
     In the .env configuration file, modify the LANGUAGE parameter to switch to different languages. The default is English (Chinese: zh, English: en, other languages to be added later).
-
-## Usage Instructions
-
-
-If nltk-related errors occur during the use of the knowledge base, you need to install the nltk toolkit. For more details, please refer to: [nltk documents](https://www.nltk.org/data.html)
-Run the Python interpreter and type the commands:
-
-```bash
->>> import nltk
->>> nltk.download()
-```
-
-## Acknowledgement
-
-This project is standing on the shoulders of giants and is not going to work without the open-source communities. Special thanks to the following projects for their excellent contribution to the AI industry:
-- [FastChat](https://github.com/lm-sys/FastChat) for providing chat services
-- [vicuna-13b](https://lmsys.org/blog/2023-03-30-vicuna/) as the base model
-- [langchain](https://langchain.readthedocs.io/) tool chain
-- [Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT) universal plugin template
-- [Hugging Face](https://huggingface.co/) for big model management
-- [Chroma](https://github.com/chroma-core/chroma) for vector storage
-- [Milvus](https://milvus.io/) for distributed vector storage
-- [ChatGLM](https://github.com/THUDM/ChatGLM-6B) as the base model
-- [llama_index](https://github.com/jerryjliu/llama_index) for enhancing database-related knowledge using [in-context learning](https://arxiv.org/abs/2301.00234) based on existing knowledge bases.
 
 ## Contribution
 
