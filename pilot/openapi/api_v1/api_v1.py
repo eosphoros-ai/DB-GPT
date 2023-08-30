@@ -311,33 +311,23 @@ async def chat_completions(dialogue: ConversationVo = Body()):
 
 
 async def no_stream_generator(chat):
-    msg = chat.nostream_call()
+    msg = await chat.nostream_call()
     msg = msg.replace("\n", "\\n")
     yield f"data: {msg}\n\n"
 
 
 async def stream_generator(chat):
-    model_response = chat.stream_call()
     msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
-    if not CFG.NEW_SERVER_MODE:
-        for chunk in model_response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-            if chunk:
-                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
-                    chunk, chat.skip_echo_len
-                )
-                msg = msg.replace("\n", "\\n")
-                yield f"data:{msg}\n\n"
-                await asyncio.sleep(0.02)
-    else:
-        for chunk in model_response:
-            if chunk:
-                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
-                    chunk, chat.skip_echo_len
-                )
 
-                msg = msg.replace("\n", "\\n")
-                yield f"data:{msg}\n\n"
-                await asyncio.sleep(0.02)
+    async for chunk in chat.stream_call():
+        if chunk:
+            msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                chunk, chat.skip_echo_len
+            )
+
+            msg = msg.replace("\n", "\\n")
+            yield f"data:{msg}\n\n"
+            await asyncio.sleep(0.02)
 
     chat.current_message.add_ai_message(msg)
     chat.current_message.add_view_message(msg)

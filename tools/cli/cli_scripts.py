@@ -25,7 +25,6 @@ sys.path.append(
 
 from pilot.configs.model_config import DATASETS_DIR
 
-from tools.cli.knowledge_client import knowledge_init
 
 API_ADDRESS: str = "http://127.0.0.1:5000"
 
@@ -97,6 +96,8 @@ def knowledge(
     verbose: bool,
 ):
     """Knowledge command line tool"""
+    from tools.cli.knowledge_client import knowledge_init
+
     knowledge_init(
         API_ADDRESS,
         vector_name,

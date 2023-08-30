@@ -5,9 +5,7 @@ import logging
 import logging.handlers
 import os
 import sys
-
-import requests
-import torch
+import asyncio
 
 from pilot.configs.model_config import LOGDIR
 
@@ -19,6 +17,8 @@ handler = None
 
 
 def get_gpu_memory(max_gpus=None):
+    import torch
+
     gpu_memory = []
     num_gpus = (
         torch.cuda.device_count()
@@ -73,7 +73,7 @@ def build_logger(logger_name, logger_filename):
         for name, item in logging.root.manager.loggerDict.items():
             if isinstance(item, logging.Logger):
                 item.addHandler(handler)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, encoding="utf-8")
 
     # Get logger
     logger = logging.getLogger(logger_name)
@@ -132,3 +132,15 @@ def pretty_print_semaphore(semaphore):
     if semaphore is None:
         return "None"
     return f"Semaphore(value={semaphore._value}, locked={semaphore.locked()})"
+
+
+def get_or_create_event_loop() -> asyncio.BaseEventLoop:
+    try:
+        loop = asyncio.get_event_loop()
+    except Exception as e:
+        if not "no running event loop" in str(e):
+            raise e
+        logging.warning("Cant not get running event loop, create new event loop now")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop
