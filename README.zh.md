@@ -63,10 +63,19 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
 
 #### 根据自然语言对话生成分析图表
 
+![db plugins demonstration](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/4113ac15-83c2-4350-86c0-5fc795677abd)
+
+<p align="left">
+  <img src="./assets/chat_excel/chat_excel_6.png" width="800px" />
+</p>
+
 <p align="left">
   <img src="./assets/dashboard.png" width="800px" />
 </p>
 
+<p align="left">
+  <img src="./assets/chat_dashboard/chat_dashboard_2.png" width="800px" />
+</p>
 
 #### 根据自然语言对话生成SQL
 <p align="left">
@@ -107,12 +116,8 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
 - 数据库对话
 - Chat2Dashboard
 - 插件模型
-  - 支持自定义插件执行任务，原生支持Auto-GPT插件。如:
-    - SQL自动执行，获取查询结果
-    - 自动爬取学习知识
 - 知识库统一向量存储/索引
   - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
-
 - 多模型支持
   - 支持多种大语言模型, 当前已支持如下模型: 
   - 🔥 Vicuna-v1.5(7b,13b)
@@ -124,8 +129,6 @@ https://github.com/csunny/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3d
   - guanaco(7b,13b,33b)
   - Gorilla(7b,13b)
   - baichuan(7b,13b)
-
-[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT)](https://star-history.com/#csunny/DB-GPT)
 
 ## 架构方案
 DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。
@@ -183,23 +186,8 @@ Run the Python interpreter and type the commands:
 >>> nltk.download()
 ```
 
-## 感谢
-
-项目取得的成果，需要感谢技术社区，尤其以下项目。
-
-- [FastChat](https://github.com/lm-sys/FastChat) 提供 chat 服务
-- [vicuna-13b](https://huggingface.co/Tribbiani/vicuna-13b) 作为基础模型
-- [langchain](https://github.com/hwchase17/langchain) 工具链
-- [Auto-GPT](https://github.com/Significant-Gravitas/Auto-GPT) 通用的插件模版
-- [Hugging Face](https://huggingface.co/) 大模型管理
-- [Chroma](https://github.com/chroma-core/chroma) 向量存储
-- [Milvus](https://milvus.io/) 分布式向量存储
-- [ChatGLM](https://github.com/THUDM/ChatGLM-6B) 基础模型
-- [llama-index](https://github.com/jerryjliu/llama_index) 基于现有知识库进行[In-Context Learning](https://arxiv.org/abs/2301.00234)来对其进行数据库相关知识的增强。
-
 # 贡献
-
-- 提交代码前请先执行 `black .`
+提交代码前请先执行 `black .`
 
 这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布一些新的feature。如在使用当中有任何具体问题, 优先在项目下提issue, 如有需要, 请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
 
