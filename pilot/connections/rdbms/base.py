@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from urllib.parse import quote
 import warnings
 import sqlparse
 import regex as re
@@ -95,9 +95,9 @@ class RDBMSDatabase(BaseConnect):
         db_url: str = (
             cls.driver
             + "://"
-            + user
+            + quote(user)
             + ":"
-            + pwd
+            + quote(pwd)
             + "@"
             + host
             + ":"
@@ -493,9 +493,13 @@ class RDBMSDatabase(BaseConnect):
 
     def get_users(self):
         """Get user info."""
-        cursor = self.session.execute(text(f"SELECT user, host FROM mysql.user"))
-        users = cursor.fetchall()
-        return [(user[0], user[1]) for user in users]
+        try:
+            cursor = self.session.execute(text(f"SELECT user, host FROM mysql.user"))
+            users = cursor.fetchall()
+            return [(user[0], user[1]) for user in users]
+        except Exception as e:
+            return []
+
 
     def get_table_comments(self, db_name):
         cursor = self.session.execute(

@@ -38,6 +38,7 @@ from pilot.common.schema import DBType
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.scene.message import OnceConversation
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
+from pilot.summary.db_summary_client import DBSummaryClient
 
 router = APIRouter()
 CFG = Config()
@@ -108,9 +109,29 @@ async def db_connect_delete(db_name: str = None):
     return Result.succ(CFG.LOCAL_DB_MANAGE.delete_db(db_name))
 
 
+async def async_db_summary_embedding(db_name, db_type):
+    # 在这里执行需要异步运行的代码
+    db_summary_client = DBSummaryClient()
+    db_summary_client.db_summary_embedding(db_name, db_type)
+
+
+@router.post("/v1/chat/db/test/connect", response_model=Result[bool])
+async def test_connect(db_config: DBConfig = Body()):
+    try:
+        CFG.LOCAL_DB_MANAGE.test_connect(db_config)
+        return Result.succ(True)
+    except Exception as e:
+        return Result.faild(code="E1001", msg=str(e))
+
+
+@router.post("/v1/chat/db/summary", response_model=Result[bool])
+async def db_summary(db_name: str, db_type: str):
+    async_db_summary_embedding(db_name, db_type)
+    return Result.succ(True)
+
+
 @router.get("/v1/chat/db/support/type", response_model=Result[DbTypeInfo])
 async def db_support_types():
-
     support_types = CFG.LOCAL_DB_MANAGE.get_all_completed_types()
     db_type_infos = []
     for type in support_types:
@@ -229,7 +250,8 @@ async def dialogue_delete(con_uid: str):
     history_mem.delete()
     return Result.succ(None)
 
-def get_hist_messages(conv_uid:str):
+
+def get_hist_messages(conv_uid: str):
     message_vos: List[MessageVo] = []
     history_mem = DuckdbHistoryMemory(conv_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()

@@ -1,4 +1,5 @@
 import threading
+import asyncio
 
 from pilot.configs.config import Config
 from pilot.connections.manages.connect_storage_duckdb import DuckdbConnectConfig
@@ -138,6 +139,27 @@ class ConnectManager:
                 host=db_host, port=db_port, user=db_user, pwd=db_pwd, db_name=db_name
             )
 
+    def test_connect(self, db_info: DBConfig):
+        try:
+            db_type = DBType.of_db_type(db_info.db_type)
+            connect_instance = self.get_cls_by_dbtype(db_type.value())
+            if db_type.is_file_db():
+                db_path = db_info.db_path
+                return connect_instance.from_file_path(db_path)
+            else:
+                db_name = db_info.db_name
+                db_host = db_info.db_host
+                db_port = db_info.db_port
+                db_user = db_info.db_user
+                db_pwd = db_info.db_pwd
+                return connect_instance.from_uri_db(
+                    host=db_host, port=db_port, user=db_user, pwd=db_pwd, db_name=db_name
+                )
+        except Exception as e:
+            print(f'{db_info.db_name} Test connect Failure!{str(e)}')
+            raise ValueError(f'{db_info.db_name} Test connect Failure!{str(e)}')
+
+
     def get_db_list(self):
         return self.storage.get_db_list()
 
@@ -158,6 +180,10 @@ class ConnectManager:
             db_info.db_pwd,
             db_info.comment,
         )
+
+    async def async_db_summary_embedding(self, db_name, db_type):
+        # 在这里执行需要异步运行的代码
+        self.db_summary_client.db_summary_embedding(db_name, db_type)
 
     def add_db(self, db_info: DBConfig):
         print(f"add_db:{db_info.__dict__}")
