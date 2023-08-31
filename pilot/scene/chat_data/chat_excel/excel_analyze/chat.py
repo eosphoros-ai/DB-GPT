@@ -81,7 +81,7 @@ class ChatExcel(BaseChat):
         }
         return input_values
 
-    def prepare(self):
+    async def prepare(self):
         logger.info(f"{self.chat_mode} prepare start!")
         if len(self.history_message) > 0:
             return None
@@ -93,7 +93,7 @@ class ChatExcel(BaseChat):
             "excel_reader": self.excel_reader,
         }
         learn_chat = ExcelLearning(**chat_param)
-        result = learn_chat.nostream_call()
+        result = await learn_chat.nostream_call()
         return result
 
     def do_action(self, prompt_response):
