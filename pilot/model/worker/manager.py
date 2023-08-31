@@ -23,15 +23,14 @@ from pilot.model.base import (
 )
 from pilot.model.controller.registry import ModelRegistry
 from pilot.model.parameter import (
-    EnvArgumentParser,
     ModelParameters,
     ModelWorkerParameters,
     WorkerType,
-    ParameterDescription,
 )
 from pilot.model.worker.base import ModelWorker
 from pilot.scene.base_message import ModelMessage
 from pilot.utils import build_logger
+from pilot.utils.parameter_utils import EnvArgumentParser, ParameterDescription
 from pydantic import BaseModel
 
 logger = build_logger("model_worker", LOGDIR + "/model_worker.log")
@@ -148,6 +147,8 @@ class LocalWorkerManager(WorkerManager):
         self.model_registry = model_registry
 
     def _worker_key(self, worker_type: str, model_name: str) -> str:
+        if isinstance(worker_type, WorkerType):
+            worker_type = worker_type.value
         return f"{model_name}@{worker_type}"
 
     def add_worker(
@@ -165,6 +166,9 @@ class LocalWorkerManager(WorkerManager):
 
         if not worker_params.worker_type:
             worker_params.worker_type = worker.worker_type()
+
+        if isinstance(worker_params.worker_type, WorkerType):
+            worker_params.worker_type = worker_params.worker_type.value
 
         worker_key = self._worker_key(
             worker_params.worker_type, worker_params.model_name
