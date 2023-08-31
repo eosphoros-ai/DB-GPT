@@ -56,7 +56,7 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 ## Demo
 Run on an RTX 4090 GPU.
 
-https://github.com/eosphoros-ai/DB-GPT/assets/13723926/55f31781-1d49-4757-b96e-7ef6d3dbcf80
+![demo_en](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/d40118e4-8e76-45b6-b4a6-30e5ff170f42)
 
 #### Chat with data, and figure charts.
 
