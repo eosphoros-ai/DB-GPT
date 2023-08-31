@@ -178,7 +178,7 @@ class BaseChat(ABC):
 
     async def nostream_call(self):
         payload = self.__call_base()
-        logger.info(f"Requert: \n{payload}")
+        logger.info(f"Request: \n{payload}")
         ai_response_text = ""
         try:
             from pilot.model.worker.manager import worker_manager
@@ -231,12 +231,17 @@ class BaseChat(ABC):
             except StopAsyncIteration:
                 break
 
+
     def _blocking_nostream_call(self):
         logger.warn(
             "_blocking_nostream_call is only temporarily used in webserver and will be deleted soon, please use nostream_call to replace it for higher performance"
         )
         loop = get_or_create_event_loop()
-        return loop.run_until_complete(self.nostream_call())
+        try:
+            return loop.run_until_complete(self.nostream_call())
+        finally:
+            loop.close()
+
 
     def call(self):
         if self.prompt_template.stream_out:
@@ -244,7 +249,7 @@ class BaseChat(ABC):
         else:
             return self._blocking_nostream_call()
 
-    def prepare(self):
+    async def prepare(self):
         pass
 
     def generate_llm_text(self) -> str:

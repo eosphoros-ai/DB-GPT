@@ -1,6 +1,6 @@
 import json
 import os
-
+import asyncio
 
 from typing import List, Any, Dict
 from pilot.scene.base_message import (
@@ -81,7 +81,7 @@ class ChatExcel(BaseChat):
         }
         return input_values
 
-    def prepare(self):
+    async def prepare(self):
         logger.info(f"{self.chat_mode} prepare start!")
         if len(self.history_message) > 0:
             return None
@@ -93,7 +93,7 @@ class ChatExcel(BaseChat):
             "excel_reader": self.excel_reader,
         }
         learn_chat = ExcelLearning(**chat_param)
-        result = learn_chat.call()
+        result = await learn_chat.nostream_call()
         return result
 
     def do_action(self, prompt_response):
