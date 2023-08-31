@@ -5,11 +5,11 @@ from pilot.configs.model_config import DEVICE
 from pilot.model.loader import _get_model_real_path
 from pilot.model.parameter import (
     EmbeddingModelParameters,
-    EnvArgumentParser,
     WorkerType,
 )
 from pilot.model.worker.base import ModelWorker
 from pilot.utils.model_utils import _clear_torch_cache
+from pilot.utils.parameter_utils import EnvArgumentParser
 
 logger = logging.getLogger("model_worker")
 

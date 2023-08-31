@@ -7,10 +7,11 @@ from pilot.configs.model_config import DEVICE
 from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper
 from pilot.model.base import ModelOutput
 from pilot.model.loader import ModelLoader, _get_model_real_path
-from pilot.model.parameter import EnvArgumentParser, ModelParameters
+from pilot.model.parameter import ModelParameters
 from pilot.model.worker.base import ModelWorker
 from pilot.server.chat_adapter import get_llm_chat_adapter, BaseChatAdpter
 from pilot.utils.model_utils import _clear_torch_cache
+from pilot.utils.parameter_utils import EnvArgumentParser
 
 logger = logging.getLogger("model_worker")
 
