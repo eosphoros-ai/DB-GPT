@@ -244,7 +244,7 @@ class BaseChat(ABC):
         else:
             return self._blocking_nostream_call()
 
-    def prepare(self):
+    async def prepare(self):
         pass
 
     def generate_llm_text(self) -> str:
