@@ -501,7 +501,6 @@ class RDBMSDatabase(BaseConnect):
         except Exception as e:
             return []
 
-
     def get_table_comments(self, db_name):
         cursor = self.session.execute(
             text(
