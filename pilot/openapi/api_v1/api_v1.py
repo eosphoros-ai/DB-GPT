@@ -216,7 +216,7 @@ async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File
                 conv_uid=conv_uid, chat_mode=chat_mode, select_param=doc_file.filename
             )
             chat: BaseChat = get_chat_instance(dialogue)
-            resp = chat.prepare()
+            resp = await chat.prepare()
 
         ### refresh messages
         return Result.succ(get_hist_messages(conv_uid))
@@ -279,7 +279,7 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
     chat: BaseChat = get_chat_instance(dialogue)
     if len(chat.history_message) > 0:
         return Result.succ(None)
-    resp = chat.prepare()
+    resp = await chat.prepare()
     return Result.succ(resp)
 
 
