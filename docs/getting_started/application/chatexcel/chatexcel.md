@@ -1,5 +1,6 @@
 ChatExcel
 ==================================
+![db plugins demonstration](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/4113ac15-83c2-4350-86c0-5fc795677abd)
 ChatExcel uses natural language to analyze and query Excel data.![db plugins demonstration](../../../../assets/chat_excel/chat_excel_1.png)
 
 ### 1.Select And Upload Excel or CSV File

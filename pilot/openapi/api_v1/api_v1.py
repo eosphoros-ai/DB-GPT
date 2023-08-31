@@ -151,7 +151,7 @@ async def dialogue_list(user_id: str = None):
         chat_mode = item.get("chat_mode")
 
         messages = json.loads(item.get("messages"))
-        last_round = max(messages, key=lambda x: x['chat_order'])
+        last_round = max(messages, key=lambda x: x["chat_order"])
         if "param_value" in last_round:
             select_param = last_round["param_value"]
         else:
@@ -160,7 +160,7 @@ async def dialogue_list(user_id: str = None):
             conv_uid=conv_uid,
             user_input=summary,
             chat_mode=chat_mode,
-            select_param=select_param
+            select_param=select_param,
         )
         dialogues.append(conv_vo)
 
@@ -192,7 +192,7 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-        chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
+    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
 ):
     conv_vo = __new_conversation(chat_mode, user_id)
     return Result.succ(conv_vo)
@@ -223,7 +223,7 @@ async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File
             if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)):
                 os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode))
             with NamedTemporaryFile(
-                    dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode), delete=False
+                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode), delete=False
             ) as tmp:
                 tmp.write(await doc_file.read())
                 tmp_path = tmp.name
@@ -234,7 +234,9 @@ async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File
                     ),
                 )
             ## chat prepare
-            dialogue = ConversationVo(conv_uid=conv_uid, chat_mode=chat_mode, select_param=doc_file.filename)
+            dialogue = ConversationVo(
+                conv_uid=conv_uid, chat_mode=chat_mode, select_param=doc_file.filename
+            )
             chat: BaseChat = get_chat_instance(dialogue)
             resp = chat.prepare()
 
@@ -286,7 +288,7 @@ def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
     chat_param = {
         "chat_session_id": dialogue.conv_uid,
         "user_input": dialogue.user_input,
-        "select_param": dialogue.select_param
+        "select_param": dialogue.select_param,
     }
     chat: BaseChat = CHAT_FACTORY.get_implementation(dialogue.chat_mode, **chat_param)
     return chat
@@ -331,33 +333,23 @@ async def chat_completions(dialogue: ConversationVo = Body()):
 
 
 async def no_stream_generator(chat):
-    msg = chat.nostream_call()
+    msg = await chat.nostream_call()
     msg = msg.replace("\n", "\\n")
     yield f"data: {msg}\n\n"
 
 
 async def stream_generator(chat):
-    model_response = chat.stream_call()
     msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
-    if not CFG.NEW_SERVER_MODE:
-        for chunk in model_response.iter_lines(decode_unicode=False, delimiter=b"\0"):
-            if chunk:
-                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
-                    chunk, chat.skip_echo_len
-                )
-                msg = msg.replace("\n", "\\n")
-                yield f"data:{msg}\n\n"
-                await asyncio.sleep(0.02)
-    else:
-        for chunk in model_response:
-            if chunk:
-                msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
-                    chunk, chat.skip_echo_len
-                )
 
-                msg = msg.replace("\n", "\\n")
-                yield f"data:{msg}\n\n"
-                await asyncio.sleep(0.02)
+    async for chunk in chat.stream_call():
+        if chunk:
+            msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
+                chunk, chat.skip_echo_len
+            )
+
+            msg = msg.replace("\n", "\\n")
+            yield f"data:{msg}\n\n"
+            await asyncio.sleep(0.02)
 
     chat.current_message.add_ai_message(msg)
     chat.current_message.add_view_message(msg)

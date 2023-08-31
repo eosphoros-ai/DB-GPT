@@ -10,10 +10,12 @@ class DbField(BaseModel):
     default_value: str = ""
     comment: str = ""
 
+
 class DbTable(BaseModel):
     table_name: str
     comment: str
     colunm: List[DbField]
+
 
 class ChatDbRounds(BaseModel):
     round: int
@@ -61,4 +63,3 @@ class ChatSqlEditContext(BaseModel):
 
     new_sql: str
     new_speak: str = ""
-

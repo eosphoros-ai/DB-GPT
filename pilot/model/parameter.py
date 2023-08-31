@@ -1,53 +1,126 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
-
-from typing import Any, Optional, Type
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields, MISSING
+from enum import Enum
+from typing import Any, Dict, Optional
 
 from pilot.model.conversation import conv_templates
+from pilot.utils.parameter_utils import BaseParameters
 
 suported_prompt_templates = ",".join(conv_templates.keys())
 
 
-def _genenv_ignoring_key_case(env_key: str, env_prefix: str = None, default_value=None):
-    """Get the value from the environment variable, ignoring the case of the key"""
-    if env_prefix:
-        env_key = env_prefix + env_key
-    return os.getenv(
-        env_key, os.getenv(env_key.upper(), os.getenv(env_key.lower(), default_value))
-    )
+class WorkerType(str, Enum):
+    LLM = "llm"
+    TEXT2VEC = "text2vec"
 
-
-class EnvArgumentParser:
-    def parse_args_into_dataclass(
-        self, dataclass_type: Type, env_prefix: str = None, **kwargs
-    ) -> Any:
-        for field in fields(dataclass_type):
-            env_var_value = _genenv_ignoring_key_case(field.name, env_prefix)
-            if env_var_value:
-                env_var_value = env_var_value.strip()
-                if field.type is int or field.type == Optional[int]:
-                    env_var_value = int(env_var_value)
-                elif field.type is float or field.type == Optional[float]:
-                    env_var_value = float(env_var_value)
-                elif field.type is bool or field.type == Optional[bool]:
-                    env_var_value = env_var_value.lower() == "true"
-                elif field.type is str or field.type == Optional[str]:
-                    pass
-                else:
-                    raise ValueError(f"Unsupported parameter type {field.type}")
-                kwargs[field.name] = env_var_value
-        return dataclass_type(**kwargs)
+    @staticmethod
+    def values():
+        return [item.value for item in WorkerType]
 
 
 @dataclass
-class ModelParameters:
-    device: str = field(metadata={"help": "Device to run model"})
-    model_name: str = field(metadata={"help": "Model name"})
-    model_path: str = field(metadata={"help": "Model path"})
+class ModelControllerParameters(BaseParameters):
+    host: Optional[str] = field(
+        default="0.0.0.0", metadata={"help": "Model Controller deploy host"}
+    )
+    port: Optional[int] = field(
+        default=8000, metadata={"help": "Model Controller deploy port"}
+    )
+
+
+@dataclass
+class ModelWorkerParameters(BaseParameters):
+    model_name: str = field(metadata={"help": "Model name", "tags": "fixed"})
+    model_path: str = field(metadata={"help": "Model path", "tags": "fixed"})
+    worker_type: Optional[str] = field(
+        default=None,
+        metadata={"valid_values": WorkerType.values(), "help": "Worker type"},
+    )
+    worker_class: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Model worker class, pilot.model.worker.default_worker.DefaultModelWorker"
+        },
+    )
+    host: Optional[str] = field(
+        default="0.0.0.0", metadata={"help": "Model worker deploy host"}
+    )
+
+    port: Optional[int] = field(
+        default=8000, metadata={"help": "Model worker deploy port"}
+    )
+    limit_model_concurrency: Optional[int] = field(
+        default=5, metadata={"help": "Model concurrency limit"}
+    )
+    standalone: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Standalone mode. If True, embedded Run ModelController"},
+    )
+    register: Optional[bool] = field(
+        default=True, metadata={"help": "Register current worker to model controller"}
+    )
+    worker_register_host: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The ip address of current worker to register to ModelController. If None, the address is automatically determined"
+        },
+    )
+    controller_addr: Optional[str] = field(
+        default=None, metadata={"help": "The Model controller address to register"}
+    )
+    send_heartbeat: Optional[bool] = field(
+        default=True, metadata={"help": "Send heartbeat to model controller"}
+    )
+    heartbeat_interval: Optional[int] = field(
+        default=20, metadata={"help": "The interval for sending heartbeats (seconds)"}
+    )
+
+
+@dataclass
+class EmbeddingModelParameters(BaseParameters):
+    model_name: str = field(metadata={"help": "Model name", "tags": "fixed"})
+    model_path: str = field(metadata={"help": "Model path", "tags": "fixed"})
+    device: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Device to run model. If None, the device is automatically determined"
+        },
+    )
+
+    normalize_embeddings: Optional[bool] = field(
+        default=None,
+        metadata={
+            "help": "Determines whether the model's embeddings should be normalized."
+        },
+    )
+
+    def build_kwargs(self, **kwargs) -> Dict:
+        model_kwargs, encode_kwargs = None, None
+        if self.device:
+            model_kwargs = {"device": self.device}
+        if self.normalize_embeddings:
+            encode_kwargs = {"normalize_embeddings": self.normalize_embeddings}
+        if model_kwargs:
+            kwargs["model_kwargs"] = model_kwargs
+        if encode_kwargs:
+            kwargs["encode_kwargs"] = encode_kwargs
+        return kwargs
+
+
+@dataclass
+class ModelParameters(BaseParameters):
+    model_name: str = field(metadata={"help": "Model name", "tags": "fixed"})
+    model_path: str = field(metadata={"help": "Model path", "tags": "fixed"})
+    device: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Device to run model. If None, the device is automatically determined"
+        },
+    )
     model_type: Optional[str] = field(
-        default="huggingface", metadata={"help": "Model type, huggingface or llama.cpp"}
+        default="huggingface",
+        metadata={"help": "Model type, huggingface or llama.cpp", "tags": "fixed"},
     )
     prompt_template: Optional[str] = field(
         default=None,
@@ -91,7 +164,6 @@ class ModelParameters:
         default=True,
         metadata={"help": "Nested quantization, only valid when load_4bit=True"},
     )
-    # "bfloat16", "float16", "float32"
     compute_dtype: Optional[str] = field(
         default=None,
         metadata={

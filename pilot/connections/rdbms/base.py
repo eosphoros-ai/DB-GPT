@@ -262,7 +262,7 @@ class RDBMSDatabase(BaseConnect):
             """Format the error message"""
             return f"Error: {e}"
 
-    def __write(self,  write_sql):
+    def __write(self, write_sql):
         print(f"Write[{write_sql}]")
         db_cache = self._engine.url.database
         result = self.session.execute(text(write_sql))
@@ -272,7 +272,7 @@ class RDBMSDatabase(BaseConnect):
         print(f"SQL[{write_sql}], result:{result.rowcount}")
         return result.rowcount
 
-    def __query(self,query, fetch: str = "all"):
+    def __query(self, query, fetch: str = "all"):
         """
         only for query
         Args:
@@ -325,6 +325,7 @@ class RDBMSDatabase(BaseConnect):
             result = list(result)
             return field_names, result
         return []
+
     def run(self, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""
         print("SQL:" + command)
@@ -333,12 +334,12 @@ class RDBMSDatabase(BaseConnect):
         parsed, ttype, sql_type, table_name = self.__sql_parse(command)
         if ttype == sqlparse.tokens.DML:
             if sql_type == "SELECT":
-                return self.__query( command, fetch)
+                return self.__query(command, fetch)
             else:
-                self.__write( command)
+                self.__write(command)
                 select_sql = self.convert_sql_write_to_select(command)
                 print(f"write result query:{select_sql}")
-                return self.__query( select_sql)
+                return self.__query(select_sql)
 
         else:
             print(f"DDL execution determines whether to enable through configuration ")
@@ -351,10 +352,10 @@ class RDBMSDatabase(BaseConnect):
                 result.insert(0, field_names)
                 print("DDL Result:" + str(result))
                 if not result:
-                    return self.__query( f"SHOW COLUMNS FROM {table_name}")
+                    return self.__query(f"SHOW COLUMNS FROM {table_name}")
                 return result
             else:
-                return self.__query( f"SHOW COLUMNS FROM {table_name}")
+                return self.__query(f"SHOW COLUMNS FROM {table_name}")
 
     def run_no_throw(self, session, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results.

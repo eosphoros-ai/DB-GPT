@@ -20,12 +20,7 @@ class ChatWithPlugin(BaseChat):
     plugins_prompt_generator: PluginPromptGenerator
     select_plugin: str = None
 
-    def __init__(
-        self,
-        chat_session_id,
-        user_input,
-        select_param: str = None
-    ):
+    def __init__(self, chat_session_id, user_input, select_param: str = None):
         self.plugin_selector = select_param
         super().__init__(
             chat_mode=ChatScene.ChatExecution,
