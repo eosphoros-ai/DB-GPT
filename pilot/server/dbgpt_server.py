@@ -68,7 +68,7 @@ app.add_middleware(
 
 
 app.include_router(api_v1, prefix="/api")
-app.include_router(knowledge_router, prefix="/api")
+# app.include_router(knowledge_router, prefix="/api")
 app.include_router(api_editor_route_v1, prefix="/api")
 
 # app.include_router(api_v1)
