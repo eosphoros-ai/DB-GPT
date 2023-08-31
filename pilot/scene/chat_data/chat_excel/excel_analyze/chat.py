@@ -93,7 +93,7 @@ class ChatExcel(BaseChat):
             "excel_reader": self.excel_reader,
         }
         learn_chat = ExcelLearning(**chat_param)
-        result = learn_chat.nostream_call()
+        result = learn_chat.call()
         return result
 
     def do_action(self, prompt_response):
