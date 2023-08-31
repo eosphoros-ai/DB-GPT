@@ -135,12 +135,13 @@ def pretty_print_semaphore(semaphore):
 
 
 def get_or_create_event_loop() -> asyncio.BaseEventLoop:
+    loop = None
     try:
         loop = asyncio.get_event_loop()
-    except Exception as e:
+        assert loop is not None
+        return loop
+    except RuntimeError as e:
         if not "no running event loop" in str(e):
             raise e
         logging.warning("Cant not get running event loop, create new event loop now")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    return loop
+        return asyncio.get_event_loop_policy().get_event_loop()
