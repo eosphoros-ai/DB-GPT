@@ -8,14 +8,12 @@ from pilot.configs.model_config import DEVICE
 from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper, ModelType
 from pilot.model.compression import compress_module
 from pilot.model.parameter import (
-    EnvArgumentParser,
     ModelParameters,
     LlamaCppModelParameters,
-    _genenv_ignoring_key_case,
 )
 from pilot.model.llm.monkey_patch import replace_llama_attn_with_non_inplace_operations
-from pilot.singleton import Singleton
 from pilot.utils import get_gpu_memory
+from pilot.utils.parameter_utils import EnvArgumentParser, _genenv_ignoring_key_case
 from pilot.logs import logger
 
 
