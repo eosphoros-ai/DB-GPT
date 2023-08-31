@@ -46,4 +46,3 @@ msgid ""
 "`mysql_connection <./connections/mysql_connection.html>`_: supported "
 "mysql_connection."
 msgstr "mysql connection使用方法"
-

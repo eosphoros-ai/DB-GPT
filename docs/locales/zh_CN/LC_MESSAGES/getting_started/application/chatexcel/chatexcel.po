@@ -99,4 +99,3 @@ msgid ""
 "![db plugins "
 "demonstration](../../../../assets/chat_excel/chat_excel_7.png)"
 msgstr "现在可以开始进行自然语言进行数据的分析查询对话了"
-

@@ -51,7 +51,7 @@ class DefaultModelWorker(ModelWorker):
     def parse_parameters(self, command_args: List[str] = None) -> ModelParameters:
         param_cls = self.model_param_class()
         model_args = EnvArgumentParser()
-        env_prefix = EnvArgumentParser.get_env_prefix(self.model_name)
+        env_prefix = None
         model_type = self.llm_adapter.model_type()
         model_params: ModelParameters = model_args.parse_args_into_dataclass(
             param_cls,

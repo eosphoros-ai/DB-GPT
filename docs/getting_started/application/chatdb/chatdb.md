@@ -51,5 +51,3 @@ In Editor Mode, you can edit your sql and execute it.
 ### 3.ChatDB
 
 ![db plugins demonstration](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/e04bc1b1-2c58-4b33-af62-97e89098ace7)
-
-

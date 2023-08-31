@@ -58,4 +58,3 @@ msgstr ""
 
 #~ msgid "Below is an example of using the knowledge base API to query knowledge:"
 #~ msgstr "下面是一个使用知识库API进行查询的例子:"
-

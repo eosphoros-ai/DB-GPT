@@ -100,4 +100,3 @@ msgid ""
 msgstr ""
 "注意，这里默认向量模型是text2vec-large-chinese(模型比较大，如果个人电脑配置不够建议采用text2vec-base-"
 "chinese),因此确保需要将模型download下来放到models目录中。"
-

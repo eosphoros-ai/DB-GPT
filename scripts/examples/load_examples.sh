@@ -65,5 +65,3 @@ else
     echo "Execute SQL file ${SQL_FILE}"
     sqlite3 $DB_FILE < $SQL_FILE
 fi
-
-

@@ -36,4 +36,3 @@ msgstr "Prompt是与大模型交互过程中非常重要的部分，一定程度
 #: ../../modules/prompts.md:5 6576d32e28a14be6a5d8180eed000aa7
 msgid "1.DB-GPT Prompt"
 msgstr ""
-

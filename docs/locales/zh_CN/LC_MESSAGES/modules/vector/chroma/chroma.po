@@ -47,4 +47,3 @@ msgstr "vector_name_exists()"
 #: ../../modules/vector/chroma/chroma.md:40 74ee4a7aecbf4bf58f47586138143db2
 msgid "load_document()"
 msgstr "load_document()"
-

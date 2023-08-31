@@ -12,7 +12,7 @@
 ```bash
 git clone https://github.com/csunny/DB-GPT-Plugins.git
 pip install -r requirements.txt
-python /DB-GPT-Plugins/src/dbgpt_plugins/db_dashboard/mock_datas.py 
+python /DB-GPT-Plugins/src/dbgpt_plugins/db_dashboard/mock_datas.py
 cp /DB-GPT-Plugins/src/dbgpt_plugins/db_dashboard/mock_datas/db-gpt-test.db /DB-GPT/pilot/mock_datas/
 
 python /DB-GPT/pilot/llmserver.py
@@ -52,6 +52,5 @@ docker run --init \
 
 Note: If your machine's CPU architecture is `ARM`, please use `--platform linux/arm64` instead.
 
-- Select the plugin on DB-GPT（All built-in plugins are from our repository: https://github.com/csunny/DB-GPT-Plugins），choose DB-GPT-Bytebase-Plugin. 
+- Select the plugin on DB-GPT（All built-in plugins are from our repository: https://github.com/csunny/DB-GPT-Plugins），choose DB-GPT-Bytebase-Plugin.
 Supporting functions include creating projects, creating environments, creating database instances, creating databases, database DDL/DML operations, and ticket approval process, etc.
-

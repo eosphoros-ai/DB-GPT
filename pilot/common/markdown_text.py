@@ -4,7 +4,7 @@ import pandas as pd
 
 def datas_to_table_html(data):
     df = pd.DataFrame(data[1:], columns=data[0])
-    table_style = """<style> 
+    table_style = """<style>
         table{border-collapse:collapse;width:60%;height:80%;margin:0 auto;float:right;border: 1px solid #007bff; background-color:#CFE299}th,td{border:1px solid #ddd;padding:3px;text-align:center}th{background-color:#C9C3C7;color: #fff;font-weight: bold;}tr:nth-child(even){background-color:#7C9F4A}tr:hover{background-color:#333}
      </style>"""
     html_table = df.to_html(index=False, escape=False)

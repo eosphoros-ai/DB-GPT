@@ -53,9 +53,9 @@ EXPLAIN 命令所展示的信息可以帮助普通用户了解整个计划的执
 
 EXPLAIN 命令格式如下：
 EXPLAIN [BASIC | EXTENDED | PARTITIONS | FORMAT = format_name] [PRETTY | PRETTY_COLOR] explainable_stmt
-format_name: 
+format_name:
   { TRADITIONAL | JSON }
-explainable_stmt: 
+explainable_stmt:
   { SELECT statement
  | DELETE statement
  | INSERT statement
@@ -109,37 +109,37 @@ Outputs & filters:
   8 - output([P2.C1], [P2.C2]), filter(nil),
       access([P2.C1], [P2.C2]), partitions(p[0-3])
 
-1 row in set 
+1 row in set
 
 
 
- 
-## 执行计划形状与算子信息 
+
+## 执行计划形状与算子信息
 
 在数据库系统中，执行计划在内部通常是以树的形式来表示的，但是不同的数据库会选择不同的方式展示给用户。
 
 如下示例分别为 PostgreSQL 数据库、Oracle 数据库和 OceanBase 数据库对于 TPCDS Q3 的计划展示。
 
 ```sql
-obclient> SELECT /*TPC-DS Q3*/ * 
-     FROM (SELECT dt.d_year, 
-                  item.i_brand_id    brand_id, 
-                  item.i_brand       brand, 
-                  Sum(ss_net_profit) sum_agg 
-           FROM   date_dim dt, 
-                  store_sales, 
-                  item 
-           WHERE  dt.d_date_sk = store_sales.ss_sold_date_sk 
-                  AND store_sales.ss_item_sk = item.i_item_sk 
-                  AND item.i_manufact_id = 914 
-                  AND dt.d_moy = 11 
-           GROUP  BY dt.d_year, 
-                  item.i_brand, 
-                  item.i_brand_id 
-           ORDER  BY dt.d_year, 
-                  sum_agg DESC, 
-                  brand_id) 
-     WHERE ROWNUM <= 100; 
+obclient> SELECT /*TPC-DS Q3*/ *
+     FROM (SELECT dt.d_year,
+                  item.i_brand_id    brand_id,
+                  item.i_brand       brand,
+                  Sum(ss_net_profit) sum_agg
+           FROM   date_dim dt,
+                  store_sales,
+                  item
+           WHERE  dt.d_date_sk = store_sales.ss_sold_date_sk
+                  AND store_sales.ss_item_sk = item.i_item_sk
+                  AND item.i_manufact_id = 914
+                  AND dt.d_moy = 11
+           GROUP  BY dt.d_year,
+                  item.i_brand,
+                  item.i_brand_id
+           ORDER  BY dt.d_year,
+                  sum_agg DESC,
+                  brand_id)
+     WHERE ROWNUM <= 100;
 
 PostgreSQL 数据库执行计划展示如下：
 Limit  (cost=13986.86..13987.20 rows=27 width=91)

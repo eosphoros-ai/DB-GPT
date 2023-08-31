@@ -1,5 +1,5 @@
 # DB-GPT: Revolutionizing Database Interactions with Private LLM Technology
- 
+
 <p align="left">
   <img src="./assets/LOGO.png" width="100%" />
 </p>
@@ -96,7 +96,7 @@ Currently, we have released multiple key features, which are listed below to dem
   - Gorilla(7b,13b)
   - baichuan(7b,13b)
 
-## Introduction 
+## Introduction
 DB-GPT creates a vast model operating system using [FastChat](https://github.com/lm-sys/FastChat) and offers a large language model powered by vicuna. In addition, we provide private domain knowledge base question-answering capability. Furthermore, we also provide support for additional plugins, and our design natively supports the Auto-GPT plugin.Our vision is to make it easier and more convenient to build  applications around databases and llm.
 
 Is the architecture of the entire DB-GPT shown in the following figure:
@@ -117,12 +117,12 @@ The core capabilities mainly consist of the following parts:
 ### SubModule
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL parsing with LLMs
 - [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT Plugins, Can run autogpt plugin directly
-- [DB-GPT-Web](https://github.com/eosphoros-ai/DB-GPT-Web)  ChatUI for DB-GPT  
+- [DB-GPT-Web](https://github.com/eosphoros-ai/DB-GPT-Web)  ChatUI for DB-GPT
 
 ## Image
 🌐 [AutoDL Image](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
 
-## Install 
+## Install
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)

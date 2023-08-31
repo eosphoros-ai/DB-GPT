@@ -137,4 +137,3 @@ msgstr ""
 #~ "Normal: [download mysql "
 #~ "instance](https://dev.mysql.com/downloads/mysql/)"
 #~ msgstr ""
-

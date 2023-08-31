@@ -94,5 +94,3 @@ class DBGPTOceanBase(AutoGPTPluginTemplate):
 - Please refer to the plugin development process in the public plugin library, and put the configuration parameters in `.plugin_env`
 
 - We warmly welcome everyone to contribute plugins to the public plugin library!
-
-

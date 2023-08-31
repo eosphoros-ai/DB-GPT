@@ -47,4 +47,3 @@ load_document()
         self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
         self.vector_store_client.persist()
 ```
-

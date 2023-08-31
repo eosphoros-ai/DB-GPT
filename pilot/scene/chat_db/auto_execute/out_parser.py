@@ -42,7 +42,7 @@ class DbChatOutputParser(BaseOutputParser):
             data.insert(0, ["result"])
         df = pd.DataFrame(data[1:], columns=data[0])
         if not CFG.NEW_SERVER_MODE and not CFG.SERVER_LIGHT_MODE:
-            table_style = """<style> 
+            table_style = """<style>
                 table{border-collapse:collapse;width:100%;height:80%;margin:0 auto;float:center;border: 1px solid #007bff; background-color:#333; color:#fff}th,td{border:1px solid #ddd;padding:3px;text-align:center}th{background-color:#C9C3C7;color: #fff;font-weight: bold;}tr:nth-child(even){background-color:#444}tr:hover{background-color:#444}
              </style>"""
             html_table = df.to_html(index=False, escape=False)

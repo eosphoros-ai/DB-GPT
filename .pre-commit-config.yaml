@@ -1,0 +1,6 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0  # 使用特定版本
+    hooks:
+    -   id: trailing-whitespace  # 删除行尾空格
+    -   id: end-of-file-fixer  # 确保文件以空行结尾

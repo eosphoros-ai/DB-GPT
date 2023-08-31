@@ -53,4 +53,3 @@ msgstr "实现read方法可以加载数据"
 #: d53a087726be4a0dbb8dadbeb772442b
 msgid "data_process() method allows you to pre processing your ways"
 msgstr "实现data_process方法可以进行数据预处理"
-

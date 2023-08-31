@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-DB-GPT command line tools. 
+DB-GPT command line tools.
 
 You can use it for some background management:
 - Lots of knowledge document initialization.

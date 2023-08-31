@@ -17,9 +17,9 @@ class AgentManager(metaclass=Singleton):
         self.cfg = Config()
 
     """Agent manager for managing DB-GPT agents
-       In order to compatible auto gpt plugins, 
+       In order to compatible auto gpt plugins,
        we use the same template with it.
-    
+
         Args: next_keys
                 agents
                 cfg

@@ -24,7 +24,7 @@ or
 $ pip install -e . -i http://mirrors.aliyun.com/pypi/simple/
 ```
 
-##### Q2: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file 
+##### Q2: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file
 
 make sure you pull latest code or create directory with mkdir pilot/data
 
@@ -50,7 +50,7 @@ Open `url` with your browser to see the website.
 ##### Q5: (Windows) execute `pip install -e .` error
 
 The error log like the following:
-``` 
+```
 × python setup.py bdist_wheel did not run successfully.
   │ exit code: 1
   ╰─> [11 lines of output]

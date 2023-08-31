@@ -48,4 +48,3 @@ msgstr "SQL生成和诊断"
 
 #~ msgid "![SQL Generation](../../assets/demo_en.gif)"
 #~ msgstr "![SQL 生成](../../assets/demo_en.gif)"
-

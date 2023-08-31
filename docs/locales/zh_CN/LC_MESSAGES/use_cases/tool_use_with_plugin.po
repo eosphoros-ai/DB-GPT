@@ -196,4 +196,3 @@ msgstr ""
 #~ "在DB-GPT上选择插件（所有内置插件均来自我们的仓库：https://github.com/csunny/DB-"
 #~ "GPT-Plugins），选择DB-GPT-Bytebase-"
 #~ "Plugin。支持的功能包括创建项目、创建环境、创建数据库实例、创建数据库、数据库DDL/DML操作和审批流程等。"
-

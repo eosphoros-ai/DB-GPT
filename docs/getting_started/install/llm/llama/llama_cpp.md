@@ -50,7 +50,7 @@ In DB-GPT, the model configuration can be done through  `{model name}_{config ke
 |----------|-----------| ----------- |
 | llama_cpp_prompt_template | None | Prompt template name, now support: `zero_shot, vicuna_v1.1, llama-2,baichuan-chat`, If None, the prompt template is automatically determined from model path。 |
 | llama_cpp_model_path |  None  | Model path |
-| llama_cpp_n_gpu_layers | 1000000000 |Number of layers to offload to the GPU, Set this to 1000000000 to offload all layers to the GPU. If your GPU VRAM is not enough, you can set a low number, eg: `10` | 
+| llama_cpp_n_gpu_layers | 1000000000 |Number of layers to offload to the GPU, Set this to 1000000000 to offload all layers to the GPU. If your GPU VRAM is not enough, you can set a low number, eg: `10` |
 | llama_cpp_n_threads |  None  | Number of threads to use. If None, the number of threads is automatically determined |
 | llama_cpp_n_batch |  512  | Maximum number of prompt tokens to batch together when calling llama_eval |
 | llama_cpp_n_gqa | None   | Grouped-query attention. Must be 8 for llama-2 70b.|

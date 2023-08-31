@@ -22,4 +22,3 @@ msgstr ""
 #: ../../use_cases/query_database_data.md:1 4a246f7052db497d990d3e65236b7c52
 msgid "Query database data"
 msgstr "查询数据库数据"
-

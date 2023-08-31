@@ -12,13 +12,13 @@ CFG = Config()
 PROMPT_SCENE_DEFINE = "You are an AI designed to solve the user's goals with given commands, please follow the  constraints of the system's input for your answers."
 
 _DEFAULT_TEMPLATE = """
-Goals: 
+Goals:
     {input}
-    
+
 Constraints:
 0.Exclusively use the commands listed in double quotes e.g. "command name"
 {constraints}
-    
+
 Commands:
 {commands_infos}
 

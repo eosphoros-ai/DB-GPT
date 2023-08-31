@@ -22,4 +22,3 @@ msgstr ""
 #: ../../reference.md:1 83c827fb051c40d8b16f704752c9581b
 msgid "Reference"
 msgstr "参考文献"
-

@@ -25,7 +25,7 @@ If your DB type is Mysql or other DBTYPE, you will build kbqa service database s
 ### Mysql
 $ mysql -h127.0.0.1 -uroot -paa12345678 < ./assets/schema/knowledge_management.sql
 
-or 
+or
 
 execute DBGPT/assets/schema/knowledge_management.sql
 ```
@@ -60,7 +60,7 @@ Embedding Argument
 ```{tip} Embedding arguments
 * topk:the top k vectors based on similarity score.
 * recall_score:set a threshold score for the retrieval of similar vectors.
-* recall_type:recall type. 
+* recall_type:recall type.
 * model:A model used to create vector representations of text or other data.
 * chunk_size:The size of the data chunks used in processing.
 * chunk_overlap:The amount of overlap between adjacent data chunks.
@@ -73,7 +73,7 @@ Prompt Argument
 ```{tip} Prompt arguments
 * scene:A contextual parameter used to define the setting or environment in which the prompt is being used.
 * template:A pre-defined structure or format for the prompt, which can help ensure that the AI system generates responses that are consistent with the desired style or tone.
-* max_token:The maximum number of tokens or words allowed in a prompt. 
+* max_token:The maximum number of tokens or words allowed in a prompt.
 ```
 
 #### 5.Change Vector Database

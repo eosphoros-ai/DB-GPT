@@ -17,9 +17,9 @@ According to the user goal: {user_input}，give the correct duckdb SQL for data 
 Use the table name: {table_name}
 
 According to the analysis SQL obtained by the user's goal, select the best one from the following display forms, if it cannot be determined, use Text  as the display.
-Display type: 
+Display type:
     {disply_type}
-    
+
 Respond in the following json format:
     {response}
 Ensure the response is correct json and can be parsed by Python json.loads
@@ -32,7 +32,7 @@ _DEFAULT_TEMPLATE_ZH = """
 SQL中需要使用的表名是: {table_name}
 
 根据用户目标得到的分析SQL，请从以下显示类型中选择最合适的一种用来展示结果数据，如果无法确定，则使用'Text'作为显示。
-显示类型如下: 
+显示类型如下:
     {disply_type}
 
 以以下 json 格式响应：:

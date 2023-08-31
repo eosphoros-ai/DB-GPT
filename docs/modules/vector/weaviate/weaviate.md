@@ -86,4 +86,3 @@ load_document()
                 self.vector_store_client.batch.add_data_object(data_object=properties, class_name=self.vector_name)
             self.vector_store_client.batch.flush()
 ```
-

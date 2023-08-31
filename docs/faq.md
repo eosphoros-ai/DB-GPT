@@ -71,7 +71,7 @@ mysql> create database {$your_name}
 mysql> use {$your_name}
 ```
 
-2.create table {$your_table} and insert your data. 
+2.create table {$your_table} and insert your data.
 eg:
 ```bash
 mysql>CREATE TABLE `users` (
@@ -114,7 +114,7 @@ VECTOR_STORE_TYPE=Chroma
 ##### Q8:space add error (pymysql.err.OperationalError) (1054, "Unknown column 'knowledge_space.context' in 'field list'")
 
 
-##### A8: 
+##### A8:
 1.shutdown dbgpt_server(ctrl c)
 
 2.add column context for table knowledge_space
@@ -127,12 +127,3 @@ mysql> use knowledge_management;
 mysql> ALTER TABLE knowledge_space ADD COLUMN context TEXT COMMENT "arguments context";
 ```
 4.restart dbgpt server
-
-
-
-
-
-
-
-
-

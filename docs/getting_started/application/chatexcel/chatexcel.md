@@ -6,7 +6,7 @@ ChatExcel uses natural language to analyze and query Excel data.![db plugins dem
 ### 1.Select And Upload Excel or CSV File
 Select your excel or csv file to upload and start the conversation.
 ```{tip}
-ChatExcel 
+ChatExcel
 
 The ChatExcel function supports Excel and CSV format files, select the corresponding file to use.
 ```
@@ -22,6 +22,3 @@ Now you can use natural language to analyze and query data in the dialog box.
 ![db plugins demonstration](../../../../assets/chat_excel/chat_excel_5.png)
 ![db plugins demonstration](../../../../assets/chat_excel/chat_excel_6.png)
 ![db plugins demonstration](../../../../assets/chat_excel/chat_excel_7.png)
-
-
-

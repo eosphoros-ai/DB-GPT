@@ -23,4 +23,3 @@ msgstr ""
 #: 2b540d0fbece43c5a9d90e0935eb574c
 msgid "quantization"
 msgstr "quantization"
-

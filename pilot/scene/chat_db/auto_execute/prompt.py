@@ -13,7 +13,7 @@ PROMPT_SCENE_DEFINE = "You are a SQL expert. "
 _DEFAULT_TEMPLATE = """
 Given an input question, create a syntactically correct {dialect} sql.
 
-Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results. 
+Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results.
 Use as few tables as possible when querying.
 Only use the following tables schema to generate sql:
 {table_info}

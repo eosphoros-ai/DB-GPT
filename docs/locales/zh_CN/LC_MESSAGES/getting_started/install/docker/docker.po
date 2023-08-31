@@ -153,4 +153,3 @@ msgid ""
 msgstr ""
 "`-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-"
 "chinese`, 设置知识库embedding模型为text2vec. container.\""
-

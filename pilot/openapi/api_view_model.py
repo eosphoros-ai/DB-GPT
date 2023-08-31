@@ -37,21 +37,21 @@ class ConversationVo(BaseModel):
     """
 
     conv_uid: str = ""
-    """ 
-    user input 
+    """
+    user input
     """
     user_input: str = ""
     """
     user
     """
     user_name: str = ""
-    """ 
-    the scene of chat 
+    """
+    the scene of chat
     """
     chat_mode: str = ""
 
     """
-    chat scene select param 
+    chat scene select param
     """
     select_param: str = None
 
@@ -63,7 +63,7 @@ class MessageVo(BaseModel):
 
     role: str
     """
-    current message 
+    current message
     """
     context: str
 
@@ -71,6 +71,6 @@ class MessageVo(BaseModel):
     order: int
 
     """
-    time the current message was sent 
+    time the current message was sent
     """
     time_stamp: Any = None

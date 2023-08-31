@@ -33,4 +33,3 @@ msgstr "MYSQL可以连接mysql server"
 #: 5a2141fba4bd41269d4ad73885067e0d
 msgid "inheriting the RDBMSDatabase"
 msgstr "继承RDBMSDatabase"
-

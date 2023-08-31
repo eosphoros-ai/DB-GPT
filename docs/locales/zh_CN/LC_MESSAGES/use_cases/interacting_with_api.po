@@ -22,4 +22,3 @@ msgstr ""
 #: ../../use_cases/interacting_with_api.md:1 2dc3e9c958e24aca90af1b0520d416b4
 msgid "Interacting with api"
 msgstr "API交互"
-

@@ -467,4 +467,3 @@ msgstr ""
 #~ msgstr ""
 #~ "注意，需要安装[requirements.txt](https://github.com/eosphoros-ai/DB-"
 #~ "GPT/blob/main/requirements.txt)涉及的所有的依赖"
-

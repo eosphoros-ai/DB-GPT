@@ -29,4 +29,3 @@ msgid ""
 "product interface, including PC, mobile phone, command line, Slack and "
 "other platforms."
 msgstr "TODO: 在终端展示上，我们将提供多端产品界面。包括PC、手机、命令行、Slack等多种模式。"
-

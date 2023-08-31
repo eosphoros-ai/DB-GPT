@@ -14,7 +14,7 @@ PROMPT_SCENE_DEFINE = "You are a data analysis expert. "
 _DEFAULT_TEMPLATE_EN = """
 This is an example data，please learn to understand the structure and content of this data:
     {data_example}
-Explain the meaning and function of each column, and give a simple and clear explanation of the technical terms.  
+Explain the meaning and function of each column, and give a simple and clear explanation of the technical terms.
 Provide some analysis options,please think step by step.
 
 Please return your answer in JSON format, the return format is as follows:

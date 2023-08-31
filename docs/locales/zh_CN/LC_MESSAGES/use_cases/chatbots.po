@@ -22,4 +22,3 @@ msgstr ""
 #: ../../use_cases/chatbots.md:1 e599819098be40759193233cc476f26a
 msgid "Chatbot"
 msgstr "聊天机器人"
-

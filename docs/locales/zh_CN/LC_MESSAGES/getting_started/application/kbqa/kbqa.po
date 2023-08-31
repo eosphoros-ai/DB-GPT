@@ -393,4 +393,3 @@ msgstr "WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.networkc"
 
 #~ msgid "Prompt Argument ![upload](../../../../assets/kbqa/prompt.png)"
 #~ msgstr "Prompt Argument ![upload](../../../../assets/kbqa/prompt.png)"
-

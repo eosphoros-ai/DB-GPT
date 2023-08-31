@@ -317,7 +317,7 @@ class ModelParameters(BaseParameters):
         default=False, metadata={"help": "CPU offloading"}
     )
     load_8bit: Optional[bool] = field(
-        default=False, metadata={"help": "8-bit quantization"}
+        default=True, metadata={"help": "8-bit quantization"}
     )
     load_4bit: Optional[bool] = field(
         default=False, metadata={"help": "4-bit quantization"}

@@ -48,4 +48,3 @@ msgstr "chatdb"
 #: ../../getting_started/faq.rst:11 24a115044f984a71a83dea6000a98de8
 msgid "kbqa"
 msgstr "kbqa"
-

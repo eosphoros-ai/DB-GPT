@@ -120,4 +120,3 @@ msgstr "[How to deploy DB-GPT step by "
 
 #~ msgid "db plugins demonstration"
 #~ msgstr "DB插件演示"
-

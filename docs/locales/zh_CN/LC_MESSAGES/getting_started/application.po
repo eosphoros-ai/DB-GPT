@@ -48,4 +48,3 @@ msgstr "Dashboard"
 #: ../../getting_started/application.rst:11 f6a5806d4f0d4271bb0964935d9c2ff3
 msgid "Plugins"
 msgstr "Plugins"
-

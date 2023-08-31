@@ -49,4 +49,3 @@ msgstr ""
 #: fdaf95f201624242bbfcff36480e1819
 msgid "data_process() method allows you to pre processing your ways"
 msgstr ""
-

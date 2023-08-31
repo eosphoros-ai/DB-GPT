@@ -62,4 +62,3 @@ Finally, delete the branch you created with the following command:
 git branch -d branch-name
 ```
 That's it you made it 🐣⭐⭐
-

@@ -160,7 +160,7 @@ conv_one_shot = Conversation(
             "database schema:"
             "database name:db_test, database type:MYSQL, table infos:table name:carts,table description:购物车表;table name:categories,table description:商品分类表;table name:chat_groups,table description:群组表;table name:chat_users,table description:聊天用户表;table name:friends,table description:好友表;table name:messages,table description:消息表;table name:orders,table description:订单表;table name:products,table description:商品表;table name:table_test,table description:;table name:users,table description:用户表，"
             "You should only respond in JSON format as described below and ensure the response can be parsed by Python json.loads"
-            """Response Format: 
+            """Response Format:
             {
                 "table": ["orders", "products"]
             }
@@ -220,7 +220,7 @@ auto_dbgpt_one_shot = Conversation(
               8. db_sql_executor: "Execute SQL in Database.", args: "sql": "<sql>"
 
               You should only respond in JSON format as described below and ensure the response can be parsed by Python json.loads
-              Response Format: 
+              Response Format:
               {
                   "thoughts": {
                       "text": "thought",
@@ -235,7 +235,7 @@ auto_dbgpt_one_shot = Conversation(
                           "arg name": "value"
                       }
                   }
-              } 
+              }
             """,
         ),
         (
@@ -255,7 +255,7 @@ auto_dbgpt_one_shot = Conversation(
                         "sql": "SELECT COUNT(DISTINCT(user_name)) FROM users ;"
                     }
                 }
-            } 
+            }
             """,
         ),
     ),
@@ -276,12 +276,12 @@ auto_dbgpt_without_shot = Conversation(
 )
 
 conv_qa_prompt_template = """ 基于以下已知的信息, 专业、简要的回答用户的问题,
-            如果无法从提供的内容中获取答案, 请说: "知识库中提供的内容不足以回答此问题" 禁止胡乱编造。 
-            已知内容: 
+            如果无法从提供的内容中获取答案, 请说: "知识库中提供的内容不足以回答此问题" 禁止胡乱编造。
+            已知内容:
             {context}
             问题:
             {question}
-            
+
 """
 
 # conv_qa_prompt_template = """ Please provide the known information so that I can professionally and briefly answer the user's question. If the answer cannot be obtained from the provided content,

@@ -6,7 +6,7 @@ This tutorial gives you a quick walkthrough about use DB-GPT with you environmen
 
 To get started, install DB-GPT with the following steps.
 
-### 1. Hardware Requirements 
+### 1. Hardware Requirements
 As our project has the ability to achieve ChatGPT performance of over 85%, there are certain hardware requirements. However, overall, the project can be deployed and used on consumer-grade graphics cards. The specific hardware requirements for deployment are as follows:
 
 | GPU      | VRAM Size | Performance                                 |
@@ -28,7 +28,7 @@ Here are some of the VRAM size usage of the models we tested in some common scen
 | vicuna-13b-v1.5  | 8-bit  | 20 GB     |
 | llama-2-7b  | 4-bit  | 8 GB     |
 | llama-2-7b  | 8-bit  | 12 GB     |
-| llama-2-13b  | 4-bit  | 12 GB     | 
+| llama-2-13b  | 4-bit  | 12 GB     |
 | llama-2-13b  | 8-bit  | 20 GB     |
 | llama-2-70b  | 4-bit  | 48 GB     |
 | llama-2-70b  | 8-bit  | 80 GB     |
@@ -42,7 +42,7 @@ Here are some of the VRAM size usage of the models we tested in some common scen
 git clone https://github.com/eosphoros-ai/DB-GPT.git
 ```
 
-We use Sqlite as default database, so there is no need for database installation.  If you choose to connect to other databases, you can follow our tutorial for installation and configuration. 
+We use Sqlite as default database, so there is no need for database installation.  If you choose to connect to other databases, you can follow our tutorial for installation and configuration.
 For the entire installation process of DB-GPT, we use the miniconda3 virtual environment. Create a virtual environment and install the Python dependencies.
 [How to install Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 ```bash
@@ -107,7 +107,7 @@ On windows platform:
 .\scripts\examples\load_examples.bat
 ```
 
-1.Run db-gpt server 
+1.Run db-gpt server
 
 ```bash
 python pilot/server/dbgpt_server.py

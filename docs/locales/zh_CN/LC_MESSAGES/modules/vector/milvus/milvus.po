@@ -54,4 +54,3 @@ msgstr "vector_name_exists()"
 #: ../../modules/vector/milvus/milvus.md:62 c14e570621394f6983159f2208f62b28
 msgid "load_document()"
 msgstr "load_document()"
-

@@ -212,4 +212,3 @@ msgstr "![db plugins demonstration](https://github.com/eosphoros-ai/DB-"
 
 #~ msgid "![db plugins demonstration](../../../../assets/chat_data/chatdb_eg.png)"
 #~ msgstr "![db plugins demonstration](../../../../assets/chat_data/chatdb_eg.png)"
-

@@ -55,4 +55,3 @@ msgstr "vector_name_exists()"
 #: f453b53d3d2242ec9a28e3ce1dc44561
 msgid "load_document()"
 msgstr "load_document()"
-

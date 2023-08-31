@@ -73,4 +73,3 @@ msgstr "chatData 使用clickhouse时发现driver与clickhouse-sqlalchemy不兼�
 #: e3746b0538b045e883cfbb17b0177f04
 msgid "Just set sqlalchemy<1.5,>=1.4.24"
 msgstr "调整下版本 sqlalchemy<1.5,>=1.4.24"
-

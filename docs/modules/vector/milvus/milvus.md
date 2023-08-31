@@ -73,4 +73,3 @@ load_document()
         for doc_batch in batched_list:
             self.init_schema_and_load(self.collection_name, doc_batch)
 ```
-

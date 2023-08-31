@@ -86,4 +86,3 @@ msgstr "Milvus <./vector/milvus.html>`_: 支持Milvus向量数据库"
 #, fuzzy
 msgid "`weaviate <./vector/weaviate.html>`_: supported weaviate vector database."
 msgstr "Milvus <./vector/milvus.html>`_: 支持Milvus向量数据库"
-

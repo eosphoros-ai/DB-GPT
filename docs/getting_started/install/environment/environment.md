@@ -3,17 +3,17 @@ Environment Parameter
 
 ```{admonition} LLM MODEL Config
 LLM Model Name, see /pilot/configs/model_config.LLM_MODEL_CONFIG
-* LLM_MODEL=vicuna-13b 
+* LLM_MODEL=vicuna-13b
 
 MODEL_SERVER_ADDRESS
-* MODEL_SERVER=http://127.0.0.1:8000 
+* MODEL_SERVER=http://127.0.0.1:8000
 LIMIT_MODEL_CONCURRENCY
 
-* LIMIT_MODEL_CONCURRENCY=5 
+* LIMIT_MODEL_CONCURRENCY=5
 
 MAX_POSITION_EMBEDDINGS
 
-* MAX_POSITION_EMBEDDINGS=4096 
+* MAX_POSITION_EMBEDDINGS=4096
 
 QUANTIZE_QLORA
 
@@ -21,7 +21,7 @@ QUANTIZE_QLORA
 
 QUANTIZE_8bit
 
-* QUANTIZE_8bit=True 
+* QUANTIZE_8bit=True
 ```
 
 ```{admonition} LLM PROXY Settings
@@ -50,22 +50,22 @@ from https://bard.google.com/     f12-> application-> __Secure-1PSID
 
 ```{admonition} EMBEDDING SETTINGS
 EMBEDDING MODEL Name, see /pilot/configs/model_config.LLM_MODEL_CONFIG
-* EMBEDDING_MODEL=text2vec 
+* EMBEDDING_MODEL=text2vec
 
 Embedding Chunk size, default 500
 
-* KNOWLEDGE_CHUNK_SIZE=500 
+* KNOWLEDGE_CHUNK_SIZE=500
 
 Embedding Chunk Overlap, default 100
 * KNOWLEDGE_CHUNK_OVERLAP=100
 
 embeding recall top k,5
 
-* KNOWLEDGE_SEARCH_TOP_SIZE=5 
+* KNOWLEDGE_SEARCH_TOP_SIZE=5
 
 embeding recall max token ,2000
 
-* KNOWLEDGE_SEARCH_MAX_TOKEN=5 
+* KNOWLEDGE_SEARCH_MAX_TOKEN=5
 ```
 
 ```{admonition} Vector Store SETTINGS
@@ -119,4 +119,3 @@ You can configure the maximum memory used by each GPU.
 * LANGUAGE=en
 * LANGUAGE=zh
 ```
-

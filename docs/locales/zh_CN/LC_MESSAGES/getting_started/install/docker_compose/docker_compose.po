@@ -50,4 +50,3 @@ msgid ""
 "You can open docker-compose.yml in the project root directory to see more"
 " details."
 msgstr "可以打开docker-compose.yml查看更多内容"
-

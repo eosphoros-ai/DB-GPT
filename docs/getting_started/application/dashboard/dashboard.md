@@ -33,4 +33,3 @@ data in pilot/mock_datas/, you should follow the steps.
 
 #### 5.Adjust and modify your report
 ![db plugins demonstration](../../../../assets/chat_dashboard/chat_dashboard_2.png)
-

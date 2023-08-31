@@ -32,4 +32,3 @@ version:
   - [embedding_engine api](https://db-gpt.readthedocs.io/en/latest/modules/knowledge.html)
   - [multi source embedding](https://db-gpt.readthedocs.io/en/latest/modules/knowledge/pdf/pdf_embedding.html)
   - [vector connector](https://db-gpt.readthedocs.io/en/latest/modules/vector.html)
-

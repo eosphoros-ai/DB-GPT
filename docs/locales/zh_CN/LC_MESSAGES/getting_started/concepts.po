@@ -22,4 +22,3 @@ msgstr ""
 #: ../../getting_started/concepts.md:1 bbfc919428fd48f886677ada33b9c495
 msgid "Concepts"
 msgstr "概念"
-

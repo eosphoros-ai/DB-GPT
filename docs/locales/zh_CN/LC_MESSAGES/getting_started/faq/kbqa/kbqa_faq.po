@@ -108,4 +108,3 @@ msgstr "Q5:当使用 Mysql数据库时, 使用DB-GPT怎么初始化 KBQA service
 #: bb01d8d145f64038bbacde1f05e69be1
 msgid "build Mysql KBQA system database schema."
 msgstr "构建Mysql KBQA system database schema"
-

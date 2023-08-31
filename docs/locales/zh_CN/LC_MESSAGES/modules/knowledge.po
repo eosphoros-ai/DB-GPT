@@ -200,4 +200,3 @@ msgstr "pdf_embedding <./knowledge/pdf_embedding.html>`_: supported pdf embeddin
 #~ " set Milvus, please set MILVUS_URL "
 #~ "and MILVUS_PORT)"
 #~ msgstr "2.更新你的.env，设置你的向量存储类型，VECTOR_STORE_TYPE=Chroma(现在只支持Chroma和Milvus，如果你设置了Milvus，请设置MILVUS_URL和MILVUS_PORT)"
-
