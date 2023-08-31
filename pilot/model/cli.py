@@ -7,25 +7,33 @@ from pilot.model.worker.manager import (
     WorkerApplyRequest,
     WorkerApplyType,
 )
+from pilot.model.parameter import (
+    ModelControllerParameters,
+    ModelWorkerParameters,
+    ModelParameters,
+)
 from pilot.utils import get_or_create_event_loop
+from pilot.utils.parameter_utils import EnvArgumentParser
 
 
 @click.group("model")
-def model_cli_group():
-    pass
-
-
-@model_cli_group.command()
 @click.option(
     "--address",
     type=str,
     default="http://127.0.0.1:8000",
     required=False,
+    show_default=True,
     help=(
-        "Address of the Model Controller to connect to."
+        "Address of the Model Controller to connect to. "
         "Just support light deploy model"
     ),
 )
+def model_cli_group():
+    """Clients that manage model serving"""
+    pass
+
+
+@model_cli_group.command()
 @click.option(
     "--model-name", type=str, default=None, required=False, help=("The name of model")
 )
@@ -79,16 +87,6 @@ def list(address: str, model_name: str, model_type: str):
 
 
 def add_model_options(func):
-    @click.option(
-        "--address",
-        type=str,
-        default="http://127.0.0.1:8000",
-        required=False,
-        help=(
-            "Address of the Model Controller to connect to."
-            "Just support light deploy model"
-        ),
-    )
     @click.option(
         "--model-name",
         type=str,
@@ -149,3 +147,57 @@ def worker_apply(
     )
     res = loop.run_until_complete(worker_manager.worker_apply(apply_req))
     print(res)
+
+
+@click.command(name="controller")
+@EnvArgumentParser.create_click_option(ModelControllerParameters)
+def start_model_controller(**kwargs):
+    """Start model controller"""
+    from pilot.model.controller.controller import run_model_controller
+
+    run_model_controller()
+
+
+@click.command(name="controller")
+def stop_model_controller(**kwargs):
+    """Start model controller"""
+    raise NotImplementedError
+
+
+@click.command(name="worker")
+@EnvArgumentParser.create_click_option(ModelWorkerParameters, ModelParameters)
+def start_model_worker(**kwargs):
+    """Start model worker"""
+    from pilot.model.worker.manager import run_worker_manager
+
+    run_worker_manager()
+
+
+@click.command(name="worker")
+def stop_model_worker(**kwargs):
+    """Stop model worker"""
+    raise NotImplementedError
+
+
+@click.command(name="webserver")
+def start_webserver(**kwargs):
+    """Start webserver(dbgpt_server.py)"""
+    raise NotImplementedError
+
+
+@click.command(name="webserver")
+def stop_webserver(**kwargs):
+    """Stop webserver(dbgpt_server.py)"""
+    raise NotImplementedError
+
+
+@click.command(name="apiserver")
+def start_apiserver(**kwargs):
+    """Start apiserver(TODO)"""
+    raise NotImplementedError
+
+
+@click.command(name="controller")
+def stop_apiserver(**kwargs):
+    """Start apiserver(TODO)"""
+    raise NotImplementedError

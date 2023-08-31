@@ -166,6 +166,9 @@ class Config(metaclass=Singleton):
         self.IS_LOAD_4BIT = os.getenv("QUANTIZE_4bit", "False") == "True"
         if self.IS_LOAD_8BIT and self.IS_LOAD_4BIT:
             self.IS_LOAD_8BIT = False
+        # In order to be compatible with the new and old model parameter design
+        os.environ["load_8bit"] = str(self.IS_LOAD_8BIT)
+        os.environ["load_4bit"] = str(self.IS_LOAD_4BIT)
 
         ### EMBEDDING Configuration
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text2vec")

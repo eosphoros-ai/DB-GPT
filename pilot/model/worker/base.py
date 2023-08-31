@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, Iterator, List, Type
 
 from pilot.model.base import ModelOutput
-from pilot.model.parameter import (
-    ModelParameters,
+from pilot.model.parameter import ModelParameters, WorkerType
+from pilot.utils.parameter_utils import (
     ParameterDescription,
-    WorkerType,
     _get_parameter_descriptions,
 )
 
