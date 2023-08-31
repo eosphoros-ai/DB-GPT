@@ -153,12 +153,15 @@ class ConnectManager:
                 db_user = db_info.db_user
                 db_pwd = db_info.db_pwd
                 return connect_instance.from_uri_db(
-                    host=db_host, port=db_port, user=db_user, pwd=db_pwd, db_name=db_name
+                    host=db_host,
+                    port=db_port,
+                    user=db_user,
+                    pwd=db_pwd,
+                    db_name=db_name,
                 )
         except Exception as e:
-            print(f'{db_info.db_name} Test connect Failure!{str(e)}')
-            raise ValueError(f'{db_info.db_name} Test connect Failure!{str(e)}')
-
+            print(f"{db_info.db_name} Test connect Failure!{str(e)}")
+            raise ValueError(f"{db_info.db_name} Test connect Failure!{str(e)}")
 
     def get_db_list(self):
         return self.storage.get_db_list()
