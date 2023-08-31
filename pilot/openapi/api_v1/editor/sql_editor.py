@@ -9,7 +9,7 @@ class DataNode(BaseModel):
 
     type: str = ""
     default_value: str = None
-    can_null: str = 'YES'
+    can_null: str = "YES"
     comment: str = None
     children: List = []
 

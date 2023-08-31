@@ -117,10 +117,8 @@ def _conversation_to_dic(once: OnceConversation) -> dict:
         "tokens": once.tokens if once.tokens else 0,
         "messages": messages_to_dict(once.messages),
         "param_type": once.param_type,
-        "param_value": once.param_value
+        "param_value": once.param_value,
     }
-
-
 
 
 def conversations_to_dict(conversations: List[OnceConversation]) -> List[dict]:

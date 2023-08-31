@@ -1,26 +1,19 @@
 from __future__ import annotations
+
 import json
-
-from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-)
-from pilot.utils import build_logger
 import re
+from abc import ABC, abstractmethod
+from dataclasses import asdict
+from typing import Any, Dict, TypeVar, Union
 
-from pydantic import BaseModel, Extra, Field, root_validator
-from pilot.configs.model_config import LOGDIR
 from pilot.configs.config import Config
+from pilot.configs.model_config import LOGDIR
+from pilot.model.base import ModelOutput
+from pilot.utils import build_logger
 
 T = TypeVar("T")
+ResponseTye = Union[str, bytes, ModelOutput]
+
 logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
 
 CFG = Config()
@@ -46,11 +39,8 @@ class BaseOutputParser(ABC):
             code = sep.join(blocks)
         return code
 
-    def parse_model_stream_resp_ex(self, chunk, skip_echo_len):
-        if b"\0" in chunk:
-            chunk = chunk.replace(b"\0", b"")
-        data = json.loads(chunk.decode())
-
+    def parse_model_stream_resp_ex(self, chunk: ResponseTye, skip_echo_len):
+        data = _parse_model_response(chunk)
         """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
         """
         model_context = data.get("model_context")
@@ -103,8 +93,8 @@ class BaseOutputParser(ABC):
                     output = data["text"] + f" (error_code: {data['error_code']})"
                     yield output
 
-    def parse_model_nostream_resp(self, response, sep: str):
-        resp_obj_ex = json.loads(response)
+    def parse_model_nostream_resp(self, response: ResponseTye, sep: str):
+        resp_obj_ex = _parse_model_response(response)
         if isinstance(resp_obj_ex, str):
             resp_obj_ex = json.loads(resp_obj_ex)
         if resp_obj_ex["error_code"] == 0:
@@ -123,11 +113,7 @@ class BaseOutputParser(ABC):
             ai_response = ai_response.replace("\*", "*")
             ai_response = ai_response.replace("\t", "")
 
-            ai_response = (
-                ai_response.strip()
-                    .replace("\\n", " ")
-                    .replace("\n", " ")
-            )
+            ai_response = ai_response.strip().replace("\\n", " ").replace("\n", " ")
             print("un_stream ai response:", ai_response)
             return ai_response
         else:
@@ -159,7 +145,7 @@ class BaseOutputParser(ABC):
             if i < 0:
                 return None
             count = 1
-            for j, c in enumerate(s[i + 1:], start=i + 1):
+            for j, c in enumerate(s[i + 1 :], start=i + 1):
                 if c == "]":
                     count -= 1
                 elif c == "[":
@@ -167,13 +153,13 @@ class BaseOutputParser(ABC):
                 if count == 0:
                     break
             assert count == 0
-            return s[i: j + 1]
+            return s[i : j + 1]
         else:
             i = s.find("{")
             if i < 0:
                 return None
             count = 1
-            for j, c in enumerate(s[i + 1:], start=i + 1):
+            for j, c in enumerate(s[i + 1 :], start=i + 1):
                 if c == "}":
                     count -= 1
                 elif c == "{":
@@ -181,7 +167,7 @@ class BaseOutputParser(ABC):
                 if count == 0:
                     break
             assert count == 0
-            return s[i: j + 1]
+            return s[i : j + 1]
 
     def parse_prompt_response(self, model_out_text) -> T:
         """
@@ -198,9 +184,9 @@ class BaseOutputParser(ABC):
         # if "```" in cleaned_output:
         #     cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json"):]
+            cleaned_output = cleaned_output[len("```json") :]
         if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```"):]
+            cleaned_output = cleaned_output[len("```") :]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
@@ -209,9 +195,9 @@ class BaseOutputParser(ABC):
             cleaned_output = self.__extract_json(cleaned_output)
         cleaned_output = (
             cleaned_output.strip()
-                .replace("\\n", " ")
-                .replace("\n", " ")
-                .replace("\\", " ")
+            .replace("\\n", " ")
+            .replace("\n", " ")
+            .replace("\\", " ")
         )
         cleaned_output = self.__illegal_json_ends(cleaned_output)
         return cleaned_output
@@ -244,3 +230,17 @@ class BaseOutputParser(ABC):
         output_parser_dict = super().dict()
         output_parser_dict["_type"] = self._type
         return output_parser_dict
+
+
+def _parse_model_response(response: ResponseTye):
+    if isinstance(response, ModelOutput):
+        resp_obj_ex = asdict(response)
+    elif isinstance(response, str):
+        resp_obj_ex = json.loads(response)
+    elif isinstance(response, bytes):
+        if b"\0" in response:
+            response = response.replace(b"\0", b"")
+        resp_obj_ex = json.loads(response.decode())
+    else:
+        raise ValueError(f"Unsupported response type {type(response)}")
+    return resp_obj_ex

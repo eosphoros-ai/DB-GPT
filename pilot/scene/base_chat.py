@@ -28,10 +28,7 @@ from pilot.memory.chat_history.mem_history import MemHistoryMemory
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 
 from pilot.configs.model_config import LOGDIR, DATASETS_DIR
-from pilot.utils import (
-    build_logger,
-    server_error_msg,
-)
+from pilot.utils import build_logger, server_error_msg, get_or_create_event_loop
 from pilot.scene.base_message import (
     BaseMessage,
     SystemMessage,
@@ -60,18 +57,13 @@ class BaseChat(ABC):
         arbitrary_types_allowed = True
 
     def __init__(
-            self,
-            chat_mode,
-            chat_session_id,
-            current_user_input,
-            select_param: Any = None
+        self, chat_mode, chat_session_id, current_user_input, select_param: Any = None
     ):
         self.chat_session_id = chat_session_id
         self.chat_mode = chat_mode
         self.current_user_input: str = current_user_input
         self.llm_model = CFG.LLM_MODEL
         self.llm_echo = False
-
 
         ### load prompt template
         # self.prompt_template: PromptTemplate = CFG.prompt_templates[
@@ -163,7 +155,7 @@ class BaseChat(ABC):
         }
         return payload
 
-    def stream_call(self):
+    async def stream_call(self):
         # TODO Retry when server connection error
         payload = self.__call_base()
 
@@ -171,18 +163,10 @@ class BaseChat(ABC):
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
-            if not CFG.NEW_SERVER_MODE:
-                response = requests.post(
-                    urljoin(CFG.MODEL_SERVER, "generate_stream"),
-                    headers=headers,
-                    json=payload,
-                    stream=True,
-                    timeout=120,
-                )
-                return response
-            else:
-                from pilot.server.llmserver import worker
-                return worker.generate_stream_gate(payload)
+            from pilot.model.worker.manager import worker_manager
+
+            async for output in worker_manager.generate_stream(payload):
+                yield output
         except Exception as e:
             print(traceback.format_exc())
             logger.error("model response parase faild！" + str(e))
@@ -192,34 +176,19 @@ class BaseChat(ABC):
             ### store current conversation
             self.memory.append(self.current_message)
 
-    def nostream_call(self):
+    async def nostream_call(self):
         payload = self.__call_base()
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
-            rsp_str = ""
-            if not CFG.NEW_SERVER_MODE:
-                rsp_obj = requests.post(
-                    urljoin(CFG.MODEL_SERVER, "generate"),
-                    headers=headers,
-                    json=payload,
-                    timeout=120,
-                )
-                rsp_str = rsp_obj.text
-            else:
-                ###TODO  no stream mode need independent
-                from pilot.server.llmserver import worker
+            from pilot.model.worker.manager import worker_manager
 
-                output = worker.generate_stream_gate(payload)
-                for rsp in output:
-                    rsp = rsp.replace(b"\0", b"")
-                    rsp_str = rsp.decode()
-                    print("[TEST: output]:", rsp_str)
+            model_output = await worker_manager.generate(payload)
 
             ### output parse
             ai_response_text = (
                 self.prompt_template.output_parser.parse_model_nostream_resp(
-                    rsp_str, self.prompt_template.sep
+                    model_output, self.prompt_template.sep
                 )
             )
             ### model result deal
@@ -235,7 +204,9 @@ class BaseChat(ABC):
             ### llm speaker
             speak_to_user = self.get_llm_speak(prompt_define_response)
 
-            view_message = self.prompt_template.output_parser.parse_view_response(speak_to_user, result)
+            view_message = self.prompt_template.output_parser.parse_view_response(
+                speak_to_user, result
+            )
             self.current_message.add_view_message(view_message)
         except Exception as e:
             print(traceback.format_exc())
@@ -247,16 +218,34 @@ class BaseChat(ABC):
         self.memory.append(self.current_message)
         return self.current_ai_response()
 
+    def _blocking_stream_call(self):
+        logger.warn(
+            "_blocking_stream_call is only temporarily used in webserver and will be deleted soon, please use stream_call to replace it for higher performance"
+        )
+        loop = get_or_create_event_loop()
+        async_gen = self.stream_call()
+        while True:
+            try:
+                value = loop.run_until_complete(async_gen.__anext__())
+                yield value
+            except StopAsyncIteration:
+                break
+
+    def _blocking_nostream_call(self):
+        logger.warn(
+            "_blocking_nostream_call is only temporarily used in webserver and will be deleted soon, please use nostream_call to replace it for higher performance"
+        )
+        loop = get_or_create_event_loop()
+        return loop.run_until_complete(self.nostream_call())
+
     def call(self):
         if self.prompt_template.stream_out:
-            yield self.stream_call()
+            yield self._blocking_stream_call()
         else:
-            return self.nostream_call()
-
+            return self._blocking_nostream_call()
 
     def prepare(self):
-       pass
-
+        pass
 
     def generate_llm_text(self) -> str:
         warnings.warn("This method is deprecated - please use `generate_llm_messages`.")
@@ -309,7 +298,7 @@ class BaseChat(ABC):
         system_messages = []
         for system_conv in system_convs:
             system_text += (
-                    system_conv.type + ":" + system_conv.content + self.prompt_template.sep
+                system_conv.type + ":" + system_conv.content + self.prompt_template.sep
             )
             system_messages.append(
                 ModelMessage(role=system_conv.type, content=system_conv.content)
@@ -321,7 +310,7 @@ class BaseChat(ABC):
         user_messages = []
         if user_conv:
             user_text = (
-                    user_conv.type + ":" + user_conv.content + self.prompt_template.sep
+                user_conv.type + ":" + user_conv.content + self.prompt_template.sep
             )
             user_messages.append(
                 ModelMessage(role=user_conv.type, content=user_conv.content)
@@ -343,10 +332,10 @@ class BaseChat(ABC):
                         message_type = round_message["type"]
                         message_content = round_message["data"]["content"]
                         example_text += (
-                                message_type
-                                + ":"
-                                + message_content
-                                + self.prompt_template.sep
+                            message_type
+                            + ":"
+                            + message_content
+                            + self.prompt_template.sep
                         )
                         example_messages.append(
                             ModelMessage(role=message_type, content=message_content)
@@ -363,16 +352,14 @@ class BaseChat(ABC):
                 )
             if len(self.history_message) > self.chat_retention_rounds:
                 for first_message in self.history_message[0]["messages"]:
-                    if not first_message["type"] in [
-                        ModelMessageRoleType.VIEW
-                    ]:
+                    if not first_message["type"] in [ModelMessageRoleType.VIEW]:
                         message_type = first_message["type"]
                         message_content = first_message["data"]["content"]
                         history_text += (
-                                message_type
-                                + ":"
-                                + message_content
-                                + self.prompt_template.sep
+                            message_type
+                            + ":"
+                            + message_content
+                            + self.prompt_template.sep
                         )
                         history_messages.append(
                             ModelMessage(role=message_type, content=message_content)
@@ -388,13 +375,15 @@ class BaseChat(ABC):
                                 message_type = round_message["type"]
                                 message_content = round_message["data"]["content"]
                                 history_text += (
-                                        message_type
-                                        + ":"
-                                        + message_content
-                                        + self.prompt_template.sep
+                                    message_type
+                                    + ":"
+                                    + message_content
+                                    + self.prompt_template.sep
                                 )
                                 history_messages.append(
-                                    ModelMessage(role=message_type, content=message_content)
+                                    ModelMessage(
+                                        role=message_type, content=message_content
+                                    )
                                 )
 
             else:
@@ -409,10 +398,10 @@ class BaseChat(ABC):
                             message_type = message["type"]
                             message_content = message["data"]["content"]
                             history_text += (
-                                    message_type
-                                    + ":"
-                                    + message_content
-                                    + self.prompt_template.sep
+                                message_type
+                                + ":"
+                                + message_content
+                                + self.prompt_template.sep
                             )
                             history_messages.append(
                                 ModelMessage(role=message_type, content=message_content)

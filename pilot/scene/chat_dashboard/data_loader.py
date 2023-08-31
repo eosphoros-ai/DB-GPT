@@ -11,15 +11,14 @@ logger = build_logger("dashboard_data", LOGDIR + "dashboard_data.log")
 
 
 class DashboardDataLoader:
-
     def get_sql_value(self, db_conn, chart_sql: str):
-        return    db_conn.query_ex(chart_sql)
+        return db_conn.query_ex(chart_sql)
 
-    def get_chart_values_by_conn(self, db_conn, chart_sql: str) :
-        field_names, datas =  db_conn.query_ex(chart_sql)
-        return  self.get_chart_values_by_data(field_names, datas, chart_sql)
+    def get_chart_values_by_conn(self, db_conn, chart_sql: str):
+        field_names, datas = db_conn.query_ex(chart_sql)
+        return self.get_chart_values_by_data(field_names, datas, chart_sql)
 
-    def get_chart_values_by_data(self, field_names, datas, chart_sql: str) :
+    def get_chart_values_by_data(self, field_names, datas, chart_sql: str):
         logger.info(f"get_chart_values_by_conn:{chart_sql}")
         try:
             values: List[ValueItem] = []
@@ -57,7 +56,7 @@ class DashboardDataLoader:
             logger.debug("Prepare Chart Data Faild!" + str(e))
             raise ValueError("Prepare Chart Data Faild!")
 
-    def get_chart_values_by_db(self, db_name: str, chart_sql: str) :
+    def get_chart_values_by_db(self, db_name: str, chart_sql: str):
         logger.info(f"get_chart_values_by_db:{db_name},{chart_sql}")
         db_conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
         return self.get_chart_values_by_conn(db_conn, chart_sql)

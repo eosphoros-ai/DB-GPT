@@ -8,6 +8,7 @@ from pilot.out_parser.base import BaseOutputParser, T
 from pilot.configs.model_config import LOGDIR
 from pilot.configs.config import Config
 from pilot.scene.chat_db.data_loader import DbDataLoader
+
 CFG = Config()
 
 
@@ -49,6 +50,4 @@ class DbChatOutputParser(BaseOutputParser):
             view_text = f"##### {str(speak)}" + "\n" + html.replace("\n", " ")
             return view_text
         else:
-           return data_loader.get_table_view_by_conn(data, speak)
-
-
+            return data_loader.get_table_view_by_conn(data, speak)

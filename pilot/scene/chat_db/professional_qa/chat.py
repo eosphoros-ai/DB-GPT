@@ -19,7 +19,7 @@ class ChatWithDbQA(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, user_input, select_param:str = ""):
+    def __init__(self, chat_session_id, user_input, select_param: str = ""):
         """ """
         self.db_name = select_param
         super().__init__(

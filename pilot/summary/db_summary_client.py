@@ -19,7 +19,6 @@ from pilot.utils import build_logger
 logger = build_logger("db_summary", LOGDIR + "db_summary.log")
 
 
-
 CFG = Config()
 chat_factory = ChatFactory()
 
@@ -145,7 +144,9 @@ class DBSummaryClient:
             try:
                 self.db_summary_embedding(item["db_name"], item["db_type"])
             except Exception as e:
-                logger.warn(f'{item["db_name"]}, {item["db_type"]} summary error!{str(e)}', e)
+                logger.warn(
+                    f'{item["db_name"]}, {item["db_type"]} summary error!{str(e)}', e
+                )
 
     def init_db_profile(self, db_summary_client, dbname, embeddings):
         profile_store_config = {
@@ -183,5 +184,5 @@ def _get_llm_response(query, db_input, dbsummary):
     chat: BaseChat = chat_factory.get_implementation(
         ChatScene.InnerChatDBSummary.value, **chat_param
     )
-    res = chat.nostream_call()
+    res = chat._blocking_nostream_call()
     return json.loads(res)["table"]

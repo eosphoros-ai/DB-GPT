@@ -30,7 +30,6 @@ class ChatNormal(BaseChat):
         input_values = {"input": self.current_user_input}
         return input_values
 
-
     @property
     def chat_type(self) -> str:
         return ChatScene.ChatNormal.value

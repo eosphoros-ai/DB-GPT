@@ -12,7 +12,6 @@ class Scene:
         is_inner: bool = False,
         show_disable=False,
         prepare_scene_code: str = None,
-
     ):
         self.code = code
         self.name = name
@@ -22,38 +21,39 @@ class Scene:
         self.show_disable = show_disable
         self.prepare_scene_code = prepare_scene_code
 
+
 class ChatScene(Enum):
     ChatWithDbExecute = Scene(
-        code = "chat_with_db_execute",
-        name = "Chat Data",
-        describe = "Dialogue with your private data through natural language.",
-        param_types = ["DB Select"],
+        code="chat_with_db_execute",
+        name="Chat Data",
+        describe="Dialogue with your private data through natural language.",
+        param_types=["DB Select"],
     )
     ExcelLearning = Scene(
-        code = "excel_learning",
-        name = "Excel Learning",
-        describe = "Analyze and summarize your excel files.",
-        is_inner = True,
+        code="excel_learning",
+        name="Excel Learning",
+        describe="Analyze and summarize your excel files.",
+        is_inner=True,
     )
     ChatExcel = Scene(
-        code =  "chat_excel",
-        name = "Chat Excel",
-        describe = "Dialogue with your excel, use natural language.",
+        code="chat_excel",
+        name="Chat Excel",
+        describe="Dialogue with your excel, use natural language.",
         param_types=["File Select"],
-        prepare_scene_code="excel_learning"
+        prepare_scene_code="excel_learning",
     )
 
     ChatWithDbQA = Scene(
-        code = "chat_with_db_qa",
-        name = "Chat DB",
-        describe = "Have a Professional Conversation with Metadata.",
-        param_types = ["DB Select"],
+        code="chat_with_db_qa",
+        name="Chat DB",
+        describe="Have a Professional Conversation with Metadata.",
+        param_types=["DB Select"],
     )
     ChatExecution = Scene(
-        code = "chat_execution",
-        name = "Use Plugin",
-        describe = "Use tools through dialogue to accomplish your goals.",
-        param_types = ["Plugin Select"],
+        code="chat_execution",
+        name="Use Plugin",
+        describe="Use tools through dialogue to accomplish your goals.",
+        param_types=["Plugin Select"],
     )
 
     InnerChatDBSummary = Scene(
@@ -78,7 +78,7 @@ class ChatScene(Enum):
 
     @staticmethod
     def of_mode(mode):
-      return  [x for x in ChatScene._value_ if x.code == mode][0]
+        return [x for x in ChatScene._value_ if x.code == mode][0]
 
     @staticmethod
     def is_valid_mode(mode):

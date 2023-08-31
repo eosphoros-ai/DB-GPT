@@ -27,6 +27,7 @@ CFG = Config()
 class ChatExcel(BaseChat):
     chat_scene: str = ChatScene.ChatExcel.value()
     chat_retention_rounds = 1
+
     def __init__(self, chat_session_id, user_input, select_param: str = ""):
         chat_mode = ChatScene.ChatExcel
 
@@ -34,9 +35,11 @@ class ChatExcel(BaseChat):
         if has_path(select_param):
             self.excel_reader = ExcelReader(select_param)
         else:
-            self.excel_reader = ExcelReader(os.path.join(
-                        KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode.value(), select_param
-                    ))
+            self.excel_reader = ExcelReader(
+                os.path.join(
+                    KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode.value(), select_param
+                )
+            )
 
         super().__init__(
             chat_mode=chat_mode,
@@ -70,12 +73,9 @@ class ChatExcel(BaseChat):
             ]
         return "\n".join(f"{i+1}. {item}" for i, item in enumerate(command_strings))
 
-
     def generate_input_values(self):
-
-
         input_values = {
-            "user_input":  self.current_user_input,
+            "user_input": self.current_user_input,
             "table_name": self.excel_reader.table_name,
             "disply_type": self._generate_numbered_list(),
         }
@@ -87,23 +87,21 @@ class ChatExcel(BaseChat):
             return None
         chat_param = {
             "chat_session_id": self.chat_session_id,
-            "user_input": "[" + self.excel_reader.excel_file_name +"]" + " Analysis！",
+            "user_input": "[" + self.excel_reader.excel_file_name + "]" + " Analysis！",
             "parent_mode": self.chat_mode,
-            "select_param":self.excel_reader.excel_file_name,
-            "excel_reader": self.excel_reader
+            "select_param": self.excel_reader.excel_file_name,
+            "excel_reader": self.excel_reader,
         }
         learn_chat = ExcelLearning(**chat_param)
         result = learn_chat.nostream_call()
         return result
 
-
     def do_action(self, prompt_response):
         print(f"do_action:{prompt_response}")
 
         # colunms, datas = self.excel_reader.run(prompt_response.sql)
-        param= {
+        param = {
             "speak": prompt_response.thoughts,
-            "df": self.excel_reader.get_df_by_sql_ex(prompt_response.sql)
+            "df": self.excel_reader.get_df_by_sql_ex(prompt_response.sql),
         }
         return CFG.command_disply.call(prompt_response.display, **param)
-

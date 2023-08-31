@@ -2,7 +2,9 @@ import json
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.configs.config import Config
 from pilot.scene.base import ChatScene
-from pilot.scene.chat_data.chat_excel.excel_analyze.out_parser import ChatExcelOutputParser
+from pilot.scene.chat_data.chat_excel.excel_analyze.out_parser import (
+    ChatExcelOutputParser,
+)
 from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
@@ -39,9 +41,9 @@ SQL中需要使用的表名是: {table_name}
 """
 
 RESPONSE_FORMAT_SIMPLE = {
-	"sql": "analysis SQL",
-	"thoughts": "Current thinking and value of data analysis",
-	"display": "display type name"
+    "sql": "analysis SQL",
+    "thoughts": "Current thinking and value of data analysis",
+    "display": "display type name",
 }
 
 _DEFAULT_TEMPLATE = (
@@ -67,9 +69,8 @@ prompt = PromptTemplate(
     output_parser=ChatExcelOutputParser(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
     ),
-    need_historical_messages = True,
+    need_historical_messages=True,
     # example_selector=sql_data_example,
     temperature=PROMPT_TEMPERATURE,
 )
 CFG.prompt_template_registry.register(prompt, is_default=True)
-
