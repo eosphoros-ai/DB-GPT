@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+import logging
 
 from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -18,8 +19,10 @@ from pilot.server.knowledge.request.request import DocumentSyncRequest
 
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
 
-
 HTTP_HEADERS = {"Content-Type": "application/json"}
+
+
+logger = logging.getLogger("dbgpt_cli")
 
 
 class ApiClient:
@@ -40,9 +43,9 @@ class ApiClient:
     def _post(self, url: str, data=None):
         if not isinstance(data, dict):
             data = data.__dict__
-        response = requests.post(
-            urljoin(self.api_address, url), data=json.dumps(data), headers=HTTP_HEADERS
-        )
+        url = urljoin(self.api_address, url)
+        logger.debug(f"Send request to {url}, data: {data}")
+        response = requests.post(url, data=json.dumps(data), headers=HTTP_HEADERS)
         return self._handle_response(response)
 
 
@@ -55,7 +58,7 @@ class KnowledgeApiClient(ApiClient):
             return self._post("/knowledge/space/add", data=request)
         except Exception as e:
             if "have already named" in str(e):
-                print(f"Warning: you have already named {request.name}")
+                logger.warn(f"you have already named {request.name}")
             else:
                 raise e
 
@@ -98,7 +101,6 @@ def knowledge_init(
     vector_store_type: str,
     local_doc_dir: str,
     skip_wrong_doc: bool,
-    verbose: bool,
     max_workers: int = None,
 ):
     client = KnowledgeApiClient(api_address)
@@ -109,9 +111,9 @@ def knowledge_init(
     space.owner = "DB-GPT"
 
     # Create space
-    print(f"Create space: {space}")
+    logger.info(f"Create space: {space}")
     client.space_add(space)
-    print("Create space successfully")
+    logger.info("Create space successfully")
     space_list = client.space_list(KnowledgeSpaceRequest(name=space.name))
     if len(space_list) != 1:
         raise Exception(f"List space {space.name} error")
@@ -121,13 +123,13 @@ def knowledge_init(
 
     def upload(filename: str):
         try:
-            print(f"Begin upload document: {filename} to {space.name}")
+            logger.info(f"Begin upload document: {filename} to {space.name}")
             return client.document_upload(
                 space.name, filename, KnowledgeType.DOCUMENT.value, filename
             )
         except Exception as e:
             if skip_wrong_doc:
-                print(f"Warning: {str(e)}")
+                logger.warn(f"Warning: {str(e)}")
             else:
                 raise e
 
@@ -140,7 +142,7 @@ def knowledge_init(
         doc_ids = [r.result() for r in as_completed(tasks)]
         doc_ids = list(filter(lambda x: x, doc_ids))
         if not doc_ids:
-            print("Warning: no document to sync")
+            logger.warn("Warning: no document to sync")
             return
-        print(f"Begin sync document: {doc_ids}")
+        logger.info(f"Begin sync document: {doc_ids}")
         client.document_sync(space.name, DocumentSyncRequest(doc_ids=doc_ids))
