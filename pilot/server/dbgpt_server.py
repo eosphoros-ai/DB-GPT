@@ -1,7 +1,4 @@
-import atexit
-import traceback
 import os
-import shutil
 import argparse
 import sys
 import logging
@@ -11,7 +8,6 @@ sys.path.append(ROOT_PATH)
 import signal
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
-from pilot.utils import build_logger
 
 from pilot.server.base import server_init
 
@@ -28,14 +24,11 @@ from pilot.openapi.base import validation_exception_handler
 from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
 from pilot.commands.disply_type.show_chart_gen import static_message_img_path
 from pilot.model.worker.manager import initialize_worker_manager_in_client
-
-logging.basicConfig(level=logging.INFO, encoding="utf-8")
+from pilot.utils.utils import setup_logging
 
 static_file_path = os.path.join(os.getcwd(), "server/static")
 
-
 CFG = Config()
-# logger = build_logger("webserver", LOGDIR + "webserver.log")
 
 
 def signal_handler():
@@ -102,7 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--concurrency-count", type=int, default=10)
     parser.add_argument("--share", default=False, action="store_true")
-    parser.add_argument("--log-level", type=str, default="info")
+    parser.add_argument("--log-level", type=str, default=None)
     parser.add_argument(
         "-light",
         "--light",
@@ -113,6 +106,7 @@ if __name__ == "__main__":
 
     # init server config
     args = parser.parse_args()
+    setup_logging(logging_level=args.log_level)
     server_init(args)
 
     model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
@@ -137,6 +131,5 @@ if __name__ == "__main__":
     mount_static_files(app)
     import uvicorn
 
-    logging.basicConfig(level=logging.INFO, encoding="utf-8")
-    uvicorn.run(app, host="0.0.0.0", port=args.port, log_level=args.log_level)
+    uvicorn.run(app, host="0.0.0.0", port=args.port, log_level="info")
     signal.signal(signal.SIGINT, signal_handler())

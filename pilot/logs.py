@@ -8,9 +8,7 @@ from typing import Any
 
 from colorama import Fore, Style
 
-from pilot.log.json_handler import JsonFileHandler, JsonFormatter
 from pilot.singleton import Singleton
-from pilot.speech import say_text
 
 
 class Logger(metaclass=Singleton):
@@ -86,6 +84,8 @@ class Logger(metaclass=Singleton):
     def typewriter_log(
         self, title="", title_color="", content="", speak_text=False, level=logging.INFO
     ):
+        from pilot.speech.say import say_text
+
         if speak_text and self.speak_mode:
             say_text(f"{title}. {content}")
 
@@ -159,6 +159,8 @@ class Logger(metaclass=Singleton):
         self.typewriter_log("DOUBLE CHECK CONFIGURATION", Fore.YELLOW, additionalText)
 
     def log_json(self, data: Any, file_name: str) -> None:
+        from pilot.log.json_handler import JsonFileHandler, JsonFormatter
+
         # Define log directory
         this_files_dir_path = os.path.dirname(__file__)
         log_dir = os.path.join(this_files_dir_path, "../logs")
@@ -255,6 +257,8 @@ def print_assistant_thoughts(
     assistant_reply_json_valid: object,
     speak_mode: bool = False,
 ) -> None:
+    from pilot.speech.say import say_text
+
     assistant_thoughts_reasoning = None
     assistant_thoughts_plan = None
     assistant_thoughts_speak = None

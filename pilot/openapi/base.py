@@ -1,24 +1,6 @@
-from fastapi import (
-    APIRouter,
-    Request,
-    Body,
-    status,
-    HTTPException,
-    Response,
-    BackgroundTasks,
-)
-
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.responses import StreamingResponse, FileResponse
-from fastapi.encoders import jsonable_encoder
+from fastapi import Request
 from fastapi.exceptions import RequestValidationError
-
-from pilot.openapi.api_view_model import (
-    Result,
-    ConversationVo,
-    MessageVo,
-    ChatSceneVo,
-)
+from pilot.openapi.api_view_model import Result
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):

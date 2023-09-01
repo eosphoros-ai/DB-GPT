@@ -12,7 +12,7 @@ from pilot.json_utils.json_fix_general import (
     fix_invalid_escape,
 )
 from pilot.logs import logger
-from pilot.speech import say_text
+
 
 CFG = Config()
 
@@ -87,6 +87,8 @@ def correct_json(json_to_load: str) -> str:
 
 
 def attempt_to_fix_json_by_finding_outermost_brackets(json_string: str):
+    from pilot.speech.say import say_text
+
     if CFG.speak_mode and CFG.debug_mode:
         say_text(
             "I have received an invalid JSON response from the OpenAI API. "

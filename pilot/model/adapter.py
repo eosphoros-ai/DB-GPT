@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import torch
 import os
 import re
 from pathlib import Path
@@ -14,7 +13,7 @@ from transformers import (
     LlamaTokenizer,
 )
 from pilot.model.parameter import ModelParameters, LlamaCppModelParameters
-from pilot.configs.model_config import DEVICE
+from pilot.configs.model_config import get_device
 from pilot.configs.config import Config
 from pilot.logs import logger
 
@@ -147,9 +146,11 @@ class ChatGLMAdapater(BaseLLMAdaper):
         return "chatglm" in model_path
 
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        import torch
+
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
-        if DEVICE != "cuda":
+        if get_device() != "cuda":
             model = AutoModel.from_pretrained(
                 model_path, trust_remote_code=True, **from_pretrained_kwargs
             ).float()

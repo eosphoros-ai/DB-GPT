@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, List, Type
 
-from pilot.configs.model_config import DEVICE
+from pilot.configs.model_config import get_device
 from pilot.model.loader import _get_model_real_path
 from pilot.model.parameter import (
     EmbeddingModelParameters,
@@ -55,7 +55,7 @@ class EmbeddingsModelWorker(ModelWorker):
             model_path=self.model_path,
         )
         if not model_params.device:
-            model_params.device = DEVICE
+            model_params.device = get_device()
             logger.info(
                 f"[EmbeddingsModelWorker] Parameters of device is None, use {model_params.device}"
             )

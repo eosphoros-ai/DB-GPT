@@ -5,7 +5,7 @@ import json
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.configs.config import Config
 from pilot.scene.base import ChatScene
-from pilot.scene.chat_db.auto_execute.out_parser import DbChatOutputParser, SqlAction
+from pilot.scene.chat_db.auto_execute.out_parser import DbChatOutputParser
 from pilot.common.schema import SeparatorStyle
 from pilot.scene.chat_db.auto_execute.example import sql_data_example
 

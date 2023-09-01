@@ -7,13 +7,7 @@ import time
 from typing import Optional
 
 from pilot.configs.config import Config
-from pilot.conversation import (
-    Conversation,
-    auto_dbgpt_one_shot,
-    conv_one_shot,
-    conv_templates,
-)
-from pilot.model.llm.base import Message
+from pilot.conversation import Conversation
 
 
 # TODO Rewrite this

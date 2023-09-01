@@ -1,5 +1,3 @@
-import json
-import importlib
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.configs.config import Config
 from pilot.scene.base import ChatScene

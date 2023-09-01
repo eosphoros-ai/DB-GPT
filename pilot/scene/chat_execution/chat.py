@@ -1,11 +1,6 @@
-import requests
-import datetime
-from urllib.parse import urljoin
 from typing import List
-import traceback
 
-from pilot.scene.base_chat import BaseChat, logger, headers
-from pilot.scene.message import OnceConversation
+from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
 from pilot.commands.command import execute_command

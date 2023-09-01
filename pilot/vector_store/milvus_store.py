@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from typing import Any, Iterable, List, Optional, Tuple
 
-from langchain.docstore.document import Document
 from pymilvus import Collection, DataType, connections, utility
 
 from pilot.logs import logger
@@ -279,7 +280,9 @@ class MilvusStore(VectorStoreBase):
         round_decimal: int = -1,
         timeout: Optional[int] = None,
         **kwargs: Any,
-    ) -> Tuple[List[float], List[Tuple[Document, Any, Any]]]:
+    ):
+        from langchain.docstore.document import Document
+
         self.col.load()
         # use default index params.
         if param is None:

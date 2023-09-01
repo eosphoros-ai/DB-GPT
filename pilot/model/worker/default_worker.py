@@ -2,8 +2,7 @@ import logging
 import platform
 from typing import Dict, Iterator, List
 
-import torch
-from pilot.configs.model_config import DEVICE
+from pilot.configs.model_config import get_device
 from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper
 from pilot.model.base import ModelOutput
 from pilot.model.loader import ModelLoader, _get_model_real_path
@@ -63,7 +62,7 @@ class DefaultModelWorker(ModelWorker):
             model_type=model_type,
         )
         if not model_params.device:
-            model_params.device = DEVICE
+            model_params.device = get_device()
             logger.info(
                 f"[DefaultModelWorker] Parameters of device is None, use {model_params.device}"
             )
@@ -88,6 +87,8 @@ class DefaultModelWorker(ModelWorker):
         _clear_torch_cache(self._model_params.device)
 
     def generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
+        import torch
+
         try:
             # params adaptation
             params, model_context = self.llm_chat_adapter.model_adaptation(
@@ -95,7 +96,7 @@ class DefaultModelWorker(ModelWorker):
             )
 
             for output in self.generate_stream_func(
-                self.model, self.tokenizer, params, DEVICE, self.context_len
+                self.model, self.tokenizer, params, get_device(), self.context_len
             ):
                 # Please do not open the output in production!
                 # The gpt4all thread shares stdout with the parent process,

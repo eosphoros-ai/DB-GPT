@@ -1,7 +1,6 @@
 import os
 import shutil
 import tempfile
-from tempfile import NamedTemporaryFile
 
 from fastapi import APIRouter, File, UploadFile, Form
 
