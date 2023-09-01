@@ -1,13 +1,7 @@
-from pilot.scene.base_chat import BaseChat, logger, headers
+from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
-from pilot.common.sql_database import Database
 from pilot.configs.config import Config
 
-from pilot.common.markdown_text import (
-    generate_markdown_table,
-    generate_htm_table,
-    datas_to_table_html,
-)
 from pilot.scene.chat_normal.prompt import prompt
 
 CFG = Config()

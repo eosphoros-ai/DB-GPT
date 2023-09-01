@@ -2,7 +2,6 @@ import os
 from typing import Any
 
 from chromadb.config import Settings
-from langchain.vectorstores import Chroma
 from pilot.logs import logger
 from pilot.vector_store.base import VectorStoreBase
 
@@ -11,6 +10,8 @@ class ChromaStore(VectorStoreBase):
     """chroma database"""
 
     def __init__(self, ctx: {}) -> None:
+        from langchain.vectorstores import Chroma
+
         self.ctx = ctx
         self.embeddings = ctx.get("embeddings", None)
         self.persist_dir = os.path.join(

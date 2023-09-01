@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from dataclasses import dataclass, field, fields, MISSING
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from pilot.model.conversation import conv_templates
 from pilot.utils.parameter_utils import BaseParameters

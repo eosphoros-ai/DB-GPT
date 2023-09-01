@@ -1,6 +1,5 @@
 import os
 import duckdb
-from typing import List
 
 default_db_path = os.path.join(os.getcwd(), "message")
 duckdb_path = os.getenv("DB_DUCKDB_PATH", default_db_path + "/connect_config.db")
