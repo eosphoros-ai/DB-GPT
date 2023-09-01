@@ -104,4 +104,7 @@ class ChatExcel(BaseChat):
             "speak": prompt_response.thoughts,
             "df": self.excel_reader.get_df_by_sql_ex(prompt_response.sql),
         }
-        return CFG.command_disply.call(prompt_response.display, **param)
+        if CFG.command_disply.get_command(prompt_response.display):
+            return CFG.command_disply.call(prompt_response.display, **param)
+        else:
+            return CFG.command_disply.call("response_table", **param)
