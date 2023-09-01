@@ -3,7 +3,6 @@
 
 from collections import defaultdict
 from typing import Dict, List
-import json
 
 _DEFAULT_MODEL_KEY = "___default_prompt_template_model_key__"
 _DEFUALT_LANGUAGE_KEY = "___default_prompt_template_language_key__"

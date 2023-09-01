@@ -2,12 +2,10 @@ import json
 import threading
 from datetime import datetime
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter, SpacyTextSplitter
 from pilot.vector_store.connector import VectorStoreConnector
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
-from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 from pilot.logs import logger
 from pilot.server.knowledge.chunk_db import (
     DocumentChunkEntity,
@@ -152,6 +150,14 @@ class KnowledgeService:
     """sync knowledge document chunk into vector store"""
 
     def sync_knowledge_document(self, space_name, doc_ids):
+        from pilot.embedding_engine.embedding_engine import EmbeddingEngine
+        from langchain.text_splitter import (
+            RecursiveCharacterTextSplitter,
+            SpacyTextSplitter,
+        )
+
+        # import langchain is very very slow!!!
+
         for doc_id in doc_ids:
             query = KnowledgeDocumentEntity(
                 id=doc_id,

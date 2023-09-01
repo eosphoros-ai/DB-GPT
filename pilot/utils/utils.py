@@ -16,6 +16,22 @@ server_error_msg = (
 handler = None
 
 
+def _get_logging_level() -> str:
+    return os.getenv("DBGPT_LOG_LEVEL", "INFO")
+
+
+def setup_logging(logging_level=None, logger_name: str = None):
+    if not logging_level:
+        logging_level = _get_logging_level()
+    if type(logging_level) is str:
+        logging_level = logging.getLevelName(logging_level.upper())
+    if logger_name:
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(logging_level)
+    else:
+        logging.basicConfig(level=logging_level, encoding="utf-8")
+
+
 def get_gpu_memory(max_gpus=None):
     import torch
 
@@ -47,7 +63,7 @@ def build_logger(logger_name, logger_filename):
 
     # Set the format of root handlers
     if not logging.getLogger().handlers:
-        logging.basicConfig(level=logging.INFO, encoding="utf-8")
+        setup_logging()
     logging.getLogger().handlers[0].setFormatter(formatter)
 
     # Redirect stdout and stderr to loggers
@@ -73,11 +89,11 @@ def build_logger(logger_name, logger_filename):
         for name, item in logging.root.manager.loggerDict.items():
             if isinstance(item, logging.Logger):
                 item.addHandler(handler)
-    logging.basicConfig(level=logging.INFO, encoding="utf-8")
+    setup_logging()
 
     # Get logger
     logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.INFO)
+    setup_logging(logger_name=logger_name)
 
     return logger
 

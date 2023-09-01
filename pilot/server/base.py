@@ -1,27 +1,17 @@
 import signal
 import os
 import threading
-import traceback
 import sys
 
 from pilot.summary.db_summary_client import DBSummaryClient
 from pilot.commands.command_mange import CommandRegistry
 from pilot.configs.config import Config
 
-# from pilot.configs.model_config import (
-#     DATASETS_DIR,
-#     KNOWLEDGE_UPLOAD_ROOT_PATH,
-#     LLM_MODEL_CONFIG,
-#     LOGDIR,
-# )
-from pilot.common.plugins import scan_plugins, load_native_plugins
-from pilot.utils import build_logger
+from pilot.common.plugins import scan_plugins
 from pilot.connections.manages.connection_manager import ConnectManager
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
-
-# logger = build_logger("webserver", LOGDIR + "webserver.log")
 
 
 def signal_handler(sig, frame):

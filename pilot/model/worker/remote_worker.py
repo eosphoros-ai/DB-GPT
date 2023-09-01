@@ -1,7 +1,6 @@
 import json
 from typing import Dict, Iterator, List
-
-import httpx
+import logging
 from pilot.model.base import ModelOutput
 from pilot.model.parameter import ModelParameters
 from pilot.model.worker.base import ModelWorker
@@ -10,7 +9,8 @@ from pilot.model.worker.base import ModelWorker
 class RemoteModelWorker(ModelWorker):
     def __init__(self) -> None:
         self.headers = {}
-        self.timeout = 60
+        # TODO Configured by ModelParameters
+        self.timeout = 180
         self.host = None
         self.port = None
 
@@ -44,7 +44,9 @@ class RemoteModelWorker(ModelWorker):
 
     async def async_generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
         """Asynchronous generate stream"""
-        print(f"Send async_generate_stream, params: {params}")
+        import httpx
+
+        logging.debug(f"Send async_generate_stream, params: {params}")
         async with httpx.AsyncClient() as client:
             delimiter = b"\0"
             buffer = b""
@@ -71,8 +73,9 @@ class RemoteModelWorker(ModelWorker):
 
     async def async_generate(self, params: Dict) -> ModelOutput:
         """Asynchronous generate non stream"""
-        print(f"Send async_generate_stream, params: {params}")
+        import httpx
 
+        logging.debug(f"Send async_generate_stream, params: {params}")
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 self.worker_addr + "/generate",
@@ -88,6 +91,8 @@ class RemoteModelWorker(ModelWorker):
 
     async def async_embeddings(self, params: Dict) -> List[List[float]]:
         """Asynchronous get embeddings for input"""
+        import httpx
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 self.worker_addr + "/embeddings",

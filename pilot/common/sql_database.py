@@ -3,8 +3,6 @@ import sqlparse
 import regex as re
 import warnings
 from typing import Any, Iterable, List, Optional
-from pydantic import BaseModel, Field, root_validator, validator, Extra
-from abc import ABC, abstractmethod
 import sqlalchemy
 from sqlalchemy import (
     MetaData,
@@ -14,7 +12,7 @@ from sqlalchemy import (
     select,
     text,
 )
-from sqlalchemy.engine import CursorResult, Engine
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.orm import sessionmaker, scoped_session

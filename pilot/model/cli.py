@@ -2,11 +2,7 @@ import click
 import functools
 
 from pilot.model.controller.registry import ModelRegistryClient
-from pilot.model.worker.manager import (
-    RemoteWorkerManager,
-    WorkerApplyRequest,
-    WorkerApplyType,
-)
+from pilot.model.base import WorkerApplyType
 from pilot.model.parameter import (
     ModelControllerParameters,
     ModelWorkerParameters,
@@ -15,12 +11,14 @@ from pilot.model.parameter import (
 from pilot.utils import get_or_create_event_loop
 from pilot.utils.parameter_utils import EnvArgumentParser
 
+MODEL_CONTROLLER_ADDRESS = "http://127.0.0.1:8000"
+
 
 @click.group("model")
 @click.option(
     "--address",
     type=str,
-    default="http://127.0.0.1:8000",
+    default=MODEL_CONTROLLER_ADDRESS,
     required=False,
     show_default=True,
     help=(
@@ -28,24 +26,25 @@ from pilot.utils.parameter_utils import EnvArgumentParser
         "Just support light deploy model"
     ),
 )
-def model_cli_group():
+def model_cli_group(address: str):
     """Clients that manage model serving"""
-    pass
+    global MODEL_CONTROLLER_ADDRESS
+    MODEL_CONTROLLER_ADDRESS = address
 
 
 @model_cli_group.command()
 @click.option(
-    "--model-name", type=str, default=None, required=False, help=("The name of model")
+    "--model_name", type=str, default=None, required=False, help=("The name of model")
 )
 @click.option(
-    "--model-type", type=str, default="llm", required=False, help=("The type of model")
+    "--model_type", type=str, default="llm", required=False, help=("The type of model")
 )
-def list(address: str, model_name: str, model_type: str):
+def list(model_name: str, model_type: str):
     """List model instances"""
     from prettytable import PrettyTable
 
     loop = get_or_create_event_loop()
-    registry = ModelRegistryClient(address)
+    registry = ModelRegistryClient(MODEL_CONTROLLER_ADDRESS)
 
     if not model_name:
         instances = loop.run_until_complete(registry.get_all_model_instances())
@@ -88,14 +87,14 @@ def list(address: str, model_name: str, model_type: str):
 
 def add_model_options(func):
     @click.option(
-        "--model-name",
+        "--model_name",
         type=str,
         default=None,
         required=True,
         help=("The name of model"),
     )
     @click.option(
-        "--model-type",
+        "--model_type",
         type=str,
         default="llm",
         required=False,
@@ -110,23 +109,27 @@ def add_model_options(func):
 
 @model_cli_group.command()
 @add_model_options
-def stop(address: str, model_name: str, model_type: str):
+def stop(model_name: str, model_type: str):
     """Stop model instances"""
-    worker_apply(address, model_name, model_type, WorkerApplyType.STOP)
+    worker_apply(MODEL_CONTROLLER_ADDRESS, model_name, model_type, WorkerApplyType.STOP)
 
 
 @model_cli_group.command()
 @add_model_options
-def start(address: str, model_name: str, model_type: str):
+def start(model_name: str, model_type: str):
     """Start model instances"""
-    worker_apply(address, model_name, model_type, WorkerApplyType.START)
+    worker_apply(
+        MODEL_CONTROLLER_ADDRESS, model_name, model_type, WorkerApplyType.START
+    )
 
 
 @model_cli_group.command()
 @add_model_options
-def restart(address: str, model_name: str, model_type: str):
+def restart(model_name: str, model_type: str):
     """Restart model instances"""
-    worker_apply(address, model_name, model_type, WorkerApplyType.RESTART)
+    worker_apply(
+        MODEL_CONTROLLER_ADDRESS, model_name, model_type, WorkerApplyType.RESTART
+    )
 
 
 # @model_cli_group.command()
@@ -139,6 +142,8 @@ def restart(address: str, model_name: str, model_type: str):
 def worker_apply(
     address: str, model_name: str, model_type: str, apply_type: WorkerApplyType
 ):
+    from pilot.model.worker.manager import RemoteWorkerManager, WorkerApplyRequest
+
     loop = get_or_create_event_loop()
     registry = ModelRegistryClient(address)
     worker_manager = RemoteWorkerManager(registry)

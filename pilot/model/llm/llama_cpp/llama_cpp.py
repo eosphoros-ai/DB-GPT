@@ -2,7 +2,7 @@
 Fork from text-generation-webui https://github.com/oobabooga/text-generation-webui/blob/main/modules/llamacpp_model.py
 """
 import re
-from typing import Dict, Any
+from typing import Dict
 import torch
 import llama_cpp
 

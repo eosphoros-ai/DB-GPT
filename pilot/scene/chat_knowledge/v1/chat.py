@@ -1,25 +1,15 @@
 from chromadb.errors import NoIndexException
 
-from pilot.scene.base_chat import BaseChat, logger, headers
+from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
-from pilot.common.sql_database import Database
 from pilot.configs.config import Config
 
-from pilot.common.markdown_text import (
-    generate_markdown_table,
-    generate_htm_table,
-    datas_to_table_html,
-)
-
 from pilot.configs.model_config import (
-    DATASETS_DIR,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
     LLM_MODEL_CONFIG,
-    LOGDIR,
 )
 
 from pilot.scene.chat_knowledge.v1.prompt import prompt
-from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 from pilot.server.knowledge.service import KnowledgeService
 
 CFG = Config()
@@ -32,6 +22,8 @@ class ChatKnowledge(BaseChat):
 
     def __init__(self, chat_session_id, user_input, select_param: str = None):
         """ """
+        from pilot.embedding_engine.embedding_engine import EmbeddingEngine
+
         self.knowledge_space = select_param
         super().__init__(
             chat_mode=ChatScene.ChatKnowledge,

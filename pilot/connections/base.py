@@ -3,7 +3,6 @@
 
 """We need to design a base class.  That other connector can Write with this"""
 from abc import ABC, abstractmethod
-from pydantic import BaseModel, Extra, Field, root_validator
 from typing import Any, Iterable, List, Optional
 
 

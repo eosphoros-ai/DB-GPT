@@ -7,9 +7,7 @@ from pilot.configs.config import Config
 from pilot.memory.chat_history.base import BaseChatHistoryMemory
 from pilot.scene.message import (
     OnceConversation,
-    conversation_from_dict,
     _conversation_to_dic,
-    conversations_to_dict,
 )
 from pilot.common.formatting import MyEncoder
 
