@@ -8,6 +8,15 @@ sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
+logging.basicConfig(
+    level=logging.WARNING,
+    encoding="utf-8",
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+logger = logging.getLogger("dbgpt_cli")
+
 
 @click.group()
 @click.option(
@@ -19,8 +28,7 @@ sys.path.append(
 )
 @click.version_option()
 def cli(log_level: str):
-    # TODO not working now
-    logging.basicConfig(level=log_level, encoding="utf-8")
+    logger.setLevel(logging.getLevelName(log_level.upper()))
 
 
 def add_command_alias(command, name: str, hidden: bool = False, parent_group=None):
@@ -72,6 +80,13 @@ try:
 
 except ImportError as e:
     logging.warning(f"Integrating dbgpt model command line tool failed: {e}")
+
+try:
+    from pilot.server.knowledge._cli.knowledge_cli import knowledge_cli_group
+
+    add_command_alias(knowledge_cli_group, name="knowledge", parent_group=cli)
+except ImportError as e:
+    logging.warning(f"Integrating dbgpt knowledge command line tool failed: {e}")
 
 
 def main():
