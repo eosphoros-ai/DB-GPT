@@ -1,5 +1,6 @@
 import click
 import functools
+import logging
 
 from pilot.model.controller.registry import ModelRegistryClient
 from pilot.model.base import WorkerApplyType
@@ -12,6 +13,8 @@ from pilot.utils import get_or_create_event_loop
 from pilot.utils.parameter_utils import EnvArgumentParser
 
 MODEL_CONTROLLER_ADDRESS = "http://127.0.0.1:8000"
+
+logger = logging.getLogger("dbgpt_cli")
 
 
 @click.group("model")
