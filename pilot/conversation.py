@@ -2,7 +2,6 @@
 # -*- coding:utf-8 -*-
 
 import dataclasses
-import uuid
 from enum import auto, Enum
 from typing import List, Any
 from pilot.language.translation_handler import get_lang_text

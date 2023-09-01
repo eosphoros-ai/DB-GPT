@@ -1,20 +1,18 @@
 import json
 import uuid
 
-from langchain.embeddings import HuggingFaceEmbeddings, logger
-
+from pilot.common.schema import DBType
 from pilot.configs.config import Config
-from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
+from pilot.configs.model_config import (
+    KNOWLEDGE_UPLOAD_ROOT_PATH,
+    LLM_MODEL_CONFIG,
+    LOGDIR,
+)
 from pilot.scene.base import ChatScene
 from pilot.scene.base_chat import BaseChat
-from pilot.embedding_engine.embedding_engine import EmbeddingEngine
-from pilot.embedding_engine.string_embedding import StringEmbedding
-from pilot.summary.rdbms_db_summary import RdbmsSummary
 from pilot.scene.chat_factory import ChatFactory
-from pilot.common.schema import DBType
-from pilot.configs.model_config import LOGDIR
+from pilot.summary.rdbms_db_summary import RdbmsSummary
 from pilot.utils import build_logger
-
 
 logger = build_logger("db_summary", LOGDIR + "db_summary.log")
 
@@ -33,6 +31,8 @@ class DBSummaryClient:
 
     def db_summary_embedding(self, dbname, db_type):
         """put db profile and table profile summary into vector store"""
+        from langchain.embeddings import HuggingFaceEmbeddings
+        from pilot.embedding_engine.string_embedding import StringEmbedding
 
         db_summary_client = RdbmsSummary(dbname, db_type)
         embeddings = HuggingFaceEmbeddings(
@@ -82,6 +82,8 @@ class DBSummaryClient:
         logger.info("db summary embedding success")
 
     def get_db_summary(self, dbname, query, topk):
+        from pilot.embedding_engine.embedding_engine import EmbeddingEngine
+
         vector_store_config = {
             "vector_store_name": dbname + "_profile",
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
@@ -97,6 +99,8 @@ class DBSummaryClient:
 
     def get_similar_tables(self, dbname, query, topk):
         """get user query related tables info"""
+        from pilot.embedding_engine.embedding_engine import EmbeddingEngine
+
         vector_store_config = {
             "vector_store_name": dbname + "_summary",
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
@@ -149,6 +153,8 @@ class DBSummaryClient:
                 )
 
     def init_db_profile(self, db_summary_client, dbname, embeddings):
+        from pilot.embedding_engine.string_embedding import StringEmbedding
+
         profile_store_config = {
             "vector_store_name": dbname + "_profile",
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,

@@ -1,16 +1,7 @@
-import json
-
-from pilot.scene.base_message import (
-    HumanMessage,
-    ViewMessage,
-)
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
 from pilot.configs.config import Config
-from pilot.common.markdown_text import (
-    generate_htm_table,
-)
 from pilot.scene.chat_db.auto_execute.prompt import prompt
 
 CFG = Config()

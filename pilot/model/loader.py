@@ -2,16 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from typing import Optional, Dict
-import torch
 
-from pilot.configs.model_config import DEVICE
+from pilot.configs.model_config import get_device
 from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper, ModelType
-from pilot.model.compression import compress_module
 from pilot.model.parameter import (
     ModelParameters,
     LlamaCppModelParameters,
 )
-from pilot.model.llm.monkey_patch import replace_llama_attn_with_non_inplace_operations
 from pilot.utils import get_gpu_memory
 from pilot.utils.parameter_utils import EnvArgumentParser, _genenv_ignoring_key_case
 from pilot.logs import logger
@@ -67,7 +64,7 @@ class ModelLoader:
     """
 
     def __init__(self, model_path: str, model_name: str = None) -> None:
-        self.device = DEVICE
+        self.device = get_device()
         self.model_path = model_path
         self.model_name = model_name
         self.prompt_template: str = None
@@ -127,6 +124,9 @@ class ModelLoader:
 
 
 def huggingface_loader(llm_adapter: BaseLLMAdaper, model_params: ModelParameters):
+    import torch
+    from pilot.model.compression import compress_module
+
     device = model_params.device
     max_memory = None
 
@@ -156,6 +156,10 @@ def huggingface_loader(llm_adapter: BaseLLMAdaper, model_params: ModelParameters
 
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
+        from pilot.model.llm.monkey_patch import (
+            replace_llama_attn_with_non_inplace_operations,
+        )
+
         replace_llama_attn_with_non_inplace_operations()
     else:
         raise ValueError(f"Invalid device: {device}")
@@ -200,6 +204,8 @@ def load_huggingface_quantization_model(
     kwargs: Dict,
     max_memory: Dict[int, str],
 ):
+    import torch
+
     try:
         from accelerate import init_empty_weights
         from accelerate.utils import infer_auto_device_map

@@ -1,5 +1,4 @@
 import torch
-import copy
 from threading import Thread
 from transformers import TextIteratorStreamer, StoppingCriteriaList, StoppingCriteria
 

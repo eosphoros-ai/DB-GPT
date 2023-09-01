@@ -1,5 +1,4 @@
 import asyncio
-import httpx
 import itertools
 import json
 import os
@@ -7,26 +6,21 @@ import random
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Awaitable, Callable, Dict, Iterator, List, Optional
 
-import uvicorn
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import StreamingResponse
 from pilot.configs.model_config import LOGDIR
 from pilot.model.base import (
     ModelInstance,
     ModelOutput,
-    WorkerApplyType,
     WorkerApplyOutput,
+    WorkerApplyType,
 )
 from pilot.model.controller.registry import ModelRegistry
-from pilot.model.parameter import (
-    ModelParameters,
-    ModelWorkerParameters,
-    WorkerType,
-)
+from pilot.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
 from pilot.model.worker.base import ModelWorker
 from pilot.scene.base_message import ModelMessage
 from pilot.utils import build_logger
@@ -431,6 +425,8 @@ class RemoteWorkerManager(LocalWorkerManager):
         return worker_instances
 
     async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:
+        import httpx
+
         async def _remote_apply_func(worker_run_data: WorkerRunData):
             worker_addr = worker_run_data.worker.worker_addr
             async with httpx.AsyncClient() as client:
@@ -700,6 +696,8 @@ def run_worker_manager(
         app.include_router(router, prefix="/api")
 
     if not embedded_mod:
+        import uvicorn
+
         uvicorn.run(
             app, host=worker_params.host, port=worker_params.port, log_level="info"
         )

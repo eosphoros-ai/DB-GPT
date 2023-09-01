@@ -1,18 +1,7 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, root_validator, validator, Extra
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-)
+from typing import List
 
 from pilot.scene.message import OnceConversation
 
