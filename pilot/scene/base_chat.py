@@ -231,7 +231,6 @@ class BaseChat(ABC):
             except StopAsyncIteration:
                 break
 
-
     def _blocking_nostream_call(self):
         logger.warn(
             "_blocking_nostream_call is only temporarily used in webserver and will be deleted soon, please use nostream_call to replace it for higher performance"
@@ -241,7 +240,6 @@ class BaseChat(ABC):
             return loop.run_until_complete(self.nostream_call())
         finally:
             loop.close()
-
 
     def call(self):
         if self.prompt_template.stream_out:
