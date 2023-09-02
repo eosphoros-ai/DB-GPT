@@ -226,7 +226,7 @@ async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File
             tmp_fd, tmp_path = tempfile.mkstemp(
                 dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)
             )
-            # TODO Use no noblocking file save with aiofiles
+            # TODO Use noblocking file save with aiofiles
             with os.fdopen(tmp_fd, "wb") as tmp:
                 tmp.write(await doc_file.read())
             shutil.move(
