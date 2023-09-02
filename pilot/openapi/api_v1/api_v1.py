@@ -16,7 +16,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from fastapi.exceptions import RequestValidationError
 from typing import List
-from tempfile import NamedTemporaryFile
+import tempfile
 
 from pilot.openapi.api_view_model import (
     Result,
@@ -222,17 +222,17 @@ async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File
             ## file save
             if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)):
                 os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode))
-            with NamedTemporaryFile(
-                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode), delete=False
-            ) as tmp:
+            # We can not move temp file in windows system when we open file in context of `with`
+            tmp_fd, tmp_path = tempfile.mkstemp(
+                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)
+            )
+            # TODO Use no noblocking file save with aiofiles
+            with os.fdopen(tmp_fd, "wb") as tmp:
                 tmp.write(await doc_file.read())
-                tmp_path = tmp.name
-                shutil.move(
-                    tmp_path,
-                    os.path.join(
-                        KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode, doc_file.filename
-                    ),
-                )
+            shutil.move(
+                tmp_path,
+                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode, doc_file.filename),
+            )
             ## chat prepare
             dialogue = ConversationVo(
                 conv_uid=conv_uid, chat_mode=chat_mode, select_param=doc_file.filename
