@@ -587,7 +587,11 @@ def _create_local_model_manager(
         from pilot.utils.net_utils import _get_ip_address
 
         client = ModelRegistryClient(worker_params.controller_addr)
-        host = _get_ip_address()
+        host = (
+            worker_params.worker_register_host
+            if worker_params.worker_register_host
+            else _get_ip_address()
+        )
         port = worker_params.port
 
         async def register_func(worker_run_data: WorkerRunData):
