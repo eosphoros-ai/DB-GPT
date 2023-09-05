@@ -4,7 +4,7 @@
 import os
 import re
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Callable, Type
 from functools import cache
 from transformers import (
     AutoModel,
@@ -12,7 +12,11 @@ from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
 )
-from pilot.model.parameter import ModelParameters, LlamaCppModelParameters
+from pilot.model.parameter import (
+    ModelParameters,
+    LlamaCppModelParameters,
+    ProxyModelParameters,
+)
 from pilot.configs.model_config import get_device
 from pilot.configs.config import Config
 from pilot.logs import logger
@@ -26,6 +30,7 @@ class ModelType:
 
     HF = "huggingface"
     LLAMA_CPP = "llama.cpp"
+    PROXY = "proxy"
     # TODO, support more model type
 
 
@@ -43,6 +48,8 @@ class BaseLLMAdaper:
         model_type = model_type if model_type else self.model_type()
         if model_type == ModelType.LLAMA_CPP:
             return LlamaCppModelParameters
+        elif model_type == ModelType.PROXY:
+            return ProxyModelParameters
         return ModelParameters
 
     def match(self, model_path: str):
@@ -76,7 +83,7 @@ def get_llm_model_adapter(model_name: str, model_path: str) -> BaseLLMAdaper:
             return adapter
 
     for adapter in llm_model_adapters:
-        if adapter.match(model_path):
+        if model_path and adapter.match(model_path):
             logger.info(
                 f"Found llm model adapter with model path: {model_path}, {adapter}"
             )
@@ -85,6 +92,20 @@ def get_llm_model_adapter(model_name: str, model_path: str) -> BaseLLMAdaper:
     raise ValueError(
         f"Invalid model adapter for model name {model_name} and model path {model_path}"
     )
+
+
+def _dynamic_model_parser() -> Callable[[None], List[Type]]:
+    from pilot.utils.parameter_utils import _SimpleArgParser
+
+    pre_args = _SimpleArgParser("model_name", "model_path")
+    pre_args.parse()
+    model_name = pre_args.get("model_name")
+    model_path = pre_args.get("model_path")
+    if model_name is None:
+        return None
+    llm_adapter = get_llm_model_adapter(model_name, model_path)
+    param_class = llm_adapter.model_param_class()
+    return [param_class]
 
 
 # TODO support cpu? for practise we support gpt4all or chatglm-6b-int4?
@@ -280,6 +301,9 @@ class GPT4AllAdapter(BaseLLMAdaper):
 
 class ProxyllmAdapter(BaseLLMAdaper):
     """The model adapter for local proxy"""
+
+    def model_type(self) -> str:
+        return ModelType.PROXY
 
     def match(self, model_path: str):
         return "proxyllm" in model_path

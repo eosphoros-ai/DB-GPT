@@ -309,7 +309,7 @@ class LocalWorkerManager(WorkerManager):
         else:
             # Apply to all workers
             worker_instances = list(itertools.chain(*self.workers.values()))
-            logger.info(f"Apply to all workers: {worker_instances}")
+            logger.info(f"Apply to all workers")
         return await asyncio.gather(
             *(apply_func(worker) for worker in worker_instances)
         )

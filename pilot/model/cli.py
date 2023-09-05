@@ -1,8 +1,11 @@
 import click
 import functools
 import logging
+import os
+from typing import Callable, List, Type
 
 from pilot.model.controller.registry import ModelRegistryClient
+from pilot.configs.model_config import LOGDIR
 from pilot.model.base import WorkerApplyType
 from pilot.model.parameter import (
     ModelControllerParameters,
@@ -11,6 +14,8 @@ from pilot.model.parameter import (
 )
 from pilot.utils import get_or_create_event_loop
 from pilot.utils.parameter_utils import EnvArgumentParser
+from pilot.utils.command_utils import _run_current_with_daemon, _stop_service
+
 
 MODEL_CONTROLLER_ADDRESS = "http://127.0.0.1:8000"
 
@@ -157,46 +162,81 @@ def worker_apply(
     print(res)
 
 
+def add_stop_server_options(func):
+    @click.option(
+        "--port",
+        type=int,
+        default=None,
+        required=False,
+        help=("The port to stop"),
+    )
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 @click.command(name="controller")
 @EnvArgumentParser.create_click_option(ModelControllerParameters)
 def start_model_controller(**kwargs):
     """Start model controller"""
+
     from pilot.model.controller.controller import run_model_controller
 
-    run_model_controller()
+    if kwargs["daemon"]:
+        log_file = os.path.join(LOGDIR, "model_controller_uvicorn.log")
+        _run_current_with_daemon("ModelController", log_file)
+    else:
+        from pilot.model.controller.controller import run_model_controller
+
+        run_model_controller()
 
 
 @click.command(name="controller")
-def stop_model_controller(**kwargs):
+@add_stop_server_options
+def stop_model_controller(port: int):
     """Start model controller"""
-    raise NotImplementedError
+    # Command fragments to check against running processes
+    _stop_service("controller", "ModelController", port=port)
+
+
+def _model_dynamic_factory() -> Callable[[None], List[Type]]:
+    from pilot.model.adapter import _dynamic_model_parser
+
+    param_class = _dynamic_model_parser()
+    fix_class = [ModelWorkerParameters]
+    if not param_class:
+        param_class = [ModelParameters]
+    fix_class += param_class
+    return fix_class
 
 
 @click.command(name="worker")
-@EnvArgumentParser.create_click_option(ModelWorkerParameters, ModelParameters)
+@EnvArgumentParser.create_click_option(
+    ModelWorkerParameters, ModelParameters, _dynamic_factory=_model_dynamic_factory
+)
 def start_model_worker(**kwargs):
     """Start model worker"""
-    from pilot.model.worker.manager import run_worker_manager
+    if kwargs["daemon"]:
+        port = kwargs["port"]
+        model_type = kwargs.get("worker_type") or "llm"
+        log_file = os.path.join(LOGDIR, f"model_worker_{model_type}_{port}_uvicorn.log")
+        _run_current_with_daemon("ModelWorker", log_file)
+    else:
+        from pilot.model.worker.manager import run_worker_manager
 
-    run_worker_manager()
+        run_worker_manager()
 
 
 @click.command(name="worker")
-def stop_model_worker(**kwargs):
+@add_stop_server_options
+def stop_model_worker(port: int):
     """Stop model worker"""
-    raise NotImplementedError
-
-
-@click.command(name="webserver")
-def start_webserver(**kwargs):
-    """Start webserver(dbgpt_server.py)"""
-    raise NotImplementedError
-
-
-@click.command(name="webserver")
-def stop_webserver(**kwargs):
-    """Stop webserver(dbgpt_server.py)"""
-    raise NotImplementedError
+    name = "ModelWorker"
+    if port:
+        name = f"{name}-{port}"
+    _stop_service("worker", name, port=port)
 
 
 @click.command(name="apiserver")
@@ -205,7 +245,7 @@ def start_apiserver(**kwargs):
     raise NotImplementedError
 
 
-@click.command(name="controller")
+@click.command(name="apiserver")
 def stop_apiserver(**kwargs):
     """Start apiserver(TODO)"""
     raise NotImplementedError
