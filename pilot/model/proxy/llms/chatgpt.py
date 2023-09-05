@@ -4,18 +4,27 @@
 import json
 import requests
 from typing import List
-from pilot.configs.config import Config
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
+from pilot.model.proxy.llms.proxy_model import ProxyModel
 
-CFG = Config()
 
-
-def chatgpt_generate_stream(model, tokenizer, params, device, context_len=2048):
+def chatgpt_generate_stream(
+    model: ProxyModel, tokenizer, params, device, context_len=2048
+):
     history = []
 
+    model_params = model.get_params()
+    print(f"Model: {model}, model_params: {model_params}")
+
+    proxy_api_key = model_params.proxy_api_key
+    proxy_server_url = model_params.proxy_server_url
+    proxyllm_backend = model_params.proxyllm_backend
+    if not proxyllm_backend:
+        proxyllm_backend = "gpt-3.5-turbo"
+
     headers = {
-        "Authorization": "Bearer " + CFG.proxy_api_key,
-        "Token": CFG.proxy_api_key,
+        "Authorization": "Bearer " + proxy_api_key,
+        "Token": proxy_api_key,
     }
 
     messages: List[ModelMessage] = params["messages"]
@@ -42,16 +51,16 @@ def chatgpt_generate_stream(model, tokenizer, params, device, context_len=2048):
         history.append(last_user_input)
 
     payloads = {
-        "model": "gpt-3.5-turbo",  # just for test, remove this later
+        "model": proxyllm_backend,  # just for test, remove this later
         "messages": history,
         "temperature": params.get("temperature"),
         "max_tokens": params.get("max_new_tokens"),
         "stream": True,
     }
 
-    res = requests.post(
-        CFG.proxy_server_url, headers=headers, json=payloads, stream=True
-    )
+    res = requests.post(proxy_server_url, headers=headers, json=payloads, stream=True)
+
+    print(f"Send request to {proxy_server_url} with real model {proxyllm_backend}")
 
     text = ""
     for line in res.iter_lines():

@@ -61,8 +61,6 @@ try:
         stop_model_controller,
         start_model_worker,
         stop_model_worker,
-        start_webserver,
-        stop_webserver,
         start_apiserver,
         stop_apiserver,
     )
@@ -70,16 +68,23 @@ try:
     add_command_alias(model_cli_group, name="model", parent_group=cli)
     add_command_alias(start_model_controller, name="controller", parent_group=start)
     add_command_alias(start_model_worker, name="worker", parent_group=start)
-    add_command_alias(start_webserver, name="webserver", parent_group=start)
     add_command_alias(start_apiserver, name="apiserver", parent_group=start)
 
     add_command_alias(stop_model_controller, name="controller", parent_group=stop)
     add_command_alias(stop_model_worker, name="worker", parent_group=stop)
-    add_command_alias(stop_webserver, name="webserver", parent_group=stop)
     add_command_alias(stop_apiserver, name="apiserver", parent_group=stop)
 
 except ImportError as e:
     logging.warning(f"Integrating dbgpt model command line tool failed: {e}")
+
+try:
+    from pilot.server._cli import start_webserver, stop_webserver
+
+    add_command_alias(start_webserver, name="webserver", parent_group=start)
+    add_command_alias(stop_webserver, name="webserver", parent_group=stop)
+
+except ImportError as e:
+    logging.warning(f"Integrating dbgpt webserver command line tool failed: {e}")
 
 try:
     from pilot.server.knowledge._cli.knowledge_cli import knowledge_cli_group

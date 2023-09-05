@@ -70,7 +70,7 @@ LLM_MODEL_CONFIG = {
     "claude_proxyllm": "claude_proxyllm",
     "wenxin_proxyllm": "wenxin_proxyllm",
     "tongyi_proxyllm": "tongyi_proxyllm",
-    "gpt4_proxyllm": "gpt4_proxyllm",
+    "zhipu_proxyllm": "zhipu_proxyllm",
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
     "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
     "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),

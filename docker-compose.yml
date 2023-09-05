@@ -18,7 +18,7 @@ services:
     networks:
       - dbgptnet
   webserver:
-    image: eosphorosai/dbgpt-allinone:latest
+    image: eosphorosai/dbgpt:latest
     command: python3 pilot/server/dbgpt_server.py
     environment:
       - LOCAL_DB_HOST=db
@@ -46,7 +46,6 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ['0']
               capabilities: [gpu]
 volumes:
   dbgpt-myql-db:

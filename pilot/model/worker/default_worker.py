@@ -33,6 +33,9 @@ class DefaultModelWorker(ModelWorker):
         self.llm_adapter = get_llm_model_adapter(self.model_name, self.model_path)
         model_type = self.llm_adapter.model_type()
         self.param_cls = self.llm_adapter.model_param_class(model_type)
+        logger.info(
+            f"model_name: {self.model_name}, model_path: {self.model_path}, model_param_class: {self.param_cls}"
+        )
 
         self.llm_chat_adapter = get_llm_chat_adapter(self.model_name, self.model_path)
         self.generate_stream_func = self.llm_chat_adapter.get_generate_stream_func(
