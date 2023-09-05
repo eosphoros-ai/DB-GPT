@@ -145,9 +145,9 @@ def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate
                     a_module = getattr(zipped_module, key)
                     a_keys = dir(a_module)
                     if (
-                        "_abc_impl" in a_keys
-                        and a_module.__name__ != "AutoGPTPluginTemplate"
-                        # and denylist_allowlist_check(a_module.__name__, cfg)
+                            "_abc_impl" in a_keys
+                            and a_module.__name__ != "AutoGPTPluginTemplate"
+                            # and denylist_allowlist_check(a_module.__name__, cfg)
                     ):
                         loaded_plugins.append(a_module())
 

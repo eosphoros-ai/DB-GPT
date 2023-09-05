@@ -13,8 +13,8 @@ logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
 
 class PluginAction(NamedTuple):
     command: Dict
-    speak: str
-    thoughts: str
+    speak: str = ""
+    thoughts: str = ""
 
 
 class PluginChatOutputParser(BaseOutputParser):
@@ -28,6 +28,8 @@ class PluginChatOutputParser(BaseOutputParser):
         except Exception as e:
             raise ValueError("model server out not fllow the prompt!")
 
+        speak = ""
+        thoughts=""
         for key in sorted(response):
             if key.strip() == "command":
                 command = response[key]
