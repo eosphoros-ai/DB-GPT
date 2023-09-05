@@ -161,3 +161,15 @@ def get_or_create_event_loop() -> asyncio.BaseEventLoop:
             raise e
         logging.warning("Cant not get running event loop, create new event loop now")
         return asyncio.get_event_loop_policy().get_event_loop()
+
+
+def logging_str_to_uvicorn_level(log_level_str):
+    level_str_mapping = {
+        "CRITICAL": "critical",
+        "ERROR": "error",
+        "WARNING": "warning",
+        "INFO": "info",
+        "DEBUG": "debug",
+        "NOTSET": "info",
+    }
+    return level_str_mapping.get(log_level_str.upper(), "info")
