@@ -43,8 +43,8 @@ class LearningExcelOutputParser(BaseOutputParser):
     def parse_view_response(self, speak, data) -> str:
         if data:
             ### tool out data to table view
-            html_title = f"### **数据简介**\n{data.desciption} "
-            html_colunms = f"### **数据结构**\n"
+            html_title = f"### **Data Summary**\n{data.desciption} "
+            html_colunms = f"### **Data Structure**\n"
             column_index = 0
             for item in data.clounms:
                 column_index += 1
@@ -54,7 +54,7 @@ class LearningExcelOutputParser(BaseOutputParser):
                         html_colunms + f"- **{column_index}.[{key}]**   _{item[key]}_\n"
                     )
 
-            html_plans = f"### **分析计划**\n"
+            html_plans = f"### **Recommended analysis plan**\n"
             index = 0
             for item in data.plans:
                 index += 1
