@@ -27,6 +27,9 @@ class ModelControllerParameters(BaseParameters):
     port: Optional[int] = field(
         default=8000, metadata={"help": "Model Controller deploy port"}
     )
+    daemon: Optional[bool] = field(
+        default=False, metadata={"help": "Run Model Controller in background"}
+    )
 
 
 @dataclass
@@ -49,6 +52,9 @@ class ModelWorkerParameters(BaseParameters):
 
     port: Optional[int] = field(
         default=8000, metadata={"help": "Model worker deploy port"}
+    )
+    daemon: Optional[bool] = field(
+        default=False, metadata={"help": "Run Model Worker in background"}
     )
     limit_model_concurrency: Optional[int] = field(
         default=5, metadata={"help": "Model concurrency limit"}
@@ -109,9 +115,13 @@ class EmbeddingModelParameters(BaseParameters):
 
 
 @dataclass
-class ModelParameters(BaseParameters):
+class BaseModelParameters(BaseParameters):
     model_name: str = field(metadata={"help": "Model name", "tags": "fixed"})
     model_path: str = field(metadata={"help": "Model path", "tags": "fixed"})
+
+
+@dataclass
+class ModelParameters(BaseModelParameters):
     device: Optional[str] = field(
         default=None,
         metadata={
@@ -120,7 +130,10 @@ class ModelParameters(BaseParameters):
     )
     model_type: Optional[str] = field(
         default="huggingface",
-        metadata={"help": "Model type, huggingface or llama.cpp", "tags": "fixed"},
+        metadata={
+            "help": "Model type, huggingface, llama.cpp and proxy",
+            "tags": "fixed",
+        },
     )
     prompt_template: Optional[str] = field(
         default=None,
@@ -220,4 +233,44 @@ class LlamaCppModelParameters(ModelParameters):
         metadata={
             "help": "If a GPU is available, it will be preferred by default, unless prefer_cpu=False is configured."
         },
+    )
+
+
+@dataclass
+class ProxyModelParameters(BaseModelParameters):
+    proxy_server_url: str = field(
+        metadata={
+            "help": "Proxy server url, such as: https://api.openai.com/v1/chat/completions"
+        },
+    )
+    proxy_api_key: str = field(
+        metadata={"tags": "privacy", "help": "The api key of current proxy LLM"},
+    )
+    proxyllm_backend: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The model name actually pass to current proxy server url, such as gpt-3.5-turbo, gpt-4, chatglm_pro, chatglm_std and so on"
+        },
+    )
+    model_type: Optional[str] = field(
+        default="proxy",
+        metadata={
+            "help": "Model type, huggingface, llama.cpp and proxy",
+            "tags": "fixed",
+        },
+    )
+    device: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Device to run model. If None, the device is automatically determined"
+        },
+    )
+    prompt_template: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": f"Prompt template. If None, the prompt template is automatically determined from model path, supported template: {suported_prompt_templates}"
+        },
+    )
+    max_context_size: Optional[int] = field(
+        default=4096, metadata={"help": "Maximum context size"}
     )

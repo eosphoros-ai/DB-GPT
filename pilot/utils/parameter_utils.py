@@ -1,7 +1,8 @@
 import argparse
 import os
 from dataclasses import dataclass, fields, MISSING
-from typing import Any, List, Optional, Type, Union, Callable
+from typing import Any, List, Optional, Type, Union, Callable, Dict
+from collections import OrderedDict
 
 
 @dataclass
@@ -60,12 +61,61 @@ class BaseParameters:
             f"\n\n=========================== {class_name} ===========================\n"
         ]
         for field_info in fields(self):
-            value = getattr(self, field_info.name)
+            value = _get_simple_privacy_field_value(self, field_info)
             parameters.append(f"{field_info.name}: {value}")
         parameters.append(
             "\n======================================================================\n\n"
         )
         return "\n".join(parameters)
+
+
+def _get_simple_privacy_field_value(obj, field_info):
+    """Retrieve the value of a field from a dataclass instance, applying privacy rules if necessary.
+
+    This function reads the metadata of a field to check if it's tagged with 'privacy'.
+    If the 'privacy' tag is present, then it modifies the value based on its type
+    for privacy concerns:
+    - int: returns -999
+    - float: returns -999.0
+    - bool: returns False
+    - str: if length > 5, masks the middle part and returns first and last char;
+           otherwise, returns "******"
+
+    Parameters:
+    - obj: The dataclass instance.
+    - field_info: A Field object that contains information about the dataclass field.
+
+    Returns:
+    The original or modified value of the field based on the privacy rules.
+
+    Example usage:
+    @dataclass
+    class Person:
+        name: str
+        age: int
+        ssn: str = field(metadata={"tags": "privacy"})
+    p = Person("Alice", 30, "123-45-6789")
+    print(_get_simple_privacy_field_value(p, Person.ssn))  # A******9
+    """
+    tags = field_info.metadata.get("tags")
+    tags = [] if not tags else tags.split(",")
+    is_privacy = False
+    if tags and "privacy" in tags:
+        is_privacy = True
+    value = getattr(obj, field_info.name)
+    if not is_privacy or not value:
+        return value
+    field_type = EnvArgumentParser._get_argparse_type(field_info.type)
+    if field_type is int:
+        return -999
+    if field_type is float:
+        return -999.0
+    if field_type is bool:
+        return False
+    # str
+    if len(value) > 5:
+        return value[0] + "******" + value[-1]
+    return "******"
 
 
 def _genenv_ignoring_key_case(env_key: str, env_prefix: str = None, default_value=None):
@@ -115,24 +165,11 @@ class EnvArgumentParser:
             if not env_var_value:
                 env_var_value = kwargs.get(field.name)
 
+            print(f"env_var_value: {env_var_value} for {field.name}")
             # Add a command-line argument for this field
-            help_text = field.metadata.get("help", "")
-            valid_values = field.metadata.get("valid_values", None)
-
-            argument_kwargs = {
-                "type": EnvArgumentParser._get_argparse_type(field.type),
-                "help": help_text,
-                "choices": valid_values,
-                "required": EnvArgumentParser._is_require_type(field.type),
-            }
-            if field.default != MISSING:
-                argument_kwargs["default"] = field.default
-                argument_kwargs["required"] = False
-            if env_var_value:
-                argument_kwargs["default"] = env_var_value
-                argument_kwargs["required"] = False
-
-            parser.add_argument(f"--{field.name}", **argument_kwargs)
+            EnvArgumentParser._build_single_argparse_option(
+                parser, field, env_var_value
+            )
 
         # Parse the command-line arguments
         cmd_args, cmd_argv = parser.parse_known_args(args=command_args)
@@ -148,7 +185,7 @@ class EnvArgumentParser:
         return dataclass_type(**kwargs)
 
     @staticmethod
-    def create_arg_parser(dataclass_type: Type) -> argparse.ArgumentParser:
+    def _create_arg_parser(dataclass_type: Type) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description=dataclass_type.__doc__)
         for field in fields(dataclass_type):
             help_text = field.metadata.get("help", "")
@@ -172,11 +209,6 @@ class EnvArgumentParser:
         import click
         import functools
         from collections import OrderedDict
-
-        # TODO dynamic configuration
-        # pre_args = _SimpleArgParser('model_name', 'model_path')
-        # pre_args.parse()
-        # print(pre_args)
 
         combined_fields = OrderedDict()
         if _dynamic_factory:
@@ -226,6 +258,48 @@ class EnvArgumentParser:
         return decorator
 
     @staticmethod
+    def create_argparse_option(
+        *dataclass_types: Type, _dynamic_factory: Callable[[None], List[Type]] = None
+    ) -> argparse.ArgumentParser:
+        combined_fields = _merge_dataclass_types(
+            *dataclass_types, _dynamic_factory=_dynamic_factory
+        )
+        parser = argparse.ArgumentParser()
+        for _, field in reversed(combined_fields.items()):
+            EnvArgumentParser._build_single_argparse_option(parser, field)
+        return parser
+
+    @staticmethod
+    def _build_single_argparse_option(
+        parser: argparse.ArgumentParser, field, default_value=None
+    ):
+        # Add a command-line argument for this field
+        help_text = field.metadata.get("help", "")
+        valid_values = field.metadata.get("valid_values", None)
+        short_name = field.metadata.get("short", None)
+        argument_kwargs = {
+            "type": EnvArgumentParser._get_argparse_type(field.type),
+            "help": help_text,
+            "choices": valid_values,
+            "required": EnvArgumentParser._is_require_type(field.type),
+        }
+        if field.default != MISSING:
+            argument_kwargs["default"] = field.default
+            argument_kwargs["required"] = False
+        if default_value:
+            argument_kwargs["default"] = default_value
+            argument_kwargs["required"] = False
+        if field.type is bool or field.type == Optional[bool]:
+            argument_kwargs["action"] = "store_true"
+            del argument_kwargs["type"]
+            del argument_kwargs["choices"]
+        names = []
+        if short_name:
+            names.append(f"-{short_name}")
+        names.append(f"--{field.name}")
+        parser.add_argument(*names, **argument_kwargs)
+
+    @staticmethod
     def _get_argparse_type(field_type: Type) -> Type:
         # Return the appropriate type for argparse to use based on the field type
         if field_type is int or field_type == Optional[int]:
@@ -254,6 +328,42 @@ class EnvArgumentParser:
     @staticmethod
     def _is_require_type(field_type: Type) -> str:
         return field_type not in [Optional[int], Optional[float], Optional[bool]]
+
+    @staticmethod
+    def _kwargs_to_env_key_value(
+        kwargs: Dict, prefix: str = "__dbgpt_gunicorn__env_prefix__"
+    ) -> Dict[str, str]:
+        return {prefix + k: str(v) for k, v in kwargs.items()}
+
+    @staticmethod
+    def _read_env_key_value(
+        prefix: str = "__dbgpt_gunicorn__env_prefix__",
+    ) -> List[str]:
+        env_args = []
+        for key, value in os.environ.items():
+            if key.startswith(prefix):
+                arg_key = "--" + key.replace(prefix, "")
+                if value.lower() in ["true", "1"]:
+                    # Flag args
+                    env_args.append(arg_key)
+                elif not value.lower() in ["false", "0"]:
+                    env_args.extend([arg_key, value])
+        return env_args
+
+
+def _merge_dataclass_types(
+    *dataclass_types: Type, _dynamic_factory: Callable[[None], List[Type]] = None
+) -> OrderedDict:
+    combined_fields = OrderedDict()
+    if _dynamic_factory:
+        _types = _dynamic_factory()
+        if _types:
+            dataclass_types = list(_types)
+    for dataclass_type in dataclass_types:
+        for field in fields(dataclass_type):
+            if field.name not in combined_fields:
+                combined_fields[field.name] = field
+    return combined_fields
 
 
 def _get_parameter_descriptions(dataclass_type: Type) -> List[ParameterDescription]:
@@ -297,7 +407,7 @@ class _SimpleArgParser:
             self.params[prev_arg] = None
 
     def _get_param(self, key):
-        return self.params.get(key.replace("_", "-"), None)
+        return self.params.get(key.replace("_", "-")) or self.params.get(key)
 
     def __getattr__(self, item):
         return self._get_param(item)
