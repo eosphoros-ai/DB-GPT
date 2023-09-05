@@ -29,7 +29,7 @@ class PluginChatOutputParser(BaseOutputParser):
             raise ValueError("model server out not fllow the prompt!")
 
         speak = ""
-        thoughts=""
+        thoughts = ""
         for key in sorted(response):
             if key.strip() == "command":
                 command = response[key]
