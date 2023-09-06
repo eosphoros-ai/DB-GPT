@@ -165,7 +165,7 @@ class EnvArgumentParser:
             if not env_var_value:
                 env_var_value = kwargs.get(field.name)
 
-            print(f"env_var_value: {env_var_value} for {field.name}")
+            # print(f"env_var_value: {env_var_value} for {field.name}")
             # Add a command-line argument for this field
             EnvArgumentParser._build_single_argparse_option(
                 parser, field, env_var_value
