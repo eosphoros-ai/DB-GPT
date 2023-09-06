@@ -77,6 +77,8 @@ LLM_MODEL_CONFIG = {
     "baichuan-13b": os.path.join(MODEL_PATH, "Baichuan-13B-Chat"),
     # please rename "fireballoon/baichuan-vicuna-chinese-7b" to "baichuan-7b"
     "baichuan-7b": os.path.join(MODEL_PATH, "baichuan-7b"),
+    "baichuan2-7b": os.path.join(MODEL_PATH, "Baichuan2-7B-Chat"),
+    "baichuan2-13b": os.path.join(MODEL_PATH, "Baichuan2-13B-Chat"),
     # (Llama2 based) We only support WizardLM-13B-V1.2 for now, which is trained from Llama-2 13b, see https://huggingface.co/WizardLM/WizardLM-13B-V1.2
     "wizardlm-13b": os.path.join(MODEL_PATH, "WizardLM-13B-V1.2"),
     "llama-cpp": os.path.join(MODEL_PATH, "ggml-model-q4_0.bin"),
