@@ -18,3 +18,13 @@ class VectorStoreBase(ABC):
     def vector_name_exists(self, text, topk) -> None:
         """is vector store name exist."""
         pass
+
+    @abstractmethod
+    def delete_by_ids(self, ids):
+        """delete vector by ids."""
+        pass
+
+    @abstractmethod
+    def delete_vector_name(self, vector_name):
+        """delete vector name."""
+        pass
