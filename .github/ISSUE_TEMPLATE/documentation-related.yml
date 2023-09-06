@@ -3,6 +3,13 @@ description: Suggest an improvement or report a bug for this project's Documenta
 title: "[Doc][Module Name] Documentation bug or improvement"
 labels: [ "documentation", "Waiting for reply" ]
 body:
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for taking the time to suggest an improvement or report a bug for this project's documentation. 
+        The `[Module Name]` in title see [here](https://github.com/eosphoros-ai/DB-GPT/labels?q=Module), 
+        if you don't know the module name, you don't have to fill it in.
+
   - type: checkboxes
     attributes:
       label: Search before asking
