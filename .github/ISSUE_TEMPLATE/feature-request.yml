@@ -3,6 +3,13 @@ description: Suggest an idea for this project
 title: "[Feature][Module Name] Feature title"
 labels: [ "enhancement", "Waiting for reply" ]
 body:
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for taking the time to suggest an idea for this project. 
+        The `[Module Name]` in title see [here](https://github.com/eosphoros-ai/DB-GPT/labels?q=Module), 
+        if you don't know the module name, you don't have to fill it in.
+
   - type: checkboxes
     attributes:
       label: Search before asking
