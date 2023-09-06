@@ -7,8 +7,8 @@ categories:
     labels: enhancement
   - title: 🐞 Bug fixes
     labels: fix
-  - title: ⚠️ Deprecations
-    labels: deprecation
+  # - title: ⚠️ Deprecations
+  #   labels: deprecation
   - title: 🛠️ Other improvements
     labels:
       - documentation
