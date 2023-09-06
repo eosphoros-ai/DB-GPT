@@ -1,0 +1,64 @@
+name: Feature request
+description: Suggest an idea for this project
+title: "[Feature][Module Name] Feature title"
+labels: [ "enhancement", "Waiting for reply" ]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for taking the time to suggest an idea for this project. 
+        The `[Module Name]` in title see [here](https://github.com/eosphoros-ai/DB-GPT/labels?q=Module), 
+        if you don't know the module name, you don't have to fill it in.
+
+  - type: checkboxes
+    attributes:
+      label: Search before asking
+      description: >
+        Please make sure to search in the [issues](https://github.com/eosphoros-ai/DB-GPT/issues?q=is%3Aissue) first
+        to see whether the same feature was requested already.
+      options:
+        - label: >
+            I had searched in the [issues](https://github.com/eosphoros-ai/DB-GPT/issues?q=is%3Aissue) and found no
+            similar feature requirement.
+          required: true
+
+  - type: textarea
+    attributes:
+      label: Description
+      description: A short description of your feature
+
+  - type: textarea
+    attributes:
+      label: Use case
+      description: What do you want to happen?
+      placeholder: >
+        Instead of detailing how to implement the feature, please describe your end goal or what you aim to achieve.
+
+  - type: textarea
+    attributes:
+      label: Related issues
+      description: Is there currently another issue associated with this?
+      
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Feature Priority
+      description: How would you rank the importance of this feature?
+      options:
+        - High
+        - Medium
+        - Low
+
+  - type: checkboxes
+    attributes:
+      label: Are you willing to submit PR?
+      description: >
+        It's completely optional, but if you're interested in contributing, we're here to help! 
+        If you have insights on the solution, that's even better. DB-GPT thrives on community support, 
+        and we warmly welcome new contributors.
+      options:
+        - label: Yes I am willing to submit a PR!
+
+  - type: markdown
+    attributes:
+      value: "Thanks for completing our form!"

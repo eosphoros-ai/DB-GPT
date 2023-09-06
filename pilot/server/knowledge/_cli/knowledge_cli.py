@@ -53,6 +53,7 @@ def knowledge_cli_group(address: str):
     required=False,
     type=bool,
     default=False,
+    is_flag=True,
     show_default=True,
     help="Skip wrong document",
 )
