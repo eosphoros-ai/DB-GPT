@@ -30,12 +30,7 @@
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/FMGwbRQrM) |[**Documents
-**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信
-**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community
-**](https://github.com/eosphoros-ai/community)
-
-</div>
+[**English**](README.md)|[**Discord**](https://discord.gg/FMGwbRQrM) |[**文档**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
 
 ## DB-GPT 是什么？
 
@@ -119,6 +114,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
   - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
 - 多模型支持
   - 支持多种大语言模型, 当前已支持如下模型: 
+  - 🔥 Baichuan2(7b,13b)
   - 🔥 Vicuna-v1.5(7b,13b)
   - 🔥 llama-2(7b,13b,70b)
   - WizardLM-v1.2(13b)

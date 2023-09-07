@@ -2,7 +2,7 @@ import datetime
 import traceback
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, List, Dict
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import LOGDIR
@@ -33,12 +33,12 @@ class BaseChat(ABC):
         arbitrary_types_allowed = True
 
     def __init__(
-        self, chat_mode, chat_session_id, current_user_input, select_param: Any = None
+        self, chat_param: Dict
     ):
-        self.chat_session_id = chat_session_id
-        self.chat_mode = chat_mode
-        self.current_user_input: str = current_user_input
-        self.llm_model = CFG.LLM_MODEL
+        self.chat_session_id = chat_param["chat_session_id"]
+        self.chat_mode = chat_param["chat_mode"]
+        self.current_user_input: str = chat_param["current_user_input"]
+        self.llm_model = chat_param["model_name"]
         self.llm_echo = False
 
         ### load prompt template
@@ -55,14 +55,14 @@ class BaseChat(ABC):
         )
 
         ### can configurable storage methods
-        self.memory = DuckdbHistoryMemory(chat_session_id)
+        self.memory = DuckdbHistoryMemory(chat_param["chat_session_id"])
 
         self.history_message: List[OnceConversation] = self.memory.messages()
-        self.current_message: OnceConversation = OnceConversation(chat_mode.value())
-        if select_param:
-            if len(chat_mode.param_types()) > 0:
-                self.current_message.param_type = chat_mode.param_types()[0]
-            self.current_message.param_value = select_param
+        self.current_message: OnceConversation = OnceConversation(self.chat_mode.value())
+        if chat_param["select_param"]:
+            if len(self.chat_mode.param_types()) > 0:
+                self.current_message.param_type = self.chat_mode.param_types()[0]
+            self.current_message.param_value = chat_param["select_param"]
         self.current_tokens_used: int = 0
 
     class Config:
