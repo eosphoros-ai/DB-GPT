@@ -3,7 +3,6 @@
 
 from functools import cache
 from typing import List, Dict, Tuple
-from pilot.model.llm_out.vicuna_base_llm import generate_stream
 from pilot.model.conversation import Conversation, get_conv_template
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 
@@ -131,6 +130,8 @@ class VicunaChatAdapter(BaseChatAdpter):
         return None
 
     def get_generate_stream_func(self, model_path: str):
+        from pilot.model.llm_out.vicuna_base_llm import generate_stream
+
         if self._is_llama2_based(model_path):
             return super().get_generate_stream_func(model_path)
         return generate_stream

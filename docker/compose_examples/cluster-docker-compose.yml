@@ -1,0 +1,68 @@
+version: '3.10'
+
+services:
+  controller:
+    image: eosphorosai/dbgpt:latest
+    command: dbgpt start controller
+    networks:
+      - dbgptnet
+  worker:
+    image: eosphorosai/dbgpt:latest
+    command: dbgpt start worker --model_name vicuna-13b-v1.5 --model_path /app/models/vicuna-13b-v1.5 --port 8001 --controller_addr http://controller:8000
+    environment:
+      - DBGPT_LOG_LEVEL=DEBUG
+    depends_on:
+      - controller
+    volumes:
+      - /data:/data
+      # Please modify it to your own model directory
+      - /data/models:/app/models
+    networks:
+      - dbgptnet
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+  webserver:
+    image: eosphorosai/dbgpt:latest
+    command: dbgpt start webserver --light
+    environment:
+      - DBGPT_LOG_LEVEL=DEBUG
+      - LOCAL_DB_PATH=data/default_sqlite.db
+      - LOCAL_DB_TYPE=sqlite
+      - ALLOWLISTED_PLUGINS=db_dashboard
+      - LLM_MODEL=vicuna-13b-v1.5
+      - MODEL_SERVER=http://controller:8000
+    depends_on:
+      - controller
+      - worker
+    volumes:
+      - /data:/data
+      # Please modify it to your own model directory
+      - /data/models:/app/models
+      - dbgpt-data:/app/pilot/data
+      - dbgpt-message:/app/pilot/message
+    # env_file:
+    #   - .env.template
+    ports:
+      - 5000:5000/tcp
+    # webserver may be failed, it must wait all sqls in /docker-entrypoint-initdb.d execute finish.
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+volumes:
+  dbgpt-myql-db:
+  dbgpt-data:
+  dbgpt-message:
+networks:
+  dbgptnet:
+    driver: bridge
+    name: dbgptnet

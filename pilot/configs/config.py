@@ -4,12 +4,7 @@
 import os
 from typing import List
 
-import nltk
-from auto_gpt_plugin_template import AutoGPTPluginTemplate
-
 from pilot.singleton import Singleton
-from pilot.common.sql_database import Database
-from pilot.prompts.prompt_registry import PromptTemplateRegistry
 
 
 class Config(metaclass=Singleton):
@@ -46,6 +41,10 @@ class Config(metaclass=Singleton):
         # This is a proxy server, just for test_py.  we will remove this later.
         self.proxy_api_key = os.getenv("PROXY_API_KEY")
         self.bard_proxy_api_key = os.getenv("BARD_PROXY_API_KEY")
+        # In order to be compatible with the new and old model parameter design
+        if self.bard_proxy_api_key:
+            os.environ["bard_proxyllm_proxy_api_key"] = self.bard_proxy_api_key
+
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
         self.elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
@@ -78,6 +77,8 @@ class Config(metaclass=Singleton):
         )
         self.speak_mode = False
 
+        from pilot.prompts.prompt_registry import PromptTemplateRegistry
+
         self.prompt_template_registry = PromptTemplateRegistry()
         ### Related configuration of built-in commands
         self.command_registry = []
@@ -98,6 +99,8 @@ class Config(metaclass=Singleton):
         self.message_dir = os.getenv("MESSAGE_HISTORY_DIR", "../../message")
 
         ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
+        from auto_gpt_plugin_template import AutoGPTPluginTemplate
+
         self.plugins: List[AutoGPTPluginTemplate] = []
         self.plugins_openai = []
         self.plugins_auto_load = os.getenv("AUTO_LOAD_PLUGIN", "True") == "True"
@@ -166,6 +169,9 @@ class Config(metaclass=Singleton):
         self.IS_LOAD_4BIT = os.getenv("QUANTIZE_4bit", "False") == "True"
         if self.IS_LOAD_8BIT and self.IS_LOAD_4BIT:
             self.IS_LOAD_8BIT = False
+        # In order to be compatible with the new and old model parameter design
+        os.environ["load_8bit"] = str(self.IS_LOAD_8BIT)
+        os.environ["load_4bit"] = str(self.IS_LOAD_4BIT)
 
         ### EMBEDDING Configuration
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text2vec")
@@ -179,6 +185,9 @@ class Config(metaclass=Singleton):
         self.SUMMARY_CONFIG = os.getenv("SUMMARY_CONFIG", "FAST")
 
         self.MAX_GPU_MEMORY = os.getenv("MAX_GPU_MEMORY", None)
+
+        ### Log level
+        self.DBGPT_LOG_LEVEL = os.getenv("DBGPT_LOG_LEVEL", "INFO")
 
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from typing import Any, Iterable, List, Optional, Tuple
 
-from langchain.docstore.document import Document
 from pymilvus import Collection, DataType, connections, utility
 
 from pilot.logs import logger
@@ -114,8 +115,8 @@ class MilvusStore(VectorStoreBase):
                     or x.dtype == DataType.BINARY_VECTOR
                 ):
                     self.vector_field = x.name
-            self._add_documents(texts, metadatas)
-            return self.collection_name
+            return self._add_documents(texts, metadatas)
+            # return self.collection_name
 
         dim = len(embeddings)
         # Generate unique names
@@ -153,9 +154,9 @@ class MilvusStore(VectorStoreBase):
                 self.primary_field = x.name
             if x.dtype == DataType.FLOAT_VECTOR or x.dtype == DataType.BINARY_VECTOR:
                 self.vector_field = x.name
-        self._add_documents(texts, metadatas)
+        ids = self._add_documents(texts, metadatas)
 
-        return self.collection_name
+        return ids
 
     # def init_schema(self) -> None:
     #     """Initialize collection in milvus database."""
@@ -250,9 +251,11 @@ class MilvusStore(VectorStoreBase):
         batched_list = [
             documents[i : i + batch_size] for i in range(0, len(documents), batch_size)
         ]
-        # docs = []
+        doc_ids = []
         for doc_batch in batched_list:
-            self.init_schema_and_load(self.collection_name, doc_batch)
+            doc_ids.extend(self.init_schema_and_load(self.collection_name, doc_batch))
+        doc_ids = [str(doc_id) for doc_id in doc_ids]
+        return doc_ids
 
     def similar_search(self, text, topk) -> None:
         """similar_search in vector database."""
@@ -279,7 +282,9 @@ class MilvusStore(VectorStoreBase):
         round_decimal: int = -1,
         timeout: Optional[int] = None,
         **kwargs: Any,
-    ) -> Tuple[List[float], List[Tuple[Document, Any, Any]]]:
+    ):
+        from langchain.docstore.document import Document
+
         self.col.load()
         # use default index params.
         if param is None:
@@ -321,8 +326,19 @@ class MilvusStore(VectorStoreBase):
         return utility.has_collection(self.collection_name)
 
     def delete_vector_name(self, vector_name):
+        """milvus delete collection name"""
         logger.info(f"milvus vector_name:{vector_name} begin delete...")
-        self.vector_store_client.drop()
+        utility.drop_collection(vector_name)
+        return True
+
+    def delete_by_ids(self, ids):
+        self.col = Collection(self.collection_name)
+        """milvus delete vectors by ids"""
+        logger.info(f"begin delete milvus ids...")
+        delete_ids = ids.split(",")
+        doc_ids = [int(doc_id) for doc_id in delete_ids]
+        delet_expr = f"{self.primary_field} in {doc_ids}"
+        self.col.delete(delet_expr)
         return True
 
     def close(self):

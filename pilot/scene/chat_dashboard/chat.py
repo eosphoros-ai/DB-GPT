@@ -3,7 +3,7 @@ import os
 import uuid
 from typing import List
 
-from pilot.scene.base_chat import BaseChat, logger
+from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
 from pilot.scene.chat_dashboard.data_preparation.report_schma import (

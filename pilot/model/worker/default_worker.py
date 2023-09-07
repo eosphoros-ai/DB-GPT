@@ -2,15 +2,15 @@ import logging
 import platform
 from typing import Dict, Iterator, List
 
-import torch
-from pilot.configs.model_config import DEVICE
+from pilot.configs.model_config import get_device
 from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper
 from pilot.model.base import ModelOutput
 from pilot.model.loader import ModelLoader, _get_model_real_path
-from pilot.model.parameter import EnvArgumentParser, ModelParameters
+from pilot.model.parameter import ModelParameters
 from pilot.model.worker.base import ModelWorker
 from pilot.server.chat_adapter import get_llm_chat_adapter, BaseChatAdpter
 from pilot.utils.model_utils import _clear_torch_cache
+from pilot.utils.parameter_utils import EnvArgumentParser
 
 logger = logging.getLogger("model_worker")
 
@@ -33,6 +33,9 @@ class DefaultModelWorker(ModelWorker):
         self.llm_adapter = get_llm_model_adapter(self.model_name, self.model_path)
         model_type = self.llm_adapter.model_type()
         self.param_cls = self.llm_adapter.model_param_class(model_type)
+        logger.info(
+            f"model_name: {self.model_name}, model_path: {self.model_path}, model_param_class: {self.param_cls}"
+        )
 
         self.llm_chat_adapter = get_llm_chat_adapter(self.model_name, self.model_path)
         self.generate_stream_func = self.llm_chat_adapter.get_generate_stream_func(
@@ -62,7 +65,7 @@ class DefaultModelWorker(ModelWorker):
             model_type=model_type,
         )
         if not model_params.device:
-            model_params.device = DEVICE
+            model_params.device = get_device()
             logger.info(
                 f"[DefaultModelWorker] Parameters of device is None, use {model_params.device}"
             )
@@ -87,6 +90,8 @@ class DefaultModelWorker(ModelWorker):
         _clear_torch_cache(self._model_params.device)
 
     def generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
+        import torch
+
         try:
             # params adaptation
             params, model_context = self.llm_chat_adapter.model_adaptation(
@@ -94,7 +99,7 @@ class DefaultModelWorker(ModelWorker):
             )
 
             for output in self.generate_stream_func(
-                self.model, self.tokenizer, params, DEVICE, self.context_len
+                self.model, self.tokenizer, params, get_device(), self.context_len
             ):
                 # Please do not open the output in production!
                 # The gpt4all thread shares stdout with the parent process,

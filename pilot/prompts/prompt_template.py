@@ -11,7 +11,7 @@ from pydantic import BaseModel, Extra, Field, root_validator
 
 from pilot.out_parser.base import BaseOutputParser
 from pilot.prompts.base import PromptValue
-from pilot.scene.base_message import HumanMessage, AIMessage, SystemMessage, BaseMessage
+from pilot.scene.base_message import HumanMessage, BaseMessage
 from pilot.common.formatting import formatter
 
 

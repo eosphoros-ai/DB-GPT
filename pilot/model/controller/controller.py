@@ -1,9 +1,11 @@
 import logging
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI
 from pilot.model.base import ModelInstance
+from pilot.model.parameter import ModelControllerParameters
 from pilot.model.controller.registry import EmbeddedModelRegistry, ModelRegistry
+from pilot.utils.parameter_utils import EnvArgumentParser
 
 
 class ModelController:
@@ -63,3 +65,22 @@ async def api_get_all_instances(model_name: str = None, healthy_only: bool = Fal
 @router.post("/controller/heartbeat")
 async def api_model_heartbeat(request: ModelInstance):
     return await controller.send_heartbeat(request)
+
+
+def run_model_controller():
+    import uvicorn
+
+    parser = EnvArgumentParser()
+    env_prefix = "controller_"
+    controller_params: ModelControllerParameters = parser.parse_args_into_dataclass(
+        ModelControllerParameters, env_prefix=env_prefix
+    )
+    app = FastAPI()
+    app.include_router(router, prefix="/api")
+    uvicorn.run(
+        app, host=controller_params.host, port=controller_params.port, log_level="info"
+    )
+
+
+if __name__ == "__main__":
+    run_model_controller()

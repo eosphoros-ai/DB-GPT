@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
-from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
-
+from typing import List
 from pilot.common.schema import ExampleType
 
 

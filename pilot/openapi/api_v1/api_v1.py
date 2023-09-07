@@ -16,7 +16,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from fastapi.exceptions import RequestValidationError
 from typing import List
-from tempfile import NamedTemporaryFile
+import tempfile
 
 from pilot.openapi.api_view_model import (
     Result,
@@ -38,6 +38,7 @@ from pilot.common.schema import DBType
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.scene.message import OnceConversation
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
+from pilot.summary.db_summary_client import DBSummaryClient
 
 router = APIRouter()
 CFG = Config()
@@ -106,6 +107,27 @@ async def db_connect_edit(db_config: DBConfig = Body()):
 @router.post("/v1/chat/db/delete", response_model=Result[bool])
 async def db_connect_delete(db_name: str = None):
     return Result.succ(CFG.LOCAL_DB_MANAGE.delete_db(db_name))
+
+
+async def async_db_summary_embedding(db_name, db_type):
+    # 在这里执行需要异步运行的代码
+    db_summary_client = DBSummaryClient()
+    db_summary_client.db_summary_embedding(db_name, db_type)
+
+
+@router.post("/v1/chat/db/test/connect", response_model=Result[bool])
+async def test_connect(db_config: DBConfig = Body()):
+    try:
+        CFG.LOCAL_DB_MANAGE.test_connect(db_config)
+        return Result.succ(True)
+    except Exception as e:
+        return Result.faild(code="E1001", msg=str(e))
+
+
+@router.post("/v1/chat/db/summary", response_model=Result[bool])
+async def db_summary(db_name: str, db_type: str):
+    async_db_summary_embedding(db_name, db_type)
+    return Result.succ(True)
 
 
 @router.get("/v1/chat/db/support/type", response_model=Result[DbTypeInfo])
@@ -200,23 +222,23 @@ async def params_load(conv_uid: str, chat_mode: str, doc_file: UploadFile = File
             ## file save
             if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)):
                 os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode))
-            with NamedTemporaryFile(
-                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode), delete=False
-            ) as tmp:
+            # We can not move temp file in windows system when we open file in context of `with`
+            tmp_fd, tmp_path = tempfile.mkstemp(
+                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)
+            )
+            # TODO Use noblocking file save with aiofiles
+            with os.fdopen(tmp_fd, "wb") as tmp:
                 tmp.write(await doc_file.read())
-                tmp_path = tmp.name
-                shutil.move(
-                    tmp_path,
-                    os.path.join(
-                        KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode, doc_file.filename
-                    ),
-                )
+            shutil.move(
+                tmp_path,
+                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode, doc_file.filename),
+            )
             ## chat prepare
             dialogue = ConversationVo(
                 conv_uid=conv_uid, chat_mode=chat_mode, select_param=doc_file.filename
             )
             chat: BaseChat = get_chat_instance(dialogue)
-            resp = chat.prepare()
+            resp = await chat.prepare()
 
         ### refresh messages
         return Result.succ(get_hist_messages(conv_uid))
@@ -279,7 +301,7 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
     chat: BaseChat = get_chat_instance(dialogue)
     if len(chat.history_message) > 0:
         return Result.succ(None)
-    resp = chat.prepare()
+    resp = await chat.prepare()
     return Result.succ(resp)
 
 

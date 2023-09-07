@@ -22,16 +22,13 @@ python -m spacy download zh_core_web_sm
 2.Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma
 (now only support Chroma and Milvus, if you set Milvus, please set MILVUS_URL and MILVUS_PORT)
 
-2.Run the knowledge repository script in the tools directory.
+2.Run the knowledge repository initialization command
 
-```
-python tools/knowledge_init.py
-
---vector_name : your vector store name  default_value:default
-
+```bash
+dbgpt knowledge load
 ```
 
-Optionally, you can run `python tools/knowledge_init.py -h` command to see more usage.
+Optionally, you can run `dbgpt knowledge load --help` command to see more usage.
 
 3.Add the knowledge repository in the interface by entering the name of your knowledge repository (if not specified, enter "default") so you can use it for Q&A based on your knowledge base. 
 

@@ -3,11 +3,9 @@
 
 from typing import List
 import re
-import copy
 
 import torch
 
-from pilot.conversation import ROLE_ASSISTANT, ROLE_USER
 from pilot.scene.base_message import ModelMessage, _parse_model_messages
 
 # TODO move sep to scene prompt of model

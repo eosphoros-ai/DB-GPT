@@ -3,8 +3,7 @@
 
 import os
 
-import nltk
-import torch
+# import nltk
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_PATH = os.path.join(ROOT_PATH, "models")
@@ -13,7 +12,7 @@ VECTORE_PATH = os.path.join(PILOT_PATH, "vector_store")
 LOGDIR = os.path.join(ROOT_PATH, "logs")
 DATASETS_DIR = os.path.join(PILOT_PATH, "datasets")
 DATA_DIR = os.path.join(PILOT_PATH, "data")
-nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
+# nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
 PLUGINS_DIR = os.path.join(ROOT_PATH, "plugins")
 FONT_DIR = os.path.join(PILOT_PATH, "fonts")
 
@@ -22,13 +21,19 @@ current_directory = os.getcwd()
 new_directory = PILOT_PATH
 os.chdir(new_directory)
 
-DEVICE = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
-)
+
+def get_device() -> str:
+    import torch
+
+    return (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps"
+        if torch.backends.mps.is_available()
+        else "cpu"
+    )
+
+
 LLM_MODEL_CONFIG = {
     "flan-t5-base": os.path.join(MODEL_PATH, "flan-t5-base"),
     "vicuna-13b": os.path.join(MODEL_PATH, "vicuna-13b"),
@@ -65,13 +70,15 @@ LLM_MODEL_CONFIG = {
     "claude_proxyllm": "claude_proxyllm",
     "wenxin_proxyllm": "wenxin_proxyllm",
     "tongyi_proxyllm": "tongyi_proxyllm",
-    "gpt4_proxyllm": "gpt4_proxyllm",
+    "zhipu_proxyllm": "zhipu_proxyllm",
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
     "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
     "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),
     "baichuan-13b": os.path.join(MODEL_PATH, "Baichuan-13B-Chat"),
     # please rename "fireballoon/baichuan-vicuna-chinese-7b" to "baichuan-7b"
     "baichuan-7b": os.path.join(MODEL_PATH, "baichuan-7b"),
+    "baichuan2-7b": os.path.join(MODEL_PATH, "Baichuan2-7B-Chat"),
+    "baichuan2-13b": os.path.join(MODEL_PATH, "Baichuan2-13B-Chat"),
     # (Llama2 based) We only support WizardLM-13B-V1.2 for now, which is trained from Llama-2 13b, see https://huggingface.co/WizardLM/WizardLM-13B-V1.2
     "wizardlm-13b": os.path.join(MODEL_PATH, "WizardLM-13B-V1.2"),
     "llama-cpp": os.path.join(MODEL_PATH, "ggml-model-q4_0.bin"),

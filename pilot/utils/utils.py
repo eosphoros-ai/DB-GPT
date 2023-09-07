@@ -16,6 +16,22 @@ server_error_msg = (
 handler = None
 
 
+def _get_logging_level() -> str:
+    return os.getenv("DBGPT_LOG_LEVEL", "INFO")
+
+
+def setup_logging(logging_level=None, logger_name: str = None):
+    if not logging_level:
+        logging_level = _get_logging_level()
+    if type(logging_level) is str:
+        logging_level = logging.getLevelName(logging_level.upper())
+    if logger_name:
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(logging_level)
+    else:
+        logging.basicConfig(level=logging_level, encoding="utf-8")
+
+
 def get_gpu_memory(max_gpus=None):
     import torch
 
@@ -47,7 +63,7 @@ def build_logger(logger_name, logger_filename):
 
     # Set the format of root handlers
     if not logging.getLogger().handlers:
-        logging.basicConfig(level=logging.INFO, encoding="utf-8")
+        setup_logging()
     logging.getLogger().handlers[0].setFormatter(formatter)
 
     # Redirect stdout and stderr to loggers
@@ -73,11 +89,11 @@ def build_logger(logger_name, logger_filename):
         for name, item in logging.root.manager.loggerDict.items():
             if isinstance(item, logging.Logger):
                 item.addHandler(handler)
-    logging.basicConfig(level=logging.INFO, encoding="utf-8")
+    setup_logging()
 
     # Get logger
     logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.INFO)
+    setup_logging(logger_name=logger_name)
 
     return logger
 
@@ -135,12 +151,25 @@ def pretty_print_semaphore(semaphore):
 
 
 def get_or_create_event_loop() -> asyncio.BaseEventLoop:
+    loop = None
     try:
         loop = asyncio.get_event_loop()
-    except Exception as e:
+        assert loop is not None
+        return loop
+    except RuntimeError as e:
         if not "no running event loop" in str(e):
             raise e
         logging.warning("Cant not get running event loop, create new event loop now")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    return loop
+        return asyncio.get_event_loop_policy().get_event_loop()
+
+
+def logging_str_to_uvicorn_level(log_level_str):
+    level_str_mapping = {
+        "CRITICAL": "critical",
+        "ERROR": "error",
+        "WARNING": "warning",
+        "INFO": "info",
+        "DEBUG": "debug",
+        "NOTSET": "info",
+    }
+    return level_str_mapping.get(log_level_str.upper(), "info")

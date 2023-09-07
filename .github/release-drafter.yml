@@ -1,0 +1,106 @@
+categories:
+  - title: 🏆 Highlights
+    labels: highlight
+  - title: 🚀 Performance improvements
+    labels: performance
+  - title: ✨ Enhancements
+    labels: enhancement
+  - title: 🐞 Bug fixes
+    labels: fix
+  # - title: ⚠️ Deprecations
+  #   labels: deprecation
+  - title: 🛠️ Other improvements
+    labels:
+      - documentation
+      - build
+      - internal
+
+change-template: '- $TITLE (#$NUMBER)'
+change-title-escapes: '\<*_&'
+replacers:
+  # Remove conventional commits from titles
+  - search: '/- (build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)(\(.*\))?(\!)?\: /g'
+    replace: '- '
+
+autolabeler:
+  - label: model
+    title:
+      # feat(mode): Support llama-2
+      # fix(mode): Fix llama-2 xxx bug
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*model.*\)/'
+  - label: ChatData
+    title:
+      # feat(ChatData): Support xxxx
+      # fix(ChatData): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*ChatData.*\)/'
+  - label: ChatExcel
+    title:
+      # feat(ChatExcel): Support xxxx
+      # fix(ChatExcel): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*ChatExcel.*\)/'
+  - label: ChatDB
+    title:
+      # feat(ChatDB): Support xxxx
+      # fix(ChatDB): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*ChatDB.*\)/'
+  - label: ChatKnowledge
+    title:
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*ChatKnowledge.*\)/'
+  - label: ChatDashboard
+    title:
+      # feat(ChatDashboard): Support xxxx
+      # fix(ChatDashboard): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*ChatDashboard.*\)/'
+  - label: plugin
+    title:
+      # feat(plugin): Support xxxx
+      # fix(plugin): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*plugin.*\)/'
+  - label: agent
+    title:
+      # feat(agent): Support xxxx
+      # fix(agent): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*agent.*\)/'
+  - label: cli
+    title:
+      # feat(cli): Support xxxx
+      # fix(cli): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*cli.*\)/'
+  - label: prompt
+    title:
+      # feat(prompt): Support xxxx
+      # fix(prompt): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*prompt.*\)/'
+  - label: connection
+    title:
+      # feat(connection): Support xxxx
+      # fix(connection): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*connection.*\)/'
+  - label: build
+    title:
+      - '/^build/'
+  - label: documentation
+    title:
+      - '/^docs/'
+  - label: enhancement
+    title:
+      - '/^feat/'
+  - label: fix
+    title:
+      - '/^fix/'
+  - label: performance
+    title:
+      - '/^perf/'
+  - label: release
+    title:
+      - '/^release/'
+
+  - label: internal
+    title:
+      - '/^(chore|ci|refactor|test)/'
+
+template: |
+  $CHANGES
+
+  Thank you to all our contributors for making this release possible!
+  $CONTRIBUTORS

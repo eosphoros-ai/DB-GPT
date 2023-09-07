@@ -1,44 +1,20 @@
-import time
-from abc import ABC, abstractmethod
 import datetime
 import traceback
 import warnings
-import json
-from pydantic import BaseModel, Field, root_validator, validator, Extra
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-)
-import requests
-from urllib.parse import urljoin
+from abc import ABC, abstractmethod
+from typing import Any, List
 
-import pilot.configs.config
-from pilot.scene.message import OnceConversation
-from pilot.prompts.prompt_new import PromptTemplate
+from pilot.configs.config import Config
+from pilot.configs.model_config import LOGDIR
 from pilot.memory.chat_history.base import BaseChatHistoryMemory
+from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.memory.chat_history.file_history import FileHistoryMemory
 from pilot.memory.chat_history.mem_history import MemHistoryMemory
-from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
-
-from pilot.configs.model_config import LOGDIR, DATASETS_DIR
-from pilot.utils import build_logger, server_error_msg, get_or_create_event_loop
-from pilot.scene.base_message import (
-    BaseMessage,
-    SystemMessage,
-    HumanMessage,
-    AIMessage,
-    ViewMessage,
-    ModelMessage,
-    ModelMessageRoleType,
-)
-from pilot.configs.config import Config
+from pilot.prompts.prompt_new import PromptTemplate
+from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
+from pilot.scene.message import OnceConversation
+from pilot.utils import build_logger, get_or_create_event_loop
+from pydantic import Extra
 
 logger = build_logger("BaseChat", LOGDIR + "BaseChat.log")
 headers = {"User-Agent": "dbgpt Client"}
@@ -178,7 +154,7 @@ class BaseChat(ABC):
 
     async def nostream_call(self):
         payload = self.__call_base()
-        logger.info(f"Requert: \n{payload}")
+        logger.info(f"Request: \n{payload}")
         ai_response_text = ""
         try:
             from pilot.model.worker.manager import worker_manager
@@ -236,7 +212,10 @@ class BaseChat(ABC):
             "_blocking_nostream_call is only temporarily used in webserver and will be deleted soon, please use nostream_call to replace it for higher performance"
         )
         loop = get_or_create_event_loop()
-        return loop.run_until_complete(self.nostream_call())
+        try:
+            return loop.run_until_complete(self.nostream_call())
+        finally:
+            loop.close()
 
     def call(self):
         if self.prompt_template.stream_out:
@@ -244,7 +223,7 @@ class BaseChat(ABC):
         else:
             return self._blocking_nostream_call()
 
-    def prepare(self):
+    async def prepare(self):
         pass
 
     def generate_llm_text(self) -> str:
