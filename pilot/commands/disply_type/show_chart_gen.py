@@ -142,7 +142,7 @@ def response_line_chart(speak: str, df: DataFrame) -> str:
         sns.lineplot(data=df, x=x, y=y, ax=ax, palette="Set2")
 
     ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda y, _: "{:,.0f}".format(y)))
-    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: "{:,.0f}".format(x)))
+    ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: "{:,.0f}".format(x)))
 
     chart_name = "line_" + str(uuid.uuid1()) + ".png"
     chart_path = static_message_img_path + "/" + chart_name
@@ -210,24 +210,28 @@ def response_bar_chart(speak: str, df: DataFrame) -> str:
                     data=df, x=x, y=sub_y_column, hue=hue, palette="Set2", ax=ax
                 )
         else:
-            if len(num_colmns) >= 3:
-                can_use_columns = num_colmns[:3]
+            if len(num_colmns) > 5:
+                can_use_columns = num_colmns[:5]
             else:
                 can_use_columns = num_colmns
-            sns.barplot(
-                data=df, x=x, y=y, hue=can_use_columns[0], palette="Set2", ax=ax
-            )
+            can_use_columns.append(y)
 
-            for sub_y_column in can_use_columns[1:]:
-                sns.barplot(
-                    data=df, x=x, y=sub_y_column, hue=hue, palette="Set2", ax=ax
-                )
+            df_melted = pd.melt(
+                df,
+                id_vars=x,
+                value_vars=can_use_columns,
+                var_name="line",
+                value_name="Value",
+            )
+            sns.barplot(
+                data=df_melted, x=x, y="Value", hue="line", palette="Set2", ax=ax
+            )
     else:
         sns.barplot(data=df, x=x, y=y, hue=hue, palette="Set2", ax=ax)
 
     # 设置 y 轴刻度格式为普通数字格式
     ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda y, _: "{:,.0f}".format(y)))
-    ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: "{:,.0f}".format(x)))
+    ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: "{:,.0f}".format(x)))
 
     chart_name = "bar_" + str(uuid.uuid1()) + ".png"
     chart_path = static_message_img_path + "/" + chart_name

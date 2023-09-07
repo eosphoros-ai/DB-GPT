@@ -1,6 +1,4 @@
-import httpx
 from inspect import signature
-import typing_inspect
 import logging
 from typing import get_type_hints, List, Type, TypeVar, Union, Optional, Tuple
 from dataclasses import is_dataclass, asdict
@@ -9,6 +7,8 @@ T = TypeVar("T")
 
 
 def _extract_dataclass_from_generic(type_hint: Type[T]) -> Union[Type[T], None]:
+    import typing_inspect
+
     """Extract actual dataclass from generic type hints like List[dataclass], Optional[dataclass], etc."""
     if typing_inspect.is_generic_type(type_hint) and typing_inspect.get_args(type_hint):
         return typing_inspect.get_args(type_hint)[0]
@@ -30,6 +30,8 @@ def _api_remote(path, method="GET"):
         sig = signature(func)
 
         async def wrapper(self, *args, **kwargs):
+            import httpx
+
             base_url = self.base_url  # Get base_url from class instance
 
             bound = sig.bind(self, *args, **kwargs)

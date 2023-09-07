@@ -55,6 +55,7 @@ RUN (if [ "${LOAD_EXAMPLES}" = "true" ]; \
     && sqlite3 /app/pilot/data/default_sqlite.db < /app/docker/examples/sqls/test_case_info_sqlite.sql; \
     fi;)
 
+ENV PYTHONPATH "/app:$PYTHONPATH"
 EXPOSE 5000
 
 CMD ["python3", "pilot/server/dbgpt_server.py"]

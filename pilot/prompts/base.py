@@ -1,10 +1,7 @@
-import json
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Union
+from typing import List
 
-import yaml
-from pydantic import BaseModel, Extra, Field, root_validator
+from pydantic import BaseModel
 
 from pilot.scene.base_message import BaseMessage, HumanMessage, AIMessage, SystemMessage
 

@@ -1,0 +1,186 @@
+name: Bug report
+title: "[Bug] [Module Name] Bug title "
+description: Create a report to help us improve
+labels: [ "bug", "Waiting for reply" ]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for taking the time to report a bug. The `[Module Name]` in title see 
+        [here](https://github.com/eosphoros-ai/DB-GPT/labels?q=Module), 
+        if you don't know the module name, you don't have to fill it in.
+
+  - type: checkboxes
+    attributes:
+      label: Search before asking
+      description: >
+        Please make sure to search in the [issues](https://github.com/eosphoros-ai/DB-GPT/issues?q=is%3Aissue)
+        first to see whether the same issue was reported already.
+      options:
+        - label: >
+            I had searched in the [issues](https://github.com/eosphoros-ai/DB-GPT/issues?q=is%3Aissue) and found
+            no similar issues.
+          required: true
+
+  - type: dropdown
+    id: system-information
+    attributes:
+      label: Operating system information
+      description: Operating system you use
+      options:
+        - Linux
+        - Windows
+        - MacOS(x86)
+        - MacOS(M1, M2...)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python-version
+    attributes:
+      label: Python version information
+      description: Python version you use
+      options:
+        - ">=3.11"
+        - "3.10"
+        - "3.9"
+        - "<3.9"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: code-version
+    attributes:
+      label: DB-GPT version
+      description: >
+        Which version of DB-GPT are you running?
+      options:
+        - main
+        - latest release
+        - v0.3.7
+        - <v0.3.7
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: related-scenes
+    attributes:
+      label: Related scenes
+      description: Select the scenes related to the issue (if applicable)
+      options:
+        - label: Chat Data
+        - label: Chat Excel
+        - label: Chat DB
+        - label: Chat Knowledge
+        - label: Dashboard
+        - label: Plugins
+
+  - type: checkboxes
+    id: installation-information
+    attributes:
+      label: Installation Information
+      description: Select your installation method
+      options:
+        - label: >
+            [Installation From Source](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
+        - label: >
+            [Docker Installation](https://db-gpt.readthedocs.io/en/latest/getting_started/install/docker/docker.html)
+        - label: >
+            [Docker Compose Installation](https://db-gpt.readthedocs.io/en/latest/getting_started/install/docker/docker.html)
+        - label: >
+            [Cluster Installation](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/cluster/model_cluster.html)
+        - label: AutoDL Image
+        - label: Other
+
+  - type: textarea
+    id: device-information
+    attributes:
+      label: Device information
+      description: Describe the device you use
+      placeholder: >
+        Device: CPU or GPU
+
+        If using GPU:
+
+        - GPU Count: 1
+
+        - GPU Memory: 24G
+    validations:
+      required: true
+
+  - type: textarea
+    id: models-information
+    attributes:
+      label: Models information
+      description: Describe the LLM and embedding model you use
+      placeholder: >
+        LLM: vicuna-13b-v1.5
+
+        Embedding model: text2vec-large-chinese
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What happened
+      description: Describe the bug
+      placeholder: >
+        A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What you expected to happen
+      description: What do you think went wrong?
+      placeholder: >
+        Thank you for your feedback! To better understand the issue:
+
+        1. Please describe why you believe the behavior is incorrect.
+
+        2. Share the relevant log segments or error messages. For UI issues, screenshots are appreciated.
+
+        3. For textual data, kindly copy and paste rather than using screenshots to facilitate easier searches in the future.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: How to reproduce
+      description: >
+        What should we do to reproduce the problem? If you are not able to provide a reproducible case,
+        please open a [Discussion](https://github.com/orgs/eosphoros-ai/discussions) instead.
+      placeholder: >
+        Steps to reproduce the behavior:
+
+        1. Go to '...'
+
+        2. Click on '....'
+
+        3. Scroll down to '....'
+
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: Any other context about the problem here?
+      placeholder: >
+        Add any other context about the problem here.
+
+  - type: checkboxes
+    attributes:
+      label: Are you willing to submit PR?
+      description: >
+        It's completely optional, but if you're interested in contributing, we're here to help! 
+        If you have insights on the solution, that's even better. DB-GPT thrives on community support, 
+        and we warmly welcome new contributors.
+      options:
+        - label: Yes I am willing to submit a PR!
+
+  - type: markdown
+    attributes:
+      value: "Thanks for completing our form!"

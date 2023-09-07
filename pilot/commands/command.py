@@ -7,7 +7,6 @@ from typing import Dict
 from pilot.commands.exception_not_commands import NotCommands
 from pilot.configs.config import Config
 from pilot.prompts.generator import PluginPromptGenerator
-from pilot.speech import say_text
 
 
 def _resolve_pathlike_command_args(command_args):
@@ -37,6 +36,8 @@ def execute_ai_response_json(
     Returns:
 
     """
+    from pilot.speech.say import say_text
+
     cfg = Config()
 
     command_name, arguments = get_command(ai_response)

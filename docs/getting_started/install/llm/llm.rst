@@ -19,6 +19,7 @@ Multi LLMs Support, Supports multiple large language models, currently supportin
 
 - llama_cpp
 - quantization
+- cluster deployment
 
 .. toctree::
    :maxdepth: 2
@@ -28,3 +29,4 @@ Multi LLMs Support, Supports multiple large language models, currently supportin
 
    ./llama/llama_cpp.md
    ./quantization/quantization.md
+   ./cluster/model_cluster.md

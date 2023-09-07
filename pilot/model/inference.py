@@ -9,8 +9,6 @@ from typing import Iterable, Dict
 
 import torch
 
-import torch
-
 from transformers.generation.logits_process import (
     LogitsProcessorList,
     RepetitionPenaltyLogitsProcessor,

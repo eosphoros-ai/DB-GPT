@@ -1,19 +1,15 @@
-import atexit
-import traceback
 import os
-import shutil
 import argparse
 import sys
-import logging
+from typing import List
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
 import signal
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
-from pilot.utils import build_logger
 
-from pilot.server.base import server_init
+from pilot.server.base import server_init, WebWerverParameters
 
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, applications
@@ -28,14 +24,11 @@ from pilot.openapi.base import validation_exception_handler
 from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
 from pilot.commands.disply_type.show_chart_gen import static_message_img_path
 from pilot.model.worker.manager import initialize_worker_manager_in_client
-
-logging.basicConfig(level=logging.INFO, encoding="utf-8")
+from pilot.utils.utils import setup_logging, logging_str_to_uvicorn_level
 
 static_file_path = os.path.join(os.getcwd(), "server/static")
 
-
 CFG = Config()
-# logger = build_logger("webserver", LOGDIR + "webserver.log")
 
 
 def signal_handler():
@@ -91,32 +84,24 @@ def mount_static_files(app):
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--model_list_mode", type=str, default="once", choices=["once", "reload"]
-    )
 
-    # old version server config
-    parser.add_argument("--host", type=str, default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=5000)
-    parser.add_argument("--concurrency-count", type=int, default=10)
-    parser.add_argument("--share", default=False, action="store_true")
-    parser.add_argument("--log-level", type=str, default="info")
-    parser.add_argument(
-        "-light",
-        "--light",
-        default=False,
-        action="store_true",
-        help="enable light mode",
-    )
+def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
+    """Initialize app
+    If you use gunicorn as a process manager, initialize_app can be invoke in `on_starting` hook.
+    """
+    if not param:
+        from pilot.utils.parameter_utils import EnvArgumentParser
 
-    # init server config
-    args = parser.parse_args()
-    server_init(args)
+        parser: argparse.ArgumentParser = EnvArgumentParser.create_argparse_option(
+            WebWerverParameters
+        )
+        param = WebWerverParameters(**vars(parser.parse_args(args=args)))
+
+    setup_logging(logging_level=param.log_level)
+    server_init(param)
 
     model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
-    if not args.light:
+    if not param.light:
         print("Model Unified Deployment Mode!")
         initialize_worker_manager_in_client(
             app=app, model_name=CFG.LLM_MODEL, model_path=model_path
@@ -135,8 +120,25 @@ if __name__ == "__main__":
         CFG.SERVER_LIGHT_MODE = True
 
     mount_static_files(app)
+    return param
+
+
+def run_uvicorn(param: WebWerverParameters):
     import uvicorn
 
-    logging.basicConfig(level=logging.INFO, encoding="utf-8")
-    uvicorn.run(app, host="0.0.0.0", port=args.port, log_level=args.log_level)
+    uvicorn.run(
+        app,
+        host=param.host,
+        port=param.port,
+        log_level=logging_str_to_uvicorn_level(param.log_level),
+    )
     signal.signal(signal.SIGINT, signal_handler())
+
+
+def run_webserver(param: WebWerverParameters = None):
+    param = initialize_app(param)
+    run_uvicorn(param)
+
+
+if __name__ == "__main__":
+    run_webserver()

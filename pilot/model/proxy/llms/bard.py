@@ -1,13 +1,19 @@
 import bardapi
 import requests
 from typing import List
-from pilot.configs.config import Config
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
+from pilot.model.proxy.llms.proxy_model import ProxyModel
 
-CFG = Config()
 
+def bard_generate_stream(
+    model: ProxyModel, tokenizer, params, device, context_len=2048
+):
+    model_params = model.get_params()
+    print(f"Model: {model}, model_params: {model_params}")
 
-def bard_generate_stream(model, tokenizer, params, device, context_len=2048):
+    proxy_api_key = model_params.proxy_api_key
+    proxy_server_url = model_params.proxy_server_url
+
     history = []
     messages: List[ModelMessage] = params["messages"]
     for message in messages:
@@ -35,18 +41,18 @@ def bard_generate_stream(model, tokenizer, params, device, context_len=2048):
         if msg.get("content"):
             msgs.append(msg["content"])
 
-    if CFG.proxy_server_url is not None:
+    if proxy_server_url is not None:
         headers = {"Content-Type": "application/json"}
         payloads = {"input": "\n".join(msgs)}
         response = requests.post(
-            CFG.proxy_server_url, headers=headers, json=payloads, stream=False
+            proxy_server_url, headers=headers, json=payloads, stream=False
         )
         if response.ok:
             yield response.text
         else:
             yield f"bard proxy url request failed!, response = {str(response)}"
     else:
-        response = bardapi.core.Bard(CFG.bard_proxy_api_key).get_answer("\n".join(msgs))
+        response = bardapi.core.Bard(proxy_api_key).get_answer("\n".join(msgs))
 
         if response is not None and response.get("content") is not None:
             yield str(response["content"])

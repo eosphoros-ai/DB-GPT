@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-31 17:04+0800\n"
+"POT-Creation-Date: 2023-09-01 18:16+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,11 +19,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../modules/knownledge.md:1 b18cf12f806941f3b9d1c13b52d0dfe5
+#: ../../modules/knownledge.md:1 ba585bf3ba464c32a156d308f39e65dc
 msgid "Knownledge"
 msgstr "知识"
 
-#: ../../modules/knownledge.md:3 3fe78b30d3994e4484df41a677614eb2
+#: ../../modules/knownledge.md:3 bc5d67c51b004ff8b2d1bbca17fd4aa7
 msgid ""
 "As the knowledge base is currently the most significant user demand "
 "scenario, we natively support the construction and processing of "
@@ -31,15 +31,15 @@ msgid ""
 "base management strategies in this project, such as:"
 msgstr "由于知识库是当前用户需求最显著的场景，我们原生支持知识库的构建和处理。同时，我们还在本项目中提供了多种知识库管理策略，如:"
 
-#: ../../modules/knownledge.md:4 17b2485a12744b5587655201be50e023
+#: ../../modules/knownledge.md:4 519f2686500340d191ad5a91eabc7676
 msgid "Default built-in knowledge base"
 msgstr "默认内置知识库"
 
-#: ../../modules/knownledge.md:5 e137d9916a0a4a0681dbfed5d5a5065f
+#: ../../modules/knownledge.md:5 93a25018fc144dfe98fcea0755f2ea94
 msgid "Custom addition of knowledge bases"
 msgstr "自定义新增知识库"
 
-#: ../../modules/knownledge.md:6 0bca133996d4435b84245f2b53f43d72
+#: ../../modules/knownledge.md:6 37359e14b2464b2c9fc4e5621755bb0d
 msgid ""
 "Various usage scenarios such as constructing knowledge bases through "
 "plugin capabilities and web crawling. Users only need to organize the "
@@ -47,51 +47,52 @@ msgid ""
 "the knowledge base required for the large model."
 msgstr "各种使用场景，例如通过插件功能和爬虫构建知识库。用户只需要组织知识文档，并且他们可以使用我们现有的功能来构建大型模型所需的知识库。"
 
-#: ../../modules/knownledge.md:9 7355eed198514efc8e3bc178039b0251
+#: ../../modules/knownledge.md:9 656fcb11886546df9e058227d94481b3
 msgid "Create your own knowledge repository"
 msgstr "创建你自己的知识库"
 
-#: ../../modules/knownledge.md:11 96e0276a5d3047fea5410e9b33c33308
+#: ../../modules/knownledge.md:11 37fc3ae2cfe044f8ac61de484bf0653d
 msgid ""
 "1.Place personal knowledge files or folders in the pilot/datasets "
 "directory."
 msgstr "1.将个人知识文件或文件夹放在pilot/datasets目录中。"
 
-#: ../../modules/knownledge.md:13 8762c0a463094c19924cdd4b7b1b1ede
+#: ../../modules/knownledge.md:13 a675d90485834690bfca68b41a10c085
 msgid ""
 "We currently support many document formats: txt, pdf, md, html, doc, ppt,"
 " and url."
 msgstr "当前支持txt, pdf, md, doc, ppt, html文档格式"
 
-#: ../../modules/knownledge.md:15 752a5e7c623a49439ecf1ce8e6ccca7d
+#: ../../modules/knownledge.md:15 f2c25b0536ff4b3191e13f3020e883a6
 msgid "before execution:"
 msgstr "在执行之前"
 
-#: ../../modules/knownledge.md:22 fbef967557a94b938f8e47497bb43c20
+#: ../../modules/knownledge.md:22 65427906c8b54cd699a07ed482251c83
 msgid ""
 "2.Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma "
 "(now only support Chroma and Milvus, if you set Milvus, please set "
 "MILVUS_URL and MILVUS_PORT)"
 msgstr "2.更新你的.env，设置你的向量存储类型，VECTOR_STORE_TYPE=Chroma(现在只支持Chroma和Milvus，如果你设置了Milvus，请设置MILVUS_URL和MILVUS_PORT)"
 
-#: ../../modules/knownledge.md:25 f1745e2f17864711a636ecbdd6cb9833
-msgid "2.Run the knowledge repository script in the tools directory."
-msgstr "2.在tools目录执行知识入库脚本"
+#: ../../modules/knownledge.md:25 287ae6ee51cc4b668d99e48b81147d3f
+#, fuzzy
+msgid "2.Run the knowledge repository initialization command"
+msgstr "2.执行知识入库命令"
 
-#: ../../modules/knownledge.md:34 5ae832d038b245a29a9e089f9e169cb0
+#: ../../modules/knownledge.md:31 1fe0ac58d8354c7fba782901cb0673d8
 msgid ""
-"Optionally, you can run `python tools/knowledge_init.py -h` command to "
-"see more usage."
-msgstr ""
+"Optionally, you can run `dbgpt knowledge load --help` command to see more"
+" usage."
+msgstr "另外，你可以运行 `dbgpt knowledge load --help` 命令来查看更多的用法"
 
-#: ../../modules/knownledge.md:36 4aab02276dfd41819dbd218ecc608326
+#: ../../modules/knownledge.md:33 e1607e330195470f9087bd4ffbc6d45d
 msgid ""
 "3.Add the knowledge repository in the interface by entering the name of "
 "your knowledge repository (if not specified, enter \"default\") so you "
 "can use it for Q&A based on your knowledge base."
 msgstr "如果选择新增知识库，在界面上新增知识库输入你的知识库名"
 
-#: ../../modules/knownledge.md:38 f990c8495c994aa1beb040ede6b2329a
+#: ../../modules/knownledge.md:35 0614e35ccfba42ea9e63881cb481815e
 msgid ""
 "Note that the default vector model used is text2vec-large-chinese (which "
 "is a large model, so if your personal computer configuration is not "
@@ -100,4 +101,10 @@ msgid ""
 msgstr ""
 "注意，这里默认向量模型是text2vec-large-chinese(模型比较大，如果个人电脑配置不够建议采用text2vec-base-"
 "chinese),因此确保需要将模型download下来放到models目录中。"
+
+#~ msgid ""
+#~ "Optionally, you can run `python "
+#~ "tools/knowledge_init.py -h` command to see "
+#~ "more usage."
+#~ msgstr ""
 

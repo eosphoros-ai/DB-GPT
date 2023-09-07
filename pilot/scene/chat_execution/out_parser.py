@@ -1,8 +1,5 @@
 import json
-import re
-from abc import ABC, abstractmethod
 from typing import Dict, NamedTuple
-import pandas as pd
 from pilot.utils import build_logger
 from pilot.out_parser.base import BaseOutputParser, T
 from pilot.configs.model_config import LOGDIR
@@ -13,8 +10,8 @@ logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
 
 class PluginAction(NamedTuple):
     command: Dict
-    speak: str
-    thoughts: str
+    speak: str = ""
+    thoughts: str = ""
 
 
 class PluginChatOutputParser(BaseOutputParser):
@@ -28,6 +25,8 @@ class PluginChatOutputParser(BaseOutputParser):
         except Exception as e:
             raise ValueError("model server out not fllow the prompt!")
 
+        speak = ""
+        thoughts = ""
         for key in sorted(response):
             if key.strip() == "command":
                 command = response[key]

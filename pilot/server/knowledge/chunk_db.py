@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import Column, String, DateTime, Integer, Text, create_engine, func
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import Column, String, DateTime, Integer, Text, func
+from sqlalchemy.orm import declarative_base
 
 from pilot.configs.config import Config
 from pilot.connections.rdbms.base_dao import BaseDao

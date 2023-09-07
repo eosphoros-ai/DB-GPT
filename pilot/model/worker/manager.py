@@ -1,5 +1,4 @@
 import asyncio
-import httpx
 import itertools
 import json
 import os
@@ -7,31 +6,25 @@ import random
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import Awaitable, Callable, Dict, Iterator, List, Optional
 
-import uvicorn
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import StreamingResponse
 from pilot.configs.model_config import LOGDIR
 from pilot.model.base import (
     ModelInstance,
     ModelOutput,
-    WorkerApplyType,
     WorkerApplyOutput,
+    WorkerApplyType,
 )
 from pilot.model.controller.registry import ModelRegistry
-from pilot.model.parameter import (
-    EnvArgumentParser,
-    ModelParameters,
-    ModelWorkerParameters,
-    WorkerType,
-    ParameterDescription,
-)
+from pilot.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
 from pilot.model.worker.base import ModelWorker
 from pilot.scene.base_message import ModelMessage
 from pilot.utils import build_logger
+from pilot.utils.parameter_utils import EnvArgumentParser, ParameterDescription
 from pydantic import BaseModel
 
 logger = build_logger("model_worker", LOGDIR + "/model_worker.log")
@@ -148,6 +141,8 @@ class LocalWorkerManager(WorkerManager):
         self.model_registry = model_registry
 
     def _worker_key(self, worker_type: str, model_name: str) -> str:
+        if isinstance(worker_type, WorkerType):
+            worker_type = worker_type.value
         return f"{model_name}@{worker_type}"
 
     def add_worker(
@@ -165,6 +160,9 @@ class LocalWorkerManager(WorkerManager):
 
         if not worker_params.worker_type:
             worker_params.worker_type = worker.worker_type()
+
+        if isinstance(worker_params.worker_type, WorkerType):
+            worker_params.worker_type = worker_params.worker_type.value
 
         worker_key = self._worker_key(
             worker_params.worker_type, worker_params.model_name
@@ -311,7 +309,7 @@ class LocalWorkerManager(WorkerManager):
         else:
             # Apply to all workers
             worker_instances = list(itertools.chain(*self.workers.values()))
-            logger.info(f"Apply to all workers: {worker_instances}")
+            logger.info(f"Apply to all workers")
         return await asyncio.gather(
             *(apply_func(worker) for worker in worker_instances)
         )
@@ -427,6 +425,8 @@ class RemoteWorkerManager(LocalWorkerManager):
         return worker_instances
 
     async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:
+        import httpx
+
         async def _remote_apply_func(worker_run_data: WorkerRunData):
             worker_addr = worker_run_data.worker.worker_addr
             async with httpx.AsyncClient() as client:
@@ -587,7 +587,11 @@ def _create_local_model_manager(
         from pilot.utils.net_utils import _get_ip_address
 
         client = ModelRegistryClient(worker_params.controller_addr)
-        host = _get_ip_address()
+        host = (
+            worker_params.worker_register_host
+            if worker_params.worker_register_host
+            else _get_ip_address()
+        )
         port = worker_params.port
 
         async def register_func(worker_run_data: WorkerRunData):
@@ -696,6 +700,8 @@ def run_worker_manager(
         app.include_router(router, prefix="/api")
 
     if not embedded_mod:
+        import uvicorn
+
         uvicorn.run(
             app, host=worker_params.host, port=worker_params.port, log_level="info"
         )

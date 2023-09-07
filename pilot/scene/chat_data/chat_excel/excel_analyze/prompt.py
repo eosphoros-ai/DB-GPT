@@ -16,7 +16,7 @@ Please use the data structure information of the above historical dialogue, make
 According to the user goal: {user_input}，give the correct duckdb SQL for data analysis.
 Use the table name: {table_name}
 
-According to the analysis SQL obtained by the user's goal, select the best one from the following display forms, if it cannot be determined, use Text  as the display.
+According to the analysis SQL obtained by the user's goal, select the best one from the following display forms, if it cannot be determined, use Text  as the display,Just need to return the type name into the result.
 Display type: 
     {disply_type}
     
@@ -31,7 +31,7 @@ _DEFAULT_TEMPLATE_ZH = """
 请确保不要使用不在数据结构中的列名。
 SQL中需要使用的表名是: {table_name}
 
-根据用户目标得到的分析SQL，请从以下显示类型中选择最合适的一种用来展示结果数据，如果无法确定，则使用'Text'作为显示。
+根据用户目标得到的分析SQL，请从以下显示类型中选择最合适的一种用来展示结果数据，如果无法确定，则使用'Text'作为显示, 只需要将类型名称返回到结果中。
 显示类型如下: 
     {disply_type}
 
