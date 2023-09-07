@@ -1,3 +1,5 @@
+from typing import Dict
+
 from chromadb.errors import NoIndexException
 
 from pilot.scene.base_chat import BaseChat
@@ -20,15 +22,14 @@ class ChatKnowledge(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, user_input, select_param: str = None):
+    def __init__(self, chat_param: Dict):
         """ """
         from pilot.embedding_engine.embedding_engine import EmbeddingEngine
 
-        self.knowledge_space = select_param
+        self.knowledge_space = chat_param["select_param"]
+        chat_param["chat_mode"] = ChatScene.ChatKnowledge
         super().__init__(
-            chat_mode=ChatScene.ChatKnowledge,
-            chat_session_id=chat_session_id,
-            current_user_input=user_input,
+            chat_param=chat_param,
         )
         self.space_context = self.get_space_context(self.knowledge_space)
         self.top_k = (

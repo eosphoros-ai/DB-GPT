@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from typing import List
+from typing import List, Dict
 
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
@@ -23,28 +23,23 @@ class ChatDashboard(BaseChat):
 
     def __init__(
         self,
-        chat_session_id,
-        user_input,
-        select_param: str = "",
-        report_name: str = "report",
+        chat_param: Dict
     ):
         """ """
-        self.db_name = select_param
+        self.db_name = chat_param["select_param"]
+        chat_param["chat_mode"] = ChatScene.ChatDashboard
         super().__init__(
-            chat_mode=ChatScene.ChatDashboard,
-            chat_session_id=chat_session_id,
-            current_user_input=user_input,
-            select_param=self.db_name,
+            chat_param=chat_param
         )
         if not self.db_name:
             raise ValueError(f"{ChatScene.ChatDashboard.value} mode should choose db!")
         self.db_name = self.db_name
-        self.report_name = report_name
+        self.report_name = chat_param["report_name"] or "report"
 
         self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
 
         self.top_k: int = 5
-        self.dashboard_template = self.__load_dashboard_template(report_name)
+        self.dashboard_template = self.__load_dashboard_template(self.report_name)
 
     def __load_dashboard_template(self, template_name):
         current_dir = os.getcwd()

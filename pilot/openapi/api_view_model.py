@@ -54,6 +54,10 @@ class ConversationVo(BaseModel):
     chat scene select param 
     """
     select_param: str = None
+    """
+    llm model name
+    """
+    model_name: str = None
 
 
 class MessageVo(BaseModel):
