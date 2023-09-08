@@ -225,7 +225,14 @@ class LocalWorkerManager(WorkerManager):
         self, params: Dict, async_wrapper=None, **kwargs
     ) -> Iterator[ModelOutput]:
         """Generate stream result, chat scene"""
-        worker_run_data = await self._get_model(params)
+        try:
+            worker_run_data = await self._get_model(params)
+        except Exception as e:
+            yield ModelOutput(
+                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                error_code=0,
+            )
+            return
         async with worker_run_data.semaphore:
             if worker_run_data.worker.support_async():
                 async for outout in worker_run_data.worker.async_generate_stream(
@@ -244,7 +251,13 @@ class LocalWorkerManager(WorkerManager):
 
     async def generate(self, params: Dict) -> ModelOutput:
         """Generate non stream result"""
-        worker_run_data = await self._get_model(params)
+        try:
+            worker_run_data = await self._get_model(params)
+        except Exception as e:
+            return ModelOutput(
+                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                error_code=0,
+            )
         async with worker_run_data.semaphore:
             if worker_run_data.worker.support_async():
                 return await worker_run_data.worker.async_generate(params)
@@ -256,7 +269,10 @@ class LocalWorkerManager(WorkerManager):
 
     async def embeddings(self, params: Dict) -> List[List[float]]:
         """Embed input"""
-        worker_run_data = await self._get_model(params, worker_type="text2vec")
+        try:
+            worker_run_data = await self._get_model(params, worker_type="text2vec")
+        except Exception as e:
+            raise e
         async with worker_run_data.semaphore:
             if worker_run_data.worker.support_async():
                 return await worker_run_data.worker.async_embeddings(params)
@@ -272,6 +288,8 @@ class LocalWorkerManager(WorkerManager):
             apply_func = self._start_all_worker
         elif apply_req.apply_type == WorkerApplyType.STOP:
             apply_func = self._stop_all_worker
+        elif apply_req.apply_type == WorkerApplyType.RESTART:
+            apply_func = self._restart_all_worker
         elif apply_req.apply_type == WorkerApplyType.UPDATE_PARAMS:
             apply_func = self._update_all_worker_params
         else:
@@ -298,10 +316,13 @@ class LocalWorkerManager(WorkerManager):
             apply_req (WorkerApplyRequest): Worker apply request
             apply_func (ApplyFunction): Function to apply to worker instances, now function is async function
         """
+        logger.info(f"Apply req: {apply_req}, apply_func: {apply_func}")
         if apply_req:
             worker_type = apply_req.worker_type.value
             model_name = apply_req.model
-            worker_instances = await self.get_model_instances(worker_type, model_name)
+            worker_instances = await self.get_model_instances(
+                worker_type, model_name, healthy_only=False
+            )
             if not worker_instances:
                 raise Exception(
                     f"No worker instance found for the model {model_name} worker type {worker_type}"
@@ -370,6 +391,12 @@ class LocalWorkerManager(WorkerManager):
             message=f"Worker stopped successfully", timecost=timecost
         )
 
+    async def _restart_all_worker(
+        self, apply_req: WorkerApplyRequest
+    ) -> WorkerApplyOutput:
+        await self._stop_all_worker(apply_req)
+        return await self._start_all_worker(apply_req)
+
     async def _update_all_worker_params(
         self, apply_req: WorkerApplyRequest
     ) -> WorkerApplyOutput:
@@ -389,8 +416,7 @@ class LocalWorkerManager(WorkerManager):
         timecost = time.time() - start_time
         if need_restart:
             logger.info("Model params update successfully, begin restart worker")
-            await self._stop_all_worker(apply_req)
-            await self._start_all_worker(apply_req)
+            await self._restart_all_worker(apply_req)
             timecost = time.time() - start_time
             message = f"Update worker params and restart successfully"
         return WorkerApplyOutput(message=message, timecost=timecost)
@@ -500,8 +526,8 @@ async def generate_json_stream(params):
 
 
 @router.post("/worker/generate_stream")
-async def api_generate_stream(request: Request):
-    params = await request.json()
+async def api_generate_stream(request: PromptRequest):
+    params = request.dict(exclude_none=True)
     generator = generate_json_stream(params)
     return StreamingResponse(generator)
 
@@ -534,13 +560,19 @@ async def api_worker_parameter_descs(
     return output
 
 
-def _setup_fastapi(worker_params: ModelWorkerParameters):
-    app = FastAPI()
+def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
+    if not app:
+        app = FastAPI()
     if worker_params.standalone:
         from pilot.model.controller.controller import router as controller_router
+        from pilot.model.controller.controller import initialize_controller
 
         if not worker_params.controller_addr:
             worker_params.controller_addr = f"http://127.0.0.1:{worker_params.port}"
+        logger.info(
+            f"Run WorkerManager with standalone mode, controller_addr: {worker_params.controller_addr}"
+        )
+        initialize_controller(app=app)
         app.include_router(controller_router, prefix="/api")
 
     @app.on_event("startup")
@@ -570,7 +602,7 @@ def _parse_worker_params(
     )
     worker_params.update_from(new_worker_params)
 
-    logger.info(f"Worker params: {worker_params}")
+    # logger.info(f"Worker params: {worker_params}")
     return worker_params
 
 
@@ -583,7 +615,7 @@ def _create_local_model_manager(
         )
         return LocalWorkerManager()
     else:
-        from pilot.model.controller.registry import ModelRegistryClient
+        from pilot.model.controller.controller import ModelRegistryClient
         from pilot.utils.net_utils import _get_ip_address
 
         client = ModelRegistryClient(worker_params.controller_addr)
@@ -600,6 +632,12 @@ def _create_local_model_manager(
             )
             return await client.register_instance(instance)
 
+        async def deregister_func(worker_run_data: WorkerRunData):
+            instance = ModelInstance(
+                model_name=worker_run_data.worker_key, host=host, port=port
+            )
+            return await client.deregister_instance(instance)
+
         async def send_heartbeat_func(worker_run_data: WorkerRunData):
             instance = ModelInstance(
                 model_name=worker_run_data.worker_key, host=host, port=port
@@ -607,7 +645,9 @@ def _create_local_model_manager(
             return await client.send_heartbeat(instance)
 
         return LocalWorkerManager(
-            register_func=register_func, send_heartbeat_func=send_heartbeat_func
+            register_func=register_func,
+            deregister_func=deregister_func,
+            send_heartbeat_func=send_heartbeat_func,
         )
 
 
@@ -642,30 +682,60 @@ def initialize_worker_manager_in_client(
     model_path: str = None,
     run_locally: bool = True,
     controller_addr: str = None,
+    local_port: int = 5000,
 ):
+    """Initialize WorkerManager in client.
+    If run_locally is True:
+    1. Start ModelController
+    2. Start LocalWorkerManager
+    3. Start worker in LocalWorkerManager
+    4. Register worker to ModelController
+
+    otherwise:
+    1. Build ModelRegistryClient with controller address
+    2. Start RemoteWorkerManager
+
+    """
     global worker_manager
+
+    if not app:
+        raise Exception("app can't be None")
 
     worker_params: ModelWorkerParameters = _parse_worker_params(
         model_name=model_name, model_path=model_path, controller_addr=controller_addr
     )
 
-    logger.info(f"Worker params: {worker_params}")
+    controller_addr = None
     if run_locally:
-        worker_params.register = False
+        # TODO start ModelController
+        worker_params.standalone = True
+        worker_params.register = True
+        worker_params.port = local_port
+        logger.info(f"Worker params: {worker_params}")
+        _setup_fastapi(worker_params, app)
         _start_local_worker(worker_manager, worker_params, True)
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(
-            worker_manager.worker_manager._start_all_worker(apply_req=None)
-        )
+        # loop = asyncio.get_event_loop()
+        # loop.run_until_complete(
+        #     worker_manager.worker_manager._start_all_worker(apply_req=None)
+        # )
     else:
-        from pilot.model.controller.registry import ModelRegistryClient
+        from pilot.model.controller.controller import (
+            initialize_controller,
+            ModelRegistryClient,
+        )
 
         if not worker_params.controller_addr:
             raise ValueError("Controller can`t be None")
+        controller_addr = worker_params.controller_addr
+        logger.info(f"Worker params: {worker_params}")
         client = ModelRegistryClient(worker_params.controller_addr)
         worker_manager.worker_manager = RemoteWorkerManager(client)
+        initialize_controller(
+            app=app, remote_controller_addr=worker_params.controller_addr
+        )
 
     if include_router and app:
+        # mount WorkerManager router
         app.include_router(router, prefix="/api")
 
 
