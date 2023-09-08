@@ -104,7 +104,10 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     if not param.light:
         print("Model Unified Deployment Mode!")
         initialize_worker_manager_in_client(
-            app=app, model_name=CFG.LLM_MODEL, model_path=model_path
+            app=app,
+            model_name=CFG.LLM_MODEL,
+            model_path=model_path,
+            local_port=param.port,
         )
 
         CFG.NEW_SERVER_MODE = True
@@ -116,6 +119,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
             model_path=model_path,
             run_locally=False,
             controller_addr=CFG.MODEL_SERVER,
+            local_port=param.port,
         )
         CFG.SERVER_LIGHT_MODE = True
 
