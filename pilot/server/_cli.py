@@ -30,3 +30,7 @@ def start_webserver(**kwargs):
 def stop_webserver(port: int):
     """Stop webserver(dbgpt_server.py)"""
     _stop_service("webserver", "WebServer", port=port)
+
+
+def _stop_all_dbgpt_server():
+    _stop_service("webserver", "WebServer")
