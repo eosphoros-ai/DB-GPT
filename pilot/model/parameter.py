@@ -51,7 +51,7 @@ class ModelWorkerParameters(BaseParameters):
     )
 
     port: Optional[int] = field(
-        default=8000, metadata={"help": "Model worker deploy port"}
+        default=8001, metadata={"help": "Model worker deploy port"}
     )
     daemon: Optional[bool] = field(
         default=False, metadata={"help": "Run Model Worker in background"}
