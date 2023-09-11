@@ -78,3 +78,8 @@ class MessageVo(BaseModel):
     time the current message was sent 
     """
     time_stamp: Any = None
+
+    """
+    model_name
+    """
+    model_name: str
