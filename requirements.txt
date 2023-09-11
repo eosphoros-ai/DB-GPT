@@ -80,3 +80,4 @@ duckdb-engine
 
 # cli
 prettytable
+cachetools

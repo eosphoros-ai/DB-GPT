@@ -353,5 +353,6 @@ def llamacpp_loader(llm_adapter: BaseLLMAdaper, model_params: LlamaCppModelParam
 def proxyllm_loader(llm_adapter: BaseLLMAdaper, model_params: ProxyModelParameters):
     from pilot.model.proxy.llms.proxy_model import ProxyModel
 
+    logger.info("Load proxyllm")
     model = ProxyModel(model_params)
     return model, model

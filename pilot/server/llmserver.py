@@ -9,7 +9,7 @@ sys.path.append(ROOT_PATH)
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG
-from pilot.model.worker.manager import run_worker_manager
+from pilot.model.cluster import run_worker_manager
 
 CFG = Config()
 
