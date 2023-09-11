@@ -340,11 +340,11 @@ async def chat_completions(dialogue: ConversationVo = Body()):
 async def model_types():
     print(f"/controller/model/types")
     try:
-        import requests
-
-        response = requests.get(
-            f"{CFG.MODEL_SERVER}/api/controller/models?healthy_only=true"
-        )
+        import httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+               f"{CFG.MODEL_SERVER}/api/controller/models?healthy_only=true",
+            )
         types = set()
         if response.status_code == 200:
             models = json.loads(response.text)
