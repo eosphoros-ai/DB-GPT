@@ -38,7 +38,7 @@ class BaseChat(ABC):
         self.chat_session_id = chat_param["chat_session_id"]
         self.chat_mode = chat_param["chat_mode"]
         self.current_user_input: str = chat_param["current_user_input"]
-        self.llm_model = chat_param["model_name"]
+        self.llm_model = chat_param["model_name"] if chat_param["model_name"] else CFG.LLM_MODEL
         self.llm_echo = False
 
         ### load prompt template

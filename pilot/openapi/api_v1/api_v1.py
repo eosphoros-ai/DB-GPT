@@ -259,8 +259,9 @@ def get_hist_messages(conv_uid: str):
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:
+            model_name = once.get("model_name", CFG.LLM_MODEL)
             once_message_vos = [
-                message2Vo(element, once["chat_order"]) for element in once["messages"]
+                message2Vo(element, once["chat_order"], model_name) for element in once["messages"]
             ]
             message_vos.extend(once_message_vos)
     return message_vos
@@ -381,7 +382,7 @@ async def stream_generator(chat):
     chat.memory.append(chat.current_message)
 
 
-def message2Vo(message: dict, order) -> MessageVo:
+def message2Vo(message: dict, order, model_name) -> MessageVo:
     return MessageVo(
-        role=message["type"], context=message["data"]["content"], order=order
+        role=message["type"], context=message["data"]["content"], order=order, model_name=model_name
     )
