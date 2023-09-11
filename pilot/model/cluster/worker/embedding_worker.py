@@ -7,7 +7,7 @@ from pilot.model.parameter import (
     EmbeddingModelParameters,
     WorkerType,
 )
-from pilot.model.worker.base import ModelWorker
+from pilot.model.cluster.worker_base import ModelWorker
 from pilot.utils.model_utils import _clear_torch_cache
 from pilot.utils.parameter_utils import EnvArgumentParser
 

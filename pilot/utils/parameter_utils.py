@@ -1,21 +1,50 @@
 import argparse
 import os
-from dataclasses import dataclass, fields, MISSING
+from dataclasses import dataclass, fields, MISSING, asdict, field
 from typing import Any, List, Optional, Type, Union, Callable, Dict
 from collections import OrderedDict
 
 
 @dataclass
 class ParameterDescription:
+    param_class: str
     param_name: str
     param_type: str
-    description: str
     default_value: Optional[Any]
+    description: str
     valid_values: Optional[List[Any]]
+    ext_metadata: Dict
 
 
 @dataclass
 class BaseParameters:
+    @classmethod
+    def from_dict(
+        cls, data: dict, ignore_extra_fields: bool = False
+    ) -> "BaseParameters":
+        """Create an instance of the dataclass from a dictionary.
+
+        Args:
+            data: A dictionary containing values for the dataclass fields.
+            ignore_extra_fields: If True, any extra fields in the data dictionary that are
+                not part of the dataclass will be ignored.
+                If False, extra fields will raise an error. Defaults to False.
+        Returns:
+            An instance of the dataclass with values populated from the given dictionary.
+
+        Raises:
+            TypeError: If `ignore_extra_fields` is False and there are fields in the
+                           dictionary that aren't present in the dataclass.
+        """
+        all_field_names = {f.name for f in fields(cls)}
+        if ignore_extra_fields:
+            data = {key: value for key, value in data.items() if key in all_field_names}
+        else:
+            extra_fields = set(data.keys()) - all_field_names
+            if extra_fields:
+                raise TypeError(f"Unexpected fields: {', '.join(extra_fields)}")
+        return cls(**data)
+
     def update_from(self, source: Union["BaseParameters", dict]) -> bool:
         """
         Update the attributes of this object using the values from another object (of the same or parent type) or a dictionary.
@@ -68,6 +97,35 @@ class BaseParameters:
         )
         return "\n".join(parameters)
 
+    def to_command_args(self, args_prefix: str = "--") -> List[str]:
+        """Convert the fields of the dataclass to a list of command line arguments.
+
+        Args:
+            args_prefix: args prefix
+        Returns:
+            A list of strings where each field is represented by two items:
+            one for the field name prefixed by args_prefix, and one for its value.
+        """
+        return _dict_to_command_args(asdict(self), args_prefix=args_prefix)
+
+
+def _dict_to_command_args(obj: Dict, args_prefix: str = "--") -> List[str]:
+    """Convert dict to a list of command line arguments
+
+    Args:
+        obj: dict
+    Returns:
+        A list of strings where each field is represented by two items:
+        one for the field name prefixed by args_prefix, and one for its value.
+    """
+    args = []
+    for key, value in obj.items():
+        if value is None:
+            continue
+        args.append(f"{args_prefix}{key}")
+        args.append(str(value))
+    return args
+
 
 def _get_simple_privacy_field_value(obj, field_info):
     """Retrieve the value of a field from a dataclass instance, applying privacy rules if necessary.
@@ -81,9 +139,9 @@ def _get_simple_privacy_field_value(obj, field_info):
     - str: if length > 5, masks the middle part and returns first and last char;
            otherwise, returns "******"
 
-    Parameters:
-    - obj: The dataclass instance.
-    - field_info: A Field object that contains information about the dataclass field.
+    Args:
+        obj: The dataclass instance.
+        field_info: A Field object that contains information about the dataclass field.
 
     Returns:
     The original or modified value of the field based on the privacy rules.
@@ -203,10 +261,41 @@ class EnvArgumentParser:
         return parser
 
     @staticmethod
+    def _create_click_option_from_field(field_name: str, field: Type, is_func=True):
+        import click
+
+        help_text = field.metadata.get("help", "")
+        valid_values = field.metadata.get("valid_values", None)
+        cli_params = {
+            "default": None if field.default is MISSING else field.default,
+            "help": help_text,
+            "show_default": True,
+            "required": field.default is MISSING,
+        }
+        if valid_values:
+            cli_params["type"] = click.Choice(valid_values)
+        real_type = EnvArgumentParser._get_argparse_type(field.type)
+        if real_type is int:
+            cli_params["type"] = click.INT
+        elif real_type is float:
+            cli_params["type"] = click.FLOAT
+        elif real_type is str:
+            cli_params["type"] = click.STRING
+        elif real_type is bool:
+            cli_params["is_flag"] = True
+        name = f"--{field_name}"
+        if is_func:
+            return click.option(
+                name,
+                **cli_params,
+            )
+        else:
+            return click.Option([name], **cli_params)
+
+    @staticmethod
     def create_click_option(
         *dataclass_types: Type, _dynamic_factory: Callable[[None], List[Type]] = None
     ):
-        import click
         import functools
         from collections import OrderedDict
 
@@ -222,30 +311,8 @@ class EnvArgumentParser:
 
         def decorator(func):
             for field_name, field in reversed(combined_fields.items()):
-                help_text = field.metadata.get("help", "")
-                valid_values = field.metadata.get("valid_values", None)
-                cli_params = {
-                    "default": None if field.default is MISSING else field.default,
-                    "help": help_text,
-                    "show_default": True,
-                    "required": field.default is MISSING,
-                }
-                if valid_values:
-                    cli_params["type"] = click.Choice(valid_values)
-                real_type = EnvArgumentParser._get_argparse_type(field.type)
-                if real_type is int:
-                    cli_params["type"] = click.INT
-                elif real_type is float:
-                    cli_params["type"] = click.FLOAT
-                elif real_type is str:
-                    cli_params["type"] = click.STRING
-                elif real_type is bool:
-                    cli_params["is_flag"] = True
-
-                option_decorator = click.option(
-                    # f"--{field_name.replace('_', '-')}", **cli_params
-                    f"--{field_name}",
-                    **cli_params,
+                option_decorator = EnvArgumentParser._create_click_option_from_field(
+                    field_name, field
                 )
                 func = option_decorator(func)
 
@@ -256,6 +323,23 @@ class EnvArgumentParser:
             return wrapper
 
         return decorator
+
+    @staticmethod
+    def _create_raw_click_option(
+        *dataclass_types: Type, _dynamic_factory: Callable[[None], List[Type]] = None
+    ):
+        combined_fields = _merge_dataclass_types(
+            *dataclass_types, _dynamic_factory=_dynamic_factory
+        )
+        options = []
+
+        for field_name, field in reversed(combined_fields.items()):
+            options.append(
+                EnvArgumentParser._create_click_option_from_field(
+                    field_name, field, is_func=False
+                )
+            )
+        return options
 
     @staticmethod
     def create_argparse_option(
@@ -366,19 +450,68 @@ def _merge_dataclass_types(
     return combined_fields
 
 
+def _type_str_to_python_type(type_str: str) -> Type:
+    type_mapping: Dict[str, Type] = {
+        "int": int,
+        "float": float,
+        "bool": bool,
+        "str": str,
+    }
+    return type_mapping.get(type_str, str)
+
+
 def _get_parameter_descriptions(dataclass_type: Type) -> List[ParameterDescription]:
     descriptions = []
     for field in fields(dataclass_type):
+        ext_metadata = {
+            k: v for k, v in field.metadata.items() if k not in ["help", "valid_values"]
+        }
+
         descriptions.append(
             ParameterDescription(
+                param_class=f"{dataclass_type.__module__}.{dataclass_type.__name__}",
                 param_name=field.name,
                 param_type=EnvArgumentParser._get_argparse_type_str(field.type),
                 description=field.metadata.get("help", None),
-                default_value=field.default,  # TODO handle dataclasses._MISSING_TYPE
+                default_value=field.default if field.default != MISSING else None,
                 valid_values=field.metadata.get("valid_values", None),
+                ext_metadata=ext_metadata,
             )
         )
     return descriptions
+
+
+def _build_parameter_class(desc: List[ParameterDescription]) -> Type:
+    from pilot.utils.module_utils import import_from_string
+
+    if not desc:
+        raise ValueError("Parameter descriptions cant be empty")
+    param_class_str = desc[0].param_class
+    param_class = import_from_string(param_class_str, ignore_import_error=True)
+    if param_class:
+        return param_class
+    module_name, _, class_name = param_class_str.rpartition(".")
+
+    fields_dict = {}  # This will store field names and their default values or field()
+    annotations = {}  # This will store the type annotations for the fields
+
+    for d in desc:
+        metadata = d.ext_metadata if d.ext_metadata else {}
+        metadata["help"] = d.description
+        metadata["valid_values"] = d.valid_values
+
+        annotations[d.param_name] = _type_str_to_python_type(
+            d.param_type
+        )  # Set type annotation
+        fields_dict[d.param_name] = field(default=d.default_value, metadata=metadata)
+
+    # Create the new class. Note the setting of __annotations__ for type hints
+    new_class = type(
+        class_name, (object,), {**fields_dict, "__annotations__": annotations}
+    )
+    result_class = dataclass(new_class)  # Make it a dataclass
+
+    return result_class
 
 
 class _SimpleArgParser:
@@ -422,3 +555,24 @@ class _SimpleArgParser:
         return "\n".join(
             [f'{key.replace("-", "_")}: {value}' for key, value in self.params.items()]
         )
+
+
+def build_lazy_click_command(*dataclass_types: Type, _dynamic_factory=None):
+    import click
+
+    class LazyCommand(click.Command):
+        def __init__(self, *args, **kwargs):
+            super(LazyCommand, self).__init__(*args, **kwargs)
+            self.dynamic_params_added = False
+
+        def get_params(self, ctx):
+            if ctx and not self.dynamic_params_added:
+                dynamic_params = EnvArgumentParser._create_raw_click_option(
+                    *dataclass_types, _dynamic_factory=_dynamic_factory
+                )
+                for param in reversed(dynamic_params):
+                    self.params.append(param)
+                self.dynamic_params_added = True
+            return super(LazyCommand, self).get_params(ctx)
+
+    return LazyCommand

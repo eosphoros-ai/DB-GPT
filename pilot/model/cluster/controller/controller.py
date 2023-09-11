@@ -6,7 +6,7 @@ from typing import List
 from fastapi import APIRouter, FastAPI
 from pilot.model.base import ModelInstance
 from pilot.model.parameter import ModelControllerParameters
-from pilot.model.controller.registry import EmbeddedModelRegistry, ModelRegistry
+from pilot.model.cluster.registry import EmbeddedModelRegistry, ModelRegistry
 from pilot.utils.parameter_utils import EnvArgumentParser
 from pilot.utils.api_utils import _api_remote as api_remote
 

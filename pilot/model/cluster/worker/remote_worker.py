@@ -3,7 +3,7 @@ from typing import Dict, Iterator, List
 import logging
 from pilot.model.base import ModelOutput
 from pilot.model.parameter import ModelParameters
-from pilot.model.worker.base import ModelWorker
+from pilot.model.cluster.worker_base import ModelWorker
 
 
 class RemoteModelWorker(ModelWorker):

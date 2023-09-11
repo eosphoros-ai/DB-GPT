@@ -5,7 +5,7 @@ from pilot.common.schema import DBType
 from pilot.configs.config import Config
 from pilot.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
-    LLM_MODEL_CONFIG,
+    EMBEDDING_MODEL_CONFIG,
     LOGDIR,
 )
 from pilot.scene.base import ChatScene
@@ -36,7 +36,7 @@ class DBSummaryClient:
 
         db_summary_client = RdbmsSummary(dbname, db_type)
         embeddings = HuggingFaceEmbeddings(
-            model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
         vector_store_config = {
             "vector_store_name": dbname + "_summary",
@@ -90,7 +90,7 @@ class DBSummaryClient:
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         knowledge_embedding_client = EmbeddingEngine(
-            model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
         )
         table_docs = knowledge_embedding_client.similar_search(query, topk)
@@ -108,7 +108,7 @@ class DBSummaryClient:
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         knowledge_embedding_client = EmbeddingEngine(
-            model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
         )
         if CFG.SUMMARY_CONFIG == "FAST":
@@ -134,7 +134,7 @@ class DBSummaryClient:
                 "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             }
             knowledge_embedding_client = EmbeddingEngine(
-                model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
                 vector_store_config=vector_store_config,
             )
             table_summery = knowledge_embedding_client.similar_search(query, 1)
