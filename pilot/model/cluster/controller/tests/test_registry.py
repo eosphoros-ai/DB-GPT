@@ -88,12 +88,7 @@ async def test_send_heartbeat(model_registry, model_instance):
     await model_registry.register_instance(model_instance)
     last_heartbeat = datetime.now() - timedelta(seconds=10)
     model_instance.last_heartbeat = last_heartbeat
-    assert (
-        await model_registry.send_heartbeat(
-            model_instance
-        )
-        == True
-    )
+    assert await model_registry.send_heartbeat(model_instance) == True
     assert (
         model_registry.registry[model_instance.model_name][0].last_heartbeat
         > last_heartbeat
