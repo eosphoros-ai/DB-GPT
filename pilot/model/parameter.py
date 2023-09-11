@@ -33,9 +33,13 @@ class ModelControllerParameters(BaseParameters):
 
 
 @dataclass
-class ModelWorkerParameters(BaseParameters):
+class BaseModelParameters(BaseParameters):
     model_name: str = field(metadata={"help": "Model name", "tags": "fixed"})
     model_path: str = field(metadata={"help": "Model path", "tags": "fixed"})
+
+
+@dataclass
+class ModelWorkerParameters(BaseModelParameters):
     worker_type: Optional[str] = field(
         default=None,
         metadata={"valid_values": WorkerType.values(), "help": "Worker type"},
@@ -84,9 +88,7 @@ class ModelWorkerParameters(BaseParameters):
 
 
 @dataclass
-class EmbeddingModelParameters(BaseParameters):
-    model_name: str = field(metadata={"help": "Model name", "tags": "fixed"})
-    model_path: str = field(metadata={"help": "Model path", "tags": "fixed"})
+class EmbeddingModelParameters(BaseModelParameters):
     device: Optional[str] = field(
         default=None,
         metadata={
@@ -112,12 +114,6 @@ class EmbeddingModelParameters(BaseParameters):
         if encode_kwargs:
             kwargs["encode_kwargs"] = encode_kwargs
         return kwargs
-
-
-@dataclass
-class BaseModelParameters(BaseParameters):
-    model_name: str = field(metadata={"help": "Model name", "tags": "fixed"})
-    model_path: str = field(metadata={"help": "Model path", "tags": "fixed"})
 
 
 @dataclass
