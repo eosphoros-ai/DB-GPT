@@ -4,13 +4,11 @@ import json
 import os
 import random
 import time
-from abc import ABC, abstractmethod
-from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import asdict, dataclass
-from datetime import datetime
-from typing import Awaitable, Callable, Dict, Iterator, List, Optional
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict
+from typing import Awaitable, Callable, Dict, Iterator, List
 
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, FastAPI
 from fastapi.responses import StreamingResponse
 from pilot.configs.model_config import LOGDIR
 from pilot.model.base import (
@@ -18,57 +16,22 @@ from pilot.model.base import (
     ModelOutput,
     WorkerApplyOutput,
     WorkerApplyType,
+    WorkerSupportedModel,
 )
-from pilot.model.controller.registry import ModelRegistry
+from pilot.model.cluster.registry import ModelRegistry
+from pilot.model.llm_utils import list_supported_models
 from pilot.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
-from pilot.model.worker.base import ModelWorker
-from pilot.scene.base_message import ModelMessage
+from pilot.model.cluster.worker_base import ModelWorker
+from pilot.model.cluster.manager_base import WorkerManager, WorkerRunData
+from pilot.model.cluster.base import *
 from pilot.utils import build_logger
-from pilot.utils.parameter_utils import EnvArgumentParser, ParameterDescription
-from pydantic import BaseModel
+from pilot.utils.parameter_utils import (
+    EnvArgumentParser,
+    ParameterDescription,
+    _dict_to_command_args,
+)
 
 logger = build_logger("model_worker", LOGDIR + "/model_worker.log")
-
-
-class PromptRequest(BaseModel):
-    messages: List[ModelMessage]
-    model: str
-    prompt: str = None
-    temperature: float = None
-    max_new_tokens: int = None
-    stop: str = None
-    echo: bool = True
-
-
-class EmbeddingsRequest(BaseModel):
-    model: str
-    input: List[str]
-
-
-class WorkerApplyRequest(BaseModel):
-    model: str
-    apply_type: WorkerApplyType
-    worker_type: WorkerType = WorkerType.LLM
-    params: Dict = None
-    apply_user: str = None
-
-
-class WorkerParameterRequest(BaseModel):
-    model: str
-    worker_type: WorkerType = WorkerType.LLM
-
-
-@dataclass
-class WorkerRunData:
-    worker_key: str
-    worker: ModelWorker
-    worker_params: ModelWorkerParameters
-    model_params: ModelParameters
-    stop_event: asyncio.Event
-    semaphore: asyncio.Semaphore = None
-    command_args: List[str] = None
-    _heartbeat_future: Optional[Future] = None
-    _last_heartbeat: Optional[datetime] = None
 
 
 RegisterFunc = Callable[[WorkerRunData], Awaitable[None]]
@@ -77,44 +40,10 @@ SendHeartbeatFunc = Callable[[WorkerRunData], Awaitable[None]]
 ApplyFunction = Callable[[WorkerRunData], Awaitable[None]]
 
 
-class WorkerManager(ABC):
-    @abstractmethod
-    async def get_model_instances(
-        self, worker_type: str, model_name: str, healthy_only: bool = True
-    ) -> List[WorkerRunData]:
-        """Get model instances by worker type and model name"""
-
-    @abstractmethod
-    async def select_one_instanes(
-        self, worker_type: str, model_name: str, healthy_only: bool = True
-    ) -> WorkerRunData:
-        """Select one instances"""
-
-    @abstractmethod
-    async def generate_stream(self, params: Dict, **kwargs) -> Iterator[ModelOutput]:
-        """Generate stream result, chat scene"""
-
-    @abstractmethod
-    async def generate(self, params: Dict) -> ModelOutput:
-        """Generate non stream result"""
-
-    @abstractmethod
-    async def embeddings(self, params: Dict) -> List[List[float]]:
-        """Embed input"""
-
-    @abstractmethod
-    async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:
-        """Worker apply"""
-
-    @abstractmethod
-    async def parameter_descriptions(
-        self, worker_type: str, model_name: str
-    ) -> List[ParameterDescription]:
-        """Get parameter descriptions of model"""
-
-
 async def _async_heartbeat_sender(
-    worker_run_data: WorkerRunData, send_heartbeat_func: SendHeartbeatFunc
+    worker_run_data: WorkerRunData,
+    heartbeat_interval,
+    send_heartbeat_func: SendHeartbeatFunc,
 ):
     while not worker_run_data.stop_event.is_set():
         try:
@@ -122,7 +51,7 @@ async def _async_heartbeat_sender(
         except Exception as e:
             logger.warn(f"Send heartbeat func error: {str(e)}")
         finally:
-            await asyncio.sleep(worker_run_data.worker_params.heartbeat_interval)
+            await asyncio.sleep(heartbeat_interval)
 
 
 class LocalWorkerManager(WorkerManager):
@@ -132,6 +61,8 @@ class LocalWorkerManager(WorkerManager):
         deregister_func: DeregisterFunc = None,
         send_heartbeat_func: SendHeartbeatFunc = None,
         model_registry: ModelRegistry = None,
+        host: str = None,
+        port: int = None,
     ) -> None:
         self.workers: Dict[str, List[WorkerRunData]] = dict()
         self.executor = ThreadPoolExecutor(max_workers=os.cpu_count() * 5)
@@ -139,19 +70,58 @@ class LocalWorkerManager(WorkerManager):
         self.deregister_func = deregister_func
         self.send_heartbeat_func = send_heartbeat_func
         self.model_registry = model_registry
+        self.host = host
+        self.port = port
+
+        self.run_data = WorkerRunData(
+            host=self.host,
+            port=self.port,
+            worker_key=self._worker_key(
+                WORKER_MANAGER_SERVICE_TYPE, WORKER_MANAGER_SERVICE_NAME
+            ),
+            worker=None,
+            worker_params=None,
+            model_params=None,
+            stop_event=asyncio.Event(),
+            semaphore=None,
+            command_args=None,
+        )
 
     def _worker_key(self, worker_type: str, model_name: str) -> str:
         if isinstance(worker_type, WorkerType):
             worker_type = worker_type.value
         return f"{model_name}@{worker_type}"
 
+    async def run_blocking_func(self, func, *args):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(self.executor, func, *args)
+
+    async def start(self):
+        if len(self.workers) > 0:
+            await self._start_all_worker(apply_req=None)
+        if self.register_func:
+            await self.register_func(self.run_data)
+        if self.send_heartbeat_func:
+            asyncio.create_task(
+                _async_heartbeat_sender(self.run_data, 20, self.send_heartbeat_func)
+            )
+
+    async def stop(self):
+        if not self.run_data.stop_event.is_set():
+            logger.info("Stop all workers")
+            self.run_data.stop_event.clear()
+            stop_tasks = []
+            stop_tasks.append(self._stop_all_worker(apply_req=None))
+            if self.deregister_func:
+                stop_tasks.append(self.deregister_func(self.run_data))
+            await asyncio.gather(*stop_tasks)
+
     def add_worker(
         self,
         worker: ModelWorker,
         worker_params: ModelWorkerParameters,
-        embedded_mod: bool = True,
         command_args: List[str] = None,
-    ):
+    ) -> bool:
         if not command_args:
             import sys
 
@@ -179,6 +149,8 @@ class LocalWorkerManager(WorkerManager):
         model_params = worker.parse_parameters(command_args=command_args)
 
         worker_run_data = WorkerRunData(
+            host=self.host,
+            port=self.port,
             worker_key=worker_key,
             worker=worker,
             worker_params=worker_params,
@@ -187,14 +159,66 @@ class LocalWorkerManager(WorkerManager):
             semaphore=asyncio.Semaphore(worker_params.limit_model_concurrency),
             command_args=command_args,
         )
-        if not embedded_mod:
-            exist_instances = [
-                (w, p) for w, p in instances if p.host == host and p.port == port
-            ]
-            if not exist_instances:
-                instances.append(worker_run_data)
-        else:
+        exist_instances = [
+            ins for ins in instances if ins.host == host and ins.port == port
+        ]
+        if not exist_instances:
             instances.append(worker_run_data)
+            return True
+        else:
+            # TODO Update worker
+            return False
+
+    async def model_startup(self, startup_req: WorkerStartupRequest) -> bool:
+        """Start model"""
+        model_name = startup_req.model
+        worker_type = startup_req.worker_type
+        params = startup_req.params
+        logger.debug(
+            f"start model, model name {model_name}, worker type {worker_type},  params: {params}"
+        )
+        worker_params: ModelWorkerParameters = ModelWorkerParameters.from_dict(
+            params, ignore_extra_fields=True
+        )
+        if not worker_params.model_name:
+            worker_params.model_name = model_name
+        assert model_name == worker_params.model_name
+        worker = _build_worker(worker_params)
+        command_args = _dict_to_command_args(params)
+        success = await self.run_blocking_func(
+            self.add_worker, worker, worker_params, command_args
+        )
+        if not success:
+            logger.warn(
+                f"Add worker failed, worker instances is exist, worker_params: {worker_params}"
+            )
+            return False
+        supported_types = WorkerType.values()
+        if worker_type not in supported_types:
+            raise ValueError(
+                f"Unsupported worker type: {worker_type}, now supported worker type: {supported_types}"
+            )
+        start_apply_req = WorkerApplyRequest(
+            model=model_name, apply_type=WorkerApplyType.START, worker_type=worker_type
+        )
+        await self.worker_apply(start_apply_req)
+        return True
+
+    async def model_shutdown(self, shutdown_req: WorkerStartupRequest) -> bool:
+        logger.info(f"Begin shutdown model, shutdown_req: {shutdown_req}")
+        apply_req = WorkerApplyRequest(
+            model=shutdown_req.model,
+            apply_type=WorkerApplyType.STOP,
+            worker_type=shutdown_req.worker_type,
+        )
+        out = await self._stop_all_worker(apply_req)
+        if out.success:
+            return True
+        raise Exception(out.message)
+
+    async def supported_models(self) -> List[WorkerSupportedModel]:
+        models = await self.run_blocking_func(list_supported_models)
+        return [WorkerSupportedModel(host=self.host, port=self.port, models=models)]
 
     async def get_model_instances(
         self, worker_type: str, model_name: str, healthy_only: bool = True
@@ -202,7 +226,7 @@ class LocalWorkerManager(WorkerManager):
         worker_key = self._worker_key(worker_type, model_name)
         return self.workers.get(worker_key)
 
-    async def select_one_instanes(
+    async def select_one_instance(
         self, worker_type: str, model_name: str, healthy_only: bool = True
     ) -> WorkerRunData:
         worker_instances = await self.get_model_instances(
@@ -219,7 +243,7 @@ class LocalWorkerManager(WorkerManager):
         model = params.get("model")
         if not model:
             raise Exception("Model name count not be empty")
-        return await self.select_one_instanes(worker_type, model, healthy_only=True)
+        return await self.select_one_instance(worker_type, model, healthy_only=True)
 
     async def generate_stream(
         self, params: Dict, async_wrapper=None, **kwargs
@@ -262,9 +286,8 @@ class LocalWorkerManager(WorkerManager):
             if worker_run_data.worker.support_async():
                 return await worker_run_data.worker.async_generate(params)
             else:
-                loop = asyncio.get_event_loop()
-                return await loop.run_in_executor(
-                    self.executor, worker_run_data.worker.generate, params
+                return await self.run_blocking_func(
+                    worker_run_data.worker.generate, params
                 )
 
     async def embeddings(self, params: Dict) -> List[List[float]]:
@@ -277,9 +300,8 @@ class LocalWorkerManager(WorkerManager):
             if worker_run_data.worker.support_async():
                 return await worker_run_data.worker.async_embeddings(params)
             else:
-                loop = asyncio.get_event_loop()
-                return await loop.run_in_executor(
-                    self.executor, worker_run_data.worker.embeddings, params
+                return await self.run_blocking_func(
+                    worker_run_data.worker.embeddings, params
                 )
 
     async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:
@@ -342,8 +364,10 @@ class LocalWorkerManager(WorkerManager):
         logger.info(f"Begin start all worker, apply_req: {apply_req}")
 
         async def _start_worker(worker_run_data: WorkerRunData):
-            worker_run_data.worker.start(
-                worker_run_data.model_params, worker_run_data.command_args
+            await self.run_blocking_func(
+                worker_run_data.worker.start,
+                worker_run_data.model_params,
+                worker_run_data.command_args,
             )
             worker_run_data.stop_event.clear()
             if worker_run_data.worker_params.register and self.register_func:
@@ -355,7 +379,9 @@ class LocalWorkerManager(WorkerManager):
                 ):
                     asyncio.create_task(
                         _async_heartbeat_sender(
-                            worker_run_data, self.send_heartbeat_func
+                            worker_run_data,
+                            worker_run_data.worker_params.heartbeat_interval,
+                            self.send_heartbeat_func,
                         )
                     )
 
@@ -371,7 +397,7 @@ class LocalWorkerManager(WorkerManager):
         start_time = time.time()
 
         async def _stop_worker(worker_run_data: WorkerRunData):
-            worker_run_data.worker.stop()
+            await self.run_blocking_func(worker_run_data.worker.stop)
             # Set stop event
             worker_run_data.stop_event.set()
             if worker_run_data._heartbeat_future:
@@ -422,62 +448,24 @@ class LocalWorkerManager(WorkerManager):
         return WorkerApplyOutput(message=message, timecost=timecost)
 
 
-class RemoteWorkerManager(LocalWorkerManager):
-    def __init__(self, model_registry: ModelRegistry = None) -> None:
-        super().__init__(model_registry=model_registry)
-
-    async def get_model_instances(
-        self, worker_type: str, model_name: str, healthy_only: bool = True
-    ) -> List[WorkerRunData]:
-        from pilot.model.worker.remote_worker import RemoteModelWorker
-
-        worker_key = self._worker_key(worker_type, model_name)
-        instances: List[ModelInstance] = await self.model_registry.get_all_instances(
-            worker_key, healthy_only
-        )
-        worker_instances = []
-        for ins in instances:
-            worker = RemoteModelWorker()
-            worker.load_worker(model_name, model_name, host=ins.host, port=ins.port)
-            wr = WorkerRunData(
-                worker_key=ins.model_name,
-                worker=worker,
-                worker_params=None,
-                model_params=None,
-                stop_event=asyncio.Event(),
-                semaphore=asyncio.Semaphore(100),  # Not limit in client
-            )
-            worker_instances.append(wr)
-        return worker_instances
-
-    async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:
-        import httpx
-
-        async def _remote_apply_func(worker_run_data: WorkerRunData):
-            worker_addr = worker_run_data.worker.worker_addr
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    worker_addr + "/apply",
-                    headers=worker_run_data.worker.headers,
-                    json=apply_req.dict(),
-                    timeout=worker_run_data.worker.timeout,
-                )
-                if response.status_code == 200:
-                    output = WorkerApplyOutput(**response.json())
-                    logger.info(f"worker_apply success: {output}")
-                else:
-                    output = WorkerApplyOutput(message=response.text)
-                    logger.warn(f"worker_apply failed: {output}")
-                return output
-
-        results = await self._apply_worker(apply_req, _remote_apply_func)
-        if results:
-            return results[0]
-
-
 class WorkerManagerAdapter(WorkerManager):
     def __init__(self, worker_manager: WorkerManager = None) -> None:
         self.worker_manager = worker_manager
+
+    async def start(self):
+        return await self.worker_manager.start()
+
+    async def stop(self):
+        return await self.worker_manager.stop()
+
+    async def supported_models(self) -> List[WorkerSupportedModel]:
+        return await self.worker_manager.supported_models()
+
+    async def model_startup(self, startup_req: WorkerStartupRequest) -> bool:
+        return await self.worker_manager.model_startup(startup_req)
+
+    async def model_shutdown(self, shutdown_req: WorkerStartupRequest) -> bool:
+        return await self.worker_manager.model_shutdown(shutdown_req)
 
     async def get_model_instances(
         self, worker_type: str, model_name: str, healthy_only: bool = True
@@ -486,10 +474,10 @@ class WorkerManagerAdapter(WorkerManager):
             worker_type, model_name, healthy_only
         )
 
-    async def select_one_instanes(
+    async def select_one_instance(
         self, worker_type: str, model_name: str, healthy_only: bool = True
     ) -> WorkerRunData:
-        return await self.worker_manager.select_one_instanes(
+        return await self.worker_manager.select_one_instance(
             worker_type, model_name, healthy_only
         )
 
@@ -535,37 +523,58 @@ async def api_generate_stream(request: PromptRequest):
 @router.post("/worker/generate")
 async def api_generate(request: PromptRequest):
     params = request.dict(exclude_none=True)
-    output = await worker_manager.generate(params)
-    return output
+    return await worker_manager.generate(params)
 
 
 @router.post("/worker/embeddings")
 async def api_embeddings(request: EmbeddingsRequest):
     params = request.dict(exclude_none=True)
-    output = await worker_manager.embeddings(params)
-    return output
+    return await worker_manager.embeddings(params)
 
 
 @router.post("/worker/apply")
 async def api_worker_apply(request: WorkerApplyRequest):
-    output = await worker_manager.worker_apply(request)
-    return output
+    return await worker_manager.worker_apply(request)
 
 
 @router.get("/worker/parameter/descriptions")
 async def api_worker_parameter_descs(
     model: str, worker_type: str = WorkerType.LLM.value
 ):
-    output = await worker_manager.parameter_descriptions(worker_type, model)
-    return output
+    return await worker_manager.parameter_descriptions(worker_type, model)
+
+
+@router.get("/worker/models/supports")
+async def api_supported_models():
+    """Get all supported models.
+
+    This method reads all models from the configuration file and tries to perform some basic checks on the model (like if the path exists).
+
+    If it's a RemoteWorkerManager, this method returns the list of models supported by the entire cluster.
+    """
+    return await worker_manager.supported_models()
+
+
+@router.post("/worker/models/startup")
+async def api_model_startup(request: WorkerStartupRequest):
+    """Start up a specific model."""
+    return await worker_manager.model_startup(request)
+
+
+@router.post("/worker/models/shutdown")
+async def api_model_shutdown(request: WorkerStartupRequest):
+    """Shut down a specific model."""
+    return await worker_manager.model_shutdown(request)
 
 
 def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
     if not app:
         app = FastAPI()
     if worker_params.standalone:
-        from pilot.model.controller.controller import router as controller_router
-        from pilot.model.controller.controller import initialize_controller
+        from pilot.model.cluster.controller.controller import initialize_controller
+        from pilot.model.cluster.controller.controller import (
+            router as controller_router,
+        )
 
         if not worker_params.controller_addr:
             worker_params.controller_addr = f"http://127.0.0.1:{worker_params.port}"
@@ -577,9 +586,11 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
 
     @app.on_event("startup")
     async def startup_event():
-        asyncio.create_task(
-            worker_manager.worker_manager._start_all_worker(apply_req=None)
-        )
+        asyncio.create_task(worker_manager.worker_manager.start())
+
+    @app.on_event("shutdown")
+    async def startup_event():
+        await worker_manager.worker_manager.stop()
 
     return app
 
@@ -609,22 +620,23 @@ def _parse_worker_params(
 def _create_local_model_manager(
     worker_params: ModelWorkerParameters,
 ) -> LocalWorkerManager:
+    from pilot.utils.net_utils import _get_ip_address
+
+    host = (
+        worker_params.worker_register_host
+        if worker_params.worker_register_host
+        else _get_ip_address()
+    )
+    port = worker_params.port
     if not worker_params.register or not worker_params.controller_addr:
         logger.info(
             f"Not register current to controller, register: {worker_params.register}, controller_addr: {worker_params.controller_addr}"
         )
-        return LocalWorkerManager()
+        return LocalWorkerManager(host=host, port=port)
     else:
-        from pilot.model.controller.controller import ModelRegistryClient
-        from pilot.utils.net_utils import _get_ip_address
+        from pilot.model.cluster.controller.controller import ModelRegistryClient
 
         client = ModelRegistryClient(worker_params.controller_addr)
-        host = (
-            worker_params.worker_register_host
-            if worker_params.worker_register_host
-            else _get_ip_address()
-        )
-        port = worker_params.port
 
         async def register_func(worker_run_data: WorkerRunData):
             instance = ModelInstance(
@@ -648,31 +660,33 @@ def _create_local_model_manager(
             register_func=register_func,
             deregister_func=deregister_func,
             send_heartbeat_func=send_heartbeat_func,
+            host=host,
+            port=port,
         )
 
 
-def _start_local_worker(
-    worker_manager: WorkerManagerAdapter,
-    worker_params: ModelWorkerParameters,
-    embedded_mod=True,
-):
-    from pilot.utils.module_utils import import_from_checked_string
-
+def _build_worker(worker_params: ModelWorkerParameters):
     if worker_params.worker_class:
+        from pilot.utils.module_utils import import_from_checked_string
+
         worker_cls = import_from_checked_string(worker_params.worker_class, ModelWorker)
         logger.info(
             f"Import worker class from {worker_params.worker_class} successfully"
         )
         worker: ModelWorker = worker_cls()
     else:
-        from pilot.model.worker.default_worker import DefaultModelWorker
+        from pilot.model.cluster.worker.default_worker import DefaultModelWorker
 
         worker = DefaultModelWorker()
+    return worker
 
+
+def _start_local_worker(
+    worker_manager: WorkerManagerAdapter, worker_params: ModelWorkerParameters
+):
+    worker = _build_worker(worker_params)
     worker_manager.worker_manager = _create_local_model_manager(worker_params)
-    worker_manager.worker_manager.add_worker(
-        worker, worker_params, embedded_mod=embedded_mod
-    )
+    worker_manager.worker_manager.add_worker(worker, worker_params)
 
 
 def initialize_worker_manager_in_client(
@@ -713,16 +727,13 @@ def initialize_worker_manager_in_client(
         worker_params.port = local_port
         logger.info(f"Worker params: {worker_params}")
         _setup_fastapi(worker_params, app)
-        _start_local_worker(worker_manager, worker_params, True)
-        # loop = asyncio.get_event_loop()
-        # loop.run_until_complete(
-        #     worker_manager.worker_manager._start_all_worker(apply_req=None)
-        # )
+        _start_local_worker(worker_manager, worker_params)
     else:
-        from pilot.model.controller.controller import (
-            initialize_controller,
+        from pilot.model.cluster.controller.controller import (
             ModelRegistryClient,
+            initialize_controller,
         )
+        from pilot.model.cluster.worker.remote_manager import RemoteWorkerManager
 
         if not worker_params.controller_addr:
             raise ValueError("Controller can`t be None")
@@ -758,13 +769,11 @@ def run_worker_manager(
         # Run worker manager independently
         embedded_mod = False
         app = _setup_fastapi(worker_params)
-        _start_local_worker(worker_manager, worker_params, embedded_mod=False)
+        _start_local_worker(worker_manager, worker_params)
     else:
-        _start_local_worker(worker_manager, worker_params, embedded_mod=False)
+        _start_local_worker(worker_manager, worker_params)
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(
-            worker_manager.worker_manager._start_all_worker(apply_req=None)
-        )
+        loop.run_until_complete(worker_manager.worker_manager.start())
 
     if include_router:
         app.include_router(router, prefix="/api")

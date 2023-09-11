@@ -29,10 +29,10 @@ def knownledge_tovec_st(filename):
     """Use sentence transformers to embedding the document.
     https://github.com/UKPLab/sentence-transformers
     """
-    from pilot.configs.model_config import LLM_MODEL_CONFIG
+    from pilot.configs.model_config import EMBEDDING_MODEL_CONFIG
 
     embeddings = HuggingFaceEmbeddings(
-        model_name=LLM_MODEL_CONFIG["sentence-transforms"]
+        model_name=EMBEDDING_MODEL_CONFIG["sentence-transforms"]
     )
 
     with open(filename, "r") as f:
@@ -57,10 +57,10 @@ def load_knownledge_from_doc():
             "Not Exists Local DataSets, We will answers the Question use model default."
         )
 
-    from pilot.configs.model_config import LLM_MODEL_CONFIG
+    from pilot.configs.model_config import EMBEDDING_MODEL_CONFIG
 
     embeddings = HuggingFaceEmbeddings(
-        model_name=LLM_MODEL_CONFIG["sentence-transforms"]
+        model_name=EMBEDDING_MODEL_CONFIG["sentence-transforms"]
     )
 
     files = os.listdir(DATASETS_DIR)

@@ -2,24 +2,40 @@ import click
 import functools
 import logging
 import os
-from typing import Callable, List, Type
+from typing import Callable, List, Type, Optional
 
-from pilot.model.controller.controller import ModelRegistryClient
 from pilot.configs.model_config import LOGDIR
 from pilot.model.base import WorkerApplyType
 from pilot.model.parameter import (
     ModelControllerParameters,
     ModelWorkerParameters,
     ModelParameters,
+    BaseParameters,
 )
 from pilot.utils import get_or_create_event_loop
-from pilot.utils.parameter_utils import EnvArgumentParser
-from pilot.utils.command_utils import _run_current_with_daemon, _stop_service
+from pilot.utils.parameter_utils import (
+    EnvArgumentParser,
+    _build_parameter_class,
+    build_lazy_click_command,
+)
+from pilot.utils.command_utils import (
+    _run_current_with_daemon,
+    _stop_service,
+    _detect_controller_address,
+)
 
 
 MODEL_CONTROLLER_ADDRESS = "http://127.0.0.1:8000"
 
 logger = logging.getLogger("dbgpt_cli")
+
+
+def _get_worker_manager(address: str):
+    from pilot.model.cluster import RemoteWorkerManager, ModelRegistryClient
+
+    registry = ModelRegistryClient(address)
+    worker_manager = RemoteWorkerManager(registry)
+    return worker_manager
 
 
 @click.group("model")
@@ -38,8 +54,6 @@ def model_cli_group(address: str):
     """Clients that manage model serving"""
     global MODEL_CONTROLLER_ADDRESS
     if not address:
-        from pilot.utils.command_utils import _detect_controller_address
-
         MODEL_CONTROLLER_ADDRESS = _detect_controller_address()
     else:
         MODEL_CONTROLLER_ADDRESS = address
@@ -55,6 +69,7 @@ def model_cli_group(address: str):
 def list(model_name: str, model_type: str):
     """List model instances"""
     from prettytable import PrettyTable
+    from pilot.model.cluster import ModelRegistryClient
 
     loop = get_or_create_event_loop()
     registry = ModelRegistryClient(MODEL_CONTROLLER_ADDRESS)
@@ -90,7 +105,7 @@ def list(model_name: str, model_type: str):
                 instance.port,
                 instance.healthy,
                 instance.enabled,
-                instance.prompt_template,
+                instance.prompt_template if instance.prompt_template else "",
                 instance.last_heartbeat,
             ]
         )
@@ -122,18 +137,156 @@ def add_model_options(func):
 
 @model_cli_group.command()
 @add_model_options
-def stop(model_name: str, model_type: str):
+@click.option(
+    "--host",
+    type=str,
+    required=True,
+    help=("The remote host to stop model"),
+)
+@click.option(
+    "--port",
+    type=int,
+    required=True,
+    help=("The remote port to stop model"),
+)
+def stop(model_name: str, model_type: str, host: str, port: int):
     """Stop model instances"""
-    worker_apply(MODEL_CONTROLLER_ADDRESS, model_name, model_type, WorkerApplyType.STOP)
+    from pilot.model.cluster import WorkerStartupRequest, RemoteWorkerManager
 
-
-@model_cli_group.command()
-@add_model_options
-def start(model_name: str, model_type: str):
-    """Start model instances"""
-    worker_apply(
-        MODEL_CONTROLLER_ADDRESS, model_name, model_type, WorkerApplyType.START
+    worker_manager: RemoteWorkerManager = _get_worker_manager(MODEL_CONTROLLER_ADDRESS)
+    req = WorkerStartupRequest(
+        host=host,
+        port=port,
+        worker_type=model_type,
+        model=model_name,
+        params={},
     )
+    loop = get_or_create_event_loop()
+    res = loop.run_until_complete(worker_manager.model_shutdown(req))
+    print(res)
+
+
+def _remote_model_dynamic_factory() -> Callable[[None], List[Type]]:
+    from pilot.model.adapter import _dynamic_model_parser
+    from pilot.utils.parameter_utils import _SimpleArgParser
+    from pilot.model.cluster import RemoteWorkerManager
+    from pilot.model.parameter import WorkerType
+    from dataclasses import dataclass, field, fields
+
+    pre_args = _SimpleArgParser("model_name", "address", "host", "port")
+    pre_args.parse()
+    model_name = pre_args.get("model_name")
+    address = pre_args.get("address")
+    host = pre_args.get("host")
+    port = pre_args.get("port")
+    if port:
+        port = int(port)
+
+    if not address:
+        address = _detect_controller_address()
+
+    worker_manager: RemoteWorkerManager = _get_worker_manager(address)
+    loop = get_or_create_event_loop()
+    models = loop.run_until_complete(worker_manager.supported_models())
+
+    fields_dict = {}
+    fields_dict["model_name"] = (
+        str,
+        field(default=None, metadata={"help": "The model name to deploy"}),
+    )
+    fields_dict["host"] = (
+        str,
+        field(default=None, metadata={"help": "The remote host to deploy model"}),
+    )
+    fields_dict["port"] = (
+        int,
+        field(default=None, metadata={"help": "The remote port to deploy model"}),
+    )
+    result_class = dataclass(
+        type("RemoteModelWorkerParameters", (object,), fields_dict)
+    )
+
+    if not models:
+        return [result_class]
+
+    valid_models = []
+    valid_model_cls = []
+    for model in models:
+        if host and host != model.host:
+            continue
+        if port and port != model.port:
+            continue
+        valid_models += [m.model for m in model.models]
+        valid_model_cls += [
+            (m, _build_parameter_class(m.params)) for m in model.models if m.params
+        ]
+    real_model, real_params_cls = valid_model_cls[0]
+    real_path = None
+    real_worker_type = "llm"
+    if model_name:
+        params_cls_list = [m for m in valid_model_cls if m[0].model == model_name]
+        if not params_cls_list:
+            raise ValueError(f"Not supported model with model name: {model_name}")
+        real_model, real_params_cls = params_cls_list[0]
+        real_path = real_model.path
+        real_worker_type = real_model.worker_type
+
+    @dataclass
+    class RemoteModelWorkerParameters(BaseParameters):
+        model_name: str = field(
+            metadata={"valid_values": valid_models, "help": "The model name to deploy"}
+        )
+        model_path: Optional[str] = field(
+            default=real_path, metadata={"help": "The model path to deploy"}
+        )
+        host: Optional[str] = field(
+            default=models[0].host,
+            metadata={
+                "valid_values": [model.host for model in models],
+                "help": "The remote host to deploy model",
+            },
+        )
+
+        port: Optional[int] = field(
+            default=models[0].port,
+            metadata={
+                "valid_values": [model.port for model in models],
+                "help": "The remote port to deploy model",
+            },
+        )
+        worker_type: Optional[str] = field(
+            default=real_worker_type,
+            metadata={
+                "valid_values": WorkerType.values(),
+                "help": "Worker type",
+            },
+        )
+
+    return [RemoteModelWorkerParameters, real_params_cls]
+
+
+@model_cli_group.command(
+    cls=build_lazy_click_command(_dynamic_factory=_remote_model_dynamic_factory)
+)
+def start(**kwargs):
+    """Start model instances"""
+    from pilot.model.cluster import WorkerStartupRequest, RemoteWorkerManager
+
+    worker_manager: RemoteWorkerManager = _get_worker_manager(MODEL_CONTROLLER_ADDRESS)
+    req = WorkerStartupRequest(
+        host=kwargs["host"],
+        port=kwargs["port"],
+        worker_type=kwargs["worker_type"],
+        model=kwargs["model_name"],
+        params={},
+    )
+    del kwargs["host"]
+    del kwargs["port"]
+    del kwargs["worker_type"]
+    req.params = kwargs
+    loop = get_or_create_event_loop()
+    res = loop.run_until_complete(worker_manager.model_startup(req))
+    print(res)
 
 
 @model_cli_group.command()
@@ -165,25 +318,10 @@ def chat(model_name: str, system: str):
     _cli_chat(MODEL_CONTROLLER_ADDRESS, model_name, system)
 
 
-# @model_cli_group.command()
-# @add_model_options
-# def modify(address: str, model_name: str, model_type: str):
-#     """Restart model instances"""
-#     worker_apply(address, model_name, model_type, WorkerApplyType.UPDATE_PARAMS)
-
-
-def _get_worker_manager(address: str):
-    from pilot.model.worker.manager import RemoteWorkerManager, WorkerApplyRequest
-
-    registry = ModelRegistryClient(address)
-    worker_manager = RemoteWorkerManager(registry)
-    return worker_manager
-
-
 def worker_apply(
     address: str, model_name: str, model_type: str, apply_type: WorkerApplyType
 ):
-    from pilot.model.worker.manager import WorkerApplyRequest
+    from pilot.model.cluster import WorkerApplyRequest
 
     loop = get_or_create_event_loop()
     worker_manager = _get_worker_manager(address)
@@ -201,7 +339,7 @@ def _cli_chat(address: str, model_name: str, system_prompt: str = None):
 
 
 async def _chat_stream(worker_manager, model_name: str, system_prompt: str = None):
-    from pilot.model.worker.manager import PromptRequest
+    from pilot.model.cluster import PromptRequest
     from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 
     print(f"Chatbot started with model {model_name}. Type 'exit' to leave the chat.")
@@ -249,13 +387,11 @@ def add_stop_server_options(func):
 def start_model_controller(**kwargs):
     """Start model controller"""
 
-    from pilot.model.controller.controller import run_model_controller
-
     if kwargs["daemon"]:
         log_file = os.path.join(LOGDIR, "model_controller_uvicorn.log")
         _run_current_with_daemon("ModelController", log_file)
     else:
-        from pilot.model.controller.controller import run_model_controller
+        from pilot.model.cluster import run_model_controller
 
         run_model_controller()
 
@@ -279,9 +415,8 @@ def _model_dynamic_factory() -> Callable[[None], List[Type]]:
     return fix_class
 
 
-@click.command(name="worker")
-@EnvArgumentParser.create_click_option(
-    ModelWorkerParameters, ModelParameters, _dynamic_factory=_model_dynamic_factory
+@click.command(
+    name="worker", cls=build_lazy_click_command(_dynamic_factory=_model_dynamic_factory)
 )
 def start_model_worker(**kwargs):
     """Start model worker"""
@@ -291,7 +426,7 @@ def start_model_worker(**kwargs):
         log_file = os.path.join(LOGDIR, f"model_worker_{model_type}_{port}_uvicorn.log")
         _run_current_with_daemon("ModelWorker", log_file)
     else:
-        from pilot.model.worker.manager import run_worker_manager
+        from pilot.model.cluster import run_worker_manager
 
         run_worker_manager()
 

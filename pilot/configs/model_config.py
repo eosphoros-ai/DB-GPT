@@ -41,25 +41,12 @@ LLM_MODEL_CONFIG = {
     # (Llama2 based) see https://huggingface.co/lmsys/vicuna-13b-v1.5
     "vicuna-13b-v1.5": os.path.join(MODEL_PATH, "vicuna-13b-v1.5"),
     "vicuna-7b-v1.5": os.path.join(MODEL_PATH, "vicuna-7b-v1.5"),
-    "text2vec": os.path.join(MODEL_PATH, "text2vec-large-chinese"),
-    # https://huggingface.co/moka-ai/m3e-large
-    "m3e-base": os.path.join(MODEL_PATH, "m3e-base"),
-    # https://huggingface.co/moka-ai/m3e-base
-    "m3e-large": os.path.join(MODEL_PATH, "m3e-large"),
-    # https://huggingface.co/BAAI/bge-large-en
-    "bge-large-en": os.path.join(MODEL_PATH, "bge-large-en"),
-    "bge-base-en": os.path.join(MODEL_PATH, "bge-base-en"),
-    # https://huggingface.co/BAAI/bge-large-zh
-    "bge-large-zh": os.path.join(MODEL_PATH, "bge-large-zh"),
-    "bge-base-zh": os.path.join(MODEL_PATH, "bge-base-zh"),
-    "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
     "codegen2-1b": os.path.join(MODEL_PATH, "codegen2-1B"),
     "codet5p-2b": os.path.join(MODEL_PATH, "codet5p-2b"),
     "chatglm-6b-int4": os.path.join(MODEL_PATH, "chatglm-6b-int4"),
     "chatglm-6b": os.path.join(MODEL_PATH, "chatglm-6b"),
     "chatglm2-6b": os.path.join(MODEL_PATH, "chatglm2-6b"),
     "chatglm2-6b-int4": os.path.join(MODEL_PATH, "chatglm2-6b-int4"),
-    "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "falcon-40b": os.path.join(MODEL_PATH, "falcon-40b"),
     "gorilla-7b": os.path.join(MODEL_PATH, "gorilla-7b"),
@@ -82,6 +69,22 @@ LLM_MODEL_CONFIG = {
     # (Llama2 based) We only support WizardLM-13B-V1.2 for now, which is trained from Llama-2 13b, see https://huggingface.co/WizardLM/WizardLM-13B-V1.2
     "wizardlm-13b": os.path.join(MODEL_PATH, "WizardLM-13B-V1.2"),
     "llama-cpp": os.path.join(MODEL_PATH, "ggml-model-q4_0.bin"),
+}
+
+EMBEDDING_MODEL_CONFIG = {
+    "text2vec": os.path.join(MODEL_PATH, "text2vec-large-chinese"),
+    "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
+    # https://huggingface.co/moka-ai/m3e-large
+    "m3e-base": os.path.join(MODEL_PATH, "m3e-base"),
+    # https://huggingface.co/moka-ai/m3e-base
+    "m3e-large": os.path.join(MODEL_PATH, "m3e-large"),
+    # https://huggingface.co/BAAI/bge-large-en
+    "bge-large-en": os.path.join(MODEL_PATH, "bge-large-en"),
+    "bge-base-en": os.path.join(MODEL_PATH, "bge-base-en"),
+    # https://huggingface.co/BAAI/bge-large-zh
+    "bge-large-zh": os.path.join(MODEL_PATH, "bge-large-zh"),
+    "bge-base-zh": os.path.join(MODEL_PATH, "bge-base-zh"),
+    "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
 }
 
 # Load model config
