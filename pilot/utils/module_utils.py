@@ -2,7 +2,7 @@ from typing import Type
 from importlib import import_module
 
 
-def import_from_string(module_path: str):
+def import_from_string(module_path: str, ignore_import_error: bool = False):
     try:
         module_path, class_name = module_path.rsplit(".", 1)
     except ValueError:
@@ -12,6 +12,8 @@ def import_from_string(module_path: str):
     try:
         return getattr(module, class_name)
     except AttributeError:
+        if ignore_import_error:
+            return None
         raise ImportError(
             f'Module "{module_path}" does not define a "{class_name}" attribute/class'
         )

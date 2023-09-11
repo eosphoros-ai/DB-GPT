@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from enum import Enum
-from typing import TypedDict, Optional, Dict
+from typing import TypedDict, Optional, Dict, List
 from dataclasses import dataclass
 from datetime import datetime
+from pilot.utils.parameter_utils import ParameterDescription
 
 
 class Message(TypedDict):
@@ -46,5 +47,40 @@ class ModelOutput:
 @dataclass
 class WorkerApplyOutput:
     message: str
+    success: Optional[bool] = True
     # The seconds cost to apply some action to worker instances
     timecost: Optional[int] = -1
+
+
+@dataclass
+class SupportedModel:
+    model: str
+    path: str
+    worker_type: str
+    path_exist: bool
+    proxy: bool
+    enabled: bool
+    params: List[ParameterDescription]
+
+    @classmethod
+    def from_dict(cls, model_data: Dict) -> "SupportedModel":
+        params = model_data.get("params", [])
+        if params:
+            params = [ParameterDescription(**param) for param in params]
+        model_data["params"] = params
+        return cls(**model_data)
+
+
+@dataclass
+class WorkerSupportedModel:
+    host: str
+    port: int
+    models: List[SupportedModel]
+
+    @classmethod
+    def from_dict(cls, worker_data: Dict) -> "WorkerSupportedModel":
+        models = [
+            SupportedModel.from_dict(model_data) for model_data in worker_data["models"]
+        ]
+        worker_data["models"] = models
+        return cls(**worker_data)

@@ -108,6 +108,17 @@ def _dynamic_model_parser() -> Callable[[None], List[Type]]:
     return [param_class]
 
 
+def _parse_model_param_class(model_name: str, model_path: str) -> ModelParameters:
+    try:
+        llm_adapter = get_llm_model_adapter(model_name, model_path)
+        return llm_adapter.model_param_class()
+    except Exception as e:
+        logger.warn(
+            f"Parse model parameters with model name {model_name} and model {model_path} failed {str(e)}, return `ModelParameters`"
+        )
+        return ModelParameters
+
+
 # TODO support cpu? for practise we support gpt4all or chatglm-6b-int4?
 
 

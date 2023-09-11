@@ -139,7 +139,7 @@ class BaseChat(ABC):
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
-            from pilot.model.worker.manager import worker_manager
+            from pilot.model.cluster import worker_manager
 
             async for output in worker_manager.generate_stream(payload):
                 yield output
@@ -157,7 +157,7 @@ class BaseChat(ABC):
         logger.info(f"Request: \n{payload}")
         ai_response_text = ""
         try:
-            from pilot.model.worker.manager import worker_manager
+            from pilot.model.cluster import worker_manager
 
             model_output = await worker_manager.generate(payload)
 

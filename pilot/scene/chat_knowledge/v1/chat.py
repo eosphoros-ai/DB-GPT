@@ -8,7 +8,7 @@ from pilot.configs.config import Config
 
 from pilot.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
-    LLM_MODEL_CONFIG,
+    EMBEDDING_MODEL_CONFIG,
 )
 
 from pilot.scene.chat_knowledge.v1.prompt import prompt
@@ -49,7 +49,7 @@ class ChatKnowledge(BaseChat):
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         self.knowledge_embedding_client = EmbeddingEngine(
-            model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
         )
 

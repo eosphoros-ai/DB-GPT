@@ -7,7 +7,10 @@ from fastapi import APIRouter, File, UploadFile, Form
 from langchain.embeddings import HuggingFaceEmbeddings
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
+from pilot.configs.model_config import (
+    EMBEDDING_MODEL_CONFIG,
+    KNOWLEDGE_UPLOAD_ROOT_PATH,
+)
 
 from pilot.openapi.api_view_model import Result
 from pilot.embedding_engine.embedding_engine import EmbeddingEngine
@@ -29,7 +32,9 @@ CFG = Config()
 router = APIRouter()
 
 
-embeddings = HuggingFaceEmbeddings(model_name=LLM_MODEL_CONFIG[CFG.EMBEDDING_MODEL])
+embeddings = HuggingFaceEmbeddings(
+    model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+)
 
 knowledge_space_service = KnowledgeService()
 

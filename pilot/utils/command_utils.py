@@ -4,6 +4,7 @@ import subprocess
 from typing import List, Dict
 import psutil
 import platform
+from functools import lru_cache
 
 
 def _get_abspath_of_current_command(command_path: str):
@@ -137,6 +138,7 @@ def _get_ports_by_cmdline_part(service_keys: List[str]) -> List[int]:
     return ports
 
 
+@lru_cache()
 def _detect_controller_address() -> str:
     controller_addr = os.getenv("CONTROLLER_ADDRESS")
     if controller_addr:
