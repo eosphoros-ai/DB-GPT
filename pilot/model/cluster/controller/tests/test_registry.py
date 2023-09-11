@@ -2,9 +2,8 @@ import pytest
 from datetime import datetime, timedelta
 
 import asyncio
-from unittest.mock import patch
 from pilot.model.base import ModelInstance
-from pilot.model.controller.registry import ModelRegistry, EmbeddedModelRegistry
+from pilot.model.cluster.registry import EmbeddedModelRegistry
 
 
 @pytest.fixture
@@ -16,7 +15,7 @@ def model_registry():
 def model_instance():
     return ModelInstance(
         model_name="test_model",
-        ip="192.168.1.1",
+        host="192.168.1.1",
         port=5000,
     )
 
@@ -91,7 +90,7 @@ async def test_send_heartbeat(model_registry, model_instance):
     model_instance.last_heartbeat = last_heartbeat
     assert (
         await model_registry.send_heartbeat(
-            model_instance.model_name, model_instance.ip, model_instance.port
+            model_instance
         )
         == True
     )
@@ -125,7 +124,7 @@ async def test_multiple_instances(model_registry, model_instance):
     """
     model_instance2 = ModelInstance(
         model_name="test_model",
-        ip="192.168.1.2",
+        host="192.168.1.2",
         port=5000,
     )
     await model_registry.register_instance(model_instance)
@@ -138,11 +137,11 @@ async def test_same_model_name_different_ip_port(model_registry):
     """
     Test if instances with the same model name but different IP and port are handled correctly
     """
-    instance1 = ModelInstance(model_name="test_model", ip="192.168.1.1", port=5000)
-    instance2 = ModelInstance(model_name="test_model", ip="192.168.1.2", port=6000)
+    instance1 = ModelInstance(model_name="test_model", host="192.168.1.1", port=5000)
+    instance2 = ModelInstance(model_name="test_model", host="192.168.1.2", port=6000)
     await model_registry.register_instance(instance1)
     await model_registry.register_instance(instance2)
     instances = await model_registry.get_all_instances("test_model")
     assert len(instances) == 2
-    assert instances[0].ip != instances[1].ip
+    assert instances[0].host != instances[1].host
     assert instances[0].port != instances[1].port

@@ -2,14 +2,18 @@
 # -*- coding:utf-8 -*-
 
 import traceback
+from pathlib import Path
 from queue import Queue
 from threading import Thread
 import transformers
 
-from typing import List, Optional
+from typing import List, Optional, Dict
+import cachetools
 
 from pilot.configs.config import Config
-from pilot.model.base import Message
+from pilot.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG
+from pilot.model.base import Message, SupportedModel
+from pilot.utils.parameter_utils import _get_parameter_descriptions
 
 
 def create_chat_completion(
@@ -128,3 +132,49 @@ def is_partial_stop(output: str, stop_str: str):
         if stop_str.startswith(output[-i:]):
             return True
     return False
+
+
+@cachetools.cached(cachetools.TTLCache(maxsize=100, ttl=60 * 5))
+def list_supported_models():
+    from pilot.model.parameter import WorkerType
+
+    models = _list_supported_models(WorkerType.LLM.value, LLM_MODEL_CONFIG)
+    models += _list_supported_models(WorkerType.TEXT2VEC.value, EMBEDDING_MODEL_CONFIG)
+    return models
+
+
+def _list_supported_models(
+    worker_type: str, model_config: Dict[str, str]
+) -> List[SupportedModel]:
+    from pilot.model.adapter import get_llm_model_adapter
+    from pilot.model.parameter import ModelParameters
+    from pilot.model.loader import _get_model_real_path
+
+    ret = []
+    for model_name, model_path in model_config.items():
+        model_path = _get_model_real_path(model_name, model_path)
+        model = SupportedModel(
+            model=model_name,
+            path=model_path,
+            worker_type=worker_type,
+            path_exist=False,
+            proxy=False,
+            enabled=False,
+            params=None,
+        )
+        if "proxyllm" in model_name:
+            model.proxy = True
+        else:
+            path = Path(model_path)
+            model.path_exist = path.exists()
+        param_cls = None
+        try:
+            llm_adapter = get_llm_model_adapter(model_name, model_path)
+            param_cls = llm_adapter.model_param_class()
+            model.enabled = True
+            params = _get_parameter_descriptions(param_cls)
+            model.params = params
+        except Exception:
+            pass
+        ret.append(model)
+    return ret
