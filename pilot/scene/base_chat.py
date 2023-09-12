@@ -59,6 +59,7 @@ class BaseChat(ABC):
 
         self.history_message: List[OnceConversation] = self.memory.messages()
         self.current_message: OnceConversation = OnceConversation(self.chat_mode.value())
+        self.current_message.model_name = self.llm_model
         if chat_param["select_param"]:
             if len(self.chat_mode.param_types()) > 0:
                 self.current_message.param_type = self.chat_mode.param_types()[0]
