@@ -105,7 +105,7 @@ def _conversation_to_dic(once: OnceConversation) -> dict:
 
     return {
         "chat_mode": once.chat_mode,
-        "model_name": once.model_name if once.model_name else "proxyllm",
+        "model_name": once.model_name,
         "chat_order": once.chat_order,
         "start_date": start_str,
         "cost": once.cost if once.cost else 0,

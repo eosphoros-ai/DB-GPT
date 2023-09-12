@@ -149,6 +149,7 @@ async def dialogue_list(user_id: str = None):
         conv_uid = item.get("conv_uid")
         summary = item.get("summary")
         chat_mode = item.get("chat_mode")
+        model_name = item.get("model_name", CFG.LLM_MODEL)
 
         messages = json.loads(item.get("messages"))
         last_round = max(messages, key=lambda x: x["chat_order"])
@@ -160,6 +161,7 @@ async def dialogue_list(user_id: str = None):
             conv_uid=conv_uid,
             user_input=summary,
             chat_mode=chat_mode,
+            model_name=model_name,
             select_param=select_param,
         )
         dialogues.append(conv_vo)
@@ -259,6 +261,7 @@ def get_hist_messages(conv_uid: str):
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:
+            print(f"once:{once}")
             model_name = once.get("model_name", CFG.LLM_MODEL)
             once_message_vos = [
                 message2Vo(element, once["chat_order"], model_name) for element in once["messages"]
