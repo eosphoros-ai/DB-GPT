@@ -1,3 +1,5 @@
+from typing import Dict
+
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
@@ -12,15 +14,13 @@ class ChatWithDbAutoExecute(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, user_input, select_param: str = ""):
+    def __init__(self, chat_param: Dict):
         chat_mode = ChatScene.ChatWithDbExecute
-        self.db_name = select_param
+        self.db_name = chat_param["select_param"]
+        chat_param["chat_mode"] = chat_mode
         """ """
         super().__init__(
-            chat_mode=chat_mode,
-            chat_session_id=chat_session_id,
-            current_user_input=user_input,
-            select_param=self.db_name,
+            chat_param=chat_param,
         )
         if not self.db_name:
             raise ValueError(

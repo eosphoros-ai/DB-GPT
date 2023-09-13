@@ -1,3 +1,5 @@
+from typing import Dict
+
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
@@ -12,15 +14,11 @@ class ChatWithDbQA(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, user_input, select_param: str = ""):
+    def __init__(self, chat_param: Dict):
         """ """
-        self.db_name = select_param
-        super().__init__(
-            chat_mode=ChatScene.ChatWithDbQA,
-            chat_session_id=chat_session_id,
-            current_user_input=user_input,
-            select_param=self.db_name,
-        )
+        self.db_name = chat_param["select_param"]
+        chat_param["chat_mode"] = ChatScene.ChatWithDbQA
+        super().__init__(chat_param=chat_param)
 
         if self.db_name:
             self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)

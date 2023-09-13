@@ -1,3 +1,5 @@
+from typing import Dict
+
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
@@ -12,12 +14,11 @@ class ChatNormal(BaseChat):
 
     """Number of results to return from the query"""
 
-    def __init__(self, chat_session_id, user_input, select_param: str = None):
+    def __init__(self, chat_param: Dict):
         """ """
+        chat_param["chat_mode"] = ChatScene.ChatNormal
         super().__init__(
-            chat_mode=ChatScene.ChatNormal,
-            chat_session_id=chat_session_id,
-            current_user_input=user_input,
+            chat_param=chat_param,
         )
 
     def generate_input_values(self):

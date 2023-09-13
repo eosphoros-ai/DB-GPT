@@ -30,17 +30,20 @@ class ExcelLearning(BaseChat):
         parent_mode: Any = None,
         select_param: str = None,
         excel_reader: Any = None,
+        model_name: str = None,
     ):
         chat_mode = ChatScene.ExcelLearning
         """ """
         self.excel_file_path = select_param
         self.excel_reader = excel_reader
-        super().__init__(
-            chat_mode=chat_mode,
-            chat_session_id=chat_session_id,
-            current_user_input=user_input,
-            select_param=select_param,
-        )
+        chat_param = {
+            "chat_mode": chat_mode,
+            "chat_session_id": chat_session_id,
+            "current_user_input": user_input,
+            "select_param": select_param,
+            "model_name": model_name,
+        }
+        super().__init__(chat_param=chat_param)
         if parent_mode:
             self.current_message.chat_mode = parent_mode.value()
 

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
@@ -15,14 +15,10 @@ class ChatWithPlugin(BaseChat):
     plugins_prompt_generator: PluginPromptGenerator
     select_plugin: str = None
 
-    def __init__(self, chat_session_id, user_input, select_param: str = None):
-        self.plugin_selector = select_param
-        super().__init__(
-            chat_mode=ChatScene.ChatExecution,
-            chat_session_id=chat_session_id,
-            current_user_input=user_input,
-            select_param=self.plugin_selector,
-        )
+    def __init__(self, chat_param: Dict):
+        self.plugin_selector = chat_param.select_param
+        chat_param["chat_mode"] = ChatScene.ChatExecution
+        super().__init__(chat_param=chat_param)
         self.plugins_prompt_generator = PluginPromptGenerator()
         self.plugins_prompt_generator.command_registry = CFG.command_registry
         # 加载插件中可用命令
