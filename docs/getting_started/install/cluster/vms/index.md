@@ -1,6 +1,6 @@
-Cluster deployment
+Local cluster deployment
 ==================================
-
+(local-cluster-index)=
 ## Model cluster deployment
 
 
@@ -17,7 +17,7 @@ dbgpt start controller
 By default, the Model Controller starts on port 8000.
 
 
-### Launch Model Worker
+### Launch LLM Model Worker
 
 If you are starting `chatglm2-6b`:
 
@@ -39,6 +39,18 @@ dbgpt start worker --model_name vicuna-13b-v1.5 \
 
 Note: Be sure to use your own model name and model path.
 
+### Launch Embedding Model Worker
+
+```bash
+
+dbgpt start worker --model_name text2vec \
+--model_path /app/models/text2vec-large-chinese \
+--worker_type text2vec \
+--port 8003 \
+--controller_addr http://127.0.0.1:8000
+```
+
+Note: Be sure to use your own model name and model path.
 
 Check your model:
 
@@ -51,8 +63,12 @@ You will see the following output:
 +-----------------+------------+------------+------+---------+---------+-----------------+----------------------------+
 |    Model Name   | Model Type |    Host    | Port | Healthy | Enabled | Prompt Template |       Last Heartbeat       |
 +-----------------+------------+------------+------+---------+---------+-----------------+----------------------------+
-|   chatglm2-6b   |    llm     | 172.17.0.6 | 8001 |   True  |   True  |       None      | 2023-08-31T04:48:45.252939 |
-| vicuna-13b-v1.5 |    llm     | 172.17.0.6 | 8002 |   True  |   True  |       None      | 2023-08-31T04:48:55.136676 |
+|   chatglm2-6b   |    llm     | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.287654 |
+|  WorkerManager  |  service   | 172.17.0.2 | 8001 |   True  |   True  |                 | 2023-09-12T23:04:31.286668 |
+|  WorkerManager  |  service   | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.845617 |
+|  WorkerManager  |  service   | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.598439 |
+|     text2vec    |  text2vec  | 172.17.0.2 | 8003 |   True  |   True  |                 | 2023-09-12T23:04:29.844796 |
+| vicuna-13b-v1.5 |    llm     | 172.17.0.2 | 8002 |   True  |   True  |                 | 2023-09-12T23:04:24.597775 |
 +-----------------+------------+------------+------+---------+---------+-----------------+----------------------------+
 ```
 
@@ -69,7 +85,7 @@ MODEL_SERVER=http://127.0.0.1:8000
 #### Start the webserver
 
 ```bash
-python pilot/server/dbgpt_server.py --light
+dbgpt start webserver --light
 ```
 
 `--light`  indicates not to start the embedded model service.
@@ -77,7 +93,7 @@ python pilot/server/dbgpt_server.py --light
 Alternatively, you can prepend the command with `LLM_MODEL=chatglm2-6b` to start:
 
 ```bash
-LLM_MODEL=chatglm2-6b python pilot/server/dbgpt_server.py --light
+LLM_MODEL=chatglm2-6b dbgpt start webserver --light
 ```
 
 
@@ -101,9 +117,11 @@ Options:
   --help            Show this message and exit.
 
 Commands:
-  model  Clients that manage model serving
-  start  Start specific server.
-  stop   Start specific server.
+  install    Install dependencies, plugins, etc.
+  knowledge  Knowledge command line tool
+  model      Clients that manage model serving
+  start      Start specific server.
+  stop       Start specific server.
 ```
 
 **View the `dbgpt start` help**
@@ -146,10 +164,11 @@ Options:
   --model_name TEXT               Model name  [required]
   --model_path TEXT               Model path  [required]
   --worker_type TEXT              Worker type
-  --worker_class TEXT             Model worker class, pilot.model.worker.defau
-                                  lt_worker.DefaultModelWorker
+  --worker_class TEXT             Model worker class,
+                                  pilot.model.cluster.DefaultModelWorker
   --host TEXT                     Model worker deploy host  [default: 0.0.0.0]
-  --port INTEGER                  Model worker deploy port  [default: 8000]
+  --port INTEGER                  Model worker deploy port  [default: 8001]
+  --daemon                        Run Model Worker in background
   --limit_model_concurrency INTEGER
                                   Model concurrency limit  [default: 5]
   --standalone                    Standalone mode. If True, embedded Run
@@ -166,7 +185,7 @@ Options:
                                   (seconds)  [default: 20]
   --device TEXT                   Device to run model. If None, the device is
                                   automatically determined
-  --model_type TEXT               Model type, huggingface or llama.cpp
+  --model_type TEXT               Model type, huggingface, llama.cpp and proxy
                                   [default: huggingface]
   --prompt_template TEXT          Prompt template. If None, the prompt
                                   template is automatically determined from
@@ -190,7 +209,7 @@ Options:
   --compute_dtype TEXT            Model compute type
   --trust_remote_code             Trust remote code  [default: True]
   --verbose                       Show verbose output.
-  --help                          Show this message and exit.
+  --help                          Show this message and exit. 
 ```
 
 **View the `dbgpt model`help**
@@ -208,10 +227,13 @@ Usage: dbgpt model [OPTIONS] COMMAND [ARGS]...
 
 Options:
   --address TEXT  Address of the Model Controller to connect to. Just support
-                  light deploy model  [default: http://127.0.0.1:8000]
+                  light deploy model, If the environment variable
+                  CONTROLLER_ADDRESS is configured, read from the environment
+                  variable
   --help          Show this message and exit.
 
 Commands:
+  chat     Interact with your bot from the command line
   list     List model instances
   restart  Restart model instances
   start    Start model instances

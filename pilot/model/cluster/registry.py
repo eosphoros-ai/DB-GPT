@@ -59,6 +59,12 @@ class ModelRegistry(ABC):
         """
 
     @abstractmethod
+    def sync_get_all_instances(
+        self, model_name: str, healthy_only: bool = False
+    ) -> List[ModelInstance]:
+        """Fetch all instances of a given model. Optionally, fetch only the healthy instances."""
+
+    @abstractmethod
     async def get_all_model_instances(self) -> List[ModelInstance]:
         """
         Fetch all instances of all models
@@ -164,6 +170,11 @@ class EmbeddedModelRegistry(ModelRegistry):
     async def get_all_instances(
         self, model_name: str, healthy_only: bool = False
     ) -> List[ModelInstance]:
+        return self.sync_get_all_instances(model_name, healthy_only)
+
+    def sync_get_all_instances(
+        self, model_name: str, healthy_only: bool = False
+    ) -> List[ModelInstance]:
         instances = self.registry[model_name]
         if healthy_only:
             instances = [ins for ins in instances if ins.healthy == True]
@@ -179,7 +190,7 @@ class EmbeddedModelRegistry(ModelRegistry):
         )
         if not exist_ins:
             # register new install from heartbeat
-            self.register_instance(instance)
+            await self.register_instance(instance)
             return True
 
         ins = exist_ins[0]

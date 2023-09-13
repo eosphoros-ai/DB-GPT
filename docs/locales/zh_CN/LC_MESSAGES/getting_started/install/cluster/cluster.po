@@ -1,0 +1,42 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.6\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-09-13 10:11+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/install/cluster/cluster.rst:2
+#: ../../getting_started/install/cluster/cluster.rst:13
+#: 69804208b580447798d6946150da7bdf
+msgid "Cluster deployment"
+msgstr "集群部署"
+
+#: ../../getting_started/install/cluster/cluster.rst:4
+#: fa3e4e0ae60a45eb836bcd256baa9d91
+msgid ""
+"In order to deploy DB-GPT to multiple nodes, you can deploy a cluster. "
+"The cluster architecture diagram is as follows:"
+msgstr "为了能将 DB-GPT 部署到多个节点上，你可以部署一个集群，集群的架构图如下:"
+
+#: ../../getting_started/install/cluster/cluster.rst:11
+#: e739449099ca43cabe9883233ca7e572
+#, fuzzy
+msgid ""
+"On :ref:`Deploying on local machine <local-cluster-index>`. Local cluster"
+" deployment."
+msgstr "关于 :ref:`在本地机器上部署 <local-cluster-index>`。本地集群部署。"
+

@@ -1,14 +1,12 @@
-from typing import Callable, Any
-import httpx
 import asyncio
+from typing import Any, Callable
+
+import httpx
+from pilot.model.base import ModelInstance, WorkerApplyOutput, WorkerSupportedModel
+from pilot.model.cluster.base import *
 from pilot.model.cluster.registry import ModelRegistry
 from pilot.model.cluster.worker.manager import LocalWorkerManager, WorkerRunData, logger
-from pilot.model.cluster.base import *
-from pilot.model.base import (
-    ModelInstance,
-    WorkerApplyOutput,
-    WorkerSupportedModel,
-)
+from pilot.model.cluster.worker.remote_worker import RemoteModelWorker
 
 
 class RemoteWorkerManager(LocalWorkerManager):
@@ -16,7 +14,8 @@ class RemoteWorkerManager(LocalWorkerManager):
         super().__init__(model_registry=model_registry)
 
     async def start(self):
-        pass
+        for listener in self.start_listeners:
+            listener(self)
 
     async def stop(self):
         pass
@@ -125,15 +124,9 @@ class RemoteWorkerManager(LocalWorkerManager):
             success_handler=lambda x: True,
         )
 
-    async def get_model_instances(
-        self, worker_type: str, model_name: str, healthy_only: bool = True
+    def _build_worker_instances(
+        self, model_name: str, instances: List[ModelInstance]
     ) -> List[WorkerRunData]:
-        from pilot.model.cluster.worker.remote_worker import RemoteModelWorker
-
-        worker_key = self._worker_key(worker_type, model_name)
-        instances: List[ModelInstance] = await self.model_registry.get_all_instances(
-            worker_key, healthy_only
-        )
         worker_instances = []
         for ins in instances:
             worker = RemoteModelWorker()
@@ -150,6 +143,24 @@ class RemoteWorkerManager(LocalWorkerManager):
             )
             worker_instances.append(wr)
         return worker_instances
+
+    async def get_model_instances(
+        self, worker_type: str, model_name: str, healthy_only: bool = True
+    ) -> List[WorkerRunData]:
+        worker_key = self._worker_key(worker_type, model_name)
+        instances: List[ModelInstance] = await self.model_registry.get_all_instances(
+            worker_key, healthy_only
+        )
+        return self._build_worker_instances(model_name, instances)
+
+    def sync_get_model_instances(
+        self, worker_type: str, model_name: str, healthy_only: bool = True
+    ) -> List[WorkerRunData]:
+        worker_key = self._worker_key(worker_type, model_name)
+        instances: List[ModelInstance] = self.model_registry.sync_get_all_instances(
+            worker_key, healthy_only
+        )
+        return self._build_worker_instances(model_name, instances)
 
     async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:
         async def _remote_apply_func(worker_run_data: WorkerRunData):
