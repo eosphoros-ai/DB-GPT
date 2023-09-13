@@ -217,7 +217,9 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
 
 
 @router.post("/v1/chat/mode/params/file/load")
-async def params_load(conv_uid: str, chat_mode: str, model_name: str, doc_file: UploadFile = File(...)):
+async def params_load(
+    conv_uid: str, chat_mode: str, model_name: str, doc_file: UploadFile = File(...)
+):
     print(f"params_load: {conv_uid},{chat_mode},{model_name}")
     try:
         if doc_file:
@@ -237,7 +239,10 @@ async def params_load(conv_uid: str, chat_mode: str, model_name: str, doc_file: 
             )
             ## chat prepare
             dialogue = ConversationVo(
-                conv_uid=conv_uid, chat_mode=chat_mode, select_param=doc_file.filename, model_name=model_name
+                conv_uid=conv_uid,
+                chat_mode=chat_mode,
+                select_param=doc_file.filename,
+                model_name=model_name,
             )
             chat: BaseChat = get_chat_instance(dialogue)
             resp = await chat.prepare()
@@ -264,7 +269,8 @@ def get_hist_messages(conv_uid: str):
             print(f"once:{once}")
             model_name = once.get("model_name", CFG.LLM_MODEL)
             once_message_vos = [
-                message2Vo(element, once["chat_order"], model_name) for element in once["messages"]
+                message2Vo(element, once["chat_order"], model_name)
+                for element in once["messages"]
             ]
             message_vos.extend(once_message_vos)
     return message_vos
@@ -293,9 +299,11 @@ def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         "chat_session_id": dialogue.conv_uid,
         "current_user_input": dialogue.user_input,
         "select_param": dialogue.select_param,
-        "model_name": dialogue.model_name
+        "model_name": dialogue.model_name,
     }
-    chat: BaseChat = CHAT_FACTORY.get_implementation(dialogue.chat_mode, **{"chat_param": chat_param})
+    chat: BaseChat = CHAT_FACTORY.get_implementation(
+        dialogue.chat_mode, **{"chat_param": chat_param}
+    )
     return chat
 
 
@@ -314,7 +322,9 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
 @router.post("/v1/chat/completions")
 async def chat_completions(dialogue: ConversationVo = Body()):
     # dialogue.model_name = CFG.LLM_MODEL
-    print(f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}")
+    print(
+        f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
+    )
     chat: BaseChat = get_chat_instance(dialogue)
     # background_tasks = BackgroundTasks()
     # background_tasks.add_task(release_model_semaphore)
@@ -344,9 +354,10 @@ async def model_types():
     print(f"/controller/model/types")
     try:
         import httpx
+
         async with httpx.AsyncClient() as client:
             response = await client.get(
-               f"{CFG.MODEL_SERVER}/api/controller/models?healthy_only=true",
+                f"{CFG.MODEL_SERVER}/api/controller/models?healthy_only=true",
             )
         types = set()
         if response.status_code == 200:
@@ -387,5 +398,8 @@ async def stream_generator(chat):
 
 def message2Vo(message: dict, order, model_name) -> MessageVo:
     return MessageVo(
-        role=message["type"], context=message["data"]["content"], order=order, model_name=model_name
+        role=message["type"],
+        context=message["data"]["content"],
+        order=order,
+        model_name=model_name,
     )

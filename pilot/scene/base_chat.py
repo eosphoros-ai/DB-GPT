@@ -32,13 +32,13 @@ class BaseChat(ABC):
 
         arbitrary_types_allowed = True
 
-    def __init__(
-        self, chat_param: Dict
-    ):
+    def __init__(self, chat_param: Dict):
         self.chat_session_id = chat_param["chat_session_id"]
         self.chat_mode = chat_param["chat_mode"]
         self.current_user_input: str = chat_param["current_user_input"]
-        self.llm_model = chat_param["model_name"] if chat_param["model_name"] else CFG.LLM_MODEL
+        self.llm_model = (
+            chat_param["model_name"] if chat_param["model_name"] else CFG.LLM_MODEL
+        )
         self.llm_echo = False
 
         ### load prompt template
@@ -58,7 +58,9 @@ class BaseChat(ABC):
         self.memory = DuckdbHistoryMemory(chat_param["chat_session_id"])
 
         self.history_message: List[OnceConversation] = self.memory.messages()
-        self.current_message: OnceConversation = OnceConversation(self.chat_mode.value())
+        self.current_message: OnceConversation = OnceConversation(
+            self.chat_mode.value()
+        )
         self.current_message.model_name = self.llm_model
         if chat_param["select_param"]:
             if len(self.chat_mode.param_types()) > 0:
