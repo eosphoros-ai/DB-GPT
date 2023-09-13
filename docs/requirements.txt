@@ -1,7 +1,7 @@
 autodoc_pydantic
 myst_parser
-nbsphinx==
-sphinx==4.5.0
+nbsphinx
+sphinx
 recommonmark
 sphinx_intl
 sphinx-autobuild
