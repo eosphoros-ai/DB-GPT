@@ -72,6 +72,7 @@ class LocalWorkerManager(WorkerManager):
         self.model_registry = model_registry
         self.host = host
         self.port = port
+        self.start_listeners = []
 
         self.run_data = WorkerRunData(
             host=self.host,
@@ -105,6 +106,8 @@ class LocalWorkerManager(WorkerManager):
             asyncio.create_task(
                 _async_heartbeat_sender(self.run_data, 20, self.send_heartbeat_func)
             )
+        for listener in self.start_listeners:
+            listener(self)
 
     async def stop(self):
         if not self.run_data.stop_event.is_set():
@@ -115,6 +118,9 @@ class LocalWorkerManager(WorkerManager):
             if self.deregister_func:
                 stop_tasks.append(self.deregister_func(self.run_data))
             await asyncio.gather(*stop_tasks)
+
+    def after_start(self, listener: Callable[["WorkerManager"], None]):
+        self.start_listeners.append(listener)
 
     def add_worker(
         self,
@@ -137,14 +143,7 @@ class LocalWorkerManager(WorkerManager):
         worker_key = self._worker_key(
             worker_params.worker_type, worker_params.model_name
         )
-        host = worker_params.host
-        port = worker_params.port
 
-        instances = self.workers.get(worker_key)
-        if not instances:
-            instances = []
-            self.workers[worker_key] = instances
-            logger.info(f"Init empty instances list for {worker_key}")
         # Load model params from persist storage
         model_params = worker.parse_parameters(command_args=command_args)
 
@@ -159,14 +158,15 @@ class LocalWorkerManager(WorkerManager):
             semaphore=asyncio.Semaphore(worker_params.limit_model_concurrency),
             command_args=command_args,
         )
-        exist_instances = [
-            ins for ins in instances if ins.host == host and ins.port == port
-        ]
-        if not exist_instances:
-            instances.append(worker_run_data)
+        instances = self.workers.get(worker_key)
+        if not instances:
+            instances = [worker_run_data]
+            self.workers[worker_key] = instances
+            logger.info(f"Init empty instances list for {worker_key}")
             return True
         else:
             # TODO Update worker
+            logger.warn(f"Instance {worker_key} exist")
             return False
 
     async def model_startup(self, startup_req: WorkerStartupRequest) -> bool:
@@ -223,15 +223,17 @@ class LocalWorkerManager(WorkerManager):
     async def get_model_instances(
         self, worker_type: str, model_name: str, healthy_only: bool = True
     ) -> List[WorkerRunData]:
+        return self.sync_get_model_instances(worker_type, model_name, healthy_only)
+
+    def sync_get_model_instances(
+        self, worker_type: str, model_name: str, healthy_only: bool = True
+    ) -> List[WorkerRunData]:
         worker_key = self._worker_key(worker_type, model_name)
         return self.workers.get(worker_key)
 
-    async def select_one_instance(
-        self, worker_type: str, model_name: str, healthy_only: bool = True
+    def _simple_select(
+        self, worker_type: str, model_name: str, worker_instances: List[WorkerRunData]
     ) -> WorkerRunData:
-        worker_instances = await self.get_model_instances(
-            worker_type, model_name, healthy_only
-        )
         if not worker_instances:
             raise Exception(
                 f"Cound not found worker instances for model name {model_name} and worker type {worker_type}"
@@ -239,11 +241,33 @@ class LocalWorkerManager(WorkerManager):
         worker_run_data = random.choice(worker_instances)
         return worker_run_data
 
+    async def select_one_instance(
+        self, worker_type: str, model_name: str, healthy_only: bool = True
+    ) -> WorkerRunData:
+        worker_instances = await self.get_model_instances(
+            worker_type, model_name, healthy_only
+        )
+        return self._simple_select(worker_type, model_name, worker_instances)
+
+    def sync_select_one_instance(
+        self, worker_type: str, model_name: str, healthy_only: bool = True
+    ) -> WorkerRunData:
+        worker_instances = self.sync_get_model_instances(
+            worker_type, model_name, healthy_only
+        )
+        return self._simple_select(worker_type, model_name, worker_instances)
+
     async def _get_model(self, params: Dict, worker_type: str = "llm") -> WorkerRunData:
         model = params.get("model")
         if not model:
             raise Exception("Model name count not be empty")
         return await self.select_one_instance(worker_type, model, healthy_only=True)
+
+    def _sync_get_model(self, params: Dict, worker_type: str = "llm") -> WorkerRunData:
+        model = params.get("model")
+        if not model:
+            raise Exception("Model name count not be empty")
+        return self.sync_select_one_instance(worker_type, model, healthy_only=True)
 
     async def generate_stream(
         self, params: Dict, async_wrapper=None, **kwargs
@@ -303,6 +327,10 @@ class LocalWorkerManager(WorkerManager):
                 return await self.run_blocking_func(
                     worker_run_data.worker.embeddings, params
                 )
+
+    def sync_embeddings(self, params: Dict) -> List[List[float]]:
+        worker_run_data = self._sync_get_model(params, worker_type="text2vec")
+        return worker_run_data.worker.embeddings(params)
 
     async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:
         apply_func: Callable[[WorkerApplyRequest], Awaitable[str]] = None
@@ -458,6 +486,10 @@ class WorkerManagerAdapter(WorkerManager):
     async def stop(self):
         return await self.worker_manager.stop()
 
+    def after_start(self, listener: Callable[["WorkerManager"], None]):
+        if listener is not None:
+            self.worker_manager.after_start(listener)
+
     async def supported_models(self) -> List[WorkerSupportedModel]:
         return await self.worker_manager.supported_models()
 
@@ -474,10 +506,24 @@ class WorkerManagerAdapter(WorkerManager):
             worker_type, model_name, healthy_only
         )
 
+    def sync_get_model_instances(
+        self, worker_type: str, model_name: str, healthy_only: bool = True
+    ) -> List[WorkerRunData]:
+        return self.worker_manager.sync_get_model_instances(
+            worker_type, model_name, healthy_only
+        )
+
     async def select_one_instance(
         self, worker_type: str, model_name: str, healthy_only: bool = True
     ) -> WorkerRunData:
         return await self.worker_manager.select_one_instance(
+            worker_type, model_name, healthy_only
+        )
+
+    def sync_select_one_instance(
+        self, worker_type: str, model_name: str, healthy_only: bool = True
+    ) -> WorkerRunData:
+        return self.worker_manager.sync_select_one_instance(
             worker_type, model_name, healthy_only
         )
 
@@ -490,6 +536,9 @@ class WorkerManagerAdapter(WorkerManager):
 
     async def embeddings(self, params: Dict) -> List[List[float]]:
         return await self.worker_manager.embeddings(params)
+
+    def sync_embeddings(self, params: Dict) -> List[List[float]]:
+        return self.worker_manager.sync_embeddings(params)
 
     async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:
         return await self.worker_manager.worker_apply(apply_req)
@@ -586,11 +635,11 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
 
     @app.on_event("startup")
     async def startup_event():
-        asyncio.create_task(worker_manager.worker_manager.start())
+        asyncio.create_task(worker_manager.start())
 
     @app.on_event("shutdown")
     async def startup_event():
-        await worker_manager.worker_manager.stop()
+        await worker_manager.stop()
 
     return app
 
@@ -666,27 +715,58 @@ def _create_local_model_manager(
 
 
 def _build_worker(worker_params: ModelWorkerParameters):
-    if worker_params.worker_class:
+    worker_class = worker_params.worker_class
+    if worker_class:
         from pilot.utils.module_utils import import_from_checked_string
 
-        worker_cls = import_from_checked_string(worker_params.worker_class, ModelWorker)
-        logger.info(
-            f"Import worker class from {worker_params.worker_class} successfully"
-        )
-        worker: ModelWorker = worker_cls()
+        worker_cls = import_from_checked_string(worker_class, ModelWorker)
+        logger.info(f"Import worker class from {worker_class} successfully")
     else:
-        from pilot.model.cluster.worker.default_worker import DefaultModelWorker
+        if (
+            worker_params.worker_type is None
+            or worker_params.worker_type == WorkerType.LLM
+        ):
+            from pilot.model.cluster.worker.default_worker import DefaultModelWorker
 
-        worker = DefaultModelWorker()
-    return worker
+            worker_cls = DefaultModelWorker
+        elif worker_params.worker_type == WorkerType.TEXT2VEC:
+            from pilot.model.cluster.worker.embedding_worker import (
+                EmbeddingsModelWorker,
+            )
+
+            worker_cls = EmbeddingsModelWorker
+        else:
+            raise Exception("Unsupported worker type: {worker_params.worker_type}")
+
+    return worker_cls()
 
 
 def _start_local_worker(
     worker_manager: WorkerManagerAdapter, worker_params: ModelWorkerParameters
 ):
     worker = _build_worker(worker_params)
-    worker_manager.worker_manager = _create_local_model_manager(worker_params)
+    if not worker_manager.worker_manager:
+        worker_manager.worker_manager = _create_local_model_manager(worker_params)
     worker_manager.worker_manager.add_worker(worker, worker_params)
+
+
+def _start_local_embedding_worker(
+    worker_manager: WorkerManagerAdapter,
+    embedding_model_name: str = None,
+    embedding_model_path: str = None,
+):
+    if not embedding_model_name or not embedding_model_path:
+        return
+    embedding_worker_params = ModelWorkerParameters(
+        model_name=embedding_model_name,
+        model_path=embedding_model_path,
+        worker_type=WorkerType.TEXT2VEC,
+        worker_class="pilot.model.cluster.worker.embedding_worker.EmbeddingsModelWorker",
+    )
+    logger.info(
+        f"Start local embedding worker with embedding parameters\n{embedding_worker_params}"
+    )
+    _start_local_worker(worker_manager, embedding_worker_params)
 
 
 def initialize_worker_manager_in_client(
@@ -697,6 +777,9 @@ def initialize_worker_manager_in_client(
     run_locally: bool = True,
     controller_addr: str = None,
     local_port: int = 5000,
+    embedding_model_name: str = None,
+    embedding_model_path: str = None,
+    start_listener: Callable[["WorkerManager"], None] = None,
 ):
     """Initialize WorkerManager in client.
     If run_locally is True:
@@ -728,6 +811,10 @@ def initialize_worker_manager_in_client(
         logger.info(f"Worker params: {worker_params}")
         _setup_fastapi(worker_params, app)
         _start_local_worker(worker_manager, worker_params)
+        worker_manager.after_start(start_listener)
+        _start_local_embedding_worker(
+            worker_manager, embedding_model_name, embedding_model_path
+        )
     else:
         from pilot.model.cluster.controller.controller import (
             ModelRegistryClient,
@@ -741,9 +828,12 @@ def initialize_worker_manager_in_client(
         logger.info(f"Worker params: {worker_params}")
         client = ModelRegistryClient(worker_params.controller_addr)
         worker_manager.worker_manager = RemoteWorkerManager(client)
+        worker_manager.after_start(start_listener)
         initialize_controller(
             app=app, remote_controller_addr=worker_params.controller_addr
         )
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(worker_manager.start())
 
     if include_router and app:
         # mount WorkerManager router
@@ -757,6 +847,8 @@ def run_worker_manager(
     model_path: str = None,
     standalone: bool = False,
     port: int = None,
+    embedding_model_name: str = None,
+    embedding_model_path: str = None,
 ):
     global worker_manager
 
@@ -765,15 +857,22 @@ def run_worker_manager(
     )
 
     embedded_mod = True
+    logger.info(f"Worker params: {worker_params}")
     if not app:
         # Run worker manager independently
         embedded_mod = False
         app = _setup_fastapi(worker_params)
         _start_local_worker(worker_manager, worker_params)
+        _start_local_embedding_worker(
+            worker_manager, embedding_model_name, embedding_model_path
+        )
     else:
         _start_local_worker(worker_manager, worker_params)
+        _start_local_embedding_worker(
+            worker_manager, embedding_model_name, embedding_model_path
+        )
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(worker_manager.worker_manager.start())
+        loop.run_until_complete(worker_manager.start())
 
     if include_router:
         app.include_router(router, prefix="/api")

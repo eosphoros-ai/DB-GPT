@@ -87,7 +87,15 @@ class RemoteModelWorker(ModelWorker):
 
     def embeddings(self, params: Dict) -> List[List[float]]:
         """Get embeddings for input"""
-        raise NotImplementedError
+        import requests
+
+        response = requests.post(
+            self.worker_addr + "/embeddings",
+            headers=self.headers,
+            json=params,
+            timeout=self.timeout,
+        )
+        return response.json()
 
     async def async_embeddings(self, params: Dict) -> List[List[float]]:
         """Asynchronous get embeddings for input"""

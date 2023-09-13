@@ -9,6 +9,7 @@ DB-GPT product is a Web application that you can chat database, chat knowledge, 
 - docker
 - docker_compose
 - environment
+- cluster deployment
 - deploy_faq
 
 .. toctree::
@@ -20,6 +21,7 @@ DB-GPT product is a Web application that you can chat database, chat knowledge, 
    ./install/deploy/deploy.md
    ./install/docker/docker.md
    ./install/docker_compose/docker_compose.md
+   ./install/cluster/cluster.rst
    ./install/llm/llm.rst
    ./install/environment/environment.md
    ./install/faq/deploy_faq.md

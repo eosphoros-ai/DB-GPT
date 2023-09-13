@@ -35,7 +35,7 @@ class ChatWithDbAutoExecute(BaseChat):
             from pilot.summary.db_summary_client import DBSummaryClient
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
-        client = DBSummaryClient()
+        client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
         try:
             table_infos = client.get_db_summary(
                 dbname=self.db_name,

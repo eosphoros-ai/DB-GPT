@@ -5,6 +5,9 @@ from pilot.model.cluster.base import (
     WorkerParameterRequest,
     WorkerStartupRequest,
 )
+from pilot.model.cluster.worker_base import ModelWorker
+from pilot.model.cluster.worker.default_worker import DefaultModelWorker
+
 from pilot.model.cluster.worker.manager import (
     initialize_worker_manager_in_client,
     run_worker_manager,
@@ -23,11 +26,15 @@ __all__ = [
     "EmbeddingsRequest",
     "PromptRequest",
     "WorkerApplyRequest",
-    "WorkerParameterRequest"
-    "WorkerStartupRequest"
-    "worker_manager"
+    "WorkerParameterRequest",
+    "WorkerStartupRequest",
+    "ModelWorker",
+    "DefaultModelWorker",
+    "worker_manager",
     "run_worker_manager",
     "initialize_worker_manager_in_client",
     "ModelRegistry",
-    "ModelRegistryClient" "RemoteWorkerManager" "run_model_controller",
+    "ModelRegistryClient",
+    "RemoteWorkerManager",
+    "run_model_controller",
 ]

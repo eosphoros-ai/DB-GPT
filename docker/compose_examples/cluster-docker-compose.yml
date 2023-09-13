@@ -4,9 +4,10 @@ services:
   controller:
     image: eosphorosai/dbgpt:latest
     command: dbgpt start controller
+    restart: unless-stopped
     networks:
       - dbgptnet
-  worker:
+  llm-worker:
     image: eosphorosai/dbgpt:latest
     command: dbgpt start worker --model_name vicuna-13b-v1.5 --model_path /app/models/vicuna-13b-v1.5 --port 8001 --controller_addr http://controller:8000
     environment:
@@ -17,6 +18,27 @@ services:
       - /data:/data
       # Please modify it to your own model directory
       - /data/models:/app/models
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+  embedding-worker:
+    image: eosphorosai/dbgpt:latest
+    command: dbgpt start worker --model_name text2vec --worker_type text2vec --model_path /app/models/text2vec-large-chinese --port 8002 --controller_addr http://controller:8000
+    environment:
+      - DBGPT_LOG_LEVEL=DEBUG
+    depends_on:
+      - controller
+    volumes:
+      - /data:/data
+      # Please modify it to your own model directory
+      - /data/models:/app/models
+    restart: unless-stopped
     networks:
       - dbgptnet
     deploy:
@@ -37,7 +59,8 @@ services:
       - MODEL_SERVER=http://controller:8000
     depends_on:
       - controller
-      - worker
+      - llm-worker
+      - embedding-worker
     volumes:
       - /data:/data
       # Please modify it to your own model directory
