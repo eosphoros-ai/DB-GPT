@@ -122,7 +122,9 @@ def _get_ports_by_cmdline_part(service_keys: List[str]) -> List[int]:
     for process in psutil.process_iter(attrs=["pid", "name", "connections", "cmdline"]):
         try:
             # Convert the cmdline list to a single string for easier checking
-            cmdline = " ".join(process.info["cmdline"])
+            cmdline = ""
+            if process.info.get("cmdline"):
+                cmdline = " ".join(process.info["cmdline"])
 
             # Check if all the service keys are present in the cmdline
             if all(fragment in cmdline for fragment in service_keys):

@@ -22,25 +22,22 @@ class ChatExcel(BaseChat):
     chat_scene: str = ChatScene.ChatExcel.value()
     chat_retention_rounds = 1
 
-    def __init__(self, chat_session_id, user_input, select_param: str = ""):
+    def __init__(self, chat_param: Dict):
         chat_mode = ChatScene.ChatExcel
 
-        self.select_param = select_param
-        if has_path(select_param):
-            self.excel_reader = ExcelReader(select_param)
+        self.select_param = chat_param["select_param"]
+        self.model_name = chat_param["model_name"]
+        chat_param["chat_mode"] = ChatScene.ChatExcel
+        if has_path(self.select_param):
+            self.excel_reader = ExcelReader(self.select_param)
         else:
             self.excel_reader = ExcelReader(
                 os.path.join(
-                    KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode.value(), select_param
+                    KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode.value(), self.select_param
                 )
             )
 
-        super().__init__(
-            chat_mode=chat_mode,
-            chat_session_id=chat_session_id,
-            current_user_input=user_input,
-            select_param=select_param,
-        )
+        super().__init__(chat_param=chat_param)
 
     def _generate_command_string(self, command: Dict[str, Any]) -> str:
         """
@@ -85,6 +82,7 @@ class ChatExcel(BaseChat):
             "parent_mode": self.chat_mode,
             "select_param": self.excel_reader.excel_file_name,
             "excel_reader": self.excel_reader,
+            "model_name": self.model_name,
         }
         learn_chat = ExcelLearning(**chat_param)
         result = await learn_chat.nostream_call()

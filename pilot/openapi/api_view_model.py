@@ -54,6 +54,10 @@ class ConversationVo(BaseModel):
     chat scene select param 
     """
     select_param: str = None
+    """
+    llm model name
+    """
+    model_name: str = None
 
 
 class MessageVo(BaseModel):
@@ -74,3 +78,8 @@ class MessageVo(BaseModel):
     time the current message was sent 
     """
     time_stamp: Any = None
+
+    """
+    model_name
+    """
+    model_name: str
