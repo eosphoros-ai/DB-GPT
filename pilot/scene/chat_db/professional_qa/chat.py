@@ -41,7 +41,7 @@ class ChatWithDbQA(BaseChat):
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
         if self.db_name:
-            client = DBSummaryClient()
+            client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
             try:
                 table_infos = client.get_db_summary(
                     dbname=self.db_name, query=self.current_user_input, topk=self.top_k

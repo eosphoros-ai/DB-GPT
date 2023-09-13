@@ -111,7 +111,7 @@ async def db_connect_delete(db_name: str = None):
 
 async def async_db_summary_embedding(db_name, db_type):
     # 在这里执行需要异步运行的代码
-    db_summary_client = DBSummaryClient()
+    db_summary_client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
     db_summary_client.db_summary_embedding(db_name, db_type)
 
 

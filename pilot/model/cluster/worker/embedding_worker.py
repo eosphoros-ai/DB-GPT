@@ -24,7 +24,7 @@ class EmbeddingsModelWorker(ModelWorker):
                 "Could not import langchain.embeddings.HuggingFaceEmbeddings python package. "
                 "Please install it with `pip install langchain`."
             ) from exc
-        self.embeddings: Embeddings = None
+        self._embeddings_impl: Embeddings = None
         self._model_params = None
 
     def load_worker(self, model_name: str, model_path: str, **kwargs) -> None:
@@ -75,16 +75,16 @@ class EmbeddingsModelWorker(ModelWorker):
 
         kwargs = model_params.build_kwargs(model_name=model_params.model_path)
         logger.info(f"Start HuggingFaceEmbeddings with kwargs: {kwargs}")
-        self.embeddings = HuggingFaceEmbeddings(**kwargs)
+        self._embeddings_impl = HuggingFaceEmbeddings(**kwargs)
 
     def __del__(self):
         self.stop()
 
     def stop(self) -> None:
-        if not self.embeddings:
+        if not self._embeddings_impl:
             return
-        del self.embeddings
-        self.embeddings = None
+        del self._embeddings_impl
+        self._embeddings_impl = None
         _clear_torch_cache(self._model_params.device)
 
     def generate_stream(self, params: Dict):
@@ -96,5 +96,7 @@ class EmbeddingsModelWorker(ModelWorker):
         raise NotImplementedError("Not supported generate for embeddings model")
 
     def embeddings(self, params: Dict) -> List[List[float]]:
+        model = params.get("model")
+        logger.info(f"Receive embeddings request, model: {model}")
         input: List[str] = params["input"]
-        return self.embeddings.embed_documents(input)
+        return self._embeddings_impl.embed_documents(input)

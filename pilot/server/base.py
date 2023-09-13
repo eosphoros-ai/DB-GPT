@@ -2,10 +2,11 @@ import signal
 import os
 import threading
 import sys
-from typing import Optional
+from typing import Optional, Any
 from dataclasses import dataclass, field
 
 from pilot.configs.config import Config
+from pilot.componet import SystemApp
 from pilot.utils.parameter_utils import BaseParameters
 
 
@@ -18,30 +19,28 @@ def signal_handler(sig, frame):
     os._exit(0)
 
 
-def async_db_summery():
+def async_db_summery(system_app: SystemApp):
     from pilot.summary.db_summary_client import DBSummaryClient
 
-    client = DBSummaryClient()
+    client = DBSummaryClient(system_app=system_app)
     thread = threading.Thread(target=client.init_db_summary)
     thread.start()
 
 
-def server_init(args):
+def server_init(args, system_app: SystemApp):
     from pilot.commands.command_mange import CommandRegistry
-    from pilot.connections.manages.connection_manager import ConnectManager
+
     from pilot.common.plugins import scan_plugins
 
     # logger.info(f"args: {args}")
 
     # init config
     cfg = Config()
-    # init connect manage
-    conn_manage = ConnectManager()
-    cfg.LOCAL_DB_MANAGE = conn_manage
+    cfg.SYSTEM_APP = system_app
 
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
-    async_db_summery()
+
     cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
 
     # Loader plugins and commands
@@ -68,6 +67,22 @@ def server_init(args):
     for command in command_disply_commands:
         command_disply_registry.import_commands(command)
     cfg.command_disply = command_disply_registry
+
+
+def _create_model_start_listener(system_app: SystemApp):
+    from pilot.connections.manages.connection_manager import ConnectManager
+    from pilot.model.cluster import worker_manager
+
+    cfg = Config()
+
+    def startup_event(wh):
+        # init connect manage
+        print("begin run _add_app_startup_event")
+        conn_manage = ConnectManager(system_app)
+        cfg.LOCAL_DB_MANAGE = conn_manage
+        async_db_summery(system_app)
+
+    return startup_event
 
 
 @dataclass

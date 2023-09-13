@@ -8,7 +8,7 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 sys.path.append(ROOT_PATH)
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import LLM_MODEL_CONFIG
+from pilot.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG
 from pilot.model.cluster import run_worker_manager
 
 CFG = Config()
@@ -21,4 +21,6 @@ if __name__ == "__main__":
         model_path=model_path,
         standalone=True,
         port=CFG.MODEL_PORT,
+        embedding_model_name=CFG.EMBEDDING_MODEL,
+        embedding_model_path=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
     )
