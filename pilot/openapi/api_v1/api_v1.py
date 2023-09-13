@@ -321,7 +321,6 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
 
 @router.post("/v1/chat/completions")
 async def chat_completions(dialogue: ConversationVo = Body()):
-    # dialogue.model_name = CFG.LLM_MODEL
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
@@ -350,14 +349,15 @@ async def chat_completions(dialogue: ConversationVo = Body()):
 
 
 @router.get("/v1/model/types")
-async def model_types():
+async def model_types(request: Request):
     print(f"/controller/model/types")
     try:
         import httpx
 
         async with httpx.AsyncClient() as client:
+            base_url = request.base_url
             response = await client.get(
-                f"{CFG.MODEL_SERVER}/api/controller/models?healthy_only=true",
+                f"{base_url}api/controller/models?healthy_only=true",
             )
         types = set()
         if response.status_code == 200:
