@@ -23,6 +23,7 @@ class ChatKnowledge(BaseChat):
     def __init__(self, chat_session_id, user_input, select_param: str = None):
         """ """
         from pilot.embedding_engine.embedding_engine import EmbeddingEngine
+        from pilot.embedding_engine.embedding_factory import EmbeddingFactory
 
         self.knowledge_space = select_param
         super().__init__(
@@ -47,9 +48,13 @@ class ChatKnowledge(BaseChat):
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
+        embedding_factory = CFG.SYSTEM_APP.get_componet(
+            "embedding_factory", EmbeddingFactory
+        )
         self.knowledge_embedding_client = EmbeddingEngine(
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
             vector_store_config=vector_store_config,
+            embedding_factory=embedding_factory,
         )
 
     def generate_input_values(self):

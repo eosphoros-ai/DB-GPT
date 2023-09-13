@@ -44,7 +44,11 @@ class KnownLedge2Vector:
     def __init__(self, model_name=None) -> None:
         if not model_name:
             # use default embedding model
-            self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
+            from pilot.embedding_engine.embedding_factory import DefaultEmbeddingFactory
+
+            self.embeddings = DefaultEmbeddingFactory().create(
+                model_name=self.model_name
+            )
 
     def init_vector_store(self):
         persist_dir = os.path.join(VECTORE_PATH, ".vectordb")

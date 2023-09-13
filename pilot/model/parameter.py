@@ -46,9 +46,7 @@ class ModelWorkerParameters(BaseModelParameters):
     )
     worker_class: Optional[str] = field(
         default=None,
-        metadata={
-            "help": "Model worker class, pilot.model.worker.default_worker.DefaultModelWorker"
-        },
+        metadata={"help": "Model worker class, pilot.model.cluster.DefaultModelWorker"},
     )
     host: Optional[str] = field(
         default="0.0.0.0", metadata={"help": "Model worker deploy host"}

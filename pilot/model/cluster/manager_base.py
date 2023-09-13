@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Iterator
+from typing import List, Optional, Dict, Iterator, Callable
 from abc import ABC, abstractmethod
 from datetime import datetime
 from concurrent.futures import Future
@@ -36,13 +36,29 @@ class WorkerManager(ABC):
         """Stop worker manager"""
 
     @abstractmethod
+    def after_start(self, listener: Callable[["WorkerManager"], None]):
+        """Add a listener after WorkerManager startup"""
+
+    @abstractmethod
     async def get_model_instances(
+        self, worker_type: str, model_name: str, healthy_only: bool = True
+    ) -> List[WorkerRunData]:
+        """Asynchronous get model instances by worker type and model name"""
+
+    @abstractmethod
+    def sync_get_model_instances(
         self, worker_type: str, model_name: str, healthy_only: bool = True
     ) -> List[WorkerRunData]:
         """Get model instances by worker type and model name"""
 
     @abstractmethod
     async def select_one_instance(
+        self, worker_type: str, model_name: str, healthy_only: bool = True
+    ) -> WorkerRunData:
+        """Asynchronous select one instance"""
+
+    @abstractmethod
+    def sync_select_one_instance(
         self, worker_type: str, model_name: str, healthy_only: bool = True
     ) -> WorkerRunData:
         """Select one instance"""
@@ -69,7 +85,15 @@ class WorkerManager(ABC):
 
     @abstractmethod
     async def embeddings(self, params: Dict) -> List[List[float]]:
-        """Embed input"""
+        """Asynchronous embed input"""
+
+    @abstractmethod
+    def sync_embeddings(self, params: Dict) -> List[List[float]]:
+        """Embed input
+
+        This function may be passed to a third-party system call for synchronous calls.
+        We must provide a synchronous version.
+        """
 
     @abstractmethod
     async def worker_apply(self, apply_req: WorkerApplyRequest) -> WorkerApplyOutput:

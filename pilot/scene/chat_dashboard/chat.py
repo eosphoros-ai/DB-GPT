@@ -61,7 +61,7 @@ class ChatDashboard(BaseChat):
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
 
-        client = DBSummaryClient()
+        client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
         try:
             table_infos = client.get_similar_tables(
                 dbname=self.db_name, query=self.current_user_input, topk=self.top_k
