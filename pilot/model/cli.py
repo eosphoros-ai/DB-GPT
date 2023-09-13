@@ -167,7 +167,6 @@ def stop(model_name: str, model_type: str, host: str, port: int):
 
 
 def _remote_model_dynamic_factory() -> Callable[[None], List[Type]]:
-    from pilot.model.adapter import _dynamic_model_parser
     from pilot.utils.parameter_utils import _SimpleArgParser
     from pilot.model.cluster import RemoteWorkerManager
     from pilot.model.parameter import WorkerType

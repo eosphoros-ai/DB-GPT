@@ -4,6 +4,7 @@ import asyncio
 from pilot.configs.config import Config
 from pilot.connections.manages.connect_storage_duckdb import DuckdbConnectConfig
 from pilot.common.schema import DBType
+from pilot.componet import SystemApp
 from pilot.connections.rdbms.conn_mysql import MySQLConnect
 from pilot.connections.base import BaseConnect
 
@@ -46,9 +47,9 @@ class ConnectManager:
             raise ValueError("Unsupport Db Type！" + db_type)
         return result
 
-    def __init__(self):
+    def __init__(self, system_app: SystemApp):
         self.storage = DuckdbConnectConfig()
-        self.db_summary_client = DBSummaryClient()
+        self.db_summary_client = DBSummaryClient(system_app)
         self.__load_config_db()
 
     def __load_config_db(self):

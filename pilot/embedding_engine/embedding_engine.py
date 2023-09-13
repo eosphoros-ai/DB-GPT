@@ -1,9 +1,12 @@
 from typing import Optional
 
 from chromadb.errors import NotEnoughElementsException
-from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import TextSplitter
 
+from pilot.embedding_engine.embedding_factory import (
+    EmbeddingFactory,
+    DefaultEmbeddingFactory,
+)
 from pilot.embedding_engine.knowledge_type import get_knowledge_embedding, KnowledgeType
 from pilot.vector_store.connector import VectorStoreConnector
 
@@ -24,13 +27,16 @@ class EmbeddingEngine:
         knowledge_source: Optional[str] = None,
         source_reader: Optional = None,
         text_splitter: Optional[TextSplitter] = None,
+        embedding_factory: EmbeddingFactory = None,
     ):
         """Initialize with knowledge embedding client, model_name, vector_store_config, knowledge_type, knowledge_source"""
         self.knowledge_source = knowledge_source
         self.model_name = model_name
         self.vector_store_config = vector_store_config
         self.knowledge_type = knowledge_type
-        self.embeddings = HuggingFaceEmbeddings(model_name=self.model_name)
+        if not embedding_factory:
+            embedding_factory = DefaultEmbeddingFactory()
+        self.embeddings = embedding_factory.create(model_name=self.model_name)
         self.vector_store_config["embeddings"] = self.embeddings
         self.source_reader = source_reader
         self.text_splitter = text_splitter
