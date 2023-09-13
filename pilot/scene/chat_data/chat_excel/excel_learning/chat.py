@@ -43,9 +43,7 @@ class ExcelLearning(BaseChat):
             "select_param": select_param,
             "model_name": model_name,
         }
-        super().__init__(
-            chat_param=chat_param
-        )
+        super().__init__(chat_param=chat_param)
         if parent_mode:
             self.current_message.chat_mode = parent_mode.value()
 

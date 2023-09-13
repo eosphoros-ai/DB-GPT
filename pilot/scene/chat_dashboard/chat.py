@@ -21,16 +21,11 @@ class ChatDashboard(BaseChat):
     report_name: str
     """Number of results to return from the query"""
 
-    def __init__(
-        self,
-        chat_param: Dict
-    ):
+    def __init__(self, chat_param: Dict):
         """ """
         self.db_name = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatDashboard
-        super().__init__(
-            chat_param=chat_param
-        )
+        super().__init__(chat_param=chat_param)
         if not self.db_name:
             raise ValueError(f"{ChatScene.ChatDashboard.value} mode should choose db!")
         self.db_name = self.db_name

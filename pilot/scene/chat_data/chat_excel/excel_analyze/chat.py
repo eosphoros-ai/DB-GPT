@@ -37,9 +37,7 @@ class ChatExcel(BaseChat):
                 )
             )
 
-        super().__init__(
-            chat_param=chat_param
-        )
+        super().__init__(chat_param=chat_param)
 
     def _generate_command_string(self, command: Dict[str, Any]) -> str:
         """

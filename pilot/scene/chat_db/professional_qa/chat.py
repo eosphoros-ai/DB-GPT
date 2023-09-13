@@ -18,9 +18,7 @@ class ChatWithDbQA(BaseChat):
         """ """
         self.db_name = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatWithDbQA
-        super().__init__(
-            chat_param=chat_param
-        )
+        super().__init__(chat_param=chat_param)
 
         if self.db_name:
             self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
