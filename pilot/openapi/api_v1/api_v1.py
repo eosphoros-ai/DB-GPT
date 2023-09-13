@@ -24,6 +24,7 @@ from pilot.openapi.api_view_model import (
     MessageVo,
     ChatSceneVo,
 )
+from litellm import BudgetManager
 from pilot.connections.db_conn_info import DBConfig, DbTypeInfo
 from pilot.configs.config import Config
 from pilot.server.knowledge.service import KnowledgeService
@@ -45,6 +46,10 @@ CFG = Config()
 CHAT_FACTORY = ChatFactory()
 logger = build_logger("api_v1", LOGDIR + "api_v1.log")
 knowledge_service = KnowledgeService()
+budget_manager = BudgetManager(project_name="db-gpt")
+user = "1234"
+# create a budget for user
+budget_manager.create_budget(total_budget=100, user=user)
 
 model_semaphore = None
 global_counter = 0
@@ -324,7 +329,10 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
-    chat: BaseChat = get_chat_instance(dialogue)
+    if budget_manager.get_current_cost(user=user) < budget_manager.get_total_budget(user):
+        chat: BaseChat = get_chat_instance(dialogue)
+    else:
+        raise Exception("User out of budget")
     # background_tasks = BackgroundTasks()
     # background_tasks.add_task(release_model_semaphore)
     headers = {
@@ -333,6 +341,7 @@ async def chat_completions(dialogue: ConversationVo = Body()):
         "Connection": "keep-alive",
         "Transfer-Encoding": "chunked",
     }
+    budget_manager.update_cost(completion_obj=chat, user=user)
 
     if not chat.prompt_template.stream_out:
         return StreamingResponse(
