@@ -7,9 +7,15 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 sys.path.append(ROOT_PATH)
 import signal
 from pilot.configs.config import Config
-from pilot.configs.model_config import LLM_MODEL_CONFIG
+from pilot.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG
+from pilot.componet import SystemApp
 
-from pilot.server.base import server_init, WebWerverParameters
+from pilot.server.base import (
+    server_init,
+    WebWerverParameters,
+    _create_model_start_listener,
+)
+from pilot.server.componet_configs import initialize_componets
 
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, applications
@@ -48,6 +54,8 @@ def swagger_monkey_patch(*args, **kwargs):
 applications.get_swagger_ui_html = swagger_monkey_patch
 
 app = FastAPI()
+system_app = SystemApp(app)
+
 origins = ["*"]
 
 # 添加跨域中间件
@@ -98,7 +106,12 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
         param = WebWerverParameters(**vars(parser.parse_args(args=args)))
 
     setup_logging(logging_level=param.log_level)
-    server_init(param)
+    # Before start
+    system_app.before_start()
+
+    server_init(param, system_app)
+    model_start_listener = _create_model_start_listener(system_app)
+    initialize_componets(system_app, CFG.EMBEDDING_MODEL)
 
     model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
     if not param.light:
@@ -108,6 +121,9 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
             model_name=CFG.LLM_MODEL,
             model_path=model_path,
             local_port=param.port,
+            embedding_model_name=CFG.EMBEDDING_MODEL,
+            embedding_model_path=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            start_listener=model_start_listener,
         )
 
         CFG.NEW_SERVER_MODE = True
@@ -120,6 +136,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
             run_locally=False,
             controller_addr=CFG.MODEL_SERVER,
             local_port=param.port,
+            start_listener=model_start_listener,
         )
         CFG.SERVER_LIGHT_MODE = True
 

@@ -30,8 +30,9 @@ def knownledge_tovec_st(filename):
     https://github.com/UKPLab/sentence-transformers
     """
     from pilot.configs.model_config import EMBEDDING_MODEL_CONFIG
+    from pilot.embedding_engine.embedding_factory import DefaultEmbeddingFactory
 
-    embeddings = HuggingFaceEmbeddings(
+    embeddings = DefaultEmbeddingFactory().create(
         model_name=EMBEDDING_MODEL_CONFIG["sentence-transforms"]
     )
 
@@ -58,8 +59,9 @@ def load_knownledge_from_doc():
         )
 
     from pilot.configs.model_config import EMBEDDING_MODEL_CONFIG
+    from pilot.embedding_engine.embedding_factory import DefaultEmbeddingFactory
 
-    embeddings = HuggingFaceEmbeddings(
+    embeddings = DefaultEmbeddingFactory().create(
         model_name=EMBEDDING_MODEL_CONFIG["sentence-transforms"]
     )
 

@@ -8,7 +8,10 @@ from pilot.model.base import ModelInstance
 from pilot.model.parameter import ModelControllerParameters
 from pilot.model.cluster.registry import EmbeddedModelRegistry, ModelRegistry
 from pilot.utils.parameter_utils import EnvArgumentParser
-from pilot.utils.api_utils import _api_remote as api_remote
+from pilot.utils.api_utils import (
+    _api_remote as api_remote,
+    _sync_api_remote as sync_api_remote,
+)
 
 
 class BaseModelController(ABC):
@@ -88,6 +91,12 @@ class _RemoteModelController(BaseModelController):
 class ModelRegistryClient(_RemoteModelController, ModelRegistry):
     async def get_all_model_instances(self) -> List[ModelInstance]:
         return await self.get_all_instances()
+
+    @sync_api_remote(path="/api/controller/models")
+    def sync_get_all_instances(
+        self, model_name: str, healthy_only: bool = False
+    ) -> List[ModelInstance]:
+        pass
 
 
 class ModelControllerAdapter(BaseModelController):
