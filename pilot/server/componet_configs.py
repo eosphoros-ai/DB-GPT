@@ -9,10 +9,12 @@ if TYPE_CHECKING:
 
 def initialize_componets(system_app: SystemApp, embedding_model_name: str):
     from pilot.model.cluster import worker_manager
+    from pilot.model.cluster.controller.controller import controller
 
     system_app.register(
         RemoteEmbeddingFactory, worker_manager, model_name=embedding_model_name
     )
+    system_app.register_instance(controller)
 
 
 class RemoteEmbeddingFactory(EmbeddingFactory):

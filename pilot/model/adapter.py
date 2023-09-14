@@ -411,6 +411,29 @@ class LlamaCppAdapater(BaseLLMAdaper):
         return model, tokenizer
 
 
+class InternLMAdapter(BaseLLMAdaper):
+    """The model adapter for internlm/internlm-chat-7b"""
+
+    def match(self, model_path: str):
+        return "internlm" in model_path.lower()
+
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            **from_pretrained_kwargs,
+        )
+        model = model.eval()
+        if "8k" in model_path.lower():
+            model.config.max_sequence_length = 8192
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=False, trust_remote_code=True, revision=revision
+        )
+        return model, tokenizer
+
+
 register_llm_model_adapters(VicunaLLMAdapater)
 register_llm_model_adapters(ChatGLMAdapater)
 register_llm_model_adapters(GuanacoAdapter)
@@ -421,6 +444,7 @@ register_llm_model_adapters(Llama2Adapter)
 register_llm_model_adapters(BaichuanAdapter)
 register_llm_model_adapters(WizardLMAdapter)
 register_llm_model_adapters(LlamaCppAdapater)
+register_llm_model_adapters(InternLMAdapter)
 # TODO Default support vicuna, other model need to tests and Evaluate
 
 # just for test_py, remove this later
