@@ -29,7 +29,7 @@ class ChatDashboard(BaseChat):
         if not self.db_name:
             raise ValueError(f"{ChatScene.ChatDashboard.value} mode should choose db!")
         self.db_name = self.db_name
-        self.report_name = chat_param["report_name"] or "report"
+        self.report_name = chat_param.get("report_name", "report")
 
         self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
 
