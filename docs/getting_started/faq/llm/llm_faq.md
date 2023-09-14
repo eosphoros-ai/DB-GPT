@@ -50,3 +50,25 @@ You can modify the setting `QUANTIZE_8bit=True` or `QUANTIZE_4bit=True` in `.env
 Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit quantization can run with 48 GB of VRAM.
 
 Note: you need to install the latest dependencies according to [requirements.txt](https://github.com/eosphoros-ai/DB-GPT/blob/main/requirements.txt).
+
+##### Q5 How to Add LLM Service dynamic
+
+Now DB-GPT through multi-llm service switch, so how to add llm service dynamic,
+
+```commandline
+dbgpt model start --model_name ${your_model_name} --model_path ${your_model_path}
+
+chatglm2-6b
+eg: dbgpt model start --model_name chatglm2-6b --model_path /root/DB-GPT/models/chatglm2-6b
+
+chatgpt
+eg: dbgpt model start --model_name chatgpt_proxyllm --model_path chatgpt_proxyllm --proxy_api_key ${OPENAI_KEY} --proxy_server_url {OPENAI_URL}
+```
+
+##### Q6 dbgpt command not found
+
+```commandline
+pip install -e .
+```
+
+
