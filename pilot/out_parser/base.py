@@ -129,30 +129,30 @@ class BaseOutputParser(ABC):
         return temp_json
 
     def __extract_json(self, s):
-
-        # Get the dual-mode analysis first and get the maximum result
-        temp_json_simple = self.__json_interception(s)
-        temp_json_array = self.__json_interception(s, True)
-        if len(temp_json_simple) > len(temp_json_array):
-            temp_json = temp_json_simple
-        else:
-            temp_json = temp_json_array
-
-        if not temp_json:
-            temp_json = self.__json_interception(s)
-
         try:
+            # Get the dual-mode analysis first and get the maximum result
+            temp_json_simple = self.__json_interception(s)
+            temp_json_array = self.__json_interception(s, True)
+            if len(temp_json_simple) > len(temp_json_array):
+                temp_json = temp_json_simple
+            else:
+                temp_json = temp_json_array
+
+            if not temp_json:
+                temp_json = self.__json_interception(s)
+
+
             temp_json = self.__illegal_json_ends(temp_json)
             return temp_json
         except Exception as e:
-            raise ValueError("Failed to find a valid json response！" + temp_json)
+            raise ValueError("Failed to find a valid json in LLM response！" + temp_json)
 
     def __json_interception(self, s, is_json_array: bool = False):
         try:
             if is_json_array:
                 i = s.find("[")
                 if i < 0:
-                    return None
+                    return ""
                 count = 1
                 for j, c in enumerate(s[i + 1:], start=i + 1):
                     if c == "]":
@@ -166,7 +166,7 @@ class BaseOutputParser(ABC):
             else:
                 i = s.find("{")
                 if i < 0:
-                    return None
+                    return ""
                 count = 1
                 for j, c in enumerate(s[i + 1:], start=i + 1):
                     if c == "}":
@@ -255,3 +255,10 @@ def _parse_model_response(response: ResponseTye):
     else:
         raise ValueError(f"Unsupported response type {type(response)}")
     return resp_obj_ex
+
+
+
+if __name__ == "__main__":
+    text = """ 根据您提供的数据，以下是我的分析：  "{     \"DataAnalysis\": \"2-长春理工.信息化中心服务列表 - 综合.xls的数据内容分析总结\",     \"ColumnAnalysis\": [         {             \"column name1\": \"服务名称\",             \"column name2\": \"服务负责人\",             \"column name3\": \"服务联系电话\",             \"column name4\": \"服务描述\"         }     ],     \"AnalysisProgram\": [         \"1.根据服务名称进行分类统计\",         \"2.根据服务负责人进行分类统计\"     ] }"  1. 服务名称：列出信息化中心提供的各项服务的名称。 2. 服务负责人：列出每项服务的负责人或联系人。 3. 服务联系电话：列出每项服务的联系电话。 4. 服务描述：对每项服务进行简要描述，以便用户了解服务内容。  分析方案：  1. 根据服务名称进行分类统计：可以将服务按照类别进行分类，如帮助与支持、软件安装与维护、数据库与存储、网络与安全等，以便用户更快地找到自己需要的服务。 2. 根据服务负责人进行分类统计：可以将服务按照负责人进行分类，以便用户在需要咨询或帮助时，能够更快地联系到相关的负责人。  以上是我对2-长春理工.信息化中心服务列表 - 综合.xls数据的初步分析。您可以根据实际需求和数据特点，进一步优化和调整分析方案 """
+    parse = BaseOutputParser("#")
+    print(parse.parse_prompt_response(text))
