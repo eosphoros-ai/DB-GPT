@@ -635,6 +635,7 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
 
     @app.on_event("startup")
     async def startup_event():
+        # TODO catch exception and shutdown if worker manager start failed
         asyncio.create_task(worker_manager.start())
 
     @app.on_event("shutdown")

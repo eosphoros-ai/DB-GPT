@@ -109,20 +109,27 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     # Before start
     system_app.before_start()
 
+    print(param)
+
+    embedding_model_name = CFG.EMBEDDING_MODEL
+    embedding_model_path = EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+
     server_init(param, system_app)
     model_start_listener = _create_model_start_listener(system_app)
-    initialize_componets(system_app, CFG.EMBEDDING_MODEL)
+    initialize_componets(param, system_app, embedding_model_name, embedding_model_path)
 
     model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
     if not param.light:
         print("Model Unified Deployment Mode!")
+        if not param.remote_embedding:
+            embedding_model_name, embedding_model_path = None, None
         initialize_worker_manager_in_client(
             app=app,
             model_name=CFG.LLM_MODEL,
             model_path=model_path,
             local_port=param.port,
-            embedding_model_name=CFG.EMBEDDING_MODEL,
-            embedding_model_path=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            embedding_model_name=embedding_model_name,
+            embedding_model_path=embedding_model_path,
             start_listener=model_start_listener,
         )
 

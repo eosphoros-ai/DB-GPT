@@ -102,6 +102,12 @@ class WebWerverParameters(BaseParameters):
             "help": "Whether to create a publicly shareable link for the interface. Creates an SSH tunnel to make your UI accessible from anywhere. "
         },
     )
+    remote_embedding: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "Whether to enable remote embedding models. If it is True, you need to start a embedding model through `dbgpt start worker --worker_type text2vec --model_name xxx --model_path xxx`"
+        },
+    )
     log_level: Optional[str] = field(
         default="INFO",
         metadata={

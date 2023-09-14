@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Type
+from typing import Dict, List, Type, Optional
 
 from pilot.configs.model_config import get_device
 from pilot.model.loader import _get_model_real_path
@@ -45,21 +45,12 @@ class EmbeddingsModelWorker(ModelWorker):
         self, command_args: List[str] = None
     ) -> EmbeddingModelParameters:
         param_cls = self.model_param_class()
-        model_args = EnvArgumentParser()
-        env_prefix = EnvArgumentParser.get_env_prefix(self.model_name)
-        model_params: EmbeddingModelParameters = model_args.parse_args_into_dataclass(
-            param_cls,
-            env_prefix=env_prefix,
-            command_args=command_args,
+        return _parse_embedding_params(
             model_name=self.model_name,
             model_path=self.model_path,
+            command_args=command_args,
+            param_cls=param_cls,
         )
-        if not model_params.device:
-            model_params.device = get_device()
-            logger.info(
-                f"[EmbeddingsModelWorker] Parameters of device is None, use {model_params.device}"
-            )
-        return model_params
 
     def start(
         self,
@@ -100,3 +91,26 @@ class EmbeddingsModelWorker(ModelWorker):
         logger.info(f"Receive embeddings request, model: {model}")
         input: List[str] = params["input"]
         return self._embeddings_impl.embed_documents(input)
+
+
+def _parse_embedding_params(
+    model_name: str,
+    model_path: str,
+    command_args: List[str] = None,
+    param_cls: Optional[Type] = EmbeddingModelParameters,
+):
+    model_args = EnvArgumentParser()
+    env_prefix = EnvArgumentParser.get_env_prefix(model_name)
+    model_params: EmbeddingModelParameters = model_args.parse_args_into_dataclass(
+        param_cls,
+        env_prefix=env_prefix,
+        command_args=command_args,
+        model_name=model_name,
+        model_path=model_path,
+    )
+    if not model_params.device:
+        model_params.device = get_device()
+        logger.info(
+            f"[EmbeddingsModelWorker] Parameters of device is None, use {model_params.device}"
+        )
+    return model_params

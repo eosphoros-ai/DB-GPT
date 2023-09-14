@@ -18,9 +18,11 @@ class EmbeddingFactory(BaseComponet, ABC):
 
 
 class DefaultEmbeddingFactory(EmbeddingFactory):
-    def __init__(self, system_app=None, model_name: str = None, **kwargs: Any) -> None:
+    def __init__(
+        self, system_app=None, default_model_name: str = None, **kwargs: Any
+    ) -> None:
         super().__init__(system_app=system_app)
-        self._default_model_name = model_name
+        self._default_model_name = default_model_name
         self.kwargs = kwargs
 
     def init_app(self, system_app):
@@ -31,9 +33,13 @@ class DefaultEmbeddingFactory(EmbeddingFactory):
     ) -> "Embeddings":
         if not model_name:
             model_name = self._default_model_name
+
+        new_kwargs = {k: v for k, v in self.kwargs.items()}
+        new_kwargs["model_name"] = model_name
+
         if embedding_cls:
-            return embedding_cls(model_name=model_name, **self.kwargs)
+            return embedding_cls(**new_kwargs)
         else:
             from langchain.embeddings import HuggingFaceEmbeddings
 
-            return HuggingFaceEmbeddings(model_name=model_name, **self.kwargs)
+            return HuggingFaceEmbeddings(**new_kwargs)

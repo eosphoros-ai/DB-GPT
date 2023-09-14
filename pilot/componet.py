@@ -152,6 +152,7 @@ class SystemApp(LifeCycle):
         @self.app.on_event("startup")
         async def startup_event():
             """ASGI app startup event handler."""
+            # TODO catch exception and shutdown if worker manager start failed
             asyncio.create_task(self.async_after_start())
             self.after_start()
 
