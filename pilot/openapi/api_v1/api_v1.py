@@ -18,6 +18,7 @@ from fastapi.exceptions import RequestValidationError
 from typing import List
 import tempfile
 
+from pilot.componet import ComponetType
 from pilot.openapi.api_view_model import (
     Result,
     ConversationVo,
@@ -352,20 +353,17 @@ async def chat_completions(dialogue: ConversationVo = Body()):
 async def model_types(request: Request):
     print(f"/controller/model/types")
     try:
-        import httpx
-
-        async with httpx.AsyncClient() as client:
-            base_url = request.base_url
-            response = await client.get(
-                f"{base_url}api/controller/models?healthy_only=true",
-            )
         types = set()
-        if response.status_code == 200:
-            models = json.loads(response.text)
-            for model in models:
-                worker_type = model["model_name"].split("@")[1]
-                if worker_type == "llm":
-                    types.add(model["model_name"].split("@")[0])
+        from pilot.model.cluster.controller.controller import BaseModelController
+
+        controller = CFG.SYSTEM_APP.get_componet(
+            ComponetType.MODEL_CONTROLLER, BaseModelController
+        )
+        models = await controller.get_all_instances(healthy_only=True)
+        for model in models:
+            worker_name, worker_type = model.model_name.split("@")
+            if worker_type == "llm":
+                types.add(worker_name)
         return Result.succ(list(types))
 
     except Exception as e:

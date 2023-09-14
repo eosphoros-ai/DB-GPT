@@ -3,11 +3,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Type, Dict, TypeVar, Optional, Union, TYPE_CHECKING
 from enum import Enum
+import logging
 import asyncio
 
 # Checking for type hints during runtime
 if TYPE_CHECKING:
     from fastapi import FastAPI
+
+logger = logging.getLogger(__name__)
 
 
 class LifeCycle:
@@ -40,6 +43,7 @@ class LifeCycle:
 
 class ComponetType(str, Enum):
     WORKER_MANAGER = "dbgpt_worker_manager"
+    MODEL_CONTROLLER = "dbgpt_model_controller"
 
 
 class BaseComponet(LifeCycle, ABC):
@@ -92,6 +96,7 @@ class SystemApp(LifeCycle):
             raise RuntimeError(
                 f"Componse name {name} already exists: {self.componets[name]}"
             )
+        logger.info(f"Register componet with name {name} and instance: {instance}")
         self.componets[name] = instance
         instance.init_app(self)
 
