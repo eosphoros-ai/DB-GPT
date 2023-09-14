@@ -141,7 +141,6 @@ class BaseOutputParser(ABC):
             if not temp_json:
                 temp_json = self.__json_interception(s)
 
-
             temp_json = self.__illegal_json_ends(temp_json)
             return temp_json
         except Exception as e:
@@ -154,7 +153,7 @@ class BaseOutputParser(ABC):
                 if i < 0:
                     return ""
                 count = 1
-                for j, c in enumerate(s[i + 1:], start=i + 1):
+                for j, c in enumerate(s[i + 1 :], start=i + 1):
                     if c == "]":
                         count -= 1
                     elif c == "[":
@@ -162,13 +161,13 @@ class BaseOutputParser(ABC):
                     if count == 0:
                         break
                 assert count == 0
-                return s[i: j + 1]
+                return s[i : j + 1]
             else:
                 i = s.find("{")
                 if i < 0:
                     return ""
                 count = 1
-                for j, c in enumerate(s[i + 1:], start=i + 1):
+                for j, c in enumerate(s[i + 1 :], start=i + 1):
                     if c == "}":
                         count -= 1
                     elif c == "{":
@@ -176,7 +175,7 @@ class BaseOutputParser(ABC):
                     if count == 0:
                         break
                 assert count == 0
-                return s[i: j + 1]
+                return s[i : j + 1]
         except Exception as e:
             return ""
 
@@ -195,9 +194,9 @@ class BaseOutputParser(ABC):
         # if "```" in cleaned_output:
         #     cleaned_output, _ = cleaned_output.split("```")
         if cleaned_output.startswith("```json"):
-            cleaned_output = cleaned_output[len("```json"):]
+            cleaned_output = cleaned_output[len("```json") :]
         if cleaned_output.startswith("```"):
-            cleaned_output = cleaned_output[len("```"):]
+            cleaned_output = cleaned_output[len("```") :]
         if cleaned_output.endswith("```"):
             cleaned_output = cleaned_output[: -len("```")]
         cleaned_output = cleaned_output.strip()
@@ -206,9 +205,9 @@ class BaseOutputParser(ABC):
             cleaned_output = self.__extract_json(cleaned_output)
         cleaned_output = (
             cleaned_output.strip()
-                .replace("\\n", " ")
-                .replace("\n", " ")
-                .replace("\\", " ")
+            .replace("\\n", " ")
+            .replace("\n", " ")
+            .replace("\\", " ")
         )
         cleaned_output = self.__illegal_json_ends(cleaned_output)
         return cleaned_output
