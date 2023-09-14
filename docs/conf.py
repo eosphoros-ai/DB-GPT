@@ -14,7 +14,7 @@ project = "DB-GPT"
 copyright = "2023, csunny"
 author = "csunny"
 
-version = "👏👏 0.3.6"
+version = "👏👏 0.3.8"
 html_title = project + " " + version
 
 # -- General configuration ---------------------------------------------------

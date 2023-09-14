@@ -51,7 +51,7 @@ Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit quanti
 
 Note: you need to install the latest dependencies according to [requirements.txt](https://github.com/eosphoros-ai/DB-GPT/blob/main/requirements.txt).
 
-##### Q5 How to Add LLM Service dynamic
+##### Q5 How to Add LLM Service dynamic local mode
 
 Now DB-GPT through multi-llm service switch, so how to add llm service dynamic,
 
@@ -64,8 +64,21 @@ eg: dbgpt model start --model_name chatglm2-6b --model_path /root/DB-GPT/models/
 chatgpt
 eg: dbgpt model start --model_name chatgpt_proxyllm --model_path chatgpt_proxyllm --proxy_api_key ${OPENAI_KEY} --proxy_server_url {OPENAI_URL}
 ```
+##### Q6 How to Add LLM Service dynamic in remote mode
+If you  deploy llm service in remote machine instance, and you want to add model service to dbgpt server to manage
 
-##### Q6 dbgpt command not found
+use dbgpt start worker and set --controller_addr.
+
+```commandline
+eg: dbgpt start worker --model_name vicuna-13b-v1.5 \
+--model_path /app/models/vicuna-13b-v1.5 \
+--port 8002 \
+--controller_addr http://127.0.0.1:8000
+
+```
+
+
+##### Q7 dbgpt command not found
 
 ```commandline
 pip install -e .

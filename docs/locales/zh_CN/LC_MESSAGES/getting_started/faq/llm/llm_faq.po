@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-13 23:04+0800\n"
+"POT-Creation-Date: 2023-09-14 14:35+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -120,7 +120,8 @@ msgid ""
 msgstr ""
 
 #: ../../getting_started/faq/llm/llm_faq.md:54 5fe0d9ced7e848799f4d7bce92a5c130
-msgid "Q5 How to Add LLM Service dynamic"
+#, fuzzy
+msgid "Q5 How to Add LLM Service dynamic local mode"
 msgstr "Q5 怎样动态新增模型服务"
 
 #: ../../getting_started/faq/llm/llm_faq.md:56 fd921148e3e547beb6c74035a6b6a8b0
@@ -129,7 +130,23 @@ msgid ""
 "dynamic,"
 msgstr "DB-GPT支持多个模型服务切换, 怎样添加一个模型服务呢"
 
-#: ../../getting_started/faq/llm/llm_faq.md:68 f8c024339da447ce8160a4eb9f87c125
-msgid "Q6 dbgpt command not found"
+#: ../../getting_started/faq/llm/llm_faq.md:67 5fe0d9ced7e848799f4d7bce92a5c130
+#, fuzzy
+msgid "Q6 How to Add LLM Service dynamic in remote mode"
+msgstr "Q5 怎样动态新增模型服务"
+
+#: ../../getting_started/faq/llm/llm_faq.md:68 bd29cd6d29a64908af15b391d73ea82a
+msgid ""
+"If you  deploy llm service in remote machine instance, and you want to "
+"add model service to dbgpt server to manage"
+msgstr "如果你想在远程机器实例部署大模型服务并添加到本地dbgpt_server进行管理"
+
+#: ../../getting_started/faq/llm/llm_faq.md:70 ace16dfc4326431dbe4a9a32e4a83ba4
+msgid "use dbgpt start worker and set --controller_addr."
+msgstr "使用1`dbgpt start worker`命令并设置注册地址--controller_addr"
+
+#: ../../getting_started/faq/llm/llm_faq.md:81 f8c024339da447ce8160a4eb9f87c125
+#, fuzzy
+msgid "Q7 dbgpt command not found"
 msgstr "Q6 dbgpt command not found"
 
