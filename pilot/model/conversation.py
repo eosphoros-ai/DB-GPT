@@ -2,6 +2,8 @@
 Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/conversation.py
 
 Conversation prompt templates.
+
+TODO Using fastchat core package
 """
 
 import dataclasses
@@ -365,5 +367,22 @@ register_conv_template(
         stop_token_ids=[2, 195],
     )
 )
+
+# Internlm-chat template
+register_conv_template(
+    Conversation(
+        name="internlm-chat",
+        system="A chat between a curious <|User|> and an <|Bot|>. The <|Bot|> gives helpful, detailed, and polite answers to the <|User|>'s questions.\n\n",
+        roles=("<|User|>", "<|Bot|>"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.CHATINTERN,
+        sep="<eoh>",
+        sep2="<eoa>",
+        stop_token_ids=[1, 103028],
+        stop_str="<eoa>",
+    )
+)
+
 
 # TODO Support other model conversation template

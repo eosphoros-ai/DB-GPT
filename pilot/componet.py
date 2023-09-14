@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Type, Dict, TypeVar, Optional, TYPE_CHECKING
+from typing import Type, Dict, TypeVar, Optional, Union, TYPE_CHECKING
+from enum import Enum
+import logging
 import asyncio
 
 # Checking for type hints during runtime
 if TYPE_CHECKING:
     from fastapi import FastAPI
+
+logger = logging.getLogger(__name__)
 
 
 class LifeCycle:
@@ -35,6 +39,11 @@ class LifeCycle:
     async def async_before_stop(self):
         """Asynchronous version of before_stop."""
         pass
+
+
+class ComponetType(str, Enum):
+    WORKER_MANAGER = "dbgpt_worker_manager"
+    MODEL_CONTROLLER = "dbgpt_model_controller"
 
 
 class BaseComponet(LifeCycle, ABC):
@@ -80,11 +89,21 @@ class SystemApp(LifeCycle):
 
     def register_instance(self, instance: T):
         """Register an already initialized component."""
-        self.componets[instance.name] = instance
+        name = instance.name
+        if isinstance(name, ComponetType):
+            name = name.value
+        if name in self.componets:
+            raise RuntimeError(
+                f"Componse name {name} already exists: {self.componets[name]}"
+            )
+        logger.info(f"Register componet with name {name} and instance: {instance}")
+        self.componets[name] = instance
         instance.init_app(self)
 
-    def get_componet(self, name: str, componet_type: Type[T]) -> T:
+    def get_componet(self, name: Union[str, ComponetType], componet_type: Type[T]) -> T:
         """Retrieve a registered component by its name and type."""
+        if isinstance(name, ComponetType):
+            name = name.value
         component = self.componets.get(name)
         if not component:
             raise ValueError(f"No component found with name {name}")
