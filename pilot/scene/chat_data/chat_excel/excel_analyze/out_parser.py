@@ -27,15 +27,18 @@ class ChatExcelOutputParser(BaseOutputParser):
     def parse_prompt_response(self, model_out_text):
         clean_str = super().parse_prompt_response(model_out_text)
         print("clean prompt response:", clean_str)
-        response = json.loads(clean_str)
-        for key in sorted(response):
-            if key.strip() == "sql":
-                sql = response[key]
-            if key.strip() == "thoughts":
-                thoughts = response[key]
-            if key.strip() == "display":
-                display = response[key]
-        return ExcelAnalyzeResponse(sql, thoughts, display)
+        try:
+            response = json.loads(clean_str)
+            for key in sorted(response):
+                if key.strip() == "sql":
+                    sql = response[key]
+                if key.strip() == "thoughts":
+                    thoughts = response[key]
+                if key.strip() == "display":
+                    display = response[key]
+            return ExcelAnalyzeResponse(sql, thoughts, display)
+        except Exception as e:
+            raise ValueError(f"LLM Response Can't Parser! \n{ model_out_text}")
 
     def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view
