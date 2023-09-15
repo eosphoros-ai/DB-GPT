@@ -324,7 +324,6 @@ def openai_requires():
     pip install "db-gpt[openai]"
     """
     setup_spec.extras["openai"] = ["openai", "tiktoken"]
-    llama_cpp_python_cuda_requires()
 
 
 def all_requires():
