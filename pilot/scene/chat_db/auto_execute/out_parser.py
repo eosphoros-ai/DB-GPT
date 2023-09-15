@@ -27,7 +27,7 @@ class DbChatOutputParser(BaseOutputParser):
         response = json.loads(clean_str)
         for key in sorted(response):
             if key.strip() == "sql":
-                sql = response[key]
+                sql = response[key].replace("\\", " ")
             if key.strip() == "thoughts":
                 thoughts = response[key]
         return SqlAction(sql, thoughts)
