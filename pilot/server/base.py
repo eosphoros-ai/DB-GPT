@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pilot.configs.config import Config
 from pilot.componet import SystemApp
 from pilot.utils.parameter_utils import BaseParameters
-
+from pilot.base_modules.meta_data.meta_data import ddl_init_and_upgrade
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -28,15 +28,17 @@ def async_db_summery(system_app: SystemApp):
 
 
 def server_init(args, system_app: SystemApp):
-    from pilot.commands.command_mange import CommandRegistry
+    from pilot.base_modules.agent.commands.command_mange import CommandRegistry
 
-    from pilot.common.plugins import scan_plugins
+    from pilot.base_modules.agent.plugins import scan_plugins
 
     # logger.info(f"args: {args}")
 
     # init config
     cfg = Config()
     cfg.SYSTEM_APP = system_app
+
+    ddl_init_and_upgrade()
 
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
@@ -45,8 +47,8 @@ def server_init(args, system_app: SystemApp):
 
     # Loader plugins and commands
     command_categories = [
-        "pilot.commands.built_in.audio_text",
-        "pilot.commands.built_in.image_gen",
+        "pilot.base_modules.agent.commands.built_in.audio_text",
+        "pilot.base_modules.agent.commands.built_in.image_gen",
     ]
     # exclude commands
     command_categories = [
@@ -59,9 +61,9 @@ def server_init(args, system_app: SystemApp):
     cfg.command_registry = command_registry
 
     command_disply_commands = [
-        "pilot.commands.disply_type.show_chart_gen",
-        "pilot.commands.disply_type.show_table_gen",
-        "pilot.commands.disply_type.show_text_gen",
+        "pilot.base_modules.agent.commands.disply_type.show_chart_gen",
+        "pilot.base_modules.agent.commands.disply_type.show_table_gen",
+        "pilot.base_modules.agent.commands.disply_type.show_text_gen",
     ]
     command_disply_registry = CommandRegistry()
     for command in command_disply_commands:

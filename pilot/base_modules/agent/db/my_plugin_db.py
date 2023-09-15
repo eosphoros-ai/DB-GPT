@@ -9,6 +9,7 @@ from pilot.base_modules.meta_data.base_dao import BaseDao
 from pilot.base_modules.meta_data.meta_data import Base, engine, session
 
 
+
 class MyPluginEntity(Base):
     __tablename__ = 'my_plugin'
 
@@ -57,6 +58,17 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         updated = session.merge(entity)
         session.commit()
         return updated.id
+
+    def get_by_user(self, user: str)->list[MyPluginEntity]:
+        session = self.Session()
+        my_plugins = session.query(MyPluginEntity)
+        if  user:
+            my_plugins = my_plugins.filter(
+                MyPluginEntity.user_code == user
+            )
+        result = my_plugins.all()
+        session.close()
+        return result
 
 
     def list(self, query: MyPluginEntity, page=1, page_size=20)->list[MyPluginEntity]:

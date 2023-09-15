@@ -71,6 +71,9 @@ pypdf
 weaviate-client
 bardapi==0.1.29
 
+xlrd==2.0.1
+
+
 # database
 
 # TODO moved to optional dependencies

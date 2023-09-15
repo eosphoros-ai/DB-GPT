@@ -3,6 +3,7 @@ import random
 import sys
 
 from dotenv import load_dotenv
+from pilot.base_modules.agent import PluginPromptGenerator
 
 
 if "pytest" in sys.argv or "pytest" in sys.modules or os.getenv("CI"):

@@ -3,9 +3,8 @@ from typing import List, Dict
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
-from pilot.commands.command import execute_command
-from pilot.prompts.generator import PluginPromptGenerator
-from pilot.scene.chat_execution.prompt import prompt
+from pilot.base_modules.agent.commands.command import execute_command
+from pilot.base_modules.agent import PluginPromptGenerator
 
 CFG = Config()
 

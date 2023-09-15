@@ -20,6 +20,7 @@ from pilot.configs.model_config import PLUGINS_DIR
 from pilot.logs import logger
 
 
+
 def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
     """
     Loader zip plugin file. Native support Auto_gpt_plugin
@@ -180,3 +181,7 @@ def denylist_allowlist_check(plugin_name: str, cfg: Config) -> bool:
         f" allowlist... Load? ({cfg.authorise_key}/{cfg.exit_key}): "
     )
     return ack.lower() == cfg.authorise_key
+
+
+if __name__ == '__main__':
+    print(inspect_zip_for_modules("/Users/tuyang.yhj/Downloads/DB-GPT-Plugins-main (1).zip"))
