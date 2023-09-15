@@ -155,3 +155,5 @@ We are working on building a community, if you have any ideas about building the
 <p align="center">
   <img src="./assets/wechat.jpg" width="300px" />
 </p>
+
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)

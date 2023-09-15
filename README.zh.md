@@ -30,7 +30,8 @@
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/FMGwbRQrM) |[**文档**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
+[**English**](README.md)|[**Discord**](https://discord.gg/FMGwbRQrM)|[**文档**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
+</div>
 
 ## DB-GPT 是什么？
 
@@ -38,7 +39,10 @@
 
 DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密
 
+
+
 ## 目录
+
 - [安装](#安装)
 - [效果演示](#效果演示)
 - [架构方案](#架构方案)
@@ -100,6 +104,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 ## 特性一览
 
 目前我们已经发布了多种关键的特性，这里一一列举展示一下当前发布的能力。
+
 - SQL 语言能力
   - SQL生成
   - SQL诊断
@@ -194,3 +199,5 @@ The MIT License (MIT)
   <img src="./assets/wechat.jpg" width="300px" />
 </p>
 
+
+[![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
