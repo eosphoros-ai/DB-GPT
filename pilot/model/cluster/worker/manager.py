@@ -2,6 +2,7 @@ import asyncio
 import itertools
 import json
 import os
+import sys
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -129,8 +130,6 @@ class LocalWorkerManager(WorkerManager):
         command_args: List[str] = None,
     ) -> bool:
         if not command_args:
-            import sys
-
             command_args = sys.argv[1:]
         worker.load_worker(**asdict(worker_params))
 
@@ -635,8 +634,15 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
 
     @app.on_event("startup")
     async def startup_event():
-        # TODO catch exception and shutdown if worker manager start failed
-        asyncio.create_task(worker_manager.start())
+        async def start_worker_manager():
+            try:
+                await worker_manager.start()
+            except Exception as e:
+                logger.error(f"Error starting worker manager: {e}")
+                sys.exit(1)
+
+        # It cannot be blocked here because the startup of worker_manager depends on the fastapi app (registered to the controller)
+        asyncio.create_task(start_worker_manager())
 
     @app.on_event("shutdown")
     async def startup_event():

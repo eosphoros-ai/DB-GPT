@@ -96,7 +96,11 @@ def get_llm_model_adapter(model_name: str, model_path: str) -> BaseLLMAdaper:
 
 def _dynamic_model_parser() -> Callable[[None], List[Type]]:
     from pilot.utils.parameter_utils import _SimpleArgParser
-    from pilot.model.parameter import EmbeddingModelParameters, WorkerType
+    from pilot.model.parameter import (
+        EmbeddingModelParameters,
+        WorkerType,
+        EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
+    )
 
     pre_args = _SimpleArgParser("model_name", "model_path", "worker_type")
     pre_args.parse()
@@ -106,7 +110,11 @@ def _dynamic_model_parser() -> Callable[[None], List[Type]]:
     if model_name is None:
         return None
     if worker_type == WorkerType.TEXT2VEC:
-        return [EmbeddingModelParameters]
+        return [
+            EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG.get(
+                model_name, EmbeddingModelParameters
+            )
+        ]
 
     llm_adapter = get_llm_model_adapter(model_name, model_path)
     param_class = llm_adapter.model_param_class()

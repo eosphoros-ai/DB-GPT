@@ -319,6 +319,14 @@ def all_datasource_requires():
     setup_spec.extras["datasource"] = ["pymssql", "pymysql"]
 
 
+def openai_requires():
+    """
+    pip install "db-gpt[openai]"
+    """
+    setup_spec.extras["openai"] = ["openai", "tiktoken"]
+    llama_cpp_python_cuda_requires()
+
+
 def all_requires():
     requires = set()
     for _, pkgs in setup_spec.extras.items():
@@ -339,6 +347,7 @@ llama_cpp_requires()
 quantization_requires()
 all_vector_store_requires()
 all_datasource_requires()
+openai_requires()
 
 # must be last
 all_requires()

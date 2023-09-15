@@ -86,7 +86,13 @@ class ModelWorkerParameters(BaseModelParameters):
 
 
 @dataclass
-class EmbeddingModelParameters(BaseModelParameters):
+class BaseEmbeddingModelParameters(BaseModelParameters):
+    def build_kwargs(self, **kwargs) -> Dict:
+        pass
+
+
+@dataclass
+class EmbeddingModelParameters(BaseEmbeddingModelParameters):
     device: Optional[str] = field(
         default=None,
         metadata={
@@ -268,3 +274,81 @@ class ProxyModelParameters(BaseModelParameters):
     max_context_size: Optional[int] = field(
         default=4096, metadata={"help": "Maximum context size"}
     )
+
+
+@dataclass
+class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
+    proxy_server_url: str = field(
+        metadata={
+            "help": "Proxy base url(OPENAI_API_BASE), such as https://api.openai.com/v1"
+        },
+    )
+    proxy_api_key: str = field(
+        metadata={
+            "tags": "privacy",
+            "help": "The api key of the current embedding model(OPENAI_API_KEY)",
+        },
+    )
+    device: Optional[str] = field(
+        default=None,
+        metadata={"help": "Device to run model. Not working for proxy embedding model"},
+    )
+    proxy_api_type: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The api type of current proxy the current embedding model(OPENAI_API_TYPE), if you use Azure, it can be: azure"
+        },
+    )
+    proxy_api_version: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The api version of current proxy the current embedding model(OPENAI_API_VERSION)"
+        },
+    )
+    proxy_backend: Optional[str] = field(
+        default="text-embedding-ada-002",
+        metadata={
+            "help": "The model name actually pass to current proxy server url, such as text-embedding-ada-002"
+        },
+    )
+
+    proxy_deployment: Optional[str] = field(
+        default="text-embedding-ada-002",
+        metadata={"help": "Tto support Azure OpenAI Service custom deployment names"},
+    )
+
+    def build_kwargs(self, **kwargs) -> Dict:
+        params = {
+            "openai_api_base": self.proxy_server_url,
+            "openai_api_key": self.proxy_api_key,
+            "openai_api_type": self.proxy_api_type if self.proxy_api_type else None,
+            "openai_api_version": self.proxy_api_version
+            if self.proxy_api_version
+            else None,
+            "model": self.proxy_backend,
+            "deployment": self.proxy_deployment
+            if self.proxy_deployment
+            else self.proxy_backend,
+        }
+        for k, v in kwargs:
+            params[k] = v
+        return params
+
+
+_EMBEDDING_PARAMETER_CLASS_TO_NAME_CONFIG = {
+    ProxyEmbeddingParameters: "proxy_openai,proxy_azure"
+}
+
+EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG = {}
+
+
+def _update_embedding_config():
+    global EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG
+    for param_cls, models in _EMBEDDING_PARAMETER_CLASS_TO_NAME_CONFIG.items():
+        models = [m.strip() for m in models.split(",")]
+        for model in models:
+            if model not in EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG:
+                EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG[model] = param_cls
+
+
+_update_embedding_config()

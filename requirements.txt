@@ -37,6 +37,7 @@ opencv-python==4.7.0.72
 iopath==0.1.10
 tenacity==8.2.2
 peft
+# TODO remove pycocoevalcap
 pycocoevalcap
 cpm_kernels
 umap-learn
