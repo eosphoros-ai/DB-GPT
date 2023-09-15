@@ -128,8 +128,8 @@ class Config(metaclass=Singleton):
 
         ### default Local database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST")
-        self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "")
-        self.LOCAL_DB_TYPE = os.getenv("LOCAL_DB_TYPE", "mysql")
+        self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "data/default_sqlite.db")
+        self.LOCAL_DB_TYPE = os.getenv("LOCAL_DB_TYPE", "sqlite")
         if self.LOCAL_DB_HOST is None and self.LOCAL_DB_PATH == "":
             self.LOCAL_DB_HOST = "127.0.0.1"
 
@@ -141,7 +141,7 @@ class Config(metaclass=Singleton):
         self.LOCAL_DB_MANAGE = None
 
         ### LLM Model Service Configuration
-        self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b")
+        self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b-v1.5")
         ### Proxy llm backend, this configuration is only valid when "LLM_MODEL=proxyllm"
         ### When we use the rest API provided by deployment frameworks like fastchat as a proxyllm, "PROXYLLM_BACKEND" is the model they actually deploy.
         ### We need to use "PROXYLLM_BACKEND" to load the prompt of the corresponding scene.

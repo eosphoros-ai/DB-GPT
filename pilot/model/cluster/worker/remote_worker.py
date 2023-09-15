@@ -6,6 +6,9 @@ from pilot.model.parameter import ModelParameters
 from pilot.model.cluster.worker_base import ModelWorker
 
 
+logger = logging.getLogger(__name__)
+
+
 class RemoteModelWorker(ModelWorker):
     def __init__(self) -> None:
         self.headers = {}
@@ -46,13 +49,14 @@ class RemoteModelWorker(ModelWorker):
         """Asynchronous generate stream"""
         import httpx
 
-        logging.debug(f"Send async_generate_stream, params: {params}")
         async with httpx.AsyncClient() as client:
             delimiter = b"\0"
             buffer = b""
+            url = self.worker_addr + "/generate_stream"
+            logger.debug(f"Send async_generate_stream to url {url}, params: {params}")
             async with client.stream(
                 "POST",
-                self.worker_addr + "/generate_stream",
+                url,
                 headers=self.headers,
                 json=params,
                 timeout=self.timeout,
@@ -75,10 +79,11 @@ class RemoteModelWorker(ModelWorker):
         """Asynchronous generate non stream"""
         import httpx
 
-        logging.debug(f"Send async_generate_stream, params: {params}")
         async with httpx.AsyncClient() as client:
+            url = self.worker_addr + "/generate"
+            logger.debug(f"Send async_generate to url {url}, params: {params}")
             response = await client.post(
-                self.worker_addr + "/generate",
+                url,
                 headers=self.headers,
                 json=params,
                 timeout=self.timeout,
@@ -89,8 +94,10 @@ class RemoteModelWorker(ModelWorker):
         """Get embeddings for input"""
         import requests
 
+        url = self.worker_addr + "/embeddings"
+        logger.debug(f"Send embeddings to url {url}, params: {params}")
         response = requests.post(
-            self.worker_addr + "/embeddings",
+            url,
             headers=self.headers,
             json=params,
             timeout=self.timeout,
@@ -102,8 +109,10 @@ class RemoteModelWorker(ModelWorker):
         import httpx
 
         async with httpx.AsyncClient() as client:
+            url = self.worker_addr + "/embeddings"
+            logger.debug(f"Send async_embeddings to url {url}")
             response = await client.post(
-                self.worker_addr + "/embeddings",
+                url,
                 headers=self.headers,
                 json=params,
                 timeout=self.timeout,

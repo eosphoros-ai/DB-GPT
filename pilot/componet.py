@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import sys
 from typing import Type, Dict, TypeVar, Optional, Union, TYPE_CHECKING
 from enum import Enum
 import logging
@@ -152,8 +153,15 @@ class SystemApp(LifeCycle):
         @self.app.on_event("startup")
         async def startup_event():
             """ASGI app startup event handler."""
-            # TODO catch exception and shutdown if worker manager start failed
-            asyncio.create_task(self.async_after_start())
+
+            async def _startup_func():
+                try:
+                    await self.async_after_start()
+                except Exception as e:
+                    logger.error(f"Error starting system app: {e}")
+                    sys.exit(1)
+
+            asyncio.create_task(_startup_func())
             self.after_start()
 
         @self.app.on_event("shutdown")

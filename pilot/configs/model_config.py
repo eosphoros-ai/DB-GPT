@@ -88,6 +88,8 @@ EMBEDDING_MODEL_CONFIG = {
     "bge-large-zh": os.path.join(MODEL_PATH, "bge-large-zh"),
     "bge-base-zh": os.path.join(MODEL_PATH, "bge-base-zh"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
+    "proxy_openai": "proxy_openai",
+    "proxy_azure": "proxy_azure",
 }
 
 # Load model config
