@@ -45,8 +45,12 @@ def deep_quotes(token, column_names=[]):
 if __name__ == "__main__":
     sql = "SELECT `地区`, (`2021年人口` - `2001年人口`) / `2001年人口` * 100 AS `Population_Growth_Rate` FROM Generated_by_ChatExcel_table1 (2)"
     if f'"Generated_by_ChatExcel_table1 (2)"' not in sql:
-        sql = sql.replace('Generated_by_ChatExcel_table1 (2)', f'"Generated_by_ChatExcel_table1 (2)"')
-    sql = add_quotes_ex(sql, ['地区', '地区代码', '2001年人口', '2006年人口', '2011年人口', '2016年人口', '2021年人口'])
+        sql = sql.replace(
+            "Generated_by_ChatExcel_table1 (2)", f'"Generated_by_ChatExcel_table1 (2)"'
+        )
+    sql = add_quotes_ex(
+        sql, ["地区", "地区代码", "2001年人口", "2006年人口", "2011年人口", "2016年人口", "2021年人口"]
+    )
     print(f"excute sql:{sql}")
 
 

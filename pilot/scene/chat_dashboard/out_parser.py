@@ -30,7 +30,10 @@ class ChatDashboardOutputParser(BaseOutputParser):
         for item in response:
             chart_items.append(
                 ChartItem(
-                    item["sql"].replace("\\", " "), item["title"], item["thoughts"], item["showcase"]
+                    item["sql"].replace("\\", " "),
+                    item["title"],
+                    item["thoughts"],
+                    item["showcase"],
                 )
             )
         return chart_items
