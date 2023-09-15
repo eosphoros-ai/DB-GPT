@@ -31,14 +31,14 @@ class ChatExcelOutputParser(BaseOutputParser):
             response = json.loads(clean_str)
             for key in sorted(response):
                 if key.strip() == "sql":
-                    sql = response[key]
+                    sql = response[key].replace("\\", " ")
                 if key.strip() == "thoughts":
                     thoughts = response[key]
                 if key.strip() == "display":
                     display = response[key]
             return ExcelAnalyzeResponse(sql, thoughts, display)
         except Exception as e:
-            raise ValueError(f"LLM Response Can't Parser! \n{ model_out_text}")
+            raise ValueError(f"LLM Response Can't Parser! \n")
 
     def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view

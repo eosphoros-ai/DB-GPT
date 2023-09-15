@@ -251,6 +251,7 @@ async def params_load(
         ### refresh messages
         return Result.succ(get_hist_messages(conv_uid))
     except Exception as e:
+        logger.error("excel load error!", e)
         return Result.faild(code="E000X", msg=f"File Load Error {e}")
 
 
