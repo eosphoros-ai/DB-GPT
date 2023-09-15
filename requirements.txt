@@ -58,7 +58,7 @@ seaborn
 auto-gpt-plugin-template
 pymdown-extensions
 gTTS==2.3.1
-langchain
+langchain>=0.0.286
 nltk
 python-dotenv==1.0.0
 
