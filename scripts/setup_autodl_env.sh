@@ -1,19 +1,91 @@
 #!/bin/bash
-eval "$(conda shell.bash hook)"
+# This script is used for setting up the environment required for DB-GPT on https://www.autodl.com/
 
-source ~/.bashrc
+# Usage: source /etc/network_turbo && curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/setup_autodl_env.sh | bash
 
-# source /etc/network_turbo
-# unset http_proxy && unset https_proxy
-conda create -n dbgpt python=3.10 -y
+DEFAULT_PROXY="true"
+USE_PROXY=$DEFAULT_PROXY
 
-conda activate dbgpt
+initialize_conda() {
+    eval "$(conda shell.bash hook)"
+    source ~/.bashrc
+    if [[ $USE_PROXY == "true" ]]; then 
+        source /etc/network_turbo
+        # unset http_proxy && unset https_proxy
+    fi
+}
 
-apt-get update -y && apt-get install git-lfs -y
+setup_conda_environment() {
+    conda create -n dbgpt python=3.10 -y
+    conda activate dbgpt
+}
 
-cd /root && git clone https://github.com/eosphoros-ai/DB-GPT.git
+install_sys_packages() {
+    apt-get update -y && apt-get install git-lfs -y
+}
 
-mkdir -p /root/DB-GPT/models && cd /root/DB-GPT/models
+clone_repositories() {
+    cd /root && git clone https://github.com/eosphoros-ai/DB-GPT.git
+    mkdir -p /root/DB-GPT/models && cd /root/DB-GPT/models
+    git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
+    git clone https://huggingface.co/THUDM/chatglm2-6b-int4
+    rm -rf /root/DB-GPT/models/text2vec-large-chinese/.git
+    rm -rf /root/DB-GPT/models/chatglm2-6b-int4/.git
+}
 
-git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-git clone https://huggingface.co/THUDM/chatglm2-6b-int4
+install_dbgpt_packages() {
+    conda activate dbgpt && cd /root/DB-GPT && pip install -e . && cp .env.template .env
+    cp .env.template .env && sed -i 's/LLM_MODEL=vicuna-13b-v1.5/LLM_MODEL=chatglm2-6b-int4/' .env
+    
+}
+
+clean_up() {
+    rm -rf `pip cache dir`
+    apt-get clean
+    rm ~/.bash_history
+    history -c
+}
+
+usage() {
+    echo "USAGE: $0 [--use-proxy]"
+    echo "  [--use-proxy] Use proxy settings (Optional)"
+    echo "  [-h|--help] Usage message"
+}
+
+# Command line arguments parsing
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        --use-proxy)
+        USE_PROXY="true"
+        shift
+        ;;
+        -h|--help)
+        help="true"
+        shift
+        ;;
+        *)
+        usage
+        exit 1
+        ;;
+    esac
+done
+
+if [[ $help ]]; then
+    usage
+    exit 0
+fi
+
+# Main execution
+
+if [[ $USE_PROXY == "true" ]]; then
+    echo "Using proxy settings..."
+    source /etc/network_turbo
+fi
+
+initialize_conda
+setup_conda_environment
+install_sys_packages
+clone_repositories
+install_dbgpt_packages
+clean_up
