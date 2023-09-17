@@ -3,10 +3,17 @@
 
 # Usage: source /etc/network_turbo && curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/eosphoros-ai/DB-GPT/main/scripts/setup_autodl_env.sh | bash
 
+# autodl usage: 
+# conda activate dbgpt
+# cd /root/DB-GPT
+# bash scripts/examples/load_examples.sh
+# dbgpt start webserver --port 6006
+
 DEFAULT_PROXY="true"
 USE_PROXY=$DEFAULT_PROXY
 
 initialize_conda() {
+    conda init bash
     eval "$(conda shell.bash hook)"
     source ~/.bashrc
     if [[ $USE_PROXY == "true" ]]; then 
@@ -42,8 +49,15 @@ install_dbgpt_packages() {
 clean_up() {
     rm -rf `pip cache dir`
     apt-get clean
-    rm ~/.bash_history
+    rm -f ~/.bash_history
     history -c
+}
+
+clean_local_data() {
+    rm -rf /root/DB-GPT/pilot/data
+    rm -rf /root/DB-GPT/pilot/message
+    rm -f /root/DB-GPT/logs/*
+    rm -f /root/DB-GPT/logsDbChatOutputParser.log
 }
 
 usage() {
