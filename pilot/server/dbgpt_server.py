@@ -23,6 +23,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pilot.server.knowledge.api import router as knowledge_router
+from pilot.server.prompt.api import router as prompt_router
 
 
 from pilot.openapi.api_v1.api_v1 import router as api_v1
@@ -74,6 +75,7 @@ app.include_router(api_editor_route_v1, prefix="/api")
 
 # app.include_router(api_v1)
 app.include_router(knowledge_router)
+app.include_router(prompt_router)
 # app.include_router(api_editor_route_v1)
 
 
