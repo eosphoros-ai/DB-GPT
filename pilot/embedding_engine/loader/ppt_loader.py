@@ -19,7 +19,7 @@ class PPTLoader(BaseLoader):
         docs = []
         for slide in pr.slides:
             for shape in slide.shapes:
-                if hasattr(shape, "text") and shape.text is not "":
+                if hasattr(shape, "text") and shape.text:
                     docs.append(
                         Document(
                             page_content=shape.text, metadata={"source": slide.slide_id}

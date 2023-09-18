@@ -122,7 +122,7 @@ The core capabilities mainly consist of the following parts:
 - [DB-GPT-Web](https://github.com/eosphoros-ai/DB-GPT-Web)  ChatUI for DB-GPT  
 
 ## Image
-🌐 [AutoDL Image](https://www.codewithgpu.com/i/csunny/DB-GPT/dbgpt-0.3.1-v2)
+🌐 [AutoDL Image](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
 
 ## Install 
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
