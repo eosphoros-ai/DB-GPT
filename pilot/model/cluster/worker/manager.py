@@ -7,10 +7,11 @@ import random
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
-from typing import Awaitable, Callable, Dict, Iterator, List
+from typing import Awaitable, Callable, Dict, Iterator, List, Optional
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import StreamingResponse
+from pilot.componet import SystemApp
 from pilot.configs.model_config import LOGDIR
 from pilot.model.base import (
     ModelInstance,
@@ -23,7 +24,11 @@ from pilot.model.cluster.registry import ModelRegistry
 from pilot.model.llm_utils import list_supported_models
 from pilot.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
 from pilot.model.cluster.worker_base import ModelWorker
-from pilot.model.cluster.manager_base import WorkerManager, WorkerRunData
+from pilot.model.cluster.manager_base import (
+    WorkerManager,
+    WorkerRunData,
+    WorkerManagerFactory,
+)
 from pilot.model.cluster.base import *
 from pilot.utils import build_logger
 from pilot.utils.parameter_utils import (
@@ -548,6 +553,17 @@ class WorkerManagerAdapter(WorkerManager):
         return await self.worker_manager.parameter_descriptions(worker_type, model_name)
 
 
+class _DefaultWorkerManagerFactory(WorkerManagerFactory):
+    def __init__(
+        self, system_app: SystemApp | None = None, worker_manager: WorkerManager = None
+    ):
+        super().__init__(system_app)
+        self.worker_manager = worker_manager
+
+    def create(self) -> WorkerManager:
+        return self.worker_manager
+
+
 worker_manager = WorkerManagerAdapter()
 router = APIRouter()
 
@@ -787,6 +803,7 @@ def initialize_worker_manager_in_client(
     embedding_model_name: str = None,
     embedding_model_path: str = None,
     start_listener: Callable[["WorkerManager"], None] = None,
+    system_app: SystemApp = None,
 ):
     """Initialize WorkerManager in client.
     If run_locally is True:
@@ -845,6 +862,8 @@ def initialize_worker_manager_in_client(
     if include_router and app:
         # mount WorkerManager router
         app.include_router(router, prefix="/api")
+    if system_app:
+        system_app.register(_DefaultWorkerManagerFactory, worker_manager)
 
 
 def run_worker_manager(

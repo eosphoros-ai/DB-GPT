@@ -133,6 +133,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
             embedding_model_name=embedding_model_name,
             embedding_model_path=embedding_model_path,
             start_listener=model_start_listener,
+            system_app=system_app,
         )
 
         CFG.NEW_SERVER_MODE = True
@@ -146,6 +147,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
             controller_addr=CFG.MODEL_SERVER,
             local_port=param.port,
             start_listener=model_start_listener,
+            system_app=system_app,
         )
         CFG.SERVER_LIGHT_MODE = True
 
