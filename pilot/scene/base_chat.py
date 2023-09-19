@@ -6,6 +6,7 @@ from typing import Any, List, Dict
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import LOGDIR
+from pilot.componet import ComponetType
 from pilot.memory.chat_history.base import BaseChatHistoryMemory
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.memory.chat_history.file_history import FileHistoryMemory
@@ -142,8 +143,11 @@ class BaseChat(ABC):
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
-            from pilot.model.cluster import worker_manager
+            from pilot.model.cluster import WorkerManagerFactory
 
+            worker_manager = CFG.SYSTEM_APP.get_componet(
+                ComponetType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
             async for output in worker_manager.generate_stream(payload):
                 yield output
         except Exception as e:
@@ -160,7 +164,11 @@ class BaseChat(ABC):
         logger.info(f"Request: \n{payload}")
         ai_response_text = ""
         try:
-            from pilot.model.cluster import worker_manager
+            from pilot.model.cluster import WorkerManagerFactory
+
+            worker_manager = CFG.SYSTEM_APP.get_componet(
+                ComponetType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
 
             model_output = await worker_manager.generate(payload)
 

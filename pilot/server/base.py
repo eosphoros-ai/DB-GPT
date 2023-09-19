@@ -71,7 +71,6 @@ def server_init(args, system_app: SystemApp):
 
 def _create_model_start_listener(system_app: SystemApp):
     from pilot.connections.manages.connection_manager import ConnectManager
-    from pilot.model.cluster import worker_manager
 
     cfg = Config()
 

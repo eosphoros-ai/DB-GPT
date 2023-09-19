@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Type, TYPE_CHECKING
-
-from pilot.componet import SystemApp
 import logging
-from pilot.configs.model_config import get_device
-from pilot.embedding_engine.embedding_factory import (
-    EmbeddingFactory,
-    DefaultEmbeddingFactory,
-)
+from typing import TYPE_CHECKING, Any, Type
+
+from pilot.componet import ComponetType, SystemApp
+from pilot.embedding_engine.embedding_factory import EmbeddingFactory
 from pilot.server.base import WebWerverParameters
 
 if TYPE_CHECKING:
@@ -39,13 +35,9 @@ def _initialize_embedding_model(
     embedding_model_name: str,
     embedding_model_path: str,
 ):
-    from pilot.model.cluster import worker_manager
-
     if param.remote_embedding:
         logger.info("Register remote RemoteEmbeddingFactory")
-        system_app.register(
-            RemoteEmbeddingFactory, worker_manager, model_name=embedding_model_name
-        )
+        system_app.register(RemoteEmbeddingFactory, model_name=embedding_model_name)
     else:
         logger.info(f"Register local LocalEmbeddingFactory")
         system_app.register(
@@ -56,26 +48,28 @@ def _initialize_embedding_model(
 
 
 class RemoteEmbeddingFactory(EmbeddingFactory):
-    def __init__(
-        self, system_app, worker_manager, model_name: str = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, system_app, model_name: str = None, **kwargs: Any) -> None:
         super().__init__(system_app=system_app)
-        self._worker_manager = worker_manager
         self._default_model_name = model_name
         self.kwargs = kwargs
+        self.system_app = system_app
 
     def init_app(self, system_app):
-        pass
+        self.system_app = system_app
 
     def create(
         self, model_name: str = None, embedding_cls: Type = None
     ) -> "Embeddings":
+        from pilot.model.cluster import WorkerManagerFactory
         from pilot.model.cluster.embedding.remote_embedding import RemoteEmbeddings
 
         if embedding_cls:
             raise NotImplementedError
+        worker_manager = self.system_app.get_componet(
+            ComponetType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
         # Ignore model_name args
-        return RemoteEmbeddings(self._default_model_name, self._worker_manager)
+        return RemoteEmbeddings(self._default_model_name, worker_manager)
 
 
 class LocalEmbeddingFactory(EmbeddingFactory):
@@ -103,13 +97,13 @@ class LocalEmbeddingFactory(EmbeddingFactory):
         return self._model
 
     def _load_model(self) -> "Embeddings":
-        from pilot.model.parameter import (
-            EmbeddingModelParameters,
-            BaseEmbeddingModelParameters,
-            EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
-        )
-        from pilot.model.cluster.worker.embedding_worker import _parse_embedding_params
         from pilot.model.cluster.embedding.loader import EmbeddingLoader
+        from pilot.model.cluster.worker.embedding_worker import _parse_embedding_params
+        from pilot.model.parameter import (
+            EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
+            BaseEmbeddingModelParameters,
+            EmbeddingModelParameters,
+        )
 
         param_cls = EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG.get(
             self._default_model_name, EmbeddingModelParameters

@@ -3,6 +3,7 @@ import uuid
 import asyncio
 import os
 import shutil
+import logging
 from fastapi import (
     APIRouter,
     Request,
@@ -11,6 +12,7 @@ from fastapi import (
     Form,
     Body,
     BackgroundTasks,
+    Depends,
 )
 
 from fastapi.responses import StreamingResponse
@@ -41,10 +43,13 @@ from pilot.scene.message import OnceConversation
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.summary.db_summary_client import DBSummaryClient
 
+from pilot.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
+from pilot.model.base import FlatSupportedModel
+
 router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()
-logger = build_logger("api_v1", LOGDIR + "api_v1.log")
+logger = logging.getLogger(__name__)
 knowledge_service = KnowledgeService()
 
 model_semaphore = None
@@ -88,6 +93,20 @@ def knowledge_list():
     for space in spaces:
         params.update({space.name: space.name})
     return params
+
+
+def get_model_controller() -> BaseModelController:
+    controller = CFG.SYSTEM_APP.get_componet(
+        ComponetType.MODEL_CONTROLLER, BaseModelController
+    )
+    return controller
+
+
+def get_worker_manager() -> WorkerManager:
+    worker_manager = CFG.SYSTEM_APP.get_componet(
+        ComponetType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+    ).create()
+    return worker_manager
 
 
 @router.get("/v1/chat/db/list", response_model=Result[DBConfig])
@@ -351,15 +370,10 @@ async def chat_completions(dialogue: ConversationVo = Body()):
 
 
 @router.get("/v1/model/types")
-async def model_types(request: Request):
-    print(f"/controller/model/types")
+async def model_types(controller: BaseModelController = Depends(get_model_controller)):
+    logger.info(f"/controller/model/types")
     try:
         types = set()
-        from pilot.model.cluster.controller.controller import BaseModelController
-
-        controller = CFG.SYSTEM_APP.get_componet(
-            ComponetType.MODEL_CONTROLLER, BaseModelController
-        )
         models = await controller.get_all_instances(healthy_only=True)
         for model in models:
             worker_name, worker_type = model.model_name.split("@")
@@ -369,6 +383,16 @@ async def model_types(request: Request):
 
     except Exception as e:
         return Result.faild(code="E000X", msg=f"controller model types error {e}")
+
+
+@router.get("/v1/model/supports")
+async def model_types(worker_manager: WorkerManager = Depends(get_worker_manager)):
+    logger.info(f"/controller/model/supports")
+    try:
+        models = await worker_manager.supported_models()
+        return Result.succ(FlatSupportedModel.from_supports(models))
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"Fetch supportd models error {e}")
 
 
 async def no_stream_generator(chat):
