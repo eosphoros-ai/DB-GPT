@@ -11,7 +11,7 @@ from typing import Awaitable, Callable, Dict, Iterator, List, Optional
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import StreamingResponse
-from pilot.componet import SystemApp
+from pilot.component import SystemApp
 from pilot.configs.model_config import LOGDIR
 from pilot.model.base import (
     ModelInstance,

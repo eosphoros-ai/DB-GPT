@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Type
 
-from pilot.componet import ComponetType, SystemApp
+from pilot.component import ComponentType, SystemApp
 from pilot.embedding_engine.embedding_factory import EmbeddingFactory
 from pilot.server.base import WebWerverParameters
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def initialize_componets(
+def initialize_components(
     param: WebWerverParameters,
     system_app: SystemApp,
     embedding_model_name: str,
@@ -65,8 +65,8 @@ class RemoteEmbeddingFactory(EmbeddingFactory):
 
         if embedding_cls:
             raise NotImplementedError
-        worker_manager = self.system_app.get_componet(
-            ComponetType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        worker_manager = self.system_app.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         # Ignore model_name args
         return RemoteEmbeddings(self._default_model_name, worker_manager)

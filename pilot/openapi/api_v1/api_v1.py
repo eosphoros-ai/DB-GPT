@@ -20,7 +20,7 @@ from fastapi.exceptions import RequestValidationError
 from typing import List
 import tempfile
 
-from pilot.componet import ComponetType
+from pilot.component import ComponentType
 from pilot.openapi.api_view_model import (
     Result,
     ConversationVo,
@@ -96,15 +96,15 @@ def knowledge_list():
 
 
 def get_model_controller() -> BaseModelController:
-    controller = CFG.SYSTEM_APP.get_componet(
-        ComponetType.MODEL_CONTROLLER, BaseModelController
+    controller = CFG.SYSTEM_APP.get_component(
+        ComponentType.MODEL_CONTROLLER, BaseModelController
     )
     return controller
 
 
 def get_worker_manager() -> WorkerManager:
-    worker_manager = CFG.SYSTEM_APP.get_componet(
-        ComponetType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+    worker_manager = CFG.SYSTEM_APP.get_component(
+        ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
     ).create()
     return worker_manager
 

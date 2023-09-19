@@ -2,7 +2,7 @@ import json
 import uuid
 
 from pilot.common.schema import DBType
-from pilot.componet import SystemApp
+from pilot.component import SystemApp
 from pilot.configs.config import Config
 from pilot.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
@@ -36,7 +36,7 @@ class DBSummaryClient:
         from pilot.embedding_engine.embedding_factory import EmbeddingFactory
 
         db_summary_client = RdbmsSummary(dbname, db_type)
-        embedding_factory = self.system_app.get_componet(
+        embedding_factory = self.system_app.get_component(
             "embedding_factory", EmbeddingFactory
         )
         embeddings = embedding_factory.create(
@@ -94,7 +94,7 @@ class DBSummaryClient:
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
-        embedding_factory = CFG.SYSTEM_APP.get_componet(
+        embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
         knowledge_embedding_client = EmbeddingEngine(
@@ -117,7 +117,7 @@ class DBSummaryClient:
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
-        embedding_factory = CFG.SYSTEM_APP.get_componet(
+        embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
         knowledge_embedding_client = EmbeddingEngine(

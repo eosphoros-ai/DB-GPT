@@ -6,7 +6,7 @@ from typing import Optional, Any
 from dataclasses import dataclass, field
 
 from pilot.configs.config import Config
-from pilot.componet import SystemApp
+from pilot.component import SystemApp
 from pilot.utils.parameter_utils import BaseParameters
 
 

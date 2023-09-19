@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Iterator, Callable
 from abc import ABC, abstractmethod
 from datetime import datetime
 from concurrent.futures import Future
-from pilot.componet import BaseComponet, ComponetType, SystemApp
+from pilot.component import BaseComponent, ComponentType, SystemApp
 from pilot.model.base import WorkerSupportedModel, ModelOutput, WorkerApplyOutput
 from pilot.model.cluster.worker_base import ModelWorker
 from pilot.model.cluster.base import WorkerStartupRequest, WorkerApplyRequest
@@ -107,8 +107,8 @@ class WorkerManager(ABC):
         """Get parameter descriptions of model"""
 
 
-class WorkerManagerFactory(BaseComponet, ABC):
-    name = ComponetType.WORKER_MANAGER_FACTORY.value
+class WorkerManagerFactory(BaseComponent, ABC):
+    name = ComponentType.WORKER_MANAGER_FACTORY.value
 
     def init_app(self, system_app: SystemApp):
         pass
