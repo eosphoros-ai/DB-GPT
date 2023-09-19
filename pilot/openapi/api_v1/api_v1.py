@@ -84,6 +84,7 @@ def plugins_select_info():
         plugins_infos.update({f"【{plugin._name}】=>{plugin._description}": plugin._name})
     return plugins_infos
 
+
 def get_db_list_info():
     dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
     params: dict = {}
@@ -92,6 +93,7 @@ def get_db_list_info():
         if comment is not None and len(comment) > 0:
             params.update({item["db_name"]: comment})
     return params
+
 
 def knowledge_list_info():
     """return knowledge space list"""
