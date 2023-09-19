@@ -84,6 +84,24 @@ def plugins_select_info():
         plugins_infos.update({f"【{plugin._name}】=>{plugin._description}": plugin._name})
     return plugins_infos
 
+def get_db_list_info():
+    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+    params: dict = {}
+    for item in dbs:
+        comment = item["comment"]
+        if comment is not None and len(comment) > 0:
+            params.update({item["db_name"]: comment})
+    return params
+def knowledge_list_info():
+    """return knowledge space list"""
+    params: dict = {}
+    request = KnowledgeSpaceRequest()
+    spaces = knowledge_service.get_knowledge_space(request)
+    for space in spaces:
+        params.update({space.name: space.desc})
+    return params
+
+
 
 def knowledge_list():
     """return knowledge space list"""
@@ -232,6 +250,22 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
         return Result.succ(plugins_select_info())
     elif ChatScene.ChatKnowledge.value() == chat_mode:
         return Result.succ(knowledge_list())
+    else:
+        return Result.succ(None)
+
+
+@router.post("/v1/chat/mode/params/info", response_model=Result[dict])
+async def params_list_info(chat_mode: str = ChatScene.ChatNormal.value()):
+    if ChatScene.ChatWithDbQA.value() == chat_mode:
+        return Result.succ(get_db_list_info())
+    elif ChatScene.ChatWithDbExecute.value() == chat_mode:
+        return Result.succ(get_db_list_info())
+    elif ChatScene.ChatDashboard.value() == chat_mode:
+        return Result.succ(get_db_list_info())
+    elif ChatScene.ChatExecution.value() == chat_mode:
+        return Result.succ(plugins_select_info())
+    elif ChatScene.ChatKnowledge.value() == chat_mode:
+        return Result.succ(knowledge_list_info())
     else:
         return Result.succ(None)
 
