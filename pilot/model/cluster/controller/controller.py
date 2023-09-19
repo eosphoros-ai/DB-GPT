@@ -4,7 +4,7 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, FastAPI
-from pilot.componet import BaseComponet, ComponetType, SystemApp
+from pilot.component import BaseComponent, ComponentType, SystemApp
 from pilot.model.base import ModelInstance
 from pilot.model.parameter import ModelControllerParameters
 from pilot.model.cluster.registry import EmbeddedModelRegistry, ModelRegistry
@@ -15,8 +15,8 @@ from pilot.utils.api_utils import (
 )
 
 
-class BaseModelController(BaseComponet, ABC):
-    name = ComponetType.MODEL_CONTROLLER
+class BaseModelController(BaseComponent, ABC):
+    name = ComponentType.MODEL_CONTROLLER
 
     def init_app(self, system_app: SystemApp):
         pass

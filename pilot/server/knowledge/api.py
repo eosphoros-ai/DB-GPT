@@ -181,7 +181,7 @@ def document_list(space_name: str, query_request: ChunkQueryRequest):
 @router.post("/knowledge/{vector_name}/query")
 def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
     print(f"Received params: {space_name}, {query_request}")
-    embedding_factory = CFG.SYSTEM_APP.get_componet(
+    embedding_factory = CFG.SYSTEM_APP.get_component(
         "embedding_factory", EmbeddingFactory
     )
     client = EmbeddingEngine(

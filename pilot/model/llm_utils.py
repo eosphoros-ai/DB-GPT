@@ -172,7 +172,9 @@ def _list_supported_models(
             llm_adapter = get_llm_model_adapter(model_name, model_path)
             param_cls = llm_adapter.model_param_class()
             model.enabled = True
-            params = _get_parameter_descriptions(param_cls)
+            params = _get_parameter_descriptions(
+                param_cls, model_name=model_name, model_path=model_path
+            )
             model.params = params
         except Exception:
             pass
