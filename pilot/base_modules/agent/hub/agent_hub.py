@@ -1,39 +1,54 @@
+import json
 import logging
-import git
 import os
+import glob
+import zipfile
+import requests
+from pathlib import Path
+import datetime
+import shutil
+from fastapi import UploadFile
+from typing import  Any
+import tempfile
 
 from ..db.plugin_hub_db import PluginHubEntity, PluginHubDao
 from ..db.my_plugin_db import MyPluginDao, MyPluginEntity
 from .schema import PluginStorageType
+from ..plugins_util import scan_plugins, update_from_git
 
 logger = logging.getLogger("agent_hub")
 Default_User = "default"
 DEFAULT_PLUGIN_REPO = "https://github.com/eosphoros-ai/DB-GPT-Plugins.git"
 TEMP_PLUGIN_PATH = ""
 
+
 class AgentHub:
-    def __init__(self, temp_hub_file_path:str = "") -> None:
+    def __init__(self, plugin_dir) -> None:
         self.hub_dao = PluginHubDao()
         self.my_lugin_dao = MyPluginDao()
-        if temp_hub_file_path:
-            self.temp_hub_file_path = temp_hub_file_path
-        else:
-            self.temp_hub_file_path =  os.path.join(os.getcwd(), "plugins", "temp")
+        os.makedirs(plugin_dir, exist_ok=True)
+        self.plugin_dir = plugin_dir
+        self.temp_hub_file_path = os.path.join(plugin_dir, "temp")
 
     def install_plugin(self, plugin_name: str, user_name: str = None):
         logger.info(f"install_plugin {plugin_name}")
-
         plugin_entity = self.hub_dao.get_by_name(plugin_name)
         if plugin_entity:
             if plugin_entity.storage_channel == PluginStorageType.Git.value:
                 try:
-                    self.__download_from_git(plugin_name, plugin_entity.storage_url)
-                    self.load_plugin(plugin_name)
+                    branch_name = None
+                    authorization = None
+                    if plugin_entity.download_param:
+                        download_param = json.loads(plugin_entity.download_param)
+                        branch_name = download_param.get("branch_name")
+                        authorization = download_param.get("authorization")
+                    file_name = self.__download_from_git(plugin_entity.storage_url, branch_name, authorization)
 
                     # add to my plugins and edit hub status
                     plugin_entity.installed = True
 
                     my_plugin_entity = self.__build_my_plugin(plugin_entity)
+                    my_plugin_entity.file_name = file_name
                     if user_name:
                         # TODO use user
                         my_plugin_entity.user_code = ""
@@ -55,8 +70,42 @@ class AgentHub:
 
             else:
                 raise ValueError(f"Unsupport Storage Channel {plugin_entity.storage_channel}!")
+
         else:
             raise ValueError(f"Can't Find Plugin {plugin_name}!")
+
+    def uninstall_plugin(self, plugin_name, user):
+        logger.info(f"uninstall_plugin:{plugin_name},{user}")
+        plugin_entity = self.hub_dao.get_by_name(plugin_name)
+        plugin_entity.installed = False
+        with self.hub_dao.Session() as session:
+            try:
+                my_plugin_q = session.query(MyPluginEntity).filter(MyPluginEntity.name == plugin_name)
+                if user:
+                    my_plugin_q.filter(MyPluginEntity.user_code == user)
+                my_plugin_q.delete()
+                session.merge(plugin_entity)
+                session.commit()
+            except:
+                session.rollback()
+
+        # delete package file if not use
+        plugin_infos = self.hub_dao.get_by_storage_url(plugin_entity.storage_url)
+        have_installed = False
+        for plugin_info in plugin_infos:
+            if plugin_info.installed:
+                have_installed = True
+                break
+        if not have_installed:
+            plugin_repo_name = plugin_entity.storage_url.replace(".git", "").strip('/').split('/')[-1]
+            files = glob.glob(
+                os.path.join(self.plugin_dir, f"{plugin_repo_name}*")
+            )
+            for file in files:
+                os.remove(file)
+
+    def __download_from_git(self, github_repo, branch_name, authorization):
+        return update_from_git(self.plugin_dir, github_repo, branch_name, authorization)
 
     def __build_my_plugin(self, hub_plugin: PluginHubEntity) -> MyPluginEntity:
         my_plugin_entity = MyPluginEntity()
@@ -65,29 +114,68 @@ class AgentHub:
         my_plugin_entity.version = hub_plugin.version
         return my_plugin_entity
 
-    def __fetch_from_git(self):
-        logger.info("fetch plugins from git to local path:{}", self.temp_hub_file_path)
-        os.makedirs(self.temp_hub_file_path, exist_ok=True)
-        repo = git.Repo(self.temp_hub_file_path)
-        if  repo.is_repo():
-            repo.remotes.origin.pull()
-        else:
-            git.Repo.clone_from(DEFAULT_PLUGIN_REPO, self.temp_hub_file_path)
+    def refresh_hub_from_git(self, github_repo: str = None, branch_name: str = None, authorization: str = None):
+        logger.info("refresh_hub_by_git start!")
+        update_from_git(self.temp_hub_file_path, github_repo, branch_name, authorization)
+        git_plugins = scan_plugins(self.temp_hub_file_path)
+        for git_plugin in git_plugins:
+            old_hub_info = self.hub_dao.get_by_name(git_plugin._name)
+            if old_hub_info:
+                plugin_hub_info = old_hub_info
+            else:
+                plugin_hub_info = PluginHubEntity()
+                plugin_hub_info.type = ""
+                plugin_hub_info.storage_channel = PluginStorageType.Git.value
+                plugin_hub_info.storage_url = DEFAULT_PLUGIN_REPO
+                plugin_hub_info.author = getattr(git_plugin, '_author', 'DB-GPT')
+                plugin_hub_info.email = getattr(git_plugin, '_email', '')
+                plugin_hub_info.download_param = json.dumps({
+                    branch_name: branch_name,
+                    authorization: authorization
+                })
+                plugin_hub_info.installed = False
 
-        # if repo.head.is_valid():
-            # clone succ， fetch plugins info
+            plugin_hub_info.name = git_plugin._name
+            plugin_hub_info.version = git_plugin._version
+            plugin_hub_info.description = git_plugin._description
+            self.hub_dao.update(plugin_hub_info)
+
+    def upload_my_plugin(self, doc_file: UploadFile, user: Any=Default_User):
+
+        # We can not move temp file in windows system when we open file in context of `with`
+        file_path = os.path.join(self.plugin_dir, doc_file.filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        tmp_fd, tmp_path = tempfile.mkstemp(
+            dir=os.path.join(self.plugin_dir)
+        )
+        with os.fdopen(tmp_fd, "wb") as tmp:
+            tmp.write(await doc_file.read())
+        shutil.move(
+            tmp_path,
+            os.path.join(self.plugin_dir, doc_file.filename),
+        )
+
+        my_plugins = scan_plugins(self.plugin_dir, doc_file.filename)
+        for my_plugin in my_plugins:
+            my_plugin_entiy = MyPluginEntity()
+
+            my_plugin_entiy.name = my_plugin._name
+            my_plugin_entiy.version =  my_plugin._version
+            my_plugin_entiy.type = "Personal"
+            my_plugin_entiy.user_code = user
+            my_plugin_entiy.user_name = user
+            my_plugin_entiy.tenant = ""
+            my_plugin_entiy.file_name = doc_file.filename
+
+            self.my_lugin_dao.update(my_plugin_entiy)
 
 
-    def upload_plugin_in_hub(self, name: str, path: str):
 
-        pass
 
-    def __download_from_git(self, plugin_name, url):
-        pass
-
-    def load_plugin(self, plugin_name):
-        logger.info(f"load_plugin:{plugin_name}")
-        pass
+    def reload_my_plugins(self):
+        logger.info(f"load_plugins start!")
+        return scan_plugins(self.plugin_dir)
 
     def get_my_plugin(self, user: str):
         logger.info(f"get_my_plugin:{user}")
@@ -95,7 +183,3 @@ class AgentHub:
             user = Default_User
         return self.my_lugin_dao.get_by_user(user)
 
-    def uninstall_plugin(self, plugin_name, user):
-        logger.info(f"uninstall_plugin:{plugin_name},{user}")
-
-        pass

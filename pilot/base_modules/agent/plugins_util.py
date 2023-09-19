@@ -5,6 +5,7 @@ import os
 import glob
 import zipfile
 import requests
+import git
 import threading
 import datetime
 from pathlib import Path
@@ -18,7 +19,6 @@ from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from pilot.configs.config import Config
 from pilot.configs.model_config import PLUGINS_DIR
 from pilot.logs import logger
-
 
 
 def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
@@ -106,7 +106,7 @@ def load_native_plugins(cfg: Config):
                 with open(file_name, "wb") as f:
                     f.write(response.content)
                 print("save file")
-                cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
+                cfg.set_plugins(scan_plugins(cfg.debug_mode))
             else:
                 print("get file faild，response code：", response.status_code)
         except Exception as e:
@@ -116,7 +116,30 @@ def load_native_plugins(cfg: Config):
     t.start()
 
 
-def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate]:
+def __scan_plugin_file(file_path, debug: bool = False)-> List[AutoGPTPluginTemplate]:
+    logger.info(f"__scan_plugin_file:{file_path},{debug}")
+    loaded_plugins = []
+    if moduleList := inspect_zip_for_modules(str(file_path), debug):
+        for module in moduleList:
+            plugin = Path(plugin)
+            module = Path(module)
+            logger.debug(f"Plugin: {plugin} Module: {module}")
+            zipped_package = zipimporter(str(plugin))
+            zipped_module = zipped_package.load_module(str(module.parent))
+            for key in dir(zipped_module):
+                if key.startswith("__"):
+                    continue
+                a_module = getattr(zipped_module, key)
+                a_keys = dir(a_module)
+                if (
+                        "_abc_impl" in a_keys
+                        and a_module.__name__ != "AutoGPTPluginTemplate"
+                        # and denylist_allowlist_check(a_module.__name__, cfg)
+                ):
+                    loaded_plugins.append(a_module())
+    return loaded_plugins
+
+def scan_plugins(plugins_file_path: str, file_name: str = "", debug: bool = False) -> List[AutoGPTPluginTemplate]:
     """Scan the plugins directory for plugins and loads them.
 
     Args:
@@ -126,31 +149,16 @@ def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate
     Returns:
         List[Tuple[str, Path]]: List of plugins.
     """
-    loaded_plugins = []
-    current_dir = os.getcwd()
-    print(current_dir)
-    # Generic plugins
-    plugins_path_path = Path(PLUGINS_DIR)
 
-    for plugin in plugins_path_path.glob("*.zip"):
-        if moduleList := inspect_zip_for_modules(str(plugin), debug):
-            for module in moduleList:
-                plugin = Path(plugin)
-                module = Path(module)
-                logger.debug(f"Plugin: {plugin} Module: {module}")
-                zipped_package = zipimporter(str(plugin))
-                zipped_module = zipped_package.load_module(str(module.parent))
-                for key in dir(zipped_module):
-                    if key.startswith("__"):
-                        continue
-                    a_module = getattr(zipped_module, key)
-                    a_keys = dir(a_module)
-                    if (
-                        "_abc_impl" in a_keys
-                        and a_module.__name__ != "AutoGPTPluginTemplate"
-                        # and denylist_allowlist_check(a_module.__name__, cfg)
-                    ):
-                        loaded_plugins.append(a_module())
+    loaded_plugins = []
+    # Generic plugins
+    plugins_path = Path(plugins_file_path)
+    if file_name:
+        plugin_path = Path(plugins_path, file_name)
+        loaded_plugins = __scan_plugin_file(plugin_path)
+    else:
+        for plugin_path in plugins_path.glob("*.zip"):
+          loaded_plugins.extend(__scan_plugin_file(plugin_path))
 
     if loaded_plugins:
         logger.info(f"\nPlugins found: {len(loaded_plugins)}\n" "--------------------")
@@ -183,5 +191,55 @@ def denylist_allowlist_check(plugin_name: str, cfg: Config) -> bool:
     return ack.lower() == cfg.authorise_key
 
 
-if __name__ == '__main__':
-    print(inspect_zip_for_modules("/Users/tuyang.yhj/Downloads/DB-GPT-Plugins-main (1).zip"))
+def update_from_git(download_path: str, github_repo: str = "", branch_name: str = "main",
+                    authorization: str = "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"):
+    os.makedirs(download_path, exist_ok=True)
+    if github_repo:
+        if github_repo.index("github.com") <= 0:
+            raise ValueError("Not a correct Github repository address！" + github_repo)
+        github_repo = github_repo.replace(".git", "")
+        url = github_repo + "/archive/refs/heads/" + branch_name + ".zip"
+        plugin_repo_name = github_repo.strip('/').split('/')[-1]
+    else:
+        url = "https://github.com/eosphoros-ai/DB-GPT-Plugins/archive/refs/heads/main.zip"
+        plugin_repo_name = "DB-GPT-Plugins"
+    try:
+        session = requests.Session()
+        response = session.get(
+            url,
+            headers={"Authorization": authorization},
+        )
+
+        if response.status_code == 200:
+            plugins_path_path = Path(download_path)
+            files = glob.glob(
+                os.path.join(plugins_path_path, f"{plugin_repo_name}*")
+            )
+            for file in files:
+                os.remove(file)
+            now = datetime.datetime.now()
+            time_str = now.strftime("%Y%m%d%H%M%S")
+            file_name = f"{plugins_path_path}/{plugin_repo_name}-{branch_name}-{time_str}.zip"
+            print(file_name)
+            with open(file_name, "wb") as f:
+                f.write(response.content)
+            return plugin_repo_name
+        else:
+            logger.error("update plugins faild，response code：", response.status_code)
+            raise ValueError("download plugin faild!" + response.status_code)
+    except Exception as e:
+        logger.error("update plugins from git exception!" + str(e))
+        raise ValueError("download plugin exception!", e)
+
+
+def __fetch_from_git(local_path, git_url):
+    logger.info("fetch plugins from git to local path:{}", local_path)
+    os.makedirs(local_path, exist_ok=True)
+    repo = git.Repo(local_path)
+    if repo.is_repo():
+        repo.remotes.origin.pull()
+    else:
+        git.Repo.clone_from(git_url, local_path)
+
+    # if repo.head.is_valid():
+    # clone succ， fetch plugins info

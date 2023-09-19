@@ -18,6 +18,7 @@ class MyPluginEntity(Base):
     user_code = Column(String, nullable=True, comment="user code")
     user_name = Column(String, nullable=True, comment="user name")
     name = Column(String, unique=True, nullable=False, comment="plugin name")
+    file_name = Column(String,  nullable=False, comment="plugin package file name")
     type  = Column(String, comment="plugin type")
     version =  Column(String, comment="plugin version")
     use_count = Column(Integer, nullable=True, default=0, comment="plugin total use count")
@@ -74,6 +75,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
     def list(self, query: MyPluginEntity, page=1, page_size=20)->list[MyPluginEntity]:
         session = self.Session()
         my_plugins = session.query(MyPluginEntity)
+        all_count = my_plugins.count()
         if query.id is not None:
             my_plugins = my_plugins.filter(MyPluginEntity.id == query.id)
         if query.name is not None:
@@ -101,7 +103,13 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         my_plugins = my_plugins.offset((page - 1) * page_size).limit( page_size)
         result = my_plugins.all()
         session.close()
-        return result
+        total_pages = all_count // page_size
+        if all_count % page_size != 0:
+            total_pages += 1
+
+
+        return result, total_pages, all_count
+
 
     def count(self, query: MyPluginEntity):
         session = self.Session()

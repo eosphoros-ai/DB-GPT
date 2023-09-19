@@ -6,6 +6,7 @@ from typing import Optional, Any
 from dataclasses import dataclass, field
 
 from pilot.configs.config import Config
+from pilot.configs.model_config import PLUGINS_DIR
 from pilot.componet import SystemApp
 from pilot.utils.parameter_utils import BaseParameters
 from pilot.base_modules.meta_data.meta_data import ddl_init_and_upgrade
@@ -30,7 +31,7 @@ def async_db_summery(system_app: SystemApp):
 def server_init(args, system_app: SystemApp):
     from pilot.base_modules.agent.commands.command_mange import CommandRegistry
 
-    from pilot.base_modules.agent.plugins import scan_plugins
+    from pilot.base_modules.agent.plugins_util import scan_plugins
 
     # logger.info(f"args: {args}")
 
@@ -43,7 +44,7 @@ def server_init(args, system_app: SystemApp):
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
 
-    cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
+    cfg.set_plugins(scan_plugins(PLUGINS_DIR, cfg.debug_mode))
 
     # Loader plugins and commands
     command_categories = [
@@ -126,3 +127,4 @@ class WebWerverParameters(BaseParameters):
         },
     )
     light: Optional[bool] = field(default=False, metadata={"help": "enable light mode"})
+

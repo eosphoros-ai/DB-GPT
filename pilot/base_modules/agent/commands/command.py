@@ -27,7 +27,6 @@ def execute_ai_response_json(
     user_input: str = None,
 ) -> str:
     """
-
     Args:
         command_registry:
         ai_response:
@@ -63,6 +62,8 @@ def execute_ai_response_json(
         )
         result = f"{command_result}"
     return result
+
+
 
 
 def execute_command(

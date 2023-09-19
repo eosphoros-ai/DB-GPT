@@ -13,12 +13,14 @@ class PluginHubEntity(Base):
     __tablename__ = 'plugin_hub'
     id = Column(Integer, primary_key=True, autoincrement=True, comment="autoincrement id")
     name = Column(String, unique=True, nullable=False, comment="plugin name")
+    description = Column(String, nullable=False, comment="plugin description")
     author = Column(String, nullable=True, comment="plugin author")
     email = Column(String, nullable=True, comment="plugin author email")
     type = Column(String, comment="plugin type")
     version = Column(String, comment="plugin version")
     storage_channel = Column(String, comment="plugin storage channel")
     storage_url = Column(String, comment="plugin download url")
+    download_param = Column(String, comment="plugin download param")
     created_at = Column(DateTime, default=datetime.utcnow, comment="plugin upload time")
     installed = Column(Boolean, default=False, comment="plugin already installed")
 
@@ -61,6 +63,8 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
     def list(self, query: PluginHubEntity, page=1, page_size=20) -> list[PluginHubEntity]:
         session = self.Session()
         plugin_hubs = session.query(PluginHubEntity)
+        all_count = plugin_hubs.count()
+
         if query.id is not None:
             plugin_hubs = plugin_hubs.filter(PluginHubEntity.id == query.id)
         if query.name is not None:
@@ -82,6 +86,20 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
 
         plugin_hubs = plugin_hubs.order_by(PluginHubEntity.id.desc())
         plugin_hubs = plugin_hubs.offset((page - 1) * page_size).limit(page_size)
+        result = plugin_hubs.all()
+        session.close()
+
+        total_pages = all_count // page_size
+        if all_count % page_size != 0:
+            total_pages += 1
+
+
+        return result, total_pages, all_count
+
+    def get_by_storage_url(self, storage_url):
+        session = self.Session()
+        plugin_hubs = session.query(PluginHubEntity)
+        plugin_hubs = plugin_hubs.filter(PluginHubEntity.storage_url == storage_url)
         result = plugin_hubs.all()
         session.close()
         return result
