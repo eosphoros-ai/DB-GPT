@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 from chromadb.errors import NoIndexException
@@ -70,7 +71,14 @@ class ChatKnowledge(BaseChat):
             )
             context = [d.page_content for d in docs]
             context = context[: self.max_token]
-            input_values = {"context": context, "question": self.current_user_input}
+            relations = list(
+                set([os.path.basename(d.metadata.get("source")) for d in docs])
+            )
+            input_values = {
+                "context": context,
+                "question": self.current_user_input,
+                "relations": relations,
+            }
         except NoIndexException:
             raise ValueError(
                 "you have no knowledge space, please add your knowledge space"

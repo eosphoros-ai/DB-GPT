@@ -14,9 +14,9 @@ class StrictFormatter(Formatter):
         kwargs: Mapping[str, Any],
     ) -> None:
         """Check to see if extra parameters are passed."""
-        extra = set(kwargs).difference(used_args)
-        if extra:
-            raise KeyError(extra)
+        for item_arg in used_args:
+            if item_arg not in set(kwargs):
+                raise KeyError(item_arg)
 
     def vformat(
         self, format_string: str, args: Sequence, kwargs: Mapping[str, Any]

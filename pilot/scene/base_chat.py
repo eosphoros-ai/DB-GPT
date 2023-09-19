@@ -132,6 +132,7 @@ class BaseChat(ABC):
             "max_new_tokens": int(self.prompt_template.max_new_tokens),
             "stop": self.prompt_template.sep,
             "echo": self.llm_echo,
+            "relations": input_values.get("relations"),
         }
         return payload
 
@@ -149,6 +150,7 @@ class BaseChat(ABC):
                 ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
             ).create()
             async for output in worker_manager.generate_stream(payload):
+                output.relations = payload.get("relations")
                 yield output
         except Exception as e:
             print(traceback.format_exc())
