@@ -8,14 +8,14 @@ sys.path.append(ROOT_PATH)
 import signal
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG
-from pilot.componet import SystemApp
+from pilot.component import SystemApp
 
 from pilot.server.base import (
     server_init,
     WebWerverParameters,
     _create_model_start_listener,
 )
-from pilot.server.componet_configs import initialize_componets
+from pilot.server.component_configs import initialize_components
 
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, applications
@@ -23,6 +23,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pilot.server.knowledge.api import router as knowledge_router
+from pilot.server.prompt.api import router as prompt_router
 from pilot.server.llm_manage.api import router as llm_manage_api
 
 
@@ -76,6 +77,7 @@ app.include_router(llm_manage_api, prefix="/api")
 
 # app.include_router(api_v1)
 app.include_router(knowledge_router)
+app.include_router(prompt_router)
 # app.include_router(api_editor_route_v1)
 
 
@@ -118,7 +120,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
 
     server_init(param, system_app)
     model_start_listener = _create_model_start_listener(system_app)
-    initialize_componets(param, system_app, embedding_model_name, embedding_model_path)
+    initialize_components(param, system_app, embedding_model_name, embedding_model_path)
 
     model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
     if not param.light:
@@ -133,6 +135,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
             embedding_model_name=embedding_model_name,
             embedding_model_path=embedding_model_path,
             start_listener=model_start_listener,
+            system_app=system_app,
         )
 
         CFG.NEW_SERVER_MODE = True
@@ -146,6 +149,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
             controller_addr=CFG.MODEL_SERVER,
             local_port=param.port,
             start_listener=model_start_listener,
+            system_app=system_app,
         )
         CFG.SERVER_LIGHT_MODE = True
 

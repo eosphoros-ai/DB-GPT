@@ -205,7 +205,7 @@ class KnowledgeService:
                         chunk_size=chunk_size,
                         chunk_overlap=chunk_overlap,
                     )
-            embedding_factory = CFG.SYSTEM_APP.get_componet(
+            embedding_factory = CFG.SYSTEM_APP.get_component(
                 "embedding_factory", EmbeddingFactory
             )
             client = EmbeddingEngine(

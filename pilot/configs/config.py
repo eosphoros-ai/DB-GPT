@@ -189,7 +189,7 @@ class Config(metaclass=Singleton):
         ### Log level
         self.DBGPT_LOG_LEVEL = os.getenv("DBGPT_LOG_LEVEL", "INFO")
 
-        from pilot.componet import SystemApp
+        from pilot.component import SystemApp
 
         self.SYSTEM_APP: SystemApp = None
 

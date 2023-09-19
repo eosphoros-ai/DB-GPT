@@ -12,6 +12,7 @@ class ParameterDescription:
     param_type: str
     default_value: Optional[Any]
     description: str
+    required: Optional[bool]
     valid_values: Optional[List[Any]]
     ext_metadata: Dict
 
@@ -460,20 +461,25 @@ def _type_str_to_python_type(type_str: str) -> Type:
     return type_mapping.get(type_str, str)
 
 
-def _get_parameter_descriptions(dataclass_type: Type) -> List[ParameterDescription]:
+def _get_parameter_descriptions(
+    dataclass_type: Type, **kwargs
+) -> List[ParameterDescription]:
     descriptions = []
     for field in fields(dataclass_type):
         ext_metadata = {
             k: v for k, v in field.metadata.items() if k not in ["help", "valid_values"]
         }
-
+        default_value = field.default if field.default != MISSING else None
+        if field.name in kwargs:
+            default_value = kwargs[field.name]
         descriptions.append(
             ParameterDescription(
                 param_class=f"{dataclass_type.__module__}.{dataclass_type.__name__}",
                 param_name=field.name,
                 param_type=EnvArgumentParser._get_argparse_type_str(field.type),
                 description=field.metadata.get("help", None),
-                default_value=field.default if field.default != MISSING else None,
+                required=field.default is MISSING,
+                default_value=default_value,
                 valid_values=field.metadata.get("valid_values", None),
                 ext_metadata=ext_metadata,
             )

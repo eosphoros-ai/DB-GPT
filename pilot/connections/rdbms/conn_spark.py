@@ -1,13 +1,10 @@
 import re
 from typing import Optional, Any
 
-from pyspark import SQLContext
 from sqlalchemy import text
 
-from pilot.connections.rdbms.base import RDBMSDatabase
 from pyspark.sql import SparkSession, DataFrame
 
-from sqlalchemy import create_engine
 
 
 class SparkConnect:

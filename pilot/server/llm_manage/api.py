@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter
 
-from pilot.componet import ComponetType
+from pilot.component import ComponentType
 from pilot.configs.config import Config
 from pilot.model.base import ModelInstance, WorkerApplyType
 
@@ -31,8 +31,8 @@ async def model_list():
     try:
         from pilot.model.cluster.controller.controller import BaseModelController
 
-        controller = CFG.SYSTEM_APP.get_componet(
-            ComponetType.MODEL_CONTROLLER, BaseModelController
+        controller = CFG.SYSTEM_APP.get_component(
+            ComponentType.MODEL_CONTROLLER, BaseModelController
         )
         responses = []
         managers = await controller.get_all_instances(
@@ -70,8 +70,8 @@ async def model_start(request: WorkerStartupRequest):
     try:
         from pilot.model.cluster.controller.controller import BaseModelController
 
-        controller = CFG.SYSTEM_APP.get_componet(
-            ComponetType.MODEL_CONTROLLER, BaseModelController
+        controller = CFG.SYSTEM_APP.get_component(
+            ComponentType.MODEL_CONTROLLER, BaseModelController
         )
         instances = await controller.get_all_instances(model_name="WorkerManager@service", healthy_only=True)
         worker_instance = None
@@ -98,8 +98,8 @@ async def model_start(request: WorkerStartupRequest):
     try:
         from pilot.model.cluster.controller.controller import BaseModelController
 
-        controller = CFG.SYSTEM_APP.get_componet(
-            ComponetType.MODEL_CONTROLLER, BaseModelController
+        controller = CFG.SYSTEM_APP.get_component(
+            ComponentType.MODEL_CONTROLLER, BaseModelController
         )
         instances = await controller.get_all_instances(model_name="WorkerManager@service", healthy_only=True)
         worker_instance = None

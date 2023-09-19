@@ -6,7 +6,7 @@ from typing import Optional, Any
 from dataclasses import dataclass, field
 
 from pilot.configs.config import Config
-from pilot.componet import SystemApp
+from pilot.component import SystemApp
 from pilot.utils.parameter_utils import BaseParameters
 
 
@@ -71,7 +71,6 @@ def server_init(args, system_app: SystemApp):
 
 def _create_model_start_listener(system_app: SystemApp):
     from pilot.connections.manages.connection_manager import ConnectManager
-    from pilot.model.cluster import worker_manager
 
     cfg = Config()
 
