@@ -13,15 +13,6 @@ CFG = Config()
 router = APIRouter()
 
 
-# @router.post("/controller/list")
-# async def controller_list(request: ModelInstance):
-#     print(f"/controller/list params:")
-#     try:
-#         CFG.LLM_MODEL = request.model_name
-#         return Result.succ("success")
-#
-#     except Exception as e:
-#         return Result.faild(code="E000X", msg=f"space list error {e}")
 @router.get("/v1/worker/model/params")
 async def model_params():
     print(f"/worker/model/params")
