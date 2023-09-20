@@ -1,5 +1,4 @@
 import logging
-import platform
 from typing import Dict, Iterator, List
 
 from pilot.configs.model_config import get_device
@@ -12,7 +11,7 @@ from pilot.server.chat_adapter import get_llm_chat_adapter, BaseChatAdpter
 from pilot.utils.model_utils import _clear_torch_cache
 from pilot.utils.parameter_utils import EnvArgumentParser
 
-logger = logging.getLogger("model_worker")
+logger = logging.getLogger(__name__)
 
 
 class DefaultModelWorker(ModelWorker):
@@ -91,8 +90,13 @@ class DefaultModelWorker(ModelWorker):
         _clear_torch_cache(self._model_params.device)
 
     def generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
-        import torch
+        torch_imported = False
+        try:
+            import torch
 
+            torch_imported = True
+        except ImportError:
+            pass
         try:
             # params adaptation
             params, model_context = self.llm_chat_adapter.model_adaptation(
@@ -117,16 +121,17 @@ class DefaultModelWorker(ModelWorker):
                 )
                 yield model_output
             print(f"\n\nfull stream output:\n{previous_response}")
-        except torch.cuda.CudaError:
-            model_output = ModelOutput(
-                text="**GPU OutOfMemory, Please Refresh.**", error_code=0
-            )
-            yield model_output
         except Exception as e:
-            model_output = ModelOutput(
-                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                error_code=0,
-            )
+            # Check if the exception is a torch.cuda.CudaError and if torch was imported.
+            if torch_imported and isinstance(e, torch.cuda.CudaError):
+                model_output = ModelOutput(
+                    text="**GPU OutOfMemory, Please Refresh.**", error_code=0
+                )
+            else:
+                model_output = ModelOutput(
+                    text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                    error_code=0,
+                )
             yield model_output
 
     def generate(self, params: Dict) -> ModelOutput:

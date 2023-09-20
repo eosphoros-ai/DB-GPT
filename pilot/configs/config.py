@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 
 import os
-from typing import List
+from typing import List, Optional, TYPE_CHECKING
 
 from pilot.singleton import Singleton
+
+if TYPE_CHECKING:
+    from auto_gpt_plugin_template import AutoGPTPluginTemplate
+    from pilot.component import SystemApp
 
 
 class Config(metaclass=Singleton):
@@ -99,9 +104,8 @@ class Config(metaclass=Singleton):
         self.message_dir = os.getenv("MESSAGE_HISTORY_DIR", "../../message")
 
         ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
-        from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
-        self.plugins: List[AutoGPTPluginTemplate] = []
+        self.plugins: List["AutoGPTPluginTemplate"] = []
         self.plugins_openai = []
         self.plugins_auto_load = os.getenv("AUTO_LOAD_PLUGIN", "True") == "True"
 
@@ -189,9 +193,7 @@ class Config(metaclass=Singleton):
         ### Log level
         self.DBGPT_LOG_LEVEL = os.getenv("DBGPT_LOG_LEVEL", "INFO")
 
-        from pilot.component import SystemApp
-
-        self.SYSTEM_APP: SystemApp = None
+        self.SYSTEM_APP: Optional["SystemApp"] = None
 
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""

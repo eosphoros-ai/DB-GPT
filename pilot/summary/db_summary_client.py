@@ -170,8 +170,9 @@ class DBSummaryClient:
     def init_db_profile(self, db_summary_client, dbname, embeddings):
         from pilot.embedding_engine.string_embedding import StringEmbedding
 
+        vector_store_name = dbname + "_profile"
         profile_store_config = {
-            "vector_store_name": dbname + "_profile",
+            "vector_store_name": vector_store_name,
             "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
             "embeddings": embeddings,
@@ -190,6 +191,8 @@ class DBSummaryClient:
                 )
                 docs.extend(embedding.read_batch())
             embedding.index_to_store(docs)
+        else:
+            logger.info(f"Vector store name {vector_store_name} exist")
         logger.info("init db profile success...")
 
 

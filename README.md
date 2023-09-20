@@ -86,7 +86,7 @@ Currently, we have released multiple key features, which are listed below to dem
 - Unified vector storage/indexing of knowledge base
   - Support for unstructured data such as PDF, TXT, Markdown, CSV, DOC, PPT, and WebURL
 - Multi LLMs Support, Supports multiple large language models, currently supporting
-  - 🔥 InternLM(7b)
+  - 🔥 InternLM(7b,20b)
   - 🔥 Baichuan2(7b,13b)
   - 🔥 Vicuna-v1.5(7b,13b)
   - 🔥 llama-2(7b,13b,70b)

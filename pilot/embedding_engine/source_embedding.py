@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
-from chromadb.errors import NotEnoughElementsException
 from langchain.text_splitter import TextSplitter
 
 from pilot.vector_store.connector import VectorStoreConnector
@@ -71,10 +70,9 @@ class SourceEmbedding(ABC):
         self.vector_client = VectorStoreConnector(
             self.vector_store_config["vector_store_type"], self.vector_store_config
         )
-        try:
-            ans = self.vector_client.similar_search(doc, topk)
-        except NotEnoughElementsException:
-            ans = self.vector_client.similar_search(doc, 1)
+        # https://github.com/chroma-core/chroma/issues/657
+        ans = self.vector_client.similar_search(doc, topk)
+        # ans = self.vector_client.similar_search(doc, 1)
         return ans
 
     def vector_name_exist(self):

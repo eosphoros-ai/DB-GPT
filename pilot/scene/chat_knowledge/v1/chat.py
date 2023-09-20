@@ -1,7 +1,5 @@
 from typing import Dict
 
-from chromadb.errors import NoIndexException
-
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
@@ -59,22 +57,19 @@ class ChatKnowledge(BaseChat):
         )
 
     def generate_input_values(self):
-        try:
-            if self.space_context:
-                self.prompt_template.template_define = self.space_context["prompt"][
-                    "scene"
-                ]
-                self.prompt_template.template = self.space_context["prompt"]["template"]
-            docs = self.knowledge_embedding_client.similar_search(
-                self.current_user_input, self.top_k
-            )
-            context = [d.page_content for d in docs]
-            context = context[: self.max_token]
-            input_values = {"context": context, "question": self.current_user_input}
-        except NoIndexException:
+        if self.space_context:
+            self.prompt_template.template_define = self.space_context["prompt"]["scene"]
+            self.prompt_template.template = self.space_context["prompt"]["template"]
+        docs = self.knowledge_embedding_client.similar_search(
+            self.current_user_input, self.top_k
+        )
+        if not docs:
             raise ValueError(
                 "you have no knowledge space, please add your knowledge space"
             )
+        context = [d.page_content for d in docs]
+        context = context[: self.max_token]
+        input_values = {"context": context, "question": self.current_user_input}
         return input_values
 
     @property
