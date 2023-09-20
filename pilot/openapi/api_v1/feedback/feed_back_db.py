@@ -24,19 +24,19 @@ class ChatFeedBackEntity(Base):
     gmt_modified = Column(DateTime)
 
     def __repr__(self):
-        return (f"ChatFeekBackEntity(id={self.id}, conv_index='{self.conv_index}', conv_index='{self.conv_index}', "
-                f"score='{self.score}', ques_type='{self.ques_type}', question='{self.question}', knowledge_space='{self.knowledge_space}', "
-                f"messages='{self.messages}', user_name='{self.user_name}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')")
+        return (
+            f"ChatFeekBackEntity(id={self.id}, conv_index='{self.conv_index}', conv_index='{self.conv_index}', "
+            f"score='{self.score}', ques_type='{self.ques_type}', question='{self.question}', knowledge_space='{self.knowledge_space}', "
+            f"messages='{self.messages}', user_name='{self.user_name}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+        )
 
 
 class ChatFeedBackDao(BaseDao):
     def __init__(self):
-        super().__init__(
-            database="history", orm_base=Base, create_not_exist_table=True
-        )
+        super().__init__(database="history", orm_base=Base, create_not_exist_table=True)
 
     def create_or_update_chat_feed_back(self, feed_back: FeedBackBody):
-        # Todo: We need to have user information first. 
+        # Todo: We need to have user information first.
         def_user_name = ""
 
         session = self.Session()
@@ -52,10 +52,12 @@ class ChatFeedBackDao(BaseDao):
             gmt_created=datetime.now(),
             gmt_modified=datetime.now(),
         )
-        result = (session.query(ChatFeedBackEntity)
-                  .filter(ChatFeedBackEntity.conv_uid == feed_back.conv_uid)
-                  .filter(ChatFeedBackEntity.conv_index == feed_back.conv_index)
-                  .first())
+        result = (
+            session.query(ChatFeedBackEntity)
+            .filter(ChatFeedBackEntity.conv_uid == feed_back.conv_uid)
+            .filter(ChatFeedBackEntity.conv_index == feed_back.conv_index)
+            .first()
+        )
         if result is not None:
             result.score = feed_back.score
             result.ques_type = feed_back.ques_type
@@ -72,9 +74,11 @@ class ChatFeedBackDao(BaseDao):
 
     def get_chat_feed_back(self, conv_uid: str, conv_index: int):
         session = self.Session()
-        result = (session.query(ChatFeedBackEntity)
-                  .filter(ChatFeedBackEntity.conv_uid == conv_uid)
-                  .filter(ChatFeedBackEntity.conv_index == conv_index)
-                  .first())
+        result = (
+            session.query(ChatFeedBackEntity)
+            .filter(ChatFeedBackEntity.conv_uid == conv_uid)
+            .filter(ChatFeedBackEntity.conv_index == conv_index)
+            .first()
+        )
         session.close()
         return result

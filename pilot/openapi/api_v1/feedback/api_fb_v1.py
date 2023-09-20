@@ -1,11 +1,10 @@
-from fastapi import (
-    APIRouter,
-    Body,
-    Request
-)
+from fastapi import APIRouter, Body, Request
 
 from pilot.openapi.api_v1.feedback.feed_back_model import FeedBackBody
-from pilot.openapi.api_v1.feedback.feed_back_db import ChatFeedBackDao, ChatFeedBackEntity
+from pilot.openapi.api_v1.feedback.feed_back_db import (
+    ChatFeedBackDao,
+    ChatFeedBackEntity,
+)
 from pilot.openapi.api_view_model import Result
 
 router = APIRouter()
@@ -16,15 +15,17 @@ chat_feed_back = ChatFeedBackDao()
 async def feed_back_find(conv_uid: str, conv_index: int):
     rt = chat_feed_back.get_chat_feed_back(conv_uid, conv_index)
     if rt is not None:
-        return Result.succ(FeedBackBody(
-            conv_uid=rt.conv_uid,
-            conv_index=rt.conv_index,
-            question=rt.question,
-            knowledge_space=rt.knowledge_space,
-            score=rt.score,
-            ques_type=rt.ques_type,
-            messages=rt.messages
-        ))
+        return Result.succ(
+            FeedBackBody(
+                conv_uid=rt.conv_uid,
+                conv_index=rt.conv_index,
+                question=rt.question,
+                knowledge_space=rt.knowledge_space,
+                score=rt.score,
+                ques_type=rt.ques_type,
+                messages=rt.messages,
+            )
+        )
     else:
         return Result.succ(None)
 
@@ -37,4 +38,11 @@ async def feed_back_commit(request: Request, feed_back_body: FeedBackBody = Body
 
 @router.get("/v1/feedback/select", response_model=Result[dict])
 async def feed_back_select():
-    return Result.succ({'information': '信息查询', 'work_study': '工作学习', 'just_fun': '互动闲聊', 'others': '其他'})
+    return Result.succ(
+        {
+            "information": "信息查询",
+            "work_study": "工作学习",
+            "just_fun": "互动闲聊",
+            "others": "其他",
+        }
+    )
