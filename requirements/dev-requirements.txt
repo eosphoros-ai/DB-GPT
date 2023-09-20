@@ -1,4 +1,4 @@
-# Testing dependencies
+# Testing and dev dependencies
 pytest
 asynctest
 pytest-asyncio
@@ -8,3 +8,5 @@ pytest-integration
 pytest-mock
 pytest-recording
 pytesseract==0.3.10
+# python code format
+black

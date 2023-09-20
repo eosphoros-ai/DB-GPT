@@ -23,15 +23,18 @@ os.chdir(new_directory)
 
 
 def get_device() -> str:
-    import torch
+    try:
+        import torch
 
-    return (
-        "cuda"
-        if torch.cuda.is_available()
-        else "mps"
-        if torch.backends.mps.is_available()
-        else "cpu"
-    )
+        return (
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
+    except ModuleNotFoundError:
+        return "cpu"
 
 
 LLM_MODEL_CONFIG = {
@@ -70,8 +73,9 @@ LLM_MODEL_CONFIG = {
     "wizardlm-13b": os.path.join(MODEL_PATH, "WizardLM-13B-V1.2"),
     "llama-cpp": os.path.join(MODEL_PATH, "ggml-model-q4_0.bin"),
     # https://huggingface.co/internlm/internlm-chat-7b-v1_1, 7b vs 7b-v1.1: https://github.com/InternLM/InternLM/issues/288
-    "internlm-7b": os.path.join(MODEL_PATH, "internlm-chat-7b-v1_1"),
+    "internlm-7b": os.path.join(MODEL_PATH, "internlm-chat-7b"),
     "internlm-7b-8k": os.path.join(MODEL_PATH, "internlm-chat-7b-8k"),
+    "internlm-20b": os.path.join(MODEL_PATH, "internlm-20b-chat"),
 }
 
 EMBEDDING_MODEL_CONFIG = {

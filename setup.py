@@ -10,7 +10,6 @@ from urllib.parse import urlparse, quote
 import re
 from pip._internal.utils.appdirs import user_cache_dir
 import shutil
-import tempfile
 from setuptools import find_packages
 
 with open("README.md", mode="r", encoding="utf-8") as fh:
@@ -74,7 +73,6 @@ def cache_package(package_url: str, package_name: str, is_windows: bool = False)
 
     local_path = os.path.join(cache_dir, filename)
     if not os.path.exists(local_path):
-        # temp_file, temp_path = tempfile.mkstemp()
         temp_path = local_path + ".tmp"
         if os.path.exists(temp_path):
             os.remove(temp_path)
@@ -204,23 +202,16 @@ def torch_requires(
     torchvision_version: str = "0.15.1",
     torchaudio_version: str = "2.0.1",
 ):
-    torch_pkgs = []
+    torch_pkgs = [
+        f"torch=={torch_version}",
+        f"torchvision=={torchvision_version}",
+        f"torchaudio=={torchaudio_version}",
+    ]
+    torch_cuda_pkgs = []
     os_type, _ = get_cpu_avx_support()
-    if os_type == OSType.DARWIN:
-        torch_pkgs = [
-            f"torch=={torch_version}",
-            f"torchvision=={torchvision_version}",
-            f"torchaudio=={torchaudio_version}",
-        ]
-    else:
+    if os_type != OSType.DARWIN:
         cuda_version = get_cuda_version()
-        if not cuda_version:
-            torch_pkgs = [
-                f"torch=={torch_version}",
-                f"torchvision=={torchvision_version}",
-                f"torchaudio=={torchaudio_version}",
-            ]
-        else:
+        if cuda_version:
             supported_versions = ["11.7", "11.8"]
             if cuda_version not in supported_versions:
                 print(
@@ -238,12 +229,16 @@ def torch_requires(
             torchvision_url_cached = cache_package(
                 torchvision_url, "torchvision", os_type == OSType.WINDOWS
             )
-            torch_pkgs = [
+
+            torch_cuda_pkgs = [
                 f"torch @ {torch_url_cached}",
                 f"torchvision @ {torchvision_url_cached}",
                 f"torchaudio=={torchaudio_version}",
             ]
+
     setup_spec.extras["torch"] = torch_pkgs
+    setup_spec.extras["torch_cpu"] = torch_pkgs
+    setup_spec.extras["torch_cuda"] = torch_cuda_pkgs
 
 
 def llama_cpp_python_cuda_requires():
@@ -272,6 +267,57 @@ def llama_cpp_python_cuda_requires():
     print(f"Install llama_cpp_python_cuda from {extra_index_url}")
 
     setup_spec.extras["llama_cpp"].append(f"llama_cpp_python_cuda @ {extra_index_url}")
+
+
+def core_requires():
+    """
+    pip install db-gpt or pip install "db-gpt[core]"
+    """
+    setup_spec.extras["core"] = [
+        "aiohttp==3.8.4",
+        "chardet==5.1.0",
+        "importlib-resources==5.12.0",
+        "psutil==5.9.4",
+        "python-dotenv==1.0.0",
+        "colorama",
+        "prettytable",
+        "cachetools",
+    ]
+
+    setup_spec.extras["framework"] = [
+        "httpx",
+        "sqlparse==0.4.4",
+        "seaborn",
+        # https://github.com/eosphoros-ai/DB-GPT/issues/551
+        "pandas==2.0.3",
+        "auto-gpt-plugin-template",
+        "gTTS==2.3.1",
+        "langchain>=0.0.286",
+        "SQLAlchemy",
+        "pymysql",
+        "duckdb",
+        "duckdb-engine",
+        "jsonschema",
+        # TODO move transformers to default
+        "transformers>=4.31.0",
+    ]
+
+
+def knowledge_requires():
+    """
+    pip install "db-gpt[knowledge]"
+    """
+    setup_spec.extras["knowledge"] = [
+        "spacy==3.5.3",
+        # "chromadb==0.3.22",
+        "chromadb",
+        "markdown",
+        "bs4",
+        "python-pptx",
+        "python-docx",
+        "pypdf",
+        "python-multipart",
+    ]
 
 
 def llama_cpp_requires():
@@ -309,6 +355,7 @@ def all_vector_store_requires():
     setup_spec.extras["vstore"] = [
         "grpcio==1.47.5",  # maybe delete it
         "pymilvus==2.2.1",
+        "weaviate-client",
     ]
 
 
@@ -324,6 +371,31 @@ def openai_requires():
     pip install "db-gpt[openai]"
     """
     setup_spec.extras["openai"] = ["openai", "tiktoken"]
+    setup_spec.extras["openai"] += setup_spec.extras["framework"]
+    setup_spec.extras["openai"] += setup_spec.extras["knowledge"]
+
+
+def gpt4all_requires():
+    """
+    pip install "db-gpt[gpt4all]"
+    """
+    setup_spec.extras["gpt4all"] = ["gpt4all"]
+
+
+def default_requires():
+    """
+    pip install "db-gpt[default]"
+    """
+    setup_spec.extras["default"] = [
+        "tokenizers==0.13.2",
+        "accelerate>=0.20.3",
+        "sentence-transformers",
+        "protobuf==3.20.3",
+    ]
+    setup_spec.extras["default"] += setup_spec.extras["framework"]
+    setup_spec.extras["default"] += setup_spec.extras["knowledge"]
+    setup_spec.extras["default"] += setup_spec.extras["torch"]
+    setup_spec.extras["default"] += setup_spec.extras["quantization"]
 
 
 def all_requires():
@@ -335,20 +407,23 @@ def all_requires():
 
 
 def init_install_requires():
-    setup_spec.install_requires += parse_requirements("requirements.txt")
-    setup_spec.install_requires += setup_spec.extras["torch"]
-    setup_spec.install_requires += setup_spec.extras["quantization"]
+    setup_spec.install_requires += setup_spec.extras["core"]
     print(f"Install requires: \n{','.join(setup_spec.install_requires)}")
 
 
+core_requires()
 torch_requires()
+knowledge_requires()
 llama_cpp_requires()
 quantization_requires()
+
 all_vector_store_requires()
 all_datasource_requires()
 openai_requires()
+gpt4all_requires()
 
 # must be last
+default_requires()
 all_requires()
 init_install_requires()
 

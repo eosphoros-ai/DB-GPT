@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.6\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-13 09:06+0800\n"
+"POT-Creation-Date: 2023-09-20 17:34+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,157 +20,156 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/install/cluster/vms/index.md:1
-#: 2d2e04ba49364eae9b8493bb274765a6
+#: 48c062c146cd42b48c248ae590d386df
 msgid "Local cluster deployment"
 msgstr "本地集群部署"
 
 #: ../../getting_started/install/cluster/vms/index.md:4
-#: e405d0e7ad8c4b2da4b4ca27c77f5fea
+#: ce59bbbc9c294cafa6df8165de61967f
 msgid "Model cluster deployment"
 msgstr "模型集群部署"
 
 #: ../../getting_started/install/cluster/vms/index.md:7
-#: bba397ddac754a2bab8edca163875b65
+#: 51650b41f4974f819a623db1e97764c7
 msgid "**Installing Command-Line Tool**"
 msgstr "**安装命令行工具**"
 
 #: ../../getting_started/install/cluster/vms/index.md:9
-#: bc45851124354522af8c9bb9748ff1fa
+#: 64fcb0e3ec8d491aa9d15f783823e579
+#, fuzzy
 msgid ""
 "All operations below are performed using the `dbgpt` command. To use the "
 "`dbgpt` command, you need to install the DB-GPT project with `pip install"
-" -e .`. Alternatively, you can use `python pilot/scripts/cli_scripts.py` "
-"as a substitute for the `dbgpt` command."
+" -e \".[default]\"`. Alternatively, you can use `python "
+"pilot/scripts/cli_scripts.py` as a substitute for the `dbgpt` command."
 msgstr ""
-"以下所有操作都使用 `dbgpt` 命令完成。要使用 `dbgpt` 命令，您需要安装DB-GPT项目，方法是使用`pip install -e .`。或者，您可以使用 `python pilot/scripts/cli_scripts.py` 作为 `dbgpt` 命令的替代。"
+"以下所有操作都使用 `dbgpt` 命令完成。要使用 `dbgpt` 命令，您需要安装DB-GPT项目，方法是使用`pip install -e "
+".`。或者，您可以使用 `python pilot/scripts/cli_scripts.py` 作为 `dbgpt` 命令的替代。"
 
 #: ../../getting_started/install/cluster/vms/index.md:11
-#: 9d11f7807fd140c8949b634700adc966
+#: 572f2d79178a4e6780799dd8bc0867f9
 msgid "Launch Model Controller"
 msgstr "启动 Model Controller"
 
 #: ../../getting_started/install/cluster/vms/index.md:17
-#: 97716be92ba64ce9a215433bddf77add
+#: 66cfeb3d834c4f7b87bb3180ae447203
 msgid "By default, the Model Controller starts on port 8000."
 msgstr "默认情况下，Model Controller 启动在 8000 端口。"
 
 #: ../../getting_started/install/cluster/vms/index.md:20
-#: 3f65e6a1e59248a59c033891d1ab7ba8
+#: cddb3dbc31734462b6aa3c63e3c76fe2
 msgid "Launch LLM Model Worker"
 msgstr "启动 LLM Model Worker"
 
 #: ../../getting_started/install/cluster/vms/index.md:22
-#: 60241d97573e4265b7fb150c378c4a08
+#: 953eeafd791942e895833bce2a4d755f
 msgid "If you are starting `chatglm2-6b`:"
 msgstr "如果您启动的是 `chatglm2-6b`："
 
 #: ../../getting_started/install/cluster/vms/index.md:31
-#: 18bbeb1de110438fa96dd5c736b9a7b1
+#: 779d8daa394b4731bc74a93c077961e1
 msgid "If you are starting `vicuna-13b-v1.5`:"
 msgstr "如果您启动的是 `vicuna-13b-v1.5`："
 
 #: ../../getting_started/install/cluster/vms/index.md:40
 #: ../../getting_started/install/cluster/vms/index.md:53
-#: 24b1a27313c64224aaeab6cbfad1fe19 fc94a698a7904c6893eef7e7a6e52972
+#: 736b34df46e640fbbf3eb41ff5f44cc2 b620ee13d10748e6a89c67a9bfb5a53b
 msgid "Note: Be sure to use your own model name and model path."
 msgstr "注意：确保使用您自己的模型名称和模型路径。"
 
 #: ../../getting_started/install/cluster/vms/index.md:42
-#: 19746195e85f4784bf66a9e67378c04b
+#: d1f48ab4090d4344aa2a010cdc88a28e
 msgid "Launch Embedding Model Worker"
 msgstr "启动 Embedding Model Worker"
 
 #: ../../getting_started/install/cluster/vms/index.md:55
-#: e93ce68091f64d0294b3f912a66cc18b
+#: 0b4c6d2ff51c4167b553a6255ce268ba
 msgid "Check your model:"
 msgstr "检查您的模型："
 
 #: ../../getting_started/install/cluster/vms/index.md:61
-#: fa0b8f3a18fe4bab88fbf002bf26d32e
+#: defd23cef23a4e74b150b7b49b99d333
 msgid "You will see the following output:"
 msgstr "您将看到以下输出："
 
 #: ../../getting_started/install/cluster/vms/index.md:75
-#: 695262fb4f224101902bc7865ac7871f
+#: aaa86e08b60e46ddae52a03f25812f24
 msgid "Connect to the model service in the webserver (dbgpt_server)"
 msgstr "在 webserver (dbgpt_server) 中连接到模型服务 (dbgpt_server)"
 
 #: ../../getting_started/install/cluster/vms/index.md:77
-#: 73bf4c2ae5c64d938e3b7e77c06fa21e
+#: 7fd7b622b2f649d0b7d9b51a998a038c
 msgid ""
 "**First, modify the `.env` file to change the model name and the Model "
 "Controller connection address.**"
-msgstr ""
-"**首先，修改 `.env` 文件以更改模型名称和模型控制器连接地址。**"
+msgstr "**首先，修改 `.env` 文件以更改模型名称和模型控制器连接地址。**"
 
 #: ../../getting_started/install/cluster/vms/index.md:85
-#: 8ab126fd72ed4368a79b821ba50e62c8
+#: 7ce03ec66f624d0eabd5a2fbe2efcbcc
 msgid "Start the webserver"
 msgstr "启动 webserver"
 
 #: ../../getting_started/install/cluster/vms/index.md:91
-#: 5a7e25c84ca2412bb64310bfad9e2403
+#: 9e1e2b7925834d6b9140633db1082032
 msgid "`--light`  indicates not to start the embedded model service."
 msgstr "`--light`  表示不启动嵌入式模型服务。"
 
 #: ../../getting_started/install/cluster/vms/index.md:93
-#: 8cd9ec4fa9cb4c0fa8ff05c05a85ea7f
+#: 4d47f76763914a78a89d62f0befa3fd9
 msgid ""
 "Alternatively, you can prepend the command with `LLM_MODEL=chatglm2-6b` "
 "to start:"
-msgstr ""
-"或者，您可以在命令前加上 `LLM_MODEL=chatglm2-6b` 来启动："
+msgstr "或者，您可以在命令前加上 `LLM_MODEL=chatglm2-6b` 来启动："
 
 #: ../../getting_started/install/cluster/vms/index.md:100
-#: 13ed16758a104860b5fc982d36638b17
+#: 28408fe554dd411c9ca672466d5563b6
 msgid "More Command-Line Usages"
 msgstr "更多命令行用法"
 
 #: ../../getting_started/install/cluster/vms/index.md:102
-#: 175f614d547a4391bab9a77762f9174e
+#: 8e0aa88d092d49fdb0fa849c83565a41
 msgid "You can view more command-line usages through the help command."
 msgstr "您可以通过帮助命令查看更多命令行用法。"
 
 #: ../../getting_started/install/cluster/vms/index.md:104
-#: 6a4475d271c347fbbb35f2936a86823f
+#: f307f82ced7947f980bb65b3543580d1
 msgid "**View the `dbgpt` help**"
 msgstr "**查看 `dbgpt` 帮助**"
 
 #: ../../getting_started/install/cluster/vms/index.md:109
-#: 3eb11234cf504cc9ac369d8462daa14b
+#: 7564aed77a7d43e6878b506c6a9788a2
 msgid "You will see the basic command parameters and usage:"
 msgstr "您将看到基本的命令参数和用法："
 
 #: ../../getting_started/install/cluster/vms/index.md:127
-#: 6eb47aecceec414e8510fe022b6fddbd
+#: 569f2b9e62e44179ae8dcf5b05a1f3e8
 msgid "**View the `dbgpt start` help**"
 msgstr "**查看 `dbgpt start` 帮助**"
 
 #: ../../getting_started/install/cluster/vms/index.md:133
-#: 1f4c0a4ce0704ca8ac33178bd13c69ad
+#: 43e8747d136d4f6cab83c1b1beaa32b0
 msgid "Here you can see the related commands and usage for start:"
 msgstr "在这里，您可以看到启动的相关命令和用法："
 
 #: ../../getting_started/install/cluster/vms/index.md:150
-#: 22e8e67bc55244e79764d091f334560b
+#: 25e37b3050b348ec9a5c96d9db515e9b
 msgid "**View the `dbgpt start worker`help**"
 msgstr "**查看 `dbgpt start worker` 帮助**"
 
 #: ../../getting_started/install/cluster/vms/index.md:156
-#: 5631b83fda714780855e99e90d4eb542
+#: 8e959fd455ca45f9a5e69e0af9b764a4
 msgid "Here you can see the parameters to start Model Worker:"
 msgstr "在这里，您可以看到启动 Model Worker 的参数："
 
 #: ../../getting_started/install/cluster/vms/index.md:215
-#: cf4a31fd3368481cba1b3ab382615f53
+#: 374d274c7a254533900145ef17bb24fb
 msgid "**View the `dbgpt model`help**"
 msgstr "**查看 `dbgpt model` 帮助**"
 
 #: ../../getting_started/install/cluster/vms/index.md:221
-#: 3740774ec4b240f2882b5b59da224d55
+#: 19bcc9abe62f490d9c3c092c5deea24a
 msgid ""
 "The `dbgpt model ` command can connect to the Model Controller via the "
 "Model Controller address and then manage a remote model:"
-msgstr ""
-"`dbgpt model` 命令可以通过 Model Controller 地址连接到 Model Controller，然后管理远程模型："
+msgstr "`dbgpt model` 命令可以通过 Model Controller 地址连接到 Model Controller，然后管理远程模型："
 

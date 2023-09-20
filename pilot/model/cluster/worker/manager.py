@@ -5,6 +5,7 @@ import os
 import sys
 import random
 import time
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from typing import Awaitable, Callable, Dict, Iterator, List, Optional
@@ -12,7 +13,6 @@ from typing import Awaitable, Callable, Dict, Iterator, List, Optional
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import StreamingResponse
 from pilot.component import SystemApp
-from pilot.configs.model_config import LOGDIR
 from pilot.model.base import (
     ModelInstance,
     ModelOutput,
@@ -30,15 +30,13 @@ from pilot.model.cluster.manager_base import (
     WorkerManagerFactory,
 )
 from pilot.model.cluster.base import *
-from pilot.utils import build_logger
 from pilot.utils.parameter_utils import (
     EnvArgumentParser,
     ParameterDescription,
     _dict_to_command_args,
 )
 
-logger = build_logger("model_worker", LOGDIR + "/model_worker.log")
-
+logger = logging.getLogger(__name__)
 
 RegisterFunc = Callable[[WorkerRunData], Awaitable[None]]
 DeregisterFunc = Callable[[WorkerRunData], Awaitable[None]]

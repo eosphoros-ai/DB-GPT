@@ -71,7 +71,7 @@ def load(
     skip_wrong_doc: bool,
     max_workers: int,
 ):
-    """Load you local knowledge to DB-GPT"""
+    """Load your local knowledge to DB-GPT"""
     from pilot.server.knowledge._cli.knowledge_client import knowledge_init
 
     knowledge_init(
