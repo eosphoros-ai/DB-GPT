@@ -85,6 +85,26 @@ def plugins_select_info():
     return plugins_infos
 
 
+def get_db_list_info():
+    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+    params: dict = {}
+    for item in dbs:
+        comment = item["comment"]
+        if comment is not None and len(comment) > 0:
+            params.update({item["db_name"]: comment})
+    return params
+
+
+def knowledge_list_info():
+    """return knowledge space list"""
+    params: dict = {}
+    request = KnowledgeSpaceRequest()
+    spaces = knowledge_service.get_knowledge_space(request)
+    for space in spaces:
+        params.update({space.name: space.desc})
+    return params
+
+
 def knowledge_list():
     """return knowledge space list"""
     params: dict = {}
