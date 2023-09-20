@@ -1,10 +1,11 @@
+from typing import List
+
 from fastapi import APIRouter
 
 from pilot.component import ComponentType
 from pilot.configs.config import Config
-from pilot.model.base import ModelInstance, WorkerApplyType
 
-from pilot.model.cluster import WorkerStartupRequest, WorkerManager
+from pilot.model.cluster import WorkerStartupRequest
 from pilot.openapi.api_view_model import Result
 
 from pilot.server.llm_manage.request.request import ModelResponse
@@ -21,13 +22,19 @@ async def model_params():
         worker_manager = CFG.SYSTEM_APP.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
-        return Result.succ(await worker_manager.supported_models())
+        params = []
+        workers = await worker_manager.supported_models()
+        for worker in workers:
+            for model in worker.models:
+                model_dict = model.__dict__
+                model_dict["host"] = worker.host
+                model_dict["port"] = worker.port
+                params.append(model_dict)
+        return Result.succ(params)
         if not worker_instance:
             return Result.faild(code="E000X", msg=f"can not find worker manager")
     except Exception as e:
         return Result.faild(code="E000X", msg=f"model stop failed {e}")
-
-
 
 
 @router.get("/v1/worker/model/list")
@@ -81,6 +88,7 @@ async def model_start(request: WorkerStartupRequest):
         instances = await controller.get_all_instances(
             model_name="WorkerManager@service", healthy_only=True
         )
+        request.params = {}
         worker_instance = None
         for instance in instances:
             if instance.host == request.host and instance.port == request.port:
