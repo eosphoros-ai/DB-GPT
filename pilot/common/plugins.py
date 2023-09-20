@@ -1,4 +1,5 @@
 """加载组件"""
+from __future__ import annotations
 
 import json
 import os
@@ -8,16 +9,18 @@ import requests
 import threading
 import datetime
 from pathlib import Path
-from typing import List
+from typing import List, TYPE_CHECKING
 from urllib.parse import urlparse
 from zipimport import zipimporter
 
 import requests
-from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import PLUGINS_DIR
 from pilot.logs import logger
+
+if TYPE_CHECKING:
+    from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 
 def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
@@ -115,7 +118,7 @@ def load_native_plugins(cfg: Config):
     t.start()
 
 
-def scan_plugins(cfg: Config, debug: bool = False) -> List[AutoGPTPluginTemplate]:
+def scan_plugins(cfg: Config, debug: bool = False) -> List["AutoGPTPluginTemplate"]:
     """Scan the plugins directory for plugins and loads them.
 
     Args:

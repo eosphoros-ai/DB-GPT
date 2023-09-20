@@ -11,10 +11,12 @@ ARG LANGUAGE="en"
 ARG PIP_INDEX_URL="https://pypi.org/simple"
 ENV PIP_INDEX_URL=$PIP_INDEX_URL
 
+ARG DB_GPT_INSTALL_MODEL="default"
+ENV DB_GPT_INSTALL_MODEL=$DB_GPT_INSTALL_MODEL
+
 RUN mkdir -p /app
 
 # COPY only requirements.txt first to leverage Docker cache
-COPY ./requirements.txt /app/requirements.txt
 COPY ./setup.py /app/setup.py
 COPY ./README.md /app/README.md
 
@@ -26,9 +28,9 @@ WORKDIR /app
 # RUN pip3 install -i $PIP_INDEX_URL ".[all]"
 
 RUN pip3 install --upgrade pip -i $PIP_INDEX_URL \
-    && pip3 install -i $PIP_INDEX_URL . \
-    # && pip3 install -i $PIP_INDEX_URL ".[llama_cpp]" \
-    && (if [ "${LANGUAGE}" = "zh" ]; \
+    && pip3 install -i $PIP_INDEX_URL ".[$DB_GPT_INSTALL_MODEL]"
+
+RUN (if [ "${LANGUAGE}" = "zh" ]; \
         # language is zh, download zh_core_web_sm from github
         then wget https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.5.0/zh_core_web_sm-3.5.0-py3-none-any.whl -O /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl \
         && pip3 install /tmp/zh_core_web_sm-3.5.0-py3-none-any.whl -i $PIP_INDEX_URL \
@@ -58,4 +60,4 @@ RUN (if [ "${LOAD_EXAMPLES}" = "true" ]; \
 ENV PYTHONPATH "/app:$PYTHONPATH"
 EXPOSE 5000
 
-CMD ["python3", "pilot/server/dbgpt_server.py"]
+CMD ["dbgpt", "start", "webserver"]

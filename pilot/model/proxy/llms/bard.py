@@ -1,4 +1,3 @@
-import bardapi
 import requests
 from typing import List
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
@@ -52,6 +51,8 @@ def bard_generate_stream(
         else:
             yield f"bard proxy url request failed!, response = {str(response)}"
     else:
+        import bardapi
+
         response = bardapi.core.Bard(proxy_api_key).get_answer("\n".join(msgs))
 
         if response is not None and response.get("content") is not None:

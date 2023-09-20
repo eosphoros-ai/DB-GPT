@@ -10,9 +10,6 @@ from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
 from pilot.configs.config import Config
-from pilot.common.markdown_text import (
-    generate_htm_table,
-)
 from pilot.scene.chat_data.chat_excel.excel_learning.prompt import prompt
 from pilot.scene.chat_data.chat_excel.excel_reader import ExcelReader
 from pilot.json_utils.utilities import DateTimeEncoder

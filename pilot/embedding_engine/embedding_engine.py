@@ -1,6 +1,5 @@
 from typing import Optional
 
-from chromadb.errors import NotEnoughElementsException
 from langchain.text_splitter import TextSplitter
 
 from pilot.embedding_engine.embedding_factory import (
@@ -69,10 +68,10 @@ class EmbeddingEngine:
         vector_client = VectorStoreConnector(
             self.vector_store_config["vector_store_type"], self.vector_store_config
         )
-        try:
-            ans = vector_client.similar_search(text, topk)
-        except NotEnoughElementsException:
-            ans = vector_client.similar_search(text, 1)
+        # https://github.com/chroma-core/chroma/issues/657
+        ans = vector_client.similar_search(text, topk)
+        # except NotEnoughElementsException:
+        # ans = vector_client.similar_search(text, 1)
         return ans
 
     def vector_exist(self):
