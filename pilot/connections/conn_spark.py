@@ -22,8 +22,8 @@ class SparkConnect(BaseConnect):
         self,
         file_path: str,
         spark_session: Optional[SparkSession] = None,
-        engine_args: Optional[dict]= None,
-        **kwargs: Any
+        engine_args: Optional[dict] = None,
+        **kwargs: Any,
     ) -> None:
         """Initialize the Spark DataFrame from Datasource path
         return: Spark DataFrame
@@ -109,15 +109,4 @@ class SparkConnect(BaseConnect):
         return f"{self.table_name}{self.get_fields()}"
 
     def get_table_comments(self, db_name):
-        session = self._db_sessions()
-        cursor = session.execute(
-            text(
-                f"""SELECT table, comment FROM system.tables WHERE database = '{db_name}'""".format(
-                    db_name
-                )
-            )
-        )
-        table_comments = cursor.fetchall()
-        return [
-            (table_comment[0], table_comment[1]) for table_comment in table_comments
-        ]
+        return ""

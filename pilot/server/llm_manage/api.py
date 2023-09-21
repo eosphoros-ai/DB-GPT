@@ -19,6 +19,7 @@ async def model_params():
     print(f"/worker/model/params")
     try:
         from pilot.model.cluster import WorkerManagerFactory
+
         worker_manager = CFG.SYSTEM_APP.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()

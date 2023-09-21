@@ -27,7 +27,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
-    'sphinxcontrib.autodoc_pydantic_base',
+    "sphinxcontrib.autodoc_pydantic_base",
     "myst_nb",
     "sphinx_copybutton",
     "sphinx_panels",
