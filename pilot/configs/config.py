@@ -185,6 +185,9 @@ class Config(metaclass=Singleton):
         self.KNOWLEDGE_SEARCH_MAX_TOKEN = int(
             os.getenv("KNOWLEDGE_SEARCH_MAX_TOKEN", 2000)
         )
+        ### Control whether to display the source document of knowledge on the front end.
+        self.KNOWLEDGE_CHAT_SHOW_RELATIONS = False
+
         ### SUMMARY_CONFIG Configuration
         self.SUMMARY_CONFIG = os.getenv("SUMMARY_CONFIG", "FAST")
 

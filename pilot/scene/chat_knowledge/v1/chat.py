@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 from pilot.scene.base_chat import BaseChat
@@ -55,6 +56,21 @@ class ChatKnowledge(BaseChat):
             vector_store_config=vector_store_config,
             embedding_factory=embedding_factory,
         )
+        self.prompt_template.template_is_strict = False
+
+    async def stream_call(self):
+        input_values = self.generate_input_values()
+        async for output in super().stream_call():
+            # Source of knowledge file
+            relations = input_values.get("relations")
+            if (
+                CFG.KNOWLEDGE_CHAT_SHOW_RELATIONS
+                and type(relations) == list
+                and len(relations) > 0
+                and hasattr(output, "text")
+            ):
+                output.text = output.text + "\trelations:" + ",".join(relations)
+            yield output
 
     def generate_input_values(self):
         if self.space_context:
@@ -69,7 +85,14 @@ class ChatKnowledge(BaseChat):
             )
         context = [d.page_content for d in docs]
         context = context[: self.max_token]
-        input_values = {"context": context, "question": self.current_user_input}
+        relations = list(
+            set([os.path.basename(d.metadata.get("source")) for d in docs])
+        )
+        input_values = {
+            "context": context,
+            "question": self.current_user_input,
+            "relations": relations,
+        }
         return input_values
 
     @property
