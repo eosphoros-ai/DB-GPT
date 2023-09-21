@@ -2,9 +2,11 @@ import logging
 
 
 def _clear_torch_cache(device="cuda"):
+    try:
+        import torch
+    except ImportError:
+        return
     import gc
-
-    import torch
 
     gc.collect()
     if device != "cpu":
