@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import TypeVar, Generic, Any
+from typing import TypeVar, Generic, Any, Optional, Literal, List
+import uuid
+import time
 
 T = TypeVar("T")
 
@@ -59,6 +61,11 @@ class ConversationVo(BaseModel):
     """
     model_name: str = None
 
+    """Used to control whether the content is returned incrementally or in full each time. 
+    If this parameter is not provided, the default is full return.
+    """
+    incremental: bool = False
+
 
 class MessageVo(BaseModel):
     """
@@ -83,3 +90,21 @@ class MessageVo(BaseModel):
     model_name
     """
     model_name: str
+
+
+class DeltaMessage(BaseModel):
+    role: Optional[str] = None
+    content: Optional[str] = None
+
+
+class ChatCompletionResponseStreamChoice(BaseModel):
+    index: int
+    delta: DeltaMessage
+    finish_reason: Optional[Literal["stop", "length"]] = None
+
+
+class ChatCompletionStreamResponse(BaseModel):
+    id: str = Field(default_factory=lambda: f"chatcmpl-{str(uuid.uuid1())}")
+    created: int = Field(default_factory=lambda: int(time.time()))
+    model: str
+    choices: List[ChatCompletionResponseStreamChoice]

@@ -8,7 +8,7 @@ from pilot.model.loader import ModelLoader, _get_model_real_path
 from pilot.model.parameter import ModelParameters
 from pilot.model.cluster.worker_base import ModelWorker
 from pilot.server.chat_adapter import get_llm_chat_adapter, BaseChatAdpter
-from pilot.utils.model_utils import _clear_torch_cache
+from pilot.utils.model_utils import _clear_model_cache
 from pilot.utils.parameter_utils import EnvArgumentParser
 
 logger = logging.getLogger(__name__)
@@ -87,7 +87,7 @@ class DefaultModelWorker(ModelWorker):
         del self.tokenizer
         self.model = None
         self.tokenizer = None
-        _clear_torch_cache(self._model_params.device)
+        _clear_model_cache(self._model_params.device)
 
     def generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
         torch_imported = False
