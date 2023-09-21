@@ -18,6 +18,7 @@ from pilot.logs import logger
 def _check_multi_gpu_or_4bit_quantization(model_params: ModelParameters):
     # TODO: vicuna-v1.5 8-bit quantization info is slow
     # TODO: support wizardlm quantization, see: https://huggingface.co/WizardLM/WizardLM-13B-V1.2/discussions/5
+    # TODO: support internlm quantization
     model_name = model_params.model_name.lower()
     supported_models = ["llama", "baichuan", "vicuna"]
     return any(m in model_name for m in supported_models)
