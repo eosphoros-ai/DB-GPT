@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from pilot.component import ComponentType
 from pilot.configs.config import Config
 
-from pilot.model.cluster import WorkerStartupRequest
+from pilot.model.cluster import WorkerStartupRequest, WorkerManagerFactory
 from pilot.openapi.api_view_model import Result
 
 from pilot.server.llm_manage.request.request import ModelResponse
@@ -77,29 +77,35 @@ async def model_list():
 
 
 @router.post("/v1/worker/model/stop")
-async def model_start(request: WorkerStartupRequest):
+async def model_stop(request: WorkerStartupRequest):
     print(f"/v1/worker/model/stop:")
     try:
         from pilot.model.cluster.controller.controller import BaseModelController
 
-        controller = CFG.SYSTEM_APP.get_component(
-            ComponentType.MODEL_CONTROLLER, BaseModelController
-        )
-        instances = await controller.get_all_instances(
-            model_name="WorkerManager@service", healthy_only=True
-        )
-        request.params = {}
-        worker_instance = None
-        for instance in instances:
-            if instance.host == request.host and instance.port == request.port:
-                from pilot.model.cluster import ModelRegistryClient
-                from pilot.model.cluster import RemoteWorkerManager
-
-                registry = ModelRegistryClient(f"http://{request.host}:{request.port}")
-                worker_manager = RemoteWorkerManager(registry)
-                return Result.succ(await worker_manager.model_shutdown(request))
-        if not worker_instance:
+        # controller = CFG.SYSTEM_APP.get_component(
+        #     ComponentType.MODEL_CONTROLLER, BaseModelController
+        # )
+        # instances = await controller.get_all_instances(
+        #     model_name="WorkerManager@service", healthy_only=True
+        # )
+        worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        if not worker_manager:
             return Result.faild(code="E000X", msg=f"can not find worker manager")
+        request.params = {}
+        return Result.succ(await worker_manager.model_shutdown(request))
+        # worker_instance = None
+        # for instance in instances:
+        #     if instance.host == request.host and instance.port == request.port:
+        #         from pilot.model.cluster import ModelRegistryClient
+        #         from pilot.model.cluster import RemoteWorkerManager
+        #
+        #         registry = ModelRegistryClient(f"http://{request.host}:{request.port}")
+        #         worker_manager = RemoteWorkerManager(registry)
+        #         return Result.succ(await worker_manager.model_shutdown(request))
+        # if not worker_instance:
+        #     return Result.faild(code="E000X", msg=f"can not find worker manager")
     except Exception as e:
         return Result.faild(code="E000X", msg=f"model stop failed {e}")
 
@@ -108,24 +114,30 @@ async def model_start(request: WorkerStartupRequest):
 async def model_start(request: WorkerStartupRequest):
     print(f"/v1/worker/model/start:")
     try:
-        from pilot.model.cluster.controller.controller import BaseModelController
-
-        controller = CFG.SYSTEM_APP.get_component(
-            ComponentType.MODEL_CONTROLLER, BaseModelController
-        )
-        instances = await controller.get_all_instances(
-            model_name="WorkerManager@service", healthy_only=True
-        )
-        worker_instance = None
-        for instance in instances:
-            if instance.host == request.host and instance.port == request.port:
-                from pilot.model.cluster import ModelRegistryClient
-                from pilot.model.cluster import RemoteWorkerManager
-
-                registry = ModelRegistryClient(f"http://{request.host}:{request.port}")
-                worker_manager = RemoteWorkerManager(registry)
-                return Result.succ(await worker_manager.model_startup(request))
-        if not worker_instance:
+        # from pilot.model.cluster.controller.controller import BaseModelController
+        #
+        # controller = CFG.SYSTEM_APP.get_component(
+        #     ComponentType.MODEL_CONTROLLER, BaseModelController
+        # )
+        # instances = await controller.get_all_instances(
+        #     model_name="WorkerManager@service", healthy_only=True
+        # )
+        worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        if not worker_manager:
             return Result.faild(code="E000X", msg=f"can not find worker manager")
+        return Result.succ(await worker_manager.model_startup(request))
+        # worker_instance = None
+        # for instance in instances:
+        #     if instance.host == request.host and instance.port == request.port:
+        #         from pilot.model.cluster import ModelRegistryClient
+        #         from pilot.model.cluster import RemoteWorkerManager
+        #
+        #         registry = ModelRegistryClient(f"http://{request.host}:{request.port}")
+        #         worker_manager = RemoteWorkerManager(registry)
+        #         return Result.succ(await worker_manager.model_startup(request))
+        # if not worker_instance:
+        #     return Result.faild(code="E000X", msg=f"can not find worker manager")
     except Exception as e:
         return Result.faild(code="E000X", msg=f"model start failed {e}")
