@@ -14,8 +14,7 @@ class BaseDao(Generic[T]):
         self._db_engine = db_engine
         self._session = session
 
-    @property
-    def Session(self):
+    def get_session(self):
         if not self._session:
             self._session = sessionmaker(bind=self.db_engine)
         return self._session

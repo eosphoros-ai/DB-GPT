@@ -4,6 +4,7 @@ import json
 import os
 import glob
 import zipfile
+import fnmatch
 import requests
 import git
 import threading
@@ -121,7 +122,7 @@ def __scan_plugin_file(file_path, debug: bool = False)-> List[AutoGPTPluginTempl
     loaded_plugins = []
     if moduleList := inspect_zip_for_modules(str(file_path), debug):
         for module in moduleList:
-            plugin = Path(plugin)
+            plugin = Path(file_path)
             module = Path(module)
             logger.debug(f"Plugin: {plugin} Module: {module}")
             zipped_package = zipimporter(str(plugin))
@@ -192,7 +193,7 @@ def denylist_allowlist_check(plugin_name: str, cfg: Config) -> bool:
 
 
 def update_from_git(download_path: str, github_repo: str = "", branch_name: str = "main",
-                    authorization: str = "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"):
+                    authorization: str = None):
     os.makedirs(download_path, exist_ok=True)
     if github_repo:
         if github_repo.index("github.com") <= 0:
@@ -205,9 +206,12 @@ def update_from_git(download_path: str, github_repo: str = "", branch_name: str 
         plugin_repo_name = "DB-GPT-Plugins"
     try:
         session = requests.Session()
+        headers = {}
+        if authorization and len(authorization) > 0:
+            headers = {"Authorization": authorization}
         response = session.get(
             url,
-            headers={"Authorization": authorization},
+            headers=headers,
         )
 
         if response.status_code == 200:

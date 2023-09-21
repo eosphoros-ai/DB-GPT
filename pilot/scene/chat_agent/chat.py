@@ -1,72 +1,58 @@
 from typing import List, Dict
+import logging
 
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
 from pilot.base_modules.agent.commands.command import execute_command
+from pilot.base_modules.agent.commands.command_mange import ApiCall
 from pilot.base_modules.agent import PluginPromptGenerator
+from pilot.common.string_utils import extract_content
+from .prompt import prompt
 
 CFG = Config()
 
+logger = logging.getLogger("chat_agent")
 
-class ChatWithPlugin(BaseChat):
+
+class ChatAgent(BaseChat):
     chat_scene: str = ChatScene.ChatAgent.value()
-    plugins_prompt_generator: PluginPromptGenerator
-    select_plugin: str = None
-
+    chat_retention_rounds = 0
     def __init__(self, chat_param: Dict):
-        self.plugin_selector = chat_param.select_param
+        if not chat_param['select_param']:
+            raise ValueError("Please select a Plugin!")
+        self.select_plugins = chat_param['select_param'].split(",")
+
         chat_param["chat_mode"] = ChatScene.ChatAgent
         super().__init__(chat_param=chat_param)
         self.plugins_prompt_generator = PluginPromptGenerator()
         self.plugins_prompt_generator.command_registry = CFG.command_registry
-        # 加载插件中可用命令
-        self.select_plugin = self.plugin_selector
-        if self.select_plugin:
-            for plugin in CFG.plugins:
-                if plugin._name == self.plugin_selector:
-                    if not plugin.can_handle_post_prompt():
-                        continue
-                    self.plugins_prompt_generator = plugin.post_prompt(
-                        self.plugins_prompt_generator
-                    )
-
-        else:
-            for plugin in CFG.plugins:
+        # load select plugin
+        for plugin in CFG.plugins:
+            if plugin._name in self.select_plugins:
                 if not plugin.can_handle_post_prompt():
                     continue
                 self.plugins_prompt_generator = plugin.post_prompt(
                     self.plugins_prompt_generator
                 )
 
+        self.api_call = ApiCall(self.plugins_prompt_generator)
+
     def generate_input_values(self):
         input_values = {
-            "input": self.current_user_input,
-            "constraints": self.__list_to_prompt_str(
+            "user_goal": self.current_user_input,
+            "expand_constraints": self.__list_to_prompt_str(
                 list(self.plugins_prompt_generator.constraints)
             ),
-            "commands_infos": self.plugins_prompt_generator.generate_commands_string(),
+            "tool_list": self.plugins_prompt_generator.generate_commands_string(),
         }
         return input_values
 
-    def do_action(self, prompt_response):
-        print(f"do_action:{prompt_response}")
-        ## plugin command run
-        return execute_command(
-            str(prompt_response.command.get("name")),
-            prompt_response.command.get("args", {}),
-            self.plugins_prompt_generator,
-        )
-
-    def chat_show(self):
-        super().chat_show()
+    def stream_plugin_call(self, text):
+        text = text.replace("\n", " ")
+        print(f"stream_plugin_call:{text}")
+        return self.api_call.run(text)
 
     def __list_to_prompt_str(self, list: List) -> str:
         return "\n".join(f"{i + 1 + 1}. {item}" for i, item in enumerate(list))
 
-    def generate(self, p) -> str:
-        return super().generate(p)
-
-    @property
-    def chat_type(self) -> str:
-        return ChatScene.ChatAgent.value

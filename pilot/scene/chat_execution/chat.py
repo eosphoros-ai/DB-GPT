@@ -5,6 +5,7 @@ from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
 from pilot.base_modules.agent.commands.command import execute_command
 from pilot.base_modules.agent import PluginPromptGenerator
+from .prompt import prompt
 
 CFG = Config()
 
@@ -15,7 +16,7 @@ class ChatWithPlugin(BaseChat):
     select_plugin: str = None
 
     def __init__(self, chat_param: Dict):
-        self.plugin_selector = chat_param.select_param
+        self.plugin_selector =  chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatExecution
         super().__init__(chat_param=chat_param)
         self.plugins_prompt_generator = PluginPromptGenerator()

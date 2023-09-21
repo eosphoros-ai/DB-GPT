@@ -2,10 +2,6 @@ import json
 import logging
 import os
 import glob
-import zipfile
-import requests
-from pathlib import Path
-import datetime
 import shutil
 from fastapi import UploadFile
 from typing import  Any
@@ -13,7 +9,7 @@ import tempfile
 
 from ..db.plugin_hub_db import PluginHubEntity, PluginHubDao
 from ..db.my_plugin_db import MyPluginDao, MyPluginEntity
-from .schema import PluginStorageType
+from ..common.schema import PluginStorageType
 from ..plugins_util import scan_plugins, update_from_git
 
 logger = logging.getLogger("agent_hub")
@@ -45,7 +41,7 @@ class AgentHub:
                     file_name = self.__download_from_git(plugin_entity.storage_url, branch_name, authorization)
 
                     # add to my plugins and edit hub status
-                    plugin_entity.installed = True
+                    plugin_entity.installed = plugin_entity.installed + 1
 
                     my_plugin_entity = self.__build_my_plugin(plugin_entity)
                     my_plugin_entity.file_name = file_name
@@ -57,28 +53,27 @@ class AgentHub:
                     else:
                         my_plugin_entity.user_code = Default_User
 
-                    with self.hub_dao.Session() as session:
+                    with self.hub_dao.get_session() as session:
                         try:
                             session.add(my_plugin_entity)
                             session.merge(plugin_entity)
                             session.commit()
+                            session.close()
                         except:
                             session.rollback()
                 except Exception as e:
                     logger.error("install pluguin exception!", e)
                     raise ValueError(f"Install Plugin {plugin_name} Faild! {str(e)}")
-
             else:
                 raise ValueError(f"Unsupport Storage Channel {plugin_entity.storage_channel}!")
-
         else:
             raise ValueError(f"Can't Find Plugin {plugin_name}!")
 
     def uninstall_plugin(self, plugin_name, user):
         logger.info(f"uninstall_plugin:{plugin_name},{user}")
         plugin_entity = self.hub_dao.get_by_name(plugin_name)
-        plugin_entity.installed = False
-        with self.hub_dao.Session() as session:
+        plugin_entity.installed = plugin_entity.installed - 1
+        with self.hub_dao.get_session() as session:
             try:
                 my_plugin_q = session.query(MyPluginEntity).filter(MyPluginEntity.name == plugin_name)
                 if user:
@@ -93,7 +88,7 @@ class AgentHub:
         plugin_infos = self.hub_dao.get_by_storage_url(plugin_entity.storage_url)
         have_installed = False
         for plugin_info in plugin_infos:
-            if plugin_info.installed:
+            if plugin_info.installed > 0:
                 have_installed = True
                 break
         if not have_installed:
@@ -118,27 +113,32 @@ class AgentHub:
         logger.info("refresh_hub_by_git start!")
         update_from_git(self.temp_hub_file_path, github_repo, branch_name, authorization)
         git_plugins = scan_plugins(self.temp_hub_file_path)
-        for git_plugin in git_plugins:
-            old_hub_info = self.hub_dao.get_by_name(git_plugin._name)
-            if old_hub_info:
-                plugin_hub_info = old_hub_info
-            else:
-                plugin_hub_info = PluginHubEntity()
-                plugin_hub_info.type = ""
-                plugin_hub_info.storage_channel = PluginStorageType.Git.value
-                plugin_hub_info.storage_url = DEFAULT_PLUGIN_REPO
-                plugin_hub_info.author = getattr(git_plugin, '_author', 'DB-GPT')
-                plugin_hub_info.email = getattr(git_plugin, '_email', '')
-                plugin_hub_info.download_param = json.dumps({
-                    branch_name: branch_name,
-                    authorization: authorization
-                })
-                plugin_hub_info.installed = False
+        try:
+            for git_plugin in git_plugins:
+                old_hub_info = self.hub_dao.get_by_name(git_plugin._name)
+                if old_hub_info:
+                    plugin_hub_info = old_hub_info
+                else:
+                    plugin_hub_info = PluginHubEntity()
+                    plugin_hub_info.type = ""
+                    plugin_hub_info.storage_channel = PluginStorageType.Git.value
+                    plugin_hub_info.storage_url = DEFAULT_PLUGIN_REPO
+                    plugin_hub_info.author = getattr(git_plugin, '_author', 'DB-GPT')
+                    plugin_hub_info.email = getattr(git_plugin, '_email', '')
+                    download_param = {}
+                    if branch_name:
+                        download_param['branch_name'] = branch_name
+                    if authorization and len(authorization) > 0:
+                        download_param['authorization'] = authorization
+                    plugin_hub_info.download_param = json.dumps(download_param)
+                    plugin_hub_info.installed = 0
 
-            plugin_hub_info.name = git_plugin._name
-            plugin_hub_info.version = git_plugin._version
-            plugin_hub_info.description = git_plugin._description
-            self.hub_dao.update(plugin_hub_info)
+                plugin_hub_info.name = git_plugin._name
+                plugin_hub_info.version = git_plugin._version
+                plugin_hub_info.description = git_plugin._description
+                self.hub_dao.update(plugin_hub_info)
+        except Exception as e:
+            raise ValueError(f"Update Agent Hub Db Info Faild!{str(e)}")
 
     def upload_my_plugin(self, doc_file: UploadFile, user: Any=Default_User):
 
@@ -150,7 +150,7 @@ class AgentHub:
             dir=os.path.join(self.plugin_dir)
         )
         with os.fdopen(tmp_fd, "wb") as tmp:
-            tmp.write(await doc_file.read())
+            tmp.write(doc_file.read())
         shutil.move(
             tmp_path,
             os.path.join(self.plugin_dir, doc_file.filename),
@@ -169,9 +169,6 @@ class AgentHub:
             my_plugin_entiy.file_name = doc_file.filename
 
             self.my_lugin_dao.update(my_plugin_entiy)
-
-
-
 
     def reload_my_plugins(self):
         logger.info(f"load_plugins start!")

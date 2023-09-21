@@ -1,6 +1,7 @@
 import datetime
 import traceback
 import warnings
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, List, Dict
 
@@ -134,6 +135,16 @@ class BaseChat(ABC):
         }
         return payload
 
+    def stream_plugin_call(self, text):
+        return text
+
+    async def check_iterator_end(iterator):
+        try:
+            await asyncio.anext(iterator)
+            return False  # 迭代器还有下一个元素
+        except StopAsyncIteration:
+            return True  # 迭代器已经执行结束
+
     async def stream_call(self):
         # TODO Retry when server connection error
         payload = self.__call_base()
@@ -144,16 +155,23 @@ class BaseChat(ABC):
         try:
             from pilot.model.cluster import worker_manager
 
-            async for output in worker_manager.generate_stream(payload):
-                yield output
+            worker_generate = worker_manager.generate_stream(payload)
+            async for output in worker_generate:
+                ## Plug-in research in result generation
+                msg = self.prompt_template.output_parser.parse_model_stream_resp_ex(
+                    output, self.skip_echo_len
+                )
+                view_msg = self.stream_plugin_call(msg)
+                yield view_msg
+            self.current_message.add_ai_message(msg)
+            self.current_message.add_view_message(view_msg)
         except Exception as e:
             print(traceback.format_exc())
             logger.error("model response parase faild！" + str(e))
             self.current_message.add_view_message(
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
-            ### store current conversation
-            self.memory.append(self.current_message)
+        self.memory.append(self.current_message)
 
     async def nostream_call(self):
         payload = self.__call_base()
@@ -186,6 +204,7 @@ class BaseChat(ABC):
             view_message = self.prompt_template.output_parser.parse_view_response(
                 speak_to_user, result
             )
+            view_message = view_message.replace("\n", "\\n")
             self.current_message.add_view_message(view_message)
         except Exception as e:
             print(traceback.format_exc())

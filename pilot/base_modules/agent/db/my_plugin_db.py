@@ -36,7 +36,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         )
 
     def add(self, engity: MyPluginEntity):
-        session = self.Session()
+        session = self.get_session()
         my_plugin = MyPluginEntity(
             tenant=engity.tenant,
             user_code=engity.user_code,
@@ -55,13 +55,13 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         return id
 
     def update(self, entity: MyPluginEntity):
-        session = self.Session()
+        session = self.get_session()
         updated = session.merge(entity)
         session.commit()
         return updated.id
 
     def get_by_user(self, user: str)->list[MyPluginEntity]:
-        session = self.Session()
+        session = self.get_session()
         my_plugins = session.query(MyPluginEntity)
         if  user:
             my_plugins = my_plugins.filter(
@@ -73,7 +73,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
 
 
     def list(self, query: MyPluginEntity, page=1, page_size=20)->list[MyPluginEntity]:
-        session = self.Session()
+        session = self.get_session()
         my_plugins = session.query(MyPluginEntity)
         all_count = my_plugins.count()
         if query.id is not None:
@@ -112,7 +112,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
 
 
     def count(self, query: MyPluginEntity):
-        session = self.Session()
+        session = self.get_session()
         my_plugins = session.query(func.count(MyPluginEntity.id))
         if query.id is not None:
             my_plugins = my_plugins.filter(MyPluginEntity.id == query.id)
@@ -142,7 +142,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
 
 
     def delete(self, plugin_id: int):
-        session = self.Session()
+        session = self.get_session()
         if plugin_id is None:
             raise Exception("plugin_id is None")
         query = MyPluginEntity(id=plugin_id)

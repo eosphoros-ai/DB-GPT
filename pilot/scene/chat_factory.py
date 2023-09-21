@@ -14,6 +14,7 @@ class ChatFactory(metaclass=Singleton):
         from pilot.scene.chat_knowledge.v1.chat import ChatKnowledge
         from pilot.scene.chat_knowledge.inner_db_summary.chat import InnerChatDBSummary
         from pilot.scene.chat_data.chat_excel.excel_analyze.chat import ChatExcel
+        from pilot.scene.chat_agent.chat import ChatAgent
 
         chat_classes = BaseChat.__subclasses__()
         implementation = None

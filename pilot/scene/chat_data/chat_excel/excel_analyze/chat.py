@@ -39,30 +39,6 @@ class ChatExcel(BaseChat):
 
         super().__init__(chat_param=chat_param)
 
-    def _generate_command_string(self, command: Dict[str, Any]) -> str:
-        """
-        Generate a formatted string representation of a command.
-
-        Args:
-            command (dict): A dictionary containing command information.
-
-        Returns:
-            str: The formatted command string.
-        """
-        args_string = ", ".join(
-            f'"{key}": "{value}"' for key, value in command["args"].items()
-        )
-        return f'{command["label"]}: "{command["name"]}", args: {args_string}'
-
-    def _generate_numbered_list(self) -> str:
-        command_strings = []
-        if CFG.command_disply:
-            command_strings += [
-                str(item)
-                for item in CFG.command_disply.commands.values()
-                if item.enabled
-            ]
-        return "\n".join(f"{i+1}. {item}" for i, item in enumerate(command_strings))
 
     def generate_input_values(self):
         input_values = {

@@ -15,6 +15,7 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 sys.path.append(ROOT_PATH)
 
 
+
 def signal_handler(sig, frame):
     print("in order to avoid chroma db atexit problem")
     os._exit(0)

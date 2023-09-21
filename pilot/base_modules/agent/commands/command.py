@@ -69,7 +69,7 @@ def execute_ai_response_json(
 def execute_command(
     command_name: str,
     arguments,
-    prompt: PluginPromptGenerator,
+    plugin_generator: PluginPromptGenerator,
 ):
     """Execute the command and return the result
 
@@ -81,7 +81,9 @@ def execute_command(
         str: The result of the command
     """
 
-    cmd = prompt.command_registry.commands.get(command_name)
+
+    cmd = plugin_generator.command_registry.commands.get(command_name)
+
 
     # If the command is found, call it with the provided arguments
     if cmd:
@@ -93,7 +95,7 @@ def execute_command(
     # non-file is given, return instructions "Input should be a python
     # filepath, write your code to file and try again
     else:
-        for command in prompt.commands:
+        for command in plugin_generator.commands:
             if (
                 command_name == command["label"].lower()
                 or command_name == command["name"].lower()
@@ -151,3 +153,6 @@ def get_command(response_json: Dict):
     # All other errors, return "Error: + error message"
     except Exception as e:
         return "Error:", str(e)
+
+
+

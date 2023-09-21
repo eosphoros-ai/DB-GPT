@@ -1,8 +1,8 @@
 from datetime import datetime
+import pytz
 from typing import List
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, Boolean
 from sqlalchemy import UniqueConstraint
-
 from pilot.base_modules.meta_data.meta_data import Base
 
 from pilot.base_modules.meta_data.base_dao import BaseDao
@@ -22,7 +22,7 @@ class PluginHubEntity(Base):
     storage_url = Column(String, comment="plugin download url")
     download_param = Column(String, comment="plugin download param")
     created_at = Column(DateTime, default=datetime.utcnow, comment="plugin upload time")
-    installed = Column(Boolean, default=False, comment="plugin already installed")
+    installed = Column(Integer, default=False, comment="plugin already installed count")
 
     __table_args__ = (
         UniqueConstraint('name', name="uk_name"),
@@ -37,7 +37,8 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         )
 
     def add(self, engity: PluginHubEntity):
-        session = self.Session()
+        session = self.get_session()
+        timezone = pytz.timezone('Asia/Shanghai')
         plugin_hub = PluginHubEntity(
             name=engity.name,
             author=engity.author,
@@ -46,7 +47,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
             version=engity.version,
             storage_channel=engity.storage_channel,
             storage_url=engity.storage_url,
-            created_at=datetime.now(),
+            created_at=timezone.localize(datetime.now()),
         )
         session.add(plugin_hub)
         session.commit()
@@ -55,13 +56,16 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         return id
 
     def update(self, entity: PluginHubEntity):
-        session = self.Session()
-        updated = session.merge(entity)
-        session.commit()
-        return updated.id
+        session = self.get_session()
+        try:
+            updated = session.merge(entity)
+            session.commit()
+            return updated.id
+        finally:
+            session.close()
 
     def list(self, query: PluginHubEntity, page=1, page_size=20) -> list[PluginHubEntity]:
-        session = self.Session()
+        session = self.get_session()
         plugin_hubs = session.query(PluginHubEntity)
         all_count = plugin_hubs.count()
 
@@ -93,11 +97,10 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         if all_count % page_size != 0:
             total_pages += 1
 
-
         return result, total_pages, all_count
 
     def get_by_storage_url(self, storage_url):
-        session = self.Session()
+        session = self.get_session()
         plugin_hubs = session.query(PluginHubEntity)
         plugin_hubs = plugin_hubs.filter(PluginHubEntity.storage_url == storage_url)
         result = plugin_hubs.all()
@@ -105,17 +108,17 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         return result
 
     def get_by_name(self, name: str) -> PluginHubEntity:
-        session = self.Session()
+        session = self.get_session()
         plugin_hubs = session.query(PluginHubEntity)
         plugin_hubs = plugin_hubs.filter(
             PluginHubEntity.name == name
         )
-        result =  plugin_hubs.get(1)
+        result = plugin_hubs.first()
         session.close()
         return result
 
     def count(self, query: PluginHubEntity):
-        session = self.Session()
+        session = self.get_session()
         plugin_hubs = session.query(func.count(PluginHubEntity.id))
         if query.id is not None:
             plugin_hubs = plugin_hubs.filter(PluginHubEntity.id == query.id)
@@ -140,7 +143,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         return count
 
     def delete(self, plugin_id: int):
-        session = self.Session()
+        session = self.get_session()
         if plugin_id is None:
             raise Exception("plugin_id is None")
         query = PluginHubEntity(id=plugin_id)

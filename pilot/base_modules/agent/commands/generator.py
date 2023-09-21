@@ -20,8 +20,6 @@ class PluginPromptGenerator:
         self.performance_evaluation = []
         self.goals = []
         self.command_registry = None
-        self.name = "Bob"
-        self.role = "AI"
         self.response_format = {
             "thoughts": {
                 "text": "thought",
@@ -87,7 +85,7 @@ class PluginPromptGenerator:
         args_string = ", ".join(
             f'"{key}": "{value}"' for key, value in command["args"].items()
         )
-        return f'{command["label"]}: "{command["name"]}", args: {args_string}'
+        return f'"{command["name"]}": {command["label"]} , args: {args_string}'
 
     def add_resource(self, resource: str) -> None:
         """
@@ -136,23 +134,4 @@ class PluginPromptGenerator:
     def generate_commands_string(self) -> str:
         return f"{self._generate_numbered_list(self.commands, item_type='command')}"
 
-    def generate_prompt_string(self) -> str:
-        """
-        Generate a prompt string based on the constraints, commands, resources,
-            and performance evaluations.
 
-        Returns:
-            str: The generated prompt string.
-        """
-        formatted_response_format = json.dumps(self.response_format, indent=4)
-        return (
-            f"Constraints:\n{self._generate_numbered_list(self.constraints)}\n\n"
-            "Commands:\n"
-            f"{self._generate_numbered_list(self.commands, item_type='command')}\n\n"
-            f"Resources:\n{self._generate_numbered_list(self.resources)}\n\n"
-            "Performance Evaluation:\n"
-            f"{self._generate_numbered_list(self.performance_evaluation)}\n\n"
-            "You should only respond in JSON format as described below and ensure the"
-            "response can be parsed by Python json.loads \nResponse"
-            f" Format: \n{formatted_response_format}"
-        )

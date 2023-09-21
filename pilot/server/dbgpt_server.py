@@ -32,6 +32,9 @@ from pilot.base_modules.agent import static_message_img_path
 from pilot.model.cluster import initialize_worker_manager_in_client
 from pilot.utils.utils import setup_logging, logging_str_to_uvicorn_level
 
+from pilot.base_modules.agent.controller import router as agent_route
+
+
 static_file_path = os.path.join(os.getcwd(), "server/static")
 
 CFG = Config()
@@ -70,6 +73,7 @@ app.add_middleware(
 
 app.include_router(api_v1, prefix="/api")
 app.include_router(api_editor_route_v1, prefix="/api")
+app.include_router(agent_route, prefix="/api")
 
 app.include_router(knowledge_router)
 

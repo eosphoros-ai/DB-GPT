@@ -179,7 +179,7 @@ async def dialogue_scenes():
         ChatScene.ChatWithDbQA,
         ChatScene.ChatKnowledge,
         ChatScene.ChatDashboard,
-        ChatScene.ChatExecution,
+        ChatScene.ChatAgent,
     ]
     for scene in new_modes:
         scene_vo = ChatSceneVo(
@@ -373,26 +373,16 @@ async def model_types(request: Request):
 
 async def no_stream_generator(chat):
     msg = await chat.nostream_call()
-    msg = msg.replace("\n", "\\n")
     yield f"data: {msg}\n\n"
 
 
 async def stream_generator(chat):
-    msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
-
     async for chunk in chat.stream_call():
         if chunk:
-            msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
-                chunk, chat.skip_echo_len
-            )
-
-            msg = msg.replace("\n", "\\n")
-            yield f"data:{msg}\n\n"
+            yield f"data:{chunk}\n\n"
             await asyncio.sleep(0.02)
 
-    chat.current_message.add_ai_message(msg)
-    chat.current_message.add_view_message(msg)
-    chat.memory.append(chat.current_message)
+
 
 
 def message2Vo(message: dict, order, model_name) -> MessageVo:
