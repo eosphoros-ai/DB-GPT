@@ -24,6 +24,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pilot.server.knowledge.api import router as knowledge_router
 from pilot.server.prompt.api import router as prompt_router
+from pilot.server.llm_manage.api import router as llm_manage_api
 
 
 from pilot.openapi.api_v1.api_v1 import router as api_v1
@@ -73,6 +74,7 @@ app.add_middleware(
 app.include_router(api_v1, prefix="/api")
 app.include_router(knowledge_router, prefix="/api")
 app.include_router(api_editor_route_v1, prefix="/api")
+app.include_router(llm_manage_api, prefix="/api")
 app.include_router(api_fb_v1, prefix="/api")
 
 # app.include_router(api_v1)
