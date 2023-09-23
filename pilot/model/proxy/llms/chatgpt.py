@@ -20,7 +20,7 @@ def chatgpt_generate_stream(
     print(f"Model: {model}, model_params: {model_params}")
 
     proxy_api_key = model_params.proxy_api_key
-    openai.api_key = openai_key = os.getenv("OPENAI_API_KEY") or proxy_api_key
+    openai.api_key = os.getenv("OPENAI_API_KEY") or proxy_api_key
     proxyllm_backend = model_params.proxyllm_backend
     if not proxyllm_backend:
         proxyllm_backend = "gpt-3.5-turbo"
