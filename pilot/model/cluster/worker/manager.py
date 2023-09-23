@@ -639,7 +639,11 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
             router as controller_router,
         )
 
-        if not worker_params.controller_addr and worker_params.model_name != "proxyllm":
+        if not worker_params.controller_addr:
+            # if we have http_proxy or https_proxy in env, the server can not start
+            # so set it to empty here
+            os.environ["http_proxy"] = ""
+            os.environ["https_proxy"] = ""
             worker_params.controller_addr = f"http://127.0.0.1:{worker_params.port}"
         logger.info(
             f"Run WorkerManager with standalone mode, controller_addr: {worker_params.controller_addr}"

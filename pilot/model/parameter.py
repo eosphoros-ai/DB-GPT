@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, Optional
@@ -246,6 +247,11 @@ class ProxyModelParameters(BaseModelParameters):
     proxy_api_key: str = field(
         metadata={"tags": "privacy", "help": "The api key of current proxy LLM"},
     )
+    http_proxy: Optional[str] = field(
+        default=os.environ.get("http_proxy") or os.environ.get("https_proxy"),
+        metadata={"help": "The http or https proxy to use openai"},
+    )
+
     proxyllm_backend: Optional[str] = field(
         default=None,
         metadata={
