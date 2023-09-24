@@ -295,6 +295,7 @@ def core_requires():
         "langchain>=0.0.286",
         "SQLAlchemy",
         "pymysql",
+        "psycopg2"
         "duckdb",
         "duckdb-engine",
         "jsonschema",

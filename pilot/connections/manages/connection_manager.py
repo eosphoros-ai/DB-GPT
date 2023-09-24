@@ -14,6 +14,7 @@ from pilot.connections.rdbms.conn_sqlite import SQLiteConnect
 from pilot.connections.rdbms.conn_mssql import MSSQLConnect
 from pilot.connections.rdbms.base import RDBMSDatabase
 from pilot.connections.rdbms.conn_clickhouse import ClickhouseConnect
+from pilot.connections.rdbms.conn_postgresql import PostgreSQLDatabase
 from pilot.singleton import Singleton
 from pilot.common.sql_database import Database
 from pilot.connections.db_conn_info import DBConfig
