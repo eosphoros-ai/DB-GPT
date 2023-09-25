@@ -73,6 +73,7 @@ body:
         - label: Chat Excel
         - label: Chat DB
         - label: Chat Knowledge
+        - label: Model Management
         - label: Dashboard
         - label: Plugins
 
