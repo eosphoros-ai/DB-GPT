@@ -66,15 +66,15 @@ async def model_list():
                     last_heartbeat=model.last_heartbeat,
                     prompt_template=model.prompt_template,
                 )
-                response.manager_host = model.host if manager_map[model.host] else None
+                response.manager_host = model.host if manager_map.get(model.host) else None
                 response.manager_port = (
-                    manager_map[model.host].port if manager_map[model.host] else None
+                    manager_map[model.host].port if manager_map.get(model.host) else None
                 )
                 responses.append(response)
         return Result.succ(responses)
 
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"space list error {e}")
+        return Result.faild(code="E000X", msg=f"model list error {e}")
 
 
 @router.post("/v1/worker/model/stop")
