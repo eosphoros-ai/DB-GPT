@@ -60,10 +60,14 @@ class PostgreSQLDatabase(RDBMSDatabase):
     
     def get_collation(self):
         """Get collation."""
-        session = self._db_sessions()
-        cursor = session.execute(text("SELECT datcollate AS collation FROM pg_database WHERE datname = current_database();"))
-        collation = cursor.fetchone()[0]
-        return collation
+        try:
+            session = self._db_sessions()
+            cursor = session.execute(text("SELECT datcollate AS collation FROM pg_database WHERE datname = current_database();"))
+            collation = cursor.fetchone()[0]
+            return collation
+        except Exception as e:
+            print("postgresql get collation error: ", e)
+            return None
     
     def get_users(self):
         """Get user info."""
@@ -72,6 +76,7 @@ class PostgreSQLDatabase(RDBMSDatabase):
             users = cursor.fetchall()
             return [user[0] for user in users]
         except Exception as e:
+            print("postgresql get users error: ", e)
             return []
 
     def get_fields(self, table_name):
