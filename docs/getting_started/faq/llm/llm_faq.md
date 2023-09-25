@@ -77,11 +77,18 @@ eg: dbgpt start worker --model_name vicuna-13b-v1.5 \
 
 ```
 
-
 ##### Q7 dbgpt command not found
 
 ```commandline
-pip install -e .
+pip install -e "pip install -e ".[default]"
+```
+
+##### Q8 When starting the worker_manager on a cloud server and registering it with the controller, it is noticed that the worker's exposed IP is a private IP instead of a public IP, which leads to the inability to access the service.
+
+```commandline
+--worker_register_host  public_ip     The ip address of current worker to register
+                                  to ModelController. If None, the address is
+                                  automatically determined
 ```
 
 
