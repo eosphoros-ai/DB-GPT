@@ -7,28 +7,28 @@ from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = "你是一个数据分析专家，请提供专业的数据分析解决方案"
+PROMPT_SCENE_DEFINE = "You are a data analysis expert, please provide a professional data analysis solution"
 
 _DEFAULT_TEMPLATE = """
-根据以下表结构定义：
+According to the following table structure definition:
 {table_info}
-提供专业的数据分析以支持用户的目标：
+Provide professional data analysis to support users' goals:
 {input}
 
-根据用户目标，提供至少4个，最多8个维度的分析。
-分析的输出数据不能超过4列，不要在SQL where条件中使用如pay_status之类的列进行数据筛选。
-根据分析数据的特性，从下面提供的图表中选择最合适的一种进行数据展示，图表类型：
+Provide at least 4 and at most 8 dimensions of analysis according to user goals.
+The output data of the analysis cannot exceed 4 columns, and do not use columns such as pay_status in the SQL where condition for data filtering.
+According to the characteristics of the analyzed data, choose the most suitable one from the charts provided below for data display, chart type:
 {supported_chat_type}
 
-注意分析结果的输出内容长度，不要超过4000个令牌
+Pay attention to the length of the output content of the analysis result, do not exceed 4000 tokens
 
-给出正确的{dialect}分析SQL
-1.不要使用未提供的值，如'paid'
-2.所有查询的值必须是有别名的，如select count(*) as count from table
-3.如果表结构定义使用了{dialect}的关键字作为字段名，需要使用转义符，如select `count` from table
-4.仔细检查SQL的正确性，SQL必须是正确的，显示方法和简要分析思路的总结，并以以下json格式回应：
+Give the correct {dialect} analysis SQL
+1.Do not use unprovided values such as 'paid'
+2.All queried values must have aliases, such as select count(*) as count from table
+3.If the table structure definition uses the keywords of {dialect} as field names, you need to use escape characters, such as select `count` from table
+4.Carefully check the correctness of the SQL, the SQL must be correct, display method and summary of brief analysis thinking, and respond in the following json format:
 {response}
-做重要的额是:请确保只返回json字符串，不要添加任何其他内容(用于程序直接处理),并且json并能被Python json.loads解析
+The important thing is: Please make sure to only return the json string, do not add any other content (for direct processing by the program), and the json can be parsed by Python json.loads
 """
 
 RESPONSE_FORMAT = [
