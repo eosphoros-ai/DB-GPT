@@ -295,7 +295,6 @@ def core_requires():
         "langchain>=0.0.286",
         "SQLAlchemy",
         "pymysql",
-        "psycopg2"
         "duckdb",
         "duckdb-engine",
         "jsonschema",
@@ -364,7 +363,7 @@ def all_datasource_requires():
     """
     pip install "db-gpt[datasource]"
     """
-    setup_spec.extras["datasource"] = ["pymssql", "pymysql"]
+    setup_spec.extras["datasource"] = ["pymssql", "pymysql","psycopg2"]
 
 
 def openai_requires():
