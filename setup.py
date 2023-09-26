@@ -365,7 +365,7 @@ def all_datasource_requires():
     """
     pip install "db-gpt[datasource]"
     """
-    setup_spec.extras["datasource"] = ["pymssql", "pymysql"]
+    setup_spec.extras["datasource"] = ["pymssql", "pymysql", "pyspark"]
 
 
 def openai_requires():
