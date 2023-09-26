@@ -19,6 +19,7 @@ from pilot.connections.rdbms.conn_clickhouse import ClickhouseConnect
 from pilot.singleton import Singleton
 from pilot.common.sql_database import Database
 from pilot.connections.db_conn_info import DBConfig
+from pilot.connections.conn_spark import SparkConnect
 from pilot.summary.db_summary_client import DBSummaryClient
 
 CFG = Config()
