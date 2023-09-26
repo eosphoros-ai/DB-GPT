@@ -45,6 +45,8 @@ class ChatWithDbAutoExecute(BaseChat):
         except Exception as e:
             print("db summary find error!" + str(e))
             table_infos = self.database.table_simple_info()
+        if not table_infos:
+            table_infos = self.database.table_simple_info()
 
         # table_infos = self.database.table_simple_info()
 

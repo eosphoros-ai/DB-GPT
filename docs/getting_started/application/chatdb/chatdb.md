@@ -35,6 +35,7 @@ now DB-GPT support Datasource Type
 * DuckDB
 * Clickhouse
 * Mssql
+* Spark
 ```
 
 ### 2.ChatData
