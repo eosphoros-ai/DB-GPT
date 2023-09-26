@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Type
 
 from pilot.component import ComponentType, SystemApp
+from pilot.utils.executor_utils import DefaultExecutorFactory
 from pilot.embedding_engine.embedding_factory import EmbeddingFactory
 from pilot.server.base import WebWerverParameters
 
@@ -21,6 +22,9 @@ def initialize_components(
     embedding_model_path: str,
 ):
     from pilot.model.cluster.controller.controller import controller
+
+    # Register global default executor factory first
+    system_app.register(DefaultExecutorFactory)
 
     system_app.register_instance(controller)
 

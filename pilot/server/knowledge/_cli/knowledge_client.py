@@ -124,12 +124,13 @@ def knowledge_init(
     def upload(filename: str):
         try:
             logger.info(f"Begin upload document: {filename} to {space.name}")
-            return client.document_upload(
+            doc_id = client.document_upload(
                 space.name, filename, KnowledgeType.DOCUMENT.value, filename
             )
+            client.document_sync(space.name, DocumentSyncRequest(doc_ids=[doc_id]))
         except Exception as e:
             if skip_wrong_doc:
-                logger.warn(f"Warning: {str(e)}")
+                logger.warn(f"Upload {filename} to {space.name} failed: {str(e)}")
             else:
                 raise e
 
@@ -144,5 +145,3 @@ def knowledge_init(
         if not doc_ids:
             logger.warn("Warning: no document to sync")
             return
-        logger.info(f"Begin sync document: {doc_ids}")
-        client.document_sync(space.name, DocumentSyncRequest(doc_ids=doc_ids))

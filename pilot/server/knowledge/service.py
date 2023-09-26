@@ -9,6 +9,9 @@ from pilot.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
+from pilot.component import ComponentType
+from pilot.utils.executor_utils import ExecutorFactory
+
 from pilot.logs import logger
 from pilot.server.knowledge.chunk_db import (
     DocumentChunkEntity,
@@ -227,10 +230,15 @@ class KnowledgeService:
             doc.gmt_modified = datetime.now()
             knowledge_document_dao.update_knowledge_document(doc)
             # async doc embeddings
-            thread = threading.Thread(
-                target=self.async_doc_embedding, args=(client, chunk_docs, doc)
-            )
-            thread.start()
+            # thread = threading.Thread(
+            #     target=self.async_doc_embedding, args=(client, chunk_docs, doc)
+            # )
+            # thread.start()
+            executor = CFG.SYSTEM_APP.get_component(
+                ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+            ).create()
+            executor.submit(self.async_doc_embedding, client, chunk_docs, doc)
+
             logger.info(f"begin save document chunks, doc:{doc.doc_name}")
             # save chunk details
             chunk_entities = [

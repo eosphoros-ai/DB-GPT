@@ -1,17 +1,18 @@
 import asyncio
 import itertools
 import json
-import os
-import sys
-import random
-import time
 import logging
+import os
+import random
+import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from typing import Awaitable, Callable, Dict, Iterator, List, Optional
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import StreamingResponse
+
 from pilot.component import SystemApp
 from pilot.model.base import (
     ModelInstance,
@@ -20,16 +21,16 @@ from pilot.model.base import (
     WorkerApplyType,
     WorkerSupportedModel,
 )
-from pilot.model.cluster.registry import ModelRegistry
-from pilot.model.llm_utils import list_supported_models
-from pilot.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
-from pilot.model.cluster.worker_base import ModelWorker
+from pilot.model.cluster.base import *
 from pilot.model.cluster.manager_base import (
     WorkerManager,
-    WorkerRunData,
     WorkerManagerFactory,
+    WorkerRunData,
 )
-from pilot.model.cluster.base import *
+from pilot.model.cluster.registry import ModelRegistry
+from pilot.model.cluster.worker_base import ModelWorker
+from pilot.model.llm_utils import list_supported_models
+from pilot.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
 from pilot.utils.parameter_utils import (
     EnvArgumentParser,
     ParameterDescription,
@@ -639,6 +640,10 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
         )
 
         if not worker_params.controller_addr:
+            # if we have http_proxy or https_proxy in env, the server can not start
+            # so set it to empty here
+            os.environ["http_proxy"] = ""
+            os.environ["https_proxy"] = ""
             worker_params.controller_addr = f"http://127.0.0.1:{worker_params.port}"
         logger.info(
             f"Run WorkerManager with standalone mode, controller_addr: {worker_params.controller_addr}"
