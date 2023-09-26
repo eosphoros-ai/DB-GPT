@@ -71,11 +71,11 @@ app.add_middleware(
 )
 
 
-app.include_router(api_v1, prefix="/api")
-app.include_router(api_editor_route_v1, prefix="/api")
-app.include_router(agent_route, prefix="/api")
+app.include_router(api_v1, prefix="/api",  tags=["Chat"])
+app.include_router(api_editor_route_v1, prefix="/api",  tags=["Editor"])
 
-app.include_router(knowledge_router)
+
+app.include_router(knowledge_router,  tags=["Knowledge"])
 
 
 def mount_static_files(app):

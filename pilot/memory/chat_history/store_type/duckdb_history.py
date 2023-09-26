@@ -10,6 +10,7 @@ from pilot.scene.message import (
     _conversation_to_dic,
 )
 from pilot.common.formatting import MyEncoder
+from ..base import MemoryStoreType
 
 default_db_path = os.path.join(os.getcwd(), "message")
 duckdb_path = os.getenv("DB_DUCKDB_PATH", default_db_path + "/chat_history.db")
@@ -19,6 +20,8 @@ CFG = Config()
 
 
 class DuckdbHistoryMemory(BaseChatHistoryMemory):
+    store_type: str = MemoryStoreType.DuckDb.value
+
     def __init__(self, chat_session_id: str):
         self.chat_seesion_id = chat_session_id
         os.makedirs(default_db_path, exist_ok=True)
@@ -117,30 +120,6 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         cursor.commit()
         return True
 
-    @staticmethod
-    def conv_list(cls, user_name: str = None) -> None:
-        if os.path.isfile(duckdb_path):
-            cursor = duckdb.connect(duckdb_path).cursor()
-            if user_name:
-                cursor.execute(
-                    "SELECT * FROM chat_history where user_name=? order by id desc limit 20",
-                    [user_name],
-                )
-            else:
-                cursor.execute("SELECT * FROM chat_history order by id desc limit 20")
-            # 获取查询结果字段名
-            fields = [field[0] for field in cursor.description]
-            data = []
-            for row in cursor.fetchall():
-                row_dict = {}
-                for i, field in enumerate(fields):
-                    row_dict[field] = row[i]
-                data.append(row_dict)
-
-            return data
-
-        return []
-
     def conv_info(self, conv_uid: str = None) -> None:
         cursor = self.connect.cursor()
         cursor.execute(
@@ -168,3 +147,28 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
             if context[0]:
                 return json.loads(context[0])
         return None
+
+
+    @staticmethod
+    def conv_list(cls, user_name: str = None) -> None:
+        if os.path.isfile(duckdb_path):
+            cursor = duckdb.connect(duckdb_path).cursor()
+            if user_name:
+                cursor.execute(
+                    "SELECT * FROM chat_history where user_name=? order by id desc limit 20",
+                    [user_name],
+                )
+            else:
+                cursor.execute("SELECT * FROM chat_history order by id desc limit 20")
+            # 获取查询结果字段名
+            fields = [field[0] for field in cursor.description]
+            data = []
+            for row in cursor.fetchall():
+                row_dict = {}
+                for i, field in enumerate(fields):
+                    row_dict[field] = row[i]
+                data.append(row_dict)
+
+            return data
+
+        return []

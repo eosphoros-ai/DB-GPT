@@ -7,15 +7,12 @@ from typing import Any, List, Dict
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import LOGDIR
-from pilot.memory.chat_history.base import BaseChatHistoryMemory
-from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
-from pilot.memory.chat_history.file_history import FileHistoryMemory
-from pilot.memory.chat_history.mem_history import MemHistoryMemory
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 from pilot.scene.message import OnceConversation
 from pilot.utils import build_logger, get_or_create_event_loop
 from pydantic import Extra
+from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 
 logger = build_logger("BaseChat", LOGDIR + "BaseChat.log")
 headers = {"User-Agent": "dbgpt Client"}
@@ -54,9 +51,9 @@ class BaseChat(ABC):
                 proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
-
+        chat_history_fac = ChatHistory()
         ### can configurable storage methods
-        self.memory = DuckdbHistoryMemory(chat_param["chat_session_id"])
+        self.memory =   chat_history_fac.get_store_instance(chat_param["chat_session_id"])
 
         self.history_message: List[OnceConversation] = self.memory.messages()
         self.current_message: OnceConversation = OnceConversation(
@@ -162,6 +159,7 @@ class BaseChat(ABC):
                     output, self.skip_echo_len
                 )
                 view_msg = self.stream_plugin_call(msg)
+                view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
             self.current_message.add_ai_message(msg)
             self.current_message.add_view_message(view_msg)

@@ -2,33 +2,72 @@ import uuid
 import os
 import duckdb
 import sqlite3
+import logging
+import fnmatch
 from datetime import datetime
 from typing import Optional, Type, TypeVar
 
-import sqlalchemy as sa
-
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate,upgrade
-from flask.cli import with_appcontext
-import subprocess
-
 from sqlalchemy import create_engine,DateTime, String, func, MetaData
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from alembic import context, command
-from alembic.config import Config
+from alembic.config import Config as AlembicConfig
+from urllib.parse import quote
+from pilot.configs.config import Config
 
+
+logger = logging.getLogger("meta_data")
+
+CFG = Config()
 default_db_path = os.path.join(os.getcwd(), "meta_data")
 
 os.makedirs(default_db_path, exist_ok=True)
 
-db_path = default_db_path + "/dbgpt.db"
+# Meta Info
+db_name = "dbgpt"
+db_path = default_db_path + f"/{db_name}.db"
 connection = sqlite3.connect(db_path)
-engine = create_engine(f'sqlite:///{db_path}')
+
+if CFG.LOCAL_DB_TYPE == 'mysql':
+    engine_temp = create_engine(f"mysql+pymysql://"
+            + quote(CFG.LOCAL_DB_USER)
+            + ":"
+            + quote(CFG.LOCAL_DB_PASSWORD)
+            + "@"
+            + CFG.LOCAL_DB_HOST
+            + ":"
+            + str(CFG.LOCAL_DB_PORT)
+            )
+    # check and auto create mysqldatabase
+    try:
+        # try to connect
+        with engine_temp.connect() as conn:
+            conn.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+        print(f"Already connect '{db_name}'")
+
+    except OperationalError as e:
+        # if connect failed, create dbgpt database
+        logger.error(f"{db_name} not connect success!")
+
+    engine = create_engine(f"mysql+pymysql://"
+            + quote(CFG.LOCAL_DB_USER)
+            + ":"
+            + quote(CFG.LOCAL_DB_PASSWORD)
+            + "@"
+            + CFG.LOCAL_DB_HOST
+            + ":"
+            + str(CFG.LOCAL_DB_PORT)
+            + f"/{db_name}"
+            )
+else:
+    engine = create_engine(f'sqlite:///{db_path}')
+
+
+
 
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 session = Session()
@@ -40,7 +79,7 @@ Base = declarative_base(bind=engine)
 # 创建Alembic配置对象
 
 alembic_ini_path = default_db_path + "/alembic.ini"
-alembic_cfg = Config(alembic_ini_path)
+alembic_cfg = AlembicConfig(alembic_ini_path)
 
 alembic_cfg.set_main_option('sqlalchemy.url',  str(engine.url))
 
@@ -59,36 +98,6 @@ alembic_cfg.attributes['session'] = session
 # Base.metadata.drop_all(engine)
 
 
-# app = Flask(__name__)
-# default_db_path = os.path.join(os.getcwd(), "meta_data")
-# duckdb_path = os.getenv("DB_DUCKDB_PATH", default_db_path + "/dbgpt.db")
-# app.config['SQLALCHEMY_DATABASE_URI'] = f'duckdb://{duckdb_path}'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# db = SQLAlchemy(app)
-# migrate = Migrate(app, db)
-#
-# # 设置FLASK_APP环境变量
-# import os
-# os.environ['FLASK_APP'] = 'server.dbgpt_server.py'
-#
-# @app.cli.command("db_init")
-# @with_appcontext
-# def db_init():
-#     subprocess.run(["flask", "db", "init"])
-#
-# @app.cli.command("db_migrate")
-# @with_appcontext
-# def db_migrate():
-#     subprocess.run(["flask", "db", "migrate"])
-#
-# @app.cli.command("db_upgrade")
-# @with_appcontext
-# def db_upgrade():
-#     subprocess.run(["flask", "db", "upgrade"])
-#
-
-
-
 def ddl_init_and_upgrade():
     # Base.metadata.create_all(bind=engine)
     # 生成并应用迁移脚本
@@ -96,14 +105,8 @@ def ddl_init_and_upgrade():
     # subprocess.run(["alembic", "revision", "--autogenerate", "-m", "Added account table"])
     with engine.connect() as connection:
         alembic_cfg.attributes['connection'] = connection
-        command.revision(alembic_cfg, "test", True)
+        heads = command.heads(alembic_cfg)
+        print("heads:" + str(heads))
+
+        command.revision(alembic_cfg, "dbgpt ddl upate", True)
         command.upgrade(alembic_cfg, "head")
-    # alembic_cfg.attributes['connection'] =  engine.connect()
-    # command.upgrade(alembic_cfg, 'head')
-
-    # with app.app_context():
-    #     db_init()
-    #     db_migrate()
-    #     db_upgrade()
-
-

@@ -98,26 +98,6 @@ class Config(metaclass=Singleton):
         ### message stor file
         self.message_dir = os.getenv("MESSAGE_HISTORY_DIR", "../../message")
 
-        ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
-        from auto_gpt_plugin_template import AutoGPTPluginTemplate
-
-        self.plugins: List[AutoGPTPluginTemplate] = []
-        self.plugins_openai = []
-        self.plugins_auto_load = os.getenv("AUTO_LOAD_PLUGIN", "True") == "True"
-
-        self.plugins_git_branch = os.getenv("PLUGINS_GIT_BRANCH", "plugin_dashboard")
-
-        plugins_allowlist = os.getenv("ALLOWLISTED_PLUGINS")
-        if plugins_allowlist:
-            self.plugins_allowlist = plugins_allowlist.split(",")
-        else:
-            self.plugins_allowlist = []
-
-        plugins_denylist = os.getenv("DENYLISTED_PLUGINS")
-        if plugins_denylist:
-            self.plugins_denylist = plugins_denylist.split(",")
-        else:
-            self.plugins_denylist = []
         ### Native SQL Execution Capability Control Configuration
         self.NATIVE_SQL_CAN_RUN_DDL = (
             os.getenv("NATIVE_SQL_CAN_RUN_DDL", "True") == "True"
@@ -126,7 +106,10 @@ class Config(metaclass=Singleton):
             os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True") == "True"
         )
 
-        ### default Local database connection configuration
+
+        self.LOCAL_DB_MANAGE = None
+
+        ###dbgpt meta info database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST")
         self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "")
         self.LOCAL_DB_TYPE = os.getenv("LOCAL_DB_TYPE", "mysql")
@@ -138,7 +121,8 @@ class Config(metaclass=Singleton):
         self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
 
-        self.LOCAL_DB_MANAGE = None
+        self.CHAT_HISTORY_STORE_TYPE = os.getenv("CHAT_HISTORY_STORE_TYPE", "duckdb")
+
 
         ### LLM Model Service Configuration
         self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b")
@@ -196,10 +180,6 @@ class Config(metaclass=Singleton):
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
         self.debug_mode = value
-
-    def set_plugins(self, value: list) -> None:
-        """Set the plugins value."""
-        self.plugins = value
 
     def set_templature(self, value: int) -> None:
         """Set the temperature value."""

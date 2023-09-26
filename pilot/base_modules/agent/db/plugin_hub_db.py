@@ -12,15 +12,15 @@ from pilot.base_modules.meta_data.meta_data import Base, engine, session
 class PluginHubEntity(Base):
     __tablename__ = 'plugin_hub'
     id = Column(Integer, primary_key=True, autoincrement=True, comment="autoincrement id")
-    name = Column(String, unique=True, nullable=False, comment="plugin name")
-    description = Column(String, nullable=False, comment="plugin description")
-    author = Column(String, nullable=True, comment="plugin author")
-    email = Column(String, nullable=True, comment="plugin author email")
-    type = Column(String, comment="plugin type")
-    version = Column(String, comment="plugin version")
-    storage_channel = Column(String, comment="plugin storage channel")
-    storage_url = Column(String, comment="plugin download url")
-    download_param = Column(String, comment="plugin download param")
+    name = Column(String(255), unique=True, nullable=False, comment="plugin name")
+    description = Column(String(255), nullable=False, comment="plugin description")
+    author = Column(String(255), nullable=True, comment="plugin author")
+    email = Column(String(255), nullable=True, comment="plugin author email")
+    type = Column(String(255), comment="plugin type")
+    version = Column(String(255), comment="plugin version")
+    storage_channel = Column(String(255), comment="plugin storage channel")
+    storage_url = Column(String(255), comment="plugin download url")
+    download_param = Column(String(255), comment="plugin download param")
     created_at = Column(DateTime, default=datetime.utcnow, comment="plugin upload time")
     installed = Column(Integer, default=False, comment="plugin already installed count")
 
@@ -146,11 +146,10 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         session = self.get_session()
         if plugin_id is None:
             raise Exception("plugin_id is None")
-        query = PluginHubEntity(id=plugin_id)
         plugin_hubs = session.query(PluginHubEntity)
-        if query.id is not None:
+        if plugin_id is not None:
             plugin_hubs = plugin_hubs.filter(
-                PluginHubEntity.id == query.id
+                PluginHubEntity.id == plugin_id
             )
         plugin_hubs.delete()
         session.commit()

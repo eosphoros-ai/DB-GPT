@@ -4,11 +4,14 @@ from pilot.memory.chat_history.base import BaseChatHistoryMemory
 from pilot.configs.config import Config
 from pilot.scene.message import OnceConversation
 from pilot.common.custom_data_structure import FixedSizeDict
+from pilot.memory.chat_history.base import MemoryStoreType
 
 CFG = Config()
 
 
 class MemHistoryMemory(BaseChatHistoryMemory):
+    store_type: str  = MemoryStoreType.Memory.value
+
     histroies_map = FixedSizeDict(100)
 
     def __init__(self, chat_session_id: str):

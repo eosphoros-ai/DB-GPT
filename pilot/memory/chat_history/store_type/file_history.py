@@ -11,12 +11,14 @@ from pilot.scene.message import (
     conversation_from_dict,
     conversations_to_dict,
 )
-
+from pilot.memory.chat_history.base import MemoryStoreType
 
 CFG = Config()
 
 
 class FileHistoryMemory(BaseChatHistoryMemory):
+    store_type: str  = MemoryStoreType.File.value
+
     def __init__(self, chat_session_id: str):
         now = datetime.datetime.now()
         date_string = now.strftime("%Y%m%d")
@@ -47,3 +49,5 @@ class FileHistoryMemory(BaseChatHistoryMemory):
 
     def clear(self) -> None:
         self.file_path.write_text(json.dumps([]))
+
+

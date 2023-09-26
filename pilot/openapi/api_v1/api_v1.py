@@ -8,13 +8,10 @@ from fastapi import (
     Request,
     File,
     UploadFile,
-    Form,
     Body,
-    BackgroundTasks,
 )
 
 from fastapi.responses import StreamingResponse
-from fastapi.exceptions import RequestValidationError
 from typing import List
 import tempfile
 
@@ -35,11 +32,10 @@ from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
 from pilot.configs.model_config import LOGDIR
 from pilot.utils import build_logger
-from pilot.common.schema import DBType
-from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.scene.message import OnceConversation
-from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
+from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.summary.db_summary_client import DBSummaryClient
+from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 
 router = APIRouter()
 CFG = Config()
@@ -61,7 +57,6 @@ def __get_conv_user_message(conversations: dict):
 
 def __new_conversation(chat_mode, user_id) -> ConversationVo:
     unique_id = uuid.uuid1()
-    # history_mem = DuckdbHistoryMemory(str(unique_id))
     return ConversationVo(conv_uid=str(unique_id), chat_mode=chat_mode)
 
 
@@ -145,7 +140,8 @@ async def db_support_types():
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
 async def dialogue_list(user_id: str = None):
     dialogues: List = []
-    datas = DuckdbHistoryMemory.conv_list(user_id)
+    chat_history_service = ChatHistory()
+    datas = chat_history_service.get_store_cls().conv_list(user_id)
     for item in datas:
         conv_uid = item.get("conv_uid")
         summary = item.get("summary")
@@ -257,14 +253,18 @@ async def params_load(
 
 @router.post("/v1/chat/dialogue/delete")
 async def dialogue_delete(con_uid: str):
-    history_mem = DuckdbHistoryMemory(con_uid)
+
+    history_fac = ChatHistory()
+    history_mem = history_fac.get_store_instance(con_uid)
     history_mem.delete()
     return Result.succ(None)
 
 
 def get_hist_messages(conv_uid: str):
     message_vos: List[MessageVo] = []
-    history_mem = DuckdbHistoryMemory(conv_uid)
+    history_fac = ChatHistory()
+    history_mem = history_fac.get_store_instance(conv_uid)
+
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:

@@ -17,6 +17,18 @@ class PagenationResult(BaseModel, Generic[T]):
     total_row_count: int = 0
     datas: List[T] = []
 
+    def to_dic(self):
+        data_dicts =[]
+        for item in self.datas:
+            data_dicts.append(item.__dict__)
+        return {
+            'page_index': self.page_index,
+            'page_size': self.page_size,
+            'total_page': self.total_page,
+            'total_row_count': self.total_row_count,
+            'datas': data_dicts
+        }
+
 @dataclass
 class PluginHubFilter(BaseModel):
     name: str
@@ -41,10 +53,9 @@ class MyPluginFilter(BaseModel):
 
 
 class PluginHubParam(BaseModel):
-    channel: str  = Field(..., description="Plugin storage channel")
-    url: str  = Field(..., description="Plugin storage url")
-
-    branch: Optional[str]   =  Field(None, description="github download branch", nullable=True)
+    channel: Optional[str]  = Field("git", description="Plugin storage channel")
+    url: Optional[str]  = Field("https://github.com/eosphoros-ai/DB-GPT-Plugins.git", description="Plugin storage url")
+    branch: Optional[str]   =  Field("main", description="github download branch", nullable=True)
     authorization: Optional[str]   = Field(None, description="github download authorization", nullable=True)
 
 

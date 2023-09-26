@@ -44,6 +44,7 @@ class LifeCycle:
 class ComponetType(str, Enum):
     WORKER_MANAGER = "dbgpt_worker_manager"
     MODEL_CONTROLLER = "dbgpt_model_controller"
+    AGENT_HUB = "dbgpt_agent_hub"
 
 
 class BaseComponet(LifeCycle, ABC):

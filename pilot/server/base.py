@@ -32,7 +32,6 @@ def async_db_summery(system_app: SystemApp):
 def server_init(args, system_app: SystemApp):
     from pilot.base_modules.agent.commands.command_mange import CommandRegistry
 
-    from pilot.base_modules.agent.plugins_util import scan_plugins
 
     # logger.info(f"args: {args}")
 
@@ -45,7 +44,7 @@ def server_init(args, system_app: SystemApp):
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
 
-    cfg.set_plugins(scan_plugins(PLUGINS_DIR, cfg.debug_mode))
+
 
     # Loader plugins and commands
     command_categories = [
