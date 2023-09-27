@@ -1,6 +1,4 @@
 from typing import Optional, Any
-from pyspark.sql import SparkSession, DataFrame
-from sqlalchemy import text
 
 from pilot.connections.base import BaseConnect
 
@@ -19,6 +17,7 @@ class SparkConnect(BaseConnect):
     driver: str = "spark"
     """db dialect"""
     dialect: str = "sparksql"
+    from pyspark.sql import SparkSession, DataFrame
 
     def __init__(
         self,
@@ -30,6 +29,7 @@ class SparkConnect(BaseConnect):
         """Initialize the Spark DataFrame from Datasource path
         return: Spark DataFrame
         """
+        from pyspark.sql import SparkSession
         self.spark_session = (
             spark_session or SparkSession.builder.appName("dbgpt_spark").getOrCreate()
         )

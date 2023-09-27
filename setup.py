@@ -281,7 +281,7 @@ def core_requires():
         "importlib-resources==5.12.0",
         "psutil==5.9.4",
         "python-dotenv==1.0.0",
-        "colorama==0.4.10",
+        "colorama==0.4.6",
         "prettytable",
         "cachetools",
     ]
@@ -312,7 +312,7 @@ def knowledge_requires():
     setup_spec.extras["knowledge"] = [
         "spacy==3.5.3",
         # "chromadb==0.3.22",
-        "chromadb",
+        "chromadb==0.4.10",
         "markdown",
         "bs4",
         "python-pptx",
