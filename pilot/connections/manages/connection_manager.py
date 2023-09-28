@@ -108,7 +108,8 @@ class ConnectManager:
                         CFG.LOCAL_DB_PASSWORD,
                         "",
                     )
-        if CFG.LOCAL_DB_PATH:
+        db_type = DBType.of_db_type(CFG.LOCAL_DB_TYPE)
+        if db_type.is_file_db():
             db_name = CFG.LOCAL_DB_NAME
             db_type = CFG.LOCAL_DB_TYPE
             db_path = CFG.LOCAL_DB_PATH
