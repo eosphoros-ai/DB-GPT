@@ -8,6 +8,7 @@ import zipfile
 import requests
 import threading
 import datetime
+import logging
 from pathlib import Path
 from typing import List, TYPE_CHECKING
 from urllib.parse import urlparse
@@ -17,7 +18,8 @@ import requests
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import PLUGINS_DIR
-from pilot.logs import logger
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from auto_gpt_plugin_template import AutoGPTPluginTemplate

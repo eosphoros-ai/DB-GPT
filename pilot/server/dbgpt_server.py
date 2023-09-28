@@ -33,7 +33,11 @@ from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route
 from pilot.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
 from pilot.commands.disply_type.show_chart_gen import static_message_img_path
 from pilot.model.cluster import initialize_worker_manager_in_client
-from pilot.utils.utils import setup_logging, logging_str_to_uvicorn_level
+from pilot.utils.utils import (
+    setup_logging,
+    _get_logging_level,
+    logging_str_to_uvicorn_level,
+)
 
 static_file_path = os.path.join(os.getcwd(), "server/static")
 
@@ -111,7 +115,11 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
         )
         param = WebWerverParameters(**vars(parser.parse_args(args=args)))
 
-    setup_logging(logging_level=param.log_level)
+    if not param.log_level:
+        param.log_level = _get_logging_level()
+    setup_logging(
+        "pilot", logging_level=param.log_level, logger_filename="dbgpt_webserver.log"
+    )
     # Before start
     system_app.before_start()
 

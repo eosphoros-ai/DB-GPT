@@ -36,6 +36,7 @@ from pilot.utils.parameter_utils import (
     ParameterDescription,
     _dict_to_command_args,
 )
+from pilot.utils.utils import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -883,6 +884,12 @@ def run_worker_manager(
 
     worker_params: ModelWorkerParameters = _parse_worker_params(
         model_name=model_name, model_path=model_path, standalone=standalone, port=port
+    )
+
+    setup_logging(
+        "pilot",
+        logging_level=worker_params.log_level,
+        logger_filename="dbgpt_model_worker_manager.log",
     )
 
     embedded_mod = True

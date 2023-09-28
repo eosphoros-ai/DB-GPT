@@ -5,6 +5,8 @@ from dataclasses import is_dataclass, asdict
 
 T = TypeVar("T")
 
+logger = logging.getLogger(__name__)
+
 
 def _extract_dataclass_from_generic(type_hint: Type[T]) -> Union[Type[T], None]:
     import typing_inspect
@@ -21,7 +23,7 @@ def _build_request(self, func, path, method, *args, **kwargs):
         raise TypeError("Return type must be annotated in the decorated function.")
 
     actual_dataclass = _extract_dataclass_from_generic(return_type)
-    logging.debug(f"return_type: {return_type}, actual_dataclass: {actual_dataclass}")
+    logger.debug(f"return_type: {return_type}, actual_dataclass: {actual_dataclass}")
     if not actual_dataclass:
         actual_dataclass = return_type
     sig = signature(func)
@@ -55,7 +57,7 @@ def _build_request(self, func, path, method, *args, **kwargs):
     else:  # For GET, DELETE, etc.
         request_params["params"] = request_data
 
-    logging.debug(f"request_params: {request_params}, args: {args}, kwargs: {kwargs}")
+    logger.debug(f"request_params: {request_params}, args: {args}, kwargs: {kwargs}")
     return return_type, actual_dataclass, request_params
 
 

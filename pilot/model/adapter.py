@@ -3,6 +3,7 @@
 
 import os
 import re
+import logging
 from pathlib import Path
 from typing import List, Tuple, Callable, Type
 from functools import cache
@@ -19,8 +20,8 @@ from pilot.model.parameter import (
 )
 from pilot.configs.model_config import get_device
 from pilot.configs.config import Config
-from pilot.logs import logger
 
+logger = logging.getLogger(__name__)
 
 CFG = Config()
 

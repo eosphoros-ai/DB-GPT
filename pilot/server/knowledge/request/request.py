@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 from fastapi import UploadFile
@@ -54,9 +54,24 @@ class DocumentQueryRequest(BaseModel):
 
 
 class DocumentSyncRequest(BaseModel):
-    """doc_ids: doc ids"""
+    """Sync request"""
 
+    """doc_ids: doc ids"""
     doc_ids: List
+
+    """Preseparator, this separator is used for pre-splitting before the document is actually split by the text splitter.
+    Preseparator are not included in the vectorized text. 
+    """
+    pre_separator: Optional[str] = None
+
+    """Custom separators"""
+    separators: Optional[List[str]] = None
+
+    """Custom chunk size"""
+    chunk_size: Optional[int] = None
+
+    """Custom chunk overlap"""
+    chunk_overlap: Optional[int] = None
 
 
 class ChunkQueryRequest(BaseModel):

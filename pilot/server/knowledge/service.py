@@ -1,5 +1,5 @@
 import json
-import threading
+import logging
 from datetime import datetime
 
 from pilot.vector_store.connector import VectorStoreConnector
@@ -12,7 +12,6 @@ from pilot.configs.model_config import (
 from pilot.component import ComponentType
 from pilot.utils.executor_utils import ExecutorFactory
 
-from pilot.logs import logger
 from pilot.server.knowledge.chunk_db import (
     DocumentChunkEntity,
     DocumentChunkDao,
@@ -31,6 +30,7 @@ from pilot.server.knowledge.request.request import (
     DocumentQueryRequest,
     ChunkQueryRequest,
     SpaceArgumentRequest,
+    DocumentSyncRequest,
 )
 from enum import Enum
 
@@ -44,6 +44,7 @@ knowledge_space_dao = KnowledgeSpaceDao()
 knowledge_document_dao = KnowledgeDocumentDao()
 document_chunk_dao = DocumentChunkDao()
 
+logger = logging.getLogger(__name__)
 CFG = Config()
 
 
@@ -107,7 +108,6 @@ class KnowledgeService:
             res.owner = space.owner
             res.gmt_created = space.gmt_created
             res.gmt_modified = space.gmt_modified
-            res.owner = space.owner
             res.context = space.context
             query = KnowledgeDocumentEntity(space=space.name)
             doc_count = knowledge_document_dao.get_knowledge_documents_count(query)
@@ -155,9 +155,10 @@ class KnowledgeService:
 
     """sync knowledge document chunk into vector store"""
 
-    def sync_knowledge_document(self, space_name, doc_ids):
+    def sync_knowledge_document(self, space_name, sync_request: DocumentSyncRequest):
         from pilot.embedding_engine.embedding_engine import EmbeddingEngine
         from pilot.embedding_engine.embedding_factory import EmbeddingFactory
+        from pilot.embedding_engine.pre_text_splitter import PreTextSplitter
         from langchain.text_splitter import (
             RecursiveCharacterTextSplitter,
             SpacyTextSplitter,
@@ -165,6 +166,7 @@ class KnowledgeService:
 
         # import langchain is very very slow!!!
 
+        doc_ids = sync_request.doc_ids
         for doc_id in doc_ids:
             query = KnowledgeDocumentEntity(
                 id=doc_id,
@@ -190,24 +192,43 @@ class KnowledgeService:
                 if space_context is None
                 else int(space_context["embedding"]["chunk_overlap"])
             )
+            if sync_request.chunk_size:
+                chunk_size = sync_request.chunk_size
+            if sync_request.chunk_overlap:
+                chunk_overlap = sync_request.chunk_overlap
+            separators = sync_request.separators or None
             if CFG.LANGUAGE == "en":
                 text_splitter = RecursiveCharacterTextSplitter(
+                    separators=separators,
                     chunk_size=chunk_size,
                     chunk_overlap=chunk_overlap,
                     length_function=len,
                 )
             else:
+                if separators and len(separators) > 1:
+                    raise ValueError(
+                        "SpacyTextSplitter do not support multiple separators"
+                    )
                 try:
+                    separator = "\n\n" if not separators else separators[0]
                     text_splitter = SpacyTextSplitter(
+                        separator=separator,
                         pipeline="zh_core_web_sm",
                         chunk_size=chunk_size,
                         chunk_overlap=chunk_overlap,
                     )
                 except Exception:
                     text_splitter = RecursiveCharacterTextSplitter(
+                        separators=separators,
                         chunk_size=chunk_size,
                         chunk_overlap=chunk_overlap,
                     )
+            if sync_request.pre_separator:
+                logger.info(f"Use preseparator, {sync_request.pre_separator}")
+                text_splitter = PreTextSplitter(
+                    pre_separator=sync_request.pre_separator,
+                    text_splitter_impl=text_splitter,
+                )
             embedding_factory = CFG.SYSTEM_APP.get_component(
                 "embedding_factory", EmbeddingFactory
             )

@@ -1,11 +1,11 @@
 import datetime
 import traceback
 import warnings
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, List, Dict
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import LOGDIR
 from pilot.component import ComponentType
 from pilot.memory.chat_history.base import BaseChatHistoryMemory
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
@@ -14,10 +14,10 @@ from pilot.memory.chat_history.mem_history import MemHistoryMemory
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 from pilot.scene.message import OnceConversation
-from pilot.utils import build_logger, get_or_create_event_loop
+from pilot.utils import get_or_create_event_loop
 from pydantic import Extra
 
-logger = build_logger("BaseChat", LOGDIR + "BaseChat.log")
+logger = logging.getLogger(__name__)
 headers = {"User-Agent": "dbgpt Client"}
 CFG = Config()
 

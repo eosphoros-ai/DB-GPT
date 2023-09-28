@@ -287,6 +287,7 @@ def core_requires():
     ]
 
     setup_spec.extras["framework"] = [
+        "coloredlogs",
         "httpx",
         "sqlparse==0.4.4",
         "seaborn",

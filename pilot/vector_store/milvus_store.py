@@ -1,11 +1,12 @@
 from __future__ import annotations
-
+import logging
 from typing import Any, Iterable, List, Optional, Tuple
 
 from pymilvus import Collection, DataType, connections, utility
 
-from pilot.logs import logger
 from pilot.vector_store.base import VectorStoreBase
+
+logger = logging.getLogger(__name__)
 
 
 class MilvusStore(VectorStoreBase):
