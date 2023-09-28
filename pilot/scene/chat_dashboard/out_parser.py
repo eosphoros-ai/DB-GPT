@@ -21,9 +21,9 @@ class ChatDashboardOutputParser(BaseOutputParser):
         super().__init__(sep=sep, is_stream_out=is_stream_out)
 
     def parse_prompt_response(self, model_out_text):
-        # clean_str = super().parse_prompt_response(model_out_text)
-        print("clean prompt response:", model_out_text)
-        response = json.loads(model_out_text)
+        clean_str = super().parse_prompt_response(model_out_text)
+        print("clean prompt response:", clean_str)
+        response = json.loads(clean_str)
         chart_items: List[ChartItem] = []
         if not isinstance(response, list):
             response = [response]
