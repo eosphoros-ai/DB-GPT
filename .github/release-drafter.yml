@@ -19,7 +19,7 @@ change-template: '- $TITLE (#$NUMBER)'
 change-title-escapes: '\<*_&'
 replacers:
   # Remove conventional commits from titles
-  - search: '/- (build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)(\(.*\))?(\!)?\: /g'
+  - search: '/- (build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)(\(.*\))?(\!)?\:\s?/g'
     replace: '- '
 
 autolabeler:
