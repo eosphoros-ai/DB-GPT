@@ -1,5 +1,6 @@
 import json
 import uuid
+import logging
 
 from pilot.common.schema import DBType
 from pilot.component import SystemApp
@@ -7,16 +8,14 @@ from pilot.configs.config import Config
 from pilot.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
     EMBEDDING_MODEL_CONFIG,
-    LOGDIR,
 )
+
 from pilot.scene.base import ChatScene
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.chat_factory import ChatFactory
 from pilot.summary.rdbms_db_summary import RdbmsSummary
-from pilot.utils import build_logger
 
-logger = build_logger("db_summary", LOGDIR + "db_summary.log")
-
+logger = logging.getLogger(__name__)
 
 CFG = Config()
 chat_factory = ChatFactory()

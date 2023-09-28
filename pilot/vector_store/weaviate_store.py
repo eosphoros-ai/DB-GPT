@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 import weaviate
 from langchain.schema import Document
 from langchain.vectorstores import Weaviate
@@ -7,9 +8,9 @@ from weaviate.exceptions import WeaviateBaseError
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
-from pilot.logs import logger
 from pilot.vector_store.base import VectorStoreBase
 
+logger = logging.getLogger(__name__)
 CFG = Config()
 
 

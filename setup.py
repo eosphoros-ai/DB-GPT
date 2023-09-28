@@ -287,6 +287,7 @@ def core_requires():
     ]
 
     setup_spec.extras["framework"] = [
+        "coloredlogs",
         "httpx",
         "sqlparse==0.4.4",
         "seaborn",
@@ -365,7 +366,8 @@ def all_datasource_requires():
     """
     pip install "db-gpt[datasource]"
     """
-    setup_spec.extras["datasource"] = ["pymssql", "pymysql", "pyspark"]
+
+    setup_spec.extras["datasource"] = ["pymssql", "pymysql", "pyspark", "psycopg2"]
 
 
 def openai_requires():

@@ -3,6 +3,7 @@
 
 from typing import Optional, Dict
 
+import logging
 from pilot.configs.model_config import get_device
 from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper, ModelType
 from pilot.model.parameter import (
@@ -12,7 +13,8 @@ from pilot.model.parameter import (
 )
 from pilot.utils import get_gpu_memory
 from pilot.utils.parameter_utils import EnvArgumentParser, _genenv_ignoring_key_case
-from pilot.logs import logger
+
+logger = logging.getLogger(__name__)
 
 
 def _check_multi_gpu_or_4bit_quantization(model_params: ModelParameters):

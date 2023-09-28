@@ -5,12 +5,13 @@ from __future__ import annotations
 import contextlib
 import json
 import re
+import logging
 from typing import Optional
 
 from pilot.configs.config import Config
 from pilot.json_utils.utilities import extract_char_position
-from pilot.logs import logger
 
+logger = logging.getLogger(__name__)
 CFG = Config()
 
 

@@ -13,6 +13,9 @@ from pilot.utils.api_utils import (
     _api_remote as api_remote,
     _sync_api_remote as sync_api_remote,
 )
+from pilot.utils.utils import setup_logging
+
+logger = logging.getLogger(__name__)
 
 
 class BaseModelController(BaseComponent, ABC):
@@ -59,7 +62,7 @@ class LocalModelController(BaseModelController):
     async def get_all_instances(
         self, model_name: str = None, healthy_only: bool = False
     ) -> List[ModelInstance]:
-        logging.info(
+        logger.info(
             f"Get all instances with {model_name}, healthy_only: {healthy_only}"
         )
         if not model_name:
@@ -178,6 +181,13 @@ def run_model_controller():
     controller_params: ModelControllerParameters = parser.parse_args_into_dataclass(
         ModelControllerParameters, env_prefix=env_prefix
     )
+
+    setup_logging(
+        "pilot",
+        logging_level=controller_params.log_level,
+        logger_filename="dbgpt_model_controller.log",
+    )
+
     initialize_controller(host=controller_params.host, port=controller_params.port)
 
 

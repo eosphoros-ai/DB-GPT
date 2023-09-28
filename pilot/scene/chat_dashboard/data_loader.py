@@ -1,13 +1,12 @@
 from typing import List
 from decimal import Decimal
+import logging
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import LOGDIR
-from pilot.utils import build_logger
 from pilot.scene.chat_dashboard.data_preparation.report_schma import ValueItem
 
 CFG = Config()
-logger = build_logger("dashboard_data", LOGDIR + "dashboard_data.log")
+logger = logging.getLogger(__name__)
 
 
 class DashboardDataLoader:

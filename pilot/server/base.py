@@ -108,7 +108,7 @@ class WebWerverParameters(BaseParameters):
         },
     )
     log_level: Optional[str] = field(
-        default="INFO",
+        default=None,
         metadata={
             "help": "Logging level",
             "valid_values": [
