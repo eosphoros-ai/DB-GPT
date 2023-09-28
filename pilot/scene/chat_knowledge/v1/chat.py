@@ -60,17 +60,24 @@ class ChatKnowledge(BaseChat):
 
     async def stream_call(self):
         input_values = self.generate_input_values()
+        # Source of knowledge file
+        relations = input_values.get("relations")
+        last_output = None
         async for output in super().stream_call():
-            # Source of knowledge file
-            relations = input_values.get("relations")
-            if (
-                CFG.KNOWLEDGE_CHAT_SHOW_RELATIONS
-                and type(relations) == list
-                and len(relations) > 0
-                and hasattr(output, "text")
-            ):
-                output.text = output.text + "\trelations:" + ",".join(relations)
+            last_output = output
             yield output
+
+        if (
+            CFG.KNOWLEDGE_CHAT_SHOW_RELATIONS
+            and last_output
+            and type(relations) == list
+            and len(relations) > 0
+            and hasattr(last_output, "text")
+        ):
+            last_output.text = (
+                last_output.text + "\n\nrelations:\n\n" + ",".join(relations)
+            )
+            yield last_output
 
     def generate_input_values(self):
         if self.space_context:

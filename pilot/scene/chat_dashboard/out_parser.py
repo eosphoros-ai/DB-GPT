@@ -1,8 +1,8 @@
 import json
+import logging
+
 from typing import NamedTuple, List
-from pilot.utils import build_logger
 from pilot.out_parser.base import BaseOutputParser, T
-from pilot.configs.model_config import LOGDIR
 from pilot.scene.base import ChatScene
 
 
@@ -13,7 +13,7 @@ class ChartItem(NamedTuple):
     showcase: str
 
 
-logger = build_logger("webserver", LOGDIR + "ChatDashboardOutputParser.log")
+logger = logging.getLogger(__name__)
 
 
 class ChatDashboardOutputParser(BaseOutputParser):

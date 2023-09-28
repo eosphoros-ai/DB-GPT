@@ -1,10 +1,11 @@
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from pilot.configs.config import Config
 from pilot.common.schema import DBType
 from pilot.connections.rdbms.base import RDBMSDatabase
-from pilot.logs import logger
 
+logger = logging.getLogger(__name__)
 CFG = Config()
 
 

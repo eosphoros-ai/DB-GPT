@@ -8,7 +8,6 @@ from enum import Enum
 import urllib.request
 from urllib.parse import urlparse, quote
 import re
-from pip._internal.utils.appdirs import user_cache_dir
 import shutil
 from setuptools import find_packages
 
@@ -67,6 +66,9 @@ def cache_package(package_url: str, package_name: str, is_windows: bool = False)
     safe_url, parsed_url = encode_url(package_url)
     if BUILD_NO_CACHE:
         return safe_url
+
+    from pip._internal.utils.appdirs import user_cache_dir
+
     filename = os.path.basename(parsed_url)
     cache_dir = os.path.join(user_cache_dir("pip"), "http", "wheels", package_name)
     os.makedirs(cache_dir, exist_ok=True)
@@ -279,12 +281,13 @@ def core_requires():
         "importlib-resources==5.12.0",
         "psutil==5.9.4",
         "python-dotenv==1.0.0",
-        "colorama",
+        "colorama==0.4.6",
         "prettytable",
         "cachetools",
     ]
 
     setup_spec.extras["framework"] = [
+        "coloredlogs",
         "httpx",
         "sqlparse==0.4.4",
         "seaborn",
@@ -310,7 +313,7 @@ def knowledge_requires():
     setup_spec.extras["knowledge"] = [
         "spacy==3.5.3",
         # "chromadb==0.3.22",
-        "chromadb",
+        "chromadb==0.4.10",
         "markdown",
         "bs4",
         "python-pptx",
@@ -363,7 +366,8 @@ def all_datasource_requires():
     """
     pip install "db-gpt[datasource]"
     """
-    setup_spec.extras["datasource"] = ["pymssql", "pymysql", "psycopg2"]
+
+    setup_spec.extras["datasource"] = ["pymssql", "pymysql", "pyspark", "psycopg2"]
 
 
 def openai_requires():

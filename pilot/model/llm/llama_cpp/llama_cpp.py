@@ -3,11 +3,13 @@ Fork from text-generation-webui https://github.com/oobabooga/text-generation-web
 """
 import re
 from typing import Dict
+import logging
 import torch
 import llama_cpp
 
 from pilot.model.parameter import LlamaCppModelParameters
-from pilot.logs import logger
+
+logger = logging.getLogger(__name__)
 
 if torch.cuda.is_available() and not torch.version.hip:
     try:

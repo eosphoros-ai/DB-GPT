@@ -31,6 +31,21 @@ class ModelControllerParameters(BaseParameters):
     daemon: Optional[bool] = field(
         default=False, metadata={"help": "Run Model Controller in background"}
     )
+    log_level: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Logging level",
+            "valid_values": [
+                "FATAL",
+                "ERROR",
+                "WARNING",
+                "WARNING",
+                "INFO",
+                "DEBUG",
+                "NOTSET",
+            ],
+        },
+    )
 
 
 @dataclass
@@ -83,6 +98,22 @@ class ModelWorkerParameters(BaseModelParameters):
     )
     heartbeat_interval: Optional[int] = field(
         default=20, metadata={"help": "The interval for sending heartbeats (seconds)"}
+    )
+
+    log_level: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Logging level",
+            "valid_values": [
+                "FATAL",
+                "ERROR",
+                "WARNING",
+                "WARNING",
+                "INFO",
+                "DEBUG",
+                "NOTSET",
+            ],
+        },
     )
 
 

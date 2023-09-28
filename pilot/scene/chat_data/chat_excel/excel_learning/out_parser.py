@@ -1,11 +1,7 @@
 import json
-import re
-from abc import ABC, abstractmethod
+import logging
 from typing import Dict, NamedTuple, List
-import pandas as pd
-from pilot.utils import build_logger
 from pilot.out_parser.base import BaseOutputParser, T
-from pilot.configs.model_config import LOGDIR
 from pilot.configs.config import Config
 
 CFG = Config()
@@ -17,7 +13,7 @@ class ExcelResponse(NamedTuple):
     plans: List
 
 
-logger = build_logger("chat_excel", LOGDIR + "ChatExcel.log")
+logger = logging.getLogger(__name__)
 
 
 class LearningExcelOutputParser(BaseOutputParser):

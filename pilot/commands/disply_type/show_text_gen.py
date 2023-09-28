@@ -1,13 +1,12 @@
+import logging
 import pandas as pd
 from pandas import DataFrame
 
 from pilot.commands.command_mange import command
 from pilot.configs.config import Config
-from pilot.configs.model_config import LOGDIR
-from pilot.utils import build_logger
 
 CFG = Config()
-logger = build_logger("show_table_gen", LOGDIR + "show_table_gen.log")
+logger = logging.getLogger(__name__)
 
 
 @command(

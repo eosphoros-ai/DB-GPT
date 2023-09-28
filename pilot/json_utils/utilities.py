@@ -3,12 +3,14 @@ import json
 import os.path
 import re
 import json
+import logging
 from datetime import datetime
 
 from jsonschema import Draft7Validator
 
 from pilot.configs.config import Config
-from pilot.logs import logger
+
+logger = logging.getLogger(__name__)
 
 CFG = Config()
 LLM_DEFAULT_RESPONSE_FORMAT = "llm_response_format_1"

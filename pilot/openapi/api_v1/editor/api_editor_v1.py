@@ -6,12 +6,11 @@ from fastapi import (
 )
 
 from typing import List
+import logging
 
 from pilot.configs.config import Config
 
 from pilot.scene.chat_factory import ChatFactory
-from pilot.configs.model_config import LOGDIR
-from pilot.utils import build_logger
 
 from pilot.openapi.api_view_model import (
     Result,
@@ -34,7 +33,8 @@ from pilot.scene.chat_db.data_loader import DbDataLoader
 router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()
-logger = build_logger("api_editor_v1", LOGDIR + "api_editor_v1.log")
+
+logger = logging.getLogger(__name__)
 
 
 @router.get("/v1/editor/db/tables", response_model=Result[DbTable])

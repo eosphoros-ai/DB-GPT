@@ -4,7 +4,9 @@ import asyncio
 from pilot.configs.config import Config
 from pilot.connections.manages.connect_storage_duckdb import DuckdbConnectConfig
 from pilot.common.schema import DBType
-from pilot.component import SystemApp
+from pilot.component import SystemApp, ComponentType
+from pilot.utils.executor_utils import ExecutorFactory
+
 from pilot.connections.rdbms.conn_mysql import MySQLConnect
 from pilot.connections.base import BaseConnect
 
@@ -18,6 +20,7 @@ from pilot.connections.rdbms.conn_postgresql import PostgreSQLDatabase
 from pilot.singleton import Singleton
 from pilot.common.sql_database import Database
 from pilot.connections.db_conn_info import DBConfig
+from pilot.connections.conn_spark import SparkConnect
 from pilot.summary.db_summary_client import DBSummaryClient
 
 CFG = Config()
@@ -77,7 +80,11 @@ class ConnectManager:
                     + CFG.LOCAL_DB_HOST
                     + ":"
                     + str(CFG.LOCAL_DB_PORT),
-                    engine_args={"pool_size": 10, "pool_recycle": 3600, "echo": True},
+                    engine_args={
+                        "pool_size": CFG.LOCAL_DB_POOL_SIZE,
+                        "pool_recycle": 3600,
+                        "echo": True,
+                    },
                 )
                 # default_mysql = MySQLConnect.from_uri(
                 #     "mysql+pymysql://"
@@ -209,13 +216,15 @@ class ConnectManager:
                     db_info.comment,
                 )
             # async embedding
-            thread = threading.Thread(
-                target=self.db_summary_client.db_summary_embedding(
-                    db_info.db_name, db_info.db_type
-                )
+            executor = CFG.SYSTEM_APP.get_component(
+                ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+            ).create()
+            executor.submit(
+                self.db_summary_client.db_summary_embedding,
+                db_info.db_name,
+                db_info.db_type,
             )
-            thread.start()
         except Exception as e:
-            raise ValueError("Add db connect info error！" + str(e))
+            raise ValueError("Add db connect info error!" + str(e))
 
         return True

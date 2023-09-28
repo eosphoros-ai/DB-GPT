@@ -1,12 +1,14 @@
 """ElevenLabs speech module"""
 import os
-
+import logging
 import requests
 
 from pilot.configs.config import Config
 from pilot.speech.base import VoiceBase
 
 PLACEHOLDERS = {"your-voice-id"}
+
+logger = logging.getLogger(__name__)
 
 
 class ElevenLabsSpeech(VoiceBase):
@@ -68,7 +70,6 @@ class ElevenLabsSpeech(VoiceBase):
         Returns:
             bool: True if the request was successful, False otherwise
         """
-        from pilot.logs import logger
         from playsound import playsound
 
         tts_url = (

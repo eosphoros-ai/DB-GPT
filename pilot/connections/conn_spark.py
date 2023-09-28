@@ -1,14 +1,14 @@
 from typing import Optional, Any
-from pyspark.sql import SparkSession, DataFrame
-from sqlalchemy import text
 
 from pilot.connections.base import BaseConnect
 
 
 class SparkConnect(BaseConnect):
-    """Spark Connect
-    Args:
-    Usage:
+    """
+    Spark Connect supports operating on a variety of data sources through the DataFrame interface.
+    A DataFrame can be operated on using relational transformations and can also be used to create a temporary view.
+    Registering a DataFrame as a temporary view allows you to run SQL queries over its data.
+    Datasource now support parquet, jdbc, orc, libsvm, csv, text, json.
     """
 
     """db type"""
@@ -21,15 +21,17 @@ class SparkConnect(BaseConnect):
     def __init__(
         self,
         file_path: str,
-        spark_session: Optional[SparkSession] = None,
+        spark_session: Optional = None,
         engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Spark DataFrame from Datasource path
         return: Spark DataFrame
         """
+        from pyspark.sql import SparkSession
+
         self.spark_session = (
-            spark_session or SparkSession.builder.appName("dbgpt").getOrCreate()
+            spark_session or SparkSession.builder.appName("dbgpt_spark").getOrCreate()
         )
         self.path = file_path
         self.table_name = "temp"
@@ -45,15 +47,20 @@ class SparkConnect(BaseConnect):
         except Exception as e:
             print("load spark datasource error" + str(e))
 
-    def create_df(self, path) -> DataFrame:
-        """Create a Spark DataFrame from Datasource path
+    def create_df(self, path):
+        """Create a Spark DataFrame from Datasource path(now support parquet, jdbc, orc, libsvm, csv, text, json.).
         return: Spark DataFrame
+        reference:https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html
         """
-        return self.spark_session.read.option("header", "true").csv(path)
+        extension = (
+            "text" if path.rsplit(".", 1)[-1] == "txt" else path.rsplit(".", 1)[-1]
+        )
+        return self.spark_session.read.load(
+            path, format=extension, inferSchema="true", header="true"
+        )
 
     def run(self, sql):
-        # self.log(f"llm ingestion sql query is :\n{sql}")
-        # self.df = self.create_df(self.path)
+        print(f"spark sql to run is {sql}")
         self.df.createOrReplaceTempView(self.table_name)
         df = self.spark_session.sql(sql)
         first_row = df.first()
