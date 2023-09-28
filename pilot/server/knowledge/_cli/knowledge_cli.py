@@ -18,7 +18,9 @@ logger = logging.getLogger("dbgpt_cli")
     default=API_ADDRESS,
     required=False,
     show_default=True,
-    help=("Address of the Api server(If not set, try to read from environment variable: API_ADDRESS)."),
+    help=(
+        "Address of the Api server(If not set, try to read from environment variable: API_ADDRESS)."
+    ),
 )
 def knowledge_cli_group(address: str):
     """Knowledge command line tool"""
