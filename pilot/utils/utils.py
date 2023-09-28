@@ -20,7 +20,7 @@ def _get_logging_level() -> str:
     return os.getenv("DBGPT_LOG_LEVEL", "INFO")
 
 
-def setup_logging(logging_level=None, logger_name: str = None):
+def setup_logging_level(logging_level=None, logger_name: str = None):
     if not logging_level:
         logging_level = _get_logging_level()
     if type(logging_level) is str:
@@ -30,6 +30,19 @@ def setup_logging(logging_level=None, logger_name: str = None):
         logger.setLevel(logging_level)
     else:
         logging.basicConfig(level=logging_level, encoding="utf-8")
+
+
+def setup_logging(logger_name: str, logging_level=None, logger_filename: str = None):
+    if not logging_level:
+        logging_level = _get_logging_level()
+    logger = _build_logger(logger_name, logging_level, logger_filename)
+    try:
+        import coloredlogs
+
+        color_level = logging_level if logging_level else "INFO"
+        coloredlogs.install(level=color_level, logger=logger)
+    except ImportError:
+        pass
 
 
 def get_gpu_memory(max_gpus=None):
@@ -53,7 +66,7 @@ def get_gpu_memory(max_gpus=None):
     return gpu_memory
 
 
-def build_logger(logger_name, logger_filename):
+def _build_logger(logger_name, logging_level=None, logger_filename: str = None):
     global handler
 
     formatter = logging.Formatter(
@@ -63,7 +76,7 @@ def build_logger(logger_name, logger_filename):
 
     # Set the format of root handlers
     if not logging.getLogger().handlers:
-        setup_logging()
+        setup_logging_level(logging_level=logging_level)
     logging.getLogger().handlers[0].setFormatter(formatter)
 
     # Redirect stdout and stderr to loggers
@@ -78,7 +91,7 @@ def build_logger(logger_name, logger_filename):
     # sys.stderr = sl
 
     # Add a file handler for all loggers
-    if handler is None:
+    if handler is None and logger_filename:
         os.makedirs(LOGDIR, exist_ok=True)
         filename = os.path.join(LOGDIR, logger_filename)
         handler = logging.handlers.TimedRotatingFileHandler(
@@ -89,11 +102,9 @@ def build_logger(logger_name, logger_filename):
         for name, item in logging.root.manager.loggerDict.items():
             if isinstance(item, logging.Logger):
                 item.addHandler(handler)
-    setup_logging()
-
     # Get logger
     logger = logging.getLogger(logger_name)
-    setup_logging(logger_name=logger_name)
+    setup_logging_level(logging_level=logging_level, logger_name=logger_name)
 
     return logger
 

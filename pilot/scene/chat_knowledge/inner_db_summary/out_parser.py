@@ -1,9 +1,7 @@
-from pilot.utils import build_logger
+import logging
 from pilot.out_parser.base import BaseOutputParser, T
-from pilot.configs.model_config import LOGDIR
 
-
-logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
+logger = logging.getLogger(__name__)
 
 
 class NormalChatOutputParser(BaseOutputParser):

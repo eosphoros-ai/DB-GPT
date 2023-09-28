@@ -3,13 +3,12 @@
 
 import os
 
-# import nltk
-
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_PATH = os.path.join(ROOT_PATH, "models")
 PILOT_PATH = os.path.join(ROOT_PATH, "pilot")
 VECTORE_PATH = os.path.join(PILOT_PATH, "vector_store")
-LOGDIR = os.path.join(ROOT_PATH, "logs")
+LOGDIR = os.getenv("DBGPT_LOG_DIR", os.path.join(ROOT_PATH, "logs"))
+
 DATASETS_DIR = os.path.join(PILOT_PATH, "datasets")
 DATA_DIR = os.path.join(PILOT_PATH, "data")
 # nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path

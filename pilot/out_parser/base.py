@@ -2,18 +2,17 @@ from __future__ import annotations
 
 import json
 from abc import ABC
+import logging
 from dataclasses import asdict
 from typing import Any, Dict, TypeVar, Union
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import LOGDIR
 from pilot.model.base import ModelOutput
-from pilot.utils import build_logger
 
 T = TypeVar("T")
 ResponseTye = Union[str, bytes, ModelOutput]
 
-logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
+logger = logging.getLogger(__name__)
 
 CFG = Config()
 

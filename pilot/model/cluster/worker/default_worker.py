@@ -120,7 +120,9 @@ class DefaultModelWorker(ModelWorker):
                     text=output, error_code=0, model_context=model_context
                 )
                 yield model_output
-            print(f"\n\nfull stream output:\n{previous_response}")
+            print(
+                f"\n\nfull stream output:\n{previous_response}\n\nmodel generate_stream params:\n{params}"
+            )
         except Exception as e:
             # Check if the exception is a torch.cuda.CudaError and if torch was imported.
             if torch_imported and isinstance(e, torch.cuda.CudaError):

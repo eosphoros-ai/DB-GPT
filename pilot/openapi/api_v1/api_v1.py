@@ -38,8 +38,6 @@ from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
-from pilot.configs.model_config import LOGDIR
-from pilot.utils import build_logger
 from pilot.common.schema import DBType
 from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.scene.message import OnceConversation
@@ -409,7 +407,7 @@ async def model_types(controller: BaseModelController = Depends(get_model_contro
 
 
 @router.get("/v1/model/supports")
-async def model_types(worker_manager: WorkerManager = Depends(get_worker_manager)):
+async def model_supports(worker_manager: WorkerManager = Depends(get_worker_manager)):
     logger.info(f"/controller/model/supports")
     try:
         models = await worker_manager.supported_models()

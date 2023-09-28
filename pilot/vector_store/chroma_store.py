@@ -1,10 +1,12 @@
 import os
+import logging
 from typing import Any
 
 from chromadb.config import Settings
 from chromadb import PersistentClient
-from pilot.logs import logger
 from pilot.vector_store.base import VectorStoreBase
+
+logger = logging.getLogger(__name__)
 
 
 class ChromaStore(VectorStoreBase):

@@ -1,6 +1,7 @@
 import contextlib
 import json
 from typing import Any, Dict
+import logging
 
 from colorama import Fore
 from regex import regex
@@ -11,9 +12,9 @@ from pilot.json_utils.json_fix_general import (
     balance_braces,
     fix_invalid_escape,
 )
-from pilot.logs import logger
 
 
+logger = logging.getLogger(__name__)
 CFG = Config()
 
 
