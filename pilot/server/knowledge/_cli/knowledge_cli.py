@@ -18,7 +18,7 @@ logger = logging.getLogger("dbgpt_cli")
     default=API_ADDRESS,
     required=False,
     show_default=True,
-    help=("Address of the Api server."),
+    help=("Address of the Api server(If not set, try to read from environment variable: API_ADDRESS)."),
 )
 def knowledge_cli_group(address: str):
     """Knowledge command line tool"""
@@ -126,7 +126,7 @@ def load(
     chunk_size: int,
     chunk_overlap: int,
 ):
-    """Load your local knowledge to DB-GPT"""
+    """Load your local documents to DB-GPT"""
     from pilot.server.knowledge._cli.knowledge_client import knowledge_init
 
     knowledge_init(
