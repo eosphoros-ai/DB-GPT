@@ -120,6 +120,8 @@ async def editor_sql_run(run_param: dict = Body()):
     try:
         start_time = time.time() * 1000
         colunms, sql_result = conn.query_ex(sql)
+        # 转换结果类型
+        sql_result = [tuple(x) for x in sql_result]
         # 计算执行耗时
         end_time = time.time() * 1000
         sql_run_data: SqlRunData = SqlRunData(
