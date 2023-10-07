@@ -44,11 +44,6 @@ static_file_path = os.path.join(os.getcwd(), "server/static")
 CFG = Config()
 
 
-def signal_handler():
-    print("in order to avoid chroma db atexit problem")
-    os._exit(0)
-
-
 def swagger_monkey_patch(*args, **kwargs):
     return get_swagger_ui_html(
         *args,
@@ -176,7 +171,6 @@ def run_uvicorn(param: WebWerverParameters):
         port=param.port,
         log_level=logging_str_to_uvicorn_level(param.log_level),
     )
-    signal.signal(signal.SIGINT, signal_handler())
 
 
 def run_webserver(param: WebWerverParameters = None):
