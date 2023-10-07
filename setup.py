@@ -14,7 +14,7 @@ from setuptools import find_packages
 with open("README.md", mode="r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "false").lower() == "true"
+BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
     os.getenv("LLAMA_CPP_GPU_ACCELERATION", "true").lower() == "true"
 )
