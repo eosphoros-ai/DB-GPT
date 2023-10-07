@@ -15,6 +15,9 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "false").lower() == "true"
+LLAMA_CPP_GPU_ACCELERATION = (
+    os.getenv("LLAMA_CPP_GPU_ACCELERATION", "true").lower() == "true"
+)
 
 
 def parse_requirements(file_name: str) -> List[str]:
@@ -249,21 +252,29 @@ def llama_cpp_python_cuda_requires():
     if not cuda_version:
         print("CUDA not support, use cpu version")
         return
+    if not LLAMA_CPP_GPU_ACCELERATION:
+        print("Disable GPU acceleration")
+        return
+    # Supports GPU acceleration
     device = "cu" + cuda_version.replace(".", "")
     os_type, cpu_avx = get_cpu_avx_support()
+    print(f"OS: {os_type}, cpu avx: {cpu_avx}")
     supported_os = [OSType.WINDOWS, OSType.LINUX]
     if os_type not in supported_os:
         print(
             f"llama_cpp_python_cuda just support in os: {[r._value_ for r in supported_os]}"
         )
         return
-    if cpu_avx == AVXType.AVX2 or AVXType.AVX512:
-        cpu_avx = AVXType.AVX
-    cpu_avx = cpu_avx._value_
+    cpu_device = ""
+    if cpu_avx == AVXType.AVX2 or cpu_avx == AVXType.AVX512:
+        cpu_device = "avx"
+    else:
+        cpu_device = "basic"
+    device += cpu_device
     base_url = "https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/textgen-webui"
-    llama_cpp_version = "0.1.77"
+    llama_cpp_version = "0.2.10"
     py_version = "cp310"
-    os_pkg_name = "linux_x86_64" if os_type == OSType.LINUX else "win_amd64"
+    os_pkg_name = "manylinux_2_31_x86_64" if os_type == OSType.LINUX else "win_amd64"
     extra_index_url = f"{base_url}/llama_cpp_python_cuda-{llama_cpp_version}+{device}-{py_version}-{py_version}-{os_pkg_name}.whl"
     extra_index_url, _ = encode_url(extra_index_url)
     print(f"Install llama_cpp_python_cuda from {extra_index_url}")
@@ -298,7 +309,7 @@ def core_requires():
         "langchain>=0.0.286",
         "SQLAlchemy",
         "pymysql",
-        "duckdb",
+        "duckdb==0.8.1",
         "duckdb-engine",
         "jsonschema",
         # TODO move transformers to default
@@ -312,7 +323,6 @@ def knowledge_requires():
     """
     setup_spec.extras["knowledge"] = [
         "spacy==3.5.3",
-        # "chromadb==0.3.22",
         "chromadb==0.4.10",
         "markdown",
         "bs4",

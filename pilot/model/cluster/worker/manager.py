@@ -115,14 +115,30 @@ class LocalWorkerManager(WorkerManager):
         for listener in self.start_listeners:
             listener(self)
 
-    async def stop(self):
+    async def stop(self, ignore_exception: bool = False):
         if not self.run_data.stop_event.is_set():
             logger.info("Stop all workers")
             self.run_data.stop_event.clear()
             stop_tasks = []
-            stop_tasks.append(self._stop_all_worker(apply_req=None))
+            stop_tasks.append(
+                self._stop_all_worker(apply_req=None, ignore_exception=ignore_exception)
+            )
             if self.deregister_func:
-                stop_tasks.append(self.deregister_func(self.run_data))
+                # If ignore_exception is True, use exception handling to ignore any exceptions raised from self.deregister_func
+                if ignore_exception:
+
+                    async def safe_deregister_func(run_data):
+                        try:
+                            await self.deregister_func(run_data)
+                        except Exception as e:
+                            logger.warning(
+                                f"Stop worker, ignored exception from deregister_func: {e}"
+                            )
+
+                    stop_tasks.append(safe_deregister_func(self.run_data))
+                else:
+                    stop_tasks.append(self.deregister_func(self.run_data))
+
             await asyncio.gather(*stop_tasks)
 
     def after_start(self, listener: Callable[["WorkerManager"], None]):
@@ -424,7 +440,7 @@ class LocalWorkerManager(WorkerManager):
         )
 
     async def _stop_all_worker(
-        self, apply_req: WorkerApplyRequest
+        self, apply_req: WorkerApplyRequest, ignore_exception: bool = False
     ) -> WorkerApplyOutput:
         start_time = time.time()
 
@@ -441,7 +457,19 @@ class LocalWorkerManager(WorkerManager):
                 and self.register_func
                 and self.deregister_func
             ):
-                await self.deregister_func(worker_run_data)
+                _deregister_func = self.deregister_func
+                if ignore_exception:
+
+                    async def safe_deregister_func(run_data):
+                        try:
+                            await self.deregister_func(run_data)
+                        except Exception as e:
+                            logger.warning(
+                                f"Stop worker, ignored exception from deregister_func: {e}"
+                            )
+
+                    _deregister_func = safe_deregister_func
+                await _deregister_func(worker_run_data)
 
         await self._apply_worker(apply_req, _stop_worker)
         timecost = time.time() - start_time
@@ -487,8 +515,8 @@ class WorkerManagerAdapter(WorkerManager):
     async def start(self):
         return await self.worker_manager.start()
 
-    async def stop(self):
-        return await self.worker_manager.stop()
+    async def stop(self, ignore_exception: bool = False):
+        return await self.worker_manager.stop(ignore_exception=ignore_exception)
 
     def after_start(self, listener: Callable[["WorkerManager"], None]):
         if listener is not None:
@@ -631,7 +659,9 @@ async def api_model_shutdown(request: WorkerStartupRequest):
     return await worker_manager.model_shutdown(request)
 
 
-def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
+def _setup_fastapi(
+    worker_params: ModelWorkerParameters, app=None, ignore_exception: bool = False
+):
     if not app:
         app = FastAPI()
     if worker_params.standalone:
@@ -666,7 +696,7 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
 
     @app.on_event("shutdown")
     async def startup_event():
-        await worker_manager.stop()
+        await worker_manager.stop(ignore_exception=ignore_exception)
 
     return app
 
@@ -837,7 +867,7 @@ def initialize_worker_manager_in_client(
         worker_params.register = True
         worker_params.port = local_port
         logger.info(f"Worker params: {worker_params}")
-        _setup_fastapi(worker_params, app)
+        _setup_fastapi(worker_params, app, ignore_exception=True)
         _start_local_worker(worker_manager, worker_params)
         worker_manager.after_start(start_listener)
         _start_local_embedding_worker(

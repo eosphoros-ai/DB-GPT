@@ -70,7 +70,8 @@ LLM_MODEL_CONFIG = {
     "baichuan2-13b": os.path.join(MODEL_PATH, "Baichuan2-13B-Chat"),
     # (Llama2 based) We only support WizardLM-13B-V1.2 for now, which is trained from Llama-2 13b, see https://huggingface.co/WizardLM/WizardLM-13B-V1.2
     "wizardlm-13b": os.path.join(MODEL_PATH, "WizardLM-13B-V1.2"),
-    "llama-cpp": os.path.join(MODEL_PATH, "ggml-model-q4_0.bin"),
+    # wget https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF/resolve/main/vicuna-13b-v1.5.Q4_K_M.gguf -O models/ggml-model-q4_0.gguf
+    "llama-cpp": os.path.join(MODEL_PATH, "ggml-model-q4_0.gguf"),
     # https://huggingface.co/internlm/internlm-chat-7b-v1_1, 7b vs 7b-v1.1: https://github.com/InternLM/InternLM/issues/288
     "internlm-7b": os.path.join(MODEL_PATH, "internlm-chat-7b"),
     "internlm-7b-8k": os.path.join(MODEL_PATH, "internlm-chat-7b-8k"),
