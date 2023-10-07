@@ -382,14 +382,14 @@ class LlamaCppAdapater(BaseLLMAdaper):
             # Just support local model
             return False, None
         if not path.is_file():
-            model_paths = list(path.glob("*ggml*.bin"))
+            model_paths = list(path.glob("*ggml*.gguf"))
             if not model_paths:
                 return False
             model_path = str(model_paths[0])
             logger.warn(
-                f"Model path {model_path} is not single file, use first *gglm*.bin model file: {model_path}"
+                f"Model path {model_path} is not single file, use first *gglm*.gguf model file: {model_path}"
             )
-        if not re.fullmatch(".*ggml.*\.bin", model_path):
+        if not re.fullmatch(".*ggml.*\.gguf", model_path):
             return False, None
         return True, model_path
 
