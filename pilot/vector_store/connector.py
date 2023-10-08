@@ -1,16 +1,8 @@
 from pilot.vector_store.chroma_store import ChromaStore
-
-# from pilot.vector_store.weaviate_store import WeaviateStore
+from pilot import vector_store
+from pilot.vector_store.base import VectorStoreBase
 
 connector = {"Chroma": ChromaStore}
-
-try:
-    from pilot.vector_store.milvus_store import MilvusStore
-
-    connector["Milvus"] = MilvusStore
-except:
-    pass
-
 
 class VectorStoreConnector:
     """VectorStoreConnector, can connect different vector db provided load document api_v1 and similar search api_v1.
@@ -24,9 +16,16 @@ class VectorStoreConnector:
     def __init__(self, vector_store_type, ctx: {}) -> None:
         """initialize vector store connector."""
         self.ctx = ctx
-        self.connector_class = connector[vector_store_type]
+        self._register()
+         
+        if self._match(vector_store_type):
+            self.connector_class = connector.get(vector_store_type)
+        else:
+            raise Exception(f"Vector Type Not support. {0}", vector_store_type)
+        
         self.client = self.connector_class(ctx)
 
+    
     def load_document(self, docs):
         """load document in vector database."""
         return self.client.load_document(docs)
@@ -46,3 +45,14 @@ class VectorStoreConnector:
     def delete_by_ids(self, ids):
         """vector store delete by ids."""
         return self.client.delete_by_ids(ids=ids)
+
+    def _match(self, vector_store_type) -> bool:
+        if connector.get(vector_store_type):
+            return True
+        else:
+            return False
+    
+    def _register(self):
+        for cls in vector_store.__all__:
+            if issubclass(getattr(vector_store, cls), VectorStoreBase):
+                connector.update({cls, getattr(vector_store, cls)})
