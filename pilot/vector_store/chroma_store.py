@@ -16,10 +16,13 @@ class ChromaStore(VectorStoreBase):
         from langchain.vectorstores import Chroma
 
         self.ctx = ctx
-        self.embeddings = ctx.get("embeddings", None)
-        self.persist_dir = os.path.join(
-            ctx["chroma_persist_path"], ctx["vector_store_name"] + ".vectordb"
+        chroma_path = ctx.get(
+            "CHROMA_PERSIST_PATH", os.getenv("CHROMA_PERSIST_PATH", os.getcwd())
         )
+        self.persist_dir = os.path.join(
+            chroma_path, ctx["vector_store_name"] + ".vectordb"
+        )
+        self.embeddings = ctx.get("embeddings", None)
         chroma_settings = Settings(
             # chroma_db_impl="duckdb+parquet", => deprecated configuration of Chroma
             persist_directory=self.persist_dir,

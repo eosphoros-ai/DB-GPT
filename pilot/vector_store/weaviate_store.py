@@ -28,7 +28,7 @@ class WeaviateStore(VectorStoreBase):
             )
 
         self.ctx = ctx
-        self.weaviate_url = CFG.WEAVIATE_URL
+        self.weaviate_url = ctx.get("WEAVIATE_URL", os.getenv("WEAVIATE_URL"))
         self.embedding = ctx.get("embeddings", None)
         self.vector_name = ctx["vector_store_name"]
         self.persist_dir = os.path.join(

@@ -15,7 +15,7 @@ class VectorStoreBase(ABC):
         pass
 
     @abstractmethod
-    def vector_name_exists(self, text, topk) -> None:
+    def vector_name_exists(self) -> None:
         """is vector store name exist."""
         pass
 
