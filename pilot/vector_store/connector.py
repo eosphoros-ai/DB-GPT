@@ -1,8 +1,7 @@
-from pilot.vector_store.chroma_store import ChromaStore
 from pilot import vector_store
 from pilot.vector_store.base import VectorStoreBase
 
-connector = {"Chroma": ChromaStore}
+connector = {}
 
 class VectorStoreConnector:
     """VectorStoreConnector, can connect different vector db provided load document api_v1 and similar search api_v1.
@@ -22,7 +21,8 @@ class VectorStoreConnector:
             self.connector_class = connector.get(vector_store_type)
         else:
             raise Exception(f"Vector Type Not support. {0}", vector_store_type)
-        
+       
+        print(self.connector_class) 
         self.client = self.connector_class(ctx)
 
     
@@ -55,4 +55,5 @@ class VectorStoreConnector:
     def _register(self):
         for cls in vector_store.__all__:
             if issubclass(getattr(vector_store, cls), VectorStoreBase):
-                connector.update({cls, getattr(vector_store, cls)})
+                _k, _v = cls, getattr(vector_store, cls)
+                connector.update({_k: _v})
