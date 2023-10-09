@@ -44,7 +44,6 @@ class DBSummaryClient:
         vector_store_config = {
             "vector_store_name": dbname + "_summary",
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
-            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             "embeddings": embeddings,
         }
         embedding = StringEmbedding(
@@ -73,7 +72,6 @@ class DBSummaryClient:
                 table_vector_store_config = {
                     "vector_store_name": dbname + "_" + table_name + "_ts",
                     "vector_store_type": CFG.VECTOR_STORE_TYPE,
-                    "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
                     "embeddings": embeddings,
                 }
                 embedding = StringEmbedding(
@@ -91,7 +89,6 @@ class DBSummaryClient:
         vector_store_config = {
             "vector_store_name": dbname + "_profile",
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
-            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
@@ -112,9 +109,7 @@ class DBSummaryClient:
 
         vector_store_config = {
             "vector_store_name": dbname + "_summary",
-            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
-            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
@@ -142,9 +137,7 @@ class DBSummaryClient:
         for table in related_tables:
             vector_store_config = {
                 "vector_store_name": dbname + "_" + table + "_ts",
-                "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
                 "vector_store_type": CFG.VECTOR_STORE_TYPE,
-                "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             }
             knowledge_embedding_client = EmbeddingEngine(
                 model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
@@ -172,7 +165,6 @@ class DBSummaryClient:
         vector_store_name = dbname + "_profile"
         profile_store_config = {
             "vector_store_name": vector_store_name,
-            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
             "embeddings": embeddings,
         }

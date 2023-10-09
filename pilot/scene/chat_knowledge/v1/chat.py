@@ -46,7 +46,6 @@ class ChatKnowledge(BaseChat):
         vector_store_config = {
             "vector_store_name": self.knowledge_space,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
-            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
@@ -93,7 +92,7 @@ class ChatKnowledge(BaseChat):
         context = [d.page_content for d in docs]
         context = context[: self.max_token]
         relations = list(
-            set([os.path.basename(d.metadata.get("source")) for d in docs])
+            set([os.path.basename(d.metadata.get("source", "")) for d in docs])
         )
         input_values = {
             "context": context,
