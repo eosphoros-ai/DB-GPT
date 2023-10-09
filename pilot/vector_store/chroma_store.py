@@ -17,7 +17,8 @@ class ChromaStore(VectorStoreBase):
 
         self.ctx = ctx
         chroma_path = ctx.get(
-            "CHROMA_PERSIST_PATH", os.getenv("CHROMA_PERSIST_PATH", os.getcwd())
+            "CHROMA_PERSIST_PATH",
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
         )
         self.persist_dir = os.path.join(
             chroma_path, ctx["vector_store_name"] + ".vectordb"
