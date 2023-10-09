@@ -64,6 +64,13 @@ class ModelWorkerParameters(BaseModelParameters):
         default=None,
         metadata={"help": "Model worker class, pilot.model.cluster.DefaultModelWorker"},
     )
+    model_type: Optional[str] = field(
+        default="huggingface",
+        metadata={
+            "help": "Model type: huggingface, llama.cpp, proxy and vllm",
+            "tags": "fixed",
+        },
+    )
     host: Optional[str] = field(
         default="0.0.0.0", metadata={"help": "Model worker deploy host"}
     )
@@ -163,7 +170,7 @@ class ModelParameters(BaseModelParameters):
     model_type: Optional[str] = field(
         default="huggingface",
         metadata={
-            "help": "Model type, huggingface, llama.cpp and proxy",
+            "help": "Model type: huggingface, llama.cpp, proxy and vllm",
             "tags": "fixed",
         },
     )
@@ -292,7 +299,7 @@ class ProxyModelParameters(BaseModelParameters):
     model_type: Optional[str] = field(
         default="proxy",
         metadata={
-            "help": "Model type, huggingface, llama.cpp and proxy",
+            "help": "Model type: huggingface, llama.cpp, proxy and vllm",
             "tags": "fixed",
         },
     )

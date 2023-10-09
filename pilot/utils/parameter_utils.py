@@ -86,17 +86,7 @@ class BaseParameters:
         return updated
 
     def __str__(self) -> str:
-        class_name = self.__class__.__name__
-        parameters = [
-            f"\n\n=========================== {class_name} ===========================\n"
-        ]
-        for field_info in fields(self):
-            value = _get_simple_privacy_field_value(self, field_info)
-            parameters.append(f"{field_info.name}: {value}")
-        parameters.append(
-            "\n======================================================================\n\n"
-        )
-        return "\n".join(parameters)
+        return _get_dataclass_print_str(self)
 
     def to_command_args(self, args_prefix: str = "--") -> List[str]:
         """Convert the fields of the dataclass to a list of command line arguments.
@@ -108,6 +98,20 @@ class BaseParameters:
             one for the field name prefixed by args_prefix, and one for its value.
         """
         return _dict_to_command_args(asdict(self), args_prefix=args_prefix)
+
+
+def _get_dataclass_print_str(obj):
+    class_name = obj.__class__.__name__
+    parameters = [
+        f"\n\n=========================== {class_name} ===========================\n"
+    ]
+    for field_info in fields(obj):
+        value = _get_simple_privacy_field_value(obj, field_info)
+        parameters.append(f"{field_info.name}: {value}")
+    parameters.append(
+        "\n======================================================================\n\n"
+    )
+    return "\n".join(parameters)
 
 
 def _dict_to_command_args(obj: Dict, args_prefix: str = "--") -> List[str]:
@@ -493,9 +497,10 @@ def _build_parameter_class(desc: List[ParameterDescription]) -> Type:
     if not desc:
         raise ValueError("Parameter descriptions cant be empty")
     param_class_str = desc[0].param_class
-    param_class = import_from_string(param_class_str, ignore_import_error=True)
-    if param_class:
-        return param_class
+    if param_class_str:
+        param_class = import_from_string(param_class_str, ignore_import_error=True)
+        if param_class:
+            return param_class
     module_name, _, class_name = param_class_str.rpartition(".")
 
     fields_dict = {}  # This will store field names and their default values or field()
@@ -518,6 +523,71 @@ def _build_parameter_class(desc: List[ParameterDescription]) -> Type:
     result_class = dataclass(new_class)  # Make it a dataclass
 
     return result_class
+
+
+def _extract_parameter_details(
+    parser: argparse.ArgumentParser,
+    param_class: str = None,
+    skip_names: List[str] = None,
+    overwrite_default_values: Dict = {},
+) -> List[ParameterDescription]:
+    descriptions = []
+
+    for action in parser._actions:
+        if (
+            action.default == argparse.SUPPRESS
+        ):  # typically this means the argument was not provided
+            continue
+
+        # determine parameter class (store_true/store_false are flags)
+        flag_or_option = (
+            "flag" if isinstance(action, argparse._StoreConstAction) else "option"
+        )
+
+        # extract parameter name (use the first option string, typically the long form)
+        param_name = action.option_strings[0] if action.option_strings else action.dest
+        if param_name.startswith("--"):
+            param_name = param_name[2:]
+        if param_name.startswith("-"):
+            param_name = param_name[1:]
+
+        param_name = param_name.replace("-", "_")
+
+        if skip_names and param_name in skip_names:
+            continue
+
+        # gather other details
+        default_value = action.default
+        if param_name in overwrite_default_values:
+            default_value = overwrite_default_values[param_name]
+        arg_type = (
+            action.type if not callable(action.type) else str(action.type.__name__)
+        )
+        description = action.help
+
+        # determine if the argument is required
+        required = action.required
+
+        # extract valid values for choices, if provided
+        valid_values = action.choices if action.choices is not None else None
+
+        # set ext_metadata as an empty dict for now, can be updated later if needed
+        ext_metadata = {}
+
+        descriptions.append(
+            ParameterDescription(
+                param_class=param_class,
+                param_name=param_name,
+                param_type=arg_type,
+                default_value=default_value,
+                description=description,
+                required=required,
+                valid_values=valid_values,
+                ext_metadata=ext_metadata,
+            )
+        )
+
+    return descriptions
 
 
 class _SimpleArgParser:
