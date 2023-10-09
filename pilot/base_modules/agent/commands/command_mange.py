@@ -1,16 +1,18 @@
 import functools
 import importlib
 import inspect
+import time
 import json
 import logging
 import xml.etree.ElementTree as ET
 
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, List
+from pydantic import BaseModel
 from pilot.base_modules.agent.common.schema import Status, ApiTagType
 from pilot.base_modules.agent.commands.command import execute_command
 from pilot.base_modules.agent.commands.generator import PluginPromptGenerator
-from pilot.common.string_utils import extract_content_include, extract_content_open_ending, extract_content, extract_content_include_open_ending
+from pilot.common.string_utils import extract_content_open_ending, extract_content
 
 # Unique identifier for auto-gpt commands
 AUTO_GPT_COMMAND_IDENTIFIER = "auto_gpt_command"
@@ -165,107 +167,179 @@ def command(
     return decorator
 
 
+class PluginStatus(BaseModel):
+    name: str
+    location: List[int]
+    args: dict
+    status: Status = Status.TODO.value
+    logo_url: str = None
+    api_result: str = None
+    err_msg: str = None
+    start_time = datetime.now().timestamp() * 1000
+    end_time: int = None
+
+
 class ApiCall:
     agent_prefix = "<api-call>"
     agent_end = "</api-call>"
     name_prefix = "<name>"
     name_end = "</name>"
 
-    def __init__(self, plugin_generator):
-        self.name: str = ""
-        self.status: Status = Status.TODO.value
-        self.logo_url: str = None
-        self.args = {}
-        self.api_result: str = None
-        self.err_msg: str = None
+    def __init__(self, plugin_generator: Any = None, display_registry: Any = None):
+        # self.name: str = ""
+        # self.status: Status = Status.TODO.value
+        # self.logo_url: str = None
+        # self.args = {}
+        # self.api_result: str = None
+        # self.err_msg: str = None
+
+        self.plugin_status_map = {}
+
         self.plugin_generator = plugin_generator
+        self.display_registry = display_registry
+        self.start_time = datetime.now().timestamp() * 1000
 
     def __repr__(self):
         return f"ApiCall(name={self.name}, status={self.status}, args={self.args})"
 
-
     def __is_need_wait_plugin_call(self, api_call_context):
+        start_agent_count = api_call_context.count(self.agent_prefix)
+        end_agent_count = api_call_context.count(self.agent_end)
 
-        if api_call_context.find(self.agent_prefix) >= 0:
+        if start_agent_count > 0:
             return True
-        check_len = len(self.agent_prefix)
-        last_text = api_call_context[-check_len:]
-        for i in range(check_len):
-            text_tmp = last_text[-i:]
-            prefix_tmp = self.agent_prefix[:i]
-            if text_tmp == prefix_tmp:
-                return True
-            else:
-                i += 1
+        else:
+            # 末尾新出字符检测
+            check_len = len(self.agent_prefix)
+            last_text = api_call_context[-check_len:]
+            for i in range(check_len):
+                text_tmp = last_text[-i:]
+                prefix_tmp = self.agent_prefix[:i]
+                if text_tmp == prefix_tmp:
+                    return True
+                else:
+                    i += 1
         return False
 
-    def __get_api_call_context(self, all_context):
-      return  extract_content_include(all_context, self.agent_prefix, self.agent_end)
+    def __check_last_plugin_call_ready(self, all_context):
+        start_agent_count = all_context.count(self.agent_prefix)
+        end_agent_count = all_context.count(self.agent_end)
 
-    def __check_plugin_call_ready(self, all_context):
-        if all_context.find(self.agent_end) > 0:
+        if start_agent_count > 0 and start_agent_count == end_agent_count:
             return True
+        return False
 
-    def api_view_context(self, all_context:str):
-        if all_context.find(self.agent_prefix) >= 0:
-            call_context = extract_content_open_ending(all_context, self.agent_prefix, self.agent_end)
-            call_context_all = extract_content_include_open_ending(all_context, self.agent_prefix, self.agent_end)
-            if len(call_context) > 0:
-                name_context = extract_content(call_context, self.name_prefix, self.name_end)
-                if len(name_context) > 0:
-                    self.name = name_context
-            return all_context.replace(call_context_all, self.to_view_text())
-        else:
-            return all_context
+    def api_view_context(self, all_context: str, display_mode: bool = False):
+        call_context_map = extract_content_open_ending(all_context, self.agent_prefix, self.agent_end, True)
+        for api_index, api_context in call_context_map.items():
+            api_status = self.plugin_status_map.get(api_context)
+            if api_status is not None:
+                if display_mode:
+                    if api_status.api_result:
+                        all_context = all_context.replace(api_context, api_status.api_result)
+                    else:
+                        if api_status.status == Status.FAILED.value:
+                            all_context = all_context.replace(api_context, f"""\n<span style=\"color:red\">ERROR!</span>{api_status.err_msg}\n """)
+                        else:
+                            cost = (api_status.end_time - self.start_time) / 1000
+                            cost_str = "{:.2f}".format(cost)
+                            all_context = all_context.replace(api_context, f'\n<span style=\"color:green\">Waiting...{cost_str}S</span>\n')
+                else:
+                    all_context = all_context.replace(api_context, self.to_view_text(api_status))
+            else:
+                # not ready api call view change
+                now_time = datetime.now().timestamp() * 1000
+                cost = (now_time - self.start_time) / 1000
+                cost_str = "{:.2f}".format(cost)
+                all_context = all_context.replace(api_context, f'\nWaiting... * {cost_str}S * \n')
+
+        return all_context
 
     def update_from_context(self, all_context):
         logging.info(f"from_context:{all_context}")
-        api_context = extract_content_include(all_context, self.agent_prefix, self.agent_end)
-        api_context = api_context.replace("\\n", "").replace("\n", "")
 
-        api_call_element = ET.fromstring(api_context)
-        self.name = api_call_element.find('name').text
+        api_context_map = extract_content(all_context, self.agent_prefix, self.agent_end, True)
+        for api_index, api_context in api_context_map.items():
+            api_context = api_context.replace("\\n", "").replace("\n", "")
+            api_call_element = ET.fromstring(api_context)
+            api_name = api_call_element.find('name').text
+            api_args = {}
+            args_elements = api_call_element.find('args')
+            for child_element in args_elements.iter():
+                api_args[child_element.tag] = child_element.text
 
-        args_elements = api_call_element.find('args')
-        for child_element in args_elements.iter():
-            self.args[child_element.tag] = child_element.text
+            api_status = self.plugin_status_map.get(api_context)
+            if api_status is None:
+                api_status = PluginStatus(name=api_name, location=[api_index], args=api_args)
+                self.plugin_status_map[api_context] = api_status
+            else:
+                api_status.location.append(api_index)
 
-    def __to_view_param_str(self):
+    def __to_view_param_str(self, api_status):
         param = {}
-        if self.name:
-            param['name'] = self.name
-        param['status'] = self.status
-        if self.logo_url:
-            param['logo'] = self.logo_url
+        if api_status.name:
+            param['name'] = api_status.name
+        param['status'] = api_status.status
+        if api_status.logo_url:
+            param['logo'] = api_status.logo_url
 
-        if self.err_msg:
-            param['err_msg'] = self.err_msg
+        if api_status.err_msg:
+            param['err_msg'] = api_status.err_msg
 
-        if self.api_result:
-            param['result'] = self.api_result
-
+        if api_status.api_result:
+            param['result'] = api_status.api_result
         return json.dumps(param)
 
-    def to_view_text(self):
+    def to_view_text(self, api_status: PluginStatus):
         api_call_element = ET.Element('dbgpt-view')
-        api_call_element.text = self.__to_view_param_str()
+        api_call_element.text = self.__to_view_param_str(api_status)
         result = ET.tostring(api_call_element, encoding="utf-8")
         return result.decode("utf-8")
-
 
     def run(self, llm_text):
         print(f"stream_plugin_call:{llm_text}")
         if self.__is_need_wait_plugin_call(llm_text):
             # wait api call generate complete
-            if self.__check_plugin_call_ready(llm_text):
+            if self.__check_last_plugin_call_ready(llm_text):
                 self.update_from_context(llm_text)
-                if self.status == Status.TODO.value:
-                    self.status = Status.RUNNING.value
-                    logging.info(f"插件执行:{self.name},{self.args}")
-                    try:
-                        self.api_result = execute_command(self.name, self.args, self.plugin_generator)
-                        self.status = Status.COMPLETED.value
-                    except Exception as e:
-                        self.status = Status.FAILED.value
-                        self.err_msg = str(e)
+                for key, value in self.plugin_status_map:
+                    if value.status == Status.TODO.value:
+                        value.status = Status.RUNNING.value
+                        logging.info(f"插件执行:{value.name},{value.args}")
+                        try:
+                            value.api_result = execute_command(value.name, value.args, self.plugin_generator)
+                            value.status = Status.COMPLETED.value
+                        except Exception as e:
+                            value.status = Status.FAILED.value
+                            value.err_msg = str(e)
+                        value.end_time = datetime.now().timestamp() * 1000
         return self.api_view_context(llm_text)
+
+    def run_display_sql(self, llm_text, sql_run_func):
+        print(f"get_display_sql:{llm_text}")
+
+        if self.__is_need_wait_plugin_call(llm_text):
+            # wait api call generate complete
+            if self.__check_last_plugin_call_ready(llm_text):
+                self.update_from_context(llm_text)
+                for key, value in self.plugin_status_map.items():
+                    if value.status == Status.TODO.value:
+                        value.status = Status.RUNNING.value
+                        logging.info(f"sql展示执行:{value.name},{value.args}")
+                        try:
+                            sql = value.args['sql']
+                            if sql:
+                                param = {
+                                    "df": sql_run_func(sql),
+                                }
+                                if self.display_registry.get_command(value.name):
+                                    value.api_result = self.display_registry.call(value.name, **param)
+                                else:
+                                    value.api_result = self.display_registry.call("response_table", **param)
+
+                            value.status = Status.COMPLETED.value
+                        except Exception as e:
+                            value.status = Status.FAILED.value
+                            value.err_msg = str(e)
+                        value.end_time = datetime.now().timestamp() * 1000
+        return self.api_view_context(llm_text, True)

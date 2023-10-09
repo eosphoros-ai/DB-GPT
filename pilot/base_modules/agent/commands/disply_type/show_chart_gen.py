@@ -92,10 +92,10 @@ def zh_font_set():
 @command(
     "response_line_chart",
     "Line chart display, used to display comparative trend analysis data",
-    '"speak": "<speak>", "df":"<data frame>"',
+    '"df":"<data frame>"',
 )
-def response_line_chart(speak: str, df: DataFrame) -> str:
-    logger.info(f"response_line_chart:{speak},")
+def response_line_chart( df: DataFrame) -> str:
+    logger.info(f"response_line_chart")
     if df.size <= 0:
         raise ValueError("No Data！")
 
@@ -148,17 +148,17 @@ def response_line_chart(speak: str, df: DataFrame) -> str:
     chart_path = static_message_img_path + "/" + chart_name
     plt.savefig(chart_path, bbox_inches="tight", dpi=100)
 
-    html_img = f"""<h5>{speak}</h5><img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
+    html_img = f"""<img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
     return html_img
 
 
 @command(
     "response_bar_chart",
     "Histogram, suitable for comparative analysis of multiple target values",
-    '"speak": "<speak>", "df":"<data frame>"',
+    '"df":"<data frame>"',
 )
-def response_bar_chart(speak: str, df: DataFrame) -> str:
-    logger.info(f"response_bar_chart:{speak},")
+def response_bar_chart( df: DataFrame) -> str:
+    logger.info(f"response_bar_chart")
     if df.size <= 0:
         raise ValueError("No Data！")
 
@@ -236,17 +236,17 @@ def response_bar_chart(speak: str, df: DataFrame) -> str:
     chart_name = "bar_" + str(uuid.uuid1()) + ".png"
     chart_path = static_message_img_path + "/" + chart_name
     plt.savefig(chart_path, bbox_inches="tight", dpi=100)
-    html_img = f"""<h5>{speak}</h5><img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
+    html_img = f"""<img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
     return html_img
 
 
 @command(
     "response_pie_chart",
     "Pie chart, suitable for scenarios such as proportion and distribution statistics",
-    '"speak": "<speak>", "df":"<data frame>"',
+    '"df":"<data frame>"',
 )
-def response_pie_chart(speak: str, df: DataFrame) -> str:
-    logger.info(f"response_pie_chart:{speak},")
+def response_pie_chart(df: DataFrame) -> str:
+    logger.info(f"response_pie_chart")
     columns = df.columns.tolist()
     if df.size <= 0:
         raise ValueError("No Data！")
@@ -291,6 +291,6 @@ def response_pie_chart(speak: str, df: DataFrame) -> str:
     chart_path = static_message_img_path + "/" + chart_name
     plt.savefig(chart_path, bbox_inches="tight", dpi=100)
 
-    html_img = f"""<h5>{speak.replace("`", '"')}</h5><img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
+    html_img = f"""<img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
 
     return html_img

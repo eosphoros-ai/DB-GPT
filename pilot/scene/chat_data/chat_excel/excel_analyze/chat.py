@@ -7,13 +7,13 @@ from pilot.scene.base_chat import BaseChat, logger
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
 from pilot.configs.config import Config
-
+from pilot.base_modules.agent.commands.command_mange import ApiCall
 from pilot.scene.chat_data.chat_excel.excel_analyze.prompt import prompt
 from pilot.scene.chat_data.chat_excel.excel_reader import ExcelReader
 from pilot.scene.chat_data.chat_excel.excel_learning.chat import ExcelLearning
 from pilot.common.path_utils import has_path
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
-
+from pilot.base_modules.agent.common.schema import Status
 
 CFG = Config()
 
@@ -36,9 +36,18 @@ class ChatExcel(BaseChat):
                     KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode.value(), self.select_param
                 )
             )
-
+        self.api_call = ApiCall(display_registry = CFG.command_disply)
         super().__init__(chat_param=chat_param)
 
+    def _generate_numbered_list(self) -> str:
+        command_strings = []
+        if CFG.command_disply:
+            command_strings += [
+                str(item)
+                for item in CFG.command_disply.commands.values()
+                if item.enabled
+            ]
+        return "\n".join(f"{i+1}. {item}" for i, item in enumerate(command_strings))
 
     def generate_input_values(self):
         input_values = {
@@ -64,15 +73,25 @@ class ChatExcel(BaseChat):
         result = await learn_chat.nostream_call()
         return result
 
-    def do_action(self, prompt_response):
-        print(f"do_action:{prompt_response}")
+    def stream_plugin_call(self, text):
+        text = text.replace("\n", " ")
+        print(f"stream_plugin_call:{text}")
+        return self.api_call.run_display_sql(text, self.excel_reader.get_df_by_sql_ex)
 
-        # colunms, datas = self.excel_reader.run(prompt_response.sql)
-        param = {
-            "speak": prompt_response.thoughts,
-            "df": self.excel_reader.get_df_by_sql_ex(prompt_response.sql),
-        }
-        if CFG.command_disply.get_command(prompt_response.display):
-            return CFG.command_disply.call(prompt_response.display, **param)
-        else:
-            return CFG.command_disply.call("response_table", **param)
+
+
+    # def do_action(self, prompt_response):
+    #     print(f"do_action:{prompt_response}")
+    #
+    #     # colunms, datas = self.excel_reader.run(prompt_response.sql)
+    #
+    #
+    #     param = {
+    #         "speak": prompt_response.thoughts,
+    #         "df": self.excel_reader.get_df_by_sql_ex(prompt_response.sql),
+    #     }
+    #
+    #     if CFG.command_disply.get_command(prompt_response.display):
+    #         return CFG.command_disply.call(prompt_response.display, **param)
+    #     else:
+    #         return CFG.command_disply.call("response_table", **param)

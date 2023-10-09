@@ -34,7 +34,7 @@ class ChatAgent(BaseChat):
         agent_module = CFG.SYSTEM_APP.get_componet(ComponetType.AGENT_HUB, ModuleAgent)
         self.plugins_prompt_generator = agent_module.load_select_plugin(self.plugins_prompt_generator, self.select_plugins)
 
-        self.api_call = ApiCall(self.plugins_prompt_generator)
+        self.api_call = ApiCall(plugin_generator=self.plugins_prompt_generator)
 
     def generate_input_values(self):
         input_values = {

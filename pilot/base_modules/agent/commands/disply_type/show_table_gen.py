@@ -13,12 +13,12 @@ logger = build_logger("show_table_gen", LOGDIR + "show_table_gen.log")
 @command(
     "response_table",
     "Table display, suitable for display with many display columns or non-numeric columns",
-    '"speak": "<speak>", "df":"<data frame>"',
+    '"df":"<data frame>"',
 )
-def response_table(speak: str, df: DataFrame) -> str:
-    logger.info(f"response_table:{speak}")
+def response_table(df: DataFrame) -> str:
+    logger.info(f"response_table")
     html_table = df.to_html(index=False, escape=False, sparsify=False)
     table_str = "".join(html_table.split())
     html = f"""<div class="w-full overflow-auto">{table_str}</div>"""
-    view_text = f"##### {str(speak)}" + "\n" + html.replace("\n", " ")
+    view_text = html.replace("\n", " ")
     return view_text

@@ -9,7 +9,7 @@ from pilot.common.schema import SeparatorStyle
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = "You are a data analysis expert. "
+_PROMPT_SCENE_DEFINE_EN = "You are a data analysis expert. "
 
 _DEFAULT_TEMPLATE_EN = """
 This is an example data，please learn to understand the structure and content of this data:
@@ -20,6 +20,8 @@ Provide some analysis options,please think step by step.
 Please return your answer in JSON format, the return format is as follows:
     {response}
 """
+
+_PROMPT_SCENE_DEFINE_ZH = "你是一个数据分析专家. "
 
 _DEFAULT_TEMPLATE_ZH = """
 下面是一份示例数据，请学习理解该数据的结构和内容:
@@ -37,8 +39,13 @@ RESPONSE_FORMAT_SIMPLE = {
     "AnalysisProgram": ["1.分析方案1，图表展示方式1", "2.分析方案2，图表展示方式2"],
 }
 
+
 _DEFAULT_TEMPLATE = (
     _DEFAULT_TEMPLATE_EN if CFG.LANGUAGE == "en" else _DEFAULT_TEMPLATE_ZH
+)
+
+PROMPT_SCENE_DEFINE =(
+    _PROMPT_SCENE_DEFINE_EN if CFG.LANGUAGE == "en" else _PROMPT_SCENE_DEFINE_ZH
 )
 
 
