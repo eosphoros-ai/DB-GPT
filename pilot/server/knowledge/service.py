@@ -239,7 +239,6 @@ class KnowledgeService:
                 vector_store_config={
                     "vector_store_name": space_name,
                     "vector_store_type": CFG.VECTOR_STORE_TYPE,
-                    "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
                 },
                 text_splitter=text_splitter,
                 embedding_factory=embedding_factory,
