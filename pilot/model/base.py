@@ -53,6 +53,9 @@ class ModelOutput:
     error_code: int
     model_context: Dict = None
 
+    def to_dict(self) -> Dict:
+        return asdict(self)
+
 
 @dataclass
 class WorkerApplyOutput:

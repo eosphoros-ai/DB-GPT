@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any, Type
+import os
 
 from pilot.component import ComponentType, SystemApp
 from pilot.utils.executor_utils import DefaultExecutorFactory
 from pilot.embedding_engine.embedding_factory import EmbeddingFactory
 from pilot.server.base import WebWerverParameters
+from pilot.configs.model_config import LOGDIR
+from pilot.utils.tracer import root_tracer, initialize_tracer
 
 if TYPE_CHECKING:
     from langchain.embeddings.base import Embeddings
@@ -22,6 +25,8 @@ def initialize_components(
     embedding_model_path: str,
 ):
     from pilot.model.cluster.controller.controller import controller
+
+    initialize_tracer(system_app, os.path.join(LOGDIR, "dbgpt_webserver_tracer.jsonl"))
 
     # Register global default executor factory first
     system_app.register(DefaultExecutorFactory)
