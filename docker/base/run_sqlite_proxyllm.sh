@@ -4,7 +4,7 @@
 PROXY_API_KEY="$PROXY_API_KEY"
 PROXY_SERVER_URL="${PROXY_SERVER_URL-'https://api.openai.com/v1/chat/completions'}"
 
-docker run --gpus all -d \
+docker run --ipc host --gpus all -d \
     -p 5000:5000 \
     -e LOCAL_DB_TYPE=sqlite \
     -e LOCAL_DB_PATH=data/default_sqlite.db \

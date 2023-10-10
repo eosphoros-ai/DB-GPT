@@ -3,9 +3,11 @@
 
 from typing import Optional, Dict
 
+from dataclasses import asdict
 import logging
 from pilot.configs.model_config import get_device
-from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper, ModelType
+from pilot.model.base import ModelType
+from pilot.model.model_adapter import get_llm_model_adapter, LLMModelAdaper
 from pilot.model.parameter import (
     ModelParameters,
     LlamaCppModelParameters,
@@ -114,8 +116,9 @@ class ModelLoader:
         else:
             raise Exception(f"Unkown model type {model_type}")
 
-    def loader_with_params(self, model_params: ModelParameters):
-        llm_adapter = get_llm_model_adapter(self.model_name, self.model_path)
+    def loader_with_params(
+        self, model_params: ModelParameters, llm_adapter: LLMModelAdaper
+    ):
         model_type = llm_adapter.model_type()
         self.prompt_template = model_params.prompt_template
         if model_type == ModelType.HF:
@@ -124,11 +127,13 @@ class ModelLoader:
             return llamacpp_loader(llm_adapter, model_params)
         elif model_type == ModelType.PROXY:
             return proxyllm_loader(llm_adapter, model_params)
+        elif model_type == ModelType.VLLM:
+            return llm_adapter.load_from_params(model_params)
         else:
             raise Exception(f"Unkown model type {model_type}")
 
 
-def huggingface_loader(llm_adapter: BaseLLMAdaper, model_params: ModelParameters):
+def huggingface_loader(llm_adapter: LLMModelAdaper, model_params: ModelParameters):
     import torch
     from pilot.model.compression import compress_module
 
@@ -181,7 +186,7 @@ def huggingface_loader(llm_adapter: BaseLLMAdaper, model_params: ModelParameters
                 f"Current model {model_params.model_name} not supported quantization"
             )
     # default loader
-    model, tokenizer = llm_adapter.loader(model_params.model_path, kwargs)
+    model, tokenizer = llm_adapter.load(model_params.model_path, kwargs)
 
     if model_params.load_8bit and num_gpus == 1 and tokenizer:
         # TODO merge current code into `load_huggingface_quantization_model`
@@ -204,7 +209,7 @@ def huggingface_loader(llm_adapter: BaseLLMAdaper, model_params: ModelParameters
 
 
 def load_huggingface_quantization_model(
-    llm_adapter: BaseLLMAdaper,
+    llm_adapter: LLMModelAdaper,
     model_params: ModelParameters,
     kwargs: Dict,
     max_memory: Dict[int, str],
@@ -339,7 +344,7 @@ def load_huggingface_quantization_model(
     return model, tokenizer
 
 
-def llamacpp_loader(llm_adapter: BaseLLMAdaper, model_params: LlamaCppModelParameters):
+def llamacpp_loader(llm_adapter: LLMModelAdaper, model_params: LlamaCppModelParameters):
     try:
         from pilot.model.llm.llama_cpp.llama_cpp import LlamaCppModel
     except ImportError as exc:
@@ -353,7 +358,7 @@ def llamacpp_loader(llm_adapter: BaseLLMAdaper, model_params: LlamaCppModelParam
     return model, tokenizer
 
 
-def proxyllm_loader(llm_adapter: BaseLLMAdaper, model_params: ProxyModelParameters):
+def proxyllm_loader(llm_adapter: LLMModelAdaper, model_params: ProxyModelParameters):
     from pilot.model.proxy.llms.proxy_model import ProxyModel
 
     logger.info("Load proxyllm")

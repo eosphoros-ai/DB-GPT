@@ -1,17 +1,25 @@
+import os
 import logging
 from typing import Dict, Iterator, List
 
 from pilot.configs.model_config import get_device
-from pilot.model.adapter import get_llm_model_adapter, BaseLLMAdaper
+from pilot.model.model_adapter import get_llm_model_adapter, LLMModelAdaper
 from pilot.model.base import ModelOutput
 from pilot.model.loader import ModelLoader, _get_model_real_path
 from pilot.model.parameter import ModelParameters
 from pilot.model.cluster.worker_base import ModelWorker
-from pilot.server.chat_adapter import get_llm_chat_adapter, BaseChatAdpter
 from pilot.utils.model_utils import _clear_model_cache
 from pilot.utils.parameter_utils import EnvArgumentParser
 
 logger = logging.getLogger(__name__)
+
+_torch_imported = False
+try:
+    import torch
+
+    _torch_imported = True
+except ImportError:
+    pass
 
 
 class DefaultModelWorker(ModelWorker):
@@ -19,8 +27,8 @@ class DefaultModelWorker(ModelWorker):
         self.model = None
         self.tokenizer = None
         self._model_params = None
-        self.llm_adapter: BaseLLMAdaper = None
-        self.llm_chat_adapter: BaseChatAdpter = None
+        self.llm_adapter: LLMModelAdaper = None
+        self._support_async = False
 
     def load_worker(self, model_name: str, model_path: str, **kwargs) -> None:
         if model_path.endswith("/"):
@@ -29,16 +37,22 @@ class DefaultModelWorker(ModelWorker):
         self.model_name = model_name
         self.model_path = model_path
 
-        self.llm_adapter = get_llm_model_adapter(self.model_name, self.model_path)
+        model_type = kwargs.get("model_type")
+        ### Temporary configuration, fastchat will be used by default in the future.
+        use_fastchat = os.getenv("USE_FASTCHAT", "True").lower() == "true"
+
+        self.llm_adapter = get_llm_model_adapter(
+            self.model_name,
+            self.model_path,
+            use_fastchat=use_fastchat,
+            model_type=model_type,
+        )
         model_type = self.llm_adapter.model_type()
         self.param_cls = self.llm_adapter.model_param_class(model_type)
+        self._support_async = self.llm_adapter.support_async()
+
         logger.info(
             f"model_name: {self.model_name}, model_path: {self.model_path}, model_param_class: {self.param_cls}"
-        )
-
-        self.llm_chat_adapter = get_llm_chat_adapter(self.model_name, self.model_path)
-        self.generate_stream_func = self.llm_chat_adapter.get_generate_stream_func(
-            self.model_path
         )
 
         self.ml: ModelLoader = ModelLoader(
@@ -49,6 +63,9 @@ class DefaultModelWorker(ModelWorker):
 
     def model_param_class(self) -> ModelParameters:
         return self.param_cls
+
+    def support_async(self) -> bool:
+        return self._support_async
 
     def parse_parameters(self, command_args: List[str] = None) -> ModelParameters:
         param_cls = self.model_param_class()
@@ -77,7 +94,9 @@ class DefaultModelWorker(ModelWorker):
             model_params = self.parse_parameters(command_args)
         self._model_params = model_params
         logger.info(f"Begin load model, model params: {model_params}")
-        self.model, self.tokenizer = self.ml.loader_with_params(model_params)
+        self.model, self.tokenizer = self.ml.loader_with_params(
+            model_params, self.llm_adapter
+        )
 
     def stop(self) -> None:
         if not self.model:
@@ -90,51 +109,26 @@ class DefaultModelWorker(ModelWorker):
         _clear_model_cache(self._model_params.device)
 
     def generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
-        torch_imported = False
         try:
-            import torch
-
-            torch_imported = True
-        except ImportError:
-            pass
-        try:
-            # params adaptation
-            params, model_context = self.llm_chat_adapter.model_adaptation(
-                params, self.ml.model_path, prompt_template=self.ml.prompt_template
+            params, model_context, generate_stream_func = self._prepare_generate_stream(
+                params
             )
 
             previous_response = ""
-            print("stream output:\n")
-            for output in self.generate_stream_func(
+
+            for output in generate_stream_func(
                 self.model, self.tokenizer, params, get_device(), self.context_len
             ):
-                # Please do not open the output in production!
-                # The gpt4all thread shares stdout with the parent process,
-                # and opening it may affect the frontend output.
-                incremental_output = output[len(previous_response) :]
-                # print("output: ", output)
-                print(incremental_output, end="", flush=True)
-                previous_response = output
-                # return some model context to dgt-server
-                model_output = ModelOutput(
-                    text=output, error_code=0, model_context=model_context
+                model_output, incremental_output, output_str = self._handle_output(
+                    output, previous_response, model_context
                 )
+                previous_response = output_str
                 yield model_output
             print(
                 f"\n\nfull stream output:\n{previous_response}\n\nmodel generate_stream params:\n{params}"
             )
         except Exception as e:
-            # Check if the exception is a torch.cuda.CudaError and if torch was imported.
-            if torch_imported and isinstance(e, torch.cuda.CudaError):
-                model_output = ModelOutput(
-                    text="**GPU OutOfMemory, Please Refresh.**", error_code=0
-                )
-            else:
-                model_output = ModelOutput(
-                    text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                    error_code=0,
-                )
-            yield model_output
+            yield self._handle_exception(e)
 
     def generate(self, params: Dict) -> ModelOutput:
         """Generate non stream result"""
@@ -145,3 +139,81 @@ class DefaultModelWorker(ModelWorker):
 
     def embeddings(self, params: Dict) -> List[List[float]]:
         raise NotImplementedError
+
+    async def async_generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
+        try:
+            params, model_context, generate_stream_func = self._prepare_generate_stream(
+                params
+            )
+
+            previous_response = ""
+
+            async for output in generate_stream_func(
+                self.model, self.tokenizer, params, get_device(), self.context_len
+            ):
+                model_output, incremental_output, output_str = self._handle_output(
+                    output, previous_response, model_context
+                )
+                previous_response = output_str
+                yield model_output
+            print(
+                f"\n\nfull stream output:\n{previous_response}\n\nmodel generate_stream params:\n{params}"
+            )
+        except Exception as e:
+            yield self._handle_exception(e)
+
+    async def async_generate(self, params: Dict) -> ModelOutput:
+        output = None
+        async for out in self.async_generate_stream(params):
+            output = out
+        return output
+
+    def _prepare_generate_stream(self, params: Dict):
+        params, model_context = self.llm_adapter.model_adaptation(
+            params,
+            self.model_name,
+            self.model_path,
+            prompt_template=self.ml.prompt_template,
+        )
+        stream_type = ""
+        if self.support_async():
+            generate_stream_func = self.llm_adapter.get_async_generate_stream_function(
+                self.model, self.model_path
+            )
+            stream_type = "async "
+            logger.info(
+                "current generate stream function is asynchronous stream function"
+            )
+        else:
+            generate_stream_func = self.llm_adapter.get_generate_stream_function(
+                self.model, self.model_path
+            )
+        str_prompt = params.get("prompt")
+        print(f"model prompt: \n\n{str_prompt}\n\n{stream_type}stream output:\n")
+        return params, model_context, generate_stream_func
+
+    def _handle_output(self, output, previous_response, model_context):
+        if isinstance(output, dict):
+            finish_reason = output.get("finish_reason")
+            output = output["text"]
+            if finish_reason is not None:
+                logger.info(f"finish_reason: {finish_reason}")
+        incremental_output = output[len(previous_response) :]
+        print(incremental_output, end="", flush=True)
+        model_output = ModelOutput(
+            text=output, error_code=0, model_context=model_context
+        )
+        return model_output, incremental_output, output
+
+    def _handle_exception(self, e):
+        # Check if the exception is a torch.cuda.CudaError and if torch was imported.
+        if _torch_imported and isinstance(e, torch.cuda.CudaError):
+            model_output = ModelOutput(
+                text="**GPU OutOfMemory, Please Refresh.**", error_code=0
+            )
+        else:
+            model_output = ModelOutput(
+                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                error_code=0,
+            )
+        return model_output
