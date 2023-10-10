@@ -10,11 +10,11 @@ git clone https://github.com/<YOUR-GITHUB-USERNAME>/DB-GPT
 ```
 3. Install the project requirements
 ```
-pip install -r requirements.txt
+pip install -r requirements/dev-requirements.txt
 ```
 4. Install pre-commit hooks
 ```
-pre-commit install
+pre-commit install --allow-missing-config
 ```
 5. Create a new branch for your changes using the following command:
 
