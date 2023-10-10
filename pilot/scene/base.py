@@ -75,6 +75,16 @@ class ChatScene(Enum):
         "Dialogue through natural language and private documents and knowledge bases.",
         ["Knowledge Space Select"],
     )
+    ExtractTriplet = Scene(
+        "extract_triplet",
+        "Extract Triplet",
+        "Extract Triplet",
+        ["Extract Select"],
+        True,
+    )
+    ExtractEntity = Scene(
+        "extract_entity", "Extract Entity", "Extract Entity", ["Extract Select"], True
+    )
 
     @staticmethod
     def of_mode(mode):

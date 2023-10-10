@@ -205,6 +205,40 @@ class BaseChat(ABC):
         self.memory.append(self.current_message)
         return self.current_ai_response()
 
+    async def get_llm_response(self):
+        payload = self.__call_base()
+        logger.info(f"Request: \n{payload}")
+        ai_response_text = ""
+        try:
+            from pilot.model.cluster import WorkerManagerFactory
+
+            worker_manager = CFG.SYSTEM_APP.get_component(
+                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
+
+            model_output = await worker_manager.generate(payload)
+
+            ### output parse
+            ai_response_text = (
+                self.prompt_template.output_parser.parse_model_nostream_resp(
+                    model_output, self.prompt_template.sep
+                )
+            )
+            ### model result deal
+            self.current_message.add_ai_message(ai_response_text)
+            prompt_define_response = (
+                self.prompt_template.output_parser.parse_prompt_response(
+                    ai_response_text
+                )
+            )
+        except Exception as e:
+            print(traceback.format_exc())
+            logger.error("model response parse failed！" + str(e))
+            self.current_message.add_view_message(
+                f"""model response parse failed！{str(e)}\n  {ai_response_text} """
+            )
+        return prompt_define_response
+
     def _blocking_stream_call(self):
         logger.warn(
             "_blocking_stream_call is only temporarily used in webserver and will be deleted soon, please use stream_call to replace it for higher performance"
