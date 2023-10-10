@@ -29,7 +29,7 @@ class SeparatorStyle(Enum):
 
 
 @dataclasses.dataclass
-class Conversation:
+class OldConversation:
     """This class keeps all conversation history."""
 
     system: str
@@ -81,7 +81,7 @@ class Conversation:
         return ret
 
     def copy(self):
-        return Conversation(
+        return OldConversation(
             system=self.system,
             roles=self.roles,
             messages=[[x, y] for x, y in self.messages],
@@ -104,7 +104,7 @@ class Conversation:
         }
 
 
-conv_default = Conversation(
+conv_default = OldConversation(
     system=None,
     roles=("human", "ai"),
     messages=[],
@@ -148,7 +148,7 @@ conv_default = Conversation(
 # )
 
 
-conv_one_shot = Conversation(
+conv_one_shot = OldConversation(
     system="You are a DB-GPT. Please provide me with user input and all table information known in the database, so I can accurately query tables are involved in the user input. If there are multiple tables involved, I will separate them by comma. Here is an example:",
     roles=("USER", "ASSISTANT"),
     messages=(
@@ -179,7 +179,7 @@ conv_one_shot = Conversation(
     sep="###",
 )
 
-conv_vicuna_v1 = Conversation(
+conv_vicuna_v1 = OldConversation(
     system="A chat between a curious user and an artificial intelligence assistant. who very familiar with database related knowledge. "
     "The assistant gives helpful, detailed, professional and polite answers to the user's questions. ",
     roles=("USER", "ASSISTANT"),
@@ -190,7 +190,7 @@ conv_vicuna_v1 = Conversation(
     sep2="</s>",
 )
 
-auto_dbgpt_one_shot = Conversation(
+auto_dbgpt_one_shot = OldConversation(
     system="You are DB-GPT, an AI designed to answer questions about HackerNews by query `hackerbews` database in MySQL. "
     "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
     roles=("USER", "ASSISTANT"),
@@ -263,7 +263,7 @@ auto_dbgpt_one_shot = Conversation(
     sep="###",
 )
 
-auto_dbgpt_without_shot = Conversation(
+auto_dbgpt_without_shot = OldConversation(
     system="You are DB-GPT, an AI designed to answer questions about users by query `users` database in MySQL. "
     "Your decisions must always be made independently without seeking user assistance. Play to your strengths as an LLM and pursue simple strategies with no legal complications.",
     roles=("USER", "ASSISTANT"),

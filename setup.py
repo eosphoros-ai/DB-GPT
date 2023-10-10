@@ -203,9 +203,9 @@ def get_cuda_version() -> str:
 
 
 def torch_requires(
-    torch_version: str = "2.0.0",
-    torchvision_version: str = "0.15.1",
-    torchaudio_version: str = "2.0.1",
+    torch_version: str = "2.0.1",
+    torchvision_version: str = "0.15.2",
+    torchaudio_version: str = "2.0.2",
 ):
     torch_pkgs = [
         f"torch=={torch_version}",
@@ -298,6 +298,7 @@ def core_requires():
     ]
 
     setup_spec.extras["framework"] = [
+        "fschat",
         "coloredlogs",
         "httpx",
         "sqlparse==0.4.4",
@@ -396,12 +397,19 @@ def gpt4all_requires():
     setup_spec.extras["gpt4all"] = ["gpt4all"]
 
 
+def vllm_requires():
+    """
+    pip install "db-gpt[vllm]"
+    """
+    setup_spec.extras["vllm"] = ["vllm"]
+
+
 def default_requires():
     """
     pip install "db-gpt[default]"
     """
     setup_spec.extras["default"] = [
-        "tokenizers==0.13.2",
+        "tokenizers==0.13.3",
         "accelerate>=0.20.3",
         "sentence-transformers",
         "protobuf==3.20.3",
@@ -435,6 +443,7 @@ all_vector_store_requires()
 all_datasource_requires()
 openai_requires()
 gpt4all_requires()
+vllm_requires()
 
 # must be last
 default_requires()
