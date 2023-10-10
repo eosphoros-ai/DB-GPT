@@ -46,9 +46,12 @@ class Config(metaclass=Singleton):
         # This is a proxy server, just for test_py.  we will remove this later.
         self.proxy_api_key = os.getenv("PROXY_API_KEY")
         self.bard_proxy_api_key = os.getenv("BARD_PROXY_API_KEY")
+
         # In order to be compatible with the new and old model parameter design
         if self.bard_proxy_api_key:
             os.environ["bard_proxyllm_proxy_api_key"] = self.bard_proxy_api_key
+
+        self.tongyi_api_key = os.getenv("TONGYI_PROXY_API_KEY")
 
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
