@@ -47,13 +47,13 @@ class DBSummaryClient:
             "embeddings": embeddings,
         }
         embedding = StringEmbedding(
-            file_path=db_summary_client.get_summery(),
+            file_path=db_summary_client.get_summary(),
             vector_store_config=vector_store_config,
         )
         self.init_db_profile(db_summary_client, dbname, embeddings)
         if not embedding.vector_name_exist():
             if CFG.SUMMARY_CONFIG == "FAST":
-                for vector_table_info in db_summary_client.get_summery():
+                for vector_table_info in db_summary_client.get_summary():
                     embedding = StringEmbedding(
                         vector_table_info,
                         vector_store_config,
@@ -61,7 +61,7 @@ class DBSummaryClient:
                     embedding.source_embedding()
             else:
                 embedding = StringEmbedding(
-                    file_path=db_summary_client.get_summery(),
+                    file_path=db_summary_client.get_summary(),
                     vector_store_config=vector_store_config,
                 )
                 embedding.source_embedding()
@@ -144,8 +144,8 @@ class DBSummaryClient:
                 vector_store_config=vector_store_config,
                 embedding_factory=embedding_factory,
             )
-            table_summery = knowledge_embedding_client.similar_search(query, 1)
-            related_table_summaries.append(table_summery[0].page_content)
+            table_summary = knowledge_embedding_client.similar_search(query, 1)
+            related_table_summaries.append(table_summary[0].page_content)
         return related_table_summaries
 
     def init_db_summary(self):
@@ -169,7 +169,7 @@ class DBSummaryClient:
             "embeddings": embeddings,
         }
         embedding = StringEmbedding(
-            file_path=db_summary_client.get_db_summery(),
+            file_path=db_summary_client.get_db_summary(),
             vector_store_config=profile_store_config,
         )
         if not embedding.vector_name_exist():

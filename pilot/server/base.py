@@ -19,7 +19,7 @@ def signal_handler(sig, frame):
     os._exit(0)
 
 
-def async_db_summery(system_app: SystemApp):
+def async_db_summary(system_app: SystemApp):
     from pilot.summary.db_summary_client import DBSummaryClient
 
     client = DBSummaryClient(system_app=system_app)
@@ -79,7 +79,7 @@ def _create_model_start_listener(system_app: SystemApp):
         print("begin run _add_app_startup_event")
         conn_manage = ConnectManager(system_app)
         cfg.LOCAL_DB_MANAGE = conn_manage
-        async_db_summery(system_app)
+        async_db_summary(system_app)
 
     return startup_event
 
