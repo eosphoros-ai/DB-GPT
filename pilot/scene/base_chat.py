@@ -139,7 +139,9 @@ class BaseChat(ABC):
     def _get_span_metadata(self, payload: Dict) -> Dict:
         metadata = {k: v for k, v in payload.items()}
         del metadata["prompt"]
-        metadata["messages"] = list(map(lambda m: m.dict(), metadata["messages"]))
+        metadata["messages"] = list(
+            map(lambda m: m if isinstance(m, dict) else m.dict(), metadata["messages"])
+        )
         return metadata
 
     async def stream_call(self):
@@ -152,6 +154,7 @@ class BaseChat(ABC):
         span = root_tracer.start_span(
             "BaseChat.stream_call", metadata=self._get_span_metadata(payload)
         )
+        payload["span_id"] = span.span_id
         try:
             from pilot.model.cluster import WorkerManagerFactory
 
@@ -178,6 +181,7 @@ class BaseChat(ABC):
         span = root_tracer.start_span(
             "BaseChat.nostream_call", metadata=self._get_span_metadata(payload)
         )
+        payload["span_id"] = span.span_id
         try:
             from pilot.model.cluster import WorkerManagerFactory
 
@@ -185,7 +189,7 @@ class BaseChat(ABC):
                 ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
             ).create()
 
-            with root_tracer.start_span("BaseChat.invoke_worker_manager.generate") as _:
+            with root_tracer.start_span("BaseChat.invoke_worker_manager.generate"):
                 model_output = await worker_manager.generate(payload)
 
             ### output parse
@@ -206,7 +210,7 @@ class BaseChat(ABC):
                 "ai_response_text": ai_response_text,
                 "prompt_define_response": prompt_define_response,
             }
-            with root_tracer.start_span("BaseChat.do_action", metadata=metadata) as _:
+            with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
                 ###  run
                 result = self.do_action(prompt_define_response)
 

@@ -9,8 +9,8 @@ from pilot.model.loader import ModelLoader, _get_model_real_path
 from pilot.model.parameter import ModelParameters
 from pilot.model.cluster.worker_base import ModelWorker
 from pilot.utils.model_utils import _clear_model_cache
-from pilot.utils.parameter_utils import EnvArgumentParser
-from pilot.utils.tracer import root_tracer
+from pilot.utils.parameter_utils import EnvArgumentParser, _get_dict_from_obj
+from pilot.utils.tracer import root_tracer, SpanType, SpanTypeRunName
 
 logger = logging.getLogger(__name__)
 
@@ -95,9 +95,20 @@ class DefaultModelWorker(ModelWorker):
             model_params = self.parse_parameters(command_args)
         self._model_params = model_params
         logger.info(f"Begin load model, model params: {model_params}")
-        self.model, self.tokenizer = self.ml.loader_with_params(
-            model_params, self.llm_adapter
-        )
+        metadata = {
+            "model_name": self.model_name,
+            "model_path": self.model_path,
+            "model_type": self.llm_adapter.model_type(),
+            "llm_adapter": str(self.llm_adapter),
+            "run_service": SpanTypeRunName.MODEL_WORKER,
+            "params": _get_dict_from_obj(model_params),
+        }
+        with root_tracer.start_span(
+            "DefaultModelWorker.start", span_type=SpanType.RUN, metadata=metadata
+        ):
+            self.model, self.tokenizer = self.ml.loader_with_params(
+                model_params, self.llm_adapter
+            )
 
     def stop(self) -> None:
         if not self.model:
@@ -110,7 +121,9 @@ class DefaultModelWorker(ModelWorker):
         _clear_model_cache(self._model_params.device)
 
     def generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
-        span = root_tracer.start_span("DefaultModelWorker.generate_stream")
+        span = root_tracer.start_span(
+            "DefaultModelWorker.generate_stream", params.get("span_id")
+        )
         try:
             (
                 params,
@@ -153,7 +166,9 @@ class DefaultModelWorker(ModelWorker):
         raise NotImplementedError
 
     async def async_generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
-        span = root_tracer.start_span("DefaultModelWorker.async_generate_stream")
+        span = root_tracer.start_span(
+            "DefaultModelWorker.async_generate_stream", params.get("span_id")
+        )
         try:
             (
                 params,

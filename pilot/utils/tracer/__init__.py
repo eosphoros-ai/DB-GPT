@@ -1,5 +1,7 @@
 from pilot.utils.tracer.base import (
+    SpanType,
     Span,
+    SpanTypeRunName,
     Tracer,
     SpanStorage,
     SpanStorageType,
@@ -14,7 +16,9 @@ from pilot.utils.tracer.tracer_impl import (
 )
 
 __all__ = [
+    "SpanType",
     "Span",
+    "SpanTypeRunName",
     "Tracer",
     "SpanStorage",
     "SpanStorageType",

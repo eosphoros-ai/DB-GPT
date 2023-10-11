@@ -10,22 +10,41 @@ from datetime import datetime
 from pilot.component import BaseComponent, SystemApp, ComponentType
 
 
+class SpanType(str, Enum):
+    BASE = "base"
+    RUN = "run"
+    CHAT = "chat"
+
+
+class SpanTypeRunName(str, Enum):
+    WEBSERVER = "Webserver"
+    WORKER_MANAGER = "WorkerManager"
+    MODEL_WORKER = "ModelWorker"
+    EMBEDDING_MODEL = "EmbeddingModel"
+
+    @staticmethod
+    def values():
+        return [item.value for item in SpanTypeRunName]
+
+
 class Span:
     """Represents a unit of work that is being traced.
     This can be any operation like a function call or a database query.
     """
 
-    span_type: str = "base"
-
     def __init__(
         self,
         trace_id: str,
         span_id: str,
+        span_type: SpanType = None,
         parent_span_id: str = None,
         operation_name: str = None,
         metadata: Dict = None,
         end_caller: Callable[[Span], None] = None,
     ):
+        if not span_type:
+            span_type = SpanType.BASE
+        self.span_type = span_type
         # The unique identifier for the entire trace
         self.trace_id = trace_id
         # Unique identifier for this span within the trace
@@ -65,7 +84,7 @@ class Span:
 
     def to_dict(self) -> Dict:
         return {
-            "span_type": self.span_type,
+            "span_type": self.span_type.value,
             "trace_id": self.trace_id,
             "span_id": self.span_id,
             "parent_span_id": self.parent_span_id,
@@ -124,7 +143,11 @@ class Tracer(BaseComponent, ABC):
 
     @abstractmethod
     def start_span(
-        self, operation_name: str, parent_span_id: str = None, metadata: Dict = None
+        self,
+        operation_name: str,
+        parent_span_id: str = None,
+        span_type: SpanType = None,
+        metadata: Dict = None,
     ) -> Span:
         """Begin a new span for the given operation. If provided, the span will be
         a child of the span with the given parent_span_id.
@@ -158,4 +181,4 @@ class Tracer(BaseComponent, ABC):
 
 @dataclass
 class TracerContext:
-    span_id: str
+    span_id: Optional[str] = None

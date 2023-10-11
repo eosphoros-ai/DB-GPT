@@ -1,6 +1,6 @@
 import argparse
 import os
-from dataclasses import dataclass, fields, MISSING, asdict, field
+from dataclasses import dataclass, fields, MISSING, asdict, field, is_dataclass
 from typing import Any, List, Optional, Type, Union, Callable, Dict
 from collections import OrderedDict
 
@@ -588,6 +588,20 @@ def _extract_parameter_details(
         )
 
     return descriptions
+
+
+def _get_dict_from_obj(obj, default_value=None) -> Optional[Dict]:
+    if not obj:
+        return None
+    if is_dataclass(type(obj)):
+        params = {}
+        for field_info in fields(obj):
+            value = _get_simple_privacy_field_value(obj, field_info)
+            params[field_info.name] = value
+        return params
+    if isinstance(obj, dict):
+        return obj
+    return default_value
 
 
 class _SimpleArgParser:

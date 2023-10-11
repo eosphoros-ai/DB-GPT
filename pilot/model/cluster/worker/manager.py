@@ -8,12 +8,13 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
-from typing import Awaitable, Callable, Dict, Iterator, List, Optional
+from typing import Awaitable, Callable, Dict, Iterator, List
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import StreamingResponse
 
 from pilot.component import SystemApp
+from pilot.configs.model_config import LOGDIR
 from pilot.model.base import (
     ModelInstance,
     ModelOutput,
@@ -35,8 +36,10 @@ from pilot.utils.parameter_utils import (
     EnvArgumentParser,
     ParameterDescription,
     _dict_to_command_args,
+    _get_dict_from_obj,
 )
 from pilot.utils.utils import setup_logging
+from pilot.utils.tracer import initialize_tracer, root_tracer, SpanType, SpanTypeRunName
 
 logger = logging.getLogger(__name__)
 
@@ -293,60 +296,72 @@ class LocalWorkerManager(WorkerManager):
         self, params: Dict, async_wrapper=None, **kwargs
     ) -> Iterator[ModelOutput]:
         """Generate stream result, chat scene"""
-        try:
-            worker_run_data = await self._get_model(params)
-        except Exception as e:
-            yield ModelOutput(
-                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                error_code=0,
-            )
-            return
-        async with worker_run_data.semaphore:
-            if worker_run_data.worker.support_async():
-                async for outout in worker_run_data.worker.async_generate_stream(
-                    params
-                ):
-                    yield outout
-            else:
-                if not async_wrapper:
-                    from starlette.concurrency import iterate_in_threadpool
+        with root_tracer.start_span(
+            "WorkerManager.generate_stream", params.get("span_id")
+        ) as span:
+            params["span_id"] = span.span_id
+            try:
+                worker_run_data = await self._get_model(params)
+            except Exception as e:
+                yield ModelOutput(
+                    text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                    error_code=0,
+                )
+                return
+            async with worker_run_data.semaphore:
+                if worker_run_data.worker.support_async():
+                    async for outout in worker_run_data.worker.async_generate_stream(
+                        params
+                    ):
+                        yield outout
+                else:
+                    if not async_wrapper:
+                        from starlette.concurrency import iterate_in_threadpool
 
-                    async_wrapper = iterate_in_threadpool
-                async for output in async_wrapper(
-                    worker_run_data.worker.generate_stream(params)
-                ):
-                    yield output
+                        async_wrapper = iterate_in_threadpool
+                    async for output in async_wrapper(
+                        worker_run_data.worker.generate_stream(params)
+                    ):
+                        yield output
 
     async def generate(self, params: Dict) -> ModelOutput:
         """Generate non stream result"""
-        try:
-            worker_run_data = await self._get_model(params)
-        except Exception as e:
-            return ModelOutput(
-                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                error_code=0,
-            )
-        async with worker_run_data.semaphore:
-            if worker_run_data.worker.support_async():
-                return await worker_run_data.worker.async_generate(params)
-            else:
-                return await self.run_blocking_func(
-                    worker_run_data.worker.generate, params
+        with root_tracer.start_span(
+            "WorkerManager.generate", params.get("span_id")
+        ) as span:
+            params["span_id"] = span.span_id
+            try:
+                worker_run_data = await self._get_model(params)
+            except Exception as e:
+                return ModelOutput(
+                    text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                    error_code=0,
                 )
+            async with worker_run_data.semaphore:
+                if worker_run_data.worker.support_async():
+                    return await worker_run_data.worker.async_generate(params)
+                else:
+                    return await self.run_blocking_func(
+                        worker_run_data.worker.generate, params
+                    )
 
     async def embeddings(self, params: Dict) -> List[List[float]]:
         """Embed input"""
-        try:
-            worker_run_data = await self._get_model(params, worker_type="text2vec")
-        except Exception as e:
-            raise e
-        async with worker_run_data.semaphore:
-            if worker_run_data.worker.support_async():
-                return await worker_run_data.worker.async_embeddings(params)
-            else:
-                return await self.run_blocking_func(
-                    worker_run_data.worker.embeddings, params
-                )
+        with root_tracer.start_span(
+            "WorkerManager.embeddings", params.get("span_id")
+        ) as span:
+            params["span_id"] = span.span_id
+            try:
+                worker_run_data = await self._get_model(params, worker_type="text2vec")
+            except Exception as e:
+                raise e
+            async with worker_run_data.semaphore:
+                if worker_run_data.worker.support_async():
+                    return await worker_run_data.worker.async_embeddings(params)
+                else:
+                    return await self.run_blocking_func(
+                        worker_run_data.worker.embeddings, params
+                    )
 
     def sync_embeddings(self, params: Dict) -> List[List[float]]:
         worker_run_data = self._sync_get_model(params, worker_type="text2vec")
@@ -608,6 +623,9 @@ async def generate_json_stream(params):
 @router.post("/worker/generate_stream")
 async def api_generate_stream(request: PromptRequest):
     params = request.dict(exclude_none=True)
+    span_id = root_tracer.get_current_span_id()
+    if "span_id" not in params and span_id:
+        params["span_id"] = span_id
     generator = generate_json_stream(params)
     return StreamingResponse(generator)
 
@@ -615,12 +633,18 @@ async def api_generate_stream(request: PromptRequest):
 @router.post("/worker/generate")
 async def api_generate(request: PromptRequest):
     params = request.dict(exclude_none=True)
+    span_id = root_tracer.get_current_span_id()
+    if "span_id" not in params and span_id:
+        params["span_id"] = span_id
     return await worker_manager.generate(params)
 
 
 @router.post("/worker/embeddings")
 async def api_embeddings(request: EmbeddingsRequest):
     params = request.dict(exclude_none=True)
+    span_id = root_tracer.get_current_span_id()
+    if "span_id" not in params and span_id:
+        params["span_id"] = span_id
     return await worker_manager.embeddings(params)
 
 
@@ -801,10 +825,18 @@ def _build_worker(worker_params: ModelWorkerParameters):
 def _start_local_worker(
     worker_manager: WorkerManagerAdapter, worker_params: ModelWorkerParameters
 ):
-    worker = _build_worker(worker_params)
-    if not worker_manager.worker_manager:
-        worker_manager.worker_manager = _create_local_model_manager(worker_params)
-    worker_manager.worker_manager.add_worker(worker, worker_params)
+    with root_tracer.start_span(
+        "WorkerManager._start_local_worker",
+        span_type=SpanType.RUN,
+        metadata={
+            "run_service": SpanTypeRunName.WORKER_MANAGER,
+            "params": _get_dict_from_obj(worker_params),
+        },
+    ):
+        worker = _build_worker(worker_params)
+        if not worker_manager.worker_manager:
+            worker_manager.worker_manager = _create_local_model_manager(worker_params)
+        worker_manager.worker_manager.add_worker(worker, worker_params)
 
 
 def _start_local_embedding_worker(
@@ -928,17 +960,17 @@ def run_worker_manager(
         # Run worker manager independently
         embedded_mod = False
         app = _setup_fastapi(worker_params)
-        _start_local_worker(worker_manager, worker_params)
-        _start_local_embedding_worker(
-            worker_manager, embedding_model_name, embedding_model_path
-        )
-    else:
-        _start_local_worker(worker_manager, worker_params)
-        _start_local_embedding_worker(
-            worker_manager, embedding_model_name, embedding_model_path
-        )
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(worker_manager.start())
+
+    system_app = SystemApp(app)
+    initialize_tracer(
+        system_app,
+        os.path.join(LOGDIR, "dbgpt_model_worker_manager_tracer.jsonl"),
+        root_operation_name="DB-GPT-WorkerManager-Entry",
+    )
+    _start_local_worker(worker_manager, worker_params)
+    _start_local_embedding_worker(
+        worker_manager, embedding_model_name, embedding_model_path
+    )
 
     if include_router:
         app.include_router(router, prefix="/api")
@@ -946,6 +978,8 @@ def run_worker_manager(
     if not embedded_mod:
         import uvicorn
 
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(worker_manager.start())
         uvicorn.run(
             app, host=worker_params.host, port=worker_params.port, log_level="info"
         )

@@ -16,12 +16,14 @@ class TraceIDMiddleware(BaseHTTPMiddleware):
         app: ASGIApp,
         trace_context_var: ContextVar[TracerContext],
         tracer: Tracer,
+        root_operation_name: str = "DB-GPT-Web-Entry",
         include_prefix: str = "/api",
         exclude_paths=_DEFAULT_EXCLUDE_PATHS,
     ):
         super().__init__(app)
         self.trace_context_var = trace_context_var
         self.tracer = tracer
+        self.root_operation_name = root_operation_name
         self.include_prefix = include_prefix
         self.exclude_paths = exclude_paths
 
@@ -37,7 +39,7 @@ class TraceIDMiddleware(BaseHTTPMiddleware):
         # self.trace_context_var.set(TracerContext(span_id=span_id))
 
         with self.tracer.start_span(
-            "DB-GPT-Web-Entry", span_id, metadata={"path": request.url.path}
-        ) as _:
+            self.root_operation_name, span_id, metadata={"path": request.url.path}
+        ):
             response = await call_next(request)
         return response

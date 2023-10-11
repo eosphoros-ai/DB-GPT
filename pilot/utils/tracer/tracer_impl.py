@@ -4,6 +4,7 @@ from functools import wraps
 
 from pilot.component import SystemApp, ComponentType
 from pilot.utils.tracer.base import (
+    SpanType,
     Span,
     Tracer,
     SpanStorage,
@@ -32,14 +33,23 @@ class DefaultTracer(Tracer):
         self._get_current_storage().append_span(span)
 
     def start_span(
-        self, operation_name: str, parent_span_id: str = None, metadata: Dict = None
+        self,
+        operation_name: str,
+        parent_span_id: str = None,
+        span_type: SpanType = None,
+        metadata: Dict = None,
     ) -> Span:
         trace_id = (
             self._new_uuid() if parent_span_id is None else parent_span_id.split(":")[0]
         )
         span_id = f"{trace_id}:{self._new_uuid()}"
         span = Span(
-            trace_id, span_id, parent_span_id, operation_name, metadata=metadata
+            trace_id,
+            span_id,
+            span_type,
+            parent_span_id,
+            operation_name,
+            metadata=metadata,
         )
 
         if self._span_storage_type in [
@@ -81,11 +91,13 @@ class DefaultTracer(Tracer):
 
 
 class TracerManager:
+    """The manager of current tracer"""
+
     def __init__(self) -> None:
         self._system_app: Optional[SystemApp] = None
         self._trace_context_var: ContextVar[TracerContext] = ContextVar(
             "trace_context",
-            default=TracerContext(span_id="default_trace_id:default_span_id"),
+            default=TracerContext(),
         )
 
     def initialize(
@@ -101,18 +113,23 @@ class TracerManager:
         return self._system_app.get_component(ComponentType.TRACER, Tracer, None)
 
     def start_span(
-        self, operation_name: str, parent_span_id: str = None, metadata: Dict = None
+        self,
+        operation_name: str,
+        parent_span_id: str = None,
+        span_type: SpanType = None,
+        metadata: Dict = None,
     ) -> Span:
+        """Start a new span with operation_name
+        This method must not throw an exception under any case and try not to block as much as possible
+        """
         tracer = self._get_tracer()
         if not tracer:
             return Span("empty_span", "empty_span")
         if not parent_span_id:
-            current_span = self.get_current_span()
-            if current_span:
-                parent_span_id = current_span.span_id
-            else:
-                parent_span_id = self._trace_context_var.get().span_id
-        return tracer.start_span(operation_name, parent_span_id, metadata)
+            parent_span_id = self.get_current_span_id()
+        return tracer.start_span(
+            operation_name, parent_span_id, span_type=span_type, metadata=metadata
+        )
 
     def end_span(self, span: Span, **kwargs):
         tracer = self._get_tracer()
@@ -126,15 +143,22 @@ class TracerManager:
             return None
         return tracer.get_current_span()
 
+    def get_current_span_id(self) -> Optional[str]:
+        current_span = self.get_current_span()
+        if current_span:
+            return current_span.span_id
+        ctx = self._trace_context_var.get()
+        return ctx.span_id if ctx else None
+
 
 root_tracer: TracerManager = TracerManager()
 
 
-def trace(operation_name: str):
+def trace(operation_name: str, **trace_kwargs):
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            with root_tracer.start_span(operation_name) as span:
+            with root_tracer.start_span(operation_name, **trace_kwargs):
                 return await func(*args, **kwargs)
 
         return wrapper
@@ -142,14 +166,18 @@ def trace(operation_name: str):
     return decorator
 
 
-def initialize_tracer(system_app: SystemApp, tracer_filename: str):
+def initialize_tracer(
+    system_app: SystemApp,
+    tracer_filename: str,
+    root_operation_name: str = "DB-GPT-Web-Entry",
+):
     if not system_app:
         return
     from pilot.utils.tracer.span_storage import FileSpanStorage
 
     trace_context_var = ContextVar(
         "trace_context",
-        default=TracerContext(span_id="default_trace_id:default_span_id"),
+        default=TracerContext(),
     )
     tracer = DefaultTracer(system_app)
 
@@ -160,5 +188,8 @@ def initialize_tracer(system_app: SystemApp, tracer_filename: str):
         from pilot.utils.tracer.tracer_middleware import TraceIDMiddleware
 
         system_app.app.add_middleware(
-            TraceIDMiddleware, trace_context_var=trace_context_var, tracer=tracer
+            TraceIDMiddleware,
+            trace_context_var=trace_context_var,
+            tracer=tracer,
+            root_operation_name=root_operation_name,
         )
