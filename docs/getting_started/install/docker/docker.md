@@ -47,7 +47,7 @@ You can execute the command `bash docker/build_all_images.sh --help` to see more
 **Run with local model and SQLite database**
 
 ```bash
-docker run --gpus all -d \
+docker run --ipc host --gpus all -d \
     -p 5000:5000 \
     -e LOCAL_DB_TYPE=sqlite \
     -e LOCAL_DB_PATH=data/default_sqlite.db \
@@ -73,7 +73,7 @@ docker logs dbgpt -f
 **Run with local model and MySQL database**
 
 ```bash
-docker run --gpus all -d -p 3306:3306 \
+docker run --ipc host --gpus all -d -p 3306:3306 \
     -p 5000:5000 \
     -e LOCAL_DB_HOST=127.0.0.1 \
     -e LOCAL_DB_PASSWORD=aa123456 \

@@ -3,13 +3,12 @@
 
 import os
 
-# import nltk
-
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_PATH = os.path.join(ROOT_PATH, "models")
 PILOT_PATH = os.path.join(ROOT_PATH, "pilot")
 VECTORE_PATH = os.path.join(PILOT_PATH, "vector_store")
-LOGDIR = os.path.join(ROOT_PATH, "logs")
+LOGDIR = os.getenv("DBGPT_LOG_DIR", os.path.join(ROOT_PATH, "logs"))
+
 DATASETS_DIR = os.path.join(PILOT_PATH, "datasets")
 DATA_DIR = os.path.join(PILOT_PATH, "data")
 # nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
@@ -23,15 +22,18 @@ os.chdir(new_directory)
 
 
 def get_device() -> str:
-    import torch
+    try:
+        import torch
 
-    return (
-        "cuda"
-        if torch.cuda.is_available()
-        else "mps"
-        if torch.backends.mps.is_available()
-        else "cpu"
-    )
+        return (
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
+    except ModuleNotFoundError:
+        return "cpu"
 
 
 LLM_MODEL_CONFIG = {
@@ -68,10 +70,14 @@ LLM_MODEL_CONFIG = {
     "baichuan2-13b": os.path.join(MODEL_PATH, "Baichuan2-13B-Chat"),
     # (Llama2 based) We only support WizardLM-13B-V1.2 for now, which is trained from Llama-2 13b, see https://huggingface.co/WizardLM/WizardLM-13B-V1.2
     "wizardlm-13b": os.path.join(MODEL_PATH, "WizardLM-13B-V1.2"),
-    "llama-cpp": os.path.join(MODEL_PATH, "ggml-model-q4_0.bin"),
+    # wget https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF/resolve/main/vicuna-13b-v1.5.Q4_K_M.gguf -O models/ggml-model-q4_0.gguf
+    "llama-cpp": os.path.join(MODEL_PATH, "ggml-model-q4_0.gguf"),
     # https://huggingface.co/internlm/internlm-chat-7b-v1_1, 7b vs 7b-v1.1: https://github.com/InternLM/InternLM/issues/288
-    "internlm-7b": os.path.join(MODEL_PATH, "internlm-chat-7b-v1_1"),
+    "internlm-7b": os.path.join(MODEL_PATH, "internlm-chat-7b"),
     "internlm-7b-8k": os.path.join(MODEL_PATH, "internlm-chat-7b-8k"),
+    "internlm-20b": os.path.join(MODEL_PATH, "internlm-20b-chat"),
+    # For test now
+    "opt-125m": os.path.join(MODEL_PATH, "opt-125m"),
 }
 
 EMBEDDING_MODEL_CONFIG = {
@@ -88,6 +94,8 @@ EMBEDDING_MODEL_CONFIG = {
     "bge-large-zh": os.path.join(MODEL_PATH, "bge-large-zh"),
     "bge-base-zh": os.path.join(MODEL_PATH, "bge-base-zh"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
+    "proxy_openai": "proxy_openai",
+    "proxy_azure": "proxy_azure",
 }
 
 # Load model config

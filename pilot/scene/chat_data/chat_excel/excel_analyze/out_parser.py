@@ -1,11 +1,7 @@
 import json
-import re
-from abc import ABC, abstractmethod
+import logging
 from typing import Dict, NamedTuple, List
-import pandas as pd
-from pilot.utils import build_logger
 from pilot.out_parser.base import BaseOutputParser, T
-from pilot.configs.model_config import LOGDIR
 from pilot.configs.config import Config
 
 CFG = Config()
@@ -17,7 +13,7 @@ class ExcelAnalyzeResponse(NamedTuple):
     display: str
 
 
-logger = build_logger("chat_excel", LOGDIR + "ChatExcel.log")
+logger = logging.getLogger(__name__)
 
 
 class ChatExcelOutputParser(BaseOutputParser):
@@ -31,15 +27,14 @@ class ChatExcelOutputParser(BaseOutputParser):
             response = json.loads(clean_str)
             for key in sorted(response):
                 if key.strip() == "sql":
-                    sql = response[key]
+                    sql = response[key].replace("\\", " ")
                 if key.strip() == "thoughts":
                     thoughts = response[key]
                 if key.strip() == "display":
                     display = response[key]
             return ExcelAnalyzeResponse(sql, thoughts, display)
         except Exception as e:
-            raise ValueError(f"LLM Response Can't Parser! \n{ model_out_text}" )
-
+            raise ValueError(f"LLM Response Can't Parser! \n")
 
     def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view

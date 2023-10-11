@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Iterator, Callable
 from abc import ABC, abstractmethod
 from datetime import datetime
 from concurrent.futures import Future
+from pilot.component import BaseComponent, ComponentType, SystemApp
 from pilot.model.base import WorkerSupportedModel, ModelOutput, WorkerApplyOutput
 from pilot.model.cluster.worker_base import ModelWorker
 from pilot.model.cluster.base import WorkerStartupRequest, WorkerApplyRequest
@@ -32,7 +33,7 @@ class WorkerManager(ABC):
         """Start worker manager"""
 
     @abstractmethod
-    async def stop(self):
+    async def stop(self, ignore_exception: bool = False):
         """Stop worker manager"""
 
     @abstractmethod
@@ -104,3 +105,14 @@ class WorkerManager(ABC):
         self, worker_type: str, model_name: str
     ) -> List[ParameterDescription]:
         """Get parameter descriptions of model"""
+
+
+class WorkerManagerFactory(BaseComponent, ABC):
+    name = ComponentType.WORKER_MANAGER_FACTORY.value
+
+    def init_app(self, system_app: SystemApp):
+        pass
+
+    @abstractmethod
+    def create(self) -> WorkerManager:
+        """Create worker manager"""

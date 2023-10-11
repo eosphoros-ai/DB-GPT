@@ -5,13 +5,16 @@ from pilot.configs.model_config import get_device
 from pilot.model.loader import _get_model_real_path
 from pilot.model.parameter import (
     EmbeddingModelParameters,
+    BaseEmbeddingModelParameters,
     WorkerType,
+    EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
 )
 from pilot.model.cluster.worker_base import ModelWorker
-from pilot.utils.model_utils import _clear_torch_cache
+from pilot.model.cluster.embedding.loader import EmbeddingLoader
+from pilot.utils.model_utils import _clear_model_cache
 from pilot.utils.parameter_utils import EnvArgumentParser
 
-logger = logging.getLogger("model_worker")
+logger = logging.getLogger(__name__)
 
 
 class EmbeddingsModelWorker(ModelWorker):
@@ -26,6 +29,9 @@ class EmbeddingsModelWorker(ModelWorker):
             ) from exc
         self._embeddings_impl: Embeddings = None
         self._model_params = None
+        self.model_name = None
+        self.model_path = None
+        self._loader = EmbeddingLoader()
 
     def load_worker(self, model_name: str, model_path: str, **kwargs) -> None:
         if model_path.endswith("/"):
@@ -39,11 +45,13 @@ class EmbeddingsModelWorker(ModelWorker):
         return WorkerType.TEXT2VEC
 
     def model_param_class(self) -> Type:
-        return EmbeddingModelParameters
+        return EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG.get(
+            self.model_name, EmbeddingModelParameters
+        )
 
     def parse_parameters(
         self, command_args: List[str] = None
-    ) -> EmbeddingModelParameters:
+    ) -> BaseEmbeddingModelParameters:
         param_cls = self.model_param_class()
         return _parse_embedding_params(
             model_name=self.model_name,
@@ -58,15 +66,10 @@ class EmbeddingsModelWorker(ModelWorker):
         command_args: List[str] = None,
     ) -> None:
         """Start model worker"""
-        from langchain.embeddings import HuggingFaceEmbeddings
-
         if not model_params:
             model_params = self.parse_parameters(command_args)
         self._model_params = model_params
-
-        kwargs = model_params.build_kwargs(model_name=model_params.model_path)
-        logger.info(f"Start HuggingFaceEmbeddings with kwargs: {kwargs}")
-        self._embeddings_impl = HuggingFaceEmbeddings(**kwargs)
+        self._embeddings_impl = self._loader.load(self.model_name, model_params)
 
     def __del__(self):
         self.stop()
@@ -76,7 +79,7 @@ class EmbeddingsModelWorker(ModelWorker):
             return
         del self._embeddings_impl
         self._embeddings_impl = None
-        _clear_torch_cache(self._model_params.device)
+        _clear_model_cache(self._model_params.device)
 
     def generate_stream(self, params: Dict):
         """Generate stream result, chat scene"""
@@ -101,7 +104,7 @@ def _parse_embedding_params(
 ):
     model_args = EnvArgumentParser()
     env_prefix = EnvArgumentParser.get_env_prefix(model_name)
-    model_params: EmbeddingModelParameters = model_args.parse_args_into_dataclass(
+    model_params: BaseEmbeddingModelParameters = model_args.parse_args_into_dataclass(
         param_cls,
         env_prefix=env_prefix,
         command_args=command_args,

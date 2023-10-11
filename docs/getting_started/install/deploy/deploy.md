@@ -49,7 +49,7 @@ For the entire installation process of DB-GPT, we use the miniconda3 virtual env
 python>=3.10
 conda create -n dbgpt_env python=3.10
 conda activate dbgpt_env
-pip install -e .
+pip install -e ".[default]"
 ```
 Before use DB-GPT Knowledge
 ```bash

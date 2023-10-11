@@ -12,7 +12,7 @@ class RdbmsSummary(DBSummary):
     def __init__(self, name, type):
         self.name = name
         self.type = type
-        self.summery = """{{"database_name": "{name}", "type": "{type}", "tables": "{tables}", "qps": "{qps}", "tps": {tps}}}"""
+        self.summary = """{{"database_name": "{name}", "type": "{type}", "tables": "{tables}", "qps": "{qps}", "tps": {tps}}}"""
         self.tables = {}
         self.tables_info = []
         self.vector_tables_info = []
@@ -48,7 +48,7 @@ class RdbmsSummary(DBSummary):
 
         for table_name in tables:
             table_summary = RdbmsTableSummary(self.db, name, table_name, comment_map)
-            # self.tables[table_name] = table_summary.get_summery()
+            # self.tables[table_name] = table_summary.get_summary()
             self.tables[table_name] = table_summary.get_columns()
             self.table_columns_info.append(table_summary.get_columns())
             # self.table_columns_json.append(table_summary.get_summary_json())
@@ -59,18 +59,18 @@ class RdbmsSummary(DBSummary):
                 )
             )
             self.table_columns_json.append(table_profile)
-            # self.tables_info.append(table_summary.get_summery())
+            # self.tables_info.append(table_summary.get_summary())
 
-    def get_summery(self):
+    def get_summary(self):
         if CFG.SUMMARY_CONFIG == "FAST":
             return self.vector_tables_info
         else:
-            return self.summery.format(
+            return self.summary.format(
                 name=self.name, type=self.type, table_info=";".join(self.tables_info)
             )
 
-    def get_db_summery(self):
-        return self.summery.format(
+    def get_db_summary(self):
+        return self.summary.format(
             name=self.name,
             type=self.type,
             tables=";".join(self.vector_tables_info),
@@ -94,8 +94,8 @@ class RdbmsTableSummary(TableSummary):
     def __init__(self, instance, dbname, name, comment_map):
         self.name = name
         self.dbname = dbname
-        self.summery = """database name:{dbname}, table name:{name}, have columns info: {fields}, have indexes info: {indexes}"""
-        self.json_summery_template = """{{"table_name": "{name}", "comment": "{comment}", "columns": "{fields}", "indexes": "{indexes}", "size_in_bytes": {size_in_bytes},  "rows": {rows}}}"""
+        self.summary = """database name:{dbname}, table name:{name}, have columns info: {fields}, have indexes info: {indexes}"""
+        self.json_summary_template = """{{"table_name": "{name}", "comment": "{comment}", "columns": "{fields}", "indexes": "{indexes}", "size_in_bytes": {size_in_bytes},  "rows": {rows}}}"""
         self.fields = []
         self.fields_info = []
         self.indexes = []
@@ -107,19 +107,19 @@ class RdbmsTableSummary(TableSummary):
         for field in fields:
             field_summary = RdbmsFieldsSummary(field)
             self.fields.append(field_summary)
-            self.fields_info.append(field_summary.get_summery())
+            self.fields_info.append(field_summary.get_summary())
             field_names.append(field[0])
 
-        self.column_summery = """{name}({columns_info})""".format(
+        self.column_summary = """{name}({columns_info})""".format(
             name=name, columns_info=",".join(field_names)
         )
 
         for index in indexes:
             index_summary = RdbmsIndexSummary(index)
             self.indexes.append(index_summary)
-            self.indexes_info.append(index_summary.get_summery())
+            self.indexes_info.append(index_summary.get_summary())
 
-        self.json_summery = self.json_summery_template.format(
+        self.json_summary = self.json_summary_template.format(
             name=name,
             comment=comment_map[name],
             fields=self.fields_info,
@@ -128,8 +128,8 @@ class RdbmsTableSummary(TableSummary):
             rows=1000,
         )
 
-    def get_summery(self):
-        return self.summery.format(
+    def get_summary(self):
+        return self.summary.format(
             name=self.name,
             dbname=self.dbname,
             fields=";".join(self.fields_info),
@@ -137,10 +137,10 @@ class RdbmsTableSummary(TableSummary):
         )
 
     def get_columns(self):
-        return self.column_summery
+        return self.column_summary
 
     def get_summary_json(self):
-        return self.json_summery
+        return self.json_summary
 
 
 class RdbmsFieldsSummary(FieldSummary):
@@ -148,14 +148,14 @@ class RdbmsFieldsSummary(FieldSummary):
 
     def __init__(self, field):
         self.name = field[0]
-        # self.summery = """column name:{name}, column data type:{data_type}, is nullable:{is_nullable}, default value is:{default_value}, comment is:{comment} """
-        # self.summery = """{"name": {name}, "type": {data_type}, "is_primary_key": {is_nullable}, "comment":{comment}, "default":{default_value}}"""
+        # self.summary = """column name:{name}, column data type:{data_type}, is nullable:{is_nullable}, default value is:{default_value}, comment is:{comment} """
+        # self.summary = """{"name": {name}, "type": {data_type}, "is_primary_key": {is_nullable}, "comment":{comment}, "default":{default_value}}"""
         self.data_type = field[1]
         self.default_value = field[2]
         self.is_nullable = field[3]
         self.comment = field[4]
 
-    def get_summery(self):
+    def get_summary(self):
         return '{{"name": "{name}", "type": "{data_type}", "is_primary_key": "{is_nullable}", "comment": "{comment}", "default": "{default_value}"}}'.format(
             name=self.name,
             data_type=self.data_type,
@@ -170,11 +170,11 @@ class RdbmsIndexSummary(IndexSummary):
 
     def __init__(self, index):
         self.name = index[0]
-        # self.summery = """index name:{name}, index bind columns:{bind_fields}"""
-        self.summery_template = '{{"name": "{name}", "columns": {bind_fields}}}'
+        # self.summary = """index name:{name}, index bind columns:{bind_fields}"""
+        self.summary_template = '{{"name": "{name}", "columns": {bind_fields}}}'
         self.bind_fields = index[1]
 
-    def get_summery(self):
-        return self.summery_template.format(
+    def get_summary(self):
+        return self.summary_template.format(
             name=self.name, bind_fields=self.bind_fields
         )

@@ -3,7 +3,7 @@
 
 from enum import Enum
 from typing import TypedDict, Optional, Dict, List
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from pilot.utils.parameter_utils import ParameterDescription
 
@@ -13,6 +13,16 @@ class Message(TypedDict):
 
     role: str
     content: str
+
+
+class ModelType:
+    """ "Type of model"""
+
+    HF = "huggingface"
+    LLAMA_CPP = "llama.cpp"
+    PROXY = "proxy"
+    VLLM = "vllm"
+    # TODO, support more model type
 
 
 @dataclass
@@ -84,3 +94,25 @@ class WorkerSupportedModel:
         ]
         worker_data["models"] = models
         return cls(**worker_data)
+
+
+@dataclass
+class FlatSupportedModel(SupportedModel):
+    """For web"""
+
+    host: str
+    port: int
+
+    @staticmethod
+    def from_supports(
+        supports: List[WorkerSupportedModel],
+    ) -> List["FlatSupportedModel"]:
+        results = []
+        for s in supports:
+            host, port, models = s.host, s.port, s.models
+            for m in models:
+                kwargs = asdict(m)
+                kwargs["host"] = host
+                kwargs["port"] = port
+                results.append(FlatSupportedModel(**kwargs))
+        return results

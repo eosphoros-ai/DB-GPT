@@ -6,6 +6,7 @@ DB-GPT provides a management and deployment solution for multiple models. This c
 
 
 Multi LLMs Support, Supports multiple large language models, currently supporting
+  - 🔥 InternLM(7b,20b)
   - 🔥 Baichuan2(7b,13b)
   - 🔥 Vicuna-v1.5(7b,13b)
   - 🔥 llama-2(7b,13b,70b)
@@ -29,3 +30,4 @@ Multi LLMs Support, Supports multiple large language models, currently supportin
 
    ./llama/llama_cpp.md
    ./quantization/quantization.md
+   ./vllm/vllm.md

@@ -6,12 +6,11 @@ from fastapi import (
 )
 
 from typing import List
+import logging
 
 from pilot.configs.config import Config
 
 from pilot.scene.chat_factory import ChatFactory
-from pilot.configs.model_config import LOGDIR
-from pilot.utils import build_logger
 
 from pilot.openapi.api_view_model import (
     Result,
@@ -34,7 +33,8 @@ from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()
-logger = build_logger("api_editor_v1", LOGDIR + "api_editor_v1.log")
+
+logger = logging.getLogger(__name__)
 
 
 @router.get("/v1/editor/db/tables", response_model=Result[DbTable])
@@ -122,6 +122,8 @@ async def editor_sql_run(run_param: dict = Body()):
     try:
         start_time = time.time() * 1000
         colunms, sql_result = conn.query_ex(sql)
+        # 转换结果类型
+        sql_result = [tuple(x) for x in sql_result]
         # 计算执行耗时
         end_time = time.time() * 1000
         sql_run_data: SqlRunData = SqlRunData(

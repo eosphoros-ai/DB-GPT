@@ -1,11 +1,13 @@
 from __future__ import annotations
-
+import logging
+import os
 from typing import Any, Iterable, List, Optional, Tuple
 
 from pymilvus import Collection, DataType, connections, utility
 
-from pilot.logs import logger
 from pilot.vector_store.base import VectorStoreBase
+
+logger = logging.getLogger(__name__)
 
 
 class MilvusStore(VectorStoreBase):
@@ -20,12 +22,12 @@ class MilvusStore(VectorStoreBase):
         # self.configure(cfg)
 
         connect_kwargs = {}
-        self.uri = ctx.get("milvus_url", None)
-        self.port = ctx.get("milvus_port", None)
-        self.username = ctx.get("milvus_username", None)
-        self.password = ctx.get("milvus_password", None)
+        self.uri = ctx.get("MILVUS_URL", os.getenv("MILVUS_URL"))
+        self.port = ctx.get("MILVUS_PORT", os.getenv("MILVUS_PORT"))
+        self.username = ctx.get("MILVUS_USERNAME", os.getenv("MILVUS_USERNAME"))
+        self.password = ctx.get("MILVUS_PASSWORD", os.getenv("MILVUS_PASSWORD"))
+        self.secure = ctx.get("MILVUS_SECURE", os.getenv("MILVUS_SECURE"))
         self.collection_name = ctx.get("vector_store_name", None)
-        self.secure = ctx.get("secure", None)
         self.embedding = ctx.get("embeddings", None)
         self.fields = []
         self.alias = "default"

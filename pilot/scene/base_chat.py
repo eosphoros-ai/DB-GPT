@@ -2,19 +2,20 @@ import datetime
 import traceback
 import warnings
 import asyncio
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, List, Dict
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import LOGDIR
+from pilot.component import ComponentType
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 from pilot.scene.message import OnceConversation
-from pilot.utils import build_logger, get_or_create_event_loop
+from pilot.utils import get_or_create_event_loop
 from pydantic import Extra
 from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 
-logger = build_logger("BaseChat", LOGDIR + "BaseChat.log")
+logger = logging.getLogger(__name__)
 headers = {"User-Agent": "dbgpt Client"}
 CFG = Config()
 
@@ -150,11 +151,13 @@ class BaseChat(ABC):
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
         try:
-            from pilot.model.cluster import worker_manager
+            from pilot.model.cluster import WorkerManagerFactory
 
-            worker_generate = worker_manager.generate_stream(payload)
-            async for output in worker_generate:
-                ## Plug-in research in result generation
+            worker_manager = CFG.SYSTEM_APP.get_component(
+                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
+            async for output in worker_manager.generate_stream(payload):
+                ### Plug-in research in result generation
                 msg = self.prompt_template.output_parser.parse_model_stream_resp_ex(
                     output, self.skip_echo_len
                 )
@@ -169,14 +172,19 @@ class BaseChat(ABC):
             self.current_message.add_view_message(
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
-        self.memory.append(self.current_message)
+            ### store current conversation
+            self.memory.append(self.current_message)
 
     async def nostream_call(self):
         payload = self.__call_base()
         logger.info(f"Request: \n{payload}")
         ai_response_text = ""
         try:
-            from pilot.model.cluster import worker_manager
+            from pilot.model.cluster import WorkerManagerFactory
+
+            worker_manager = CFG.SYSTEM_APP.get_component(
+                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
 
             model_output = await worker_manager.generate(payload)
 

@@ -1,13 +1,14 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Type, TYPE_CHECKING
 
-from pilot.componet import BaseComponet
+from pilot.component import BaseComponent
 
 if TYPE_CHECKING:
     from langchain.embeddings.base import Embeddings
 
 
-class EmbeddingFactory(BaseComponet, ABC):
+class EmbeddingFactory(BaseComponent, ABC):
     name = "embedding_factory"
 
     @abstractmethod

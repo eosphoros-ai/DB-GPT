@@ -1,16 +1,19 @@
 import asyncio
 import itertools
 import json
+import logging
 import os
 import random
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
-from typing import Awaitable, Callable, Dict, Iterator, List
+from typing import Awaitable, Callable, Dict, Iterator, List, Optional
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import StreamingResponse
-from pilot.configs.model_config import LOGDIR
+
+from pilot.component import SystemApp
 from pilot.model.base import (
     ModelInstance,
     ModelOutput,
@@ -18,21 +21,24 @@ from pilot.model.base import (
     WorkerApplyType,
     WorkerSupportedModel,
 )
+from pilot.model.cluster.base import *
+from pilot.model.cluster.manager_base import (
+    WorkerManager,
+    WorkerManagerFactory,
+    WorkerRunData,
+)
 from pilot.model.cluster.registry import ModelRegistry
+from pilot.model.cluster.worker_base import ModelWorker
 from pilot.model.llm_utils import list_supported_models
 from pilot.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
-from pilot.model.cluster.worker_base import ModelWorker
-from pilot.model.cluster.manager_base import WorkerManager, WorkerRunData
-from pilot.model.cluster.base import *
-from pilot.utils import build_logger
 from pilot.utils.parameter_utils import (
     EnvArgumentParser,
     ParameterDescription,
     _dict_to_command_args,
 )
+from pilot.utils.utils import setup_logging
 
-logger = build_logger("model_worker", LOGDIR + "/model_worker.log")
-
+logger = logging.getLogger(__name__)
 
 RegisterFunc = Callable[[WorkerRunData], Awaitable[None]]
 DeregisterFunc = Callable[[WorkerRunData], Awaitable[None]]
@@ -109,14 +115,30 @@ class LocalWorkerManager(WorkerManager):
         for listener in self.start_listeners:
             listener(self)
 
-    async def stop(self):
+    async def stop(self, ignore_exception: bool = False):
         if not self.run_data.stop_event.is_set():
             logger.info("Stop all workers")
             self.run_data.stop_event.clear()
             stop_tasks = []
-            stop_tasks.append(self._stop_all_worker(apply_req=None))
+            stop_tasks.append(
+                self._stop_all_worker(apply_req=None, ignore_exception=ignore_exception)
+            )
             if self.deregister_func:
-                stop_tasks.append(self.deregister_func(self.run_data))
+                # If ignore_exception is True, use exception handling to ignore any exceptions raised from self.deregister_func
+                if ignore_exception:
+
+                    async def safe_deregister_func(run_data):
+                        try:
+                            await self.deregister_func(run_data)
+                        except Exception as e:
+                            logger.warning(
+                                f"Stop worker, ignored exception from deregister_func: {e}"
+                            )
+
+                    stop_tasks.append(safe_deregister_func(self.run_data))
+                else:
+                    stop_tasks.append(self.deregister_func(self.run_data))
+
             await asyncio.gather(*stop_tasks)
 
     def after_start(self, listener: Callable[["WorkerManager"], None]):
@@ -129,8 +151,6 @@ class LocalWorkerManager(WorkerManager):
         command_args: List[str] = None,
     ) -> bool:
         if not command_args:
-            import sys
-
             command_args = sys.argv[1:]
         worker.load_worker(**asdict(worker_params))
 
@@ -420,7 +440,7 @@ class LocalWorkerManager(WorkerManager):
         )
 
     async def _stop_all_worker(
-        self, apply_req: WorkerApplyRequest
+        self, apply_req: WorkerApplyRequest, ignore_exception: bool = False
     ) -> WorkerApplyOutput:
         start_time = time.time()
 
@@ -437,7 +457,19 @@ class LocalWorkerManager(WorkerManager):
                 and self.register_func
                 and self.deregister_func
             ):
-                await self.deregister_func(worker_run_data)
+                _deregister_func = self.deregister_func
+                if ignore_exception:
+
+                    async def safe_deregister_func(run_data):
+                        try:
+                            await self.deregister_func(run_data)
+                        except Exception as e:
+                            logger.warning(
+                                f"Stop worker, ignored exception from deregister_func: {e}"
+                            )
+
+                    _deregister_func = safe_deregister_func
+                await _deregister_func(worker_run_data)
 
         await self._apply_worker(apply_req, _stop_worker)
         timecost = time.time() - start_time
@@ -483,8 +515,8 @@ class WorkerManagerAdapter(WorkerManager):
     async def start(self):
         return await self.worker_manager.start()
 
-    async def stop(self):
-        return await self.worker_manager.stop()
+    async def stop(self, ignore_exception: bool = False):
+        return await self.worker_manager.stop(ignore_exception=ignore_exception)
 
     def after_start(self, listener: Callable[["WorkerManager"], None]):
         if listener is not None:
@@ -547,6 +579,17 @@ class WorkerManagerAdapter(WorkerManager):
         self, worker_type: str, model_name: str
     ) -> List[ParameterDescription]:
         return await self.worker_manager.parameter_descriptions(worker_type, model_name)
+
+
+class _DefaultWorkerManagerFactory(WorkerManagerFactory):
+    def __init__(
+        self, system_app: SystemApp | None = None, worker_manager: WorkerManager = None
+    ):
+        super().__init__(system_app)
+        self.worker_manager = worker_manager
+
+    def create(self) -> WorkerManager:
+        return self.worker_manager
 
 
 worker_manager = WorkerManagerAdapter()
@@ -616,7 +659,9 @@ async def api_model_shutdown(request: WorkerStartupRequest):
     return await worker_manager.model_shutdown(request)
 
 
-def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
+def _setup_fastapi(
+    worker_params: ModelWorkerParameters, app=None, ignore_exception: bool = False
+):
     if not app:
         app = FastAPI()
     if worker_params.standalone:
@@ -626,6 +671,10 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
         )
 
         if not worker_params.controller_addr:
+            # if we have http_proxy or https_proxy in env, the server can not start
+            # so set it to empty here
+            os.environ["http_proxy"] = ""
+            os.environ["https_proxy"] = ""
             worker_params.controller_addr = f"http://127.0.0.1:{worker_params.port}"
         logger.info(
             f"Run WorkerManager with standalone mode, controller_addr: {worker_params.controller_addr}"
@@ -635,12 +684,19 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
 
     @app.on_event("startup")
     async def startup_event():
-        # TODO catch exception and shutdown if worker manager start failed
-        asyncio.create_task(worker_manager.start())
+        async def start_worker_manager():
+            try:
+                await worker_manager.start()
+            except Exception as e:
+                logger.error(f"Error starting worker manager: {e}")
+                sys.exit(1)
+
+        # It cannot be blocked here because the startup of worker_manager depends on the fastapi app (registered to the controller)
+        asyncio.create_task(start_worker_manager())
 
     @app.on_event("shutdown")
     async def startup_event():
-        await worker_manager.stop()
+        await worker_manager.stop(ignore_exception=ignore_exception)
 
     return app
 
@@ -781,6 +837,7 @@ def initialize_worker_manager_in_client(
     embedding_model_name: str = None,
     embedding_model_path: str = None,
     start_listener: Callable[["WorkerManager"], None] = None,
+    system_app: SystemApp = None,
 ):
     """Initialize WorkerManager in client.
     If run_locally is True:
@@ -810,7 +867,7 @@ def initialize_worker_manager_in_client(
         worker_params.register = True
         worker_params.port = local_port
         logger.info(f"Worker params: {worker_params}")
-        _setup_fastapi(worker_params, app)
+        _setup_fastapi(worker_params, app, ignore_exception=True)
         _start_local_worker(worker_manager, worker_params)
         worker_manager.after_start(start_listener)
         _start_local_embedding_worker(
@@ -839,6 +896,8 @@ def initialize_worker_manager_in_client(
     if include_router and app:
         # mount WorkerManager router
         app.include_router(router, prefix="/api")
+    if system_app:
+        system_app.register(_DefaultWorkerManagerFactory, worker_manager)
 
 
 def run_worker_manager(
@@ -855,6 +914,12 @@ def run_worker_manager(
 
     worker_params: ModelWorkerParameters = _parse_worker_params(
         model_name=model_name, model_path=model_path, standalone=standalone, port=port
+    )
+
+    setup_logging(
+        "pilot",
+        logging_level=worker_params.log_level,
+        logger_filename="dbgpt_model_worker_manager.log",
     )
 
     embedded_mod = True

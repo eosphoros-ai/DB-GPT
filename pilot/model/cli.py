@@ -404,7 +404,7 @@ def stop_model_controller(port: int):
 
 
 def _model_dynamic_factory() -> Callable[[None], List[Type]]:
-    from pilot.model.adapter import _dynamic_model_parser
+    from pilot.model.model_adapter import _dynamic_model_parser
 
     param_class = _dynamic_model_parser()
     fix_class = [ModelWorkerParameters]

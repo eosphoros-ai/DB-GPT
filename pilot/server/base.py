@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import PLUGINS_DIR
-from pilot.componet import SystemApp
+from pilot.component import SystemApp
 from pilot.utils.parameter_utils import BaseParameters
 from pilot.base_modules.meta_data.meta_data import ddl_init_and_upgrade
 
@@ -21,7 +21,7 @@ def signal_handler(sig, frame):
     os._exit(0)
 
 
-def async_db_summery(system_app: SystemApp):
+def async_db_summary(system_app: SystemApp):
     from pilot.summary.db_summary_client import DBSummaryClient
 
     client = DBSummaryClient(system_app=system_app)
@@ -74,7 +74,6 @@ def server_init(args, system_app: SystemApp):
 
 def _create_model_start_listener(system_app: SystemApp):
     from pilot.connections.manages.connection_manager import ConnectManager
-    from pilot.model.cluster import worker_manager
 
     cfg = Config()
 
@@ -83,7 +82,7 @@ def _create_model_start_listener(system_app: SystemApp):
         print("begin run _add_app_startup_event")
         conn_manage = ConnectManager(system_app)
         cfg.LOCAL_DB_MANAGE = conn_manage
-        async_db_summery(system_app)
+        async_db_summary(system_app)
 
     return startup_event
 
@@ -112,7 +111,7 @@ class WebWerverParameters(BaseParameters):
         },
     )
     log_level: Optional[str] = field(
-        default="INFO",
+        default=None,
         metadata={
             "help": "Logging level",
             "valid_values": [

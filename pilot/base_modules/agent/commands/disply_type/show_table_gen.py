@@ -3,11 +3,8 @@ from pandas import DataFrame
 from pilot.base_modules.agent.commands.command_mange import command
 from pilot.configs.config import Config
 
-from pilot.configs.model_config import LOGDIR
-from pilot.utils import build_logger
 
 CFG = Config()
-logger = build_logger("show_table_gen", LOGDIR + "show_table_gen.log")
 
 
 @command(

@@ -19,7 +19,7 @@ change-template: '- $TITLE (#$NUMBER)'
 change-title-escapes: '\<*_&'
 replacers:
   # Remove conventional commits from titles
-  - search: '/- (build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)(\(.*\))?(\!)?\: /g'
+  - search: '/- (build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)(\(.*\))?(\!)?\:\s?/g'
     replace: '- '
 
 autolabeler:
@@ -76,6 +76,16 @@ autolabeler:
       # feat(connection): Support xxxx
       # fix(connection): Fix xxx
       - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*connection.*\)/'
+  - label: core
+    title:
+      # feat(core): Support xxxx
+      # fix(core): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*core.*\)/'
+  - label: web
+    title:
+      # feat(web): Support xxxx
+      # fix(web): Fix xxx
+      - '/^(build|chore|ci|depr|docs|feat|fix|perf|refactor|release|test)\(.*web.*\)/'
   - label: build
     title:
       - '/^build/'

@@ -1,9 +1,12 @@
 import os
+import logging
 from typing import Any
 
 from chromadb.config import Settings
-from pilot.logs import logger
+from chromadb import PersistentClient
 from pilot.vector_store.base import VectorStoreBase
+
+logger = logging.getLogger(__name__)
 
 
 class ChromaStore(VectorStoreBase):
@@ -13,20 +16,27 @@ class ChromaStore(VectorStoreBase):
         from langchain.vectorstores import Chroma
 
         self.ctx = ctx
-        self.embeddings = ctx.get("embeddings", None)
-        self.persist_dir = os.path.join(
-            ctx["chroma_persist_path"], ctx["vector_store_name"] + ".vectordb"
+        chroma_path = ctx.get(
+            "CHROMA_PERSIST_PATH",
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
         )
+        self.persist_dir = os.path.join(
+            chroma_path, ctx["vector_store_name"] + ".vectordb"
+        )
+        self.embeddings = ctx.get("embeddings", None)
         chroma_settings = Settings(
-            chroma_db_impl="duckdb+parquet",
+            # chroma_db_impl="duckdb+parquet", => deprecated configuration of Chroma
             persist_directory=self.persist_dir,
             anonymized_telemetry=False,
         )
+        client = PersistentClient(path=self.persist_dir, settings=chroma_settings)
+
         collection_metadata = {"hnsw:space": "cosine"}
         self.vector_store_client = Chroma(
             persist_directory=self.persist_dir,
             embedding_function=self.embeddings,
-            client_settings=chroma_settings,
+            # client_settings=chroma_settings,
+            client=client,
             collection_metadata=collection_metadata,
         )
 
@@ -35,9 +45,13 @@ class ChromaStore(VectorStoreBase):
         return self.vector_store_client.similarity_search(text, topk)
 
     def vector_name_exists(self):
-        return (
-            os.path.exists(self.persist_dir) and len(os.listdir(self.persist_dir)) > 0
-        )
+        logger.info(f"Check persist_dir: {self.persist_dir}")
+        if not os.path.exists(self.persist_dir):
+            return False
+        files = os.listdir(self.persist_dir)
+        # Skip default file: chroma.sqlite3
+        files = list(filter(lambda f: f != "chroma.sqlite3", files))
+        return len(files) > 0
 
     def load_document(self, documents):
         logger.info("ChromaStore load document")

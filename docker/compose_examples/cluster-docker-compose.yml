@@ -21,6 +21,7 @@ services:
     restart: unless-stopped
     networks:
       - dbgptnet
+    ipc: host
     deploy:
       resources:
         reservations:
@@ -49,7 +50,7 @@ services:
               capabilities: [gpu]
   webserver:
     image: eosphorosai/dbgpt:latest
-    command: dbgpt start webserver --light
+    command: dbgpt start webserver --light --remote_embedding
     environment:
       - DBGPT_LOG_LEVEL=DEBUG
       - LOCAL_DB_PATH=data/default_sqlite.db

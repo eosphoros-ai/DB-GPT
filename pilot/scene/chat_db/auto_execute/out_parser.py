@@ -1,8 +1,7 @@
 import json
 from typing import Dict, NamedTuple
-from pilot.utils import build_logger
+import logging
 from pilot.out_parser.base import BaseOutputParser, T
-from pilot.configs.model_config import LOGDIR
 from pilot.configs.config import Config
 from pilot.scene.chat_db.data_loader import DbDataLoader
 
@@ -14,7 +13,7 @@ class SqlAction(NamedTuple):
     thoughts: Dict
 
 
-logger = build_logger("webserver", LOGDIR + "DbChatOutputParser.log")
+logger = logging.getLogger(__name__)
 
 
 class DbChatOutputParser(BaseOutputParser):

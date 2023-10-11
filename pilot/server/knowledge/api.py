@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+import logging
 
 from fastapi import APIRouter, File, UploadFile, Form
 
@@ -26,6 +27,8 @@ from pilot.server.knowledge.request.request import (
 )
 
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
+
+logger = logging.getLogger(__name__)
 
 CFG = Config()
 router = APIRouter()
@@ -159,10 +162,10 @@ async def document_upload(
 
 @router.post("/knowledge/{space_name}/document/sync")
 def document_sync(space_name: str, request: DocumentSyncRequest):
-    print(f"Received params: {space_name}, {request}")
+    logger.info(f"Received params: {space_name}, {request}")
     try:
         knowledge_space_service.sync_knowledge_document(
-            space_name=space_name, doc_ids=request.doc_ids
+            space_name=space_name, sync_request=request
         )
         return Result.succ([])
     except Exception as e:
@@ -181,7 +184,7 @@ def document_list(space_name: str, query_request: ChunkQueryRequest):
 @router.post("/knowledge/{vector_name}/query")
 def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
     print(f"Received params: {space_name}, {query_request}")
-    embedding_factory = CFG.SYSTEM_APP.get_componet(
+    embedding_factory = CFG.SYSTEM_APP.get_component(
         "embedding_factory", EmbeddingFactory
     )
     client = EmbeddingEngine(

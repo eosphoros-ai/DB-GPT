@@ -14,6 +14,14 @@ def excel_colunm_format(old_name: str) -> str:
     return new_column
 
 
+def add_quotes_ex(sql: str, column_names):
+    sql = sql.replace("`", '"')
+    for column_name in column_names:
+        if sql.find(column_name) != -1 and sql.find(f'"{column_name}"') == -1:
+            sql = sql.replace(column_name, f'"{column_name}"')
+    return sql
+
+
 def add_quotes(sql, column_names=[]):
     sql = sql.replace("`", "")
     parsed = sqlparse.parse(sql)
@@ -28,12 +36,22 @@ def deep_quotes(token, column_names=[]):
         for token_child in token.tokens:
             deep_quotes(token_child, column_names)
     else:
-        if token.ttype == sqlparse.tokens.Name:
-            if len(column_names) > 0:
-                if token.value in column_names:
-                    token.value = f'"{token.value.replace("`", "")}"'
-            else:
-                token.value = f'"{token.value.replace("`", "")}"'
+        if token.value in column_names:
+            token.value = f'"{token.value.replace("`", "")}"'
+        elif token.ttype == sqlparse.tokens.Name:
+            token.value = f'"{token.value.replace("`", "")}"'
+
+
+if __name__ == "__main__":
+    sql = "SELECT `地区`, (`2021年人口` - `2001年人口`) / `2001年人口` * 100 AS `Population_Growth_Rate` FROM Generated_by_ChatExcel_table1 (2)"
+    if f'"Generated_by_ChatExcel_table1 (2)"' not in sql:
+        sql = sql.replace(
+            "Generated_by_ChatExcel_table1 (2)", f'"Generated_by_ChatExcel_table1 (2)"'
+        )
+    sql = add_quotes_ex(
+        sql, ["地区", "地区代码", "2001年人口", "2006年人口", "2011年人口", "2016年人口", "2021年人口"]
+    )
+    print(f"excute sql:{sql}")
 
 
 def is_chinese(string):
@@ -81,14 +99,14 @@ class ExcelReader:
         # connect DuckDB
         self.db = duckdb.connect(database=":memory:", read_only=False)
 
-        self.table_name = file_name_without_extension
+        self.table_name = "excel_data"
         # write data in duckdb
         self.db.register(self.table_name, self.df)
 
     def run(self, sql):
         if f'"{self.table_name}"' not in sql:
             sql = sql.replace(self.table_name, f'"{self.table_name}"')
-        sql = add_quotes(sql, self.columns_map.values())
+        sql = add_quotes_ex(sql, self.columns_map.values())
         print(f"excute sql:{sql}")
         results = self.db.execute(sql)
         colunms = []

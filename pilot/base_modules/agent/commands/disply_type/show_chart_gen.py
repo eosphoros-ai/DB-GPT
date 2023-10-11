@@ -13,11 +13,9 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.font_manager import FontManager
 
-from pilot.configs.model_config import LOGDIR
-from pilot.utils import build_logger
 
 CFG = Config()
-logger = build_logger("show_chart_gen", LOGDIR + "show_chart_gen.log")
+
 static_message_img_path = os.path.join(os.getcwd(), "message/img")
 
 

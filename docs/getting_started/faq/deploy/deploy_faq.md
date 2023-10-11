@@ -81,3 +81,15 @@ Download and install `Microsoft C++ Build Tools` from [visual-cpp-build-tools](h
 
 1. Install [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit-archive)
 2. Reinstall PyTorch [start-locally](https://pytorch.org/get-started/locally/#start-locally) with CUDA support.
+
+##### Q7: ImportError: cannot import name 'PersistentClient' from 'chromadb'.
+
+```commandline
+pip install chromadb==0.4.10
+```
+
+##### Q8: pydantic.error_wrappers.ValidationError:1 validation error for HuggingFaceEmbeddings.model_kwargs extra not permitted
+
+```commandline
+pip install langchain>=0.0.286
+```
