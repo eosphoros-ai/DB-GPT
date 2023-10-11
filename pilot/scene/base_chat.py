@@ -140,7 +140,7 @@ class BaseChat(ABC):
         payload = self.__call_base()
 
         self.skip_echo_len = len(payload.get("prompt").replace("</s>", " ")) + 11
-        logger.info(f"Requert: \n{payload}")
+        logger.info(f"Request: \n{payload}")
         ai_response_text = ""
         try:
             from pilot.model.cluster import WorkerManagerFactory
