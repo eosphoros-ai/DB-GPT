@@ -4,7 +4,6 @@ import base64
 import hmac
 import hashlib
 import websockets 
-import asyncio
 from datetime import datetime
 from typing import List
 from time import mktime
@@ -73,13 +72,12 @@ def spark_generate_stream(
         },
         "payload": {
             "message": {
-                "text": last_user_input.get("") 
+                "text": last_user_input.get("content") 
             }
         }
     }
 
-    # TODO
-     
+    async_call(request_url, data)
 
 async def async_call(request_url, data):
     async with websockets.connect(request_url) as ws:
