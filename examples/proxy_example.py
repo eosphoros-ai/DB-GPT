@@ -3,6 +3,7 @@
 
 import dashscope
 import requests
+import hashlib
 from http import HTTPStatus
 from dashscope import Generation
 
@@ -44,6 +45,17 @@ def build_access_token(api_key: str, secret_key: str) -> str:
     if res.status_code == 200:
         return res.json().get("access_token")
 
-  
+
+def _calculate_md5(text: str) -> str:
+    
+    md5 = hashlib.md5()
+    md5.update(text.encode("utf-8"))
+    encrypted = md5.hexdigest()
+    return encrypted
+
+def baichuan_call():
+    url = "https://api.baichuan-ai.com/v1/stream/chat"
+    
+ 
 if __name__ == '__main__':
     call_with_messages()
