@@ -251,7 +251,7 @@ class ApiCall:
                 now_time = datetime.now().timestamp() * 1000
                 cost = (now_time - self.start_time) / 1000
                 cost_str = "{:.2f}".format(cost)
-                all_context = all_context.replace(api_context, f'\nWaiting... * {cost_str}S * \n')
+                all_context = all_context.replace(api_context, f'\n<span style=\"color:green\">Waiting...{cost_str}S</span>\n')
 
         return all_context
 
@@ -343,3 +343,4 @@ class ApiCall:
                             value.err_msg = str(e)
                         value.end_time = datetime.now().timestamp() * 1000
         return self.api_view_context(llm_text, True)
+
