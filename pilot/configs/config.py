@@ -204,6 +204,9 @@ class Config(metaclass=Singleton):
 
         self.SYSTEM_APP: Optional["SystemApp"] = None
 
+        ### Temporary configuration
+        self.USE_FASTCHAT: bool = os.getenv("USE_FASTCHAT", "True").lower() == "true"
+
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
         self.debug_mode = value

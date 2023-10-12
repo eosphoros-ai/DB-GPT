@@ -15,6 +15,16 @@ class Message(TypedDict):
     content: str
 
 
+class ModelType:
+    """ "Type of model"""
+
+    HF = "huggingface"
+    LLAMA_CPP = "llama.cpp"
+    PROXY = "proxy"
+    VLLM = "vllm"
+    # TODO, support more model type
+
+
 @dataclass
 class ModelInstance:
     """Model instance info"""

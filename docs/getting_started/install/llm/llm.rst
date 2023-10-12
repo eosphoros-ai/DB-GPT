@@ -30,3 +30,4 @@ Multi LLMs Support, Supports multiple large language models, currently supportin
 
    ./llama/llama_cpp.md
    ./quantization/quantization.md
+   ./vllm/vllm.md

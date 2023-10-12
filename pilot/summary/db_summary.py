@@ -1,18 +1,18 @@
 class DBSummary:
     def __init__(self, name):
         self.name = name
-        self.summery = None
+        self.summary = None
         self.tables = []
         self.metadata = str
 
-    def get_summery(self):
-        return self.summery
+    def get_summary(self):
+        return self.summary
 
 
 class TableSummary:
     def __init__(self, name):
         self.name = name
-        self.summery = None
+        self.summary = None
         self.fields = []
         self.indexes = []
 
@@ -20,12 +20,12 @@ class TableSummary:
 class FieldSummary:
     def __init__(self, name):
         self.name = name
-        self.summery = None
+        self.summary = None
         self.data_type = None
 
 
 class IndexSummary:
     def __init__(self, name):
         self.name = name
-        self.summery = None
+        self.summary = None
         self.bind_fields = []
