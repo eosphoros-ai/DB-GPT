@@ -34,7 +34,7 @@ def tongyi_generate_stream(
         elif message.role == ModelMessageRoleType.SYSTEM:
             history.append({"role": "system", "content": message.content})
         elif message.role == ModelMessageRoleType.AI:
-            history.append({"role": "assistant", "content": message.content})
+            history.append({"role": "system", "content": message.content})
         else:
             pass
             
@@ -49,7 +49,7 @@ def tongyi_generate_stream(
         history.remove(last_user_input)
         history.append(last_user_input)
     
-    print("history", history)  
+    print(history)  
     gen = Generation()
     res = gen.call(
         proxyllm_backend,

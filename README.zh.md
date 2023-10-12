@@ -117,22 +117,75 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 - 插件模型
 - 知识库统一向量存储/索引
   - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
-- 多模型支持
+- 多模型支持与管理
   - 支持多种大语言模型, 当前已支持如下模型: 
-  - 🔥 InternLM(7b,20b)
-  - 🔥 Baichuan2(7b,13b)
-  - 🔥 Vicuna-v1.5(7b,13b)
-  - 🔥 llama-2(7b,13b,70b)
-  - WizardLM-v1.2(13b)
-  - Vicuna (7b,13b)
-  - ChatGLM-6b (int4,int8)
-  - ChatGLM2-6b (int4,int8)
-  - guanaco(7b,13b,33b)
-  - Gorilla(7b,13b)
-  - baichuan(7b,13b)
+  - [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
+  - [baichuan2-7b/baichuan2-13b](https://huggingface.co/baichuan-inc)
+  - [internlm/internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
+  - [Qwen/Qwen-7B-Chat/Qwen-14B-Chat](https://huggingface.co/Qwen/)
+  - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
+  - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
+  - [camel-ai/CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
+  - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
+  - [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
+  - [h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b)
+  - [lcw99/polyglot-ko-12.8b-chang-instruct-chat](https://huggingface.co/lcw99/polyglot-ko-12.8b-chang-instruct-chat)
+  - [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
+  - [mosaicml/mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
+  - [Neutralzz/BiLLa-7B-SFT](https://huggingface.co/Neutralzz/BiLLa-7B-SFT)
+  - [nomic-ai/gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
+  - [NousResearch/Nous-Hermes-13b](https://huggingface.co/NousResearch/Nous-Hermes-13b)
+  - [openaccess-ai-collective/manticore-13b-chat-pyg](https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg)
+  - [OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5](https://huggingface.co/OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5)
+  - [project-baize/baize-v2-7b](https://huggingface.co/project-baize/baize-v2-7b)
+  - [Salesforce/codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
+  - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
+  - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
+  - [THUDM/chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
+  - [tiiuae/falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
+  - [timdettmers/guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
+  - [togethercomputer/RedPajama-INCITE-7B-Chat](https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat)
+  - [WizardLM/WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
+  - [WizardLM/WizardCoder-15B-V1.0](https://huggingface.co/WizardLM/WizardCoder-15B-V1.0)
+  - [baichuan-inc/baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
+  - [HuggingFaceH4/starchat-beta](https://huggingface.co/HuggingFaceH4/starchat-beta)
+  - [FlagAlpha/Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
+  - [BAAI/AquilaChat-7B](https://huggingface.co/BAAI/AquilaChat-7B)
+  - [all models of OpenOrca](https://huggingface.co/Open-Orca)
+  - [Spicyboros](https://huggingface.co/jondurbin/spicyboros-7b-2.2?not-for-all-audiences=true) + [airoboros 2.2](https://huggingface.co/jondurbin/airoboros-l2-13b-2.2)
+  - [VMware&#39;s OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
+
+- 支持在线代理模型 
+  - [x] ChatGPT
+  - [x] Tongyi
+  - [x] Wenxin
+  - [x] ChatGLM
+
+
+- 支持数据源
+| DataSource                                                                      | support     | Notes                                       |
+| ------------------------------------------------------------------------------  | ----------- | ------------------------------------------- |
+| [MySQL](https://www.mysql.com/)                                                 | Yes         |                                             |
+| [PostgresSQL](https://www.postgresql.org/)                                      | Yes         |                                             |
+| [Spark](https://github.com/apache/spark)                                        | Yes         |                                             |
+| [DuckDB](https://github.com/duckdb/duckdb)                                      | Yes         |                                             |
+| [Sqlite](https://github.com/sqlite/sqlite)                                      | Yes         |                                             |
+| [MSSQL](https://github.com/microsoft/mssql-jdbc)                                | Yes         |                                             |
+| [ClickHouse](https://github.com/ClickHouse/ClickHouse)                          | Yes         |                                             |
+| [Oracle](https://github.com/oracle)                                             | No          |           TODO                              |
+| [Redis](https://github.com/redis/redis)                                         | No          |           TODO                              |
+| [MongoDB](https://github.com/mongodb/mongo)                                     | No          |           TODO                              |
+| [HBase](https://github.com/apache/hbase)                                        | No          |           TODO                              |
+| [Doris](https://github.com/apache/doris)                                        | No          |           TODO                              |
+| [DB2](https://github.com/IBM/Db2)                                               | No          |           TODO                              |
+| [Couchbase](https://github.com/couchbase)                                       | No          |           TODO                              |
+| [Elasticsearch](https://github.com/elastic/elasticsearch)                       | No          |           TODO                              |
+| [OceanBase](https://github.com/OceanBase)                                       | No          |           TODO                              |
+| [TiDB](https://github.com/pingcap/tidb)                                         | No          |           TODO                              |
+| [StarRocks](https://github.com/StarRocks/starrocks)                             | No          |           TODO                              |
 
 ## 架构方案
-DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境，并提供 vicuna 作为基础的大语言模型。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。
+DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。
 
 整个DB-GPT的架构，如下图所示
 
@@ -141,16 +194,16 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 </p>
 
 核心能力主要有以下几个部分。 
-1. 知识库能力：支持私域知识库问答能力   
-2. 大模型管理能力：基于FastChat提供一个大模型的运营环境。
-3. 统一的数据向量化存储与索引：提供一种统一的方式来存储和索引各种数据类型。   
-4. 连接模块：用于连接不同的模块和数据源，实现数据的流转和交互。 
-5. Agent与插件：提供Agent和插件机制，使得用户可以自定义并增强系统的行为。  
-6. Prompt自动生成与优化：自动化生成高质量的Prompt，并进行优化，提高系统的响应效率。  
-7. 多端产品界面：支持多种不同的客户端产品，例如Web、移动应用和桌面应用等。
+1. 多模型：支持多LLM，如LLaMA/LLaMA2、CodeLLaMA、ChatGLM、QWen、Vicuna以及代理模型ChatGPT、Baichuan、tongyi、wenxin等
+2. 私域知识库问答: 可以根据本地文档（如pdf、word、excel等数据）进行高质量的智能问答。
+3. 统一数据向量存储和索引: 将数据嵌入为向量并存储在向量数据库中，提供内容相似性搜索。  
+4. 多数据源: 用于连接不同的模块和数据源，实现数据的流动和交互。
+5. Agent与插件: 提供Agent和插件机制，使得用户可以自定义并增强系统的行为。  
+6. 隐私和安全: 您可以放心，没有数据泄露的风险，您的数据100%私密和安全。
+7. Text2SQL: 我们通过在大型语言模型监督微调（SFT）来增强文本到SQL的性能
 
 ### 子模块
-- [DB-GPT-Hub](https://github.com/csunny/DB-GPT-Hub) 使用 LLM 进行文本到 SQL 解析
+- [DB-GPT-Hub](https://github.com/csunny/DB-GPT-Hub) 通过微调来持续提升Text2SQL效果 
 - [DB-GPT-Plugins](https://github.com/csunny/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
 - [DB-GPT-Web](https://github.com/csunny/DB-GPT-Web)  多端交互前端界面
 
@@ -193,6 +246,84 @@ The MIT License (MIT)
 <p align="left">
   <img src="./assets/roadmap.jpg" width="800px" />
 </p>
+
+### 知识库RAG检索优化
+- [x] Multi Documents
+  - [x] PDF
+  - [x] Excel, csv
+  - [x] Word
+  - [x] Text
+  - [x] MarkDown
+  - [ ] Code
+  - [ ] Images 
+- [x]RAG
+- [ ]KnownledgeGraph
+
+### 多数据源支持
+
+- 支持数据源
+  - [x]MySQL
+  - [x]PostgresSQL
+  - [x]Spark
+  - [x]DuckDB
+  - [x]Sqlite
+  - [x]MSSQL
+  - [x]ClickHouse
+  - [ ]Oracle
+  - [ ]Redis
+  - [ ]MongoDB
+  - [ ]HBase
+  - [ ]Doris
+  - [ ]DB2
+  - [ ]Couchbase
+  - [ ]Elasticsearch
+  - [ ]OceanBase
+  - [ ]TiDB
+  - [ ]StarRocks
+
+### 多模型管理与推理优化
+- [x] [集群部署](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
+- [x] [fastchat支持](https://github.com/lm-sys/FastChat)
+- [x] [vLLM 支持](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
+
+### Agents与插件市场
+- [x] 多Agents框架
+- [x] 自定义Agents
+- [ ] 插件市场
+
+### 成本与可观测性 
+- [x] [debugging](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
+- [ ] 可观测性
+- [ ] 推理预算
+
+### Text2SQL微调
+- support llms
+  - [x]LLaMA
+  - [x]LLaMA-2
+  - [x]BLOOM
+  - [x]BLOOMZ
+  - [x]Falcon
+  - [x]Baichuan
+  - [x]Baichuan2
+  - [x]InternLM
+  - [x]Qwen
+  - [x]XVERSE
+  - [x]ChatGLM2
+
+-  SFT模型准确率 
+截止20231010，我们利用本项目基于开源的13B大小的模型微调后，在Spider的评估集上的执行准确率，已经超越GPT-4!
+
+| 模型名称                           | 执行准确率           | 说明                                                                                                                      |
+| ----------------------------------| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| **GPT-4**                         | **0.762**          | [numbersstation-eval-res](https://www.numbersstation.ai/post/nsql-llama-2-7b)                                                  |
+| ChatGPT                           | 0.728              | [numbersstation-eval-res](https://www.numbersstation.ai/post/nsql-llama-2-7b)                                                  | 
+| **CodeLlama-13b-Instruct-hf_lora**| **0.789**          | sft train by our this project,only used spider train dataset ,the same eval  way in this project  with lora SFT                |
+| CodeLlama-13b-Instruct-hf_qlora   | 0.774              | sft train by our this project,only used spider train dataset ,the same eval  way in this project  with qlora and nf4,bit4 SFT  |
+| wizardcoder                       | 0.610              | [text-to-sql-wizardcoder](https://github.com/cuplv/text-to-sql-wizardcoder/tree/main)                                          |  
+| CodeLlama-13b-Instruct-hf         | 0.556              | eval in this project default param                                                                                             |
+| llama2_13b_hf_lora_best           | 0.744              | sft train by our this project,only used spider train dataset ,the same eval  way in this project                               |
+
+[More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
 ## 联系我们
 
