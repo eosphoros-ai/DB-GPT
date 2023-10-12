@@ -174,6 +174,9 @@ def list(
 def tree(trace_id: str, files):
     """Display trace links as a tree"""
     hierarchy = _view_trace_hierarchy(trace_id, files)
+    if not hierarchy:
+        _print_empty_message(files)
+        return
     _print_trace_hierarchy(hierarchy)
 
 
@@ -194,6 +197,14 @@ def tree(trace_id: str, files):
     help="Display trace spans as a tree",
 )
 @click.option(
+    "--hide_conv",
+    required=False,
+    type=bool,
+    default=False,
+    is_flag=True,
+    help="Hide your conversation details",
+)
+@click.option(
     "--hide_run_params",
     required=False,
     type=bool,
@@ -209,7 +220,14 @@ def tree(trace_id: str, files):
     help="The output format",
 )
 @click.argument("files", nargs=-1, type=click.Path(exists=False, readable=True))
-def chat(trace_id: str, tree: bool, hide_run_params: bool, output: str, files):
+def chat(
+    trace_id: str,
+    tree: bool,
+    hide_conv: bool,
+    hide_run_params: bool,
+    output: str,
+    files,
+):
     """Show conversation details"""
     from prettytable import PrettyTable
 
@@ -220,6 +238,9 @@ def chat(trace_id: str, tree: bool, hide_run_params: bool, output: str, files):
         spans, key=lambda span: _parse_datetime(span["start_time"]), reverse=True
     )
     spans = [sp for sp in spans]
+    if not spans:
+        _print_empty_message(files)
+        return
     service_spans = {}
     service_names = set(SpanTypeRunName.values())
     found_trace_id = None
@@ -265,6 +286,8 @@ def chat(trace_id: str, tree: bool, hide_run_params: bool, output: str, files):
         else:
             for service_name, table in service_tables.items():
                 print(table.get_formatted_string(out_format=output, **out_kwargs))
+    if hide_conv:
+        return
 
     if not found_trace_id:
         print(f"Can't found conversation with trace_id: {trace_id}")
@@ -375,6 +398,13 @@ def read_spans_from_files(files=None) -> Iterable[Dict]:
                     yield json.loads(line)
 
 
+def _print_empty_message(files=None):
+    if not files:
+        files = [_DEFAULT_FILE_PATTERN]
+    file_names = ",".join(files)
+    print(f"No trace span records found in your tracer files: {file_names}")
+
+
 def _new_search_span_func(search: str):
     def func(span: Dict) -> bool:
         items = [span["trace_id"], span["span_id"], span["parent_span_id"]]
@@ -450,6 +480,8 @@ def _view_trace_hierarchy(trace_id, files=None):
     """Find and display the calls of the entire link based on the given trace_id"""
     spans = read_spans_from_files(files)
     trace_spans = [span for span in spans if span["trace_id"] == trace_id]
+    if not trace_spans:
+        return None
     hierarchy = _build_trace_hierarchy(trace_spans)
     return hierarchy
 
