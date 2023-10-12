@@ -47,6 +47,7 @@ class ComponentType(str, Enum):
     WORKER_MANAGER_FACTORY = "dbgpt_worker_manager_factory"
     MODEL_CONTROLLER = "dbgpt_model_controller"
     EXECUTOR_DEFAULT = "dbgpt_thread_pool_default"
+    RAG_GRAPH_DEFAULT = "dbgpt_rag_engine_default"
 
 
 class BaseComponent(LifeCycle, ABC):
