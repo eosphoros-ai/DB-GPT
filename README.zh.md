@@ -156,11 +156,10 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
   - [VMware&#39;s OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
 
 - 支持在线代理模型 
-  - [x] ChatGPT
-  - [x] Tongyi
-  - [x] Wenxin
-  - [x] ChatGLM
-
+  - [x] [ChatGPT](https://api.openai.com/)
+  - [x] [Tongyi](https://www.aliyun.com/product/dashscope)
+  - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
+  - [x] [ChatGLM](http://open.bigmodel.cn/)
 
 - 支持数据源
 

@@ -130,10 +130,10 @@ Currently, we have released multiple key features, which are listed below to dem
   - [VMware&#39;s OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
 
 - Support API Proxy LLMs
-  - [x] ChatGPT
-  - [x] Tongyi
-  - [x] Wenxin
-  - [x] ChatGLM
+  - [x] [ChatGPT](https://api.openai.com/)
+  - [x] [Tongyi](https://www.aliyun.com/product/dashscope)
+  - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
+  - [x] [ChatGLM](http://open.bigmodel.cn/)
 
 - Support Datasources
 
