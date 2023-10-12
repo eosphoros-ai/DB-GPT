@@ -1,8 +1,11 @@
 from typing import Any
 import logging
 from pilot.vector_store.base import VectorStoreBase
+from pilot.configs.config import Config
 
 logger = logging.getLogger(__name__)
+
+CFG = Config()
 
 class PGVectorStore(VectorStoreBase):
     """`Postgres.PGVector` vector store. 

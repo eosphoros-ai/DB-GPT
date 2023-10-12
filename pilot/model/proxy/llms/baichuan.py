@@ -27,9 +27,9 @@ def baichuan_generate_stream(
     model_params = model.get_params()
     url = "https://api.baichuan-ai.com/v1/stream/chat"
 
-    model_name = os.getenv("BAICHUN_MODEL_NAME") or BAICHUAN_DEFAULT_MODEL
-    proxy_api_key = os.getenv("BAICHUAN_PROXY_API_KEY")
-    proxy_api_secret = os.getenv("BAICHUAN_PROXY_API_SECRET")
+    model_name = model_params.proxyllm_backend or BAICHUAN_DEFAULT_MODEL
+    proxy_api_key = model_params.proxy_api_key 
+    proxy_api_secret = model_params.proxy_api_secret 
 
 
     history = []

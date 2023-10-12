@@ -15,8 +15,8 @@ def tongyi_generate_stream(
     model_params = model.get_params()
     print(f"Model: {model}, model_params: {model_params}")
 
-    # proxy_api_key = model_params.proxy_api_key # // TODO Set this according env
-    dashscope.api_key = os.getenv("TONGYI_PROXY_API_KEY") 
+    proxy_api_key = model_params.proxy_api_key 
+    dashscope.api_key = proxy_api_key
 
     
     proxyllm_backend = model_params.proxyllm_backend

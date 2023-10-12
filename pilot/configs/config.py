@@ -51,8 +51,47 @@ class Config(metaclass=Singleton):
         if self.bard_proxy_api_key:
             os.environ["bard_proxyllm_proxy_api_key"] = self.bard_proxy_api_key
 
-        self.tongyi_api_key = os.getenv("TONGYI_PROXY_API_KEY")
+        # tongyi
+        self.tongyi_proxy_api_key = os.getenv("TONGYI_PROXY_API_KEY")
+        if self.tongyi_proxy_api_key:
+            os.environ["tongyi_proxyllm_proxy_api_key"] = self.tongyi_proxy_api_key
+        
+        # zhipu
+        self.zhipu_proxy_api_key = os.getenv("ZHIPU_PROXY_API_KEY")
+        if self.zhipu_proxy_api_key:
+            os.environ["zhipu_proxyllm_proxy_api_key"] = self.zhipu_proxy_api_key
+            os.environ["zhipu_proxyllm_proxyllm_backend"] = os.getenv("ZHIPU_MODEL_VERSION")
 
+        # wenxin
+        self.wenxin_proxy_api_key = os.getenv("WEN_XIN_API_KEY")
+        self.wenxin_proxy_api_secret = os.getenv("WEN_XIN_SECRET_KEY") 
+        self.wenxin_model_version = os.getenv("WEN_XIN_MODEL_VERSION")
+        if self.wenxin_proxy_api_key and self.wenxin_proxy_api_secret:
+            os.environ["wenxin_proxyllm_proxy_api_key"] = self.wenxin_proxy_api_key
+            os.environ["wenxin_proxyllm_proxy_api_secret"] = self.wenxin_proxy_api_secret
+            os.environ["wenxin_proxyllm_proxyllm_backend"] = self.wenxin_model_version
+
+        # xunfei spark
+        self.spark_api_version = os.getenv("XUNFEI_SPARK_API_VERSION")
+        self.spark_proxy_api_key = os.getenv("XUNFEI_SPARK_API_KEY")
+        self.spark_proxy_api_secret = os.getenv("XUNFEI_SPARK_API_SECRET")
+        self.spark_proxy_api_appid = os.getenv("XUNFEI_SPARK_APPID")
+        if self.spark_proxy_api_key and self.spark_proxy_api_secret:
+            os.environ["spark_proxyllm_proxy_api_key"] = self.spark_proxy_api_key
+            os.environ["spark_proxyllm_proxy_api_secret"] = self.spark_proxy_api_secret
+            os.environ["spark_proxyllm_proxyllm_backend"] = self.spark_api_version
+            os.environ["spark_proxyllm_proxy_app_id"] = self.spark_proxy_api_appid
+
+        # baichuan proxy
+        self.bc_proxy_api_key = os.getenv("BAICHUAN_PROXY_API_KEY")
+        self.bc_proxy_api_secret = os.getenv("BAICHUAN_PROXY_API_SECRET")
+        self.bc_model_version = os.getenv("BAICHUN_MODEL_NAME")
+        if self.bc_proxy_api_key and self.bc_proxy_api_secret:
+            os.environ["bc_proxyllm_proxy_api_key"] = self.bc_proxy_api_key
+            os.environ["bc_proxyllm_proxy_api_secret"] = self.bc_proxy_api_secret
+            os.environ["bc_proxyllm_proxyllm_backend"] = self.bc_model_version
+            
+         
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
         self.elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")

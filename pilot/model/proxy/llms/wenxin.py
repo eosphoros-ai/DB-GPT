@@ -29,13 +29,13 @@ def wenxin_generate_stream(
     }
 
     model_params = model.get_params()    
-    model_name = os.getenv("WEN_XIN_MODEL_VERSION")
+    model_name = model_params.proxyllm_backend 
     model_version = MODEL_VERSION.get(model_name)
     if not model_version:
         yield f"Unsupport model version {model_name}"
         
-    proxy_api_key = os.getenv("WEN_XIN_API_KEY")
-    proxy_api_secret = os.getenv("WEN_XIN_SECRET_KEY")
+    proxy_api_key = model_params.proxy_api_key 
+    proxy_api_secret = model_params.proxy_api_secret 
     access_token = _build_access_token(proxy_api_key, proxy_api_secret)
      
     headers = {

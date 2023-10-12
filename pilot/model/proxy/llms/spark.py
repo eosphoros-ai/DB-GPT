@@ -19,10 +19,10 @@ def spark_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
     model_params = model.get_params()
-    proxy_api_version = os.getenv("XUNFEI_SPARK_API_VERSION") or SPARK_DEFAULT_API_VERSION
-    proxy_api_key = os.getenv("XUNFEI_SPARK_API_KEY")
-    proxy_api_secret = os.getenv("XUNFEI_SPARK_API_SECRET")
-    proxy_app_id = os.getenv("XUNFEI_SPARK_APPID")
+    proxy_api_version = model_params.proxyllm_backend or SPARK_DEFAULT_API_VERSION
+    proxy_api_key = model_params.proxy_api_key 
+    proxy_api_secret = model_params.proxy_api_secret 
+    proxy_app_id = model_params.proxy_app_id 
 
     if proxy_api_version == SPARK_DEFAULT_API_VERSION:
         url = "ws://spark-api.xf-yun.com/v2.1/chat"
