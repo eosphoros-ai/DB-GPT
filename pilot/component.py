@@ -47,6 +47,8 @@ class ComponentType(str, Enum):
     WORKER_MANAGER_FACTORY = "dbgpt_worker_manager_factory"
     MODEL_CONTROLLER = "dbgpt_model_controller"
     EXECUTOR_DEFAULT = "dbgpt_thread_pool_default"
+    TRACER = "dbgpt_tracer"
+    TRACER_SPAN_STORAGE = "dbgpt_tracer_span_storage"
     RAG_GRAPH_DEFAULT = "dbgpt_rag_engine_default"
 
 
@@ -70,6 +72,8 @@ class BaseComponent(LifeCycle, ABC):
 
 
 T = TypeVar("T", bound=BaseComponent)
+
+_EMPTY_DEFAULT_COMPONENT = "_EMPTY_DEFAULT_COMPONENT"
 
 
 class SystemApp(LifeCycle):
@@ -105,13 +109,18 @@ class SystemApp(LifeCycle):
         instance.init_app(self)
 
     def get_component(
-        self, name: Union[str, ComponentType], component_type: Type[T]
+        self,
+        name: Union[str, ComponentType],
+        component_type: Type[T],
+        default_component=_EMPTY_DEFAULT_COMPONENT,
     ) -> T:
         """Retrieve a registered component by its name and type."""
         if isinstance(name, ComponentType):
             name = name.value
         component = self.components.get(name)
         if not component:
+            if default_component != _EMPTY_DEFAULT_COMPONENT:
+                return default_component
             raise ValueError(f"No component found with name {name}")
         if not isinstance(component, component_type):
             raise TypeError(f"Component {name} is not of type {component_type}")

@@ -46,6 +46,7 @@ from pilot.summary.db_summary_client import DBSummaryClient
 
 from pilot.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from pilot.model.base import FlatSupportedModel
+from pilot.utils.tracer import root_tracer, SpanType
 
 router = APIRouter()
 CFG = Config()
@@ -366,7 +367,10 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
-    chat: BaseChat = get_chat_instance(dialogue)
+    with root_tracer.start_span(
+        "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
+    ):
+        chat: BaseChat = get_chat_instance(dialogue)
     # background_tasks = BackgroundTasks()
     # background_tasks.add_task(release_model_semaphore)
     headers = {
@@ -417,9 +421,10 @@ async def model_supports(worker_manager: WorkerManager = Depends(get_worker_mana
 
 
 async def no_stream_generator(chat):
-    msg = await chat.nostream_call()
-    msg = msg.replace("\n", "\\n")
-    yield f"data: {msg}\n\n"
+    with root_tracer.start_span("no_stream_generator"):
+        msg = await chat.nostream_call()
+        msg = msg.replace("\n", "\\n")
+        yield f"data: {msg}\n\n"
 
 
 async def stream_generator(chat, incremental: bool, model_name: str):
@@ -436,6 +441,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
     Yields:
         _type_: streaming responses
     """
+    span = root_tracer.start_span("stream_generator")
     msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
 
     stream_id = f"chatcmpl-{str(uuid.uuid1())}"
@@ -464,6 +470,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
             await asyncio.sleep(0.02)
     if incremental:
         yield "data: [DONE]\n\n"
+    span.end()
     chat.current_message.add_ai_message(msg)
     chat.current_message.add_view_message(msg)
     chat.memory.append(chat.current_message)

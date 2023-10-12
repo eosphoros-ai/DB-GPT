@@ -9,7 +9,8 @@ from pilot.model.loader import ModelLoader, _get_model_real_path
 from pilot.model.parameter import ModelParameters
 from pilot.model.cluster.worker_base import ModelWorker
 from pilot.utils.model_utils import _clear_model_cache
-from pilot.utils.parameter_utils import EnvArgumentParser
+from pilot.utils.parameter_utils import EnvArgumentParser, _get_dict_from_obj
+from pilot.utils.tracer import root_tracer, SpanType, SpanTypeRunName
 
 logger = logging.getLogger(__name__)
 
@@ -94,9 +95,20 @@ class DefaultModelWorker(ModelWorker):
             model_params = self.parse_parameters(command_args)
         self._model_params = model_params
         logger.info(f"Begin load model, model params: {model_params}")
-        self.model, self.tokenizer = self.ml.loader_with_params(
-            model_params, self.llm_adapter
-        )
+        metadata = {
+            "model_name": self.model_name,
+            "model_path": self.model_path,
+            "model_type": self.llm_adapter.model_type(),
+            "llm_adapter": str(self.llm_adapter),
+            "run_service": SpanTypeRunName.MODEL_WORKER,
+            "params": _get_dict_from_obj(model_params),
+        }
+        with root_tracer.start_span(
+            "DefaultModelWorker.start", span_type=SpanType.RUN, metadata=metadata
+        ):
+            self.model, self.tokenizer = self.ml.loader_with_params(
+                model_params, self.llm_adapter
+            )
 
     def stop(self) -> None:
         if not self.model:
@@ -109,9 +121,18 @@ class DefaultModelWorker(ModelWorker):
         _clear_model_cache(self._model_params.device)
 
     def generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
+        span = root_tracer.start_span(
+            "DefaultModelWorker.generate_stream", params.get("span_id")
+        )
         try:
-            params, model_context, generate_stream_func = self._prepare_generate_stream(
-                params
+            (
+                params,
+                model_context,
+                generate_stream_func,
+                model_span,
+            ) = self._prepare_generate_stream(
+                params,
+                span_operation_name="DefaultModelWorker_call.generate_stream_func",
             )
 
             previous_response = ""
@@ -127,8 +148,12 @@ class DefaultModelWorker(ModelWorker):
             print(
                 f"\n\nfull stream output:\n{previous_response}\n\nmodel generate_stream params:\n{params}"
             )
+            model_span.end(metadata={"output": previous_response})
+            span.end()
         except Exception as e:
-            yield self._handle_exception(e)
+            output = self._handle_exception(e)
+            yield output
+            span.end(metadata={"error": output.to_dict()})
 
     def generate(self, params: Dict) -> ModelOutput:
         """Generate non stream result"""
@@ -141,9 +166,18 @@ class DefaultModelWorker(ModelWorker):
         raise NotImplementedError
 
     async def async_generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
+        span = root_tracer.start_span(
+            "DefaultModelWorker.async_generate_stream", params.get("span_id")
+        )
         try:
-            params, model_context, generate_stream_func = self._prepare_generate_stream(
-                params
+            (
+                params,
+                model_context,
+                generate_stream_func,
+                model_span,
+            ) = self._prepare_generate_stream(
+                params,
+                span_operation_name="DefaultModelWorker_call.generate_stream_func",
             )
 
             previous_response = ""
@@ -159,8 +193,12 @@ class DefaultModelWorker(ModelWorker):
             print(
                 f"\n\nfull stream output:\n{previous_response}\n\nmodel generate_stream params:\n{params}"
             )
+            model_span.end(metadata={"output": previous_response})
+            span.end()
         except Exception as e:
-            yield self._handle_exception(e)
+            output = self._handle_exception(e)
+            yield output
+            span.end(metadata={"error": output.to_dict()})
 
     async def async_generate(self, params: Dict) -> ModelOutput:
         output = None
@@ -168,7 +206,7 @@ class DefaultModelWorker(ModelWorker):
             output = out
         return output
 
-    def _prepare_generate_stream(self, params: Dict):
+    def _prepare_generate_stream(self, params: Dict, span_operation_name: str):
         params, model_context = self.llm_adapter.model_adaptation(
             params,
             self.model_name,
@@ -190,7 +228,30 @@ class DefaultModelWorker(ModelWorker):
             )
         str_prompt = params.get("prompt")
         print(f"model prompt: \n\n{str_prompt}\n\n{stream_type}stream output:\n")
-        return params, model_context, generate_stream_func
+
+        generate_stream_func_str_name = "{}.{}".format(
+            generate_stream_func.__module__, generate_stream_func.__name__
+        )
+
+        span_params = {k: v for k, v in params.items()}
+        if "messages" in span_params:
+            span_params["messages"] = list(
+                map(lambda m: m.dict(), span_params["messages"])
+            )
+
+        model_span = root_tracer.start_span(
+            span_operation_name,
+            metadata={
+                "prompt": str_prompt,
+                "params": span_params,
+                "is_async_func": self.support_async(),
+                "llm_adapter": str(self.llm_adapter),
+                "generate_stream_func": generate_stream_func_str_name,
+                "model_context": model_context,
+            },
+        )
+
+        return params, model_context, generate_stream_func, model_span
 
     def _handle_output(self, output, previous_response, model_context):
         if isinstance(output, dict):

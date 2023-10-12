@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any, Type
+import os
 
 from pilot.component import ComponentType, SystemApp
 from pilot.utils.executor_utils import DefaultExecutorFactory
