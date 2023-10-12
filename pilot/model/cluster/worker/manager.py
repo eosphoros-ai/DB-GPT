@@ -729,8 +729,15 @@ def _parse_worker_params(
     model_name: str = None, model_path: str = None, **kwargs
 ) -> ModelWorkerParameters:
     worker_args = EnvArgumentParser()
+    env_prefix = None
+    if model_name:
+        env_prefix = EnvArgumentParser.get_env_prefix(model_name)
     worker_params: ModelWorkerParameters = worker_args.parse_args_into_dataclass(
-        ModelWorkerParameters, model_name=model_name, model_path=model_path, **kwargs
+        ModelWorkerParameters,
+        env_prefix=env_prefix,
+        model_name=model_name,
+        model_path=model_path,
+        **kwargs,
     )
     env_prefix = EnvArgumentParser.get_env_prefix(worker_params.model_name)
     # Read parameters agein with prefix of model name.
