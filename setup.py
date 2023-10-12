@@ -403,6 +403,10 @@ def vllm_requires():
     """
     setup_spec.extras["vllm"] = ["vllm"]
 
+# def chat_scene():
+#     setup_spec.extras["chat"] = [
+#         ""
+#     ]
 
 def default_requires():
     """

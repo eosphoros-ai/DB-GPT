@@ -3,24 +3,32 @@ import uuid
 import asyncio
 import os
 import shutil
+import logging
 from fastapi import (
     APIRouter,
     Request,
     File,
     UploadFile,
+    Form,
     Body,
+    BackgroundTasks,
+    Depends,
 )
 
 from fastapi.responses import StreamingResponse
+from fastapi.exceptions import RequestValidationError
 from typing import List
 import tempfile
 
-from pilot.componet import ComponetType
+from pilot.component import ComponentType
 from pilot.openapi.api_view_model import (
     Result,
     ConversationVo,
     MessageVo,
     ChatSceneVo,
+    ChatCompletionResponseStreamChoice,
+    DeltaMessage,
+    ChatCompletionStreamResponse,
 )
 from pilot.connections.db_conn_info import DBConfig, DbTypeInfo
 from pilot.configs.config import Config
@@ -30,17 +38,19 @@ from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
-from pilot.configs.model_config import LOGDIR
-from pilot.utils import build_logger
+from pilot.common.schema import DBType
+
 from pilot.scene.message import OnceConversation
-from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
+from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.summary.db_summary_client import DBSummaryClient
 from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
+from pilot.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
+from pilot.model.base import FlatSupportedModel
 
 router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()
-logger = build_logger("api_v1", LOGDIR + "api_v1.log")
+logger = logging.getLogger(__name__)
 knowledge_service = KnowledgeService()
 
 model_semaphore = None
@@ -75,6 +85,26 @@ def plugins_select_info():
     return plugins_infos
 
 
+def get_db_list_info():
+    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+    params: dict = {}
+    for item in dbs:
+        comment = item["comment"]
+        if comment is not None and len(comment) > 0:
+            params.update({item["db_name"]: comment})
+    return params
+
+
+def knowledge_list_info():
+    """return knowledge space list"""
+    params: dict = {}
+    request = KnowledgeSpaceRequest()
+    spaces = knowledge_service.get_knowledge_space(request)
+    for space in spaces:
+        params.update({space.name: space.desc})
+    return params
+
+
 def knowledge_list():
     """return knowledge space list"""
     params: dict = {}
@@ -83,6 +113,20 @@ def knowledge_list():
     for space in spaces:
         params.update({space.name: space.name})
     return params
+
+
+def get_model_controller() -> BaseModelController:
+    controller = CFG.SYSTEM_APP.get_component(
+        ComponentType.MODEL_CONTROLLER, BaseModelController
+    )
+    return controller
+
+
+def get_worker_manager() -> WorkerManager:
+    worker_manager = CFG.SYSTEM_APP.get_component(
+        ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+    ).create()
+    return worker_manager
 
 
 @router.get("/v1/chat/db/list", response_model=Result[DBConfig])
@@ -344,22 +388,17 @@ async def chat_completions(dialogue: ConversationVo = Body()):
         )
     else:
         return StreamingResponse(
-            stream_generator(chat),
+            stream_generator(chat, dialogue.incremental, dialogue.model_name),
             headers=headers,
             media_type="text/plain",
         )
 
 
 @router.get("/v1/model/types")
-async def model_types(request: Request):
-    print(f"/controller/model/types")
+async def model_types(controller: BaseModelController = Depends(get_model_controller)):
+    logger.info(f"/controller/model/types")
     try:
         types = set()
-        from pilot.model.cluster.controller.controller import BaseModelController
-
-        controller = CFG.SYSTEM_APP.get_componet(
-            ComponetType.MODEL_CONTROLLER, BaseModelController
-        )
         models = await controller.get_all_instances(healthy_only=True)
         for model in models:
             worker_name, worker_type = model.model_name.split("@")
@@ -371,18 +410,60 @@ async def model_types(request: Request):
         return Result.faild(code="E000X", msg=f"controller model types error {e}")
 
 
+@router.get("/v1/model/supports")
+async def model_supports(worker_manager: WorkerManager = Depends(get_worker_manager)):
+    logger.info(f"/controller/model/supports")
+    try:
+        models = await worker_manager.supported_models()
+        return Result.succ(FlatSupportedModel.from_supports(models))
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"Fetch supportd models error {e}")
+
+
 async def no_stream_generator(chat):
     msg = await chat.nostream_call()
     yield f"data: {msg}\n\n"
 
 
-async def stream_generator(chat):
+async def stream_generator(chat, incremental: bool, model_name: str):
+    """Generate streaming responses
+
+    Our goal is to generate an openai-compatible streaming responses.
+    Currently, the incremental response is compatible, and the full response will be transformed in the future.
+
+    Args:
+        chat (BaseChat): Chat instance.
+        incremental (bool): Used to control whether the content is returned incrementally or in full each time.
+        model_name (str): The model name
+
+    Yields:
+        _type_: streaming responses
+    """
+    msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
+
+    stream_id = f"chatcmpl-{str(uuid.uuid1())}"
+    previous_response = ""
     async for chunk in chat.stream_call():
         if chunk:
-            yield f"data:{chunk}\n\n"
+            msg = chunk.replace("\ufffd", "")
+            if incremental:
+                incremental_output = msg[len(previous_response) :]
+                choice_data = ChatCompletionResponseStreamChoice(
+                    index=0,
+                    delta=DeltaMessage(role="assistant", content=incremental_output),
+                )
+                chunk = ChatCompletionStreamResponse(
+                    id=stream_id, choices=[choice_data], model=model_name
+                )
+                yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+            else:
+                # TODO generate an openai-compatible streaming responses
+                msg = msg.replace("\n", "\\n")
+                yield f"data:{msg}\n\n"
+            previous_response = msg
             await asyncio.sleep(0.02)
-
-
+    if incremental:
+        yield "data: [DONE]\n\n"
 
 
 def message2Vo(message: dict, order, model_name) -> MessageVo:

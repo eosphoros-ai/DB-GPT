@@ -173,7 +173,7 @@ class BaseChat(ABC):
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
             ### store current conversation
-            self.memory.append(self.current_message)
+        self.memory.append(self.current_message)
 
     async def nostream_call(self):
         payload = self.__call_base()

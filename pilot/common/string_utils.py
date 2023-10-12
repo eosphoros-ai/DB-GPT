@@ -1,4 +1,23 @@
+import re
 
+def is_all_chinese(text):
+    ### Determine whether the string is pure Chinese
+    pattern = re.compile(r'^[一-龥]+$')
+    match = re.match(pattern, text)
+    return match is not None
+
+
+def is_number_chinese(text):
+    ### Determine whether the string is numbers and Chinese
+    pattern = re.compile(r'^[\d一-龥]+$')
+    match = re.match(pattern, text)
+    return match is not None
+
+def is_chinese_include_number(text):
+    ### Determine whether the string is pure Chinese or Chinese containing numbers
+    pattern = re.compile(r'^[一-龥]+[\d一-龥]*$')
+    match = re.match(pattern, text)
+    return match is not None
 
 def extract_content(long_string, s1, s2, is_include: bool = False):
     # extract text

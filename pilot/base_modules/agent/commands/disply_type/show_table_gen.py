@@ -1,11 +1,9 @@
 from pandas import DataFrame
 
 from pilot.base_modules.agent.commands.command_mange import command
-from pilot.configs.config import Config
 
-
-CFG = Config()
-
+import logging
+logger = logging.getLogger(__name__)
 
 @command(
     "response_table",

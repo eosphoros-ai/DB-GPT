@@ -14,7 +14,9 @@ import matplotlib.ticker as mtick
 from matplotlib.font_manager import FontManager
 
 
-CFG = Config()
+import logging
+logger = logging.getLogger(__name__)
+
 
 static_message_img_path = os.path.join(os.getcwd(), "message/img")
 

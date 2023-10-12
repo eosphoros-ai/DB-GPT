@@ -30,9 +30,8 @@ from pilot.server.llm_manage.api import router as llm_manage_api
 from pilot.openapi.api_v1.api_v1 import router as api_v1
 from pilot.openapi.base import validation_exception_handler
 from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
-from pilot.base_modules.agent import static_message_img_path
 from pilot.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
-from pilot.commands.disply_type.show_chart_gen import static_message_img_path
+from pilot.base_modules.agent.commands.disply_type.show_chart_gen import static_message_img_path
 from pilot.model.cluster import initialize_worker_manager_in_client
 from pilot.utils.utils import (
     setup_logging,

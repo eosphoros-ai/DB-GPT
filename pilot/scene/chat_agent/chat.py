@@ -9,7 +9,7 @@ from pilot.base_modules.agent.commands.command_mange import ApiCall
 from pilot.base_modules.agent import PluginPromptGenerator
 from pilot.common.string_utils import extract_content
 from .prompt import prompt
-from pilot.componet import ComponetType
+from pilot.component import ComponentType
 from pilot.base_modules.agent.controller import ModuleAgent
 
 CFG = Config()
@@ -31,7 +31,7 @@ class ChatAgent(BaseChat):
         self.plugins_prompt_generator.command_registry = CFG.command_registry
 
         # load  select plugin
-        agent_module = CFG.SYSTEM_APP.get_componet(ComponetType.AGENT_HUB, ModuleAgent)
+        agent_module = CFG.SYSTEM_APP.get_componet(ComponentType.AGENT_HUB, ModuleAgent)
         self.plugins_prompt_generator = agent_module.load_select_plugin(self.plugins_prompt_generator, self.select_plugins)
 
         self.api_call = ApiCall(plugin_generator=self.plugins_prompt_generator)

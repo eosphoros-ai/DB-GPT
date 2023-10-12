@@ -1,5 +1,6 @@
 import json
 import time
+import logging
 from fastapi import (
     APIRouter,
     Body,
@@ -9,7 +10,7 @@ from fastapi import (
 from abc import ABC, abstractmethod
 from typing import List
 from pilot.configs.model_config import LOGDIR
-from pilot.utils import build_logger
+
 
 from pilot.openapi.api_view_model import (
     Result,
@@ -22,14 +23,14 @@ from .plugins_util import scan_plugins
 from .commands.generator import PluginPromptGenerator
 
 from pilot.configs.model_config import PLUGINS_DIR
-from pilot.componet import BaseComponet, ComponetType, SystemApp
+from pilot.component import BaseComponent, ComponentType, SystemApp
 
 router = APIRouter()
-logger = build_logger("agent_mange", LOGDIR + "agent_mange.log")
+logger = logging.getLogger(__name__)
 
 
-class ModuleAgent(BaseComponet, ABC):
-    name = ComponetType.AGENT_HUB
+class ModuleAgent(BaseComponent, ABC):
+    name = ComponentType.AGENT_HUB
 
     def __init__(self):
         #load plugins

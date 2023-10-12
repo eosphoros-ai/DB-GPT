@@ -77,21 +77,3 @@ class ChatExcel(BaseChat):
         text = text.replace("\n", " ")
         print(f"stream_plugin_call:{text}")
         return self.api_call.run_display_sql(text, self.excel_reader.get_df_by_sql_ex)
-
-
-
-    # def do_action(self, prompt_response):
-    #     print(f"do_action:{prompt_response}")
-    #
-    #     # colunms, datas = self.excel_reader.run(prompt_response.sql)
-    #
-    #
-    #     param = {
-    #         "speak": prompt_response.thoughts,
-    #         "df": self.excel_reader.get_df_by_sql_ex(prompt_response.sql),
-    #     }
-    #
-    #     if CFG.command_disply.get_command(prompt_response.display):
-    #         return CFG.command_disply.call(prompt_response.display, **param)
-    #     else:
-    #         return CFG.command_disply.call("response_table", **param)
