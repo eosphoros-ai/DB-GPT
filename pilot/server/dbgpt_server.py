@@ -7,7 +7,7 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 sys.path.append(ROOT_PATH)
 import signal
 from pilot.configs.config import Config
-from pilot.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG
+from pilot.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG, LOGDIR
 from pilot.component import SystemApp
 
 from pilot.server.base import (
@@ -38,6 +38,8 @@ from pilot.utils.utils import (
     _get_logging_level,
     logging_str_to_uvicorn_level,
 )
+from pilot.utils.tracer import root_tracer, initialize_tracer, SpanType, SpanTypeRunName
+from pilot.utils.parameter_utils import _get_dict_from_obj
 
 from pilot.base_modules.agent.controller import router as agent_route
 
@@ -101,17 +103,21 @@ def mount_static_files(app):
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
+def _get_webserver_params(args: List[str] = None):
+    from pilot.utils.parameter_utils import EnvArgumentParser
+
+    parser: argparse.ArgumentParser = EnvArgumentParser.create_argparse_option(
+        WebWerverParameters
+    )
+    return WebWerverParameters(**vars(parser.parse_args(args=args)))
+
+
 def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     """Initialize app
     If you use gunicorn as a process manager, initialize_app can be invoke in `on_starting` hook.
     """
     if not param:
-        from pilot.utils.parameter_utils import EnvArgumentParser
-
-        parser: argparse.ArgumentParser = EnvArgumentParser.create_argparse_option(
-            WebWerverParameters
-        )
-        param = WebWerverParameters(**vars(parser.parse_args(args=args)))
+        param = _get_webserver_params(args)
 
     if not param.log_level:
         param.log_level = _get_logging_level()
@@ -130,7 +136,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     model_start_listener = _create_model_start_listener(system_app)
     initialize_components(param, system_app, embedding_model_name, embedding_model_path)
 
-    model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
+    model_path = LLM_MODEL_CONFIG.get(CFG.LLM_MODEL)
     if not param.light:
         print("Model Unified Deployment Mode!")
         if not param.remote_embedding:
@@ -177,8 +183,20 @@ def run_uvicorn(param: WebWerverParameters):
 
 
 def run_webserver(param: WebWerverParameters = None):
-    param = initialize_app(param)
-    run_uvicorn(param)
+    if not param:
+        param = _get_webserver_params()
+    initialize_tracer(system_app, os.path.join(LOGDIR, "dbgpt_webserver_tracer.jsonl"))
+
+    with root_tracer.start_span(
+        "run_webserver",
+        span_type=SpanType.RUN,
+        metadata={
+            "run_service": SpanTypeRunName.WEBSERVER,
+            "params": _get_dict_from_obj(param),
+        },
+    ):
+        param = initialize_app(param)
+        run_uvicorn(param)
 
 
 if __name__ == "__main__":

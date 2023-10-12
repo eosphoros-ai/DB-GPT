@@ -354,7 +354,7 @@ class LlamaCppAdapater(BaseLLMAdaper):
         if not path.is_file():
             model_paths = list(path.glob("*ggml*.gguf"))
             if not model_paths:
-                return False
+                return False, None
             model_path = str(model_paths[0])
             logger.warn(
                 f"Model path {model_path} is not single file, use first *gglm*.gguf model file: {model_path}"

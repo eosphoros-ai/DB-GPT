@@ -285,6 +285,19 @@ class ProxyModelParameters(BaseModelParameters):
     proxy_api_key: str = field(
         metadata={"tags": "privacy", "help": "The api key of current proxy LLM"},
     )
+    
+    proxy_app_id: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Appid for visitor proxy"
+        },
+    )
+
+    proxy_api_secret: Optional[str] = field(
+        default=None,
+        metadata={"tags": "privacy", "help": "The api secret of current proxy LLM"},
+    )
+    
     http_proxy: Optional[str] = field(
         default=os.environ.get("http_proxy") or os.environ.get("https_proxy"),
         metadata={"help": "The http or https proxy to use openai"},
