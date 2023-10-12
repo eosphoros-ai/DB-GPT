@@ -163,6 +163,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 
 - 支持数据源
+
 | DataSource                                                                      | support     | Notes                                       |
 | ------------------------------------------------------------------------------  | ----------- | ------------------------------------------- |
 | [MySQL](https://www.mysql.com/)                                                 | Yes         |                                             |
@@ -248,6 +249,7 @@ The MIT License (MIT)
 </p>
 
 ### 知识库RAG检索优化
+
 - [x] Multi Documents
   - [x] PDF
   - [x] Excel, csv
@@ -256,30 +258,31 @@ The MIT License (MIT)
   - [x] MarkDown
   - [ ] Code
   - [ ] Images 
-- [x]RAG
-- [ ]KnownledgeGraph
+- [x] RAG
+- [ ] KnownledgeGraph
 
 ### 多数据源支持
 
 - 支持数据源
-  - [x]MySQL
-  - [x]PostgresSQL
-  - [x]Spark
-  - [x]DuckDB
-  - [x]Sqlite
-  - [x]MSSQL
-  - [x]ClickHouse
-  - [ ]Oracle
-  - [ ]Redis
-  - [ ]MongoDB
-  - [ ]HBase
-  - [ ]Doris
-  - [ ]DB2
-  - [ ]Couchbase
-  - [ ]Elasticsearch
-  - [ ]OceanBase
-  - [ ]TiDB
-  - [ ]StarRocks
+
+  - [x] MySQL
+  - [x] PostgresSQL
+  - [x] Spark
+  - [x] DuckDB
+  - [x] Sqlite
+  - [x] MSSQL
+  - [x] ClickHouse
+  - [ ] Oracle
+  - [ ] Redis
+  - [ ] MongoDB
+  - [ ] HBase
+  - [ ] Doris
+  - [ ] DB2
+  - [ ] Couchbase
+  - [ ] Elasticsearch
+  - [ ] OceanBase
+  - [ ] TiDB
+  - [ ] StarRocks
 
 ### 多模型管理与推理优化
 - [x] [集群部署](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
@@ -298,17 +301,17 @@ The MIT License (MIT)
 
 ### Text2SQL微调
 - support llms
-  - [x]LLaMA
-  - [x]LLaMA-2
-  - [x]BLOOM
-  - [x]BLOOMZ
-  - [x]Falcon
-  - [x]Baichuan
-  - [x]Baichuan2
-  - [x]InternLM
-  - [x]Qwen
-  - [x]XVERSE
-  - [x]ChatGLM2
+  - [x] LLaMA
+  - [x] LLaMA-2
+  - [x] BLOOM
+  - [x] BLOOMZ
+  - [x] Falcon
+  - [x] Baichuan
+  - [x] Baichuan2
+  - [x] InternLM
+  - [x] Qwen
+  - [x] XVERSE
+  - [x] ChatGLM2
 
 -  SFT模型准确率 
 截止20231010，我们利用本项目基于开源的13B大小的模型微调后，在Spider的评估集上的执行准确率，已经超越GPT-4!

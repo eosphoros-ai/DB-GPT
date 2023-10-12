@@ -213,30 +213,30 @@ The core capabilities mainly consist of the following parts:
   - [ ] Code
   - [ ] Images 
 
-- [x]RAG
-- [ ]KnownledgeGraph
+- [x] RAG
+- [ ] KnownledgeGraph
 
 ### Multi Datasource Support
 
 - Multi Datasource Support 
-  - [x]MySQL
-  - [x]PostgresSQL
-  - [x]Spark
-  - [x]DuckDB
-  - [x]Sqlite
-  - [x]MSSQL
-  - [x]ClickHouse
-  - [ ]Oracle
-  - [ ]Redis
-  - [ ]MongoDB
-  - [ ]HBase
-  - [ ]Doris
-  - [ ]DB2
-  - [ ]Couchbase
-  - [ ]Elasticsearch
-  - [ ]OceanBase
-  - [ ]TiDB
-  - [ ]StarRocks
+  - [x] MySQL
+  - [x] PostgresSQL
+  - [x] Spark
+  - [x] DuckDB
+  - [x] Sqlite
+  - [x] MSSQL
+  - [x] ClickHouse
+  - [ ] Oracle
+  - [ ] Redis
+  - [ ] MongoDB
+  - [ ] HBase
+  - [ ] Doris
+  - [ ] DB2
+  - [ ] Couchbase
+  - [ ] Elasticsearch
+  - [ ] OceanBase
+  - [ ] TiDB
+  - [ ] StarRocks
 
 ### Multi-Models And vLLM
 - [x] [cluster deployment](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
@@ -251,20 +251,21 @@ The core capabilities mainly consist of the following parts:
 ### Cost and Observability
 - [x] [debugging](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
 - [ ] Observability
+- [ ] cost & budgets
 
 ### Text2SQL Finetune
 - support llms
-  - [x]LLaMA
-  - [x]LLaMA-2
-  - [x]BLOOM
-  - [x]BLOOMZ
-  - [x]Falcon
-  - [x]Baichuan
-  - [x]Baichuan2
-  - [x]InternLM
-  - [x]Qwen
-  - [x]XVERSE
-  - [x]ChatGLM2
+  - [x] LLaMA
+  - [x] LLaMA-2
+  - [x] BLOOM
+  - [x] BLOOMZ
+  - [x] Falcon
+  - [x] Baichuan
+  - [x] Baichuan2
+  - [x] InternLM
+  - [x] Qwen
+  - [x] XVERSE
+  - [x] ChatGLM2
 
 -  SFT Accuracy
 
