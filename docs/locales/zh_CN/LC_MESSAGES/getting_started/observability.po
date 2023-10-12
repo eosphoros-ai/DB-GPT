@@ -27,8 +27,7 @@ msgstr ""
 msgid ""
 "DB-GPT provides a set of tools to help you troubleshoot and resolve some "
 "of the issues you may encounter."
-msgstr ""
-"DB-GPT 提供了一套工具来帮助你排查和解决一些遇到的问题。"
+msgstr "DB-GPT 提供了一套工具来帮助你排查和解决一些遇到的问题。"
 
 #: ../../getting_started/observability.md:7 7fe5b8ab29194e42b74a8ab3e77006c7
 msgid "Trace Logs"
@@ -38,8 +37,7 @@ msgstr "追踪日志"
 msgid ""
 "DB-GPT writes some critical system runtime information to trace logs. By "
 "default, these are located in `logs/dbgpt*.jsonl`."
-msgstr ""
-"DB-GPT 会将一些系统运行的关键的信息写入到追踪日志中，默认情况下，在 `logs/dbgpt*.jsonl` 中。"
+msgstr "DB-GPT 会将一些系统运行的关键的信息写入到追踪日志中，默认情况下，在 `logs/dbgpt*.jsonl` 中。"
 
 #: ../../getting_started/observability.md:11 5e2b847179e9427a8ae022b5338cbbd9
 msgid ""
@@ -47,18 +45,18 @@ msgid ""
 "analyze these trace logs. You can see its specific usage with the command"
 " `dbgpt trace --help`."
 msgstr ""
-"DB-GPT 也提供了命令工具 `dbgpt trace` 命令来帮助你分析追踪日志，你可以使用命令 `dbgpt trace --help` 来查看具体的用法。"
+"DB-GPT 也提供了命令工具 `dbgpt trace` 命令来帮助你分析追踪日志，你可以使用命令 `dbgpt trace --help` "
+"来查看具体的用法。"
 
 #: ../../getting_started/observability.md:14 6e0c9c4ba6ac4eb49d9289b0d63f77fb
-msgid "查看对话详情"
-msgstr ""
+msgid "Viewing Chat Details"
+msgstr "查看对话详情"
 
 #: ../../getting_started/observability.md:16 b9badbab74de47f192ff117d7d36fa72
 msgid ""
 "You can use the `dbgpt trace chat` command to view chat details. By "
 "default, it will display the latest chat message."
-msgstr ""
-"你可以使用 `dbgpt trace chat` 命令来查看对话信息，默认情况会显示你最新的一条对话信息。"
+msgstr "你可以使用 `dbgpt trace chat` 命令来查看对话信息，默认情况会显示你最新的一条对话信息。"
 
 #: ../../getting_started/observability.md:18 55c7466bd80d43c9a355d87daf2a2be7
 msgid "Viewing Service Runtime Information"
@@ -118,4 +116,7 @@ msgstr "搜索追踪信息"
 #: ../../getting_started/observability.md:281 3681413d196144389431422010a7e30f
 msgid "More `list` Usage"
 msgstr "更多 `list` 用法"
+
+#~ msgid "查看对话详情"
+#~ msgstr ""
 
