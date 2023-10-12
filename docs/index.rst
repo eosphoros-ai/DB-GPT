@@ -53,6 +53,7 @@ Getting Started
    getting_started/concepts.md
    getting_started/tutorials.md
    getting_started/faq.rst
+   getting_started/observability.md
 
 
 Modules

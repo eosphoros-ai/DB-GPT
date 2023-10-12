@@ -18,11 +18,13 @@ class PromptRequest(BaseModel):
     max_new_tokens: int = None
     stop: str = None
     echo: bool = True
+    span_id: str = None
 
 
 class EmbeddingsRequest(BaseModel):
     model: str
     input: List[str]
+    span_id: str = None
 
 
 class WorkerApplyRequest(BaseModel):

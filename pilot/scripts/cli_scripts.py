@@ -119,6 +119,14 @@ except ImportError as e:
     logging.warning(f"Integrating dbgpt knowledge command line tool failed: {e}")
 
 
+try:
+    from pilot.utils.tracer.tracer_cli import trace_cli_group
+
+    add_command_alias(trace_cli_group, name="trace", parent_group=cli)
+except ImportError as e:
+    logging.warning(f"Integrating dbgpt trace command line tool failed: {e}")
+
+
 def main():
     return cli()
 
