@@ -282,9 +282,30 @@ class ProxyModelParameters(BaseModelParameters):
             "help": "Proxy server url, such as: https://api.openai.com/v1/chat/completions"
         },
     )
+
     proxy_api_key: str = field(
         metadata={"tags": "privacy", "help": "The api key of current proxy LLM"},
     )
+
+    proxy_api_base: str = field(
+        default=None,
+        metadata={
+            "help": "The base api address, such as: https://api.openai.com/v1. If None, we will use proxy_api_base first"
+        },
+    )
+
+    proxy_api_type: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The api type of current proxy the current proxy model, if you use Azure, it can be: azure"
+        },
+    )
+
+    proxy_api_version: Optional[str] = field(
+        default=None,
+        metadata={"help": "The api version of current proxy the current model"},
+    )
+
     http_proxy: Optional[str] = field(
         default=os.environ.get("http_proxy") or os.environ.get("https_proxy"),
         metadata={"help": "The http or https proxy to use openai"},
