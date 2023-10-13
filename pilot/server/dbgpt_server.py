@@ -5,7 +5,6 @@ from typing import List
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
-import signal
 from pilot.configs.config import Config
 from pilot.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG, LOGDIR
 from pilot.component import SystemApp
@@ -40,6 +39,7 @@ from pilot.utils.utils import (
 )
 from pilot.utils.tracer import root_tracer, initialize_tracer, SpanType, SpanTypeRunName
 from pilot.utils.parameter_utils import _get_dict_from_obj
+from pilot.utils.system_utils import get_system_info
 
 static_file_path = os.path.join(os.getcwd(), "server/static")
 
@@ -190,6 +190,7 @@ def run_webserver(param: WebWerverParameters = None):
         metadata={
             "run_service": SpanTypeRunName.WEBSERVER,
             "params": _get_dict_from_obj(param),
+            "sys_infos": _get_dict_from_obj(get_system_info()),
         },
     ):
         param = initialize_app(param)

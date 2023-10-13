@@ -11,6 +11,7 @@ from pilot.model.cluster.worker_base import ModelWorker
 from pilot.utils.model_utils import _clear_model_cache
 from pilot.utils.parameter_utils import EnvArgumentParser, _get_dict_from_obj
 from pilot.utils.tracer import root_tracer, SpanType, SpanTypeRunName
+from pilot.utils.system_utils import get_system_info
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,7 @@ class DefaultModelWorker(ModelWorker):
             "llm_adapter": str(self.llm_adapter),
             "run_service": SpanTypeRunName.MODEL_WORKER,
             "params": _get_dict_from_obj(model_params),
+            "sys_infos": _get_dict_from_obj(get_system_info()),
         }
         with root_tracer.start_span(
             "DefaultModelWorker.start", span_type=SpanType.RUN, metadata=metadata
