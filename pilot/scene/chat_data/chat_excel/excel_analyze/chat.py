@@ -42,11 +42,14 @@ class ChatExcel(BaseChat):
     def _generate_numbered_list(self) -> str:
         command_strings = []
         if CFG.command_disply:
-            command_strings += [
-                str(item)
-                for item in CFG.command_disply.commands.values()
-                if item.enabled
-            ]
+            for name, item in CFG.command_disply.commands.items():
+                if item.enabled:
+                    command_strings.append(f"{name}:{item.description}")
+            # command_strings += [
+            #     str(item)
+            #     for item in CFG.command_disply.commands.values()
+            #     if item.enabled
+            # ]
         return "\n".join(f"{i+1}. {item}" for i, item in enumerate(command_strings))
 
     def generate_input_values(self):
