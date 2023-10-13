@@ -24,6 +24,7 @@ from pilot.server.knowledge.request.request import (
     ChunkQueryRequest,
     DocumentQueryRequest,
     SpaceArgumentRequest,
+    EntityExtractRequest,
 )
 
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
@@ -198,3 +199,37 @@ def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
         for d in docs
     ]
     return {"response": res}
+
+
+@router.post("/knowledge/entity/extract")
+async def entity_extract(request: EntityExtractRequest):
+    logger.info(f"Received params: {request}")
+    try:
+        # from pilot.graph_engine.graph_factory import RAGGraphFactory
+        # from pilot.component import ComponentType
+        # rag_engine = CFG.SYSTEM_APP.get_component(
+        #     ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
+        # ).create()
+        # return Result.succ(await rag_engine.search(request.text))
+        from pilot.scene.base import ChatScene
+        from pilot.common.chat_util import llm_chat_response_nostream
+        import uuid
+
+        chat_param = {
+            "chat_session_id": uuid.uuid1(),
+            "current_user_input": request.text,
+            "select_param": "entity",
+            "model_name": request.model_name,
+        }
+
+        # import nest_asyncio
+        # nest_asyncio.apply()
+        # loop = asyncio.get_event_loop()
+        # loop.stop()
+        # loop = utils.get_or_create_event_loop()
+        res = await llm_chat_response_nostream(
+            ChatScene.ExtractEntity.value(), **{"chat_param": chat_param}
+        )
+        return Result.succ(res)
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"entity extract error {e}")

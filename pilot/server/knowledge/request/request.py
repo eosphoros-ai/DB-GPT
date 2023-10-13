@@ -104,3 +104,10 @@ class SpaceArgumentRequest(BaseModel):
     """argument: argument"""
 
     argument: str
+
+
+class EntityExtractRequest(BaseModel):
+    """argument: argument"""
+
+    text: str
+    model_name: str

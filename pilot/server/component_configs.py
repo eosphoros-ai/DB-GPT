@@ -31,6 +31,7 @@ def initialize_components(
 
     # Register global default RAGGraphFactory
     from pilot.graph_engine.graph_factory import DefaultRAGGraphFactory
+
     system_app.register(DefaultRAGGraphFactory)
 
     _initialize_embedding_model(

@@ -1,6 +1,7 @@
 import os
 from typing import Dict
 
+from pilot.component import ComponentType
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
@@ -47,6 +48,11 @@ class ChatKnowledge(BaseChat):
             "vector_store_name": self.knowledge_space,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
         }
+        from pilot.graph_engine.graph_factory import RAGGraphFactory
+
+        self.rag_engine = CFG.SYSTEM_APP.get_component(
+            ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
+        ).create()
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
@@ -82,6 +88,25 @@ class ChatKnowledge(BaseChat):
         if self.space_context:
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
+        # docs = self.rag_engine.search(query=self.current_user_input)
+        # import httpx
+        # with httpx.Client() as client:
+        #     request = client.build_request(
+        #         "post",
+        #         "http://127.0.0.1/api/knowledge/entities/extract",
+        #         json="application/json",  # using json for data to ensure it sends as application/json
+        #         params={"text": self.current_user_input},
+        #         headers={},
+        #     )
+        #
+        #     response = client.send(request)
+        #     if response.status_code != 200:
+        #         error_msg = f"request /api/knowledge/entities/extract failed, error: {response.text}"
+        #         raise Exception(error_msg)
+        #     docs = response.json()
+        # import requests
+        # docs = requests.post("http://127.0.0.1:5000/api/knowledge/entities/extract", headers={}, json={"text": self.current_user_input})
+
         docs = self.knowledge_embedding_client.similar_search(
             self.current_user_input, self.top_k
         )

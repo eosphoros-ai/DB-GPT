@@ -58,7 +58,11 @@ class SyncStatus(Enum):
 # @singleton
 class KnowledgeService:
     def __init__(self):
-        pass
+        from pilot.graph_engine.graph_engine import RAGGraphEngine
+
+        # source = "/Users/chenketing/Desktop/project/llama_index/examples/paul_graham_essay/data/test/test_kg_text.txt"
+
+        # pass
 
     """create knowledge space"""
 
@@ -229,6 +233,10 @@ class KnowledgeService:
                     pre_separator=sync_request.pre_separator,
                     text_splitter_impl=text_splitter,
                 )
+            from pilot.graph_engine.graph_engine import RAGGraphEngine
+
+            # source = "/Users/chenketing/Desktop/project/llama_index/examples/paul_graham_essay/data/test/test_kg_text.txt"
+            # engine = RAGGraphEngine(knowledge_source=source, model_name="proxyllm", text_splitter=text_splitter)
             embedding_factory = CFG.SYSTEM_APP.get_component(
                 "embedding_factory", EmbeddingFactory
             )
@@ -244,6 +252,18 @@ class KnowledgeService:
                 embedding_factory=embedding_factory,
             )
             chunk_docs = client.read()
+            from pilot.graph_engine.graph_factory import RAGGraphFactory
+
+            rag_engine = CFG.SYSTEM_APP.get_component(
+                ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
+            ).create()
+            rag_engine.knowledge_graph(docs=chunk_docs)
+            # docs = engine.search(
+            #     "Comparing Curry and James in terms of their positions, playing styles, and achievements in the NBA"
+            # )
+            embedding_factory = CFG.SYSTEM_APP.get_component(
+                "embedding_factory", EmbeddingFactory
+            )
             # update document status
             doc.status = SyncStatus.RUNNING.name
             doc.chunk_size = len(chunk_docs)
