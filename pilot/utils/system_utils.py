@@ -205,8 +205,14 @@ def get_cpu_info():
         except:
             pass
     elif os_type == OSType.WINDOWS:
-        # TODO
-        raise NotImplementedError
+        try:
+            output = subprocess.check_output("wmic cpu get Name", shell=True).decode(
+                "utf-8"
+            )
+            lines = output.splitlines()
+            cpu_info = lines[2].split(":")[-1].strip()
+        except:
+            pass
 
     return os_type, avx_type, cpu_info, distribution
 
