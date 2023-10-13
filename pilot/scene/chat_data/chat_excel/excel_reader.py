@@ -4,6 +4,9 @@ import duckdb
 import os
 import re
 import sqlparse
+
+import pandas as pd
+import chardet
 import pandas as pd
 import numpy as np
 from pyparsing import CaselessKeyword, Word, alphas, alphanums, delimitedList, Forward, Group, Optional,\
@@ -17,6 +20,16 @@ def excel_colunm_format(old_name: str) -> str:
     new_column = old_name.strip()
     new_column = new_column.replace(" ", "_")
     return new_column
+
+def detect_encoding(file_path):
+    # 读取文件的二进制数据
+    with open(file_path, 'rb') as f:
+        data = f.read()
+    # 使用 chardet 来检测文件编码
+    result = chardet.detect(data)
+    encoding = result['encoding']
+    confidence = result['confidence']
+    return encoding, confidence
 
 
 def add_quotes_ex(sql: str, column_names):
@@ -75,16 +88,6 @@ def parse_sql(sql):
     return parsed_result.asList()
 
 
-
-def add_quotes_v2(sql: str, column_names):
-    pass
-
-def add_quotes_v3(sql):
-    pattern = r'[一-鿿]+'
-    matches = re.findall(pattern, sql)
-    for match in matches:
-        sql = sql.replace(match, f'[{match}]')
-    return sql
 
 def add_quotes(sql, column_names=[]):
     sql = sql.replace("`", "")
@@ -156,25 +159,26 @@ def process_identifier(identifier, column_names=[]):
     # if identifier.has_alias():
     #     alias = identifier.get_alias()
     #     identifier.tokens[-1].value = '[' + alias + ']'
-    if identifier.tokens and identifier.value in column_names:
+    if  hasattr(identifier, 'tokens') and identifier.value in column_names:
         if  is_chinese(identifier.value):
             new_value = get_new_value(identifier.value)
             identifier.value = new_value
             identifier.normalized = new_value
             identifier.tokens = [sqlparse.sql.Token(sqlparse.tokens.Name, new_value)]
     else:
-        for token in identifier.tokens:
-            if isinstance(token, sqlparse.sql.Function):
-                process_function(token)
-            elif token.ttype in sqlparse.tokens.Name and is_chinese(token.value):
-                new_value = get_new_value(token.value)
-                token.value = new_value
-                token.normalized = new_value
-            elif token.value in column_names and is_chinese(token.value):
-                new_value = get_new_value(token.value)
-                token.value = new_value
-                token.normalized = new_value
-                token.tokens = [sqlparse.sql.Token(sqlparse.tokens.Name, new_value)]
+        if hasattr(identifier, 'tokens'):
+            for token in identifier.tokens:
+                if isinstance(token, sqlparse.sql.Function):
+                    process_function(token)
+                elif token.ttype in sqlparse.tokens.Name :
+                    new_value = get_new_value(token.value)
+                    token.value = new_value
+                    token.normalized = new_value
+                elif token.value in column_names:
+                    new_value = get_new_value(token.value)
+                    token.value = new_value
+                    token.normalized = new_value
+                    token.tokens = [sqlparse.sql.Token(sqlparse.tokens.Name, new_value)]
 def get_new_value(value):
     return f""" "{value.replace("`", "").replace("'", "").replace('"', "")}" """
 
@@ -186,11 +190,11 @@ def process_function(function):
         # 如果参数部分是一个标识符（字段名）
         if isinstance(param, sqlparse.sql.Identifier):
             # 判断是否需要替换字段值
-            if is_chinese(param.value):
+            # if is_chinese(param.value):
                 # 替换字段值
-                new_value = get_new_value(param.value)
-                # new_parameter = sqlparse.sql.Identifier(f'[{param.value}]')
-                function_params[i].tokens = [sqlparse.sql.Token(sqlparse.tokens.Name, new_value)]
+            new_value = get_new_value(param.value)
+            # new_parameter = sqlparse.sql.Identifier(f'[{param.value}]')
+            function_params[i].tokens = [sqlparse.sql.Token(sqlparse.tokens.Name, new_value)]
     print(str(function))
 
 def is_chinese(text):
@@ -221,7 +225,8 @@ class ExcelReader:
     def __init__(self, file_path):
         file_name = os.path.basename(file_path)
         file_name_without_extension = os.path.splitext(file_name)[0]
-
+        encoding, confidence = detect_encoding(file_path)
+        logging.error(f"Detected Encoding: {encoding} (Confidence: {confidence})")
         self.excel_file_name = file_name
         self.extension = os.path.splitext(file_name)[1]
         # read excel file
@@ -232,9 +237,10 @@ class ExcelReader:
                 converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
         elif file_path.endswith(".csv"):
-            df_tmp = pd.read_csv(file_path)
+            df_tmp = pd.read_csv(file_path, encoding=encoding)
             self.df = pd.read_csv(
                 file_path,
+                encoding = encoding,
                 converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
         else:
@@ -272,7 +278,7 @@ class ExcelReader:
             return colunms, results.fetchall()
         except Exception as e:
             logging.error("excel sql run error!", e)
-            raise ValueError(f"Data Query Exception!{sql}")
+            raise ValueError(f"Data Query Exception!\\nSQL[{sql}].\\nError:{str(e)}")
 
 
     def get_df_by_sql_ex(self, sql):

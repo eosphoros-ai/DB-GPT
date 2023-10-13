@@ -19,6 +19,17 @@ def is_chinese_include_number(text):
     match = re.match(pattern, text)
     return match is not None
 
+def is_scientific_notation(string):
+    # 科学计数法的正则表达式
+    pattern = r'^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$'
+    # 使用正则表达式匹配字符串
+    match = re.match(pattern, str(string))
+    # 判断是否匹配成功
+    if match is not None:
+        return True
+    else:
+        return False
+
 def extract_content(long_string, s1, s2, is_include: bool = False):
     # extract text
     match_map ={}

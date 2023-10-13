@@ -20,21 +20,39 @@ def zhipu_generate_stream(
 
     import zhipuai
     zhipuai.api_key = proxy_api_key
-
     history = []
 
     messages: List[ModelMessage] = params["messages"]
     # Add history conversation
-
-    for message in messages:
+    system = ""
+    if len(messages) > 1 and messages[0].role == ModelMessageRoleType.SYSTEM:
+        role_define = messages.pop(0)
+        system = role_define.content
+    else:
+        message = messages.pop(0)
         if message.role == ModelMessageRoleType.HUMAN:
             history.append({"role": "user", "content": message.content})
-        elif message.role == ModelMessageRoleType.SYSTEM:
-            history.append({"role": "system", "content": message.content})
+    for message in messages:
+        if message.role == ModelMessageRoleType.SYSTEM:
+            history.append({"role": "user", "content": message.content})
+        # elif message.role == ModelMessageRoleType.HUMAN:
+        #     history.append({"role": "user", "content": message.content})
         elif message.role == ModelMessageRoleType.AI:
             history.append({"role": "assistant", "content": message.content})
         else:
             pass
+
+    # temp_his = history[::-1]
+    temp_his = history
+    last_user_input = None
+    for m in temp_his:
+        if m["role"] == "user":
+            last_user_input = m
+            break
+
+    if last_user_input:
+        history.remove(last_user_input)
+        history.append(last_user_input)
 
     res = zhipuai.model_api.sse_invoke(
         model=proxyllm_backend,

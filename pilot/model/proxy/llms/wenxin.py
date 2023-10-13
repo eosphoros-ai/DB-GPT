@@ -46,24 +46,45 @@ def wenxin_generate_stream(
     proxy_server_url = f'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/{model_version}?access_token={access_token}'
     
     if not access_token:
-        yield "Failed to get access token. please set the correct api_key and secret key." 
-    
-    messages: List[ModelMessage] = params["messages"] 
+        yield "Failed to get access token. please set the correct api_key and secret key."
 
     history = []
+
+    messages: List[ModelMessage] = params["messages"]
     # Add history conversation
-    for message in messages:
+    system = ""
+    if len(messages) > 1 and messages[0].role == ModelMessageRoleType.SYSTEM:
+        role_define = messages.pop(0)
+        system = role_define.content
+    else:
+        message = messages.pop(0)
         if message.role == ModelMessageRoleType.HUMAN:
             history.append({"role": "user", "content": message.content})
-        elif message.role == ModelMessageRoleType.SYSTEM:
-            history.append({"role": "system", "content": message.content})
+    for message in messages:
+        if message.role == ModelMessageRoleType.SYSTEM:
+            history.append({"role": "user", "content": message.content})
+        # elif message.role == ModelMessageRoleType.HUMAN:
+        #     history.append({"role": "user", "content": message.content})
         elif message.role == ModelMessageRoleType.AI:
             history.append({"role": "assistant", "content": message.content})
         else:
             pass
-    
+
+    # temp_his = history[::-1]
+    temp_his = history
+    last_user_input = None
+    for m in temp_his:
+        if m["role"] == "user":
+            last_user_input = m
+            break
+
+    if last_user_input:
+        history.remove(last_user_input)
+        history.append(last_user_input)
+
     payload = {
         "messages": history,
+        "system": system,
         "temperature": params.get("temperature"),
         "stream": True
     }

@@ -417,6 +417,9 @@ def default_requires():
         "accelerate>=0.20.3",
         "sentence-transformers",
         "protobuf==3.20.3",
+        "zhipuai",
+        "dashscope",
+        "chardet"
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["knowledge"]

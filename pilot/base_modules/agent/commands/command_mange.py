@@ -87,6 +87,11 @@ class CommandRegistry:
             if hasattr(reloaded_module, "register"):
                 reloaded_module.register(self)
 
+    def is_valid_command(self, name:str)-> bool:
+        if name not in self.commands:
+            return False
+        else:
+            return True
     def get_command(self, name: str) -> Callable[..., Any]:
         return self.commands[name]
 
@@ -229,6 +234,18 @@ class ApiCall:
             return True
         return False
 
+    def __deal_error_md_tags(self, all_context, api_context, include_end: bool = True):
+        error_md_tags = ["```", "```python", "```xml", "```json", "```markdown"]
+        if include_end == False:
+            md_tag_end = ""
+        else:
+            md_tag_end = "```"
+        for tag in error_md_tags:
+            all_context = all_context.replace(tag + api_context + md_tag_end, api_context)
+            all_context = all_context.replace(tag + "\n" +api_context + "\n" + md_tag_end, api_context)
+            all_context = all_context.replace(tag + api_context, api_context)
+        return all_context
+
     def api_view_context(self, all_context: str, display_mode: bool = False):
         error_mk_tags = ["```", "```python", "```xml"]
         call_context_map = extract_content_open_ending(all_context, self.agent_prefix, self.agent_end, True)
@@ -237,22 +254,20 @@ class ApiCall:
             if api_status is not None:
                 if display_mode:
                     if api_status.api_result:
-                        for tag in error_mk_tags:
-                            all_context = all_context.replace(tag + api_context + "```", api_context)
+                        all_context = self.__deal_error_md_tags(all_context, api_context)
                         all_context = all_context.replace(api_context, api_status.api_result)
 
                     else:
                         if api_status.status == Status.FAILED.value:
+                            all_context = self.__deal_error_md_tags(all_context, api_context)
                             all_context = all_context.replace(api_context, f"""\n<span style=\"color:red\">ERROR!</span>{api_status.err_msg}\n """)
                         else:
                             cost = (api_status.end_time - self.start_time) / 1000
                             cost_str = "{:.2f}".format(cost)
-                            for tag in error_mk_tags:
-                                all_context = all_context.replace(tag + api_context + "```", api_context)
+                            all_context = self.__deal_error_md_tags(all_context, api_context)
                             all_context = all_context.replace(api_context, f'\n<span style=\"color:green\">Waiting...{cost_str}S</span>\n')
                 else:
-                    for tag in error_mk_tags:
-                        all_context = all_context.replace(tag + api_context + "```", api_context)
+                    all_context = self.__deal_error_md_tags(all_context, api_context, False)
                     all_context = all_context.replace(api_context, self.to_view_text(api_status))
 
             else:
@@ -260,13 +275,13 @@ class ApiCall:
                 now_time = datetime.now().timestamp() * 1000
                 cost = (now_time - self.start_time) / 1000
                 cost_str = "{:.2f}".format(cost)
+                for tag in error_mk_tags:
+                    all_context = all_context.replace(tag + api_context , api_context)
                 all_context = all_context.replace(api_context, f'\n<span style=\"color:green\">Waiting...{cost_str}S</span>\n')
 
         return all_context
 
     def update_from_context(self, all_context):
-        logging.info(f"from_context:{all_context}")
-
         api_context_map = extract_content(all_context, self.agent_prefix, self.agent_end, True)
         for api_index, api_context in api_context_map.items():
             api_context = api_context.replace("\\n", "").replace("\n", "")
@@ -308,7 +323,6 @@ class ApiCall:
         return result.decode("utf-8")
 
     def run(self, llm_text):
-        print(f"stream_plugin_call:{llm_text}")
         if self.__is_need_wait_plugin_call(llm_text):
             # wait api call generate complete
             if self.__check_last_plugin_call_ready(llm_text):
@@ -327,8 +341,6 @@ class ApiCall:
         return self.api_view_context(llm_text)
 
     def run_display_sql(self, llm_text, sql_run_func):
-        print(f"get_display_sql:{llm_text}")
-
         if self.__is_need_wait_plugin_call(llm_text):
             # wait api call generate complete
             if self.__check_last_plugin_call_ready(llm_text):
@@ -343,7 +355,7 @@ class ApiCall:
                                 param = {
                                     "df": sql_run_func(sql),
                                 }
-                                if self.display_registry.get_command(value.name):
+                                if self.display_registry.is_valid_command(value.name):
                                     value.api_result = self.display_registry.call(value.name, **param)
                                 else:
                                     value.api_result = self.display_registry.call("response_table", **param)

@@ -14,6 +14,6 @@ def response_table(df: DataFrame) -> str:
     logger.info(f"response_table")
     html_table = df.to_html(index=False, escape=False, sparsify=False)
     table_str = "".join(html_table.split())
-    html = f"""<div class="w-full overflow-auto">{table_str}</div>"""
-    view_text = html.replace("\n", " ")
-    return view_text
+    table_str = table_str.replace("\n", " ")
+    html = f""" \n<div class="w-full overflow-auto">{table_str}</div>\n """
+    return html
