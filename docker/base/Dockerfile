@@ -3,7 +3,7 @@ ARG BASE_IMAGE="nvidia/cuda:11.8.0-runtime-ubuntu22.04"
 FROM ${BASE_IMAGE}
 ARG BASE_IMAGE
 
-RUN apt-get update && apt-get install -y git python3 pip wget sqlite3 \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y git python3 pip wget sqlite3 tzdata \
     && apt-get clean
 
 ARG BUILD_LOCAL_CODE="false"
@@ -44,17 +44,17 @@ ARG BUILD_LOCAL_CODE="false"
 # COPY the rest of the app
 COPY . /app
 
-# TODO：Need to find a better way to determine whether to build docker image with local code.
-RUN (if [ "${BUILD_LOCAL_CODE}" = "true" ]; \
-    then rm -rf /app/logs && rm -rf /app/pilot/data && rm -rf /app/pilot/message; \
-    fi;)
-
 ARG LOAD_EXAMPLES="true"
 
 RUN (if [ "${LOAD_EXAMPLES}" = "true" ]; \
     then mkdir -p /app/pilot/data && sqlite3 /app/pilot/data/default_sqlite.db < /app/docker/examples/sqls/case_1_student_manager_sqlite.sql \
     && sqlite3 /app/pilot/data/default_sqlite.db < /app/docker/examples/sqls/case_2_ecom_sqlite.sql \
     && sqlite3 /app/pilot/data/default_sqlite.db < /app/docker/examples/sqls/test_case_info_sqlite.sql; \
+    fi;)
+
+RUN (if [ "${LANGUAGE}" = "zh" ]; \
+    then ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo "Asia/Shanghai" > /etc/timezone; \
     fi;)
 
 ENV PYTHONPATH "/app:$PYTHONPATH"
