@@ -5,7 +5,7 @@ import json
 import tempfile
 import time
 
-from pilot.utils.tracer import SpanStorage, FileSpanStorage, Span
+from pilot.utils.tracer import SpanStorage, FileSpanStorage, Span, SpanType
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def read_spans_from_file(filename):
     "storage", [{"batch_size": 1, "flush_interval": 5}], indirect=True
 )
 def test_write_span(storage: SpanStorage):
-    span = Span("1", "a", "b", "op1")
+    span = Span("1", "a", SpanType.BASE, "b", "op1")
     storage.append_span(span)
     time.sleep(0.1)
 
@@ -57,8 +57,8 @@ def test_write_span(storage: SpanStorage):
     "storage", [{"batch_size": 1, "flush_interval": 5}], indirect=True
 )
 def test_incremental_write(storage: SpanStorage):
-    span1 = Span("1", "a", "b", "op1")
-    span2 = Span("2", "c", "d", "op2")
+    span1 = Span("1", "a", SpanType.BASE, "b", "op1")
+    span2 = Span("2", "c", SpanType.BASE, "d", "op2")
 
     storage.append_span(span1)
     storage.append_span(span2)
@@ -72,7 +72,7 @@ def test_incremental_write(storage: SpanStorage):
     "storage", [{"batch_size": 2, "flush_interval": 5}], indirect=True
 )
 def test_sync_and_async_append(storage: SpanStorage):
-    span = Span("1", "a", "b", "op1")
+    span = Span("1", "a", SpanType.BASE, "b", "op1")
 
     storage.append_span(span)
 
@@ -88,7 +88,7 @@ def test_sync_and_async_append(storage: SpanStorage):
 
 @pytest.mark.asyncio
 async def test_flush_policy(storage: SpanStorage):
-    span = Span("1", "a", "b", "op1")
+    span = Span("1", "a", SpanType.BASE, "b", "op1")
 
     for _ in range(storage.batch_size - 1):
         storage.append_span(span)
@@ -108,8 +108,8 @@ async def test_flush_policy(storage: SpanStorage):
     "storage", [{"batch_size": 2, "file_does_not_exist": True}], indirect=True
 )
 def test_non_existent_file(storage: SpanStorage):
-    span = Span("1", "a", "b", "op1")
-    span2 = Span("2", "c", "d", "op2")
+    span = Span("1", "a", SpanType.BASE, "b", "op1")
+    span2 = Span("2", "c", SpanType.BASE, "d", "op2")
     storage.append_span(span)
     time.sleep(0.1)
 
