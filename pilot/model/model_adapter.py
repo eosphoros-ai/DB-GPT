@@ -51,6 +51,12 @@ _OLD_MODELS = [
 class LLMModelAdaper:
     """New Adapter for DB-GPT LLM models"""
 
+    def use_fast_tokenizer(self) -> bool:
+        """Whether use a [fast Rust-based tokenizer](https://huggingface.co/docs/tokenizers/index) if it is supported
+        for a given model.
+        """
+        return False
+
     def model_type(self) -> str:
         return ModelType.HF
 
@@ -169,6 +175,9 @@ class OldLLMModelAdaperWrapper(LLMModelAdaper):
         self._adapter = adapter
         self._chat_adapter = chat_adapter
 
+    def use_fast_tokenizer(self) -> bool:
+        return self._adapter.use_fast_tokenizer()
+
     def model_type(self) -> str:
         return self._adapter.model_type()
 
@@ -199,6 +208,9 @@ class FastChatLLMModelAdaperWrapper(LLMModelAdaper):
 
     def __init__(self, adapter: "BaseModelAdapter") -> None:
         self._adapter = adapter
+
+    def use_fast_tokenizer(self) -> bool:
+        return self._adapter.use_fast_tokenizer
 
     def load(self, model_path: str, from_pretrained_kwargs: dict):
         return self._adapter.load_model(model_path, from_pretrained_kwargs)
