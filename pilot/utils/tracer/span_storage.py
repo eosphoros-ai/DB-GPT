@@ -34,7 +34,9 @@ class FileSpanStorage(SpanStorage):
         self.flush_signal_queue = queue.Queue()
 
         if not os.path.exists(filename):
-            with open(filename, "w") as _:
+            # New file if not exist
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            with open(filename, "a"):
                 pass
         self.flush_thread = threading.Thread(target=self._flush_to_file, daemon=True)
         self.flush_thread.start()

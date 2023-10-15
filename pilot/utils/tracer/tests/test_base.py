@@ -1,7 +1,7 @@
 from typing import Dict
 from pilot.component import SystemApp
 
-from pilot.utils.tracer import Span, SpanStorage, Tracer
+from pilot.utils.tracer import Span, SpanType, SpanStorage, Tracer
 
 
 # Mock implementations
@@ -31,7 +31,9 @@ class MockTracer(Tracer):
             self._new_uuid() if parent_span_id is None else parent_span_id.split(":")[0]
         )
         span_id = f"{trace_id}:{self._new_uuid()}"
-        span = Span(trace_id, span_id, parent_span_id, operation_name, metadata)
+        span = Span(
+            trace_id, span_id, SpanType.BASE, parent_span_id, operation_name, metadata
+        )
         self.current_span = span
         return span
 
@@ -50,7 +52,14 @@ class MockTracer(Tracer):
 
 
 def test_span_creation():
-    span = Span("trace_id", "span_id", "parent_span_id", "operation", {"key": "value"})
+    span = Span(
+        "trace_id",
+        "span_id",
+        SpanType.BASE,
+        "parent_span_id",
+        "operation",
+        {"key": "value"},
+    )
     assert span.trace_id == "trace_id"
     assert span.span_id == "span_id"
     assert span.parent_span_id == "parent_span_id"
