@@ -107,10 +107,9 @@ class BaseChat(ABC):
 
     async def __call_base(self):
         import inspect
-
         input_values = (
             await self.generate_input_values()
-            if inspect.isawaitable(self.generate_input_values())
+            if inspect.isawaitable(self.generate_input_values)
             else self.generate_input_values()
         )
         ### Chat sequence advance
@@ -181,7 +180,7 @@ class BaseChat(ABC):
             span.end(metadata={"error": str(e)})
 
     async def nostream_call(self):
-        payload = self.__call_base()
+        payload = await self.__call_base()
         logger.info(f"Request: \n{payload}")
         ai_response_text = ""
         span = root_tracer.start_span(

@@ -106,21 +106,50 @@ class RAGGraphEngine:
     def _build_index_from_docs(self, documents: List[Document]) -> KG:
         """Build the index from nodes."""
         index_struct = self.index_struct_cls()
-        for doc in documents:
-            triplets = self._extract_triplets(doc.page_content)
-            if len(triplets) == 0:
-                continue
-            text_node = TextNode(text=doc.page_content, metadata=doc.metadata)
-            logger.info(f"extracted knowledge triplets: {triplets}")
-            for triplet in triplets:
-                subj, _, obj = triplet
-                self.graph_store.upsert_triplet(*triplet)
-                index_struct.add_node([subj, obj], text_node)
+        num_threads = 5
+        chunk_size = len(documents) if (len(documents) < num_threads) else len(documents) / num_threads
 
+        import concurrent
+        future_tasks = []
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for i in range(num_threads):
+                start = i * chunk_size
+                end = start + chunk_size if i < num_threads - 1 else None
+                future_tasks.append(executor.submit(self._extract_triplets_task, documents[start:end][0], index_struct))
+
+        result = [future.result() for future in future_tasks]
         return index_struct
+        # for doc in documents:
+        #     triplets = self._extract_triplets(doc.page_content)
+        #     if len(triplets) == 0:
+        #         continue
+        #     text_node = TextNode(text=doc.page_content, metadata=doc.metadata)
+        #     logger.info(f"extracted knowledge triplets: {triplets}")
+        #     for triplet in triplets:
+        #         subj, _, obj = triplet
+        #         self.graph_store.upsert_triplet(*triplet)
+        #         index_struct.add_node([subj, obj], text_node)
+        #
+        # return index_struct
 
     def search(self, query):
         from pilot.graph_engine.graph_search import RAGGraphSearch
 
         graph_search = RAGGraphSearch(graph_engine=self)
         return graph_search.search(query)
+
+    def _extract_triplets_task(self, doc, index_struct):
+        import threading
+        thread_id = threading.get_ident()
+        print(f"current thread-{thread_id} begin extract triplets task")
+        triplets = self._extract_triplets(doc.page_content)
+        if len(triplets) == 0:
+            triplets = []
+        text_node = TextNode(text=doc.page_content, metadata=doc.metadata)
+        logger.info(f"extracted knowledge triplets: {triplets}")
+        print(f"current thread-{thread_id} end extract triplets tasks, triplets-{triplets}")
+        for triplet in triplets:
+            subj, _, obj = triplet
+            self.graph_store.upsert_triplet(*triplet)
+            self.graph_store.upsert_triplet(*triplet)
+            index_struct.add_node([subj, obj], text_node)

@@ -1,11 +1,7 @@
 import os
-import json
 import logging
-import weaviate
+#import weaviate
 from langchain.schema import Document
-from langchain.vectorstores import Weaviate
-from weaviate.exceptions import WeaviateBaseError
-
 from pilot.configs.config import Config
 from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.vector_store.base import VectorStoreBase
@@ -72,7 +68,7 @@ class WeaviateStore(VectorStoreBase):
             if self.vector_store_client.schema.get(self.vector_name):
                 return True
             return False
-        except WeaviateBaseError as e:
+        except Exception as e:
             logger.error("vector_name_exists error", e.message)
             return False
 
