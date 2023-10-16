@@ -136,7 +136,7 @@ async def personal_agent_upload( doc_file: UploadFile = File(...), user: str =No
     logger.info(f"personal_agent_upload:{doc_file.filename},{user}")
     try:
         agent_hub = AgentHub(PLUGINS_DIR)
-        agent_hub.upload_my_plugin(doc_file, user)
+        await agent_hub.upload_my_plugin(doc_file, user)
         return Result.succ(None)
     except Exception  as e:
         logger.error("Upload Personal Plugin Error!", e)

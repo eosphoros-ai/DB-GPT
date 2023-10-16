@@ -15,7 +15,7 @@ class MyPluginEntity(Base):
 
     id = Column(Integer, primary_key=True, comment="autoincrement id")
     tenant = Column(String(255), nullable=True, comment="user's tenant")
-    user_code = Column(String(255), nullable=True, comment="user code")
+    user_code = Column(String(255), nullable=False, comment="user code")
     user_name = Column(String(255), nullable=True, comment="user name")
     name = Column(String(255), unique=True, nullable=False, comment="plugin name")
     file_name = Column(String(255),  nullable=False, comment="plugin package file name")
@@ -25,7 +25,7 @@ class MyPluginEntity(Base):
     succ_count = Column(Integer, nullable=True, default=0, comment="plugin total success count")
     created_at = Column(DateTime, default=datetime.utcnow, comment="plugin install time")
     __table_args__ = (
-        UniqueConstraint('name', name="uk_name"),
+        UniqueConstraint('user_code','name', name="uk_name"),
     )
 
 

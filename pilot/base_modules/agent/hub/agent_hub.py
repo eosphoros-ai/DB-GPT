@@ -140,7 +140,7 @@ class AgentHub:
         except Exception as e:
             raise ValueError(f"Update Agent Hub Db Info Faild!{str(e)}")
 
-    def upload_my_plugin(self, doc_file: UploadFile, user: Any=Default_User):
+    async def upload_my_plugin(self, doc_file: UploadFile, user: Any=Default_User):
 
         # We can not move temp file in windows system when we open file in context of `with`
         file_path = os.path.join(self.plugin_dir, doc_file.filename)
@@ -150,13 +150,17 @@ class AgentHub:
             dir=os.path.join(self.plugin_dir)
         )
         with os.fdopen(tmp_fd, "wb") as tmp:
-            tmp.write(doc_file.read())
+            tmp.write(await doc_file.read())
         shutil.move(
             tmp_path,
             os.path.join(self.plugin_dir, doc_file.filename),
         )
 
         my_plugins = scan_plugins(self.plugin_dir, doc_file.filename)
+
+        if user is None or len(user) <=0:
+            user = Default_User
+
         for my_plugin in my_plugins:
             my_plugin_entiy = MyPluginEntity()
 

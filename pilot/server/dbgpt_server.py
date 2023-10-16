@@ -41,7 +41,6 @@ from pilot.utils.utils import (
 from pilot.utils.tracer import root_tracer, initialize_tracer, SpanType, SpanTypeRunName
 from pilot.utils.parameter_utils import _get_dict_from_obj
 from pilot.utils.system_utils import get_system_info
-
 from pilot.base_modules.agent.controller import router as agent_route
 
 
