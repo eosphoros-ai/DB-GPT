@@ -162,6 +162,12 @@ class DBSummaryClient:
                 )
 
     def init_db_profile(self, db_summary_client, dbname, embeddings):
+        """db profile initialization
+        Args:
+        db_summary_client(DBSummaryClient): DB Summary Client
+        dbname(str): dbname
+        embeddings(SourceEmbedding): embedding for read string document
+        """
         from pilot.embedding_engine.string_embedding import StringEmbedding
 
         vector_store_name = dbname + "_profile"
@@ -178,9 +184,15 @@ class DBSummaryClient:
             docs = []
             docs.extend(embedding.read_batch())
             for table_summary in db_summary_client.table_info_json():
+                from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+                text_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=len(table_summary), chunk_overlap=100
+                )
                 embedding = StringEmbedding(
-                    table_summary,
-                    profile_store_config,
+                    file_path=table_summary,
+                    vector_store_config=profile_store_config,
+                    text_splitter=text_splitter,
                 )
                 docs.extend(embedding.read_batch())
             embedding.index_to_store(docs)
