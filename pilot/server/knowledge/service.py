@@ -261,9 +261,6 @@ class KnowledgeService:
             # docs = engine.search(
             #     "Comparing Curry and James in terms of their positions, playing styles, and achievements in the NBA"
             # )
-            embedding_factory = CFG.SYSTEM_APP.get_component(
-                "embedding_factory", EmbeddingFactory
-            )
             # update document status
             doc.status = SyncStatus.RUNNING.name
             doc.chunk_size = len(chunk_docs)

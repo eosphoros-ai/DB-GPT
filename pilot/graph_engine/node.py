@@ -21,6 +21,7 @@ WRAP_WIDTH = 70
 
 class BaseComponent(BaseModel):
     """Base component object to caputure class names."""
+
     """reference llama-index"""
 
     @classmethod

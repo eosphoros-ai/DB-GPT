@@ -9,7 +9,7 @@ chat_factory = ChatFactory()
 
 
 async def llm_chat_response_nostream(chat_scene: str, **chat_param):
-    """ llm_chat_response_nostream """
+    """llm_chat_response_nostream"""
     chat: BaseChat = chat_factory.get_implementation(chat_scene, **chat_param)
     res = await chat.get_llm_response()
     return res

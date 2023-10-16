@@ -4,6 +4,8 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional, Dict, Any, Set, Callable
 
+from langchain.schema import Document
+
 from pilot.graph_engine.node import BaseNode, TextNode, NodeWithScore
 from pilot.graph_engine.search import BaseSearch, SearchMode
 from pilot.utils import utils
@@ -67,14 +69,14 @@ class RAGGraphSearch(BaseSearch):
             logger.warn(f"can not to find graph schema: {e}")
             self._graph_schema = ""
 
-    def _extract_subject_entities(self, query_str: str) -> Set[str]:
+    async def _extract_subject_entities(self, query_str: str) -> Set[str]:
         """extract subject entities."""
         if self.extract_subject_entities_fn is not None:
-            return self.extract_subject_entities_fn(query_str)
+            return await self.extract_subject_entities_fn(query_str)
         else:
-            return self._extract_entities_by_llm(query_str)
+            return await self._extract_entities_by_llm(query_str)
 
-    def _extract_entities_by_llm(self, text: str) -> Set[str]:
+    async def _extract_entities_by_llm(self, text: str) -> Set[str]:
         """extract subject entities from text by llm"""
         from pilot.scene.base import ChatScene
         from pilot.common.chat_util import llm_chat_response_nostream
@@ -86,21 +88,23 @@ class RAGGraphSearch(BaseSearch):
             "select_param": "entity",
             "model_name": self.model_name,
         }
-        loop = utils.get_or_create_event_loop()
-        entities = loop.run_until_complete(
-            llm_chat_response_nostream(
-                ChatScene.ExtractEntity.value(), **{"chat_param": chat_param}
-            )
+        # loop = utils.get_or_create_event_loop()
+        # entities = loop.run_until_complete(
+        #     llm_chat_response_nostream(
+        #         ChatScene.ExtractEntity.value(), **{"chat_param": chat_param}
+        #     )
+        # )
+        return await llm_chat_response_nostream(
+            ChatScene.ExtractEntity.value(), **{"chat_param": chat_param}
         )
-        return entities
 
-    def _search(
+    async def _search(
         self,
         query_str: str,
-    ) -> List[NodeWithScore]:
+    ) -> List[Document]:
         """Get nodes for response."""
         node_visited = set()
-        keywords = self._extract_subject_entities(query_str)
+        keywords = await self._extract_subject_entities(query_str)
         print(f"extract entities: {keywords}\n")
         rel_texts = []
         cur_rel_map = {}
@@ -114,8 +118,8 @@ class RAGGraphSearch(BaseSearch):
                     if node_id in node_visited:
                         continue
 
-                    if self._include_text:
-                        chunk_indices_count[node_id] += 1
+                    # if self._include_text:
+                    #     chunk_indices_count[node_id] += 1
 
                     node_visited.add(node_id)
 
@@ -179,8 +183,11 @@ class RAGGraphSearch(BaseSearch):
         sorted_nodes_with_scores.append(
             NodeWithScore(node=rel_text_node, score=DEFAULT_NODE_SCORE)
         )
-
-        return sorted_nodes_with_scores
+        docs = [
+            Document(page_content=node.text, metadata=node.metadata)
+            for node in sorted_nodes_with_scores
+        ]
+        return docs
 
     def _get_metadata_for_response(
         self, nodes: List[BaseNode]

@@ -64,7 +64,7 @@ class ChatKnowledge(BaseChat):
         self.prompt_template.template_is_strict = False
 
     async def stream_call(self):
-        input_values = self.generate_input_values()
+        input_values = await self.generate_input_values()
         # Source of knowledge file
         relations = input_values.get("relations")
         last_output = None
@@ -84,14 +84,14 @@ class ChatKnowledge(BaseChat):
             )
             yield last_output
 
-    def generate_input_values(self):
+    async def generate_input_values(self):
         if self.space_context:
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
-        docs = self.rag_engine.search(query=self.current_user_input)
-        docs = self.knowledge_embedding_client.similar_search(
-            self.current_user_input, self.top_k
-        )
+        docs = await self.rag_engine.search(query=self.current_user_input)
+        # docs = self.knowledge_embedding_client.similar_search(
+        #     self.current_user_input, self.top_k
+        # )
         if not docs:
             raise ValueError(
                 "you have no knowledge space, please add your knowledge space"

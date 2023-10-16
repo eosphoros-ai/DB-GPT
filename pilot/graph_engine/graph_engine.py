@@ -45,8 +45,7 @@ class RAGGraphEngine:
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        # from llama_index.graph_stores import SimpleGraphStore
-        # from llama_index.graph_stores.types import GraphStore
+        from llama_index.graph_stores import SimpleGraphStore
 
         # need to set parameters before building index in base class.
         self.knowledge_source = knowledge_source
@@ -55,8 +54,8 @@ class RAGGraphEngine:
         self.text_splitter = text_splitter
         self.index_struct = index_struct
         self.include_embeddings = include_embeddings
-        # self.graph_store = graph_store or SimpleGraphStore()
-        self.graph_store = graph_store
+        self.graph_store = graph_store or SimpleGraphStore()
+        # self.graph_store = graph_store
         self.max_triplets_per_chunk = max_triplets_per_chunk
         self._max_object_length = max_object_length
         self._extract_triplet_fn = extract_triplet_fn
@@ -103,14 +102,6 @@ class RAGGraphEngine:
             )
         )
         return triplets
-        # response = self._service_context.llm_predictor.predict(
-        #     self.kg_triple_extract_template,
-        #     text=text,
-        # )
-        # print(response, flush=True)
-        # return self._parse_triplet_response(
-        #     response, max_length=self._max_object_length
-        # )
 
     def _build_index_from_docs(self, documents: List[Document]) -> KG:
         """Build the index from nodes."""
@@ -126,7 +117,6 @@ class RAGGraphEngine:
                 self.graph_store.upsert_triplet(*triplet)
                 index_struct.add_node([subj, obj], text_node)
 
-
         return index_struct
 
     def search(self, query):
@@ -134,4 +124,3 @@ class RAGGraphEngine:
 
         graph_search = RAGGraphSearch(graph_engine=self)
         return graph_search.search(query)
-

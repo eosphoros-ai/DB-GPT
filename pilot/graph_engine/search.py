@@ -23,7 +23,7 @@ class SearchMode(str, Enum):
 class BaseSearch(ABC):
     """Base Search."""
 
-    def search(self, query: str):
+    async def search(self, query: str):
         """Retrieve nodes given query.
 
         Args:
@@ -32,10 +32,10 @@ class BaseSearch(ABC):
 
         """
         # if isinstance(query, str):
-        return self._search(query)
+        return await self._search(query)
 
     @abstractmethod
-    def _search(self, query: str):
+    async def _search(self, query: str):
         """search nodes given query.
 
         Implemented by the user.

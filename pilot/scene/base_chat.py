@@ -105,8 +105,14 @@ class BaseChat(ABC):
             speak_to_user = prompt_define_response
         return speak_to_user
 
-    def __call_base(self):
-        input_values = self.generate_input_values()
+    async def __call_base(self):
+        import inspect
+
+        input_values = (
+            await self.generate_input_values()
+            if inspect.isawaitable(self.generate_input_values())
+            else self.generate_input_values()
+        )
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)
@@ -146,7 +152,7 @@ class BaseChat(ABC):
 
     async def stream_call(self):
         # TODO Retry when server connection error
-        payload = self.__call_base()
+        payload = await self.__call_base()
 
         self.skip_echo_len = len(payload.get("prompt").replace("</s>", " ")) + 11
         logger.info(f"Request: \n{payload}")
@@ -234,7 +240,7 @@ class BaseChat(ABC):
         return self.current_ai_response()
 
     async def get_llm_response(self):
-        payload = self.__call_base()
+        payload = await self.__call_base()
         logger.info(f"Request: \n{payload}")
         ai_response_text = ""
         try:
