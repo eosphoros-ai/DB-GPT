@@ -308,7 +308,7 @@ def core_requires():
         "auto-gpt-plugin-template",
         "gTTS==2.3.1",
         "langchain>=0.0.286",
-        "SQLAlchemy",
+        "SQLAlchemy==2.0.22",
         "pymysql",
         "duckdb==0.8.1",
         "duckdb-engine",

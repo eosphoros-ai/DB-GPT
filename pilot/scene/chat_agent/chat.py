@@ -31,7 +31,7 @@ class ChatAgent(BaseChat):
         self.plugins_prompt_generator.command_registry = CFG.command_registry
 
         # load  select plugin
-        agent_module = CFG.SYSTEM_APP.get_componet(ComponentType.AGENT_HUB, ModuleAgent)
+        agent_module = CFG.SYSTEM_APP.get_component(ComponentType.AGENT_HUB, ModuleAgent)
         self.plugins_prompt_generator = agent_module.load_select_plugin(self.plugins_prompt_generator, self.select_plugins)
 
         self.api_call = ApiCall(plugin_generator=self.plugins_prompt_generator)

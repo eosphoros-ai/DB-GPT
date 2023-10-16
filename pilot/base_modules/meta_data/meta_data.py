@@ -72,7 +72,7 @@ else:
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 session = Session()
 
-Base = declarative_base(bind=engine)
+Base = declarative_base()
 
 # Base.metadata.create_all()
 
@@ -84,6 +84,8 @@ alembic_cfg = AlembicConfig(alembic_ini_path)
 alembic_cfg.set_main_option('sqlalchemy.url',  str(engine.url))
 
 os.makedirs(default_db_path + "/alembic", exist_ok=True)
+os.makedirs(default_db_path + "/alembic/versions", exist_ok=True)
+
 alembic_cfg.set_main_option('script_location',  default_db_path + "/alembic")
 
 # 将模型和会话传递给Alembic配置

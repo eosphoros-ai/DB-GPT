@@ -81,9 +81,8 @@ app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
 
 
 app.include_router(knowledge_router,  tags=["Knowledge"])
-
 app.include_router(prompt_router,  tags=["Prompt"])
-# app.include_router(api_editor_route_v1)
+
 
 @app.get("/openapi.json")
 async def get_openapi_endpoint():
