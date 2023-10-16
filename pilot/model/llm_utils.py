@@ -146,7 +146,7 @@ def list_supported_models():
 def _list_supported_models(
     worker_type: str, model_config: Dict[str, str]
 ) -> List[SupportedModel]:
-    from pilot.model.adapter import get_llm_model_adapter
+    from pilot.model.model_adapter import get_llm_model_adapter
     from pilot.model.parameter import ModelParameters
     from pilot.model.loader import _get_model_real_path
 

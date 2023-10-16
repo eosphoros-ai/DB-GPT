@@ -17,7 +17,7 @@ class RemoteWorkerManager(LocalWorkerManager):
         for listener in self.start_listeners:
             listener(self)
 
-    async def stop(self):
+    async def stop(self, ignore_exception: bool = False):
         pass
 
     async def _fetch_from_worker(

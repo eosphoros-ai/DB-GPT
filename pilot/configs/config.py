@@ -32,7 +32,7 @@ class Config(metaclass=Singleton):
         # self.NUM_GPUS = int(os.getenv("NUM_GPUS", 1))
 
         self.execute_local_commands = (
-            os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
+            os.getenv("EXECUTE_LOCAL_COMMANDS", "False").lower() == "true"
         )
         # User agent header to use when making HTTP requests
         # Some websites might just completely deny request with an error code if
@@ -64,7 +64,7 @@ class Config(metaclass=Singleton):
         self.milvus_username = os.getenv("MILVUS_USERNAME")
         self.milvus_password = os.getenv("MILVUS_PASSWORD")
         self.milvus_collection = os.getenv("MILVUS_COLLECTION", "dbgpt")
-        self.milvus_secure = os.getenv("MILVUS_SECURE") == "True"
+        self.milvus_secure = os.getenv("MILVUS_SECURE", "False").lower() == "true"
 
         self.authorise_key = os.getenv("AUTHORISE_COMMAND_KEY", "y")
         self.exit_key = os.getenv("EXIT_KEY", "n")
@@ -98,7 +98,7 @@ class Config(metaclass=Singleton):
             self.disabled_command_categories = []
 
         self.execute_local_commands = (
-            os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
+            os.getenv("EXECUTE_LOCAL_COMMANDS", "False").lower() == "true"
         )
         ### message stor file
         self.message_dir = os.getenv("MESSAGE_HISTORY_DIR", "../../message")
@@ -107,7 +107,7 @@ class Config(metaclass=Singleton):
 
         self.plugins: List["AutoGPTPluginTemplate"] = []
         self.plugins_openai = []
-        self.plugins_auto_load = os.getenv("AUTO_LOAD_PLUGIN", "True") == "True"
+        self.plugins_auto_load = os.getenv("AUTO_LOAD_PLUGIN", "True").lower() == "true"
 
         self.plugins_git_branch = os.getenv("PLUGINS_GIT_BRANCH", "plugin_dashboard")
 
@@ -124,10 +124,10 @@ class Config(metaclass=Singleton):
             self.plugins_denylist = []
         ### Native SQL Execution Capability Control Configuration
         self.NATIVE_SQL_CAN_RUN_DDL = (
-            os.getenv("NATIVE_SQL_CAN_RUN_DDL", "True") == "True"
+            os.getenv("NATIVE_SQL_CAN_RUN_DDL", "True").lower() == "true"
         )
         self.NATIVE_SQL_CAN_RUN_WRITE = (
-            os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True") == "True"
+            os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True").lower() == "true"
         )
 
         ### default Local database connection configuration
@@ -141,6 +141,7 @@ class Config(metaclass=Singleton):
         self.LOCAL_DB_PORT = int(os.getenv("LOCAL_DB_PORT", 3306))
         self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
+        self.LOCAL_DB_POOL_SIZE = int(os.getenv("LOCAL_DB_POOL_SIZE", 10))
 
         self.LOCAL_DB_MANAGE = None
 
@@ -169,8 +170,8 @@ class Config(metaclass=Singleton):
 
         # QLoRA
         self.QLoRA = os.getenv("QUANTIZE_QLORA", "True")
-        self.IS_LOAD_8BIT = os.getenv("QUANTIZE_8bit", "True") == "True"
-        self.IS_LOAD_4BIT = os.getenv("QUANTIZE_4bit", "False") == "True"
+        self.IS_LOAD_8BIT = os.getenv("QUANTIZE_8bit", "True").lower() == "true"
+        self.IS_LOAD_4BIT = os.getenv("QUANTIZE_4bit", "False").lower() == "true"
         if self.IS_LOAD_8BIT and self.IS_LOAD_4BIT:
             self.IS_LOAD_8BIT = False
         # In order to be compatible with the new and old model parameter design
@@ -185,6 +186,11 @@ class Config(metaclass=Singleton):
         self.KNOWLEDGE_SEARCH_MAX_TOKEN = int(
             os.getenv("KNOWLEDGE_SEARCH_MAX_TOKEN", 2000)
         )
+        ### Control whether to display the source document of knowledge on the front end.
+        self.KNOWLEDGE_CHAT_SHOW_RELATIONS = (
+            os.getenv("KNOWLEDGE_CHAT_SHOW_RELATIONS", "False").lower() == "true"
+        )
+
         ### SUMMARY_CONFIG Configuration
         self.SUMMARY_CONFIG = os.getenv("SUMMARY_CONFIG", "FAST")
 
@@ -194,6 +200,9 @@ class Config(metaclass=Singleton):
         self.DBGPT_LOG_LEVEL = os.getenv("DBGPT_LOG_LEVEL", "INFO")
 
         self.SYSTEM_APP: Optional["SystemApp"] = None
+
+        ### Temporary configuration
+        self.USE_FASTCHAT: bool = os.getenv("USE_FASTCHAT", "True").lower() == "true"
 
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""

@@ -22,9 +22,13 @@ According to the characteristics of the analyzed data, choose the most suitable 
 
 Pay attention to the length of the output content of the analysis result, do not exceed 4000 tokens
 
-Give the correct {dialect} analysis SQL (don't use unprovided values such as 'paid'), analysis title(don't exist the same), display method and summary of brief analysis thinking, and respond in the following json format:
+Give the correct {dialect} analysis SQL
+1.Do not use unprovided values such as 'paid'
+2.All queried values must have aliases, such as select count(*) as count from table
+3.If the table structure definition uses the keywords of {dialect} as field names, you need to use escape characters, such as select `count` from table
+4.Carefully check the correctness of the SQL, the SQL must be correct, display method and summary of brief analysis thinking, and respond in the following json format:
 {response}
-Ensure the response is correct json and can be parsed by Python json.loads
+The important thing is: Please make sure to only return the json string, do not add any other content (for direct processing by the program), and the json can be parsed by Python json.loads
 """
 
 RESPONSE_FORMAT = [

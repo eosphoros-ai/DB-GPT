@@ -5,9 +5,8 @@ from typing import List
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
-import signal
 from pilot.configs.config import Config
-from pilot.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG
+from pilot.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG, LOGDIR
 from pilot.component import SystemApp
 
 from pilot.server.base import (
@@ -24,23 +23,27 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pilot.server.knowledge.api import router as knowledge_router
 from pilot.server.prompt.api import router as prompt_router
+from pilot.server.llm_manage.api import router as llm_manage_api
 
 
 from pilot.openapi.api_v1.api_v1 import router as api_v1
 from pilot.openapi.base import validation_exception_handler
 from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
+from pilot.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
 from pilot.commands.disply_type.show_chart_gen import static_message_img_path
 from pilot.model.cluster import initialize_worker_manager_in_client
-from pilot.utils.utils import setup_logging, logging_str_to_uvicorn_level
+from pilot.utils.utils import (
+    setup_logging,
+    _get_logging_level,
+    logging_str_to_uvicorn_level,
+)
+from pilot.utils.tracer import root_tracer, initialize_tracer, SpanType, SpanTypeRunName
+from pilot.utils.parameter_utils import _get_dict_from_obj
+from pilot.utils.system_utils import get_system_info
 
 static_file_path = os.path.join(os.getcwd(), "server/static")
 
 CFG = Config()
-
-
-def signal_handler():
-    print("in order to avoid chroma db atexit problem")
-    os._exit(0)
 
 
 def swagger_monkey_patch(*args, **kwargs):
@@ -72,6 +75,8 @@ app.add_middleware(
 app.include_router(api_v1, prefix="/api")
 app.include_router(knowledge_router, prefix="/api")
 app.include_router(api_editor_route_v1, prefix="/api")
+app.include_router(llm_manage_api, prefix="/api")
+app.include_router(api_fb_v1, prefix="/api")
 
 # app.include_router(api_v1)
 app.include_router(knowledge_router)
@@ -95,19 +100,27 @@ def mount_static_files(app):
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
+def _get_webserver_params(args: List[str] = None):
+    from pilot.utils.parameter_utils import EnvArgumentParser
+
+    parser: argparse.ArgumentParser = EnvArgumentParser.create_argparse_option(
+        WebWerverParameters
+    )
+    return WebWerverParameters(**vars(parser.parse_args(args=args)))
+
+
 def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     """Initialize app
     If you use gunicorn as a process manager, initialize_app can be invoke in `on_starting` hook.
     """
     if not param:
-        from pilot.utils.parameter_utils import EnvArgumentParser
+        param = _get_webserver_params(args)
 
-        parser: argparse.ArgumentParser = EnvArgumentParser.create_argparse_option(
-            WebWerverParameters
-        )
-        param = WebWerverParameters(**vars(parser.parse_args(args=args)))
-
-    setup_logging(logging_level=param.log_level)
+    if not param.log_level:
+        param.log_level = _get_logging_level()
+    setup_logging(
+        "pilot", logging_level=param.log_level, logger_filename="dbgpt_webserver.log"
+    )
     # Before start
     system_app.before_start()
 
@@ -120,7 +133,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     model_start_listener = _create_model_start_listener(system_app)
     initialize_components(param, system_app, embedding_model_name, embedding_model_path)
 
-    model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
+    model_path = LLM_MODEL_CONFIG.get(CFG.LLM_MODEL)
     if not param.light:
         print("Model Unified Deployment Mode!")
         if not param.remote_embedding:
@@ -164,12 +177,24 @@ def run_uvicorn(param: WebWerverParameters):
         port=param.port,
         log_level=logging_str_to_uvicorn_level(param.log_level),
     )
-    signal.signal(signal.SIGINT, signal_handler())
 
 
 def run_webserver(param: WebWerverParameters = None):
-    param = initialize_app(param)
-    run_uvicorn(param)
+    if not param:
+        param = _get_webserver_params()
+    initialize_tracer(system_app, os.path.join(LOGDIR, "dbgpt_webserver_tracer.jsonl"))
+
+    with root_tracer.start_span(
+        "run_webserver",
+        span_type=SpanType.RUN,
+        metadata={
+            "run_service": SpanTypeRunName.WEBSERVER,
+            "params": _get_dict_from_obj(param),
+            "sys_infos": _get_dict_from_obj(get_system_info()),
+        },
+    ):
+        param = initialize_app(param)
+        run_uvicorn(param)
 
 
 if __name__ == "__main__":

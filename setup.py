@@ -8,14 +8,16 @@ from enum import Enum
 import urllib.request
 from urllib.parse import urlparse, quote
 import re
-from pip._internal.utils.appdirs import user_cache_dir
 import shutil
 from setuptools import find_packages
 
 with open("README.md", mode="r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "false").lower() == "true"
+BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
+LLAMA_CPP_GPU_ACCELERATION = (
+    os.getenv("LLAMA_CPP_GPU_ACCELERATION", "true").lower() == "true"
+)
 
 
 def parse_requirements(file_name: str) -> List[str]:
@@ -67,6 +69,9 @@ def cache_package(package_url: str, package_name: str, is_windows: bool = False)
     safe_url, parsed_url = encode_url(package_url)
     if BUILD_NO_CACHE:
         return safe_url
+
+    from pip._internal.utils.appdirs import user_cache_dir
+
     filename = os.path.basename(parsed_url)
     cache_dir = os.path.join(user_cache_dir("pip"), "http", "wheels", package_name)
     os.makedirs(cache_dir, exist_ok=True)
@@ -198,9 +203,9 @@ def get_cuda_version() -> str:
 
 
 def torch_requires(
-    torch_version: str = "2.0.0",
-    torchvision_version: str = "0.15.1",
-    torchaudio_version: str = "2.0.1",
+    torch_version: str = "2.0.1",
+    torchvision_version: str = "0.15.2",
+    torchaudio_version: str = "2.0.2",
 ):
     torch_pkgs = [
         f"torch=={torch_version}",
@@ -247,21 +252,29 @@ def llama_cpp_python_cuda_requires():
     if not cuda_version:
         print("CUDA not support, use cpu version")
         return
+    if not LLAMA_CPP_GPU_ACCELERATION:
+        print("Disable GPU acceleration")
+        return
+    # Supports GPU acceleration
     device = "cu" + cuda_version.replace(".", "")
     os_type, cpu_avx = get_cpu_avx_support()
+    print(f"OS: {os_type}, cpu avx: {cpu_avx}")
     supported_os = [OSType.WINDOWS, OSType.LINUX]
     if os_type not in supported_os:
         print(
             f"llama_cpp_python_cuda just support in os: {[r._value_ for r in supported_os]}"
         )
         return
-    if cpu_avx == AVXType.AVX2 or AVXType.AVX512:
-        cpu_avx = AVXType.AVX
-    cpu_avx = cpu_avx._value_
+    cpu_device = ""
+    if cpu_avx == AVXType.AVX2 or cpu_avx == AVXType.AVX512:
+        cpu_device = "avx"
+    else:
+        cpu_device = "basic"
+    device += cpu_device
     base_url = "https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/textgen-webui"
-    llama_cpp_version = "0.1.77"
+    llama_cpp_version = "0.2.10"
     py_version = "cp310"
-    os_pkg_name = "linux_x86_64" if os_type == OSType.LINUX else "win_amd64"
+    os_pkg_name = "manylinux_2_31_x86_64" if os_type == OSType.LINUX else "win_amd64"
     extra_index_url = f"{base_url}/llama_cpp_python_cuda-{llama_cpp_version}+{device}-{py_version}-{py_version}-{os_pkg_name}.whl"
     extra_index_url, _ = encode_url(extra_index_url)
     print(f"Install llama_cpp_python_cuda from {extra_index_url}")
@@ -279,12 +292,14 @@ def core_requires():
         "importlib-resources==5.12.0",
         "psutil==5.9.4",
         "python-dotenv==1.0.0",
-        "colorama",
+        "colorama==0.4.6",
         "prettytable",
         "cachetools",
     ]
 
     setup_spec.extras["framework"] = [
+        "fschat",
+        "coloredlogs",
         "httpx",
         "sqlparse==0.4.4",
         "seaborn",
@@ -295,7 +310,7 @@ def core_requires():
         "langchain>=0.0.286",
         "SQLAlchemy",
         "pymysql",
-        "duckdb",
+        "duckdb==0.8.1",
         "duckdb-engine",
         "jsonschema",
         # TODO move transformers to default
@@ -309,8 +324,7 @@ def knowledge_requires():
     """
     setup_spec.extras["knowledge"] = [
         "spacy==3.5.3",
-        # "chromadb==0.3.22",
-        "chromadb",
+        "chromadb==0.4.10",
         "markdown",
         "bs4",
         "python-pptx",
@@ -363,7 +377,8 @@ def all_datasource_requires():
     """
     pip install "db-gpt[datasource]"
     """
-    setup_spec.extras["datasource"] = ["pymssql", "pymysql"]
+
+    setup_spec.extras["datasource"] = ["pymssql", "pymysql", "pyspark", "psycopg2"]
 
 
 def openai_requires():
@@ -382,12 +397,19 @@ def gpt4all_requires():
     setup_spec.extras["gpt4all"] = ["gpt4all"]
 
 
+def vllm_requires():
+    """
+    pip install "db-gpt[vllm]"
+    """
+    setup_spec.extras["vllm"] = ["vllm"]
+
+
 def default_requires():
     """
     pip install "db-gpt[default]"
     """
     setup_spec.extras["default"] = [
-        "tokenizers==0.13.2",
+        "tokenizers==0.13.3",
         "accelerate>=0.20.3",
         "sentence-transformers",
         "protobuf==3.20.3",
@@ -421,6 +443,7 @@ all_vector_store_requires()
 all_datasource_requires()
 openai_requires()
 gpt4all_requires()
+vllm_requires()
 
 # must be last
 default_requires()
@@ -430,7 +453,7 @@ init_install_requires()
 setuptools.setup(
     name="db-gpt",
     packages=find_packages(exclude=("tests", "*.tests", "*.tests.*", "examples")),
-    version="0.3.8",
+    version="0.3.9",
     author="csunny",
     author_email="cfqcsunny@gmail.com",
     description="DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment."

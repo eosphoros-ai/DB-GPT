@@ -13,7 +13,7 @@ from pilot.model.cluster import run_worker_manager
 
 CFG = Config()
 
-model_path = LLM_MODEL_CONFIG[CFG.LLM_MODEL]
+model_path = LLM_MODEL_CONFIG.get(CFG.LLM_MODEL)
 
 if __name__ == "__main__":
     run_worker_manager(

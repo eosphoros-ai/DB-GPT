@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-29 21:14+0800\n"
+"POT-Creation-Date: 2023-09-28 12:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,12 +20,12 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/application/kbqa/kbqa.md:1
-#: 4b44ec7d6b3b492489b84bab4471fe46
+#: 2f77b0e5795f4d3593b5f04c54c2c6c2
 msgid "KBQA"
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:3
-#: c4217f8786e24f5190354d129b21dff5
+#: 1e4f61ecf9084777ae451d2259bf804d
 msgid ""
 "![chat_knowledge](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/bc343c94-df3e-41e5-90d5-23b68c768c59)"
@@ -33,12 +33,12 @@ msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:3
 #: ../../getting_started/application/kbqa/kbqa.md:7
-#: 2f02ab2494b54fff87e7d1e310f38119 dc0349e48d5e4d89b1f9f353813c9f06
+#: 7144258d06f3459d9404ef583b4f3696 e0aec0e78a9a40a2a6c6d496a5966fe8
 msgid "chat_knowledge"
 msgstr "chat_knowledge"
 
 #: ../../getting_started/application/kbqa/kbqa.md:5
-#: 149c4c9e15004aaf992c5896deb9e541
+#: 4eeebe69ee5b4055bb2ac48444b5f3cc
 msgid ""
 "DB-GPT supports a knowledge question-answering module, which aims to "
 "create an intelligent expert in the field of databases and provide "
@@ -46,7 +46,7 @@ msgid ""
 msgstr " DB-GPT支持知识问答模块，知识问答的初衷是打造DB领域的智能专家，为数据库从业人员解决专业的知识问题回答"
 
 #: ../../getting_started/application/kbqa/kbqa.md:7
-#: c7e103a20a2e4989aab8a750cdc4dbf4
+#: 99ec2e6a023744878a8e970de7588dfe
 msgid ""
 "![chat_knowledge](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/6e55f2e5-94f7-4906-aed6-097db5c6c721)"
@@ -54,83 +54,83 @@ msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:9
 #: ../../getting_started/application/kbqa/kbqa.md:12
-#: 3ddf012fb6d74eb1be1a0fd0ada9ddf6 e29bffef26fb44ac978d6cbe6584f48f
+#: 77f6d58b0c714a0cbb2510aa2a036560 f3837660bb674945904a2acb34fd816a
 msgid "KBQA abilities"
 msgstr "KBQA现有能力"
 
 #: ../../getting_started/application/kbqa/kbqa.md:13
-#: 87cf02966b574d6db8baf0839b13e1e7
+#: 96d691596d1f4309bd29e4d8b3a3bc61
 msgid "Knowledge Space."
 msgstr "知识空间"
 
 #: ../../getting_started/application/kbqa/kbqa.md:14
-#: 2777488125234408aa7156a69fcfacef
+#: 36fe78a666a0410380e338674bb76e96
 msgid "Multi Source Knowledge Source Embedding."
 msgstr "多数据源Embedding"
 
 #: ../../getting_started/application/kbqa/kbqa.md:15
-#: c50f2de4ea6f4aedb7d4fd674ee3f6f7
+#: 14659bb6964b402ba2aa912feffe0a28
 msgid "Embedding Argument Adjust"
 msgstr "Embedding参数自定义"
 
 #: ../../getting_started/application/kbqa/kbqa.md:16
-#: f8a7af83e94e45239bd0efdb06eb320b
+#: c72212e1a0e54aa9b0b5adee687fed65
 msgid "Chat Knowledge"
 msgstr "知识问答"
 
 #: ../../getting_started/application/kbqa/kbqa.md:17
-#: e6025e23178f4f58a6d4c75a6bc1d036
+#: d5fea791138240e8b26b4da0a7d3a4bf
 msgid "Multi Vector DB"
 msgstr "多向量数据库管理"
 
 #: ../../getting_started/application/kbqa/kbqa.md:21
-#: 0780e1d27af244429186caa866772c06
+#: d2460e9418c44064be16f8b8bd76bf7a
 msgid ""
 "If your DB type is Sqlite, there is nothing to do to build KBQA service "
 "database schema."
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:23
-#: 38584aba054f4520a0b1d9b00d6abf06
+#: b0ebff37da05465fb5c91abb496647ee
 msgid ""
 "If your DB type is Mysql or other DBTYPE, you will build kbqa service "
 "database schema."
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:25
-#: 9ef800860afe4728b2103286864ed3fb
+#: ac0e3e657e9c4dfaafdb8884bf0d915a
 msgid "Mysql"
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:26
-#: 3b30239fd457457eb707821794e786db
+#: 4b899ec4f62c47a79e9cff79524ed069
 msgid ""
 "$ mysql -h127.0.0.1 -uroot -paa12345678 < "
 "./assets/schema/knowledge_management.sql"
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:28
-#: 1cd533c2f0254f8d8d10bafe5811a279
+#: a74b6c512b4d4ed399d5ee25e4a4f44a
 msgid "or"
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:30
-#: 2b57e7d9a70f427e81122fe8d7d3c50b
+#: 87216b282f664c6abfe736db5e3badd5
 msgid "execute DBGPT/assets/schema/knowledge_management.sql"
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:33
-#: 45a0c8c8ff0a4b48ac2d66b4713c4108
+#: 67aaa574f941485c8ba55a9058750175
 msgid "Steps to KBQA In DB-GPT"
 msgstr "怎样一步一步使用KBQA"
 
 #: ../../getting_started/application/kbqa/kbqa.md:35
-#: 2ff844b9a29f4717909d091a57d58fe8
+#: 202ed073da4948a49d32b1beca69292d
 msgid "1.Create Knowledge Space"
 msgstr "1.首先创建知识空间"
 
 #: ../../getting_started/application/kbqa/kbqa.md:36
-#: 081e1d1ef5bb42ddbd7330dd3ac1d38e
+#: f1defb29643f4664a125cf127e63ef71
 #, fuzzy
 msgid ""
 "If you are using Knowledge Space for the first time, you need to create a"
@@ -140,17 +140,17 @@ msgid ""
 msgstr "如果你是第一次使用，先创建知识空间，指定名字,拥有者和描述信息"
 
 #: ../../getting_started/application/kbqa/kbqa.md:36
-#: 4a393bf0f50647d4b0cfc64db80847eb
+#: 378e6091c3eb4f0d8ca4d4144303dde1
 msgid "create_space"
 msgstr "create_space"
 
 #: ../../getting_started/application/kbqa/kbqa.md:41
-#: 96303597bc364952b7249e805486e73f
+#: 669504b548ce4b7b9ea4c463b446cf39
 msgid "2.Create Knowledge Document"
 msgstr "2.上传知识"
 
 #: ../../getting_started/application/kbqa/kbqa.md:42
-#: 765f93f2b668491cb6824ea4706cb449
+#: 731b15e4396b450589d619fccd78d542
 msgid ""
 "DB-GPT now support Multi Knowledge Source, including Text, WebUrl, and "
 "Document(PDF, Markdown, Word, PPT, HTML and CSV). After successfully "
@@ -165,29 +165,29 @@ msgstr ""
 "CSV)。上传文档成功后后台会自动将文档内容进行读取，切片，然后导入到向量数据库中，当然你也可以手动进行同步，你也可以点击详情查看具体的文档切片内容"
 
 #: ../../getting_started/application/kbqa/kbqa.md:44
-#: a0eddeecc620479483bf50857da39ffd
+#: 7c020f677a364693800952d558ba357e
 msgid "2.1 Choose Knowledge Type:"
 msgstr "2.1 选择知识类型"
 
 #: ../../getting_started/application/kbqa/kbqa.md:45
-#: 44de66f399324454b389d5c348af94e9
+#: c88460c498ff4fbca22f35e181c66723
 msgid ""
 "![document](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/5b8173da-f444-4607-9d12-14bcab8179d0)"
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:45
-#: 1ae65290b99d490bb72b060084ecc726
+#: 60fcd6db28c546728bf9c015b63e9434
 msgid "document"
 msgstr "document"
 
 #: ../../getting_started/application/kbqa/kbqa.md:47
-#: d8720434626444b593bb3b06b50dc70f
+#: ffb8436b6e97468296e5852530e3d9c8
 msgid "2.2 Upload Document:"
 msgstr "2.2上传文档"
 
 #: ../../getting_started/application/kbqa/kbqa.md:48
-#: 2d4bcbeb391a47b89454b06cb041dff2
+#: a652b17e64b040938cf4e09ef7ed470a
 msgid ""
 "![upload](https://github.com/eosphoros-ai/DB-GPT/assets/13723926"
 "/91b338fc-d3b2-476e-9396-3f6b4f16a890)"
@@ -197,30 +197,30 @@ msgstr ""
 #: ../../getting_started/application/kbqa/kbqa.md:52
 #: ../../getting_started/application/kbqa/kbqa.md:57
 #: ../../getting_started/application/kbqa/kbqa.md:70
-#: 58b32cb59a6242679f4a1e5fc7ca819f 81041a1f25b64b19a7f662ed55029224
-#: 8891e61f67014355b74c17d013c09cca f0e9c548494f4045a3dc92e993f4cfe7
+#: 3f1c6873d54c47fea96d91188f728af9 434f854aa1af4f4bbf9ec4060388c643
+#: c1404f398cc3480d9c59b4ce326501e7 f18624fc081d4276859d4a4c99e998ee
 msgid "upload"
 msgstr "upload"
 
 #: ../../getting_started/application/kbqa/kbqa.md:51
-#: 645bf91a4f6a428a9e99ca29599c0722
+#: 6695dbe6d16e43d7b88dbad61039ff7e
 msgid "3.Chat With Knowledge"
 msgstr "3.知识问答"
 
 #: ../../getting_started/application/kbqa/kbqa.md:52
-#: 85077af67bd740c1b3b02996dc287a80
+#: 30b3afb9cb4d4705833ba15580425b05
 msgid ""
 "![upload](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/a8281be7-1454-467d-81c9-15ef108aac10)"
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:54
-#: 42d5776030ad4109810a0cb18e19de37
+#: 05cc4bf0473f4f88aef63342b714d472
 msgid "4.Adjust Space arguments"
 msgstr "4.调整知识参数"
 
 #: ../../getting_started/application/kbqa/kbqa.md:55
-#: a8ea23895a4b4312b1c1e072865f8b90
+#: 9ec125362dbb4aec864777313b1a8327
 msgid ""
 "Each knowledge space supports argument customization, including the "
 "relevant arguments for vector retrieval and the arguments for knowledge "
@@ -228,78 +228,78 @@ msgid ""
 msgstr "每一个知识空间都支持参数自定义, 包括向量召回的相关参数以及知识问答Promp参数"
 
 #: ../../getting_started/application/kbqa/kbqa.md:56
-#: 2f5c087e4f7a49828aa797fafff237f0
+#: 54fd9461ced1436aa6c51984024caa74
 msgid "4.1 Embedding"
 msgstr "4.1 Embedding"
 
 #: ../../getting_started/application/kbqa/kbqa.md:57
-#: 47087bf391b642f3ba73e461d2d132a0
+#: 4b17fde7063e40e88dd121024f3e1c42
 msgid ""
 "Embedding Argument ![upload](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/f1221bd5-d049-4ceb-96e6-8709e76e502e)"
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:61
-#: 1ed384ba0501423184a4c977d86b8b3a
+#: 6715234540d74eb79da60cf5ec29e236
 msgid "Embedding arguments"
 msgstr "Embedding arguments"
 
 #: ../../getting_started/application/kbqa/kbqa.md:62
-#: 848962be69a348ffab3dd48839fb100a
+#: af7ed9e32c6846b6a75893a55e0d78a4
 msgid "topk:the top k vectors based on similarity score."
 msgstr "topk:相似性检索出tok条文档"
 
 #: ../../getting_started/application/kbqa/kbqa.md:63
-#: 0880963aeb9c426187809a7086c224a8
+#: 05290f955cd142a2857d20786edf0952
 msgid "recall_score:set a threshold score for the retrieval of similar vectors."
 msgstr "recall_score:向量检索相关度衡量指标分数"
 
 #: ../../getting_started/application/kbqa/kbqa.md:64
-#: a6ead8ae58164749b83e5c972537fe8b
+#: b6e088dda8f142438bc0baebd357fa0e
 msgid "recall_type:recall type."
 msgstr "recall_type:召回类型"
 
 #: ../../getting_started/application/kbqa/kbqa.md:65
-#: 70d900b0948849d080effcdfc79bb685
+#: 509bb3adefb74b65baea79bcbe94a240
 msgid "model:A model used to create vector representations of text or other data."
 msgstr "model:embdding模型"
 
 #: ../../getting_started/application/kbqa/kbqa.md:66
-#: 489a58835a5d4c98ad5f6f904f7af370
+#: 43ef5b6a16c0435b9b7416d3600556e5
 msgid "chunk_size:The size of the data chunks used in processing."
 msgstr "chunk_size:文档切片阈值大小"
 
 #: ../../getting_started/application/kbqa/kbqa.md:67
-#: b42781f2340c478f86137147fd4a6c91
+#: 800fb14f22304155bedc5dc666f56a25
 msgid "chunk_overlap:The amount of overlap between adjacent data chunks."
 msgstr "chunk_overlap:文本块之间的最大重叠量。保留一些重叠可以保持文本块之间的连续性（例如使用滑动窗口）"
 
 #: ../../getting_started/application/kbqa/kbqa.md:69
-#: 5f027d4a10394e7da3d4b50fc2663f82
+#: 5497d17bcf014ad5b61d5febd7a9fda5
 msgid "4.2 Prompt"
 msgstr "4.2 Prompt"
 
 #: ../../getting_started/application/kbqa/kbqa.md:70
-#: 9ad62d8626584e80a82fcef239c0f546
+#: dd9cdfac5aae44c8998b36ae0ed286b8
 msgid ""
 "Prompt Argument ![upload](https://github.com/eosphoros-ai/DB-"
 "GPT/assets/13723926/9918c9c3-ed64-4804-9e05-fa7d7d177bec)"
 msgstr ""
 
 #: ../../getting_started/application/kbqa/kbqa.md:74
-#: ec0717b8d210410f9894d2a4f51642e1
+#: fbede51cc73444aab74fa646834ea1c2
 msgid "Prompt arguments"
 msgstr "Prompt arguments"
 
 #: ../../getting_started/application/kbqa/kbqa.md:75
-#: 7cf68eacd5ae4151abdefe44feb239e1
+#: a85ab9b05ec04cd59d3f4539599a8e35
 msgid ""
 "scene:A contextual parameter used to define the setting or environment in"
 " which the prompt is being used."
 msgstr "scene:上下文环境的场景定义"
 
 #: ../../getting_started/application/kbqa/kbqa.md:76
-#: 2d9293acfb1a495c9b08261e957b2395
+#: 48258fcdbb134a0e820347185ea45ca0
 msgid ""
 "template:A pre-defined structure or format for the prompt, which can help"
 " ensure that the AI system generates responses that are consistent with "
@@ -307,74 +307,167 @@ msgid ""
 msgstr "template:预定义的提示结构或格式，可以帮助确保AI系统生成与所期望的风格或语气一致的回复。"
 
 #: ../../getting_started/application/kbqa/kbqa.md:77
-#: 307dd62261214e4e84beb7f19b3e2f26
+#: 2dab662fc6a945b3b2691831f16b52e7
 msgid "max_token:The maximum number of tokens or words allowed in a prompt."
 msgstr "max_token: prompt token最大值"
 
 #: ../../getting_started/application/kbqa/kbqa.md:79
-#: 07b797731fa74738acb3e1fb4c03deac
+#: a7c5a81457334f39a8956146fe4aa951
 msgid "5.Change Vector Database"
 msgstr "5.Change Vector Database"
 
 #: ../../getting_started/application/kbqa/kbqa.md:81
-#: 43fa40ced23842b48007b4264c1423c0
+#: dccbc6e611e64f79aadb849ae1cdf0d2
 msgid "Vector Store SETTINGS"
 msgstr "Vector Store SETTINGS"
 
 #: ../../getting_started/application/kbqa/kbqa.md:82
-#: 0ed4e0c6a81e4265b443a2c6d05d440b
+#: a3af9f960c3144b2884a5ff3dc4f8cfa
 msgid "Chroma"
 msgstr "Chroma"
 
 #: ../../getting_started/application/kbqa/kbqa.md:83
-#: 8ef2d15ffd0c4919bdbfdb52443021eb
+#: f195989635ec403d9f7ece263c451fa2
 msgid "VECTOR_STORE_TYPE=Chroma"
 msgstr "VECTOR_STORE_TYPE=Chroma"
 
 #: ../../getting_started/application/kbqa/kbqa.md:84
-#: 08504aaae0014bd9992345f036989198
+#: 9821aa494e514654bf33335c2db7700f
 msgid "MILVUS"
 msgstr "MILVUS"
 
 #: ../../getting_started/application/kbqa/kbqa.md:85
-#: aa30fe77dc3f46bfb153b81e0cbdfb97
+#: 1d7ef3150b6549fc834567f2647c32db
 msgid "VECTOR_STORE_TYPE=Milvus"
 msgstr "VECTOR_STORE_TYPE=Milvus"
 
 #: ../../getting_started/application/kbqa/kbqa.md:86
-#: e14c1646e5ca4677a471645c13dca835
+#: 702e9fc52c1d45cc9136ffd0a1bbcbc8
 msgid "MILVUS_URL=127.0.0.1"
 msgstr "MILVUS_URL=127.0.0.1"
 
 #: ../../getting_started/application/kbqa/kbqa.md:87
-#: 0f0614f951934fd6abfb0fd45e0b79e7
+#: 44ed55973e50490db566f5d65fa87207
 msgid "MILVUS_PORT=19530"
 msgstr "MILVUS_PORT=19530"
 
 #: ../../getting_started/application/kbqa/kbqa.md:88
-#: 4dafbbd894e4469e80414b54bde69193
+#: e1e13a389f404a3384e96b178b7887d0
 msgid "MILVUS_USERNAME"
 msgstr "MILVUS_USERNAME"
 
 #: ../../getting_started/application/kbqa/kbqa.md:89
-#: 1759ec4d744e42a5a928c6abcc2dd2ac
+#: 5755432971214b6dbe016a1556be759c
 msgid "MILVUS_PASSWORD"
 msgstr "MILVUS_PASSWORD"
 
 #: ../../getting_started/application/kbqa/kbqa.md:90
-#: d44bcea1db4f4388bc2ae7968e541761
+#: f92e8123fadc4f67a3a81ce76f642d67
 msgid "MILVUS_SECURE="
 msgstr "MILVUS_SECURE="
 
 #: ../../getting_started/application/kbqa/kbqa.md:92
-#: f33218e0880f4d888438d3333f4a0895
+#: 5ad47c8768484e67a0b919d290b0fcde
 msgid "WEAVIATE"
 msgstr "WEAVIATE"
 
 #: ../../getting_started/application/kbqa/kbqa.md:93
-#: 42a2102b236447ff83820d3a1602c3f2
+#: 139b2fab9a294215ba152710e464d425
 msgid "WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.network"
 msgstr "WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.networkc"
+
+#: ../../getting_started/application/kbqa/kbqa.md:96
+#: bd9c81cd547142fab5857dbf0df441d0
+msgid "KBQA command line"
+msgstr "KBQA 命令行工具"
+
+#: ../../getting_started/application/kbqa/kbqa.md:98
+#: fba52bfa428549e683c9cfb8e9684636
+msgid "Load your local documents to DB-GPT"
+msgstr "将你的本地文档导入到 DB-GPT"
+
+#: ../../getting_started/application/kbqa/kbqa.md:104
+#: 5c3e7fa9b2b04e6097781d3f406c2bae
+msgid "`--space_name`: Your knowledge space name, default: `default`"
+msgstr ""
+
+#: ../../getting_started/application/kbqa/kbqa.md:105
+#: 083bb6913da64f8a880b20e31d138d7b
+msgid ""
+"`--local_doc_path`: Your document directory or document file path, "
+"default: `./pilot/datasets`"
+msgstr ""
+
+#: ../../getting_started/application/kbqa/kbqa.md:106
+#: 7b17564ffc7a43ab8e5beb023f18a59a
+msgid "`--vector_store_type`: Vector store type, default: `Chroma`"
+msgstr ""
+
+#: ../../getting_started/application/kbqa/kbqa.md:108
+#: 814bdf5ecddd4490af57dcab73ae8c85
+msgid "**View the `dbgpt knowledge load --help`help**"
+msgstr ""
+
+#: ../../getting_started/application/kbqa/kbqa.md:114
+#: f1aaa308ef4b46f1adbb8ec64738f361
+msgid "Here you can see the parameters:"
+msgstr ""
+
+#: ../../getting_started/application/kbqa/kbqa.md:141
+#: ../../getting_started/application/kbqa/kbqa.md:143
+#: 163ff96e128641509933c1871b6bde64 fca3ea3c13bc4fa3bfa33845f4d88b52
+#, fuzzy
+msgid "List knowledge space"
+msgstr "查看知识空间"
+
+#: ../../getting_started/application/kbqa/kbqa.md:149
+#: ../../getting_started/application/kbqa/kbqa.md:169
+#: 57b89ee3fde745ff8502ede525fc4a8c d9852d13a9b444618a598ba4abe47493
+msgid "Output should look something like the following:"
+msgstr "输出如下："
+
+#: ../../getting_started/application/kbqa/kbqa.md:163
+#: 14300078a0a74aee9cf6e54c470e3862
+#, fuzzy
+msgid "List documents in knowledge space"
+msgstr "查看某个知识空间中的文档"
+
+#: ../../getting_started/application/kbqa/kbqa.md:188
+#: b9afd5b23fb947c691d66f82f86c36f2
+msgid "List chunks of document in space `default`"
+msgstr "查看某个知识空间文档中的块"
+
+#: ../../getting_started/application/kbqa/kbqa.md:217
+#: 294d9d963299400db39c5c51ab5d2e23
+msgid "More list usage"
+msgstr "更多 list 命令用户"
+
+#: ../../getting_started/application/kbqa/kbqa.md:242
+#: 5d962a6b5b2d4fb6809bc84cb7711120
+msgid "Delete your knowledge space or document in space"
+msgstr "删除你的知识空间或者知识空间中的文档"
+
+#: ../../getting_started/application/kbqa/kbqa.md:244
+#: f1deee3aaf8e41308f2f81974032e4d4
+#, fuzzy
+msgid "Delete your knowledge space"
+msgstr "删除知识空间"
+
+#: ../../getting_started/application/kbqa/kbqa.md:250
+#: ba2314a2d20944f7b64a60e67a5b8d94
+msgid "Delete your document in space"
+msgstr "删除知识空间中的文档"
+
+#: ../../getting_started/application/kbqa/kbqa.md:257
+#: 2400777f270d40e2adcdc38a2d3cb73a
+msgid "More delete usage"
+msgstr "更多删除用法"
+
+#: ../../getting_started/application/kbqa/kbqa.md:276
+#: 4e79bbda201347f2822b1742805923a6
+#, fuzzy
+msgid "More knowledge usage"
+msgstr "更知识库命令用法"
 
 #~ msgid "![chat_knowledge](../../../../assets/chat_knowledge.png)"
 #~ msgstr "![chat_knowledge](../../../../assets/chat_knowledge.png)"

@@ -8,19 +8,19 @@ DB-GPT already supports [llama.cpp](https://github.com/ggerganov/llama.cpp) via 
 
 ### Preparing Model Files
 
-To use llama.cpp, you need to prepare a ggml format model file, and there are two common ways to obtain it, you can choose either:
+To use llama.cpp, you need to prepare a gguf format model file, and there are two common ways to obtain it, you can choose either:
 
 1. Download a pre-converted model file.
 
-Suppose you want to use [Vicuna 7B v1.5](https://huggingface.co/lmsys/vicuna-7b-v1.5), you can download the file already converted from [TheBloke/vicuna-7B-v1.5-GGML](https://huggingface.co/TheBloke/vicuna-7B-v1.5-GGML), only one file is needed. Download it to the `models` directory and rename it to `ggml-model-q4_0.bin`.
+Suppose you want to use [Vicuna 13B v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5), you can download the file already converted from [TheBloke/vicuna-13B-v1.5-GGUF](https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF), only one file is needed. Download it to the `models` directory and rename it to `ggml-model-q4_0.gguf`.
 
 ```bash
-wget https://huggingface.co/TheBloke/vicuna-7B-v1.5-GGML/resolve/main/vicuna-7b-v1.5.ggmlv3.q4_K_M.bin -O models/ggml-model-q4_0.bin
+wget https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF/resolve/main/vicuna-13b-v1.5.Q4_K_M.gguf -O models/ggml-model-q4_0.gguf
 ```
 
 2. Convert It Yourself
 
-You can convert the model file yourself according to the instructions in [llama.cpp#prepare-data--run](https://github.com/ggerganov/llama.cpp#prepare-data--run), and put the converted file in the models directory and rename it to `ggml-model-q4_0.bin`.
+You can convert the model file yourself according to the instructions in [llama.cpp#prepare-data--run](https://github.com/ggerganov/llama.cpp#prepare-data--run), and put the converted file in the models directory and rename it to `ggml-model-q4_0.gguf`.
 
 ### Installing Dependencies
 
@@ -46,9 +46,9 @@ Then you can run it according to [Run](https://db-gpt.readthedocs.io/en/latest/g
 
 In DB-GPT, the model configuration can be done through  `{model name}_{config key}`.
 
-| Environment Variable Key      | default | Prompt Template Name|
+| Environment Variable Key      | default | Description |
 |----------|-----------| ----------- |
-| llama_cpp_prompt_template | None | Prompt template name, now support: `zero_shot, vicuna_v1.1, llama-2,baichuan-chat`, If None, the prompt template is automatically determined from model path。 |
+| llama_cpp_prompt_template | None | Prompt template name, now support: `zero_shot, vicuna_v1.1,alpaca,llama-2,baichuan-chat,internlm-chat`, If None, the prompt template is automatically determined from model path。 |
 | llama_cpp_model_path |  None  | Model path |
 | llama_cpp_n_gpu_layers | 1000000000 |Number of layers to offload to the GPU, Set this to 1000000000 to offload all layers to the GPU. If your GPU VRAM is not enough, you can set a low number, eg: `10` | 
 | llama_cpp_n_threads |  None  | Number of threads to use. If None, the number of threads is automatically determined |

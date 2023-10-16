@@ -1,10 +1,12 @@
 import os
+import logging
 from typing import Any
 
 from chromadb.config import Settings
 from chromadb import PersistentClient
-from pilot.logs import logger
 from pilot.vector_store.base import VectorStoreBase
+
+logger = logging.getLogger(__name__)
 
 
 class ChromaStore(VectorStoreBase):
@@ -14,10 +16,14 @@ class ChromaStore(VectorStoreBase):
         from langchain.vectorstores import Chroma
 
         self.ctx = ctx
-        self.embeddings = ctx.get("embeddings", None)
-        self.persist_dir = os.path.join(
-            ctx["chroma_persist_path"], ctx["vector_store_name"] + ".vectordb"
+        chroma_path = ctx.get(
+            "CHROMA_PERSIST_PATH",
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data"),
         )
+        self.persist_dir = os.path.join(
+            chroma_path, ctx["vector_store_name"] + ".vectordb"
+        )
+        self.embeddings = ctx.get("embeddings", None)
         chroma_settings = Settings(
             # chroma_db_impl="duckdb+parquet", => deprecated configuration of Chroma
             persist_directory=self.persist_dir,

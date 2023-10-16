@@ -15,6 +15,16 @@ class Message(TypedDict):
     content: str
 
 
+class ModelType:
+    """ "Type of model"""
+
+    HF = "huggingface"
+    LLAMA_CPP = "llama.cpp"
+    PROXY = "proxy"
+    VLLM = "vllm"
+    # TODO, support more model type
+
+
 @dataclass
 class ModelInstance:
     """Model instance info"""
@@ -42,6 +52,9 @@ class ModelOutput:
     text: str
     error_code: int
     model_context: Dict = None
+
+    def to_dict(self) -> Dict:
+        return asdict(self)
 
 
 @dataclass

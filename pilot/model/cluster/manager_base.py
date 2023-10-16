@@ -33,7 +33,7 @@ class WorkerManager(ABC):
         """Start worker manager"""
 
     @abstractmethod
-    async def stop(self):
+    async def stop(self, ignore_exception: bool = False):
         """Stop worker manager"""
 
     @abstractmethod

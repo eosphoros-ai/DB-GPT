@@ -3,7 +3,9 @@ Fork from fastchat: https://github.com/lm-sys/FastChat/blob/main/fastchat/conver
 
 Conversation prompt templates.
 
-TODO Using fastchat core package
+
+This code file will be deprecated in the future. 
+We have integrated fastchat. For details, see: pilot/model/model_adapter.py
 """
 
 import dataclasses

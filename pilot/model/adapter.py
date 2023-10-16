@@ -1,8 +1,13 @@
+"""
+This code file will be deprecated in the future. 
+We have integrated fastchat. For details, see: pilot/model/model_adapter.py
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
 import re
+import logging
 from pathlib import Path
 from typing import List, Tuple, Callable, Type
 from functools import cache
@@ -12,6 +17,8 @@ from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
 )
+from pilot.model.base import ModelType
+
 from pilot.model.parameter import (
     ModelParameters,
     LlamaCppModelParameters,
@@ -19,19 +26,10 @@ from pilot.model.parameter import (
 )
 from pilot.configs.model_config import get_device
 from pilot.configs.config import Config
-from pilot.logs import logger
 
+logger = logging.getLogger(__name__)
 
 CFG = Config()
-
-
-class ModelType:
-    """ "Type of model"""
-
-    HF = "huggingface"
-    LLAMA_CPP = "llama.cpp"
-    PROXY = "proxy"
-    # TODO, support more model type
 
 
 class BaseLLMAdaper:
@@ -92,33 +90,6 @@ def get_llm_model_adapter(model_name: str, model_path: str) -> BaseLLMAdaper:
     raise ValueError(
         f"Invalid model adapter for model name {model_name} and model path {model_path}"
     )
-
-
-def _dynamic_model_parser() -> Callable[[None], List[Type]]:
-    from pilot.utils.parameter_utils import _SimpleArgParser
-    from pilot.model.parameter import (
-        EmbeddingModelParameters,
-        WorkerType,
-        EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
-    )
-
-    pre_args = _SimpleArgParser("model_name", "model_path", "worker_type")
-    pre_args.parse()
-    model_name = pre_args.get("model_name")
-    model_path = pre_args.get("model_path")
-    worker_type = pre_args.get("worker_type")
-    if model_name is None:
-        return None
-    if worker_type == WorkerType.TEXT2VEC:
-        return [
-            EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG.get(
-                model_name, EmbeddingModelParameters
-            )
-        ]
-
-    llm_adapter = get_llm_model_adapter(model_name, model_path)
-    param_class = llm_adapter.model_param_class()
-    return [param_class]
 
 
 def _parse_model_param_class(model_name: str, model_path: str) -> ModelParameters:
@@ -381,14 +352,14 @@ class LlamaCppAdapater(BaseLLMAdaper):
             # Just support local model
             return False, None
         if not path.is_file():
-            model_paths = list(path.glob("*ggml*.bin"))
+            model_paths = list(path.glob("*ggml*.gguf"))
             if not model_paths:
-                return False
+                return False, None
             model_path = str(model_paths[0])
             logger.warn(
-                f"Model path {model_path} is not single file, use first *gglm*.bin model file: {model_path}"
+                f"Model path {model_path} is not single file, use first *gglm*.gguf model file: {model_path}"
             )
-        if not re.fullmatch(".*ggml.*\.bin", model_path):
+        if not re.fullmatch(".*ggml.*\.gguf", model_path):
             return False, None
         return True, model_path
 

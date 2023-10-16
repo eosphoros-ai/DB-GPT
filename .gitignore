@@ -152,3 +152,5 @@ pilot/mock_datas/db-gpt-test.db.wal
 logswebserver.log.*
 .history/*
 .plugin_env
+# Ignore for now
+thirdparty

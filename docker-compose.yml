@@ -41,6 +41,7 @@ services:
     restart: unless-stopped
     networks:
       - dbgptnet
+    ipc: host
     deploy:
       resources:
         reservations:

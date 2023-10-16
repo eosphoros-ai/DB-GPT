@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 from pilot.scene.base_chat import BaseChat
@@ -45,7 +46,6 @@ class ChatKnowledge(BaseChat):
         vector_store_config = {
             "vector_store_name": self.knowledge_space,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
-            "chroma_persist_path": KNOWLEDGE_UPLOAD_ROOT_PATH,
         }
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
@@ -55,6 +55,28 @@ class ChatKnowledge(BaseChat):
             vector_store_config=vector_store_config,
             embedding_factory=embedding_factory,
         )
+        self.prompt_template.template_is_strict = False
+
+    async def stream_call(self):
+        input_values = self.generate_input_values()
+        # Source of knowledge file
+        relations = input_values.get("relations")
+        last_output = None
+        async for output in super().stream_call():
+            last_output = output
+            yield output
+
+        if (
+            CFG.KNOWLEDGE_CHAT_SHOW_RELATIONS
+            and last_output
+            and type(relations) == list
+            and len(relations) > 0
+            and hasattr(last_output, "text")
+        ):
+            last_output.text = (
+                last_output.text + "\n\nrelations:\n\n" + ",".join(relations)
+            )
+            yield last_output
 
     def generate_input_values(self):
         if self.space_context:
@@ -69,7 +91,14 @@ class ChatKnowledge(BaseChat):
             )
         context = [d.page_content for d in docs]
         context = context[: self.max_token]
-        input_values = {"context": context, "question": self.current_user_input}
+        relations = list(
+            set([os.path.basename(d.metadata.get("source", "")) for d in docs])
+        )
+        input_values = {
+            "context": context,
+            "question": self.current_user_input,
+            "relations": relations,
+        }
         return input_values
 
     @property

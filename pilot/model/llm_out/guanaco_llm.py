@@ -1,7 +1,6 @@
 import torch
 from threading import Thread
 from transformers import TextIteratorStreamer, StoppingCriteriaList, StoppingCriteria
-from pilot.conversation import ROLE_ASSISTANT, ROLE_USER
 
 
 def guanaco_generate_output(model, tokenizer, params, device, context_len=2048):

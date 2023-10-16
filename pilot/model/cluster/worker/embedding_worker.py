@@ -11,7 +11,7 @@ from pilot.model.parameter import (
 )
 from pilot.model.cluster.worker_base import ModelWorker
 from pilot.model.cluster.embedding.loader import EmbeddingLoader
-from pilot.utils.model_utils import _clear_torch_cache
+from pilot.utils.model_utils import _clear_model_cache
 from pilot.utils.parameter_utils import EnvArgumentParser
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,7 @@ class EmbeddingsModelWorker(ModelWorker):
             return
         del self._embeddings_impl
         self._embeddings_impl = None
-        _clear_torch_cache(self._model_params.device)
+        _clear_model_cache(self._model_params.device)
 
     def generate_stream(self, params: Dict):
         """Generate stream result, chat scene"""

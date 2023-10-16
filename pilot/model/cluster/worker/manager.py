@@ -1,18 +1,20 @@
 import asyncio
 import itertools
 import json
-import os
-import sys
-import random
-import time
 import logging
+import os
+import random
+import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
-from typing import Awaitable, Callable, Dict, Iterator, List, Optional
+from typing import Awaitable, Callable, Dict, Iterator, List
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import StreamingResponse
+
 from pilot.component import SystemApp
+from pilot.configs.model_config import LOGDIR
 from pilot.model.base import (
     ModelInstance,
     ModelOutput,
@@ -20,21 +22,25 @@ from pilot.model.base import (
     WorkerApplyType,
     WorkerSupportedModel,
 )
-from pilot.model.cluster.registry import ModelRegistry
-from pilot.model.llm_utils import list_supported_models
-from pilot.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
-from pilot.model.cluster.worker_base import ModelWorker
+from pilot.model.cluster.base import *
 from pilot.model.cluster.manager_base import (
     WorkerManager,
-    WorkerRunData,
     WorkerManagerFactory,
+    WorkerRunData,
 )
-from pilot.model.cluster.base import *
+from pilot.model.cluster.registry import ModelRegistry
+from pilot.model.cluster.worker_base import ModelWorker
+from pilot.model.llm_utils import list_supported_models
+from pilot.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
 from pilot.utils.parameter_utils import (
     EnvArgumentParser,
     ParameterDescription,
     _dict_to_command_args,
+    _get_dict_from_obj,
 )
+from pilot.utils.utils import setup_logging
+from pilot.utils.tracer import initialize_tracer, root_tracer, SpanType, SpanTypeRunName
+from pilot.utils.system_utils import get_system_info
 
 logger = logging.getLogger(__name__)
 
@@ -113,14 +119,30 @@ class LocalWorkerManager(WorkerManager):
         for listener in self.start_listeners:
             listener(self)
 
-    async def stop(self):
+    async def stop(self, ignore_exception: bool = False):
         if not self.run_data.stop_event.is_set():
             logger.info("Stop all workers")
             self.run_data.stop_event.clear()
             stop_tasks = []
-            stop_tasks.append(self._stop_all_worker(apply_req=None))
+            stop_tasks.append(
+                self._stop_all_worker(apply_req=None, ignore_exception=ignore_exception)
+            )
             if self.deregister_func:
-                stop_tasks.append(self.deregister_func(self.run_data))
+                # If ignore_exception is True, use exception handling to ignore any exceptions raised from self.deregister_func
+                if ignore_exception:
+
+                    async def safe_deregister_func(run_data):
+                        try:
+                            await self.deregister_func(run_data)
+                        except Exception as e:
+                            logger.warning(
+                                f"Stop worker, ignored exception from deregister_func: {e}"
+                            )
+
+                    stop_tasks.append(safe_deregister_func(self.run_data))
+                else:
+                    stop_tasks.append(self.deregister_func(self.run_data))
+
             await asyncio.gather(*stop_tasks)
 
     def after_start(self, listener: Callable[["WorkerManager"], None]):
@@ -275,60 +297,72 @@ class LocalWorkerManager(WorkerManager):
         self, params: Dict, async_wrapper=None, **kwargs
     ) -> Iterator[ModelOutput]:
         """Generate stream result, chat scene"""
-        try:
-            worker_run_data = await self._get_model(params)
-        except Exception as e:
-            yield ModelOutput(
-                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                error_code=0,
-            )
-            return
-        async with worker_run_data.semaphore:
-            if worker_run_data.worker.support_async():
-                async for outout in worker_run_data.worker.async_generate_stream(
-                    params
-                ):
-                    yield outout
-            else:
-                if not async_wrapper:
-                    from starlette.concurrency import iterate_in_threadpool
+        with root_tracer.start_span(
+            "WorkerManager.generate_stream", params.get("span_id")
+        ) as span:
+            params["span_id"] = span.span_id
+            try:
+                worker_run_data = await self._get_model(params)
+            except Exception as e:
+                yield ModelOutput(
+                    text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                    error_code=0,
+                )
+                return
+            async with worker_run_data.semaphore:
+                if worker_run_data.worker.support_async():
+                    async for outout in worker_run_data.worker.async_generate_stream(
+                        params
+                    ):
+                        yield outout
+                else:
+                    if not async_wrapper:
+                        from starlette.concurrency import iterate_in_threadpool
 
-                    async_wrapper = iterate_in_threadpool
-                async for output in async_wrapper(
-                    worker_run_data.worker.generate_stream(params)
-                ):
-                    yield output
+                        async_wrapper = iterate_in_threadpool
+                    async for output in async_wrapper(
+                        worker_run_data.worker.generate_stream(params)
+                    ):
+                        yield output
 
     async def generate(self, params: Dict) -> ModelOutput:
         """Generate non stream result"""
-        try:
-            worker_run_data = await self._get_model(params)
-        except Exception as e:
-            return ModelOutput(
-                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                error_code=0,
-            )
-        async with worker_run_data.semaphore:
-            if worker_run_data.worker.support_async():
-                return await worker_run_data.worker.async_generate(params)
-            else:
-                return await self.run_blocking_func(
-                    worker_run_data.worker.generate, params
+        with root_tracer.start_span(
+            "WorkerManager.generate", params.get("span_id")
+        ) as span:
+            params["span_id"] = span.span_id
+            try:
+                worker_run_data = await self._get_model(params)
+            except Exception as e:
+                return ModelOutput(
+                    text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                    error_code=0,
                 )
+            async with worker_run_data.semaphore:
+                if worker_run_data.worker.support_async():
+                    return await worker_run_data.worker.async_generate(params)
+                else:
+                    return await self.run_blocking_func(
+                        worker_run_data.worker.generate, params
+                    )
 
     async def embeddings(self, params: Dict) -> List[List[float]]:
         """Embed input"""
-        try:
-            worker_run_data = await self._get_model(params, worker_type="text2vec")
-        except Exception as e:
-            raise e
-        async with worker_run_data.semaphore:
-            if worker_run_data.worker.support_async():
-                return await worker_run_data.worker.async_embeddings(params)
-            else:
-                return await self.run_blocking_func(
-                    worker_run_data.worker.embeddings, params
-                )
+        with root_tracer.start_span(
+            "WorkerManager.embeddings", params.get("span_id")
+        ) as span:
+            params["span_id"] = span.span_id
+            try:
+                worker_run_data = await self._get_model(params, worker_type="text2vec")
+            except Exception as e:
+                raise e
+            async with worker_run_data.semaphore:
+                if worker_run_data.worker.support_async():
+                    return await worker_run_data.worker.async_embeddings(params)
+                else:
+                    return await self.run_blocking_func(
+                        worker_run_data.worker.embeddings, params
+                    )
 
     def sync_embeddings(self, params: Dict) -> List[List[float]]:
         worker_run_data = self._sync_get_model(params, worker_type="text2vec")
@@ -422,7 +456,7 @@ class LocalWorkerManager(WorkerManager):
         )
 
     async def _stop_all_worker(
-        self, apply_req: WorkerApplyRequest
+        self, apply_req: WorkerApplyRequest, ignore_exception: bool = False
     ) -> WorkerApplyOutput:
         start_time = time.time()
 
@@ -439,7 +473,19 @@ class LocalWorkerManager(WorkerManager):
                 and self.register_func
                 and self.deregister_func
             ):
-                await self.deregister_func(worker_run_data)
+                _deregister_func = self.deregister_func
+                if ignore_exception:
+
+                    async def safe_deregister_func(run_data):
+                        try:
+                            await self.deregister_func(run_data)
+                        except Exception as e:
+                            logger.warning(
+                                f"Stop worker, ignored exception from deregister_func: {e}"
+                            )
+
+                    _deregister_func = safe_deregister_func
+                await _deregister_func(worker_run_data)
 
         await self._apply_worker(apply_req, _stop_worker)
         timecost = time.time() - start_time
@@ -485,8 +531,8 @@ class WorkerManagerAdapter(WorkerManager):
     async def start(self):
         return await self.worker_manager.start()
 
-    async def stop(self):
-        return await self.worker_manager.stop()
+    async def stop(self, ignore_exception: bool = False):
+        return await self.worker_manager.stop(ignore_exception=ignore_exception)
 
     def after_start(self, listener: Callable[["WorkerManager"], None]):
         if listener is not None:
@@ -578,6 +624,9 @@ async def generate_json_stream(params):
 @router.post("/worker/generate_stream")
 async def api_generate_stream(request: PromptRequest):
     params = request.dict(exclude_none=True)
+    span_id = root_tracer.get_current_span_id()
+    if "span_id" not in params and span_id:
+        params["span_id"] = span_id
     generator = generate_json_stream(params)
     return StreamingResponse(generator)
 
@@ -585,12 +634,18 @@ async def api_generate_stream(request: PromptRequest):
 @router.post("/worker/generate")
 async def api_generate(request: PromptRequest):
     params = request.dict(exclude_none=True)
+    span_id = root_tracer.get_current_span_id()
+    if "span_id" not in params and span_id:
+        params["span_id"] = span_id
     return await worker_manager.generate(params)
 
 
 @router.post("/worker/embeddings")
 async def api_embeddings(request: EmbeddingsRequest):
     params = request.dict(exclude_none=True)
+    span_id = root_tracer.get_current_span_id()
+    if "span_id" not in params and span_id:
+        params["span_id"] = span_id
     return await worker_manager.embeddings(params)
 
 
@@ -629,7 +684,9 @@ async def api_model_shutdown(request: WorkerStartupRequest):
     return await worker_manager.model_shutdown(request)
 
 
-def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
+def _setup_fastapi(
+    worker_params: ModelWorkerParameters, app=None, ignore_exception: bool = False
+):
     if not app:
         app = FastAPI()
     if worker_params.standalone:
@@ -639,6 +696,10 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
         )
 
         if not worker_params.controller_addr:
+            # if we have http_proxy or https_proxy in env, the server can not start
+            # so set it to empty here
+            os.environ["http_proxy"] = ""
+            os.environ["https_proxy"] = ""
             worker_params.controller_addr = f"http://127.0.0.1:{worker_params.port}"
         logger.info(
             f"Run WorkerManager with standalone mode, controller_addr: {worker_params.controller_addr}"
@@ -660,7 +721,7 @@ def _setup_fastapi(worker_params: ModelWorkerParameters, app=None):
 
     @app.on_event("shutdown")
     async def startup_event():
-        await worker_manager.stop()
+        await worker_manager.stop(ignore_exception=ignore_exception)
 
     return app
 
@@ -669,8 +730,15 @@ def _parse_worker_params(
     model_name: str = None, model_path: str = None, **kwargs
 ) -> ModelWorkerParameters:
     worker_args = EnvArgumentParser()
+    env_prefix = None
+    if model_name:
+        env_prefix = EnvArgumentParser.get_env_prefix(model_name)
     worker_params: ModelWorkerParameters = worker_args.parse_args_into_dataclass(
-        ModelWorkerParameters, model_name=model_name, model_path=model_path, **kwargs
+        ModelWorkerParameters,
+        env_prefix=env_prefix,
+        model_name=model_name,
+        model_path=model_path,
+        **kwargs,
     )
     env_prefix = EnvArgumentParser.get_env_prefix(worker_params.model_name)
     # Read parameters agein with prefix of model name.
@@ -765,10 +833,19 @@ def _build_worker(worker_params: ModelWorkerParameters):
 def _start_local_worker(
     worker_manager: WorkerManagerAdapter, worker_params: ModelWorkerParameters
 ):
-    worker = _build_worker(worker_params)
-    if not worker_manager.worker_manager:
-        worker_manager.worker_manager = _create_local_model_manager(worker_params)
-    worker_manager.worker_manager.add_worker(worker, worker_params)
+    with root_tracer.start_span(
+        "WorkerManager._start_local_worker",
+        span_type=SpanType.RUN,
+        metadata={
+            "run_service": SpanTypeRunName.WORKER_MANAGER,
+            "params": _get_dict_from_obj(worker_params),
+            "sys_infos": _get_dict_from_obj(get_system_info()),
+        },
+    ):
+        worker = _build_worker(worker_params)
+        if not worker_manager.worker_manager:
+            worker_manager.worker_manager = _create_local_model_manager(worker_params)
+        worker_manager.worker_manager.add_worker(worker, worker_params)
 
 
 def _start_local_embedding_worker(
@@ -831,7 +908,7 @@ def initialize_worker_manager_in_client(
         worker_params.register = True
         worker_params.port = local_port
         logger.info(f"Worker params: {worker_params}")
-        _setup_fastapi(worker_params, app)
+        _setup_fastapi(worker_params, app, ignore_exception=True)
         _start_local_worker(worker_manager, worker_params)
         worker_manager.after_start(start_listener)
         _start_local_embedding_worker(
@@ -880,23 +957,30 @@ def run_worker_manager(
         model_name=model_name, model_path=model_path, standalone=standalone, port=port
     )
 
+    setup_logging(
+        "pilot",
+        logging_level=worker_params.log_level,
+        logger_filename="dbgpt_model_worker_manager.log",
+    )
+
     embedded_mod = True
     logger.info(f"Worker params: {worker_params}")
     if not app:
         # Run worker manager independently
         embedded_mod = False
         app = _setup_fastapi(worker_params)
-        _start_local_worker(worker_manager, worker_params)
-        _start_local_embedding_worker(
-            worker_manager, embedding_model_name, embedding_model_path
-        )
-    else:
-        _start_local_worker(worker_manager, worker_params)
-        _start_local_embedding_worker(
-            worker_manager, embedding_model_name, embedding_model_path
-        )
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(worker_manager.start())
+
+    system_app = SystemApp(app)
+    initialize_tracer(
+        system_app,
+        os.path.join(LOGDIR, "dbgpt_model_worker_manager_tracer.jsonl"),
+        root_operation_name="DB-GPT-WorkerManager-Entry",
+    )
+
+    _start_local_worker(worker_manager, worker_params)
+    _start_local_embedding_worker(
+        worker_manager, embedding_model_name, embedding_model_path
+    )
 
     if include_router:
         app.include_router(router, prefix="/api")
@@ -907,6 +991,10 @@ def run_worker_manager(
         uvicorn.run(
             app, host=worker_params.host, port=worker_params.port, log_level="info"
         )
+    else:
+        # Embedded mod, start worker manager
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(worker_manager.start())
 
 
 if __name__ == "__main__":

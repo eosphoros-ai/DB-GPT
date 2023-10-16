@@ -2,14 +2,15 @@
 import io
 import uuid
 from base64 import b64decode
+import logging
 
 import requests
 from PIL import Image
 
 from pilot.commands.command_mange import command
 from pilot.configs.config import Config
-from pilot.logs import logger
 
+logger = logging.getLogger(__name__)
 CFG = Config()
 
 
