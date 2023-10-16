@@ -188,7 +188,7 @@ The core capabilities mainly consist of the following parts:
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-[**Quickstart**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
+[**Installation && Usage Tutorial**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
 
 ### Language Switching
     In the .env configuration file, modify the LANGUAGE parameter to switch to different languages. The default is English (Chinese: zh, English: en, other languages to be added later).
@@ -214,8 +214,17 @@ The core capabilities mainly consist of the following parts:
   - [ ] Images 
 
 - [x] RAG
-- [ ] KnownledgeGraph
-
+- [ ] Graph Database
+  - [ ] Neo4j Graph
+  - [ ] Nebula Graph
+- [x] Multi Vector Database
+  - [x] Chroma
+  - [x] Milvus
+  - [x] Weaviate
+  - [x] PGVector
+  - [ ] Elasticsearch
+  - [ ] ClickHouse
+  - [ ] Faiss 
 ### Multi Datasource Support
 
 - Multi Datasource Support 
@@ -239,9 +248,9 @@ The core capabilities mainly consist of the following parts:
   - [ ] StarRocks
 
 ### Multi-Models And vLLM
-- [x] [cluster deployment](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
-- [x] [fastchat support](https://github.com/lm-sys/FastChat)
-- [x] [vLLM support](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
+- [x] [Cluster Deployment](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
+- [x] [Fastchat Support](https://github.com/lm-sys/FastChat)
+- [x] [vLLM Support](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
 
 ### Agents market and Plugins
 - [x] multi-agents framework
