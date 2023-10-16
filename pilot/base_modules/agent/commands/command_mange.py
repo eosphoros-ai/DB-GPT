@@ -327,7 +327,7 @@ class ApiCall:
             # wait api call generate complete
             if self.__check_last_plugin_call_ready(llm_text):
                 self.update_from_context(llm_text)
-                for key, value in self.plugin_status_map:
+                for key, value in self.plugin_status_map.items():
                     if value.status == Status.TODO.value:
                         value.status = Status.RUNNING.value
                         logging.info(f"插件执行:{value.name},{value.args}")
