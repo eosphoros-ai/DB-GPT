@@ -23,8 +23,10 @@ chat_factory = ChatFactory()
 
 
 class DBSummaryClient:
-    """db summary client, provide db_summary_embedding(put db profile and table profile summary into vector store)
+    """DB Summary client, provide db_summary_embedding(put db profile and table profile summary into vector store)
     , get_similar_tables method(get user query related tables info)
+    Args:
+        system_app (SystemApp): Main System Application class that manages the lifecycle and registration of components..
     """
 
     def __init__(self, system_app: SystemApp):
