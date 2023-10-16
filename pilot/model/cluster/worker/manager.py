@@ -40,6 +40,7 @@ from pilot.utils.parameter_utils import (
 )
 from pilot.utils.utils import setup_logging
 from pilot.utils.tracer import initialize_tracer, root_tracer, SpanType, SpanTypeRunName
+from pilot.utils.system_utils import get_system_info
 
 logger = logging.getLogger(__name__)
 
@@ -838,6 +839,7 @@ def _start_local_worker(
         metadata={
             "run_service": SpanTypeRunName.WORKER_MANAGER,
             "params": _get_dict_from_obj(worker_params),
+            "sys_infos": _get_dict_from_obj(get_system_info()),
         },
     ):
         worker = _build_worker(worker_params)
@@ -974,6 +976,7 @@ def run_worker_manager(
         os.path.join(LOGDIR, "dbgpt_model_worker_manager_tracer.jsonl"),
         root_operation_name="DB-GPT-WorkerManager-Entry",
     )
+
     _start_local_worker(worker_manager, worker_params)
     _start_local_embedding_worker(
         worker_manager, embedding_model_name, embedding_model_path
@@ -985,11 +988,13 @@ def run_worker_manager(
     if not embedded_mod:
         import uvicorn
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(worker_manager.start())
         uvicorn.run(
             app, host=worker_params.host, port=worker_params.port, log_level="info"
         )
+    else:
+        # Embedded mod, start worker manager
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(worker_manager.start())
 
 
 if __name__ == "__main__":

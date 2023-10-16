@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from pilot.model.parameter import BaseEmbeddingModelParameters
 from pilot.utils.parameter_utils import _get_dict_from_obj
 from pilot.utils.tracer import root_tracer, SpanType, SpanTypeRunName
+from pilot.utils.system_utils import get_system_info
 
 if TYPE_CHECKING:
     from langchain.embeddings.base import Embeddings
@@ -21,6 +22,7 @@ class EmbeddingLoader:
             "model_name": model_name,
             "run_service": SpanTypeRunName.EMBEDDING_MODEL.value,
             "params": _get_dict_from_obj(param),
+            "sys_infos": _get_dict_from_obj(get_system_info()),
         }
         with root_tracer.start_span(
             "EmbeddingLoader.load", span_type=SpanType.RUN, metadata=metadata

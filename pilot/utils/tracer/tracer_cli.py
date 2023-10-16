@@ -259,6 +259,7 @@ def chat(
                 found_trace_id = trace_id
 
     service_tables = {}
+    system_infos_table = {}
     out_kwargs = {"ensure_ascii": False} if output == "json" else {}
     for service_name, sp in service_spans.items():
         metadata = sp["metadata"]
@@ -266,6 +267,15 @@ def chat(
         for k, v in metadata["params"].items():
             table.add_row([k, v])
         service_tables[service_name] = table
+        sys_infos = metadata.get("sys_infos")
+        if sys_infos and isinstance(sys_infos, dict):
+            sys_table = PrettyTable(
+                ["System Config Key", "System Config Value"],
+                title=f"{service_name} System information",
+            )
+            for k, v in sys_infos.items():
+                sys_table.add_row([k, v])
+            system_infos_table[service_name] = sys_table
 
     if not hide_run_params:
         merged_table1 = merge_tables_horizontally(
@@ -276,16 +286,23 @@ def chat(
         )
         merged_table2 = merge_tables_horizontally(
             [
-                service_tables.get(SpanTypeRunName.MODEL_WORKER),
-                service_tables.get(SpanTypeRunName.WORKER_MANAGER),
+                service_tables.get(SpanTypeRunName.MODEL_WORKER.value),
+                service_tables.get(SpanTypeRunName.WORKER_MANAGER.value),
             ]
         )
+        sys_table = system_infos_table.get(SpanTypeRunName.WORKER_MANAGER.value)
+        if system_infos_table:
+            for k, v in system_infos_table.items():
+                sys_table = v
+                break
         if output == "text":
             print(merged_table1)
             print(merged_table2)
         else:
             for service_name, table in service_tables.items():
                 print(table.get_formatted_string(out_format=output, **out_kwargs))
+        if sys_table:
+            print(sys_table.get_formatted_string(out_format=output, **out_kwargs))
     if hide_conv:
         return
 
