@@ -230,6 +230,13 @@ The core capabilities mainly consist of the following parts:
   - [ ] Elasticsearch
   - [ ] ClickHouse
   - [ ] Faiss 
+  
+-  [ ] Testing and Evaluation Capability Building
+  - [ ] Knowledge QA datasets
+  - [ ] Question collection [easy, medium, hard]:
+  - [ ] Scoring mechanism
+  - [ ] Testing and evaluation using Excel + DB datasets
+  
 ### Multi Datasource Support
 
 - Multi Datasource Support 
@@ -256,11 +263,19 @@ The core capabilities mainly consist of the following parts:
 - [x] [Cluster Deployment](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
 - [x] [Fastchat Support](https://github.com/lm-sys/FastChat)
 - [x] [vLLM Support](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
+- [ ] Cloud-native environment and support for Ray environment
+- [ ] Service Registry(eg:nacos)
+- [ ] Compatibility with OpenAI's interfaces
+- [ ] Expansion and optimization of embedding models
 
 ### Agents market and Plugins
 - [x] multi-agents framework
 - [x] custom plugin development 
 - [ ] plugin market
+- [ ] Integration with CoT
+- [ ] Enrich plugin sample library
+- [ ] Support for AutoGPT protocol
+- [ ] Integration of multi-agents and visualization capabilities, defining LLM+Vis new standards
 
 ### Cost and Observability
 - [x] [debugging](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)

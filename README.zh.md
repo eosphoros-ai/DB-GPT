@@ -59,6 +59,8 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 ![demo_zh](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/94a40a1b-fb54-4a3b-b0a6-30575bd2796c)
 
+![7f1bd042-7165-4b9f-a88e-ccce35f9d9aa](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0f6e0944-24e5-4481-87f5-7c168a63c5ea)
+
 #### 根据自然语言对话生成分析图表
 
 ![db plugins demonstration](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/4113ac15-83c2-4350-86c0-5fc795677abd)
@@ -298,11 +300,26 @@ The MIT License (MIT)
 - [x] [fastchat支持](https://github.com/lm-sys/FastChat)
 - [x] [fastchat支持](https://github.com/lm-sys/FastChat)
 - [x] [vLLM 支持](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
+- [ ] 云原生环境与Ray环境支持
+- [ ] 注册中心引入nacos
+- [ ] 上层接口兼容Openai
+- [ ] Embedding模型扩充，优化
 
 ### Agents与插件市场
 - [x] 多Agents框架
 - [x] 自定义Agents
 - [ ] 插件市场
+- [ ] CoT集成
+- [ ] 丰富插件样本库
+- [ ] 支持AutoGPT协议
+- [ ] Multi-agents & 可视化能力打通，定义LLM+Vis新标准
+
+
+### 测试评估能力建设
+- [ ] 知识库的数据文本集
+- [ ] 问题集合 [easy、medium、hard]
+- [ ] 评分机制
+- [ ] Excel + DB库表的测试评估
 
 ### 成本与可观测性 
 - [x] [debugging](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
