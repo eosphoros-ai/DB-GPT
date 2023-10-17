@@ -52,8 +52,8 @@ class DashboardDataLoader:
                         values.append(value_item)
             return field_names, values
         except Exception as e:
-            logger.debug("Prepare Chart Data Faild!" + str(e))
-            raise ValueError("Prepare Chart Data Faild!")
+            logger.debug("Prepare Chart Data Failed!" + str(e))
+            raise ValueError("Prepare Chart Data Failed!")
 
     def get_chart_values_by_db(self, db_name: str, chart_sql: str):
         logger.info(f"get_chart_values_by_db:{db_name},{chart_sql}")

@@ -111,7 +111,7 @@ def load_native_plugins(cfg: Config):
                 print("save file")
                 cfg.set_plugins(scan_plugins(cfg.debug_mode))
             else:
-                print("get file faild，response code：", response.status_code)
+                print("get file failed，response code：", response.status_code)
         except Exception as e:
             print("load plugin from git exception!" + str(e))
 

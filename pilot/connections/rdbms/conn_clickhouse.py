@@ -106,13 +106,13 @@ class ClickhouseConnect(RDBMSDatabase):
         return [
             (table_comment[0], table_comment[1]) for table_comment in table_comments
         ]
-    
+
     def table_simple_info(self):
         # group_concat() not supported in clickhouse, use arrayStringConcat+groupArray instead; and quotes need to be escaped
         _sql = f"""
                 select concat(TABLE_NAME, \'(\' , arrayStringConcat(groupArray(column_name),\'-\'), \')\') as schema_info 
-                from information_schema.COLUMNS where table_schema=\'{self.get_current_db_name()}\' group by TABLE_NAME; """ 
-        
+                from information_schema.COLUMNS where table_schema=\'{self.get_current_db_name()}\' group by TABLE_NAME; """
+
         cursor = self.session.execute(text(_sql))
         results = cursor.fetchall()
         return results
