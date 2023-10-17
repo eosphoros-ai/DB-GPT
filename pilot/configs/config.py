@@ -55,20 +55,24 @@ class Config(metaclass=Singleton):
         self.tongyi_proxy_api_key = os.getenv("TONGYI_PROXY_API_KEY")
         if self.tongyi_proxy_api_key:
             os.environ["tongyi_proxyllm_proxy_api_key"] = self.tongyi_proxy_api_key
-        
+
         # zhipu
         self.zhipu_proxy_api_key = os.getenv("ZHIPU_PROXY_API_KEY")
         if self.zhipu_proxy_api_key:
             os.environ["zhipu_proxyllm_proxy_api_key"] = self.zhipu_proxy_api_key
-            os.environ["zhipu_proxyllm_proxyllm_backend"] = os.getenv("ZHIPU_MODEL_VERSION")
+            os.environ["zhipu_proxyllm_proxyllm_backend"] = os.getenv(
+                "ZHIPU_MODEL_VERSION"
+            )
 
         # wenxin
         self.wenxin_proxy_api_key = os.getenv("WEN_XIN_API_KEY")
-        self.wenxin_proxy_api_secret = os.getenv("WEN_XIN_SECRET_KEY") 
+        self.wenxin_proxy_api_secret = os.getenv("WEN_XIN_SECRET_KEY")
         self.wenxin_model_version = os.getenv("WEN_XIN_MODEL_VERSION")
         if self.wenxin_proxy_api_key and self.wenxin_proxy_api_secret:
             os.environ["wenxin_proxyllm_proxy_api_key"] = self.wenxin_proxy_api_key
-            os.environ["wenxin_proxyllm_proxy_api_secret"] = self.wenxin_proxy_api_secret
+            os.environ[
+                "wenxin_proxyllm_proxy_api_secret"
+            ] = self.wenxin_proxy_api_secret
             os.environ["wenxin_proxyllm_proxyllm_backend"] = self.wenxin_model_version
 
         # xunfei spark
@@ -90,8 +94,7 @@ class Config(metaclass=Singleton):
             os.environ["bc_proxyllm_proxy_api_key"] = self.bc_proxy_api_key
             os.environ["bc_proxyllm_proxy_api_secret"] = self.bc_proxy_api_secret
             os.environ["bc_proxyllm_proxyllm_backend"] = self.bc_model_version
-            
-         
+
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
         self.elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
@@ -172,7 +175,6 @@ class Config(metaclass=Singleton):
             os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True").lower() == "true"
         )
 
-
         self.LOCAL_DB_MANAGE = None
 
         ###dbgpt meta info database connection configuration
@@ -189,7 +191,6 @@ class Config(metaclass=Singleton):
         self.LOCAL_DB_POOL_SIZE = int(os.getenv("LOCAL_DB_POOL_SIZE", 10))
 
         self.CHAT_HISTORY_STORE_TYPE = os.getenv("CHAT_HISTORY_STORE_TYPE", "duckdb")
-
 
         ### LLM Model Service Configuration
         self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b-v1.5")

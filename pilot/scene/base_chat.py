@@ -54,7 +54,7 @@ class BaseChat(ABC):
         )
         chat_history_fac = ChatHistory()
         ### can configurable storage methods
-        self.memory =   chat_history_fac.get_store_instance(chat_param["chat_session_id"])
+        self.memory = chat_history_fac.get_store_instance(chat_param["chat_session_id"])
 
         self.history_message: List[OnceConversation] = self.memory.messages()
         self.current_message: OnceConversation = OnceConversation(

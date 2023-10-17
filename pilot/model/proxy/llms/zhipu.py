@@ -7,6 +7,7 @@ from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 
 CHATGLM_DEFAULT_MODEL = "chatglm_pro"
 
+
 def zhipu_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
@@ -16,9 +17,10 @@ def zhipu_generate_stream(
 
     # TODO proxy model use unified config?
     proxy_api_key = model_params.proxy_api_key
-    proxyllm_backend = CHATGLM_DEFAULT_MODEL or model_params.proxyllm_backend 
+    proxyllm_backend = CHATGLM_DEFAULT_MODEL or model_params.proxyllm_backend
 
     import zhipuai
+
     zhipuai.api_key = proxy_api_key
     history = []
 

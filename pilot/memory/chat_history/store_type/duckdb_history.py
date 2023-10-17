@@ -148,7 +148,6 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
                 return json.loads(context[0])
         return None
 
-
     @staticmethod
     def conv_list(cls, user_name: str = None) -> None:
         if os.path.isfile(duckdb_path):

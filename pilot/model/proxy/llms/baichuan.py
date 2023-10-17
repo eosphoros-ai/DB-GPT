@@ -9,17 +9,20 @@ from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 
 BAICHUAN_DEFAULT_MODEL = "Baichuan2-53B"
 
+
 def _calculate_md5(text: str) -> str:
-    """Calculate md5 """
+    """Calculate md5"""
     md5 = hashlib.md5()
     md5.update(text.encode("utf-8"))
     encrypted = md5.hexdigest()
     return encrypted
 
+
 def _sign(data: dict, secret_key: str, timestamp: str):
     data_str = json.dumps(data)
     signature = _calculate_md5(secret_key + data_str + timestamp)
     return signature
+
 
 def baichuan_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=4096
@@ -28,12 +31,11 @@ def baichuan_generate_stream(
     url = "https://api.baichuan-ai.com/v1/stream/chat"
 
     model_name = model_params.proxyllm_backend or BAICHUAN_DEFAULT_MODEL
-    proxy_api_key = model_params.proxy_api_key 
-    proxy_api_secret = model_params.proxy_api_secret 
-
+    proxy_api_key = model_params.proxy_api_key
+    proxy_api_secret = model_params.proxy_api_secret
 
     history = []
-    messages: List[ModelMessage] = params["messages"] 
+    messages: List[ModelMessage] = params["messages"]
     # Add history conversation
     for message in messages:
         if message.role == ModelMessageRoleType.HUMAN:
@@ -47,23 +49,23 @@ def baichuan_generate_stream(
 
     payload = {
         "model": model_name,
-        "messages":  history,
+        "messages": history,
         "parameters": {
             "temperature": params.get("temperature"),
-            "top_k": params.get("top_k", 10)
-        } 
+            "top_k": params.get("top_k", 10),
+        },
     }
 
     timestamp = int(time.time())
     _signature = _sign(payload, proxy_api_secret, str(timestamp))
-    
+
     headers = {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + proxy_api_key,
         "X-BC-Request-Id": params.get("request_id") or "dbgpt",
         "X-BC-Timestamp": str(timestamp),
         "X-BC-Signature": _signature,
-        "X-BC-Sign-Algo": "MD5", 
+        "X-BC-Sign-Algo": "MD5",
     }
 
     res = requests.post(url=url, json=payload, headers=headers, stream=True)

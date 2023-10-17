@@ -9,8 +9,21 @@ import pandas as pd
 import chardet
 import pandas as pd
 import numpy as np
-from pyparsing import CaselessKeyword, Word, alphas, alphanums, delimitedList, Forward, Group, Optional,\
-    Literal, infixNotation, opAssoc, unicodeString,Regex
+from pyparsing import (
+    CaselessKeyword,
+    Word,
+    alphas,
+    alphanums,
+    delimitedList,
+    Forward,
+    Group,
+    Optional,
+    Literal,
+    infixNotation,
+    opAssoc,
+    unicodeString,
+    Regex,
+)
 
 from pilot.common.pd_utils import csv_colunm_foramt
 from pilot.common.string_utils import is_chinese_include_number
@@ -21,14 +34,15 @@ def excel_colunm_format(old_name: str) -> str:
     new_column = new_column.replace(" ", "_")
     return new_column
 
+
 def detect_encoding(file_path):
     # 读取文件的二进制数据
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         data = f.read()
     # 使用 chardet 来检测文件编码
     result = chardet.detect(data)
-    encoding = result['encoding']
-    confidence = result['confidence']
+    encoding = result["encoding"]
+    confidence = result["confidence"]
     return encoding, confidence
 
 
@@ -39,10 +53,11 @@ def add_quotes_ex(sql: str, column_names):
             sql = sql.replace(column_name, f'"{column_name}"')
     return sql
 
+
 def parse_sql(sql):
     # 定义关键字和标识符
     select_stmt = Forward()
-    column = Regex(r'[\w一-龥]*')
+    column = Regex(r"[\w一-龥]*")
     table = Word(alphanums)
     join_expr = Forward()
     where_expr = Forward()
@@ -62,21 +77,24 @@ def parse_sql(sql):
     not_in_keyword = CaselessKeyword("NOT IN")
 
     # 定义语法规则
-    select_stmt <<= (select_keyword + delimitedList(column) +
-                     from_keyword + delimitedList(table) +
-                     Optional(join_expr) +
-                     Optional(where_keyword + where_expr) +
-                     Optional(group_by_keyword + group_by_expr) +
-                     Optional(order_by_keyword + order_by_expr))
+    select_stmt <<= (
+        select_keyword
+        + delimitedList(column)
+        + from_keyword
+        + delimitedList(table)
+        + Optional(join_expr)
+        + Optional(where_keyword + where_expr)
+        + Optional(group_by_keyword + group_by_expr)
+        + Optional(order_by_keyword + order_by_expr)
+    )
 
     join_expr <<= join_keyword + table + on_keyword + column + Literal("=") + column
 
-    where_expr <<= column + Literal("=") + Word(alphanums) + \
-                  Optional(and_keyword + where_expr) | \
-                  column + Literal(">") + Word(alphanums) + \
-                  Optional(and_keyword + where_expr) | \
-                  column + Literal("<") + Word(alphanums) + \
-                  Optional(and_keyword + where_expr)
+    where_expr <<= (
+        column + Literal("=") + Word(alphanums) + Optional(and_keyword + where_expr)
+        | column + Literal(">") + Word(alphanums) + Optional(and_keyword + where_expr)
+        | column + Literal("<") + Word(alphanums) + Optional(and_keyword + where_expr)
+    )
 
     group_by_expr <<= delimitedList(column)
 
@@ -86,7 +104,6 @@ def parse_sql(sql):
     parsed_result = select_stmt.parseString(sql)
 
     return parsed_result.asList()
-
 
 
 def add_quotes(sql, column_names=[]):
@@ -108,6 +125,7 @@ def deep_quotes(token, column_names=[]):
             new_value = token.value.replace("`", "").replace("'", "")
             token.value = f'"{new_value}"'
 
+
 def get_select_clause(sql):
     parsed = sqlparse.parse(sql)[0]  # 解析 SQL 语句，获取第一个语句块
 
@@ -122,6 +140,7 @@ def get_select_clause(sql):
                 break
             select_tokens.append(token)
     return "".join(str(token) for token in select_tokens)
+
 
 def parse_select_fields(sql):
     parsed = sqlparse.parse(sql)[0]  # 解析 SQL 语句，获取第一个语句块
@@ -139,11 +158,13 @@ def parse_select_fields(sql):
 
     return fields
 
+
 def add_quotes_to_chinese_columns(sql, column_names=[]):
     parsed = sqlparse.parse(sql)
     for stmt in parsed:
         process_statement(stmt, column_names)
     return str(parsed[0])
+
 
 def process_statement(statement, column_names=[]):
     if isinstance(statement, sqlparse.sql.IdentifierList):
@@ -155,22 +176,23 @@ def process_statement(statement, column_names=[]):
         for item in statement.tokens:
             process_statement(item)
 
+
 def process_identifier(identifier, column_names=[]):
     # if identifier.has_alias():
     #     alias = identifier.get_alias()
     #     identifier.tokens[-1].value = '[' + alias + ']'
-    if  hasattr(identifier, 'tokens') and identifier.value in column_names:
-        if  is_chinese(identifier.value):
+    if hasattr(identifier, "tokens") and identifier.value in column_names:
+        if is_chinese(identifier.value):
             new_value = get_new_value(identifier.value)
             identifier.value = new_value
             identifier.normalized = new_value
             identifier.tokens = [sqlparse.sql.Token(sqlparse.tokens.Name, new_value)]
     else:
-        if hasattr(identifier, 'tokens'):
+        if hasattr(identifier, "tokens"):
             for token in identifier.tokens:
                 if isinstance(token, sqlparse.sql.Function):
                     process_function(token)
-                elif token.ttype in sqlparse.tokens.Name :
+                elif token.ttype in sqlparse.tokens.Name:
                     new_value = get_new_value(token.value)
                     token.value = new_value
                     token.normalized = new_value
@@ -179,8 +201,11 @@ def process_identifier(identifier, column_names=[]):
                     token.value = new_value
                     token.normalized = new_value
                     token.tokens = [sqlparse.sql.Token(sqlparse.tokens.Name, new_value)]
+
+
 def get_new_value(value):
     return f""" "{value.replace("`", "").replace("'", "").replace('"', "")}" """
+
 
 def process_function(function):
     function_params = list(function.get_parameters())
@@ -191,15 +216,18 @@ def process_function(function):
         if isinstance(param, sqlparse.sql.Identifier):
             # 判断是否需要替换字段值
             # if is_chinese(param.value):
-                # 替换字段值
+            # 替换字段值
             new_value = get_new_value(param.value)
             # new_parameter = sqlparse.sql.Identifier(f'[{param.value}]')
-            function_params[i].tokens = [sqlparse.sql.Token(sqlparse.tokens.Name, new_value)]
+            function_params[i].tokens = [
+                sqlparse.sql.Token(sqlparse.tokens.Name, new_value)
+            ]
     print(str(function))
+
 
 def is_chinese(text):
     for char in text:
-        if '一' <= char <= '鿿':
+        if "一" <= char <= "鿿":
             return True
     return False
 
@@ -240,7 +268,7 @@ class ExcelReader:
             df_tmp = pd.read_csv(file_path, encoding=encoding)
             self.df = pd.read_csv(
                 file_path,
-                encoding = encoding,
+                encoding=encoding,
                 converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
         else:
@@ -279,7 +307,6 @@ class ExcelReader:
         except Exception as e:
             logging.error("excel sql run error!", e)
             raise ValueError(f"Data Query Exception!\\nSQL[{sql}].\\nError:{str(e)}")
-
 
     def get_df_by_sql_ex(self, sql):
         colunms, values = self.run(sql)

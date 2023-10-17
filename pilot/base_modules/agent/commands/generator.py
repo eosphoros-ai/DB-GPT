@@ -133,5 +133,3 @@ class PluginPromptGenerator:
 
     def generate_commands_string(self) -> str:
         return f"{self._generate_numbered_list(self.commands, item_type='command')}"
-
-

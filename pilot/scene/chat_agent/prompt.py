@@ -54,7 +54,7 @@ _DEFAULT_TEMPLATE = (
 )
 
 
-_PROMPT_SCENE_DEFINE=(
+_PROMPT_SCENE_DEFINE = (
     _PROMPT_SCENE_DEFINE_EN if CFG.LANGUAGE == "en" else _PROMPT_SCENE_DEFINE_ZH
 )
 
@@ -76,7 +76,7 @@ prompt = PromptTemplate(
     output_parser=PluginChatOutputParser(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT
     ),
-    temperature = 1
+    temperature=1
     # example_selector=plugin_example,
 )
 

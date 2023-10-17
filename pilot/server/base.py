@@ -15,7 +15,6 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 sys.path.append(ROOT_PATH)
 
 
-
 def signal_handler(sig, frame):
     print("in order to avoid chroma db atexit problem")
     os._exit(0)
@@ -32,7 +31,6 @@ def async_db_summary(system_app: SystemApp):
 def server_init(args, system_app: SystemApp):
     from pilot.base_modules.agent.commands.command_mange import CommandRegistry
 
-
     # logger.info(f"args: {args}")
 
     # init config
@@ -43,8 +41,6 @@ def server_init(args, system_app: SystemApp):
 
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
-
-
 
     # Loader plugins and commands
     command_categories = [
@@ -126,4 +122,3 @@ class WebWerverParameters(BaseParameters):
         },
     )
     light: Optional[bool] = field(default=False, metadata={"help": "enable light mode"})
-

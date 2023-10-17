@@ -16,7 +16,7 @@ class ChatWithPlugin(BaseChat):
     select_plugin: str = None
 
     def __init__(self, chat_param: Dict):
-        self.plugin_selector =  chat_param["select_param"]
+        self.plugin_selector = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatExecution
         super().__init__(chat_param=chat_param)
         self.plugins_prompt_generator = PluginPromptGenerator()

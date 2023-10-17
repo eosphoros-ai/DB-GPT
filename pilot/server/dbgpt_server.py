@@ -31,7 +31,9 @@ from pilot.openapi.api_v1.api_v1 import router as api_v1
 from pilot.openapi.base import validation_exception_handler
 from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
 from pilot.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
-from pilot.base_modules.agent.commands.disply_type.show_chart_gen import static_message_img_path
+from pilot.base_modules.agent.commands.disply_type.show_chart_gen import (
+    static_message_img_path,
+)
 from pilot.model.cluster import initialize_worker_manager_in_client
 from pilot.utils.utils import (
     setup_logging,
@@ -56,6 +58,8 @@ def swagger_monkey_patch(*args, **kwargs):
         swagger_js_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css"
     )
+
+
 app = FastAPI()
 applications.get_swagger_ui_html = swagger_monkey_patch
 
@@ -73,14 +77,14 @@ app.add_middleware(
 )
 
 
-app.include_router(api_v1, prefix="/api",  tags=["Chat"])
-app.include_router(api_editor_route_v1, prefix="/api",  tags=["Editor"])
+app.include_router(api_v1, prefix="/api", tags=["Chat"])
+app.include_router(api_editor_route_v1, prefix="/api", tags=["Editor"])
 app.include_router(llm_manage_api, prefix="/api", tags=["LLM Manage"])
 app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
 
 
-app.include_router(knowledge_router,  tags=["Knowledge"])
-app.include_router(prompt_router,  tags=["Prompt"])
+app.include_router(knowledge_router, tags=["Knowledge"])
+app.include_router(prompt_router, tags=["Prompt"])
 
 
 def mount_static_files(app):
@@ -98,6 +102,7 @@ def mount_static_files(app):
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
+
 def _get_webserver_params(args: List[str] = None):
     from pilot.utils.parameter_utils import EnvArgumentParser
 
@@ -105,6 +110,7 @@ def _get_webserver_params(args: List[str] = None):
         WebWerverParameters
     )
     return WebWerverParameters(**vars(parser.parse_args(args=args)))
+
 
 def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     """Initialize app

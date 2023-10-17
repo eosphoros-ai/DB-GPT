@@ -10,8 +10,10 @@ from pilot.base_modules.meta_data.meta_data import Base, engine, session
 
 
 class PluginHubEntity(Base):
-    __tablename__ = 'plugin_hub'
-    id = Column(Integer, primary_key=True, autoincrement=True, comment="autoincrement id")
+    __tablename__ = "plugin_hub"
+    id = Column(
+        Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
+    )
     name = Column(String(255), unique=True, nullable=False, comment="plugin name")
     description = Column(String(255), nullable=False, comment="plugin description")
     author = Column(String(255), nullable=True, comment="plugin author")
@@ -25,8 +27,8 @@ class PluginHubEntity(Base):
     installed = Column(Integer, default=False, comment="plugin already installed count")
 
     __table_args__ = (
-        UniqueConstraint('name', name="uk_name"),
-        Index('idx_q_type', 'type'),
+        UniqueConstraint("name", name="uk_name"),
+        Index("idx_q_type", "type"),
     )
 
 
@@ -38,7 +40,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
 
     def add(self, engity: PluginHubEntity):
         session = self.get_session()
-        timezone = pytz.timezone('Asia/Shanghai')
+        timezone = pytz.timezone("Asia/Shanghai")
         plugin_hub = PluginHubEntity(
             name=engity.name,
             author=engity.author,
@@ -64,7 +66,9 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         finally:
             session.close()
 
-    def list(self, query: PluginHubEntity, page=1, page_size=20) -> list[PluginHubEntity]:
+    def list(
+        self, query: PluginHubEntity, page=1, page_size=20
+    ) -> list[PluginHubEntity]:
         session = self.get_session()
         plugin_hubs = session.query(PluginHubEntity)
         all_count = plugin_hubs.count()
@@ -72,17 +76,11 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         if query.id is not None:
             plugin_hubs = plugin_hubs.filter(PluginHubEntity.id == query.id)
         if query.name is not None:
-            plugin_hubs = plugin_hubs.filter(
-                PluginHubEntity.name == query.name
-            )
+            plugin_hubs = plugin_hubs.filter(PluginHubEntity.name == query.name)
         if query.type is not None:
-            plugin_hubs = plugin_hubs.filter(
-                PluginHubEntity.type == query.type
-            )
+            plugin_hubs = plugin_hubs.filter(PluginHubEntity.type == query.type)
         if query.author is not None:
-            plugin_hubs = plugin_hubs.filter(
-                PluginHubEntity.author == query.author
-            )
+            plugin_hubs = plugin_hubs.filter(PluginHubEntity.author == query.author)
         if query.storage_channel is not None:
             plugin_hubs = plugin_hubs.filter(
                 PluginHubEntity.storage_channel == query.storage_channel
@@ -110,9 +108,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
     def get_by_name(self, name: str) -> PluginHubEntity:
         session = self.get_session()
         plugin_hubs = session.query(PluginHubEntity)
-        plugin_hubs = plugin_hubs.filter(
-            PluginHubEntity.name == name
-        )
+        plugin_hubs = plugin_hubs.filter(PluginHubEntity.name == name)
         result = plugin_hubs.first()
         session.close()
         return result
@@ -123,17 +119,11 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         if query.id is not None:
             plugin_hubs = plugin_hubs.filter(PluginHubEntity.id == query.id)
         if query.name is not None:
-            plugin_hubs = plugin_hubs.filter(
-                PluginHubEntity.name == query.name
-            )
+            plugin_hubs = plugin_hubs.filter(PluginHubEntity.name == query.name)
         if query.type is not None:
-            plugin_hubs = plugin_hubs.filter(
-                PluginHubEntity.type == query.type
-            )
+            plugin_hubs = plugin_hubs.filter(PluginHubEntity.type == query.type)
         if query.author is not None:
-            plugin_hubs = plugin_hubs.filter(
-                PluginHubEntity.author == query.author
-            )
+            plugin_hubs = plugin_hubs.filter(PluginHubEntity.author == query.author)
         if query.storage_channel is not None:
             plugin_hubs = plugin_hubs.filter(
                 PluginHubEntity.storage_channel == query.storage_channel
@@ -148,9 +138,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
             raise Exception("plugin_id is None")
         plugin_hubs = session.query(PluginHubEntity)
         if plugin_id is not None:
-            plugin_hubs = plugin_hubs.filter(
-                PluginHubEntity.id == plugin_id
-            )
+            plugin_hubs = plugin_hubs.filter(PluginHubEntity.id == plugin_id)
         plugin_hubs.delete()
         session.commit()
         session.close()

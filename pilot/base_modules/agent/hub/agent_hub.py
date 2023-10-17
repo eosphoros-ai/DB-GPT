@@ -4,7 +4,7 @@ import os
 import glob
 import shutil
 from fastapi import UploadFile
-from typing import  Any
+from typing import Any
 import tempfile
 
 from ..db.plugin_hub_db import PluginHubEntity, PluginHubDao
@@ -38,7 +38,9 @@ class AgentHub:
                         download_param = json.loads(plugin_entity.download_param)
                         branch_name = download_param.get("branch_name")
                         authorization = download_param.get("authorization")
-                    file_name = self.__download_from_git(plugin_entity.storage_url, branch_name, authorization)
+                    file_name = self.__download_from_git(
+                        plugin_entity.storage_url, branch_name, authorization
+                    )
 
                     # add to my plugins and edit hub status
                     plugin_entity.installed = plugin_entity.installed + 1
@@ -65,7 +67,9 @@ class AgentHub:
                     logger.error("install pluguin exception!", e)
                     raise ValueError(f"Install Plugin {plugin_name} Faild! {str(e)}")
             else:
-                raise ValueError(f"Unsupport Storage Channel {plugin_entity.storage_channel}!")
+                raise ValueError(
+                    f"Unsupport Storage Channel {plugin_entity.storage_channel}!"
+                )
         else:
             raise ValueError(f"Can't Find Plugin {plugin_name}!")
 
@@ -75,7 +79,9 @@ class AgentHub:
         plugin_entity.installed = plugin_entity.installed - 1
         with self.hub_dao.get_session() as session:
             try:
-                my_plugin_q = session.query(MyPluginEntity).filter(MyPluginEntity.name == plugin_name)
+                my_plugin_q = session.query(MyPluginEntity).filter(
+                    MyPluginEntity.name == plugin_name
+                )
                 if user:
                     my_plugin_q.filter(MyPluginEntity.user_code == user)
                 my_plugin_q.delete()
@@ -92,10 +98,10 @@ class AgentHub:
                 have_installed = True
                 break
         if not have_installed:
-            plugin_repo_name = plugin_entity.storage_url.replace(".git", "").strip('/').split('/')[-1]
-            files = glob.glob(
-                os.path.join(self.plugin_dir, f"{plugin_repo_name}*")
+            plugin_repo_name = (
+                plugin_entity.storage_url.replace(".git", "").strip("/").split("/")[-1]
             )
+            files = glob.glob(os.path.join(self.plugin_dir, f"{plugin_repo_name}*"))
             for file in files:
                 os.remove(file)
 
@@ -109,9 +115,16 @@ class AgentHub:
         my_plugin_entity.version = hub_plugin.version
         return my_plugin_entity
 
-    def refresh_hub_from_git(self, github_repo: str = None, branch_name: str = None, authorization: str = None):
+    def refresh_hub_from_git(
+        self,
+        github_repo: str = None,
+        branch_name: str = None,
+        authorization: str = None,
+    ):
         logger.info("refresh_hub_by_git start!")
-        update_from_git(self.temp_hub_file_path, github_repo, branch_name, authorization)
+        update_from_git(
+            self.temp_hub_file_path, github_repo, branch_name, authorization
+        )
         git_plugins = scan_plugins(self.temp_hub_file_path)
         try:
             for git_plugin in git_plugins:
@@ -123,13 +136,13 @@ class AgentHub:
                     plugin_hub_info.type = ""
                     plugin_hub_info.storage_channel = PluginStorageType.Git.value
                     plugin_hub_info.storage_url = DEFAULT_PLUGIN_REPO
-                    plugin_hub_info.author = getattr(git_plugin, '_author', 'DB-GPT')
-                    plugin_hub_info.email = getattr(git_plugin, '_email', '')
+                    plugin_hub_info.author = getattr(git_plugin, "_author", "DB-GPT")
+                    plugin_hub_info.email = getattr(git_plugin, "_email", "")
                     download_param = {}
                     if branch_name:
-                        download_param['branch_name'] = branch_name
+                        download_param["branch_name"] = branch_name
                     if authorization and len(authorization) > 0:
-                        download_param['authorization'] = authorization
+                        download_param["authorization"] = authorization
                     plugin_hub_info.download_param = json.dumps(download_param)
                     plugin_hub_info.installed = 0
 
@@ -140,15 +153,12 @@ class AgentHub:
         except Exception as e:
             raise ValueError(f"Update Agent Hub Db Info Faild!{str(e)}")
 
-    async def upload_my_plugin(self, doc_file: UploadFile, user: Any=Default_User):
-
+    async def upload_my_plugin(self, doc_file: UploadFile, user: Any = Default_User):
         # We can not move temp file in windows system when we open file in context of `with`
         file_path = os.path.join(self.plugin_dir, doc_file.filename)
         if os.path.exists(file_path):
             os.remove(file_path)
-        tmp_fd, tmp_path = tempfile.mkstemp(
-            dir=os.path.join(self.plugin_dir)
-        )
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.join(self.plugin_dir))
         with os.fdopen(tmp_fd, "wb") as tmp:
             tmp.write(await doc_file.read())
         shutil.move(
@@ -158,14 +168,14 @@ class AgentHub:
 
         my_plugins = scan_plugins(self.plugin_dir, doc_file.filename)
 
-        if user is None or len(user) <=0:
+        if user is None or len(user) <= 0:
             user = Default_User
 
         for my_plugin in my_plugins:
             my_plugin_entiy = MyPluginEntity()
 
             my_plugin_entiy.name = my_plugin._name
-            my_plugin_entiy.version =  my_plugin._version
+            my_plugin_entiy.version = my_plugin._version
             my_plugin_entiy.type = "Personal"
             my_plugin_entiy.user_code = user
             my_plugin_entiy.user_name = user
@@ -183,4 +193,3 @@ class AgentHub:
         if not user:
             user = Default_User
         return self.my_lugin_dao.get_by_user(user)
-

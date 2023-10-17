@@ -15,6 +15,7 @@ from matplotlib.font_manager import FontManager
 from pilot.common.string_utils import is_scientific_notation
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -88,12 +89,13 @@ def zh_font_set():
     if len(can_use_fonts) > 0:
         plt.rcParams["font.sans-serif"] = can_use_fonts
 
+
 def format_axis(value, pos):
     # 判断是否为数字
     if is_scientific_notation(value):
         # 判断是否需要进行非科学计数法格式化
 
-        return '{:.2f}'.format(value)
+        return "{:.2f}".format(value)
     return value
 
 
@@ -102,7 +104,7 @@ def format_axis(value, pos):
     "Line chart display, used to display comparative trend analysis data",
     '"df":"<data frame>"',
 )
-def response_line_chart( df: DataFrame) -> str:
+def response_line_chart(df: DataFrame) -> str:
     logger.info(f"response_line_chart")
     if df.size <= 0:
         raise ValueError("No Data！")
@@ -143,9 +145,15 @@ def response_line_chart( df: DataFrame) -> str:
         if len(num_colmns) > 0:
             num_colmns.append(y)
             df_melted = pd.melt(
-                df, id_vars=x, value_vars=num_colmns, var_name="line", value_name="Value"
+                df,
+                id_vars=x,
+                value_vars=num_colmns,
+                var_name="line",
+                value_name="Value",
             )
-            sns.lineplot(data=df_melted, x=x, y="Value", hue="line", ax=ax, palette="Set2")
+            sns.lineplot(
+                data=df_melted, x=x, y="Value", hue="line", ax=ax, palette="Set2"
+            )
         else:
             sns.lineplot(data=df, x=x, y=y, ax=ax, palette="Set2")
 
@@ -154,7 +162,7 @@ def response_line_chart( df: DataFrame) -> str:
 
         chart_name = "line_" + str(uuid.uuid1()) + ".png"
         chart_path = static_message_img_path + "/" + chart_name
-        plt.savefig(chart_path,  dpi=100, transparent=True)
+        plt.savefig(chart_path, dpi=100, transparent=True)
 
         html_img = f"""<img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
         return html_img
@@ -168,7 +176,7 @@ def response_line_chart( df: DataFrame) -> str:
     "Histogram, suitable for comparative analysis of multiple target values",
     '"df":"<data frame>"',
 )
-def response_bar_chart( df: DataFrame) -> str:
+def response_bar_chart(df: DataFrame) -> str:
     logger.info(f"response_bar_chart")
     if df.size <= 0:
         raise ValueError("No Data！")
@@ -246,7 +254,7 @@ def response_bar_chart( df: DataFrame) -> str:
 
     chart_name = "bar_" + str(uuid.uuid1()) + ".png"
     chart_path = static_message_img_path + "/" + chart_name
-    plt.savefig(chart_path, dpi=100,transparent=True)
+    plt.savefig(chart_path, dpi=100, transparent=True)
     html_img = f"""<img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
     return html_img
 

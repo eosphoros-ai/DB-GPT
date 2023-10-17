@@ -29,6 +29,7 @@ def initialize_components(
     system_app.register_instance(controller)
 
     from pilot.base_modules.agent.controller import module_agent
+
     system_app.register_instance(module_agent)
 
     _initialize_embedding_model(

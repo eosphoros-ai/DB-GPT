@@ -7,7 +7,7 @@ import fnmatch
 from datetime import datetime
 from typing import Optional, Type, TypeVar
 
-from sqlalchemy import create_engine,DateTime, String, func, MetaData
+from sqlalchemy import create_engine, DateTime, String, func, MetaData
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped
@@ -32,16 +32,17 @@ db_name = "dbgpt"
 db_path = default_db_path + f"/{db_name}.db"
 connection = sqlite3.connect(db_path)
 
-if CFG.LOCAL_DB_TYPE == 'mysql':
-    engine_temp = create_engine(f"mysql+pymysql://"
-            + quote(CFG.LOCAL_DB_USER)
-            + ":"
-            + quote(CFG.LOCAL_DB_PASSWORD)
-            + "@"
-            + CFG.LOCAL_DB_HOST
-            + ":"
-            + str(CFG.LOCAL_DB_PORT)
-            )
+if CFG.LOCAL_DB_TYPE == "mysql":
+    engine_temp = create_engine(
+        f"mysql+pymysql://"
+        + quote(CFG.LOCAL_DB_USER)
+        + ":"
+        + quote(CFG.LOCAL_DB_PASSWORD)
+        + "@"
+        + CFG.LOCAL_DB_HOST
+        + ":"
+        + str(CFG.LOCAL_DB_PORT)
+    )
     # check and auto create mysqldatabase
     try:
         # try to connect
@@ -53,20 +54,19 @@ if CFG.LOCAL_DB_TYPE == 'mysql':
         # if connect failed, create dbgpt database
         logger.error(f"{db_name} not connect success!")
 
-    engine = create_engine(f"mysql+pymysql://"
-            + quote(CFG.LOCAL_DB_USER)
-            + ":"
-            + quote(CFG.LOCAL_DB_PASSWORD)
-            + "@"
-            + CFG.LOCAL_DB_HOST
-            + ":"
-            + str(CFG.LOCAL_DB_PORT)
-            + f"/{db_name}"
-            )
+    engine = create_engine(
+        f"mysql+pymysql://"
+        + quote(CFG.LOCAL_DB_USER)
+        + ":"
+        + quote(CFG.LOCAL_DB_PASSWORD)
+        + "@"
+        + CFG.LOCAL_DB_HOST
+        + ":"
+        + str(CFG.LOCAL_DB_PORT)
+        + f"/{db_name}"
+    )
 else:
-    engine = create_engine(f'sqlite:///{db_path}')
-
-
+    engine = create_engine(f"sqlite:///{db_path}")
 
 
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -81,16 +81,16 @@ Base = declarative_base()
 alembic_ini_path = default_db_path + "/alembic.ini"
 alembic_cfg = AlembicConfig(alembic_ini_path)
 
-alembic_cfg.set_main_option('sqlalchemy.url',  str(engine.url))
+alembic_cfg.set_main_option("sqlalchemy.url", str(engine.url))
 
 os.makedirs(default_db_path + "/alembic", exist_ok=True)
 os.makedirs(default_db_path + "/alembic/versions", exist_ok=True)
 
-alembic_cfg.set_main_option('script_location',  default_db_path + "/alembic")
+alembic_cfg.set_main_option("script_location", default_db_path + "/alembic")
 
 # 将模型和会话传递给Alembic配置
-alembic_cfg.attributes['target_metadata'] = Base.metadata
-alembic_cfg.attributes['session'] = session
+alembic_cfg.attributes["target_metadata"] = Base.metadata
+alembic_cfg.attributes["session"] = session
 
 
 # # 创建表
@@ -106,7 +106,7 @@ def ddl_init_and_upgrade():
     # command.upgrade(alembic_cfg, 'head')
     # subprocess.run(["alembic", "revision", "--autogenerate", "-m", "Added account table"])
     with engine.connect() as connection:
-        alembic_cfg.attributes['connection'] = connection
+        alembic_cfg.attributes["connection"] = connection
         heads = command.heads(alembic_cfg)
         print("heads:" + str(heads))
 
