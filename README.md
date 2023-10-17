@@ -59,8 +59,7 @@ Run on an RTX 4090 GPU.
 ![demo_en](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/d40118e4-8e76-45b6-b4a6-30e5ff170f42)
 
 
-
-https://github.com/eosphoros-ai/DB-GPT/assets/13723926/cce5b604-0515-40d7-913f-51afe8e08124
+![7f1bd042-7165-4b9f-a88e-ccce35f9d9aa](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0f6e0944-24e5-4481-87f5-7c168a63c5ea)
 
 
 
