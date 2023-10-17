@@ -104,12 +104,16 @@ class LocalWorkerManager(WorkerManager):
         return f"{model_name}@{worker_type}"
 
     async def run_blocking_func(self, func, *args):
+        if asyncio.iscoroutinefunction(func):
+            raise ValueError(f"The function {func} is not blocking function")
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(self.executor, func, *args)
 
     async def start(self):
         if len(self.workers) > 0:
-            await self._start_all_worker(apply_req=None)
+            out = await self._start_all_worker(apply_req=None)
+            if not out.success:
+                raise Exception(out.message)
         if self.register_func:
             await self.register_func(self.run_data)
         if self.send_heartbeat_func:
@@ -143,7 +147,9 @@ class LocalWorkerManager(WorkerManager):
                 else:
                     stop_tasks.append(self.deregister_func(self.run_data))
 
-            await asyncio.gather(*stop_tasks)
+            results = await asyncio.gather(*stop_tasks)
+            if not results[0].success and not ignore_exception:
+                raise Exception(results[0].message)
 
     def after_start(self, listener: Callable[["WorkerManager"], None]):
         self.start_listeners.append(listener)
@@ -193,7 +199,15 @@ class LocalWorkerManager(WorkerManager):
             logger.warn(f"Instance {worker_key} exist")
             return False
 
-    async def model_startup(self, startup_req: WorkerStartupRequest) -> bool:
+    def _remove_worker(self, worker_params: ModelWorkerParameters) -> None:
+        worker_key = self._worker_key(
+            worker_params.worker_type, worker_params.model_name
+        )
+        instances = self.workers.get(worker_key)
+        if instances:
+            del self.workers[worker_key]
+
+    async def model_startup(self, startup_req: WorkerStartupRequest):
         """Start model"""
         model_name = startup_req.model
         worker_type = startup_req.worker_type
@@ -213,22 +227,30 @@ class LocalWorkerManager(WorkerManager):
             self.add_worker, worker, worker_params, command_args
         )
         if not success:
-            logger.warn(
-                f"Add worker failed, worker instances is exist, worker_params: {worker_params}"
-            )
-            return False
+            msg = f"Add worker {model_name}@{worker_type}, worker instances is exist"
+            logger.warn(f"{msg}, worker_params: {worker_params}")
+            self._remove_worker(worker_params)
+            raise Exception(msg)
         supported_types = WorkerType.values()
         if worker_type not in supported_types:
+            self._remove_worker(worker_params)
             raise ValueError(
                 f"Unsupported worker type: {worker_type}, now supported worker type: {supported_types}"
             )
         start_apply_req = WorkerApplyRequest(
             model=model_name, apply_type=WorkerApplyType.START, worker_type=worker_type
         )
-        await self.worker_apply(start_apply_req)
-        return True
+        out: WorkerApplyOutput = None
+        try:
+            out = await self.worker_apply(start_apply_req)
+        except Exception as e:
+            self._remove_worker(worker_params)
+            raise e
+        if not out.success:
+            self._remove_worker(worker_params)
+            raise Exception(out.message)
 
-    async def model_shutdown(self, shutdown_req: WorkerStartupRequest) -> bool:
+    async def model_shutdown(self, shutdown_req: WorkerStartupRequest):
         logger.info(f"Begin shutdown model, shutdown_req: {shutdown_req}")
         apply_req = WorkerApplyRequest(
             model=shutdown_req.model,
@@ -236,9 +258,8 @@ class LocalWorkerManager(WorkerManager):
             worker_type=shutdown_req.worker_type,
         )
         out = await self._stop_all_worker(apply_req)
-        if out.success:
-            return True
-        raise Exception(out.message)
+        if not out.success:
+            raise Exception(out.message)
 
     async def supported_models(self) -> List[WorkerSupportedModel]:
         models = await self.run_blocking_func(list_supported_models)
@@ -253,7 +274,7 @@ class LocalWorkerManager(WorkerManager):
         self, worker_type: str, model_name: str, healthy_only: bool = True
     ) -> List[WorkerRunData]:
         worker_key = self._worker_key(worker_type, model_name)
-        return self.workers.get(worker_key)
+        return self.workers.get(worker_key, [])
 
     def _simple_select(
         self, worker_type: str, model_name: str, worker_instances: List[WorkerRunData]
@@ -424,36 +445,47 @@ class LocalWorkerManager(WorkerManager):
     async def _start_all_worker(
         self, apply_req: WorkerApplyRequest
     ) -> WorkerApplyOutput:
+        # TODO avoid start twice
         start_time = time.time()
         logger.info(f"Begin start all worker, apply_req: {apply_req}")
 
         async def _start_worker(worker_run_data: WorkerRunData):
-            await self.run_blocking_func(
-                worker_run_data.worker.start,
-                worker_run_data.model_params,
-                worker_run_data.command_args,
-            )
-            worker_run_data.stop_event.clear()
-            if worker_run_data.worker_params.register and self.register_func:
-                # Register worker to controller
-                await self.register_func(worker_run_data)
-                if (
-                    worker_run_data.worker_params.send_heartbeat
-                    and self.send_heartbeat_func
-                ):
-                    asyncio.create_task(
-                        _async_heartbeat_sender(
-                            worker_run_data,
-                            worker_run_data.worker_params.heartbeat_interval,
-                            self.send_heartbeat_func,
+            _start_time = time.time()
+            info = worker_run_data._to_print_key()
+            out = WorkerApplyOutput("")
+            try:
+                await self.run_blocking_func(
+                    worker_run_data.worker.start,
+                    worker_run_data.model_params,
+                    worker_run_data.command_args,
+                )
+                worker_run_data.stop_event.clear()
+                if worker_run_data.worker_params.register and self.register_func:
+                    # Register worker to controller
+                    await self.register_func(worker_run_data)
+                    if (
+                        worker_run_data.worker_params.send_heartbeat
+                        and self.send_heartbeat_func
+                    ):
+                        asyncio.create_task(
+                            _async_heartbeat_sender(
+                                worker_run_data,
+                                worker_run_data.worker_params.heartbeat_interval,
+                                self.send_heartbeat_func,
+                            )
                         )
-                    )
+                out.message = f"{info} start successfully"
+            except Exception as e:
+                out.success = False
+                out.message = f"{info} start failed, {str(e)}"
+            finally:
+                out.timecost = time.time() - _start_time
+            return out
 
-        await self._apply_worker(apply_req, _start_worker)
-        timecost = time.time() - start_time
-        return WorkerApplyOutput(
-            message=f"Worker started successfully", timecost=timecost
-        )
+        outs = await self._apply_worker(apply_req, _start_worker)
+        out = WorkerApplyOutput.reduce(outs)
+        out.timecost = time.time() - start_time
+        return out
 
     async def _stop_all_worker(
         self, apply_req: WorkerApplyRequest, ignore_exception: bool = False
@@ -461,42 +493,56 @@ class LocalWorkerManager(WorkerManager):
         start_time = time.time()
 
         async def _stop_worker(worker_run_data: WorkerRunData):
-            await self.run_blocking_func(worker_run_data.worker.stop)
-            # Set stop event
-            worker_run_data.stop_event.set()
-            if worker_run_data._heartbeat_future:
-                # Wait thread finish
-                worker_run_data._heartbeat_future.result()
-                worker_run_data._heartbeat_future = None
-            if (
-                worker_run_data.worker_params.register
-                and self.register_func
-                and self.deregister_func
-            ):
-                _deregister_func = self.deregister_func
-                if ignore_exception:
+            _start_time = time.time()
+            info = worker_run_data._to_print_key()
+            out = WorkerApplyOutput("")
+            try:
+                await self.run_blocking_func(worker_run_data.worker.stop)
+                # Set stop event
+                worker_run_data.stop_event.set()
+                if worker_run_data._heartbeat_future:
+                    # Wait thread finish
+                    worker_run_data._heartbeat_future.result()
+                    worker_run_data._heartbeat_future = None
+                if (
+                    worker_run_data.worker_params.register
+                    and self.register_func
+                    and self.deregister_func
+                ):
+                    _deregister_func = self.deregister_func
+                    if ignore_exception:
 
-                    async def safe_deregister_func(run_data):
-                        try:
-                            await self.deregister_func(run_data)
-                        except Exception as e:
-                            logger.warning(
-                                f"Stop worker, ignored exception from deregister_func: {e}"
-                            )
+                        async def safe_deregister_func(run_data):
+                            try:
+                                await self.deregister_func(run_data)
+                            except Exception as e:
+                                logger.warning(
+                                    f"Stop worker, ignored exception from deregister_func: {e}"
+                                )
 
-                    _deregister_func = safe_deregister_func
-                await _deregister_func(worker_run_data)
+                        _deregister_func = safe_deregister_func
+                    await _deregister_func(worker_run_data)
+                # Remove metadata
+                self._remove_worker(worker_run_data.worker_params)
+                out.message = f"{info} stop successfully"
+            except Exception as e:
+                out.success = False
+                out.message = f"{info} stop failed, {str(e)}"
+            finally:
+                out.timecost = time.time() - _start_time
+            return out
 
-        await self._apply_worker(apply_req, _stop_worker)
-        timecost = time.time() - start_time
-        return WorkerApplyOutput(
-            message=f"Worker stopped successfully", timecost=timecost
-        )
+        outs = await self._apply_worker(apply_req, _stop_worker)
+        out = WorkerApplyOutput.reduce(outs)
+        out.timecost = time.time() - start_time
+        return out
 
     async def _restart_all_worker(
         self, apply_req: WorkerApplyRequest
     ) -> WorkerApplyOutput:
-        await self._stop_all_worker(apply_req)
+        out = await self._stop_all_worker(apply_req, ignore_exception=True)
+        if not out.success:
+            return out
         return await self._start_all_worker(apply_req)
 
     async def _update_all_worker_params(
@@ -541,10 +587,10 @@ class WorkerManagerAdapter(WorkerManager):
     async def supported_models(self) -> List[WorkerSupportedModel]:
         return await self.worker_manager.supported_models()
 
-    async def model_startup(self, startup_req: WorkerStartupRequest) -> bool:
+    async def model_startup(self, startup_req: WorkerStartupRequest):
         return await self.worker_manager.model_startup(startup_req)
 
-    async def model_shutdown(self, shutdown_req: WorkerStartupRequest) -> bool:
+    async def model_shutdown(self, shutdown_req: WorkerStartupRequest):
         return await self.worker_manager.model_shutdown(shutdown_req)
 
     async def get_model_instances(
