@@ -5,7 +5,6 @@ import os
 import re
 import sqlparse
 
-import pandas as pd
 import chardet
 import pandas as pd
 import numpy as np
