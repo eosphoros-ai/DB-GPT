@@ -7,7 +7,7 @@ import fnmatch
 from datetime import datetime
 from typing import Optional, Type, TypeVar
 
-from sqlalchemy import create_engine, DateTime, String, func, MetaData
+from sqlalchemy import create_engine, DateTime, String, func, MetaData, DDL
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped
@@ -47,7 +47,7 @@ if CFG.LOCAL_DB_TYPE == "mysql":
     try:
         # try to connect
         with engine_temp.connect() as conn:
-            conn.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+            conn.execute(DDL(f"CREATE DATABASE IF NOT EXISTS {db_name}"))
         print(f"Already connect '{db_name}'")
 
     except OperationalError as e:
