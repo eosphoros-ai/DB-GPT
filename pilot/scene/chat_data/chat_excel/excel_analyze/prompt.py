@@ -35,7 +35,7 @@ _DEFAULT_TEMPLATE_ZH = """
 	5.优先使用数据分析的方式回答，如果用户问题不涉及数据分析内容，你可以按你的理解进行回答
 	6.请确保你的输出内容有良好排版，输出内容均为普通markdown文本,不要用```或者```python这种标签来包围<api-call>的输出内容
 请确保你的输出格式如下:
-    输出给用户的分析文本信息.<api-call><name>[数据展示方式]</name><args><sql>[正确的duckdb数据分析sql]</sql></args></api-call>
+    分析思路简介.<api-call><name>[数据展示方式]</name><args><sql>[正确的duckdb数据分析sql]</sql></args></api-call>
 
 用户问题：{user_input}
 """
