@@ -3,7 +3,9 @@ from pandas import DataFrame
 from pilot.base_modules.agent.commands.command_mange import command
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 @command(
     "response_table",

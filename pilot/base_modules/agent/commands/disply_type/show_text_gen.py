@@ -3,6 +3,7 @@ from pandas import DataFrame
 from pilot.base_modules.agent.commands.command_mange import command
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +23,7 @@ def response_data_text(df: DataFrame) -> str:
         html_table = df.to_html(index=False, escape=False, sparsify=False)
         table_str = "".join(html_table.split())
         html = f"""<div class="w-full overflow-auto">{table_str}</div>"""
-        text_info =  html.replace("\n", " ")
+        text_info = html.replace("\n", " ")
     elif row_size == 1:
         row = data[0]
         for value in row:

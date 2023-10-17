@@ -10,7 +10,7 @@ CFG = Config()
 
 
 class MemHistoryMemory(BaseChatHistoryMemory):
-    store_type: str  = MemoryStoreType.Memory.value
+    store_type: str = MemoryStoreType.Memory.value
 
     histroies_map = FixedSizeDict(100)
 

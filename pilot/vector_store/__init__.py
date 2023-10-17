@@ -1,20 +1,29 @@
 from typing import Any
 
+
 def _import_pgvector() -> Any:
-    from pilot.vector_store.pgvector_store import PGVectorStore 
+    from pilot.vector_store.pgvector_store import PGVectorStore
+
     return PGVectorStore
+
 
 def _import_milvus() -> Any:
     from pilot.vector_store.milvus_store import MilvusStore
+
     return MilvusStore
+
 
 def _import_chroma() -> Any:
     from pilot.vector_store.chroma_store import ChromaStore
+
     return ChromaStore
+
 
 def _import_weaviate() -> Any:
     from pilot.vector_store.weaviate_store import WeaviateStore
+
     return WeaviateStore
+
 
 def __getattr__(name: str) -> Any:
     if name == "Chroma":
@@ -28,9 +37,5 @@ def __getattr__(name: str) -> Any:
     else:
         raise AttributeError(f"Could not find: {name}")
 
-__all__ = [
-    "Chroma",
-    "Milvus",
-    "Weaviate",
-    "PGVector" 
-]
+
+__all__ = ["Chroma", "Milvus", "Weaviate", "PGVector"]

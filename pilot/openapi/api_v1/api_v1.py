@@ -297,7 +297,6 @@ async def params_load(
 
 @router.post("/v1/chat/dialogue/delete")
 async def dialogue_delete(con_uid: str):
-
     history_fac = ChatHistory()
     history_mem = history_fac.get_store_instance(con_uid)
     history_mem.delete()

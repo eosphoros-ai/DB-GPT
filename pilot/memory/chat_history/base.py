@@ -5,15 +5,17 @@ from typing import List
 from enum import Enum
 from pilot.scene.message import OnceConversation
 
+
 class MemoryStoreType(Enum):
-    File= 'file'
-    Memory = 'memory'
-    DB = 'db'
-    DuckDb = 'duckdb'
+    File = "file"
+    Memory = "memory"
+    DB = "db"
+    DuckDb = "duckdb"
 
 
 class BaseChatHistoryMemory(ABC):
     store_type: MemoryStoreType
+
     def __init__(self):
         self.conversations: List[OnceConversation] = []
 

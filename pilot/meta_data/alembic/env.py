@@ -66,12 +66,14 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        if engine.dialect.name == 'sqlite':
-            context.configure(connection=engine.connect(), target_metadata=target_metadata, render_as_batch=True)
-        else:
+        if engine.dialect.name == "sqlite":
             context.configure(
-                connection=connection, target_metadata=target_metadata
+                connection=engine.connect(),
+                target_metadata=target_metadata,
+                render_as_batch=True,
             )
+        else:
+            context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

@@ -8,10 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 def tongyi_generate_stream(
-        model: ProxyModel, tokenizer, params, device, context_len=2048
+    model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
     import dashscope
     from dashscope import Generation
+
     model_params = model.get_params()
     print(f"Model: {model}, model_params: {model_params}")
 
@@ -62,14 +63,14 @@ def tongyi_generate_stream(
         messages=history,
         top_p=params.get("top_p", 0.8),
         stream=True,
-        result_format='message'
+        result_format="message",
     )
 
     for r in res:
         if r:
-            if r['status_code'] == 200:
+            if r["status_code"] == 200:
                 content = r["output"]["choices"][0]["message"].get("content")
                 yield content
             else:
-                content = r['code'] + ":" + r["message"]
+                content = r["code"] + ":" + r["message"]
                 yield content

@@ -20,10 +20,11 @@ logger = logging.getLogger("chat_agent")
 class ChatAgent(BaseChat):
     chat_scene: str = ChatScene.ChatAgent.value()
     chat_retention_rounds = 0
+
     def __init__(self, chat_param: Dict):
-        if not chat_param['select_param']:
+        if not chat_param["select_param"]:
             raise ValueError("Please select a Plugin!")
-        self.select_plugins = chat_param['select_param'].split(",")
+        self.select_plugins = chat_param["select_param"].split(",")
 
         chat_param["chat_mode"] = ChatScene.ChatAgent
         super().__init__(chat_param=chat_param)
@@ -31,8 +32,12 @@ class ChatAgent(BaseChat):
         self.plugins_prompt_generator.command_registry = CFG.command_registry
 
         # load  select plugin
-        agent_module = CFG.SYSTEM_APP.get_component(ComponentType.AGENT_HUB, ModuleAgent)
-        self.plugins_prompt_generator = agent_module.load_select_plugin(self.plugins_prompt_generator, self.select_plugins)
+        agent_module = CFG.SYSTEM_APP.get_component(
+            ComponentType.AGENT_HUB, ModuleAgent
+        )
+        self.plugins_prompt_generator = agent_module.load_select_plugin(
+            self.plugins_prompt_generator, self.select_plugins
+        )
 
         self.api_call = ApiCall(plugin_generator=self.plugins_prompt_generator)
 
@@ -53,4 +58,3 @@ class ChatAgent(BaseChat):
 
     def __list_to_prompt_str(self, list: List) -> str:
         return "\n".join(f"{i + 1 + 1}. {item}" for i, item in enumerate(list))
-

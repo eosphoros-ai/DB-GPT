@@ -6,19 +6,25 @@ from pilot.model.proxy.llms.proxy_model import ProxyModel
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 from cachetools import cached, TTLCache
 
+
 @cached(TTLCache(1, 1800))
 def _build_access_token(api_key: str, secret_key: str) -> str:
     """
-        Generate Access token according AK, SK
+    Generate Access token according AK, SK
     """
-    
+
     url = "https://aip.baidubce.com/oauth/2.0/token"
-    params = {"grant_type": "client_credentials", "client_id": api_key, "client_secret": secret_key}
+    params = {
+        "grant_type": "client_credentials",
+        "client_id": api_key,
+        "client_secret": secret_key,
+    }
 
     res = requests.get(url=url, params=params)
-     
+
     if res.status_code == 200:
         return res.json().get("access_token")
+
 
 def wenxin_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
@@ -28,23 +34,20 @@ def wenxin_generate_stream(
         "ERNIE-Bot-turbo": "eb-instant",
     }
 
-    model_params = model.get_params()    
-    model_name = model_params.proxyllm_backend 
+    model_params = model.get_params()
+    model_name = model_params.proxyllm_backend
     model_version = MODEL_VERSION.get(model_name)
     if not model_version:
         yield f"Unsupport model version {model_name}"
-        
-    proxy_api_key = model_params.proxy_api_key 
-    proxy_api_secret = model_params.proxy_api_secret 
-    access_token = _build_access_token(proxy_api_key, proxy_api_secret)
-     
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
 
-    proxy_server_url = f'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/{model_version}?access_token={access_token}'
-    
+    proxy_api_key = model_params.proxy_api_key
+    proxy_api_secret = model_params.proxy_api_secret
+    access_token = _build_access_token(proxy_api_key, proxy_api_secret)
+
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+
+    proxy_server_url = f"https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/{model_version}?access_token={access_token}"
+
     if not access_token:
         yield "Failed to get access token. please set the correct api_key and secret key."
 
@@ -86,7 +89,7 @@ def wenxin_generate_stream(
         "messages": history,
         "system": system,
         "temperature": params.get("temperature"),
-        "stream": True
+        "stream": True,
     }
 
     text = ""
@@ -106,6 +109,3 @@ def wenxin_generate_stream(
                         content = obj["result"]
                         text += content
                 yield text
-    
-
-    

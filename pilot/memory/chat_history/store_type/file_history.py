@@ -17,7 +17,7 @@ CFG = Config()
 
 
 class FileHistoryMemory(BaseChatHistoryMemory):
-    store_type: str  = MemoryStoreType.File.value
+    store_type: str = MemoryStoreType.File.value
 
     def __init__(self, chat_session_id: str):
         now = datetime.datetime.now()
@@ -49,5 +49,3 @@ class FileHistoryMemory(BaseChatHistoryMemory):
 
     def clear(self) -> None:
         self.file_path.write_text(json.dumps([]))
-
-

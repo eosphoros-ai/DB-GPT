@@ -258,7 +258,17 @@ The MIT License (MIT)
   - [ ] Code
   - [ ] Images 
 - [x] RAG
-- [ ] KnownledgeGraph
+- [ ] Graph Database
+  - [ ] Neo4j Graph
+  - [ ] Nebula Graph
+- [x] Multi Vector Database
+  - [x] Chroma
+  - [x] Milvus
+  - [x] Weaviate
+  - [x] PGVector
+  - [ ] Elasticsearch
+  - [ ] ClickHouse
+  - [ ] Faiss 
 
 ### 多数据源支持
 
@@ -285,6 +295,7 @@ The MIT License (MIT)
 
 ### 多模型管理与推理优化
 - [x] [集群部署](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
+- [x] [fastchat支持](https://github.com/lm-sys/FastChat)
 - [x] [fastchat支持](https://github.com/lm-sys/FastChat)
 - [x] [vLLM 支持](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
 

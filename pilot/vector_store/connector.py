@@ -3,6 +3,7 @@ from pilot.vector_store.base import VectorStoreBase
 
 connector = {}
 
+
 class VectorStoreConnector:
     """VectorStoreConnector, can connect different vector db provided load document api_v1 and similar search api_v1.
     1.load_document:knowledge document source into vector store.(Chroma, Milvus, Weaviate)
@@ -16,16 +17,15 @@ class VectorStoreConnector:
         """initialize vector store connector."""
         self.ctx = ctx
         self._register()
-         
+
         if self._match(vector_store_type):
             self.connector_class = connector.get(vector_store_type)
         else:
             raise Exception(f"Vector Type Not support. {0}", vector_store_type)
-       
-        print(self.connector_class) 
+
+        print(self.connector_class)
         self.client = self.connector_class(ctx)
 
-    
     def load_document(self, docs):
         """load document in vector database."""
         return self.client.load_document(docs)
@@ -51,7 +51,7 @@ class VectorStoreConnector:
             return True
         else:
             return False
-    
+
     def _register(self):
         for cls in vector_store.__all__:
             if issubclass(getattr(vector_store, cls), VectorStoreBase):

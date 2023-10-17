@@ -28,13 +28,13 @@ class Command:
     """
 
     def __init__(
-            self,
-            name: str,
-            description: str,
-            method: Callable[..., Any],
-            signature: str = "",
-            enabled: bool = True,
-            disabled_reason: Optional[str] = None,
+        self,
+        name: str,
+        description: str,
+        method: Callable[..., Any],
+        signature: str = "",
+        enabled: bool = True,
+        disabled_reason: Optional[str] = None,
     ):
         self.name = name
         self.description = description
@@ -87,11 +87,12 @@ class CommandRegistry:
             if hasattr(reloaded_module, "register"):
                 reloaded_module.register(self)
 
-    def is_valid_command(self, name:str)-> bool:
+    def is_valid_command(self, name: str) -> bool:
         if name not in self.commands:
             return False
         else:
             return True
+
     def get_command(self, name: str) -> Callable[..., Any]:
         return self.commands[name]
 
@@ -129,23 +130,23 @@ class CommandRegistry:
             attr = getattr(module, attr_name)
             # Register decorated functions
             if hasattr(attr, AUTO_GPT_COMMAND_IDENTIFIER) and getattr(
-                    attr, AUTO_GPT_COMMAND_IDENTIFIER
+                attr, AUTO_GPT_COMMAND_IDENTIFIER
             ):
                 self.register(attr.command)
             # Register command classes
             elif (
-                    inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
+                inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
             ):
                 cmd_instance = attr()
                 self.register(cmd_instance)
 
 
 def command(
-        name: str,
-        description: str,
-        signature: str = "",
-        enabled: bool = True,
-        disabled_reason: Optional[str] = None,
+    name: str,
+    description: str,
+    signature: str = "",
+    enabled: bool = True,
+    disabled_reason: Optional[str] = None,
 ) -> Callable[..., Any]:
     """The command decorator is used to create Command objects from ordinary functions."""
 
@@ -241,34 +242,60 @@ class ApiCall:
         else:
             md_tag_end = "```"
         for tag in error_md_tags:
-            all_context = all_context.replace(tag + api_context + md_tag_end, api_context)
-            all_context = all_context.replace(tag + "\n" +api_context + "\n" + md_tag_end, api_context)
-            all_context = all_context.replace(tag + " " +api_context + " " + md_tag_end, api_context)
+            all_context = all_context.replace(
+                tag + api_context + md_tag_end, api_context
+            )
+            all_context = all_context.replace(
+                tag + "\n" + api_context + "\n" + md_tag_end, api_context
+            )
+            all_context = all_context.replace(
+                tag + " " + api_context + " " + md_tag_end, api_context
+            )
             all_context = all_context.replace(tag + api_context, api_context)
         return all_context
 
     def api_view_context(self, all_context: str, display_mode: bool = False):
         error_mk_tags = ["```", "```python", "```xml"]
-        call_context_map = extract_content_open_ending(all_context, self.agent_prefix, self.agent_end, True)
+        call_context_map = extract_content_open_ending(
+            all_context, self.agent_prefix, self.agent_end, True
+        )
         for api_index, api_context in call_context_map.items():
             api_status = self.plugin_status_map.get(api_context)
             if api_status is not None:
                 if display_mode:
                     if api_status.api_result:
-                        all_context = self.__deal_error_md_tags(all_context, api_context)
-                        all_context = all_context.replace(api_context, api_status.api_result)
+                        all_context = self.__deal_error_md_tags(
+                            all_context, api_context
+                        )
+                        all_context = all_context.replace(
+                            api_context, api_status.api_result
+                        )
                     else:
                         if api_status.status == Status.FAILED.value:
-                            all_context = self.__deal_error_md_tags(all_context, api_context)
-                            all_context = all_context.replace(api_context, f"""\n<span style=\"color:red\">ERROR!</span>{api_status.err_msg}\n """)
+                            all_context = self.__deal_error_md_tags(
+                                all_context, api_context
+                            )
+                            all_context = all_context.replace(
+                                api_context,
+                                f"""\n<span style=\"color:red\">ERROR!</span>{api_status.err_msg}\n """,
+                            )
                         else:
                             cost = (api_status.end_time - self.start_time) / 1000
                             cost_str = "{:.2f}".format(cost)
-                            all_context = self.__deal_error_md_tags(all_context, api_context)
-                            all_context = all_context.replace(api_context, f'\n<span style=\"color:green\">Waiting...{cost_str}S</span>\n')
+                            all_context = self.__deal_error_md_tags(
+                                all_context, api_context
+                            )
+                            all_context = all_context.replace(
+                                api_context,
+                                f'\n<span style="color:green">Waiting...{cost_str}S</span>\n',
+                            )
                 else:
-                    all_context = self.__deal_error_md_tags(all_context, api_context, False)
-                    all_context = all_context.replace(api_context, self.to_view_text(api_status))
+                    all_context = self.__deal_error_md_tags(
+                        all_context, api_context, False
+                    )
+                    all_context = all_context.replace(
+                        api_context, self.to_view_text(api_status)
+                    )
 
             else:
                 # not ready api call view change
@@ -276,27 +303,34 @@ class ApiCall:
                 cost = (now_time - self.start_time) / 1000
                 cost_str = "{:.2f}".format(cost)
                 for tag in error_mk_tags:
-                    all_context = all_context.replace(tag + api_context , api_context)
-                all_context = all_context.replace(api_context, f'\n<span style=\"color:green\">Waiting...{cost_str}S</span>\n')
+                    all_context = all_context.replace(tag + api_context, api_context)
+                all_context = all_context.replace(
+                    api_context,
+                    f'\n<span style="color:green">Waiting...{cost_str}S</span>\n',
+                )
 
         return all_context
 
     def update_from_context(self, all_context):
-        api_context_map = extract_content(all_context, self.agent_prefix, self.agent_end, True)
+        api_context_map = extract_content(
+            all_context, self.agent_prefix, self.agent_end, True
+        )
         for api_index, api_context in api_context_map.items():
             api_context = api_context.replace("\\n", "").replace("\n", "")
             api_call_element = ET.fromstring(api_context)
-            api_name = api_call_element.find('name').text
-            if api_name.find("[")>=0 or api_name.find("]")>=0:
+            api_name = api_call_element.find("name").text
+            if api_name.find("[") >= 0 or api_name.find("]") >= 0:
                 api_name = api_name.replace("[", "").replace("]", "")
             api_args = {}
-            args_elements = api_call_element.find('args')
+            args_elements = api_call_element.find("args")
             for child_element in args_elements.iter():
                 api_args[child_element.tag] = child_element.text
 
             api_status = self.plugin_status_map.get(api_context)
             if api_status is None:
-                api_status = PluginStatus(name=api_name, location=[api_index], args=api_args)
+                api_status = PluginStatus(
+                    name=api_name, location=[api_index], args=api_args
+                )
                 self.plugin_status_map[api_context] = api_status
             else:
                 api_status.location.append(api_index)
@@ -304,20 +338,20 @@ class ApiCall:
     def __to_view_param_str(self, api_status):
         param = {}
         if api_status.name:
-            param['name'] = api_status.name
-        param['status'] = api_status.status
+            param["name"] = api_status.name
+        param["status"] = api_status.status
         if api_status.logo_url:
-            param['logo'] = api_status.logo_url
+            param["logo"] = api_status.logo_url
 
         if api_status.err_msg:
-            param['err_msg'] = api_status.err_msg
+            param["err_msg"] = api_status.err_msg
 
         if api_status.api_result:
-            param['result'] = api_status.api_result
+            param["result"] = api_status.api_result
         return json.dumps(param)
 
     def to_view_text(self, api_status: PluginStatus):
-        api_call_element = ET.Element('dbgpt-view')
+        api_call_element = ET.Element("dbgpt-view")
         api_call_element.text = self.__to_view_param_str(api_status)
         result = ET.tostring(api_call_element, encoding="utf-8")
         return result.decode("utf-8")
@@ -332,7 +366,9 @@ class ApiCall:
                         value.status = Status.RUNNING.value
                         logging.info(f"插件执行:{value.name},{value.args}")
                         try:
-                            value.api_result = execute_command(value.name, value.args, self.plugin_generator)
+                            value.api_result = execute_command(
+                                value.name, value.args, self.plugin_generator
+                            )
                             value.status = Status.COMPLETED.value
                         except Exception as e:
                             value.status = Status.FAILED.value
@@ -350,15 +386,19 @@ class ApiCall:
                         value.status = Status.RUNNING.value
                         logging.info(f"sql展示执行:{value.name},{value.args}")
                         try:
-                            sql = value.args['sql']
+                            sql = value.args["sql"]
                             if sql:
                                 param = {
                                     "df": sql_run_func(sql),
                                 }
                                 if self.display_registry.is_valid_command(value.name):
-                                    value.api_result = self.display_registry.call(value.name, **param)
+                                    value.api_result = self.display_registry.call(
+                                        value.name, **param
+                                    )
                                 else:
-                                    value.api_result = self.display_registry.call("response_table", **param)
+                                    value.api_result = self.display_registry.call(
+                                        "response_table", **param
+                                    )
 
                             value.status = Status.COMPLETED.value
                         except Exception as e:
@@ -366,4 +406,3 @@ class ApiCall:
                             value.err_msg = str(e)
                         value.end_time = datetime.now().timestamp() * 1000
         return self.api_view_context(llm_text, True)
-

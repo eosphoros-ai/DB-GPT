@@ -9,6 +9,7 @@ from .generator import PluginPromptGenerator
 
 from pilot.configs.config import Config
 
+
 def _resolve_pathlike_command_args(command_args):
     if "directory" in command_args and command_args["directory"] in {"", "/"}:
         # todo
@@ -64,8 +65,6 @@ def execute_ai_response_json(
     return result
 
 
-
-
 def execute_command(
     command_name: str,
     arguments,
@@ -81,9 +80,7 @@ def execute_command(
         str: The result of the command
     """
 
-
     cmd = plugin_generator.command_registry.commands.get(command_name)
-
 
     # If the command is found, call it with the provided arguments
     if cmd:
@@ -153,6 +150,3 @@ def get_command(response_json: Dict):
     # All other errors, return "Error: + error message"
     except Exception as e:
         return "Error:", str(e)
-
-
-

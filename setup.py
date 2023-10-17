@@ -316,6 +316,8 @@ def core_requires():
         "jsonschema",
         # TODO move transformers to default
         "transformers>=4.31.0",
+        "GitPython",
+        "alembic",
     ]
 
 
@@ -404,10 +406,12 @@ def vllm_requires():
     """
     setup_spec.extras["vllm"] = ["vllm"]
 
+
 # def chat_scene():
 #     setup_spec.extras["chat"] = [
 #         ""
 #     ]
+
 
 def default_requires():
     """
@@ -420,7 +424,7 @@ def default_requires():
         "protobuf==3.20.3",
         "zhipuai",
         "dashscope",
-        "chardet"
+        "chardet",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["knowledge"]

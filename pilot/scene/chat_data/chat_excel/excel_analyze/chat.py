@@ -36,7 +36,7 @@ class ChatExcel(BaseChat):
                     KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode.value(), self.select_param
                 )
             )
-        self.api_call = ApiCall(display_registry = CFG.command_disply)
+        self.api_call = ApiCall(display_registry=CFG.command_disply)
         super().__init__(chat_param=chat_param)
 
     def _generate_numbered_list(self) -> str:
