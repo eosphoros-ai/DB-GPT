@@ -71,6 +71,20 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         session.close()
         return result
 
+    def get_by_user_and_plugin(self, user: str, plugin: str) -> MyPluginEntity:
+        session = self.get_session()
+        my_plugins = session.query(MyPluginEntity)
+        if user:
+            my_plugins = my_plugins.filter(
+                MyPluginEntity.user_code == user
+            )
+        my_plugins = my_plugins.filter(
+                MyPluginEntity.name == plugin
+            )
+        result = my_plugins.first()
+        session.close()
+        return result
+
 
     def list(self, query: MyPluginEntity, page=1, page_size=20)->list[MyPluginEntity]:
         session = self.get_session()

@@ -309,6 +309,7 @@ def core_requires():
         "gTTS==2.3.1",
         "langchain>=0.0.286",
         "SQLAlchemy==2.0.22",
+        "fastapi==0.98.0",
         "pymysql",
         "duckdb==0.8.1",
         "duckdb-engine",
