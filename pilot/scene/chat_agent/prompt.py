@@ -16,11 +16,14 @@ You need to analyze the user goals and, under the given constraints, prioritize 
 Tool list:
     {tool_list}
 Constraint:
-	1. After selecting an available tool, please ensure that the output results include the following parts to use the tool: 
-	<api-call><name>Selected Tool name</name><args><name>value</name></args></api-call>
-	2. If you cannot analyze the exact tool for the problem, you can consider using the search engine tool among the tools first.
-	3. Parameter content may need to be inferred based on the user's goals, not just extracted from text
-	4. If you cannot find a suitable tool, please answer Unable to complete the goal.
+    1. After finding the available tools from the tool list given below, please output the following content to use the tool. Please make sure that the following content only appears once in the output result:
+        <api-call><name>Selected Tool name</name><args><arg1>value</arg1><arg2>value</arg2></args></api-call>
+    2. Please generate the above call text according to the definition of the corresponding tool in the tool list. The reference case is as follows:
+        Introduction to tool function: "Tool name", args: "Parameter 1": "<Parameter 1 value description>", "Parameter 2": "<Parameter 2 value description>" Corresponding call text: <api-call>< name>Tool name</name><args><parameter 1>value</parameter 1><parameter 2>value</parameter 2></args></api-call>
+    3. Generate the call of each tool according to the above constraints. The prompt text for tool use needs to be generated before the tool is used.
+    4. If the user goals cannot be understood and the intention is unclear, give priority to using search engine tools
+    5. Parameter content may need to be inferred based on the user's goals, not just extracted from text
+    6. Constraint conditions and tool information are used as auxiliary information for the reasoning process and should not be expressed in the output content to the user. 
     {expand_constraints}
 User goals:
     {user_goal}

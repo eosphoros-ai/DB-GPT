@@ -3,7 +3,7 @@ from urllib.parse import quote
 import warnings
 import sqlparse
 import regex as re
-
+import pandas as pd
 from typing import Any, Iterable, List, Optional
 from pydantic import BaseModel, Field, root_validator, validator, Extra
 from abc import ABC, abstractmethod
@@ -357,7 +357,13 @@ class RDBMSDatabase(BaseConnect):
             else:
                 return self.__query(f"SHOW COLUMNS FROM {table_name}")
 
-    def run_no_throw(self, session, command: str, fetch: str = "all") -> List:
+    def run_to_df(self, command: str, fetch: str = "all"):
+        result_lst = self.run(command, fetch)
+        colunms = result_lst[0]
+        values = result_lst[1:]
+        return pd.DataFrame(values, columns=colunms)
+
+    def run_no_throw(self, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
@@ -366,7 +372,7 @@ class RDBMSDatabase(BaseConnect):
         If the statement throws an error, the error message is returned.
         """
         try:
-            return self.run(session, command, fetch)
+            return self.run( command, fetch)
         except SQLAlchemyError as e:
             """Format the error message"""
             return f"Error: {e}"
