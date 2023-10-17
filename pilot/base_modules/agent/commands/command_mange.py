@@ -243,6 +243,7 @@ class ApiCall:
         for tag in error_md_tags:
             all_context = all_context.replace(tag + api_context + md_tag_end, api_context)
             all_context = all_context.replace(tag + "\n" +api_context + "\n" + md_tag_end, api_context)
+            all_context = all_context.replace(tag + " " +api_context + " " + md_tag_end, api_context)
             all_context = all_context.replace(tag + api_context, api_context)
         return all_context
 
@@ -256,7 +257,6 @@ class ApiCall:
                     if api_status.api_result:
                         all_context = self.__deal_error_md_tags(all_context, api_context)
                         all_context = all_context.replace(api_context, api_status.api_result)
-
                     else:
                         if api_status.status == Status.FAILED.value:
                             all_context = self.__deal_error_md_tags(all_context, api_context)
