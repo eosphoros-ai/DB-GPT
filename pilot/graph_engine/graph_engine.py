@@ -107,7 +107,7 @@ class RAGGraphEngine:
         """Build the index from nodes."""
         index_struct = self.index_struct_cls()
         num_threads = 5
-        chunk_size = len(documents) if (len(documents) < num_threads) else len(documents) / num_threads
+        chunk_size = len(documents) if (len(documents) < num_threads) else len(documents) // num_threads
 
         import concurrent
         future_tasks = []
@@ -131,6 +131,7 @@ class RAGGraphEngine:
         #         index_struct.add_node([subj, obj], text_node)
         #
         # return index_struct
+
 
     def search(self, query):
         from pilot.graph_engine.graph_search import RAGGraphSearch

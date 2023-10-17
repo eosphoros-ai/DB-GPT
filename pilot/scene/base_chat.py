@@ -109,7 +109,7 @@ class BaseChat(ABC):
         import inspect
         input_values = (
             await self.generate_input_values()
-            if inspect.isawaitable(self.generate_input_values)
+            if inspect.isawaitable(self.generate_input_values())
             else self.generate_input_values()
         )
         ### Chat sequence advance
