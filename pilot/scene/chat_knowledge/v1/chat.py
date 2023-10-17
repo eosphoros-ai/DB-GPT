@@ -92,7 +92,7 @@ class ChatKnowledge(BaseChat):
         context = [d.page_content for d in docs]
         context = context[: self.max_token]
         relations = list(
-            set([os.path.basename(d.metadata.get("source", "")) for d in docs])
+            set([os.path.basename(str(d.metadata.get("source", ""))) for d in docs])
         )
         input_values = {
             "context": context,
