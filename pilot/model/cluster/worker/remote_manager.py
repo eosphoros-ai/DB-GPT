@@ -96,7 +96,7 @@ class RemoteWorkerManager(LocalWorkerManager):
             raise Exception(error_msg)
         return worker_instances
 
-    async def model_startup(self, startup_req: WorkerStartupRequest) -> bool:
+    async def model_startup(self, startup_req: WorkerStartupRequest):
         worker_instances = await self._get_worker_service_instance(
             startup_req.host, startup_req.port
         )
@@ -107,10 +107,10 @@ class RemoteWorkerManager(LocalWorkerManager):
             "/models/startup",
             method="POST",
             json=startup_req.dict(),
-            success_handler=lambda x: True,
+            success_handler=lambda x: None,
         )
 
-    async def model_shutdown(self, shutdown_req: WorkerStartupRequest) -> bool:
+    async def model_shutdown(self, shutdown_req: WorkerStartupRequest):
         worker_instances = await self._get_worker_service_instance(
             shutdown_req.host, shutdown_req.port
         )
@@ -121,7 +121,7 @@ class RemoteWorkerManager(LocalWorkerManager):
             "/models/shutdown",
             method="POST",
             json=shutdown_req.dict(),
-            success_handler=lambda x: True,
+            success_handler=lambda x: None,
         )
 
     def _build_worker_instances(
