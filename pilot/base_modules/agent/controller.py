@@ -69,8 +69,10 @@ async def agent_hub_update(update_param: PluginHubParam = Body()):
     logger.info(f"agent_hub_update:{update_param.__dict__}")
     try:
         agent_hub = AgentHub(PLUGINS_DIR)
+        branch = update_param.branch if update_param.branch is not None and len(update_param.branch) > 0 else  "main"
+        authorization = update_param.authorization if update_param.branch is not None and len(update_param.branch) > 0 else None
         agent_hub.refresh_hub_from_git(
-            update_param.url, update_param.branch, update_param.authorization
+            update_param.url, branch, authorization
         )
         return Result.succ(None)
     except Exception as e:

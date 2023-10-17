@@ -125,7 +125,7 @@ class AgentHub:
         my_plugin_entity.version = hub_plugin.version
         return my_plugin_entity
 
-    def refresh_hub_from_git(self, github_repo: str = None, branch_name: str = None, authorization: str = None):
+    def refresh_hub_from_git(self, github_repo: str = None, branch_name: str = "main", authorization: str = None):
         logger.info("refresh_hub_by_git start!")
         update_from_git(self.temp_hub_file_path, github_repo, branch_name, authorization)
         git_plugins = scan_plugins(self.temp_hub_file_path)
