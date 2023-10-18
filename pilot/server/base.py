@@ -37,7 +37,7 @@ def server_init(args, system_app: SystemApp):
     cfg = Config()
     cfg.SYSTEM_APP = system_app
 
-    # ddl_init_and_upgrade()
+    ddl_init_and_upgrade()
 
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
