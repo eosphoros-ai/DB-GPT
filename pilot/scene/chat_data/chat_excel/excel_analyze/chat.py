@@ -20,7 +20,7 @@ CFG = Config()
 
 class ChatExcel(BaseChat):
     chat_scene: str = ChatScene.ChatExcel.value()
-    chat_retention_rounds = 1
+    chat_retention_rounds = 2
 
     def __init__(self, chat_param: Dict):
         chat_mode = ChatScene.ChatExcel
