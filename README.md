@@ -231,7 +231,7 @@ The core capabilities mainly consist of the following parts:
   - [ ] ClickHouse
   - [ ] Faiss 
   
--  [ ] Testing and Evaluation Capability Building
+- [ ] Testing and Evaluation Capability Building
   - [ ] Knowledge QA datasets
   - [ ] Question collection [easy, medium, hard]:
   - [ ] Scoring mechanism

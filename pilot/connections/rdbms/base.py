@@ -372,7 +372,7 @@ class RDBMSDatabase(BaseConnect):
         If the statement throws an error, the error message is returned.
         """
         try:
-            return self.run( command, fetch)
+            return self.run(command, fetch)
         except SQLAlchemyError as e:
             """Format the error message"""
             return f"Error: {e}"
