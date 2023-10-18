@@ -1,4 +1,4 @@
-Local cluster deployment
+Cluster Deployment
 ==================================
 (local-cluster-index)=
 ## Model cluster deployment

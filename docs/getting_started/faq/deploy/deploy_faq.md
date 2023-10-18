@@ -92,4 +92,9 @@ pip install chromadb==0.4.10
 
 ```commandline
 pip install langchain>=0.0.286
+
+##### Q9: In Centos OS, No matching distribution found for setuptools_scm
+
+```commandline
+pip install --use-pep517 fschat
 ```

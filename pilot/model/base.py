@@ -64,6 +64,20 @@ class WorkerApplyOutput:
     # The seconds cost to apply some action to worker instances
     timecost: Optional[int] = -1
 
+    @staticmethod
+    def reduce(outs: List["WorkerApplyOutput"]) -> "WorkerApplyOutput":
+        """Merge all outputs
+
+        Args:
+            outs (List["WorkerApplyOutput"]): The list of WorkerApplyOutput
+        """
+        if not outs:
+            return WorkerApplyOutput("Not outputs")
+        combined_success = all(out.success for out in outs)
+        max_timecost = max(out.timecost for out in outs)
+        combined_message = ", ".join(out.message for out in outs)
+        return WorkerApplyOutput(combined_message, combined_success, max_timecost)
+
 
 @dataclass
 class SupportedModel:

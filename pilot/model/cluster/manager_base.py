@@ -26,11 +26,22 @@ class WorkerRunData:
     _heartbeat_future: Optional[Future] = None
     _last_heartbeat: Optional[datetime] = None
 
+    def _to_print_key(self):
+        model_name = self.model_params.model_name
+        model_type = self.model_params.model_type
+        host = self.host
+        port = self.port
+        return f"model {model_name}@{model_type}({host}:{port})"
+
 
 class WorkerManager(ABC):
     @abstractmethod
     async def start(self):
-        """Start worker manager"""
+        """Start worker manager
+
+        Raises:
+            Exception: if start worker manager not successfully
+        """
 
     @abstractmethod
     async def stop(self, ignore_exception: bool = False):
@@ -69,11 +80,11 @@ class WorkerManager(ABC):
         """List supported models"""
 
     @abstractmethod
-    async def model_startup(self, startup_req: WorkerStartupRequest) -> bool:
+    async def model_startup(self, startup_req: WorkerStartupRequest):
         """Create and start a model instance"""
 
     @abstractmethod
-    async def model_shutdown(self, shutdown_req: WorkerStartupRequest) -> bool:
+    async def model_shutdown(self, shutdown_req: WorkerStartupRequest):
         """Shutdown model instance"""
 
     @abstractmethod

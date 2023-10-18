@@ -316,8 +316,6 @@ def core_requires():
         "jsonschema",
         # TODO move transformers to default
         "transformers>=4.31.0",
-        "GitPython",
-        "alembic",
     ]
 
 
@@ -425,6 +423,8 @@ def default_requires():
         "zhipuai",
         "dashscope",
         "chardet",
+        "GitPython",
+        "alembic",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["knowledge"]
@@ -465,7 +465,7 @@ init_install_requires()
 setuptools.setup(
     name="db-gpt",
     packages=find_packages(exclude=("tests", "*.tests", "*.tests.*", "examples")),
-    version="0.3.9",
+    version="0.4.0",
     author="csunny",
     author_email="cfqcsunny@gmail.com",
     description="DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment."

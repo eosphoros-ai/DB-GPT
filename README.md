@@ -58,6 +58,11 @@ Run on an RTX 4090 GPU.
 
 ![demo_en](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/d40118e4-8e76-45b6-b4a6-30e5ff170f42)
 
+
+![7f1bd042-7165-4b9f-a88e-ccce35f9d9aa](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0f6e0944-24e5-4481-87f5-7c168a63c5ea)
+
+
+
 #### Chat with data, and figure charts.
 
 ![db plugins demonstration](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/4113ac15-83c2-4350-86c0-5fc795677abd)
@@ -225,6 +230,13 @@ The core capabilities mainly consist of the following parts:
   - [ ] Elasticsearch
   - [ ] ClickHouse
   - [ ] Faiss 
+  
+-  [ ] Testing and Evaluation Capability Building
+  - [ ] Knowledge QA datasets
+  - [ ] Question collection [easy, medium, hard]:
+  - [ ] Scoring mechanism
+  - [ ] Testing and evaluation using Excel + DB datasets
+  
 ### Multi Datasource Support
 
 - Multi Datasource Support 
@@ -251,11 +263,19 @@ The core capabilities mainly consist of the following parts:
 - [x] [Cluster Deployment](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
 - [x] [Fastchat Support](https://github.com/lm-sys/FastChat)
 - [x] [vLLM Support](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
+- [ ] Cloud-native environment and support for Ray environment
+- [ ] Service Registry(eg:nacos)
+- [ ] Compatibility with OpenAI's interfaces
+- [ ] Expansion and optimization of embedding models
 
 ### Agents market and Plugins
 - [x] multi-agents framework
 - [x] custom plugin development 
 - [ ] plugin market
+- [ ] Integration with CoT
+- [ ] Enrich plugin sample library
+- [ ] Support for AutoGPT protocol
+- [ ] Integration of multi-agents and visualization capabilities, defining LLM+Vis new standards
 
 ### Cost and Observability
 - [x] [debugging](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
