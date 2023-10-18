@@ -40,9 +40,9 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = config.get_main_option(engine.url)
     context.configure(
-        url="'mysql+pymysql://root:aa123456@127.0.0.1:3306/dbgpt'",
+        url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
