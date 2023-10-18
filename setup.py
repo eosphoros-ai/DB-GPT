@@ -424,7 +424,7 @@ def default_requires():
         "dashscope",
         "chardet",
         "GitPython",
-        "alembic",
+        "alembic==1.12.0",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["knowledge"]

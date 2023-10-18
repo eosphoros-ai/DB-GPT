@@ -3,8 +3,6 @@ from typing import List
 from sqlalchemy import Column, Integer, String, Index, DateTime, func
 from sqlalchemy import UniqueConstraint
 
-from pilot.base_modules.meta_data.meta_data import Base
-
 from pilot.base_modules.meta_data.base_dao import BaseDao
 from pilot.base_modules.meta_data.meta_data import Base, engine, session
 

@@ -180,7 +180,7 @@ class AgentHub:
             os.remove(file_path)
         tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.join(self.plugin_dir))
         with os.fdopen(tmp_fd, "wb") as tmp:
-            tmp.write(await doc_file.read())
+            await tmp.write(await doc_file.read())
         shutil.move(
             tmp_path,
             os.path.join(self.plugin_dir, doc_file.filename),

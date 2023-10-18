@@ -84,7 +84,7 @@ class DbHistoryMemory(BaseChatHistoryMemory):
         return chat_history.__dict__
 
     def get_messages(self) -> List[OnceConversation]:
-        logger.info("get_messages:{}", self.chat_seesion_id)
+        # logger.info("get_messages:{}", self.chat_seesion_id)
         chat_history = self.chat_history_dao.get_by_uid(self.chat_seesion_id)
         if chat_history:
             context = chat_history.messages

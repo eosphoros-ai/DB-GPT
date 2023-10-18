@@ -40,9 +40,9 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = str(engine.url)
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url="'mysql+pymysql://root:aa123456@127.0.0.1:3306/dbgpt'",
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -65,7 +65,7 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
 
-    with connectable.connect() as connection:
+    with engine.connect() as connection:
         if engine.dialect.name == "sqlite":
             context.configure(
                 connection=engine.connect(),
