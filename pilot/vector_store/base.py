@@ -15,9 +15,9 @@ class VectorStoreBase(ABC):
         pass
 
     @abstractmethod
-    def vector_name_exists(self) -> None:
+    def vector_name_exists(self) -> bool:
         """is vector store name exist."""
-        pass
+        return False
 
     @abstractmethod
     def delete_by_ids(self, ids):

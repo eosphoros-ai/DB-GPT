@@ -308,7 +308,8 @@ def core_requires():
         "auto-gpt-plugin-template",
         "gTTS==2.3.1",
         "langchain>=0.0.286",
-        "SQLAlchemy",
+        "SQLAlchemy==2.0.22",
+        "fastapi==0.98.0",
         "pymysql",
         "duckdb==0.8.1",
         "duckdb-engine",
@@ -404,6 +405,12 @@ def vllm_requires():
     setup_spec.extras["vllm"] = ["vllm"]
 
 
+# def chat_scene():
+#     setup_spec.extras["chat"] = [
+#         ""
+#     ]
+
+
 def default_requires():
     """
     pip install "db-gpt[default]"
@@ -413,6 +420,11 @@ def default_requires():
         "accelerate>=0.20.3",
         "sentence-transformers",
         "protobuf==3.20.3",
+        "zhipuai",
+        "dashscope",
+        "chardet",
+        "GitPython",
+        "alembic==1.12.0",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["knowledge"]
@@ -453,7 +465,7 @@ init_install_requires()
 setuptools.setup(
     name="db-gpt",
     packages=find_packages(exclude=("tests", "*.tests", "*.tests.*", "examples")),
-    version="0.3.9",
+    version="0.4.0",
     author="csunny",
     author_email="cfqcsunny@gmail.com",
     description="DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment."

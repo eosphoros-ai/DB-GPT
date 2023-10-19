@@ -54,7 +54,7 @@ class ConnectManager:
     def __init__(self, system_app: SystemApp):
         self.storage = DuckdbConnectConfig()
         self.db_summary_client = DBSummaryClient(system_app)
-        self.__load_config_db()
+        # self.__load_config_db()
 
     def __load_config_db(self):
         if CFG.LOCAL_DB_HOST:

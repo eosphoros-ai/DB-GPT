@@ -46,6 +46,7 @@ class ComponentType(str, Enum):
     WORKER_MANAGER = "dbgpt_worker_manager"
     WORKER_MANAGER_FACTORY = "dbgpt_worker_manager_factory"
     MODEL_CONTROLLER = "dbgpt_model_controller"
+    AGENT_HUB = "dbgpt_agent_hub"
     EXECUTOR_DEFAULT = "dbgpt_thread_pool_default"
     TRACER = "dbgpt_tracer"
     TRACER_SPAN_STORAGE = "dbgpt_tracer_span_storage"

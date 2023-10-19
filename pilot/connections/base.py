@@ -34,6 +34,9 @@ class BaseConnect(ABC):
     def run(self, session, command: str, fetch: str = "all") -> List:
         pass
 
+    def run_to_df(self, command: str, fetch: str = "all"):
+        pass
+
     def get_users(self):
         pass
 
