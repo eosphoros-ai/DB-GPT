@@ -1,6 +1,7 @@
 import os
 import logging
-#import weaviate
+
+# import weaviate
 from langchain.schema import Document
 from pilot.configs.config import Config
 from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH

@@ -107,6 +107,7 @@ class BaseChat(ABC):
 
     async def __call_base(self):
         import inspect
+
         input_values = (
             await self.generate_input_values()
             if inspect.isawaitable(self.generate_input_values())

@@ -258,9 +258,6 @@ class KnowledgeService:
                 ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
             ).create()
             rag_engine.knowledge_graph(docs=chunk_docs)
-            # docs = engine.search(
-            #     "Comparing Curry and James in terms of their positions, playing styles, and achievements in the NBA"
-            # )
             # update document status
             doc.status = SyncStatus.RUNNING.name
             doc.chunk_size = len(chunk_docs)
