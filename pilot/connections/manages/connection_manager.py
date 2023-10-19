@@ -54,7 +54,7 @@ class ConnectManager:
     def __init__(self, system_app: SystemApp):
         self.storage = DuckdbConnectConfig()
         self.db_summary_client = DBSummaryClient(system_app)
-        self.__load_config_db()
+        # self.__load_config_db()
 
     def __load_config_db(self):
         if CFG.LOCAL_DB_HOST:
@@ -154,7 +154,7 @@ class ConnectManager:
             db_type = DBType.of_db_type(db_info.db_type)
             connect_instance = self.get_cls_by_dbtype(db_type.value())
             if db_type.is_file_db():
-                db_path = db_info.db_path
+                db_path = db_info.file_path
                 return connect_instance.from_file_path(db_path)
             else:
                 db_name = db_info.db_name

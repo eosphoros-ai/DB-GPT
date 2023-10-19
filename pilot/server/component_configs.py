@@ -26,13 +26,16 @@ def initialize_components(
 
     # Register global default executor factory first
     system_app.register(DefaultExecutorFactory)
-
     system_app.register_instance(controller)
 
     # Register global default RAGGraphFactory
     from pilot.graph_engine.graph_factory import DefaultRAGGraphFactory
 
     system_app.register(DefaultRAGGraphFactory)
+
+    from pilot.base_modules.agent.controller import module_agent
+
+    system_app.register_instance(module_agent)
 
     _initialize_embedding_model(
         param, system_app, embedding_model_name, embedding_model_path

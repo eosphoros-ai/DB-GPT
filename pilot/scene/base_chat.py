@@ -1,22 +1,19 @@
 import datetime
 import traceback
 import warnings
+import asyncio
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, List, Dict
 
 from pilot.configs.config import Config
 from pilot.component import ComponentType
-from pilot.memory.chat_history.base import BaseChatHistoryMemory
-from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
-from pilot.memory.chat_history.file_history import FileHistoryMemory
-from pilot.memory.chat_history.mem_history import MemHistoryMemory
 from pilot.prompts.prompt_new import PromptTemplate
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 from pilot.scene.message import OnceConversation
 from pilot.utils import get_or_create_event_loop
-from pilot.utils.tracer import root_tracer
 from pydantic import Extra
+from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 
 logger = logging.getLogger(__name__)
 headers = {"User-Agent": "dbgpt Client"}
@@ -55,9 +52,9 @@ class BaseChat(ABC):
                 proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
-
+        chat_history_fac = ChatHistory()
         ### can configurable storage methods
-        self.memory = DuckdbHistoryMemory(chat_param["chat_session_id"])
+        self.memory = chat_history_fac.get_store_instance(chat_param["chat_session_id"])
 
         self.history_message: List[OnceConversation] = self.memory.messages()
         self.current_message: OnceConversation = OnceConversation(
@@ -142,25 +139,23 @@ class BaseChat(ABC):
         }
         return payload
 
-    def _get_span_metadata(self, payload: Dict) -> Dict:
-        metadata = {k: v for k, v in payload.items()}
-        del metadata["prompt"]
-        metadata["messages"] = list(
-            map(lambda m: m if isinstance(m, dict) else m.dict(), metadata["messages"])
-        )
-        return metadata
+    def stream_plugin_call(self, text):
+        return text
+
+    async def check_iterator_end(iterator):
+        try:
+            await asyncio.anext(iterator)
+            return False  # 迭代器还有下一个元素
+        except StopAsyncIteration:
+            return True  # 迭代器已经执行结束
 
     async def stream_call(self):
         # TODO Retry when server connection error
         payload = await self.__call_base()
 
         self.skip_echo_len = len(payload.get("prompt").replace("</s>", " ")) + 11
-        logger.info(f"Request: \n{payload}")
+        logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
-        span = root_tracer.start_span(
-            "BaseChat.stream_call", metadata=self._get_span_metadata(payload)
-        )
-        payload["span_id"] = span.span_id
         try:
             from pilot.model.cluster import WorkerManagerFactory
 
@@ -168,8 +163,15 @@ class BaseChat(ABC):
                 ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
             ).create()
             async for output in worker_manager.generate_stream(payload):
-                yield output
-            span.end()
+                ### Plug-in research in result generation
+                msg = self.prompt_template.output_parser.parse_model_stream_resp_ex(
+                    output, self.skip_echo_len
+                )
+                view_msg = self.stream_plugin_call(msg)
+                view_msg = view_msg.replace("\n", "\\n")
+                yield view_msg
+            self.current_message.add_ai_message(msg)
+            self.current_message.add_view_message(view_msg)
         except Exception as e:
             print(traceback.format_exc())
             logger.error("model response parase faild！" + str(e))
@@ -177,17 +179,12 @@ class BaseChat(ABC):
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
             ### store current conversation
-            self.memory.append(self.current_message)
-            span.end(metadata={"error": str(e)})
+        self.memory.append(self.current_message)
 
     async def nostream_call(self):
         payload = await self.__call_base()
         logger.info(f"Request: \n{payload}")
         ai_response_text = ""
-        span = root_tracer.start_span(
-            "BaseChat.nostream_call", metadata=self._get_span_metadata(payload)
-        )
-        payload["span_id"] = span.span_id
         try:
             from pilot.model.cluster import WorkerManagerFactory
 
@@ -195,8 +192,7 @@ class BaseChat(ABC):
                 ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
             ).create()
 
-            with root_tracer.start_span("BaseChat.invoke_worker_manager.generate"):
-                model_output = await worker_manager.generate(payload)
+            model_output = await worker_manager.generate(payload)
 
             ### output parse
             ai_response_text = (
@@ -211,14 +207,8 @@ class BaseChat(ABC):
                     ai_response_text
                 )
             )
-            metadata = {
-                "model_output": model_output.to_dict(),
-                "ai_response_text": ai_response_text,
-                "prompt_define_response": prompt_define_response,
-            }
-            with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
-                ###  run
-                result = self.do_action(prompt_define_response)
+            ###  run
+            result = self.do_action(prompt_define_response)
 
             ### llm speaker
             speak_to_user = self.get_llm_speak(prompt_define_response)
@@ -226,15 +216,14 @@ class BaseChat(ABC):
             view_message = self.prompt_template.output_parser.parse_view_response(
                 speak_to_user, result
             )
+            view_message = view_message.replace("\n", "\\n")
             self.current_message.add_view_message(view_message)
-            span.end()
         except Exception as e:
             print(traceback.format_exc())
             logger.error("model response parase faild！" + str(e))
             self.current_message.add_view_message(
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
-            span.end(metadata={"error": str(e)})
         ### store dialogue
         self.memory.append(self.current_message)
         return self.current_ai_response()
@@ -410,7 +399,10 @@ class BaseChat(ABC):
                 )
             if len(self.history_message) > self.chat_retention_rounds:
                 for first_message in self.history_message[0]["messages"]:
-                    if not first_message["type"] in [ModelMessageRoleType.VIEW]:
+                    if not first_message["type"] in [
+                        ModelMessageRoleType.VIEW,
+                        ModelMessageRoleType.SYSTEM,
+                    ]:
                         message_type = first_message["type"]
                         message_content = first_message["data"]["content"]
                         history_text += (

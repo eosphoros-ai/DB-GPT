@@ -6,8 +6,19 @@ This tutorial gives you a quick walkthrough about use DB-GPT with you environmen
 
 To get started, install DB-GPT with the following steps.
 
-### 1. Hardware Requirements 
-As our project has the ability to achieve ChatGPT performance of over 85%, there are certain hardware requirements. However, overall, the project can be deployed and used on consumer-grade graphics cards. The specific hardware requirements for deployment are as follows:
+### 1. Hardware Requirements
+ DB-GPT can be deployed on servers with low hardware requirements or on servers with high hardware requirements.
+
+##### Low hardware requirements
+The low hardware requirements mode is suitable for integrating with third-party LLM services' APIs, such as OpenAI, Tongyi, Wenxin, or Llama.cpp.
+
+DB-GPT provides set proxy api to support LLM api.
+
+As our project has the ability to achieve ChatGPT performance of over 85%, 
+
+##### High hardware requirements
+The high hardware requirements mode is suitable for independently deploying LLM services, such as Llama series models, Baichuan, ChatGLM, Vicuna, and other private LLM service.
+there are certain hardware requirements. However, overall, the project can be deployed and used on consumer-grade graphics cards. The specific hardware requirements for deployment are as follows:
 
 | GPU      | VRAM Size | Performance                                 |
 |----------|-----------| ------------------------------------------- |
@@ -16,7 +27,7 @@ As our project has the ability to achieve ChatGPT performance of over 85%, there
 | V100     | 16 GB     | Conversation inference possible, noticeable stutter |
 | T4       | 16 GB     | Conversation inference possible, noticeable stutter |
 
-if your VRAM Size is not enough, DB-GPT supported 8-bit quantization and 4-bit quantization.
+If your VRAM Size is not enough, DB-GPT supported 8-bit quantization and 4-bit quantization.
 
 Here are some of the VRAM size usage of the models we tested in some common scenarios.
 
@@ -64,7 +75,7 @@ Notice make sure you have install git-lfs
 
 centos:yum install git-lfs
 
-ubuntu:app-get install git-lfs
+ubuntu:apt-get install git-lfs
 
 macos:brew install git-lfs
 ```

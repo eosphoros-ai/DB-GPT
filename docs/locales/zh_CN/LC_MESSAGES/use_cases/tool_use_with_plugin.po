@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-14 21:47+0800\n"
+"POT-Creation-Date: 2023-10-17 17:24+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,84 +19,44 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../use_cases/tool_use_with_plugin.md:1 584817fdb00047de8f8d7ae02ce86783
+#: ../../use_cases/tool_use_with_plugin.md:1 1fb6c590034347ff9bf374dcf0a63fd3
 msgid "Tool use with plugin"
 msgstr "插件工具"
 
-#: ../../use_cases/tool_use_with_plugin.md:3 74d688e857ee4afe9237aa959238d3df
+#: ../../use_cases/tool_use_with_plugin.md:3 b48206ede79641fdabb3afd4c5f7fa7e
 msgid ""
-"DB-GPT supports a variety of plug-ins, such as MySQL, MongoDB, ClickHouse"
-" and other database tool plug-ins. In addition, some database management "
-"platforms can also package their interfaces and package them into plug-"
-"ins, and use the model to realize the ability of \"single-sentence "
-"requirements\""
+"DB-GPT supports a variety of plug-ins, such as BaiduSearch, SendEmail. In"
+" addition, some database management platforms can also package their "
+"interfaces and package them into plug-ins, and use the model to realize "
+"the ability of \"single-sentence requirements\""
 msgstr ""
 
-#: ../../use_cases/tool_use_with_plugin.md:6 55754e6c89d149cd9eb5f935fd9dc761
-msgid "DB-GPT-DASHBOARD-PLUGIN"
+#: ../../use_cases/tool_use_with_plugin.md:6 e90be2eb88c140b5b0ac3e6b6fac76bc
+msgid "Baidu-Search-Plugin"
 msgstr ""
 
-#: ../../use_cases/tool_use_with_plugin.md:8 d3c0287afa81409f9bda6fc495d63917
+#: ../../use_cases/tool_use_with_plugin.md:8 0b98dfd78d49426098974d3d9c2d962b
 msgid ""
-"[](https://github.com/csunny/DB-GPT-"
+"[Db-GPT Plugins](https://github.com/eosphoros-ai/DB-GPT-"
 "Plugins/blob/main/src/dbgpt_plugins/Readme.md)"
 msgstr ""
 
-#: ../../use_cases/tool_use_with_plugin.md:10 a65c05f21ee94e8da1f14076dbed8123
+#: ../../use_cases/tool_use_with_plugin.md:10 c34f612a2ec449548ec90d3bcbf5d9a0
 msgid ""
-"This is a DB-GPT plugin to generate data analysis charts, if you want to "
-"use the test sample data, please first pull the code of [DB-GPT-"
-"Plugins](https://github.com/csunny/DB-GPT-Plugins), run the command to "
-"generate test DuckDB data, and then copy the generated data file to the "
-"`/pilot/mock_datas` directory of the DB-GPT project."
+"Perform search queries using the Baidu search engine  [DB-GPT-"
+"Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins)."
 msgstr ""
 
-#: ../../use_cases/tool_use_with_plugin.md:21 c25ef922010442f5be632f6d8f2e730c
+#: ../../use_cases/tool_use_with_plugin.md:21 81638eb1f4f34b39a1ce383f6ef5720f
 msgid ""
 "Test Case: Use a histogram to analyze the total order amount of users in "
 "different cities."
 msgstr ""
 
-#: ../../use_cases/tool_use_with_plugin.md:26 3f07d6e71ced4011998b1f1fda640394
+#: ../../use_cases/tool_use_with_plugin.md:26 8cf2cbbff8cc408c9e885a406d34dbcb
 msgid ""
-"More detail see: [DB-DASHBOARD](https://github.com/csunny/DB-GPT-"
+"More detail see: [DB-DASHBOARD](https://github.com/eosphoros-ai/DB-GPT-"
 "Plugins/blob/main/src/dbgpt_plugins/Readme.md)"
-msgstr ""
-
-#: ../../use_cases/tool_use_with_plugin.md:29 20e5d3aed30847ccac905d0d5268824f
-msgid "DB-GPT-SQL-Execution-Plugin"
-msgstr ""
-
-#: ../../use_cases/tool_use_with_plugin.md:32 4ebfd33a77e547edb1de9d3159745cb6
-msgid "This is an DbGPT plugin to connect Generic Db And Execute SQL."
-msgstr ""
-
-#: ../../use_cases/tool_use_with_plugin.md:35 8c11ec372d9346e79e5ebba390b15919
-msgid "DB-GPT-Bytebase-Plugin"
-msgstr ""
-
-#: ../../use_cases/tool_use_with_plugin.md:37 b01eb72df51648a293613dbab2bbe4f0
-msgid ""
-"To use a tool or platform plugin, you should first deploy a plugin. "
-"Taking the open-source database management platform Bytebase as an "
-"example, you can deploy your Bytebase service with one click using Docker"
-" and access it at http://127.0.0.1:5678. More details can be found at "
-"https://github.com/bytebase/bytebase."
-msgstr ""
-
-#: ../../use_cases/tool_use_with_plugin.md:53 1cdcd5fc42b6433ba5573fc157328c5c
-msgid ""
-"Note: If your machine's CPU architecture is `ARM`, please use `--platform"
-" linux/arm64` instead."
-msgstr ""
-
-#: ../../use_cases/tool_use_with_plugin.md:55 179dc86ad25f4498af7c90f570f1a556
-msgid ""
-"Select the plugin on DB-GPT（All built-in plugins are from our repository:"
-" https://github.com/csunny/DB-GPT-Plugins），choose DB-GPT-Bytebase-Plugin."
-"  Supporting functions include creating projects, creating environments, "
-"creating database instances, creating databases, database DDL/DML "
-"operations, and ticket approval process, etc."
 msgstr ""
 
 #~ msgid ""
@@ -110,11 +70,9 @@ msgstr ""
 #~ " realize the ability of \"single-"
 #~ "sentence requirements\""
 #~ msgstr ""
-#~ "DB-"
-#~ "GPT支持各种插件，例如MySQL、MongoDB、ClickHouse等数据库工具插件。此外，一些数据库管理平台也可以将它们的接口打包成插件，使用该模型实现\"一句话需求\"的能力。"
 
 #~ msgid "DB-GPT-DASHBOARD-PLUGIN"
-#~ msgstr "DB-GPT-DASHBOARD-PLUGIN"
+#~ msgstr ""
 
 #~ msgid ""
 #~ "[Db-GPT Chart Plugin](https://github.com/csunny"
@@ -135,9 +93,6 @@ msgstr ""
 #~ "the `/pilot/mock_datas` directory of the "
 #~ "DB-GPT project."
 #~ msgstr ""
-#~ "这是一个DB-GPT插件，用于生成数据分析图表。如果您想使用测试样本数据，请先拉取 DB-GPT-"
-#~ "Plugins 的代码，运行命令以生成测试 DuckDB 数据，然后将生成的数据文件复制到 "
-#~ "DB-GPT 项目的 /pilot/mock_datas 目录中。"
 
 #~ msgid ""
 #~ "Test Case: Use a histogram to "
@@ -150,17 +105,15 @@ msgstr ""
 #~ "DASHBOARD](https://github.com/csunny/DB-GPT-"
 #~ "Plugins/blob/main/src/dbgpt_plugins/Readme.md)"
 #~ msgstr ""
-#~ "更多详情请看：[DB-DASHBOARD](https://github.com/csunny/DB-GPT-"
-#~ "Plugins/blob/main/src/dbgpt_plugins/Readme.md)"
 
 #~ msgid "DB-GPT-SQL-Execution-Plugin"
-#~ msgstr "DB-GPT-SQL-Execution-Plugin"
+#~ msgstr ""
 
 #~ msgid "This is an DbGPT plugin to connect Generic Db And Execute SQL."
-#~ msgstr "这是一个 DbGPT 插件，用于连接通用数据库并执行 SQL。"
+#~ msgstr ""
 
 #~ msgid "DB-GPT-Bytebase-Plugin"
-#~ msgstr "DB-GPT-Bytebase-Plugin"
+#~ msgstr ""
 
 #~ msgid ""
 #~ "To use a tool or platform plugin,"
@@ -173,14 +126,12 @@ msgstr ""
 #~ " More details can be found at "
 #~ "https://github.com/bytebase/bytebase."
 #~ msgstr ""
-#~ "要使用一个工具或平台插件，您应该首先部署一个插件。以开源数据库管理平台Bytebase为例，您可以使用Docker一键部署Bytebase服务，并通过http://127.0.0.1:5678进行访问。更多细节可以在"
-#~ " https://github.com/bytebase/bytebase 找到。"
 
 #~ msgid ""
 #~ "Note: If your machine's CPU architecture"
 #~ " is `ARM`, please use `--platform "
 #~ "linux/arm64` instead."
-#~ msgstr "备注：如果你的机器CPU架构是ARM,请使用--platform linux/arm64 代替"
+#~ msgstr ""
 
 #~ msgid ""
 #~ "Select the plugin on DB-GPT（All "
@@ -193,7 +144,9 @@ msgstr ""
 #~ "database DDL/DML operations, and ticket "
 #~ "approval process, etc."
 #~ msgstr ""
-#~ "在DB-GPT上选择插件（所有内置插件均来自我们的仓库：https://github.com/csunny/DB-"
-#~ "GPT-Plugins），选择DB-GPT-Bytebase-"
-#~ "Plugin。支持的功能包括创建项目、创建环境、创建数据库实例、创建数据库、数据库DDL/DML操作和审批流程等。"
+
+#~ msgid ""
+#~ "[](https://github.com/csunny/DB-GPT-"
+#~ "Plugins/blob/main/src/dbgpt_plugins/Readme.md)"
+#~ msgstr ""
 

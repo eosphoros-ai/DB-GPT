@@ -19,6 +19,7 @@ from pilot.server.component_configs import initialize_components
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, applications
 from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.openapi.utils import get_openapi
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pilot.server.knowledge.api import router as knowledge_router
@@ -30,7 +31,9 @@ from pilot.openapi.api_v1.api_v1 import router as api_v1
 from pilot.openapi.base import validation_exception_handler
 from pilot.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
 from pilot.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
-from pilot.commands.disply_type.show_chart_gen import static_message_img_path
+from pilot.base_modules.agent.commands.disply_type.show_chart_gen import (
+    static_message_img_path,
+)
 from pilot.model.cluster import initialize_worker_manager_in_client
 from pilot.utils.utils import (
     setup_logging,
@@ -40,6 +43,8 @@ from pilot.utils.utils import (
 from pilot.utils.tracer import root_tracer, initialize_tracer, SpanType, SpanTypeRunName
 from pilot.utils.parameter_utils import _get_dict_from_obj
 from pilot.utils.system_utils import get_system_info
+from pilot.base_modules.agent.controller import router as agent_route
+
 
 static_file_path = os.path.join(os.getcwd(), "server/static")
 
@@ -55,9 +60,9 @@ def swagger_monkey_patch(*args, **kwargs):
     )
 
 
+app = FastAPI()
 applications.get_swagger_ui_html = swagger_monkey_patch
 
-app = FastAPI()
 system_app = SystemApp(app)
 
 origins = ["*"]
@@ -72,16 +77,14 @@ app.add_middleware(
 )
 
 
-app.include_router(api_v1, prefix="/api")
-app.include_router(knowledge_router, prefix="/api")
-app.include_router(api_editor_route_v1, prefix="/api")
-app.include_router(llm_manage_api, prefix="/api")
-app.include_router(api_fb_v1, prefix="/api")
+app.include_router(api_v1, prefix="/api", tags=["Chat"])
+app.include_router(api_editor_route_v1, prefix="/api", tags=["Editor"])
+app.include_router(llm_manage_api, prefix="/api", tags=["LLM Manage"])
+app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
 
-# app.include_router(api_v1)
-app.include_router(knowledge_router)
-app.include_router(prompt_router)
-# app.include_router(api_editor_route_v1)
+
+app.include_router(knowledge_router, tags=["Knowledge"])
+app.include_router(prompt_router, tags=["Prompt"])
 
 
 def mount_static_files(app):

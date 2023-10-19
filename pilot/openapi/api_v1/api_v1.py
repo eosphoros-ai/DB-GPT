@@ -39,14 +39,13 @@ from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
 from pilot.common.schema import DBType
-from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
+
 from pilot.scene.message import OnceConversation
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.summary.db_summary_client import DBSummaryClient
-
+from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 from pilot.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from pilot.model.base import FlatSupportedModel
-from pilot.utils.tracer import root_tracer, SpanType
 
 router = APIRouter()
 CFG = Config()
@@ -68,7 +67,6 @@ def __get_conv_user_message(conversations: dict):
 
 def __new_conversation(chat_mode, user_id) -> ConversationVo:
     unique_id = uuid.uuid1()
-    # history_mem = DuckdbHistoryMemory(str(unique_id))
     return ConversationVo(conv_uid=str(unique_id), chat_mode=chat_mode)
 
 
@@ -186,7 +184,8 @@ async def db_support_types():
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
 async def dialogue_list(user_id: str = None):
     dialogues: List = []
-    datas = DuckdbHistoryMemory.conv_list(user_id)
+    chat_history_service = ChatHistory()
+    datas = chat_history_service.get_store_cls().conv_list(user_id)
     for item in datas:
         conv_uid = item.get("conv_uid")
         summary = item.get("summary")
@@ -220,7 +219,7 @@ async def dialogue_scenes():
         ChatScene.ChatWithDbQA,
         ChatScene.ChatKnowledge,
         ChatScene.ChatDashboard,
-        ChatScene.ChatExecution,
+        ChatScene.ChatAgent,
     ]
     for scene in new_modes:
         scene_vo = ChatSceneVo(
@@ -298,14 +297,17 @@ async def params_load(
 
 @router.post("/v1/chat/dialogue/delete")
 async def dialogue_delete(con_uid: str):
-    history_mem = DuckdbHistoryMemory(con_uid)
+    history_fac = ChatHistory()
+    history_mem = history_fac.get_store_instance(con_uid)
     history_mem.delete()
     return Result.succ(None)
 
 
 def get_hist_messages(conv_uid: str):
     message_vos: List[MessageVo] = []
-    history_mem = DuckdbHistoryMemory(conv_uid)
+    history_fac = ChatHistory()
+    history_mem = history_fac.get_store_instance(conv_uid)
+
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:
@@ -367,10 +369,7 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
-    with root_tracer.start_span(
-        "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
-    ):
-        chat: BaseChat = get_chat_instance(dialogue)
+    chat: BaseChat = get_chat_instance(dialogue)
     # background_tasks = BackgroundTasks()
     # background_tasks.add_task(release_model_semaphore)
     headers = {
@@ -421,10 +420,8 @@ async def model_supports(worker_manager: WorkerManager = Depends(get_worker_mana
 
 
 async def no_stream_generator(chat):
-    with root_tracer.start_span("no_stream_generator"):
-        msg = await chat.nostream_call()
-        msg = msg.replace("\n", "\\n")
-        yield f"data: {msg}\n\n"
+    msg = await chat.nostream_call()
+    yield f"data: {msg}\n\n"
 
 
 async def stream_generator(chat, incremental: bool, model_name: str):
@@ -441,17 +438,13 @@ async def stream_generator(chat, incremental: bool, model_name: str):
     Yields:
         _type_: streaming responses
     """
-    span = root_tracer.start_span("stream_generator")
     msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
 
     stream_id = f"chatcmpl-{str(uuid.uuid1())}"
     previous_response = ""
     async for chunk in chat.stream_call():
         if chunk:
-            msg = chat.prompt_template.output_parser.parse_model_stream_resp_ex(
-                chunk, chat.skip_echo_len
-            )
-            msg = msg.replace("\ufffd", "")
+            msg = chunk.replace("\ufffd", "")
             if incremental:
                 incremental_output = msg[len(previous_response) :]
                 choice_data = ChatCompletionResponseStreamChoice(
@@ -470,10 +463,6 @@ async def stream_generator(chat, incremental: bool, model_name: str):
             await asyncio.sleep(0.02)
     if incremental:
         yield "data: [DONE]\n\n"
-    span.end()
-    chat.current_message.add_ai_message(msg)
-    chat.current_message.add_view_message(msg)
-    chat.memory.append(chat.current_message)
 
 
 def message2Vo(message: dict, order, model_name) -> MessageVo:

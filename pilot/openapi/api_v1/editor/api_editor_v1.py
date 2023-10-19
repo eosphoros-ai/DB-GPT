@@ -25,10 +25,10 @@ from pilot.openapi.editor_view_model import (
 )
 
 from pilot.openapi.api_v1.editor.sql_editor import DataNode, ChartRunData, SqlRunData
-from pilot.memory.chat_history.duckdb_history import DuckdbHistoryMemory
 from pilot.scene.message import OnceConversation
 from pilot.scene.chat_dashboard.data_loader import DashboardDataLoader
 from pilot.scene.chat_db.data_loader import DbDataLoader
+from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 
 router = APIRouter()
 CFG = Config()
@@ -67,7 +67,8 @@ async def get_editor_tables(
 @router.get("/v1/editor/sql/rounds", response_model=Result[ChatDbRounds])
 async def get_editor_sql_rounds(con_uid: str):
     logger.info("get_editor_sql_rounds:{con_uid}")
-    history_mem = DuckdbHistoryMemory(con_uid)
+    chat_history_fac = ChatHistory()
+    history_mem = chat_history_fac.get_store_instance(con_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         result: List = []
@@ -89,7 +90,8 @@ async def get_editor_sql_rounds(con_uid: str):
 @router.get("/v1/editor/sql", response_model=Result[dict])
 async def get_editor_sql(con_uid: str, round: int):
     logger.info(f"get_editor_sql:{con_uid},{round}")
-    history_mem = DuckdbHistoryMemory(con_uid)
+    chat_history_fac = ChatHistory()
+    history_mem = chat_history_fac.get_store_instance(con_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:
@@ -140,7 +142,9 @@ async def editor_sql_run(run_param: dict = Body()):
 @router.post("/v1/sql/editor/submit")
 async def sql_editor_submit(sql_edit_context: ChatSqlEditContext = Body()):
     logger.info(f"sql_editor_submit:{sql_edit_context.__dict__}")
-    history_mem = DuckdbHistoryMemory(sql_edit_context.conv_uid)
+
+    chat_history_fac = ChatHistory()
+    history_mem = chat_history_fac.get_store_instance(sql_edit_context.con_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         conn = CFG.LOCAL_DB_MANAGE.get_connect(sql_edit_context.db_name)
@@ -173,7 +177,8 @@ async def get_editor_chart_list(con_uid: str):
     logger.info(
         f"get_editor_sql_rounds:{con_uid}",
     )
-    history_mem = DuckdbHistoryMemory(con_uid)
+    chat_history_fac = ChatHistory()
+    history_mem = chat_history_fac.get_store_instance(con_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         last_round = max(history_messages, key=lambda x: x["chat_order"])
@@ -195,7 +200,8 @@ async def get_editor_chart_info(param: dict = Body()):
     conv_uid = param["con_uid"]
     chart_title = param["chart_title"]
 
-    history_mem = DuckdbHistoryMemory(conv_uid)
+    chat_history_fac = ChatHistory()
+    history_mem = chat_history_fac.get_store_instance(conv_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         last_round = max(history_messages, key=lambda x: x["chat_order"])
@@ -271,7 +277,9 @@ async def editor_chart_run(run_param: dict = Body()):
 @router.post("/v1/chart/editor/submit", response_model=Result[bool])
 async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body()):
     logger.info(f"sql_editor_submit:{chart_edit_context.__dict__}")
-    history_mem = DuckdbHistoryMemory(chart_edit_context.conv_uid)
+
+    chat_history_fac = ChatHistory()
+    history_mem = chat_history_fac.get_store_instance(chart_edit_context.con_uid)
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         dashboard_data_loader: DashboardDataLoader = DashboardDataLoader()

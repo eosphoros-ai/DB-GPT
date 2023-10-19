@@ -3,7 +3,6 @@ import logging
 import os
 from typing import Any, Iterable, List, Optional, Tuple
 
-from pymilvus import Collection, DataType, connections, utility
 
 from pilot.vector_store.base import VectorStoreBase
 
@@ -14,6 +13,8 @@ class MilvusStore(VectorStoreBase):
     """Milvus database"""
 
     def __init__(self, ctx: {}) -> None:
+        from pymilvus import Collection, DataType, connections, utility
+
         """init a milvus storage connection.
 
         Args:
@@ -85,6 +86,7 @@ class MilvusStore(VectorStoreBase):
                 DataType,
                 FieldSchema,
                 connections,
+                utility,
             )
             from pymilvus.orm.types import infer_dtype_bydata
         except ImportError:
@@ -260,6 +262,8 @@ class MilvusStore(VectorStoreBase):
         return doc_ids
 
     def similar_search(self, text, topk) -> None:
+        from pymilvus import Collection, DataType
+
         """similar_search in vector database."""
         self.col = Collection(self.collection_name)
         schema = self.col.schema
@@ -324,16 +328,22 @@ class MilvusStore(VectorStoreBase):
         return data[0], ret
 
     def vector_name_exists(self):
+        from pymilvus import utility
+
         """is vector store name exist."""
         return utility.has_collection(self.collection_name)
 
     def delete_vector_name(self, vector_name):
+        from pymilvus import utility
+
         """milvus delete collection name"""
         logger.info(f"milvus vector_name:{vector_name} begin delete...")
         utility.drop_collection(vector_name)
         return True
 
     def delete_by_ids(self, ids):
+        from pymilvus import Collection
+
         self.col = Collection(self.collection_name)
         """milvus delete vectors by ids"""
         logger.info(f"begin delete milvus ids...")
@@ -342,6 +352,3 @@ class MilvusStore(VectorStoreBase):
         delet_expr = f"{self.primary_field} in {doc_ids}"
         self.col.delete(delet_expr)
         return True
-
-    def close(self):
-        connections.disconnect()

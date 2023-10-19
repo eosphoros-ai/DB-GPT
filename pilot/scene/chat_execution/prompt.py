@@ -49,7 +49,7 @@ prompt = PromptTemplate(
     output_parser=PluginChatOutputParser(
         sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT
     ),
-    example_selector=plugin_example,
+    # example_selector=plugin_example,
 )
 
 CFG.prompt_template_registry.register(prompt, is_default=True)

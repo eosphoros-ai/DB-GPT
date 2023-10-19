@@ -46,9 +46,54 @@ class Config(metaclass=Singleton):
         # This is a proxy server, just for test_py.  we will remove this later.
         self.proxy_api_key = os.getenv("PROXY_API_KEY")
         self.bard_proxy_api_key = os.getenv("BARD_PROXY_API_KEY")
+
         # In order to be compatible with the new and old model parameter design
         if self.bard_proxy_api_key:
             os.environ["bard_proxyllm_proxy_api_key"] = self.bard_proxy_api_key
+
+        # tongyi
+        self.tongyi_proxy_api_key = os.getenv("TONGYI_PROXY_API_KEY")
+        if self.tongyi_proxy_api_key:
+            os.environ["tongyi_proxyllm_proxy_api_key"] = self.tongyi_proxy_api_key
+
+        # zhipu
+        self.zhipu_proxy_api_key = os.getenv("ZHIPU_PROXY_API_KEY")
+        if self.zhipu_proxy_api_key:
+            os.environ["zhipu_proxyllm_proxy_api_key"] = self.zhipu_proxy_api_key
+            os.environ["zhipu_proxyllm_proxyllm_backend"] = os.getenv(
+                "ZHIPU_MODEL_VERSION"
+            )
+
+        # wenxin
+        self.wenxin_proxy_api_key = os.getenv("WEN_XIN_API_KEY")
+        self.wenxin_proxy_api_secret = os.getenv("WEN_XIN_SECRET_KEY")
+        self.wenxin_model_version = os.getenv("WEN_XIN_MODEL_VERSION")
+        if self.wenxin_proxy_api_key and self.wenxin_proxy_api_secret:
+            os.environ["wenxin_proxyllm_proxy_api_key"] = self.wenxin_proxy_api_key
+            os.environ[
+                "wenxin_proxyllm_proxy_api_secret"
+            ] = self.wenxin_proxy_api_secret
+            os.environ["wenxin_proxyllm_proxyllm_backend"] = self.wenxin_model_version
+
+        # xunfei spark
+        self.spark_api_version = os.getenv("XUNFEI_SPARK_API_VERSION")
+        self.spark_proxy_api_key = os.getenv("XUNFEI_SPARK_API_KEY")
+        self.spark_proxy_api_secret = os.getenv("XUNFEI_SPARK_API_SECRET")
+        self.spark_proxy_api_appid = os.getenv("XUNFEI_SPARK_APPID")
+        if self.spark_proxy_api_key and self.spark_proxy_api_secret:
+            os.environ["spark_proxyllm_proxy_api_key"] = self.spark_proxy_api_key
+            os.environ["spark_proxyllm_proxy_api_secret"] = self.spark_proxy_api_secret
+            os.environ["spark_proxyllm_proxyllm_backend"] = self.spark_api_version
+            os.environ["spark_proxyllm_proxy_app_id"] = self.spark_proxy_api_appid
+
+        # baichuan proxy
+        self.bc_proxy_api_key = os.getenv("BAICHUAN_PROXY_API_KEY")
+        self.bc_proxy_api_secret = os.getenv("BAICHUAN_PROXY_API_SECRET")
+        self.bc_model_version = os.getenv("BAICHUN_MODEL_NAME")
+        if self.bc_proxy_api_key and self.bc_proxy_api_secret:
+            os.environ["bc_proxyllm_proxy_api_key"] = self.bc_proxy_api_key
+            os.environ["bc_proxyllm_proxy_api_secret"] = self.bc_proxy_api_secret
+            os.environ["bc_proxyllm_proxyllm_backend"] = self.bc_model_version
 
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
@@ -130,7 +175,9 @@ class Config(metaclass=Singleton):
             os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True").lower() == "true"
         )
 
-        ### default Local database connection configuration
+        self.LOCAL_DB_MANAGE = None
+
+        ###dbgpt meta info database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST")
         self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "data/default_sqlite.db")
         self.LOCAL_DB_TYPE = os.getenv("LOCAL_DB_TYPE", "sqlite")
@@ -143,7 +190,7 @@ class Config(metaclass=Singleton):
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
         self.LOCAL_DB_POOL_SIZE = int(os.getenv("LOCAL_DB_POOL_SIZE", 10))
 
-        self.LOCAL_DB_MANAGE = None
+        self.CHAT_HISTORY_STORE_TYPE = os.getenv("CHAT_HISTORY_STORE_TYPE", "duckdb")
 
         ### LLM Model Service Configuration
         self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b-v1.5")
@@ -181,7 +228,7 @@ class Config(metaclass=Singleton):
         ### EMBEDDING Configuration
         self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text2vec")
         self.KNOWLEDGE_CHUNK_SIZE = int(os.getenv("KNOWLEDGE_CHUNK_SIZE", 100))
-        self.KNOWLEDGE_CHUNK_OVERLAP = int(os.getenv("KNOWLEDGE_CHUNK_OVERLAP", 100))
+        self.KNOWLEDGE_CHUNK_OVERLAP = int(os.getenv("KNOWLEDGE_CHUNK_OVERLAP", 50))
         self.KNOWLEDGE_SEARCH_TOP_SIZE = int(os.getenv("KNOWLEDGE_SEARCH_TOP_SIZE", 5))
         self.KNOWLEDGE_SEARCH_MAX_TOKEN = int(
             os.getenv("KNOWLEDGE_SEARCH_MAX_TOKEN", 2000)
@@ -207,10 +254,6 @@ class Config(metaclass=Singleton):
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
         self.debug_mode = value
-
-    def set_plugins(self, value: list) -> None:
-        """Set the plugins value."""
-        self.plugins = value
 
     def set_templature(self, value: int) -> None:
         """Set the temperature value."""

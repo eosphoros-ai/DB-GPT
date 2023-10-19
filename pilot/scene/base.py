@@ -56,6 +56,13 @@ class ChatScene(Enum):
         param_types=["Plugin Select"],
     )
 
+    ChatAgent = Scene(
+        code="chat_agent",
+        name="Agent Chat",
+        describe="Use tools through dialogue to accomplish your goals.",
+        param_types=["Plugin Select"],
+    )
+
     InnerChatDBSummary = Scene(
         "inner_chat_db_summary", "DB Summary", "Db Summary.", True
     )
