@@ -87,7 +87,8 @@ def execute_command(
         try:
             return cmd(**arguments)
         except Exception as e:
-            return f"Error: {str(e)}"
+            raise ValueError(f"Error: {str(e)}")
+            # return f"Error: {str(e)}"
     # TODO: Change these to take in a file rather than pasted code, if
     # non-file is given, return instructions "Input should be a python
     # filepath, write your code to file and try again
