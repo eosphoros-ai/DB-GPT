@@ -21,6 +21,12 @@ CFG = Config()
 
 
 class BaseChat(ABC):
+    """DB-GPT Chat Service Base Module
+    Include:
+    stream_call():scene + prompt -> stream response
+    nostream_call():scene + prompt -> nostream response
+    """
+
     chat_scene: str = None
     llm_model: Any = None
     # By default, keep the last two rounds of conversation records as the context
@@ -32,6 +38,14 @@ class BaseChat(ABC):
         arbitrary_types_allowed = True
 
     def __init__(self, chat_param: Dict):
+        """Chat Module Initialization
+        Args:
+           - chat_param: Dict
+            - chat_session_id: (str) chat session_id
+            - current_user_input: (str) current user input
+            - model_name:(str) llm model name
+            - select_param:(str) select param
+        """
         self.chat_session_id = chat_param["chat_session_id"]
         self.chat_mode = chat_param["chat_mode"]
         self.current_user_input: str = chat_param["current_user_input"]

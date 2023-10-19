@@ -19,10 +19,17 @@ CFG = Config()
 class ChatDashboard(BaseChat):
     chat_scene: str = ChatScene.ChatDashboard.value()
     report_name: str
-    """Number of results to return from the query"""
+    """Chat Dashboard to generate dashboard chart"""
 
     def __init__(self, chat_param: Dict):
-        """ """
+        """Chat Dashboard Module Initialization
+        Args:
+           - chat_param: Dict
+            - chat_session_id: (str) chat session_id
+            - current_user_input: (str) current user input
+            - model_name:(str) llm model name
+            - select_param:(str) dbname
+        """
         self.db_name = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatDashboard
         super().__init__(chat_param=chat_param)
