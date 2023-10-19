@@ -1,0 +1,123 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023, csunny
+# This file is distributed under the same license as the DB-GPT package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: DB-GPT 👏👏 0.3.9\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-10-17 17:24+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: ../../getting_started/application/chatagent/chatagent.md:1
+#: ../../getting_started/application/chatagent/chatagent.md:3
+#: 17aae18073594c7498c8b2434d50b218 77f0177e55e144a89e3bcf735b0d52de
+msgid "ChatAgent"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:3
+#: 41b42808938245dc946960571c09026a
+msgid ""
+"ChatAgent can automatically select the right tool to answer and solve "
+"user problems through LLM. ![ChatAgent](https://github.com/eosphoros-ai"
+"/DB-GPT/assets/13723926/)"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:6
+#: bb76bb44442647a091d008c9e1427e4a
+msgid "1.Update Plugins From Git"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:7
+#: a7f188c3de7e4b85b2d3079128b535b2
+msgid ""
+"Update the latest plug-in information from the DB-GPT official plug-in "
+"repository. ![Update From Github](https://github.com/eosphoros-ai/DB-"
+"GPT/assets/13723926/)"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:7
+#: 612cb75edb2f48a087fc99e6d0890b80
+msgid "Update From Github"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:10
+#: 1ad3f7680837410cb8018fff5787366f
+msgid "2.Install Plugin"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:11
+#: b32e9318a8e347339b6c4cad4b966880
+msgid ""
+"Install the plugin you want to use from the list of agent hub plugins. "
+"![Install Plugin](https://github.com/eosphoros-ai/DB-"
+"GPT/assets/13723926/)"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:11
+#: bee96f7936564bc6be98655bfc6aae0d
+msgid "Install Plugin"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:15
+#: 20d562b9ed004336bb6df8d163554924
+msgid "3.Upload My Local Plugin File"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:16
+#: b43e485ff4f042dd80b5950444c0db08
+msgid ""
+"If you want to use a private plug-in developed by yourself, you can "
+"upload the plug-in first and then use it. ![Upload Private "
+"Plugin](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/)"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:16
+#: a05724784c0e45528039b8238fd9ed3c
+msgid "Upload Private Plugin"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:19
+#: 726b5c4cad7d4be9815e9fbeedaecc2b
+msgid "4.Select installed plug-ins dialog"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:20
+#: e3d9dc892d054cbca29267cd0fffe7be
+msgid ""
+"Select an installed plugin to have a conversation. ![Select "
+"Plugins](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/)"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:20
+#: 97f28bacc02444c580f6481b21e6c155
+msgid "Select Plugins"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:23
+#: d0272e7d94d743289fb2c1613ee85c36
+msgid "5.Uninstall My Plugin"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:24
+#: 2fee213a12da4674b19fe8891e4318f5
+msgid ""
+"Uninstall plugins you no longer need. ![Uninstall "
+"Plugin](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/)"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:24
+#: 32e5405249134863bcaf85b0ef91260f
+msgid "Uninstall Plugin"
+msgstr ""
+
