@@ -359,7 +359,10 @@ class BaseChat(ABC):
                 )
             if len(self.history_message) > self.chat_retention_rounds:
                 for first_message in self.history_message[0]["messages"]:
-                    if not first_message["type"] in [ModelMessageRoleType.VIEW, ModelMessageRoleType.SYSTEM]:
+                    if not first_message["type"] in [
+                        ModelMessageRoleType.VIEW,
+                        ModelMessageRoleType.SYSTEM,
+                    ]:
                         message_type = first_message["type"]
                         message_content = first_message["data"]["content"]
                         history_text += (
