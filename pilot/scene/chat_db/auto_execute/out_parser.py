@@ -36,8 +36,8 @@ class DbChatOutputParser(BaseOutputParser):
 
         ### tool out data to table view
         data_loader = DbDataLoader()
-        if len(data) <= 1:
-            data.insert(0, ["result"])
+        if len(data) < 1:
+            data.insert(0, [])
         df = pd.DataFrame(data[1:], columns=data[0])
         if not CFG.NEW_SERVER_MODE and not CFG.SERVER_LIGHT_MODE:
             table_style = """<style> 
