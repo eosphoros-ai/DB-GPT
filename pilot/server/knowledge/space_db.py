@@ -1,14 +1,13 @@
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, Text, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 
+from pilot.base_modules.meta_data.base_dao import BaseDao
+from pilot.base_modules.meta_data.meta_data import Base, engine, session
 from pilot.configs.config import Config
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
-from pilot.connections.rdbms.base_dao import BaseDao
 
 CFG = Config()
-Base = declarative_base()
 
 
 class KnowledgeSpaceEntity(Base):
@@ -29,11 +28,11 @@ class KnowledgeSpaceEntity(Base):
 class KnowledgeSpaceDao(BaseDao):
     def __init__(self):
         super().__init__(
-            database="knowledge_management", orm_base=Base, create_not_exist_table=True
+            database="dbgpt", orm_base=Base, db_engine=engine, session=session
         )
 
     def create_knowledge_space(self, space: KnowledgeSpaceRequest):
-        session = self.Session()
+        session = self.get_session()
         knowledge_space = KnowledgeSpaceEntity(
             name=space.name,
             vector_type=CFG.VECTOR_STORE_TYPE,
@@ -47,7 +46,7 @@ class KnowledgeSpaceDao(BaseDao):
         session.close()
 
     def get_knowledge_space(self, query: KnowledgeSpaceEntity):
-        session = self.Session()
+        session = self.get_session()
         knowledge_spaces = session.query(KnowledgeSpaceEntity)
         if query.id is not None:
             knowledge_spaces = knowledge_spaces.filter(
@@ -86,14 +85,14 @@ class KnowledgeSpaceDao(BaseDao):
         return result
 
     def update_knowledge_space(self, space: KnowledgeSpaceEntity):
-        session = self.Session()
+        session = self.get_session()
         session.merge(space)
         session.commit()
         session.close()
         return True
 
     def delete_knowledge_space(self, space: KnowledgeSpaceEntity):
-        session = self.Session()
+        session = self.get_session()
         if space:
             session.delete(space)
             session.commit()
