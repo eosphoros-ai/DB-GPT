@@ -33,7 +33,7 @@ class SourceEmbedding(ABC):
         Args:
            - file_path: data source path
            - vector_store_config: vector store config params.
-           - source_reader: Optional[]
+           - source_reader: Optional[BaseLoader]
            - text_splitter: Optional[TextSplitter]
            - embedding_args: Optional
         """
@@ -52,8 +52,8 @@ class SourceEmbedding(ABC):
     @register
     def data_process(self, text):
         """pre process data.
-         Args:
-           - text: raw text
+        Args:
+          - text: raw text
         """
 
     @register

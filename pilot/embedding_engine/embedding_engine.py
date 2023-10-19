@@ -28,7 +28,16 @@ class EmbeddingEngine:
         text_splitter: Optional[TextSplitter] = None,
         embedding_factory: EmbeddingFactory = None,
     ):
-        """Initialize with knowledge embedding client, model_name, vector_store_config, knowledge_type, knowledge_source"""
+        """Initialize with knowledge embedding client, model_name, vector_store_config, knowledge_type, knowledge_source
+        Args:
+           - model_name: model_name
+           - vector_store_config: vector store config: Dict
+           - knowledge_type: Optional[KnowledgeType]
+           - knowledge_source: Optional[str]
+           - source_reader: Optional[BaseLoader]
+           - text_splitter: Optional[TextSplitter]
+           - embedding_factory: EmbeddingFactory
+        """
         self.knowledge_source = knowledge_source
         self.model_name = model_name
         self.vector_store_config = vector_store_config
@@ -65,6 +74,11 @@ class EmbeddingEngine:
         )
 
     def similar_search(self, text, topk):
+        """vector db similar search
+        Args:
+           - text: query text
+           - topk: top k
+        """
         vector_client = VectorStoreConnector(
             self.vector_store_config["vector_store_type"], self.vector_store_config
         )
@@ -75,12 +89,17 @@ class EmbeddingEngine:
         return ans
 
     def vector_exist(self):
+        """vector db is exist"""
         vector_client = VectorStoreConnector(
             self.vector_store_config["vector_store_type"], self.vector_store_config
         )
         return vector_client.vector_name_exists()
 
     def delete_by_ids(self, ids):
+        """delete vector db by ids
+        Args:
+           - ids: vector ids
+        """
         vector_client = VectorStoreConnector(
             self.vector_store_config["vector_store_type"], self.vector_store_config
         )

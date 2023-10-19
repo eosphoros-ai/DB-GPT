@@ -20,7 +20,13 @@ class StringEmbedding(SourceEmbedding):
         source_reader: Optional = None,
         text_splitter: Optional[TextSplitter] = None,
     ):
-        """Initialize raw text word path."""
+        """Initialize raw text word path.
+        Args:
+           - file_path: data source path
+           - vector_store_config: vector store config params.
+           - source_reader: Optional[BaseLoader]
+           - text_splitter: Optional[TextSplitter]
+        """
         super().__init__(
             file_path=file_path,
             vector_store_config=vector_store_config,
