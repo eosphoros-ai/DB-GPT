@@ -11,6 +11,10 @@ CFG = Config()
 
 class KnowledgeDocumentEntity(Base):
     __tablename__ = "knowledge_document"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
     id = Column(Integer, primary_key=True)
     doc_name = Column(String(100))
     doc_type = Column(String(100))
@@ -23,6 +27,8 @@ class KnowledgeDocumentEntity(Base):
     vector_ids = Column(Text)
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
+
+    __table_args__ = {"mysql_charset": "utf8mb4"}
 
     def __repr__(self):
         return f"KnowledgeDocumentEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"

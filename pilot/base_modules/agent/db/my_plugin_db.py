@@ -9,7 +9,10 @@ from pilot.base_modules.meta_data.meta_data import Base, engine, session
 
 class MyPluginEntity(Base):
     __tablename__ = "my_plugin"
-
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
     id = Column(Integer, primary_key=True, comment="autoincrement id")
     tenant = Column(String(255), nullable=True, comment="user's tenant")
     user_code = Column(String(255), nullable=False, comment="user code")
@@ -27,7 +30,7 @@ class MyPluginEntity(Base):
     created_at = Column(
         DateTime, default=datetime.utcnow, comment="plugin install time"
     )
-    __table_args__ = (UniqueConstraint("user_code", "name", name="uk_name"),)
+    UniqueConstraint("user_code", "name", name="uk_name")
 
 
 class MyPluginDao(BaseDao[MyPluginEntity]):
