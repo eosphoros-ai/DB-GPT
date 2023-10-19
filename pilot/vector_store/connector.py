@@ -34,13 +34,13 @@ class VectorStoreConnector:
         """load document in vector database."""
         return self.client.load_document(docs)
 
-    def similar_search(self, query: str, topk: int):
+    def similar_search(self, doc: str, topk: int):
         """similar search in vector database.
         Args:
-           - query: query text
+           - doc: query text
            - topk: topk
         """
-        return self.client.similar_search(query, topk)
+        return self.client.similar_search(doc, topk)
 
     def vector_name_exists(self):
         """is vector store name exist."""

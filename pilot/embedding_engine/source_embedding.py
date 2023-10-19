@@ -51,21 +51,33 @@ class SourceEmbedding(ABC):
 
     @register
     def data_process(self, text):
-        """pre process data."""
+        """pre process data.
+         Args:
+           - text: raw text
+        """
 
     @register
     def text_splitter(self, text_splitter: TextSplitter):
-        """add text split chunk"""
+        """add text split chunk
+        Args:
+           - text_splitter: TextSplitter
+        """
         pass
 
     @register
     def text_to_vector(self, docs):
-        """transform vector"""
+        """transform vector
+        Args:
+           - docs: List[Document]
+        """
         pass
 
     @register
     def index_to_store(self, docs):
-        """index to vector store"""
+        """index to vector store
+        Args:
+           - docs: List[Document]
+        """
         self.vector_client = VectorStoreConnector(
             self.vector_store_config["vector_store_type"], self.vector_store_config
         )
@@ -73,7 +85,10 @@ class SourceEmbedding(ABC):
 
     @register
     def similar_search(self, doc, topk):
-        """vector store similarity_search"""
+        """vector store similarity_search
+        Args:
+           - query: query
+        """
         self.vector_client = VectorStoreConnector(
             self.vector_store_config["vector_store_type"], self.vector_store_config
         )
@@ -89,6 +104,7 @@ class SourceEmbedding(ABC):
         return self.vector_client.vector_name_exists()
 
     def source_embedding(self):
+        """read()->data_process()->text_split()->index_to_store()"""
         if "read" in registered_methods:
             text = self.read()
         if "data_process" in registered_methods:
