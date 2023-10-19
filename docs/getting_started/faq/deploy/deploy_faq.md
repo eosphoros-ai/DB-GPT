@@ -98,3 +98,9 @@ pip install langchain>=0.0.286
 ```commandline
 pip install --use-pep517 fschat
 ```
+
+##### Q9: alembic.util.exc.CommandError: Target database is not up to date.
+delete files in `DB-GPT/pilot/meta_data/alembic/versions/` and reboot.
+```commandline
+rm -rf DB-GPT/pilot/meta_data/alembic/versions/*
+```

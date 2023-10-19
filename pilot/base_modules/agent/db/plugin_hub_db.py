@@ -10,6 +10,8 @@ from pilot.base_modules.meta_data.meta_data import Base, engine, session
 
 
 char_set_sql = DDL("ALTER TABLE plugin_hub CONVERT TO CHARACTER SET utf8mb4")
+
+
 class PluginHubEntity(Base):
     __tablename__ = "plugin_hub"
     __table_args__ = {
@@ -33,7 +35,6 @@ class PluginHubEntity(Base):
 
     UniqueConstraint("name", name="uk_name")
     Index("idx_q_type", "type")
-
 
 
 class PluginHubDao(BaseDao[PluginHubEntity]):

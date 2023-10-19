@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-26 17:47+0800\n"
+"POT-Creation-Date: 2023-10-19 19:31+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,12 +20,12 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:1
-#: ca823e9d6d1d433db7ed15c8273e1b00
+#: fb640f7c38744cbf996dcf7f73f325f6
 msgid "Installation FAQ"
 msgstr "Installation FAQ"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:5
-#: 3803d098c534434f9f513b3a62de54a4
+#: 79fd80e469d14d608554d53a0e0ed2e3
 #, fuzzy
 msgid ""
 "Q1: execute `pip install -e .` error, found some package cannot find "
@@ -35,18 +35,18 @@ msgstr ""
 "cannot find correct version."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:6
-#: b785864f47e643df9a4669d8da6167d6
+#: f1f6e3291d1446b5bbcf744cd4c4e89a
 msgid "change the pip source."
 msgstr "替换pip源."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:13
 #: ../../getting_started/faq/deploy/deploy_faq.md:20
-#: c41f026fb1464c71a45d0746c224ecce f70fb69b568d4fc4ad4c4731b2032eaf
+#: 68e1b39a08774a81b9061cc5205e4c1c dd34901f446749e998cd34ec5b6c44f4
 msgid "or"
 msgstr "或者"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:27
-#: d179e3d695764f838dc354eb0d978bb3
+#: 0899f0e28dae443b8f912d96c797b79c
 msgid ""
 "Q2: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to"
 " open database file"
@@ -55,85 +55,96 @@ msgstr ""
 " open database file"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:29
-#: 55174e8d247a414e8c6c8861d4707a55
+#: 3e60d8190e49436b8c40b34a67b7bfb3
 msgid "make sure you pull latest code or create directory with mkdir pilot/data"
 msgstr "make sure you pull latest code or create directory with mkdir pilot/data"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:31
-#: dbce9e9cae734a5083a6f0fc28bce7cd
+#: baeaae20238842d3b8e4ae5b337198e5
 msgid "Q3: The model keeps getting killed."
 msgstr "Q3: The model keeps getting killed."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:33
-#: 2de5648d2e7546bf85f20f4162003298
+#: eb3936307ad64b19b73483ff9ae126f2
 msgid ""
 "your GPU VRAM size is not enough, try replace your hardware or replace "
 "other llms."
 msgstr "GPU显存不够, 增加显存或者换一个显存小的模型"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:35
-#: 47810771cd364964b9b5b8fd85bca4ee
+#: f6dba770717041699c73b4cd00d48aad
 msgid "Q4: How to access website on the public network"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:37
-#: e8c5bac6680648509d528ea6aaf5994e
+#: 447d9e9374de44bab6d8a03f2c936676
 msgid ""
 "You can try to use gradio's [network](https://github.com/gradio-"
 "app/gradio/blob/main/gradio/networking.py) to achieve."
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:48
-#: bb75ec127f574c00a09d92d5206e9357
+#: 5e34dd4dfcf34feeb1815dfa974041d0
 msgid "Open `url` with your browser to see the website."
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:50
-#: 5fdb87b84bd94385a1a93dab8d41ebe8
+#: aaef774ce6124021a3862bc0a25d465f
 msgid "Q5: (Windows) execute `pip install -e .` error"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:52
-#: 31eef51e044044f29f3ad08defa9c305
+#: ec3945df451c4ec2b32ebb476f45c82b
 msgid "The error log like the following:"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:71
-#: aaba0c3060b443e4b9877f70d78321ce
+#: 1df09f6d9f9b4c1a8a32d6e271e5ee39
 msgid ""
 "Download and install `Microsoft C++ Build Tools` from [visual-cpp-build-"
 "tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:75
-#: 4c8137546e5c4240884f7ea6d9d922bf
+#: 251f47bfa5694242a1c9d81a2022b7a0
 msgid "Q6: `Torch not compiled with CUDA enabled`"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:82
-#: 01daf14f8c494219b1d9a5af4449951e
+#: bc9dfdfc47924a0e8d3ec535e23bf923
 msgid "Install [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit-archive)"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:83
-#: c75e6371911e4d5ca6859e51501c9679
+#: b5a632baa42745bdbee5d6ba516d8d8b
 msgid ""
 "Reinstall PyTorch [start-locally](https://pytorch.org/get-started/locally"
 "/#start-locally) with CUDA support."
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:85
-#: 7cfb9003e505445ebb9ed3d015e184e2
+#: 0092fb91642749f5a55b629017c0de6a
 msgid "Q7: ImportError: cannot import name 'PersistentClient' from 'chromadb'."
 msgstr "Q7: ImportError: cannot import name 'PersistentClient' from 'chromadb'."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:91
-#: e1d5d5d85ddc480d8d81f7b550848cbf
+#: 4aa87418f2a54c138bf3b7ff28a7e776
 msgid ""
 "Q8: pydantic.error_wrappers.ValidationError:1 validation error for "
 "HuggingFaceEmbeddings.model_kwargs extra not permitted"
-msgstr "Q8: pydantic.error_wrappers.ValidationError:1 validation error for "
+msgstr ""
+"Q8: pydantic.error_wrappers.ValidationError:1 validation error for "
 "HuggingFaceEmbeddings.model_kwargs extra not permitted"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:102
+#: 6b690ab272af44f6b126cfe5ce1435ef
+msgid "Q9: alembic.util.exc.CommandError: Target database is not up to date."
+msgstr ""
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:103
+#: 223026d3b9124363b695937922d8f8d5
+msgid "delete files in `DB-GPT/pilot/meta_data/alembic/versions/` and reboot."
+msgstr "删除`DB-GPT/pilot/meta_data/alembic/versions/`目录下文件"
 
 #~ msgid ""
 #~ "Q2: When use Mysql, Access denied "

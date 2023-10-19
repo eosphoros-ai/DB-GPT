@@ -29,7 +29,14 @@ class SourceEmbedding(ABC):
         text_splitter: Optional[TextSplitter] = None,
         embedding_args: Optional[Dict] = None,
     ):
-        """Initialize with Loader url, model_name, vector_store_config"""
+        """Initialize with Loader url, model_name, vector_store_config
+        Args:
+           - file_path: data source path
+           - vector_store_config: vector store config params.
+           - source_reader: Optional[]
+           - text_splitter: Optional[TextSplitter]
+           - embedding_args: Optional
+        """
         self.file_path = file_path
         self.vector_store_config = vector_store_config
         self.source_reader = source_reader or None
