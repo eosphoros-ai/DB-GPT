@@ -129,6 +129,11 @@ class RAGGraphEngine:
                 )
 
         result = [future.result() for future in future_tasks]
+        # for triplet in triplets:
+        #     subj, _, obj = triplet
+        #     self.graph_store.upsert_triplet(*triplet)
+        #     self.graph_store.upsert_triplet(*triplet)
+        #     index_struct.add_node([subj, obj], text_node)
         return index_struct
         # for doc in documents:
         #     triplets = self._extract_triplets(doc.page_content)
@@ -162,8 +167,9 @@ class RAGGraphEngine:
         print(
             f"current thread-{thread_id} end extract triplets tasks, triplets-{triplets}"
         )
-        for triplet in triplets:
-            subj, _, obj = triplet
-            self.graph_store.upsert_triplet(*triplet)
-            self.graph_store.upsert_triplet(*triplet)
-            index_struct.add_node([subj, obj], text_node)
+        return triplets
+        # for triplet in triplets:
+        #     subj, _, obj = triplet
+        #     self.graph_store.upsert_triplet(*triplet)
+        #     self.graph_store.upsert_triplet(*triplet)
+        #     index_struct.add_node([subj, obj], text_node)

@@ -145,7 +145,7 @@ class RAGGraphSearch(BaseSearch):
             if len(sorted_nodes_with_scores) == 0:
                 logger.info("> No nodes found by keywords, returning empty response.")
             return [
-                NodeWithScore(node=TextNode(text="No relationships found."), score=1.0)
+                Document(page_content="No relationships found.")
             ]
 
         # add relationships as Node
