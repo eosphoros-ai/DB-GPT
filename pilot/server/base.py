@@ -21,6 +21,7 @@ def signal_handler(sig, frame):
 
 
 def async_db_summary(system_app: SystemApp):
+    """async db schema into vector db"""
     from pilot.summary.db_summary_client import DBSummaryClient
 
     client = DBSummaryClient(system_app=system_app)

@@ -115,6 +115,9 @@ def _get_webserver_params(args: List[str] = None):
 def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     """Initialize app
     If you use gunicorn as a process manager, initialize_app can be invoke in `on_starting` hook.
+    Args:
+        param:WebWerverParameters
+        args:List[str]
     """
     if not param:
         param = _get_webserver_params(args)
