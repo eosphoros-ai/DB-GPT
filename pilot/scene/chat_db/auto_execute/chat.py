@@ -5,7 +5,6 @@ from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
 from pilot.configs.config import Config
 from pilot.scene.chat_db.auto_execute.prompt import prompt
-from pilot.base_modules.agent.commands.command_mange import ApiCall
 
 CFG = Config()
 
@@ -38,7 +37,6 @@ class ChatWithDbAutoExecute(BaseChat):
 
         self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
         self.top_k: int = 200
-        self.api_call = ApiCall(display_registry=CFG.command_disply)
 
     def generate_input_values(self):
         """
@@ -71,12 +69,6 @@ class ChatWithDbAutoExecute(BaseChat):
         }
         return input_values
 
-    def stream_plugin_call(self, text):
-        text = text.replace("\n", " ")
-        print(f"stream_plugin_call:{text}")
-        return self.api_call.run_display_sql(text, self.database.run_to_df)
-
-    #
-    # def do_action(self, prompt_response):
-    #     print(f"do_action:{prompt_response}")
-    #     return self.database.run(prompt_response.sql)
+    def do_action(self, prompt_response):
+        print(f"do_action:{prompt_response}")
+        return self.database.run(prompt_response.sql)
