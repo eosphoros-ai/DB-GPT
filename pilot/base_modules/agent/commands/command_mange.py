@@ -227,7 +227,7 @@ class ApiCall:
                     i += 1
         return False
 
-    def __check_last_plugin_call_ready(self, all_context):
+    def check_last_plugin_call_ready(self, all_context):
         start_agent_count = all_context.count(self.agent_prefix)
         end_agent_count = all_context.count(self.agent_end)
 
@@ -359,7 +359,7 @@ class ApiCall:
     def run(self, llm_text):
         if self.__is_need_wait_plugin_call(llm_text):
             # wait api call generate complete
-            if self.__check_last_plugin_call_ready(llm_text):
+            if self.check_last_plugin_call_ready(llm_text):
                 self.update_from_context(llm_text)
                 for key, value in self.plugin_status_map.items():
                     if value.status == Status.TODO.value:
@@ -379,7 +379,7 @@ class ApiCall:
     def run_display_sql(self, llm_text, sql_run_func):
         if self.__is_need_wait_plugin_call(llm_text):
             # wait api call generate complete
-            if self.__check_last_plugin_call_ready(llm_text):
+            if self.check_last_plugin_call_ready(llm_text):
                 self.update_from_context(llm_text)
                 for key, value in self.plugin_status_map.items():
                     if value.status == Status.TODO.value:

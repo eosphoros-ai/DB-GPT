@@ -29,6 +29,8 @@ from pilot.scene.message import OnceConversation
 from pilot.scene.chat_dashboard.data_loader import DashboardDataLoader
 from pilot.scene.chat_db.data_loader import DbDataLoader
 from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
+from pilot.base_modules.agent.commands.command_mange import ApiCall
+
 
 router = APIRouter()
 CFG = Config()
@@ -101,12 +103,15 @@ async def get_editor_sql(con_uid: str, round: int):
                         logger.info(
                             f'history ai json resp:{element["data"]["content"]}'
                         )
-                        context = (
-                            element["data"]["content"]
-                            .replace("\\n", " ")
-                            .replace("\n", " ")
-                        )
-                        return Result.succ(json.loads(context))
+                        api_call = ApiCall()
+                        result = {}
+                        result['thoughts'] = element["data"]["content"]
+                        if api_call.check_last_plugin_call_ready(element["data"]["content"]):
+                            api_call.update_from_context(element["data"]["content"])
+                            if len(api_call.plugin_status_map) > 0:
+                                first_item = next(iter(api_call.plugin_status_map.items()))[1]
+                                result['sql'] = first_item.args["sql"]
+                        return Result.succ(result)
     return Result.faild(msg="not have sql!")
 
 
@@ -156,17 +161,18 @@ async def sql_editor_submit(sql_edit_context: ChatSqlEditContext = Body()):
             )
         )[0]
         if edit_round:
+            new_ai_text = ""
             for element in edit_round["messages"]:
                 if element["type"] == "ai":
-                    db_resp = json.loads(element["data"]["content"])
-                    db_resp["thoughts"] = sql_edit_context.new_speak
-                    db_resp["sql"] = sql_edit_context.new_sql
-                    element["data"]["content"] = json.dumps(db_resp)
+                    new_ai_text = element["data"]["content"]
+                    new_ai_text.replace(sql_edit_context.old_sql, sql_edit_context.new_sql)
+                    element["data"]["content"] = new_ai_text
+
+            for element in edit_round["messages"]:
                 if element["type"] == "view":
-                    data_loader = DbDataLoader()
-                    element["data"]["content"] = data_loader.get_table_view_by_conn(
-                        conn.run(sql_edit_context.new_sql), sql_edit_context.new_speak
-                    )
+                    api_call = ApiCall()
+                    new_view_text = api_call.run_display_sql(new_ai_text, conn.run_to_df)
+                    element["data"]["content"] = new_view_text
             history_mem.update(history_messages)
             return Result.succ(None)
     return Result.faild(msg="Edit Faild!")
