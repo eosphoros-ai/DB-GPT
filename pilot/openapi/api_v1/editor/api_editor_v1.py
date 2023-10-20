@@ -105,12 +105,16 @@ async def get_editor_sql(con_uid: str, round: int):
                         )
                         api_call = ApiCall()
                         result = {}
-                        result['thoughts'] = element["data"]["content"]
-                        if api_call.check_last_plugin_call_ready(element["data"]["content"]):
+                        result["thoughts"] = element["data"]["content"]
+                        if api_call.check_last_plugin_call_ready(
+                            element["data"]["content"]
+                        ):
                             api_call.update_from_context(element["data"]["content"])
                             if len(api_call.plugin_status_map) > 0:
-                                first_item = next(iter(api_call.plugin_status_map.items()))[1]
-                                result['sql'] = first_item.args["sql"]
+                                first_item = next(
+                                    iter(api_call.plugin_status_map.items())
+                                )[1]
+                                result["sql"] = first_item.args["sql"]
                         return Result.succ(result)
     return Result.faild(msg="not have sql!")
 
@@ -165,13 +169,17 @@ async def sql_editor_submit(sql_edit_context: ChatSqlEditContext = Body()):
             for element in edit_round["messages"]:
                 if element["type"] == "ai":
                     new_ai_text = element["data"]["content"]
-                    new_ai_text.replace(sql_edit_context.old_sql, sql_edit_context.new_sql)
+                    new_ai_text.replace(
+                        sql_edit_context.old_sql, sql_edit_context.new_sql
+                    )
                     element["data"]["content"] = new_ai_text
 
             for element in edit_round["messages"]:
                 if element["type"] == "view":
                     api_call = ApiCall()
-                    new_view_text = api_call.run_display_sql(new_ai_text, conn.run_to_df)
+                    new_view_text = api_call.run_display_sql(
+                        new_ai_text, conn.run_to_df
+                    )
                     element["data"]["content"] = new_view_text
             history_mem.update(history_messages)
             return Result.succ(None)
