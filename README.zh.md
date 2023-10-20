@@ -64,7 +64,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 ##### LLM Management
 ![llm_manage](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/501d6b3f-c4ce-4197-9a6f-f016f8150a11)
 ##### FastChat && vLLM
-![fastchat_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/ca392904-a854-46ff-b93a-b6796c136b0b)
+![vllm](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0c9475d2-45ee-4573-aa5a-814f7fd40213)
 ##### Trace
 ![trace_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/69bd14b8-14d0-4ca9-9cb7-6cef44a2bc93)
 ##### Chat Knowledge
