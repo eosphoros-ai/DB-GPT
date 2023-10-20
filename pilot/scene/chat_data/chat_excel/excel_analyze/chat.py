@@ -78,5 +78,4 @@ class ChatExcel(BaseChat):
 
     def stream_plugin_call(self, text):
         text = text.replace("\n", " ")
-        print(f"stream_plugin_call:{text}")
         return self.api_call.run_display_sql(text, self.excel_reader.get_df_by_sql_ex)
