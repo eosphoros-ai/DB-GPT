@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.9\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-17 17:24+0800\n"
+"POT-Creation-Date: 2023-10-20 13:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,104 +20,179 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/application/chatagent/chatagent.md:1
-#: ../../getting_started/application/chatagent/chatagent.md:3
-#: 17aae18073594c7498c8b2434d50b218 77f0177e55e144a89e3bcf735b0d52de
+#: 3d20e06900dd4b26a186d8061e8d20e0
 msgid "ChatAgent"
 msgstr ""
 
 #: ../../getting_started/application/chatagent/chatagent.md:3
-#: 41b42808938245dc946960571c09026a
+#: 48bbe6fd70a5464abdc85214428173e9
 msgid ""
 "ChatAgent can automatically select the right tool to answer and solve "
-"user problems through LLM. ![ChatAgent](https://github.com/eosphoros-ai"
-"/DB-GPT/assets/13723926/)"
+"user problems through LLM. ![chat_agent0](https://github.com/eosphoros-ai"
+"/DB-GPT/assets/13723926/f6a88ab8-9352-444d-80a3-2d5456cd4286)"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:3
+#: a50f13b6b007459194cbb896d6ac1d1e
+msgid "chat_agent0"
 msgstr ""
 
 #: ../../getting_started/application/chatagent/chatagent.md:6
-#: bb76bb44442647a091d008c9e1427e4a
+#: 22d0068943e341eaa0b3cbeecc0302f2
 msgid "1.Update Plugins From Git"
 msgstr ""
 
 #: ../../getting_started/application/chatagent/chatagent.md:7
-#: a7f188c3de7e4b85b2d3079128b535b2
+#: 83d7d659bb12434aa2ba0872c0b38fbb
 msgid ""
 "Update the latest plug-in information from the DB-GPT official plug-in "
-"repository. ![Update From Github](https://github.com/eosphoros-ai/DB-"
-"GPT/assets/13723926/)"
-msgstr ""
-
-#: ../../getting_started/application/chatagent/chatagent.md:7
-#: 612cb75edb2f48a087fc99e6d0890b80
-msgid "Update From Github"
+"repository. Address:https://github.com/eosphoros-ai/DB-GPT-"
+"Plugins/tree/main/src/dbgpt_plugins/search_engine"
 msgstr ""
 
 #: ../../getting_started/application/chatagent/chatagent.md:10
-#: 1ad3f7680837410cb8018fff5787366f
+#: 1d15db09b41c437db7c9be747da75181
+msgid ""
+"![agent_hub_1](https://github.com/eosphoros-ai/DB-"
+"GPT/assets/13723926/1ae406e2-840d-4e82-92f5-716cf69367e2)"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:10
+#: ../../getting_started/application/chatagent/chatagent.md:15
+#: 9433f2b9ee764881aa4803576d27007a a8aa2659211742c184b2dc123b422c0b
+msgid "agent_hub_1"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:12
+#: 4cc4fff702e34fc5bbacb03080fc71bc
 msgid "2.Install Plugin"
 msgstr ""
 
-#: ../../getting_started/application/chatagent/chatagent.md:11
-#: b32e9318a8e347339b6c4cad4b966880
-msgid ""
-"Install the plugin you want to use from the list of agent hub plugins. "
-"![Install Plugin](https://github.com/eosphoros-ai/DB-"
-"GPT/assets/13723926/)"
-msgstr ""
-
-#: ../../getting_started/application/chatagent/chatagent.md:11
-#: bee96f7936564bc6be98655bfc6aae0d
-msgid "Install Plugin"
+#: ../../getting_started/application/chatagent/chatagent.md:13
+#: 70bf8e85525b47ba948bdc4c903bed8d
+msgid "Install the plugin you want to use from the list of agent hub plugins."
 msgstr ""
 
 #: ../../getting_started/application/chatagent/chatagent.md:15
-#: 20d562b9ed004336bb6df8d163554924
+#: 413958b102104e0f863b28bac00f685b
+msgid ""
+"Address:https://github.com/eosphoros-ai/DB-GPT-"
+"Plugins/tree/main/src/dbgpt_plugins/search_engine "
+"![agent_hub_1](https://github.com/eosphoros-ai/DB-"
+"GPT/assets/13723926/1ae406e2-840d-4e82-92f5-716cf69367e2)"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:18
+#: 965cfcc855314ae38b1080a7d74c40d9
 msgid "3.Upload My Local Plugin File"
 msgstr ""
 
-#: ../../getting_started/application/chatagent/chatagent.md:16
-#: b43e485ff4f042dd80b5950444c0db08
+#: ../../getting_started/application/chatagent/chatagent.md:19
+#: 4edcee6f3590426bb842a72b1124fafb
 msgid ""
 "If you want to use a private plug-in developed by yourself, you can "
-"upload the plug-in first and then use it. ![Upload Private "
-"Plugin](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/)"
+"upload the plug-in first and then use it."
 msgstr ""
 
-#: ../../getting_started/application/chatagent/chatagent.md:16
-#: a05724784c0e45528039b8238fd9ed3c
-msgid "Upload Private Plugin"
-msgstr ""
-
-#: ../../getting_started/application/chatagent/chatagent.md:19
-#: 726b5c4cad7d4be9815e9fbeedaecc2b
+#: ../../getting_started/application/chatagent/chatagent.md:21
+#: e957b23e3b96432db489729070e138e3
 msgid "4.Select installed plug-ins dialog"
 msgstr ""
 
-#: ../../getting_started/application/chatagent/chatagent.md:20
-#: e3d9dc892d054cbca29267cd0fffe7be
+#: ../../getting_started/application/chatagent/chatagent.md:22
+#: 7cfa156721074a8bb1ab1b34614374f1
 msgid ""
-"Select an installed plugin to have a conversation. ![Select "
-"Plugins](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/)"
+"Select an installed plugin to have a conversation. "
+"![chat_agent1](https://github.com/eosphoros-ai/DB-GPT/assets/13723926"
+"/f0b94bea-23ab-4ae3-8b45-195e1edafed5) ![chat_agent2](https://github.com"
+"/eosphoros-ai/DB-"
+"GPT/assets/13723926/eae566ff-2105-4553-9125-9e9cab687377)"
 msgstr ""
 
-#: ../../getting_started/application/chatagent/chatagent.md:20
-#: 97f28bacc02444c580f6481b21e6c155
-msgid "Select Plugins"
+#: ../../getting_started/application/chatagent/chatagent.md:22
+#: a50f13b6b007459194cbb896d6ac1d1e
+msgid "chat_agent1"
 msgstr ""
 
-#: ../../getting_started/application/chatagent/chatagent.md:23
-#: d0272e7d94d743289fb2c1613ee85c36
+#: ../../getting_started/application/chatagent/chatagent.md:22
+#: a50f13b6b007459194cbb896d6ac1d1e
+msgid "chat_agent2"
+msgstr ""
+
+#: ../../getting_started/application/chatagent/chatagent.md:26
+#: f8837cdb2f774bdf9856611b4dc830e0
 msgid "5.Uninstall My Plugin"
 msgstr ""
 
-#: ../../getting_started/application/chatagent/chatagent.md:24
-#: 2fee213a12da4674b19fe8891e4318f5
+#: ../../getting_started/application/chatagent/chatagent.md:27
+#: f3de133280174fe5b8d938a47d5b4c62
 msgid ""
-"Uninstall plugins you no longer need. ![Uninstall "
-"Plugin](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/)"
+"Uninstall plugins you no longer need. ![agent_hub_2](https://github.com"
+"/eosphoros-ai/DB-"
+"GPT/assets/13723926/1989a9d1-5b52-4c31-8f07-4d676a26ef75)"
 msgstr ""
 
-#: ../../getting_started/application/chatagent/chatagent.md:24
-#: 32e5405249134863bcaf85b0ef91260f
-msgid "Uninstall Plugin"
+#: ../../getting_started/application/chatagent/chatagent.md:27
+#: 84dc512e68ef42849da6254374e2e9ba
+msgid "agent_hub_2"
 msgstr ""
+
+#~ msgid ""
+#~ "ChatAgent can automatically select the "
+#~ "right tool to answer and solve "
+#~ "user problems through LLM. "
+#~ "![ChatAgent](https://github.com/eosphoros-ai/DB-"
+#~ "GPT/assets/13723926/)"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Update the latest plug-in information"
+#~ " from the DB-GPT official plug-"
+#~ "in repository. ![Update From "
+#~ "Github](https://github.com/eosphoros-ai/DB-"
+#~ "GPT/assets/13723926/)"
+#~ msgstr ""
+
+#~ msgid "Update From Github"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Install the plugin you want to use"
+#~ " from the list of agent hub "
+#~ "plugins. ![Install Plugin](https://github.com"
+#~ "/eosphoros-ai/DB-GPT/assets/13723926/)"
+#~ msgstr ""
+
+#~ msgid "Install Plugin"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "If you want to use a private "
+#~ "plug-in developed by yourself, you "
+#~ "can upload the plug-in first and"
+#~ " then use it. ![Upload Private "
+#~ "Plugin](https://github.com/eosphoros-ai/DB-"
+#~ "GPT/assets/13723926/)"
+#~ msgstr ""
+
+#~ msgid "Upload Private Plugin"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Select an installed plugin to have "
+#~ "a conversation. ![Select Plugins](https://github.com"
+#~ "/eosphoros-ai/DB-GPT/assets/13723926/)"
+#~ msgstr ""
+
+#~ msgid "Select Plugins"
+#~ msgstr ""
+
+#~ msgid ""
+#~ "Uninstall plugins you no longer need."
+#~ " ![Uninstall Plugin](https://github.com/eosphoros-ai"
+#~ "/DB-GPT/assets/13723926/)"
+#~ msgstr ""
+
+#~ msgid "Uninstall Plugin"
+#~ msgstr ""
 

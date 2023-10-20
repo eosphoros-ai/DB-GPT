@@ -103,4 +103,5 @@ pip install --use-pep517 fschat
 delete files in `DB-GPT/pilot/meta_data/alembic/versions/` and reboot.
 ```commandline
 rm -rf DB-GPT/pilot/meta_data/alembic/versions/*
+rm -rf DB-GPT/pilot/meta_data/alembic/dbgpt.db
 ```

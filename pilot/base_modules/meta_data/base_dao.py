@@ -20,6 +20,6 @@ class BaseDao(Generic[T]):
         self._session = session
 
     def get_session(self):
-        if not self._session:
-            self._session = sessionmaker(bind=self.db_engine)
-        return self._session
+        Session = sessionmaker(autocommit=False, autoflush=False, bind=self._db_engine)
+        session = Session()
+        return session
