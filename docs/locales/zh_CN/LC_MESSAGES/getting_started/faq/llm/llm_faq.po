@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-25 20:58+0800\n"
+"POT-Creation-Date: 2023-10-20 22:29+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,33 +19,34 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../getting_started/faq/llm/llm_faq.md:1 0d4fc79dbfce4f968ab310de12d69f3b
+#: ../../getting_started/faq/llm/llm_faq.md:1 54763acec7da4deb90669195c54ec3a1
 msgid "LLM USE FAQ"
 msgstr "LLM模型使用FAQ"
 
-#: ../../getting_started/faq/llm/llm_faq.md:3 08873df3ef2741dca8916c4c0d503b4f
+#: ../../getting_started/faq/llm/llm_faq.md:3 66f73fd2ee7b462e92d3f263792a5e33
 msgid "Q1:how to use openai chatgpt service"
 msgstr "我怎么使用OPENAI服务"
 
-#: ../../getting_started/faq/llm/llm_faq.md:4 7741b098acd347659ccf663b5323666c
-msgid "change your LLM_MODEL"
+#: ../../getting_started/faq/llm/llm_faq.md:4 9d178d8462b74cb188bbacf2ac2ac12b
+#, fuzzy
+msgid "change your LLM_MODEL in `.env`"
 msgstr "通过在.env文件设置LLM_MODEL"
 
-#: ../../getting_started/faq/llm/llm_faq.md:9 018115ec074c48739b730310a8bafa44
+#: ../../getting_started/faq/llm/llm_faq.md:9 f7ca82f257be4ac09639a7f8af5e83eb
 msgid "set your OPENAPI KEY"
 msgstr "set your OPENAPI KEY"
 
-#: ../../getting_started/faq/llm/llm_faq.md:16 42408d9c11994a848da41c3ab87d7a78
+#: ../../getting_started/faq/llm/llm_faq.md:16 d6255b20dce34a2690df7e2af3505d97
 msgid "make sure your openapi API_KEY is available"
 msgstr "确认openapi API_KEY是否可用"
 
-#: ../../getting_started/faq/llm/llm_faq.md:18 d9aedc07578d4562bad0ba1f130651de
+#: ../../getting_started/faq/llm/llm_faq.md:18 6f1c6dbdb31f4210a6d21f0f3a6ae589
 msgid ""
 "Q2 What difference between `python dbgpt_server --light` and `python "
 "dbgpt_server`"
 msgstr "Q2 `python dbgpt_server --light` 和 `python dbgpt_server`的区别是什么?"
 
-#: ../../getting_started/faq/llm/llm_faq.md:21 03c03fedaa2f4bfdaefb42fd4164c902
+#: ../../getting_started/faq/llm/llm_faq.md:20 b839771ae9e34e998b0edf8d69deabdd
 msgid ""
 "`python dbgpt_server --light` dbgpt_server does not start the llm "
 "service. Users can deploy the llm service separately by using `python "
@@ -57,54 +58,75 @@ msgstr ""
 "用户可以通过`python "
 "llmserver`单独部署模型服务，dbgpt_server通过LLM_SERVER环境变量来访问模型服务。目的是为了可以将dbgpt后台服务和大模型服务分离部署。"
 
-#: ../../getting_started/faq/llm/llm_faq.md:23 61354a0859284346adc3e07c820aa61a
+#: ../../getting_started/faq/llm/llm_faq.md:22 aba39cef6fe84799bcd03e8f36c41296
 msgid ""
 "`python dbgpt_server` dbgpt_server service and the llm service are "
 "deployed on the same instance. when dbgpt_server starts the service, it "
 "also starts the llm service at the same time."
 msgstr "`python dbgpt_server` 是将后台服务和模型服务部署在同一台实例上.dbgpt_server在启动服务的时候同时开启模型服务."
 
-#: ../../getting_started/faq/llm/llm_faq.md:27 41ee95bf0b224be995f7530d0b67f712
+#: ../../getting_started/faq/llm/llm_faq.md:27 c65270d479af49e28e99b35a7932adbd
+msgid ""
+"If you want to access an external LLM service(deployed by DB-GPT), you "
+"need to"
+msgstr "如果模型服务部署(通过DB-GPT部署)在别的机器，想通过dbgpt服务访问模型服务"
+
+#: ../../getting_started/faq/llm/llm_faq.md:29 da153e6d18c543f28e0c4e85618e3d3d
+msgid ""
+"1.set the variables LLM_MODEL=YOUR_MODEL_NAME, "
+"MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env "
+"file."
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:31 cd89b8a2075f4407b8036a74151a6377
+msgid "2.execute dbgpt_server.py in light mode"
+msgstr "2.execute dbgpt_server.py light 模式"
+
+#: ../../getting_started/faq/llm/llm_faq.md:33 8f4b9401ac4f4a25a7479bee9ef5e8c1
+msgid "python pilot/server/dbgpt_server.py --light"
+msgstr ""
+
+#: ../../getting_started/faq/llm/llm_faq.md:38 69e1064cd7554ce6b49da732f800eacc
 #, fuzzy
-msgid "Q3 how to use MultiGPUs"
+msgid "Q3 How to use MultiGPUs"
 msgstr "Q2 怎么使用 MultiGPUs"
 
-#: ../../getting_started/faq/llm/llm_faq.md:29 7fce22f0327646399b98b0e20574a2fd
+#: ../../getting_started/faq/llm/llm_faq.md:40 6de3f105ce96430db5756f38bbd9ca12
 msgid ""
 "DB-GPT will use all available gpu by default. And you can modify the "
 "setting `CUDA_VISIBLE_DEVICES=0,1` in `.env` file to use the specific gpu"
 " IDs."
 msgstr "DB-GPT默认加载可利用的gpu，你也可以通过修改 在`.env`文件 `CUDA_VISIBLE_DEVICES=0,1`来指定gpu IDs"
 
-#: ../../getting_started/faq/llm/llm_faq.md:32 3f4eb824dc924d7ca309dc5057f8360a
+#: ../../getting_started/faq/llm/llm_faq.md:43 87cb9bfb20af4b259d719df797c42a7d
 msgid ""
 "Optionally, you can also specify the gpu ID to use before the starting "
 "command, as shown below:"
 msgstr "你也可以指定gpu ID启动"
 
-#: ../../getting_started/faq/llm/llm_faq.md:42 a77d72f91b864d0aac344b317c100950
+#: ../../getting_started/faq/llm/llm_faq.md:53 bcfa35cda6304ee5ab9a775a2d4eda63
 msgid ""
 "You can modify the setting `MAX_GPU_MEMORY=xxGib` in `.env` file to "
 "configure the maximum memory used by each GPU."
 msgstr "同时你可以通过在.env文件设置`MAX_GPU_MEMORY=xxGib`修改每个GPU的最大使用内存"
 
-#: ../../getting_started/faq/llm/llm_faq.md:44 b3bb92777a1244d5967a4308d14722fc
+#: ../../getting_started/faq/llm/llm_faq.md:55 a05c5484927844c8bb4791f0a9ccc82e
 #, fuzzy
 msgid "Q4 Not Enough Memory"
 msgstr "Q3 机器显存不够 "
 
-#: ../../getting_started/faq/llm/llm_faq.md:46 c3976d81aafa4c6081e37c0d0a115d96
+#: ../../getting_started/faq/llm/llm_faq.md:57 fe17a023b6eb4a92b1b927e1b94e3784
 msgid "DB-GPT supported 8-bit quantization and 4-bit quantization."
 msgstr "DB-GPT 支持 8-bit quantization 和 4-bit quantization."
 
-#: ../../getting_started/faq/llm/llm_faq.md:48 93ade142f949449d8f54c0b6d8c8d261
+#: ../../getting_started/faq/llm/llm_faq.md:59 76c3684c10864b8e87e5c2255b6c0b7f
 msgid ""
 "You can modify the setting `QUANTIZE_8bit=True` or `QUANTIZE_4bit=True` "
 "in `.env` file to use quantization(8-bit quantization is enabled by "
 "default)."
 msgstr "你可以通过在.env文件设置`QUANTIZE_8bit=True` or `QUANTIZE_4bit=True`"
 
-#: ../../getting_started/faq/llm/llm_faq.md:50 be2573907d624ebf8c901301f938577b
+#: ../../getting_started/faq/llm/llm_faq.md:61 c5d849a38f1a4f0687bbcffb6699dc39
 msgid ""
 "Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit"
 " quantization can run with 48 GB of VRAM."
@@ -112,45 +134,45 @@ msgstr ""
 "Llama-2-70b with 8-bit quantization 可以运行在 80 GB VRAM机器， 4-bit "
 "quantization可以运行在 48 GB VRAM"
 
-#: ../../getting_started/faq/llm/llm_faq.md:52 c084d4624e794f7e8ceebadb6f260b49
+#: ../../getting_started/faq/llm/llm_faq.md:63 867329a5e3b0403083e96f72b8747fb2
 msgid ""
 "Note: you need to install the latest dependencies according to "
 "[requirements.txt](https://github.com/eosphoros-ai/DB-"
 "GPT/blob/main/requirements.txt)."
 msgstr ""
 
-#: ../../getting_started/faq/llm/llm_faq.md:54 559bcd62af7340f79f5eca817187e13e
+#: ../../getting_started/faq/llm/llm_faq.md:65 60ceee25e9fb4ddba40c5306bfb0a82f
 #, fuzzy
 msgid "Q5 How to Add LLM Service dynamic local mode"
 msgstr "Q5 怎样动态新增模型服务"
 
-#: ../../getting_started/faq/llm/llm_faq.md:56 e47101d7d47e486e8572f6acd609fa92
+#: ../../getting_started/faq/llm/llm_faq.md:67 c99eb7f7ae844884a8f0da94238ea7e0
 msgid ""
 "Now DB-GPT through multi-llm service switch, so how to add llm service "
 "dynamic,"
 msgstr "DB-GPT支持多个模型服务切换, 怎样添加一个模型服务呢"
 
-#: ../../getting_started/faq/llm/llm_faq.md:67 5710dd9bf8f54bd388354079b29acdd2
+#: ../../getting_started/faq/llm/llm_faq.md:78 cd89b8a2075f4407b8036a74151a6377
 #, fuzzy
 msgid "Q6 How to Add LLM Service dynamic in remote mode"
 msgstr "Q5 怎样动态新增模型服务"
 
-#: ../../getting_started/faq/llm/llm_faq.md:68 9c9311d6daad402a8e0748f00e69e8cf
+#: ../../getting_started/faq/llm/llm_faq.md:79 8833ce89465848259b08ef0a4fa68d96
 msgid ""
 "If you  deploy llm service in remote machine instance, and you want to "
 "add model service to dbgpt server to manage"
 msgstr "如果你想在远程机器实例部署大模型服务并添加到本地dbgpt_server进行管理"
 
-#: ../../getting_started/faq/llm/llm_faq.md:70 3ec1565e74384beab23df9d8d4a19a39
+#: ../../getting_started/faq/llm/llm_faq.md:81 992eb37e3cca48829636c15ba3ec2ee8
 msgid "use dbgpt start worker and set --controller_addr."
 msgstr "使用1`dbgpt start worker`命令并设置注册地址--controller_addr"
 
-#: ../../getting_started/faq/llm/llm_faq.md:80 e2b8a9119f7843beb787d021c973eea4
+#: ../../getting_started/faq/llm/llm_faq.md:91 0d06d7d6dd3d4780894ecd914c89b5a2
 #, fuzzy
 msgid "Q7 dbgpt command not found"
 msgstr "Q6 dbgpt command not found"
 
-#: ../../getting_started/faq/llm/llm_faq.md:86 257ae9c462cd4a9abe7d2ff00f6bc891
+#: ../../getting_started/faq/llm/llm_faq.md:97 5d9beed0d95a4503a43d0e025664273b
 msgid ""
 "Q8 When starting the worker_manager on a cloud server and registering it "
 "with the controller, it is noticed that the worker's exposed IP is a "

@@ -1,7 +1,7 @@
 LLM USE FAQ
 ==================================
 ##### Q1:how to use openai chatgpt service
-change your LLM_MODEL
+change your LLM_MODEL in `.env`
 ````shell
 LLM_MODEL=proxyllm
 ````
@@ -16,7 +16,6 @@ PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
 make sure your openapi API_KEY is available
 
 ##### Q2 What difference between `python dbgpt_server --light` and `python dbgpt_server`
-
 ```{note}
 * `python dbgpt_server --light` dbgpt_server does not start the llm service. Users can deploy the llm service separately by using `python llmserver`, and dbgpt_server accesses the llm service through set the LLM_SERVER environment variable in .env. The purpose is to allow for the separate deployment of dbgpt's backend service and llm service.
 
@@ -24,7 +23,19 @@ make sure your openapi API_KEY is available
 
 ```
 
-##### Q3 how to use MultiGPUs
+```{tip}
+If you want to access an external LLM service(deployed by DB-GPT), you need to
+
+1.set the variables LLM_MODEL=YOUR_MODEL_NAME, MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env file.
+
+2.execute dbgpt_server.py in light mode
+
+python pilot/server/dbgpt_server.py --light
+
+```
+
+
+##### Q3 How to use MultiGPUs
 
 DB-GPT will use all available gpu by default. And you can modify the setting `CUDA_VISIBLE_DEVICES=0,1` in `.env` file
 to use the specific gpu IDs.
