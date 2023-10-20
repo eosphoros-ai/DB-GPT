@@ -12,10 +12,17 @@ CFG = Config()
 class ChatWithDbQA(BaseChat):
     chat_scene: str = ChatScene.ChatWithDbQA.value()
 
-    """Number of results to return from the query"""
+    """As a DBA, Chat DB Module, chat with combine DB meta schema """
 
     def __init__(self, chat_param: Dict):
-        """ """
+        """Chat DB Module Initialization
+        Args:
+           - chat_param: Dict
+            - chat_session_id: (str) chat session_id
+            - current_user_input: (str) current user input
+            - model_name:(str) llm model name
+            - select_param:(str) dbname
+        """
         self.db_name = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatWithDbQA
         super().__init__(chat_param=chat_param)

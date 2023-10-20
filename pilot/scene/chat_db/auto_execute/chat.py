@@ -16,6 +16,14 @@ class ChatWithDbAutoExecute(BaseChat):
     """Number of results to return from the query"""
 
     def __init__(self, chat_param: Dict):
+        """Chat Data Module Initialization
+        Args:
+           - chat_param: Dict
+            - chat_session_id: (str) chat session_id
+            - current_user_input: (str) current user input
+            - model_name:(str) llm model name
+            - select_param:(str) dbname
+        """
         chat_mode = ChatScene.ChatWithDbExecute
         self.db_name = chat_param["select_param"]
         chat_param["chat_mode"] = chat_mode
@@ -33,6 +41,9 @@ class ChatWithDbAutoExecute(BaseChat):
         self.api_call = ApiCall(display_registry=CFG.command_disply)
 
     def generate_input_values(self):
+        """
+        generate input values
+        """
         try:
             from pilot.summary.db_summary_client import DBSummaryClient
         except ImportError:

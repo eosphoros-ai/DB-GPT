@@ -10,6 +10,10 @@ class ChatHistoryEntity(Base):
     id = Column(
         Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
     )
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
     conv_uid = Column(
         String(255),
         unique=False,
@@ -21,12 +25,10 @@ class ChatHistoryEntity(Base):
     user_name = Column(String(255), nullable=True, comment="interlocutor")
     messages = Column(Text, nullable=True, comment="Conversation details")
 
-    __table_args__ = (
-        UniqueConstraint("conv_uid", name="uk_conversation"),
-        Index("idx_q_user", "user_name"),
-        Index("idx_q_mode", "chat_mode"),
-        Index("idx_q_conv", "summary"),
-    )
+    UniqueConstraint("conv_uid", name="uk_conversation")
+    Index("idx_q_user", "user_name")
+    Index("idx_q_mode", "chat_mode")
+    Index("idx_q_conv", "summary")
 
 
 class ChatHistoryDao(BaseDao[ChatHistoryEntity]):

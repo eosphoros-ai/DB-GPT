@@ -21,6 +21,7 @@ def signal_handler(sig, frame):
 
 
 def async_db_summary(system_app: SystemApp):
+    """async db schema into vector db"""
     from pilot.summary.db_summary_client import DBSummaryClient
 
     client = DBSummaryClient(system_app=system_app)
@@ -94,6 +95,19 @@ class WebWerverParameters(BaseParameters):
     daemon: Optional[bool] = field(
         default=False, metadata={"help": "Run Webserver in background"}
     )
+    controller_addr: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The Model controller address to connect. If None, read model controller address from environment key `MODEL_SERVER`."
+        },
+    )
+    model_name: str = field(
+        default=None,
+        metadata={
+            "help": "The default model name to use. If None, read model name from environment key `LLM_MODEL`.",
+            "tags": "fixed",
+        },
+    )
     share: Optional[bool] = field(
         default=False,
         metadata={
@@ -122,3 +136,15 @@ class WebWerverParameters(BaseParameters):
         },
     )
     light: Optional[bool] = field(default=False, metadata={"help": "enable light mode"})
+    log_file: Optional[str] = field(
+        default="dbgpt_webserver.log",
+        metadata={
+            "help": "The filename to store log",
+        },
+    )
+    tracer_file: Optional[str] = field(
+        default="dbgpt_webserver_tracer.jsonl",
+        metadata={
+            "help": "The filename to store tracer span records",
+        },
+    )

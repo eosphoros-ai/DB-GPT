@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import datetime
 import threading
 import queue
 import logging
@@ -27,6 +28,13 @@ class FileSpanStorage(SpanStorage):
     def __init__(self, filename: str, batch_size=10, flush_interval=10):
         super().__init__()
         self.filename = filename
+        # Split filename into prefix and suffix
+        self.filename_prefix, self.filename_suffix = os.path.splitext(filename)
+        if not self.filename_suffix:
+            self.filename_suffix = ".log"
+        self.last_date = (
+            datetime.datetime.now().date()
+        )  # Store the current date for checking date changes
         self.queue = queue.Queue()
         self.batch_size = batch_size
         self.flush_interval = flush_interval
@@ -52,7 +60,21 @@ class FileSpanStorage(SpanStorage):
             except queue.Full:
                 pass  # If the signal queue is full, it's okay. The flush thread will handle it.
 
+    def _get_dated_filename(self, date: datetime.date) -> str:
+        """Return the filename based on a specific date."""
+        date_str = date.strftime("%Y-%m-%d")
+        return f"{self.filename_prefix}_{date_str}{self.filename_suffix}"
+
+    def _roll_over_if_needed(self):
+        """Checks if a day has changed since the last write, and if so, renames the current file."""
+        current_date = datetime.datetime.now().date()
+        if current_date != self.last_date:
+            if os.path.exists(self.filename):
+                os.rename(self.filename, self._get_dated_filename(self.last_date))
+            self.last_date = current_date
+
     def _write_to_file(self):
+        self._roll_over_if_needed()
         spans_to_write = []
         while not self.queue.empty():
             spans_to_write.append(self.queue.get())

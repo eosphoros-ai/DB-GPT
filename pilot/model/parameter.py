@@ -46,6 +46,18 @@ class ModelControllerParameters(BaseParameters):
             ],
         },
     )
+    log_file: Optional[str] = field(
+        default="dbgpt_model_controller.log",
+        metadata={
+            "help": "The filename to store log",
+        },
+    )
+    tracer_file: Optional[str] = field(
+        default="dbgpt_model_controller_tracer.jsonl",
+        metadata={
+            "help": "The filename to store tracer span records",
+        },
+    )
 
 
 @dataclass
@@ -120,6 +132,18 @@ class ModelWorkerParameters(BaseModelParameters):
                 "DEBUG",
                 "NOTSET",
             ],
+        },
+    )
+    log_file: Optional[str] = field(
+        default="dbgpt_model_worker_manager.log",
+        metadata={
+            "help": "The filename to store log",
+        },
+    )
+    tracer_file: Optional[str] = field(
+        default="dbgpt_model_worker_manager_tracer.jsonl",
+        metadata={
+            "help": "The filename to store tracer span records",
         },
     )
 

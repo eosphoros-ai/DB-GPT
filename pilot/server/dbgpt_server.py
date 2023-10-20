@@ -115,6 +115,9 @@ def _get_webserver_params(args: List[str] = None):
 def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     """Initialize app
     If you use gunicorn as a process manager, initialize_app can be invoke in `on_starting` hook.
+    Args:
+        param:WebWerverParameters
+        args:List[str]
     """
     if not param:
         param = _get_webserver_params(args)
@@ -122,7 +125,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     if not param.log_level:
         param.log_level = _get_logging_level()
     setup_logging(
-        "pilot", logging_level=param.log_level, logger_filename="dbgpt_webserver.log"
+        "pilot", logging_level=param.log_level, logger_filename=param.log_file
     )
     # Before start
     system_app.before_start()
@@ -136,14 +139,16 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     model_start_listener = _create_model_start_listener(system_app)
     initialize_components(param, system_app, embedding_model_name, embedding_model_path)
 
-    model_path = LLM_MODEL_CONFIG.get(CFG.LLM_MODEL)
+    model_name = param.model_name or CFG.LLM_MODEL
+
+    model_path = LLM_MODEL_CONFIG.get(model_name)
     if not param.light:
         print("Model Unified Deployment Mode!")
         if not param.remote_embedding:
             embedding_model_name, embedding_model_path = None, None
         initialize_worker_manager_in_client(
             app=app,
-            model_name=CFG.LLM_MODEL,
+            model_name=model_name,
             model_path=model_path,
             local_port=param.port,
             embedding_model_name=embedding_model_name,
@@ -155,12 +160,13 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
         CFG.NEW_SERVER_MODE = True
     else:
         # MODEL_SERVER is controller address now
+        controller_addr = param.controller_addr or CFG.MODEL_SERVER
         initialize_worker_manager_in_client(
             app=app,
-            model_name=CFG.LLM_MODEL,
+            model_name=model_name,
             model_path=model_path,
             run_locally=False,
-            controller_addr=CFG.MODEL_SERVER,
+            controller_addr=controller_addr,
             local_port=param.port,
             start_listener=model_start_listener,
             system_app=system_app,
@@ -185,7 +191,7 @@ def run_uvicorn(param: WebWerverParameters):
 def run_webserver(param: WebWerverParameters = None):
     if not param:
         param = _get_webserver_params()
-    initialize_tracer(system_app, os.path.join(LOGDIR, "dbgpt_webserver_tracer.jsonl"))
+    initialize_tracer(system_app, os.path.join(LOGDIR, param.tracer_file))
 
     with root_tracer.start_span(
         "run_webserver",

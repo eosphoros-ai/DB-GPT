@@ -1,18 +1,20 @@
 from datetime import datetime
 
 from sqlalchemy import Column, String, DateTime, Integer, Text, func
-from sqlalchemy.orm import declarative_base
 
+from pilot.base_modules.meta_data.base_dao import BaseDao
+from pilot.base_modules.meta_data.meta_data import Base, engine, session
 from pilot.configs.config import Config
-from pilot.connections.rdbms.base_dao import BaseDao
 
 CFG = Config()
-
-Base = declarative_base()
 
 
 class KnowledgeDocumentEntity(Base):
     __tablename__ = "knowledge_document"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
     id = Column(Integer, primary_key=True)
     doc_name = Column(String(100))
     doc_type = Column(String(100))
@@ -26,6 +28,8 @@ class KnowledgeDocumentEntity(Base):
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
 
+    __table_args__ = {"mysql_charset": "utf8mb4"}
+
     def __repr__(self):
         return f"KnowledgeDocumentEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
@@ -33,11 +37,11 @@ class KnowledgeDocumentEntity(Base):
 class KnowledgeDocumentDao(BaseDao):
     def __init__(self):
         super().__init__(
-            database="knowledge_management", orm_base=Base, create_not_exist_table=True
+            database="dbgpt", orm_base=Base, db_engine=engine, session=session
         )
 
     def create_knowledge_document(self, document: KnowledgeDocumentEntity):
-        session = self.Session()
+        session = self.get_session()
         knowledge_document = KnowledgeDocumentEntity(
             doc_name=document.doc_name,
             doc_type=document.doc_type,
@@ -58,7 +62,7 @@ class KnowledgeDocumentDao(BaseDao):
         return doc_id
 
     def get_knowledge_documents(self, query, page=1, page_size=20):
-        session = self.Session()
+        session = self.get_session()
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(
@@ -92,7 +96,7 @@ class KnowledgeDocumentDao(BaseDao):
         return result
 
     def get_documents(self, query):
-        session = self.Session()
+        session = self.get_session()
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(
@@ -123,7 +127,7 @@ class KnowledgeDocumentDao(BaseDao):
         return result
 
     def get_knowledge_documents_count(self, query):
-        session = self.Session()
+        session = self.get_session()
         knowledge_documents = session.query(func.count(KnowledgeDocumentEntity.id))
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(
@@ -150,14 +154,14 @@ class KnowledgeDocumentDao(BaseDao):
         return count
 
     def update_knowledge_document(self, document: KnowledgeDocumentEntity):
-        session = self.Session()
+        session = self.get_session()
         updated_space = session.merge(document)
         session.commit()
         return updated_space.id
 
     #
     def delete(self, query: KnowledgeDocumentEntity):
-        session = self.Session()
+        session = self.get_session()
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(

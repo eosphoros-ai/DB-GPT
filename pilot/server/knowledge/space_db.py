@@ -1,18 +1,21 @@
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, Text, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 
+from pilot.base_modules.meta_data.base_dao import BaseDao
+from pilot.base_modules.meta_data.meta_data import Base, engine, session
 from pilot.configs.config import Config
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
-from pilot.connections.rdbms.base_dao import BaseDao
 
 CFG = Config()
-Base = declarative_base()
 
 
 class KnowledgeSpaceEntity(Base):
     __tablename__ = "knowledge_space"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
     vector_type = Column(String(100))
@@ -29,11 +32,11 @@ class KnowledgeSpaceEntity(Base):
 class KnowledgeSpaceDao(BaseDao):
     def __init__(self):
         super().__init__(
-            database="knowledge_management", orm_base=Base, create_not_exist_table=True
+            database="dbgpt", orm_base=Base, db_engine=engine, session=session
         )
 
     def create_knowledge_space(self, space: KnowledgeSpaceRequest):
-        session = self.Session()
+        session = self.get_session()
         knowledge_space = KnowledgeSpaceEntity(
             name=space.name,
             vector_type=CFG.VECTOR_STORE_TYPE,
@@ -47,7 +50,7 @@ class KnowledgeSpaceDao(BaseDao):
         session.close()
 
     def get_knowledge_space(self, query: KnowledgeSpaceEntity):
-        session = self.Session()
+        session = self.get_session()
         knowledge_spaces = session.query(KnowledgeSpaceEntity)
         if query.id is not None:
             knowledge_spaces = knowledge_spaces.filter(
@@ -86,14 +89,14 @@ class KnowledgeSpaceDao(BaseDao):
         return result
 
     def update_knowledge_space(self, space: KnowledgeSpaceEntity):
-        session = self.Session()
+        session = self.get_session()
         session.merge(space)
         session.commit()
         session.close()
         return True
 
     def delete_knowledge_space(self, space: KnowledgeSpaceEntity):
-        session = self.Session()
+        session = self.get_session()
         if space:
             session.delete(space)
             session.commit()

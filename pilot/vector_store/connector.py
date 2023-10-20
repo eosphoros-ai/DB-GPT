@@ -14,7 +14,11 @@ class VectorStoreConnector:
     """
 
     def __init__(self, vector_store_type, ctx: {}) -> None:
-        """initialize vector store connector."""
+        """initialize vector store connector.
+        Args:
+            - vector_store_type: vector store type Milvus, Chroma, Weaviate
+            - ctx: vector store config params.
+        """
         self.ctx = ctx
         self._register()
 
@@ -30,20 +34,30 @@ class VectorStoreConnector:
         """load document in vector database."""
         return self.client.load_document(docs)
 
-    def similar_search(self, docs, topk):
-        """similar search in vector database."""
-        return self.client.similar_search(docs, topk)
+    def similar_search(self, doc: str, topk: int):
+        """similar search in vector database.
+        Args:
+           - doc: query text
+           - topk: topk
+        """
+        return self.client.similar_search(doc, topk)
 
     def vector_name_exists(self):
         """is vector store name exist."""
         return self.client.vector_name_exists()
 
     def delete_vector_name(self, vector_name):
-        """vector store delete"""
+        """vector store delete
+        Args:
+            - vector_name: vector store name
+        """
         return self.client.delete_vector_name(vector_name)
 
     def delete_by_ids(self, ids):
-        """vector store delete by ids."""
+        """vector store delete by ids.
+        Args:
+            - ids: vector ids
+        """
         return self.client.delete_by_ids(ids=ids)
 
     def _match(self, vector_store_type) -> bool:

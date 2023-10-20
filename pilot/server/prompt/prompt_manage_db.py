@@ -1,19 +1,22 @@
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, Text, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 
+from pilot.base_modules.meta_data.base_dao import BaseDao
+from pilot.base_modules.meta_data.meta_data import Base, engine, session
 from pilot.configs.config import Config
-from pilot.connections.rdbms.base_dao import BaseDao
 
 from pilot.server.prompt.request.request import PromptManageRequest
 
 CFG = Config()
-Base = declarative_base()
 
 
 class PromptManageEntity(Base):
     __tablename__ = "prompt_manage"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
     id = Column(Integer, primary_key=True)
     chat_scene = Column(String(100))
     sub_chat_scene = Column(String(100))
@@ -31,11 +34,11 @@ class PromptManageEntity(Base):
 class PromptManageDao(BaseDao):
     def __init__(self):
         super().__init__(
-            database="prompt_management", orm_base=Base, create_not_exist_table=True
+            database="dbgpt", orm_base=Base, db_engine=engine, session=session
         )
 
     def create_prompt(self, prompt: PromptManageRequest):
-        session = self.Session()
+        session = self.get_session()
         prompt_manage = PromptManageEntity(
             chat_scene=prompt.chat_scene,
             sub_chat_scene=prompt.sub_chat_scene,
@@ -51,7 +54,7 @@ class PromptManageDao(BaseDao):
         session.close()
 
     def get_prompts(self, query: PromptManageEntity):
-        session = self.Session()
+        session = self.get_session()
         prompts = session.query(PromptManageEntity)
         if query.chat_scene is not None:
             prompts = prompts.filter(PromptManageEntity.chat_scene == query.chat_scene)
@@ -78,13 +81,13 @@ class PromptManageDao(BaseDao):
         return result
 
     def update_prompt(self, prompt: PromptManageEntity):
-        session = self.Session()
+        session = self.get_session()
         session.merge(prompt)
         session.commit()
         session.close()
 
     def delete_prompt(self, prompt: PromptManageEntity):
-        session = self.Session()
+        session = self.get_session()
         if prompt:
             session.delete(prompt)
             session.commit()

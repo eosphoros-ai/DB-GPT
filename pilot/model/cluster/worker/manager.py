@@ -1006,7 +1006,7 @@ def run_worker_manager(
     setup_logging(
         "pilot",
         logging_level=worker_params.log_level,
-        logger_filename="dbgpt_model_worker_manager.log",
+        logger_filename=worker_params.log_file,
     )
 
     embedded_mod = True
@@ -1019,7 +1019,7 @@ def run_worker_manager(
     system_app = SystemApp(app)
     initialize_tracer(
         system_app,
-        os.path.join(LOGDIR, "dbgpt_model_worker_manager_tracer.jsonl"),
+        os.path.join(LOGDIR, worker_params.tracer_file),
         root_operation_name="DB-GPT-WorkerManager-Entry",
     )
 

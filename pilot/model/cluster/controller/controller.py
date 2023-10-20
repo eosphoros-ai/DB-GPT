@@ -185,7 +185,7 @@ def run_model_controller():
     setup_logging(
         "pilot",
         logging_level=controller_params.log_level,
-        logger_filename="dbgpt_model_controller.log",
+        logger_filename=controller_params.log_file,
     )
 
     initialize_controller(host=controller_params.host, port=controller_params.port)

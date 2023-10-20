@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytz
 from typing import List
-from sqlalchemy import Column, Integer, String, Index, DateTime, func, Boolean
+from sqlalchemy import Column, Integer, String, Index, DateTime, func, Boolean, DDL
 from sqlalchemy import UniqueConstraint
 from pilot.base_modules.meta_data.meta_data import Base
 
@@ -9,8 +9,15 @@ from pilot.base_modules.meta_data.base_dao import BaseDao
 from pilot.base_modules.meta_data.meta_data import Base, engine, session
 
 
+char_set_sql = DDL("ALTER TABLE plugin_hub CONVERT TO CHARACTER SET utf8mb4")
+
+
 class PluginHubEntity(Base):
     __tablename__ = "plugin_hub"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
     id = Column(
         Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
     )
@@ -26,10 +33,8 @@ class PluginHubEntity(Base):
     created_at = Column(DateTime, default=datetime.utcnow, comment="plugin upload time")
     installed = Column(Integer, default=False, comment="plugin already installed count")
 
-    __table_args__ = (
-        UniqueConstraint("name", name="uk_name"),
-        Index("idx_q_type", "type"),
-    )
+    UniqueConstraint("name", name="uk_name")
+    Index("idx_q_type", "type")
 
 
 class PluginHubDao(BaseDao[PluginHubEntity]):

@@ -3,7 +3,7 @@ class DbDataLoader:
         import pandas as pd
 
         ### tool out data to table view
-        if len(data) <= 1:
+        if len(data) < 1:
             data.insert(0, ["result"])
         df = pd.DataFrame(data[1:], columns=data[0])
         html_table = df.to_html(index=False, escape=False, sparsify=False)
