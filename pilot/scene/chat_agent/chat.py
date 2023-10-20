@@ -63,7 +63,6 @@ class ChatAgent(BaseChat):
 
     def stream_plugin_call(self, text):
         text = text.replace("\n", " ")
-        print(f"stream_plugin_call:{text}")
         return self.api_call.run(text)
 
     def __list_to_prompt_str(self, list: List) -> str:
