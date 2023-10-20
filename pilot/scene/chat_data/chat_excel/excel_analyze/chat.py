@@ -19,10 +19,20 @@ CFG = Config()
 
 
 class ChatExcel(BaseChat):
+    """a Excel analyzer to analyze Excel Data"""
+
     chat_scene: str = ChatScene.ChatExcel.value()
     chat_retention_rounds = 1
 
     def __init__(self, chat_param: Dict):
+        """Chat Excel Module Initialization
+        Args:
+           - chat_param: Dict
+            - chat_session_id: (str) chat session_id
+            - current_user_input: (str) current user input
+            - model_name:(str) llm model name
+            - select_param:(str) file path
+        """
         chat_mode = ChatScene.ChatExcel
 
         self.select_param = chat_param["select_param"]

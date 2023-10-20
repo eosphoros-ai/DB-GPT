@@ -11,11 +11,21 @@ CFG = Config()
 
 
 class ChatWithPlugin(BaseChat):
+    """Chat With Plugin"""
+
     chat_scene: str = ChatScene.ChatExecution.value()
     plugins_prompt_generator: PluginPromptGenerator
     select_plugin: str = None
 
     def __init__(self, chat_param: Dict):
+        """Chat Dashboard Module Initialization
+        Args:
+           - chat_param: Dict
+            - chat_session_id: (str) chat session_id
+            - current_user_input: (str) current user input
+            - model_name:(str) llm model name
+            - select_param:(str) plugin selector
+        """
         self.plugin_selector = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatExecution
         super().__init__(chat_param=chat_param)

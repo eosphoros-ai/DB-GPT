@@ -18,10 +18,20 @@ logger = logging.getLogger("chat_agent")
 
 
 class ChatAgent(BaseChat):
+    """Chat With Agent through plugin"""
+
     chat_scene: str = ChatScene.ChatAgent.value()
     chat_retention_rounds = 0
 
     def __init__(self, chat_param: Dict):
+        """Chat Agent Module Initialization
+        Args:
+           - chat_param: Dict
+            - chat_session_id: (str) chat session_id
+            - current_user_input: (str) current user input
+            - model_name:(str) llm model name
+            - select_param:(str) agent plugin
+        """
         if not chat_param["select_param"]:
             raise ValueError("Please select a Plugin!")
         self.select_plugins = chat_param["select_param"].split(",")

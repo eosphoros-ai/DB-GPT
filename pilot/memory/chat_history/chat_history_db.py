@@ -31,7 +31,6 @@ class ChatHistoryEntity(Base):
     Index("idx_q_conv", "summary")
 
 
-
 class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
     def __init__(self):
         super().__init__(
