@@ -57,9 +57,19 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 示例通过 RTX 4090 GPU 演示
 
-![demo_zh](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/94a40a1b-fb54-4a3b-b0a6-30575bd2796c)
-
-![7f1bd042-7165-4b9f-a88e-ccce35f9d9aa](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0f6e0944-24e5-4481-87f5-7c168a63c5ea)
+##### Chat Excel
+![cx_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/659259dc-c3ba-41c8-8bc3-179cd4385dbe)
+![chatecl_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/2ebfdee2-2262-4d32-8933-4fb27f969180)
+##### Chat Plugin
+![auto_plugin_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/7d95c347-f4b7-4fb6-8dd2-c1c02babaa56)
+##### LLM Management
+![llm_manage](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/501d6b3f-c4ce-4197-9a6f-f016f8150a11)
+##### FastChat && vLLM
+![fastchat_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/ca392904-a854-46ff-b93a-b6796c136b0b)
+##### Trace
+![trace_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/69bd14b8-14d0-4ca9-9cb7-6cef44a2bc93)
+##### Chat Knowledge
+![kbqa_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/72266a48-edef-4c6d-88c6-fbb1a24a6c3e)
 
 #### 根据自然语言对话生成分析图表
 
@@ -102,6 +112,30 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 <p align="left">
   <img src="./assets/chat_knowledge_zh.png" width="800px" />
 </p>
+
+## 安装
+
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+
+[**教程**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
+- [**安装**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/deploy/deploy.html)
+  - [**Install Step by Step**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/deploy/deploy.html)
+  - [**Docker安装**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/docker/docker.html)
+  - [**Docker Compose安装**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/docker_compose/docker_compose.html)
+- [**产品使用手册**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/chatdb/chatdb.html)
+  - [**ChatData**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/chatdb/chatdb.html)
+  - [**ChatKnowledge**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/kbqa/kbqa.html)
+  - [**ChatExcel**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/chatexcel/chatexcel.html)
+  - [**Dashboard**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/dashboard/dashboard.html)
+  - [**LLM 管理**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/model/model.html)
+- [**如何部署LLM**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/cluster/cluster.html)
+  - [**Standalone**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/cluster/vms/standalone.html#)
+  - [**Cluster**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/cluster/vms/index.html)
+  - [**vLLM**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/llm/vllm/vllm.html)
+- [**FAQ**](https://db-gpt.readthedocs.io/en/latest/getting_started/faq/deploy/deploy_faq.html)
 
 ## 特性一览
 
@@ -215,14 +249,6 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 
 🌐 [阿里云镜像](http://dbgpt.site/web/#/p/dc4bb97e0bc15302dbf3a5d5571142dd)
 
-## 安装
-
-![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
-![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
-
-[**快速开始**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/deploy/deploy.html)
 
 ### 多语言切换
 

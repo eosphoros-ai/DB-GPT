@@ -28,8 +28,6 @@ class KnowledgeDocumentEntity(Base):
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
 
-    __table_args__ = {"mysql_charset": "utf8mb4"}
-
     def __repr__(self):
         return f"KnowledgeDocumentEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
@@ -63,6 +61,7 @@ class KnowledgeDocumentDao(BaseDao):
 
     def get_knowledge_documents(self, query, page=1, page_size=20):
         session = self.get_session()
+        print(f"current session:{session}")
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(
@@ -97,6 +96,7 @@ class KnowledgeDocumentDao(BaseDao):
 
     def get_documents(self, query):
         session = self.get_session()
+        print(f"current session:{session}")
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(
