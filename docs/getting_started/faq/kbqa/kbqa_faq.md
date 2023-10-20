@@ -68,3 +68,26 @@ build Mysql KBQA system database schema.
 ```bash
 $ mysql -h127.0.0.1 -uroot -paa12345678 < ./assets/schema/knowledge_management.sql
 ```
+
+
+##### Q6:when pull from 0.4.0, I found historical knowledge document disappeared
+
+In version 0.4.0, the metadata module of the DB-GPT application has been refactored. All metadata tables will now be automatically saved in the 'dbgpt' database, based on the database type specified in the .env file. If you would like to retain the existing data, it is recommended to use a data migration tool to transfer the database table information to the 'dbgpt' database.
+
+```{tip}
+old database:knowledge_management;
+new database:dbgpt;
+```
+```commandline
+### SQLite database (Current default database)
+#LOCAL_DB_PATH=data/default_sqlite.db
+#LOCAL_DB_TYPE=sqlite
+
+### Mysql database
+LOCAL_DB_TYPE=mysql
+LOCAL_DB_USER=root
+LOCAL_DB_PASSWORD=aa12345678
+LOCAL_DB_HOST=127.0.0.1
+LOCAL_DB_PORT=3306
+
+```

@@ -349,7 +349,7 @@ class RDBMSDatabase(BaseConnect):
     def run(self, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""
         print("SQL:" + command)
-        if not command or len(command) <0:
+        if not command or len(command) < 0:
             return []
         parsed, ttype, sql_type, table_name = self.__sql_parse(command)
         if ttype == sqlparse.tokens.DML:
