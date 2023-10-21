@@ -77,7 +77,7 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/internlm/internlm-chat-7b-v1_1, 7b vs 7b-v1.1: https://github.com/InternLM/InternLM/issues/288
     "internlm-7b": os.path.join(MODEL_PATH, "internlm-chat-7b"),
     "internlm-7b-8k": os.path.join(MODEL_PATH, "internlm-chat-7b-8k"),
-    "internlm-20b": os.path.join(MODEL_PATH, "internlm-20b-chat"),
+    "internlm-20b": os.path.join(MODEL_PATH, "internlm-chat-20b"),
     # For test now
     "opt-125m": os.path.join(MODEL_PATH, "opt-125m"),
 }
