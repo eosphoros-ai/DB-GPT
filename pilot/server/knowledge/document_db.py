@@ -11,6 +11,10 @@ CFG = Config()
 
 class KnowledgeDocumentEntity(Base):
     __tablename__ = "knowledge_document"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
     id = Column(Integer, primary_key=True)
     doc_name = Column(String(100))
     doc_type = Column(String(100))
@@ -57,6 +61,7 @@ class KnowledgeDocumentDao(BaseDao):
 
     def get_knowledge_documents(self, query, page=1, page_size=20):
         session = self.get_session()
+        print(f"current session:{session}")
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(
@@ -91,6 +96,7 @@ class KnowledgeDocumentDao(BaseDao):
 
     def get_documents(self, query):
         session = self.get_session()
+        print(f"current session:{session}")
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(

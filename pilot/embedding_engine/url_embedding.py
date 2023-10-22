@@ -22,7 +22,13 @@ class URLEmbedding(SourceEmbedding):
         source_reader: Optional = None,
         text_splitter: Optional[TextSplitter] = None,
     ):
-        """Initialize url word path."""
+        """Initialize url word path.
+        Args:
+           - file_path: data source path
+           - vector_store_config: vector store config params.
+           - source_reader: Optional[BaseLoader]
+           - text_splitter: Optional[TextSplitter]
+        """
         super().__init__(
             file_path, vector_store_config, source_reader=None, text_splitter=None
         )

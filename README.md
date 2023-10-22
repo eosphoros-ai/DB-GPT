@@ -55,13 +55,18 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 
 ## Demo
 Run on an RTX 4090 GPU.
-
-![demo_en](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/d40118e4-8e76-45b6-b4a6-30e5ff170f42)
-
-
-![7f1bd042-7165-4b9f-a88e-ccce35f9d9aa](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0f6e0944-24e5-4481-87f5-7c168a63c5ea)
-
-
+##### Chat Excel
+![excel](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0474d220-2a9f-449f-a940-92c8a25af390)
+##### Chat Plugin
+![auto_plugin_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/7d95c347-f4b7-4fb6-8dd2-c1c02babaa56)
+##### LLM Management
+![llm_manage](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/501d6b3f-c4ce-4197-9a6f-f016f8150a11)
+##### FastChat && vLLM
+![vllm](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0c9475d2-45ee-4573-aa5a-814f7fd40213)
+##### Trace
+![trace_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/69bd14b8-14d0-4ca9-9cb7-6cef44a2bc93)
+##### Chat Knowledge
+![kbqa_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/72266a48-edef-4c6d-88c6-fbb1a24a6c3e)
 
 #### Chat with data, and figure charts.
 
@@ -74,6 +79,31 @@ Run on an RTX 4090 GPU.
 <p align="left">
   <img src="./assets/chat_dashboard/chat_dashboard_2.png" width="800px" />
 </p>
+
+## Install 
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+
+[**Usage Tutorial**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
+- [**Install**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
+  - [**Install Step by Step**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
+  - [**Docker Install**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/docker/docker.html)
+  - [**Docker Compose**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/docker_compose/docker_compose.html)
+- [**How to Use**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/chatdb/chatdb.html)
+  - [**ChatData**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/chatdb/chatdb.html)
+  - [**ChatKnowledge**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/kbqa/kbqa.html)
+  - [**ChatExcel**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/chatexcel/chatexcel.html)
+  - [**Dashboard**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/dashboard/dashboard.html)
+  - [**LLM Management**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/model/model.html)
+  - [**Chat Agent**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/chatagent/chatagent.html)
+- [**How to Deploy LLM**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/cluster.html)
+  - [**Standalone**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/standalone.html)
+  - [**Cluster**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
+  - [**vLLM**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
+- [**How to Debug**](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
+- [**FAQ**](https://db-gpt.readthedocs.io/en/latest/getting_started/faq/deploy/deploy_faq.html)
 
 
 ## Features
@@ -187,13 +217,8 @@ The core capabilities mainly consist of the following parts:
 ## Image
 🌐 [AutoDL Image](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
 
-## Install 
-![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
-![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
-![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-[**Installation && Usage Tutorial**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
+
 
 ### Language Switching
     In the .env configuration file, modify the LANGUAGE parameter to switch to different languages. The default is English (Chinese: zh, English: en, other languages to be added later).

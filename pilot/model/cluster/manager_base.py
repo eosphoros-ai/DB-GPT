@@ -28,7 +28,11 @@ class WorkerRunData:
 
     def _to_print_key(self):
         model_name = self.model_params.model_name
-        model_type = self.model_params.model_type
+        model_type = (
+            self.model_params.model_type
+            if hasattr(self.model_params, "model_type")
+            else "text2vec"
+        )
         host = self.host
         port = self.port
         return f"model {model_name}@{model_type}({host}:{port})"

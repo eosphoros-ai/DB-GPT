@@ -12,6 +12,10 @@ CFG = Config()
 
 class DocumentChunkEntity(Base):
     __tablename__ = "document_chunk"
+    __table_args__ = {
+        "mysql_charset": "utf8mb4",
+        "mysql_collate": "utf8mb4_unicode_ci",
+    }
     id = Column(Integer, primary_key=True)
     document_id = Column(Integer)
     doc_name = Column(String(100))

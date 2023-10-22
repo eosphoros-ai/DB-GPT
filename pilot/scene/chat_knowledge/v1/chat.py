@@ -20,10 +20,17 @@ CFG = Config()
 class ChatKnowledge(BaseChat):
     chat_scene: str = ChatScene.ChatKnowledge.value()
 
-    """Number of results to return from the query"""
+    """KBQA Chat Module"""
 
     def __init__(self, chat_param: Dict):
-        """ """
+        """Chat Knowledge Module Initialization
+        Args:
+           - chat_param: Dict
+            - chat_session_id: (str) chat session_id
+            - current_user_input: (str) current user input
+            - model_name:(str) llm model name
+            - select_param:(str) space name
+        """
         from pilot.embedding_engine.embedding_engine import EmbeddingEngine
         from pilot.embedding_engine.embedding_factory import EmbeddingFactory
 

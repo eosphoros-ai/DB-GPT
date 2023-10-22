@@ -16,6 +16,9 @@ CFG = Config()
 model_path = LLM_MODEL_CONFIG.get(CFG.LLM_MODEL)
 
 if __name__ == "__main__":
+    """run llm server including controller, manager worker
+    If you use gunicorn as a process manager, initialize_app can be invoke in `on_starting` hook.
+    """
     run_worker_manager(
         model_name=CFG.LLM_MODEL,
         model_path=model_path,

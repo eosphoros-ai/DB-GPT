@@ -316,6 +316,7 @@ def core_requires():
         "jsonschema",
         # TODO move transformers to default
         "transformers>=4.31.0",
+        "alembic==1.12.0",
     ]
 
 
@@ -424,7 +425,6 @@ def default_requires():
         "dashscope",
         "chardet",
         "GitPython",
-        "alembic==1.12.0",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["knowledge"]

@@ -57,6 +57,13 @@ class SyncStatus(Enum):
 
 # @singleton
 class KnowledgeService:
+    """KnowledgeService
+    Knowledge Management Service:
+        -knowledge_space management
+        -knowledge_document management
+        -embedding management
+    """
+
     def __init__(self):
         from pilot.graph_engine.graph_engine import RAGGraphEngine
 
@@ -64,9 +71,11 @@ class KnowledgeService:
 
         # pass
 
-    """create knowledge space"""
-
     def create_knowledge_space(self, request: KnowledgeSpaceRequest):
+        """create knowledge space
+        Args:
+           - request: KnowledgeSpaceRequest
+        """
         query = KnowledgeSpaceEntity(
             name=request.name,
         )
@@ -76,9 +85,11 @@ class KnowledgeService:
         knowledge_space_dao.create_knowledge_space(request)
         return True
 
-    """create knowledge document"""
-
     def create_knowledge_document(self, space, request: KnowledgeDocumentRequest):
+        """create knowledge document
+        Args:
+           - request: KnowledgeDocumentRequest
+        """
         query = KnowledgeDocumentEntity(doc_name=request.doc_name, space=space)
         documents = knowledge_document_dao.get_knowledge_documents(query)
         if len(documents) > 0:
@@ -95,9 +106,11 @@ class KnowledgeService:
         )
         return knowledge_document_dao.create_knowledge_document(document)
 
-    """get knowledge space"""
-
     def get_knowledge_space(self, request: KnowledgeSpaceRequest):
+        """get knowledge space
+        Args:
+           - request: KnowledgeSpaceRequest
+        """
         query = KnowledgeSpaceEntity(
             name=request.name, vector_type=request.vector_type, owner=request.owner
         )
@@ -120,6 +133,10 @@ class KnowledgeService:
         return responses
 
     def arguments(self, space_name):
+        """show knowledge space arguments
+        Args:
+            - space_name: Knowledge Space Name
+        """
         query = KnowledgeSpaceEntity(name=space_name)
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) != 1:
@@ -132,6 +149,11 @@ class KnowledgeService:
         return json.loads(context)
 
     def argument_save(self, space_name, argument_request: SpaceArgumentRequest):
+        """save argument
+        Args:
+            - space_name: Knowledge Space Name
+            - argument_request: SpaceArgumentRequest
+        """
         query = KnowledgeSpaceEntity(name=space_name)
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) != 1:
@@ -140,9 +162,12 @@ class KnowledgeService:
         space.context = argument_request.argument
         return knowledge_space_dao.update_knowledge_space(space)
 
-    """get knowledge get_knowledge_documents"""
-
     def get_knowledge_documents(self, space, request: DocumentQueryRequest):
+        """get knowledge documents
+        Args:
+            - space: Knowledge Space Name
+            - request: DocumentQueryRequest
+        """
         query = KnowledgeDocumentEntity(
             doc_name=request.doc_name,
             doc_type=request.doc_type,
@@ -157,9 +182,12 @@ class KnowledgeService:
         res.page = request.page
         return res
 
-    """sync knowledge document chunk into vector store"""
-
     def sync_knowledge_document(self, space_name, sync_request: DocumentSyncRequest):
+        """sync knowledge document chunk into vector store
+        Args:
+            - space: Knowledge Space Name
+            - sync_request: DocumentSyncRequest
+        """
         from pilot.embedding_engine.embedding_engine import EmbeddingEngine
         from pilot.embedding_engine.embedding_factory import EmbeddingFactory
         from pilot.embedding_engine.pre_text_splitter import PreTextSplitter
@@ -263,11 +291,6 @@ class KnowledgeService:
             doc.chunk_size = len(chunk_docs)
             doc.gmt_modified = datetime.now()
             knowledge_document_dao.update_knowledge_document(doc)
-            # async doc embeddings
-            # thread = threading.Thread(
-            #     target=self.async_doc_embedding, args=(client, chunk_docs, doc)
-            # )
-            # thread.start()
             executor = CFG.SYSTEM_APP.get_component(
                 ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
             ).create()
@@ -291,16 +314,21 @@ class KnowledgeService:
 
         return True
 
-    """update knowledge space"""
-
     def update_knowledge_space(
         self, space_id: int, space_request: KnowledgeSpaceRequest
     ):
+        """update knowledge space
+        Args:
+            - space_id: space id
+            - space_request: KnowledgeSpaceRequest
+        """
         knowledge_space_dao.update_knowledge_space(space_id, space_request)
 
-    """delete knowledge space"""
-
     def delete_space(self, space_name: str):
+        """delete knowledge space
+        Args:
+            - space_name: knowledge space name
+        """
         query = KnowledgeSpaceEntity(name=space_name)
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) == 0:
@@ -326,6 +354,11 @@ class KnowledgeService:
         return knowledge_space_dao.delete_knowledge_space(space)
 
     def delete_document(self, space_name: str, doc_name: str):
+        """delete document
+        Args:
+            - space_name: knowledge space name
+            - doc_name: doocument name
+        """
         document_query = KnowledgeDocumentEntity(doc_name=doc_name, space=space_name)
         documents = knowledge_document_dao.get_documents(document_query)
         if len(documents) != 1:
@@ -346,9 +379,11 @@ class KnowledgeService:
         # delete document
         return knowledge_document_dao.delete(document_query)
 
-    """get document chunks"""
-
     def get_document_chunks(self, request: ChunkQueryRequest):
+        """get document chunks
+        Args:
+            - request: ChunkQueryRequest
+        """
         query = DocumentChunkEntity(
             id=request.id,
             document_id=request.document_id,
@@ -364,6 +399,12 @@ class KnowledgeService:
         return res
 
     def async_doc_embedding(self, client, chunk_docs, doc):
+        """async document embedding into vector db
+        Args:
+            - client: EmbeddingEngine Client
+            - chunk_docs: List[Document]
+            - doc: doc
+        """
         logger.info(
             f"async_doc_embedding, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
         )
@@ -405,6 +446,10 @@ class KnowledgeService:
         return context_template_string
 
     def get_space_context(self, space_name):
+        """get space contect
+        Args:
+           - space_name: space name
+        """
         request = KnowledgeSpaceRequest()
         request.name = space_name
         spaces = self.get_knowledge_space(request)

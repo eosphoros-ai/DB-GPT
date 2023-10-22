@@ -52,7 +52,18 @@ class RDBMSDatabase(BaseConnect):
         custom_table_info: Optional[dict] = None,
         view_support: bool = False,
     ):
-        """Create engine from database URI."""
+        """Create engine from database URI.
+        Args:
+           - engine: Engine sqlalchemy.engine
+           - schema: Optional[str].
+           - metadata: Optional[MetaData]
+           - ignore_tables: Optional[List[str]]
+           - include_tables: Optional[List[str]]
+           - sample_rows_in_table_info: int default:3,
+           - indexes_in_table_info: bool = False,
+           - custom_table_info: Optional[dict] = None,
+           - view_support: bool = False,
+        """
         self._engine = engine
         self._schema = schema
         if include_tables and ignore_tables:
@@ -92,6 +103,15 @@ class RDBMSDatabase(BaseConnect):
         engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> RDBMSDatabase:
+        """Construct a SQLAlchemy engine from uri database.
+        Args:
+            host (str): database host.
+            port (int): database port.
+            user (str): database user.
+            pwd (str): database password.
+            db_name (str): database name.
+            engine_args (Optional[dict]):other engine_args.
+        """
         db_url: str = (
             cls.driver
             + "://"
@@ -329,7 +349,7 @@ class RDBMSDatabase(BaseConnect):
     def run(self, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""
         print("SQL:" + command)
-        if not command:
+        if not command or len(command) < 0:
             return []
         parsed, ttype, sql_type, table_name = self.__sql_parse(command)
         if ttype == sqlparse.tokens.DML:

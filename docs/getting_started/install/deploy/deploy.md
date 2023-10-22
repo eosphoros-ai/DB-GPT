@@ -60,12 +60,8 @@ For the entire installation process of DB-GPT, we use the miniconda3 virtual env
 python>=3.10
 conda create -n dbgpt_env python=3.10
 conda activate dbgpt_env
+# it will take some minutes
 pip install -e ".[default]"
-```
-Before use DB-GPT Knowledge
-```bash
-python -m spacy download zh_core_web_sm
-
 ```
 
 Once the environment is installed, we have to create a new folder "models" in the DB-GPT project, and then we can put all the models downloaded from huggingface in this directory
@@ -79,24 +75,32 @@ ubuntu:apt-get install git-lfs
 
 macos:brew install git-lfs
 ```
+##### Download LLM Model and Embedding Model
+
+If you use OpenAI llm service, see [LLM Use FAQ](https://db-gpt.readthedocs.io/en/latest/getting_started/faq/llm/llm_faq.html)
+
+```{tip}
+If you use openai or Axzure or tongyi llm api service, you don't need to download llm model.
+
+```
 
 ```bash
 cd DB-GPT
 mkdir models and cd models
-#### llm model
-git clone https://huggingface.co/lmsys/vicuna-13b-v1.5
-or
-git clone https://huggingface.co/THUDM/chatglm2-6b
 
 #### embedding model
 git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
 or
 git clone https://huggingface.co/moka-ai/m3e-large
+
+#### llm model, if you use openai or Azure or tongyi llm api service, you don't need to download llm model
+git clone https://huggingface.co/lmsys/vicuna-13b-v1.5
+or
+git clone https://huggingface.co/THUDM/chatglm2-6b
+
 ```
 
 The model files are large and will take a long time to download. During the download, let's configure the .env file, which needs to be copied and created from the .env.template
-
-if you want to use openai llm service, see [LLM Use FAQ](https://db-gpt.readthedocs.io/en/latest/getting_started/faq/llm/llm_faq.html)
 
 ```{tip}
 cp .env.template .env
@@ -108,7 +112,7 @@ You can configure basic parameters in the .env file, for example setting LLM_MOD
 
 ### 3. Run
 
-**(Optional) load examples into SQLlite**
+**(Optional) load examples into SQLite**
 ```bash
 bash ./scripts/examples/load_examples.sh
 ```
@@ -118,7 +122,7 @@ On windows platform:
 .\scripts\examples\load_examples.bat
 ```
 
-1.Run db-gpt server 
+Run db-gpt server 
 
 ```bash
 python pilot/server/dbgpt_server.py
@@ -126,19 +130,6 @@ python pilot/server/dbgpt_server.py
 
 Open http://localhost:5000 with your browser to see the product.
 
-```{tip}
-If you want to access an external LLM service, you need to
-
-1.set the variables LLM_MODEL=YOUR_MODEL_NAME, MODEL_SERVER=YOUR_MODEL_SERVER（eg:http://localhost:5000） in the .env file.
-
-2.execute dbgpt_server.py in light mode
-```
-
-If you want to learn about dbgpt-webui, read https://github./csunny/DB-GPT/tree/new-page-framework/datacenter
-
-```bash
-python pilot/server/dbgpt_server.py --light
-```
 
 ### Multiple GPUs
 
