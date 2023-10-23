@@ -59,15 +59,15 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 ##### Chat Excel
 ![excel](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0474d220-2a9f-449f-a940-92c8a25af390)
-##### Chat Plugin
+#### Chat Plugin
 ![auto_plugin_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/7d95c347-f4b7-4fb6-8dd2-c1c02babaa56)
-##### LLM Management
+#### LLM Management
 ![llm_manage](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/501d6b3f-c4ce-4197-9a6f-f016f8150a11)
-##### FastChat && vLLM
+#### FastChat && vLLM
 ![vllm](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0c9475d2-45ee-4573-aa5a-814f7fd40213)
-##### Trace
+#### Trace
 ![trace_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/69bd14b8-14d0-4ca9-9cb7-6cef44a2bc93)
-##### Chat Knowledge
+#### Chat Knowledge
 ![kbqa_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/72266a48-edef-4c6d-88c6-fbb1a24a6c3e)
 
 #### 根据自然语言对话生成分析图表
@@ -115,14 +115,23 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 目前我们已经发布了多种关键的特性，这里一一列举展示一下当前发布的能力。
 
 - 私域问答&数据处理
+
   支持内置、多文件格式上传、插件自抓取等方式自定义构建知识库，对海量结构化，非结构化数据做统一向量存储与检索
+  
 - 多数据源&可视化
+
   支持自然语言与Excel、数据库、数仓等多种数据源交互，并支持分析报告。
+
 - 自动化微调
+
   围绕大语言模型、Text2SQL数据集、LoRA/QLoRA/Pturning等微调方法构建的自动化微调轻量框架, 让TextSQL微调像流水线一样方便。详见: [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
+
 - Multi-Agents&Plugins
+
   支持自定义插件执行任务，原生支持Auto-GPT插件模型，Agents协议采用Agent Protocol标准
+
 - 多模型支持与管理
+
   海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。
   - 支持多种大语言模型, 当前已支持如下模型: 
   - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
@@ -154,6 +163,10 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
     - [x] [Tongyi](https://www.aliyun.com/product/dashscope)
     - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
     - [x] [ChatGLM](http://open.bigmodel.cn/)
+
+- 隐私安全
+
+  通过私有化大模型、代理脱敏等多种技术保障数据的隐私安全。
 
 - 支持数据源
 
@@ -195,6 +208,11 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 5. Agent与插件: 提供Agent和插件机制，使得用户可以自定义并增强系统的行为。  
 6. 隐私和安全: 您可以放心，没有数据泄露的风险，您的数据100%私密和安全。
 7. Text2SQL: 我们通过在大型语言模型监督微调（SFT）来增强文本到SQL的性能
+
+### RAG生产落地实践架构
+<p align="center">
+  <img src="./assets/RAG-IN-ACTION.jpg" width="800px" />
+</p>
 
 ### 子模块
 - [DB-GPT-Hub](https://github.com/csunny/DB-GPT-Hub) 通过微调来持续提升Text2SQL效果 

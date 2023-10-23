@@ -98,17 +98,23 @@ Run on an RTX 4090 GPU.
 
 Currently, we have released multiple key features, which are listed below to demonstrate our current capabilities:
 - Private KBQA & data processing
+
   The DB-GPT project offers a range of features to enhance knowledge base construction and enable efficient storage and retrieval of both structured and unstructured data. These include built-in support for uploading multiple file formats, the ability to integrate plug-ins for custom data extraction, and unified vector storage and retrieval capabilities for managing large volumes of information.
+
 - Multiple data sources & visualization
+  
   The DB-GPT project enables seamless natural language interaction with various data sources, including Excel, databases, and data warehouses. It facilitates effortless querying and retrieval of information from these sources, allowing users to engage in intuitive conversations and obtain insights. Additionally, DB-GPT supports the generation of analysis reports, providing users with valuable summaries and interpretations of the data.
 
 - Multi-Agents&Plugins
+
   Supports custom plug-ins to perform tasks, natively supports the Auto-GPT plug-in model, and the Agents protocol adopts the Agent Protocol standard
 
 - Fine-tuning text2SQL
+
   An automated fine-tuning lightweight framework built around large language models, Text2SQL data sets, LoRA/QLoRA/Pturning and other fine-tuning methods, making TextSQL fine-tuning as convenient as an assembly line. [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
 - Multi LLMs Support, Supports multiple large language models, currently supporting
+
   Massive model support, including dozens of large language models such as open source and API agents. Such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, etc.
   - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
   - [vicuna-13b-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5)
@@ -144,6 +150,7 @@ Currently, we have released multiple key features, which are listed below to dem
     - [x] [ChatGLM](http://open.bigmodel.cn/)
 
 - Privacy and security
+  
   The privacy and security of data are ensured through various technologies such as privatized large models and proxy desensitization.
 
 - Support Datasources
@@ -184,6 +191,11 @@ The core capabilities mainly consist of the following parts:
 5. Multi-Agents: Provides Agent and plugin mechanisms, allowing users to customize and enhance the system's behavior.
 6. Privacy & Secure: You can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 7. Text2SQL: We enhance the Text-to-SQL performance by applying Supervised Fine-Tuning (SFT) on large language models
+
+### RAG-IN-Action
+<p align="center">
+  <img src="./assets/RAG-IN-ACTION.jpg" width="800px" />
+</p>
 
 ### SubModule
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL performance by applying Supervised Fine-Tuning (SFT) on large language models.
