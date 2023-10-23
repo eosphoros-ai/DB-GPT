@@ -58,8 +58,7 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 示例通过 RTX 4090 GPU 演示
 
 ##### Chat Excel
-![cx_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/659259dc-c3ba-41c8-8bc3-179cd4385dbe)
-![chatecl_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/2ebfdee2-2262-4d32-8933-4fb27f969180)
+![excel](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0474d220-2a9f-449f-a940-92c8a25af390)
 ##### Chat Plugin
 ![auto_plugin_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/7d95c347-f4b7-4fb6-8dd2-c1c02babaa56)
 ##### LLM Management
