@@ -26,7 +26,7 @@ Currently, we have released multiple key features, which are listed below to dem
 - Unified vector storage/indexing of knowledge base
   - Support for unstructured data such as PDF, Markdown, CSV, and WebURL
 
-- Milti LLMs Support
+- Multi LLMs Support
   - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8)
   - TODO: codegen2, codet5p
 
