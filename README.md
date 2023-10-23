@@ -62,23 +62,11 @@ Run on an RTX 4090 GPU.
 ##### LLM Management
 ![llm_manage](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/501d6b3f-c4ce-4197-9a6f-f016f8150a11)
 ##### FastChat && vLLM
-![fastchat_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/ca392904-a854-46ff-b93a-b6796c136b0b)
+![vllm](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0c9475d2-45ee-4573-aa5a-814f7fd40213)
 ##### Trace
 ![trace_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/69bd14b8-14d0-4ca9-9cb7-6cef44a2bc93)
 ##### Chat Knowledge
 ![kbqa_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/72266a48-edef-4c6d-88c6-fbb1a24a6c3e)
-
-#### Chat with data, and figure charts.
-
-![db plugins demonstration](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/4113ac15-83c2-4350-86c0-5fc795677abd)
-
-<p align="left">
-  <img src="./assets/chat_excel/chat_excel_6.png" width="800px" />
-</p>
-
-<p align="left">
-  <img src="./assets/chat_dashboard/chat_dashboard_2.png" width="800px" />
-</p>
 
 ## Install 
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
@@ -109,66 +97,61 @@ Run on an RTX 4090 GPU.
 ## Features
 
 Currently, we have released multiple key features, which are listed below to demonstrate our current capabilities:
-- SQL language capabilities
-  - SQL generation
-  - SQL diagnosis
-- Private domain Q&A and data processing
-  - Knowledge Management(We currently support many document formats: txt, pdf, md, html, doc, ppt, and url.)
-- ChatDB
-- ChatExcel
-- ChatDashboard
-- Multi-Agents&Plugins
-- Unified vector storage/indexing of knowledge base
-  - Support for unstructured data 
-    - PDF
-    - TXT
-    - Markdown
-    - CSV
-    - DOC
-    - PPT
-    - WebURL
-- Multi LLMs Support, Supports multiple large language models, currently supporting
-  - [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
-  - [baichuan2-7b/baichuan2-13b](https://huggingface.co/baichuan-inc)
-  - [internlm/internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
-  - [Qwen/Qwen-7B-Chat/Qwen-14B-Chat](https://huggingface.co/Qwen/)
-  - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
-  - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
-  - [camel-ai/CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
-  - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
-  - [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
-  - [h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b)
-  - [lcw99/polyglot-ko-12.8b-chang-instruct-chat](https://huggingface.co/lcw99/polyglot-ko-12.8b-chang-instruct-chat)
-  - [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
-  - [mosaicml/mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
-  - [Neutralzz/BiLLa-7B-SFT](https://huggingface.co/Neutralzz/BiLLa-7B-SFT)
-  - [nomic-ai/gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
-  - [NousResearch/Nous-Hermes-13b](https://huggingface.co/NousResearch/Nous-Hermes-13b)
-  - [openaccess-ai-collective/manticore-13b-chat-pyg](https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg)
-  - [OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5](https://huggingface.co/OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5)
-  - [project-baize/baize-v2-7b](https://huggingface.co/project-baize/baize-v2-7b)
-  - [Salesforce/codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
-  - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
-  - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
-  - [THUDM/chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
-  - [tiiuae/falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
-  - [timdettmers/guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
-  - [togethercomputer/RedPajama-INCITE-7B-Chat](https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat)
-  - [WizardLM/WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
-  - [WizardLM/WizardCoder-15B-V1.0](https://huggingface.co/WizardLM/WizardCoder-15B-V1.0)
-  - [baichuan-inc/baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
-  - [HuggingFaceH4/starchat-beta](https://huggingface.co/HuggingFaceH4/starchat-beta)
-  - [FlagAlpha/Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
-  - [BAAI/AquilaChat-7B](https://huggingface.co/BAAI/AquilaChat-7B)
-  - [all models of OpenOrca](https://huggingface.co/Open-Orca)
-  - [Spicyboros](https://huggingface.co/jondurbin/spicyboros-7b-2.2?not-for-all-audiences=true) + [airoboros 2.2](https://huggingface.co/jondurbin/airoboros-l2-13b-2.2)
-  - [VMware&#39;s OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
+- Private KBQA & data processing
 
-- Support API Proxy LLMs
-  - [x] [ChatGPT](https://api.openai.com/)
-  - [x] [Tongyi](https://www.aliyun.com/product/dashscope)
-  - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
-  - [x] [ChatGLM](http://open.bigmodel.cn/)
+  The DB-GPT project offers a range of features to enhance knowledge base construction and enable efficient storage and retrieval of both structured and unstructured data. These include built-in support for uploading multiple file formats, the ability to integrate plug-ins for custom data extraction, and unified vector storage and retrieval capabilities for managing large volumes of information.
+
+- Multiple data sources & visualization
+  
+  The DB-GPT project enables seamless natural language interaction with various data sources, including Excel, databases, and data warehouses. It facilitates effortless querying and retrieval of information from these sources, allowing users to engage in intuitive conversations and obtain insights. Additionally, DB-GPT supports the generation of analysis reports, providing users with valuable summaries and interpretations of the data.
+
+- Multi-Agents&Plugins
+
+  Supports custom plug-ins to perform tasks, natively supports the Auto-GPT plug-in model, and the Agents protocol adopts the Agent Protocol standard
+
+- Fine-tuning text2SQL
+
+  An automated fine-tuning lightweight framework built around large language models, Text2SQL data sets, LoRA/QLoRA/Pturning and other fine-tuning methods, making TextSQL fine-tuning as convenient as an assembly line. [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
+
+- Multi LLMs Support, Supports multiple large language models, currently supporting
+
+  Massive model support, including dozens of large language models such as open source and API agents. Such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, etc.
+  - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
+  - [vicuna-13b-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5)
+  - [LLama2](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
+  - [baichuan2-13b](https://huggingface.co/baichuan-inc)
+  - [baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
+  - [chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
+  - [chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
+  - [falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
+  - [internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
+  - [Qwen-7B-Chat/Qwen-14B-Chat](https://huggingface.co/Qwen/)
+  - [RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
+  - [CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
+  - [dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
+  - [h2ogpt-gm-oasst1-en-2048-open-llama-7b](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b)
+  - [fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
+  - [mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
+  - [gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
+  - [Nous-Hermes-13b](https://huggingface.co/NousResearch/Nous-Hermes-13b)
+  - [codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
+  - [guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
+  - [WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
+  - [WizardLM/WizardCoder-15B-V1.0](https://huggingface.co/WizardLM/WizardCoder-15B-V1.0)
+  - [Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
+  - [OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
+
+  etc.
+
+  - Support API Proxy LLMs
+    - [x] [ChatGPT](https://api.openai.com/)
+    - [x] [Tongyi](https://www.aliyun.com/product/dashscope)
+    - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
+    - [x] [ChatGLM](http://open.bigmodel.cn/)
+
+- Privacy and security
+  
+  The privacy and security of data are ensured through various technologies such as privatized large models and proxy desensitization.
 
 - Support Datasources
 
@@ -208,6 +191,11 @@ The core capabilities mainly consist of the following parts:
 5. Multi-Agents: Provides Agent and plugin mechanisms, allowing users to customize and enhance the system's behavior.
 6. Privacy & Secure: You can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 7. Text2SQL: We enhance the Text-to-SQL performance by applying Supervised Fine-Tuning (SFT) on large language models
+
+### RAG-IN-Action
+<p align="center">
+  <img src="./assets/RAG-IN-ACTION.jpg" width="800px" />
+</p>
 
 ### SubModule
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL performance by applying Supervised Fine-Tuning (SFT) on large language models.
