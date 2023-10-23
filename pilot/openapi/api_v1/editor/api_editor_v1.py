@@ -104,10 +104,11 @@ async def get_editor_sql(con_uid: str, round: int):
                             f'history ai json resp:{element["data"]["content"]}'
                         )
                         api_call = ApiCall()
+                        api_call.update_from_context(element["data"]["content"])
                         result = {}
-                        result['thoughts'] = element["data"]["content"]
+                        result['thoughts'] = element["data"]["content"].replace("\n", " ").replace("\\n", " ")
                         if api_call.check_last_plugin_call_ready(element["data"]["content"]):
-                            api_call.update_from_context(element["data"]["content"])
+
                             if len(api_call.plugin_status_map) > 0:
                                 first_item = next(iter(api_call.plugin_status_map.items()))[1]
                                 result['sql'] = first_item.args["sql"]

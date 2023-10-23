@@ -19,10 +19,8 @@ Table structure information:
 Constraint:
 1. You can only use the table provided in the table structure information to generate sql. If you cannot generate sql based on the provided table structure, please say: "The table structure information provided is not enough to generate sql query." It is prohibited to fabricate information at will.
 2. Do not query columns that do not exist. Pay attention to which column is in which table.
-3. Replace the corresponding sql into the sql field in the returned result
-4. Unless the user specifies in the question a specific number of examples he wishes to obtain, always limit the query to a maximum of {top_k} results.
-5. Please output the Sql content in the following format to execute the corresponding SQL to display the data:<api-call><name>response_table</name><args><sql>SQL Query to run</sql></args></api-call>
-Please make sure to respond as following format:
+3. Unless the user specifies in the question a specific number of examples he wishes to obtain, always limit the query to a maximum of {top_k} results.
+4. Please ensure that the output result contains: <api-call><name>response_table</name><args><sql>SQL Query to run</sql></args></api-call>，and replace the generated sql into the parameter sql.Please make sure to respond as following format:
     thoughts summary to say to user.<api-call><name>response_table</name><args><sql>SQL Query to run</sql></args></api-call>
     
 Question: {input}
@@ -36,8 +34,8 @@ _DEFAULT_TEMPLATE_ZH = """
 约束:
 1. 只能使用表结构信息中提供的表来生成 sql，如果无法根据提供的表结构中生成 sql ，请说：“提供的表结构信息不足以生成 sql 查询。” 禁止随意捏造信息。
 2. 不要查询不存在的列，注意哪一列位于哪张表中。
-3.将对应的sql替换到返回结果中的sql字段中
-4.除非用户在问题中指定了他希望获得的具体示例数量，否则始终将查询限制为最多 {top_k} 个结果。
+3. 请确保输出结果包含<api-call><name>response_table</name><args><sql>要运行的SQL</sql></args></api-call>， 并将对应的sql替换到sql参数中
+4. 除非用户在问题中指定了他希望获得的具体示例数量，否则始终将查询限制为最多 {top_k} 个结果。
 
 请务必按照以下格式回复：
    对用户说的想法摘要。<api-call><name>response_table</name><args><sql>要运行的 SQL</sql></args></api-call>
