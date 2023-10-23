@@ -72,8 +72,6 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 #### 根据自然语言对话生成分析图表
 
-![db plugins demonstration](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/4113ac15-83c2-4350-86c0-5fc795677abd)
-
 <p align="left">
   <img src="./assets/chat_excel/chat_excel_6.png" width="800px" />
 </p>
@@ -84,32 +82,6 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 <p align="left">
   <img src="./assets/chat_dashboard/chat_dashboard_2.png" width="800px" />
-</p>
-
-#### 根据自然语言对话生成SQL
-<p align="left">
-  <img src="./assets/chatSQL.png" width="800px" />
-</p>
-
-#### 与数据库元数据信息进行对话, 生成准确SQL语句
-<p align="left">
-  <img src="./assets/chatdb.png" width="800px" />
-</p>
-
-
-#### 与数据对话, 直接查看执行结果
-<p align="left">
-  <img src="./assets/chatdata.png" width="800px" />
-</p>
-
-#### 知识库管理
-<p align="left">
-  <img src="./assets/ks.png" width="800px" />
-</p>
-
-#### 根据知识库对话, 比如pdf、csv、txt、words等等.
-<p align="left">
-  <img src="./assets/chat_knowledge_zh.png" width="800px" />
 </p>
 
 ## 安装
@@ -142,61 +114,46 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 目前我们已经发布了多种关键的特性，这里一一列举展示一下当前发布的能力。
 
-- SQL 语言能力
-  - SQL生成
-  - SQL诊断
-- 私域问答与数据处理
-  - 知识库管理(目前支持 txt, pdf, md, html, doc, ppt, and url)
-  - 数据库知识问答
-  - 数据处理
-- 数据库对话
-- Chat2Dashboard
-- 插件模型
-- 知识库统一向量存储/索引
-  - 非结构化数据支持包括PDF、MarkDown、CSV、WebURL
+- 私域问答&数据处理
+  支持内置、多文件格式上传、插件自抓取等方式自定义构建知识库，对海量结构化，非结构化数据做统一向量存储与检索
+- 多数据源&可视化
+  支持自然语言与Excel、数据库、数仓等多种数据源交互，并支持分析报告。
+- 自动化微调
+  围绕大语言模型、Text2SQL数据集、LoRA/QLoRA/Pturning等微调方法构建的自动化微调轻量框架, 让TextSQL微调像流水线一样方便。详见: [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
+- Multi-Agents&Plugins
+  支持自定义插件执行任务，原生支持Auto-GPT插件模型，Agents协议采用Agent Protocol标准
 - 多模型支持与管理
+  海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。
   - 支持多种大语言模型, 当前已支持如下模型: 
-  - [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
-  - [baichuan2-7b/baichuan2-13b](https://huggingface.co/baichuan-inc)
-  - [internlm/internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
-  - [Qwen/Qwen-7B-Chat/Qwen-14B-Chat](https://huggingface.co/Qwen/)
   - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
-  - [BlinkDL/RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
-  - [camel-ai/CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
-  - [databricks/dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
-  - [FreedomIntelligence/phoenix-inst-chat-7b](https://huggingface.co/FreedomIntelligence/phoenix-inst-chat-7b)
-  - [h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b)
-  - [lcw99/polyglot-ko-12.8b-chang-instruct-chat](https://huggingface.co/lcw99/polyglot-ko-12.8b-chang-instruct-chat)
-  - [lmsys/fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
-  - [mosaicml/mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
-  - [Neutralzz/BiLLa-7B-SFT](https://huggingface.co/Neutralzz/BiLLa-7B-SFT)
-  - [nomic-ai/gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
-  - [NousResearch/Nous-Hermes-13b](https://huggingface.co/NousResearch/Nous-Hermes-13b)
-  - [openaccess-ai-collective/manticore-13b-chat-pyg](https://huggingface.co/openaccess-ai-collective/manticore-13b-chat-pyg)
-  - [OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5](https://huggingface.co/OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5)
-  - [project-baize/baize-v2-7b](https://huggingface.co/project-baize/baize-v2-7b)
-  - [Salesforce/codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
-  - [StabilityAI/stablelm-tuned-alpha-7b](https://huggingface.co/stabilityai/stablelm-tuned-alpha-7b)
-  - [THUDM/chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
-  - [THUDM/chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
-  - [tiiuae/falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
-  - [timdettmers/guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
-  - [togethercomputer/RedPajama-INCITE-7B-Chat](https://huggingface.co/togethercomputer/RedPajama-INCITE-7B-Chat)
-  - [WizardLM/WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
+  - [vicuna-13b-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5)
+  - [LLama2](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
+  - [baichuan2-13b](https://huggingface.co/baichuan-inc)
+  - [baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
+  - [chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
+  - [chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
+  - [falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
+  - [internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
+  - [Qwen-7B-Chat/Qwen-14B-Chat](https://huggingface.co/Qwen/)
+  - [RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
+  - [CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
+  - [dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
+  - [h2ogpt-gm-oasst1-en-2048-open-llama-7b](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b)
+  - [fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
+  - [mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
+  - [gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
+  - [Nous-Hermes-13b](https://huggingface.co/NousResearch/Nous-Hermes-13b)
+  - [codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
+  - [guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
+  - [WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
   - [WizardLM/WizardCoder-15B-V1.0](https://huggingface.co/WizardLM/WizardCoder-15B-V1.0)
-  - [baichuan-inc/baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
-  - [HuggingFaceH4/starchat-beta](https://huggingface.co/HuggingFaceH4/starchat-beta)
-  - [FlagAlpha/Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
-  - [BAAI/AquilaChat-7B](https://huggingface.co/BAAI/AquilaChat-7B)
-  - [all models of OpenOrca](https://huggingface.co/Open-Orca)
-  - [Spicyboros](https://huggingface.co/jondurbin/spicyboros-7b-2.2?not-for-all-audiences=true) + [airoboros 2.2](https://huggingface.co/jondurbin/airoboros-l2-13b-2.2)
-  - [VMware&#39;s OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
-
-- 支持在线代理模型 
-  - [x] [ChatGPT](https://api.openai.com/)
-  - [x] [Tongyi](https://www.aliyun.com/product/dashscope)
-  - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
-  - [x] [ChatGLM](http://open.bigmodel.cn/)
+  - [Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
+  - [OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
+  - 支持在线代理模型 
+    - [x] [ChatGPT](https://api.openai.com/)
+    - [x] [Tongyi](https://www.aliyun.com/product/dashscope)
+    - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
+    - [x] [ChatGLM](http://open.bigmodel.cn/)
 
 - 支持数据源
 
@@ -227,7 +184,7 @@ DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运�
 整个DB-GPT的架构，如下图所示
 
 <p align="center">
-  <img src="./assets/DB-GPT.png" width="800px" />
+  <img src="./assets/DB-GPT_zh.png" width="800px" />
 </p>
 
 核心能力主要有以下几个部分。 
