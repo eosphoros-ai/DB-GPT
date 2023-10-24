@@ -317,6 +317,8 @@ def core_requires():
         # TODO move transformers to default
         "transformers>=4.31.0",
         "alembic==1.12.0",
+        # for excel
+        "openpyxl",
     ]
 
 
@@ -361,6 +363,8 @@ def quantization_requires():
         )
         pkgs = [f"bitsandbytes @ {local_pkg}"]
         print(pkgs)
+    # For chatglm2-6b-int4
+    pkgs += ["cpm_kernels"]
     setup_spec.extras["quantization"] = pkgs
 
 

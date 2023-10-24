@@ -21,7 +21,7 @@ class ChatNormal(BaseChat):
             chat_param=chat_param,
         )
 
-    def generate_input_values(self):
+    async def generate_input_values(self) -> Dict:
         input_values = {"input": self.current_user_input}
         return input_values
 

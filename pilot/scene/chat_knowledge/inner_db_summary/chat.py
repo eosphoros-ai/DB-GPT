@@ -1,3 +1,4 @@
+from typing import Dict
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
@@ -30,7 +31,7 @@ class InnerChatDBSummary(BaseChat):
         self.db_input = db_select
         self.db_summary = db_summary
 
-    def generate_input_values(self):
+    async def generate_input_values(self) -> Dict:
         input_values = {
             "db_input": self.db_input,
             "db_profile_summary": self.db_summary,
