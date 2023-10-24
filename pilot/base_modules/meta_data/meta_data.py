@@ -20,7 +20,7 @@ from urllib.parse import quote
 from pilot.configs.config import Config
 
 
-logger = logging.getLogger("meta_data")
+logger = logging.getLogger(__name__)
 
 CFG = Config()
 default_db_path = os.path.join(os.getcwd(), "meta_data")

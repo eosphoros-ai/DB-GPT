@@ -14,7 +14,7 @@ from ..chat_history_db import ChatHistoryEntity, ChatHistoryDao
 from pilot.memory.chat_history.base import MemoryStoreType
 
 CFG = Config()
-logger = logging.getLogger("db_chat_history")
+logger = logging.getLogger(__name__)
 
 
 class DbHistoryMemory(BaseChatHistoryMemory):

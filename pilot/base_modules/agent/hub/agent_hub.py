@@ -12,7 +12,7 @@ from ..db.my_plugin_db import MyPluginDao, MyPluginEntity
 from ..common.schema import PluginStorageType
 from ..plugins_util import scan_plugins, update_from_git
 
-logger = logging.getLogger("agent_hub")
+logger = logging.getLogger(__name__)
 Default_User = "default"
 DEFAULT_PLUGIN_REPO = "https://github.com/eosphoros-ai/DB-GPT-Plugins.git"
 TEMP_PLUGIN_PATH = ""

@@ -19,6 +19,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.exceptions import RequestValidationError
 from typing import List
 import tempfile
+from concurrent.futures import Executor
 
 from pilot.component import ComponentType
 from pilot.openapi.api_view_model import (
@@ -46,6 +47,8 @@ from pilot.summary.db_summary_client import DBSummaryClient
 from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 from pilot.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from pilot.model.base import FlatSupportedModel
+from pilot.utils.tracer import root_tracer, SpanType
+from pilot.utils.executor_utils import ExecutorFactory, blocking_func_to_async
 
 router = APIRouter()
 CFG = Config()
@@ -129,6 +132,13 @@ def get_worker_manager() -> WorkerManager:
     return worker_manager
 
 
+def get_executor() -> Executor:
+    """Get the global default executor"""
+    return CFG.SYSTEM_APP.get_component(
+        ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+    ).create()
+
+
 @router.get("/v1/chat/db/list", response_model=Result[DBConfig])
 async def db_connect_list():
     return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list())
@@ -158,6 +168,7 @@ async def async_db_summary_embedding(db_name, db_type):
 @router.post("/v1/chat/db/test/connect", response_model=Result[bool])
 async def test_connect(db_config: DBConfig = Body()):
     try:
+        # TODO Change the synchronous call to the asynchronous call
         CFG.LOCAL_DB_MANAGE.test_connect(db_config)
         return Result.succ(True)
     except Exception as e:
@@ -166,6 +177,7 @@ async def test_connect(db_config: DBConfig = Body()):
 
 @router.post("/v1/chat/db/summary", response_model=Result[bool])
 async def db_summary(db_name: str, db_type: str):
+    # TODO Change the synchronous call to the asynchronous call
     async_db_summary_embedding(db_name, db_type)
     return Result.succ(True)
 
@@ -185,6 +197,7 @@ async def db_support_types():
 async def dialogue_list(user_id: str = None):
     dialogues: List = []
     chat_history_service = ChatHistory()
+    # TODO Change the synchronous call to the asynchronous call
     datas = chat_history_service.get_store_cls().conv_list(user_id)
     for item in datas:
         conv_uid = item.get("conv_uid")
@@ -285,7 +298,7 @@ async def params_load(
                 select_param=doc_file.filename,
                 model_name=model_name,
             )
-            chat: BaseChat = get_chat_instance(dialogue)
+            chat: BaseChat = await get_chat_instance(dialogue)
             resp = await chat.prepare()
 
         ### refresh messages
@@ -299,6 +312,7 @@ async def params_load(
 async def dialogue_delete(con_uid: str):
     history_fac = ChatHistory()
     history_mem = history_fac.get_store_instance(con_uid)
+    # TODO Change the synchronous call to the asynchronous call
     history_mem.delete()
     return Result.succ(None)
 
@@ -324,10 +338,11 @@ def get_hist_messages(conv_uid: str):
 @router.get("/v1/chat/dialogue/messages/history", response_model=Result[MessageVo])
 async def dialogue_history_messages(con_uid: str):
     print(f"dialogue_history_messages:{con_uid}")
+    # TODO Change the synchronous call to the asynchronous call
     return Result.succ(get_hist_messages(con_uid))
 
 
-def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
+async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
     logger.info(f"get_chat_instance:{dialogue}")
     if not dialogue.chat_mode:
         dialogue.chat_mode = ChatScene.ChatNormal.value()
@@ -346,8 +361,14 @@ def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         "select_param": dialogue.select_param,
         "model_name": dialogue.model_name,
     }
-    chat: BaseChat = CHAT_FACTORY.get_implementation(
-        dialogue.chat_mode, **{"chat_param": chat_param}
+    # chat: BaseChat = CHAT_FACTORY.get_implementation(
+    #     dialogue.chat_mode, **{"chat_param": chat_param}
+    # )
+    chat: BaseChat = await blocking_func_to_async(
+        get_executor(),
+        CHAT_FACTORY.get_implementation,
+        dialogue.chat_mode,
+        **{"chat_param": chat_param},
     )
     return chat
 
@@ -357,7 +378,7 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
     # dialogue.model_name = CFG.LLM_MODEL
     logger.info(f"chat_prepare:{dialogue}")
     ## check conv_uid
-    chat: BaseChat = get_chat_instance(dialogue)
+    chat: BaseChat = await get_chat_instance(dialogue)
     if len(chat.history_message) > 0:
         return Result.succ(None)
     resp = await chat.prepare()
@@ -369,7 +390,10 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
-    chat: BaseChat = get_chat_instance(dialogue)
+    with root_tracer.start_span(
+        "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
+    ):
+        chat: BaseChat = await get_chat_instance(dialogue)
     # background_tasks = BackgroundTasks()
     # background_tasks.add_task(release_model_semaphore)
     headers = {
@@ -420,8 +444,9 @@ async def model_supports(worker_manager: WorkerManager = Depends(get_worker_mana
 
 
 async def no_stream_generator(chat):
-    msg = await chat.nostream_call()
-    yield f"data: {msg}\n\n"
+    with root_tracer.start_span("no_stream_generator"):
+        msg = await chat.nostream_call()
+        yield f"data: {msg}\n\n"
 
 
 async def stream_generator(chat, incremental: bool, model_name: str):
@@ -438,6 +463,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
     Yields:
         _type_: streaming responses
     """
+    span = root_tracer.start_span("stream_generator")
     msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
 
     stream_id = f"chatcmpl-{str(uuid.uuid1())}"
@@ -463,6 +489,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
             await asyncio.sleep(0.02)
     if incremental:
         yield "data: [DONE]\n\n"
+    span.end()
 
 
 def message2Vo(message: dict, order, model_name) -> MessageVo:
