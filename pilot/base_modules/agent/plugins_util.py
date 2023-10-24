@@ -9,6 +9,7 @@ import requests
 import git
 import threading
 import datetime
+import logging
 from pathlib import Path
 from typing import List
 from urllib.parse import urlparse
@@ -19,7 +20,8 @@ from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import PLUGINS_DIR
-from pilot.logs import logger
+
+logger = logging.getLogger(__name__)
 
 
 def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:

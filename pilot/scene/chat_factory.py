@@ -1,5 +1,6 @@
 from pilot.scene.base_chat import BaseChat
 from pilot.singleton import Singleton
+from pilot.utils.tracer import root_tracer
 
 
 class ChatFactory(metaclass=Singleton):
@@ -20,7 +21,11 @@ class ChatFactory(metaclass=Singleton):
         implementation = None
         for cls in chat_classes:
             if cls.chat_scene == chat_mode:
-                implementation = cls(**kwargs)
+                metadata = {"cls": str(cls), "params": kwargs}
+                with root_tracer.start_span(
+                    "get_implementation_of_chat", metadata=metadata
+                ):
+                    implementation = cls(**kwargs)
         if implementation == None:
             raise Exception(f"Invalid implementation name:{chat_mode}")
         return implementation
