@@ -89,6 +89,13 @@ class ChatScene(Enum):
         ["Extract Select"],
         True,
     )
+    ExtractSummary = Scene(
+        "extract_summary",
+        "Extract Summary",
+        "Extract Summary",
+        ["Extract Select"],
+        True,
+    )
     ExtractEntity = Scene(
         "extract_entity", "Extract Entity", "Extract Entity", ["Extract Select"], True
     )

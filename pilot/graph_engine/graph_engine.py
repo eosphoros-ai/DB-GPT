@@ -15,10 +15,12 @@ logger = logging.getLogger(__name__)
 
 class RAGGraphEngine:
     """Knowledge RAG Graph Engine.
-    Build a KG by extracting triplets, and leveraging the KG during query-time.
+    Build a RAG Graph Client can extract triplets and insert into graph store.
     Args:
         knowledge_type (Optional[str]): Default: KnowledgeType.DOCUMENT.value
             extracting triplets.
+        knowledge_source (Optional[str]):
+        model_name (Optional[str]): llm model name
         graph_store (Optional[GraphStore]): The graph store to use.refrence:llama-index
         include_embeddings (bool): Whether to include embeddings in the index.
             Defaults to False.
@@ -104,37 +106,64 @@ class RAGGraphEngine:
         return triplets
 
     def _build_index_from_docs(self, documents: List[Document]) -> KG:
-        """Build the index from nodes."""
+        """Build the index from nodes.
+        Args:documents:List[Document]
+        """
         index_struct = self.index_struct_cls()
-        num_threads = 5
-        chunk_size = (
-            len(documents)
-            if (len(documents) < num_threads)
-            else len(documents) // num_threads
-        )
-
-        import concurrent
-
-        future_tasks = []
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            for i in range(num_threads):
-                start = i * chunk_size
-                end = start + chunk_size if i < num_threads - 1 else None
-                future_tasks.append(
-                    executor.submit(
-                        self._extract_triplets_task,
-                        documents[start:end][0],
-                        index_struct,
-                    )
-                )
-
-        result = [future.result() for future in future_tasks]
+        triplets = []
+        for doc in documents:
+            trips = self._extract_triplets_task([doc], index_struct)
+            triplets.extend(trips)
+        print(triplets)
+        text_node = TextNode(text=doc.page_content, metadata=doc.metadata)
+        for triplet in triplets:
+            subj, _, obj = triplet
+            self.graph_store.upsert_triplet(*triplet)
+            index_struct.add_node([subj, obj], text_node)
+        return index_struct
+        # num_threads = 5
+        # chunk_size = (
+        #     len(documents)
+        #     if (len(documents) < num_threads)
+        #     else len(documents) // num_threads
+        # )
+        #
+        # import concurrent
+        # triples = []
+        # future_tasks = []
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     for i in range(num_threads):
+        #         start = i * chunk_size
+        #         end = start + chunk_size if i < num_threads - 1 else None
+        #         # doc = documents[start:end]
+        #         future_tasks.append(
+        #             executor.submit(
+        #                 self._extract_triplets_task,
+        #                 documents[start:end],
+        #                 index_struct,
+        #             )
+        #         )
+        #         # for doc in documents[start:end]:
+        #         #     future_tasks.append(
+        #         #         executor.submit(
+        #         #             self._extract_triplets_task,
+        #         #             doc,
+        #         #             index_struct,
+        #         #         )
+        #         #     )
+        #
+        # # result = [future.result() for future in future_tasks]
+        # completed_futures, _ = concurrent.futures.wait(future_tasks, return_when=concurrent.futures.ALL_COMPLETED)
+        # for future in completed_futures:
+        #     # 获取已完成的future的结果并添加到results列表中
+        #     result = future.result()
+        #     triplets.extend(result)
+        # print(f"total triplets-{triples}")
         # for triplet in triplets:
         #     subj, _, obj = triplet
         #     self.graph_store.upsert_triplet(*triplet)
-        #     self.graph_store.upsert_triplet(*triplet)
-        #     index_struct.add_node([subj, obj], text_node)
-        return index_struct
+        #     # index_struct.add_node([subj, obj], text_node)
+        # return index_struct
         # for doc in documents:
         #     triplets = self._extract_triplets(doc.page_content)
         #     if len(triplets) == 0:
@@ -154,20 +183,22 @@ class RAGGraphEngine:
         graph_search = RAGGraphSearch(graph_engine=self)
         return graph_search.search(query)
 
-    def _extract_triplets_task(self, doc, index_struct):
-        import threading
-
-        thread_id = threading.get_ident()
-        print(f"current thread-{thread_id} begin extract triplets task")
-        triplets = self._extract_triplets(doc.page_content)
-        if len(triplets) == 0:
-            triplets = []
-        text_node = TextNode(text=doc.page_content, metadata=doc.metadata)
-        logger.info(f"extracted knowledge triplets: {triplets}")
-        print(
-            f"current thread-{thread_id} end extract triplets tasks, triplets-{triplets}"
-        )
-        return triplets
+    def _extract_triplets_task(self, docs, index_struct):
+        triple_results = []
+        for doc in docs:
+            import threading
+            thread_id = threading.get_ident()
+            print(f"current thread-{thread_id} begin extract triplets task")
+            triplets = self._extract_triplets(doc.page_content)
+            if len(triplets) == 0:
+                triplets = []
+            text_node = TextNode(text=doc.page_content, metadata=doc.metadata)
+            logger.info(f"extracted knowledge triplets: {triplets}")
+            print(
+                f"current thread-{thread_id} end extract triplets tasks, triplets-{triplets}"
+            )
+            triple_results.extend(triplets)
+        return triple_results
         # for triplet in triplets:
         #     subj, _, obj = triplet
         #     self.graph_store.upsert_triplet(*triplet)

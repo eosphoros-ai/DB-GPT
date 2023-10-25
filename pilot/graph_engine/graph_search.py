@@ -8,7 +8,6 @@ from langchain.schema import Document
 
 from pilot.graph_engine.node import BaseNode, TextNode, NodeWithScore
 from pilot.graph_engine.search import BaseSearch, SearchMode
-from pilot.utils import utils
 
 logger = logging.getLogger(__name__)
 DEFAULT_NODE_SCORE = 1000.0
@@ -113,15 +112,15 @@ class RAGGraphSearch(BaseSearch):
             for keyword in keywords:
                 keyword = keyword.lower()
                 subjs = set((keyword,))
-                node_ids = self._index_struct.search_node_by_keyword(keyword)
-                for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
-                    if node_id in node_visited:
-                        continue
-
-                    # if self._include_text:
-                    #     chunk_indices_count[node_id] += 1
-
-                    node_visited.add(node_id)
+                # node_ids = self._index_struct.search_node_by_keyword(keyword)
+                # for node_id in node_ids[:GLOBAL_EXPLORE_NODE_LIMIT]:
+                #     if node_id in node_visited:
+                #         continue
+                #
+                #     # if self._include_text:
+                #     #     chunk_indices_count[node_id] += 1
+                #
+                #     node_visited.add(node_id)
 
                 rel_map = self._graph_store.get_rel_map(
                     list(subjs), self.graph_store_query_depth
