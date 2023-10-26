@@ -267,8 +267,12 @@ class ApiCall:
                         all_context = self.__deal_error_md_tags(
                             all_context, api_context
                         )
+                        # all_context = all_context.replace(
+                        #     api_context, api_status.api_result
+                        # )
+
                         all_context = all_context.replace(
-                            api_context, api_status.api_result
+                            api_context, self.to_view_antv_vis(api_status)
                         )
                     else:
                         if api_status.status == Status.FAILED.value:
@@ -335,6 +339,7 @@ class ApiCall:
             else:
                 api_status.location.append(api_index)
 
+
     def __to_view_param_str(self, api_status):
         param = {}
         if api_status.name:
@@ -355,6 +360,27 @@ class ApiCall:
         api_call_element.text = self.__to_view_param_str(api_status)
         result = ET.tostring(api_call_element, encoding="utf-8")
         return result.decode("utf-8")
+
+    def to_view_antv_vis(self, api_status: PluginStatus):
+        api_call_element = ET.Element("chart-view")
+        api_call_element.text = self.__to_antv_vis_param(api_status)
+        result = ET.tostring(api_call_element, encoding="utf-8")
+        return result.decode("utf-8")
+
+    def __to_antv_vis_param(self, api_status: PluginStatus):
+        param = {}
+        if api_status.name:
+            param["type"] = api_status.name
+        if api_status.args:
+            param["sql"] = api_status.args["sql"]
+
+        if api_status.err_msg:
+            param["err_msg"] = api_status.err_msg
+
+        if api_status.api_result:
+            param["data"] = api_status.api_result
+
+        return json.dumps(param)
 
     def run(self, llm_text):
         if self.__is_need_wait_plugin_call(llm_text):
@@ -401,6 +427,41 @@ class ApiCall:
                                     )
 
                             value.status = Status.COMPLETED.value
+                        except Exception as e:
+                            value.status = Status.FAILED.value
+                            value.err_msg = str(e)
+                        value.end_time = datetime.now().timestamp() * 1000
+        return self.api_view_context(llm_text, True)
+
+
+    def display_sql_llmvis(self, llm_text, sql_run_func):
+        """
+        Render charts using the Antv standard protocol
+        Args:
+            llm_text: LLM response text
+            sql_run_func: sql run  function
+
+        Returns:
+           ChartView protocol text
+        """
+        if self.__is_need_wait_plugin_call(llm_text):
+            # wait api call generate complete
+            if self.check_last_plugin_call_ready(llm_text):
+                self.update_from_context(llm_text)
+                for key, value in self.plugin_status_map.items():
+                    if value.status == Status.TODO.value:
+                        value.status = Status.RUNNING.value
+                        logging.info(f"sql展示执行:{value.name},{value.args}")
+                        try:
+                            sql = value.args["sql"]
+                            if sql is not None and len(sql) > 0:
+                                data_df = sql_run_func(sql)
+                                value.api_result = data_df.apply(lambda row: row.to_dict(), axis=1).to_list()
+                                value.status = Status.COMPLETED.value
+                            else:
+                                value.status = Status.FAILED.value
+                                value.err_msg = "No executable sql！"
+
                         except Exception as e:
                             value.status = Status.FAILED.value
                             value.err_msg = str(e)
