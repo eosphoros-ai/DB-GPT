@@ -321,9 +321,7 @@ msgstr "下载LLM模型和Embedding模型"
 msgid ""
 "If you use OpenAI llm service, see [How to Use LLM REST API](https://db-"
 "gpt.readthedocs.io/en/latest/getting_started/install/llm/proxyllm/proxyllm.html)"
-msgstr ""
-"如果想使用openai大模型服务, 可以参考[LLM Use FAQ](https://db-"
-"gpt.readthedocs.io/en/latest/getting_started/faq/llm/llm_faq.html)"
+msgstr "如果想使用openai大模型服务, 可以参考[如何集成LLM REST API](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/proxyllm/proxyllm.html)"
 
 #: ../../getting_started/install/deploy/deploy.md:83
 #: f1a43cd2eba3458c863bfc77cf13ac1f
