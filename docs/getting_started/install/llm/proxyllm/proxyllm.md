@@ -24,6 +24,7 @@ PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
 
 #Azure
 LLM_MODEL=chatgpt_proxyllm
+OPENAI_API_TYPE=azure
 PROXY_API_KEY={your-openai-sk}
 PROXY_SERVER_URL=https://xx.openai.azure.com/v1/chat/completions
 
