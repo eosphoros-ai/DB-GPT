@@ -33,11 +33,18 @@ _DEFAULT_TEMPLATE_ZH = """
     {response}
 """
 
-RESPONSE_FORMAT_SIMPLE = {
+_RESPONSE_FORMAT_SIMPLE_ZH = {
     "DataAnalysis": "数据内容分析总结",
     "ColumnAnalysis": [{"column name1": "字段1介绍，专业术语解释(请尽量简单明了)"}],
     "AnalysisProgram": ["1.分析方案1，图表展示方式1", "2.分析方案2，图表展示方式2"],
 }
+_RESPONSE_FORMAT_SIMPLE_EN = {
+    "DataAnalysis": "Data content analysis summary",
+    "ColumnAnalysis": [{"column name1": "Introduction to Column 1 and explanation of professional terms (please try to be as simple and clear as possible)"}],
+    "AnalysisProgram": ["1. Analysis plan 1, chart display type 1", "2. Analysis plan 2, chart display type 2"],
+}
+
+RESPONSE_FORMAT_SIMPLE =(_RESPONSE_FORMAT_SIMPLE_EN if CFG.LANGUAGE == "en" else _RESPONSE_FORMAT_SIMPLE_ZH)
 
 
 _DEFAULT_TEMPLATE = (
