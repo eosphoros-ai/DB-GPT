@@ -21,7 +21,7 @@ class ChatFactory(metaclass=Singleton):
         implementation = None
         for cls in chat_classes:
             if cls.chat_scene == chat_mode:
-                metadata = {"cls": str(cls), "params": kwargs}
+                metadata = {"cls": str(cls)}
                 with root_tracer.start_span(
                     "get_implementation_of_chat", metadata=metadata
                 ):
