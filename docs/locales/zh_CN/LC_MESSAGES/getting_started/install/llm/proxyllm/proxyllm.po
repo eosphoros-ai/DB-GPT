@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.4.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-26 00:03+0800\n"
+"POT-Creation-Date: 2023-10-26 11:26+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -66,7 +66,8 @@ msgstr "百川API"
 
 #: ../../getting_started/install/llm/proxyllm/proxyllm.md:13
 #: aba2dcc36b854b6193ababca772e1cf0
-msgid "bard"
+#, fuzzy
+msgid "Bard"
 msgstr "bard API"
 
 #: ../../getting_started/install/llm/proxyllm/proxyllm.md:17
@@ -81,12 +82,12 @@ msgstr "如何集成这些LLM rest API呢"
 msgid "update your `.env` file"
 msgstr "更新`.env`配置文件"
 
-#: ../../getting_started/install/llm/proxyllm/proxyllm.md:62
+#: ../../getting_started/install/llm/proxyllm/proxyllm.md:63
 #: f602876d957446fd8056854b6b2121a1
 msgid "Make sure your .env configuration is not overwritten"
 msgstr "确保文件配置不会被覆盖"
 
-#: ../../getting_started/install/llm/proxyllm/proxyllm.md:65
+#: ../../getting_started/install/llm/proxyllm/proxyllm.md:66
 #: 51cb501d1500440981b3b93f01ff36f4
 msgid "How to Integrate Embedding rest API, like OpenAI, Azure api service?"
 msgstr "如何集成想OpenAI Embedding rest api"
