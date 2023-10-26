@@ -164,6 +164,7 @@ class LLMModelAdaper:
 
         # Overwrite model params:
         params["stop"] = conv.stop_str
+        params["stop_token_ids"] = conv.stop_token_ids
 
         return params, model_context
 
