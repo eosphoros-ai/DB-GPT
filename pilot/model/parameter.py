@@ -307,12 +307,6 @@ class ProxyModelParameters(BaseModelParameters):
         },
     )
 
-    proxy_api_app_id: str = field(
-        metadata={
-            "help": "The app id for current proxy LLM(Just for spark proxy LLM now)."
-        },
-    )
-
     proxy_api_key: str = field(
         metadata={"tags": "privacy", "help": "The api key of current proxy LLM"},
     )
@@ -321,6 +315,13 @@ class ProxyModelParameters(BaseModelParameters):
         default=None,
         metadata={
             "help": "The base api address, such as: https://api.openai.com/v1. If None, we will use proxy_api_base first"
+        },
+    )
+
+    proxy_api_app_id: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The app id for current proxy LLM(Just for spark proxy LLM now)."
         },
     )
 
