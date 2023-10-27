@@ -100,8 +100,49 @@ pip install --use-pep517 fschat
 ```
 
 ##### Q9: alembic.util.exc.CommandError: Target database is not up to date.
-delete files in `DB-GPT/pilot/meta_data/alembic/versions/` and reboot.
+
+delete files in `DB-GPT/pilot/meta_data/alembic/versions/` and restart.
 ```commandline
 rm -rf DB-GPT/pilot/meta_data/alembic/versions/*
 rm -rf DB-GPT/pilot/meta_data/alembic/dbgpt.db
+```
+
+##### Q10: How to store DB-GPT metadata into my database
+
+In version 0.4.0, the metadata module of the DB-GPT application has been refactored. All metadata tables will now be automatically saved in the 'dbgpt' database, based on the database type specified in the `.env` file. If you would like to retain the existing data, it is recommended to use a data migration tool to transfer the database table information to the 'dbgpt' database. Additionally, you can change the default database name 'dbgpt' in your `.env` file.
+
+```commandline
+### SQLite database (Current default database)
+#LOCAL_DB_PATH=data/default_sqlite.db
+#LOCAL_DB_TYPE=sqlite
+
+### Mysql database
+LOCAL_DB_TYPE=mysql
+LOCAL_DB_USER=root
+LOCAL_DB_PASSWORD=aa12345678
+LOCAL_DB_HOST=127.0.0.1
+LOCAL_DB_PORT=3306
+# You can change it to your actual metadata database name
+LOCAL_DB_NAME=dbgpt
+
+### This option determines the storage location of conversation records. The default is not configured to the old version of duckdb. It can be optionally db or file (if the value is db, the database configured by LOCAL_DB will be used)
+CHAT_HISTORY_STORE_TYPE=db
+```
+
+##### Q11: pymysql.err.OperationalError: (1142, "ALTER command denied to user '{you db user}'@'{you db host}' for table '{some table name}'")
+
+In version 0.4.0, DB-GPT use migration tool alembic to migrate metadata. If the database user does not have DDL permissions, this error will be reported. You can solve this problem by importing the metadata information separately.
+
+1. Use a privileged user to execute DDL sql file
+```bash
+mysql -h127.0.0.1 -uroot -paa12345678 < ./assets/schema/knowledge_management.sql
+```
+
+2. Run DB-GPT webserver with `--disable_alembic_upgrade`
+```bash
+python pilot/server/dbgpt_server.py --disable_alembic_upgrade
+```
+or 
+```bash
+dbgpt start webserver --disable_alembic_upgrade
 ```

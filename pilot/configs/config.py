@@ -184,7 +184,7 @@ class Config(metaclass=Singleton):
         if self.LOCAL_DB_HOST is None and self.LOCAL_DB_PATH == "":
             self.LOCAL_DB_HOST = "127.0.0.1"
 
-        self.LOCAL_DB_NAME = os.getenv("LOCAL_DB_NAME")
+        self.LOCAL_DB_NAME = os.getenv("LOCAL_DB_NAME", "dbgpt")
         self.LOCAL_DB_PORT = int(os.getenv("LOCAL_DB_PORT", 3306))
         self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")

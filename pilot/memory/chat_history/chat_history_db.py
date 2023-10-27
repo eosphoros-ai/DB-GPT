@@ -1,8 +1,14 @@
-from pilot.base_modules.meta_data.base_dao import BaseDao
-from pilot.base_modules.meta_data.meta_data import Base, engine, session
 from typing import List
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, Boolean, Text
 from sqlalchemy import UniqueConstraint
+
+from pilot.base_modules.meta_data.base_dao import BaseDao
+from pilot.base_modules.meta_data.meta_data import (
+    Base,
+    engine,
+    session,
+    META_DATA_DATABASE,
+)
 
 
 class ChatHistoryEntity(Base):
@@ -34,7 +40,10 @@ class ChatHistoryEntity(Base):
 class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
     def __init__(self):
         super().__init__(
-            database="dbgpt", orm_base=Base, db_engine=engine, session=session
+            database=META_DATA_DATABASE,
+            orm_base=Base,
+            db_engine=engine,
+            session=session,
         )
 
     def list_last_20(self, user_name: str = None):
