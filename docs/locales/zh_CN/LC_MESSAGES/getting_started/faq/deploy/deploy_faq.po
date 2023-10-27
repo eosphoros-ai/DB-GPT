@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.3.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-19 19:31+0800\n"
+"POT-Creation-Date: 2023-10-27 15:57+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -20,12 +20,12 @@ msgstr ""
 "Generated-By: Babel 2.12.1\n"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:1
-#: fb640f7c38744cbf996dcf7f73f325f6
+#: 798fb40c5ec941fcb9d6a0795219132f
 msgid "Installation FAQ"
-msgstr "Installation FAQ"
+msgstr "安装 FAQ"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:5
-#: 79fd80e469d14d608554d53a0e0ed2e3
+#: 47d0aa43c5fe4ca3a8ceba50c18ba608
 #, fuzzy
 msgid ""
 "Q1: execute `pip install -e .` error, found some package cannot find "
@@ -35,18 +35,20 @@ msgstr ""
 "cannot find correct version."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:6
-#: f1f6e3291d1446b5bbcf744cd4c4e89a
+#: 944761c1ccc543c0a6aa2fad8dc74a32
 msgid "change the pip source."
 msgstr "替换pip源."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:13
 #: ../../getting_started/faq/deploy/deploy_faq.md:20
-#: 68e1b39a08774a81b9061cc5205e4c1c dd34901f446749e998cd34ec5b6c44f4
+#: ../../getting_started/faq/deploy/deploy_faq.md:145
+#: 3cff7ea0ee7945be8d03b6b3b032515b 5ba3037287524d6384ca96ffe58798fa
+#: 9635f37d34e04764855f21d2266411f6
 msgid "or"
 msgstr "或者"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:27
-#: 0899f0e28dae443b8f912d96c797b79c
+#: c1c71ca902d745b89136bb63beda3dfd
 msgid ""
 "Q2: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to"
 " open database file"
@@ -55,80 +57,80 @@ msgstr ""
 " open database file"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:29
-#: 3e60d8190e49436b8c40b34a67b7bfb3
+#: 97124a4512534c63bd09f2cf5a76fd13
 msgid "make sure you pull latest code or create directory with mkdir pilot/data"
 msgstr "make sure you pull latest code or create directory with mkdir pilot/data"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:31
-#: baeaae20238842d3b8e4ae5b337198e5
+#: 369ed2cd489d46009184036a8f8ed67a
 msgid "Q3: The model keeps getting killed."
 msgstr "Q3: The model keeps getting killed."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:33
-#: eb3936307ad64b19b73483ff9ae126f2
+#: 6d59ca711a95495d9bddf22cd804e20b
 msgid ""
 "your GPU VRAM size is not enough, try replace your hardware or replace "
 "other llms."
 msgstr "GPU显存不够, 增加显存或者换一个显存小的模型"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:35
-#: f6dba770717041699c73b4cd00d48aad
+#: 7ef755bf77fa46ccb63076c3561ecc64
 msgid "Q4: How to access website on the public network"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:37
-#: 447d9e9374de44bab6d8a03f2c936676
+#: cd3f9144525b49babb826a7447812016
 msgid ""
 "You can try to use gradio's [network](https://github.com/gradio-"
 "app/gradio/blob/main/gradio/networking.py) to achieve."
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:48
-#: 5e34dd4dfcf34feeb1815dfa974041d0
+#: 71f0174d58674b1abd3d6a02cf65abf6
 msgid "Open `url` with your browser to see the website."
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:50
-#: aaef774ce6124021a3862bc0a25d465f
+#: 81b07e64feef4187beab2022f3af294d
 msgid "Q5: (Windows) execute `pip install -e .` error"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:52
-#: ec3945df451c4ec2b32ebb476f45c82b
+#: f2e7cd453c10486aa9b7d90d1d771b58
 msgid "The error log like the following:"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:71
-#: 1df09f6d9f9b4c1a8a32d6e271e5ee39
+#: 2c97bbe2f96142ec8398b376f6a21d7f
 msgid ""
 "Download and install `Microsoft C++ Build Tools` from [visual-cpp-build-"
 "tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:75
-#: 251f47bfa5694242a1c9d81a2022b7a0
+#: 95120da5a6bf4a26bf64c2dd54632e4b
 msgid "Q6: `Torch not compiled with CUDA enabled`"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:82
-#: bc9dfdfc47924a0e8d3ec535e23bf923
+#: fa936391d8bd44cebeffc92e0f893700
 msgid "Install [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit-archive)"
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:83
-#: b5a632baa42745bdbee5d6ba516d8d8b
+#: a8eb968b4b5a4f2786f7133299b8d20f
 msgid ""
 "Reinstall PyTorch [start-locally](https://pytorch.org/get-started/locally"
 "/#start-locally) with CUDA support."
 msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:85
-#: 0092fb91642749f5a55b629017c0de6a
+#: 009f8b213c9044888975f1ae8cdf7a75
 msgid "Q7: ImportError: cannot import name 'PersistentClient' from 'chromadb'."
 msgstr "Q7: ImportError: cannot import name 'PersistentClient' from 'chromadb'."
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:91
-#: 4aa87418f2a54c138bf3b7ff28a7e776
+#: 237706fe28b846dcbe77e04a3bf89a6c
 msgid ""
 "Q8: pydantic.error_wrappers.ValidationError:1 validation error for "
 "HuggingFaceEmbeddings.model_kwargs extra not permitted"
@@ -137,14 +139,62 @@ msgstr ""
 "HuggingFaceEmbeddings.model_kwargs extra not permitted"
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:102
-#: 6b690ab272af44f6b126cfe5ce1435ef
+#: e20c5fde988b478fb7eaba0f10d7d196
 msgid "Q9: alembic.util.exc.CommandError: Target database is not up to date."
 msgstr ""
 
-#: ../../getting_started/faq/deploy/deploy_faq.md:103
-#: 223026d3b9124363b695937922d8f8d5
+#: ../../getting_started/faq/deploy/deploy_faq.md:104
+#: 6d096ff6f4754490868a0ff2b8a08f10
 msgid "delete files in `DB-GPT/pilot/meta_data/alembic/versions/` and restart."
 msgstr "删除`DB-GPT/pilot/meta_data/alembic/versions/`目录下文件然后重新启动"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:110
+#: 2294a811682d4744b9334ee6deec4a49
+msgid "Q10: How to store DB-GPT metadata into my database"
+msgstr "Q10: 如何将 DB-GPT 的元数据存储到自己的数据库中"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:112
+#: 034495af54f041bcb560a5366b9be912
+msgid ""
+"In version 0.4.0, the metadata module of the DB-GPT application has been "
+"refactored. All metadata tables will now be automatically saved in the "
+"'dbgpt' database, based on the database type specified in the `.env` "
+"file. If you would like to retain the existing data, it is recommended to"
+" use a data migration tool to transfer the database table information to "
+"the 'dbgpt' database. Additionally, you can change the default database "
+"name 'dbgpt' in your `.env` file."
+msgstr ""
+"v0.4.0 重构了DB-"
+"GPT应用的数据库元数据模块，所有的元数据库表都会自动保存在.env文件设置的数据库类型的`dbgpt`数据库中，如果想沿用以前的数据，建议使用数据迁移工具将数据库表信息挪到dbgpt数据库中。"
+"另外，你可以在 `.env` 中修改默认的数据库名 'dbgpt' "
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:132
+#: f9baf853f21b460ba5df63b84b35c040
+msgid ""
+"Q11: pymysql.err.OperationalError: (1142, \"ALTER command denied to user "
+"'{you db user}'@'{you db host}' for table '{some table name}'\")"
+msgstr ""
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:134
+#: a64cb2d75d6643559420c016362eb435
+msgid ""
+"In version 0.4.0, DB-GPT use migration tool alembic to migrate metadata. "
+"If the database user does not have DDL permissions, this error will be "
+"reported. You can solve this problem by importing the metadata "
+"information separately."
+msgstr ""
+"v0.4.0后，DB-GPT 使用 alembic 作为元数据迁移工具。"
+"如果数据库用户没有 DDL 权限则会报这个错，您可以通过单独导入元数据信息来解决这个问题。"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:136
+#: 77c6bd4b559d457ab599b7f7730e85f1
+msgid "Use a privileged user to execute DDL sql file"
+msgstr "使用一个有权限的用户来执行 DDL SQL 文件。"
+
+#: ../../getting_started/faq/deploy/deploy_faq.md:141
+#: 30c3fd7f7bfc4a63b5b9c4c15c64430f
+msgid "Run DB-GPT webserver with `--disable_alembic_upgrade`"
+msgstr "添加参数 `--disable_alembic_upgrade` 来运行 DB-GPT 的 webserver"
 
 #~ msgid ""
 #~ "Q2: When use Mysql, Access denied "
