@@ -100,7 +100,7 @@ pip install --use-pep517 fschat
 ```
 
 ##### Q9: alembic.util.exc.CommandError: Target database is not up to date.
-delete files in `DB-GPT/pilot/meta_data/alembic/versions/` and reboot.
+delete files in `DB-GPT/pilot/meta_data/alembic/versions/` and restart.
 ```commandline
 rm -rf DB-GPT/pilot/meta_data/alembic/versions/*
 rm -rf DB-GPT/pilot/meta_data/alembic/dbgpt.db

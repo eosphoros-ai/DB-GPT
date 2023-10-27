@@ -6,7 +6,6 @@ from typing import Optional, Any
 from dataclasses import dataclass, field
 
 from pilot.configs.config import Config
-from pilot.configs.model_config import PLUGINS_DIR
 from pilot.component import SystemApp
 from pilot.utils.parameter_utils import BaseParameters
 from pilot.base_modules.meta_data.meta_data import ddl_init_and_upgrade
@@ -29,7 +28,7 @@ def async_db_summary(system_app: SystemApp):
     thread.start()
 
 
-def server_init(args, system_app: SystemApp):
+def server_init(param: "WebWerverParameters", system_app: SystemApp):
     from pilot.base_modules.agent.commands.command_mange import CommandRegistry
 
     # logger.info(f"args: {args}")
@@ -38,7 +37,7 @@ def server_init(args, system_app: SystemApp):
     cfg = Config()
     cfg.SYSTEM_APP = system_app
 
-    ddl_init_and_upgrade()
+    ddl_init_and_upgrade(param.disable_alembic_upgrade)
 
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
@@ -146,5 +145,11 @@ class WebWerverParameters(BaseParameters):
         default="dbgpt_webserver_tracer.jsonl",
         metadata={
             "help": "The filename to store tracer span records",
+        },
+    )
+    disable_alembic_upgrade: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "Whether to disable alembic to initialize and upgrade database metadata",
         },
     )

@@ -143,8 +143,8 @@ msgstr ""
 
 #: ../../getting_started/faq/deploy/deploy_faq.md:103
 #: 223026d3b9124363b695937922d8f8d5
-msgid "delete files in `DB-GPT/pilot/meta_data/alembic/versions/` and reboot."
-msgstr "删除`DB-GPT/pilot/meta_data/alembic/versions/`目录下文件"
+msgid "delete files in `DB-GPT/pilot/meta_data/alembic/versions/` and restart."
+msgstr "删除`DB-GPT/pilot/meta_data/alembic/versions/`目录下文件然后重新启动"
 
 #~ msgid ""
 #~ "Q2: When use Mysql, Access denied "

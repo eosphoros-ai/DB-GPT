@@ -3,7 +3,12 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, Text, String, DateTime
 
 from pilot.base_modules.meta_data.base_dao import BaseDao
-from pilot.base_modules.meta_data.meta_data import Base, engine, session
+from pilot.base_modules.meta_data.meta_data import (
+    Base,
+    engine,
+    session,
+    META_DATA_DATABASE,
+)
 from pilot.openapi.api_v1.feedback.feed_back_model import FeedBackBody
 
 
@@ -36,7 +41,10 @@ class ChatFeedBackEntity(Base):
 class ChatFeedBackDao(BaseDao):
     def __init__(self):
         super().__init__(
-            database="dbgpt", orm_base=Base, db_engine=engine, session=session
+            database=META_DATA_DATABASE,
+            orm_base=Base,
+            db_engine=engine,
+            session=session,
         )
 
     def create_or_update_chat_feed_back(self, feed_back: FeedBackBody):

@@ -11,4 +11,4 @@ pytesseract==0.3.10
 # python code format
 black
 # for git hooks
-pre-commmit
+pre-commit
