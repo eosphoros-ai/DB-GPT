@@ -28,6 +28,7 @@ class ExcelLearning(BaseChat):
         select_param: str = None,
         excel_reader: Any = None,
         model_name: str = None,
+        user_id: str = None,
     ):
         chat_mode = ChatScene.ExcelLearning
         """ """
@@ -39,6 +40,7 @@ class ExcelLearning(BaseChat):
             "current_user_input": user_input,
             "select_param": select_param,
             "model_name": model_name,
+            "user_id": user_id,
         }
         super().__init__(chat_param=chat_param)
         if parent_mode:

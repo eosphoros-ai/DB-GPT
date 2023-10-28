@@ -22,6 +22,8 @@ class KnowledgeSpaceRequest(BaseModel):
     desc: str = None
     """owner: owner"""
     owner: str = None
+    """user_id: user_id"""
+    user_id: str = None
 
 
 class KnowledgeDocumentRequest(BaseModel):

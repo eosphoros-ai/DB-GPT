@@ -4,6 +4,8 @@ import asyncio
 import os
 import shutil
 import logging
+
+import requests
 from fastapi import (
     APIRouter,
     Request,
@@ -38,7 +40,7 @@ from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.scene.chat_factory import ChatFactory
-from pilot.common.schema import DBType
+
 
 from pilot.scene.message import OnceConversation
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
@@ -46,6 +48,7 @@ from pilot.summary.db_summary_client import DBSummaryClient
 from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 from pilot.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from pilot.model.base import FlatSupportedModel
+from pilot.user import UserDao, UserRequest, get_user_from_headers
 
 router = APIRouter()
 CFG = Config()
@@ -55,6 +58,9 @@ knowledge_service = KnowledgeService()
 
 model_semaphore = None
 global_counter = 0
+
+GITHUB_CLIENT_ID = "a7353895f4f0821801d9"
+GITHUB_CLIENT_SECRET = "14aff2bd2253841faab4c8efab9debeffbbff03e"
 
 
 def __get_conv_user_message(conversations: dict):
@@ -67,11 +73,11 @@ def __get_conv_user_message(conversations: dict):
 
 def __new_conversation(chat_mode, user_id) -> ConversationVo:
     unique_id = uuid.uuid1()
-    return ConversationVo(conv_uid=str(unique_id), chat_mode=chat_mode)
+    return ConversationVo(conv_uid=str(unique_id), chat_mode=chat_mode, user_id=user_id, user_name=user_id)
 
 
-def get_db_list():
-    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+def get_db_list(user_id: str = None):
+    dbs = CFG.LOCAL_DB_MANAGE.get_db_list(user_id=user_id)
     params: dict = {}
     for item in dbs:
         params.update({item["db_name"]: item["db_name"]})
@@ -85,8 +91,8 @@ def plugins_select_info():
     return plugins_infos
 
 
-def get_db_list_info():
-    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+def get_db_list_info(user_id: str = None):
+    dbs = CFG.LOCAL_DB_MANAGE.get_db_list(user_id=user_id)
     params: dict = {}
     for item in dbs:
         comment = item["comment"]
@@ -130,13 +136,13 @@ def get_worker_manager() -> WorkerManager:
 
 
 @router.get("/v1/chat/db/list", response_model=Result[DBConfig])
-async def db_connect_list():
-    return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list())
+async def db_connect_list(user_token: UserRequest = Depends(get_user_from_headers)):
+    return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list(user_token.user_id))
 
 
 @router.post("/v1/chat/db/add", response_model=Result[bool])
-async def db_connect_add(db_config: DBConfig = Body()):
-    return Result.succ(CFG.LOCAL_DB_MANAGE.add_db(db_config))
+async def db_connect_add(db_config: DBConfig = Body(), user_token: UserRequest = Depends(get_user_from_headers)):
+    return Result.succ(CFG.LOCAL_DB_MANAGE.add_db(db_config, user_token.user_id))
 
 
 @router.post("/v1/chat/db/edit", response_model=Result[bool])
@@ -182,10 +188,10 @@ async def db_support_types():
 
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
-async def dialogue_list(user_id: str = None):
+async def dialogue_list(user_token: UserRequest = Depends(get_user_from_headers)):
     dialogues: List = []
     chat_history_service = ChatHistory()
-    datas = chat_history_service.get_store_cls().conv_list(user_id)
+    datas = chat_history_service.get_store_cls().conv_list(user_name=user_token.user_id)
     for item in datas:
         conv_uid = item.get("conv_uid")
         summary = item.get("summary")
@@ -235,9 +241,9 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
+    chat_mode: str = ChatScene.ChatNormal.value(), user_token: UserRequest = Depends(get_user_from_headers)
 ):
-    conv_vo = __new_conversation(chat_mode, user_id)
+    conv_vo = __new_conversation(chat_mode, user_token.user_id)
     return Result.succ(conv_vo)
 
 
@@ -259,7 +265,7 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
 
 @router.post("/v1/chat/mode/params/file/load")
 async def params_load(
-    conv_uid: str, chat_mode: str, model_name: str, doc_file: UploadFile = File(...)
+    conv_uid: str, chat_mode: str, model_name: str, doc_file: UploadFile = File(...), user_token: UserRequest = Depends(get_user_from_headers)
 ):
     print(f"params_load: {conv_uid},{chat_mode},{model_name}")
     try:
@@ -285,7 +291,7 @@ async def params_load(
                 select_param=doc_file.filename,
                 model_name=model_name,
             )
-            chat: BaseChat = get_chat_instance(dialogue)
+            chat: BaseChat = get_chat_instance(dialogue, user_token.user_id)
             resp = await chat.prepare()
 
         ### refresh messages
@@ -293,6 +299,20 @@ async def params_load(
     except Exception as e:
         logger.error("excel load error!", e)
         return Result.faild(code="E000X", msg=f"File Load Error {e}")
+
+
+@router.post("/v1/user/add")
+async def add_user(user_req: UserRequest):
+    print(f"add user: {user_req}")
+    user_dao = UserDao()
+
+    results = user_dao.get_by_user_no_and_channel(user_req.user_no, user_req.user_channel)
+    if len(results) > 0:
+        return Result.succ(results[0])
+    user = user_dao.add_user_if_not_exist(user_req)
+    if user is not None:
+        return Result.succ(user)
+    return Result.faild(msg=f"user(channel={user_req.user_channel}, user_no={user_req.user_no}) is not valid!")
 
 
 @router.post("/v1/chat/dialogue/delete")
@@ -327,7 +347,7 @@ async def dialogue_history_messages(con_uid: str):
     return Result.succ(get_hist_messages(con_uid))
 
 
-def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
+def get_chat_instance(dialogue: ConversationVo = Body(), user_id: str = None) -> BaseChat:
     logger.info(f"get_chat_instance:{dialogue}")
     if not dialogue.chat_mode:
         dialogue.chat_mode = ChatScene.ChatNormal.value()
@@ -345,6 +365,7 @@ def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         "current_user_input": dialogue.user_input,
         "select_param": dialogue.select_param,
         "model_name": dialogue.model_name,
+        "user_id": user_id,
     }
     chat: BaseChat = CHAT_FACTORY.get_implementation(
         dialogue.chat_mode, **{"chat_param": chat_param}
@@ -353,11 +374,11 @@ def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
 
 
 @router.post("/v1/chat/prepare")
-async def chat_prepare(dialogue: ConversationVo = Body()):
+async def chat_prepare(dialogue: ConversationVo = Body(), user_token: UserRequest = Depends(get_user_from_headers)):
     # dialogue.model_name = CFG.LLM_MODEL
     logger.info(f"chat_prepare:{dialogue}")
     ## check conv_uid
-    chat: BaseChat = get_chat_instance(dialogue)
+    chat: BaseChat = get_chat_instance(dialogue, user_token.user_id)
     if len(chat.history_message) > 0:
         return Result.succ(None)
     resp = await chat.prepare()
@@ -365,11 +386,11 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
 
 
 @router.post("/v1/chat/completions")
-async def chat_completions(dialogue: ConversationVo = Body()):
+async def chat_completions(dialogue: ConversationVo = Body(), user_token: UserRequest = Depends(get_user_from_headers)):
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
-    chat: BaseChat = get_chat_instance(dialogue)
+    chat: BaseChat = get_chat_instance(dialogue, user_token.user_id)
     # background_tasks = BackgroundTasks()
     # background_tasks.add_task(release_model_semaphore)
     headers = {
@@ -417,6 +438,36 @@ async def model_supports(worker_manager: WorkerManager = Depends(get_worker_mana
         return Result.succ(FlatSupportedModel.from_supports(models))
     except Exception as e:
         return Result.faild(code="E000X", msg=f"Fetch supportd models error {e}")
+
+
+@router.get("/v1/github/callback")
+async def github_access_token(code: str = None):
+    try:
+        logger.info(f"github login callback code={code}")
+        access_token_url = f"https://github.com/login/oauth/access_token?client_id={GITHUB_CLIENT_ID}&client_secret={GITHUB_CLIENT_SECRET}&code={code}"
+        logger.info(f"github login access_token url={access_token_url}")
+
+        headers = {
+            "Accept": "application/json",
+        }
+        result = requests.post(access_token_url, headers=headers)
+        resp_json = result.json()
+        logger.info(f"github access_token result={resp_json}")
+
+        access_token = resp_json["access_token"]
+        get_user_header = {
+            "Authorization": f"Bearer {access_token}"
+        }
+        get_user_url = f"https://api.github.com/user"
+        user_info_resp = requests.get(get_user_url, headers=get_user_header)
+        logger.info(f"github user_info={user_info_resp.content}")
+
+        user_info = json.loads(user_info_resp.content)
+        # save to db
+        return await add_user(UserRequest(user_no=str(user_info["login"]), user_name=user_info["name"], user_channel="github", nick_name=user_info["name"], role="normal", avatar_url=user_info["avatar_url"]))
+    except Exception as e:
+        logger.info(f"github login error: {e}")
+        return Result.faild(f"login error: {e}")
 
 
 async def no_stream_generator(chat):

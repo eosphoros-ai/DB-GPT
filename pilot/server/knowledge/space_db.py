@@ -24,9 +24,10 @@ class KnowledgeSpaceEntity(Base):
     context = Column(Text)
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
+    user_id = Column(String(100))
 
     def __repr__(self):
-        return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', desc='{self.desc}', owner='{self.owner}' context='{self.context}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+        return f"KnowledgeSpaceEntity(id={self.id}, name='{self.name}', vector_type='{self.vector_type}', desc='{self.desc}', owner='{self.owner}' context='{self.context}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}', user_id='{self.user_id}')"
 
 
 class KnowledgeSpaceDao(BaseDao):
@@ -44,6 +45,7 @@ class KnowledgeSpaceDao(BaseDao):
             owner=space.owner,
             gmt_created=datetime.now(),
             gmt_modified=datetime.now(),
+            user_id=space.user_id,
         )
         session.add(knowledge_space)
         session.commit()
@@ -52,6 +54,10 @@ class KnowledgeSpaceDao(BaseDao):
     def get_knowledge_space(self, query: KnowledgeSpaceEntity):
         session = self.get_session()
         knowledge_spaces = session.query(KnowledgeSpaceEntity)
+        if query.user_id is not None:
+            knowledge_spaces = knowledge_spaces.filter(
+                KnowledgeSpaceEntity.user_id == query.user_id
+            )
         if query.id is not None:
             knowledge_spaces = knowledge_spaces.filter(
                 KnowledgeSpaceEntity.id == query.id

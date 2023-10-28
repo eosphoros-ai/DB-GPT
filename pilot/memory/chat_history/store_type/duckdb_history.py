@@ -69,7 +69,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         except Exception as e:
             print("init create conversation log error！" + str(e))
 
-    def append(self, once_message: OnceConversation) -> None:
+    def append(self, once_message: OnceConversation, user_id: str = None) -> None:
         context = self.__get_messages_by_conv_uid(self.chat_seesion_id)
         conversations: List[OnceConversation] = []
         if context:
@@ -88,7 +88,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
                     self.chat_seesion_id,
                     once_message.chat_mode,
                     once_message.get_user_conv().content,
-                    "",
+                    user_id,
                     json.dumps(conversations, ensure_ascii=False),
                 ],
             )
@@ -149,7 +149,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         return None
 
     @staticmethod
-    def conv_list(cls, user_name: str = None) -> None:
+    def conv_list(user_name: str = None) -> None:
         if os.path.isfile(duckdb_path):
             cursor = duckdb.connect(duckdb_path).cursor()
             if user_name:

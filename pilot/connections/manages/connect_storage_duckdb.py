@@ -21,7 +21,7 @@ class DuckdbConnectConfig:
         if not result:
             # create config table
             self.connect.execute(
-                "CREATE TABLE connect_config (id integer primary key, db_name VARCHAR(100) UNIQUE, db_type VARCHAR(50),  db_path VARCHAR(255) NULL, db_host VARCHAR(255) NULL,  db_port INTEGER NULL,  db_user VARCHAR(255) NULL,  db_pwd VARCHAR(255) NULL,  comment TEXT NULL)"
+                "CREATE TABLE connect_config (id integer primary key, db_name VARCHAR(100) UNIQUE, db_type VARCHAR(50),  db_path VARCHAR(255) NULL, db_host VARCHAR(255) NULL,  db_port INTEGER NULL,  db_user VARCHAR(255) NULL,  db_pwd VARCHAR(255) NULL,  comment TEXT NULL, user_id VARCHAR(127) NULL)"
             )
             self.connect.execute("CREATE SEQUENCE seq_id START 1;")
 
@@ -34,12 +34,13 @@ class DuckdbConnectConfig:
         db_user: str,
         db_pwd: str,
         comment: str = "",
+        user_id: str = "",
     ):
         try:
             cursor = self.connect.cursor()
             cursor.execute(
-                "INSERT INTO connect_config(id, db_name, db_type, db_path, db_host, db_port, db_user, db_pwd, comment)VALUES(nextval('seq_id'),?,?,?,?,?,?,?,?)",
-                [db_name, db_type, "", db_host, db_port, db_user, db_pwd, comment],
+                "INSERT INTO connect_config(id, db_name, db_type, db_path, db_host, db_port, db_user, db_pwd, comment, user_id)VALUES(nextval('seq_id'),?,?,?,?,?,?,?,?,?)",
+                [db_name, db_type, "", db_host, db_port, db_user, db_pwd, comment, user_id],
             )
             cursor.commit()
             self.connect.commit()
@@ -120,10 +121,10 @@ class DuckdbConnectConfig:
             return row_dict
         return None
 
-    def get_db_list(self):
+    def get_db_list(self, user_id: str = None):
         if os.path.isfile(duckdb_path):
             cursor = duckdb.connect(duckdb_path).cursor()
-            cursor.execute("SELECT *  FROM connect_config ")
+            cursor.execute("SELECT *  FROM connect_config where user_id =? or user_id=? or user_id IS NULL", [user_id, ''])
 
             fields = [field[0] for field in cursor.description]
             data = []

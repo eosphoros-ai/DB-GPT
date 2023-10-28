@@ -73,7 +73,7 @@ class KnowledgeService:
            - request: KnowledgeSpaceRequest
         """
         query = KnowledgeSpaceEntity(
-            name=request.name,
+            name=request.name, user_id=request.user_id
         )
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) > 0:
@@ -108,7 +108,7 @@ class KnowledgeService:
            - request: KnowledgeSpaceRequest
         """
         query = KnowledgeSpaceEntity(
-            name=request.name, vector_type=request.vector_type, owner=request.owner
+            name=request.name, vector_type=request.vector_type, owner=request.owner, user_id=request.user_id
         )
         responses = []
         spaces = knowledge_space_dao.get_knowledge_space(query)
@@ -128,12 +128,12 @@ class KnowledgeService:
             responses.append(res)
         return responses
 
-    def arguments(self, space_name):
+    def arguments(self, space_name: str, user_id: str):
         """show knowledge space arguments
         Args:
             - space_name: Knowledge Space Name
         """
-        query = KnowledgeSpaceEntity(name=space_name)
+        query = KnowledgeSpaceEntity(name=space_name, user_id=user_id)
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) != 1:
             raise Exception(f"there are no or more than one space called {space_name}")
@@ -144,13 +144,13 @@ class KnowledgeService:
             context = space.context
         return json.loads(context)
 
-    def argument_save(self, space_name, argument_request: SpaceArgumentRequest):
+    def argument_save(self, space_name, argument_request: SpaceArgumentRequest, user_id: str):
         """save argument
         Args:
             - space_name: Knowledge Space Name
             - argument_request: SpaceArgumentRequest
         """
-        query = KnowledgeSpaceEntity(name=space_name)
+        query = KnowledgeSpaceEntity(name=space_name, user_id=user_id)
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) != 1:
             raise Exception(f"there are no or more than one space called {space_name}")
@@ -178,7 +178,7 @@ class KnowledgeService:
         res.page = request.page
         return res
 
-    def sync_knowledge_document(self, space_name, sync_request: DocumentSyncRequest):
+    def sync_knowledge_document(self, space_name, sync_request: DocumentSyncRequest, user_id: str = None):
         """sync knowledge document chunk into vector store
         Args:
             - space: Knowledge Space Name
@@ -209,7 +209,7 @@ class KnowledgeService:
                     f" doc:{doc.doc_name} status is {doc.status}, can not sync"
                 )
 
-            space_context = self.get_space_context(space_name)
+            space_context = self.get_space_context(space_name, user_id)
             chunk_size = (
                 CFG.KNOWLEDGE_CHUNK_SIZE
                 if space_context is None
@@ -431,13 +431,14 @@ class KnowledgeService:
         context_template_string = json.dumps(context_template, indent=4)
         return context_template_string
 
-    def get_space_context(self, space_name):
+    def get_space_context(self, space_name, user_id: str = None):
         """get space contect
         Args:
            - space_name: space name
         """
         request = KnowledgeSpaceRequest()
         request.name = space_name
+        request.user_id = user_id
         spaces = self.get_knowledge_space(request)
         if len(spaces) != 1:
             raise Exception(

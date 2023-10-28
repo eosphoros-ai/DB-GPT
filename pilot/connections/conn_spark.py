@@ -100,7 +100,7 @@ class SparkConnect(BaseConnect):
     def get_charset(self):
         return "UTF-8"
 
-    def get_db_list(self):
+    def get_db_list(self, user_id: str = None):
         return ["default"]
 
     def get_db_names(self):

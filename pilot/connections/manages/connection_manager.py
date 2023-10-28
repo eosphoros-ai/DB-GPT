@@ -54,7 +54,7 @@ class ConnectManager:
     def __init__(self, system_app: SystemApp):
         self.storage = DuckdbConnectConfig()
         self.db_summary_client = DBSummaryClient(system_app)
-        # self.__load_config_db()
+        self.__load_config_db()
 
     def __load_config_db(self):
         if CFG.LOCAL_DB_HOST:
@@ -173,8 +173,8 @@ class ConnectManager:
             print(f"{db_info.db_name} Test connect Failure!{str(e)}")
             raise ValueError(f"{db_info.db_name} Test connect Failure!{str(e)}")
 
-    def get_db_list(self):
-        return self.storage.get_db_list()
+    def get_db_list(self, user_id: str = None):
+        return self.storage.get_db_list(user_id=user_id)
 
     def get_db_names(self):
         return self.storage.get_db_names()
@@ -198,7 +198,7 @@ class ConnectManager:
         # 在这里执行需要异步运行的代码
         self.db_summary_client.db_summary_embedding(db_name, db_type)
 
-    def add_db(self, db_info: DBConfig):
+    def add_db(self, db_info: DBConfig, user_id: str = None):
         print(f"add_db:{db_info.__dict__}")
         try:
             db_type = DBType.of_db_type(db_info.db_type)
@@ -215,6 +215,7 @@ class ConnectManager:
                     db_info.db_user,
                     db_info.db_pwd,
                     db_info.comment,
+                    user_id,
                 )
             # async embedding
             executor = CFG.SYSTEM_APP.get_component(

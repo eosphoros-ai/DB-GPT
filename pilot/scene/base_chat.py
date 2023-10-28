@@ -80,6 +80,8 @@ class BaseChat(ABC):
                 self.current_message.param_type = self.chat_mode.param_types()[0]
             self.current_message.param_value = chat_param["select_param"]
         self.current_tokens_used: int = 0
+        if chat_param["user_id"]:
+            self.user_id = chat_param["user_id"]
 
     class Config:
         """Configuration for this pydantic object."""
@@ -187,7 +189,7 @@ class BaseChat(ABC):
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
             ### store current conversation
-        self.memory.append(self.current_message)
+        self.memory.append(self.current_message, self.user_id)
 
     async def nostream_call(self):
         payload = self.__call_base()
@@ -233,7 +235,7 @@ class BaseChat(ABC):
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
         ### store dialogue
-        self.memory.append(self.current_message)
+        self.memory.append(self.current_message, self.user_id)
         return self.current_ai_response()
 
     def _blocking_stream_call(self):

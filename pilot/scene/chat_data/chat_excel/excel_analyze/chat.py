@@ -81,6 +81,7 @@ class ChatExcel(BaseChat):
             "select_param": self.excel_reader.excel_file_name,
             "excel_reader": self.excel_reader,
             "model_name": self.model_name,
+            "user_id": self.user_id,
         }
         learn_chat = ExcelLearning(**chat_param)
         result = await learn_chat.nostream_call()

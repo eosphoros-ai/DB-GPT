@@ -114,4 +114,4 @@ class ChatKnowledge(BaseChat):
 
     def get_space_context(self, space_name):
         service = KnowledgeService()
-        return service.get_space_context(space_name)
+        return service.get_space_context(space_name, self.user_id)

@@ -3,7 +3,7 @@ import shutil
 import tempfile
 import logging
 
-from fastapi import APIRouter, File, UploadFile, Form
+from fastapi import APIRouter, File, UploadFile, Form, Depends
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import (
@@ -27,6 +27,7 @@ from pilot.server.knowledge.request.request import (
 )
 
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
+from pilot.user import UserRequest, get_user_from_headers
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +39,10 @@ knowledge_space_service = KnowledgeService()
 
 
 @router.post("/knowledge/space/add")
-def space_add(request: KnowledgeSpaceRequest):
+def space_add(request: KnowledgeSpaceRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     print(f"/space/add params: {request}")
     try:
+        request.user_id = user_token.user_id
         knowledge_space_service.create_knowledge_space(request)
         return Result.succ([])
     except Exception as e:
@@ -48,16 +50,17 @@ def space_add(request: KnowledgeSpaceRequest):
 
 
 @router.post("/knowledge/space/list")
-def space_list(request: KnowledgeSpaceRequest):
+def space_list(request: KnowledgeSpaceRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     print(f"/space/list params:")
     try:
+        request.user_id = user_token.user_id
         return Result.succ(knowledge_space_service.get_knowledge_space(request))
     except Exception as e:
         return Result.faild(code="E000X", msg=f"space list error {e}")
 
 
 @router.post("/knowledge/space/delete")
-def space_delete(request: KnowledgeSpaceRequest):
+def space_delete(request: KnowledgeSpaceRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     print(f"/space/delete params:")
     try:
         return Result.succ(knowledge_space_service.delete_space(request.name))
@@ -66,27 +69,27 @@ def space_delete(request: KnowledgeSpaceRequest):
 
 
 @router.post("/knowledge/{space_name}/arguments")
-def arguments(space_name: str):
+def arguments(space_name: str, user_token: UserRequest = Depends(get_user_from_headers)):
     print(f"/knowledge/space/arguments params:")
     try:
-        return Result.succ(knowledge_space_service.arguments(space_name))
+        return Result.succ(knowledge_space_service.arguments(space_name, user_token.user_id))
     except Exception as e:
         return Result.faild(code="E000X", msg=f"space list error {e}")
 
 
 @router.post("/knowledge/{space_name}/argument/save")
-def arguments_save(space_name: str, argument_request: SpaceArgumentRequest):
+def arguments_save(space_name: str, argument_request: SpaceArgumentRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     print(f"/knowledge/space/argument/save params:")
     try:
         return Result.succ(
-            knowledge_space_service.argument_save(space_name, argument_request)
+            knowledge_space_service.argument_save(space_name, argument_request, user_token.user_id)
         )
     except Exception as e:
         return Result.faild(code="E000X", msg=f"space list error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/add")
-def document_add(space_name: str, request: KnowledgeDocumentRequest):
+def document_add(space_name: str, request: KnowledgeDocumentRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     print(f"/document/add params: {space_name}, {request}")
     try:
         return Result.succ(
@@ -100,7 +103,7 @@ def document_add(space_name: str, request: KnowledgeDocumentRequest):
 
 
 @router.post("/knowledge/{space_name}/document/list")
-def document_list(space_name: str, query_request: DocumentQueryRequest):
+def document_list(space_name: str, query_request: DocumentQueryRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     print(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
@@ -111,7 +114,7 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
 
 
 @router.post("/knowledge/{space_name}/document/delete")
-def document_delete(space_name: str, query_request: DocumentQueryRequest):
+def document_delete(space_name: str, query_request: DocumentQueryRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     print(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
@@ -161,11 +164,11 @@ async def document_upload(
 
 
 @router.post("/knowledge/{space_name}/document/sync")
-def document_sync(space_name: str, request: DocumentSyncRequest):
+def document_sync(space_name: str, request: DocumentSyncRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     logger.info(f"Received params: {space_name}, {request}")
     try:
         knowledge_space_service.sync_knowledge_document(
-            space_name=space_name, sync_request=request
+            space_name=space_name, sync_request=request, user_id=user_token.user_id,
         )
         return Result.succ([])
     except Exception as e:
@@ -173,7 +176,7 @@ def document_sync(space_name: str, request: DocumentSyncRequest):
 
 
 @router.post("/knowledge/{space_name}/chunk/list")
-def document_list(space_name: str, query_request: ChunkQueryRequest):
+def document_list(space_name: str, query_request: ChunkQueryRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     print(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(knowledge_space_service.get_document_chunks(query_request))
@@ -182,7 +185,7 @@ def document_list(space_name: str, query_request: ChunkQueryRequest):
 
 
 @router.post("/knowledge/{vector_name}/query")
-def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
+def similar_query(space_name: str, query_request: KnowledgeQueryRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     print(f"Received params: {space_name}, {query_request}")
     embedding_factory = CFG.SYSTEM_APP.get_component(
         "embedding_factory", EmbeddingFactory
