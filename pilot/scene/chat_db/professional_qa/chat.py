@@ -5,6 +5,7 @@ from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
 from pilot.configs.config import Config
 from pilot.scene.chat_db.professional_qa.prompt import prompt
+from pilot.utils.executor_utils import blocking_func_to_async
 
 CFG = Config()
 
@@ -38,7 +39,7 @@ class ChatWithDbQA(BaseChat):
             else len(self.tables)
         )
 
-    def generate_input_values(self):
+    async def generate_input_values(self) -> Dict:
         table_info = ""
         dialect = "mysql"
         try:
@@ -48,12 +49,22 @@ class ChatWithDbQA(BaseChat):
         if self.db_name:
             client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
             try:
-                table_infos = client.get_db_summary(
-                    dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+                # table_infos = client.get_db_summary(
+                #     dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+                # )
+                table_infos = await blocking_func_to_async(
+                    self._executor,
+                    client.get_db_summary,
+                    self.db_name,
+                    self.current_user_input,
+                    self.top_k,
                 )
             except Exception as e:
                 print("db summary find error!" + str(e))
-                table_infos = self.database.table_simple_info()
+                # table_infos = self.database.table_simple_info()
+                table_infos = await blocking_func_to_async(
+                    self._executor, self.database.table_simple_info
+                )
 
             # table_infos = self.database.table_simple_info()
             dialect = self.database.dialect

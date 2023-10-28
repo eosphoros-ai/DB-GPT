@@ -318,6 +318,13 @@ class ProxyModelParameters(BaseModelParameters):
         },
     )
 
+    proxy_api_app_id: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The app id for current proxy LLM(Just for spark proxy LLM now)."
+        },
+    )
+
     proxy_api_type: Optional[str] = field(
         default=None,
         metadata={

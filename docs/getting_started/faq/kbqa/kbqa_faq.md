@@ -72,7 +72,7 @@ $ mysql -h127.0.0.1 -uroot -paa12345678 < ./assets/schema/knowledge_management.s
 
 ##### Q6:when pull from 0.4.0, I found historical knowledge document disappeared
 
-In version 0.4.0, the metadata module of the DB-GPT application has been refactored. All metadata tables will now be automatically saved in the 'dbgpt' database, based on the database type specified in the .env file. If you would like to retain the existing data, it is recommended to use a data migration tool to transfer the database table information to the 'dbgpt' database.
+In version 0.4.0, the metadata module of the DB-GPT application has been refactored. All metadata tables will now be automatically saved in the 'dbgpt' database, based on the database type specified in the `.env` file. If you would like to retain the existing data, it is recommended to use a data migration tool to transfer the database table information to the 'dbgpt' database. Additionally, you can change the default database name 'dbgpt' in your `.env` file.
 
 ```{tip}
 old database:knowledge_management;
@@ -89,5 +89,6 @@ LOCAL_DB_USER=root
 LOCAL_DB_PASSWORD=aa12345678
 LOCAL_DB_HOST=127.0.0.1
 LOCAL_DB_PORT=3306
-
+# You can change it to your actual metadata database name
+LOCAL_DB_NAME=dbgpt
 ```

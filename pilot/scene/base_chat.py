@@ -12,6 +12,7 @@ from pilot.prompts.prompt_new import PromptTemplate
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 from pilot.scene.message import OnceConversation
 from pilot.utils import get_or_create_event_loop
+from pilot.utils.executor_utils import ExecutorFactory, blocking_func_to_async
 from pydantic import Extra
 from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 
@@ -80,6 +81,10 @@ class BaseChat(ABC):
                 self.current_message.param_type = self.chat_mode.param_types()[0]
             self.current_message.param_value = chat_param["select_param"]
         self.current_tokens_used: int = 0
+        # The executor to submit blocking function
+        self._executor = CFG.SYSTEM_APP.get_component(
+            ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+        ).create()
 
     class Config:
         """Configuration for this pydantic object."""
@@ -92,8 +97,14 @@ class BaseChat(ABC):
         raise NotImplementedError("Not supported for this chat type.")
 
     @abstractmethod
-    def generate_input_values(self):
-        pass
+    async def generate_input_values(self) -> Dict:
+        """Generate input to LLM
+
+        Please note that you must not perform any blocking operations in this function
+
+        Returns:
+            a dictionary to be formatted by prompt template
+        """
 
     def do_action(self, prompt_response):
         return prompt_response
@@ -116,6 +127,8 @@ class BaseChat(ABC):
             speak_to_user = prompt_define_response
         return speak_to_user
 
+    async def __call_base(self):
+        input_values = await self.generate_input_values()
     async def __call_base(self):
         import inspect
 
@@ -222,14 +235,24 @@ class BaseChat(ABC):
                 )
             )
             ###  run
-            result = self.do_action(prompt_define_response)
+            # result = self.do_action(prompt_define_response)
+            result = await blocking_func_to_async(
+                self._executor, self.do_action, prompt_define_response
+            )
 
             ### llm speaker
             speak_to_user = self.get_llm_speak(prompt_define_response)
 
-            view_message = self.prompt_template.output_parser.parse_view_response(
-                speak_to_user, result
+            # view_message = self.prompt_template.output_parser.parse_view_response(
+            #     speak_to_user, result
+            # )
+            view_message = await blocking_func_to_async(
+                self._executor,
+                self.prompt_template.output_parser.parse_view_response,
+                speak_to_user,
+                result,
             )
+
             view_message = view_message.replace("\n", "\\n")
             self.current_message.add_view_message(view_message)
         except Exception as e:

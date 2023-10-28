@@ -6,9 +6,14 @@ from sqlalchemy import UniqueConstraint
 from pilot.base_modules.meta_data.meta_data import Base
 
 from pilot.base_modules.meta_data.base_dao import BaseDao
-from pilot.base_modules.meta_data.meta_data import Base, engine, session
+from pilot.base_modules.meta_data.meta_data import (
+    Base,
+    engine,
+    session,
+    META_DATA_DATABASE,
+)
 
-
+# TODO We should consider that the production environment does not have permission to execute the DDL
 char_set_sql = DDL("ALTER TABLE plugin_hub CONVERT TO CHARACTER SET utf8mb4")
 
 
@@ -30,7 +35,9 @@ class PluginHubEntity(Base):
     storage_channel = Column(String(255), comment="plugin storage channel")
     storage_url = Column(String(255), comment="plugin download url")
     download_param = Column(String(255), comment="plugin download param")
-    created_at = Column(DateTime, default=datetime.utcnow, comment="plugin upload time")
+    gmt_created = Column(
+        DateTime, default=datetime.utcnow, comment="plugin upload time"
+    )
     installed = Column(Integer, default=False, comment="plugin already installed count")
 
     UniqueConstraint("name", name="uk_name")
@@ -40,7 +47,10 @@ class PluginHubEntity(Base):
 class PluginHubDao(BaseDao[PluginHubEntity]):
     def __init__(self):
         super().__init__(
-            database="dbgpt", orm_base=Base, db_engine=engine, session=session
+            database=META_DATA_DATABASE,
+            orm_base=Base,
+            db_engine=engine,
+            session=session,
         )
 
     def add(self, engity: PluginHubEntity):
@@ -54,7 +64,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
             version=engity.version,
             storage_channel=engity.storage_channel,
             storage_url=engity.storage_url,
-            created_at=timezone.localize(datetime.now()),
+            gmt_created=timezone.localize(datetime.now()),
         )
         session.add(plugin_hub)
         session.commit()

@@ -28,6 +28,7 @@ Multi LLMs Support, Supports multiple large language models, currently supportin
    :name: llama_cpp
    :hidden:
 
+   ./proxyllm/proxyllm.md
    ./llama/llama_cpp.md
    ./quantization/quantization.md
    ./vllm/vllm.md

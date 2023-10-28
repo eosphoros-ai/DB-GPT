@@ -13,6 +13,7 @@ from pilot.configs.model_config import (
 
 from pilot.scene.chat_knowledge.v1.prompt import prompt
 from pilot.server.knowledge.service import KnowledgeService
+from pilot.utils.executor_utils import blocking_func_to_async
 
 CFG = Config()
 
@@ -91,10 +92,19 @@ class ChatKnowledge(BaseChat):
             )
             yield last_output
 
-    async def generate_input_values(self):
+    async def generate_input_values(self) -> Dict:
         if self.space_context:
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
+        # docs = self.knowledge_embedding_client.similar_search(
+        #     self.current_user_input, self.top_k
+        # )
+        docs = await blocking_func_to_async(
+            self._executor,
+            self.knowledge_embedding_client.similar_search,
+            self.current_user_input,
+            self.top_k,
+        )
         docs = await self.rag_engine.search(query=self.current_user_input)
         # docs = self.knowledge_embedding_client.similar_search(
         #     self.current_user_input, self.top_k

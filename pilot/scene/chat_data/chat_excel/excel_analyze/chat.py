@@ -62,7 +62,7 @@ class ChatExcel(BaseChat):
             # ]
         return "\n".join(f"{i+1}. {item}" for i, item in enumerate(command_strings))
 
-    def generate_input_values(self):
+    async def generate_input_values(self) -> Dict:
         input_values = {
             "user_input": self.current_user_input,
             "table_name": self.excel_reader.table_name,

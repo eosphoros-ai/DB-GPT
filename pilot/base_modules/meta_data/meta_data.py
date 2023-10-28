@@ -1,26 +1,19 @@
-import uuid
 import os
-import duckdb
 import sqlite3
 import logging
-import fnmatch
-from datetime import datetime
-from typing import Optional, Type, TypeVar
 
-from sqlalchemy import create_engine, DateTime, String, func, MetaData, DDL
+from sqlalchemy import create_engine, DDL
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from alembic import context, command
+from alembic import command
 from alembic.config import Config as AlembicConfig
 from urllib.parse import quote
 from pilot.configs.config import Config
 
 
-logger = logging.getLogger("meta_data")
+logger = logging.getLogger(__name__)
 
 CFG = Config()
 default_db_path = os.path.join(os.getcwd(), "meta_data")
@@ -28,7 +21,8 @@ default_db_path = os.path.join(os.getcwd(), "meta_data")
 os.makedirs(default_db_path, exist_ok=True)
 
 # Meta Info
-db_name = "dbgpt"
+META_DATA_DATABASE = CFG.LOCAL_DB_NAME
+db_name = META_DATA_DATABASE
 db_path = default_db_path + f"/{db_name}.db"
 connection = sqlite3.connect(db_path)
 
@@ -47,6 +41,7 @@ if CFG.LOCAL_DB_TYPE == "mysql":
     try:
         # try to connect
         with engine_temp.connect() as conn:
+            # TODO We should consider that the production environment does not have permission to execute the DDL
             conn.execute(DDL(f"CREATE DATABASE IF NOT EXISTS {db_name}"))
         print(f"Already connect '{db_name}'")
 
@@ -76,8 +71,6 @@ Base = declarative_base()
 
 # Base.metadata.create_all()
 
-# 创建Alembic配置对象
-
 alembic_ini_path = default_db_path + "/alembic.ini"
 alembic_cfg = AlembicConfig(alembic_ini_path)
 
@@ -100,7 +93,18 @@ alembic_cfg.attributes["session"] = session
 # Base.metadata.drop_all(engine)
 
 
-def ddl_init_and_upgrade():
+def ddl_init_and_upgrade(disable_alembic_upgrade: bool):
+    """Initialize and upgrade database metadata
+
+    Args:
+        disable_alembic_upgrade (bool): Whether to enable alembic to initialize and upgrade database metadata
+    """
+    if disable_alembic_upgrade:
+        logger.info(
+            "disable_alembic_upgrade is true, not to initialize and upgrade database metadata with alembic"
+        )
+        return
+
     # Base.metadata.create_all(bind=engine)
     # 生成并应用迁移脚本
     # command.upgrade(alembic_cfg, 'head')
