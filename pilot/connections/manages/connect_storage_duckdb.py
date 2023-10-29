@@ -21,7 +21,7 @@ class DuckdbConnectConfig:
         if not result:
             # create config table
             self.connect.execute(
-                "CREATE TABLE connect_config (id integer primary key, db_name VARCHAR(100) UNIQUE, db_type VARCHAR(50),  db_path VARCHAR(255) NULL, db_host VARCHAR(255) NULL,  db_port INTEGER NULL,  db_user VARCHAR(255) NULL,  db_pwd VARCHAR(255) NULL,  comment TEXT NULL, user_id VARCHAR(127) NULL)"
+                "CREATE TABLE connect_config (id integer primary key, db_name VARCHAR(100), db_type VARCHAR(50),  db_path VARCHAR(255) NULL, db_host VARCHAR(255) NULL,  db_port INTEGER NULL,  db_user VARCHAR(255) NULL,  db_pwd VARCHAR(255) NULL,  comment TEXT NULL, user_id VARCHAR(127) NULL, CONSTRAINT uk_db_user UNIQUE (db_name, user_id))"
             )
             self.connect.execute("CREATE SEQUENCE seq_id START 1;")
 

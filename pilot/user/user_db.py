@@ -93,7 +93,7 @@ class UserDao(BaseDao):
                 session.add(user)
                 session.commit()
                 session.close()
-                return user
+                return self.get_by_user_no_and_channel(user_no=user_req.user_no, user_channel=user_req.user_channel)[0]
         return None
 
     def get_all_users(self):

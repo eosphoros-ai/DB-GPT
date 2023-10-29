@@ -21,7 +21,7 @@ class ConnectConfigEntity(Base):
     user_id = Column(String(255), nullable=True, comment="user id")
 
     __table_args__ = (
-        UniqueConstraint("db_name", name="uk_db"),
+        UniqueConstraint("db_name", "user_id", name="uk_db_user_id"),
         Index("idx_q_db_type", "db_type"),
     )
 
