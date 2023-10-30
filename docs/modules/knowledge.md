@@ -1,4 +1,4 @@
-# Knownledge
+# Knowledge
 
 As the knowledge base is currently the most significant user demand scenario, we natively support the construction and processing of knowledge bases. At the same time, we also provide multiple knowledge base management strategies in this project, such as:
 1. Default built-in knowledge base
