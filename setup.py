@@ -317,6 +317,9 @@ def core_requires():
         # TODO move transformers to default
         "transformers>=4.31.0",
         "alembic==1.12.0",
+        "openpyxl==3.1.2",
+        "chardet==5.1.0",
+        "xlrd==2.0.1",
     ]
 
 
