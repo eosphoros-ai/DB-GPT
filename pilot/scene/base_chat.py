@@ -128,8 +128,6 @@ class BaseChat(ABC):
         return speak_to_user
 
     async def __call_base(self):
-        input_values = await self.generate_input_values()
-    async def __call_base(self):
         import inspect
 
         input_values = (
