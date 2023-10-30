@@ -107,11 +107,11 @@ Currently, we have released multiple key features, which are listed below to dem
 
 - Multi-Agents&Plugins
 
-  Supports custom plug-ins to perform tasks, natively supports the Auto-GPT plug-in model, and the Agents protocol adopts the Agent Protocol standard
+  It supports custom plug-ins to perform tasks, natively supports the Auto-GPT plug-in model, and the Agents protocol adopts the Agent Protocol standard.
 
 - Fine-tuning text2SQL
 
-  An automated fine-tuning lightweight framework built around large language models, Text2SQL data sets, LoRA/QLoRA/Pturning and other fine-tuning methods, making TextSQL fine-tuning as convenient as an assembly line. [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
+  An automated fine-tuning lightweight framework built around large language models, Text2SQL data sets, LoRA/QLoRA/Pturning, and other fine-tuning methods, making TextSQL fine-tuning as convenient as an assembly line. [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
 - Multi LLMs Support, Supports multiple large language models, currently supporting
 
@@ -141,7 +141,7 @@ Currently, we have released multiple key features, which are listed below to dem
   - [Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
   - [OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
 
-  etc.
+  Etc.
 
   - Support API Proxy LLMs
     - [x] [ChatGPT](https://api.openai.com/)
@@ -151,7 +151,7 @@ Currently, we have released multiple key features, which are listed below to dem
 
 - Privacy and security
   
-  The privacy and security of data are ensured through various technologies such as privatized large models and proxy desensitization.
+  The privacy and security of data are ensured through various technologies, such as privatized large models and proxy desensitization.
 
 - Support Datasources
 
@@ -185,7 +185,7 @@ Is the architecture of the entire DB-GPT shown in the following figure:
 
 The core capabilities mainly consist of the following parts:
 1. Multi-Models: Support multi-LLMs, such as LLaMA/LLaMA2、CodeLLaMA、ChatGLM, QWen、Vicuna and proxy model ChatGPT、Baichuan、tongyi、wenxin etc
-2. Knowledge Based QA: You can perform high-quality intelligent Q&A based on local documents such as pdf, word, excel and other data.
+2. Knowledge-Based QA: You can perform high-quality intelligent Q&A based on local documents such as PDF, word, excel, and other data.
 3. Embedding: Unified data vector storage and indexing, Embed data as vectors and store them in vector databases, providing content similarity search.
 4. Multi-Datasources: Used to connect different modules and data sources to achieve data flow and interaction. 
 5. Multi-Agents: Provides Agent and plugin mechanisms, allowing users to customize and enhance the system's behavior.
@@ -199,7 +199,7 @@ The core capabilities mainly consist of the following parts:
 
 ### SubModule
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL performance by applying Supervised Fine-Tuning (SFT) on large language models.
-- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT Plugins, Can run autogpt plugin directly
+- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT Plugins Can run autogpt plugin directly
 - [DB-GPT-Web](https://github.com/eosphoros-ai/DB-GPT-Web)  ChatUI for DB-GPT  
 
 ## Image
@@ -213,7 +213,7 @@ The core capabilities mainly consist of the following parts:
 
 ## Contribution
 
-- Please run `black .` before submitting the code. contributing guidelines, [how to contribution](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING.md)
+- Please run `black .` before submitting the code. Contributing guidelines, [how to contribution](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING.md)
 
 ## RoadMap
 
@@ -224,7 +224,7 @@ The core capabilities mainly consist of the following parts:
 ### KBQA RAG optimization
 - [x] Multi Documents
   - [x] PDF
-  - [x] Excel, csv
+  - [x] Excel, CSV
   - [x] Word
   - [x] Text
   - [x] MarkDown
@@ -235,7 +235,7 @@ The core capabilities mainly consist of the following parts:
 - [ ] Graph Database
   - [ ] Neo4j Graph
   - [ ] Nebula Graph
-- [x] Multi Vector Database
+- [x] Multi-Vector Database
   - [x] Chroma
   - [x] Milvus
   - [x] Weaviate
