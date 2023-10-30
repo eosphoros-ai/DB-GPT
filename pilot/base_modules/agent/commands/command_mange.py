@@ -184,6 +184,8 @@ class PluginStatus(BaseModel):
     start_time = datetime.now().timestamp() * 1000
     end_time: int = None
 
+    df: Any = None
+
 
 class ApiCall:
     agent_prefix = "<api-call>"
@@ -191,7 +193,8 @@ class ApiCall:
     name_prefix = "<name>"
     name_end = "</name>"
 
-    def __init__(self, plugin_generator: Any = None, display_registry: Any = None):
+
+    def __init__(self, plugin_generator: Any = None, display_registry: Any = None, backend_rendering: bool = False):
         # self.name: str = ""
         # self.status: Status = Status.TODO.value
         # self.logo_url: str = None
@@ -204,6 +207,7 @@ class ApiCall:
         self.plugin_generator = plugin_generator
         self.display_registry = display_registry
         self.start_time = datetime.now().timestamp() * 1000
+        self.backend_rendering: bool = True
 
     def __repr__(self):
         return f"ApiCall(name={self.name}, status={self.status}, args={self.args})"
@@ -362,10 +366,17 @@ class ApiCall:
         return result.decode("utf-8")
 
     def to_view_antv_vis(self, api_status: PluginStatus):
-        api_call_element = ET.Element("chart-view")
-        api_call_element.text = self.__to_antv_vis_param(api_status)
-        result = ET.tostring(api_call_element, encoding="utf-8")
-        return result.decode("utf-8")
+        if self.backend_rendering:
+            html_table = api_status.df.to_html(index=False, escape=False, sparsify=False)
+            table_str = "".join(html_table.split())
+            table_str = table_str.replace("\n", " ")
+            html = f""" \n<div><b>[SQL]{api_status.args["sql"]}</b></div><div class="w-full overflow-auto">{table_str}</div>\n """
+            return html
+        else:
+            api_call_element = ET.Element("chart-view")
+            api_call_element.text = self.__to_antv_vis_param(api_status)
+            result = ET.tostring(api_call_element, encoding="utf-8")
+            return result.decode("utf-8")
 
     def __to_antv_vis_param(self, api_status: PluginStatus):
         param = {}
@@ -417,6 +428,7 @@ class ApiCall:
                                 param = {
                                     "df": sql_run_func(sql),
                                 }
+                                value.df = param['df']
                                 if self.display_registry.is_valid_command(value.name):
                                     value.api_result = self.display_registry.call(
                                         value.name, **param
@@ -456,6 +468,7 @@ class ApiCall:
                             sql = value.args["sql"]
                             if sql is not None and len(sql) > 0:
                                 data_df = sql_run_func(sql)
+                                value.df = data_df
                                 value.api_result = data_df.apply(lambda row: row.to_dict(), axis=1).to_list()
                                 value.status = Status.COMPLETED.value
                             else:
