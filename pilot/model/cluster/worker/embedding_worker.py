@@ -106,7 +106,7 @@ def _parse_embedding_params(
     env_prefix = EnvArgumentParser.get_env_prefix(model_name)
     model_params: BaseEmbeddingModelParameters = model_args.parse_args_into_dataclass(
         param_cls,
-        env_prefix=env_prefix,
+        env_prefixes=[env_prefix],
         command_args=command_args,
         model_name=model_name,
         model_path=model_path,

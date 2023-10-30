@@ -76,7 +76,7 @@ class DefaultModelWorker(ModelWorker):
         model_type = self.llm_adapter.model_type()
         model_params: ModelParameters = model_args.parse_args_into_dataclass(
             param_cls,
-            env_prefix=env_prefix,
+            env_prefixes=[env_prefix, "LLM_"],
             command_args=command_args,
             model_name=self.model_name,
             model_path=self.model_path,

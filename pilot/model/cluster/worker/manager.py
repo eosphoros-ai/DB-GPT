@@ -38,7 +38,7 @@ from pilot.utils.parameter_utils import (
     _dict_to_command_args,
     _get_dict_from_obj,
 )
-from pilot.utils.utils import setup_logging
+from pilot.utils.utils import setup_logging, setup_http_service_logging
 from pilot.utils.tracer import initialize_tracer, root_tracer, SpanType, SpanTypeRunName
 from pilot.utils.system_utils import get_system_info
 
@@ -735,6 +735,8 @@ def _setup_fastapi(
 ):
     if not app:
         app = FastAPI()
+        setup_http_service_logging()
+
     if worker_params.standalone:
         from pilot.model.cluster.controller.controller import initialize_controller
         from pilot.model.cluster.controller.controller import (
@@ -781,7 +783,7 @@ def _parse_worker_params(
         env_prefix = EnvArgumentParser.get_env_prefix(model_name)
     worker_params: ModelWorkerParameters = worker_args.parse_args_into_dataclass(
         ModelWorkerParameters,
-        env_prefix=env_prefix,
+        env_prefixes=[env_prefix],
         model_name=model_name,
         model_path=model_path,
         **kwargs,
@@ -790,7 +792,7 @@ def _parse_worker_params(
     # Read parameters agein with prefix of model name.
     new_worker_params = worker_args.parse_args_into_dataclass(
         ModelWorkerParameters,
-        env_prefix=env_prefix,
+        env_prefixes=[env_prefix],
         model_name=worker_params.model_name,
         model_path=worker_params.model_path,
         **kwargs,
