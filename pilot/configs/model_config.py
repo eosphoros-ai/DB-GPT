@@ -78,6 +78,8 @@ LLM_MODEL_CONFIG = {
     "internlm-7b": os.path.join(MODEL_PATH, "internlm-chat-7b"),
     "internlm-7b-8k": os.path.join(MODEL_PATH, "internlm-chat-7b-8k"),
     "internlm-20b": os.path.join(MODEL_PATH, "internlm-chat-20b"),
+    "codellama-13b-sql-sft": os.path.join(MODEL_PATH, "codellama-13b-sql-sft"),
+
     # For test now
     "opt-125m": os.path.join(MODEL_PATH, "opt-125m"),
 }

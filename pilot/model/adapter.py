@@ -319,6 +319,18 @@ class Llama2Adapter(BaseLLMAdaper):
         model.config.pad_token_id = tokenizer.pad_token_id
         return model, tokenizer
 
+class CodeLlamaAdapter(BaseLLMAdaper):
+    """The model adapter for codellama """
+
+    def match(self, model_path: str):
+        return "codelama" in model_path.lower()
+
+    def loader(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().loader(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
 
 class BaichuanAdapter(BaseLLMAdaper):
     """The model adapter for Baichuan models (e.g., baichuan-inc/Baichuan-13B-Chat)"""
@@ -420,6 +432,7 @@ register_llm_model_adapters(FalconAdapater)
 register_llm_model_adapters(GorillaAdapter)
 register_llm_model_adapters(GPT4AllAdapter)
 register_llm_model_adapters(Llama2Adapter)
+register_llm_model_adapters(CodeLlamaAdapter)
 register_llm_model_adapters(BaichuanAdapter)
 register_llm_model_adapters(WizardLMAdapter)
 register_llm_model_adapters(LlamaCppAdapater)

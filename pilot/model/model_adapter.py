@@ -45,6 +45,7 @@ _OLD_MODELS = [
     "llama-cpp",
     "proxyllm",
     "gptj-6b",
+    "codellama-13b-sql-sft"
 ]
 
 

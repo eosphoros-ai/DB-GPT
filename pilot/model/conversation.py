@@ -339,6 +339,28 @@ register_conv_template(
     )
 )
 
+
+# codellama template
+# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
+# reference2 : https://github.com/eosphoros-ai/DB-GPT-Hub/blob/main/README.zh.md
+register_conv_template(
+    Conversation(
+        name="codellama",
+        system="<s>[INST] <<SYS>>\nI want you to act as a SQL terminal in front of an example database, you need only to return the sql command to me.Below is an instruction that describes a task, Write a response that appropriately completes the request."
+        "If you don't know the answer to the request, please don't share false information.\n<</SYS>>\n\n",
+        roles=("[INST]", "[/INST]"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.LLAMA2,
+        sep=" ",
+        sep2=" </s><s>",
+        stop_token_ids=[2],
+        system_formatter=lambda msg: f"<s>[INST] <<SYS>>\n{msg}\n<</SYS>>\n\n",
+    )
+)
+
+
+
 # Alpaca default template
 register_conv_template(
     Conversation(

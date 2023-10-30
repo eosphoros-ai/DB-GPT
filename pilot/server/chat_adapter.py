@@ -213,6 +213,15 @@ class Llama2ChatAdapter(BaseChatAdpter):
 
     def get_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llama-2")
+    
+
+class CodeLlamaChatAdapter(BaseChatAdpter):
+    """The model ChatAdapter for codellama ."""
+    def match(self, model_path: str):
+        return "codelama" in model_path.lower()
+
+    def get_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("codellama")
 
 
 class BaichuanChatAdapter(BaseChatAdpter):
@@ -268,6 +277,7 @@ register_llm_model_chat_adapter(FalconChatAdapter)
 register_llm_model_chat_adapter(GorillaChatAdapter)
 register_llm_model_chat_adapter(GPT4AllChatAdapter)
 register_llm_model_chat_adapter(Llama2ChatAdapter)
+register_llm_model_chat_adapter(CodeLlamaChatAdapter)
 register_llm_model_chat_adapter(BaichuanChatAdapter)
 register_llm_model_chat_adapter(WizardLMChatAdapter)
 register_llm_model_chat_adapter(LlamaCppChatAdapter)
