@@ -51,7 +51,7 @@ class ChatAgent(BaseChat):
 
         self.api_call = ApiCall(plugin_generator=self.plugins_prompt_generator)
 
-    def generate_input_values(self):
+    async def generate_input_values(self) -> Dict[str, str]:
         input_values = {
             "user_goal": self.current_user_input,
             "expand_constraints": self.__list_to_prompt_str(

@@ -3,7 +3,12 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, Text, String, DateTime
 
 from pilot.base_modules.meta_data.base_dao import BaseDao
-from pilot.base_modules.meta_data.meta_data import Base, engine, session
+from pilot.base_modules.meta_data.meta_data import (
+    Base,
+    engine,
+    session,
+    META_DATA_DATABASE,
+)
 from pilot.configs.config import Config
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
 
@@ -32,7 +37,10 @@ class KnowledgeSpaceEntity(Base):
 class KnowledgeSpaceDao(BaseDao):
     def __init__(self):
         super().__init__(
-            database="dbgpt", orm_base=Base, db_engine=engine, session=session
+            database=META_DATA_DATABASE,
+            orm_base=Base,
+            db_engine=engine,
+            session=session,
         )
 
     def create_knowledge_space(self, space: KnowledgeSpaceRequest):

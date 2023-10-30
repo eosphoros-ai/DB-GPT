@@ -50,7 +50,7 @@ class ChatWithPlugin(BaseChat):
                     self.plugins_prompt_generator
                 )
 
-    def generate_input_values(self):
+    async def generate_input_values(self) -> Dict:
         input_values = {
             "input": self.current_user_input,
             "constraints": self.__list_to_prompt_str(

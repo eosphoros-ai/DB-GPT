@@ -158,7 +158,7 @@ Currently, we have released multiple key features, which are listed below to dem
 | DataSource                                                                      | support     | Notes                                       |
 | ------------------------------------------------------------------------------  | ----------- | ------------------------------------------- |
 | [MySQL](https://www.mysql.com/)                                                 | Yes         |                                             |
-| [PostgresSQL](https://www.postgresql.org/)                                      | Yes         |                                             |
+| [PostgreSQL](https://www.postgresql.org/)                                      | Yes         |                                             |
 | [Spark](https://github.com/apache/spark)                                        | Yes         |                                             |
 | [DuckDB](https://github.com/duckdb/duckdb)                                      | Yes         |                                             |
 | [Sqlite](https://github.com/sqlite/sqlite)                                      | Yes         |                                             |
@@ -254,7 +254,7 @@ The core capabilities mainly consist of the following parts:
 
 - Multi Datasource Support 
   - [x] MySQL
-  - [x] PostgresSQL
+  - [x] PostgreSQL
   - [x] Spark
   - [x] DuckDB
   - [x] Sqlite

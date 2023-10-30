@@ -12,6 +12,7 @@ from pilot.configs.model_config import (
 
 from pilot.scene.chat_knowledge.v1.prompt import prompt
 from pilot.server.knowledge.service import KnowledgeService
+from pilot.utils.executor_utils import blocking_func_to_async
 
 CFG = Config()
 
@@ -65,7 +66,7 @@ class ChatKnowledge(BaseChat):
         self.prompt_template.template_is_strict = False
 
     async def stream_call(self):
-        input_values = self.generate_input_values()
+        input_values = await self.generate_input_values()
         # Source of knowledge file
         relations = input_values.get("relations")
         last_output = None
@@ -85,12 +86,18 @@ class ChatKnowledge(BaseChat):
             )
             yield last_output
 
-    def generate_input_values(self):
+    async def generate_input_values(self) -> Dict:
         if self.space_context:
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
-        docs = self.knowledge_embedding_client.similar_search(
-            self.current_user_input, self.top_k
+        # docs = self.knowledge_embedding_client.similar_search(
+        #     self.current_user_input, self.top_k
+        # )
+        docs = await blocking_func_to_async(
+            self._executor,
+            self.knowledge_embedding_client.similar_search,
+            self.current_user_input,
+            self.top_k,
         )
         if not docs:
             raise ValueError(

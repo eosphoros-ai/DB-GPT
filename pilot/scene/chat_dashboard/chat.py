@@ -12,6 +12,7 @@ from pilot.scene.chat_dashboard.data_preparation.report_schma import (
 )
 from pilot.scene.chat_dashboard.prompt import prompt
 from pilot.scene.chat_dashboard.data_loader import DashboardDataLoader
+from pilot.utils.executor_utils import blocking_func_to_async
 
 CFG = Config()
 
@@ -52,7 +53,7 @@ class ChatDashboard(BaseChat):
             data = f.read()
         return json.loads(data)
 
-    def generate_input_values(self):
+    async def generate_input_values(self) -> Dict:
         try:
             from pilot.summary.db_summary_client import DBSummaryClient
         except ImportError:
@@ -60,9 +61,16 @@ class ChatDashboard(BaseChat):
 
         client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
         try:
-            table_infos = client.get_similar_tables(
-                dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+            table_infos = await blocking_func_to_async(
+                self._executor,
+                client.get_similar_tables,
+                self.db_name,
+                self.current_user_input,
+                self.top_k,
             )
+            # table_infos = client.get_similar_tables(
+            #     dbname=self.db_name, query=self.current_user_input, topk=self.top_k
+            # )
             print("dashboard vector find tables:{}", table_infos)
         except Exception as e:
             print("db summary find error!" + str(e))

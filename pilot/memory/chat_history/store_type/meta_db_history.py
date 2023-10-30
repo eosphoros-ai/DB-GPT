@@ -14,7 +14,7 @@ from ..chat_history_db import ChatHistoryEntity, ChatHistoryDao
 from pilot.memory.chat_history.base import MemoryStoreType
 
 CFG = Config()
-logger = logging.getLogger("db_chat_history")
+logger = logging.getLogger(__name__)
 
 
 class DbHistoryMemory(BaseChatHistoryMemory):
@@ -47,7 +47,7 @@ class DbHistoryMemory(BaseChatHistoryMemory):
             logger.error("init create conversation log error！" + str(e))
 
     def append(self, once_message: OnceConversation) -> None:
-        logger.info("db history append:{}", once_message)
+        logger.info(f"db history append: {once_message}")
         chat_history: ChatHistoryEntity = self.chat_history_dao.get_by_uid(
             self.chat_seesion_id
         )
