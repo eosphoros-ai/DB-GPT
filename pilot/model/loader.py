@@ -95,7 +95,7 @@ class ModelLoader:
         env_prefix = env_prefix.replace("-", "_")
         model_params = args_parser.parse_args_into_dataclass(
             param_cls,
-            env_prefix=env_prefix,
+            env_prefixes=[env_prefix],
             device=self.device,
             model_path=self.model_path,
             model_name=self.model_name,

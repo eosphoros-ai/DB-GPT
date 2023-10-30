@@ -13,7 +13,7 @@ from pilot.utils.api_utils import (
     _api_remote as api_remote,
     _sync_api_remote as sync_api_remote,
 )
-from pilot.utils.utils import setup_logging
+from pilot.utils.utils import setup_logging, setup_http_service_logging
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +149,7 @@ def initialize_controller(
     else:
         import uvicorn
 
+        setup_http_service_logging()
         app = FastAPI()
         app.include_router(router, prefix="/api", tags=["Model"])
         uvicorn.run(app, host=host, port=port, log_level="info")
@@ -179,7 +180,8 @@ def run_model_controller():
     parser = EnvArgumentParser()
     env_prefix = "controller_"
     controller_params: ModelControllerParameters = parser.parse_args_into_dataclass(
-        ModelControllerParameters, env_prefix=env_prefix
+        ModelControllerParameters,
+        env_prefixes=[env_prefix],
     )
 
     setup_logging(
