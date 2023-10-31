@@ -284,6 +284,7 @@ class BaseChat(ABC):
             )
             ### model result deal
             self.current_message.add_ai_message(ai_response_text)
+            prompt_define_response = None
             prompt_define_response = (
                 self.prompt_template.output_parser.parse_prompt_response(
                     ai_response_text
