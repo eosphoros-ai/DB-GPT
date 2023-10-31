@@ -437,6 +437,9 @@ class KnowledgeService:
         summary = self._llm_extract_summary(texts[0])
         # summaries = self._mapreduce_extract_summary(texts)
         outputs, summary = self._refine_extract_summary(texts[1:], summary)
+        print(
+            f"refine summary outputs:{outputs}"
+        )
         summaries = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=outputs)
         summary = self._llm_extract_summary("|".join(summaries))
         print(
@@ -530,16 +533,16 @@ class KnowledgeService:
                 ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
             )
         )
-        print(
-            f"initialize summary is :{summary}"
-        )
         return summary
     def _refine_extract_summary(self, docs, summary: str, max_iteration:int = 5):
         """Extract refine summary by llm"""
         from pilot.scene.base import ChatScene
         from pilot.common.chat_util import llm_chat_response_nostream
         import uuid
-        outputs = []
+        print(
+            f"initialize summary is :{summary}"
+        )
+        outputs = [summary]
         max_iteration = max_iteration if len(docs) > max_iteration else len(docs)
         for doc in docs[0:max_iteration]:
             chat_param = {
