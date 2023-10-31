@@ -584,7 +584,7 @@ class KnowledgeService:
             return summary
         else:
             max_iteration = max_iteration if len(docs) > max_iteration else len(docs)
-            for doc in docs:
+            for doc in docs[0:max_iteration]:
                 chat_param = {
                     "chat_session_id": uuid.uuid1(),
                     "current_user_input": doc,
