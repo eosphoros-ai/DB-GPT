@@ -59,11 +59,11 @@ Embedding Chunk size, default 500
 Embedding Chunk Overlap, default 100
 * KNOWLEDGE_CHUNK_OVERLAP=100
 
-embeding recall top k,5
+embedding recall top k,5
 
 * KNOWLEDGE_SEARCH_TOP_SIZE=5 
 
-embeding recall max token ,2000
+embedding recall max token ,2000
 
 * KNOWLEDGE_SEARCH_MAX_TOKEN=5 
 ```
