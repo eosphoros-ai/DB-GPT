@@ -437,7 +437,11 @@ class KnowledgeService:
         summary = self._llm_extract_summary(texts[0])
         # summaries = self._mapreduce_extract_summary(texts)
         outputs, summary = self._refine_extract_summary(texts[1:], summary)
-
+        summaries = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=outputs)
+        summary = self._llm_extract_summary("|".join(summaries))
+        print(
+            f"final summary:{summary}"
+        )
         doc.summary = summary
         return knowledge_document_dao.update_knowledge_document(doc)
 
@@ -526,7 +530,7 @@ class KnowledgeService:
                 ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
             )
         )
-        logger.info(
+        print(
             f"initialize summary is :{summary}"
         )
         return summary
@@ -552,7 +556,7 @@ class KnowledgeService:
                 )
             )
             outputs.append(summary)
-            logger.info(
+            print(
                 f"iterator is {len(outputs)} current summary is :{summary}"
             )
         return outputs, summary
