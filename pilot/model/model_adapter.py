@@ -445,17 +445,47 @@ class VLLMModelAdaperWrapper(LLMModelAdaper):
 
 # Covering the configuration of fastcaht, we will regularly feedback the code here to fastchat.
 # We also recommend that you modify it directly in the fastchat repository.
+
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L212
 register_conv_template(
     Conversation(
-        name="internlm-chat",
-        system_message="A chat between a curious <|User|> and an <|Bot|>. The <|Bot|> gives helpful, detailed, and polite answers to the <|User|>'s questions.\n\n",
-        roles=("<|User|>", "<|Bot|>"),
-        sep_style=SeparatorStyle.CHATINTERN,
-        sep="<eoh>",
-        sep2="<eoa>",
-        stop_token_ids=[1, 103028],
-        # TODO feedback stop_str to fastchat
-        stop_str="<eoa>",
-    ),
-    override=True,
+        name="aquila-legacy",
+        system_message="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+        roles=("### Human: ", "### Assistant: ", "System"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="\n",
+        sep2="</s>",
+        stop_str=["</s>", "[UNK]"],
+    )
+)
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L227
+register_conv_template(
+    Conversation(
+        name="aquila",
+        system_message="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("Human", "Assistant", "System"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="###",
+        sep2="</s>",
+        stop_str=["</s>", "[UNK]"],
+    )
+)
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L242
+register_conv_template(
+    Conversation(
+        name="aquila-v1",
+        roles=("<|startofpiece|>", "<|endofpiece|>", ""),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="",
+        sep2="</s>",
+        stop_str=["</s>", "<|endoftext|>"],
+    )
 )

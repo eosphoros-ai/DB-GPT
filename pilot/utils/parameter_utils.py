@@ -190,6 +190,17 @@ def _genenv_ignoring_key_case(env_key: str, env_prefix: str = None, default_valu
     )
 
 
+def _genenv_ignoring_key_case_with_prefixes(
+    env_key: str, env_prefixes: List[str] = None, default_value=None
+) -> str:
+    if env_prefixes:
+        for env_prefix in env_prefixes:
+            env_var_value = _genenv_ignoring_key_case(env_key, env_prefix)
+            if env_var_value:
+                return env_var_value
+    return _genenv_ignoring_key_case(env_key, default_value=default_value)
+
+
 class EnvArgumentParser:
     @staticmethod
     def get_env_prefix(env_key: str) -> str:
@@ -201,18 +212,16 @@ class EnvArgumentParser:
     def parse_args_into_dataclass(
         self,
         dataclass_type: Type,
-        env_prefix: str = None,
+        env_prefixes: List[str] = None,
         command_args: List[str] = None,
         **kwargs,
     ) -> Any:
         """Parse parameters from environment variables and command lines and populate them into data class"""
         parser = argparse.ArgumentParser()
         for field in fields(dataclass_type):
-            env_var_value = _genenv_ignoring_key_case(field.name, env_prefix)
-            if not env_var_value:
-                # Read without env prefix
-                env_var_value = _genenv_ignoring_key_case(field.name)
-
+            env_var_value = _genenv_ignoring_key_case_with_prefixes(
+                field.name, env_prefixes
+            )
             if env_var_value:
                 env_var_value = env_var_value.strip()
                 if field.type is int or field.type == Optional[int]:

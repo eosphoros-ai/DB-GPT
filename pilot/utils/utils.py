@@ -3,6 +3,8 @@
 
 import logging
 import logging.handlers
+from typing import Any, List
+
 import os
 import sys
 import asyncio
@@ -186,3 +188,42 @@ def logging_str_to_uvicorn_level(log_level_str):
         "NOTSET": "info",
     }
     return level_str_mapping.get(log_level_str.upper(), "info")
+
+
+class EndpointFilter(logging.Filter):
+    """Disable access log on certain endpoint
+
+    source: https://github.com/encode/starlette/issues/864#issuecomment-1254987630
+    """
+
+    def __init__(
+        self,
+        path: str,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        super().__init__(*args, **kwargs)
+        self._path = path
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.getMessage().find(self._path) == -1
+
+
+def setup_http_service_logging(exclude_paths: List[str] = None):
+    """Setup http service logging
+
+    Now just disable some logs
+
+    Args:
+        exclude_paths (List[str]): The paths to disable log
+    """
+    if not exclude_paths:
+        # Not show heartbeat log
+        exclude_paths = ["/api/controller/heartbeat"]
+    uvicorn_logger = logging.getLogger("uvicorn.access")
+    if uvicorn_logger:
+        for path in exclude_paths:
+            uvicorn_logger.addFilter(EndpointFilter(path=path))
+    httpx_logger = logging.getLogger("httpx")
+    if httpx_logger:
+        httpx_logger.setLevel(logging.WARNING)
