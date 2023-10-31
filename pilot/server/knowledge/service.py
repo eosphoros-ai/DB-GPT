@@ -578,10 +578,12 @@ class KnowledgeService:
         from pilot.common.chat_util import llm_chat_response_nostream
         import uuid
         tasks = []
+        max_iteration = 5
         if len(docs) == 1:
             summary = self._llm_extract_summary(doc=docs[0])
             return summary
         else:
+            max_iteration = max_iteration if len(docs) > max_iteration else len(docs)
             for doc in docs:
                 chat_param = {
                     "chat_session_id": uuid.uuid1(),
