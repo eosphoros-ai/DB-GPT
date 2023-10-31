@@ -288,7 +288,7 @@ class KnowledgeService:
             executor = CFG.SYSTEM_APP.get_component(
                 ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
             ).create()
-            executor.submit(self.async_document_summary, chunk_docs, doc)
+            # executor.submit(self.async_document_summary, chunk_docs, doc)
             executor.submit(self.async_doc_embedding, client, chunk_docs, doc)
             logger.info(f"begin save document chunks, doc:{doc.doc_name}")
             # save chunk details
@@ -431,7 +431,8 @@ class KnowledgeService:
         texts = [doc.page_content for doc in chunk_docs]
         prompt_helper = PromptHelper()
         texts = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=texts)
-        summary = self._llm_extract_summary(chunk_docs[0])
+        summary = self._llm_extract_summary(texts[0])
+        # summaries = self._mapreduce_extract_summary(texts)
         outputs, summary = self._refine_extract_summary(texts[1:], summary)
         logger.info(
             f"async_document_summary, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to graph store"
@@ -452,6 +453,7 @@ class KnowledgeService:
         )
         try:
             vector_ids = client.knowledge_embedding_batch(chunk_docs)
+            self.async_document_summary(chunk_docs, doc)
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document embedding success"
             if vector_ids is not None:
@@ -512,9 +514,9 @@ class KnowledgeService:
 
         chat_param = {
             "chat_session_id": uuid.uuid1(),
-            "current_user_input": doc.page_content,
+            "current_user_input": doc,
             "select_param": "summary",
-            "model_name": "proxyllm",
+            "model_name": CFG.LLM_MODEL,
         }
         from pilot.utils import utils
         loop = utils.get_or_create_event_loop()
@@ -535,7 +537,7 @@ class KnowledgeService:
                 "chat_session_id": uuid.uuid1(),
                 "current_user_input": doc,
                 "select_param": summary,
-                "model_name": "proxyllm",
+                "model_name": CFG.LLM_MODEL,
             }
             from pilot.utils import utils
             loop = utils.get_or_create_event_loop()
@@ -546,5 +548,34 @@ class KnowledgeService:
             )
             outputs.append(summary)
         return outputs, summary
+
+    def _mapreduce_extract_summary(self, docs):
+        """Extract mapreduce summary by llm"""
+        from pilot.scene.base import ChatScene
+        from pilot.common.chat_util import llm_chat_response_nostream
+        import uuid
+        outputs = []
+        tasks = []
+        for doc in docs:
+            chat_param = {
+                "chat_session_id": uuid.uuid1(),
+                "current_user_input": doc,
+                "select_param": "summary",
+                "model_name": CFG.LLM_MODEL,
+            }
+            tasks.append(llm_chat_response_nostream(
+                    ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
+            ))
+        from pilot.common.chat_util import run_async_tasks
+        summaries = run_async_tasks(tasks)
+            # from pilot.utils import utils
+            # loop = utils.get_or_create_event_loop()
+            # summary = loop.run_until_complete(
+            #     llm_chat_response_nostream(
+            #         ChatScene.ExtractRefineSummary.value(), **{"chat_param": chat_param}
+            #     )
+            # )
+            # outputs.append(summary)
+        return summaries
 
 
