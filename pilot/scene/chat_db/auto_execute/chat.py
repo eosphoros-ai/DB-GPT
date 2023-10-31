@@ -40,7 +40,7 @@ class ChatWithDbAutoExecute(BaseChat):
         self.top_k: int = 200
         self.api_call = ApiCall(display_registry=CFG.command_disply)
 
-    def generate_input_values(self):
+    async def generate_input_values(self):
         """
         generate input values
         """
