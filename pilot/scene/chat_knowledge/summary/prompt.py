@@ -9,19 +9,22 @@ CFG = Config()
 
 # PROMPT_SCENE_DEFINE = """You are an expert Q&A system that is trusted around the world.\nAlways answer the query using the provided context information, and not prior knowledge.\nSome rules to follow:\n1. Never directly reference the given context in your answer.\n2. Avoid statements like 'Based on the context, ...' or 'The context information ...' or anything along those lines."""
 
-PROMPT_SCENE_DEFINE = """Your job is to produce a final summary."""
+PROMPT_SCENE_DEFINE = """"""
 
-# _DEFAULT_TEMPLATE = """
-# Context information from multiple sources is below.\n---------------------\n
-# {context}
-# Given the information from multiple sources and not prior knowledge, answer the query.\nQuery: Describe what the provided text is about. Also describe some of the questions that this text can answer. \nAnswer: "
-# """
+_DEFAULT_TEMPLATE_ZH = """请根据提供的上下文信息的进行简洁地总结:
+{context}
+"""
 
-_DEFAULT_TEMPLATE = """
+_DEFAULT_TEMPLATE_EN = """
 Write a concise summary of the following context: 
 {context}
 please use original language.
 """
+
+_DEFAULT_TEMPLATE = (
+    _DEFAULT_TEMPLATE_EN if CFG.LANGUAGE == "en" else _DEFAULT_TEMPLATE_ZH
+)
+
 PROMPT_RESPONSE = """"""
 
 

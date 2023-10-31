@@ -429,19 +429,22 @@ class KnowledgeService:
         from llama_index import PromptHelper
         from llama_index.prompts.default_prompt_selectors import DEFAULT_TREE_SUMMARIZE_PROMPT_SEL
         texts = [doc.page_content for doc in chunk_docs]
-        prompt_helper = PromptHelper()
+        prompt_helper = PromptHelper(context_window=2500)
+
         texts = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=texts)
         logger.info(
             f"async_document_summary, doc:{doc.doc_name}, chunk_size:{len(texts)}, begin generate summary"
         )
-        summary = self._llm_extract_summary(texts[0])
-        # summaries = self._mapreduce_extract_summary(texts)
-        outputs, summary = self._refine_extract_summary(texts[1:], summary)
-        print(
-            f"refine summary outputs:{outputs}"
-        )
-        summaries = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=outputs)
-        summary = self._llm_extract_summary("|".join(summaries))
+        # summary = self._llm_extract_summary(texts[0])
+        summary = self._mapreduce_extract_summary(texts)
+        # summaries = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=summaries)
+        # if (len(summaries)) > 1:
+        #     outputs, summary = self._refine_extract_summary(summaries[1:], summaries[0])
+        # else:
+        #     summary = self._llm_extract_summary("\n".join(summaries))
+        # print(
+        #     f"refine summary outputs:{summaries}"
+        # )
         print(
             f"final summary:{summary}"
         )
@@ -565,33 +568,36 @@ class KnowledgeService:
         return outputs, summary
 
     def _mapreduce_extract_summary(self, docs):
-        """Extract mapreduce summary by llm"""
+        """Extract mapreduce summary by llm
+        map -> multi thread generate summary
+        reduce -> merge the summaries by map process
+        Args:
+            docs:List[str]
+        """
         from pilot.scene.base import ChatScene
         from pilot.common.chat_util import llm_chat_response_nostream
         import uuid
-        outputs = []
         tasks = []
-        for doc in docs:
-            chat_param = {
-                "chat_session_id": uuid.uuid1(),
-                "current_user_input": doc,
-                "select_param": "summary",
-                "model_name": CFG.LLM_MODEL,
-            }
-            tasks.append(llm_chat_response_nostream(
+        if len(docs) == 1:
+            summary = self._llm_extract_summary(doc=docs[0])
+            return summary
+        else:
+            for doc in docs:
+                chat_param = {
+                    "chat_session_id": uuid.uuid1(),
+                    "current_user_input": doc,
+                    "select_param": "summary",
+                    "model_name": CFG.LLM_MODEL,
+                }
+                tasks.append(llm_chat_response_nostream(
                     ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
-            ))
-        from pilot.common.chat_util import run_async_tasks
-        summary_iters = run_async_tasks(tasks)
-        summary = self._llm_extract_summary(" ".join(summary_iters))
-            # from pilot.utils import utils
-            # loop = utils.get_or_create_event_loop()
-            # summary = loop.run_until_complete(
-            #     llm_chat_response_nostream(
-            #         ChatScene.ExtractRefineSummary.value(), **{"chat_param": chat_param}
-            #     )
-            # )
-            # outputs.append(summary)
-        return summary
+                ))
+            from pilot.common.chat_util import run_async_tasks
+            summary_iters = run_async_tasks(tasks)
+            from pilot.common.prompt_util import PromptHelper
+            from llama_index.prompts.default_prompt_selectors import DEFAULT_TREE_SUMMARIZE_PROMPT_SEL
+            prompt_helper = PromptHelper(context_window=2500)
+            summary_iters = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=summary_iters)
+            return self._mapreduce_extract_summary(summary_iters)
 
 

@@ -8,18 +8,20 @@ from pilot.scene.chat_knowledge.refine_summary.out_parser import ExtractRefineSu
 CFG = Config()
 
 
-PROMPT_SCENE_DEFINE = """Your job is to produce a final summary."""
+PROMPT_SCENE_DEFINE = """"""
 
-_DEFAULT_TEMPLATE = """
-We have provided an existing summary up to a certain point: {existing_answer}\nWe have the opportunity to refine the existing summary (only if needed) with some more context below.\n------------\n{context}\n------------\nGiven the new context, refine the original summary.\nIf the context isn't useful, return the original summary.
+_DEFAULT_TEMPLATE_ZH = """根据提供的上下文信息，我们已经提供了一个到某一点的现有总结:{existing_answer}\n 我们有机会在下面提供的更多上下文信息的基础上进一步完善现有的总结（仅在需要的情况下）。请根据新的上下文信息，完善原来的总结。\n------------\n{context}\n------------\n如果上下文信息没有用处，请返回原来的总结。"""
 
+_DEFAULT_TEMPLATE_EN = """
+We have provided an existing summary up to a certain point: {existing_answer}\nWe have the opportunity to refine the existing summary (only if needed) with some more context below.\n------------\n{context}\n------------\nGiven the new context, refine the original summary. \nIf the context isn't useful, return the original summary.
 please use original language.
 """
+
+_DEFAULT_TEMPLATE = (
+    _DEFAULT_TEMPLATE_EN if CFG.LANGUAGE == "en" else _DEFAULT_TEMPLATE_ZH
+)
+
 PROMPT_RESPONSE = """"""
-
-
-RESPONSE_FORMAT = """"""
-
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
