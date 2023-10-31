@@ -45,6 +45,10 @@ _OLD_MODELS = [
     "llama-cpp",
     "proxyllm",
     "gptj-6b",
+    "codellama-13b-sql-sft",
+    "codellama-7b",
+    "codellama-7b-sql-sft",
+    "codellama-13b",
 ]
 
 
@@ -148,8 +152,12 @@ class LLMModelAdaper:
                 conv.append_message(conv.roles[1], content)
             else:
                 raise ValueError(f"Unknown role: {role}")
+
         if system_messages:
-            conv.set_system_message("".join(system_messages))
+            if isinstance(conv, Conversation):
+                conv.set_system_message("".join(system_messages))
+            else:
+                conv.update_system_message("".join(system_messages))
 
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
