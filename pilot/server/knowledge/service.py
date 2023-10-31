@@ -429,7 +429,7 @@ class KnowledgeService:
         from llama_index import PromptHelper
         from llama_index.prompts.default_prompt_selectors import DEFAULT_TREE_SUMMARIZE_PROMPT_SEL
         texts = [doc.page_content for doc in chunk_docs]
-        prompt_helper = PromptHelper(context_window=3900)
+        prompt_helper = PromptHelper()
         texts = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=texts)
         logger.info(
             f"async_document_summary, doc:{doc.doc_name}, chunk_size:{len(texts)}, begin generate summary"
