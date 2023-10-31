@@ -360,7 +360,6 @@ register_conv_template(
 )
 
 
-
 # Alpaca default template
 register_conv_template(
     Conversation(

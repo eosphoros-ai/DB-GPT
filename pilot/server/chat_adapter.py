@@ -213,10 +213,11 @@ class Llama2ChatAdapter(BaseChatAdpter):
 
     def get_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llama-2")
-    
+
 
 class CodeLlamaChatAdapter(BaseChatAdpter):
     """The model ChatAdapter for codellama ."""
+
     def match(self, model_path: str):
         return "codellama" in model_path.lower()
 

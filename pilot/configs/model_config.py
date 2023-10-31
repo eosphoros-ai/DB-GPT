@@ -82,11 +82,6 @@ LLM_MODEL_CONFIG = {
     "codellama-7b-sql-sft": os.path.join(MODEL_PATH, "codellama-7b-sql-sft"),
     "codellama-13b": os.path.join(MODEL_PATH, "CodeLlama-13b-Instruct-hf"),
     "codellama-13b-sql-sft": os.path.join(MODEL_PATH, "codellama-13b-sql-sft"),
-
-
-    
-
-
     # For test now
     "opt-125m": os.path.join(MODEL_PATH, "opt-125m"),
 }

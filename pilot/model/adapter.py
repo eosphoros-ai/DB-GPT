@@ -319,8 +319,9 @@ class Llama2Adapter(BaseLLMAdaper):
         model.config.pad_token_id = tokenizer.pad_token_id
         return model, tokenizer
 
+
 class CodeLlamaAdapter(BaseLLMAdaper):
-    """The model adapter for codellama """
+    """The model adapter for codellama"""
 
     def match(self, model_path: str):
         return "codellama" in model_path.lower()
