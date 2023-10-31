@@ -43,8 +43,8 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 
 
 ## Contents
-- [install](#install)
-- [demo](#demo)
+- [Install](#install)
+- [Demo](#demo)
 - [introduction](#introduction)
 - [features](#features)
 - [contribution](#contribution)
@@ -213,7 +213,7 @@ The core capabilities mainly consist of the following parts:
 
 ## Contribution
 
-- Please run `black .` before submitting the code. Contributing guidelines, [how to contribution](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING.md)
+- Please run `black .` before submitting the code. Contributing guidelines, [how to contribute](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING.md)
 
 ## RoadMap
 
