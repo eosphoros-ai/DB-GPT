@@ -323,7 +323,7 @@ class CodeLlamaAdapter(BaseLLMAdaper):
     """The model adapter for codellama """
 
     def match(self, model_path: str):
-        return "codelama" in model_path.lower()
+        return "codellama" in model_path.lower()
 
     def loader(self, model_path: str, from_pretrained_kwargs: dict):
         model, tokenizer = super().loader(model_path, from_pretrained_kwargs)
