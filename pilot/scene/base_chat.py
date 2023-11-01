@@ -141,7 +141,6 @@ class BaseChat(ABC):
         self.current_message.start_date = datetime.datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S"
         )
-
         self.current_message.tokens = 0
         if self.prompt_template.template:
             current_prompt = self.prompt_template.format(**input_values)
@@ -152,7 +151,6 @@ class BaseChat(ABC):
             # Not new server mode, we convert the message format(List[ModelMessage]) to list of dict
             # fix the error of "Object of type ModelMessage is not JSON serializable" when passing the payload to request.post
             llm_messages = list(map(lambda m: m.dict(), llm_messages))
-
         payload = {
             "model": self.llm_model,
             "prompt": self.generate_llm_text(),
@@ -165,6 +163,9 @@ class BaseChat(ABC):
         return payload
 
     def stream_plugin_call(self, text):
+        return text
+
+    def knowledge_reference_call(self, text):
         return text
 
     async def check_iterator_end(iterator):
@@ -196,6 +197,7 @@ class BaseChat(ABC):
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
             self.current_message.add_ai_message(msg)
+            view_msg = self.knowledge_reference_call(msg)
             self.current_message.add_view_message(view_msg)
         except Exception as e:
             print(traceback.format_exc())

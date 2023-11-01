@@ -187,6 +187,7 @@ class RAGGraphEngine:
         triple_results = []
         for doc in docs:
             import threading
+
             thread_id = threading.get_ident()
             print(f"current thread-{thread_id} begin extract triplets task")
             triplets = self._extract_triplets(doc.page_content)

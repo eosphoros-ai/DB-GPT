@@ -59,6 +59,8 @@ class DocumentSyncRequest(BaseModel):
     """doc_ids: doc ids"""
     doc_ids: List
 
+    model_name: Optional[str] = None
+
     """Preseparator, this separator is used for pre-splitting before the document is actually split by the text splitter.
     Preseparator are not included in the vectorized text. 
     """

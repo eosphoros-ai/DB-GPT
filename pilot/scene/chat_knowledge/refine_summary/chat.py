@@ -21,13 +21,13 @@ class ExtractRefineSummary(BaseChat):
             chat_param=chat_param,
         )
 
-        self.user_input = chat_param["current_user_input"]
+        # self.user_input = chat_param["current_user_input"]
         self.existing_answer = chat_param["select_param"]
         # self.extract_mode = chat_param["select_param"]
 
     def generate_input_values(self):
         input_values = {
-            "context": self.user_input,
+            # "context": self.user_input,
             "existing_answer": self.existing_answer,
         }
         return input_values

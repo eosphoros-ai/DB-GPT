@@ -11,14 +11,15 @@ CFG = Config()
 
 PROMPT_SCENE_DEFINE = """"""
 
-_DEFAULT_TEMPLATE_ZH = """请根据提供的上下文信息的进行简洁地总结:
+_DEFAULT_TEMPLATE_ZH = """请根据提供的上下文信息的进行总结:
 {context}
+回答的时候最好按照1.2.3.点进行总结
 """
 
 _DEFAULT_TEMPLATE_EN = """
-Write a concise summary of the following context: 
+Write a summary of the following context: 
 {context}
-please use original language.
+When answering, it is best to summarize according to points 1.2.3.
 """
 
 _DEFAULT_TEMPLATE = (

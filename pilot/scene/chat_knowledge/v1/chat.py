@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict, List
 
 from pilot.component import ComponentType
 from pilot.scene.base_chat import BaseChat
@@ -20,7 +20,6 @@ CFG = Config()
 
 class ChatKnowledge(BaseChat):
     chat_scene: str = ChatScene.ChatKnowledge.value()
-
     """KBQA Chat Module"""
 
     def __init__(self, chat_param: Dict):
@@ -46,7 +45,6 @@ class ChatKnowledge(BaseChat):
             if self.space_context is None
             else int(self.space_context["embedding"]["topk"])
         )
-        # self.recall_score = CFG.KNOWLEDGE_SEARCH_TOP_SIZE if self.space_context is None else self.space_context["embedding"]["recall_score"]
         self.max_token = (
             CFG.KNOWLEDGE_SEARCH_MAX_TOKEN
             if self.space_context is None
@@ -56,11 +54,11 @@ class ChatKnowledge(BaseChat):
             "vector_store_name": self.knowledge_space,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
         }
-        from pilot.graph_engine.graph_factory import RAGGraphFactory
-
-        self.rag_engine = CFG.SYSTEM_APP.get_component(
-            ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
-        ).create()
+        # from pilot.graph_engine.graph_factory import RAGGraphFactory
+        #
+        # self.rag_engine = CFG.SYSTEM_APP.get_component(
+        #     ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
+        # ).create()
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
@@ -90,25 +88,29 @@ class ChatKnowledge(BaseChat):
             last_output.text = (
                 last_output.text + "\n\nrelations:\n\n" + ",".join(relations)
             )
-            yield last_output
+        reference = f"\n\n{self.parse_source_view(self.sources)}"
+        last_output = last_output + reference
+        yield last_output
+
+    def knowledge_reference_call(self, text):
+        """return reference"""
+        return text + f"\n\n{self.parse_source_view(self.sources)}"
 
     async def generate_input_values(self) -> Dict:
         if self.space_context:
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
-        # docs = self.knowledge_embedding_client.similar_search(
-        #     self.current_user_input, self.top_k
-        # )
         docs = await blocking_func_to_async(
             self._executor,
             self.knowledge_embedding_client.similar_search,
             self.current_user_input,
             self.top_k,
         )
-        docs = await self.rag_engine.search(query=self.current_user_input)
-        # docs = self.knowledge_embedding_client.similar_search(
-        #     self.current_user_input, self.top_k
-        # )
+        self.sources = self.merge_by_key(
+            list(map(lambda doc: doc.metadata, docs)), "source"
+        )
+
+        self.current_message.knowledge_source = self.sources
         if not docs:
             raise ValueError(
                 "you have no knowledge space, please add your knowledge space"
@@ -124,6 +126,42 @@ class ChatKnowledge(BaseChat):
             "relations": relations,
         }
         return input_values
+
+    def parse_source_view(self, sources: List):
+        html_title = f"##### **References:**"
+        lines = ""
+        for item in sources:
+            source = item["source"] if "source" in item else ""
+            pages = ",".join(item["pages"]) if "pages" in item else ""
+            lines += f"{source}"
+            if len(pages) > 0:
+                lines += f", **pages**:{pages}\n\n"
+            else:
+                lines += "\n\n"
+        html = f"""{html_title}\n{lines}"""
+        return html
+
+    def merge_by_key(self, data, key):
+        result = {}
+        for item in data:
+            item_key = os.path.basename(item.get(key))
+            if item_key in result:
+                if "pages" in result[item_key] and "page" in item:
+                    result[item_key]["pages"].append(str(item["page"]))
+                elif "page" in item:
+                    result[item_key]["pages"] = [
+                        result[item_key]["pages"],
+                        str(item["page"]),
+                    ]
+            else:
+                if "page" in item:
+                    result[item_key] = {
+                        "source": item_key,
+                        "pages": [str(item["page"])],
+                    }
+                else:
+                    result[item_key] = {"source": item_key}
+        return list(result.values())
 
     @property
     def chat_type(self) -> str:

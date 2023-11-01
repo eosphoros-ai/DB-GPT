@@ -199,6 +199,7 @@ class KnowledgeService:
         # import langchain is very very slow!!!
 
         doc_ids = sync_request.doc_ids
+        self.model_name = sync_request.model_name or CFG.LLM_MODEL
         for doc_id in doc_ids:
             query = KnowledgeDocumentEntity(
                 id=doc_id,
@@ -427,11 +428,16 @@ class KnowledgeService:
             - doc: KnowledgeDocumentEntity
         """
         from llama_index import PromptHelper
-        from llama_index.prompts.default_prompt_selectors import DEFAULT_TREE_SUMMARIZE_PROMPT_SEL
-        texts = [doc.page_content for doc in chunk_docs]
-        prompt_helper = PromptHelper(context_window=2500)
+        from llama_index.prompts.default_prompt_selectors import (
+            DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
+        )
 
-        texts = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=texts)
+        texts = [doc.page_content for doc in chunk_docs]
+        prompt_helper = PromptHelper(context_window=2000)
+
+        texts = prompt_helper.repack(
+            prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=texts
+        )
         logger.info(
             f"async_document_summary, doc:{doc.doc_name}, chunk_size:{len(texts)}, begin generate summary"
         )
@@ -445,12 +451,9 @@ class KnowledgeService:
         # print(
         #     f"refine summary outputs:{summaries}"
         # )
-        print(
-            f"final summary:{summary}"
-        )
+        print(f"final summary:{summary}")
         doc.summary = summary
         return knowledge_document_dao.update_knowledge_document(doc)
-
 
     def async_doc_embedding(self, client, chunk_docs, doc):
         """async document embedding into vector db
@@ -460,11 +463,11 @@ class KnowledgeService:
             - doc: KnowledgeDocumentEntity
         """
         logger.info(
-            f"async_doc_embedding, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
+            f"async doc sync, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
         )
         try:
-            vector_ids = client.knowledge_embedding_batch(chunk_docs)
             self.async_document_summary(chunk_docs, doc)
+            vector_ids = client.knowledge_embedding_batch(chunk_docs)
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document embedding success"
             if vector_ids is not None:
@@ -526,25 +529,27 @@ class KnowledgeService:
         chat_param = {
             "chat_session_id": uuid.uuid1(),
             "current_user_input": doc,
-            "select_param": "summary",
-            "model_name": CFG.LLM_MODEL,
+            "select_param": doc,
+            "model_name": self.model_name,
         }
-        from pilot.utils import utils
-        loop = utils.get_or_create_event_loop()
-        summary = loop.run_until_complete(
-            llm_chat_response_nostream(
-                ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
-            )
+        from pilot.common.chat_util import run_async_tasks
+
+        summary_iters = run_async_tasks(
+            [
+                llm_chat_response_nostream(
+                    ChatScene.ExtractRefineSummary.value(), **{"chat_param": chat_param}
+                )
+            ]
         )
-        return summary
-    def _refine_extract_summary(self, docs, summary: str, max_iteration:int = 5):
+        return summary_iters[0]
+
+    def _refine_extract_summary(self, docs, summary: str, max_iteration: int = 5):
         """Extract refine summary by llm"""
         from pilot.scene.base import ChatScene
         from pilot.common.chat_util import llm_chat_response_nostream
         import uuid
-        print(
-            f"initialize summary is :{summary}"
-        )
+
+        print(f"initialize summary is :{summary}")
         outputs = [summary]
         max_iteration = max_iteration if len(docs) > max_iteration else len(docs)
         for doc in docs[0:max_iteration]:
@@ -552,9 +557,10 @@ class KnowledgeService:
                 "chat_session_id": uuid.uuid1(),
                 "current_user_input": doc,
                 "select_param": summary,
-                "model_name": CFG.LLM_MODEL,
+                "model_name": self.model_name,
             }
             from pilot.utils import utils
+
             loop = utils.get_or_create_event_loop()
             summary = loop.run_until_complete(
                 llm_chat_response_nostream(
@@ -562,9 +568,7 @@ class KnowledgeService:
                 )
             )
             outputs.append(summary)
-            print(
-                f"iterator is {len(outputs)} current summary is :{summary}"
-            )
+            print(f"iterator is {len(outputs)} current summary is :{summary}")
         return outputs, summary
 
     def _mapreduce_extract_summary(self, docs):
@@ -577,6 +581,7 @@ class KnowledgeService:
         from pilot.scene.base import ChatScene
         from pilot.common.chat_util import llm_chat_response_nostream
         import uuid
+
         tasks = []
         max_iteration = 5
         if len(docs) == 1:
@@ -589,17 +594,23 @@ class KnowledgeService:
                     "chat_session_id": uuid.uuid1(),
                     "current_user_input": doc,
                     "select_param": "summary",
-                    "model_name": CFG.LLM_MODEL,
+                    "model_name": self.model_name,
                 }
-                tasks.append(llm_chat_response_nostream(
-                    ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
-                ))
+                tasks.append(
+                    llm_chat_response_nostream(
+                        ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
+                    )
+                )
             from pilot.common.chat_util import run_async_tasks
+
             summary_iters = run_async_tasks(tasks)
             from pilot.common.prompt_util import PromptHelper
-            from llama_index.prompts.default_prompt_selectors import DEFAULT_TREE_SUMMARIZE_PROMPT_SEL
+            from llama_index.prompts.default_prompt_selectors import (
+                DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
+            )
+
             prompt_helper = PromptHelper(context_window=2500)
-            summary_iters = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=summary_iters)
+            summary_iters = prompt_helper.repack(
+                prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=summary_iters
+            )
             return self._mapreduce_extract_summary(summary_iters)
-
-

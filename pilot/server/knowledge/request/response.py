@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class ChunkQueryResponse(BaseModel):
     """data: data"""
+
     data: List = None
     """summary: document summary"""
     summary: str = None
