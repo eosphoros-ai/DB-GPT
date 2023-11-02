@@ -44,11 +44,13 @@ class ExcelLearning(BaseChat):
         if parent_mode:
             self.current_message.chat_mode = parent_mode.value()
 
+
     async def generate_input_values(self) -> Dict:
         # colunms, datas = self.excel_reader.get_sample_data()
         colunms, datas = await blocking_func_to_async(
             self._executor, self.excel_reader.get_sample_data
         )
+        self.prompt_template.output_parser.update(colunms)
         copy_datas = datas.copy()
         datas.insert(0, colunms)
 

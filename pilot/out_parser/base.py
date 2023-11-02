@@ -26,6 +26,10 @@ class BaseOutputParser(ABC):
     def __init__(self, sep: str, is_stream_out: bool = True):
         self.sep = sep
         self.is_stream_out = is_stream_out
+        self.data_schema = None
+
+    def update(self, data_schema):
+        self.data_schema = data_schema
 
     def __post_process_code(self, code):
         sep = "\n```"
