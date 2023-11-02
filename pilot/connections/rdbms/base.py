@@ -179,9 +179,13 @@ class RDBMSDatabase(BaseConnect):
         return self.session.execute(text("SELECT DATABASE()")).scalar()
 
     def table_simple_info(self):
+        # group_concat() not supported in clickhouse, use arrayStringConcat+groupArray instead; 
+        # quotes need to be escaped
         _sql = f"""
-                select concat(table_name, "(" , group_concat(column_name), ")") as schema_info from information_schema.COLUMNS where table_schema="{self.get_current_db_name()}" group by TABLE_NAME;
-            """
+                select concat(TABLE_NAME, \'(\' , arrayStringConcat(groupArray(column_name),\'-\'), \')\') as schema_info 
+                from information_schema.COLUMNS where table_schema=\'{self.get_current_db_name()}\' group by TABLE_NAME; """ if "clickhouse" in str(self._engine)  \
+            else f""" select concat(table_name, \'(\' , group_concat(column_name), \')\') as schema_info 
+                    from information_schema.COLUMNS where table_schema=\'{self.get_current_db_name()}\' group by TABLE_NAME;  """
         cursor = self.session.execute(text(_sql))
         results = cursor.fetchall()
         return results
