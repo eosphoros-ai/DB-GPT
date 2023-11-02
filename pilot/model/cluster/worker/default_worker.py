@@ -256,15 +256,22 @@ class DefaultModelWorker(ModelWorker):
         return params, model_context, generate_stream_func, model_span
 
     def _handle_output(self, output, previous_response, model_context):
+        finish_reason = None
+        usage = None
         if isinstance(output, dict):
             finish_reason = output.get("finish_reason")
+            usage = output.get("usage")
             output = output["text"]
             if finish_reason is not None:
                 logger.info(f"finish_reason: {finish_reason}")
         incremental_output = output[len(previous_response) :]
         print(incremental_output, end="", flush=True)
         model_output = ModelOutput(
-            text=output, error_code=0, model_context=model_context
+            text=output,
+            error_code=0,
+            model_context=model_context,
+            finish_reason=finish_reason,
+            usage=usage,
         )
         return model_output, incremental_output, output
 
