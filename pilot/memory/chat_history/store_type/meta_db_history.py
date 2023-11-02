@@ -46,7 +46,7 @@ class DbHistoryMemory(BaseChatHistoryMemory):
         except Exception as e:
             logger.error("init create conversation log error！" + str(e))
 
-    def append(self, once_message: OnceConversation) -> None:
+    def append(self, once_message: OnceConversation, user_id: str = None) -> None:
         logger.info("db history append:{}", once_message)
         chat_history: ChatHistoryEntity = self.chat_history_dao.get_by_uid(
             self.chat_seesion_id
@@ -62,7 +62,7 @@ class DbHistoryMemory(BaseChatHistoryMemory):
             chat_history: ChatHistoryEntity = ChatHistoryEntity()
             chat_history.conv_uid = self.chat_seesion_id
             chat_history.chat_mode = once_message.chat_mode
-            chat_history.user_name = "default"
+            chat_history.user_name = "default" if user_id is None else user_id
             chat_history.summary = once_message.get_user_conv().content
 
         conversations.append(_conversation_to_dic(once_message))
@@ -92,7 +92,7 @@ class DbHistoryMemory(BaseChatHistoryMemory):
         return []
 
     @staticmethod
-    def conv_list(cls, user_name: str = None) -> None:
+    def conv_list(user_name: str = None) -> None:
         chat_history_dao = ChatHistoryDao()
         history_list = chat_history_dao.list_last_20()
         result = []

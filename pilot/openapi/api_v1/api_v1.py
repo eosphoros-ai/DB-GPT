@@ -191,7 +191,7 @@ async def db_support_types():
 async def dialogue_list(user_token: UserRequest = Depends(get_user_from_headers)):
     dialogues: List = []
     chat_history_service = ChatHistory()
-    datas = chat_history_service.get_store_cls().conv_list(user_name=user_token.user_id)
+    datas = chat_history_service.get_store_cls().conv_list(user_token.user_id)
     for item in datas:
         conv_uid = item.get("conv_uid")
         summary = item.get("summary")
