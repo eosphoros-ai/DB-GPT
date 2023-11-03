@@ -30,9 +30,23 @@ extensions = [
     "myst_nb",
     "sphinx_copybutton",
     "sphinx_panels",
+    "sphinx_tabs.tabs",
     "IPython.sphinxext.ipython_console_highlighting",
+    'sphinx.ext.autosectionlabel'
 ]
 source_suffix = [".ipynb", ".html", ".md", ".rst"]
+
+
+myst_enable_extensions = [
+    "dollarmath",
+    "amsmath",
+    "deflist",
+    "html_admonition",
+    "html_image",
+    "colon_fence",
+    "smartquotes",
+    "replacements",
+]
 
 # autodoc_pydantic_model_show_json = False
 # autodoc_pydantic_field_list_validators = False
@@ -56,5 +70,7 @@ gettext_uuid = True
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "furo"
+html_theme = "sphinx_book_theme"
+
+
 html_static_path = ["_static"]
