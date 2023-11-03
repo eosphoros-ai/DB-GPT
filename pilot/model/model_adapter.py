@@ -467,7 +467,8 @@ register_conv_template(
         sep="\n",
         sep2="</s>",
         stop_str=["</s>", "[UNK]"],
-    )
+    ),
+    override=True,
 )
 # source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L227
 register_conv_template(
@@ -482,7 +483,8 @@ register_conv_template(
         sep="###",
         sep2="</s>",
         stop_str=["</s>", "[UNK]"],
-    )
+    ),
+    override=True,
 )
 # source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L242
 register_conv_template(
@@ -495,5 +497,6 @@ register_conv_template(
         sep="",
         sep2="</s>",
         stop_str=["</s>", "<|endoftext|>"],
-    )
+    ),
+    override=True,
 )
