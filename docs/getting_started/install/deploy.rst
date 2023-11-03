@@ -5,11 +5,6 @@ Installation From Source
 
 To get started, install DB-GPT with the following steps.
 
-DB-GPT can be deployed on servers with low hardware requirements or on servers with high hardware requirements.
-You can install DB-GPT by Using third-part LLM REST API Service OpenAI, Azure.
-
-And you can also install DB-GPT by deploy LLM Service by download LLM model.
-
 
 1.Preparation
 -----------------
@@ -23,7 +18,7 @@ And you can also install DB-GPT by deploy LLM Service by download LLM model.
 
 We use Sqlite as default database, so there is no need for database installation.  If you choose to connect to other databases, you can follow our tutorial for installation and configuration.
 For the entire installation process of DB-GPT, we use the miniconda3 virtual environment. Create a virtual environment and install the Python dependencies.
-:ref: `https://docs.conda.io/en/latest/miniconda.html<How to install Miniconda>`
+`How to install Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_
 
 .. code-block:: shell
 
@@ -42,6 +37,21 @@ For the entire installation process of DB-GPT, we use the miniconda3 virtual env
 DB-GPT can be deployed on servers with low hardware requirements or on servers with high hardware requirements.
 
 If you are low hardware requirements you can install DB-GPT by Using third-part LLM REST API Service OpenAI, Azure, tongyi.
+
+.. tip::
+
+        As our project has the ability to achieve OpenAI performance of over 85%,
+
+
+.. note::
+
+        Notice make sure you have install git-lfs
+
+        centos:yum install git-lfs
+
+        ubuntu:apt-get install git-lfs
+
+        macos:brew install git-lfs
 
 .. tabs::
 
@@ -73,7 +83,7 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
 
 
     .. tab:: Vicuna
-        ([Vicuna-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5) based on llama-2 has been released, we recommend you set `LLM_MODEL=vicuna-13b-v1.5` to try this model)
+        `Vicuna-v1.5 <https://huggingface.co/lmsys/vicuna-13b-v1.5>`_ based on llama-2 has been released, we recommend you set `LLM_MODEL=vicuna-13b-v1.5` to try this model)
 
         .. list-table:: vicuna-v1.5 hardware requirements
             :widths: 50 50 50
@@ -94,17 +104,6 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
             * - vicuna-13b-v1.5
               - 8-bit
               - 20 GB
-
-
-        .. note::
-
-          Notice make sure you have install git-lfs
-
-          centos:yum install git-lfs
-
-          ubuntu:apt-get install git-lfs
-
-          macos:brew install git-lfs
 
 
         .. code-block:: shell
@@ -151,16 +150,6 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
               - 8-bit
               - 20 GB
 
-        .. note::
-
-          Notice make sure you have install git-lfs
-
-          centos:yum install git-lfs
-
-          ubuntu:apt-get install git-lfs
-
-          macos:brew install git-lfs
-
 
         .. code-block:: shell
 
@@ -188,16 +177,6 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
             LLM_MODEL=baichuan2-13b
 
     .. tab:: ChatGLM
-
-        .. note::
-
-          Notice make sure you have install git-lfs
-
-          centos:yum install git-lfs
-
-          ubuntu:apt-get install git-lfs
-
-          macos:brew install git-lfs
 
 
         .. code-block:: shell
@@ -302,7 +281,7 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
 
     .. tab:: llama.cpp
 
-        DB-GPT already supports [llama.cpp](https://github.com/ggerganov/llama.cpp) via [llama-cpp-python](https://github.com/abetlen/llama-cpp-python).
+        DB-GPT already supports `llama.cpp <https://github.com/ggerganov/llama.cpp>`_ via `llama-cpp-python <https://github.com/abetlen/llama-cpp-python>`_ .
 
         **Preparing Model Files**
 
@@ -338,7 +317,7 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
             LLM_MODEL=llama-cpp
             llama_cpp_prompt_template=vicuna_v1.1
 
-        Then you can run it according to [Run](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html#run).
+        Then you can run it according to `Run <https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html#run>`_
 
 
         **More Configurations**
@@ -404,8 +383,9 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
             LLM_MODEL=vicuna-13b-v1.5
             MODEL_TYPE=vllm
 
+        You can view the models supported by vLLM `here <https://vllm.readthedocs.io/en/latest/models/supported_models.html#supported-models>`_
 
-
+        Then you can run it according to `Run <https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html#run>`_
 
 
 
@@ -415,24 +395,23 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
 -----------------
 **(Optional) load examples into SQLite**
 
-        .. code-block:: shell
+.. code-block:: shell
 
-            bash ./scripts/examples/load_examples.sh
+        bash ./scripts/examples/load_examples.sh
 
 
-        On windows platform:
+On windows platform:
 
-        .. code-block:: shell
+.. code-block:: shell
 
-            .\scripts\examples\load_examples.bat
+        .\scripts\examples\load_examples.bat
 
 4.Run db-gpt server
 -----------------
 
-        .. code-block:: shell
+.. code-block:: shell
 
-
-            python pilot/server/dbgpt_server.py
+       python pilot/server/dbgpt_server.py
 
 **Open http://localhost:5000 with your browser to see the product.**
 

@@ -29,9 +29,9 @@ def initialize_components(
     system_app.register_instance(controller)
 
     # Register global default RAGGraphFactory
-    from pilot.graph_engine.graph_factory import DefaultRAGGraphFactory
+    # from pilot.graph_engine.graph_factory import DefaultRAGGraphFactory
 
-    system_app.register(DefaultRAGGraphFactory)
+    # system_app.register(DefaultRAGGraphFactory)
 
     from pilot.base_modules.agent.controller import module_agent
 

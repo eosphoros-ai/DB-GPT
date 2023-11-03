@@ -441,16 +441,7 @@ class KnowledgeService:
         logger.info(
             f"async_document_summary, doc:{doc.doc_name}, chunk_size:{len(texts)}, begin generate summary"
         )
-        # summary = self._llm_extract_summary(texts[0])
         summary = self._mapreduce_extract_summary(texts)
-        # summaries = prompt_helper.repack(prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=summaries)
-        # if (len(summaries)) > 1:
-        #     outputs, summary = self._refine_extract_summary(summaries[1:], summaries[0])
-        # else:
-        #     summary = self._llm_extract_summary("\n".join(summaries))
-        # print(
-        #     f"refine summary outputs:{summaries}"
-        # )
         print(f"final summary:{summary}")
         doc.summary = summary
         return knowledge_document_dao.update_knowledge_document(doc)
@@ -466,7 +457,6 @@ class KnowledgeService:
             f"async doc sync, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
         )
         try:
-            self.async_document_summary(chunk_docs, doc)
             vector_ids = client.knowledge_embedding_batch(chunk_docs)
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document embedding success"
@@ -543,37 +533,9 @@ class KnowledgeService:
         )
         return summary_iters[0]
 
-    def _refine_extract_summary(self, docs, summary: str, max_iteration: int = 5):
-        """Extract refine summary by llm"""
-        from pilot.scene.base import ChatScene
-        from pilot.common.chat_util import llm_chat_response_nostream
-        import uuid
-
-        print(f"initialize summary is :{summary}")
-        outputs = [summary]
-        max_iteration = max_iteration if len(docs) > max_iteration else len(docs)
-        for doc in docs[0:max_iteration]:
-            chat_param = {
-                "chat_session_id": uuid.uuid1(),
-                "current_user_input": doc,
-                "select_param": summary,
-                "model_name": self.model_name,
-            }
-            from pilot.utils import utils
-
-            loop = utils.get_or_create_event_loop()
-            summary = loop.run_until_complete(
-                llm_chat_response_nostream(
-                    ChatScene.ExtractRefineSummary.value(), **{"chat_param": chat_param}
-                )
-            )
-            outputs.append(summary)
-            print(f"iterator is {len(outputs)} current summary is :{summary}")
-        return outputs, summary
-
     def _mapreduce_extract_summary(self, docs):
-        """Extract mapreduce summary by llm
-        map -> multi thread generate summary
+        """Extract summary by mapreduce mode
+        map -> multi async thread generate summary
         reduce -> merge the summaries by map process
         Args:
             docs:List[str]

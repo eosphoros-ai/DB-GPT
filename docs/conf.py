@@ -14,7 +14,7 @@ project = "DB-GPT"
 copyright = "2023, csunny"
 author = "csunny"
 
-version = "👏👏 0.4.0"
+version = "👏👏 0.4.1"
 html_title = project + " " + version
 
 # -- General configuration ---------------------------------------------------
@@ -66,6 +66,14 @@ language = "en"  # ['en', 'zh_CN'] #
 locales_dirs = ["./locales/"]
 gettext_compact = False
 gettext_uuid = True
+
+
+def setup(app):
+    app.add_css_file("css/custom.css")
+    app.add_css_file("css/examples.css")
+    app.add_css_file("css/termynal.css")
+    # app.add_css_file("css/use_cases.css")
+
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

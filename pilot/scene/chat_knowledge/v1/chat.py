@@ -55,11 +55,6 @@ class ChatKnowledge(BaseChat):
             "vector_store_name": self.knowledge_space,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
         }
-        # from pilot.graph_engine.graph_factory import RAGGraphFactory
-        #
-        # self.rag_engine = CFG.SYSTEM_APP.get_component(
-        #     ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
-        # ).create()
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
