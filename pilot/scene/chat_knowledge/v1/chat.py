@@ -130,19 +130,21 @@ class ChatKnowledge(BaseChat):
         build knowledge reference view message to web
         {
             "title":"References",
-            "reference":{
+            "references":[{
                 "name":"aa.pdf",
                 "pages":["1","2","3"]
-            },
+            }]
         }
         """
-        references = {"title": "References", "reference": {}}
+        references = {"title": "References", "references": []}
         for item in sources:
+            reference = {}
             source = item["source"] if "source" in item else ""
-            references["reference"]["name"] = source
+            reference["name"] = source
             pages = item["pages"] if "pages" in item else []
             if len(pages) > 0:
-                references["reference"]["pages"] = pages
+                reference["pages"] = pages
+            references["references"].append(reference)
         html = (
             f"""<references>{json.dumps(references, ensure_ascii=False)}</references>"""
         )
