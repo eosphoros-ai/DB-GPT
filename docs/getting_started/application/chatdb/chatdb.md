@@ -4,6 +4,12 @@ ChatData generates SQL from natural language and executes it. ChatDB involves co
 Database, including metadata about databases, tables, and
 fields.![db plugins demonstration](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/d8bfeee9-e982-465e-a2b8-1164b673847e)
 
+```{admonition} The LLM (Language Model) suitable for the ChatData scene is 
+* chatgpt3.5.
+* chatgpt4.
+* Vicuna-v1.5.
+```
+
 ### 1.Choose Datasource
 
 If you are using DB-GPT for the first time, you need to add a data source and set the relevant connection information
