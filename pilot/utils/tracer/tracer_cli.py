@@ -340,36 +340,43 @@ def chat(
                 table.add_row(["echo", metadata.get("echo")])
             elif "error" in metadata:
                 table.add_row(["BaseChat Error", metadata.get("error")])
-            if op == "BaseChat.nostream_call" and not sp["end_time"]:
-                if "model_output" in metadata:
-                    table.add_row(
-                        [
-                            "BaseChat model_output",
-                            split_string_by_terminal_width(
-                                metadata.get("model_output").get("text"),
-                                split=split_long_text,
-                            ),
-                        ]
+        if op == "BaseChat.do_action" and not sp["end_time"]:
+            if "model_output" in metadata:
+                table.add_row(
+                    [
+                        "BaseChat model_output",
+                        split_string_by_terminal_width(
+                            metadata.get("model_output").get("text"),
+                            split=split_long_text,
+                        ),
+                    ]
+                )
+            if "ai_response_text" in metadata:
+                table.add_row(
+                    [
+                        "BaseChat ai_response_text",
+                        split_string_by_terminal_width(
+                            metadata.get("ai_response_text"), split=split_long_text
+                        ),
+                    ]
+                )
+            if "prompt_define_response" in metadata:
+                prompt_define_response = metadata.get("prompt_define_response") or ""
+                if isinstance(prompt_define_response, dict) or isinstance(
+                    prompt_define_response, type([])
+                ):
+                    prompt_define_response = json.dumps(
+                        prompt_define_response, ensure_ascii=False
                     )
-                if "ai_response_text" in metadata:
-                    table.add_row(
-                        [
-                            "BaseChat ai_response_text",
-                            split_string_by_terminal_width(
-                                metadata.get("ai_response_text"), split=split_long_text
-                            ),
-                        ]
-                    )
-                if "prompt_define_response" in metadata:
-                    table.add_row(
-                        [
-                            "BaseChat prompt_define_response",
-                            split_string_by_terminal_width(
-                                metadata.get("prompt_define_response"),
-                                split=split_long_text,
-                            ),
-                        ]
-                    )
+                table.add_row(
+                    [
+                        "BaseChat prompt_define_response",
+                        split_string_by_terminal_width(
+                            prompt_define_response,
+                            split=split_long_text,
+                        ),
+                    ]
+                )
         if op == "DefaultModelWorker_call.generate_stream_func":
             if not sp["end_time"]:
                 table.add_row(["llm_adapter", metadata.get("llm_adapter")])

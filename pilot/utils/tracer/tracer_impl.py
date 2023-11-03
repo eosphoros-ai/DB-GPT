@@ -1,6 +1,9 @@
 from typing import Dict, Optional
 from contextvars import ContextVar
 from functools import wraps
+import asyncio
+import inspect
+
 
 from pilot.component import SystemApp, ComponentType
 from pilot.utils.tracer.base import (
@@ -154,16 +157,40 @@ class TracerManager:
 root_tracer: TracerManager = TracerManager()
 
 
-def trace(operation_name: str, **trace_kwargs):
+def trace(operation_name: Optional[str] = None, **trace_kwargs):
     def decorator(func):
         @wraps(func)
-        async def wrapper(*args, **kwargs):
-            with root_tracer.start_span(operation_name, **trace_kwargs):
+        def sync_wrapper(*args, **kwargs):
+            name = (
+                operation_name if operation_name else _parse_operation_name(func, *args)
+            )
+            with root_tracer.start_span(name, **trace_kwargs):
+                return func(*args, **kwargs)
+
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            name = (
+                operation_name if operation_name else _parse_operation_name(func, *args)
+            )
+            with root_tracer.start_span(name, **trace_kwargs):
                 return await func(*args, **kwargs)
 
-        return wrapper
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
 
     return decorator
+
+
+def _parse_operation_name(func, *args):
+    self_name = None
+    if inspect.signature(func).parameters.get("self"):
+        self_name = args[0].__class__.__name__
+    func_name = func.__name__
+    if self_name:
+        return f"{self_name}.{func_name}"
+    return func_name
 
 
 def initialize_tracer(
