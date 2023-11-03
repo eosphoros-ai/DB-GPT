@@ -1,8 +1,3 @@
-:root {
-  --ray-example-gallery-gap-x: 18px;
-  --ray-example-gallery-gap-y: 22px;
-  --sidebar-top: 5em;
-}
 
 #site-navigation {
   width: 330px !important;
