@@ -94,7 +94,7 @@ class DbHistoryMemory(BaseChatHistoryMemory):
     @staticmethod
     def conv_list(user_name: str = None) -> None:
         chat_history_dao = ChatHistoryDao()
-        history_list = chat_history_dao.list_last_20()
+        history_list = chat_history_dao.list_last_20(user_name)
         result = []
         for history in history_list:
             result.append(history.__dict__)
