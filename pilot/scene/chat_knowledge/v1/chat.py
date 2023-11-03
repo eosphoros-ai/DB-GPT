@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Dict, List
 
@@ -110,12 +111,14 @@ class ChatKnowledge(BaseChat):
             list(map(lambda doc: doc.metadata, docs)), "source"
         )
 
-        self.current_message.knowledge_source = self.sources
-        if not docs:
-            raise ValueError(
-                "you have no knowledge space, please add your knowledge space"
-            )
-        context = [d.page_content for d in docs]
+        if not docs or len(docs) == 0:
+            print("no relevant docs to retrieve")
+            context = "no relevant docs to retrieve"
+            # raise ValueError(
+            #     "you have no knowledge space, please add your knowledge space"
+            # )
+        else:
+            context = [d.page_content for d in docs]
         context = context[: self.max_token]
         relations = list(
             set([os.path.basename(str(d.metadata.get("source", ""))) for d in docs])
@@ -128,17 +131,26 @@ class ChatKnowledge(BaseChat):
         return input_values
 
     def parse_source_view(self, sources: List):
-        html_title = f"##### **References:**"
-        lines = ""
+        """
+        build knowledge reference view message to web
+        {
+            "title":"References",
+            "reference":{
+                "name":"aa.pdf",
+                "pages":["1","2","3"]
+            },
+        }
+        """
+        references = {"title": "References", "reference": {}}
         for item in sources:
             source = item["source"] if "source" in item else ""
-            pages = ",".join(item["pages"]) if "pages" in item else ""
-            lines += f"{source}"
+            references["reference"]["name"] = source
+            pages = item["pages"] if "pages" in item else []
             if len(pages) > 0:
-                lines += f", **pages**:{pages}\n\n"
-            else:
-                lines += "\n\n"
-        html = f"""{html_title}\n{lines}"""
+                references["reference"]["pages"] = pages
+        html = (
+            f"""<references>{json.dumps(references, ensure_ascii=False)}</references>"""
+        )
         return html
 
     def merge_by_key(self, data, key):

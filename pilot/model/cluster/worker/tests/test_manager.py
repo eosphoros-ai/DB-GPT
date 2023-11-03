@@ -3,7 +3,7 @@ import pytest
 from typing import List, Iterator, Dict, Tuple
 from dataclasses import asdict
 from pilot.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
-from pilot.model.base import ModelOutput, WorkerApplyType
+from pilot.model.base import ModelOutput, WorkerApplyType, ModelInstance
 from pilot.model.cluster.base import WorkerApplyRequest, WorkerStartupRequest
 from pilot.model.cluster.worker_base import ModelWorker
 from pilot.model.cluster.manager_base import WorkerRunData
@@ -14,7 +14,7 @@ from pilot.model.cluster.worker.manager import (
     SendHeartbeatFunc,
     ApplyFunction,
 )
-from pilot.model.cluster.worker.tests.base_tests import (
+from pilot.model.cluster.tests.conftest import (
     MockModelWorker,
     manager_2_workers,
     manager_with_2_workers,
@@ -216,7 +216,7 @@ async def test__remove_worker():
     workers = _create_workers(3)
     async with _start_worker_manager(workers=workers, stop=False) as manager:
         assert len(manager.workers) == 3
-        for _, worker_params in workers:
+        for _, worker_params, _ in workers:
             manager._remove_worker(worker_params)
         not_exist_parmas = _new_worker_params(
             model_name="this is a not exist worker params"
@@ -229,7 +229,7 @@ async def test__remove_worker():
 async def test_model_startup(mock_build_worker):
     async with _start_worker_manager() as manager:
         workers = _create_workers(1)
-        worker, worker_params = workers[0]
+        worker, worker_params, model_instance = workers[0]
         mock_build_worker.return_value = worker
 
         req = WorkerStartupRequest(
@@ -245,7 +245,7 @@ async def test_model_startup(mock_build_worker):
 
     async with _start_worker_manager() as manager:
         workers = _create_workers(1, error_worker=True)
-        worker, worker_params = workers[0]
+        worker, worker_params, model_instance = workers[0]
         mock_build_worker.return_value = worker
         req = WorkerStartupRequest(
             host="127.0.0.1",
@@ -263,7 +263,7 @@ async def test_model_startup(mock_build_worker):
 async def test_model_shutdown(mock_build_worker):
     async with _start_worker_manager(start=False, stop=False) as manager:
         workers = _create_workers(1)
-        worker, worker_params = workers[0]
+        worker, worker_params, model_instance = workers[0]
         mock_build_worker.return_value = worker
 
         req = WorkerStartupRequest(
@@ -298,7 +298,7 @@ async def test_get_model_instances(is_async):
     workers = _create_workers(3)
     async with _start_worker_manager(workers=workers, stop=False) as manager:
         assert len(manager.workers) == 3
-        for _, worker_params in workers:
+        for _, worker_params, _ in workers:
             model_name = worker_params.model_name
             worker_type = worker_params.worker_type
             if is_async:
@@ -326,7 +326,7 @@ async def test__simple_select(
     ]
 ):
     manager, workers = manager_with_2_workers
-    for _, worker_params in workers:
+    for _, worker_params, _ in workers:
         model_name = worker_params.model_name
         worker_type = worker_params.worker_type
         instances = await manager.get_model_instances(worker_type, model_name)
@@ -351,7 +351,7 @@ async def test_select_one_instance(
     ],
 ):
     manager, workers = manager_with_2_workers
-    for _, worker_params in workers:
+    for _, worker_params, _ in workers:
         model_name = worker_params.model_name
         worker_type = worker_params.worker_type
         if is_async:
@@ -376,7 +376,7 @@ async def test__get_model(
     ],
 ):
     manager, workers = manager_with_2_workers
-    for _, worker_params in workers:
+    for _, worker_params, _ in workers:
         model_name = worker_params.model_name
         worker_type = worker_params.worker_type
         params = {"model": model_name}
@@ -403,13 +403,13 @@ async def test_generate_stream(
     expected_messages: str,
 ):
     manager, workers = manager_with_2_workers
-    for _, worker_params in workers:
+    for _, worker_params, _ in workers:
         model_name = worker_params.model_name
         worker_type = worker_params.worker_type
         params = {"model": model_name}
         text = ""
         async for out in manager.generate_stream(params):
-            text += out.text
+            text = out.text
         assert text == expected_messages
 
 
@@ -417,8 +417,8 @@ async def test_generate_stream(
 @pytest.mark.parametrize(
     "manager_with_2_workers, expected_messages",
     [
-        ({"stream_messags": ["Hello", " world."]}, " world."),
-        ({"stream_messags": ["你好，我是", "张三。"]}, "张三。"),
+        ({"stream_messags": ["Hello", " world."]}, "Hello world."),
+        ({"stream_messags": ["你好，我是", "张三。"]}, "你好，我是张三。"),
     ],
     indirect=["manager_with_2_workers"],
 )
@@ -429,7 +429,7 @@ async def test_generate(
     expected_messages: str,
 ):
     manager, workers = manager_with_2_workers
-    for _, worker_params in workers:
+    for _, worker_params, _ in workers:
         model_name = worker_params.model_name
         worker_type = worker_params.worker_type
         params = {"model": model_name}
@@ -454,7 +454,7 @@ async def test_embeddings(
     is_async: bool,
 ):
     manager, workers = manager_2_embedding_workers
-    for _, worker_params in workers:
+    for _, worker_params, _ in workers:
         model_name = worker_params.model_name
         worker_type = worker_params.worker_type
         params = {"model": model_name, "input": ["hello", "world"]}
@@ -472,7 +472,7 @@ async def test_parameter_descriptions(
     ]
 ):
     manager, workers = manager_with_2_workers
-    for _, worker_params in workers:
+    for _, worker_params, _ in workers:
         model_name = worker_params.model_name
         worker_type = worker_params.worker_type
         params = await manager.parameter_descriptions(worker_type, model_name)

@@ -45,6 +45,10 @@ _OLD_MODELS = [
     "llama-cpp",
     "proxyllm",
     "gptj-6b",
+    "codellama-13b-sql-sft",
+    "codellama-7b",
+    "codellama-7b-sql-sft",
+    "codellama-13b",
 ]
 
 
@@ -148,8 +152,12 @@ class LLMModelAdaper:
                 conv.append_message(conv.roles[1], content)
             else:
                 raise ValueError(f"Unknown role: {role}")
+
         if system_messages:
-            conv.set_system_message("".join(system_messages))
+            if isinstance(conv, Conversation):
+                conv.set_system_message("".join(system_messages))
+            else:
+                conv.update_system_message("".join(system_messages))
 
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
@@ -459,7 +467,8 @@ register_conv_template(
         sep="\n",
         sep2="</s>",
         stop_str=["</s>", "[UNK]"],
-    )
+    ),
+    override=True,
 )
 # source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L227
 register_conv_template(
@@ -474,7 +483,8 @@ register_conv_template(
         sep="###",
         sep2="</s>",
         stop_str=["</s>", "[UNK]"],
-    )
+    ),
+    override=True,
 )
 # source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L242
 register_conv_template(
@@ -487,5 +497,6 @@ register_conv_template(
         sep="",
         sep2="</s>",
         stop_str=["</s>", "<|endoftext|>"],
-    )
+    ),
+    override=True,
 )

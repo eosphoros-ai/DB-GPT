@@ -99,9 +99,7 @@ class LocalWorkerManager(WorkerManager):
         )
 
     def _worker_key(self, worker_type: str, model_name: str) -> str:
-        if isinstance(worker_type, WorkerType):
-            worker_type = worker_type.value
-        return f"{model_name}@{worker_type}"
+        return WorkerType.to_worker_key(model_name, worker_type)
 
     async def run_blocking_func(self, func, *args):
         if asyncio.iscoroutinefunction(func):

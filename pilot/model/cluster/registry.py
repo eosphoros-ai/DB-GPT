@@ -1,21 +1,36 @@
 import random
 import threading
 import time
+import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import itertools
 
+from pilot.component import BaseComponent, ComponentType, SystemApp
 from pilot.model.base import ModelInstance
 
 
-class ModelRegistry(ABC):
+logger = logging.getLogger(__name__)
+
+
+class ModelRegistry(BaseComponent, ABC):
     """
     Abstract base class for a model registry. It provides an interface
     for registering, deregistering, fetching instances, and sending heartbeats
     for instances.
     """
+
+    name = ComponentType.MODEL_REGISTRY
+
+    def __init__(self, system_app: SystemApp | None = None):
+        self.system_app = system_app
+        super().__init__(system_app)
+
+    def init_app(self, system_app: SystemApp):
+        """Initialize the component with the main application."""
+        self.system_app = system_app
 
     @abstractmethod
     async def register_instance(self, instance: ModelInstance) -> bool:
@@ -65,9 +80,11 @@ class ModelRegistry(ABC):
         """Fetch all instances of a given model. Optionally, fetch only the healthy instances."""
 
     @abstractmethod
-    async def get_all_model_instances(self) -> List[ModelInstance]:
+    async def get_all_model_instances(
+        self, healthy_only: bool = False
+    ) -> List[ModelInstance]:
         """
-        Fetch all instances of all models
+        Fetch all instances of all models, Optionally, fetch only the healthy instances.
 
         Returns:
         - List[ModelInstance]: A list of instances for the all models.
@@ -105,8 +122,12 @@ class ModelRegistry(ABC):
 
 class EmbeddedModelRegistry(ModelRegistry):
     def __init__(
-        self, heartbeat_interval_secs: int = 60, heartbeat_timeout_secs: int = 120
+        self,
+        system_app: SystemApp | None = None,
+        heartbeat_interval_secs: int = 60,
+        heartbeat_timeout_secs: int = 120,
     ):
+        super().__init__(system_app)
         self.registry: Dict[str, List[ModelInstance]] = defaultdict(list)
         self.heartbeat_interval_secs = heartbeat_interval_secs
         self.heartbeat_timeout_secs = heartbeat_timeout_secs
@@ -180,9 +201,14 @@ class EmbeddedModelRegistry(ModelRegistry):
             instances = [ins for ins in instances if ins.healthy == True]
         return instances
 
-    async def get_all_model_instances(self) -> List[ModelInstance]:
-        print(self.registry)
-        return list(itertools.chain(*self.registry.values()))
+    async def get_all_model_instances(
+        self, healthy_only: bool = False
+    ) -> List[ModelInstance]:
+        logger.debug("Current registry metadata:\n{self.registry}")
+        instances = list(itertools.chain(*self.registry.values()))
+        if healthy_only:
+            instances = [ins for ins in instances if ins.healthy == True]
+        return instances
 
     async def send_heartbeat(self, instance: ModelInstance) -> bool:
         _, exist_ins = self._get_instances(

@@ -32,7 +32,7 @@ extensions = [
     "sphinx_panels",
     "sphinx_tabs.tabs",
     "IPython.sphinxext.ipython_console_highlighting",
-    'sphinx.ext.autosectionlabel'
+    "sphinx.ext.autosectionlabel",
 ]
 source_suffix = [".ipynb", ".html", ".md", ".rst"]
 

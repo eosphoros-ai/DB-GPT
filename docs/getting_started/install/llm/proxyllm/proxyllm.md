@@ -24,9 +24,12 @@ PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
 
 #Azure
 LLM_MODEL=chatgpt_proxyllm
-OPENAI_API_TYPE=azure
-PROXY_API_KEY={your-openai-sk}
-PROXY_SERVER_URL=https://xx.openai.azure.com/v1/chat/completions
+PROXY_API_KEY={your-azure-sk}
+PROXY_API_BASE=https://{your domain}.openai.azure.com/
+PROXY_API_TYPE=azure
+PROXY_SERVER_URL=xxxx
+PROXY_API_VERSION=2023-05-15
+PROXYLLM_BACKEND=gpt-35-turbo
 
 #Aliyun tongyi
 LLM_MODEL=tongyi_proxyllm

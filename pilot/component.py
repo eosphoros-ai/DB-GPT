@@ -46,6 +46,8 @@ class ComponentType(str, Enum):
     WORKER_MANAGER = "dbgpt_worker_manager"
     WORKER_MANAGER_FACTORY = "dbgpt_worker_manager_factory"
     MODEL_CONTROLLER = "dbgpt_model_controller"
+    MODEL_REGISTRY = "dbgpt_model_registry"
+    MODEL_API_SERVER = "dbgpt_model_api_server"
     AGENT_HUB = "dbgpt_agent_hub"
     EXECUTOR_DEFAULT = "dbgpt_thread_pool_default"
     TRACER = "dbgpt_tracer"
@@ -69,7 +71,6 @@ class BaseComponent(LifeCycle, ABC):
         This method needs to be implemented by every component to define how it integrates
         with the main system app.
         """
-        pass
 
 
 T = TypeVar("T", bound=BaseComponent)
@@ -91,13 +92,28 @@ class SystemApp(LifeCycle):
         """Returns the internal ASGI app."""
         return self._asgi_app
 
-    def register(self, component: Type[BaseComponent], *args, **kwargs):
-        """Register a new component by its type."""
+    def register(self, component: Type[BaseComponent], *args, **kwargs) -> T:
+        """Register a new component by its type.
+
+        Args:
+            component (Type[BaseComponent]): The component class to register
+
+        Returns:
+            T: The instance of registered component
+        """
         instance = component(self, *args, **kwargs)
         self.register_instance(instance)
+        return instance
 
-    def register_instance(self, instance: T):
-        """Register an already initialized component."""
+    def register_instance(self, instance: T) -> T:
+        """Register an already initialized component.
+
+        Args:
+            instance (T): The component instance to register
+
+        Returns:
+            T: The instance of registered component
+        """
         name = instance.name
         if isinstance(name, ComponentType):
             name = name.value
@@ -108,18 +124,34 @@ class SystemApp(LifeCycle):
         logger.info(f"Register component with name {name} and instance: {instance}")
         self.components[name] = instance
         instance.init_app(self)
+        return instance
 
     def get_component(
         self,
         name: Union[str, ComponentType],
         component_type: Type[T],
         default_component=_EMPTY_DEFAULT_COMPONENT,
+        or_register_component: Type[BaseComponent] = None,
+        *args,
+        **kwargs,
     ) -> T:
-        """Retrieve a registered component by its name and type."""
+        """Retrieve a registered component by its name and type.
+
+        Args:
+            name (Union[str, ComponentType]): Component name
+            component_type (Type[T]): The type of current retrieve component
+            default_component : The default component instance if not retrieve by name
+            or_register_component (Type[BaseComponent]): The new component to register if not retrieve by name
+
+        Returns:
+            T: The instance retrieved by component name
+        """
         if isinstance(name, ComponentType):
             name = name.value
         component = self.components.get(name)
         if not component:
+            if or_register_component:
+                return self.register(or_register_component, *args, **kwargs)
             if default_component != _EMPTY_DEFAULT_COMPONENT:
                 return default_component
             raise ValueError(f"No component found with name {name}")

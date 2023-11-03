@@ -43,8 +43,8 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 
 
 ## Contents
-- [install](#install)
-- [demo](#demo)
+- [Install](#install)
+- [Demo](#demo)
 - [introduction](#introduction)
 - [features](#features)
 - [contribution](#contribution)
@@ -177,7 +177,7 @@ Currently, we have released multiple key features, which are listed below to dem
 | [StarRocks](https://github.com/StarRocks/starrocks)                             | No          |           TODO                              |
 
 ## Introduction 
-Is the architecture of the entire DB-GPT shown in the following figure:
+The architecture of the entire DB-GPT is shown.
 
 <p align="center">
   <img src="./assets/DB-GPT.png" width="800" />
@@ -213,7 +213,7 @@ The core capabilities mainly consist of the following parts:
 
 ## Contribution
 
-- Please run `black .` before submitting the code. Contributing guidelines, [how to contribution](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING.md)
+- Please run `black .` before submitting the code. Contributing guidelines, [how to contribute](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING.md)
 
 ## RoadMap
 
@@ -330,7 +330,7 @@ As of October 10, 2023, by fine-tuning an open-source model of 13 billion parame
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us.
+We are working on building a community, if you have any ideas for building the community, feel free to contact us.
 [![](https://dcbadge.vercel.app/api/server/nASQyBjvY?compact=true&style=flat)](https://discord.gg/nASQyBjvY)
 
 <p align="center">

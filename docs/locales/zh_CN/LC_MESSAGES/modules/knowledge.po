@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 0.3.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-02 10:10+0800\n"
+"POT-Creation-Date: 2023-11-02 21:04+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -19,11 +19,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.12.1\n"
 
-#: ../../modules/knowledge.md:1 436b94d3a8374ed18feb5c14893a84e6
+#: ../../modules/knowledge.md:1 b94b3b15cb2441ed9d78abd222a717b7
 msgid "Knowledge"
 msgstr "知识"
 
-#: ../../modules/knowledge.md:3 918a3747cbed42d18b8c9c4547e67b14
+#: ../../modules/knowledge.md:3 c6d6e308a6ce42948d29e928136ef561
 #, fuzzy
 msgid ""
 "As the knowledge base is currently the most significant user demand "
@@ -34,15 +34,15 @@ msgstr ""
 "由于知识库是当前用户需求最显著的场景，我们原生支持知识库的构建和处理。同时，我们还在本项目中提供了多种知识库管理策略，如:pdf,md , "
 "txt, word, ppt"
 
-#: ../../modules/knowledge.md:4 d4d4b5d57918485aafa457bb9fdcf626
+#: ../../modules/knowledge.md:4 268abc408d40410ba90cf5f121dc5270
 msgid "Default built-in knowledge base"
 msgstr ""
 
-#: ../../modules/knowledge.md:5 d4d4b5d57918485aafa457bb9fdcf626
+#: ../../modules/knowledge.md:5 558c3364c38b458a8ebf81030efc2a48
 msgid "Custom addition of knowledge bases"
 msgstr ""
 
-#: ../../modules/knowledge.md:6 984361ce835c4c3492e29e1fb897348a
+#: ../../modules/knowledge.md:6 9cb3ce62da1440579c095848c7aef88c
 msgid ""
 "Various usage scenarios such as constructing knowledge bases through "
 "plugin capabilities and web crawling. Users only need to organize the "
@@ -50,53 +50,53 @@ msgid ""
 "the knowledge base required for the large model."
 msgstr ""
 
-#: ../../modules/knowledge.md:9 746e4fbd3212460198be51b90caee2c8
+#: ../../modules/knowledge.md:9 b8ca6bc4dd9845baa56e36eea7fac2a2
 #, fuzzy
 msgid "Create your own knowledge repository"
 msgstr "创建你自己的知识库"
 
-#: ../../modules/knowledge.md:11 1c46b33b0532417c824efbaa3e687c3f
+#: ../../modules/knowledge.md:11 17d7178a67924f43aa5b6293707ef041
 msgid ""
 "1.Place personal knowledge files or folders in the pilot/datasets "
 "directory."
 msgstr ""
 
-#: ../../modules/knowledge.md:13 3b16f387b5354947a89d6df77bd65bdb
+#: ../../modules/knowledge.md:13 31c31f14bf444981939689f9a9fb038a
 #, fuzzy
 msgid ""
 "We currently support many document formats: txt, pdf, md, html, doc, ppt,"
 " and url."
 msgstr "当前支持txt, pdf, md, html, doc, ppt, url文档格式"
 
-#: ../../modules/knowledge.md:15 09ec337d7da4418db854e58afb6c0980
+#: ../../modules/knowledge.md:15 9ad2f2e05f8842a9b9d8469a3704df23
 msgid "before execution:"
 msgstr "开始前"
 
-#: ../../modules/knowledge.md:22 c09b3decb018485f8e56830ddc156194
+#: ../../modules/knowledge.md:22 6fd2775914b641c4b8e486417b558ea6
 msgid ""
 "2.Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma "
 "(now only support Chroma and Milvus, if you set Milvus, please set "
 "MILVUS_URL and MILVUS_PORT)"
 msgstr ""
 
-#: ../../modules/knowledge.md:25 74460ec7709441d5945ce9f745a26d20
+#: ../../modules/knowledge.md:25 131c5f58898a4682940910980edb2043
 msgid "2.Run the knowledge repository initialization command"
 msgstr ""
 
-#: ../../modules/knowledge.md:31 4498ec4e46ff4e24b45dd855e829bd32
+#: ../../modules/knowledge.md:31 2cf550f17881497bb881b19efcc18c23
 msgid ""
 "Optionally, you can run `dbgpt knowledge load --help` command to see more"
 " usage."
 msgstr ""
 
-#: ../../modules/knowledge.md:33 5048ac3289e540f2a2b5fd0e5ed043f5
+#: ../../modules/knowledge.md:33 c8a2ea571b944bdfbcad48fa8b54fcc9
 msgid ""
 "3.Add the knowledge repository in the interface by entering the name of "
 "your knowledge repository (if not specified, enter \"default\") so you "
 "can use it for Q&A based on your knowledge base."
 msgstr ""
 
-#: ../../modules/knowledge.md:35 deeccff20f7f453dad0881b63dae2a18
+#: ../../modules/knowledge.md:35 b701170ad75e49dea7d7734c15681e0f
 msgid ""
 "Note that the default vector model used is text2vec-large-chinese (which "
 "is a large model, so if your personal computer configuration is not "

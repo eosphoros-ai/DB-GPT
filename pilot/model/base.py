@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from enum import Enum
-from typing import TypedDict, Optional, Dict, List
+from typing import TypedDict, Optional, Dict, List, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from pilot.utils.parameter_utils import ParameterDescription
@@ -52,6 +52,8 @@ class ModelOutput:
     text: str
     error_code: int
     model_context: Dict = None
+    finish_reason: str = None
+    usage: Dict[str, Any] = None
 
     def to_dict(self) -> Dict:
         return asdict(self)
