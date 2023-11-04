@@ -15,6 +15,7 @@ from pilot.configs.model_config import (
 from pilot.scene.chat_knowledge.v1.prompt import prompt
 from pilot.server.knowledge.service import KnowledgeService
 from pilot.utils.executor_utils import blocking_func_to_async
+from pilot.utils.tracer import root_tracer, trace
 
 CFG = Config()
 
@@ -92,6 +93,7 @@ class ChatKnowledge(BaseChat):
         """return reference"""
         return text + f"\n\n{self.parse_source_view(self.sources)}"
 
+    @trace()
     async def generate_input_values(self) -> Dict:
         if self.space_context:
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]

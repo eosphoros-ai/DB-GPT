@@ -10,6 +10,7 @@ from pilot.utils.tracer.base import (
 from pilot.utils.tracer.span_storage import MemorySpanStorage, FileSpanStorage
 from pilot.utils.tracer.tracer_impl import (
     root_tracer,
+    trace,
     initialize_tracer,
     DefaultTracer,
     TracerManager,
@@ -26,6 +27,7 @@ __all__ = [
     "MemorySpanStorage",
     "FileSpanStorage",
     "root_tracer",
+    "trace",
     "initialize_tracer",
     "DefaultTracer",
     "TracerManager",
