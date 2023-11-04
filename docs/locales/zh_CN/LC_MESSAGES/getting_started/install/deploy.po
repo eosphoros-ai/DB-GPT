@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: DB-GPT 👏👏 0.4.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-03 15:25+0800\n"
+"POT-Creation-Date: 2023-11-04 15:08+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_CN\n"
@@ -90,7 +90,7 @@ msgid "macos:brew install git-lfs"
 msgstr ""
 
 #: ../../getting_started/install/deploy.rst:58
-#: ../../getting_started/install/deploy.rst:221
+#: ../../getting_started/install/deploy.rst:223
 #: 9c601ee0c06646d58cbd2c2fff342cb5 d3fe6c712b4145d0856487c65057c2a0
 msgid "OpenAI"
 msgstr "OpenAI"
@@ -102,13 +102,13 @@ msgid "Download embedding model"
 msgstr "下载embedding model"
 
 #: ../../getting_started/install/deploy.rst:72
-#: ../../getting_started/install/deploy.rst:229
+#: ../../getting_started/install/deploy.rst:231
 #: 953d6931627641b985588abf8b6ad9fd d52e287164ca44f79709f4645a1bb774
 msgid "Configure LLM_MODEL and PROXY_API_URL and API_KEY in `.env` file"
 msgstr "在`.env`文件设置LLM_MODEL and PROXY_API_URL and API_KEY"
 
 #: ../../getting_started/install/deploy.rst:82
-#: ../../getting_started/install/deploy.rst:280
+#: ../../getting_started/install/deploy.rst:282
 #: 6dc89616c0bf46a898a49606d1349039 e30b7458fc0d46e8bcf0ec61a2be2e19
 msgid "Make sure your .env configuration is not overwritten"
 msgstr "认.env文件不会被覆盖\""
@@ -214,7 +214,7 @@ msgid "**Configure LLM_MODEL in `.env` file**"
 msgstr ""
 
 #: ../../getting_started/install/deploy.rst:131
-#: ../../getting_started/install/deploy.rst:226
+#: ../../getting_started/install/deploy.rst:228
 #: 022addaea4ea432584b8a27ea83a9dc4 7a95d25c58d2491e855dff42f6d3a686
 msgid "Baichuan"
 msgstr ""
@@ -256,37 +256,42 @@ msgstr "将chatglm模型目录修改为\"chatglm2-6b\""
 msgid "Other LLM API"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:222
+#: ../../getting_started/install/deploy.rst:219
+#: 3df3d5e0e4f64813a7ca2adccd056c4a
+msgid "Now DB-GPT support LLM REST API TYPE:"
+msgstr "目前DB-GPT支持的大模型REST API类型:"
+
+#: ../../getting_started/install/deploy.rst:224
 #: 4f7cb7a3f324410d8a34ba96d7c9536a
 msgid "Azure"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:223
+#: ../../getting_started/install/deploy.rst:225
 #: ee6cbe48a8094637b6b8a049446042c6
 msgid "Aliyun tongyi"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:224
+#: ../../getting_started/install/deploy.rst:226
 #: a3d9c061b0f440258be88cc3143b1887
 msgid "Baidu wenxin"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:225
+#: ../../getting_started/install/deploy.rst:227
 #: 176001fb6eaf448f9eca1abd256b3ef4
 msgid "Zhipu"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:227
+#: ../../getting_started/install/deploy.rst:229
 #: 17fecc140be2474ea1566d44641a27c0
 msgid "Bard"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:282
+#: ../../getting_started/install/deploy.rst:284
 #: bc34832cec754984a40c4d01526f0f83
 msgid "llama.cpp"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:284
+#: ../../getting_started/install/deploy.rst:286
 #: aa4b14e726dc447f92dec48f38a3d770
 msgid ""
 "DB-GPT already supports `llama.cpp "
@@ -296,24 +301,24 @@ msgstr ""
 "DB-GPT 已经支持了 `llama.cpp <https://github.com/ggerganov/llama.cpp>`_ via "
 "`llama-cpp-python <https://github.com/abetlen/llama-cpp-python>`_ ."
 
-#: ../../getting_started/install/deploy.rst:286
+#: ../../getting_started/install/deploy.rst:288
 #: e97a868ad05b48ee8d25017457c1b7ee
 msgid "**Preparing Model Files**"
 msgstr "**准备Model文件**"
 
-#: ../../getting_started/install/deploy.rst:288
+#: ../../getting_started/install/deploy.rst:290
 #: 8efc7824082545a4a98ebbd6b12fa00f
 msgid ""
 "To use llama.cpp, you need to prepare a gguf format model file, and there"
 " are two common ways to obtain it, you can choose either:"
 msgstr "使用 llama.cpp，你需要准备 gguf 格式的文件，你可以通过以下两种方法获取"
 
-#: ../../getting_started/install/deploy.rst:290
+#: ../../getting_started/install/deploy.rst:292
 #: 5b9f3a35779c4f89a4b9051904c5f7d8
 msgid "**1. Download a pre-converted model file.**"
 msgstr "**1.下载已转换的模型文件.**"
 
-#: ../../getting_started/install/deploy.rst:292
+#: ../../getting_started/install/deploy.rst:294
 #: e15f33a2e5fc4caaa9ad2e10cabf9d32
 msgid ""
 "Suppose you want to use [Vicuna 13B v1.5](https://huggingface.co/lmsys"
@@ -328,12 +333,12 @@ msgstr ""
 "13B-v1.5-GGUF)下载已转换的文件，只需要一个文件。将其下载到models目录并将其重命名为 `ggml-"
 "model-q4_0.gguf`。"
 
-#: ../../getting_started/install/deploy.rst:298
+#: ../../getting_started/install/deploy.rst:300
 #: 81ab603cd9b94cabb48add9541590b8b
 msgid "**2. Convert It Yourself**"
 msgstr "**2. 自行转换**"
 
-#: ../../getting_started/install/deploy.rst:300
+#: ../../getting_started/install/deploy.rst:302
 #: f9b46aa70a0842d6acc7e837c8b27778
 msgid ""
 "You can convert the model file yourself according to the instructions in "
@@ -345,31 +350,31 @@ msgstr ""
 "#prepare-data--run)中的说明自行转换模型文件，并把转换后的文件放在models目录中，并重命名为`ggml-"
 "model-q4_0.gguf`。"
 
-#: ../../getting_started/install/deploy.rst:302
+#: ../../getting_started/install/deploy.rst:304
 #: 5278c05568dd4ad688bcc181e45caa18
 msgid "**Installing Dependencies**"
 msgstr "**安装依赖**"
 
-#: ../../getting_started/install/deploy.rst:304
+#: ../../getting_started/install/deploy.rst:306
 #: bd67bf651a9a4096a37e73851b5fad98
 msgid ""
 "llama.cpp is an optional dependency in DB-GPT, and you can manually "
 "install it using the following command:"
 msgstr "llama.cpp在DB-GPT中是可选安装项, 你可以通过以下命令进行安装"
 
-#: ../../getting_started/install/deploy.rst:311
+#: ../../getting_started/install/deploy.rst:313
 #: 71ed6ae4d0aa4d3ca27ebfffc42a5095
 msgid "**3.Modifying the Configuration File**"
 msgstr "**3.修改配置文件**"
 
-#: ../../getting_started/install/deploy.rst:313
+#: ../../getting_started/install/deploy.rst:315
 #: a0a2fdb799524ef4938df2c306536e2a
 msgid "Next, you can directly modify your `.env` file to enable llama.cpp."
 msgstr "修改`.env`文件使用llama.cpp"
 
-#: ../../getting_started/install/deploy.rst:320
-#: ../../getting_started/install/deploy.rst:388
-#: 03694cbb7dfa432cb32116925357f008 07594f3e3e2e4d0f86b243629df5699e
+#: ../../getting_started/install/deploy.rst:322
+#: ../../getting_started/install/deploy.rst:390
+#: 03694cbb7dfa432cb32116925357f008
 msgid ""
 "Then you can run it according to `Run <https://db-"
 "gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html#run>`_"
@@ -377,55 +382,53 @@ msgstr ""
 "然后你可以根据[运行](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-"
 "cn/zh_CN/latest/getting_started/install/deploy/deploy.html#run)来运行"
 
-#: ../../getting_started/install/deploy.rst:323
+#: ../../getting_started/install/deploy.rst:325
 #: c9bbc15ea2fc4562bdf87a4e099600a0
 msgid "**More Configurations**"
 msgstr "**更多配置文件**"
 
-#: ../../getting_started/install/deploy.rst:325
+#: ../../getting_started/install/deploy.rst:327
 #: 9beff887d8554d1dac169de93625c1b2
 msgid ""
 "In DB-GPT, the model configuration can be done through  `{model "
 "name}_{config key}`."
 msgstr "在DB-GPT中，模型配置可以通过`{模型名称}_{配置名}` 来配置。"
 
-#: ../../getting_started/install/deploy.rst:327
+#: ../../getting_started/install/deploy.rst:329
 #: 6cad64bcc9f141de85479203b21f7f9e
 msgid "More Configurations"
 msgstr "**更多配置文件**"
 
-#: ../../getting_started/install/deploy.rst:331
+#: ../../getting_started/install/deploy.rst:333
 #: de97b0d5b59c4bfabbd47b7e1766cc70
 msgid "Environment Variable Key"
 msgstr "环境变量Key"
 
-#: ../../getting_started/install/deploy.rst:332
+#: ../../getting_started/install/deploy.rst:334
 #: 76afa3655f644576b54b4422bad3fcad
 msgid "Default"
 msgstr "默认值"
 
-#: ../../getting_started/install/deploy.rst:333
+#: ../../getting_started/install/deploy.rst:335
 #: 0dcabfeeb4874e08ba53d4b4aa6a1d73
 msgid "Description"
 msgstr "描述"
 
-#: ../../getting_started/install/deploy.rst:334
+#: ../../getting_started/install/deploy.rst:336
 #: c1670aec27cf4c068d825456817d7667
 msgid "llama_cpp_prompt_template"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:335
-#: ../../getting_started/install/deploy.rst:338
-#: ../../getting_started/install/deploy.rst:344
-#: ../../getting_started/install/deploy.rst:350
-#: ../../getting_started/install/deploy.rst:356
-#: 1e13d43ba3574c33afa7e44d1643171b 355e51a688a0463f881ffce1a6cb0934
-#: 3775eb80762c4c6189efcaf62ee25556 49c8f875066f49c6aac195805f88e4a9
-#: 4d4358e00a31419b96d937cbbb4d9943
+#: ../../getting_started/install/deploy.rst:337
+#: ../../getting_started/install/deploy.rst:340
+#: ../../getting_started/install/deploy.rst:346
+#: ../../getting_started/install/deploy.rst:352
+#: ../../getting_started/install/deploy.rst:358
+#: 49c8f875066f49c6aac195805f88e4a9
 msgid "None"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:336
+#: ../../getting_started/install/deploy.rst:338
 #: bb31e19533e5434b832d5975bf579dc3
 msgid ""
 "Prompt template name, now support: zero_shot, vicuna_v1.1,alpaca,llama-2"
@@ -435,27 +438,27 @@ msgstr ""
 "Prompt template 现在可以支持`zero_shot, vicuna_v1.1,alpaca,llama-2,baichuan-"
 "chat,internlm-chat`, 如果是None, 可以根据模型路径来自动获取模型 Prompt template"
 
-#: ../../getting_started/install/deploy.rst:337
+#: ../../getting_started/install/deploy.rst:339
 #: 38ed23e19e2a47cf8fbacb035cfe1292
 msgid "llama_cpp_model_path"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:339
+#: ../../getting_started/install/deploy.rst:341
 #: eb069fdfdfeb4b17b723ee6733ba50c2
 msgid "Model path"
 msgstr "模型路径"
 
-#: ../../getting_started/install/deploy.rst:340
+#: ../../getting_started/install/deploy.rst:342
 #: 348d3ff3e4f44ceb99aadead11f5cca5
 msgid "llama_cpp_n_gpu_layers"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:341
+#: ../../getting_started/install/deploy.rst:343
 #: 007deecf593b4553b6ca8df3e9240a28
 msgid "1000000000"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:342
+#: ../../getting_started/install/deploy.rst:344
 #: 4da435c417f0482581895bf4d052a6a1
 msgid ""
 "Number of layers to offload to the GPU, Set this to 1000000000 to offload"
@@ -463,123 +466,123 @@ msgid ""
 " number, eg: 10"
 msgstr "要将多少网络层转移到GPU上，将其设置为1000000000以将所有层转移到GPU上。如果您的 GPU 内存不足，可以设置较低的数字，例如：10。"
 
-#: ../../getting_started/install/deploy.rst:343
+#: ../../getting_started/install/deploy.rst:345
 #: 4f186505ea81467590cf817d116e6879
 msgid "llama_cpp_n_threads"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:345
+#: ../../getting_started/install/deploy.rst:347
 #: b94dc2fb2cd14a4a8f38ba95b05fbb5b
 msgid ""
 "Number of threads to use. If None, the number of threads is automatically"
 " determined"
 msgstr "要使用的线程数量。如果为None，则线程数量将自动确定。"
 
-#: ../../getting_started/install/deploy.rst:346
+#: ../../getting_started/install/deploy.rst:348
 #: 867f2357430440eba4e749a8a39bff18
 msgid "llama_cpp_n_batch"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:347
+#: ../../getting_started/install/deploy.rst:349
 #: 78516f7b23264147bae11e13426097eb
 msgid "512"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:348
+#: ../../getting_started/install/deploy.rst:350
 #: c2ec97ffef3e4a70afef6634e78801a2
 msgid "Maximum number of prompt tokens to batch together when calling llama_eval"
 msgstr "在调用llama_eval时，批处理在一起的prompt tokens的最大数量"
 
-#: ../../getting_started/install/deploy.rst:349
+#: ../../getting_started/install/deploy.rst:351
 #: 29ad3c5ab7134da49d6fca3b42d734d6
 msgid "llama_cpp_n_gqa"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:351
+#: ../../getting_started/install/deploy.rst:353
 #: e5bc322b0c824465b1adbd162838a3b7
 msgid "Grouped-query attention. Must be 8 for llama-2 70b."
 msgstr "对于 llama-2 70B 模型，Grouped-query attention 必须为8。"
 
-#: ../../getting_started/install/deploy.rst:352
+#: ../../getting_started/install/deploy.rst:354
 #: 43e7d412238a4f0ba8227938d9fa4172
 msgid "llama_cpp_rms_norm_eps"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:353
+#: ../../getting_started/install/deploy.rst:355
 #: 6328db04645b4b089593291e2ca13f79
 msgid "5e-06"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:354
+#: ../../getting_started/install/deploy.rst:356
 #: 6c8bf631cece42fa86954f5cf2d75503
 msgid "5e-6 is a good value for llama-2 models."
 msgstr "对于llama-2模型来说，5e-6是一个不错的值。"
 
-#: ../../getting_started/install/deploy.rst:355
+#: ../../getting_started/install/deploy.rst:357
 #: 22ebee39fe8b4cc18378447cac67e631
 msgid "llama_cpp_cache_capacity"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:357
+#: ../../getting_started/install/deploy.rst:359
 #: 4dc98bede90f4237829f65513e4adf61
 msgid "Maximum cache capacity. Examples: 2000MiB, 2GiB"
 msgstr "模型缓存最大值. 例如: 2000MiB, 2GiB"
 
-#: ../../getting_started/install/deploy.rst:358
+#: ../../getting_started/install/deploy.rst:360
 #: bead617b5af943dab0bc1209823d3c22
 msgid "llama_cpp_prefer_cpu"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:359
+#: ../../getting_started/install/deploy.rst:361
 #: 8efb44f1cfc54b1a8b3ca8ea138113ee
 msgid "False"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:360
+#: ../../getting_started/install/deploy.rst:362
 #: b854e6a44c8348ceb72ac382b73ceec5
 msgid ""
 "If a GPU is available, it will be preferred by default, unless "
 "prefer_cpu=False is configured."
 msgstr "如果有可用的GPU，默认情况下会优先使用GPU，除非配置了 prefer_cpu=False。"
 
-#: ../../getting_started/install/deploy.rst:363
+#: ../../getting_started/install/deploy.rst:365
 #: 41b0440eb0074e5fa8c87dd404efe0ce
 msgid "vllm"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:365
+#: ../../getting_started/install/deploy.rst:367
 #: 6fc445675bf74b2ea2fe0c7f2a64db69
 msgid "vLLM is a fast and easy-to-use library for LLM inference and serving."
 msgstr "\"vLLM 是一个快速且易于使用的 LLM 推理和服务的库。"
 
-#: ../../getting_started/install/deploy.rst:367
+#: ../../getting_started/install/deploy.rst:369
 #: aab5f913d29445c4b345180b8793ebc7
 msgid "**Running vLLM**"
 msgstr "**运行vLLM**"
 
-#: ../../getting_started/install/deploy.rst:369
+#: ../../getting_started/install/deploy.rst:371
 #: a9560d697821404cb0abdabf9f479645
 msgid "**1.Installing Dependencies**"
 msgstr "**1.安装依赖**"
 
-#: ../../getting_started/install/deploy.rst:371
+#: ../../getting_started/install/deploy.rst:373
 #: b008224d4f314e5c988335262c95a42e
 msgid ""
 "vLLM is an optional dependency in DB-GPT, and you can manually install it"
 " using the following command:"
 msgstr "vLLM 在 DB-GPT 是一个可选依赖, 你可以使用下面的命令手动安装它："
 
-#: ../../getting_started/install/deploy.rst:377
+#: ../../getting_started/install/deploy.rst:379
 #: 7dc0c8e996124177935a4e0d9ef19837
 msgid "**2.Modifying the Configuration File**"
 msgstr "**2.修改配置文件**"
 
-#: ../../getting_started/install/deploy.rst:379
+#: ../../getting_started/install/deploy.rst:381
 #: 49667576b44c46bf87d5bf4d207dd63a
 msgid "Next, you can directly modify your .env file to enable vllm."
 msgstr "你可以直接修改你的 `.env` 文件"
 
-#: ../../getting_started/install/deploy.rst:386
+#: ../../getting_started/install/deploy.rst:388
 #: f16a78f0ee6545babab0d66f12654c0a
 msgid ""
 "You can view the models supported by vLLM `here "
@@ -590,27 +593,27 @@ msgstr ""
 "[这里](https://vllm.readthedocs.io/en/latest/models/supported_models.html"
 "#supported-models) 查看 vLLM 支持的模型。"
 
-#: ../../getting_started/install/deploy.rst:395
+#: ../../getting_started/install/deploy.rst:397
 #: f7ae366723e9494d8177eeb963ba0ed9
 msgid "3.Prepare sql example(Optional)"
 msgstr "3.准备 sql example(可选)"
 
-#: ../../getting_started/install/deploy.rst:396
+#: ../../getting_started/install/deploy.rst:398
 #: d302aac8ddb346598fc9d73e0f6c2cbc
 msgid "**(Optional) load examples into SQLite**"
 msgstr "**(可选) load examples into SQLite**"
 
-#: ../../getting_started/install/deploy.rst:403
+#: ../../getting_started/install/deploy.rst:405
 #: ae2a315e40854f27a074f2c0f2506014
 msgid "On windows platform:"
 msgstr ""
 
-#: ../../getting_started/install/deploy.rst:410
+#: ../../getting_started/install/deploy.rst:412
 #: 36b4b7a813844af3a4ec8062b39059a3
 msgid "4.Run db-gpt server"
 msgstr "4.运行db-gpt server"
 
-#: ../../getting_started/install/deploy.rst:416
+#: ../../getting_started/install/deploy.rst:418
 #: e56f15e563484027b7efb2147c9b71a7
 msgid "**Open http://localhost:5000 with your browser to see the product.**"
 msgstr "打开浏览器访问http://localhost:5000"
