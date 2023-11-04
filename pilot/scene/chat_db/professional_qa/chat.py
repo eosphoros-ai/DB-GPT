@@ -6,6 +6,7 @@ from pilot.common.sql_database import Database
 from pilot.configs.config import Config
 from pilot.scene.chat_db.professional_qa.prompt import prompt
 from pilot.utils.executor_utils import blocking_func_to_async
+from pilot.utils.tracer import root_tracer, trace
 
 CFG = Config()
 
@@ -39,6 +40,7 @@ class ChatWithDbQA(BaseChat):
             else len(self.tables)
         )
 
+    @trace()
     async def generate_input_values(self) -> Dict:
         table_info = ""
         dialect = "mysql"

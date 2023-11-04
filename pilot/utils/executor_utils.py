@@ -1,5 +1,6 @@
 from typing import Callable, Awaitable, Any
 import asyncio
+import contextvars
 from abc import ABC, abstractmethod
 from concurrent.futures import Executor, ThreadPoolExecutor
 from functools import partial
@@ -55,6 +56,12 @@ async def blocking_func_to_async(
     """
     if asyncio.iscoroutinefunction(func):
         raise ValueError(f"The function {func} is not blocking function")
+
+    # This function will be called within the new thread, capturing the current context
+    ctx = contextvars.copy_context()
+
+    def run_with_context():
+        return ctx.run(partial(func, *args, **kwargs))
+
     loop = asyncio.get_event_loop()
-    sync_function_noargs = partial(func, *args, **kwargs)
-    return await loop.run_in_executor(executor, sync_function_noargs)
+    return await loop.run_in_executor(executor, run_with_context)

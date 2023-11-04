@@ -145,7 +145,14 @@ class BaseChat(ABC):
         )
         self.current_message.tokens = 0
         if self.prompt_template.template:
-            current_prompt = self.prompt_template.format(**input_values)
+            metadata = {
+                "template_scene": self.prompt_template.template_scene,
+                "input_values": input_values,
+            }
+            with root_tracer.start_span(
+                "BaseChat.__call_base.prompt_template.format", metadata=metadata
+            ):
+                current_prompt = self.prompt_template.format(**input_values)
             self.current_message.add_system_message(current_prompt)
 
         llm_messages = self.generate_llm_messages()

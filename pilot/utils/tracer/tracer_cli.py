@@ -303,8 +303,6 @@ def chat(
                 print(table.get_formatted_string(out_format=output, **out_kwargs))
         if sys_table:
             print(sys_table.get_formatted_string(out_format=output, **out_kwargs))
-    if hide_conv:
-        return
 
     if not found_trace_id:
         print(f"Can't found conversation with trace_id: {trace_id}")
@@ -315,8 +313,11 @@ def chat(
     trace_spans = [s for s in reversed(trace_spans)]
     hierarchy = _build_trace_hierarchy(trace_spans)
     if tree:
-        print("\nInvoke Trace Tree:\n")
+        print(f"\nInvoke Trace Tree(trace_id: {trace_id}):\n")
         _print_trace_hierarchy(hierarchy)
+
+    if hide_conv:
+        return
 
     trace_spans = _get_ordered_trace_from(hierarchy)
     table = PrettyTable(["Key", "Value Value"], title="Chat Trace Details")

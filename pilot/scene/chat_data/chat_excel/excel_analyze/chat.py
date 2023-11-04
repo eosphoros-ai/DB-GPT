@@ -14,6 +14,7 @@ from pilot.scene.chat_data.chat_excel.excel_learning.chat import ExcelLearning
 from pilot.common.path_utils import has_path
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.base_modules.agent.common.schema import Status
+from pilot.utils.tracer import root_tracer, trace
 
 CFG = Config()
 
@@ -62,6 +63,7 @@ class ChatExcel(BaseChat):
             # ]
         return "\n".join(f"{i+1}. {item}" for i, item in enumerate(command_strings))
 
+    @trace()
     async def generate_input_values(self) -> Dict:
         input_values = {
             "user_input": self.current_user_input,
@@ -88,4 +90,9 @@ class ChatExcel(BaseChat):
 
     def stream_plugin_call(self, text):
         text = text.replace("\n", " ")
-        return self.api_call.run_display_sql(text, self.excel_reader.get_df_by_sql_ex)
+        with root_tracer.start_span(
+            "ChatExcel.stream_plugin_call.run_display_sql", metadata={"text": text}
+        ):
+            return self.api_call.run_display_sql(
+                text, self.excel_reader.get_df_by_sql_ex
+            )
