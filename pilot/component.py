@@ -52,6 +52,7 @@ class ComponentType(str, Enum):
     EXECUTOR_DEFAULT = "dbgpt_thread_pool_default"
     TRACER = "dbgpt_tracer"
     TRACER_SPAN_STORAGE = "dbgpt_tracer_span_storage"
+    RAG_GRAPH_DEFAULT = "dbgpt_rag_engine_default"
 
 
 class BaseComponent(LifeCycle, ABC):

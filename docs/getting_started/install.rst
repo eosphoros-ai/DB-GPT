@@ -18,7 +18,7 @@ DB-GPT product is a Web application that you can chat database, chat knowledge, 
    :name: deploy
    :hidden:
 
-   ./install/deploy/deploy.md
+   ./install/deploy.rst
    ./install/docker/docker.md
    ./install/docker_compose/docker_compose.md
    ./install/cluster/cluster.rst

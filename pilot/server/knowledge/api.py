@@ -24,6 +24,7 @@ from pilot.server.knowledge.request.request import (
     ChunkQueryRequest,
     DocumentQueryRequest,
     SpaceArgumentRequest,
+    EntityExtractRequest,
 )
 
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
@@ -198,3 +199,26 @@ def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
         for d in docs
     ]
     return {"response": res}
+
+
+@router.post("/knowledge/entity/extract")
+async def entity_extract(request: EntityExtractRequest):
+    logger.info(f"Received params: {request}")
+    try:
+        from pilot.scene.base import ChatScene
+        from pilot.common.chat_util import llm_chat_response_nostream
+        import uuid
+
+        chat_param = {
+            "chat_session_id": uuid.uuid1(),
+            "current_user_input": request.text,
+            "select_param": "entity",
+            "model_name": request.model_name,
+        }
+
+        res = await llm_chat_response_nostream(
+            ChatScene.ExtractEntity.value(), **{"chat_param": chat_param}
+        )
+        return Result.succ(res)
+    except Exception as e:
+        return Result.faild(code="E000X", msg=f"entity extract error {e}")

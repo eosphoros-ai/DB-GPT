@@ -38,11 +38,11 @@ class SourceEmbedding(ABC):
            - embedding_args: Optional
         """
         self.file_path = file_path
-        self.vector_store_config = vector_store_config
+        self.vector_store_config = vector_store_config or {}
         self.source_reader = source_reader or None
         self.text_splitter = text_splitter or None
         self.embedding_args = embedding_args
-        self.embeddings = vector_store_config["embeddings"]
+        self.embeddings = self.vector_store_config.get("embeddings", None)
 
     @abstractmethod
     @register

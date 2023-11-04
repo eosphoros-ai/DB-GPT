@@ -170,10 +170,12 @@ def get_or_create_event_loop() -> asyncio.BaseEventLoop:
         assert loop is not None
         return loop
     except RuntimeError as e:
-        if not "no running event loop" in str(e):
+        if not "no running event loop" in str(e) and not "no current event loop" in str(
+            e
+        ):
             raise e
         logging.warning("Cant not get running event loop, create new event loop now")
-        return asyncio.get_event_loop_policy().get_event_loop()
+    return asyncio.get_event_loop_policy().new_event_loop()
 
 
 def logging_str_to_uvicorn_level(log_level_str):

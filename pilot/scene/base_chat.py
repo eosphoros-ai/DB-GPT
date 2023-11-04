@@ -128,14 +128,19 @@ class BaseChat(ABC):
         return speak_to_user
 
     async def __call_base(self):
-        input_values = await self.generate_input_values()
+        import inspect
+
+        input_values = (
+            await self.generate_input_values()
+            if inspect.isawaitable(self.generate_input_values())
+            else self.generate_input_values()
+        )
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)
         self.current_message.start_date = datetime.datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S"
         )
-
         self.current_message.tokens = 0
         if self.prompt_template.template:
             current_prompt = self.prompt_template.format(**input_values)
@@ -146,7 +151,6 @@ class BaseChat(ABC):
             # Not new server mode, we convert the message format(List[ModelMessage]) to list of dict
             # fix the error of "Object of type ModelMessage is not JSON serializable" when passing the payload to request.post
             llm_messages = list(map(lambda m: m.dict(), llm_messages))
-
         payload = {
             "model": self.llm_model,
             "prompt": self.generate_llm_text(),
@@ -159,6 +163,9 @@ class BaseChat(ABC):
         return payload
 
     def stream_plugin_call(self, text):
+        return text
+
+    def knowledge_reference_call(self, text):
         return text
 
     async def check_iterator_end(iterator):
@@ -190,6 +197,7 @@ class BaseChat(ABC):
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
             self.current_message.add_ai_message(msg)
+            view_msg = self.knowledge_reference_call(msg)
             self.current_message.add_view_message(view_msg)
         except Exception as e:
             print(traceback.format_exc())
@@ -256,6 +264,41 @@ class BaseChat(ABC):
         ### store dialogue
         self.memory.append(self.current_message)
         return self.current_ai_response()
+
+    async def get_llm_response(self):
+        payload = await self.__call_base()
+        logger.info(f"Request: \n{payload}")
+        ai_response_text = ""
+        try:
+            from pilot.model.cluster import WorkerManagerFactory
+
+            worker_manager = CFG.SYSTEM_APP.get_component(
+                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
+
+            model_output = await worker_manager.generate(payload)
+
+            ### output parse
+            ai_response_text = (
+                self.prompt_template.output_parser.parse_model_nostream_resp(
+                    model_output, self.prompt_template.sep
+                )
+            )
+            ### model result deal
+            self.current_message.add_ai_message(ai_response_text)
+            prompt_define_response = None
+            prompt_define_response = (
+                self.prompt_template.output_parser.parse_prompt_response(
+                    ai_response_text
+                )
+            )
+        except Exception as e:
+            print(traceback.format_exc())
+            logger.error("model response parse failed！" + str(e))
+            self.current_message.add_view_message(
+                f"""model response parse failed！{str(e)}\n  {ai_response_text} """
+            )
+        return prompt_define_response
 
     def _blocking_stream_call(self):
         logger.warn(

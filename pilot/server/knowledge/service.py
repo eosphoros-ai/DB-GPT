@@ -65,7 +65,11 @@ class KnowledgeService:
     """
 
     def __init__(self):
-        pass
+        from pilot.graph_engine.graph_engine import RAGGraphEngine
+
+        # source = "/Users/chenketing/Desktop/project/llama_index/examples/paul_graham_essay/data/test/test_kg_text.txt"
+
+        # pass
 
     def create_knowledge_space(self, request: KnowledgeSpaceRequest):
         """create knowledge space
@@ -195,6 +199,7 @@ class KnowledgeService:
         # import langchain is very very slow!!!
 
         doc_ids = sync_request.doc_ids
+        self.model_name = sync_request.model_name or CFG.LLM_MODEL
         for doc_id in doc_ids:
             query = KnowledgeDocumentEntity(
                 id=doc_id,
@@ -257,6 +262,10 @@ class KnowledgeService:
                     pre_separator=sync_request.pre_separator,
                     text_splitter_impl=text_splitter,
                 )
+            from pilot.graph_engine.graph_engine import RAGGraphEngine
+
+            # source = "/Users/chenketing/Desktop/project/llama_index/examples/paul_graham_essay/data/test/test_kg_text.txt"
+            # engine = RAGGraphEngine(knowledge_source=source, model_name="proxyllm", text_splitter=text_splitter)
             embedding_factory = CFG.SYSTEM_APP.get_component(
                 "embedding_factory", EmbeddingFactory
             )
@@ -280,8 +289,8 @@ class KnowledgeService:
             executor = CFG.SYSTEM_APP.get_component(
                 ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
             ).create()
+            # executor.submit(self.async_document_summary, chunk_docs, doc)
             executor.submit(self.async_doc_embedding, client, chunk_docs, doc)
-
             logger.info(f"begin save document chunks, doc:{doc.doc_name}")
             # save chunk details
             chunk_entities = [
@@ -376,23 +385,76 @@ class KnowledgeService:
             doc_name=request.doc_name,
             doc_type=request.doc_type,
         )
+        document_query = KnowledgeDocumentEntity(id=request.document_id)
+        documents = knowledge_document_dao.get_documents(document_query)
+
         res = ChunkQueryResponse()
         res.data = document_chunk_dao.get_document_chunks(
             query, page=request.page, page_size=request.page_size
         )
+        res.summary = documents[0].summary
         res.total = document_chunk_dao.get_document_chunks_count(query)
         res.page = request.page
         return res
+
+    def async_knowledge_graph(self, chunk_docs, doc):
+        """async document extract triplets and save into graph db
+        Args:
+            - chunk_docs: List[Document]
+            - doc: KnowledgeDocumentEntity
+        """
+        logger.info(
+            f"async_knowledge_graph, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to graph store"
+        )
+        try:
+            from pilot.graph_engine.graph_factory import RAGGraphFactory
+
+            rag_engine = CFG.SYSTEM_APP.get_component(
+                ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
+            ).create()
+            rag_engine.knowledge_graph(chunk_docs)
+            doc.status = SyncStatus.FINISHED.name
+            doc.result = "document build graph success"
+        except Exception as e:
+            doc.status = SyncStatus.FAILED.name
+            doc.result = "document build graph failed" + str(e)
+            logger.error(f"document build graph failed:{doc.doc_name}, {str(e)}")
+        return knowledge_document_dao.update_knowledge_document(doc)
+
+    def async_document_summary(self, chunk_docs, doc):
+        """async document extract summary
+        Args:
+            - chunk_docs: List[Document]
+            - doc: KnowledgeDocumentEntity
+        """
+        from llama_index import PromptHelper
+        from llama_index.prompts.default_prompt_selectors import (
+            DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
+        )
+
+        texts = [doc.page_content for doc in chunk_docs]
+        prompt_helper = PromptHelper(context_window=2000)
+
+        texts = prompt_helper.repack(
+            prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=texts
+        )
+        logger.info(
+            f"async_document_summary, doc:{doc.doc_name}, chunk_size:{len(texts)}, begin generate summary"
+        )
+        summary = self._mapreduce_extract_summary(texts)
+        print(f"final summary:{summary}")
+        doc.summary = summary
+        return knowledge_document_dao.update_knowledge_document(doc)
 
     def async_doc_embedding(self, client, chunk_docs, doc):
         """async document embedding into vector db
         Args:
             - client: EmbeddingEngine Client
             - chunk_docs: List[Document]
-            - doc: doc
+            - doc: KnowledgeDocumentEntity
         """
         logger.info(
-            f"async_doc_embedding, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
+            f"async doc sync, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
         )
         try:
             vector_ids = client.knowledge_embedding_batch(chunk_docs)
@@ -447,3 +509,70 @@ class KnowledgeService:
         if space.context is not None:
             return json.loads(spaces[0].context)
         return None
+
+    def _llm_extract_summary(self, doc: str):
+        """Extract triplets from text by llm"""
+        from pilot.scene.base import ChatScene
+        from pilot.common.chat_util import llm_chat_response_nostream
+        import uuid
+
+        chat_param = {
+            "chat_session_id": uuid.uuid1(),
+            "current_user_input": doc,
+            "select_param": doc,
+            "model_name": self.model_name,
+        }
+        from pilot.common.chat_util import run_async_tasks
+
+        summary_iters = run_async_tasks(
+            [
+                llm_chat_response_nostream(
+                    ChatScene.ExtractRefineSummary.value(), **{"chat_param": chat_param}
+                )
+            ]
+        )
+        return summary_iters[0]
+
+    def _mapreduce_extract_summary(self, docs):
+        """Extract summary by mapreduce mode
+        map -> multi async thread generate summary
+        reduce -> merge the summaries by map process
+        Args:
+            docs:List[str]
+        """
+        from pilot.scene.base import ChatScene
+        from pilot.common.chat_util import llm_chat_response_nostream
+        import uuid
+
+        tasks = []
+        max_iteration = 5
+        if len(docs) == 1:
+            summary = self._llm_extract_summary(doc=docs[0])
+            return summary
+        else:
+            max_iteration = max_iteration if len(docs) > max_iteration else len(docs)
+            for doc in docs[0:max_iteration]:
+                chat_param = {
+                    "chat_session_id": uuid.uuid1(),
+                    "current_user_input": doc,
+                    "select_param": "summary",
+                    "model_name": self.model_name,
+                }
+                tasks.append(
+                    llm_chat_response_nostream(
+                        ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
+                    )
+                )
+            from pilot.common.chat_util import run_async_tasks
+
+            summary_iters = run_async_tasks(tasks)
+            from pilot.common.prompt_util import PromptHelper
+            from llama_index.prompts.default_prompt_selectors import (
+                DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
+            )
+
+            prompt_helper = PromptHelper(context_window=2500)
+            summary_iters = prompt_helper.repack(
+                prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=summary_iters
+            )
+            return self._mapreduce_extract_summary(summary_iters)
