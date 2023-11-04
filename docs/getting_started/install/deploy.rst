@@ -216,6 +216,8 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
             or
             git clone https://huggingface.co/moka-ai/m3e-large
 
+        Now DB-GPT support LLM REST API TYPE:
+
         .. note::
 
             * OpenAI
