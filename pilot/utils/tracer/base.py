@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Callable, Optional
+from typing import Dict, Callable, Optional, List
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -120,6 +120,11 @@ class SpanStorage(BaseComponent, ABC):
     @abstractmethod
     def append_span(self, span: Span):
         """Store the given span. This needs to be implemented by subclasses."""
+
+    def append_span_batch(self, spans: List[Span]):
+        """Store the span batch"""
+        for span in spans:
+            self.append_span(span)
 
 
 class Tracer(BaseComponent, ABC):

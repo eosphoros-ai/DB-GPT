@@ -3,6 +3,7 @@ from contextvars import ContextVar
 from functools import wraps
 import asyncio
 import inspect
+import logging
 
 
 from pilot.component import SystemApp, ComponentType
@@ -15,6 +16,9 @@ from pilot.utils.tracer.base import (
     TracerContext,
 )
 from pilot.utils.tracer.span_storage import MemorySpanStorage
+from pilot.utils.module_utils import import_from_checked_string
+
+logger = logging.getLogger(__name__)
 
 
 class DefaultTracer(Tracer):
@@ -197,10 +201,11 @@ def initialize_tracer(
     system_app: SystemApp,
     tracer_filename: str,
     root_operation_name: str = "DB-GPT-Web-Entry",
+    tracer_storage_cls: str = None,
 ):
     if not system_app:
         return
-    from pilot.utils.tracer.span_storage import FileSpanStorage
+    from pilot.utils.tracer.span_storage import FileSpanStorage, SpanStorageContainer
 
     trace_context_var = ContextVar(
         "trace_context",
@@ -208,7 +213,15 @@ def initialize_tracer(
     )
     tracer = DefaultTracer(system_app)
 
-    system_app.register_instance(FileSpanStorage(tracer_filename))
+    storage_container = SpanStorageContainer(system_app)
+    storage_container.append_storage(FileSpanStorage(tracer_filename))
+
+    if tracer_storage_cls:
+        logger.info(f"Begin parse storage class {tracer_storage_cls}")
+        storage = import_from_checked_string(tracer_storage_cls, SpanStorage)
+        storage_container.append_storage(storage())
+
+    system_app.register_instance(storage_container)
     system_app.register_instance(tracer)
     root_tracer.initialize(system_app, trace_context_var)
     if system_app.app:

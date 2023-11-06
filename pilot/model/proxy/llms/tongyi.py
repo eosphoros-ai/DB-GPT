@@ -36,7 +36,10 @@ def tongyi_generate_stream(
         if message.role == ModelMessageRoleType.HUMAN:
             history.append({"role": "user", "content": message.content})
     for message in messages:
-        if message.role == ModelMessageRoleType.SYSTEM or message.role == ModelMessageRoleType.HUMAN:
+        if (
+            message.role == ModelMessageRoleType.SYSTEM
+            or message.role == ModelMessageRoleType.HUMAN
+        ):
             history.append({"role": "user", "content": message.content})
         # elif message.role == ModelMessageRoleType.HUMAN:
         #     history.append({"role": "user", "content": message.content})

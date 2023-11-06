@@ -1021,6 +1021,7 @@ def run_worker_manager(
         system_app,
         os.path.join(LOGDIR, worker_params.tracer_file),
         root_operation_name="DB-GPT-WorkerManager-Entry",
+        tracer_storage_cls=worker_params.tracer_storage_cls,
     )
 
     _start_local_worker(worker_manager, worker_params)
