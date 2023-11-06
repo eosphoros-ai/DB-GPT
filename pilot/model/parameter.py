@@ -88,6 +88,12 @@ class ModelControllerParameters(BaseParameters):
             "help": "The filename to store tracer span records",
         },
     )
+    tracer_storage_cls: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The storage class to storage tracer span records",
+        },
+    )
 
 
 @dataclass
@@ -136,6 +142,12 @@ class ModelAPIServerParameters(BaseParameters):
         default="dbgpt_model_apiserver_tracer.jsonl",
         metadata={
             "help": "The filename to store tracer span records",
+        },
+    )
+    tracer_storage_cls: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The storage class to storage tracer span records",
         },
     )
 
@@ -224,6 +236,12 @@ class ModelWorkerParameters(BaseModelParameters):
         default="dbgpt_model_worker_manager_tracer.jsonl",
         metadata={
             "help": "The filename to store tracer span records",
+        },
+    )
+    tracer_storage_cls: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The storage class to storage tracer span records",
         },
     )
 
