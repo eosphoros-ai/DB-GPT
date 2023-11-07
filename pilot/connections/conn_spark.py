@@ -1,7 +1,7 @@
 from typing import Optional, Any
 
 from pilot.connections.base import BaseConnect
-
+from pyspark.sql import SparkSession
 
 class SparkConnect(BaseConnect):
     """
@@ -21,14 +21,13 @@ class SparkConnect(BaseConnect):
     def __init__(
         self,
         file_path: str,
-        spark_session: Optional = None,
+        spark_session: Optional[SparkSession] = None,
         engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Spark DataFrame from Datasource path
         return: Spark DataFrame
         """
-        from pyspark.sql import SparkSession
 
         self.spark_session = (
             spark_session or SparkSession.builder.appName("dbgpt_spark").getOrCreate()
