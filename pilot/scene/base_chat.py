@@ -382,7 +382,7 @@ class BaseChat(ABC):
         text += self.__load_example_messages()
 
         ### Load History
-        text += self.__load_histroy_messages()
+        text += self.__load_history_messages()
 
         ### Load User Input
         text += self.__load_user_message()
@@ -408,7 +408,7 @@ class BaseChat(ABC):
         messages += self.__load_example_messages(str_message=False)
 
         ### Load History
-        messages += self.__load_histroy_messages(str_message=False)
+        messages += self.__load_history_messages(str_message=False)
 
         ### Load User Input
         messages += self.__load_user_message(str_message=False)
@@ -464,7 +464,7 @@ class BaseChat(ABC):
                         )
         return example_text if str_message else example_messages
 
-    def __load_histroy_messages(self, str_message: bool = True):
+    def __load_history_messages(self, str_message: bool = True):
         history_text = ""
         history_messages = []
         if self.prompt_template.need_historical_messages:
