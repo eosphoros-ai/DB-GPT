@@ -262,10 +262,6 @@ class KnowledgeService:
                     pre_separator=sync_request.pre_separator,
                     text_splitter_impl=text_splitter,
                 )
-            from pilot.graph_engine.graph_engine import RAGGraphEngine
-
-            # source = "/Users/chenketing/Desktop/project/llama_index/examples/paul_graham_essay/data/test/test_kg_text.txt"
-            # engine = RAGGraphEngine(knowledge_source=source, model_name="proxyllm", text_splitter=text_splitter)
             embedding_factory = CFG.SYSTEM_APP.get_component(
                 "embedding_factory", EmbeddingFactory
             )
