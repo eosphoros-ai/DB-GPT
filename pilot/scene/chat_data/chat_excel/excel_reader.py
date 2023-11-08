@@ -281,7 +281,7 @@ class ExcelReader:
                 self.df[column_name] = pd.to_numeric(self.df[column_name])
                 self.df[column_name] = self.df[column_name].fillna(0)
             except Exception as e:
-                print("transfor column error！" + column_name)
+                print("can't transfor numeric column" + column_name)
 
         self.df = self.df.rename(columns=lambda x: x.strip().replace(" ", "_"))
 
@@ -291,6 +291,13 @@ class ExcelReader:
         self.table_name = "excel_data"
         # write data in duckdb
         self.db.register(self.table_name, self.df)
+
+        # 获取结果并打印表结构信息
+        result = self.db.execute(f"DESCRIBE {self.table_name}")
+        columns = result.fetchall()
+        for column in columns:
+            print(column)
+
 
     def run(self, sql):
         try:

@@ -207,7 +207,7 @@ class ApiCall:
         self.plugin_generator = plugin_generator
         self.display_registry = display_registry
         self.start_time = datetime.now().timestamp() * 1000
-        self.backend_rendering: bool = True
+        self.backend_rendering: bool = False
 
     def __repr__(self):
         return f"ApiCall(name={self.name}, status={self.status}, args={self.args})"
