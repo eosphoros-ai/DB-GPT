@@ -34,7 +34,7 @@ PROXYLLM_BACKEND=gpt-35-turbo
 #Aliyun tongyi
 LLM_MODEL=tongyi_proxyllm
 TONGYI_PROXY_API_KEY={your-tongyi-sk}
-PROXY_SERVER_URL={your_service_url}
+PROXY_SERVER_URL=https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
 
 ## Baidu wenxin
 LLM_MODEL=wenxin_proxyllm

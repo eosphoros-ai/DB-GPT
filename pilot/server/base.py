@@ -142,7 +142,7 @@ class WebWerverParameters(BaseParameters):
         },
     )
     tracer_file: Optional[str] = field(
-        default="dbgpt_webserver_tracer.jsonl",
+        default="dbgpt_webserver_tracer.log",
         metadata={
             "help": "The filename to store tracer span records",
         },
