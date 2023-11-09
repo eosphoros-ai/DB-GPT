@@ -14,7 +14,8 @@ _PROMPT_SCENE_DEFINE_EN = "You are a data analysis expert. "
 _DEFAULT_TEMPLATE_EN = """
 This is an example data，please learn to understand the structure and content of this data:
     {data_example}
-Explain the meaning and function of each column, and give a simple and clear explanation of the technical terms.  
+Explain the meaning and function of each column, and give a simple and clear explanation of the technical terms， If it is a Date column, please summarize the Date format like: yyyy-MM-dd HH:MM:ss.
+Please do not modify or translate the column names, make sure they are consistent with the given data column names.
 Provide some analysis options,please think step by step.
 
 Please return your answer in JSON format, the return format is as follows:
@@ -26,7 +27,9 @@ _PROMPT_SCENE_DEFINE_ZH = "你是一个数据分析专家. "
 _DEFAULT_TEMPLATE_ZH = """
 下面是一份示例数据，请学习理解该数据的结构和内容:
     {data_example}
-分析各列数据的含义和作用，并对专业术语进行简单明了的解释。
+分析各列数据的含义和作用，并对专业术语进行简单明了的解释, 如果是时间类型请给出时间格式类似:yyyy-MM-dd HH:MM:ss.
+请不要修改或者翻译列名，确保和给出数据列名一致.
+
 提供一些分析方案思路，请一步一步思考。
 
 请以JSON格式返回您的答案，返回格式如下：

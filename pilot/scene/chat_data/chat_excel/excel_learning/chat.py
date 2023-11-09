@@ -51,10 +51,9 @@ class ExcelLearning(BaseChat):
             self._executor, self.excel_reader.get_sample_data
         )
         self.prompt_template.output_parser.update(colunms)
-        copy_datas = datas.copy()
         datas.insert(0, colunms)
 
         input_values = {
-            "data_example": json.dumps(copy_datas, cls=DateTimeEncoder),
+            "data_example": json.dumps(datas, cls=DateTimeEncoder),
         }
         return input_values

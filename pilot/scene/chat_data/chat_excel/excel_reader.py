@@ -258,15 +258,17 @@ class ExcelReader:
         self.extension = os.path.splitext(file_name)[1]
         # read excel file
         if file_path.endswith(".xlsx") or file_path.endswith(".xls"):
-            df_tmp = pd.read_excel(file_path)
+            df_tmp = pd.read_excel(file_path, index_col= False)
             self.df = pd.read_excel(
                 file_path,
+                index_col=False,
                 converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
         elif file_path.endswith(".csv"):
-            df_tmp = pd.read_csv(file_path, encoding=encoding)
+            df_tmp = pd.read_csv(file_path, index_col= False, encoding=encoding)
             self.df = pd.read_csv(
                 file_path,
+                index_col=False,
                 encoding=encoding,
                 converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
