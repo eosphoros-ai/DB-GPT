@@ -5,7 +5,9 @@ import time
 import json
 import logging
 import xml.etree.ElementTree as ET
+import pandas as pd
 
+from pilot.common.json_utils import serialize
 from datetime import datetime
 from typing import Any, Callable, Optional, List
 from pydantic import BaseModel
@@ -357,7 +359,7 @@ class ApiCall:
 
         if api_status.api_result:
             param["result"] = api_status.api_result
-        return json.dumps(param)
+        return json.dumps(param, default=serialize)
 
     def to_view_text(self, api_status: PluginStatus):
         api_call_element = ET.Element("dbgpt-view")
@@ -391,7 +393,7 @@ class ApiCall:
         if api_status.api_result:
             param["data"] = api_status.api_result
 
-        return json.dumps(param)
+        return json.dumps(param, default=serialize)
 
     def run(self, llm_text):
         if self.__is_need_wait_plugin_call(llm_text):
@@ -469,7 +471,7 @@ class ApiCall:
                             if sql is not None and len(sql) > 0:
                                 data_df = sql_run_func(sql)
                                 value.df = data_df
-                                value.api_result = data_df.apply(lambda row: row.to_dict(), axis=1).to_list()
+                                value.api_result = json.loads(data_df.to_json(orient='records', date_format='iso', date_unit='s'))
                                 value.status = Status.COMPLETED.value
                             else:
                                 value.status = Status.FAILED.value
@@ -480,3 +482,5 @@ class ApiCall:
                             value.err_msg = str(e)
                         value.end_time = datetime.now().timestamp() * 1000
         return self.api_view_context(llm_text, True)
+
+

@@ -20,7 +20,9 @@ Constraint:
 1. You can only use the table provided in the table structure information to generate sql. If you cannot generate sql based on the provided table structure, please say: "The table structure information provided is not enough to generate sql query." It is prohibited to fabricate information at will.
 2. Do not query columns that do not exist. Pay attention to which column is in which table.
 3. Unless the user specifies in the question a specific number of examples he wishes to obtain, always limit the query to a maximum of {top_k} results.
-4. Please ensure that the output result contains: <api-call><name>response_table</name><args><sql>SQL Query to run</sql></args></api-call>，and replace the generated sql into the parameter sql.Please make sure to respond as following format:
+4. Please ensure that the output result contains: <api-call><name>response_table</name><args><sql>SQL Query to run</sql></args></api-call>，and replace the generated sql into the parameter sql.
+
+Please make sure to respond as following format:
     thoughts summary to say to user.<api-call><name>response_table</name><args><sql>SQL Query to run</sql></args></api-call>
     
 Question: {input}

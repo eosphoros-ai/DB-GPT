@@ -4,7 +4,7 @@ import duckdb
 import os
 import re
 import sqlparse
-
+import pandas as pd
 import chardet
 import pandas as pd
 import numpy as np
@@ -240,13 +240,24 @@ if __name__ == "__main__":
     # print(add_quotes_to_chinese_columns(sql_2))
 
     # sql = """ SELECT 省份, 2021年, 2022年 as GDP FROM excel_data """
-    sql = """ SELECT 省份, 2022年, 2021年 FROM excel_data """
-    sql_2 = """ SELECT "省份", "2022年" as "2022年实际GDP增速", "2021年" as "2021年实际GDP增速" FROM excel_data """
-    sql_3 = """ SELECT "省份", ("2022年" / ("2022年" + "2021年")) * 100 as "2022年实际GDP增速占比", ("2021年" / ("2022年" + "2021年")) * 100 as "2021年实际GDP增速占比" FROM excel_data """
+    # sql = """ SELECT 省份, 2022年, 2021年 FROM excel_data """
+    # sql_2 = """ SELECT "省份", "2022年" as "2022年实际GDP增速", "2021年" as "2021年实际GDP增速" FROM excel_data """
+    # sql_3 = """ SELECT "省份", ("2022年" / ("2022年" + "2021年")) * 100 as "2022年实际GDP增速占比", ("2021年" / ("2022年" + "2021年")) * 100 as "2021年实际GDP增速占比" FROM excel_data """
+    #
+    # sql = add_quotes_to_chinese_columns(sql_3)
+    # print(f"excute sql:{sql}")
 
-    sql = add_quotes_to_chinese_columns(sql_3)
-    print(f"excute sql:{sql}")
+    data = {
+        'name': ['John', 'Alice', 'Bob'],
+        'age': [30, 25, 35],
+        'timestamp': [pd.Timestamp('2022-01-01'), pd.Timestamp('2022-01-02'), pd.Timestamp('2022-01-03')],
+        'category': pd.Categorical(['A', 'B', 'C'])
+    }
 
+    df = pd.DataFrame(data)
+
+    json_data = df.to_json(orient='records', date_format='iso', date_unit='s')
+    print(json_data)
 
 class ExcelReader:
     def __init__(self, file_path):
