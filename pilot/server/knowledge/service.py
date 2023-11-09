@@ -10,7 +10,7 @@ from pilot.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
 from pilot.component import ComponentType
-from pilot.utils.executor_utils import ExecutorFactory
+from pilot.utils.executor_utils import ExecutorFactory, blocking_func_to_async
 
 from pilot.server.knowledge.chunk_db import (
     DocumentChunkEntity,
@@ -31,6 +31,7 @@ from pilot.server.knowledge.request.request import (
     ChunkQueryRequest,
     SpaceArgumentRequest,
     DocumentSyncRequest,
+    DocumentSummaryRequest,
 )
 from enum import Enum
 
@@ -303,7 +304,30 @@ class KnowledgeService:
             ]
             document_chunk_dao.create_documents_chunks(chunk_entities)
 
-        return True
+        return doc.id
+
+    async def document_summary(self, request: DocumentSummaryRequest):
+        """get document summary
+        Args:
+            - request: DocumentSummaryRequest
+        """
+        doc_query = KnowledgeDocumentEntity(id=request.doc_id)
+        documents = knowledge_document_dao.get_documents(doc_query)
+        if len(documents) != 1:
+            raise Exception(f"can not found document for {request.doc_id}")
+        document = documents[0]
+        query = DocumentChunkEntity(
+            document_id=request.doc_id,
+        )
+        chunks = document_chunk_dao.get_document_chunks(query, page=1, page_size=100)
+        if len(chunks) == 0:
+            raise Exception(f"can not found chunks for {request.doc_id}")
+        from langchain.schema import Document
+
+        chunk_docs = [Document(page_content=chunk.content) for chunk in chunks]
+        return await self.async_document_summary(
+            model_name=request.model_name, chunk_docs=chunk_docs, doc=document
+        )
 
     def update_knowledge_space(
         self, space_id: int, space_request: KnowledgeSpaceRequest
@@ -417,30 +441,25 @@ class KnowledgeService:
             logger.error(f"document build graph failed:{doc.doc_name}, {str(e)}")
         return knowledge_document_dao.update_knowledge_document(doc)
 
-    def async_document_summary(self, chunk_docs, doc):
+    async def async_document_summary(self, model_name, chunk_docs, doc):
         """async document extract summary
         Args:
+            - model_name: str
             - chunk_docs: List[Document]
             - doc: KnowledgeDocumentEntity
         """
-        from llama_index import PromptHelper
-        from llama_index.prompts.default_prompt_selectors import (
-            DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
-        )
-
         texts = [doc.page_content for doc in chunk_docs]
-        prompt_helper = PromptHelper(context_window=2000)
+        from pilot.common.prompt_util import PromptHelper
 
-        texts = prompt_helper.repack(
-            prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=texts
-        )
+        prompt_helper = PromptHelper()
+        from pilot.scene.chat_knowledge.summary.prompt import prompt
+
+        texts = prompt_helper.repack(prompt_template=prompt.template, text_chunks=texts)
         logger.info(
             f"async_document_summary, doc:{doc.doc_name}, chunk_size:{len(texts)}, begin generate summary"
         )
-        summary = self._mapreduce_extract_summary(texts)
-        print(f"final summary:{summary}")
-        doc.summary = summary
-        return knowledge_document_dao.update_knowledge_document(doc)
+        summary = await self._mapreduce_extract_summary(texts, model_name, 10, 3)
+        return await self._llm_extract_summary(summary, model_name)
 
     def async_doc_embedding(self, client, chunk_docs, doc):
         """async document embedding into vector db
@@ -506,30 +525,37 @@ class KnowledgeService:
             return json.loads(spaces[0].context)
         return None
 
-    def _llm_extract_summary(self, doc: str):
+    async def _llm_extract_summary(self, doc: str, model_name: str = None):
         """Extract triplets from text by llm"""
         from pilot.scene.base import ChatScene
-        from pilot.common.chat_util import llm_chat_response_nostream
         import uuid
 
         chat_param = {
             "chat_session_id": uuid.uuid1(),
-            "current_user_input": doc,
+            "current_user_input": "",
             "select_param": doc,
-            "model_name": self.model_name,
+            "model_name": model_name,
         }
-        from pilot.common.chat_util import run_async_tasks
+        executor = CFG.SYSTEM_APP.get_component(
+            ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+        ).create()
+        from pilot.openapi.api_v1.api_v1 import CHAT_FACTORY
 
-        summary_iters = run_async_tasks(
-            [
-                llm_chat_response_nostream(
-                    ChatScene.ExtractRefineSummary.value(), **{"chat_param": chat_param}
-                )
-            ]
+        chat = await blocking_func_to_async(
+            executor,
+            CHAT_FACTORY.get_implementation,
+            ChatScene.ExtractRefineSummary.value(),
+            **{"chat_param": chat_param},
         )
-        return summary_iters[0]
+        return chat
 
-    def _mapreduce_extract_summary(self, docs):
+    async def _mapreduce_extract_summary(
+        self,
+        docs,
+        model_name: str = None,
+        max_iteration: int = 5,
+        concurrency_limit: int = None,
+    ):
         """Extract summary by mapreduce mode
         map -> multi async thread generate summary
         reduce -> merge the summaries by map process
@@ -541,18 +567,16 @@ class KnowledgeService:
         import uuid
 
         tasks = []
-        max_iteration = 5
         if len(docs) == 1:
-            summary = self._llm_extract_summary(doc=docs[0])
-            return summary
+            return docs[0]
         else:
             max_iteration = max_iteration if len(docs) > max_iteration else len(docs)
             for doc in docs[0:max_iteration]:
                 chat_param = {
                     "chat_session_id": uuid.uuid1(),
-                    "current_user_input": doc,
-                    "select_param": "summary",
-                    "model_name": self.model_name,
+                    "current_user_input": "",
+                    "select_param": doc,
+                    "model_name": model_name,
                 }
                 tasks.append(
                     llm_chat_response_nostream(
@@ -561,14 +585,22 @@ class KnowledgeService:
                 )
             from pilot.common.chat_util import run_async_tasks
 
-            summary_iters = run_async_tasks(tasks)
+            summary_iters = await run_async_tasks(
+                tasks=tasks, concurrency_limit=concurrency_limit
+            )
+            summary_iters = list(
+                filter(
+                    lambda content: "LLMServer Generate Error" not in content,
+                    summary_iters,
+                )
+            )
             from pilot.common.prompt_util import PromptHelper
-            from llama_index.prompts.default_prompt_selectors import (
-                DEFAULT_TREE_SUMMARIZE_PROMPT_SEL,
-            )
+            from pilot.scene.chat_knowledge.summary.prompt import prompt
 
-            prompt_helper = PromptHelper(context_window=2500)
+            prompt_helper = PromptHelper()
             summary_iters = prompt_helper.repack(
-                prompt=DEFAULT_TREE_SUMMARIZE_PROMPT_SEL, text_chunks=summary_iters
+                prompt_template=prompt.template, text_chunks=summary_iters
             )
-            return self._mapreduce_extract_summary(summary_iters)
+            return await self._mapreduce_extract_summary(
+                summary_iters, model_name, max_iteration, concurrency_limit
+            )

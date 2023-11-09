@@ -11,15 +11,15 @@ CFG = Config()
 
 PROMPT_SCENE_DEFINE = """"""
 
-_DEFAULT_TEMPLATE_ZH = """请根据提供的上下文信息的进行总结:
+_DEFAULT_TEMPLATE_ZH = """请根据提供的上下文信息的进行精简地总结:
 {context}
-回答的时候最好按照1.2.3.点进行总结
+答案尽量精确和简单,不要过长，长度控制在100字左右
 """
 
 _DEFAULT_TEMPLATE_EN = """
-Write a summary of the following context: 
+Write a quick summary of the following context: 
 {context}
-When answering, it is best to summarize according to points 1.2.3.
+the summary should be as concise as possible and not overly lengthy.Please keep the answer within approximately 200 characters.
 """
 
 _DEFAULT_TEMPLATE = (

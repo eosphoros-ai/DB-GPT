@@ -108,6 +108,14 @@ class SpaceArgumentRequest(BaseModel):
     argument: str
 
 
+class DocumentSummaryRequest(BaseModel):
+    """Sync request"""
+
+    """doc_ids: doc ids"""
+    doc_id: int
+    model_name: str
+
+
 class EntityExtractRequest(BaseModel):
     """argument: argument"""
 
