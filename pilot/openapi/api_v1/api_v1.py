@@ -248,13 +248,13 @@ async def dialogue_new(
 
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
-async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
+async def params_list(chat_mode: str = ChatScene.ChatNormal.value(), user_token: UserRequest = Depends(get_user_from_headers)):
     if ChatScene.ChatWithDbQA.value() == chat_mode:
-        return Result.succ(get_db_list())
+        return Result.succ(get_db_list(user_id=user_token.user_id))
     elif ChatScene.ChatWithDbExecute.value() == chat_mode:
-        return Result.succ(get_db_list())
+        return Result.succ(get_db_list(user_id=user_token.user_id))
     elif ChatScene.ChatDashboard.value() == chat_mode:
-        return Result.succ(get_db_list())
+        return Result.succ(get_db_list(user_id=user_token.user_id))
     elif ChatScene.ChatExecution.value() == chat_mode:
         return Result.succ(plugins_select_info())
     elif ChatScene.ChatKnowledge.value() == chat_mode:

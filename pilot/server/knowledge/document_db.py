@@ -16,6 +16,7 @@ class KnowledgeDocumentEntity(Base):
         "mysql_collate": "utf8mb4_unicode_ci",
     }
     id = Column(Integer, primary_key=True)
+    space_id = Column(Integer)
     doc_name = Column(String(100))
     doc_type = Column(String(100))
     space = Column(String(100))
@@ -29,7 +30,7 @@ class KnowledgeDocumentEntity(Base):
     gmt_modified = Column(DateTime)
 
     def __repr__(self):
-        return f"KnowledgeDocumentEntity(id={self.id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+        return f"KnowledgeDocumentEntity(id={self.id}, space_id={self.space_id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
 class KnowledgeDocumentDao(BaseDao):
@@ -41,6 +42,7 @@ class KnowledgeDocumentDao(BaseDao):
     def create_knowledge_document(self, document: KnowledgeDocumentEntity):
         session = self.get_session()
         knowledge_document = KnowledgeDocumentEntity(
+            space_id=document.space_id,
             doc_name=document.doc_name,
             doc_type=document.doc_type,
             space=document.space,
@@ -66,6 +68,10 @@ class KnowledgeDocumentDao(BaseDao):
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.id == query.id
+            )
+        if query.space_id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space_id == query.space_id
             )
         if query.doc_name is not None:
             knowledge_documents = knowledge_documents.filter(
@@ -102,6 +108,10 @@ class KnowledgeDocumentDao(BaseDao):
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.id == query.id
             )
+        if query.space_id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space_id == query.space_id
+            )
         if query.doc_name is not None:
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.doc_name == query.doc_name
@@ -132,6 +142,10 @@ class KnowledgeDocumentDao(BaseDao):
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.id == query.id
+            )
+        if query.space_id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space_id == query.space_id
             )
         if query.doc_name is not None:
             knowledge_documents = knowledge_documents.filter(
@@ -174,6 +188,10 @@ class KnowledgeDocumentDao(BaseDao):
         if query.space is not None:
             knowledge_documents = knowledge_documents.filter(
                 KnowledgeDocumentEntity.space == query.space
+            )
+        if query.space_id is not None:
+            knowledge_documents = knowledge_documents.filter(
+                KnowledgeDocumentEntity.space_id == query.space_id
             )
         knowledge_documents.delete()
         session.commit()

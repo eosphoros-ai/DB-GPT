@@ -81,19 +81,24 @@ class KnowledgeService:
         knowledge_space_dao.create_knowledge_space(request)
         return True
 
-    def create_knowledge_document(self, space, request: KnowledgeDocumentRequest):
+    def create_knowledge_document(self, space_id, request: KnowledgeDocumentRequest):
         """create knowledge document
         Args:
            - request: KnowledgeDocumentRequest
         """
-        query = KnowledgeDocumentEntity(doc_name=request.doc_name, space=space)
+        knowledge_spaces = knowledge_space_dao.get_knowledge_space(KnowledgeSpaceEntity(id=space_id))
+        if len(knowledge_spaces) == 0:
+            return None
+        ks = knowledge_spaces[0]
+        query = KnowledgeDocumentEntity(doc_name=request.doc_name, space_id=space_id)
         documents = knowledge_document_dao.get_knowledge_documents(query)
         if len(documents) > 0:
             raise Exception(f"document name:{request.doc_name} have already named")
         document = KnowledgeDocumentEntity(
             doc_name=request.doc_name,
             doc_type=request.doc_type,
-            space=space,
+            space_id=space_id,
+            space=ks.name,
             chunk_size=0,
             status=SyncStatus.TODO.name,
             last_sync=datetime.now(),
@@ -158,7 +163,7 @@ class KnowledgeService:
         space.context = argument_request.argument
         return knowledge_space_dao.update_knowledge_space(space)
 
-    def get_knowledge_documents(self, space, request: DocumentQueryRequest):
+    def get_knowledge_documents(self, space_id, request: DocumentQueryRequest):
         """get knowledge documents
         Args:
             - space: Knowledge Space Name
@@ -167,7 +172,7 @@ class KnowledgeService:
         query = KnowledgeDocumentEntity(
             doc_name=request.doc_name,
             doc_type=request.doc_type,
-            space=space,
+            space_id=space_id,
             status=request.status,
         )
         res = DocumentQueryResponse()
@@ -178,7 +183,7 @@ class KnowledgeService:
         res.page = request.page
         return res
 
-    def sync_knowledge_document(self, space_name, sync_request: DocumentSyncRequest, user_id: str = None):
+    def sync_knowledge_document(self, space_id, sync_request: DocumentSyncRequest, user_id: str = None):
         """sync knowledge document chunk into vector store
         Args:
             - space: Knowledge Space Name
@@ -198,7 +203,7 @@ class KnowledgeService:
         for doc_id in doc_ids:
             query = KnowledgeDocumentEntity(
                 id=doc_id,
-                space=space_name,
+                space_id=space_id,
             )
             doc = knowledge_document_dao.get_knowledge_documents(query)[0]
             if (
@@ -209,7 +214,11 @@ class KnowledgeService:
                     f" doc:{doc.doc_name} status is {doc.status}, can not sync"
                 )
 
-            space_context = self.get_space_context(space_name, user_id)
+            knowledge_spaces = knowledge_space_dao.get_knowledge_space(KnowledgeSpaceEntity(id=space_id))
+            if len(knowledge_spaces) == 0:
+                continue
+            ks = knowledge_spaces[0]
+            space_context = self.get_space_context(ks.name, user_id)
             chunk_size = (
                 CFG.KNOWLEDGE_CHUNK_SIZE
                 if space_context is None
@@ -265,7 +274,7 @@ class KnowledgeService:
                 knowledge_type=doc.doc_type.upper(),
                 model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
                 vector_store_config={
-                    "vector_store_name": space_name,
+                    "vector_store_name": ks.name + ks.user_id,
                     "vector_store_type": CFG.VECTOR_STORE_TYPE,
                 },
                 text_splitter=text_splitter,
@@ -310,18 +319,18 @@ class KnowledgeService:
         """
         knowledge_space_dao.update_knowledge_space(space_id, space_request)
 
-    def delete_space(self, space_name: str):
+    def delete_space(self, space_id: int):
         """delete knowledge space
         Args:
             - space_name: knowledge space name
         """
-        query = KnowledgeSpaceEntity(name=space_name)
-        spaces = knowledge_space_dao.get_knowledge_space(query)
+
+        spaces = knowledge_space_dao.get_knowledge_space(KnowledgeSpaceEntity(id=space_id))
         if len(spaces) == 0:
-            raise Exception(f"delete error, no space name:{space_name} in database")
+            raise f"Current Knowledge is not existed"
         space = spaces[0]
         vector_config = {}
-        vector_config["vector_store_name"] = space.name
+        vector_config["vector_store_name"] = space.name + space.user_id
         vector_config["vector_store_type"] = CFG.VECTOR_STORE_TYPE
         vector_config["chroma_persist_path"] = KNOWLEDGE_UPLOAD_ROOT_PATH
         vector_client = VectorStoreConnector(
@@ -329,7 +338,7 @@ class KnowledgeService:
         )
         # delete vectors
         vector_client.delete_vector_name(space.name)
-        document_query = KnowledgeDocumentEntity(space=space.name)
+        document_query = KnowledgeDocumentEntity(space_id=space.id)
         # delete chunks
         documents = knowledge_document_dao.get_documents(document_query)
         for document in documents:
@@ -339,20 +348,25 @@ class KnowledgeService:
         # delete space
         return knowledge_space_dao.delete_knowledge_space(space)
 
-    def delete_document(self, space_name: str, doc_name: str):
+    def delete_document(self, space_id: int, doc_name: str):
         """delete document
         Args:
             - space_name: knowledge space name
             - doc_name: doocument name
         """
-        document_query = KnowledgeDocumentEntity(doc_name=doc_name, space=space_name)
+        knowledge_spaces = knowledge_space_dao.get_knowledge_space(KnowledgeSpaceEntity(id=space_id))
+        if len(knowledge_spaces) == 0:
+            return None
+        ks = knowledge_spaces[0]
+
+        document_query = KnowledgeDocumentEntity(doc_name=doc_name, space_id=space_id)
         documents = knowledge_document_dao.get_documents(document_query)
         if len(documents) != 1:
             raise Exception(f"there are no or more than one document called {doc_name}")
         vector_ids = documents[0].vector_ids
         if vector_ids is not None:
             vector_config = {}
-            vector_config["vector_store_name"] = space_name
+            vector_config["vector_store_name"] = ks.name + ks.user_id
             vector_config["vector_store_type"] = CFG.VECTOR_STORE_TYPE
             vector_config["chroma_persist_path"] = KNOWLEDGE_UPLOAD_ROOT_PATH
             vector_client = VectorStoreConnector(

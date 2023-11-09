@@ -51,7 +51,7 @@ class ChatKnowledge(BaseChat):
             else int(self.space_context["prompt"]["max_token"])
         )
         vector_store_config = {
-            "vector_store_name": self.knowledge_space,
+            "vector_store_name": self.knowledge_space + self.user_id,
             "vector_store_type": CFG.VECTOR_STORE_TYPE,
         }
         embedding_factory = CFG.SYSTEM_APP.get_component(

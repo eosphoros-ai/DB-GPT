@@ -9,12 +9,14 @@ CREATE TABLE `knowledge_space` (
   `context` TEXT DEFAULT NULL COMMENT 'context argument',
   `gmt_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
   `gmt_modified` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  `user_id` varchar(100) DEFAULT NULL COMMENT 'user id',
   PRIMARY KEY (`id`),
   KEY `idx_name` (`name`) COMMENT 'index:idx_name'
 ) ENGINE=InnoDB AUTO_INCREMENT=100001 DEFAULT CHARSET=utf8mb4 COMMENT='knowledge space table';
 
 CREATE TABLE `knowledge_document` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'auto increment id',
+  `space_id` int NOT NULL COMMENT 'knowledge space id',
   `doc_name` varchar(100) NOT NULL COMMENT 'document path name',
   `doc_type` varchar(50) NOT NULL COMMENT 'doc type',
   `space` varchar(50) NOT NULL COMMENT 'knowledge space',

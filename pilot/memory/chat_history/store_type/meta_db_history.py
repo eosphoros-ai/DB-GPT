@@ -47,7 +47,9 @@ class DbHistoryMemory(BaseChatHistoryMemory):
             logger.error("init create conversation log error！" + str(e))
 
     def append(self, once_message: OnceConversation, user_id: str = None) -> None:
-        logger.info("db history append:{}", once_message)
+        logger.info(f"db history append, chat_mode: {once_message.chat_mode}, messages: {once_message.messages}, start_date: {once_message.start_date}, " \
+           f"chat_order: {once_message.chat_order}, model_name: {once_message.model_name}, param_type: {once_message.param_type}, " \
+           f"param_value: {once_message.param_value}, cost: {once_message.cost}, tokens: {once_message.tokens}")
         chat_history: ChatHistoryEntity = self.chat_history_dao.get_by_uid(
             self.chat_seesion_id
         )

@@ -21,7 +21,7 @@ class MemHistoryMemory(BaseChatHistoryMemory):
     def messages(self) -> List[OnceConversation]:
         return self.histroies_map.get(self.chat_seesion_id)
 
-    def append(self, once_message: OnceConversation) -> None:
+    def append(self, once_message: OnceConversation, user_id: str = None) -> None:
         self.histroies_map.get(self.chat_seesion_id).append(once_message)
 
     def clear(self) -> None:

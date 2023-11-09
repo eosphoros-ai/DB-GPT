@@ -61,9 +61,14 @@ def space_list(request: KnowledgeSpaceRequest, user_token: UserRequest = Depends
 
 @router.post("/knowledge/space/delete")
 def space_delete(request: KnowledgeSpaceRequest, user_token: UserRequest = Depends(get_user_from_headers)):
+    spaces = knowledge_space_service.get_knowledge_space(
+        KnowledgeSpaceRequest(user_id=user_token.user_id, name=request.name))
+    if len(spaces) == 0:
+        return Result.faild(code="E000X",
+                            msg=f"knowledge_space {request.name} cannot not be found by user {user_token.user_id}")
     print(f"/space/delete params:")
     try:
-        return Result.succ(knowledge_space_service.delete_space(request.name))
+        return Result.succ(knowledge_space_service.delete_space(spaces[0].id))
     except Exception as e:
         return Result.faild(code="E000X", msg=f"space list error {e}")
 
@@ -90,24 +95,32 @@ def arguments_save(space_name: str, argument_request: SpaceArgumentRequest, user
 
 @router.post("/knowledge/{space_name}/document/add")
 def document_add(space_name: str, request: KnowledgeDocumentRequest, user_token: UserRequest = Depends(get_user_from_headers)):
-    print(f"/document/add params: {space_name}, {request}")
+    spaces = knowledge_space_service.get_knowledge_space(KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
+    if len(spaces) == 0:
+        return Result.faild(code="E000X", msg=f"knowledge_space {space_name} cannot not be found by user {user_token.user_id}")
+
+    print(f"/document/add params: {space_name}, {request}, {user_token.user_id}")
     try:
         return Result.succ(
             knowledge_space_service.create_knowledge_document(
-                space=space_name, request=request
+                space_id=spaces[0].id, request=request
             )
         )
-        # return Result.succ([])
     except Exception as e:
         return Result.faild(code="E000X", msg=f"document add error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/list")
 def document_list(space_name: str, query_request: DocumentQueryRequest, user_token: UserRequest = Depends(get_user_from_headers)):
+    spaces = knowledge_space_service.get_knowledge_space(
+        KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
+    if len(spaces) == 0:
+        return Result.faild(code="E000X",
+                            msg=f"knowledge_space {space_name} cannot not be found by user {user_token.user_id}")
     print(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
-            knowledge_space_service.get_knowledge_documents(space_name, query_request)
+            knowledge_space_service.get_knowledge_documents(spaces[0].id, query_request)
         )
     except Exception as e:
         return Result.faild(code="E000X", msg=f"document list error {e}")
@@ -115,10 +128,15 @@ def document_list(space_name: str, query_request: DocumentQueryRequest, user_tok
 
 @router.post("/knowledge/{space_name}/document/delete")
 def document_delete(space_name: str, query_request: DocumentQueryRequest, user_token: UserRequest = Depends(get_user_from_headers)):
+    spaces = knowledge_space_service.get_knowledge_space(
+        KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
+    if len(spaces) == 0:
+        return Result.faild(code="E000X",
+                            msg=f"knowledge_space {space_name} cannot not be found by user {user_token.user_id}")
     print(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
-            knowledge_space_service.delete_document(space_name, query_request.doc_name)
+            knowledge_space_service.delete_document(spaces[0].id, query_request.doc_name)
         )
     except Exception as e:
         return Result.faild(code="E000X", msg=f"document list error {e}")
@@ -130,31 +148,38 @@ async def document_upload(
     doc_name: str = Form(...),
     doc_type: str = Form(...),
     doc_file: UploadFile = File(...),
+    user_token: UserRequest = Depends(get_user_from_headers)
 ):
+    spaces = knowledge_space_service.get_knowledge_space(
+        KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
+    if len(spaces) == 0:
+        return Result.faild(code="E000X",
+                            msg=f"knowledge_space {space_name} cannot not be found by user {user_token.user_id}")
     print(f"/document/upload params: {space_name}")
     try:
+        space_name_dir = space_name + user_token.user_id
         if doc_file:
-            if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name)):
-                os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name))
+            if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name_dir)):
+                os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name_dir))
             # We can not move temp file in windows system when we open file in context of `with`
             tmp_fd, tmp_path = tempfile.mkstemp(
-                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name)
+                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name_dir)
             )
             with os.fdopen(tmp_fd, "wb") as tmp:
                 tmp.write(await doc_file.read())
             shutil.move(
                 tmp_path,
-                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename),
+                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, space_name_dir, doc_file.filename),
             )
             request = KnowledgeDocumentRequest()
             request.doc_name = doc_name
             request.doc_type = doc_type
             request.content = os.path.join(
-                KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
+                KNOWLEDGE_UPLOAD_ROOT_PATH, space_name_dir, doc_file.filename
             )
             return Result.succ(
                 knowledge_space_service.create_knowledge_document(
-                    space=space_name, request=request
+                    space_id=spaces[0].id, request=request
                 )
             )
             # return Result.succ([])
@@ -165,10 +190,15 @@ async def document_upload(
 
 @router.post("/knowledge/{space_name}/document/sync")
 def document_sync(space_name: str, request: DocumentSyncRequest, user_token: UserRequest = Depends(get_user_from_headers)):
+    spaces = knowledge_space_service.get_knowledge_space(
+        KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
+    if len(spaces) == 0:
+        return Result.faild(code="E000X",
+                            msg=f"knowledge_space {space_name} cannot not be found by user {user_token.user_id}")
     logger.info(f"Received params: {space_name}, {request}")
     try:
         knowledge_space_service.sync_knowledge_document(
-            space_name=space_name, sync_request=request, user_id=user_token.user_id,
+            space_id=spaces[0].id, sync_request=request, user_id=user_token.user_id,
         )
         return Result.succ([])
     except Exception as e:
@@ -192,7 +222,7 @@ def similar_query(space_name: str, query_request: KnowledgeQueryRequest, user_to
     )
     client = EmbeddingEngine(
         model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-        vector_store_config={"vector_store_name": space_name},
+        vector_store_config={"vector_store_name": space_name + user_token.user_id},
         embedding_factory=embedding_factory,
     )
     docs = client.similar_search(query_request.query, query_request.top_k)

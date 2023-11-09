@@ -36,6 +36,8 @@ class KnowledgeDocumentRequest(BaseModel):
     content: str = None
     """content: content"""
     source: str = None
+    """ space id"""
+    space_id: str = None
 
     """text_chunk_size: text_chunk_size"""
     # text_chunk_size: int

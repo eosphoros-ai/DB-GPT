@@ -39,7 +39,7 @@ class FileHistoryMemory(BaseChatHistoryMemory):
             history.append(messages)
         return history
 
-    def append(self, once_message: OnceConversation) -> None:
+    def append(self, once_message: OnceConversation, user_id: str = None) -> None:
         historys = self.messages()
         historys.append(once_message)
         self.file_path.write_text(
