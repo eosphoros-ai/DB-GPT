@@ -48,7 +48,7 @@ def space_add(request: KnowledgeSpaceRequest):
         knowledge_space_service.create_knowledge_space(request)
         return Result.succ([])
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"space add error {e}")
+        return Result.failed(code="E000X", msg=f"space add error {e}")
 
 
 @router.post("/knowledge/space/list")
@@ -57,7 +57,7 @@ def space_list(request: KnowledgeSpaceRequest):
     try:
         return Result.succ(knowledge_space_service.get_knowledge_space(request))
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"space list error {e}")
+        return Result.failed(code="E000X", msg=f"space list error {e}")
 
 
 @router.post("/knowledge/space/delete")
@@ -66,7 +66,7 @@ def space_delete(request: KnowledgeSpaceRequest):
     try:
         return Result.succ(knowledge_space_service.delete_space(request.name))
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"space list error {e}")
+        return Result.failed(code="E000X", msg=f"space list error {e}")
 
 
 @router.post("/knowledge/{space_name}/arguments")
@@ -75,7 +75,7 @@ def arguments(space_name: str):
     try:
         return Result.succ(knowledge_space_service.arguments(space_name))
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"space list error {e}")
+        return Result.failed(code="E000X", msg=f"space list error {e}")
 
 
 @router.post("/knowledge/{space_name}/argument/save")
@@ -86,7 +86,7 @@ def arguments_save(space_name: str, argument_request: SpaceArgumentRequest):
             knowledge_space_service.argument_save(space_name, argument_request)
         )
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"space list error {e}")
+        return Result.failed(code="E000X", msg=f"space list error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/add")
@@ -100,7 +100,7 @@ def document_add(space_name: str, request: KnowledgeDocumentRequest):
         )
         # return Result.succ([])
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"document add error {e}")
+        return Result.failed(code="E000X", msg=f"document add error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/list")
@@ -111,7 +111,7 @@ def document_list(space_name: str, query_request: DocumentQueryRequest):
             knowledge_space_service.get_knowledge_documents(space_name, query_request)
         )
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"document list error {e}")
+        return Result.failed(code="E000X", msg=f"document list error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/delete")
@@ -122,7 +122,7 @@ def document_delete(space_name: str, query_request: DocumentQueryRequest):
             knowledge_space_service.delete_document(space_name, query_request.doc_name)
         )
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"document list error {e}")
+        return Result.failed(code="E000X", msg=f"document list error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/upload")
@@ -159,9 +159,9 @@ async def document_upload(
                 )
             )
             # return Result.succ([])
-        return Result.faild(code="E000X", msg=f"doc_file is None")
+        return Result.failed(code="E000X", msg=f"doc_file is None")
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"document add error {e}")
+        return Result.failed(code="E000X", msg=f"document add error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/sync")
@@ -173,7 +173,7 @@ def document_sync(space_name: str, request: DocumentSyncRequest):
         )
         return Result.succ([])
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"document sync error {e}")
+        return Result.failed(code="E000X", msg=f"document sync error {e}")
 
 
 @router.post("/knowledge/{space_name}/chunk/list")
@@ -182,7 +182,7 @@ def document_list(space_name: str, query_request: ChunkQueryRequest):
     try:
         return Result.succ(knowledge_space_service.get_document_chunks(query_request))
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"document chunk list error {e}")
+        return Result.failed(code="E000X", msg=f"document chunk list error {e}")
 
 
 @router.post("/knowledge/{vector_name}/query")

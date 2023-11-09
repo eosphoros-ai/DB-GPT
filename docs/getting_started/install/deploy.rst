@@ -57,6 +57,12 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
 
     .. tab:: OpenAI
 
+        Installing Dependencies
+
+        .. code-block::
+
+          pip install -e ".[openai]"
+
         Download embedding model
 
         .. code-block:: shell
@@ -69,7 +75,7 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
             or
             git clone https://huggingface.co/moka-ai/m3e-large
 
-        Configure LLM_MODEL and PROXY_API_URL and API_KEY in `.env` file
+        Configure LLM_MODEL, PROXY_API_URL and API_KEY in `.env` file
 
         .. code-block:: shell
 
@@ -291,7 +297,7 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
 
         **1. Download a pre-converted model file.**
 
-        Suppose you want to use [Vicuna 13B v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5), you can download the file already converted from [TheBloke/vicuna-13B-v1.5-GGUF](https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF), only one file is needed. Download it to the `models` directory and rename it to `ggml-model-q4_0.gguf`.
+        Suppose you want to use `Vicuna 13B v1.5 <https://huggingface.co/lmsys/vicuna-13b-v1.5>`_ , you can download the file already converted from `TheBloke/vicuna-13B-v1.5-GGUF <https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF>`_ , only one file is needed. Download it to the `models` directory and rename it to `ggml-model-q4_0.gguf`.
 
         .. code-block::
 
@@ -299,7 +305,7 @@ If you are low hardware requirements you can install DB-GPT by Using third-part 
 
         **2. Convert It Yourself**
 
-        You can convert the model file yourself according to the instructions in [llama.cpp#prepare-data--run](https://github.com/ggerganov/llama.cpp#prepare-data--run), and put the converted file in the models directory and rename it to `ggml-model-q4_0.gguf`.
+        You can convert the model file yourself according to the instructions in `llama.cpp#prepare-data--run <https://github.com/ggerganov/llama.cpp#prepare-data--run>`_ , and put the converted file in the models directory and rename it to `ggml-model-q4_0.gguf`.
 
         **Installing Dependencies**
 

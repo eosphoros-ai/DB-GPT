@@ -6,6 +6,7 @@ from pilot.common.sql_database import Database
 from pilot.configs.config import Config
 from pilot.scene.chat_db.auto_execute.prompt import prompt
 from pilot.utils.executor_utils import blocking_func_to_async
+from pilot.utils.tracer import root_tracer, trace
 
 CFG = Config()
 
@@ -35,10 +36,13 @@ class ChatWithDbAutoExecute(BaseChat):
             raise ValueError(
                 f"{ChatScene.ChatWithDbExecute.value} mode should chose db!"
             )
-
-        self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
+        with root_tracer.start_span(
+            "ChatWithDbAutoExecute.get_connect", metadata={"db_name": self.db_name}
+        ):
+            self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
         self.top_k: int = 200
 
+    @trace()
     async def generate_input_values(self) -> Dict:
         """
         generate input values
@@ -55,13 +59,14 @@ class ChatWithDbAutoExecute(BaseChat):
             #     query=self.current_user_input,
             #     topk=CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
             # )
-            table_infos = await blocking_func_to_async(
-                self._executor,
-                client.get_db_summary,
-                self.db_name,
-                self.current_user_input,
-                CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
-            )
+            with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
+                table_infos = await blocking_func_to_async(
+                    self._executor,
+                    client.get_db_summary,
+                    self.db_name,
+                    self.current_user_input,
+                    CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
+                )
         except Exception as e:
             print("db summary find error!" + str(e))
         if not table_infos:
@@ -80,4 +85,8 @@ class ChatWithDbAutoExecute(BaseChat):
 
     def do_action(self, prompt_response):
         print(f"do_action:{prompt_response}")
-        return self.database.run(prompt_response.sql)
+        with root_tracer.start_span(
+            "ChatWithDbAutoExecute.do_action.run_sql",
+            metadata=prompt_response.to_dict(),
+        ):
+            return self.database.run(prompt_response.sql)

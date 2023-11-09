@@ -54,7 +54,7 @@ _DEFAULT_TEMPLATE = (
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
-PROMPT_NEED_NEED_STREAM_OUT = True
+PROMPT_NEED_STREAM_OUT = True
 
 prompt = PromptTemplate(
     template_scene=ChatScene.ChatWithDbQA.value(),
@@ -62,9 +62,9 @@ prompt = PromptTemplate(
     response_format=None,
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE,
-    stream_out=PROMPT_NEED_NEED_STREAM_OUT,
+    stream_out=PROMPT_NEED_STREAM_OUT,
     output_parser=NormalChatOutputParser(
-        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
+        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT
     ),
 )
 
