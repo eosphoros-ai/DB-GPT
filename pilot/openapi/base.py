@@ -7,4 +7,4 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     message = ""
     for error in exc.errors():
         message += ".".join(error.get("loc")) + ":" + error.get("msg") + ";"
-    return Result.faild(code="E0001", msg=message)
+    return Result.failed(code="E0001", msg=message)

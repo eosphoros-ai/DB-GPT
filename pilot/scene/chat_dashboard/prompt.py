@@ -42,7 +42,7 @@ RESPONSE_FORMAT = [
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
-PROMPT_NEED_NEED_STREAM_OUT = False
+PROMPT_NEED_STREAM_OUT = False
 
 prompt = PromptTemplate(
     template_scene=ChatScene.ChatDashboard.value(),
@@ -50,9 +50,9 @@ prompt = PromptTemplate(
     response_format=json.dumps(RESPONSE_FORMAT, indent=4),
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE,
-    stream_out=PROMPT_NEED_NEED_STREAM_OUT,
+    stream_out=PROMPT_NEED_STREAM_OUT,
     output_parser=ChatDashboardOutputParser(
-        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
+        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT
     ),
 )
 CFG.prompt_template_registry.register(prompt, is_default=True)

@@ -33,7 +33,7 @@ _DEFAULT_TEMPLATE = (
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
-PROMPT_NEED_NEED_STREAM_OUT = True
+PROMPT_NEED_STREAM_OUT = True
 
 prompt = PromptTemplate(
     template_scene=ChatScene.ChatKnowledge.value(),
@@ -41,9 +41,9 @@ prompt = PromptTemplate(
     response_format=None,
     template_define=None,
     template=_DEFAULT_TEMPLATE,
-    stream_out=PROMPT_NEED_NEED_STREAM_OUT,
+    stream_out=PROMPT_NEED_STREAM_OUT,
     output_parser=NormalChatOutputParser(
-        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
+        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT
     ),
 )
 

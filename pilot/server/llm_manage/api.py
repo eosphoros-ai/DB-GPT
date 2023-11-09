@@ -33,9 +33,9 @@ async def model_params():
                 params.append(model_dict)
         return Result.succ(params)
         if not worker_instance:
-            return Result.faild(code="E000X", msg=f"can not find worker manager")
+            return Result.failed(code="E000X", msg=f"can not find worker manager")
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"model stop failed {e}")
+        return Result.failed(code="E000X", msg=f"model stop failed {e}")
 
 
 @router.get("/v1/worker/model/list")
@@ -78,7 +78,7 @@ async def model_list():
         return Result.succ(responses)
 
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"model list error {e}")
+        return Result.failed(code="E000X", msg=f"model list error {e}")
 
 
 @router.post("/v1/worker/model/stop")
@@ -91,11 +91,11 @@ async def model_stop(request: WorkerStartupRequest):
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         if not worker_manager:
-            return Result.faild(code="E000X", msg=f"can not find worker manager")
+            return Result.failed(code="E000X", msg=f"can not find worker manager")
         request.params = {}
         return Result.succ(await worker_manager.model_shutdown(request))
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"model stop failed {e}")
+        return Result.failed(code="E000X", msg=f"model stop failed {e}")
 
 
 @router.post("/v1/worker/model/start")
@@ -106,7 +106,7 @@ async def model_start(request: WorkerStartupRequest):
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         if not worker_manager:
-            return Result.faild(code="E000X", msg=f"can not find worker manager")
+            return Result.failed(code="E000X", msg=f"can not find worker manager")
         return Result.succ(await worker_manager.model_startup(request))
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"model start failed {e}")
+        return Result.failed(code="E000X", msg=f"model start failed {e}")

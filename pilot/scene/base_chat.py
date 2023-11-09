@@ -223,7 +223,7 @@ class BaseChat(ABC):
             span.end()
         except Exception as e:
             print(traceback.format_exc())
-            logger.error("model response parase faild！" + str(e))
+            logger.error("model response parase failed！" + str(e))
             self.current_message.add_view_message(
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
