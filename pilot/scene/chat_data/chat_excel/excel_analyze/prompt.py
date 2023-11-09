@@ -22,7 +22,7 @@ Constraint:
     5.The <api-call></api-call> part of the required output format needs to be parsed by the code. Please ensure that this part of the content is output as required.
     
 Please respond in the following format:
-    thoughts.<api-call><name>[Data display method]</name><args><sql>[Correct duckdb data analysis sql]</sql></args></api-call>
+    Summary of your analytical thinking.<api-call><name>[Data display method]</name><args><sql>[Correct duckdb data analysis sql]</sql></args></api-call>
     
 User Questions:
     {user_input}
@@ -36,9 +36,9 @@ _DEFAULT_TEMPLATE_ZH = """
 	2.请从如下给出的展示方式种选择最优的一种用以进行数据渲染，将类型名称放入返回要求格式的name参数值种，如果找不到最合适的则使用'Table'作为展示方式，可用数据展示方式如下: {disply_type}
 	3.SQL中需要使用的表名是: {table_name},请检查你生成的sql，不要使用没在数据结构中的列名，。
 	4.优先使用数据分析的方式回答，如果用户问题不涉及数据分析内容，你可以按你的理解进行回答
-	5.要求的输出格式中<api-call></api-call>部分需要被代码解析只想，请确保这部分内容按要求输出
+	5.要求的输出格式中<api-call></api-call>部分需要被代码解析执行，请确保这部分内容按要求输出
 请确保你的输出格式如下:
-    你的想法.<api-call><name>[数据展示方式]</name><args><sql>[正确的duckdb数据分析sql]</sql></args></api-call>
+    分析思路总结.<api-call><name>[数据展示方式]</name><args><sql>[正确的duckdb数据分析sql]</sql></args></api-call>
 
 用户问题：{user_input}
 """

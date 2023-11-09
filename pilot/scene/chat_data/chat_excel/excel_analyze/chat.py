@@ -76,7 +76,7 @@ class ChatExcel(BaseChat):
             return None
         chat_param = {
             "chat_session_id": self.chat_session_id,
-            "user_input": "[" + self.excel_reader.excel_file_name + "]" + " Analysis！",
+            "user_input": f"{self.excel_reader.excel_file_name} analyze！",
             "parent_mode": self.chat_mode,
             "select_param": self.excel_reader.excel_file_name,
             "excel_reader": self.excel_reader,

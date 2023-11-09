@@ -251,7 +251,7 @@ if __name__ == "__main__":
 class ExcelReader:
     def __init__(self, file_path):
         file_name = os.path.basename(file_path)
-        file_name_without_extension = os.path.splitext(file_name)[0]
+        self.file_name_without_extension = os.path.splitext(file_name)[0]
         encoding, confidence = detect_encoding(file_path)
         logging.error(f"Detected Encoding: {encoding} (Confidence: {confidence})")
         self.excel_file_name = file_name
@@ -280,7 +280,8 @@ class ExcelReader:
         for column_name in df_tmp.columns:
             self.columns_map.update({column_name: excel_colunm_format(column_name)})
             try:
-                self.df[column_name] = pd.to_numeric(self.df[column_name])
+                if not pd.api.types.is_datetime64_ns_dtype(self.df[column_name]) :
+                    self.df[column_name] = pd.to_numeric(self.df[column_name])
                 self.df[column_name] = self.df[column_name].fillna(0)
             except Exception as e:
                 print("can't transfor numeric column" + column_name)
