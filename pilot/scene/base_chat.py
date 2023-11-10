@@ -174,8 +174,8 @@ class BaseChat(ABC):
     def stream_plugin_call(self, text):
         return text
 
-    def knowledge_reference_call(self, text):
-        return text
+    # def knowledge_reference_call(self, text):
+    #     return text
 
     async def check_iterator_end(iterator):
         try:
@@ -218,7 +218,7 @@ class BaseChat(ABC):
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
             self.current_message.add_ai_message(msg)
-            view_msg = self.knowledge_reference_call(msg)
+            # view_msg = self.knowledge_reference_call(msg)
             self.current_message.add_view_message(view_msg)
             span.end()
         except Exception as e:

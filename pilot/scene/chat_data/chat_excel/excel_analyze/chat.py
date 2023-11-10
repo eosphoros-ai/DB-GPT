@@ -14,6 +14,7 @@ from pilot.scene.chat_data.chat_excel.excel_learning.chat import ExcelLearning
 from pilot.common.path_utils import has_path
 from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.base_modules.agent.common.schema import Status
+from pilot.utils.tracer import root_tracer, trace
 
 CFG = Config()
 

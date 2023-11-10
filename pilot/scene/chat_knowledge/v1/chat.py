@@ -89,7 +89,7 @@ class ChatKnowledge(BaseChat):
         last_output = last_output + reference
         yield last_output
 
-    def knowledge_reference_call(self, text):
+    def stream_plugin_call(self, text):
         """return reference"""
         return text + f"\n\n{self.parse_source_view(self.sources)}"
 
