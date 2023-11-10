@@ -274,7 +274,7 @@ class ApiCall:
                     )
                     if Status.FAILED.value == api_status.status:
                         all_context = all_context.replace(
-                            api_context, "\n" + api_status.err_msg + self.to_view_antv_vis(api_status)
+                            api_context, f'\n<span style="color:red">Error:</span>{api_status.err_msg}\n' + self.to_view_antv_vis(api_status)
                         )
                     else:
                         all_context = all_context.replace(
@@ -367,14 +367,14 @@ class ApiCall:
         if api_status.name:
             param["type"] = api_status.name
         if api_status.args:
-            param["sql"] = api_status.args["sql"].replace(',', '\\,')
+            param["sql"] = api_status.args["sql"]
         if api_status.err_msg:
             param["err_msg"] = api_status.err_msg
 
         if api_status.api_result:
             param["data"] = api_status.api_result
 
-        return json.dumps(param, default=serialize, ensure_ascii=False)
+        return json.dumps(param, default=serialize, ensure_ascii=False, separators=(',', ':'))
 
     def run(self, llm_text):
         if self.__is_need_wait_plugin_call(llm_text):

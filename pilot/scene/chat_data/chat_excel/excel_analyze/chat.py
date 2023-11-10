@@ -104,6 +104,6 @@ class ChatExcel(BaseChat):
         with root_tracer.start_span(
             "ChatExcel.stream_plugin_call.run_display_sql", metadata={"text": text}
         ):
-            return self.api_call.run_display_sql(
+            return self.api_call.display_sql_llmvis(
                 text, self.excel_reader.get_df_by_sql_ex
             )
