@@ -45,7 +45,7 @@ class ApiKeyDao(BaseDao):
             raise "llm_model is null"
         session = self.get_session()
         api_keys = session.query(ApiKeyEntity).filter(ApiKeyEntity.llm_model == llm_model).filter(ApiKeyEntity.status == 'UP').all()
-        if len(api_keys == 0):
+        if len(api_keys) == 0:
             raise "No valid key found."
         key = api_keys[random.randint(0, len(api_keys) - 1)]
         print(f"valid key ({llm_model}, {key.sk})")

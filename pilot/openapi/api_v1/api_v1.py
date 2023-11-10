@@ -388,13 +388,28 @@ async def chat_prepare(dialogue: ConversationVo = Body(), user_token: UserReques
     return Result.succ(resp)
 
 
+async def stream_error(msg):
+    yield f"data: {msg}\n\n"
+
+
 @router.post("/v1/chat/completions")
 async def chat_completions(dialogue: ConversationVo = Body(), user_token: UserRequest = Depends(get_user_from_headers)):
+    headers = {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Transfer-Encoding": "chunked",
+    }
 
     chat_log_dao = ChatLogDao()
     count = chat_log_dao.get_latest_one_day_records(user_id=user_token.user_id)
     if count > 20:
-        raise f"The current user has reached the maximum number of requests for the day."
+        return StreamingResponse(
+            stream_error("The 20 free requests for the day have been used up. Please come back tomorrow or contact us: <img src='https://github.com/eosphoros-ai/DB-GPT/blob/main/assets/wechat.jpg?raw=true'/>"),
+            headers=headers,
+            media_type="text/event-stream",
+        )
+        # raise f"The current user has reached the maximum number of requests for the day."
     chat_log_dao.add_inference_request(ChatLogEntity(user_id=user_token.user_id, request=json.dumps({"user_input": dialogue.user_input, "chat_mode": dialogue.chat_mode, "select_param": dialogue.select_param, "model_name": dialogue.model_name})))
 
     print(
@@ -403,12 +418,6 @@ async def chat_completions(dialogue: ConversationVo = Body(), user_token: UserRe
     chat: BaseChat = get_chat_instance(dialogue, user_token.user_id)
     # background_tasks = BackgroundTasks()
     # background_tasks.add_task(release_model_semaphore)
-    headers = {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "Transfer-Encoding": "chunked",
-    }
 
     if not chat.prompt_template.stream_out:
         return StreamingResponse(
