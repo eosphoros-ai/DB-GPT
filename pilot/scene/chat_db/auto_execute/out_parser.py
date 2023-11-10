@@ -24,7 +24,7 @@ class DbChatOutputParser(BaseOutputParser):
 
     def parse_prompt_response(self, model_out_text):
         clean_str = super().parse_prompt_response(model_out_text)
-        print("clean prompt response:", clean_str)
+        logging.info("clean prompt response:", clean_str)
         response = json.loads(clean_str)
         for key in sorted(response):
             if key.strip() == "sql":
@@ -43,16 +43,16 @@ class DbChatOutputParser(BaseOutputParser):
             param["type"] = "response_table"
             param["sql"] = prompt_response.sql
             param["data"] = json.loads(df.to_json(orient='records', date_format='iso', date_unit='s'))
-            view_json_str = json.dumps(param, default=serialize)
+            view_json_str = json.dumps(param, default=serialize,  ensure_ascii=False)
         except Exception as e:
             logger.error("parse_view_response error!" + str(e))
             err_param = {}
             err_param["sql"] = f'{prompt_response.sql}'
             err_param["type"] = "response_table"
-            err_param["err_msg"] = str(e)
+            # err_param["err_msg"] = str(e)
             err_param["data"] = []
             err_msg = str(e)
-            view_json_str = json.dumps(err_param, default=serialize)
+            view_json_str = json.dumps(err_param, default=serialize,  ensure_ascii=False)
 
         api_call_element.text = view_json_str
         result = ET.tostring(api_call_element, encoding="utf-8")
