@@ -50,15 +50,15 @@ class ChatExcel(BaseChat):
         super().__init__(chat_param=chat_param)
 
     def _generate_numbered_list(self) -> str:
-        antv_charts = [{"line_chart":"used to display comparative trend analysis data"},
-                       {"pie_chart":"suitable for scenarios such as proportion and distribution statistics"},
+        antv_charts = [{"response_line_chart":"used to display comparative trend analysis data"},
+                       {"response_pie_chart":"suitable for scenarios such as proportion and distribution statistics"},
                        {"response_table":"suitable for display with many display columns or non-numeric columns"},
-                       {"data_text":" the default display method, suitable for single-line or simple content display"},
-                       {"scatter_plot":"Suitable for exploring relationships between variables, detecting outliers, etc."},
-                       {"bubble_chart":"Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."},
-                       {"donut_chart":"Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc."},
-                       {"area_chart":"Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc."},
-                       {"heatmap":"Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."}
+                       # {"response_data_text":" the default display method, suitable for single-line or simple content display"},
+                       {"response_scatter_plot":"Suitable for exploring relationships between variables, detecting outliers, etc."},
+                       {"response_bubble_chart":"Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."},
+                       {"response_donut_chart":"Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc."},
+                       {"response_area_chart":"Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc."},
+                       {"response_heatmap":"Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."}
                        ]
 
         # command_strings = []

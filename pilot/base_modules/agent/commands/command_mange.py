@@ -269,36 +269,18 @@ class ApiCall:
             api_status = self.plugin_status_map.get(api_context)
             if api_status is not None:
                 if display_mode:
-                    if api_status.api_result:
-                        all_context = self.__deal_error_md_tags(
-                            all_context, api_context
+                    all_context = self.__deal_error_md_tags(
+                        all_context, api_context
+                    )
+                    if Status.FAILED.value == api_status.status:
+                        all_context = all_context.replace(
+                            api_context, "\n" + api_status.err_msg + self.to_view_antv_vis(api_status)
                         )
-                        # all_context = all_context.replace(
-                        #     api_context, api_status.api_result
-                        # )
-
+                    else:
                         all_context = all_context.replace(
                             api_context, self.to_view_antv_vis(api_status)
                         )
-                    else:
-                        if api_status.status == Status.FAILED.value:
-                            all_context = self.__deal_error_md_tags(
-                                all_context, api_context
-                            )
-                            all_context = all_context.replace(
-                                api_context,
-                                f"""\n<span style=\"color:red\">ERROR!</span>{api_status.err_msg}\n """,
-                            )
-                        else:
-                            cost = (api_status.end_time - self.start_time) / 1000
-                            cost_str = "{:.2f}".format(cost)
-                            all_context = self.__deal_error_md_tags(
-                                all_context, api_context
-                            )
-                            all_context = all_context.replace(
-                                api_context,
-                                f'\n<span style="color:green">Waiting...{cost_str}S</span>\n',
-                            )
+
                 else:
                     all_context = self.__deal_error_md_tags(
                         all_context, api_context, False
@@ -359,7 +341,7 @@ class ApiCall:
 
         if api_status.api_result:
             param["result"] = api_status.api_result
-        return json.dumps(param, default=serialize)
+        return json.dumps(param, default=serialize, ensure_ascii=False)
 
     def to_view_text(self, api_status: PluginStatus):
         api_call_element = ET.Element("dbgpt-view")
@@ -385,15 +367,14 @@ class ApiCall:
         if api_status.name:
             param["type"] = api_status.name
         if api_status.args:
-            param["sql"] = api_status.args["sql"]
-
+            param["sql"] = api_status.args["sql"].replace(',', '\\,')
         if api_status.err_msg:
             param["err_msg"] = api_status.err_msg
 
         if api_status.api_result:
             param["data"] = api_status.api_result
 
-        return json.dumps(param, default=serialize)
+        return json.dumps(param, default=serialize, ensure_ascii=False)
 
     def run(self, llm_text):
         if self.__is_need_wait_plugin_call(llm_text):

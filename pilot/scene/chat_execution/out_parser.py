@@ -35,7 +35,7 @@ class PluginChatOutputParser(BaseOutputParser):
                 speak = response[key]
         return PluginAction(command, speak, thoughts)
 
-    def parse_view_response(self, speak, data) -> str:
+    def parse_view_response(self, speak, data, prompt_response) -> str:
         ### tool out data to table view
         print(f"parse_view_response:{speak},{str(data)}")
         view_text = f"##### {speak}" + "\n" + str(data)
