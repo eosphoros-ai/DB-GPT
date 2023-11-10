@@ -45,6 +45,8 @@ from pilot.scene.chat_factory import ChatFactory
 from pilot.scene.message import OnceConversation
 from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 from pilot.server.monitor.chat_log_db import ChatLogDao, ChatLogEntity
+from pilot.server.monitor.api_key_db import ApiKeyEntity, ApiKeyDao
+from pilot.server.monitor.inference_db import InferenceRequestEntity, InferenceRequestDao
 from pilot.summary.db_summary_client import DBSummaryClient
 from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 from pilot.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
