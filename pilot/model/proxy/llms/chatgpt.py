@@ -10,6 +10,7 @@ import openai
 from pilot.model.proxy.llms.proxy_model import ProxyModel
 from pilot.model.parameter import ProxyModelParameters
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
+from pilot.server.monitor.api_key_db import ApiKeyDao
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +22,13 @@ def _initialize_openai(params: ProxyModelParameters):
         "OPENAI_API_TYPE",
         os.getenv("AZURE_OPENAI_ENDPOINT") if api_type == "azure" else None,
     )
-    api_key = params.proxy_api_key or os.getenv(
-        "OPENAI_API_KEY",
-        os.getenv("AZURE_OPENAI_KEY") if api_type == "azure" else None,
-    )
+
+    api_key_dao = ApiKeyDao()
+    api_key = api_key_dao.get_one_valid_key(os.getenv("LLM_MODEL"))
+    # api_key = params.proxy_api_key or os.getenv(
+    #     "OPENAI_API_KEY",
+    #     os.getenv("AZURE_OPENAI_KEY") if api_type == "azure" else None,
+    # )
     api_version = params.proxy_api_version or os.getenv("OPENAI_API_VERSION")
 
     if not api_base and params.proxy_server_url:

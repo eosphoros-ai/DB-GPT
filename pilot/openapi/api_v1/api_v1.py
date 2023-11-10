@@ -43,7 +43,8 @@ from pilot.scene.chat_factory import ChatFactory
 
 
 from pilot.scene.message import OnceConversation
-from pilot.configs.model_config import LLM_MODEL_CONFIG, KNOWLEDGE_UPLOAD_ROOT_PATH
+from pilot.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
+from pilot.server.monitor.chat_log_db import ChatLogDao, ChatLogEntity
 from pilot.summary.db_summary_client import DBSummaryClient
 from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 from pilot.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
@@ -387,6 +388,13 @@ async def chat_prepare(dialogue: ConversationVo = Body(), user_token: UserReques
 
 @router.post("/v1/chat/completions")
 async def chat_completions(dialogue: ConversationVo = Body(), user_token: UserRequest = Depends(get_user_from_headers)):
+
+    chat_log_dao = ChatLogDao()
+    count = chat_log_dao.get_latest_one_day_records(user_id=user_token.user_id)
+    if count > 20:
+        raise f"The current user has reached the maximum number of requests for the day."
+    chat_log_dao.add_inference_request(ChatLogEntity(user_id=user_token.user_id, request=json.dumps({"user_input": dialogue.user_input, "chat_mode": dialogue.chat_mode, "select_param": dialogue.select_param, "model_name": dialogue.model_name})))
+
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
