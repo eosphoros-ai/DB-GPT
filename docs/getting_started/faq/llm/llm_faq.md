@@ -1,6 +1,6 @@
 LLM USE FAQ
 ==================================
-##### Q1:how to use openai chatgpt service
+##### Q1: how to use openai chatgpt service
 change your LLM_MODEL in `.env`
 ````shell
 LLM_MODEL=proxyllm
@@ -15,7 +15,7 @@ PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
 
 make sure your openapi API_KEY is available
 
-##### Q2 What difference between `python dbgpt_server --light` and `python dbgpt_server`
+##### Q2: What difference between `python dbgpt_server --light` and `python dbgpt_server`
 ```{note}
 * `python dbgpt_server --light` dbgpt_server does not start the llm service. Users can deploy the llm service separately by using `python llmserver`, and dbgpt_server accesses the llm service through set the LLM_SERVER environment variable in .env. The purpose is to allow for the separate deployment of dbgpt's backend service and llm service.
 
@@ -35,7 +35,7 @@ python pilot/server/dbgpt_server.py --light
 ```
 
 
-##### Q3 How to use MultiGPUs
+##### Q3: How to use MultiGPUs
 
 DB-GPT will use all available gpu by default. And you can modify the setting `CUDA_VISIBLE_DEVICES=0,1` in `.env` file
 to use the specific gpu IDs.
@@ -52,7 +52,7 @@ CUDA_VISIBLE_DEVICES=3,4,5,6 python3 pilot/server/dbgpt_server.py
 
 You can modify the setting `MAX_GPU_MEMORY=xxGib` in `.env` file to configure the maximum memory used by each GPU.
 
-##### Q4 Not Enough Memory
+##### Q4: Not Enough Memory
 
 DB-GPT supported 8-bit quantization and 4-bit quantization.
 
@@ -60,9 +60,9 @@ You can modify the setting `QUANTIZE_8bit=True` or `QUANTIZE_4bit=True` in `.env
 
 Llama-2-70b with 8-bit quantization can run with 80 GB of VRAM, and 4-bit quantization can run with 48 GB of VRAM.
 
-Note: you need to install the latest dependencies according to [requirements.txt](https://github.com/eosphoros-ai/DB-GPT/blob/main/requirements.txt).
+Note: you need to install the quantization dependencies with `pip install -e ".[quantization]"`
 
-##### Q5 How to Add LLM Service dynamic local mode
+##### Q5: How to Add LLM Service dynamic local mode
 
 Now DB-GPT through multi-llm service switch, so how to add llm service dynamic,
 
@@ -75,7 +75,7 @@ eg: dbgpt model start --model_name chatglm2-6b --model_path /root/DB-GPT/models/
 chatgpt
 eg: dbgpt model start --model_name chatgpt_proxyllm --model_path chatgpt_proxyllm --proxy_api_key ${OPENAI_KEY} --proxy_server_url {OPENAI_URL}
 ```
-##### Q6 How to Add LLM Service dynamic in remote mode
+##### Q6: How to Add LLM Service dynamic in remote mode
 If you  deploy llm service in remote machine instance, and you want to add model service to dbgpt server to manage
 
 use dbgpt start worker and set --controller_addr.
@@ -88,13 +88,13 @@ eg: dbgpt start worker --model_name vicuna-13b-v1.5 \
 
 ```
 
-##### Q7 dbgpt command not found
+##### Q7: dbgpt command not found
 
 ```commandline
 pip install -e "pip install -e ".[default]"
 ```
 
-##### Q8 When starting the worker_manager on a cloud server and registering it with the controller, it is noticed that the worker's exposed IP is a private IP instead of a public IP, which leads to the inability to access the service.
+##### Q8: When starting the worker_manager on a cloud server and registering it with the controller, it is noticed that the worker's exposed IP is a private IP instead of a public IP, which leads to the inability to access the service.
 
 ```commandline
 
@@ -103,4 +103,14 @@ pip install -e "pip install -e ".[default]"
                                   automatically determined
 ```
 
+##### Q9: How to customize model path and prompt template
+
+DB-GPT will read the model path from `pilot.configs.model_config.LLM_MODEL_CONFIG` based on the `LLM_MODEL`.
+Of course, you can use the environment variable `LLM_MODEL_PATH` to specify the model path and `LLM_PROMPT_TEMPLATE` to specify your model prompt template.
+
+```
+LLM_MODEL=vicuna-13b-v1.5
+LLM_MODEL_PATH=/app/models/vicuna-13b-v1.5
+# LLM_PROMPT_TEMPLATE=vicuna_v1.1
+```
 

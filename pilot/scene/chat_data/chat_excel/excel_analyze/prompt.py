@@ -54,7 +54,7 @@ _PROMPT_SCENE_DEFINE = (
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
-PROMPT_NEED_NEED_STREAM_OUT = True
+PROMPT_NEED_STREAM_OUT = True
 
 # Temperature is a configuration hyperparameter that controls the randomness of language model output.
 # A high temperature produces more unpredictable and creative results, while a low temperature produces more common and conservative output.
@@ -66,9 +66,9 @@ prompt = PromptTemplate(
     input_variables=["user_input", "table_name", "disply_type"],
     template_define=_PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE,
-    stream_out=PROMPT_NEED_NEED_STREAM_OUT,
+    stream_out=PROMPT_NEED_STREAM_OUT,
     output_parser=ChatExcelOutputParser(
-        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
+        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT
     ),
     need_historical_messages=True,
     # example_selector=sql_data_example,

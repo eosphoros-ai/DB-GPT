@@ -45,6 +45,10 @@ _OLD_MODELS = [
     "llama-cpp",
     "proxyllm",
     "gptj-6b",
+    "codellama-13b-sql-sft",
+    "codellama-7b",
+    "codellama-7b-sql-sft",
+    "codellama-13b",
 ]
 
 
@@ -148,8 +152,12 @@ class LLMModelAdaper:
                 conv.append_message(conv.roles[1], content)
             else:
                 raise ValueError(f"Unknown role: {role}")
+
         if system_messages:
-            conv.set_system_message("".join(system_messages))
+            if isinstance(conv, Conversation):
+                conv.set_system_message("".join(system_messages))
+            else:
+                conv.update_system_message("".join(system_messages))
 
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
@@ -445,17 +453,50 @@ class VLLMModelAdaperWrapper(LLMModelAdaper):
 
 # Covering the configuration of fastcaht, we will regularly feedback the code here to fastchat.
 # We also recommend that you modify it directly in the fastchat repository.
+
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L212
 register_conv_template(
     Conversation(
-        name="internlm-chat",
-        system_message="A chat between a curious <|User|> and an <|Bot|>. The <|Bot|> gives helpful, detailed, and polite answers to the <|User|>'s questions.\n\n",
-        roles=("<|User|>", "<|Bot|>"),
-        sep_style=SeparatorStyle.CHATINTERN,
-        sep="<eoh>",
-        sep2="<eoa>",
-        stop_token_ids=[1, 103028],
-        # TODO feedback stop_str to fastchat
-        stop_str="<eoa>",
+        name="aquila-legacy",
+        system_message="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+        roles=("### Human: ", "### Assistant: ", "System"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="\n",
+        sep2="</s>",
+        stop_str=["</s>", "[UNK]"],
+    ),
+    override=True,
+)
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L227
+register_conv_template(
+    Conversation(
+        name="aquila",
+        system_message="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("Human", "Assistant", "System"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="###",
+        sep2="</s>",
+        stop_str=["</s>", "[UNK]"],
+    ),
+    override=True,
+)
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L242
+register_conv_template(
+    Conversation(
+        name="aquila-v1",
+        roles=("<|startofpiece|>", "<|endofpiece|>", ""),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="",
+        sep2="</s>",
+        stop_str=["</s>", "<|endoftext|>"],
     ),
     override=True,
 )

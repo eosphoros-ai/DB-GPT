@@ -303,8 +303,6 @@ def chat(
                 print(table.get_formatted_string(out_format=output, **out_kwargs))
         if sys_table:
             print(sys_table.get_formatted_string(out_format=output, **out_kwargs))
-    if hide_conv:
-        return
 
     if not found_trace_id:
         print(f"Can't found conversation with trace_id: {trace_id}")
@@ -315,8 +313,11 @@ def chat(
     trace_spans = [s for s in reversed(trace_spans)]
     hierarchy = _build_trace_hierarchy(trace_spans)
     if tree:
-        print("\nInvoke Trace Tree:\n")
+        print(f"\nInvoke Trace Tree(trace_id: {trace_id}):\n")
         _print_trace_hierarchy(hierarchy)
+
+    if hide_conv:
+        return
 
     trace_spans = _get_ordered_trace_from(hierarchy)
     table = PrettyTable(["Key", "Value Value"], title="Chat Trace Details")
@@ -340,36 +341,43 @@ def chat(
                 table.add_row(["echo", metadata.get("echo")])
             elif "error" in metadata:
                 table.add_row(["BaseChat Error", metadata.get("error")])
-            if op == "BaseChat.nostream_call" and not sp["end_time"]:
-                if "model_output" in metadata:
-                    table.add_row(
-                        [
-                            "BaseChat model_output",
-                            split_string_by_terminal_width(
-                                metadata.get("model_output").get("text"),
-                                split=split_long_text,
-                            ),
-                        ]
+        if op == "BaseChat.do_action" and not sp["end_time"]:
+            if "model_output" in metadata:
+                table.add_row(
+                    [
+                        "BaseChat model_output",
+                        split_string_by_terminal_width(
+                            metadata.get("model_output").get("text"),
+                            split=split_long_text,
+                        ),
+                    ]
+                )
+            if "ai_response_text" in metadata:
+                table.add_row(
+                    [
+                        "BaseChat ai_response_text",
+                        split_string_by_terminal_width(
+                            metadata.get("ai_response_text"), split=split_long_text
+                        ),
+                    ]
+                )
+            if "prompt_define_response" in metadata:
+                prompt_define_response = metadata.get("prompt_define_response") or ""
+                if isinstance(prompt_define_response, dict) or isinstance(
+                    prompt_define_response, type([])
+                ):
+                    prompt_define_response = json.dumps(
+                        prompt_define_response, ensure_ascii=False
                     )
-                if "ai_response_text" in metadata:
-                    table.add_row(
-                        [
-                            "BaseChat ai_response_text",
-                            split_string_by_terminal_width(
-                                metadata.get("ai_response_text"), split=split_long_text
-                            ),
-                        ]
-                    )
-                if "prompt_define_response" in metadata:
-                    table.add_row(
-                        [
-                            "BaseChat prompt_define_response",
-                            split_string_by_terminal_width(
-                                metadata.get("prompt_define_response"),
-                                split=split_long_text,
-                            ),
-                        ]
-                    )
+                table.add_row(
+                    [
+                        "BaseChat prompt_define_response",
+                        split_string_by_terminal_width(
+                            prompt_define_response,
+                            split=split_long_text,
+                        ),
+                    ]
+                )
         if op == "DefaultModelWorker_call.generate_stream_func":
             if not sp["end_time"]:
                 table.add_row(["llm_adapter", metadata.get("llm_adapter")])

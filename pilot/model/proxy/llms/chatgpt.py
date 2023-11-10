@@ -5,8 +5,6 @@ import os
 from typing import List
 import logging
 
-import openai
-
 from pilot.model.proxy.llms.proxy_model import ProxyModel
 from pilot.model.parameter import ProxyModelParameters
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
@@ -15,6 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 def _initialize_openai(params: ProxyModelParameters):
+    try:
+        import openai
+    except ImportError as exc:
+        raise ValueError(
+            "Could not import python package: openai "
+            "Please install openai by command `pip install openai` "
+        ) from exc
+
     api_type = params.proxy_api_type or os.getenv("OPENAI_API_TYPE", "open_ai")
 
     api_base = params.proxy_api_base or os.getenv(
@@ -106,6 +112,8 @@ def _build_request(model: ProxyModel, params):
 def chatgpt_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
+    import openai
+
     history, payloads = _build_request(model, params)
 
     res = openai.ChatCompletion.create(messages=history, **payloads)
@@ -121,6 +129,8 @@ def chatgpt_generate_stream(
 async def async_chatgpt_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
+    import openai
+
     history, payloads = _build_request(model, params)
 
     res = await openai.ChatCompletion.acreate(messages=history, **payloads)

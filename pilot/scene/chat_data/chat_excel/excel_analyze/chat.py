@@ -73,6 +73,7 @@ class ChatExcel(BaseChat):
             # ]
         return "\n".join(f"{key}:{value}" for dict_item in antv_charts for key, value in dict_item.items())
 
+    @trace()
     async def generate_input_values(self) -> Dict:
         input_values = {
             "user_input": self.current_user_input,
@@ -87,7 +88,7 @@ class ChatExcel(BaseChat):
             return None
         chat_param = {
             "chat_session_id": self.chat_session_id,
-            "user_input": f"{self.excel_reader.excel_file_name} analyze！",
+            "user_input": "[" + self.excel_reader.excel_file_name + "]" + " Analyze！",
             "parent_mode": self.chat_mode,
             "select_param": self.excel_reader.excel_file_name,
             "excel_reader": self.excel_reader,
@@ -99,4 +100,9 @@ class ChatExcel(BaseChat):
 
     def stream_plugin_call(self, text):
         text = text.replace("\n", " ")
-        return self.api_call.display_sql_llmvis(text, self.excel_reader.get_df_by_sql_ex)
+        with root_tracer.start_span(
+            "ChatExcel.stream_plugin_call.run_display_sql", metadata={"text": text}
+        ):
+            return self.api_call.run_display_sql(
+                text, self.excel_reader.get_df_by_sql_ex
+            )

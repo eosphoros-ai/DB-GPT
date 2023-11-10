@@ -25,8 +25,8 @@
     <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/DB-GPT" />
     </a>
-    <a href="https://discord.gg/vqBrcV7Nd">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/vqBrcV7Nd?compact=true&style=flat" />
+    <a href="https://discord.gg/nASQyBjvY">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/nASQyBjvY?compact=true&style=flat" />
     </a>
     <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
@@ -34,7 +34,7 @@
   </p>
 
 
-[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/vqBrcV7Nd) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community**](https://github.com/eosphoros-ai/community)
+[**简体中文**](README.zh.md) |[**Discord**](https://discord.gg/nASQyBjvY) |[**Documents**](https://db-gpt.readthedocs.io/en/latest/)|[**Wechat**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**Community**](https://github.com/eosphoros-ai/community)
 </div>
 
 ## What is DB-GPT?
@@ -43,8 +43,8 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 
 
 ## Contents
-- [install](#install)
-- [demo](#demo)
+- [Install](#install)
+- [Demo](#demo)
 - [introduction](#introduction)
 - [features](#features)
 - [contribution](#contribution)
@@ -75,8 +75,8 @@ Run on an RTX 4090 GPU.
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
 [**Usage Tutorial**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
-- [**Install**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
-  - [**Install Step by Step**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
+- [**Install**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy.html)
+  - [**Install Step by Step**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy.html)
   - [**Docker Install**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/docker/docker.html)
   - [**Docker Compose**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/docker_compose/docker_compose.html)
 - [**How to Use**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/chatdb/chatdb.html)
@@ -107,11 +107,11 @@ Currently, we have released multiple key features, which are listed below to dem
 
 - Multi-Agents&Plugins
 
-  Supports custom plug-ins to perform tasks, natively supports the Auto-GPT plug-in model, and the Agents protocol adopts the Agent Protocol standard
+  It supports custom plug-ins to perform tasks, natively supports the Auto-GPT plug-in model, and the Agents protocol adopts the Agent Protocol standard.
 
 - Fine-tuning text2SQL
 
-  An automated fine-tuning lightweight framework built around large language models, Text2SQL data sets, LoRA/QLoRA/Pturning and other fine-tuning methods, making TextSQL fine-tuning as convenient as an assembly line. [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
+  An automated fine-tuning lightweight framework built around large language models, Text2SQL data sets, LoRA/QLoRA/Pturning, and other fine-tuning methods, making TextSQL fine-tuning as convenient as an assembly line. [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
 - Multi LLMs Support, Supports multiple large language models, currently supporting
 
@@ -141,7 +141,7 @@ Currently, we have released multiple key features, which are listed below to dem
   - [Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
   - [OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
 
-  etc.
+  Etc.
 
   - Support API Proxy LLMs
     - [x] [ChatGPT](https://api.openai.com/)
@@ -151,7 +151,7 @@ Currently, we have released multiple key features, which are listed below to dem
 
 - Privacy and security
   
-  The privacy and security of data are ensured through various technologies such as privatized large models and proxy desensitization.
+  The privacy and security of data are ensured through various technologies, such as privatized large models and proxy desensitization.
 
 - Support Datasources
 
@@ -177,7 +177,7 @@ Currently, we have released multiple key features, which are listed below to dem
 | [StarRocks](https://github.com/StarRocks/starrocks)                             | No          |           TODO                              |
 
 ## Introduction 
-Is the architecture of the entire DB-GPT shown in the following figure:
+The architecture of the entire DB-GPT is shown.
 
 <p align="center">
   <img src="./assets/DB-GPT.png" width="800" />
@@ -185,7 +185,7 @@ Is the architecture of the entire DB-GPT shown in the following figure:
 
 The core capabilities mainly consist of the following parts:
 1. Multi-Models: Support multi-LLMs, such as LLaMA/LLaMA2、CodeLLaMA、ChatGLM, QWen、Vicuna and proxy model ChatGPT、Baichuan、tongyi、wenxin etc
-2. Knowledge Based QA: You can perform high-quality intelligent Q&A based on local documents such as pdf, word, excel and other data.
+2. Knowledge-Based QA: You can perform high-quality intelligent Q&A based on local documents such as PDF, word, excel, and other data.
 3. Embedding: Unified data vector storage and indexing, Embed data as vectors and store them in vector databases, providing content similarity search.
 4. Multi-Datasources: Used to connect different modules and data sources to achieve data flow and interaction. 
 5. Multi-Agents: Provides Agent and plugin mechanisms, allowing users to customize and enhance the system's behavior.
@@ -199,7 +199,7 @@ The core capabilities mainly consist of the following parts:
 
 ### SubModule
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL performance by applying Supervised Fine-Tuning (SFT) on large language models.
-- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT Plugins, Can run autogpt plugin directly
+- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT Plugins Can run autogpt plugin directly
 - [DB-GPT-Web](https://github.com/eosphoros-ai/DB-GPT-Web)  ChatUI for DB-GPT  
 
 ## Image
@@ -213,7 +213,7 @@ The core capabilities mainly consist of the following parts:
 
 ## Contribution
 
-- Please run `black .` before submitting the code. contributing guidelines, [how to contribution](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING.md)
+- Please run `black .` before submitting the code. Contributing guidelines, [how to contribute](https://github.com/csunny/DB-GPT/blob/main/CONTRIBUTING.md)
 
 ## RoadMap
 
@@ -224,7 +224,7 @@ The core capabilities mainly consist of the following parts:
 ### KBQA RAG optimization
 - [x] Multi Documents
   - [x] PDF
-  - [x] Excel, csv
+  - [x] Excel, CSV
   - [x] Word
   - [x] Text
   - [x] MarkDown
@@ -235,7 +235,7 @@ The core capabilities mainly consist of the following parts:
 - [ ] Graph Database
   - [ ] Neo4j Graph
   - [ ] Nebula Graph
-- [x] Multi Vector Database
+- [x] Multi-Vector Database
   - [x] Chroma
   - [x] Milvus
   - [x] Weaviate
@@ -330,8 +330,8 @@ As of October 10, 2023, by fine-tuning an open-source model of 13 billion parame
 The MIT License (MIT)
 
 ## Contact Information
-We are working on building a community, if you have any ideas about building the community, feel free to contact us.
-[![](https://dcbadge.vercel.app/api/server/vqBrcV7Nd?compact=true&style=flat)](https://discord.gg/vqBrcV7Nd)
+We are working on building a community, if you have any ideas for building the community, feel free to contact us.
+[![](https://dcbadge.vercel.app/api/server/nASQyBjvY?compact=true&style=flat)](https://discord.gg/nASQyBjvY)
 
 <p align="center">
   <img src="./assets/wechat.jpg" width="300px" />

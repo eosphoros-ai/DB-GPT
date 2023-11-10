@@ -33,7 +33,7 @@ class URLEmbedding(SourceEmbedding):
             file_path, vector_store_config, source_reader=None, text_splitter=None
         )
         self.file_path = file_path
-        self.vector_store_config = vector_store_config
+        self.vector_store_config = vector_store_config or None
         self.source_reader = source_reader or None
         self.text_splitter = text_splitter or None
 

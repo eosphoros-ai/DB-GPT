@@ -194,6 +194,8 @@ class Config(metaclass=Singleton):
 
         ### LLM Model Service Configuration
         self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b-v1.5")
+        self.LLM_MODEL_PATH = os.getenv("LLM_MODEL_PATH")
+
         ### Proxy llm backend, this configuration is only valid when "LLM_MODEL=proxyllm"
         ### When we use the rest API provided by deployment frameworks like fastchat as a proxyllm, "PROXYLLM_BACKEND" is the model they actually deploy.
         ### We need to use "PROXYLLM_BACKEND" to load the prompt of the corresponding scene.

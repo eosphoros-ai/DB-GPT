@@ -4,6 +4,11 @@ The purpose of the DB-GPT Dashboard is to empower data analysts with efficiency.
 technology, allowing business analysts to perform self-service analysis directly using natural language and gain
 insights into their respective areas of business.
 
+```{admonition} The LLM (Language Model) suitable for the Dashboard scene is
+* chatgpt3.5.
+* chatgpt4.
+```
+
 ```{note} Dashboard now support Datasource Type
 * Mysql
 * Sqlite

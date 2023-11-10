@@ -91,35 +91,6 @@ It's very important for DB-GPT, DB-GPT also provide standard, extendable interfa
    ./modules/knowledge.rst
    ./modules/vector.rst
 
-Use Cases
----------
-
-| Best Practices and built-in implementations for common DB-GPT use cases:
-
-- `Sql generation and diagnosis <./use_cases/sql_generation_and_diagnosis.html>`_: SQL generation and diagnosis.
-
-- `knownledge Based QA <./use_cases/knownledge_based_qa.html>`_: A important scene for user to chat with database documents, codes, bugs and schemas.
-
-- `Chatbots <./use_cases/chatbots.html>`_: Language model love to chat, use multi models to chat.
-
-- `Querying Database Data <./use_cases/query_database_data.html>`_: Query and Analysis data from databases and give charts.
-
-- `Interacting with apis <./use_cases/interacting_with_api.html>`_: Interact with apis, such as create a table, deploy a database cluster, create a database and so on.
-
-- `Tool use with plugins <./use_cases/tool_use_with_plugin>`_: According to Plugin use tools to manage databases autonomoly.
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Use Cases
-   :name: use_cases
-   :hidden:
-
-   ./use_cases/sql_generation_and_diagnosis.md
-   ./use_cases/knownledge_based_qa.md
-   ./use_cases/chatbots.md
-   ./use_cases/query_database_data.md
-   ./use_cases/interacting_with_api.md
-   ./use_cases/tool_use_with_plugin.md
 
 Reference
 -----------

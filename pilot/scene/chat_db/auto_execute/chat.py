@@ -5,6 +5,8 @@ from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
 from pilot.configs.config import Config
 from pilot.scene.chat_db.auto_execute.prompt import prompt
+from pilot.utils.executor_utils import blocking_func_to_async
+from pilot.utils.tracer import root_tracer, trace
 from pilot.base_modules.agent.commands.command_mange import ApiCall
 
 CFG = Config()
@@ -35,12 +37,16 @@ class ChatWithDbAutoExecute(BaseChat):
             raise ValueError(
                 f"{ChatScene.ChatWithDbExecute.value} mode should chose db!"
             )
+        with root_tracer.start_span(
+            "ChatWithDbAutoExecute.get_connect", metadata={"db_name": self.db_name}
+        ):
+            self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
 
-        self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
         self.top_k: int = 50
-        self.api_call = ApiCall(display_registry=CFG.command_disply)
 
-    async def generate_input_values(self):
+
+    @trace()
+    async def generate_input_values(self) -> Dict:
         """
         generate input values
         """
@@ -50,18 +56,20 @@ class ChatWithDbAutoExecute(BaseChat):
             raise ValueError("Could not import DBSummaryClient. ")
         client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
         try:
-            table_infos = client.get_db_summary(
-                dbname=self.db_name,
-                query=self.current_user_input,
-                topk=CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
-            )
+            with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
+                table_infos = await blocking_func_to_async(
+                    self._executor,
+                    client.get_db_summary,
+                    self.db_name,
+                    self.current_user_input,
+                    CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
+                )
         except Exception as e:
             print("db summary find error!" + str(e))
-            table_infos = self.database.table_simple_info()
         if not table_infos:
-            table_infos = self.database.table_simple_info()
-
-        # table_infos = self.database.table_simple_info()
+            table_infos = await blocking_func_to_async(
+                self._executor, self.database.table_simple_info
+            )
 
         input_values = {
             # "input": self.current_user_input,

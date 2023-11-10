@@ -147,6 +147,12 @@ class WebWerverParameters(BaseParameters):
             "help": "The filename to store tracer span records",
         },
     )
+    tracer_storage_cls: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The storage class to storage tracer span records",
+        },
+    )
     disable_alembic_upgrade: Optional[bool] = field(
         default=False,
         metadata={

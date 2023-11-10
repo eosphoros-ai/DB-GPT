@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Union
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -70,14 +70,6 @@ class SystemMessage(BaseMessage):
         return "system"
 
 
-class ModelMessage(BaseModel):
-    """Type of message that interaction between dbgpt-server and llm-server"""
-
-    """Similar to openai's message format"""
-    role: str
-    content: str
-
-
 class ModelMessageRoleType:
     """ "Type of ModelMessage role"""
 
@@ -85,6 +77,45 @@ class ModelMessageRoleType:
     HUMAN = "human"
     AI = "ai"
     VIEW = "view"
+
+
+class ModelMessage(BaseModel):
+    """Type of message that interaction between dbgpt-server and llm-server"""
+
+    """Similar to openai's message format"""
+    role: str
+    content: str
+
+    @staticmethod
+    def from_openai_messages(
+        messages: Union[str, List[Dict[str, str]]]
+    ) -> List["ModelMessage"]:
+        """Openai message format to current ModelMessage format"""
+        if isinstance(messages, str):
+            return [ModelMessage(role=ModelMessageRoleType.HUMAN, content=messages)]
+        result = []
+        for message in messages:
+            msg_role = message["role"]
+            content = message["content"]
+            if msg_role == "system":
+                result.append(
+                    ModelMessage(role=ModelMessageRoleType.SYSTEM, content=content)
+                )
+            elif msg_role == "user":
+                result.append(
+                    ModelMessage(role=ModelMessageRoleType.HUMAN, content=content)
+                )
+            elif msg_role == "assistant":
+                result.append(
+                    ModelMessage(role=ModelMessageRoleType.AI, content=content)
+                )
+            else:
+                raise ValueError(f"Unknown role: {msg_role}")
+        return result
+
+    @staticmethod
+    def to_dict_list(messages: List["ModelMessage"]) -> List[Dict[str, str]]:
+        return list(map(lambda m: m.dict(), messages))
 
 
 class Generation(BaseModel):

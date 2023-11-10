@@ -7,6 +7,8 @@ class ChunkQueryResponse(BaseModel):
     """data: data"""
 
     data: List = None
+    """summary: document summary"""
+    summary: str = None
     """total: total size"""
     total: int = None
     """page: current page"""

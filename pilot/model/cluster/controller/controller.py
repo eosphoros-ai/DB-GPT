@@ -13,7 +13,7 @@ from pilot.utils.api_utils import (
     _api_remote as api_remote,
     _sync_api_remote as sync_api_remote,
 )
-from pilot.utils.utils import setup_logging
+from pilot.utils.utils import setup_logging, setup_http_service_logging
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,9 @@ class LocalModelController(BaseModelController):
             f"Get all instances with {model_name}, healthy_only: {healthy_only}"
         )
         if not model_name:
-            return await self.registry.get_all_model_instances()
+            return await self.registry.get_all_model_instances(
+                healthy_only=healthy_only
+            )
         else:
             return await self.registry.get_all_instances(model_name, healthy_only)
 
@@ -98,8 +100,10 @@ class _RemoteModelController(BaseModelController):
 
 
 class ModelRegistryClient(_RemoteModelController, ModelRegistry):
-    async def get_all_model_instances(self) -> List[ModelInstance]:
-        return await self.get_all_instances()
+    async def get_all_model_instances(
+        self, healthy_only: bool = False
+    ) -> List[ModelInstance]:
+        return await self.get_all_instances(healthy_only=healthy_only)
 
     @sync_api_remote(path="/api/controller/models")
     def sync_get_all_instances(
@@ -149,6 +153,7 @@ def initialize_controller(
     else:
         import uvicorn
 
+        setup_http_service_logging()
         app = FastAPI()
         app.include_router(router, prefix="/api", tags=["Model"])
         uvicorn.run(app, host=host, port=port, log_level="info")
@@ -179,7 +184,8 @@ def run_model_controller():
     parser = EnvArgumentParser()
     env_prefix = "controller_"
     controller_params: ModelControllerParameters = parser.parse_args_into_dataclass(
-        ModelControllerParameters, env_prefix=env_prefix
+        ModelControllerParameters,
+        env_prefixes=[env_prefix],
     )
 
     setup_logging(
