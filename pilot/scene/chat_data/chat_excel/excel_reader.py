@@ -247,17 +247,12 @@ if __name__ == "__main__":
     # sql = add_quotes_to_chinese_columns(sql_3)
     # print(f"excute sql:{sql}")
 
-    data = {
-        'name': ['John', 'Alice', 'Bob'],
-        'age': [30, 25, 35],
-        'timestamp': [pd.Timestamp('2022-01-01'), pd.Timestamp('2022-01-02'), pd.Timestamp('2022-01-03')],
-        'category': pd.Categorical(['A', 'B', 'C'])
-    }
+    my_list = [{'name': 'John', 'age': 30}, {'name': 'Alice', 'age': 25}, {'name': 'Bob', 'age': 35}]
 
-    df = pd.DataFrame(data)
+    for dict_item in my_list:
+        for key, value in dict_item.items():
+            print(key, value)
 
-    json_data = df.to_json(orient='records', date_format='iso', date_unit='s')
-    print(json_data)
 
 class ExcelReader:
     def __init__(self, file_path):

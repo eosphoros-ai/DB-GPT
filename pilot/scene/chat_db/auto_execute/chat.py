@@ -37,7 +37,7 @@ class ChatWithDbAutoExecute(BaseChat):
             )
 
         self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
-        self.top_k: int = 200
+        self.top_k: int = 50
         self.api_call = ApiCall(display_registry=CFG.command_disply)
 
     async def generate_input_values(self):
@@ -64,7 +64,7 @@ class ChatWithDbAutoExecute(BaseChat):
         # table_infos = self.database.table_simple_info()
 
         input_values = {
-            "input": self.current_user_input,
+            # "input": self.current_user_input,
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
             "table_info": table_infos,
@@ -79,4 +79,4 @@ class ChatWithDbAutoExecute(BaseChat):
 
     def do_action(self, prompt_response):
         print(f"do_action:{prompt_response}")
-        return self.database.run(prompt_response.sql)
+        return self.database.run_to_df

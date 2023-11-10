@@ -50,17 +50,28 @@ class ChatExcel(BaseChat):
         super().__init__(chat_param=chat_param)
 
     def _generate_numbered_list(self) -> str:
-        command_strings = []
-        if CFG.command_disply:
-            for name, item in CFG.command_disply.commands.items():
-                if item.enabled:
-                    command_strings.append(f"{name}:{item.description}")
+        antv_charts = [{"line_chart":"used to display comparative trend analysis data"},
+                       {"pie_chart":"suitable for scenarios such as proportion and distribution statistics"},
+                       {"response_table":"suitable for display with many display columns or non-numeric columns"},
+                       {"data_text":" the default display method, suitable for single-line or simple content display"},
+                       {"scatter_plot":"Suitable for exploring relationships between variables, detecting outliers, etc."},
+                       {"bubble_chart":"Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."},
+                       {"donut_chart":"Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc."},
+                       {"area_chart":"Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc."},
+                       {"heatmap":"Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."}
+                       ]
+
+        # command_strings = []
+        # if CFG.command_disply:
+        #     for name, item in CFG.command_disply.commands.items():
+        #         if item.enabled:
+        #             command_strings.append(f"{name}:{item.description}")
             # command_strings += [
             #     str(item)
             #     for item in CFG.command_disply.commands.values()
             #     if item.enabled
             # ]
-        return "\n".join(f"{i+1}. {item}" for i, item in enumerate(command_strings))
+        return "\n".join(f"{key}:{value}" for dict_item in antv_charts for key, value in dict_item.items())
 
     async def generate_input_values(self) -> Dict:
         input_values = {

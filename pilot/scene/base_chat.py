@@ -227,7 +227,6 @@ class BaseChat(ABC):
                 )
             )
             ###  run
-            # result = self.do_action(prompt_define_response)
             result = await blocking_func_to_async(
                 self._executor, self.do_action, prompt_define_response
             )
@@ -243,6 +242,7 @@ class BaseChat(ABC):
                 self.prompt_template.output_parser.parse_view_response,
                 speak_to_user,
                 result,
+                prompt_define_response
             )
 
             view_message = view_message.replace("\n", "\\n")

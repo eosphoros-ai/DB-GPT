@@ -1,6 +1,8 @@
 import json
 from typing import Dict, NamedTuple
 import logging
+import xml.etree.ElementTree as ET
+from pilot.common.json_utils import serialize
 from pilot.out_parser.base import BaseOutputParser, T
 from pilot.configs.config import Config
 from pilot.scene.chat_db.data_loader import DbDataLoader
@@ -31,21 +33,28 @@ class DbChatOutputParser(BaseOutputParser):
                 thoughts = response[key]
         return SqlAction(sql, thoughts)
 
-    def parse_view_response(self, speak, data) -> str:
-        import pandas as pd
+    def parse_view_response(self, speak, data, prompt_response) -> str:
 
-        ### tool out data to table view
-        data_loader = DbDataLoader()
-        if len(data) < 1:
-            data.insert(0, [])
-        df = pd.DataFrame(data[1:], columns=data[0])
-        if not CFG.NEW_SERVER_MODE and not CFG.SERVER_LIGHT_MODE:
-            table_style = """<style> 
-                table{border-collapse:collapse;width:100%;height:80%;margin:0 auto;float:center;border: 1px solid #007bff; background-color:#333; color:#fff}th,td{border:1px solid #ddd;padding:3px;text-align:center}th{background-color:#C9C3C7;color: #fff;font-weight: bold;}tr:nth-child(even){background-color:#444}tr:hover{background-color:#444}
-             </style>"""
-            html_table = df.to_html(index=False, escape=False)
-            html = f"<html><head>{table_style}</head><body>{html_table}</body></html>"
-            view_text = f"##### {str(speak)}" + "\n" + html.replace("\n", " ")
-            return view_text
-        else:
-            return data_loader.get_table_view_by_conn(data, speak)
+        param = {}
+        api_call_element = ET.Element("chart-view")
+        try:
+            df = data(prompt_response.sql)
+            param["type"] = "response_table"
+            param["sql"] = prompt_response.sql
+            param["data"] = json.loads(df.to_json(orient='records', date_format='iso', date_unit='s'))
+            view_json_str = json.dumps(param, default=serialize)
+        except Exception as e:
+            err_param ={}
+            param["sql"] = prompt_response.sql
+            err_param["type"] = "response_table"
+            err_param["err_msg"] = str(e)
+            view_json_str = json.dumps(err_param, default=serialize)
+
+        api_call_element.text = view_json_str
+        result = ET.tostring(api_call_element, encoding="utf-8")
+
+        return speak + "\n" + result.decode("utf-8")
+
+
+
+

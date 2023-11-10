@@ -215,7 +215,7 @@ class BaseOutputParser(ABC):
         cleaned_output = self.__illegal_json_ends(cleaned_output)
         return cleaned_output
 
-    def parse_view_response(self, ai_text, data) -> str:
+    def parse_view_response(self, ai_text, data, parse_prompt_response:Any=None) -> str:
         """
         parse the ai response info to user view
         Args:
