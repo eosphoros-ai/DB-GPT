@@ -7,6 +7,7 @@ from pilot.configs.config import Config
 from pilot.scene.chat_db.auto_execute.prompt import prompt
 from pilot.utils.executor_utils import blocking_func_to_async
 from pilot.utils.tracer import root_tracer, trace
+from pilot.base_modules.agent.commands.command_mange import ApiCall
 
 CFG = Config()
 
@@ -40,7 +41,9 @@ class ChatWithDbAutoExecute(BaseChat):
             "ChatWithDbAutoExecute.get_connect", metadata={"db_name": self.db_name}
         ):
             self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
-        self.top_k: int = 200
+
+        self.top_k: int = 50
+
 
     @trace()
     async def generate_input_values(self) -> Dict:
@@ -52,13 +55,7 @@ class ChatWithDbAutoExecute(BaseChat):
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
         client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
-        table_infos = None
         try:
-            # table_infos = client.get_db_summary(
-            #     dbname=self.db_name,
-            #     query=self.current_user_input,
-            #     topk=CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
-            # )
             with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
                 table_infos = await blocking_func_to_async(
                     self._executor,
@@ -70,23 +67,24 @@ class ChatWithDbAutoExecute(BaseChat):
         except Exception as e:
             print("db summary find error!" + str(e))
         if not table_infos:
-            # table_infos = self.database.table_simple_info()
             table_infos = await blocking_func_to_async(
                 self._executor, self.database.table_simple_info
             )
 
         input_values = {
-            "input": self.current_user_input,
+            # "input": self.current_user_input,
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
             "table_info": table_infos,
         }
         return input_values
 
+    def stream_plugin_call(self, text):
+        text = text.replace("\n", " ")
+        print(f"stream_plugin_call:{text}")
+        return self.api_call.display_sql_llmvis(text, self.database.run_to_df)
+
+
     def do_action(self, prompt_response):
         print(f"do_action:{prompt_response}")
-        with root_tracer.start_span(
-            "ChatWithDbAutoExecute.do_action.run_sql",
-            metadata=prompt_response.to_dict(),
-        ):
-            return self.database.run(prompt_response.sql)
+        return self.database.run_to_df

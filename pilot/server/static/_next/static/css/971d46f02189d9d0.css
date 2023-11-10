@@ -1,0 +1,1 @@
+.model-tab:before{content:"";position:absolute;left:.4rem;width:45%;height:80%;background-color:#ffc800;border-radius:2rem;transition:all .4s}.editor-tab:before{left:calc(50%)}.auto-chart-header{padding:12px 0;&-title{font-weight:500;font-size:16px}&-toolbar{display:flex;align-items:center;&>*{margin-left:8px}}}

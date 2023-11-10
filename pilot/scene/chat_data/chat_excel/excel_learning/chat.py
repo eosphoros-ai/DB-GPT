@@ -51,10 +51,11 @@ class ExcelLearning(BaseChat):
         colunms, datas = await blocking_func_to_async(
             self._executor, self.excel_reader.get_sample_data
         )
-        copy_datas = datas.copy()
+        self.prompt_template.output_parser.update(colunms)
         datas.insert(0, colunms)
 
         input_values = {
-            "data_example": json.dumps(copy_datas, cls=DateTimeEncoder),
+            "data_example": json.dumps(datas, cls=DateTimeEncoder),
+            "file_name": self.excel_reader.excel_file_name
         }
         return input_values

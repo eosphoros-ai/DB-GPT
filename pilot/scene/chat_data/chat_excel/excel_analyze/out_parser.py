@@ -36,6 +36,6 @@ class ChatExcelOutputParser(BaseOutputParser):
         except Exception as e:
             raise ValueError(f"LLM Response Can't Parser! \n")
 
-    def parse_view_response(self, speak, data) -> str:
+    def parse_view_response(self, speak, data, prompt_response) -> str:
         ### tool out data to table view
         return data

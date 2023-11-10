@@ -5,7 +5,9 @@ import time
 import json
 import logging
 import xml.etree.ElementTree as ET
+import pandas as pd
 
+from pilot.common.json_utils import serialize
 from datetime import datetime
 from typing import Any, Callable, Optional, List
 from pydantic import BaseModel
@@ -184,6 +186,8 @@ class PluginStatus(BaseModel):
     start_time = datetime.now().timestamp() * 1000
     end_time: int = None
 
+    df: Any = None
+
 
 class ApiCall:
     agent_prefix = "<api-call>"
@@ -191,7 +195,8 @@ class ApiCall:
     name_prefix = "<name>"
     name_end = "</name>"
 
-    def __init__(self, plugin_generator: Any = None, display_registry: Any = None):
+
+    def __init__(self, plugin_generator: Any = None, display_registry: Any = None, backend_rendering: bool = False):
         # self.name: str = ""
         # self.status: Status = Status.TODO.value
         # self.logo_url: str = None
@@ -204,6 +209,7 @@ class ApiCall:
         self.plugin_generator = plugin_generator
         self.display_registry = display_registry
         self.start_time = datetime.now().timestamp() * 1000
+        self.backend_rendering: bool = False
 
     def __repr__(self):
         return f"ApiCall(name={self.name}, status={self.status}, args={self.args})"
@@ -227,7 +233,7 @@ class ApiCall:
                     i += 1
         return False
 
-    def __check_last_plugin_call_ready(self, all_context):
+    def check_last_plugin_call_ready(self, all_context):
         start_agent_count = all_context.count(self.agent_prefix)
         end_agent_count = all_context.count(self.agent_end)
 
@@ -263,32 +269,18 @@ class ApiCall:
             api_status = self.plugin_status_map.get(api_context)
             if api_status is not None:
                 if display_mode:
-                    if api_status.api_result:
-                        all_context = self.__deal_error_md_tags(
-                            all_context, api_context
-                        )
+                    all_context = self.__deal_error_md_tags(
+                        all_context, api_context
+                    )
+                    if Status.FAILED.value == api_status.status:
                         all_context = all_context.replace(
-                            api_context, api_status.api_result
+                            api_context, "\n" + api_status.err_msg + self.to_view_antv_vis(api_status)
                         )
                     else:
-                        if api_status.status == Status.FAILED.value:
-                            all_context = self.__deal_error_md_tags(
-                                all_context, api_context
-                            )
-                            all_context = all_context.replace(
-                                api_context,
-                                f"""\n<span style=\"color:red\">ERROR!</span>{api_status.err_msg}\n """,
-                            )
-                        else:
-                            cost = (api_status.end_time - self.start_time) / 1000
-                            cost_str = "{:.2f}".format(cost)
-                            all_context = self.__deal_error_md_tags(
-                                all_context, api_context
-                            )
-                            all_context = all_context.replace(
-                                api_context,
-                                f'\n<span style="color:green">Waiting...{cost_str}S</span>\n',
-                            )
+                        all_context = all_context.replace(
+                            api_context, self.to_view_antv_vis(api_status)
+                        )
+
                 else:
                     all_context = self.__deal_error_md_tags(
                         all_context, api_context, False
@@ -335,6 +327,7 @@ class ApiCall:
             else:
                 api_status.location.append(api_index)
 
+
     def __to_view_param_str(self, api_status):
         param = {}
         if api_status.name:
@@ -348,7 +341,7 @@ class ApiCall:
 
         if api_status.api_result:
             param["result"] = api_status.api_result
-        return json.dumps(param)
+        return json.dumps(param, default=serialize, ensure_ascii=False)
 
     def to_view_text(self, api_status: PluginStatus):
         api_call_element = ET.Element("dbgpt-view")
@@ -356,10 +349,37 @@ class ApiCall:
         result = ET.tostring(api_call_element, encoding="utf-8")
         return result.decode("utf-8")
 
+    def to_view_antv_vis(self, api_status: PluginStatus):
+        if self.backend_rendering:
+            html_table = api_status.df.to_html(index=False, escape=False, sparsify=False)
+            table_str = "".join(html_table.split())
+            table_str = table_str.replace("\n", " ")
+            html = f""" \n<div><b>[SQL]{api_status.args["sql"]}</b></div><div class="w-full overflow-auto">{table_str}</div>\n """
+            return html
+        else:
+            api_call_element = ET.Element("chart-view")
+            api_call_element.text = self.__to_antv_vis_param(api_status)
+            result = ET.tostring(api_call_element, encoding="utf-8")
+            return result.decode("utf-8")
+
+    def __to_antv_vis_param(self, api_status: PluginStatus):
+        param = {}
+        if api_status.name:
+            param["type"] = api_status.name
+        if api_status.args:
+            param["sql"] = api_status.args["sql"].replace(',', '\\,')
+        if api_status.err_msg:
+            param["err_msg"] = api_status.err_msg
+
+        if api_status.api_result:
+            param["data"] = api_status.api_result
+
+        return json.dumps(param, default=serialize, ensure_ascii=False)
+
     def run(self, llm_text):
         if self.__is_need_wait_plugin_call(llm_text):
             # wait api call generate complete
-            if self.__check_last_plugin_call_ready(llm_text):
+            if self.check_last_plugin_call_ready(llm_text):
                 self.update_from_context(llm_text)
                 for key, value in self.plugin_status_map.items():
                     if value.status == Status.TODO.value:
@@ -379,7 +399,7 @@ class ApiCall:
     def run_display_sql(self, llm_text, sql_run_func):
         if self.__is_need_wait_plugin_call(llm_text):
             # wait api call generate complete
-            if self.__check_last_plugin_call_ready(llm_text):
+            if self.check_last_plugin_call_ready(llm_text):
                 self.update_from_context(llm_text)
                 for key, value in self.plugin_status_map.items():
                     if value.status == Status.TODO.value:
@@ -391,6 +411,7 @@ class ApiCall:
                                 param = {
                                     "df": sql_run_func(sql),
                                 }
+                                value.df = param['df']
                                 if self.display_registry.is_valid_command(value.name):
                                     value.api_result = self.display_registry.call(
                                         value.name, **param
@@ -406,3 +427,41 @@ class ApiCall:
                             value.err_msg = str(e)
                         value.end_time = datetime.now().timestamp() * 1000
         return self.api_view_context(llm_text, True)
+
+
+    def display_sql_llmvis(self, llm_text, sql_run_func):
+        """
+        Render charts using the Antv standard protocol
+        Args:
+            llm_text: LLM response text
+            sql_run_func: sql run  function
+
+        Returns:
+           ChartView protocol text
+        """
+        if self.__is_need_wait_plugin_call(llm_text):
+            # wait api call generate complete
+            if self.check_last_plugin_call_ready(llm_text):
+                self.update_from_context(llm_text)
+                for key, value in self.plugin_status_map.items():
+                    if value.status == Status.TODO.value:
+                        value.status = Status.RUNNING.value
+                        logging.info(f"sql展示执行:{value.name},{value.args}")
+                        try:
+                            sql = value.args["sql"]
+                            if sql is not None and len(sql) > 0:
+                                data_df = sql_run_func(sql)
+                                value.df = data_df
+                                value.api_result = json.loads(data_df.to_json(orient='records', date_format='iso', date_unit='s'))
+                                value.status = Status.COMPLETED.value
+                            else:
+                                value.status = Status.FAILED.value
+                                value.err_msg = "No executable sql！"
+
+                        except Exception as e:
+                            value.status = Status.FAILED.value
+                            value.err_msg = str(e)
+                        value.end_time = datetime.now().timestamp() * 1000
+        return self.api_view_context(llm_text, True)
+
+

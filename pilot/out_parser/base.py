@@ -26,6 +26,10 @@ class BaseOutputParser(ABC):
     def __init__(self, sep: str, is_stream_out: bool = True):
         self.sep = sep
         self.is_stream_out = is_stream_out
+        self.data_schema = None
+
+    def update(self, data_schema):
+        self.data_schema = data_schema
 
     def __post_process_code(self, code):
         sep = "\n```"
@@ -211,7 +215,7 @@ class BaseOutputParser(ABC):
         cleaned_output = self.__illegal_json_ends(cleaned_output)
         return cleaned_output
 
-    def parse_view_response(self, ai_text, data) -> str:
+    def parse_view_response(self, ai_text, data, parse_prompt_response:Any=None) -> str:
         """
         parse the ai response info to user view
         Args:
