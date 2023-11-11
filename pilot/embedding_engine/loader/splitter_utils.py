@@ -79,4 +79,3 @@ def split_by_phrase_regex() -> Callable[[str], List[str]]:
     """
     regex = "[^,.;。]+[,.;。]?"
     return split_by_regex(regex)
-

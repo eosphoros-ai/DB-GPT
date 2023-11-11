@@ -153,12 +153,17 @@ async def document_upload(
             request.content = os.path.join(
                 KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
             )
+            space_res = knowledge_space_service.get_knowledge_space(KnowledgeSpaceRequest(name=space_name))
+            if len(space_res) == 0:
+                # create default space
+                if "default" != space_name:
+                    raise Exception(f"you have not create your knowledge space.")
+                knowledge_space_service.create_knowledge_space(KnowledgeSpaceRequest(name=space_name, desc="first db-gpt rag application", owner="dbgpt"))
             return Result.succ(
                 knowledge_space_service.create_knowledge_document(
                     space=space_name, request=request
                 )
             )
-            # return Result.succ([])
         return Result.failed(code="E000X", msg=f"doc_file is None")
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document add error {e}")
@@ -240,7 +245,7 @@ async def document_summary(request: DocumentSummaryRequest):
         # )
         # return Result.succ([])
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"document add error {e}")
+        return Result.faild(code="E000X", msg=f"document summary error {e}")
 
 
 @router.post("/knowledge/entity/extract")

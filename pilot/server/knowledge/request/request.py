@@ -114,6 +114,7 @@ class DocumentSummaryRequest(BaseModel):
     """doc_ids: doc ids"""
     doc_id: int
     model_name: str
+    conv_uid: str
 
 
 class EntityExtractRequest(BaseModel):
@@ -121,3 +122,4 @@ class EntityExtractRequest(BaseModel):
 
     text: str
     model_name: str
+

@@ -13,7 +13,6 @@ from string import Formatter
 from typing import Callable, List, Optional, Sequence
 
 from pydantic import Field, PrivateAttr, BaseModel
-from llama_index.prompts import BasePromptTemplate
 
 from pilot.common.global_helper import globals_helper
 from pilot.common.llm_metadata import LLMMetadata

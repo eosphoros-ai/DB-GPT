@@ -83,7 +83,7 @@ class DocumentChunkDao(BaseDao):
                 DocumentChunkEntity.meta_info == query.meta_info
             )
 
-        document_chunks = document_chunks.order_by(DocumentChunkEntity.id.desc())
+        document_chunks = document_chunks.order_by(DocumentChunkEntity.id.asc())
         document_chunks = document_chunks.offset((page - 1) * page_size).limit(
             page_size
         )

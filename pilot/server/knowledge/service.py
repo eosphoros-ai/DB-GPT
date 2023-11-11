@@ -66,11 +66,7 @@ class KnowledgeService:
     """
 
     def __init__(self):
-        from pilot.graph_engine.graph_engine import RAGGraphEngine
-
-        # source = "/Users/chenketing/Desktop/project/llama_index/examples/paul_graham_essay/data/test/test_kg_text.txt"
-
-        # pass
+        pass
 
     def create_knowledge_space(self, request: KnowledgeSpaceRequest):
         """create knowledge space
@@ -286,7 +282,6 @@ class KnowledgeService:
             executor = CFG.SYSTEM_APP.get_component(
                 ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
             ).create()
-            # executor.submit(self.async_document_summary, chunk_docs, doc)
             executor.submit(self.async_doc_embedding, client, chunk_docs, doc)
             logger.info(f"begin save document chunks, doc:{doc.doc_name}")
             # save chunk details
@@ -326,7 +321,7 @@ class KnowledgeService:
 
         chunk_docs = [Document(page_content=chunk.content) for chunk in chunks]
         return await self.async_document_summary(
-            model_name=request.model_name, chunk_docs=chunk_docs, doc=document
+            model_name=request.model_name, chunk_docs=chunk_docs, doc=document, conn_uid=request.conv_uid
         )
 
     def update_knowledge_space(
@@ -441,7 +436,7 @@ class KnowledgeService:
             logger.error(f"document build graph failed:{doc.doc_name}, {str(e)}")
         return knowledge_document_dao.update_knowledge_document(doc)
 
-    async def async_document_summary(self, model_name, chunk_docs, doc):
+    async def async_document_summary(self, model_name, chunk_docs, doc, conn_uid):
         """async document extract summary
         Args:
             - model_name: str
@@ -458,8 +453,17 @@ class KnowledgeService:
         logger.info(
             f"async_document_summary, doc:{doc.doc_name}, chunk_size:{len(texts)}, begin generate summary"
         )
-        summary = await self._mapreduce_extract_summary(texts, model_name, 10, 3)
-        return await self._llm_extract_summary(summary, model_name)
+        space_context = self.get_space_context(doc.space)
+        if space_context and space_context.get("summary"):
+            summary = await self._mapreduce_extract_summary(
+                docs=texts,
+                model_name=model_name,
+                max_iteration=space_context["summary"]["max_iteration"],
+                concurrency_limit=space_context["summary"]["concurrency_limit"],
+            )
+        else:
+            summary = await self._mapreduce_extract_summary(docs=texts, model_name=model_name)
+        return await self._llm_extract_summary(summary, conn_uid, model_name)
 
     def async_doc_embedding(self, client, chunk_docs, doc):
         """async document embedding into vector db
@@ -504,6 +508,10 @@ class KnowledgeService:
                 "scene": PROMPT_SCENE_DEFINE,
                 "template": _DEFAULT_TEMPLATE,
             },
+            "summary": {
+                "max_iteration": 5,
+                "concurrency_limit": 3,
+            },
         }
         context_template_string = json.dumps(context_template, indent=4)
         return context_template_string
@@ -525,13 +533,13 @@ class KnowledgeService:
             return json.loads(spaces[0].context)
         return None
 
-    async def _llm_extract_summary(self, doc: str, model_name: str = None):
+    async def _llm_extract_summary(self, doc: str, conn_uid:str, model_name: str = None):
         """Extract triplets from text by llm"""
         from pilot.scene.base import ChatScene
         import uuid
 
         chat_param = {
-            "chat_session_id": uuid.uuid1(),
+            "chat_session_id": conn_uid,
             "current_user_input": "",
             "select_param": doc,
             "model_name": model_name,
@@ -554,10 +562,10 @@ class KnowledgeService:
         docs,
         model_name: str = None,
         max_iteration: int = 5,
-        concurrency_limit: int = None,
+        concurrency_limit: int = 3,
     ):
         """Extract summary by mapreduce mode
-        map -> multi async thread generate summary
+        map -> multi async call llm to generate summary
         reduce -> merge the summaries by map process
         Args:
             docs:List[str]
