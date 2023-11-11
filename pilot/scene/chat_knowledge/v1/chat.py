@@ -85,9 +85,9 @@ class ChatKnowledge(BaseChat):
             last_output.text = (
                 last_output.text + "\n\nrelations:\n\n" + ",".join(relations)
             )
-        reference = f"\n\n{self.parse_source_view(self.sources)}"
-        last_output = last_output + reference
-        yield last_output
+            reference = f"\n\n{self.parse_source_view(self.sources)}"
+            last_output = last_output + reference
+            yield last_output
 
     def knowledge_reference_call(self, text):
         """return reference"""
