@@ -75,8 +75,8 @@ Run on an RTX 4090 GPU.
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
 [**Usage Tutorial**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
-- [**Install**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
-  - [**Install Step by Step**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
+- [**Install**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy.html)
+  - [**Install Step by Step**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy.html)
   - [**Docker Install**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/docker/docker.html)
   - [**Docker Compose**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/docker_compose/docker_compose.html)
 - [**How to Use**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/chatdb/chatdb.html)

@@ -77,3 +77,4 @@ By analyzing this information, we can identify performance bottlenecks in model 
 
    ./vms/standalone.md
    ./vms/index.md
+   ./openai.md

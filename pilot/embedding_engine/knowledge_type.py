@@ -41,7 +41,11 @@ class KnowledgeType(Enum):
 
 
 def get_knowledge_embedding(
-    knowledge_type, knowledge_source, vector_store_config, source_reader, text_splitter
+    knowledge_type,
+    knowledge_source,
+    vector_store_config=None,
+    source_reader=None,
+    text_splitter=None,
 ):
     match knowledge_type:
         case KnowledgeType.DOCUMENT.value:

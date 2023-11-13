@@ -17,11 +17,11 @@ class Result(Generic[T], BaseModel):
         return Result(success=True, err_code=None, err_msg=None, data=data)
 
     @classmethod
-    def faild(cls, msg):
+    def failed(cls, msg):
         return Result(success=False, err_code="E000X", err_msg=msg, data=None)
 
     @classmethod
-    def faild(cls, code, msg):
+    def failed(cls, code, msg):
         return Result(success=False, err_code=code, err_msg=msg, data=None)
 
 

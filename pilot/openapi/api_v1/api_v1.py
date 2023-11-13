@@ -172,7 +172,7 @@ async def test_connect(db_config: DBConfig = Body()):
         CFG.LOCAL_DB_MANAGE.test_connect(db_config)
         return Result.succ(True)
     except Exception as e:
-        return Result.faild(code="E1001", msg=str(e))
+        return Result.failed(code="E1001", msg=str(e))
 
 
 @router.post("/v1/chat/db/summary", response_model=Result[bool])
@@ -305,7 +305,7 @@ async def params_load(
         return Result.succ(get_hist_messages(conv_uid))
     except Exception as e:
         logger.error("excel load error!", e)
-        return Result.faild(code="E000X", msg=f"File Load Error {e}")
+        return Result.failed(code="E000X", msg=f"File Load Error {e}")
 
 
 @router.post("/v1/chat/dialogue/delete")
@@ -352,7 +352,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
 
     if not ChatScene.is_valid_mode(dialogue.chat_mode):
         raise StopAsyncIteration(
-            Result.faild("Unsupported Chat Mode," + dialogue.chat_mode + "!")
+            Result.failed("Unsupported Chat Mode," + dialogue.chat_mode + "!")
         )
 
     chat_param = {
@@ -430,7 +430,7 @@ async def model_types(controller: BaseModelController = Depends(get_model_contro
         return Result.succ(list(types))
 
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"controller model types error {e}")
+        return Result.failed(code="E000X", msg=f"controller model types error {e}")
 
 
 @router.get("/v1/model/supports")
@@ -440,7 +440,7 @@ async def model_supports(worker_manager: WorkerManager = Depends(get_worker_mana
         models = await worker_manager.supported_models()
         return Result.succ(FlatSupportedModel.from_supports(models))
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"Fetch supportd models error {e}")
+        return Result.failed(code="E000X", msg=f"Fetch supportd models error {e}")
 
 
 async def no_stream_generator(chat):

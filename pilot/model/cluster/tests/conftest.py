@@ -6,12 +6,30 @@ from pilot.model.parameter import ModelParameters, ModelWorkerParameters, Worker
 from pilot.model.base import ModelOutput
 from pilot.model.cluster.worker_base import ModelWorker
 from pilot.model.cluster.worker.manager import (
+    WorkerManager,
     LocalWorkerManager,
     RegisterFunc,
     DeregisterFunc,
     SendHeartbeatFunc,
     ApplyFunction,
 )
+
+from pilot.model.base import ModelInstance
+from pilot.model.cluster.registry import ModelRegistry, EmbeddedModelRegistry
+
+
+@pytest.fixture
+def model_registry(request):
+    return EmbeddedModelRegistry()
+
+
+@pytest.fixture
+def model_instance():
+    return ModelInstance(
+        model_name="test_model",
+        host="192.168.1.1",
+        port=5000,
+    )
 
 
 class MockModelWorker(ModelWorker):
@@ -51,8 +69,10 @@ class MockModelWorker(ModelWorker):
             raise Exception("Stop worker error for mock")
 
     def generate_stream(self, params: Dict) -> Iterator[ModelOutput]:
+        full_text = ""
         for msg in self.stream_messags:
-            yield ModelOutput(text=msg, error_code=0)
+            full_text += msg
+            yield ModelOutput(text=full_text, error_code=0)
 
     def generate(self, params: Dict) -> ModelOutput:
         output = None
@@ -66,6 +86,8 @@ class MockModelWorker(ModelWorker):
 
 _TEST_MODEL_NAME = "vicuna-13b-v1.5"
 _TEST_MODEL_PATH = "/app/models/vicuna-13b-v1.5"
+
+ClusterType = Tuple[WorkerManager, ModelRegistry]
 
 
 def _new_worker_params(
@@ -85,7 +107,9 @@ def _create_workers(
     worker_type: str = WorkerType.LLM.value,
     stream_messags: List[str] = None,
     embeddings: List[List[float]] = None,
-) -> List[Tuple[ModelWorker, ModelWorkerParameters]]:
+    host: str = "127.0.0.1",
+    start_port=8001,
+) -> List[Tuple[ModelWorker, ModelWorkerParameters, ModelInstance]]:
     workers = []
     for i in range(num_workers):
         model_name = f"test-model-name-{i}"
@@ -98,10 +122,16 @@ def _create_workers(
             stream_messags=stream_messags,
             embeddings=embeddings,
         )
+        model_instance = ModelInstance(
+            model_name=WorkerType.to_worker_key(model_name, worker_type),
+            host=host,
+            port=start_port + i,
+            healthy=True,
+        )
         worker_params = _new_worker_params(
             model_name, model_path, worker_type=worker_type
         )
-        workers.append((worker, worker_params))
+        workers.append((worker, worker_params, model_instance))
     return workers
 
 
@@ -127,12 +157,12 @@ async def _start_worker_manager(**kwargs):
         model_registry=model_registry,
     )
 
-    for worker, worker_params in _create_workers(
+    for worker, worker_params, model_instance in _create_workers(
         num_workers, error_worker, stop_error, stream_messags, embeddings
     ):
         worker_manager.add_worker(worker, worker_params)
     if workers:
-        for worker, worker_params in workers:
+        for worker, worker_params, model_instance in workers:
             worker_manager.add_worker(worker, worker_params)
 
     if start:
@@ -141,6 +171,15 @@ async def _start_worker_manager(**kwargs):
     yield worker_manager
     if stop:
         await worker_manager.stop()
+
+
+async def _create_model_registry(
+    workers: List[Tuple[ModelWorker, ModelWorkerParameters, ModelInstance]]
+) -> ModelRegistry:
+    registry = EmbeddedModelRegistry()
+    for _, _, inst in workers:
+        assert await registry.register_instance(inst) == True
+    return registry
 
 
 @pytest_asyncio.fixture
@@ -166,3 +205,27 @@ async def manager_2_embedding_workers(request):
     )
     async with _start_worker_manager(workers=workers, **param) as worker_manager:
         yield (worker_manager, workers)
+
+
+@asynccontextmanager
+async def _new_cluster(**kwargs) -> ClusterType:
+    num_workers = kwargs.get("num_workers", 0)
+    workers = _create_workers(
+        num_workers, stream_messags=kwargs.get("stream_messags", [])
+    )
+    if "num_workers" in kwargs:
+        del kwargs["num_workers"]
+    registry = await _create_model_registry(
+        workers,
+    )
+    async with _start_worker_manager(workers=workers, **kwargs) as worker_manager:
+        yield (worker_manager, registry)
+
+
+@pytest_asyncio.fixture
+async def cluster_2_workers(request):
+    param = getattr(request, "param", {})
+    workers = _create_workers(2)
+    registry = await _create_model_registry(workers)
+    async with _start_worker_manager(workers=workers, **param) as worker_manager:
+        yield (worker_manager, registry)

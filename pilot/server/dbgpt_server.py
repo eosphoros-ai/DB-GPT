@@ -195,7 +195,11 @@ def run_uvicorn(param: WebWerverParameters):
 def run_webserver(param: WebWerverParameters = None):
     if not param:
         param = _get_webserver_params()
-    initialize_tracer(system_app, os.path.join(LOGDIR, param.tracer_file))
+    initialize_tracer(
+        system_app,
+        os.path.join(LOGDIR, param.tracer_file),
+        tracer_storage_cls=param.tracer_storage_cls,
+    )
 
     with root_tracer.start_span(
         "run_webserver",

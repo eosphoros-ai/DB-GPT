@@ -34,6 +34,7 @@ CREATE TABLE `knowledge_document` (
   `content` LONGTEXT NOT NULL COMMENT 'knowledge embedding sync result',
   `result` TEXT NULL COMMENT 'knowledge content',
   `vector_ids` LONGTEXT NULL COMMENT 'vector_ids',
+  `summary` LONGTEXT NULL COMMENT 'knowledge summary',
   `gmt_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
   `gmt_modified` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`),

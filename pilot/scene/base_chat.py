@@ -13,6 +13,7 @@ from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 from pilot.scene.message import OnceConversation
 from pilot.utils import get_or_create_event_loop
 from pilot.utils.executor_utils import ExecutorFactory, blocking_func_to_async
+from pilot.utils.tracer import root_tracer, trace
 from pydantic import Extra
 from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 
@@ -38,6 +39,7 @@ class BaseChat(ABC):
 
         arbitrary_types_allowed = True
 
+    @trace("BaseChat.__init__")
     def __init__(self, chat_param: Dict):
         """Chat Module Initialization
         Args:
@@ -128,17 +130,29 @@ class BaseChat(ABC):
         return speak_to_user
 
     async def __call_base(self):
-        input_values = await self.generate_input_values()
+        import inspect
+
+        input_values = (
+            await self.generate_input_values()
+            if inspect.isawaitable(self.generate_input_values())
+            else self.generate_input_values()
+        )
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)
         self.current_message.start_date = datetime.datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S"
         )
-
         self.current_message.tokens = 0
         if self.prompt_template.template:
-            current_prompt = self.prompt_template.format(**input_values)
+            metadata = {
+                "template_scene": self.prompt_template.template_scene,
+                "input_values": input_values,
+            }
+            with root_tracer.start_span(
+                "BaseChat.__call_base.prompt_template.format", metadata=metadata
+            ):
+                current_prompt = self.prompt_template.format(**input_values)
             self.current_message.add_system_message(current_prompt)
 
         llm_messages = self.generate_llm_messages()
@@ -146,7 +160,6 @@ class BaseChat(ABC):
             # Not new server mode, we convert the message format(List[ModelMessage]) to list of dict
             # fix the error of "Object of type ModelMessage is not JSON serializable" when passing the payload to request.post
             llm_messages = list(map(lambda m: m.dict(), llm_messages))
-
         payload = {
             "model": self.llm_model,
             "prompt": self.generate_llm_text(),
@@ -161,12 +174,23 @@ class BaseChat(ABC):
     def stream_plugin_call(self, text):
         return text
 
+    def knowledge_reference_call(self, text):
+        return text
+
     async def check_iterator_end(iterator):
         try:
             await asyncio.anext(iterator)
             return False  # 迭代器还有下一个元素
         except StopAsyncIteration:
             return True  # 迭代器已经执行结束
+
+    def _get_span_metadata(self, payload: Dict) -> Dict:
+        metadata = {k: v for k, v in payload.items()}
+        del metadata["prompt"]
+        metadata["messages"] = list(
+            map(lambda m: m if isinstance(m, dict) else m.dict(), metadata["messages"])
+        )
+        return metadata
 
     async def stream_call(self):
         # TODO Retry when server connection error
@@ -175,6 +199,10 @@ class BaseChat(ABC):
         self.skip_echo_len = len(payload.get("prompt").replace("</s>", " ")) + 11
         logger.info(f"Requert: \n{payload}")
         ai_response_text = ""
+        span = root_tracer.start_span(
+            "BaseChat.stream_call", metadata=self._get_span_metadata(payload)
+        )
+        payload["span_id"] = span.span_id
         try:
             from pilot.model.cluster import WorkerManagerFactory
 
@@ -190,17 +218,91 @@ class BaseChat(ABC):
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
             self.current_message.add_ai_message(msg)
+            view_msg = self.knowledge_reference_call(msg)
             self.current_message.add_view_message(view_msg)
+            span.end()
+        except Exception as e:
+            print(traceback.format_exc())
+            logger.error("model response parase failed！" + str(e))
+            self.current_message.add_view_message(
+                f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
+            )
+            ### store current conversation
+            span.end(metadata={"error": str(e)})
+        self.memory.append(self.current_message)
+
+    async def nostream_call(self):
+        payload = await self.__call_base()
+        logger.info(f"Request: \n{payload}")
+        ai_response_text = ""
+        span = root_tracer.start_span(
+            "BaseChat.nostream_call", metadata=self._get_span_metadata(payload)
+        )
+        payload["span_id"] = span.span_id
+        try:
+            from pilot.model.cluster import WorkerManagerFactory
+
+            worker_manager = CFG.SYSTEM_APP.get_component(
+                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
+
+            with root_tracer.start_span("BaseChat.invoke_worker_manager.generate"):
+                model_output = await worker_manager.generate(payload)
+
+            ### output parse
+            ai_response_text = (
+                self.prompt_template.output_parser.parse_model_nostream_resp(
+                    model_output, self.prompt_template.sep
+                )
+            )
+            ### model result deal
+            self.current_message.add_ai_message(ai_response_text)
+            prompt_define_response = (
+                self.prompt_template.output_parser.parse_prompt_response(
+                    ai_response_text
+                )
+            )
+            metadata = {
+                "model_output": model_output.to_dict(),
+                "ai_response_text": ai_response_text,
+                "prompt_define_response": self._parse_prompt_define_response(
+                    prompt_define_response
+                ),
+            }
+            with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
+                ###  run
+                result = await blocking_func_to_async(
+                    self._executor, self.do_action, prompt_define_response
+                )
+
+            ### llm speaker
+            speak_to_user = self.get_llm_speak(prompt_define_response)
+
+            # view_message = self.prompt_template.output_parser.parse_view_response(
+            #     speak_to_user, result
+            # )
+            view_message = await blocking_func_to_async(
+                self._executor,
+                self.prompt_template.output_parser.parse_view_response,
+                speak_to_user,
+                result,
+            )
+
+            view_message = view_message.replace("\n", "\\n")
+            self.current_message.add_view_message(view_message)
+            span.end()
         except Exception as e:
             print(traceback.format_exc())
             logger.error("model response parase faild！" + str(e))
             self.current_message.add_view_message(
                 f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
             )
-            ### store current conversation
+            span.end(metadata={"error": str(e)})
+        ### store dialogue
         self.memory.append(self.current_message)
+        return self.current_ai_response()
 
-    async def nostream_call(self):
+    async def get_llm_response(self):
         payload = await self.__call_base()
         logger.info(f"Request: \n{payload}")
         ai_response_text = ""
@@ -221,41 +323,19 @@ class BaseChat(ABC):
             )
             ### model result deal
             self.current_message.add_ai_message(ai_response_text)
+            prompt_define_response = None
             prompt_define_response = (
                 self.prompt_template.output_parser.parse_prompt_response(
                     ai_response_text
                 )
             )
-            ###  run
-            # result = self.do_action(prompt_define_response)
-            result = await blocking_func_to_async(
-                self._executor, self.do_action, prompt_define_response
-            )
-
-            ### llm speaker
-            speak_to_user = self.get_llm_speak(prompt_define_response)
-
-            # view_message = self.prompt_template.output_parser.parse_view_response(
-            #     speak_to_user, result
-            # )
-            view_message = await blocking_func_to_async(
-                self._executor,
-                self.prompt_template.output_parser.parse_view_response,
-                speak_to_user,
-                result,
-            )
-
-            view_message = view_message.replace("\n", "\\n")
-            self.current_message.add_view_message(view_message)
         except Exception as e:
             print(traceback.format_exc())
-            logger.error("model response parase faild！" + str(e))
+            logger.error("model response parse failed！" + str(e))
             self.current_message.add_view_message(
-                f"""<span style=\"color:red\">ERROR!</span>{str(e)}\n  {ai_response_text} """
+                f"""model response parse failed！{str(e)}\n  {ai_response_text} """
             )
-        ### store dialogue
-        self.memory.append(self.current_message)
-        return self.current_ai_response()
+        return prompt_define_response
 
     def _blocking_stream_call(self):
         logger.warn(
@@ -302,7 +382,7 @@ class BaseChat(ABC):
         text += self.__load_example_messages()
 
         ### Load History
-        text += self.__load_histroy_messages()
+        text += self.__load_history_messages()
 
         ### Load User Input
         text += self.__load_user_message()
@@ -328,7 +408,7 @@ class BaseChat(ABC):
         messages += self.__load_example_messages(str_message=False)
 
         ### Load History
-        messages += self.__load_histroy_messages(str_message=False)
+        messages += self.__load_history_messages(str_message=False)
 
         ### Load User Input
         messages += self.__load_user_message(str_message=False)
@@ -384,7 +464,7 @@ class BaseChat(ABC):
                         )
         return example_text if str_message else example_messages
 
-    def __load_histroy_messages(self, str_message: bool = True):
+    def __load_history_messages(self, str_message: bool = True):
         history_text = ""
         history_messages = []
         if self.prompt_template.need_historical_messages:
@@ -470,3 +550,21 @@ class BaseChat(ABC):
 
         """
         pass
+
+    def _parse_prompt_define_response(self, prompt_define_response: Any) -> Any:
+        if not prompt_define_response:
+            return ""
+        if isinstance(prompt_define_response, str) or isinstance(
+            prompt_define_response, dict
+        ):
+            return prompt_define_response
+        if isinstance(prompt_define_response, tuple):
+            if hasattr(prompt_define_response, "_asdict"):
+                # namedtuple
+                return prompt_define_response._asdict()
+            else:
+                return dict(
+                    zip(range(len(prompt_define_response)), prompt_define_response)
+                )
+        else:
+            return prompt_define_response

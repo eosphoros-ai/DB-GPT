@@ -66,7 +66,9 @@ class LocalModelController(BaseModelController):
             f"Get all instances with {model_name}, healthy_only: {healthy_only}"
         )
         if not model_name:
-            return await self.registry.get_all_model_instances()
+            return await self.registry.get_all_model_instances(
+                healthy_only=healthy_only
+            )
         else:
             return await self.registry.get_all_instances(model_name, healthy_only)
 
@@ -98,8 +100,10 @@ class _RemoteModelController(BaseModelController):
 
 
 class ModelRegistryClient(_RemoteModelController, ModelRegistry):
-    async def get_all_model_instances(self) -> List[ModelInstance]:
-        return await self.get_all_instances()
+    async def get_all_model_instances(
+        self, healthy_only: bool = False
+    ) -> List[ModelInstance]:
+        return await self.get_all_instances(healthy_only=healthy_only)
 
     @sync_api_remote(path="/api/controller/models")
     def sync_get_all_instances(

@@ -91,9 +91,9 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-[**教程**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
-- [**安装**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/deploy/deploy.html)
-  - [**Install Step by Step**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/deploy/deploy.html)
+[**教程**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh-cn/latest/getting_started/install/deploy.html)
+- [**安装**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh-cn/latest/getting_started/install/deploy.html)
+  - [**Install Step by Step**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh-cn/latest/getting_started/install/deploy.html)
   - [**Docker安装**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/docker/docker.html)
   - [**Docker Compose安装**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/docker_compose/docker_compose.html)
 - [**产品使用手册**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/chatdb/chatdb.html)

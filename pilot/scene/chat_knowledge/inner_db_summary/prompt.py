@@ -33,7 +33,7 @@ RESPONSE_FORMAT = {"table": ["orders", "products"]}
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
-PROMPT_NEED_NEED_STREAM_OUT = False
+PROMPT_NEED_STREAM_OUT = False
 
 prompt = PromptTemplate(
     template_scene=ChatScene.InnerChatDBSummary.value(),
@@ -41,9 +41,9 @@ prompt = PromptTemplate(
     response_format=json.dumps(RESPONSE_FORMAT, indent=4),
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE + PROMPT_RESPONSE,
-    stream_out=PROMPT_NEED_NEED_STREAM_OUT,
+    stream_out=PROMPT_NEED_STREAM_OUT,
     output_parser=NormalChatOutputParser(
-        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
+        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT
     ),
 )
 

@@ -8,6 +8,7 @@ from pilot.configs.model_config import LOGDIR
 from pilot.model.base import WorkerApplyType
 from pilot.model.parameter import (
     ModelControllerParameters,
+    ModelAPIServerParameters,
     ModelWorkerParameters,
     ModelParameters,
     BaseParameters,
@@ -441,15 +442,27 @@ def stop_model_worker(port: int):
 
 
 @click.command(name="apiserver")
+@EnvArgumentParser.create_click_option(ModelAPIServerParameters)
 def start_apiserver(**kwargs):
-    """Start apiserver(TODO)"""
-    raise NotImplementedError
+    """Start apiserver"""
+
+    if kwargs["daemon"]:
+        log_file = os.path.join(LOGDIR, "model_apiserver_uvicorn.log")
+        _run_current_with_daemon("ModelAPIServer", log_file)
+    else:
+        from pilot.model.cluster import run_apiserver
+
+        run_apiserver()
 
 
 @click.command(name="apiserver")
-def stop_apiserver(**kwargs):
-    """Start apiserver(TODO)"""
-    raise NotImplementedError
+@add_stop_server_options
+def stop_apiserver(port: int):
+    """Stop apiserver"""
+    name = "ModelAPIServer"
+    if port:
+        name = f"{name}-{port}"
+    _stop_service("apiserver", name, port=port)
 
 
 def _stop_all_model_server(**kwargs):

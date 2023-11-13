@@ -7,6 +7,16 @@ services:
     restart: unless-stopped
     networks:
       - dbgptnet
+  api-server:
+    image: eosphorosai/dbgpt:latest
+    command: dbgpt start apiserver --controller_addr http://controller:8000
+    restart: unless-stopped
+    depends_on:
+      - controller
+    networks:
+      - dbgptnet
+    ports:
+      - 8100:8100/tcp
   llm-worker:
     image: eosphorosai/dbgpt:latest
     command: dbgpt start worker --model_name vicuna-13b-v1.5 --model_path /app/models/vicuna-13b-v1.5 --port 8001 --controller_addr http://controller:8000

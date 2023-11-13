@@ -99,9 +99,7 @@ class LocalWorkerManager(WorkerManager):
         )
 
     def _worker_key(self, worker_type: str, model_name: str) -> str:
-        if isinstance(worker_type, WorkerType):
-            worker_type = worker_type.value
-        return f"{model_name}@{worker_type}"
+        return WorkerType.to_worker_key(model_name, worker_type)
 
     async def run_blocking_func(self, func, *args):
         if asyncio.iscoroutinefunction(func):
@@ -1023,6 +1021,7 @@ def run_worker_manager(
         system_app,
         os.path.join(LOGDIR, worker_params.tracer_file),
         root_operation_name="DB-GPT-WorkerManager-Entry",
+        tracer_storage_cls=worker_params.tracer_storage_cls,
     )
 
     _start_local_worker(worker_manager, worker_params)
