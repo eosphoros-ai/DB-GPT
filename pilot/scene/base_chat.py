@@ -174,6 +174,9 @@ class BaseChat(ABC):
     def stream_plugin_call(self, text):
         return text
 
+    def stream_call_reinforce_fn(self, text):
+        return text
+
     async def check_iterator_end(iterator):
         try:
             await asyncio.anext(iterator)
@@ -215,6 +218,7 @@ class BaseChat(ABC):
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
             self.current_message.add_ai_message(msg)
+            view_msg = self.stream_call_reinforce_fn(view_msg)
             self.current_message.add_view_message(view_msg)
             span.end()
         except Exception as e:
