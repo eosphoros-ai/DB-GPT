@@ -1,6 +1,7 @@
 import json
 from typing import Dict, NamedTuple
 import logging
+import sqlparse
 import xml.etree.ElementTree as ET
 from pilot.common.json_utils import serialize
 from pilot.out_parser.base import BaseOutputParser, T
@@ -21,20 +22,34 @@ class SqlAction(NamedTuple):
 logger = logging.getLogger(__name__)
 
 
+
 class DbChatOutputParser(BaseOutputParser):
     def __init__(self, sep: str, is_stream_out: bool):
         super().__init__(sep=sep, is_stream_out=is_stream_out)
 
+    def is_sql_statement(statement):
+        parsed = sqlparse.parse(statement)
+        if not parsed:
+            return False
+        for stmt in parsed:
+            if stmt.get_type() != 'UNKNOWN':
+                return True
+        return False
+
     def parse_prompt_response(self, model_out_text):
         clean_str = super().parse_prompt_response(model_out_text)
         logging.info("clean prompt response:", clean_str)
-        response = json.loads(clean_str)
-        for key in sorted(response):
-            if key.strip() == "sql":
-                sql = response[key]
-            if key.strip() == "thoughts":
-                thoughts = response[key]
-        return SqlAction(sql, thoughts)
+        #Compatible with community pure sql output model
+        if self.is_sql_statement(clean_str):
+            return SqlAction(clean_str, "")
+        else:
+            response = json.loads(clean_str)
+            for key in sorted(response):
+                if key.strip() == "sql":
+                    sql = response[key]
+                if key.strip() == "thoughts":
+                    thoughts = response[key]
+            return SqlAction(sql, thoughts)
 
     def parse_view_response(self, speak, data, prompt_response) -> str:
 
@@ -57,7 +72,8 @@ class DbChatOutputParser(BaseOutputParser):
             err_msg = str(e)
             view_json_str = json.dumps(err_param, default=serialize,  ensure_ascii=False)
 
-        api_call_element.text = view_json_str
+        # api_call_element.text = view_json_str
+        api_call_element.set("content", view_json_str)
         result = ET.tostring(api_call_element, encoding="utf-8")
         if err_msg:
             return f"""{speak} \\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result.decode("utf-8")}"""

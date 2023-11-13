@@ -341,6 +341,7 @@ class ApiCall:
 
         if api_status.api_result:
             param["result"] = api_status.api_result
+
         return json.dumps(param, default=serialize, ensure_ascii=False)
 
     def to_view_text(self, api_status: PluginStatus):
@@ -358,9 +359,12 @@ class ApiCall:
             return html
         else:
             api_call_element = ET.Element("chart-view")
-            api_call_element.text = self.__to_antv_vis_param(api_status)
+            api_call_element.set("content", self.__to_antv_vis_param(api_status))
+            # api_call_element.text = self.__to_antv_vis_param(api_status)
             result = ET.tostring(api_call_element, encoding="utf-8")
             return result.decode("utf-8")
+
+            # return f'<chart-view content="{self.__to_antv_vis_param(api_status)}">'
 
     def __to_antv_vis_param(self, api_status: PluginStatus):
         param = {}
@@ -373,8 +377,9 @@ class ApiCall:
 
         if api_status.api_result:
             param["data"] = api_status.api_result
-
-        return json.dumps(param, default=serialize, ensure_ascii=False, separators=(',', ':'))
+        else:
+            param["data"] =[]
+        return json.dumps(param, ensure_ascii=False)
 
     def run(self, llm_text):
         if self.__is_need_wait_plugin_call(llm_text):

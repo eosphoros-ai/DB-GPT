@@ -37,7 +37,8 @@ class DbDataLoader:
             err_msg = str(e)
             view_json_str = json.dumps(err_param, default=serialize,  ensure_ascii=False)
 
-        api_call_element.text = view_json_str
+        # api_call_element.text = view_json_str
+        api_call_element.set("content", view_json_str)
         result = ET.tostring(api_call_element, encoding="utf-8")
         if err_msg:
             return f"""{speak} \\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result.decode("utf-8")}"""
