@@ -29,7 +29,9 @@ class ChatHistoryEntity(Base):
     chat_mode = Column(String(255), nullable=False, comment="Conversation scene mode")
     summary = Column(String(255), nullable=False, comment="Conversation record summary")
     user_name = Column(String(255), nullable=True, comment="interlocutor")
-    messages = Column(Text(length=2**31-1), nullable=True, comment="Conversation details")
+    messages = Column(
+        Text(length=2**31 - 1), nullable=True, comment="Conversation details"
+    )
 
     UniqueConstraint("conv_uid", name="uk_conversation")
     Index("idx_q_user", "user_name")

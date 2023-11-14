@@ -195,8 +195,12 @@ class ApiCall:
     name_prefix = "<name>"
     name_end = "</name>"
 
-
-    def __init__(self, plugin_generator: Any = None, display_registry: Any = None, backend_rendering: bool = False):
+    def __init__(
+        self,
+        plugin_generator: Any = None,
+        display_registry: Any = None,
+        backend_rendering: bool = False,
+    ):
         # self.name: str = ""
         # self.status: Status = Status.TODO.value
         # self.logo_url: str = None
@@ -269,12 +273,12 @@ class ApiCall:
             api_status = self.plugin_status_map.get(api_context)
             if api_status is not None:
                 if display_mode:
-                    all_context = self.__deal_error_md_tags(
-                        all_context, api_context
-                    )
+                    all_context = self.__deal_error_md_tags(all_context, api_context)
                     if Status.FAILED.value == api_status.status:
                         all_context = all_context.replace(
-                            api_context, "\n" + api_status.err_msg + self.to_view_antv_vis(api_status)
+                            api_context,
+                            f'\n<span style="color:red">Error:</span>{api_status.err_msg}\n'
+                            + self.to_view_antv_vis(api_status),
                         )
                     else:
                         all_context = all_context.replace(
@@ -327,7 +331,6 @@ class ApiCall:
             else:
                 api_status.location.append(api_index)
 
-
     def __to_view_param_str(self, api_status):
         param = {}
         if api_status.name:
@@ -341,6 +344,7 @@ class ApiCall:
 
         if api_status.api_result:
             param["result"] = api_status.api_result
+
         return json.dumps(param, default=serialize, ensure_ascii=False)
 
     def to_view_text(self, api_status: PluginStatus):
@@ -351,30 +355,36 @@ class ApiCall:
 
     def to_view_antv_vis(self, api_status: PluginStatus):
         if self.backend_rendering:
-            html_table = api_status.df.to_html(index=False, escape=False, sparsify=False)
+            html_table = api_status.df.to_html(
+                index=False, escape=False, sparsify=False
+            )
             table_str = "".join(html_table.split())
             table_str = table_str.replace("\n", " ")
             html = f""" \n<div><b>[SQL]{api_status.args["sql"]}</b></div><div class="w-full overflow-auto">{table_str}</div>\n """
             return html
         else:
             api_call_element = ET.Element("chart-view")
-            api_call_element.text = self.__to_antv_vis_param(api_status)
+            api_call_element.set("content", self.__to_antv_vis_param(api_status))
+            # api_call_element.text = self.__to_antv_vis_param(api_status)
             result = ET.tostring(api_call_element, encoding="utf-8")
             return result.decode("utf-8")
+
+            # return f'<chart-view content="{self.__to_antv_vis_param(api_status)}">'
 
     def __to_antv_vis_param(self, api_status: PluginStatus):
         param = {}
         if api_status.name:
             param["type"] = api_status.name
         if api_status.args:
-            param["sql"] = api_status.args["sql"].replace(',', '\\,')
+            param["sql"] = api_status.args["sql"]
         if api_status.err_msg:
             param["err_msg"] = api_status.err_msg
 
         if api_status.api_result:
             param["data"] = api_status.api_result
-
-        return json.dumps(param, default=serialize, ensure_ascii=False)
+        else:
+            param["data"] = []
+        return json.dumps(param, ensure_ascii=False)
 
     def run(self, llm_text):
         if self.__is_need_wait_plugin_call(llm_text):
@@ -411,7 +421,7 @@ class ApiCall:
                                 param = {
                                     "df": sql_run_func(sql),
                                 }
-                                value.df = param['df']
+                                value.df = param["df"]
                                 if self.display_registry.is_valid_command(value.name):
                                     value.api_result = self.display_registry.call(
                                         value.name, **param
@@ -427,7 +437,6 @@ class ApiCall:
                             value.err_msg = str(e)
                         value.end_time = datetime.now().timestamp() * 1000
         return self.api_view_context(llm_text, True)
-
 
     def display_sql_llmvis(self, llm_text, sql_run_func):
         """
@@ -452,7 +461,13 @@ class ApiCall:
                             if sql is not None and len(sql) > 0:
                                 data_df = sql_run_func(sql)
                                 value.df = data_df
-                                value.api_result = json.loads(data_df.to_json(orient='records', date_format='iso', date_unit='s'))
+                                value.api_result = json.loads(
+                                    data_df.to_json(
+                                        orient="records",
+                                        date_format="iso",
+                                        date_unit="s",
+                                    )
+                                )
                                 value.status = Status.COMPLETED.value
                             else:
                                 value.status = Status.FAILED.value
@@ -463,5 +478,3 @@ class ApiCall:
                             value.err_msg = str(e)
                         value.end_time = datetime.now().timestamp() * 1000
         return self.api_view_context(llm_text, True)
-
-

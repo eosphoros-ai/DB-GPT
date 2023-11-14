@@ -153,12 +153,20 @@ async def document_upload(
             request.content = os.path.join(
                 KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
             )
-            space_res = knowledge_space_service.get_knowledge_space(KnowledgeSpaceRequest(name=space_name))
+            space_res = knowledge_space_service.get_knowledge_space(
+                KnowledgeSpaceRequest(name=space_name)
+            )
             if len(space_res) == 0:
                 # create default space
                 if "default" != space_name:
                     raise Exception(f"you have not create your knowledge space.")
-                knowledge_space_service.create_knowledge_space(KnowledgeSpaceRequest(name=space_name, desc="first db-gpt rag application", owner="dbgpt"))
+                knowledge_space_service.create_knowledge_space(
+                    KnowledgeSpaceRequest(
+                        name=space_name,
+                        desc="first db-gpt rag application",
+                        owner="dbgpt",
+                    )
+                )
             return Result.succ(
                 knowledge_space_service.create_knowledge_document(
                     space=space_name, request=request

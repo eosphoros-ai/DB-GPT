@@ -321,7 +321,10 @@ class KnowledgeService:
 
         chunk_docs = [Document(page_content=chunk.content) for chunk in chunks]
         return await self.async_document_summary(
-            model_name=request.model_name, chunk_docs=chunk_docs, doc=document, conn_uid=request.conv_uid
+            model_name=request.model_name,
+            chunk_docs=chunk_docs,
+            doc=document,
+            conn_uid=request.conv_uid,
         )
 
     def update_knowledge_space(
@@ -462,7 +465,9 @@ class KnowledgeService:
                 concurrency_limit=space_context["summary"]["concurrency_limit"],
             )
         else:
-            summary = await self._mapreduce_extract_summary(docs=texts, model_name=model_name)
+            summary = await self._mapreduce_extract_summary(
+                docs=texts, model_name=model_name
+            )
         return await self._llm_extract_summary(summary, conn_uid, model_name)
 
     def async_doc_embedding(self, client, chunk_docs, doc):
@@ -533,7 +538,9 @@ class KnowledgeService:
             return json.loads(spaces[0].context)
         return None
 
-    async def _llm_extract_summary(self, doc: str, conn_uid:str, model_name: str = None):
+    async def _llm_extract_summary(
+        self, doc: str, conn_uid: str, model_name: str = None
+    ):
         """Extract triplets from text by llm"""
         from pilot.scene.base import ChatScene
         import uuid

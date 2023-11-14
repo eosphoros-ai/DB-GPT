@@ -44,7 +44,6 @@ class ChatWithDbAutoExecute(BaseChat):
 
         self.top_k: int = 50
 
-
     @trace()
     async def generate_input_values(self) -> Dict:
         """
@@ -83,7 +82,6 @@ class ChatWithDbAutoExecute(BaseChat):
         text = text.replace("\n", " ")
         print(f"stream_plugin_call:{text}")
         return self.api_call.display_sql_llmvis(text, self.database.run_to_df)
-
 
     def do_action(self, prompt_response):
         print(f"do_action:{prompt_response}")

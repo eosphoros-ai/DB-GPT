@@ -56,6 +56,6 @@ class ExcelLearning(BaseChat):
 
         input_values = {
             "data_example": json.dumps(datas, cls=DateTimeEncoder),
-            "file_name": self.excel_reader.excel_file_name
+            "file_name": self.excel_reader.excel_file_name,
         }
         return input_values

@@ -275,7 +275,6 @@ class BaseChat(ABC):
                     self._executor, self.do_action, prompt_define_response
                 )
 
-
             ### llm speaker
             speak_to_user = self.get_llm_speak(prompt_define_response)
 
@@ -287,7 +286,7 @@ class BaseChat(ABC):
                 self.prompt_template.output_parser.parse_view_response,
                 speak_to_user,
                 result,
-                prompt_define_response
+                prompt_define_response,
             )
 
             view_message = view_message.replace("\n", "\\n")

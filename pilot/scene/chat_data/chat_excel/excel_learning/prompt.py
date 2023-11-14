@@ -43,11 +43,20 @@ _RESPONSE_FORMAT_SIMPLE_ZH = {
 }
 _RESPONSE_FORMAT_SIMPLE_EN = {
     "DataAnalysis": "Data content analysis summary",
-    "ColumnAnalysis": [{"column name1": "Introduction to Column 1 and explanation of professional terms (please try to be as simple and clear as possible)"}],
-    "AnalysisProgram": ["1. Analysis plan 1, chart display type 1", "2. Analysis plan 2, chart display type 2"],
+    "ColumnAnalysis": [
+        {
+            "column name1": "Introduction to Column 1 and explanation of professional terms (please try to be as simple and clear as possible)"
+        }
+    ],
+    "AnalysisProgram": [
+        "1. Analysis plan 1, chart display type 1",
+        "2. Analysis plan 2, chart display type 2",
+    ],
 }
 
-RESPONSE_FORMAT_SIMPLE =(_RESPONSE_FORMAT_SIMPLE_EN if CFG.LANGUAGE == "en" else _RESPONSE_FORMAT_SIMPLE_ZH)
+RESPONSE_FORMAT_SIMPLE = (
+    _RESPONSE_FORMAT_SIMPLE_EN if CFG.LANGUAGE == "en" else _RESPONSE_FORMAT_SIMPLE_ZH
+)
 
 
 _DEFAULT_TEMPLATE = (

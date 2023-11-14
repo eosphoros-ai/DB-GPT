@@ -247,7 +247,11 @@ if __name__ == "__main__":
     # sql = add_quotes_to_chinese_columns(sql_3)
     # print(f"excute sql:{sql}")
 
-    my_list = [{'name': 'John', 'age': 30}, {'name': 'Alice', 'age': 25}, {'name': 'Bob', 'age': 35}]
+    my_list = [
+        {"name": "John", "age": 30},
+        {"name": "Alice", "age": 25},
+        {"name": "Bob", "age": 35},
+    ]
 
     for dict_item in my_list:
         for key, value in dict_item.items():
@@ -264,14 +268,14 @@ class ExcelReader:
         self.extension = os.path.splitext(file_name)[1]
         # read excel file
         if file_path.endswith(".xlsx") or file_path.endswith(".xls"):
-            df_tmp = pd.read_excel(file_path, index_col= False)
+            df_tmp = pd.read_excel(file_path, index_col=False)
             self.df = pd.read_excel(
                 file_path,
                 index_col=False,
                 converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
         elif file_path.endswith(".csv"):
-            df_tmp = pd.read_csv(file_path, index_col= False, encoding=encoding)
+            df_tmp = pd.read_csv(file_path, index_col=False, encoding=encoding)
             self.df = pd.read_csv(
                 file_path,
                 index_col=False,
@@ -286,7 +290,7 @@ class ExcelReader:
         for column_name in df_tmp.columns:
             self.columns_map.update({column_name: excel_colunm_format(column_name)})
             try:
-                if not pd.api.types.is_datetime64_ns_dtype(self.df[column_name]) :
+                if not pd.api.types.is_datetime64_ns_dtype(self.df[column_name]):
                     self.df[column_name] = pd.to_numeric(self.df[column_name])
                 self.df[column_name] = self.df[column_name].fillna(0)
             except Exception as e:
@@ -306,7 +310,6 @@ class ExcelReader:
         columns = result.fetchall()
         for column in columns:
             print(column)
-
 
     def run(self, sql):
         try:

@@ -21,7 +21,6 @@ class LearningExcelOutputParser(BaseOutputParser):
         super().__init__(sep=sep, is_stream_out=is_stream_out)
         self.is_downgraded = False
 
-
     def parse_prompt_response(self, model_out_text):
         try:
             clean_str = super().parse_prompt_response(model_out_text)
@@ -38,8 +37,9 @@ class LearningExcelOutputParser(BaseOutputParser):
         except Exception as e:
             logger.error(f"parse_prompt_response Faild!{str(e)}")
             self.is_downgraded = True
-            return ExcelResponse(desciption=model_out_text, clounms=self.data_schema, plans=None)
-
+            return ExcelResponse(
+                desciption=model_out_text, clounms=self.data_schema, plans=None
+            )
 
     def parse_view_response(self, speak, data, prompt_response) -> str:
         if data and not isinstance(data, str):
@@ -60,7 +60,8 @@ class LearningExcelOutputParser(BaseOutputParser):
                     keys = item.keys()
                     for key in keys:
                         html_colunms = (
-                            html_colunms + f"- **{column_index}.[{key}]**   _{item[key]}_\n"
+                            html_colunms
+                            + f"- **{column_index}.[{key}]**   _{item[key]}_\n"
                         )
 
             html_plans = f"### **Recommended analysis plan**\n"

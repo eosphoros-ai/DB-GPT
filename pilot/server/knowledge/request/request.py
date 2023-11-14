@@ -122,4 +122,3 @@ class EntityExtractRequest(BaseModel):
 
     text: str
     model_name: str
-

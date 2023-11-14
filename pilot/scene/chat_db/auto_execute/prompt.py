@@ -78,7 +78,7 @@ prompt = PromptTemplate(
     ),
     # example_selector=sql_data_example,
     temperature=PROMPT_TEMPERATURE,
-    need_historical_messages=True
+    need_historical_messages=True,
 )
 CFG.prompt_template_registry.register(prompt, is_default=True)
 from . import prompt_baichuan
