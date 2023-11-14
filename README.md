@@ -39,7 +39,17 @@
 
 ## What is DB-GPT?
 
-DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
+ DB-GPT is an open-source framework for large models in the databases fields. It's purpose is to build infrastructure for the domain of large models, making it easier and more convenient to develop applications around databases. By developing various technical capabilities such as:
+
+1. **SMMF(Service-oriented Multi-model Management Framework)**
+2. **Text2SQL Fine-tuning**
+3. **RAG(Retrieval Augmented Generation) framework and optimization**
+4. **Data-Driven Agents framework collaboration**
+5. **GBI(Generative Business intelligence)**
+
+etc, DB-GPT simplifies the construction of large model applications based on databases. 
+
+In the era of Data 3.0, enterprises and developers can build their own customized applications with less code, leveraging models and databases.
 
 
 ## Contents
@@ -284,7 +294,6 @@ The core capabilities mainly consist of the following parts:
   - [x] ChatGLM2
 
 -  SFT Accuracy
-
 As of October 10, 2023, by fine-tuning an open-source model of 13 billion parameters using this project, the execution accuracy on the Spider evaluation dataset has surpassed that of GPT-4!
 
 [More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
