@@ -32,14 +32,14 @@ class ExtractRefineSummary(BaseChat):
         }
         return input_values
 
-    # async def stream_call(self):
-    #     last_output = None
-    #     async for output in super().stream_call():
-    #         last_output = output
-    #         yield output
-    #
-    #     last_output = f"<summary>{last_output}</summary>"
-    #     yield last_output
+    async def stream_call(self):
+        last_output = None
+        async for output in super().stream_call():
+            last_output = output
+            yield output
+
+        last_output = f"<summary>{last_output}</summary>"
+        yield last_output
 
     def stream_call_reinforce_fn(self, text):
         """return reference"""
