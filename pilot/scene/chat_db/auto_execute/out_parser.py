@@ -27,7 +27,7 @@ class DbChatOutputParser(BaseOutputParser):
     def __init__(self, sep: str, is_stream_out: bool):
         super().__init__(sep=sep, is_stream_out=is_stream_out)
 
-    def is_sql_statement(statement):
+    def is_sql_statement(self, statement):
         parsed = sqlparse.parse(statement)
         if not parsed:
             return False
@@ -43,13 +43,17 @@ class DbChatOutputParser(BaseOutputParser):
         if self.is_sql_statement(clean_str):
             return SqlAction(clean_str, "")
         else:
-            response = json.loads(clean_str)
-            for key in sorted(response):
-                if key.strip() == "sql":
-                    sql = response[key]
-                if key.strip() == "thoughts":
-                    thoughts = response[key]
-            return SqlAction(sql, thoughts)
+            try:
+                response = json.loads(clean_str)
+                for key in sorted(response):
+                    if key.strip() == "sql":
+                        sql = response[key]
+                    if key.strip() == "thoughts":
+                        thoughts = response[key]
+                return SqlAction(sql, thoughts)
+            except Exception as e:
+                logging.error("json load faild")
+                return SqlAction("", clean_str)
 
     def parse_view_response(self, speak, data, prompt_response) -> str:
 
@@ -57,6 +61,9 @@ class DbChatOutputParser(BaseOutputParser):
         api_call_element = ET.Element("chart-view")
         err_msg = None
         try:
+            if not prompt_response.sql or len(prompt_response.sql) <=0:
+                return f""" <span style=\"color:red\">[Unresolvable return]</span>\n{speak}"""
+
             df = data(prompt_response.sql)
             param["type"] = "response_table"
             param["sql"] = prompt_response.sql

@@ -22,6 +22,8 @@ Constraint:
     3.Use as few tables as possible when querying.
     4.Please check the correctness of the SQL and ensure that the query performance is optimized under correct conditions.
     
+User Question:
+    {user_input}
 Please think step by step and respond according to the following JSON format:
     {response}
 Ensure the response is correct json and can be parsed by Python json.loads.
@@ -37,7 +39,8 @@ _DEFAULT_TEMPLATE_ZH = """
     2. 只能使用表结构信息中提供的表来生成 sql，如果无法根据提供的表结构中生成 sql ，请说：“提供的表结构信息不足以生成 sql 查询。” 禁止随意捏造信息。
     3. 请注意生成SQL时不要弄错表和列的关系
     4. 请检查SQL的正确性，并保证正确的情况下优化查询性能
-
+用户问题:
+    {user_input}
 请一步步思考并按照以下JSON格式回复：
       {response}
 确保返回正确的json并且可以被Python json.loads方法解析.

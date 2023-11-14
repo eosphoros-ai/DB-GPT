@@ -206,6 +206,10 @@ class BaseOutputParser(ABC):
         if not cleaned_output.startswith("{") or not cleaned_output.endswith("}"):
             logger.info("illegal json processing:\n" + cleaned_output)
             cleaned_output = self.__extract_json(cleaned_output)
+
+        if not cleaned_output or len(cleaned_output) <=0:
+            return model_out_text
+
         cleaned_output = (
             cleaned_output.strip()
             .replace("\\n", " ")
