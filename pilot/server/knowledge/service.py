@@ -576,6 +576,9 @@ class KnowledgeService:
         reduce -> merge the summaries by map process
         Args:
             docs:List[str]
+            model_name:model name str
+            max_iteration:max iteration will call llm to summary
+            concurrency_limit:the max concurrency threads to call llm
         """
         from pilot.scene.base import ChatScene
         from pilot.common.chat_util import llm_chat_response_nostream

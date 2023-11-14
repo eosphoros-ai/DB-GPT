@@ -245,15 +245,8 @@ async def document_summary(request: DocumentSummaryRequest):
                 headers=headers,
                 media_type="text/plain",
             )
-
-        # return Result.succ(
-        #     knowledge_space_service.create_knowledge_document(
-        #         space=space_name, request=request
-        #     )
-        # )
-        # return Result.succ([])
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"document summary error {e}")
+        return Result.failed(code="E000X", msg=f"document summary error {e}")
 
 
 @router.post("/knowledge/entity/extract")
@@ -276,4 +269,4 @@ async def entity_extract(request: EntityExtractRequest):
         )
         return Result.succ(res)
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"entity extract error {e}")
+        return Result.failed(code="E000X", msg=f"entity extract error {e}")
