@@ -176,11 +176,6 @@ The core capabilities mainly consist of the following parts:
 6. Privacy & Secure: You can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 7. Text2SQL: We enhance the Text-to-SQL performance by applying Supervised Fine-Tuning (SFT) on large language models
 
-### RAG-IN-Action
-<p align="center">
-  <img src="./assets/RAG-IN-ACTION.jpg" width="800px" />
-</p>
-
 ### SubModule
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL performance by applying Supervised Fine-Tuning (SFT) on large language models.
 - [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT Plugins Can run autogpt plugin directly
