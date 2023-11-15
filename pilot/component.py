@@ -48,6 +48,7 @@ class ComponentType(str, Enum):
     MODEL_CONTROLLER = "dbgpt_model_controller"
     MODEL_REGISTRY = "dbgpt_model_registry"
     MODEL_API_SERVER = "dbgpt_model_api_server"
+    MODEL_CACHE_MANAGER = "dbgpt_model_cache_manager"
     AGENT_HUB = "dbgpt_agent_hub"
     EXECUTOR_DEFAULT = "dbgpt_thread_pool_default"
     TRACER = "dbgpt_tracer"

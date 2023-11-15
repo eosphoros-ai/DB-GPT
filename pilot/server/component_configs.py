@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Type
 import os
 
 from pilot.component import ComponentType, SystemApp
+from pilot.configs.model_config import MODEL_DISK_CACHE_DIR
 from pilot.utils.executor_utils import DefaultExecutorFactory
 from pilot.embedding_engine.embedding_factory import EmbeddingFactory
 from pilot.server.base import WebWerverParameters
@@ -40,6 +41,10 @@ def initialize_components(
     _initialize_embedding_model(
         param, system_app, embedding_model_name, embedding_model_path
     )
+
+    from pilot.cache import initialize_cache
+
+    initialize_cache(system_app, MODEL_DISK_CACHE_DIR)
 
 
 def _initialize_embedding_model(

@@ -16,6 +16,8 @@ from pilot.utils.executor_utils import ExecutorFactory, blocking_func_to_async
 from pilot.utils.tracer import root_tracer, trace
 from pydantic import Extra
 from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
+from pilot.awel import BaseOperator, SimpleCallDataInputSource, InputOperator, DAG
+from pilot.model.operator.model_operator import ModelOperator, ModelStreamOperator
 
 logger = logging.getLogger(__name__)
 headers = {"User-Agent": "dbgpt Client"}
@@ -87,6 +89,11 @@ class BaseChat(ABC):
         self._executor = CFG.SYSTEM_APP.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
+
+        self._model_operator: BaseOperator = _build_model_operator()
+        self._model_stream_operator: BaseOperator = _build_model_operator(
+            is_stream=True, dag_name="llm_stream_model_dag"
+        )
 
     class Config:
         """Configuration for this pydantic object."""
@@ -204,12 +211,9 @@ class BaseChat(ABC):
         )
         payload["span_id"] = span.span_id
         try:
-            from pilot.model.cluster import WorkerManagerFactory
-
-            worker_manager = CFG.SYSTEM_APP.get_component(
-                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-            ).create()
-            async for output in worker_manager.generate_stream(payload):
+            async for output in await self._model_stream_operator.call_stream(
+                call_data={"data": payload}
+            ):
                 ### Plug-in research in result generation
                 msg = self.prompt_template.output_parser.parse_model_stream_resp_ex(
                     output, self.skip_echo_len
@@ -240,14 +244,10 @@ class BaseChat(ABC):
         )
         payload["span_id"] = span.span_id
         try:
-            from pilot.model.cluster import WorkerManagerFactory
-
-            worker_manager = CFG.SYSTEM_APP.get_component(
-                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-            ).create()
-
             with root_tracer.start_span("BaseChat.invoke_worker_manager.generate"):
-                model_output = await worker_manager.generate(payload)
+                model_output = await self._model_operator.call(
+                    call_data={"data": payload}
+                )
 
             ### output parse
             ai_response_text = (
@@ -307,14 +307,7 @@ class BaseChat(ABC):
         logger.info(f"Request: \n{payload}")
         ai_response_text = ""
         try:
-            from pilot.model.cluster import WorkerManagerFactory
-
-            worker_manager = CFG.SYSTEM_APP.get_component(
-                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-            ).create()
-
-            model_output = await worker_manager.generate(payload)
-
+            model_output = await self._model_operator.call(call_data={"data": payload})
             ### output parse
             ai_response_text = (
                 self.prompt_template.output_parser.parse_model_nostream_resp(
@@ -568,3 +561,34 @@ class BaseChat(ABC):
                 )
         else:
             return prompt_define_response
+
+
+def _build_model_operator(
+    is_stream: bool = False, dag_name: str = "llm_model_dag"
+) -> BaseOperator:
+    from pilot.model.cluster import WorkerManagerFactory
+    from pilot.model.operator.model_operator import (
+        ModelCacheOperator,
+        ModelStreamCacheOperator,
+        ModelCachePreOperator,
+    )
+    from pilot.cache import CacheManager
+
+    worker_manager = CFG.SYSTEM_APP.get_component(
+        ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+    ).create()
+    cache_manager: CacheManager = CFG.SYSTEM_APP.get_component(
+        ComponentType.MODEL_CACHE_MANAGER, CacheManager
+    )
+
+    with DAG(dag_name):
+        input_node = InputOperator(SimpleCallDataInputSource())
+        cache_check_node = ModelCachePreOperator(cache_manager)
+        if is_stream:
+            model_node = ModelStreamOperator(worker_manager)
+            cache_node = ModelStreamCacheOperator(cache_manager)
+        else:
+            model_node = ModelOperator(worker_manager)
+            cache_node = ModelCacheOperator(cache_manager)
+        input_node >> cache_check_node >> model_node >> cache_node
+    return cache_node
