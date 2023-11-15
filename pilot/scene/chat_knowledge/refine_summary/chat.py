@@ -36,6 +36,7 @@ class ExtractRefineSummary(BaseChat):
         last_output = None
         async for output in super().stream_call():
             last_output = output
+            last_output = last_output.replace("\n", "\\n")
             yield output
 
         last_output = f"<summary>{last_output}</summary>"
