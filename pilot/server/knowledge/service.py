@@ -461,8 +461,8 @@ class KnowledgeService:
             summary = await self._mapreduce_extract_summary(
                 docs=texts,
                 model_name=model_name,
-                max_iteration=space_context["summary"]["max_iteration"],
-                concurrency_limit=space_context["summary"]["concurrency_limit"],
+                max_iteration=int(space_context["summary"]["max_iteration"]),
+                concurrency_limit=int(space_context["summary"]["concurrency_limit"]),
             )
         else:
             summary = await self._mapreduce_extract_summary(
