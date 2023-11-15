@@ -49,7 +49,7 @@ class ChatKnowledge(BaseChat):
         )
         self.max_token = (
             CFG.KNOWLEDGE_SEARCH_MAX_TOKEN
-            if self.space_context is None
+            if self.space_context is None or self.space_context.get("prompt") is None
             else int(self.space_context["prompt"]["max_token"])
         )
         vector_store_config = {
