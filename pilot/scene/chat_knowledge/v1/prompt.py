@@ -17,13 +17,13 @@ _DEFAULT_TEMPLATE_ZH = """ 基于以下已知的信息, 专业、简要的回答
             已知内容: 
             {context}
             问题:
-            {question}
+            {question},请使用和用户相同的语言进行回答.
 """
 _DEFAULT_TEMPLATE_EN = """ Based on the known information below, provide users with professional and concise answers to their questions. If the answer cannot be obtained from the provided content, please say: "The information provided in the knowledge base is not sufficient to answer this question." It is forbidden to make up information randomly. When answering, it is best to summarize according to points 1.2.3.
             known information: 
             {context}
             question:
-            {question}
+            {question},when answering, use the same language as the "user".
 """
 
 _DEFAULT_TEMPLATE = (

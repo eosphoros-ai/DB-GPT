@@ -95,7 +95,7 @@ class ChatKnowledge(BaseChat):
 
     @trace()
     async def generate_input_values(self) -> Dict:
-        if self.space_context:
+        if self.space_context and self.space_context.get("prompt"):
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
         docs = await blocking_func_to_async(
@@ -111,9 +111,6 @@ class ChatKnowledge(BaseChat):
         if not docs or len(docs) == 0:
             print("no relevant docs to retrieve")
             context = "no relevant docs to retrieve"
-            # raise ValueError(
-            #     "you have no knowledge space, please add your knowledge space"
-            # )
         else:
             context = [d.page_content for d in docs]
         context = context[: self.max_token]
@@ -155,23 +152,24 @@ class ChatKnowledge(BaseChat):
     def merge_by_key(self, data, key):
         result = {}
         for item in data:
-            item_key = os.path.basename(item.get(key))
-            if item_key in result:
-                if "pages" in result[item_key] and "page" in item:
-                    result[item_key]["pages"].append(str(item["page"]))
-                elif "page" in item:
-                    result[item_key]["pages"] = [
-                        result[item_key]["pages"],
-                        str(item["page"]),
-                    ]
-            else:
-                if "page" in item:
-                    result[item_key] = {
-                        "source": item_key,
-                        "pages": [str(item["page"])],
-                    }
+            if item.get(key):
+                item_key = os.path.basename(item.get(key))
+                if item_key in result:
+                    if "pages" in result[item_key] and "page" in item:
+                        result[item_key]["pages"].append(str(item["page"]))
+                    elif "page" in item:
+                        result[item_key]["pages"] = [
+                            result[item_key]["pages"],
+                            str(item["page"]),
+                        ]
                 else:
-                    result[item_key] = {"source": item_key}
+                    if "page" in item:
+                        result[item_key] = {
+                            "source": item_key,
+                            "pages": [str(item["page"])],
+                        }
+                    else:
+                        result[item_key] = {"source": item_key}
         return list(result.values())
 
     @property
