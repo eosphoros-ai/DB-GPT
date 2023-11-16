@@ -372,8 +372,8 @@ class ApiCall:
             param["type"] = api_status.name
         if api_status.args:
             param["sql"] = api_status.args["sql"]
-        if api_status.err_msg:
-            param["err_msg"] = api_status.err_msg
+        # if api_status.err_msg:
+        #     param["err_msg"] = api_status.err_msg
 
         if api_status.api_result:
             param["data"] = api_status.api_result

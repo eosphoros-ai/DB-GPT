@@ -62,7 +62,7 @@ class DbChatOutputParser(BaseOutputParser):
         err_msg = None
         try:
             if not prompt_response.sql or len(prompt_response.sql) <=0:
-                return f""" <span style=\"color:red\">[Unresolvable return]</span>\n{speak}"""
+                return f"""{speak}"""
 
             df = data(prompt_response.sql)
             param["type"] = "response_table"

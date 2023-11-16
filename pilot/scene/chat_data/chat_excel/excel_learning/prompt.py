@@ -28,23 +28,24 @@ _DEFAULT_TEMPLATE_ZH = """
 下面是用户文件{file_name}的一部分数据，请学习理解该数据的结构和内容，按要求输出解析结果:
     {data_example}
 分析各列数据的含义和作用，并对专业术语进行简单明了的解释, 如果是时间类型请给出时间格式类似:yyyy-MM-dd HH:MM:ss.
-请不要修改或者翻译列名，确保和给出数据列名一致.
+将列名作为key，分析解释作为value，生成json数组如[\\{{"列名1": "分析解释内容1"\\}},\\{{"列名2":"分析解释2"\\}}]，并输出在返回json内容的ColumnAnalysis属性中.
+请不要修改或者翻译列名，确保和给出数据列名一致
 
 提供一些分析方案思路，请一步一步思考。
 
-请以JSON格式返回您的答案，返回格式如下：
+请以确保只以JSON格式回答，格式如下：
     {response}
 """
 
 _RESPONSE_FORMAT_SIMPLE_ZH = {
     "DataAnalysis": "数据内容分析总结",
-    "ColumnAnalysis": [{"column name1": "字段1介绍，专业术语解释(请尽量简单明了)"}],
-    "AnalysisProgram": ["1.分析方案1，图表展示方式1", "2.分析方案2，图表展示方式2"],
+    "ColumnAnalysis": [{"column name": "字段1介绍，专业术语解释(请尽量简单明了)"}],
+    "AnalysisProgram": ["1.分析方案1", "2.分析方案2"],
 }
 _RESPONSE_FORMAT_SIMPLE_EN = {
     "DataAnalysis": "Data content analysis summary",
-    "ColumnAnalysis": [{"column name1": "Introduction to Column 1 and explanation of professional terms (please try to be as simple and clear as possible)"}],
-    "AnalysisProgram": ["1. Analysis plan 1, chart display type 1", "2. Analysis plan 2, chart display type 2"],
+    "ColumnAnalysis": [{"column name": "Introduction to Column 1 and explanation of professional terms (please try to be as simple and clear as possible)"}],
+    "AnalysisProgram": ["1. Analysis plan ", "2. Analysis plan "],
 }
 
 RESPONSE_FORMAT_SIMPLE =(_RESPONSE_FORMAT_SIMPLE_EN if CFG.LANGUAGE == "en" else _RESPONSE_FORMAT_SIMPLE_ZH)

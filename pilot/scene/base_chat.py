@@ -209,6 +209,8 @@ class BaseChat(ABC):
             worker_manager = CFG.SYSTEM_APP.get_component(
                 ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
             ).create()
+            msg =""
+            view_msg=""
             async for output in worker_manager.generate_stream(payload):
                 ### Plug-in research in result generation
                 msg = self.prompt_template.output_parser.parse_model_stream_resp_ex(

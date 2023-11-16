@@ -72,6 +72,7 @@ class ChatWithDbAutoExecute(BaseChat):
             )
 
         input_values = {
+            "db_name": self.db_name,
             "user_input": self.current_user_input,
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,

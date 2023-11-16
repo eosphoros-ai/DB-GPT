@@ -153,11 +153,21 @@ class LLMModelAdaper:
             else:
                 raise ValueError(f"Unknown role: {role}")
 
+        can_use_system = ""
         if system_messages:
-            if isinstance(conv, Conversation):
-                conv.set_system_message("".join(system_messages))
-            else:
-                conv.update_system_message("".join(system_messages))
+            # TODO vicuna 兼容 测试完放弃
+            if len(system_messages) > 1:
+                can_use_system = system_messages[0]
+                conv[-1][0][-1]  =system_messages[-1]
+            elif len(system_messages) == 1:
+                conv[-1][0][-1] = system_messages[-1]
+
+        if isinstance(conv, Conversation):
+            conv.set_system_message(can_use_system)
+        else:
+            conv.update_system_message(can_use_system)
+
+
 
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
