@@ -170,10 +170,7 @@ def chatgpt_generate_stream(
             from openai import OpenAI
 
             client = OpenAI(**openai_params)
-        print("openai_params", openai_params)
-        print("payloads", payloads)
         res = client.chat.completions.create(messages=history, **payloads)
-        print(res)
         text = ""
         for r in res:
             if r.choices[0].delta.content is not None:
@@ -209,19 +206,23 @@ async def async_chatgpt_generate_stream(
 
             client = AsyncAzureOpenAI(
                 api_key=openai_params["api_key"],
-                end_point=openai_params["base_url"],
                 api_version=api_version,
-                azure_endpoint=os.getenv(
-                    "AZURE_OPENAI_ENDPOINT"
-                ),  # Your Azure OpenAI resource's endpoint value.
+                azure_endpoint=openai_params[
+                    "base_url"
+                ],  # Your Azure OpenAI resource's endpoint value.
             )
         else:
             from openai import AsyncOpenAI
 
             client = AsyncOpenAI(**openai_params)
-        res = await client.chat.completions.create(
-            messages=history, **payloads
-        ).model_dump()
+
+        res = await client.chat.completions.create(messages=history, **payloads)
+        text = ""
+        for r in res:
+            if r.choices[0].delta.content is not None:
+                content = r.choices[0].delta.content
+                text += content
+                yield text
     else:
         import openai
 
@@ -229,9 +230,9 @@ async def async_chatgpt_generate_stream(
 
         res = await openai.ChatCompletion.acreate(messages=history, **payloads)
 
-    text = ""
-    async for r in res:
-        if r["choices"][0]["delta"].get("content") is not None:
-            content = r["choices"][0]["delta"]["content"]
-            text += content
-            yield text
+        text = ""
+        async for r in res:
+            if r["choices"][0]["delta"].get("content") is not None:
+                content = r["choices"][0]["delta"]["content"]
+                text += content
+                yield text
