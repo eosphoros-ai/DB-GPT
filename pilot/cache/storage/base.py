@@ -184,7 +184,7 @@ class CacheStorage(ABC):
 
 
 class MemoryCacheStorage(CacheStorage):
-    def __init__(self, max_memory_mb: int = 1024):
+    def __init__(self, max_memory_mb: int = 256):
         self.cache = OrderedDict()
         self.max_memory = max_memory_mb * 1024 * 1024
         self.current_memory_usage = 0

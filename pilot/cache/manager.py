@@ -100,19 +100,27 @@ class LocalCacheManager(CacheManager):
         return self._serializer
 
 
-def initialize_cache(system_app: SystemApp, persist_dir: str):
+def initialize_cache(
+    system_app: SystemApp, storage_type: str, max_memory_mb: int, persist_dir: str
+):
     from pilot.cache.protocal.json_protocal import JsonSerializer
     from pilot.cache.storage.base import MemoryCacheStorage
 
-    try:
-        from pilot.cache.storage.disk.disk_storage import DiskCacheStorage
+    cache_storage = None
+    if storage_type == "disk":
+        try:
+            from pilot.cache.storage.disk.disk_storage import DiskCacheStorage
 
-        cache_storage = DiskCacheStorage(persist_dir)
-    except ImportError as e:
-        logger.warn(
-            f"Can't import DiskCacheStorage, use MemoryCacheStorage, import error message: {str(e)}"
-        )
-        cache_storage = MemoryCacheStorage()
+            cache_storage = DiskCacheStorage(
+                persist_dir, mem_table_buffer_mb=max_memory_mb
+            )
+        except ImportError as e:
+            logger.warn(
+                f"Can't import DiskCacheStorage, use MemoryCacheStorage, import error message: {str(e)}"
+            )
+            cache_storage = MemoryCacheStorage(max_memory_mb=max_memory_mb)
+    else:
+        cache_storage = MemoryCacheStorage(max_memory_mb=max_memory_mb)
     system_app.register(
         LocalCacheManager, serializer=JsonSerializer(), storage=cache_storage
     )
