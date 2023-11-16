@@ -1,8 +1,11 @@
 from typing import List, Set, Optional, Dict
 import uuid
+import logging
 from ..dag.base import DAG
 
 from ..operator.base import BaseOperator, CALL_DATA
+
+logger = logging.getLogger(__name__)
 
 
 class DAGNodeInstance:
@@ -45,14 +48,19 @@ def _save_call_data(
     root_nodes: List[BaseOperator], call_data: CALL_DATA
 ) -> Dict[str, Dict]:
     id2call_data = {}
+    logger.debug(f"_save_call_data: {call_data}, root_nodes: {root_nodes}")
     if not call_data:
         return id2call_data
     if len(root_nodes) == 1:
         node = root_nodes[0]
+        logger.info(f"Save call data to node {node.node_id}, call_data: {call_data}")
         id2call_data[node.node_id] = call_data
     else:
         for node in root_nodes:
             node_id = node.node_id
+            logger.info(
+                f"Save call data to node {node.node_id}, call_data: {call_data.get(node_id)}"
+            )
             id2call_data[node_id] = call_data.get(node_id)
     return id2call_data
 
@@ -71,4 +79,4 @@ def _build_from_end_node(end_node: BaseOperator) -> List[BaseOperator]:
 
 
 def _get_root_nodes(nodes: List[BaseOperator]) -> List[BaseOperator]:
-    return list(filter(lambda x: not x.upstream, nodes))
+    return list(set(filter(lambda x: not x.upstream, nodes)))

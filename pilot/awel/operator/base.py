@@ -100,6 +100,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     def __init__(
         self,
         task_id: Optional[str] = None,
+        task_name: Optional[str] = None,
         dag: Optional[DAG] = None,
         runner: WorkflowRunner = None,
         **kwargs,
@@ -109,7 +110,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         Args:
             runner (WorkflowRunner, optional): The runner used to execute the workflow. Defaults to None.
         """
-        super().__init__(node_id=task_id, dag=dag, **kwargs)
+        super().__init__(node_id=task_id, node_name=task_name, dag=dag, **kwargs)
         if not runner:
             from pilot.awel import DefaultWorkflowRunner
 

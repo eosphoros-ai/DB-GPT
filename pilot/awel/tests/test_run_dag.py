@@ -108,21 +108,34 @@ async def test_join_node(runner: WorkflowRunner, input_nodes: List[InputOperator
     "input_node, is_odd",
     [
         ({"outputs": [0]}, False),
-        # ({"outputs": [1]}, False),
+        ({"outputs": [1]}, True),
     ],
     indirect=["input_node"],
 )
 async def test_branch_node(
     runner: WorkflowRunner, input_node: InputOperator, is_odd: bool
 ):
+    def join_func(o1, o2) -> int:
+        print(f"join func result, o1: {o1}, o2: {o2}")
+        return o1 or o2
+
     with DAG("test_join_node") as dag:
-        odd_node = MapOperator(lambda x: 999, task_id="odd_node")
-        even_node = MapOperator(lambda x: 888, task_id="even_node")
+        odd_node = MapOperator(
+            lambda x: 999, task_id="odd_node", task_name="odd_node_name"
+        )
+        even_node = MapOperator(
+            lambda x: 888, task_id="even_node", task_name="even_node_name"
+        )
+        join_node = JoinOperator(join_func)
         branch_node = BranchOperator(
             {lambda x: x % 2 == 1: odd_node, lambda x: x % 2 == 0: even_node}
         )
+        branch_node >> odd_node >> join_node
+        branch_node >> even_node >> join_node
+
         input_node >> branch_node
 
-        odd_res: DAGContext[int] = await runner.execute_workflow(odd_node)
-        even_res: DAGContext[int] = await runner.execute_workflow(even_node)
-        assert branch_node.current_task_context.current_state == TaskState.SUCCESS
+        res: DAGContext[int] = await runner.execute_workflow(join_node)
+        assert res.current_task_context.current_state == TaskState.SUCCESS
+        expect_res = 999 if is_odd else 888
+        assert res.current_task_context.task_output.output == expect_res

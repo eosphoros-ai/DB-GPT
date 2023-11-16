@@ -81,6 +81,10 @@ class TaskOutput(ABC, Generic[T]):
             output_data (Union[T, AsyncIterator[T]]): Output data.
         """
 
+    @abstractmethod
+    def new_output(self) -> "TaskOutput[T]":
+        """Create new output object"""
+
     async def map(self, map_func) -> "TaskOutput[T]":
         """Apply a mapping function to the task's output.
 
@@ -334,13 +338,18 @@ class InputContext(ABC):
         """
         return len(self.parent_outputs) == 1
 
-    def check_stream(self) -> bool:
+    def check_stream(self, skip_empty: bool = False) -> bool:
         """Check if all parent outputs are streams.
+
+        Args:
+            skip_empty (bool): Skip empty output or not.
 
         Returns:
             bool: True if all parent outputs are streams, False otherwise.
         """
         for out in self.parent_outputs:
+            if out.task_output.is_empty and skip_empty:
+                continue
             if not (out.task_output and out.task_output.is_stream):
                 return False
         return True

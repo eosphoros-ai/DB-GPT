@@ -566,29 +566,83 @@ class BaseChat(ABC):
 def _build_model_operator(
     is_stream: bool = False, dag_name: str = "llm_model_dag"
 ) -> BaseOperator:
+    """Builds and returns a model processing workflow (DAG) operator.
+
+    This function constructs a Directed Acyclic Graph (DAG) for processing data using a model. 
+    It includes caching and branching logic to either fetch results from a cache or process 
+    data using the model. It supports both streaming and non-streaming modes.
+
+    .. code-block:: python
+        input_node >> cache_check_branch_node
+        cache_check_branch_node >> model_node >> save_cached_node >> join_node
+        cache_check_branch_node >> cached_node >> join_node        
+
+    equivalent to::
+    
+                          -> model_node -> save_cached_node ->
+                         /                                    \
+        input_node -> cache_check_branch_node                   ---> join_node
+                        \                                     / 
+                         -> cached_node ------------------- ->
+  
+    Args:
+        is_stream (bool): Flag to determine if the operator should process data in streaming mode.
+        dag_name (str): Name of the DAG.
+
+    Returns:
+        BaseOperator: The final operator in the constructed DAG, typically a join node.
+    """
     from pilot.model.cluster import WorkerManagerFactory
+    from pilot.awel import JoinOperator
     from pilot.model.operator.model_operator import (
-        ModelCacheOperator,
-        ModelStreamCacheOperator,
-        ModelCachePreOperator,
+        ModelCacheBranchOperator,
+        CachedModelStreamOperator,
+        CachedModelOperator,
+        ModelSaveCacheOperator,
+        ModelStreamSaveCacheOperator,
     )
     from pilot.cache import CacheManager
 
+    # Fetch worker and cache managers from the system configuration
     worker_manager = CFG.SYSTEM_APP.get_component(
         ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
     ).create()
     cache_manager: CacheManager = CFG.SYSTEM_APP.get_component(
         ComponentType.MODEL_CACHE_MANAGER, CacheManager
     )
+    # Define task names for the model and cache nodes
+    model_task_name = "llm_model_node"
+    cache_task_name = "llm_model_cache_node"
 
     with DAG(dag_name):
+        # Create an input node
         input_node = InputOperator(SimpleCallDataInputSource())
-        cache_check_node = ModelCachePreOperator(cache_manager)
+        # Determine if the workflow should operate in streaming mode
         if is_stream:
-            model_node = ModelStreamOperator(worker_manager)
-            cache_node = ModelStreamCacheOperator(cache_manager)
+            model_node = ModelStreamOperator(worker_manager, task_name=model_task_name)
+            cached_node = CachedModelStreamOperator(
+                cache_manager, task_name=cache_task_name
+            )
+            save_cached_node = ModelStreamSaveCacheOperator(cache_manager)
         else:
-            model_node = ModelOperator(worker_manager)
-            cache_node = ModelCacheOperator(cache_manager)
-        input_node >> cache_check_node >> model_node >> cache_node
-    return cache_node
+            model_node = ModelOperator(worker_manager, task_name=model_task_name)
+            cached_node = CachedModelOperator(cache_manager, task_name=cache_task_name)
+            save_cached_node = ModelSaveCacheOperator(cache_manager)
+
+        # Create a branch node to decide between fetching from cache or processing with the model
+        cache_check_branch_node = ModelCacheBranchOperator(
+            cache_manager,
+            model_task_name="llm_model_node",
+            cache_task_name="llm_model_cache_node",
+        )
+        # Create a join node to merge outputs from the model and cache nodes, just keep the fist not empty output
+        join_node = JoinOperator(
+            combine_function=lambda model_out, cache_out: cache_out or model_out
+        )
+
+        # Define the workflow structure using the >> operator
+        input_node >> cache_check_branch_node
+        cache_check_branch_node >> model_node >> save_cached_node >> join_node
+        cache_check_branch_node >> cached_node >> join_node
+
+    return join_node

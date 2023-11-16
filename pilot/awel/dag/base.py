@@ -143,7 +143,9 @@ class DAGNode(DependencyMixin, ABC):
     resource_group: Optional[ResourceGroup] = None
     """The resource group of current DAGNode"""
 
-    def __init__(self, dag: Optional["DAG"] = None, node_id: str = None) -> None:
+    def __init__(
+        self, dag: Optional["DAG"] = None, node_id: str = None, node_name: str = None
+    ) -> None:
         super().__init__()
         self._upstream: List["DAGNode"] = []
         self._downstream: List["DAGNode"] = []
@@ -151,6 +153,7 @@ class DAGNode(DependencyMixin, ABC):
         if not node_id and self._dag:
             node_id = self._dag._new_node_id()
         self._node_id: str = node_id
+        self._node_name: str = node_name
 
     @property
     def node_id(self) -> str:
@@ -158,6 +161,21 @@ class DAGNode(DependencyMixin, ABC):
 
     def set_node_id(self, node_id: str) -> None:
         self._node_id = node_id
+
+    def __hash__(self) -> int:
+        if self.node_id:
+            return hash(self.node_id)
+        else:
+            return super().__hash__()
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, DAGNode):
+            return False
+        return self.node_id == other.node_id
+
+    @property
+    def node_name(self) -> str:
+        return self._node_name
 
     @property
     def dag(self) -> "DAGNode":

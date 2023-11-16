@@ -13,8 +13,11 @@ from typing import (
     Union,
 )
 import asyncio
-
+import logging
 from .base import TaskOutput, TaskContext, TaskState, InputContext, InputSource, T
+
+
+logger = logging.getLogger(__name__)
 
 
 async def _reduce_stream(stream: AsyncIterator, reduce_function) -> Any:
@@ -43,6 +46,9 @@ class SimpleTaskOutput(TaskOutput[T], Generic[T]):
 
     def set_output(self, output_data: T | AsyncIterator[T]) -> None:
         self._data = output_data
+
+    def new_output(self) -> TaskOutput[T]:
+        return SimpleTaskOutput(None)
 
     @property
     def is_empty(self) -> bool:
@@ -88,6 +94,9 @@ class SimpleStreamTaskOutput(TaskOutput[T], Generic[T]):
 
     def set_output(self, output_data: T | AsyncIterator[T]) -> None:
         self._data = output_data
+
+    def new_output(self) -> TaskOutput[T]:
+        return SimpleStreamTaskOutput(None)
 
     async def map(self, map_func) -> TaskOutput[T]:
         is_async = asyncio.iscoroutinefunction(map_func)
@@ -213,7 +222,8 @@ class DefaultTaskContext(TaskContext, Generic[T]):
         self._task_state = task_state
 
     def new_ctx(self) -> TaskContext:
-        return DefaultTaskContext(self._task_id, self._task_state, self._output)
+        new_output = self._output.new_output()
+        return DefaultTaskContext(self._task_id, self._task_state, new_output)
 
     @property
     def metadata(self) -> Dict[str, Any]:
@@ -259,9 +269,17 @@ class DefaultInputContext(InputContext):
     async def map_all(self, map_func: Callable[..., Any]) -> InputContext:
         if not self._outputs:
             return DefaultInputContext([])
-        is_steam = self._outputs[0].task_output.is_stream
+        # Some parent may be empty
+        not_empty_idx = 0
+        for i, p in enumerate(self._outputs):
+            if p.task_output.is_empty:
+                continue
+            not_empty_idx = i
+            break
+        # All output is empty?
+        is_steam = self._outputs[not_empty_idx].task_output.is_stream
         if is_steam:
-            if not self.check_stream():
+            if not self.check_stream(skip_empty=True):
                 raise ValueError(
                     "The output in all tasks must has same output format to map_all"
                 )
@@ -275,9 +293,11 @@ class DefaultInputContext(InputContext):
             map_res = await map_func(*outputs)
         else:
             map_res = map_func(*outputs)
-
-        single_output: TaskContext = self._outputs[0].new_ctx()
+        single_output: TaskContext = self._outputs[not_empty_idx].new_ctx()
         single_output.task_output.set_output(map_res)
+        logger.debug(
+            f"Current map_all map_res: {map_res}, is steam: {single_output.task_output.is_stream}"
+        )
         return DefaultInputContext([single_output])
 
     async def reduce(self, reduce_func: Callable[[Any], Any]) -> InputContext:
@@ -311,6 +331,7 @@ class DefaultInputContext(InputContext):
         for i, task_ctx in enumerate(new_outputs):
             task_ctx: TaskContext = task_ctx
             if results[i]:
+                task_ctx.task_output.set_output(True)
                 result_outputs.append(task_ctx)
             else:
                 task_ctx.task_output.set_output(failed_value)

@@ -1,5 +1,6 @@
 from typing import Generic, Dict, List, Union, Callable, Any, AsyncIterator, Awaitable
 import asyncio
+import logging
 
 from ..dag.base import DAGContext
 from ..task.base import (
@@ -12,6 +13,9 @@ from ..task.base import (
 )
 
 from .base import BaseOperator
+
+
+logger = logging.getLogger(__name__)
 
 
 class JoinOperator(BaseOperator, Generic[OUT]):
@@ -141,31 +145,36 @@ class MapOperator(BaseOperator, Generic[IN, OUT]):
         raise NotImplementedError
 
 
-BranchFunc = Union[Callable[[Any], bool], Callable[[Any], Awaitable[bool]]]
+BranchFunc = Union[Callable[[IN], bool], Callable[[IN], Awaitable[bool]]]
 
 
-class BranchOperator(BaseOperator, Generic[OUT]):
+class BranchOperator(BaseOperator, Generic[IN, OUT]):
     """Operator node that branches the workflow based on a provided function.
 
     This node filters its input data using a branching function and
     allows for conditional paths in the workflow.
     """
 
-    def __init__(self, branches: Dict[BranchFunc, BaseOperator], **kwargs):
+    def __init__(
+        self, branches: Dict[BranchFunc[IN], Union[BaseOperator, str]], **kwargs
+    ):
         """
         Initializes a BranchDAGNode with a branching function.
 
         Args:
-            branches (Dict[BranchFunc, RunnableDAGNode]): Dict of function that defines the branching condition.
+            branches (Dict[BranchFunc[IN], Union[BaseOperator, str]]): Dict of function that defines the branching condition.
 
         Raises:
             ValueError: If the branch_function is not callable.
         """
         super().__init__(**kwargs)
-        for branch_function in branches.keys():
-            if not callable(branch_function):
-                raise ValueError("branch_function must be callable")
-        self.branches = branches
+        if branches:
+            for branch_function, value in branches.items():
+                if not callable(branch_function):
+                    raise ValueError("branch_function must be callable")
+                if isinstance(value, BaseOperator):
+                    branches[branch_function] = value.node_name or value.node_name
+        self._branches = branches
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
         """Run the branching operation on the DAG context's inputs.
@@ -186,27 +195,36 @@ class BranchOperator(BaseOperator, Generic[OUT]):
         if not task_input.check_single_parent():
             raise ValueError("BranchDAGNode expects single parent")
 
+        branches = self._branches
+        if not branches:
+            branches = await self.branchs()
+
         branch_func_tasks = []
-        branch_nodes: List[BaseOperator] = []
-        for func, node in self.branches.items():
-            branch_nodes.append(node)
+        branch_nodes: List[str] = []
+        for func, node_name in branches.items():
+            branch_nodes.append(node_name)
             branch_func_tasks.append(
                 curr_task_ctx.task_input.predicate_map(func, failed_value=None)
             )
+
         branch_input_ctxs: List[InputContext] = await asyncio.gather(*branch_func_tasks)
         parent_output = task_input.parent_outputs[0].task_output
         curr_task_ctx.set_task_output(parent_output)
-
+        skip_node_names = []
         for i, ctx in enumerate(branch_input_ctxs):
-            node = branch_nodes[i]
+            node_name = branch_nodes[i]
+            branch_out = ctx.parent_outputs[0].task_output
+            logger.info(
+                f"branch_input_ctxs {i} result {branch_out.output}, is_empty: {branch_out.is_empty}"
+            )
             if ctx.parent_outputs[0].task_output.is_empty:
-                # Skip current node
-                # node.current_task_context.set_current_state(TaskState.SKIP)
-                pass
-            else:
-                pass
+                logger.info(f"Skip node name {node_name}")
+                skip_node_names.append(node_name)
+        curr_task_ctx.update_metadata("skip_node_names", skip_node_names)
+        return parent_output
+
+    async def branchs(self) -> Dict[BranchFunc[IN], Union[BaseOperator, str]]:
         raise NotImplementedError
-        return None
 
 
 class InputOperator(BaseOperator, Generic[OUT]):

@@ -9,6 +9,7 @@ from .operator.common_operator import (
     MapOperator,
     BranchOperator,
     InputOperator,
+    BranchFunc,
 )
 
 from .operator.stream_operator import (
@@ -25,6 +26,7 @@ from .task.task_impl import (
     DefaultInputContext,
     SimpleTaskOutput,
     SimpleStreamTaskOutput,
+    _is_async_iterator,
 )
 from .runner.local_runner import DefaultWorkflowRunner
 
@@ -38,6 +40,7 @@ __all__ = [
     "MapOperator",
     "BranchOperator",
     "InputOperator",
+    "BranchFunc",
     "WorkflowRunner",
     "TaskState",
     "TaskOutput",
