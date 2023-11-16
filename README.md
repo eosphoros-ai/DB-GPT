@@ -39,7 +39,17 @@
 
 ## What is DB-GPT?
 
-DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
+ DB-GPT is an open-source framework for large models in the databases fields. It's purpose is to build infrastructure for the domain of large models, making it easier and more convenient to develop applications around databases. By developing various technical capabilities such as:
+
+1. **SMMF(Service-oriented Multi-model Management Framework)**
+2. **Text2SQL Fine-tuning**
+3. **RAG(Retrieval Augmented Generation) framework and optimization**
+4. **Data-Driven Agents framework collaboration**
+5. **GBI(Generative Business intelligence)**
+
+etc, DB-GPT simplifies the construction of large model applications based on databases. 
+
+In the era of Data 3.0, enterprises and developers can build their own customized applications with less code, leveraging models and databases.
 
 
 ## Contents
@@ -57,16 +67,6 @@ DB-GPT is an experimental open-source project that uses localized GPT large mode
 Run on an RTX 4090 GPU.
 ##### Chat Excel
 ![excel](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0474d220-2a9f-449f-a940-92c8a25af390)
-##### Chat Plugin
-![auto_plugin_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/7d95c347-f4b7-4fb6-8dd2-c1c02babaa56)
-##### LLM Management
-![llm_manage](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/501d6b3f-c4ce-4197-9a6f-f016f8150a11)
-##### FastChat && vLLM
-![vllm](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0c9475d2-45ee-4573-aa5a-814f7fd40213)
-##### Trace
-![trace_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/69bd14b8-14d0-4ca9-9cb7-6cef44a2bc93)
-##### Chat Knowledge
-![kbqa_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/72266a48-edef-4c6d-88c6-fbb1a24a6c3e)
 
 ## Install 
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
@@ -97,23 +97,23 @@ Run on an RTX 4090 GPU.
 ## Features
 
 Currently, we have released multiple key features, which are listed below to demonstrate our current capabilities:
-- Private KBQA & data processing
+- **Private Domain Q&A & Data Processing**
 
   The DB-GPT project offers a range of features to enhance knowledge base construction and enable efficient storage and retrieval of both structured and unstructured data. These include built-in support for uploading multiple file formats, the ability to integrate plug-ins for custom data extraction, and unified vector storage and retrieval capabilities for managing large volumes of information.
 
-- Multiple data sources & visualization
+- **Multi-Data Source & GBI(Generative Business intelligence)**
   
   The DB-GPT project enables seamless natural language interaction with various data sources, including Excel, databases, and data warehouses. It facilitates effortless querying and retrieval of information from these sources, allowing users to engage in intuitive conversations and obtain insights. Additionally, DB-GPT supports the generation of analysis reports, providing users with valuable summaries and interpretations of the data.
 
-- Multi-Agents&Plugins
+- **Multi-Agents&Plugins**
 
   It supports custom plug-ins to perform tasks, natively supports the Auto-GPT plug-in model, and the Agents protocol adopts the Agent Protocol standard.
 
-- Fine-tuning text2SQL
-
+- **Automated Fine-tuning text2SQL**
+ 
   An automated fine-tuning lightweight framework built around large language models, Text2SQL data sets, LoRA/QLoRA/Pturning, and other fine-tuning methods, making TextSQL fine-tuning as convenient as an assembly line. [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
-- Multi LLMs Support, Supports multiple large language models, currently supporting
+- **SMMF(Service-oriented Multi-model Management Framework)**
 
   Massive model support, including dozens of large language models such as open source and API agents. Such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, etc.
   - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
@@ -126,22 +126,6 @@ Currently, we have released multiple key features, which are listed below to dem
   - [falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
   - [internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
   - [Qwen-7B-Chat/Qwen-14B-Chat](https://huggingface.co/Qwen/)
-  - [RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
-  - [CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
-  - [dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
-  - [h2ogpt-gm-oasst1-en-2048-open-llama-7b](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b)
-  - [fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
-  - [mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
-  - [gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
-  - [Nous-Hermes-13b](https://huggingface.co/NousResearch/Nous-Hermes-13b)
-  - [codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
-  - [guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
-  - [WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
-  - [WizardLM/WizardCoder-15B-V1.0](https://huggingface.co/WizardLM/WizardCoder-15B-V1.0)
-  - [Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
-  - [OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
-
-  Etc.
 
   - Support API Proxy LLMs
     - [x] [ChatGPT](https://api.openai.com/)
@@ -149,7 +133,7 @@ Currently, we have released multiple key features, which are listed below to dem
     - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
     - [x] [ChatGLM](http://open.bigmodel.cn/)
 
-- Privacy and security
+- **Privacy and Security**
   
   The privacy and security of data are ensured through various technologies, such as privatized large models and proxy desensitization.
 
@@ -191,11 +175,6 @@ The core capabilities mainly consist of the following parts:
 5. Multi-Agents: Provides Agent and plugin mechanisms, allowing users to customize and enhance the system's behavior.
 6. Privacy & Secure: You can be assured that there is no risk of data leakage, and your data is 100% private and secure.
 7. Text2SQL: We enhance the Text-to-SQL performance by applying Supervised Fine-Tuning (SFT) on large language models
-
-### RAG-IN-Action
-<p align="center">
-  <img src="./assets/RAG-IN-ACTION.jpg" width="800px" />
-</p>
 
 ### SubModule
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL performance by applying Supervised Fine-Tuning (SFT) on large language models.
@@ -310,18 +289,7 @@ The core capabilities mainly consist of the following parts:
   - [x] ChatGLM2
 
 -  SFT Accuracy
-
 As of October 10, 2023, by fine-tuning an open-source model of 13 billion parameters using this project, the execution accuracy on the Spider evaluation dataset has surpassed that of GPT-4!
-
-| name                              | Execution Accuracy | reference                                                                                                                      |
-| ----------------------------------| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| **GPT-4**                         | **0.762**          | [numbersstation-eval-res](https://www.numbersstation.ai/post/nsql-llama-2-7b)                                                  |
-| ChatGPT                           | 0.728              | [numbersstation-eval-res](https://www.numbersstation.ai/post/nsql-llama-2-7b)                                                  | 
-| **CodeLlama-13b-Instruct-hf_lora**| **0.789**          | sft train by our this project,only used spider train dataset ,the same eval  way in this project  with lora SFT                |
-| CodeLlama-13b-Instruct-hf_qlora   | 0.774              | sft train by our this project,only used spider train dataset ,the same eval  way in this project  with qlora and nf4,bit4 SFT  |
-| wizardcoder                       | 0.610              | [text-to-sql-wizardcoder](https://github.com/cuplv/text-to-sql-wizardcoder/tree/main)                                          |  
-| CodeLlama-13b-Instruct-hf         | 0.556              | eval in this project default param                                                                                             |
-| llama2_13b_hf_lora_best           | 0.744              | sft train by our this project,only used spider train dataset ,the same eval  way in this project                               |
 
 [More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
