@@ -54,6 +54,8 @@ class ModelOutput:
     model_context: Dict = None
     finish_reason: str = None
     usage: Dict[str, Any] = None
+    metrics: Dict[str, Any] = None
+    """Some metrics for model inference"""
 
     def to_dict(self) -> Dict:
         return asdict(self)
