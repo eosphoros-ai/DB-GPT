@@ -320,6 +320,8 @@ def core_requires():
         "openpyxl==3.1.2",
         "chardet==5.1.0",
         "xlrd==2.0.1",
+        # for cache, TODO pympler has not been updated for a long time and needs to find a new toolkit.
+        "pympler",
     ]
 
 
@@ -364,6 +366,8 @@ def quantization_requires():
         )
         pkgs = [f"bitsandbytes @ {local_pkg}"]
         print(pkgs)
+    # For chatglm2-6b-int4
+    pkgs += ["cpm_kernels"]
     setup_spec.extras["quantization"] = pkgs
 
 
@@ -407,6 +411,13 @@ def vllm_requires():
     pip install "db-gpt[vllm]"
     """
     setup_spec.extras["vllm"] = ["vllm"]
+
+
+def cache_requires():
+    """
+    pip install "db-gpt[cache]"
+    """
+    setup_spec.extras["cache"] = ["rocksdict", "msgpack"]
 
 
 # def chat_scene():
@@ -459,6 +470,7 @@ all_datasource_requires()
 openai_requires()
 gpt4all_requires()
 vllm_requires()
+cache_requires()
 
 # must be last
 default_requires()

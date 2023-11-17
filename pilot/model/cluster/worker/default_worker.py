@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Dict, Iterator, List
+from typing import Dict, Iterator, List, Optional
 
 from pilot.configs.model_config import get_device
 from pilot.model.model_adapter import get_llm_model_adapter, LLMModelAdaper
@@ -60,7 +60,7 @@ class DefaultModelWorker(ModelWorker):
         self.ml: ModelLoader = ModelLoader(
             model_path=self.model_path, model_name=self.model_name
         )
-        # TODO read context len from model config
+        # Default model context len
         self.context_len = 2048
 
     def model_param_class(self) -> ModelParameters:
@@ -111,6 +111,12 @@ class DefaultModelWorker(ModelWorker):
             self.model, self.tokenizer = self.ml.loader_with_params(
                 model_params, self.llm_adapter
             )
+            model_max_length = _parse_model_max_length(self.model, self.tokenizer)
+            if model_max_length:
+                logger.info(
+                    f"Parse model max length {model_max_length} from model {self.model_name}."
+                )
+                self.context_len = model_max_length
 
     def stop(self) -> None:
         if not self.model:
@@ -138,9 +144,9 @@ class DefaultModelWorker(ModelWorker):
             )
 
             previous_response = ""
-
+            context_len = params.get("context_len") or self.context_len
             for output in generate_stream_func(
-                self.model, self.tokenizer, params, get_device(), self.context_len
+                self.model, self.tokenizer, params, get_device(), context_len
             ):
                 model_output, incremental_output, output_str = self._handle_output(
                     output, previous_response, model_context
@@ -183,9 +189,10 @@ class DefaultModelWorker(ModelWorker):
             )
 
             previous_response = ""
+            context_len = params.get("context_len") or self.context_len
 
             async for output in generate_stream_func(
-                self.model, self.tokenizer, params, get_device(), self.context_len
+                self.model, self.tokenizer, params, get_device(), context_len
             ):
                 model_output, incremental_output, output_str = self._handle_output(
                     output, previous_response, model_context
@@ -279,11 +286,27 @@ class DefaultModelWorker(ModelWorker):
         # Check if the exception is a torch.cuda.CudaError and if torch was imported.
         if _torch_imported and isinstance(e, torch.cuda.CudaError):
             model_output = ModelOutput(
-                text="**GPU OutOfMemory, Please Refresh.**", error_code=0
+                text="**GPU OutOfMemory, Please Refresh.**", error_code=1
             )
         else:
             model_output = ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                error_code=0,
+                error_code=1,
             )
         return model_output
+
+
+def _parse_model_max_length(model, tokenizer) -> Optional[int]:
+    if not (tokenizer or model):
+        return None
+    try:
+        if tokenizer and hasattr(tokenizer, "model_max_length"):
+            return tokenizer.model_max_length
+        if model and hasattr(model, "config"):
+            model_config = model.config
+            if hasattr(model_config, "max_sequence_length"):
+                return model_config.max_sequence_length
+            if hasattr(model_config, "max_position_embeddings"):
+                return model_config.max_position_embeddings
+    except Exception:
+        return None

@@ -547,7 +547,7 @@ class KnowledgeService:
 
         chat_param = {
             "chat_session_id": conn_uid,
-            "current_user_input": "",
+            "current_user_input": "summary",
             "select_param": doc,
             "model_name": model_name,
         }
@@ -592,7 +592,7 @@ class KnowledgeService:
             for doc in docs[0:max_iteration]:
                 chat_param = {
                     "chat_session_id": uuid.uuid1(),
-                    "current_user_input": "",
+                    "current_user_input": "summary",
                     "select_param": doc,
                     "model_name": model_name,
                 }

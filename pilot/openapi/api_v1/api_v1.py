@@ -272,6 +272,8 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
         return Result.succ(plugins_select_info())
     elif ChatScene.ChatKnowledge.value() == chat_mode:
         return Result.succ(knowledge_list())
+    elif ChatScene.ChatKnowledge.ExtractRefineSummary.value() == chat_mode:
+        return Result.succ(knowledge_list())
     else:
         return Result.succ(None)
 
