@@ -111,6 +111,10 @@ class BaseChat(ABC):
     def do_action(self, prompt_response):
         return prompt_response
 
+
+    def message_adjust(self):
+        pass
+
     def get_llm_speak(self, prompt_define_response):
         if hasattr(prompt_define_response, "thoughts"):
             if isinstance(prompt_define_response.thoughts, dict):
@@ -294,6 +298,8 @@ class BaseChat(ABC):
 
             view_message = view_message.replace("\n", "\\n")
             self.current_message.add_view_message(view_message)
+            self.message_adjust()
+
             span.end()
         except Exception as e:
             print(traceback.format_exc())

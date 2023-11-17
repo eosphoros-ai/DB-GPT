@@ -215,6 +215,7 @@ class BaseOutputParser(ABC):
             .replace("\\n", " ")
             .replace("\n", " ")
             .replace("\\", " ")
+            .replace("\_", "_")
         )
         cleaned_output = self.__illegal_json_ends(cleaned_output)
         return cleaned_output
