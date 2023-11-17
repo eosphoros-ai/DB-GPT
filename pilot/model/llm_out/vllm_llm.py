@@ -53,4 +53,25 @@ async def generate_stream(
         else:
             text_outputs = [output.text for output in request_output.outputs]
         text_outputs = " ".join(text_outputs)
-        yield {"text": text_outputs, "error_code": 0, "usage": {}}
+
+        # Note: usage is not supported yet
+        prompt_tokens = len(request_output.prompt_token_ids)
+        completion_tokens = sum(
+            len(output.token_ids) for output in request_output.outputs
+        )
+        usage = {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+        }
+        finish_reason = (
+            request_output.outputs[0].finish_reason
+            if len(request_output.outputs) == 1
+            else [output.finish_reason for output in request_output.outputs]
+        )
+        yield {
+            "text": text_outputs,
+            "error_code": 0,
+            "usage": usage,
+            "finish_reason": finish_reason,
+        }
