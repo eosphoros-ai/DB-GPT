@@ -14,6 +14,7 @@ DATA_DIR = os.path.join(PILOT_PATH, "data")
 # nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
 PLUGINS_DIR = os.path.join(ROOT_PATH, "plugins")
 FONT_DIR = os.path.join(PILOT_PATH, "fonts")
+MODEL_DISK_CACHE_DIR = os.path.join(DATA_DIR, "model_cache")
 
 current_directory = os.getcwd()
 

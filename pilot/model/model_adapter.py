@@ -170,9 +170,12 @@ class LLMModelAdaper:
         model_context["has_format_prompt"] = True
         params["prompt"] = new_prompt
 
-        # Overwrite model params:
-        params["stop"] = conv.stop_str
-        params["stop_token_ids"] = conv.stop_token_ids
+        custom_stop = params.get("stop")
+        custom_stop_token_ids = params.get("stop_token_ids")
+
+        # Prefer the value passed in from the input parameter
+        params["stop"] = custom_stop or conv.stop_str
+        params["stop_token_ids"] = custom_stop_token_ids or conv.stop_token_ids
 
         return params, model_context
 

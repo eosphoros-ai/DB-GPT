@@ -17,6 +17,8 @@ class PromptRequest(BaseModel):
     temperature: float = None
     max_new_tokens: int = None
     stop: str = None
+    stop_token_ids: List[int] = []
+    context_len: int = None
     echo: bool = True
     span_id: str = None
 

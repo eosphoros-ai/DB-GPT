@@ -253,6 +253,19 @@ class Config(metaclass=Singleton):
         ### Temporary configuration
         self.USE_FASTCHAT: bool = os.getenv("USE_FASTCHAT", "True").lower() == "true"
 
+        self.MODEL_CACHE_ENABLE: bool = (
+            os.getenv("MODEL_CACHE_ENABLE", "True").lower() == "true"
+        )
+        self.MODEL_CACHE_STORAGE_TYPE: str = os.getenv(
+            "MODEL_CACHE_STORAGE_TYPE", "disk"
+        )
+        self.MODEL_CACHE_MAX_MEMORY_MB: int = int(
+            os.getenv("MODEL_CACHE_MAX_MEMORY_MB", 256)
+        )
+        self.MODEL_CACHE_STORAGE_DISK_DIR: str = os.getenv(
+            "MODEL_CACHE_STORAGE_DISK_DIR"
+        )
+
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
         self.debug_mode = value

@@ -319,6 +319,8 @@ def core_requires():
         "alembic==1.12.0",
         # for excel
         "openpyxl",
+        # for cache, TODO pympler has not been updated for a long time and needs to find a new toolkit.
+        "pympler",
     ]
 
 
@@ -410,6 +412,13 @@ def vllm_requires():
     setup_spec.extras["vllm"] = ["vllm"]
 
 
+def cache_requires():
+    """
+    pip install "db-gpt[cache]"
+    """
+    setup_spec.extras["cache"] = ["rocksdict", "msgpack"]
+
+
 # def chat_scene():
 #     setup_spec.extras["chat"] = [
 #         ""
@@ -460,6 +469,7 @@ all_datasource_requires()
 openai_requires()
 gpt4all_requires()
 vllm_requires()
+cache_requires()
 
 # must be last
 default_requires()
