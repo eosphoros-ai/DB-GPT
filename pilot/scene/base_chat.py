@@ -173,7 +173,7 @@ class BaseChat(ABC):
             "messages": llm_messages,
             "temperature": float(self.prompt_template.temperature),
             "max_new_tokens": int(self.prompt_template.max_new_tokens),
-            "stop": self.prompt_template.sep,
+            # "stop": self.prompt_template.sep,
             "echo": self.llm_echo,
         }
         return payload

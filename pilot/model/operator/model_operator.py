@@ -1,4 +1,4 @@
-from typing import AsyncIterator, Dict, Union
+from typing import AsyncIterator, Dict, List, Union
 import logging
 from pilot.awel import (
     BranchFunc,
@@ -227,7 +227,7 @@ class ModelStreamSaveCacheOperator(
                 )
             outputs.append(out)
             yield out
-        if llm_cache_key:
+        if llm_cache_key and _is_success_model_output(outputs):
             llm_cache_value: LLMCacheValue = self._client.new_value(output=outputs)
             await self._client.set(llm_cache_key, llm_cache_value)
 
@@ -258,7 +258,7 @@ class ModelSaveCacheOperator(MapOperator[ModelOutput, ModelOutput]):
             _LLM_MODEL_INPUT_VALUE_KEY
         )
         llm_cache_value: LLMCacheValue = self._client.new_value(output=input_value)
-        if llm_cache_key:
+        if llm_cache_key and _is_success_model_output(input_value):
             await self._client.set(llm_cache_key, llm_cache_value)
         return input_value
 
@@ -284,3 +284,17 @@ def _parse_cache_key_dict(input_value: Dict) -> Dict:
         # TODO pass model_type
         "model_type": input_value.get("model_type", "huggingface"),
     }
+
+
+def _is_success_model_output(out: Union[Dict, ModelOutput, List[ModelOutput]]) -> bool:
+    if not out:
+        return False
+    if isinstance(out, list):
+        # check last model output
+        out = out[-1]
+    error_code = 0
+    if isinstance(out, ModelOutput):
+        error_code = out.error_code
+    else:
+        error_code = int(out.get("error_code", 0))
+    return error_code == 0
