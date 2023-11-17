@@ -1000,11 +1000,16 @@ def run_worker_manager(
     embedding_model_name: str = None,
     embedding_model_path: str = None,
     start_listener: Callable[["WorkerManager"], None] = None,
+    **kwargs,
 ):
     global worker_manager
 
     worker_params: ModelWorkerParameters = _parse_worker_params(
-        model_name=model_name, model_path=model_path, standalone=standalone, port=port
+        model_name=model_name,
+        model_path=model_path,
+        standalone=standalone,
+        port=port,
+        **kwargs,
     )
 
     setup_logging(
