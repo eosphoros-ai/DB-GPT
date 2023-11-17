@@ -12,7 +12,7 @@ CFG = Config()
 class ExtractRefineSummary(BaseChat):
     chat_scene: str = ChatScene.ExtractRefineSummary.value()
 
-    """get summary by llm"""
+    """extract final summary by llm"""
 
     def __init__(self, chat_param: Dict):
         """ """
@@ -43,7 +43,7 @@ class ExtractRefineSummary(BaseChat):
         yield last_output
 
     def stream_call_reinforce_fn(self, text):
-        """return reference"""
+        """return summary label"""
         return f"<summary>{text}</summary>"
 
     @property

@@ -9,7 +9,8 @@ CFG = Config()
 
 # PROMPT_SCENE_DEFINE = """You are an expert Q&A system that is trusted around the world.\nAlways answer the query using the provided context information, and not prior knowledge.\nSome rules to follow:\n1. Never directly reference the given context in your answer.\n2. Avoid statements like 'Based on the context, ...' or 'The context information ...' or anything along those lines."""
 
-PROMPT_SCENE_DEFINE = """"""
+PROMPT_SCENE_DEFINE = """A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. 
+The assistant gives helpful, detailed, professional and polite answers to the user's questions."""
 
 _DEFAULT_TEMPLATE_ZH = """请根据提供的上下文信息的进行精简地总结:
 {context}
@@ -49,3 +50,4 @@ prompt = PromptTemplate(
 )
 
 CFG.prompt_template_registry.register(prompt, is_default=True)
+from ..v1 import prompt_chatglm

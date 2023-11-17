@@ -10,7 +10,8 @@ from pilot.scene.chat_knowledge.refine_summary.out_parser import (
 CFG = Config()
 
 
-PROMPT_SCENE_DEFINE = """"""
+PROMPT_SCENE_DEFINE = """A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. 
+The assistant gives helpful, detailed, professional and polite answers to the user's questions."""
 
 _DEFAULT_TEMPLATE_ZH = """根据提供的上下文信息，我们已经提供了一个到某一点的现有总结:{existing_answer}\n 请根据你之前推理的内容进行最终的总结,并且总结回答的时候最好按照1.2.3.进行总结."""
 
@@ -43,3 +44,4 @@ prompt = PromptTemplate(
 )
 
 CFG.prompt_template_registry.register(prompt, is_default=True)
+from ..v1 import prompt_chatglm
