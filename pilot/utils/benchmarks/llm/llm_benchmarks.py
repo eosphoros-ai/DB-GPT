@@ -40,15 +40,6 @@ def get_result_csv_file() -> str:
     )
 
 
-input_output_length_pair = [
-    [64, 256],
-    [64, 512],
-    [64, 1024],
-    [512, 1024],
-    [1024, 1024],
-    [1024, 2048],
-    [2048, 2048],
-]
 input_lens = [64, 64]
 output_lens = [256, 512]
 
@@ -96,8 +87,8 @@ def build_param(
     system_prompt: str = None,
 ) -> Dict:
     hist = []
-    if system_prompt:
-        hist.append()(
+    if system_prompt is not None:
+        hist.append(
             ModelMessage(role=ModelMessageRoleType.SYSTEM, content=system_prompt)
         )
     hist.append(ModelMessage(role=ModelMessageRoleType.HUMAN, content=user_input))
@@ -119,8 +110,15 @@ async def run_batch(
 ):
     tasks = []
     prompt = read_prompt_from_file("11k")
+    if model_type == "vllm":
+        max_input_str_len = input_len
+        if "baichuan" in model_name:
+            # TODO prompt handle first
+            max_input_str_len *= 2
+        prompt = prompt[-max_input_str_len:]
+
     for _ in range(parallel_num):
-        params = build_param(input_len, output_len, prompt)
+        params = build_param(input_len, output_len, prompt, system_prompt="")
         tasks.append(wh.generate(params))
     print(
         f"Begin run benchmarks, model name: {model_name}, input_len: {input_len}, output_len: {output_len}, parallel_num: {parallel_num}, save result to {output_file}"
@@ -136,6 +134,7 @@ async def run_batch(
         metrics = r.metrics
         if isinstance(metrics, dict):
             metrics = ModelInferenceMetrics(**metrics)
+        print(r)
         test_total_tokens += metrics.total_tokens
         row_data = metrics.to_dict()
         rows.append(row_data)

@@ -1,9 +1,9 @@
 import os
 import logging
-from typing import Dict, Iterator, List, Optional
 
+from typing import Dict, Iterator, List, Optional
 import time
-import copy
+import traceback
 
 from pilot.configs.model_config import get_device
 from pilot.model.model_adapter import get_llm_model_adapter, LLMModelAdaper
@@ -332,6 +332,8 @@ class DefaultModelWorker(ModelWorker):
                 text="**GPU OutOfMemory, Please Refresh.**", error_code=1
             )
         else:
+            msg = traceback.format_exc()
+            logger.error(f"Model inference error, detail: {msg}")
             model_output = ModelOutput(
                 text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
                 error_code=1,

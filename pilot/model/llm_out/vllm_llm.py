@@ -1,7 +1,11 @@
 from typing import Dict
+import os
 from vllm import AsyncLLMEngine
 from vllm.utils import random_uuid
 from vllm.sampling_params import SamplingParams
+
+
+_IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
 
 async def generate_stream(
@@ -37,15 +41,29 @@ async def generate_stream(
     top_p = max(top_p, 1e-5)
     if temperature <= 1e-5:
         top_p = 1.0
+    gen_params = {
+        "stop": list(stop),
+        "ignore_eos": False,
+    }
+    prompt_token_ids = None
+    if _IS_BENCHMARK:
+        gen_params["stop"] = []
+        gen_params["ignore_eos"] = True
+        prompt_len = context_len - max_new_tokens - 2
+        prompt_token_ids = tokenizer([prompt]).input_ids[0]
+        prompt_token_ids = prompt_token_ids[-prompt_len:]
     sampling_params = SamplingParams(
         n=1,
         temperature=temperature,
         top_p=top_p,
         use_beam_search=False,
-        stop=list(stop),
         max_tokens=max_new_tokens,
+        **gen_params
     )
-    results_generator = model.generate(prompt, sampling_params, request_id)
+
+    results_generator = model.generate(
+        prompt, sampling_params, request_id, prompt_token_ids=prompt_token_ids
+    )
     async for request_output in results_generator:
         prompt = request_output.prompt
         if echo:

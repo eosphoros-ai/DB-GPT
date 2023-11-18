@@ -11,7 +11,7 @@ parallel_nums=${3:-$default_parallel_nums}
 run_benchmark() {
     local model_name=$1
     local model_type=$2
-    python pilot/utils/benchmarks/llm/llm_benchmarks.py --model_name ${model_name} --model_type ${model_type} --input_lens ${input_lens} --output_lens ${output_lens} --parallel_nums ${parallel_nums}
+    DB_GPT_MODEL_BENCHMARK=true python pilot/utils/benchmarks/llm/llm_benchmarks.py --model_name ${model_name} --model_type ${model_type} --input_lens ${input_lens} --output_lens ${output_lens} --parallel_nums ${parallel_nums}
 }
 
 run_benchmark "vicuna-7b-v1.5" "huggingface"
