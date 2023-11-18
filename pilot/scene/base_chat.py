@@ -635,7 +635,7 @@ def _build_model_operator(
             model_task_name="llm_model_node",
             cache_task_name="llm_model_cache_node",
         )
-        # Create a join node to merge outputs from the model and cache nodes, just keep the fist not empty output
+        # Create a join node to merge outputs from the model and cache nodes, just keep the first not empty output
         join_node = JoinOperator(
             combine_function=lambda model_out, cache_out: cache_out or model_out
         )

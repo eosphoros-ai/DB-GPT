@@ -5,6 +5,8 @@ import sys
 import time
 import csv
 import argparse
+import logging
+import traceback
 from pilot.configs.model_config import ROOT_PATH, LLM_MODEL_CONFIG
 
 from pilot.model.cluster.worker.manager import (
@@ -19,14 +21,12 @@ from pilot.model.cluster import PromptRequest
 from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 
 
-# model_name = "chatglm2-6b"
-# model_name = "vicuna-7b-v1.5"
-model_name = "baichuan2-7b"
+model_name = "vicuna-7b-v1.5"
 model_path = LLM_MODEL_CONFIG[model_name]
 # or vllm
 model_type = "huggingface"
 
-controller_addr = "http://127.0.0.1:5005"
+controller_addr = "http://127.0.0.1:5000"
 
 result_csv_file = None
 
@@ -59,7 +59,7 @@ METRICS_HEADERS = [
     # Merge parallel result
     "test_time_cost_ms",
     "test_total_tokens",
-    "test_speed_per_second",
+    "test_speed_per_second",  # (tokens / s)
     # Detail for each task
     "start_time_ms",
     "end_time_ms",
@@ -93,7 +93,7 @@ def build_param(
         )
     hist.append(ModelMessage(role=ModelMessageRoleType.HUMAN, content=user_input))
     hist = list(h.dict() for h in hist)
-    context_len = input_len + output_len
+    context_len = input_len + output_len + 2
     params = {
         "prompt": user_input,
         "messages": hist,
@@ -167,7 +167,15 @@ async def run_model(wh: WorkerManager) -> None:
         os.rename(result_csv_file, f"{result_csv_file}.bak.csv")
     for parallel_num in parallel_nums:
         for input_len, output_len in zip(input_lens, output_lens):
-            await run_batch(wh, input_len, output_len, parallel_num, result_csv_file)
+            try:
+                await run_batch(
+                    wh, input_len, output_len, parallel_num, result_csv_file
+                )
+            except Exception:
+                msg = traceback.format_exc()
+                logging.error(
+                    f"Run benchmarks error, input_len: {input_len}, output_len: {output_len}, parallel_num: {parallel_num}, error message: {msg}"
+                )
 
     sys.exit(0)
 
@@ -184,7 +192,6 @@ def startup_llm_env():
         controller_addr=controller_addr,
         local_port=6000,
         start_listener=run_model,
-        # system_app=system_app,
     )
 
 
@@ -198,9 +205,9 @@ if __name__ == "__main__":
     parser.add_argument("--model_path", type=str, default=None)
     parser.add_argument("--model_type", type=str, default="huggingface")
     parser.add_argument("--result_csv_file", type=str, default=None)
-    parser.add_argument("--input_lens", type=str, default="64,64,64,512,1024,1024,2048")
+    parser.add_argument("--input_lens", type=str, default="8,8,256,1024")
     parser.add_argument(
-        "--output_lens", type=str, default="256,512,1024,1024,1024,2048,2048"
+        "--output_lens", type=str, default="256,512,1024,1024"
     )
     parser.add_argument("--parallel_nums", type=str, default="1,2,4,16,32")
     parser.add_argument(
@@ -225,8 +232,10 @@ if __name__ == "__main__":
         raise ValueError("input_lens size must equal output_lens size")
 
     if remote_model:
+        # Connect to remote model and run benchmarks
         connect_to_remote_model()
     else:
+        # Start worker manager and run benchmarks
         run_worker_manager(
             model_name=model_name,
             model_path=model_path,
