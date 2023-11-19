@@ -28,30 +28,27 @@ _DEFAULT_TEMPLATE_ZH = """
 下面是用户文件{file_name}的一部分数据，请学习理解该数据的结构和内容，按要求输出解析结果:
     {data_example}
 分析各列数据的含义和作用，并对专业术语进行简单明了的解释, 如果是时间类型请给出时间格式类似:yyyy-MM-dd HH:MM:ss.
+将列名作为属性名，分析解释作为属性值,组成json数组，并输出在返回json内容的ColumnAnalysis属性中.
 请不要修改或者翻译列名，确保和给出数据列名一致.
+针对数据从不同维度提供一些有用的分析思路给用户。
 
-提供一些分析方案思路，请一步一步思考。
-
-请以JSON格式返回您的答案，返回格式如下：
+请一步一步思考,确保只以JSON格式回答，具体格式如下：
     {response}
 """
 
 _RESPONSE_FORMAT_SIMPLE_ZH = {
     "DataAnalysis": "数据内容分析总结",
-    "ColumnAnalysis": [{"column name1": "字段1介绍，专业术语解释(请尽量简单明了)"}],
-    "AnalysisProgram": ["1.分析方案1，图表展示方式1", "2.分析方案2，图表展示方式2"],
+    "ColumnAnalysis": [{"column name": "字段1介绍，专业术语解释(请尽量简单明了)"}],
+    "AnalysisProgram": ["1.分析方案1", "2.分析方案2"],
 }
 _RESPONSE_FORMAT_SIMPLE_EN = {
     "DataAnalysis": "Data content analysis summary",
     "ColumnAnalysis": [
         {
-            "column name1": "Introduction to Column 1 and explanation of professional terms (please try to be as simple and clear as possible)"
+            "column name": "Introduction to Column 1 and explanation of professional terms (please try to be as simple and clear as possible)"
         }
     ],
-    "AnalysisProgram": [
-        "1. Analysis plan 1, chart display type 1",
-        "2. Analysis plan 2, chart display type 2",
-    ],
+    "AnalysisProgram": ["1. Analysis plan ", "2. Analysis plan "],
 }
 
 RESPONSE_FORMAT_SIMPLE = (
@@ -75,7 +72,7 @@ PROMPT_NEED_STREAM_OUT = False
 # Temperature is a configuration hyperparameter that controls the randomness of language model output.
 # A high temperature produces more unpredictable and creative results, while a low temperature produces more common and conservative output.
 # For example, if you adjust the temperature to 0.5, the model will usually generate text that is more predictable and less creative than if you set the temperature to 1.0.
-PROMPT_TEMPERATURE = 0.5
+PROMPT_TEMPERATURE = 0.8
 
 prompt = PromptTemplate(
     template_scene=ChatScene.ExcelLearning.value(),

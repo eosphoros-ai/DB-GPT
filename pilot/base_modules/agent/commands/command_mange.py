@@ -246,7 +246,14 @@ class ApiCall:
         return False
 
     def __deal_error_md_tags(self, all_context, api_context, include_end: bool = True):
-        error_md_tags = ["```", "```python", "```xml", "```json", "```markdown"]
+        error_md_tags = [
+            "```",
+            "```python",
+            "```xml",
+            "```json",
+            "```markdown",
+            "```sql",
+        ]
         if include_end == False:
             md_tag_end = ""
         else:
@@ -265,7 +272,6 @@ class ApiCall:
         return all_context
 
     def api_view_context(self, all_context: str, display_mode: bool = False):
-        error_mk_tags = ["```", "```python", "```xml"]
         call_context_map = extract_content_open_ending(
             all_context, self.agent_prefix, self.agent_end, True
         )
@@ -298,8 +304,8 @@ class ApiCall:
                 now_time = datetime.now().timestamp() * 1000
                 cost = (now_time - self.start_time) / 1000
                 cost_str = "{:.2f}".format(cost)
-                for tag in error_mk_tags:
-                    all_context = all_context.replace(tag + api_context, api_context)
+                all_context = self.__deal_error_md_tags(all_context, api_context)
+
                 all_context = all_context.replace(
                     api_context,
                     f'\n<span style="color:green">Waiting...{cost_str}S</span>\n',
@@ -377,8 +383,8 @@ class ApiCall:
             param["type"] = api_status.name
         if api_status.args:
             param["sql"] = api_status.args["sql"]
-        if api_status.err_msg:
-            param["err_msg"] = api_status.err_msg
+        # if api_status.err_msg:
+        #     param["err_msg"] = api_status.err_msg
 
         if api_status.api_result:
             param["data"] = api_status.api_result
@@ -448,33 +454,39 @@ class ApiCall:
         Returns:
            ChartView protocol text
         """
-        if self.__is_need_wait_plugin_call(llm_text):
-            # wait api call generate complete
-            if self.check_last_plugin_call_ready(llm_text):
-                self.update_from_context(llm_text)
-                for key, value in self.plugin_status_map.items():
-                    if value.status == Status.TODO.value:
-                        value.status = Status.RUNNING.value
-                        logging.info(f"sql展示执行:{value.name},{value.args}")
-                        try:
-                            sql = value.args["sql"]
-                            if sql is not None and len(sql) > 0:
-                                data_df = sql_run_func(sql)
-                                value.df = data_df
-                                value.api_result = json.loads(
-                                    data_df.to_json(
-                                        orient="records",
-                                        date_format="iso",
-                                        date_unit="s",
+        try:
+            if self.__is_need_wait_plugin_call(llm_text):
+                # wait api call generate complete
+                if self.check_last_plugin_call_ready(llm_text):
+                    self.update_from_context(llm_text)
+                    for key, value in self.plugin_status_map.items():
+                        if value.status == Status.TODO.value:
+                            value.status = Status.RUNNING.value
+                            logging.info(f"sql展示执行:{value.name},{value.args}")
+                            try:
+                                sql = value.args["sql"]
+                                if sql is not None and len(sql) > 0:
+                                    data_df = sql_run_func(sql)
+                                    value.df = data_df
+                                    value.api_result = json.loads(
+                                        data_df.to_json(
+                                            orient="records",
+                                            date_format="iso",
+                                            date_unit="s",
+                                        )
                                     )
-                                )
-                                value.status = Status.COMPLETED.value
-                            else:
-                                value.status = Status.FAILED.value
-                                value.err_msg = "No executable sql！"
+                                    value.status = Status.COMPLETED.value
+                                else:
+                                    value.status = Status.FAILED.value
+                                    value.err_msg = "No executable sql！"
 
-                        except Exception as e:
-                            value.status = Status.FAILED.value
-                            value.err_msg = str(e)
-                        value.end_time = datetime.now().timestamp() * 1000
+                            except Exception as e:
+                                value.status = Status.FAILED.value
+                                value.err_msg = str(e)
+                            value.end_time = datetime.now().timestamp() * 1000
+        except Exception as e:
+            logging.error("Api parsing exception", e)
+            value.status = Status.FAILED.value
+            value.err_msg = "Api parsing exception," + str(e)
+
         return self.api_view_context(llm_text, True)

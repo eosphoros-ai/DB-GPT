@@ -541,15 +541,22 @@ class KnowledgeService:
     async def _llm_extract_summary(
         self, doc: str, conn_uid: str, model_name: str = None
     ):
-        """Extract triplets from text by llm"""
+        """Extract triplets from text by llm
+        Args:
+            doc: Document
+            conn_uid: str,chat conversation id
+            model_name: str, model name
+        Returns:
+             chat: BaseChat, refine summary chat.
+        """
         from pilot.scene.base import ChatScene
-        import uuid
 
         chat_param = {
             "chat_session_id": conn_uid,
             "current_user_input": "",
             "select_param": doc,
             "model_name": model_name,
+            "model_cache_enable": False,
         }
         executor = CFG.SYSTEM_APP.get_component(
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
@@ -579,6 +586,8 @@ class KnowledgeService:
             model_name:model name str
             max_iteration:max iteration will call llm to summary
             concurrency_limit:the max concurrency threads to call llm
+        Returns:
+             Document: refine summary context document.
         """
         from pilot.scene.base import ChatScene
         from pilot.common.chat_util import llm_chat_response_nostream
@@ -595,6 +604,7 @@ class KnowledgeService:
                     "current_user_input": "",
                     "select_param": doc,
                     "model_name": model_name,
+                    "model_cache_enable": True,
                 }
                 tasks.append(
                     llm_chat_response_nostream(

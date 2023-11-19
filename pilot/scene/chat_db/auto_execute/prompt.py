@@ -13,8 +13,11 @@ _PROMPT_SCENE_DEFINE_EN = "You are a database expert. "
 _PROMPT_SCENE_DEFINE_ZH = "你是一个数据库专家. "
 
 _DEFAULT_TEMPLATE_EN = """
-Please create a syntactically correct {dialect} sql based on the user question, use the following tables schema to generate sql:
-    {table_info}
+Please answer the user's question based on the database selected by the user and some of the available table structure definitions of the database.
+Database name:
+     {db_name}
+Table structure definition:
+     {table_info}
 
 Constraint:
     1.Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results. 
@@ -22,6 +25,8 @@ Constraint:
     3.Use as few tables as possible when querying.
     4.Please check the correctness of the SQL and ensure that the query performance is optimized under correct conditions.
     
+User Question:
+    {user_input}
 Please think step by step and respond according to the following JSON format:
     {response}
 Ensure the response is correct json and can be parsed by Python json.loads.
@@ -29,15 +34,20 @@ Ensure the response is correct json and can be parsed by Python json.loads.
 """
 
 _DEFAULT_TEMPLATE_ZH = """
-请根据用户输入问题，使用如下的表结构定义创建一个语法正确的 {dialect} sql:
+请根据用户选择的数据库和该库的部分可用表结构定义来回答用户问题.
+数据库名:
+    {db_name}
+表结构定义:
     {table_info}
 
 约束:
+    1. 请理解用户意图根据用户输入问题，使用给出表结构定义创建一个语法正确的 {dialect} sql，如果不需要sql，则直接回答用户问题。
     1. 除非用户在问题中指定了他希望获得的具体数据行数，否则始终将查询限制为最多 {top_k} 个结果。
     2. 只能使用表结构信息中提供的表来生成 sql，如果无法根据提供的表结构中生成 sql ，请说：“提供的表结构信息不足以生成 sql 查询。” 禁止随意捏造信息。
     3. 请注意生成SQL时不要弄错表和列的关系
     4. 请检查SQL的正确性，并保证正确的情况下优化查询性能
-
+用户问题:
+    {user_input}
 请一步步思考并按照以下JSON格式回复：
       {response}
 确保返回正确的json并且可以被Python json.loads方法解析.

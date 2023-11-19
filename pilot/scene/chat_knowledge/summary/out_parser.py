@@ -1,9 +1,7 @@
-import json
 import logging
-import re
 from typing import List, Tuple
 
-from pilot.out_parser.base import BaseOutputParser, T
+from pilot.out_parser.base import BaseOutputParser, T, ResponseTye
 from pilot.configs.config import Config
 
 CFG = Config()
@@ -26,28 +24,9 @@ class ExtractSummaryParser(BaseOutputParser):
     def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view
         return data
-    def parse_model_nostream_resp(self, response: ResponseTye, sep: str) -> str:
-        ### tool out data to table view
-        resp_obj_ex = _parse_model_response(response)
-        if isinstance(resp_obj_ex, str):
-            resp_obj_ex = json.loads(resp_obj_ex)
-        if resp_obj_ex["error_code"] == 0:
-            all_text = resp_obj_ex["text"]
-            tmp_resp = all_text.split(sep)
-            last_index = -1
-            for i in range(len(tmp_resp)):
-                if tmp_resp[i].find("assistant:") != -1:
-                    last_index = i
-            ai_response = tmp_resp[last_index]
-            ai_response = ai_response.replace("assistant:", "")
-            ai_response = ai_response.replace("Assistant:", "")
-            ai_response = ai_response.replace("ASSISTANT:", "")
-            ai_response = ai_response.replace("\_", "_")
-            ai_response = ai_response.replace("\*", "*")
-            ai_response = ai_response.replace("\t", "")
 
-            ai_response = ai_response.strip().replace("\\n", " ").replace("\n", " ")
-            print("un_stream ai response:", ai_response)
-            return ai_response
-        else:
-            raise ValueError("Model server error!code=" + resp_obj_ex["error_code"])
+    def parse_model_nostream_resp(self, response: ResponseTye, sep: str) -> str:
+        try:
+            return super().parse_model_nostream_resp(response, sep)
+        except Exception as e:
+            return str(e)

@@ -333,7 +333,6 @@ def get_hist_messages(conv_uid: str):
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:
-            print(f"once:{once}")
             model_name = once.get("model_name", CFG.LLM_MODEL)
             once_message_vos = [
                 message2Vo(element, once["chat_order"], model_name)

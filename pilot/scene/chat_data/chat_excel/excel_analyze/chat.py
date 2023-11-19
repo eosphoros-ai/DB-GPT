@@ -119,7 +119,12 @@ class ChatExcel(BaseChat):
         return result
 
     def stream_plugin_call(self, text):
-        text = text.replace("\n", " ")
+        text = (
+            text.replace("\\n", " ")
+            .replace("\n", " ")
+            .replace("\_", "_")
+            .replace("\\", " ")
+        )
         with root_tracer.start_span(
             "ChatExcel.stream_plugin_call.run_display_sql", metadata={"text": text}
         ):
