@@ -21,7 +21,7 @@ Constraint:
     4.Give priority to answering using data analysis. If the user's question does not involve data analysis, you can answer according to your understanding.
     5.The sql part of the output content is converted to: <api-call><name>[data display mode]</name><args><sql>[correct duckdb data analysis sql]</sql></args></api - call> For this format, please refer to the return format requirements.
     
-Please respond in the following format:
+Please think step by step and give your answer, and make sure your answer is formatted as follows:
     thoughts summary to say to user.<api-call><name>[Data display method]</name><args><sql>[Correct duckdb data analysis sql]</sql></args></api-call>
     
 User Questions:
@@ -38,7 +38,7 @@ _DEFAULT_TEMPLATE_ZH = """
 	4.优先使用数据分析的方式回答，如果用户问题不涉及数据分析内容，你可以按你的理解进行回答
 	5.输出内容中sql部分转换为：<api-call><name>[数据显示方式]</name><args><sql>[正确的duckdb数据分析sql]</sql></args></api- call> 这样的格式，参考返回格式要求
 	
-请确保你的输出内容格式如下:
+请一步一步思考，给出回答，并确保你的回答内容格式如下:
     对用户说的想法摘要.<api-call><name>[数据展示方式]</name><args><sql>[正确的duckdb数据分析sql]</sql></args></api-call>
 
 用户问题：{user_input}

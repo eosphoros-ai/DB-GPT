@@ -371,6 +371,7 @@ class ApiCall:
         else:
             api_call_element = ET.Element("chart-view")
             api_call_element.attrib["content"] = self.__to_antv_vis_param(api_status)
+            api_call_element.text = "\n"
             # api_call_element.set("content", self.__to_antv_vis_param(api_status))
             # api_call_element.text = self.__to_antv_vis_param(api_status)
             result = ET.tostring(api_call_element, encoding="utf-8")
@@ -487,7 +488,6 @@ class ApiCall:
                             value.end_time = datetime.now().timestamp() * 1000
         except Exception as e:
             logging.error("Api parsing exception", e)
-            value.status = Status.FAILED.value
-            value.err_msg = "Api parsing exception," + str(e)
+            raise ValueError("Api parsing exception," + str(e))
 
         return self.api_view_context(llm_text, True)
