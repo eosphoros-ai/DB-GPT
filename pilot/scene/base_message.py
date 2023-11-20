@@ -117,6 +117,10 @@ class ModelMessage(BaseModel):
     def to_dict_list(messages: List["ModelMessage"]) -> List[Dict[str, str]]:
         return list(map(lambda m: m.dict(), messages))
 
+    @staticmethod
+    def build_human_message(content: str) -> "ModelMessage":
+        return ModelMessage(role=ModelMessageRoleType.HUMAN, content=content)
+
 
 class Generation(BaseModel):
     """Output of a single generation."""

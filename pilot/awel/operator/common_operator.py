@@ -237,3 +237,10 @@ class InputOperator(BaseOperator, Generic[OUT]):
         task_output = await self._input_source.read(curr_task_ctx)
         curr_task_ctx.set_task_output(task_output)
         return task_output
+
+
+class TriggerOperator(InputOperator, Generic[OUT]):
+    def __init__(self, **kwargs) -> None:
+        from ..task.task_impl import SimpleCallDataInputSource
+
+        super().__init__(input_source=SimpleCallDataInputSource(), **kwargs)

@@ -54,6 +54,8 @@ class ComponentType(str, Enum):
     TRACER = "dbgpt_tracer"
     TRACER_SPAN_STORAGE = "dbgpt_tracer_span_storage"
     RAG_GRAPH_DEFAULT = "dbgpt_rag_engine_default"
+    AWEL_TRIGGER_MANAGER = "dbgpt_awel_trigger_manager"
+    AWEL_DAG_MANAGER = "dbgpt_awel_dag_manager"
 
 
 class BaseComponent(LifeCycle, ABC):

@@ -45,6 +45,7 @@ def initialize_components(
         param, system_app, embedding_model_name, embedding_model_path
     )
     _initialize_model_cache(system_app)
+    _initialize_awel(system_app)
 
 
 def _initialize_embedding_model(
@@ -149,3 +150,10 @@ def _initialize_model_cache(system_app: SystemApp):
     max_memory_mb = CFG.MODEL_CACHE_MAX_MEMORY_MB or 256
     persist_dir = CFG.MODEL_CACHE_STORAGE_DISK_DIR or MODEL_DISK_CACHE_DIR
     initialize_cache(system_app, storage_type, max_memory_mb, persist_dir)
+
+
+def _initialize_awel(system_app: SystemApp):
+    from pilot.awel import initialize_awel
+    from pilot.configs.model_config import _DAG_DEFINITION_DIR
+
+    initialize_awel(system_app, _DAG_DEFINITION_DIR)

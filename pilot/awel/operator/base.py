@@ -14,6 +14,7 @@ from typing import (
 )
 import functools
 from inspect import signature
+from pilot.component import SystemApp
 
 from ..dag.base import DAGNode, DAGContext, DAGVar, DAG
 from ..task.base import (
@@ -67,6 +68,9 @@ class BaseOperatorMeta(ABCMeta):
         def apply_defaults(self: "BaseOperator", *args: Any, **kwargs: Any) -> Any:
             dag: Optional[DAG] = kwargs.get("dag") or DAGVar.get_current_dag()
             task_id: Optional[str] = kwargs.get("task_id")
+            system_app: Optional[SystemApp] = (
+                kwargs.get("system_app") or DAGVar.get_current_system_app()
+            )
             if not task_id and dag:
                 task_id = dag._new_node_id()
             runner: Optional[WorkflowRunner] = kwargs.get("runner") or default_runner
@@ -80,6 +84,8 @@ class BaseOperatorMeta(ABCMeta):
                 kwargs["task_id"] = task_id
             if not kwargs.get("runner"):
                 kwargs["runner"] = runner
+            if not kwargs.get("system_app"):
+                kwargs["system_app"] = system_app
             real_obj = func(self, *args, **kwargs)
             return real_obj
 
@@ -172,6 +178,6 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         return out_ctx.current_task_context.task_output.output_stream
 
 
-def initialize_awel(runner: WorkflowRunner):
+def initialize_runner(runner: WorkflowRunner):
     global default_runner
     default_runner = runner

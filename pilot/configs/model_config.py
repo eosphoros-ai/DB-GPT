@@ -16,6 +16,7 @@ DATA_DIR = os.path.join(PILOT_PATH, "data")
 PLUGINS_DIR = os.path.join(ROOT_PATH, "plugins")
 FONT_DIR = os.path.join(PILOT_PATH, "fonts")
 MODEL_DISK_CACHE_DIR = os.path.join(DATA_DIR, "model_cache")
+_DAG_DEFINITION_DIR = os.path.join(ROOT_PATH, "examples/awel")
 
 current_directory = os.getcwd()
 

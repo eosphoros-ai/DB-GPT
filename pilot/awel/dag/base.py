@@ -1,13 +1,18 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, List, Sequence, Union, Any
+from typing import Optional, Dict, List, Sequence, Union, Any, Set
 import uuid
 import contextvars
 import threading
 import asyncio
+import logging
 from collections import deque
+from functools import cache
 
+from pilot.component import SystemApp
 from ..resource.base import ResourceGroup
 from ..task.base import TaskContext
+
+logger = logging.getLogger(__name__)
 
 DependencyType = Union["DependencyMixin", Sequence["DependencyMixin"]]
 
@@ -96,6 +101,7 @@ class DependencyMixin(ABC):
 class DAGVar:
     _thread_local = threading.local()
     _async_local = contextvars.ContextVar("current_dag_stack", default=deque())
+    _system_app: SystemApp = None
 
     @classmethod
     def enter_dag(cls, dag) -> None:
@@ -138,18 +144,38 @@ class DAGVar:
                 return cls._thread_local.current_dag_stack[-1]
             return None
 
+    @classmethod
+    def get_current_system_app(cls) -> SystemApp:
+        if not cls._system_app:
+            raise RuntimeError("System APP not set for DAGVar")
+        return cls._system_app
+
+    @classmethod
+    def set_current_system_app(cls, system_app: SystemApp) -> None:
+        if cls._system_app:
+            logger.warn("System APP has already set, nothing to do")
+        else:
+            cls._system_app = system_app
+
 
 class DAGNode(DependencyMixin, ABC):
     resource_group: Optional[ResourceGroup] = None
     """The resource group of current DAGNode"""
 
     def __init__(
-        self, dag: Optional["DAG"] = None, node_id: str = None, node_name: str = None
+        self,
+        dag: Optional["DAG"] = None,
+        node_id: str = None,
+        node_name: str = None,
+        system_app: SystemApp = None,
     ) -> None:
         super().__init__()
         self._upstream: List["DAGNode"] = []
         self._downstream: List["DAGNode"] = []
         self._dag: Optional["DAG"] = dag or DAGVar.get_current_dag()
+        self._system_app: Optional[SystemApp] = (
+            system_app or DAGVar.get_current_system_app()
+        )
         if not node_id and self._dag:
             node_id = self._dag._new_node_id()
         self._node_id: str = node_id
@@ -158,6 +184,10 @@ class DAGNode(DependencyMixin, ABC):
     @property
     def node_id(self) -> str:
         return self._node_id
+
+    @property
+    def system_app(self) -> SystemApp:
+        return self._system_app
 
     def set_node_id(self, node_id: str) -> None:
         self._node_id = node_id
@@ -178,7 +208,7 @@ class DAGNode(DependencyMixin, ABC):
         return self._node_name
 
     @property
-    def dag(self) -> "DAGNode":
+    def dag(self) -> "DAG":
         return self._dag
 
     def set_upstream(self, nodes: DependencyType) -> "DAGNode":
@@ -254,13 +284,54 @@ class DAG:
     def __init__(
         self, dag_id: str, resource_group: Optional[ResourceGroup] = None
     ) -> None:
+        self._dag_id = dag_id
         self.node_map: Dict[str, DAGNode] = {}
+        self._root_nodes: Set[DAGNode] = None
+        self._leaf_nodes: Set[DAGNode] = None
+        self._trigger_nodes: Set[DAGNode] = None
 
     def _append_node(self, node: DAGNode) -> None:
         self.node_map[node.node_id] = node
+        # clear cached nodes
+        self._root_nodes = None
+        self._leaf_nodes = None
 
     def _new_node_id(self) -> str:
         return str(uuid.uuid4())
+
+    @property
+    def dag_id(self) -> str:
+        return self._dag_id
+
+    def _build(self) -> None:
+        from ..operator.common_operator import TriggerOperator
+
+        nodes = set()
+        for _, node in self.node_map.items():
+            nodes = nodes.union(_get_nodes(node))
+        self._root_nodes = list(set(filter(lambda x: not x.upstream, nodes)))
+        self._leaf_nodes = list(set(filter(lambda x: not x.downstream, nodes)))
+        self._trigger_nodes = list(
+            set(filter(lambda x: isinstance(x, TriggerOperator), nodes))
+        )
+
+    @property
+    def root_nodes(self) -> List[DAGNode]:
+        if not self._root_nodes:
+            self._build()
+        return self._root_nodes
+
+    @property
+    def leaf_nodes(self) -> List[DAGNode]:
+        if not self._leaf_nodes:
+            self._build()
+        return self._leaf_nodes
+
+    @property
+    def trigger_nodes(self):
+        if not self._trigger_nodes:
+            self._build()
+        return self._trigger_nodes
 
     def __enter__(self):
         DAGVar.enter_dag(self)
@@ -268,3 +339,14 @@ class DAG:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         DAGVar.exit_dag()
+
+
+def _get_nodes(node: DAGNode, is_upstream: Optional[bool] = True) -> set[DAGNode]:
+    nodes = set()
+    if not node:
+        return nodes
+    nodes.add(node)
+    stream_nodes = node.upstream if is_upstream else node.downstream
+    for node in stream_nodes:
+        nodes = nodes.union(_get_nodes(node, is_upstream))
+    return nodes

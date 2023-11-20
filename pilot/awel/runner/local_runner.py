@@ -3,7 +3,7 @@ import logging
 
 from ..dag.base import DAGContext
 from ..operator.base import WorkflowRunner, BaseOperator, CALL_DATA
-from ..operator.common_operator import BranchOperator, JoinOperator
+from ..operator.common_operator import BranchOperator, JoinOperator, TriggerOperator
 from ..task.base import TaskContext, TaskState
 from ..task.task_impl import DefaultInputContext, DefaultTaskContext, SimpleTaskOutput
 from .job_manager import JobManager
