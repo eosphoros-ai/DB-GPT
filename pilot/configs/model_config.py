@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import os
+from functools import cache
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_PATH = os.path.join(ROOT_PATH, "models")
@@ -22,6 +23,7 @@ new_directory = PILOT_PATH
 os.chdir(new_directory)
 
 
+@cache
 def get_device() -> str:
     try:
         import torch
