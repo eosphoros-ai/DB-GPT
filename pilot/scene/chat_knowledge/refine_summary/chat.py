@@ -21,9 +21,7 @@ class ExtractRefineSummary(BaseChat):
             chat_param=chat_param,
         )
 
-        # self.user_input = chat_param["current_user_input"]
         self.existing_answer = chat_param["select_param"]
-        # self.extract_mode = chat_param["select_param"]
 
     def generate_input_values(self):
         input_values = {
@@ -32,17 +30,7 @@ class ExtractRefineSummary(BaseChat):
         }
         return input_values
 
-    async def stream_call(self):
-        last_output = None
-        async for output in super().stream_call():
-            last_output = output
-            last_output = last_output.replace("\n", "\\n")
-            yield output
-
-        last_output = f"<summary>{last_output}</summary>"
-        yield last_output
-
-    def stream_call_reinforce_fn(self, text):
+    def stream_plugin_call(self, text):
         """return summary label"""
         return f"<summary>{text}</summary>"
 
