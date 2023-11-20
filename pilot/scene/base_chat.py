@@ -58,6 +58,7 @@ class BaseChat(ABC):
             chat_param["model_name"] if chat_param["model_name"] else CFG.LLM_MODEL
         )
         self.llm_echo = False
+        self.model_cache_enable = chat_param.get("model_cache_enable", False)
 
         ### load prompt template
         # self.prompt_template: PromptTemplate = CFG.prompt_templates[
@@ -117,6 +118,9 @@ class BaseChat(ABC):
 
     def do_action(self, prompt_response):
         return prompt_response
+
+    def message_adjust(self):
+        pass
 
     def get_llm_speak(self, prompt_define_response):
         if hasattr(prompt_define_response, "thoughts"):
@@ -181,7 +185,7 @@ class BaseChat(ABC):
     def stream_plugin_call(self, text):
         return text
 
-    def knowledge_reference_call(self, text):
+    def stream_call_reinforce_fn(self, text):
         return text
 
     async def check_iterator_end(iterator):
@@ -210,6 +214,7 @@ class BaseChat(ABC):
             "BaseChat.stream_call", metadata=self._get_span_metadata(payload)
         )
         payload["span_id"] = span.span_id
+        payload["model_cache_enable"] = self.model_cache_enable
         try:
             async for output in await self._model_stream_operator.call_stream(
                 call_data={"data": payload}
@@ -222,7 +227,7 @@ class BaseChat(ABC):
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
             self.current_message.add_ai_message(msg)
-            view_msg = self.knowledge_reference_call(msg)
+            view_msg = self.stream_call_reinforce_fn(view_msg)
             self.current_message.add_view_message(view_msg)
             span.end()
         except Exception as e:
@@ -243,6 +248,7 @@ class BaseChat(ABC):
             "BaseChat.nostream_call", metadata=self._get_span_metadata(payload)
         )
         payload["span_id"] = span.span_id
+        payload["model_cache_enable"] = self.model_cache_enable
         try:
             with root_tracer.start_span("BaseChat.invoke_worker_manager.generate"):
                 model_output = await self._model_operator.call(
@@ -286,10 +292,13 @@ class BaseChat(ABC):
                 self.prompt_template.output_parser.parse_view_response,
                 speak_to_user,
                 result,
+                prompt_define_response,
             )
 
             view_message = view_message.replace("\n", "\\n")
             self.current_message.add_view_message(view_message)
+            self.message_adjust()
+
             span.end()
         except Exception as e:
             print(traceback.format_exc())
@@ -306,6 +315,7 @@ class BaseChat(ABC):
         payload = await self.__call_base()
         logger.info(f"Request: \n{payload}")
         ai_response_text = ""
+        payload["model_cache_enable"] = self.model_cache_enable
         try:
             model_output = await self._model_operator.call(call_data={"data": payload})
             ### output parse
@@ -568,23 +578,23 @@ def _build_model_operator(
 ) -> BaseOperator:
     """Builds and returns a model processing workflow (DAG) operator.
 
-    This function constructs a Directed Acyclic Graph (DAG) for processing data using a model. 
-    It includes caching and branching logic to either fetch results from a cache or process 
+    This function constructs a Directed Acyclic Graph (DAG) for processing data using a model.
+    It includes caching and branching logic to either fetch results from a cache or process
     data using the model. It supports both streaming and non-streaming modes.
 
     .. code-block:: python
         input_node >> cache_check_branch_node
         cache_check_branch_node >> model_node >> save_cached_node >> join_node
-        cache_check_branch_node >> cached_node >> join_node        
+        cache_check_branch_node >> cached_node >> join_node
 
     equivalent to::
-    
+
                           -> model_node -> save_cached_node ->
                          /                                    \
         input_node -> cache_check_branch_node                   ---> join_node
-                        \                                     / 
+                        \                                     /
                          -> cached_node ------------------- ->
-  
+
     Args:
         is_stream (bool): Flag to determine if the operator should process data in streaming mode.
         dag_name (str): Name of the DAG.

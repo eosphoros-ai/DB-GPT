@@ -1,6 +1,9 @@
 import json
 from typing import Dict, NamedTuple
 import logging
+import sqlparse
+import xml.etree.ElementTree as ET
+from pilot.common.json_utils import serialize
 from pilot.out_parser.base import BaseOutputParser, T
 from pilot.configs.config import Config
 from pilot.scene.chat_db.data_loader import DbDataLoader
@@ -23,32 +26,63 @@ class DbChatOutputParser(BaseOutputParser):
     def __init__(self, sep: str, is_stream_out: bool):
         super().__init__(sep=sep, is_stream_out=is_stream_out)
 
+    def is_sql_statement(self, statement):
+        parsed = sqlparse.parse(statement)
+        if not parsed:
+            return False
+        for stmt in parsed:
+            if stmt.get_type() != "UNKNOWN":
+                return True
+        return False
+
     def parse_prompt_response(self, model_out_text):
         clean_str = super().parse_prompt_response(model_out_text)
-        print("clean prompt response:", clean_str)
-        response = json.loads(clean_str)
-        for key in sorted(response):
-            if key.strip() == "sql":
-                sql = response[key]
-            if key.strip() == "thoughts":
-                thoughts = response[key]
-        return SqlAction(sql, thoughts)
-
-    def parse_view_response(self, speak, data) -> str:
-        import pandas as pd
-
-        ### tool out data to table view
-        data_loader = DbDataLoader()
-        if len(data) < 1:
-            data.insert(0, [])
-        df = pd.DataFrame(data[1:], columns=data[0])
-        if not CFG.NEW_SERVER_MODE and not CFG.SERVER_LIGHT_MODE:
-            table_style = """<style> 
-                table{border-collapse:collapse;width:100%;height:80%;margin:0 auto;float:center;border: 1px solid #007bff; background-color:#333; color:#fff}th,td{border:1px solid #ddd;padding:3px;text-align:center}th{background-color:#C9C3C7;color: #fff;font-weight: bold;}tr:nth-child(even){background-color:#444}tr:hover{background-color:#444}
-             </style>"""
-            html_table = df.to_html(index=False, escape=False)
-            html = f"<html><head>{table_style}</head><body>{html_table}</body></html>"
-            view_text = f"##### {str(speak)}" + "\n" + html.replace("\n", " ")
-            return view_text
+        logging.info("clean prompt response:", clean_str)
+        # Compatible with community pure sql output model
+        if self.is_sql_statement(clean_str):
+            return SqlAction(clean_str, "")
         else:
-            return data_loader.get_table_view_by_conn(data, speak)
+            try:
+                response = json.loads(clean_str)
+                for key in sorted(response):
+                    if key.strip() == "sql":
+                        sql = response[key]
+                    if key.strip() == "thoughts":
+                        thoughts = response[key]
+                return SqlAction(sql, thoughts)
+            except Exception as e:
+                logging.error("json load faild")
+                return SqlAction("", clean_str)
+
+    def parse_view_response(self, speak, data, prompt_response) -> str:
+        param = {}
+        api_call_element = ET.Element("chart-view")
+        err_msg = None
+        try:
+            if not prompt_response.sql or len(prompt_response.sql) <= 0:
+                return f"""{speak}"""
+
+            df = data(prompt_response.sql)
+            param["type"] = "response_table"
+            param["sql"] = prompt_response.sql
+            param["data"] = json.loads(
+                df.to_json(orient="records", date_format="iso", date_unit="s")
+            )
+            view_json_str = json.dumps(param, default=serialize, ensure_ascii=False)
+        except Exception as e:
+            logger.error("parse_view_response error!" + str(e))
+            err_param = {}
+            err_param["sql"] = f"{prompt_response.sql}"
+            err_param["type"] = "response_table"
+            # err_param["err_msg"] = str(e)
+            err_param["data"] = []
+            err_msg = str(e)
+            view_json_str = json.dumps(err_param, default=serialize, ensure_ascii=False)
+
+        # api_call_element.text = view_json_str
+        api_call_element.set("content", view_json_str)
+        result = ET.tostring(api_call_element, encoding="utf-8")
+        if err_msg:
+            return f"""{speak} \\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result.decode("utf-8")}"""
+        else:
+            return speak + "\n" + result.decode("utf-8")

@@ -7,6 +7,35 @@ from pilot.scene.base_message import ModelMessage, ModelMessageRoleType
 logger = logging.getLogger(__name__)
 
 
+def __convert_2_tongyi_messages(messages: List[ModelMessage]):
+    chat_round = 0
+    tongyi_messages = []
+
+    last_usr_message = ""
+    system_messages = []
+
+    for message in messages:
+        if message.role == ModelMessageRoleType.HUMAN:
+            last_usr_message = message.content
+        elif message.role == ModelMessageRoleType.SYSTEM:
+            system_messages.append(message.content)
+        elif message.role == ModelMessageRoleType.AI:
+            last_ai_message = message.content
+            tongyi_messages.append({"role": "user", "content": last_usr_message})
+            tongyi_messages.append({"role": "assistant", "content": last_ai_message})
+    if len(system_messages) > 0:
+        if len(system_messages) < 2:
+            tongyi_messages.insert(0, {"role": "system", "content": system_messages[0]})
+        else:
+            tongyi_messages.append({"role": "user", "content": system_messages[1]})
+    else:
+        last_message = messages[-1]
+        if last_message.role == ModelMessageRoleType.HUMAN:
+            tongyi_messages.append({"role": "user", "content": last_message.content})
+
+    return tongyi_messages
+
+
 def tongyi_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
@@ -23,50 +52,9 @@ def tongyi_generate_stream(
     if not proxyllm_backend:
         proxyllm_backend = Generation.Models.qwen_turbo  # By Default qwen_turbo
 
-    history = []
-
     messages: List[ModelMessage] = params["messages"]
-    # Add history conversation
 
-    if len(messages) > 1 and messages[0].role == ModelMessageRoleType.SYSTEM:
-        role_define = messages.pop(0)
-        history.append({"role": "system", "content": role_define.content})
-    else:
-        message = messages.pop(0)
-        if message.role == ModelMessageRoleType.HUMAN:
-            history.append({"role": "user", "content": message.content})
-    for message in messages:
-        if (
-            message.role == ModelMessageRoleType.SYSTEM
-            or message.role == ModelMessageRoleType.HUMAN
-        ):
-            history.append({"role": "user", "content": message.content})
-        # elif message.role == ModelMessageRoleType.HUMAN:
-        #     history.append({"role": "user", "content": message.content})
-        elif message.role == ModelMessageRoleType.AI:
-            history.append({"role": "assistant", "content": message.content})
-        else:
-            pass
-
-    temp_his = history[::-1]
-    last_user_input = None
-    for m in temp_his:
-        if m["role"] == "user":
-            last_user_input = m
-            break
-
-    temp_his = history
-    prompt_input = None
-    for m in temp_his:
-        if m["role"] == "user":
-            prompt_input = m
-            break
-
-    if last_user_input and prompt_input and last_user_input != prompt_input:
-        history.remove(last_user_input)
-        history.remove(prompt_input)
-        history.append(prompt_input)
-
+    history = __convert_2_tongyi_messages(messages)
     gen = Generation()
     res = gen.call(
         proxyllm_backend,

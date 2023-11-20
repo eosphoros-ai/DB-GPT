@@ -171,6 +171,8 @@ class ModelCacheBranchOperator(BranchOperator[Dict, Dict]):
 
         async def check_cache_true(input_value: Dict) -> bool:
             # Check if the cache contains the result for the given input
+            if not input_value["model_cache_enable"]:
+                return False
             cache_dict = _parse_cache_key_dict(input_value)
             cache_key: LLMCacheKey = self._client.new_key(**cache_dict)
             cache_value = await self._client.get(cache_key)

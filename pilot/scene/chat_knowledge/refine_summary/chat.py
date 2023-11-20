@@ -12,7 +12,7 @@ CFG = Config()
 class ExtractRefineSummary(BaseChat):
     chat_scene: str = ChatScene.ExtractRefineSummary.value()
 
-    """get summary by llm"""
+    """extract final summary by llm"""
 
     def __init__(self, chat_param: Dict):
         """ """
@@ -21,9 +21,7 @@ class ExtractRefineSummary(BaseChat):
             chat_param=chat_param,
         )
 
-        # self.user_input = chat_param["current_user_input"]
         self.existing_answer = chat_param["select_param"]
-        # self.extract_mode = chat_param["select_param"]
 
     def generate_input_values(self):
         input_values = {
@@ -31,6 +29,10 @@ class ExtractRefineSummary(BaseChat):
             "existing_answer": self.existing_answer,
         }
         return input_values
+
+    def stream_plugin_call(self, text):
+        """return summary label"""
+        return f"<summary>{text}</summary>"
 
     @property
     def chat_type(self) -> str:

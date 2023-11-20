@@ -1,10 +1,7 @@
 import json
 from typing import Any, Dict
 
-from pilot.scene.base_message import (
-    HumanMessage,
-    ViewMessage,
-)
+from pilot.scene.base_message import HumanMessage, ViewMessage, AIMessage
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.common.sql_database import Database
@@ -51,10 +48,22 @@ class ExcelLearning(BaseChat):
         colunms, datas = await blocking_func_to_async(
             self._executor, self.excel_reader.get_sample_data
         )
-        copy_datas = datas.copy()
+        self.prompt_template.output_parser.update(colunms)
         datas.insert(0, colunms)
 
         input_values = {
-            "data_example": json.dumps(copy_datas, cls=DateTimeEncoder),
+            "data_example": json.dumps(datas, cls=DateTimeEncoder),
+            "file_name": self.excel_reader.excel_file_name,
         }
         return input_values
+
+    def message_adjust(self):
+        ### adjust learning result in messages
+        view_message = ""
+        for message in self.current_message.messages:
+            if message.type == ViewMessage.type:
+                view_message = message.content
+
+        for message in self.current_message.messages:
+            if message.type == AIMessage.type:
+                message.content = view_message

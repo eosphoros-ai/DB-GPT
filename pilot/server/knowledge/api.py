@@ -10,6 +10,7 @@ from pilot.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
+from pilot.openapi.api_v1.api_v1 import no_stream_generator, stream_generator
 
 from pilot.openapi.api_view_model import Result
 from pilot.embedding_engine.embedding_engine import EmbeddingEngine
@@ -25,9 +26,11 @@ from pilot.server.knowledge.request.request import (
     DocumentQueryRequest,
     SpaceArgumentRequest,
     EntityExtractRequest,
+    DocumentSummaryRequest,
 )
 
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
+from pilot.utils.tracer import root_tracer, SpanType
 
 logger = logging.getLogger(__name__)
 
@@ -150,12 +153,25 @@ async def document_upload(
             request.content = os.path.join(
                 KNOWLEDGE_UPLOAD_ROOT_PATH, space_name, doc_file.filename
             )
+            space_res = knowledge_space_service.get_knowledge_space(
+                KnowledgeSpaceRequest(name=space_name)
+            )
+            if len(space_res) == 0:
+                # create default space
+                if "default" != space_name:
+                    raise Exception(f"you have not create your knowledge space.")
+                knowledge_space_service.create_knowledge_space(
+                    KnowledgeSpaceRequest(
+                        name=space_name,
+                        desc="first db-gpt rag application",
+                        owner="dbgpt",
+                    )
+                )
             return Result.succ(
                 knowledge_space_service.create_knowledge_document(
                     space=space_name, request=request
                 )
             )
-            # return Result.succ([])
         return Result.failed(code="E000X", msg=f"doc_file is None")
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document add error {e}")
@@ -201,6 +217,38 @@ def similar_query(space_name: str, query_request: KnowledgeQueryRequest):
     return {"response": res}
 
 
+@router.post("/knowledge/document/summary")
+async def document_summary(request: DocumentSummaryRequest):
+    print(f"/document/summary params: {request}")
+    try:
+        with root_tracer.start_span(
+            "get_chat_instance", span_type=SpanType.CHAT, metadata=request
+        ):
+            chat = await knowledge_space_service.document_summary(request=request)
+        headers = {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Transfer-Encoding": "chunked",
+        }
+        from starlette.responses import StreamingResponse
+
+        if not chat.prompt_template.stream_out:
+            return StreamingResponse(
+                no_stream_generator(chat),
+                headers=headers,
+                media_type="text/event-stream",
+            )
+        else:
+            return StreamingResponse(
+                stream_generator(chat, False, request.model_name),
+                headers=headers,
+                media_type="text/plain",
+            )
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"document summary error {e}")
+
+
 @router.post("/knowledge/entity/extract")
 async def entity_extract(request: EntityExtractRequest):
     logger.info(f"Received params: {request}")
@@ -221,4 +269,4 @@ async def entity_extract(request: EntityExtractRequest):
         )
         return Result.succ(res)
     except Exception as e:
-        return Result.faild(code="E000X", msg=f"entity extract error {e}")
+        return Result.failed(code="E000X", msg=f"entity extract error {e}")

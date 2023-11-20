@@ -23,7 +23,7 @@ class ChatExcel(BaseChat):
     """a Excel analyzer to analyze Excel Data"""
 
     chat_scene: str = ChatScene.ChatExcel.value()
-    chat_retention_rounds = 1
+    chat_retention_rounds = 2
 
     def __init__(self, chat_param: Dict):
         """Chat Excel Module Initialization
@@ -51,17 +51,47 @@ class ChatExcel(BaseChat):
         super().__init__(chat_param=chat_param)
 
     def _generate_numbered_list(self) -> str:
-        command_strings = []
-        if CFG.command_disply:
-            for name, item in CFG.command_disply.commands.items():
-                if item.enabled:
-                    command_strings.append(f"{name}:{item.description}")
-            # command_strings += [
-            #     str(item)
-            #     for item in CFG.command_disply.commands.values()
-            #     if item.enabled
-            # ]
-        return "\n".join(f"{i+1}. {item}" for i, item in enumerate(command_strings))
+        antv_charts = [
+            {"response_line_chart": "used to display comparative trend analysis data"},
+            {
+                "response_pie_chart": "suitable for scenarios such as proportion and distribution statistics"
+            },
+            {
+                "response_table": "suitable for display with many display columns or non-numeric columns"
+            },
+            # {"response_data_text":" the default display method, suitable for single-line or simple content display"},
+            {
+                "response_scatter_plot": "Suitable for exploring relationships between variables, detecting outliers, etc."
+            },
+            {
+                "response_bubble_chart": "Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."
+            },
+            {
+                "response_donut_chart": "Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc."
+            },
+            {
+                "response_area_chart": "Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc."
+            },
+            {
+                "response_heatmap": "Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."
+            },
+        ]
+
+        # command_strings = []
+        # if CFG.command_disply:
+        #     for name, item in CFG.command_disply.commands.items():
+        #         if item.enabled:
+        #             command_strings.append(f"{name}:{item.description}")
+        # command_strings += [
+        #     str(item)
+        #     for item in CFG.command_disply.commands.values()
+        #     if item.enabled
+        # ]
+        return "\n".join(
+            f"{key}:{value}"
+            for dict_item in antv_charts
+            for key, value in dict_item.items()
+        )
 
     @trace()
     async def generate_input_values(self) -> Dict:
@@ -78,7 +108,7 @@ class ChatExcel(BaseChat):
             return None
         chat_param = {
             "chat_session_id": self.chat_session_id,
-            "user_input": "[" + self.excel_reader.excel_file_name + "]" + " Analysis！",
+            "user_input": "[" + self.excel_reader.excel_file_name + "]" + " Analyze！",
             "parent_mode": self.chat_mode,
             "select_param": self.excel_reader.excel_file_name,
             "excel_reader": self.excel_reader,
@@ -89,10 +119,15 @@ class ChatExcel(BaseChat):
         return result
 
     def stream_plugin_call(self, text):
-        text = text.replace("\n", " ")
+        text = (
+            text.replace("\\n", " ")
+            .replace("\n", " ")
+            .replace("\_", "_")
+            .replace("\\", " ")
+        )
         with root_tracer.start_span(
             "ChatExcel.stream_plugin_call.run_display_sql", metadata={"text": text}
         ):
-            return self.api_call.run_display_sql(
+            return self.api_call.display_sql_llmvis(
                 text, self.excel_reader.get_df_by_sql_ex
             )

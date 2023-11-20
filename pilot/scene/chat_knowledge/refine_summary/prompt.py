@@ -10,13 +10,17 @@ from pilot.scene.chat_knowledge.refine_summary.out_parser import (
 CFG = Config()
 
 
-PROMPT_SCENE_DEFINE = """"""
+PROMPT_SCENE_DEFINE = """A chat between a curious user and an artificial intelligence assistant, who very familiar with database related knowledge. 
+The assistant gives helpful, detailed, professional and polite answers to the user's questions."""
 
-_DEFAULT_TEMPLATE_ZH = """根据提供的上下文信息，我们已经提供了一个到某一点的现有总结:{existing_answer}\n 请再完善一下原来的总结。\n回答的时候最好按照1.2.3.点进行总结"""
+_DEFAULT_TEMPLATE_ZH = (
+    """我们已经提供了一个到某一点的现有总结:{existing_answer}\n 请根据你之前推理的内容进行最终的总结,总结回答的时候最好按照1.2.3.进行."""
+)
 
 _DEFAULT_TEMPLATE_EN = """
-We have provided an existing summary up to a certain point: {existing_answer}\nWe have the opportunity to refine the existing summary (only if needed) with some more context below.please refine the original summary. 
-\nWhen answering, it is best to summarize according to points 1.2.3.
+We have provided an existing summary up to a certain point: {existing_answer}\nWe have the opportunity to refine the existing summary (only if needed) with some more context below. 
+\nBased on the previous reasoning, please summarize the final conclusion in accordance with points 1.2.and 3.
+
 """
 
 _DEFAULT_TEMPLATE = (
@@ -27,12 +31,12 @@ PROMPT_RESPONSE = """"""
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
-PROMPT_NEED_NEED_STREAM_OUT = False
+PROMPT_NEED_NEED_STREAM_OUT = True
 
 prompt = PromptTemplate(
     template_scene=ChatScene.ExtractRefineSummary.value(),
     input_variables=["existing_answer"],
-    response_format="",
+    response_format=None,
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE + PROMPT_RESPONSE,
     stream_out=PROMPT_NEED_NEED_STREAM_OUT,
@@ -42,3 +46,4 @@ prompt = PromptTemplate(
 )
 
 CFG.prompt_template_registry.register(prompt, is_default=True)
+from ..v1 import prompt_chatglm

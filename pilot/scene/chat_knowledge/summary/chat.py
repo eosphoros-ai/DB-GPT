@@ -21,8 +21,7 @@ class ExtractSummary(BaseChat):
             chat_param=chat_param,
         )
 
-        self.user_input = chat_param["current_user_input"]
-        # self.extract_mode = chat_param["select_param"]
+        self.user_input = chat_param["select_param"]
 
     def generate_input_values(self):
         input_values = {
