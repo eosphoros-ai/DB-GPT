@@ -206,9 +206,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_type", type=str, default="huggingface")
     parser.add_argument("--result_csv_file", type=str, default=None)
     parser.add_argument("--input_lens", type=str, default="8,8,256,1024")
-    parser.add_argument(
-        "--output_lens", type=str, default="256,512,1024,1024"
-    )
+    parser.add_argument("--output_lens", type=str, default="256,512,1024,1024")
     parser.add_argument("--parallel_nums", type=str, default="1,2,4,16,32")
     parser.add_argument(
         "--remote_model", type=bool, default=False, help="Connect to remote model"
