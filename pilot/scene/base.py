@@ -26,7 +26,7 @@ class ChatScene(Enum):
     ChatWithDbExecute = Scene(
         code="chat_with_db_execute",
         name="Chat Data",
-        describe="Dialogue with your private databse data through natural language.",
+        describe="Dialogue with your private data through natural language.",
         param_types=["DB Select"],
     )
     ExcelLearning = Scene(
