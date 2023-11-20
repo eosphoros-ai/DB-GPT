@@ -371,6 +371,7 @@ class ApiCall:
         else:
             api_call_element = ET.Element("chart-view")
             api_call_element.attrib["content"] = self.__to_antv_vis_param(api_status)
+            api_call_element.text = "\n"
             # api_call_element.set("content", self.__to_antv_vis_param(api_status))
             # api_call_element.text = self.__to_antv_vis_param(api_status)
             result = ET.tostring(api_call_element, encoding="utf-8")
