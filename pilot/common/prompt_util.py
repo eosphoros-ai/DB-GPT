@@ -190,19 +190,6 @@ class PromptHelper(BaseModel):
             tokenizer=self._tokenizer,
         )
 
-    # def truncate(
-    #     self,
-    #     prompt: BasePromptTemplate,
-    #     text_chunks: Sequence[str],
-    #     padding: int = DEFAULT_PADDING,
-    # ) -> List[str]:
-    #     """Truncate text chunks to fit available context window."""
-    #     text_splitter = self.get_text_splitter_given_prompt(
-    #         prompt,
-    #         num_chunks=len(text_chunks),
-    #         padding=padding,
-    #     )
-    #     return [truncate_text(chunk, text_splitter) for chunk in text_chunks]
 
     def repack(
         self,
