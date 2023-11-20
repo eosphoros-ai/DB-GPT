@@ -21,6 +21,8 @@ class PromptRequest(BaseModel):
     context_len: int = None
     echo: bool = True
     span_id: str = None
+    metrics: bool = False
+    """Whether to return metrics of inference"""
 
 
 class EmbeddingsRequest(BaseModel):

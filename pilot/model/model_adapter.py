@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 thread_local = threading.local()
-
+_IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
 _OLD_MODELS = [
     "llama-cpp",
@@ -244,9 +244,16 @@ class FastChatLLMModelAdaperWrapper(LLMModelAdaper):
         return self._adapter.load_model(model_path, from_pretrained_kwargs)
 
     def get_generate_stream_function(self, model: "TorchNNModule", model_path: str):
-        from fastchat.model.model_adapter import get_generate_stream_function
+        if _IS_BENCHMARK:
+            from pilot.utils.benchmarks.llm.fastchat_benchmarks_inference import (
+                generate_stream,
+            )
 
-        return get_generate_stream_function(model, model_path)
+            return generate_stream
+        else:
+            from fastchat.model.model_adapter import get_generate_stream_function
+
+            return get_generate_stream_function(model, model_path)
 
     def get_default_conv_template(
         self, model_name: str, model_path: str
