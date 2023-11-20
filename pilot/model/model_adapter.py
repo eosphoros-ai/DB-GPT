@@ -158,24 +158,23 @@ class LLMModelAdaper:
             else:
                 raise ValueError(f"Unknown role: {role}")
 
-        can_use_system = ""
+        can_use_systems:[] = []
         if system_messages:
-            # TODO vicuna 兼容 测试完放弃
-            user_messages[-1] = system_messages[-1]
             if len(system_messages) > 1:
-                can_use_system = system_messages[0]
-
+                ##  Compatible with dbgpt complex scenarios, the last system will protect more complete information entered by the current user
+                user_messages[-1] = system_messages[-1]
+                can_use_systems = system_messages[:-1]
+            else:
+                can_use_systems = system_messages
         for  i in range(len(user_messages)):
             conv.append_message(conv.roles[0], user_messages[i])
             if i < len(ai_messages):
                 conv.append_message(conv.roles[1], ai_messages[i])
 
         if isinstance(conv, Conversation):
-            conv.set_system_message(can_use_system)
+            conv.set_system_message("".join(can_use_systems))
         else:
-            conv.update_system_message(can_use_system)
-
-
+            conv.update_system_message("".join(can_use_systems))
 
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
