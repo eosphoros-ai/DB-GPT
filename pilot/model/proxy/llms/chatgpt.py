@@ -58,6 +58,42 @@ def _initialize_openai(params: ProxyModelParameters):
     return openai_params
 
 
+def __convert_2_gpt_messages(messages: List[ModelMessage]):
+
+    chat_round = 0
+    gpt_messages = []
+
+    last_usr_message = ""
+    system_messages = []
+
+    for message in messages:
+        if message.role == ModelMessageRoleType.HUMAN:
+            last_usr_message =  message.content
+        elif message.role == ModelMessageRoleType.SYSTEM:
+            system_messages.append(message.content)
+        elif message.role == ModelMessageRoleType.AI:
+            last_ai_message = message.content
+            gpt_messages.append({"role": "user", "content": last_usr_message})
+            gpt_messages.append({"role": "assistant", "content": last_ai_message})
+
+    # build last user messge
+
+    if len(system_messages) >0:
+        if len(system_messages) > 1:
+            end_message = system_messages[-1]
+        else:
+            last_message = messages[-1]
+            if last_message.role == ModelMessageRoleType.HUMAN:
+                end_message = system_messages[-1] + "\n"  + last_message.content
+            else:
+                end_message = system_messages[-1]
+    else:
+        last_message = messages[-1]
+        end_message = last_message.content
+    gpt_messages.append({"role": "user", "content": end_message})
+    return gpt_messages, system_messages
+
+
 def _initialize_openai_v1(params: ProxyModelParameters):
     try:
         from openai import OpenAI
