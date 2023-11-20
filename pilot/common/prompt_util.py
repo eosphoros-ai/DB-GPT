@@ -190,7 +190,6 @@ class PromptHelper(BaseModel):
             tokenizer=self._tokenizer,
         )
 
-
     def repack(
         self,
         prompt_template: str,
