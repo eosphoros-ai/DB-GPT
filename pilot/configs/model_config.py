@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import os
+from functools import cache
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODEL_PATH = os.path.join(ROOT_PATH, "models")
@@ -14,6 +15,7 @@ DATA_DIR = os.path.join(PILOT_PATH, "data")
 # nltk.data.path = [os.path.join(PILOT_PATH, "nltk_data")] + nltk.data.path
 PLUGINS_DIR = os.path.join(ROOT_PATH, "plugins")
 FONT_DIR = os.path.join(PILOT_PATH, "fonts")
+MODEL_DISK_CACHE_DIR = os.path.join(DATA_DIR, "model_cache")
 
 current_directory = os.getcwd()
 
@@ -21,6 +23,7 @@ new_directory = PILOT_PATH
 os.chdir(new_directory)
 
 
+@cache
 def get_device() -> str:
     try:
         import torch

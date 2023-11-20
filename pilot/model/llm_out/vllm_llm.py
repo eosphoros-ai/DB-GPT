@@ -1,7 +1,11 @@
 from typing import Dict
+import os
 from vllm import AsyncLLMEngine
 from vllm.utils import random_uuid
 from vllm.sampling_params import SamplingParams
+
+
+_IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
 
 async def generate_stream(
@@ -37,15 +41,29 @@ async def generate_stream(
     top_p = max(top_p, 1e-5)
     if temperature <= 1e-5:
         top_p = 1.0
+    gen_params = {
+        "stop": list(stop),
+        "ignore_eos": False,
+    }
+    prompt_token_ids = None
+    if _IS_BENCHMARK:
+        gen_params["stop"] = []
+        gen_params["ignore_eos"] = True
+        prompt_len = context_len - max_new_tokens - 2
+        prompt_token_ids = tokenizer([prompt]).input_ids[0]
+        prompt_token_ids = prompt_token_ids[-prompt_len:]
     sampling_params = SamplingParams(
         n=1,
         temperature=temperature,
         top_p=top_p,
         use_beam_search=False,
-        stop=list(stop),
         max_tokens=max_new_tokens,
+        **gen_params
     )
-    results_generator = model.generate(prompt, sampling_params, request_id)
+
+    results_generator = model.generate(
+        prompt, sampling_params, request_id, prompt_token_ids=prompt_token_ids
+    )
     async for request_output in results_generator:
         prompt = request_output.prompt
         if echo:
@@ -53,4 +71,25 @@ async def generate_stream(
         else:
             text_outputs = [output.text for output in request_output.outputs]
         text_outputs = " ".join(text_outputs)
-        yield {"text": text_outputs, "error_code": 0, "usage": {}}
+
+        # Note: usage is not supported yet
+        prompt_tokens = len(request_output.prompt_token_ids)
+        completion_tokens = sum(
+            len(output.token_ids) for output in request_output.outputs
+        )
+        usage = {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+        }
+        finish_reason = (
+            request_output.outputs[0].finish_reason
+            if len(request_output.outputs) == 1
+            else [output.finish_reason for output in request_output.outputs]
+        )
+        yield {
+            "text": text_outputs,
+            "error_code": 0,
+            "usage": usage,
+            "finish_reason": finish_reason,
+        }
