@@ -15,10 +15,11 @@ _DEFAULT_TEMPLATE_EN = """
 The following is part of the data of the user file {file_name}. Please learn to understand the structure and content of the data and output the parsing results as required:
     {data_example}
 Explain the meaning and function of each column, and give a simple and clear explanation of the technical terms， If it is a Date column, please summarize the Date format like: yyyy-MM-dd HH:MM:ss.
+Use the column name as the attribute name and the analysis explanation as the attribute value to form a json array and output it in the ColumnAnalysis attribute that returns the json content.
 Please do not modify or translate the column names, make sure they are consistent with the given data column names.
-Provide some analysis options,please think step by step.
+Provide some useful analysis ideas to users from different dimensions for data.
 
-Please return your answer in JSON format, the return format is as follows:
+Please think step by step and give your answer. Make sure to answer only in JSON format，the format is as follows:
     {response}
 """
 
