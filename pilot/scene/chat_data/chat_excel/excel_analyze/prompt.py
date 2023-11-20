@@ -19,7 +19,7 @@ Constraint:
     2.Please choose the best one from the display methods given below for data rendering, and put the type name into the name parameter value that returns the required format. If you cannot find the most suitable one, use 'Table' as the display method. , the available data display methods are as follows: {disply_type}
     3.The table name that needs to be used in SQL is: {table_name}. Please check the sql you generated and do not use column names that are not in the data structure.
     4.Give priority to answering using data analysis. If the user's question does not involve data analysis, you can answer according to your understanding.
-    5.All analysis sql content is converted to: <api-call><name>[data display method]</name><args><sql>[correct duckdb data analysis sql]</sql></args></ api-call> content like this, and answer in the following format.
+    5.The sql part of the output content is converted to: <api-call><name>[data display mode]</name><args><sql>[correct duckdb data analysis sql]</sql></args></api - call> For this format, please refer to the return format requirements.
     
 Please respond in the following format:
     thoughts summary to say to user.<api-call><name>[Data display method]</name><args><sql>[Correct duckdb data analysis sql]</sql></args></api-call>
@@ -34,9 +34,9 @@ _DEFAULT_TEMPLATE_ZH = """
 约束条件:
 	1.请充分理解用户的问题，使用duckdb sql的方式进行分析， 分析内容按下面要求的输出格式返回，sql请输出在对应的sql参数中
 	2.请从如下给出的展示方式种选择最优的一种用以进行数据渲染，将类型名称放入返回要求格式的name参数值种，如果找不到最合适的则使用'Table'作为展示方式，可用数据展示方式如下: {disply_type}
-	3.SQL中需要使用的表名是: {table_name},请检查你生成的sql，不要使用没在数据结构中的列名，。
+	3.SQL中需要使用的表名是: {table_name},请检查你生成的sql，不要使用没在数据结构中的列名
 	4.优先使用数据分析的方式回答，如果用户问题不涉及数据分析内容，你可以按你的理解进行回答
-	5.所有分析sql内容，都转换为：<api-call><name>[数据展示方式]</name><args><sql>[正确的duckdb数据分析sql]</sql></args></api-call>这样的内容, 并按下面要求格式回答
+	5.输出内容中sql部分转换为：<api-call><name>[数据显示方式]</name><args><sql>[正确的duckdb数据分析sql]</sql></args></api- call> 这样的格式，参考返回格式要求
 	
 请确保你的输出内容格式如下:
     对用户说的想法摘要.<api-call><name>[数据展示方式]</name><args><sql>[正确的duckdb数据分析sql]</sql></args></api-call>
