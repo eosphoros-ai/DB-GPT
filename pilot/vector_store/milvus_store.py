@@ -168,61 +168,6 @@ class MilvusStore(VectorStoreBase):
 
         return ids
 
-    # def init_schema(self) -> None:
-    #     """Initialize collection in milvus database."""
-    #     fields = [
-    #         FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=True),
-    #         FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=self.model_config["dim"]),
-    #         FieldSchema(name="raw_text", dtype=DataType.VARCHAR, max_length=65535),
-    #     ]
-    #
-    #     # create collection if not exist and load it.
-    #     self.schema = CollectionSchema(fields, "db-gpt memory storage")
-    #     self.collection = Collection(self.collection_name, self.schema)
-    #     self.index_params_map = {
-    #         "IVF_FLAT": {"params": {"nprobe": 10}},
-    #         "IVF_SQ8": {"params": {"nprobe": 10}},
-    #         "IVF_PQ": {"params": {"nprobe": 10}},
-    #         "HNSW": {"params": {"ef": 10}},
-    #         "RHNSW_FLAT": {"params": {"ef": 10}},
-    #         "RHNSW_SQ": {"params": {"ef": 10}},
-    #         "RHNSW_PQ": {"params": {"ef": 10}},
-    #         "IVF_HNSW": {"params": {"nprobe": 10, "ef": 10}},
-    #         "ANNOY": {"params": {"search_k": 10}},
-    #     }
-    #
-    #     self.index_params = {
-    #         "metric_type": "IP",
-    #         "index_type": "HNSW",
-    #         "params": {"M": 8, "efConstruction": 64},
-    #     }
-    #     # create index if not exist.
-    #     if not self.collection.has_index():
-    #         self.collection.release()
-    #         self.collection.create_index(
-    #             "vector",
-    #             self.index_params,
-    #             index_name="vector",
-    #         )
-    #     info = self.collection.describe()
-    #     self.collection.load()
-
-    # def insert(self, text, model_config) -> str:
-    #     """Add an embedding of data into milvus.
-    #     Args:
-    #         text (str): The raw text to construct embedding index.
-    #     Returns:
-    #         str: log.
-    #     """
-    #     # embedding = get_ada_embedding(data)
-    #     embeddings = HuggingFaceEmbeddings(model_name=self.model_config["model_name"])
-    #     result = self.collection.insert([embeddings.embed_documents(text), text])
-    #     _text = (
-    #         "Inserting data into memory at primary key: "
-    #         f"{result.primary_keys[0]}:\n data: {text}"
-    #     )
-    #     return _text
-
     def _add_documents(
         self,
         texts: Iterable[str],
