@@ -23,7 +23,7 @@ class ExtractSummary(BaseChat):
 
         self.user_input = chat_param["select_param"]
 
-    def generate_input_values(self):
+    async def generate_input_values(self):
         input_values = {
             "context": self.user_input,
         }

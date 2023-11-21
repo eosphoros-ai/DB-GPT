@@ -3,7 +3,7 @@ import logging
 
 from ..dag.base import DAGContext
 from ..operator.base import WorkflowRunner, BaseOperator, CALL_DATA
-from ..operator.common_operator import BranchOperator, JoinOperator
+from ..operator.common_operator import BranchOperator, JoinOperator, TriggerOperator
 from ..task.base import TaskContext, TaskState
 from ..task.task_impl import DefaultInputContext, DefaultTaskContext, SimpleTaskOutput
 from .job_manager import JobManager
@@ -67,7 +67,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
             node_outputs[node.node_id] = task_ctx
             return
         try:
-            logger.info(
+            logger.debug(
                 f"Begin run operator, node id: {node.node_id}, node name: {node.node_name}, cls: {node}"
             )
             await node._run(dag_ctx)
@@ -76,7 +76,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
 
             if isinstance(node, BranchOperator):
                 skip_nodes = task_ctx.metadata.get("skip_node_names", [])
-                logger.info(
+                logger.debug(
                     f"Current is branch operator, skip node names: {skip_nodes}"
                 )
                 _skip_current_downstream_by_node_name(node, skip_nodes, skip_node_ids)

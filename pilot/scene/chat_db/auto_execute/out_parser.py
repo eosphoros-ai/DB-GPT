@@ -37,7 +37,7 @@ class DbChatOutputParser(BaseOutputParser):
 
     def parse_prompt_response(self, model_out_text):
         clean_str = super().parse_prompt_response(model_out_text)
-        logging.info("clean prompt response:", clean_str)
+        logger.info(f"clean prompt response: {clean_str}")
         # Compatible with community pure sql output model
         if self.is_sql_statement(clean_str):
             return SqlAction(clean_str, "")
@@ -51,7 +51,7 @@ class DbChatOutputParser(BaseOutputParser):
                         thoughts = response[key]
                 return SqlAction(sql, thoughts)
             except Exception as e:
-                logging.error("json load faild")
+                logger.error("json load faild")
                 return SqlAction("", clean_str)
 
     def parse_view_response(self, speak, data, prompt_response) -> str:

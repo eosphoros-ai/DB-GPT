@@ -7,9 +7,10 @@ from pilot.awel import (
     MapOperator,
     TransformStreamAbsOperator,
 )
+from pilot.component import ComponentType
 from pilot.awel.operator.base import BaseOperator
 from pilot.model.base import ModelOutput
-from pilot.model.cluster import WorkerManager
+from pilot.model.cluster import WorkerManager, WorkerManagerFactory
 from pilot.cache import LLMCacheClient, CacheManager, LLMCacheKey, LLMCacheValue
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ class ModelStreamOperator(StreamifyAbsOperator[Dict, ModelOutput]):
         streamify: Asynchronously processes a stream of inputs, yielding model outputs.
     """
 
-    def __init__(self, worker_manager: WorkerManager, **kwargs) -> None:
+    def __init__(self, worker_manager: WorkerManager = None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.worker_manager = worker_manager
 
@@ -42,6 +43,10 @@ class ModelStreamOperator(StreamifyAbsOperator[Dict, ModelOutput]):
         Returns:
             AsyncIterator[ModelOutput]: An asynchronous iterator of model outputs.
         """
+        if not self.worker_manager:
+            self.worker_manager = self.system_app.get_component(
+                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
         async for out in self.worker_manager.generate_stream(input_value):
             yield out
 
@@ -57,9 +62,9 @@ class ModelOperator(MapOperator[Dict, ModelOutput]):
         map: Asynchronously processes a single input and returns the model output.
     """
 
-    def __init__(self, worker_manager: WorkerManager, **kwargs) -> None:
-        self.worker_manager = worker_manager
+    def __init__(self, worker_manager: WorkerManager = None, **kwargs) -> None:
         super().__init__(**kwargs)
+        self.worker_manager = worker_manager
 
     async def map(self, input_value: Dict) -> ModelOutput:
         """Process a single input and return the model output.
@@ -70,6 +75,10 @@ class ModelOperator(MapOperator[Dict, ModelOutput]):
         Returns:
             ModelOutput: The output from the model.
         """
+        if not self.worker_manager:
+            self.worker_manager = self.system_app.get_component(
+                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
         return await self.worker_manager.generate(input_value)
 
 
