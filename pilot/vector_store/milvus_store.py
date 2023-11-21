@@ -32,7 +32,7 @@ class MilvusStore(VectorStoreBase):
         self.secure = ctx.get("MILVUS_SECURE", os.getenv("MILVUS_SECURE"))
         self.collection_name = ctx.get("vector_store_name", None)
         self.embedding = ctx.get("embeddings", None)
-        self.fields = ["metadata"]
+        self.fields = []
         self.alias = "default"
 
         # use HNSW by default.
