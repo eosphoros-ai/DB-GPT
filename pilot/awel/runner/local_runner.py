@@ -67,7 +67,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
             node_outputs[node.node_id] = task_ctx
             return
         try:
-            logger.info(
+            logger.debug(
                 f"Begin run operator, node id: {node.node_id}, node name: {node.node_name}, cls: {node}"
             )
             await node._run(dag_ctx)
@@ -76,7 +76,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
 
             if isinstance(node, BranchOperator):
                 skip_nodes = task_ctx.metadata.get("skip_node_names", [])
-                logger.info(
+                logger.debug(
                     f"Current is branch operator, skip node names: {skip_nodes}"
                 )
                 _skip_current_downstream_by_node_name(node, skip_nodes, skip_node_ids)

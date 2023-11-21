@@ -14,7 +14,13 @@ from typing import (
 )
 import functools
 from inspect import signature
-from pilot.component import SystemApp
+from pilot.component import SystemApp, ComponentType
+from pilot.utils.executor_utils import (
+    ExecutorFactory,
+    DefaultExecutorFactory,
+    blocking_func_to_async,
+    BlockingFunction,
+)
 
 from ..dag.base import DAGNode, DAGContext, DAGVar, DAG
 from ..task.base import (
@@ -71,6 +77,16 @@ class BaseOperatorMeta(ABCMeta):
             system_app: Optional[SystemApp] = (
                 kwargs.get("system_app") or DAGVar.get_current_system_app()
             )
+            executor = kwargs.get("executor") or DAGVar.get_executor()
+            if not executor:
+                if system_app:
+                    executor = system_app.get_component(
+                        ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+                    ).create()
+                else:
+                    executor = DefaultExecutorFactory().create()
+                DAGVar.set_executor(executor)
+
             if not task_id and dag:
                 task_id = dag._new_node_id()
             runner: Optional[WorkflowRunner] = kwargs.get("runner") or default_runner
@@ -86,6 +102,8 @@ class BaseOperatorMeta(ABCMeta):
                 kwargs["runner"] = runner
             if not kwargs.get("system_app"):
                 kwargs["system_app"] = system_app
+            if not kwargs.get("executor"):
+                kwargs["executor"] = executor
             real_obj = func(self, *args, **kwargs)
             return real_obj
 
@@ -176,6 +194,11 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         """
         out_ctx = await self._runner.execute_workflow(self, call_data)
         return out_ctx.current_task_context.task_output.output_stream
+
+    async def blocking_func_to_async(
+        self, func: BlockingFunction, *args, **kwargs
+    ) -> Any:
+        return await blocking_func_to_async(self._executor, func, *args, **kwargs)
 
 
 def initialize_runner(runner: WorkflowRunner):

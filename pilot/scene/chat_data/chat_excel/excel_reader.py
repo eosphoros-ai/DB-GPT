@@ -6,7 +6,6 @@ import re
 import sqlparse
 import pandas as pd
 import chardet
-import pandas as pd
 import numpy as np
 from pyparsing import (
     CaselessKeyword,
@@ -26,6 +25,8 @@ from pyparsing import (
 
 from pilot.common.pd_utils import csv_colunm_foramt
 from pilot.common.string_utils import is_chinese_include_number
+
+logger = logging.getLogger(__name__)
 
 
 def excel_colunm_format(old_name: str) -> str:
@@ -263,7 +264,7 @@ class ExcelReader:
         file_name = os.path.basename(file_path)
         self.file_name_without_extension = os.path.splitext(file_name)[0]
         encoding, confidence = detect_encoding(file_path)
-        logging.error(f"Detected Encoding: {encoding} (Confidence: {confidence})")
+        logger.error(f"Detected Encoding: {encoding} (Confidence: {confidence})")
         self.excel_file_name = file_name
         self.extension = os.path.splitext(file_name)[1]
         # read excel file
@@ -323,7 +324,7 @@ class ExcelReader:
                 colunms.append(descrip[0])
             return colunms, results.fetchall()
         except Exception as e:
-            logging.error("excel sql run error!", e)
+            logger.error(f"excel sql run error!, {str(e)}")
             raise ValueError(f"Data Query Exception!\\nSQL[{sql}].\\nError:{str(e)}")
 
     def get_df_by_sql_ex(self, sql):

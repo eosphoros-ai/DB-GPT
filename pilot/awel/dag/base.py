@@ -7,6 +7,7 @@ import asyncio
 import logging
 from collections import deque
 from functools import cache
+from concurrent.futures import Executor
 
 from pilot.component import SystemApp
 from ..resource.base import ResourceGroup
@@ -102,6 +103,7 @@ class DAGVar:
     _thread_local = threading.local()
     _async_local = contextvars.ContextVar("current_dag_stack", default=deque())
     _system_app: SystemApp = None
+    _executor: Executor = None
 
     @classmethod
     def enter_dag(cls, dag) -> None:
@@ -157,6 +159,14 @@ class DAGVar:
         else:
             cls._system_app = system_app
 
+    @classmethod
+    def get_executor(cls) -> Executor:
+        return cls._executor
+
+    @classmethod
+    def set_executor(cls, executor: Executor) -> None:
+        cls._executor = executor
+
 
 class DAGNode(DependencyMixin, ABC):
     resource_group: Optional[ResourceGroup] = None
@@ -165,9 +175,10 @@ class DAGNode(DependencyMixin, ABC):
     def __init__(
         self,
         dag: Optional["DAG"] = None,
-        node_id: str = None,
-        node_name: str = None,
-        system_app: SystemApp = None,
+        node_id: Optional[str] = None,
+        node_name: Optional[str] = None,
+        system_app: Optional[SystemApp] = None,
+        executor: Optional[Executor] = None,
     ) -> None:
         super().__init__()
         self._upstream: List["DAGNode"] = []
@@ -176,6 +187,7 @@ class DAGNode(DependencyMixin, ABC):
         self._system_app: Optional[SystemApp] = (
             system_app or DAGVar.get_current_system_app()
         )
+        self._executor: Optional[Executor] = executor or DAGVar.get_executor()
         if not node_id and self._dag:
             node_id = self._dag._new_node_id()
         self._node_id: str = node_id

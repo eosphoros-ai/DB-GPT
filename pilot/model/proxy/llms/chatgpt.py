@@ -143,9 +143,7 @@ def _build_request(model: ProxyModel, params):
             proxyllm_backend = proxyllm_backend or "gpt-3.5-turbo"
             payloads["model"] = proxyllm_backend
 
-    logger.info(
-        f"Send request to real model {proxyllm_backend}, openai_params: {openai_params}"
-    )
+    logger.info(f"Send request to real model {proxyllm_backend}")
     return history, payloads
 
 

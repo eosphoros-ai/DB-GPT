@@ -104,7 +104,7 @@ class ChatKnowledge(BaseChat):
             self.current_user_input,
             self.top_k,
         )
-        self.sources = self.merge_by_key(
+        self.sources = _merge_by_key(
             list(map(lambda doc: doc.metadata, docs)), "source"
         )
 
@@ -149,29 +149,6 @@ class ChatKnowledge(BaseChat):
         )
         return html
 
-    def merge_by_key(self, data, key):
-        result = {}
-        for item in data:
-            if item.get(key):
-                item_key = os.path.basename(item.get(key))
-                if item_key in result:
-                    if "pages" in result[item_key] and "page" in item:
-                        result[item_key]["pages"].append(str(item["page"]))
-                    elif "page" in item:
-                        result[item_key]["pages"] = [
-                            result[item_key]["pages"],
-                            str(item["page"]),
-                        ]
-                else:
-                    if "page" in item:
-                        result[item_key] = {
-                            "source": item_key,
-                            "pages": [str(item["page"])],
-                        }
-                    else:
-                        result[item_key] = {"source": item_key}
-        return list(result.values())
-
     @property
     def chat_type(self) -> str:
         return ChatScene.ChatKnowledge.value()
@@ -179,3 +156,27 @@ class ChatKnowledge(BaseChat):
     def get_space_context(self, space_name):
         service = KnowledgeService()
         return service.get_space_context(space_name)
+
+
+def _merge_by_key(data, key):
+    result = {}
+    for item in data:
+        if item.get(key):
+            item_key = os.path.basename(item.get(key))
+            if item_key in result:
+                if "pages" in result[item_key] and "page" in item:
+                    result[item_key]["pages"].append(str(item["page"]))
+                elif "page" in item:
+                    result[item_key]["pages"] = [
+                        result[item_key]["pages"],
+                        str(item["page"]),
+                    ]
+            else:
+                if "page" in item:
+                    result[item_key] = {
+                        "source": item_key,
+                        "pages": [str(item["page"])],
+                    }
+                else:
+                    result[item_key] = {"source": item_key}
+    return list(result.values())

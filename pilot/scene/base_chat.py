@@ -68,7 +68,7 @@ class BaseChat(ABC):
             CFG.prompt_template_registry.get_prompt_template(
                 self.chat_mode.value(),
                 language=CFG.LANGUAGE,
-                model_name=CFG.LLM_MODEL,
+                model_name=self.llm_model,
                 proxyllm_backend=CFG.PROXYLLM_BACKEND,
             )
         )
@@ -141,13 +141,7 @@ class BaseChat(ABC):
         return speak_to_user
 
     async def __call_base(self):
-        import inspect
-
-        input_values = (
-            await self.generate_input_values()
-            if inspect.isawaitable(self.generate_input_values())
-            else self.generate_input_values()
-        )
+        input_values = await self.generate_input_values()
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)
@@ -379,16 +373,18 @@ class BaseChat(ABC):
         if self.prompt_template.template_define:
             text += self.prompt_template.template_define + self.prompt_template.sep
         ### Load prompt
-        text += self.__load_system_message()
+        text += _load_system_message(self.current_message, self.prompt_template)
 
         ### Load examples
-        text += self.__load_example_messages()
+        text += _load_example_messages(self.prompt_template)
 
         ### Load History
-        text += self.__load_history_messages()
+        text += _load_history_messages(
+            self.prompt_template, self.history_message, self.chat_retention_rounds
+        )
 
         ### Load User Input
-        text += self.__load_user_message()
+        text += _load_user_message(self.current_message, self.prompt_template)
         return text
 
     def generate_llm_messages(self) -> List[ModelMessage]:
@@ -406,136 +402,25 @@ class BaseChat(ABC):
                 )
             )
         ### Load prompt
-        messages += self.__load_system_message(str_message=False)
+        messages += _load_system_message(
+            self.current_message, self.prompt_template, str_message=False
+        )
         ### Load examples
-        messages += self.__load_example_messages(str_message=False)
+        messages += _load_example_messages(self.prompt_template, str_message=False)
 
         ### Load History
-        messages += self.__load_history_messages(str_message=False)
+        messages += _load_history_messages(
+            self.prompt_template,
+            self.history_message,
+            self.chat_retention_rounds,
+            str_message=False,
+        )
 
         ### Load User Input
-        messages += self.__load_user_message(str_message=False)
+        messages += _load_user_message(
+            self.current_message, self.prompt_template, str_message=False
+        )
         return messages
-
-    def __load_system_message(self, str_message: bool = True):
-        system_convs = self.current_message.get_system_conv()
-        system_text = ""
-        system_messages = []
-        for system_conv in system_convs:
-            system_text += (
-                system_conv.type + ":" + system_conv.content + self.prompt_template.sep
-            )
-            system_messages.append(
-                ModelMessage(role=system_conv.type, content=system_conv.content)
-            )
-        return system_text if str_message else system_messages
-
-    def __load_user_message(self, str_message: bool = True):
-        user_conv = self.current_message.get_user_conv()
-        user_messages = []
-        if user_conv:
-            user_text = (
-                user_conv.type + ":" + user_conv.content + self.prompt_template.sep
-            )
-            user_messages.append(
-                ModelMessage(role=user_conv.type, content=user_conv.content)
-            )
-            return user_text if str_message else user_messages
-        else:
-            raise ValueError("Hi! What do you want to talk about？")
-
-    def __load_example_messages(self, str_message: bool = True):
-        example_text = ""
-        example_messages = []
-        if self.prompt_template.example_selector:
-            for round_conv in self.prompt_template.example_selector.examples():
-                for round_message in round_conv["messages"]:
-                    if not round_message["type"] in [
-                        ModelMessageRoleType.VIEW,
-                        ModelMessageRoleType.SYSTEM,
-                    ]:
-                        message_type = round_message["type"]
-                        message_content = round_message["data"]["content"]
-                        example_text += (
-                            message_type
-                            + ":"
-                            + message_content
-                            + self.prompt_template.sep
-                        )
-                        example_messages.append(
-                            ModelMessage(role=message_type, content=message_content)
-                        )
-        return example_text if str_message else example_messages
-
-    def __load_history_messages(self, str_message: bool = True):
-        history_text = ""
-        history_messages = []
-        if self.prompt_template.need_historical_messages:
-            if self.history_message:
-                logger.info(
-                    f"There are already {len(self.history_message)} rounds of conversations! Will use {self.chat_retention_rounds} rounds of content as history!"
-                )
-            if len(self.history_message) > self.chat_retention_rounds:
-                for first_message in self.history_message[0]["messages"]:
-                    if not first_message["type"] in [
-                        ModelMessageRoleType.VIEW,
-                        ModelMessageRoleType.SYSTEM,
-                    ]:
-                        message_type = first_message["type"]
-                        message_content = first_message["data"]["content"]
-                        history_text += (
-                            message_type
-                            + ":"
-                            + message_content
-                            + self.prompt_template.sep
-                        )
-                        history_messages.append(
-                            ModelMessage(role=message_type, content=message_content)
-                        )
-                if self.chat_retention_rounds > 1:
-                    index = self.chat_retention_rounds - 1
-                    for round_conv in self.history_message[-index:]:
-                        for round_message in round_conv["messages"]:
-                            if not round_message["type"] in [
-                                ModelMessageRoleType.VIEW,
-                                ModelMessageRoleType.SYSTEM,
-                            ]:
-                                message_type = round_message["type"]
-                                message_content = round_message["data"]["content"]
-                                history_text += (
-                                    message_type
-                                    + ":"
-                                    + message_content
-                                    + self.prompt_template.sep
-                                )
-                                history_messages.append(
-                                    ModelMessage(
-                                        role=message_type, content=message_content
-                                    )
-                                )
-
-            else:
-                ### user all history
-                for conversation in self.history_message:
-                    for message in conversation["messages"]:
-                        ### histroy message not have promot and view info
-                        if not message["type"] in [
-                            ModelMessageRoleType.VIEW,
-                            ModelMessageRoleType.SYSTEM,
-                        ]:
-                            message_type = message["type"]
-                            message_content = message["data"]["content"]
-                            history_text += (
-                                message_type
-                                + ":"
-                                + message_content
-                                + self.prompt_template.sep
-                            )
-                            history_messages.append(
-                                ModelMessage(role=message_type, content=message_content)
-                            )
-
-        return history_text if str_message else history_messages
 
     def current_ai_response(self) -> str:
         for message in self.current_message.messages:
@@ -656,3 +541,127 @@ def _build_model_operator(
         cache_check_branch_node >> cached_node >> join_node
 
     return join_node
+
+
+def _load_system_message(
+    current_message: OnceConversation,
+    prompt_template: PromptTemplate,
+    str_message: bool = True,
+):
+    system_convs = current_message.get_system_conv()
+    system_text = ""
+    system_messages = []
+    for system_conv in system_convs:
+        system_text += (
+            system_conv.type + ":" + system_conv.content + prompt_template.sep
+        )
+        system_messages.append(
+            ModelMessage(role=system_conv.type, content=system_conv.content)
+        )
+    return system_text if str_message else system_messages
+
+
+def _load_user_message(
+    current_message: OnceConversation,
+    prompt_template: PromptTemplate,
+    str_message: bool = True,
+):
+    user_conv = current_message.get_user_conv()
+    user_messages = []
+    if user_conv:
+        user_text = user_conv.type + ":" + user_conv.content + prompt_template.sep
+        user_messages.append(
+            ModelMessage(role=user_conv.type, content=user_conv.content)
+        )
+        return user_text if str_message else user_messages
+    else:
+        raise ValueError("Hi! What do you want to talk about？")
+
+
+def _load_example_messages(prompt_template: PromptTemplate, str_message: bool = True):
+    example_text = ""
+    example_messages = []
+    if prompt_template.example_selector:
+        for round_conv in prompt_template.example_selector.examples():
+            for round_message in round_conv["messages"]:
+                if not round_message["type"] in [
+                    ModelMessageRoleType.VIEW,
+                    ModelMessageRoleType.SYSTEM,
+                ]:
+                    message_type = round_message["type"]
+                    message_content = round_message["data"]["content"]
+                    example_text += (
+                        message_type + ":" + message_content + prompt_template.sep
+                    )
+                    example_messages.append(
+                        ModelMessage(role=message_type, content=message_content)
+                    )
+    return example_text if str_message else example_messages
+
+
+def _load_history_messages(
+    prompt_template: PromptTemplate,
+    history_message: List[OnceConversation],
+    chat_retention_rounds: int,
+    str_message: bool = True,
+):
+    history_text = ""
+    history_messages = []
+    if prompt_template.need_historical_messages:
+        if history_message:
+            logger.info(
+                f"There are already {len(history_message)} rounds of conversations! Will use {chat_retention_rounds} rounds of content as history!"
+            )
+        if len(history_message) > chat_retention_rounds:
+            for first_message in history_message[0]["messages"]:
+                if not first_message["type"] in [
+                    ModelMessageRoleType.VIEW,
+                    ModelMessageRoleType.SYSTEM,
+                ]:
+                    message_type = first_message["type"]
+                    message_content = first_message["data"]["content"]
+                    history_text += (
+                        message_type + ":" + message_content + prompt_template.sep
+                    )
+                    history_messages.append(
+                        ModelMessage(role=message_type, content=message_content)
+                    )
+            if chat_retention_rounds > 1:
+                index = chat_retention_rounds - 1
+                for round_conv in history_message[-index:]:
+                    for round_message in round_conv["messages"]:
+                        if not round_message["type"] in [
+                            ModelMessageRoleType.VIEW,
+                            ModelMessageRoleType.SYSTEM,
+                        ]:
+                            message_type = round_message["type"]
+                            message_content = round_message["data"]["content"]
+                            history_text += (
+                                message_type
+                                + ":"
+                                + message_content
+                                + prompt_template.sep
+                            )
+                            history_messages.append(
+                                ModelMessage(role=message_type, content=message_content)
+                            )
+
+        else:
+            ### user all history
+            for conversation in history_message:
+                for message in conversation["messages"]:
+                    ### histroy message not have promot and view info
+                    if not message["type"] in [
+                        ModelMessageRoleType.VIEW,
+                        ModelMessageRoleType.SYSTEM,
+                    ]:
+                        message_type = message["type"]
+                        message_content = message["data"]["content"]
+                        history_text += (
+                            message_type + ":" + message_content + prompt_template.sep
+                        )
+                        history_messages.append(
+                            ModelMessage(role=message_type, content=message_content)
+                        )
+
+    return history_text if str_message else history_messages
