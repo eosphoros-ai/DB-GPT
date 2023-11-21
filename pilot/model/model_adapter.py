@@ -166,10 +166,6 @@ class LLMModelAdaper:
                 can_use_systems = system_messages[:-1]
             else:
                 can_use_systems = system_messages
-        for i in range(len(user_messages)):
-            user_messages[-1] = system_messages[-1]
-            if len(system_messages) > 1:
-                can_use_system = system_messages[0]
 
         for i in range(len(user_messages)):
             conv.append_message(conv.roles[0], user_messages[i])
