@@ -140,8 +140,11 @@ def get_worker_manager() -> WorkerManager:
 
 @router.get("/v1/chat/db/list", response_model=Result[DBConfig])
 async def db_connect_list(user_token: UserRequest = Depends(get_user_from_headers)):
-    return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list(user_token.user_id))
-
+    results = CFG.LOCAL_DB_MANAGE.get_db_list(user_token.user_id)
+    # 排除部分数据库不允许用户访问
+    if results and len(results):
+        results = [d for d in results if d.get("db_name") not in ["auth", "dbgpt", "test", "public"]]
+    return Result.succ(results)
 
 @router.post("/v1/chat/db/add", response_model=Result[bool])
 async def db_connect_add(db_config: DBConfig = Body(), user_token: UserRequest = Depends(get_user_from_headers)):
@@ -252,18 +255,23 @@ async def dialogue_new(
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
 async def params_list(chat_mode: str = ChatScene.ChatNormal.value(), user_token: UserRequest = Depends(get_user_from_headers)):
+    # TODO 过滤掉 dbgpt, auth库
+    result = None
     if ChatScene.ChatWithDbQA.value() == chat_mode:
-        return Result.succ(get_db_list(user_id=user_token.user_id))
+        result = get_db_list(user_id=user_token.user_id)
     elif ChatScene.ChatWithDbExecute.value() == chat_mode:
-        return Result.succ(get_db_list(user_id=user_token.user_id))
+        result = get_db_list(user_id=user_token.user_id)
     elif ChatScene.ChatDashboard.value() == chat_mode:
-        return Result.succ(get_db_list(user_id=user_token.user_id))
+        result = get_db_list(user_id=user_token.user_id)
     elif ChatScene.ChatExecution.value() == chat_mode:
-        return Result.succ(plugins_select_info())
+        result = plugins_select_info()
     elif ChatScene.ChatKnowledge.value() == chat_mode:
-        return Result.succ(knowledge_list())
-    else:
-        return Result.succ(None)
+        result = knowledge_list()
+    if result and result.get("dbgpt"):
+        del result["dbgpt"]
+    if result and result.get("auth"):
+        del result["auth"]
+    return Result.succ(result)
 
 
 @router.post("/v1/chat/mode/params/file/load")
