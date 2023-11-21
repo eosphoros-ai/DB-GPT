@@ -177,8 +177,6 @@ class LLMModelAdaper:
         else:
             conv.update_system_message("".join(can_use_systems))
 
-            conv.update_system_message(can_use_system)
-
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
         new_prompt = conv.get_prompt()
