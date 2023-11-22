@@ -1,5 +1,7 @@
 """AWEL: Simple rag example
 
+    DB-GPT will automatically load and execute the current file after startup.
+
     Example:
 
     .. code-block:: shell
@@ -49,6 +51,7 @@ with DAG("simple_rag_example") as dag:
         "/examples/simple_rag", methods="POST", request_body=ConversationVo
     )
     req_parse_task = RequestParseOperator()
+    # TODO should register prompt template first
     prompt_task = PromptManagerOperator()
     history_storage_task = ChatHistoryStorageOperator()
     history_task = ChatHistoryOperator()
