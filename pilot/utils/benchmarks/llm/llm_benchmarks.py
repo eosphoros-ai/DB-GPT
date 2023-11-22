@@ -8,6 +8,7 @@ import argparse
 import logging
 import traceback
 from pilot.configs.model_config import ROOT_PATH, LLM_MODEL_CONFIG
+from datetime import timedelta, datetime
 
 from pilot.model.cluster.worker.manager import (
     run_worker_manager,
@@ -53,6 +54,7 @@ prompt_file_map = {
 METRICS_HEADERS = [
     # Params
     "model_name",
+    "gpu_nums",
     "parallel_nums",
     "input_length",
     "output_length",
@@ -65,6 +67,7 @@ METRICS_HEADERS = [
     "avg_first_token_latency_ms",
     # avg_latency_ms: sum(end_time_ms - start_time_ms) / parallel_nums
     "avg_latency_ms",
+    "gpu_mem(GiB)",
     # Detail for each task
     "start_time_ms",
     "end_time_ms",
@@ -144,6 +147,8 @@ async def run_batch(
     test_total_tokens = 0
     first_token_latency_ms = 0
     latency_ms = 0
+    gpu_nums = 0
+    avg_gpu_mem = 0
     rows = []
     for r in results:
         metrics = r.metrics
@@ -154,6 +159,15 @@ async def run_batch(
         first_token_latency_ms += metrics.first_token_time_ms - metrics.start_time_ms
         latency_ms += metrics.end_time_ms - metrics.start_time_ms
         row_data = metrics.to_dict()
+        del row_data["collect_index"]
+        if "avg_gpu_infos" in row_data:
+            avg_gpu_infos = row_data["avg_gpu_infos"]
+            gpu_nums = len(avg_gpu_infos)
+            avg_gpu_mem = (
+                sum(i["allocated_memory_gb"] for i in avg_gpu_infos) / gpu_nums
+            )
+            del row_data["avg_gpu_infos"]
+            del row_data["current_gpu_infos"]
         rows.append(row_data)
     avg_test_speed_per_second = test_total_tokens / (test_time_cost_ms / 1000.0)
     avg_first_token_latency_ms = first_token_latency_ms / len(results)
@@ -174,6 +188,8 @@ async def run_batch(
             row["avg_test_speed_per_second(tokens/s)"] = avg_test_speed_per_second
             row["avg_first_token_latency_ms"] = avg_first_token_latency_ms
             row["avg_latency_ms"] = avg_latency_ms
+            row["gpu_nums"] = gpu_nums
+            row["gpu_mem(GiB)"] = avg_gpu_mem
             writer.writerow(row)
     print(
         f"input_len: {input_len}, output_len: {output_len}, parallel_num: {parallel_num}, save result to {output_file}"
@@ -185,7 +201,9 @@ async def run_model(wh: WorkerManager) -> None:
     if not result_csv_file:
         result_csv_file = get_result_csv_file()
     if os.path.exists(result_csv_file):
-        os.rename(result_csv_file, f"{result_csv_file}.bak.csv")
+        now = datetime.now()
+        now_str = now.strftime("%Y-%m-%d")
+        os.rename(result_csv_file, f"{result_csv_file}.bak_{now_str}.csv")
     for parallel_num in parallel_nums:
         for input_len, output_len in zip(input_lens, output_lens):
             try:

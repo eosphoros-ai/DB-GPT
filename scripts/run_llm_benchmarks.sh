@@ -1,7 +1,7 @@
 #!/bin/bash
 
-default_input_lens="64,64,64,512,1024,1024,2048"
-default_output_lens="256,512,1024,1024,1024,2048,2048"
+default_input_lens="8,8,256,1024"
+default_output_lens="256,512,1024,1024"
 default_parallel_nums="1,2,4,16,32"
 
 input_lens=${1:-$default_input_lens}
