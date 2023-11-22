@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 # you can use next command to create.
 # CREATE DATABASE IF NOT EXISTS dbgpt_test CHARACTER SET utf8;
 
+
 def build_table(connection):
     connection.cursor().execute(
         """CREATE TABLE user (
@@ -29,7 +30,7 @@ def build_table(connection):
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户信息表';"""
     )
     connection.cursor().execute(
-          """CREATE TABLE transaction_order (
+        """CREATE TABLE transaction_order (
               id INT(11) NOT NULL AUTO_INCREMENT COMMENT '订单ID',
               order_no CHAR(20) NOT NULL COMMENT '订单编号',
               product_name VARCHAR(50) NOT NULL COMMENT '产品名称',
@@ -45,6 +46,7 @@ def build_table(connection):
               KEY idx_user_id (user_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='交易订单表';"""
     )
+
 
 def user_build(names: List, country: str, grander: str = "Male") -> List:
     countries = ["China", "US", "India", "Indonesia", "Pakistan"]  # 国家列表
@@ -77,16 +79,28 @@ def user_build(names: List, country: str, grander: str = "Male") -> List:
         start = datetime(year, 1, 1)
         end = datetime(year, 12, 31)
         random_date = start + timedelta(days=random.randint(0, (end - start).days))
-        random_time = datetime.combine(
-            random_date, datetime.min.time()
-        ) + timedelta(seconds=random.randint(0, 24 * 60 * 60 - 1))
+        random_time = datetime.combine(random_date, datetime.min.time()) + timedelta(
+            seconds=random.randint(0, 24 * 60 * 60 - 1)
+        )
 
         random_datetime_str = random_time.strftime("%Y-%m-%d %H:%M:%S")
         create_time = random_datetime_str
         users.append(
-            (id, name, email, mobile, gender, birth, country, city, create_time, create_time)
+            (
+                id,
+                name,
+                email,
+                mobile,
+                gender,
+                birth,
+                country,
+                city,
+                create_time,
+                create_time,
+            )
         )
     return users
+
 
 def gnerate_all_users(cursor):
     users = []
@@ -111,6 +125,7 @@ def gnerate_all_users(cursor):
         )
 
     return users
+
 
 def gnerate_all_orders(users, cursor):
     orders = []
@@ -143,9 +158,9 @@ def gnerate_all_orders(users, cursor):
         start = datetime(year, 1, 1)
         end = datetime(year, 12, 31)
         random_date = start + timedelta(days=random.randint(0, (end - start).days))
-        random_time = datetime.combine(
-            random_date, datetime.min.time()
-        ) + timedelta(seconds=random.randint(0, 24 * 60 * 60 - 1))
+        random_time = datetime.combine(random_date, datetime.min.time()) + timedelta(
+            seconds=random.randint(0, 24 * 60 * 60 - 1)
+        )
 
         random_datetime_str = random_time.strftime("%Y-%m-%d %H:%M:%S")
         create_time = random_datetime_str
