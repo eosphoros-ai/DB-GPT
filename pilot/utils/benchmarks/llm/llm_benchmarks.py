@@ -59,7 +59,12 @@ METRICS_HEADERS = [
     # Merge parallel result
     "test_time_cost_ms",
     "test_total_tokens",
-    "test_speed_per_second",  # (tokens / s)
+    # avg_test_speed_per_second: (tokens / s), test_total_tokens / (test_time_cost_ms / 1000.0)
+    "avg_test_speed_per_second(tokens/s)",
+    # avg_first_token_latency_ms: sum(first_token_time_ms) / parallel_nums
+    "avg_first_token_latency_ms",
+    # avg_latency_ms: sum(end_time_ms - start_time_ms) / parallel_nums
+    "avg_latency_ms",
     # Detail for each task
     "start_time_ms",
     "end_time_ms",
@@ -106,7 +111,11 @@ def build_param(
 
 
 async def run_batch(
-    wh, input_len: int, output_len: int, parallel_num: int, output_file: str
+    wh: WorkerManager,
+    input_len: int,
+    output_len: int,
+    parallel_num: int,
+    output_file: str,
 ):
     tasks = []
     prompt = read_prompt_from_file("11k")
@@ -116,6 +125,10 @@ async def run_batch(
             # TODO prompt handle first
             max_input_str_len *= 2
         prompt = prompt[-max_input_str_len:]
+
+    # Warmup first
+    params = build_param(input_len, output_len, prompt, system_prompt="")
+    await wh.generate(params)
 
     for _ in range(parallel_num):
         params = build_param(input_len, output_len, prompt, system_prompt="")
@@ -129,6 +142,8 @@ async def run_batch(
 
     test_time_cost_ms = end_time_ms - start_time_ms
     test_total_tokens = 0
+    first_token_latency_ms = 0
+    latency_ms = 0
     rows = []
     for r in results:
         metrics = r.metrics
@@ -136,9 +151,13 @@ async def run_batch(
             metrics = ModelInferenceMetrics(**metrics)
         print(r)
         test_total_tokens += metrics.total_tokens
+        first_token_latency_ms += metrics.first_token_time_ms - metrics.start_time_ms
+        latency_ms += metrics.end_time_ms - metrics.start_time_ms
         row_data = metrics.to_dict()
         rows.append(row_data)
-    test_speed_per_second = test_total_tokens / (test_time_cost_ms / 1000.0)
+    avg_test_speed_per_second = test_total_tokens / (test_time_cost_ms / 1000.0)
+    avg_first_token_latency_ms = first_token_latency_ms / len(results)
+    avg_latency_ms = latency_ms / len(results)
 
     with open(output_file, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=METRICS_HEADERS)
@@ -152,7 +171,9 @@ async def run_batch(
             row["output_length"] = output_len
             row["test_time_cost_ms"] = test_time_cost_ms
             row["test_total_tokens"] = test_total_tokens
-            row["test_speed_per_second"] = test_speed_per_second
+            row["avg_test_speed_per_second(tokens/s)"] = avg_test_speed_per_second
+            row["avg_first_token_latency_ms"] = avg_first_token_latency_ms
+            row["avg_latency_ms"] = avg_latency_ms
             writer.writerow(row)
     print(
         f"input_len: {input_len}, output_len: {output_len}, parallel_num: {parallel_num}, save result to {output_file}"

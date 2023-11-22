@@ -385,6 +385,13 @@ def _new_metrics_from_model_output(
         metrics.first_completion_tokens = completion_tokens
         if completion_tokens == 1:
             metrics.first_token_time_ms = metrics.first_completion_time_ms
+    if (
+        not is_first_generate
+        and metrics.first_token_time_ms is None
+        and completion_tokens == 1
+    ):
+        # Case: first generate has 0 token, and second generate has 1 token
+        metrics.first_token_time_ms = time.time_ns() // 1_000_000
 
     if prompt_tokens:
         metrics.prompt_tokens = prompt_tokens
