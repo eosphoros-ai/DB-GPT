@@ -61,9 +61,11 @@ In the era of Data 3.0, enterprises and developers can take the ability to creat
 [DB-GPT Youtube Video](https://www.youtube.com/watch?v=f5_g0OObZBQ)
 
 ## Demo
-Run on an RTX 4090 GPU.
+##### Chat Data
+![chatdata](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/1f77079e-d018-4eee-982b-9b6a66bf1063)
+
 ##### Chat Excel
-![excel](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0474d220-2a9f-449f-a940-92c8a25af390)
+![excel](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/3044e83b-a71e-41fe-a1e2-98e479e0ab59)
 
 ## Install 
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
