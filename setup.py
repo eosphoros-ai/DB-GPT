@@ -421,12 +421,6 @@ def cache_requires():
     setup_spec.extras["cache"] = ["rocksdict", "msgpack"]
 
 
-# def chat_scene():
-#     setup_spec.extras["chat"] = [
-#         ""
-#     ]
-
-
 def default_requires():
     """
     pip install "db-gpt[default]"
@@ -445,6 +439,7 @@ def default_requires():
     setup_spec.extras["default"] += setup_spec.extras["knowledge"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
     setup_spec.extras["default"] += setup_spec.extras["quantization"]
+    setup_spec.extras["default"] += setup_spec.extras["cache"]
 
 
 def all_requires():
