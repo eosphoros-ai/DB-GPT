@@ -1,9 +1,7 @@
-import json
 import logging
-import re
 from typing import List, Tuple
 
-from pilot.out_parser.base import BaseOutputParser, T
+from pilot.out_parser.base import BaseOutputParser, T, ResponseTye
 from pilot.configs.config import Config
 
 CFG = Config()
@@ -26,3 +24,9 @@ class ExtractSummaryParser(BaseOutputParser):
     def parse_view_response(self, speak, data) -> str:
         ### tool out data to table view
         return data
+
+    def parse_model_nostream_resp(self, response: ResponseTye, sep: str) -> str:
+        try:
+            return super().parse_model_nostream_resp(response, sep)
+        except Exception as e:
+            return str(e)

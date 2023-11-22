@@ -134,6 +134,7 @@ async def editor_sql_run(run_param: dict = Body()):
         )
         return Result.succ(sql_run_data)
     except Exception as e:
+        logging.error("editor_sql_run exception!" + str(e))
         return Result.succ(
             SqlRunData(result_info=str(e), run_cost=0, colunms=[], values=[])
         )
@@ -165,7 +166,8 @@ async def sql_editor_submit(sql_edit_context: ChatSqlEditContext = Body()):
                 if element["type"] == "view":
                     data_loader = DbDataLoader()
                     element["data"]["content"] = data_loader.get_table_view_by_conn(
-                        conn.run(sql_edit_context.new_sql), sql_edit_context.new_speak
+                        conn.run_to_df(sql_edit_context.new_sql),
+                        sql_edit_context.new_speak,
                     )
             history_mem.update(history_messages)
             return Result.succ(None)

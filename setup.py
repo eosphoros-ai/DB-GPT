@@ -318,7 +318,11 @@ def core_requires():
         "transformers>=4.31.0",
         "alembic==1.12.0",
         # for excel
-        "openpyxl",
+        "openpyxl==3.1.2",
+        "chardet==5.1.0",
+        "xlrd==2.0.1",
+        # for cache, TODO pympler has not been updated for a long time and needs to find a new toolkit.
+        "pympler",
     ]
 
 
@@ -410,6 +414,13 @@ def vllm_requires():
     setup_spec.extras["vllm"] = ["vllm"]
 
 
+def cache_requires():
+    """
+    pip install "db-gpt[cache]"
+    """
+    setup_spec.extras["cache"] = ["rocksdict", "msgpack"]
+
+
 # def chat_scene():
 #     setup_spec.extras["chat"] = [
 #         ""
@@ -460,6 +471,7 @@ all_datasource_requires()
 openai_requires()
 gpt4all_requires()
 vllm_requires()
+cache_requires()
 
 # must be last
 default_requires()
@@ -469,7 +481,7 @@ init_install_requires()
 setuptools.setup(
     name="db-gpt",
     packages=find_packages(exclude=("tests", "*.tests", "*.tests.*", "examples")),
-    version="0.4.1",
+    version="0.4.2",
     author="csunny",
     author_email="cfqcsunny@gmail.com",
     description="DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment."

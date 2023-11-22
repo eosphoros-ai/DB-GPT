@@ -64,7 +64,12 @@ class ChatAgent(BaseChat):
         return input_values
 
     def stream_plugin_call(self, text):
-        text = text.replace("\n", " ")
+        text = (
+            text.replace("\\n", " ")
+            .replace("\n", " ")
+            .replace("\_", "_")
+            .replace("\\", " ")
+        )
         with root_tracer.start_span(
             "ChatAgent.stream_plugin_call.api_call", metadata={"text": text}
         ):

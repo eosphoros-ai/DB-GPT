@@ -75,10 +75,13 @@ def __new_conversation(chat_mode, user_id) -> ConversationVo:
 
 def get_db_list():
     dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
-    params: dict = {}
+    db_params = []
     for item in dbs:
-        params.update({item["db_name"]: item["db_name"]})
-    return params
+        params: dict = {}
+        params.update({"param": item["db_name"]})
+        params.update({"type": item["db_type"]})
+        db_params.append(params)
+    return db_params
 
 
 def plugins_select_info():
@@ -110,12 +113,15 @@ def knowledge_list_info():
 
 def knowledge_list():
     """return knowledge space list"""
-    params: dict = {}
     request = KnowledgeSpaceRequest()
     spaces = knowledge_service.get_knowledge_space(request)
+    space_list = []
     for space in spaces:
-        params.update({space.name: space.name})
-    return params
+        params: dict = {}
+        params.update({"param": space.name})
+        params.update({"type": "space"})
+        space_list.append(params)
+    return space_list
 
 
 def get_model_controller() -> BaseModelController:
@@ -228,8 +234,8 @@ async def dialogue_scenes():
     scene_vos: List[ChatSceneVo] = []
     new_modes: List[ChatScene] = [
         ChatScene.ChatWithDbExecute,
-        ChatScene.ChatExcel,
         ChatScene.ChatWithDbQA,
+        ChatScene.ChatExcel,
         ChatScene.ChatKnowledge,
         ChatScene.ChatDashboard,
         ChatScene.ChatAgent,
@@ -265,6 +271,8 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
     elif ChatScene.ChatExecution.value() == chat_mode:
         return Result.succ(plugins_select_info())
     elif ChatScene.ChatKnowledge.value() == chat_mode:
+        return Result.succ(knowledge_list())
+    elif ChatScene.ChatKnowledge.ExtractRefineSummary.value() == chat_mode:
         return Result.succ(knowledge_list())
     else:
         return Result.succ(None)
@@ -325,7 +333,6 @@ def get_hist_messages(conv_uid: str):
     history_messages: List[OnceConversation] = history_mem.get_messages()
     if history_messages:
         for once in history_messages:
-            print(f"once:{once}")
             model_name = once.get("model_name", CFG.LLM_MODEL)
             once_message_vos = [
                 message2Vo(element, once["chat_order"], model_name)

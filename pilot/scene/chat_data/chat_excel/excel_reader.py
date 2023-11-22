@@ -4,9 +4,8 @@ import duckdb
 import os
 import re
 import sqlparse
-
-import chardet
 import pandas as pd
+import chardet
 import numpy as np
 from pyparsing import (
     CaselessKeyword,
@@ -26,6 +25,8 @@ from pyparsing import (
 
 from pilot.common.pd_utils import csv_colunm_foramt
 from pilot.common.string_utils import is_chinese_include_number
+
+logger = logging.getLogger(__name__)
 
 
 def excel_colunm_format(old_name: str) -> str:
@@ -240,33 +241,45 @@ if __name__ == "__main__":
     # print(add_quotes_to_chinese_columns(sql_2))
 
     # sql = """ SELECT 省份, 2021年, 2022年 as GDP FROM excel_data """
-    sql = """ SELECT 省份, 2022年, 2021年 FROM excel_data """
-    sql_2 = """ SELECT "省份", "2022年" as "2022年实际GDP增速", "2021年" as "2021年实际GDP增速" FROM excel_data """
-    sql_3 = """ SELECT "省份", ("2022年" / ("2022年" + "2021年")) * 100 as "2022年实际GDP增速占比", ("2021年" / ("2022年" + "2021年")) * 100 as "2021年实际GDP增速占比" FROM excel_data """
+    # sql = """ SELECT 省份, 2022年, 2021年 FROM excel_data """
+    # sql_2 = """ SELECT "省份", "2022年" as "2022年实际GDP增速", "2021年" as "2021年实际GDP增速" FROM excel_data """
+    # sql_3 = """ SELECT "省份", ("2022年" / ("2022年" + "2021年")) * 100 as "2022年实际GDP增速占比", ("2021年" / ("2022年" + "2021年")) * 100 as "2021年实际GDP增速占比" FROM excel_data """
+    #
+    # sql = add_quotes_to_chinese_columns(sql_3)
+    # print(f"excute sql:{sql}")
 
-    sql = add_quotes_to_chinese_columns(sql_3)
-    print(f"excute sql:{sql}")
+    my_list = [
+        {"name": "John", "age": 30},
+        {"name": "Alice", "age": 25},
+        {"name": "Bob", "age": 35},
+    ]
+
+    for dict_item in my_list:
+        for key, value in dict_item.items():
+            print(key, value)
 
 
 class ExcelReader:
     def __init__(self, file_path):
         file_name = os.path.basename(file_path)
-        file_name_without_extension = os.path.splitext(file_name)[0]
+        self.file_name_without_extension = os.path.splitext(file_name)[0]
         encoding, confidence = detect_encoding(file_path)
-        logging.error(f"Detected Encoding: {encoding} (Confidence: {confidence})")
+        logger.error(f"Detected Encoding: {encoding} (Confidence: {confidence})")
         self.excel_file_name = file_name
         self.extension = os.path.splitext(file_name)[1]
         # read excel file
         if file_path.endswith(".xlsx") or file_path.endswith(".xls"):
-            df_tmp = pd.read_excel(file_path)
+            df_tmp = pd.read_excel(file_path, index_col=False)
             self.df = pd.read_excel(
                 file_path,
+                index_col=False,
                 converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
         elif file_path.endswith(".csv"):
-            df_tmp = pd.read_csv(file_path, encoding=encoding)
+            df_tmp = pd.read_csv(file_path, index_col=False, encoding=encoding)
             self.df = pd.read_csv(
                 file_path,
+                index_col=False,
                 encoding=encoding,
                 converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
@@ -278,10 +291,11 @@ class ExcelReader:
         for column_name in df_tmp.columns:
             self.columns_map.update({column_name: excel_colunm_format(column_name)})
             try:
-                self.df[column_name] = pd.to_numeric(self.df[column_name])
+                if not pd.api.types.is_datetime64_ns_dtype(self.df[column_name]):
+                    self.df[column_name] = pd.to_numeric(self.df[column_name])
                 self.df[column_name] = self.df[column_name].fillna(0)
             except Exception as e:
-                print("transfor column error！" + column_name)
+                print("can't transfor numeric column" + column_name)
 
         self.df = self.df.rename(columns=lambda x: x.strip().replace(" ", "_"))
 
@@ -291,6 +305,12 @@ class ExcelReader:
         self.table_name = "excel_data"
         # write data in duckdb
         self.db.register(self.table_name, self.df)
+
+        # 获取结果并打印表结构信息
+        result = self.db.execute(f"DESCRIBE {self.table_name}")
+        columns = result.fetchall()
+        for column in columns:
+            print(column)
 
     def run(self, sql):
         try:
@@ -304,7 +324,7 @@ class ExcelReader:
                 colunms.append(descrip[0])
             return colunms, results.fetchall()
         except Exception as e:
-            logging.error("excel sql run error!", e)
+            logger.error(f"excel sql run error!, {str(e)}")
             raise ValueError(f"Data Query Exception!\\nSQL[{sql}].\\nError:{str(e)}")
 
     def get_df_by_sql_ex(self, sql):

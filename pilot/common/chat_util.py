@@ -21,35 +21,27 @@ async def llm_chat_response(chat_scene: str, **chat_param):
     return chat.stream_call()
 
 
-def run_async_tasks(
+async def run_async_tasks(
     tasks: List[Coroutine],
-    show_progress: bool = False,
-    progress_bar_desc: str = "Running async tasks",
+    concurrency_limit: int = None,
 ) -> List[Any]:
     """Run a list of async tasks."""
-
     tasks_to_execute: List[Any] = tasks
-    if show_progress:
-        try:
-            import nest_asyncio
-            from tqdm.asyncio import tqdm
-
-            nest_asyncio.apply()
-            loop = asyncio.get_event_loop()
-
-            async def _tqdm_gather() -> List[Any]:
-                return await tqdm.gather(*tasks_to_execute, desc=progress_bar_desc)
-
-            tqdm_outputs: List[Any] = loop.run_until_complete(_tqdm_gather())
-            return tqdm_outputs
-        # run the operation w/o tqdm on hitting a fatal
-        # may occur in some environments where tqdm.asyncio
-        # is not supported
-        except Exception:
-            pass
 
     async def _gather() -> List[Any]:
-        return await asyncio.gather(*tasks_to_execute)
+        if concurrency_limit:
+            semaphore = asyncio.Semaphore(concurrency_limit)
 
-    outputs: List[Any] = asyncio.run(_gather())
-    return outputs
+            async def _execute_task(task):
+                async with semaphore:
+                    return await task
+
+            # Execute tasks with semaphore limit
+            return await asyncio.gather(
+                *[_execute_task(task) for task in tasks_to_execute]
+            )
+        else:
+            return await asyncio.gather(*tasks_to_execute)
+
+    # outputs: List[Any] = asyncio.run(_gather())
+    return await _gather()

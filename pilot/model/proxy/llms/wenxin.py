@@ -26,6 +26,41 @@ def _build_access_token(api_key: str, secret_key: str) -> str:
         return res.json().get("access_token")
 
 
+def __convert_2_wenxin_messages(messages: List[ModelMessage]):
+    chat_round = 0
+    wenxin_messages = []
+
+    last_usr_message = ""
+    system_messages = []
+
+    for message in messages:
+        if message.role == ModelMessageRoleType.HUMAN:
+            last_usr_message = message.content
+        elif message.role == ModelMessageRoleType.SYSTEM:
+            system_messages.append(message.content)
+        elif message.role == ModelMessageRoleType.AI:
+            last_ai_message = message.content
+            wenxin_messages.append({"role": "user", "content": last_usr_message})
+            wenxin_messages.append({"role": "assistant", "content": last_ai_message})
+
+    # build last user messge
+
+    if len(system_messages) > 0:
+        if len(system_messages) > 1:
+            end_message = system_messages[-1]
+        else:
+            last_message = messages[-1]
+            if last_message.role == ModelMessageRoleType.HUMAN:
+                end_message = system_messages[-1] + "\n" + last_message.content
+            else:
+                end_message = system_messages[-1]
+    else:
+        last_message = messages[-1]
+        end_message = last_message.content
+    wenxin_messages.append({"role": "user", "content": end_message})
+    return wenxin_messages, system_messages
+
+
 def wenxin_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
@@ -40,8 +75,9 @@ def wenxin_generate_stream(
     if not model_version:
         yield f"Unsupport model version {model_name}"
 
-    proxy_api_key = model_params.proxy_api_key
-    proxy_api_secret = model_params.proxy_api_secret
+    keys: [] = model_params.proxy_api_key.split(";")
+    proxy_api_key = keys[0]
+    proxy_api_secret = keys[1]
     access_token = _build_access_token(proxy_api_key, proxy_api_secret)
 
     headers = {"Content-Type": "application/json", "Accept": "application/json"}
@@ -51,40 +87,42 @@ def wenxin_generate_stream(
     if not access_token:
         yield "Failed to get access token. please set the correct api_key and secret key."
 
-    history = []
-
     messages: List[ModelMessage] = params["messages"]
     # Add history conversation
+    # system = ""
+    # if len(messages) > 1 and messages[0].role == ModelMessageRoleType.SYSTEM:
+    #     role_define = messages.pop(0)
+    #     system = role_define.content
+    # else:
+    #     message = messages.pop(0)
+    #     if message.role == ModelMessageRoleType.HUMAN:
+    #         history.append({"role": "user", "content": message.content})
+    # for message in messages:
+    #     if message.role == ModelMessageRoleType.SYSTEM:
+    #         history.append({"role": "user", "content": message.content})
+    #     # elif message.role == ModelMessageRoleType.HUMAN:
+    #     #     history.append({"role": "user", "content": message.content})
+    #     elif message.role == ModelMessageRoleType.AI:
+    #         history.append({"role": "assistant", "content": message.content})
+    #     else:
+    #         pass
+    #
+    # # temp_his = history[::-1]
+    # temp_his = history
+    # last_user_input = None
+    # for m in temp_his:
+    #     if m["role"] == "user":
+    #         last_user_input = m
+    #         break
+    #
+    # if last_user_input:
+    #     history.remove(last_user_input)
+    #     history.append(last_user_input)
+    #
+    history, systems = __convert_2_wenxin_messages(messages)
     system = ""
-    if len(messages) > 1 and messages[0].role == ModelMessageRoleType.SYSTEM:
-        role_define = messages.pop(0)
-        system = role_define.content
-    else:
-        message = messages.pop(0)
-        if message.role == ModelMessageRoleType.HUMAN:
-            history.append({"role": "user", "content": message.content})
-    for message in messages:
-        if message.role == ModelMessageRoleType.SYSTEM:
-            history.append({"role": "user", "content": message.content})
-        # elif message.role == ModelMessageRoleType.HUMAN:
-        #     history.append({"role": "user", "content": message.content})
-        elif message.role == ModelMessageRoleType.AI:
-            history.append({"role": "assistant", "content": message.content})
-        else:
-            pass
-
-    # temp_his = history[::-1]
-    temp_his = history
-    last_user_input = None
-    for m in temp_his:
-        if m["role"] == "user":
-            last_user_input = m
-            break
-
-    if last_user_input:
-        history.remove(last_user_input)
-        history.append(last_user_input)
-
+    if systems and len(systems) > 0:
+        system = systems[0]
     payload = {
         "messages": history,
         "system": system,

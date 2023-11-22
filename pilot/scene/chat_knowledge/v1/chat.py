@@ -49,7 +49,7 @@ class ChatKnowledge(BaseChat):
         )
         self.max_token = (
             CFG.KNOWLEDGE_SEARCH_MAX_TOKEN
-            if self.space_context is None
+            if self.space_context is None or self.space_context.get("prompt") is None
             else int(self.space_context["prompt"]["max_token"])
         )
         vector_store_config = {
@@ -89,13 +89,13 @@ class ChatKnowledge(BaseChat):
             last_output = last_output + reference
             yield last_output
 
-    def knowledge_reference_call(self, text):
+    def stream_call_reinforce_fn(self, text):
         """return reference"""
         return text + f"\n\n{self.parse_source_view(self.sources)}"
 
     @trace()
     async def generate_input_values(self) -> Dict:
-        if self.space_context:
+        if self.space_context and self.space_context.get("prompt"):
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
         docs = await blocking_func_to_async(
@@ -104,16 +104,13 @@ class ChatKnowledge(BaseChat):
             self.current_user_input,
             self.top_k,
         )
-        self.sources = self.merge_by_key(
+        self.sources = _merge_by_key(
             list(map(lambda doc: doc.metadata, docs)), "source"
         )
 
         if not docs or len(docs) == 0:
             print("no relevant docs to retrieve")
             context = "no relevant docs to retrieve"
-            # raise ValueError(
-            #     "you have no knowledge space, please add your knowledge space"
-            # )
         else:
             context = [d.page_content for d in docs]
         context = context[: self.max_token]
@@ -152,9 +149,19 @@ class ChatKnowledge(BaseChat):
         )
         return html
 
-    def merge_by_key(self, data, key):
-        result = {}
-        for item in data:
+    @property
+    def chat_type(self) -> str:
+        return ChatScene.ChatKnowledge.value()
+
+    def get_space_context(self, space_name):
+        service = KnowledgeService()
+        return service.get_space_context(space_name)
+
+
+def _merge_by_key(data, key):
+    result = {}
+    for item in data:
+        if item.get(key):
             item_key = os.path.basename(item.get(key))
             if item_key in result:
                 if "pages" in result[item_key] and "page" in item:
@@ -172,12 +179,4 @@ class ChatKnowledge(BaseChat):
                     }
                 else:
                     result[item_key] = {"source": item_key}
-        return list(result.values())
-
-    @property
-    def chat_type(self) -> str:
-        return ChatScene.ChatKnowledge.value()
-
-    def get_space_context(self, space_name):
-        service = KnowledgeService()
-        return service.get_space_context(space_name)
+    return list(result.values())

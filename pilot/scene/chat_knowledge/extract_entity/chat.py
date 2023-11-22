@@ -24,7 +24,7 @@ class ExtractEntity(BaseChat):
         self.user_input = chat_param["current_user_input"]
         self.extract_mode = chat_param["select_param"]
 
-    def generate_input_values(self):
+    async def generate_input_values(self):
         input_values = {
             "text": self.user_input,
         }

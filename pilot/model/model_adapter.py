@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 thread_local = threading.local()
-
+_IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
 _OLD_MODELS = [
     "llama-cpp",
@@ -132,6 +132,9 @@ class LLMModelAdaper:
 
         conv = conv.copy()
         system_messages = []
+        user_messages = []
+        ai_messages = []
+
         for message in messages:
             role, content = None, None
             if isinstance(message, ModelMessage):
@@ -147,17 +150,32 @@ class LLMModelAdaper:
                 # Support for multiple system messages
                 system_messages.append(content)
             elif role == ModelMessageRoleType.HUMAN:
-                conv.append_message(conv.roles[0], content)
+                # conv.append_message(conv.roles[0], content)
+                user_messages.append(content)
             elif role == ModelMessageRoleType.AI:
-                conv.append_message(conv.roles[1], content)
+                # conv.append_message(conv.roles[1], content)
+                ai_messages.append(content)
             else:
                 raise ValueError(f"Unknown role: {role}")
 
+        can_use_systems: [] = []
         if system_messages:
-            if isinstance(conv, Conversation):
-                conv.set_system_message("".join(system_messages))
+            if len(system_messages) > 1:
+                ##  Compatible with dbgpt complex scenarios, the last system will protect more complete information entered by the current user
+                user_messages[-1] = system_messages[-1]
+                can_use_systems = system_messages[:-1]
             else:
-                conv.update_system_message("".join(system_messages))
+                can_use_systems = system_messages
+
+        for i in range(len(user_messages)):
+            conv.append_message(conv.roles[0], user_messages[i])
+            if i < len(ai_messages):
+                conv.append_message(conv.roles[1], ai_messages[i])
+
+        if isinstance(conv, Conversation):
+            conv.set_system_message("".join(can_use_systems))
+        else:
+            conv.update_system_message("".join(can_use_systems))
 
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
@@ -170,9 +188,12 @@ class LLMModelAdaper:
         model_context["has_format_prompt"] = True
         params["prompt"] = new_prompt
 
-        # Overwrite model params:
-        params["stop"] = conv.stop_str
-        params["stop_token_ids"] = conv.stop_token_ids
+        custom_stop = params.get("stop")
+        custom_stop_token_ids = params.get("stop_token_ids")
+
+        # Prefer the value passed in from the input parameter
+        params["stop"] = custom_stop or conv.stop_str
+        params["stop_token_ids"] = custom_stop_token_ids or conv.stop_token_ids
 
         return params, model_context
 
@@ -225,9 +246,16 @@ class FastChatLLMModelAdaperWrapper(LLMModelAdaper):
         return self._adapter.load_model(model_path, from_pretrained_kwargs)
 
     def get_generate_stream_function(self, model: "TorchNNModule", model_path: str):
-        from fastchat.model.model_adapter import get_generate_stream_function
+        if _IS_BENCHMARK:
+            from pilot.utils.benchmarks.llm.fastchat_benchmarks_inference import (
+                generate_stream,
+            )
 
-        return get_generate_stream_function(model, model_path)
+            return generate_stream
+        else:
+            from fastchat.model.model_adapter import get_generate_stream_function
+
+            return get_generate_stream_function(model, model_path)
 
     def get_default_conv_template(
         self, model_name: str, model_path: str

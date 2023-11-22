@@ -119,7 +119,10 @@ class LocalWorkerManager(WorkerManager):
                 _async_heartbeat_sender(self.run_data, 20, self.send_heartbeat_func)
             )
         for listener in self.start_listeners:
-            listener(self)
+            if asyncio.iscoroutinefunction(listener):
+                await listener(self)
+            else:
+                listener(self)
 
     async def stop(self, ignore_exception: bool = False):
         if not self.run_data.stop_event.is_set():
@@ -325,7 +328,7 @@ class LocalWorkerManager(WorkerManager):
             except Exception as e:
                 yield ModelOutput(
                     text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                    error_code=0,
+                    error_code=1,
                 )
                 return
             async with worker_run_data.semaphore:
@@ -355,7 +358,7 @@ class LocalWorkerManager(WorkerManager):
             except Exception as e:
                 return ModelOutput(
                     text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                    error_code=0,
+                    error_code=1,
                 )
             async with worker_run_data.semaphore:
                 if worker_run_data.worker.support_async():
@@ -996,11 +999,17 @@ def run_worker_manager(
     port: int = None,
     embedding_model_name: str = None,
     embedding_model_path: str = None,
+    start_listener: Callable[["WorkerManager"], None] = None,
+    **kwargs,
 ):
     global worker_manager
 
     worker_params: ModelWorkerParameters = _parse_worker_params(
-        model_name=model_name, model_path=model_path, standalone=standalone, port=port
+        model_name=model_name,
+        model_path=model_path,
+        standalone=standalone,
+        port=port,
+        **kwargs,
     )
 
     setup_logging(
@@ -1028,6 +1037,8 @@ def run_worker_manager(
     _start_local_embedding_worker(
         worker_manager, embedding_model_name, embedding_model_path
     )
+
+    worker_manager.after_start(start_listener)
 
     if include_router:
         app.include_router(router, prefix="/api")
