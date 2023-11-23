@@ -215,6 +215,8 @@ async def run_model(wh: WorkerManager) -> None:
                 logging.error(
                     f"Run benchmarks error, input_len: {input_len}, output_len: {output_len}, parallel_num: {parallel_num}, error message: {msg}"
                 )
+                if "torch.cuda.OutOfMemoryError" in msg:
+                    return
 
     sys.exit(0)
 
