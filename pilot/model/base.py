@@ -8,6 +8,7 @@ from dataclasses import dataclass, asdict
 import time
 from datetime import datetime
 from pilot.utils.parameter_utils import ParameterDescription
+from pilot.utils.model_utils import GPUInfo
 
 
 class Message(TypedDict):
@@ -53,6 +54,8 @@ class WorkerApplyType(str, Enum):
 class ModelInferenceMetrics:
     """A class to represent metrics for assessing the inference performance of a LLM."""
 
+    collect_index: Optional[int] = 0
+
     start_time_ms: Optional[int] = None
     """The timestamp (in milliseconds) when the model inference starts."""
 
@@ -83,6 +86,12 @@ class ModelInferenceMetrics:
     speed_per_second: Optional[float] = None
     """The average number of tokens generated per second."""
 
+    current_gpu_infos: Optional[List[GPUInfo]] = None
+    """Current gpu information, all devices"""
+
+    avg_gpu_infos: Optional[List[GPUInfo]] = None
+    """Average memory usage across all collection points"""
+
     @staticmethod
     def create_metrics(
         last_metrics: Optional["ModelInferenceMetrics"] = None,
@@ -99,6 +108,8 @@ class ModelInferenceMetrics:
         completion_tokens = last_metrics.completion_tokens if last_metrics else None
         total_tokens = last_metrics.total_tokens if last_metrics else None
         speed_per_second = last_metrics.speed_per_second if last_metrics else None
+        current_gpu_infos = last_metrics.current_gpu_infos if last_metrics else None
+        avg_gpu_infos = last_metrics.avg_gpu_infos if last_metrics else None
 
         if not start_time_ms:
             start_time_ms = time.time_ns() // 1_000_000
@@ -116,6 +127,8 @@ class ModelInferenceMetrics:
             completion_tokens=completion_tokens,
             total_tokens=total_tokens,
             speed_per_second=speed_per_second,
+            current_gpu_infos=current_gpu_infos,
+            avg_gpu_infos=avg_gpu_infos,
         )
 
     def to_dict(self) -> Dict:
