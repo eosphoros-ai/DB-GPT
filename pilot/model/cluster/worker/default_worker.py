@@ -11,7 +11,7 @@ from pilot.model.base import ModelOutput, ModelInferenceMetrics
 from pilot.model.loader import ModelLoader, _get_model_real_path
 from pilot.model.parameter import ModelParameters
 from pilot.model.cluster.worker_base import ModelWorker
-from pilot.utils.model_utils import _clear_model_cache
+from pilot.utils.model_utils import _clear_model_cache, _get_current_cuda_memory
 from pilot.utils.parameter_utils import EnvArgumentParser, _get_dict_from_obj
 from pilot.utils.tracer import root_tracer, SpanType, SpanTypeRunName
 from pilot.utils.system_utils import get_system_info
@@ -363,6 +363,7 @@ def _new_metrics_from_model_output(
     usage: Optional[Dict] = None,
 ) -> ModelInferenceMetrics:
     metrics = ModelInferenceMetrics.create_metrics(last_metric)
+    metrics.collect_index = last_metric.collect_index + 1
     if is_first_generate:
         logger.info(f"is_first_generate, usage: {usage}")
         metrics.first_completion_time_ms = time.time_ns() // 1_000_000
@@ -385,6 +386,13 @@ def _new_metrics_from_model_output(
         metrics.first_completion_tokens = completion_tokens
         if completion_tokens == 1:
             metrics.first_token_time_ms = metrics.first_completion_time_ms
+    if (
+        not is_first_generate
+        and metrics.first_token_time_ms is None
+        and completion_tokens == 1
+    ):
+        # Case: first generate has 0 token, and second generate has 1 token
+        metrics.first_token_time_ms = time.time_ns() // 1_000_000
 
     if prompt_tokens:
         metrics.prompt_tokens = prompt_tokens
@@ -400,4 +408,28 @@ def _new_metrics_from_model_output(
         # time cost(seconds)
         duration = (metrics.current_time_ms - metrics.start_time_ms) / 1000.0
         metrics.speed_per_second = total_tokens / duration
+
+    current_gpu_infos = _get_current_cuda_memory()
+    metrics.current_gpu_infos = current_gpu_infos
+    if not metrics.avg_gpu_infos:
+        metrics.avg_gpu_infos = current_gpu_infos
+    elif current_gpu_infos:
+        for i, last_avg in enumerate(metrics.avg_gpu_infos):
+            allocated_memory_gb = (
+                last_avg.allocated_memory_gb * (metrics.collect_index - 1)
+                + current_gpu_infos[i].allocated_memory_gb
+            )
+            metrics.avg_gpu_infos[i].allocated_memory_gb = (
+                allocated_memory_gb / metrics.collect_index
+            )
+            metrics.avg_gpu_infos[i].total_memory_gb = current_gpu_infos[
+                i
+            ].total_memory_gb
+            metrics.avg_gpu_infos[i].cached_memory_gb = current_gpu_infos[
+                i
+            ].cached_memory_gb
+            metrics.avg_gpu_infos[i].available_memory_gb = current_gpu_infos[
+                i
+            ].available_memory_gb
+
     return metrics
