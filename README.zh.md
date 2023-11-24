@@ -133,6 +133,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
   - [openchat_3.5](https://huggingface.co/openchat/openchat_3.5)
   - [zephyr-7b-alpha](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha)
   - [mistral-7b-instruct-v0.1](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1)
+  - [Yi-34B-Chat](https://huggingface.co/01-ai/Yi-34B-Chat)
 
   - 支持在线代理模型 
     - [x] [ChatGPT](https://api.openai.com/)

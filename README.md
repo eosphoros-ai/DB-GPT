@@ -135,6 +135,7 @@ At present, we have introduced several key features to showcase our current capa
   - [openchat_3.5](https://huggingface.co/openchat/openchat_3.5)
   - [zephyr-7b-alpha](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha)
   - [mistral-7b-instruct-v0.1](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1)
+  - [Yi-34B-Chat](https://huggingface.co/01-ai/Yi-34B-Chat)
 
   - Support API Proxy LLMs
     - [x] [ChatGPT](https://api.openai.com/)
