@@ -113,15 +113,25 @@ async def _trigger_dag(
     response_media_type: Optional[str] = None,
 ) -> Any:
     from fastapi.responses import StreamingResponse
-
+    from fastapi.responses import Response
     end_node = dag.leaf_nodes
     if len(end_node) != 1:
         raise ValueError("HttpTrigger just support one leaf node in dag")
     end_node = end_node[0]
+    headers = response_headers
     if not streaming_response:
-        return await end_node.call(call_data={"data": body})
+        media_type = response_media_type if response_media_type else "text/plain"
+        if not headers:
+            headers = {
+                "Cache-Control": "no-cache",
+                "Transfer-Encoding": "chunked",
+            }
+        return Response(
+            await end_node.call(call_data={"data": body}),
+            headers=headers,
+            media_type=media_type,
+        )
     else:
-        headers = response_headers
         media_type = response_media_type if response_media_type else "text/event-stream"
         if not headers:
             headers = {
