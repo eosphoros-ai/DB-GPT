@@ -114,6 +114,7 @@ async def _trigger_dag(
 ) -> Any:
     from fastapi.responses import StreamingResponse
     from fastapi.responses import Response
+
     end_node = dag.leaf_nodes
     if len(end_node) != 1:
         raise ValueError("HttpTrigger just support one leaf node in dag")
