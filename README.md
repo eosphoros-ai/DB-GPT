@@ -4,7 +4,6 @@
   <img src="./assets/LOGO.png" width="100%" />
 </p>
 
-
 <div align="center">
   <p>
     <a href="https://github.com/eosphoros-ai/DB-GPT">
@@ -73,24 +72,11 @@ In the era of Data 3.0, enterprises and developers can take the ability to creat
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-[**Usage Tutorial**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
-- [**Install**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy.html)
-  - [**Install Step by Step**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy.html)
-  - [**Docker Install**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/docker/docker.html)
-  - [**Docker Compose**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/docker_compose/docker_compose.html)
-- [**How to Use**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/chatdb/chatdb.html)
-  - [**ChatData**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/chatdb/chatdb.html)
-  - [**ChatKnowledge**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/kbqa/kbqa.html)
-  - [**ChatExcel**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/chatexcel/chatexcel.html)
-  - [**Dashboard**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/dashboard/dashboard.html)
-  - [**LLM Management**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/model/model.html)
-  - [**Chat Agent**](https://db-gpt.readthedocs.io/en/latest/getting_started/application/chatagent/chatagent.html)
-- [**How to Deploy LLM**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/cluster.html)
-  - [**Standalone**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/standalone.html)
-  - [**Cluster**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
-  - [**vLLM**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
-- [**How to Debug**](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
-- [**FAQ**](https://db-gpt.readthedocs.io/en/latest/getting_started/faq/deploy/deploy_faq.html)
+[**Usage Tutorial**](http://docs.dbgpt.site/docs/overview)
+- [**Install**](http://docs.dbgpt.site/docs/installation)
+- [**Quickstart**](http://docs.dbgpt.site/docs/quickstart)
+- [**Application**](http://docs.dbgpt.site/docs/operation_manual)
+- [**Debugging**](http://docs.dbgpt.site/docs/operation_manual/advanced_tutorial/debugging)
 
 
 ## Features
@@ -114,61 +100,15 @@ At present, we have introduced several key features to showcase our current capa
 
 - **SMMF(Service-oriented Multi-model Management Framework)**
 
-  We offer extensive model support, including dozens of large language models (LLMs) from both open-source and API agents, such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, and many more.
-  
-  - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
-  - [vicuna-13b-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5)
-  - [LLama2](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
-  - [baichuan2-13b](https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat)
-  - [baichuan2-7b](https://huggingface.co/baichuan-inc/Baichuan2-7B-Chat)
-  - [chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
-  - [chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
-  - [chatglm3-6b](https://huggingface.co/THUDM/chatglm3-6b)
-  - [falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
-  - [internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
-  - [internlm-chat-20b](https://huggingface.co/internlm/internlm-chat-20b)
-  - [qwen-7b-chat](https://huggingface.co/Qwen/Qwen-7B-Chat)
-  - [qwen-14b-chat](https://huggingface.co/Qwen/Qwen-14B-Chat)
-  - [wizardlm-13b](https://huggingface.co/WizardLM/WizardLM-13B-V1.2)
-  - [orca-2-7b](https://huggingface.co/microsoft/Orca-2-7b)
-  - [orca-2-13b](https://huggingface.co/microsoft/Orca-2-13b)
-  - [openchat_3.5](https://huggingface.co/openchat/openchat_3.5)
-  - [zephyr-7b-alpha](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha)
-  - [mistral-7b-instruct-v0.1](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1)
-  - [Yi-34B-Chat](https://huggingface.co/01-ai/Yi-34B-Chat)
+  We offer extensive model support, including dozens of large language models (LLMs) from both open-source and API agents, such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, and many more. 
 
-  - Support API Proxy LLMs
-    - [x] [ChatGPT](https://api.openai.com/)
-    - [x] [Tongyi](https://www.aliyun.com/product/dashscope)
-    - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
-    - [x] [ChatGLM](http://open.bigmodel.cn/)
-
+  - [Current Supported LLMs](http://docs.dbgpt.site/docs/modules/smmf)
 - **Privacy and Security**
   
   We ensure the privacy and security of data through the implementation of various technologies, including privatized large models and proxy desensitization.
 
 - Support Datasources
-
-| DataSource                                                                      | support     | Notes                                       |
-| ------------------------------------------------------------------------------  | ----------- | ------------------------------------------- |
-| [MySQL](https://www.mysql.com/)                                                 | Yes         |                                             |
-| [PostgreSQL](https://www.postgresql.org/)                                      | Yes         |                                             |
-| [Spark](https://github.com/apache/spark)                                        | Yes         |                                             |
-| [DuckDB](https://github.com/duckdb/duckdb)                                      | Yes         |                                             |
-| [Sqlite](https://github.com/sqlite/sqlite)                                      | Yes         |                                             |
-| [MSSQL](https://github.com/microsoft/mssql-jdbc)                                | Yes         |                                             |
-| [ClickHouse](https://github.com/ClickHouse/ClickHouse)                          | Yes         |                                             |
-| [Oracle](https://github.com/oracle)                                             | No          |           TODO                              |
-| [Redis](https://github.com/redis/redis)                                         | No          |           TODO                              |
-| [MongoDB](https://github.com/mongodb/mongo)                                     | No          |           TODO                              |
-| [HBase](https://github.com/apache/hbase)                                        | No          |           TODO                              |
-| [Doris](https://github.com/apache/doris)                                        | No          |           TODO                              |
-| [DB2](https://github.com/IBM/Db2)                                               | No          |           TODO                              |
-| [Couchbase](https://github.com/couchbase)                                       | No          |           TODO                              |
-| [Elasticsearch](https://github.com/elastic/elasticsearch)                       | No          |           TODO                              |
-| [OceanBase](https://github.com/OceanBase)                                       | No          |           TODO                              |
-| [TiDB](https://github.com/pingcap/tidb)                                         | No          |           TODO                              |
-| [StarRocks](https://github.com/StarRocks/starrocks)                             | No          |           TODO                              |
+  - [Datasources](http://docs.dbgpt.site/docs/modules/connections)
 
 ## Introduction 
 The architecture of DB-GPT is shown in the following figure:
