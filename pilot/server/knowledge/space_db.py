@@ -56,7 +56,7 @@ class KnowledgeSpaceDao(BaseDao):
         knowledge_spaces = session.query(KnowledgeSpaceEntity)
         if query.user_id is not None:
             knowledge_spaces = knowledge_spaces.filter(
-                KnowledgeSpaceEntity.user_id == query.user_id or KnowledgeSpaceEntity.user_id is None or KnowledgeSpaceEntity.user_id == ''
+                KnowledgeSpaceEntity.user_id == query.user_id
             )
         if query.id is not None:
             knowledge_spaces = knowledge_spaces.filter(
