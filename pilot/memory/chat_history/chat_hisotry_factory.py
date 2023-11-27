@@ -1,3 +1,4 @@
+from typing import Type
 from .base import MemoryStoreType
 from pilot.configs.config import Config
 from pilot.memory.chat_history.base import BaseChatHistoryMemory
@@ -32,5 +33,5 @@ class ChatHistory:
             chat_session_id
         )
 
-    def get_store_cls(self):
+    def get_store_cls(self) -> Type[BaseChatHistoryMemory]:
         return self.mem_store_class_map.get(CFG.CHAT_HISTORY_STORE_TYPE)

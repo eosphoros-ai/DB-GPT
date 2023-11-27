@@ -66,6 +66,8 @@ class ConversationVo(BaseModel):
     """
     incremental: bool = False
 
+    sys_code: Optional[str] = None
+
 
 class MessageVo(BaseModel):
     """
