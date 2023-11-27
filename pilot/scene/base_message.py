@@ -114,6 +114,34 @@ class ModelMessage(BaseModel):
         return result
 
     @staticmethod
+    def to_openai_messages(messages: List["ModelMessage"]) -> List[Dict[str, str]]:
+        """Convert to OpenAI message format and
+        hugggingface [Templates of Chat Models](https://huggingface.co/docs/transformers/v4.34.1/en/chat_templating)
+        """
+        history = []
+        # Add history conversation
+        for message in messages:
+            if message.role == ModelMessageRoleType.HUMAN:
+                history.append({"role": "user", "content": message.content})
+            elif message.role == ModelMessageRoleType.SYSTEM:
+                history.append({"role": "system", "content": message.content})
+            elif message.role == ModelMessageRoleType.AI:
+                history.append({"role": "assistant", "content": message.content})
+            else:
+                pass
+        # Move the last user's information to the end
+        temp_his = history[::-1]
+        last_user_input = None
+        for m in temp_his:
+            if m["role"] == "user":
+                last_user_input = m
+                break
+        if last_user_input:
+            history.remove(last_user_input)
+            history.append(last_user_input)
+        return history
+
+    @staticmethod
     def to_dict_list(messages: List["ModelMessage"]) -> List[Dict[str, str]]:
         return list(map(lambda m: m.dict(), messages))
 

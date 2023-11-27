@@ -253,6 +253,7 @@ class DefaultModelWorker(ModelWorker):
             params,
             self.model_name,
             self.model_path,
+            self.tokenizer,
             prompt_template=self.ml.prompt_template,
         )
         stream_type = ""
@@ -269,7 +270,9 @@ class DefaultModelWorker(ModelWorker):
                 self.model, self.model_path
             )
         str_prompt = params.get("prompt")
-        print(f"model prompt: \n\n{str_prompt}\n\n{stream_type}stream output:\n")
+        print(
+            f"llm_adapter: {str(self.llm_adapter)}\n\nmodel prompt: \n\n{str_prompt}\n\n{stream_type}stream output:\n"
+        )
 
         generate_stream_func_str_name = "{}.{}".format(
             generate_stream_func.__module__, generate_stream_func.__name__
