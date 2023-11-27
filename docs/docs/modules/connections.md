@@ -1,0 +1,2 @@
+# Connections
+The connections module supports connecting to various structured, semi-structured, and unstructured data storage engines. Bring multi-dimensional data into the framework and realize the interaction between natural language and multi-dimensional data
