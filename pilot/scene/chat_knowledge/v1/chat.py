@@ -98,21 +98,27 @@ class ChatKnowledge(BaseChat):
         if self.space_context and self.space_context.get("prompt"):
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
+        from pilot.rag.retriever.reinforce import QueryReinforce
+
+        # query_reinforce = QueryReinforce(query=self.current_user_input, model_name=self.llm_model)
+        # queries = await query_reinforce.rewrite()
+        # print(queries)
+
         docs = await blocking_func_to_async(
             self._executor,
-            self.knowledge_embedding_client.similar_search,
+            self.knowledge_embedding_client.similar_search_with_scores,
             self.current_user_input,
             self.top_k,
         )
-        self.sources = _merge_by_key(
-            list(map(lambda doc: doc.metadata, docs)), "source"
-        )
-
         if not docs or len(docs) == 0:
             print("no relevant docs to retrieve")
             context = "no relevant docs to retrieve"
         else:
             context = [d.page_content for d in docs]
+
+        self.sources = _merge_by_key(
+            list(map(lambda doc: doc.metadata, docs)), "source"
+        )
         context = context[: self.max_token]
         relations = list(
             set([os.path.basename(str(d.metadata.get("source", ""))) for d in docs])

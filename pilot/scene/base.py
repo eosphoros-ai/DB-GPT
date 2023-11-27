@@ -106,6 +106,9 @@ class ChatScene(Enum):
     ExtractEntity = Scene(
         "extract_entity", "Extract Entity", "Extract Entity", ["Extract Select"], True
     )
+    QueryRewrite = Scene(
+        "query_rewrite", "query_rewrite", "query_rewrite", ["query_rewrite"], True
+    )
 
     @staticmethod
     def of_mode(mode):

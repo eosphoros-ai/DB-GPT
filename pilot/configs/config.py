@@ -104,13 +104,6 @@ class Config(metaclass=Singleton):
         self.use_mac_os_tts = False
         self.use_mac_os_tts = os.getenv("USE_MAC_OS_TTS")
 
-        # milvus or zilliz cloud configuration
-        self.milvus_addr = os.getenv("MILVUS_ADDR", "localhost:19530")
-        self.milvus_username = os.getenv("MILVUS_USERNAME")
-        self.milvus_password = os.getenv("MILVUS_PASSWORD")
-        self.milvus_collection = os.getenv("MILVUS_COLLECTION", "dbgpt")
-        self.milvus_secure = os.getenv("MILVUS_SECURE", "False").lower() == "true"
-
         self.authorise_key = os.getenv("AUTHORISE_COMMAND_KEY", "y")
         self.exit_key = os.getenv("EXIT_KEY", "n")
         self.image_provider = os.getenv("IMAGE_PROVIDER", True)
@@ -190,7 +183,7 @@ class Config(metaclass=Singleton):
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
         self.LOCAL_DB_POOL_SIZE = int(os.getenv("LOCAL_DB_POOL_SIZE", 10))
 
-        self.CHAT_HISTORY_STORE_TYPE = os.getenv("CHAT_HISTORY_STORE_TYPE", "duckdb")
+        self.CHAT_HISTORY_STORE_TYPE = os.getenv("CHAT_HISTORY_STORE_TYPE", "db")
 
         ### LLM Model Service Configuration
         self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b-v1.5")
