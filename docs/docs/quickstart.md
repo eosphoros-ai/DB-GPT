@@ -1,7 +1,6 @@
 ---
 sidebar_position: 0
 ---
-
 # Quickstart
 DB-GPT supports the installation and use of a variety of open source and closed models. Different models have different requirements for environment and resources. If localized model deployment is required, GPU resources are required for deployment. The API proxy model requires relatively few resources and can be deployed and started on a CPU machine.
 
@@ -56,8 +55,18 @@ cp .env.template  .env
 Provide two deployment methods to quickly start experiencing DB-GPT.
 
 :::
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-### Method 1. OpenAI agent mode deployment
+<Tabs
+  defaultValue="openai"
+  values={[
+    {label: 'Open AI', value: 'openai'},
+    {label: 'Vicuna', value: 'vicuna'},
+  ]}>
+
+  <TabItem value="openai" label="openai">
+
 :::info note
 
 ⚠️  You need to ensure that git-lfs is installed
@@ -90,9 +99,9 @@ LLM_MODEL=chatgpt_proxyllm
 PROXY_API_KEY={your-openai-sk}
 PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
 ```
+  </TabItem>
 
-
-### Method 2. Vicuna local deployment
+  <TabItem value="vicuna" label="vicuna">
 
 #### Hardware requirements description
 | Model    		                         |   Quantize   |  VRAM Size   	| 
@@ -122,6 +131,9 @@ git clone https://huggingface.co/lmsys/vicuna-13b-v1.5
 # .env
 LLM_MODEL=vicuna-13b-v1.5
 ```
+  </TabItem>
+
+</Tabs>
 
 
 ## Test data (optional)
