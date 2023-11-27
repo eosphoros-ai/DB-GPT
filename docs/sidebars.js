@@ -92,37 +92,38 @@ const sidebars = {
 
     {
       type: "category",
-      label: "Operation Manual",
+      label: "Application Manual",
       collapsed: false,
       collapsible: false,
       items: [
+
         {
           type: 'category',
           label: 'Getting Started Tutorial',
           items: [
             {
               type: 'doc',
-              id: 'operation_manual/started_tutorial/chat_knowledge',
+              id: 'application_manual/started_tutorial/chat_knowledge',
             },
             {
               type: 'doc',
-              id: 'operation_manual/started_tutorial/chat_data',
+              id: 'application_manual/started_tutorial/chat_data',
             },
             {
               type: 'doc',
-              id: 'operation_manual/started_tutorial/chat_excel',
+              id: 'application_manual/started_tutorial/chat_excel',
             },
             {
               type: 'doc',
-              id: 'operation_manual/started_tutorial/chat_db',
+              id: 'application_manual/started_tutorial/chat_db',
             },
             {
               type: 'doc',
-              id: 'operation_manual/started_tutorial/chat_dashboard',
+              id: 'application_manual/started_tutorial/chat_dashboard',
             },
             {
               type: 'doc',
-              id: 'operation_manual/started_tutorial/agent',
+              id: 'application_manual/started_tutorial/agent',
             },
           ],
         },
@@ -132,15 +133,15 @@ const sidebars = {
           items: [
             {
               type: 'doc',
-              id: 'operation_manual/advanced_tutorial/rag',
+              id: 'application_manual/advanced_tutorial/rag',
             },
             {
               type: 'doc',
-              id: 'operation_manual/advanced_tutorial/smmf',
+              id: 'application_manual/advanced_tutorial/smmf',
             },
             {
               type: 'doc',
-              id: 'operation_manual/advanced_tutorial/debugging',
+              id: 'application_manual/advanced_tutorial/debugging',
             },
           ],
         },
@@ -150,23 +151,17 @@ const sidebars = {
           items: [
             {
               type: 'doc',
-              id: 'operation_manual/fine_tuning_manual/text_to_sql',
+              id: 'application_manual/fine_tuning_manual/text_to_sql',
             },
-          
           ],
         },
-
-
-
-
       ],
       link: {
-        type: "generated-index",
-        description: "DB-GPT Operation Manual",
-        slug: "operation_manual",
-      }
+        type: 'generated-index',
+        slug: "application",
+      },
     },
-    
+
     {
       type: "category",
       label: "Modules",
