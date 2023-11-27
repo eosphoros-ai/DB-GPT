@@ -438,7 +438,7 @@ async def chat_completions(dialogue: ConversationVo = Body(), user_token: UserRe
     with root_tracer.start_span(
         "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
     ):
-        chat: BaseChat = await get_chat_instance(dialogue)
+        chat: BaseChat = await get_chat_instance(dialogue, user_token.user_id)
     # background_tasks = BackgroundTasks()
     # background_tasks.add_task(release_model_semaphore)
     headers = {
@@ -462,7 +462,6 @@ async def chat_completions(dialogue: ConversationVo = Body(), user_token: UserRe
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
-    chat: BaseChat = get_chat_instance(dialogue, user_token.user_id)
     # background_tasks = BackgroundTasks()
     # background_tasks.add_task(release_model_semaphore)
 
