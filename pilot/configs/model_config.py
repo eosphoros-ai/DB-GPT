@@ -128,6 +128,10 @@ LLM_MODEL_CONFIG = {
     "xwin-lm-70b-v0.1": os.path.join(MODEL_PATH, "Xwin-LM-70B-V0.1"),
     # https://huggingface.co/01-ai/Yi-34B-Chat
     "yi-34b-chat": os.path.join(MODEL_PATH, "Yi-34B-Chat"),
+    # https://huggingface.co/01-ai/Yi-34B-Chat-8bits
+    "yi-34b-chat-8bits": os.path.join(MODEL_PATH, "Yi-34B-Chat-8bits"),
+    # https://huggingface.co/01-ai/Yi-34B-Chat-4bits
+    "yi-34b-chat-4bits": os.path.join(MODEL_PATH, "Yi-34B-Chat-4bits"),
     "yi-6b-chat": os.path.join(MODEL_PATH, "Yi-6B-Chat"),
 }
 

@@ -78,7 +78,9 @@ class BaseChat(ABC):
 
         self.history_message: List[OnceConversation] = self.memory.messages()
         self.current_message: OnceConversation = OnceConversation(
-            self.chat_mode.value()
+            self.chat_mode.value(),
+            user_name=chat_param.get("user_name"),
+            sys_code=chat_param.get("sys_code"),
         )
         self.current_message.model_name = self.llm_model
         if chat_param["select_param"]:
@@ -171,7 +173,6 @@ class BaseChat(ABC):
             "messages": llm_messages,
             "temperature": float(self.prompt_template.temperature),
             "max_new_tokens": int(self.prompt_template.max_new_tokens),
-            # "stop": self.prompt_template.sep,
             "echo": self.llm_echo,
         }
         return payload

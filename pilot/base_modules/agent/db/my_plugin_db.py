@@ -32,6 +32,7 @@ class MyPluginEntity(Base):
     succ_count = Column(
         Integer, nullable=True, default=0, comment="plugin total success count"
     )
+    sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(
         DateTime, default=datetime.utcnow, comment="plugin install time"
     )
@@ -58,6 +59,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
             version=engity.version,
             use_count=engity.use_count or 0,
             succ_count=engity.succ_count or 0,
+            sys_code=engity.sys_code,
             gmt_created=datetime.now(),
         )
         session.add(my_plugin)
@@ -107,6 +109,8 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
             my_plugins = my_plugins.filter(MyPluginEntity.user_code == query.user_code)
         if query.user_name is not None:
             my_plugins = my_plugins.filter(MyPluginEntity.user_name == query.user_name)
+        if query.sys_code is not None:
+            my_plugins = my_plugins.filter(MyPluginEntity.sys_code == query.sys_code)
 
         my_plugins = my_plugins.order_by(MyPluginEntity.id.desc())
         my_plugins = my_plugins.offset((page - 1) * page_size).limit(page_size)
@@ -133,6 +137,8 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
             my_plugins = my_plugins.filter(MyPluginEntity.user_code == query.user_code)
         if query.user_name is not None:
             my_plugins = my_plugins.filter(MyPluginEntity.user_name == query.user_name)
+        if query.sys_code is not None:
+            my_plugins = my_plugins.filter(MyPluginEntity.sys_code == query.sys_code)
         count = my_plugins.scalar()
         session.close()
         return count

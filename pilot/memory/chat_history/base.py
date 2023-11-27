@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional, Dict
 from enum import Enum
 from pilot.scene.message import OnceConversation
 
@@ -36,11 +36,6 @@ class BaseChatHistoryMemory(ABC):
     #     """Clear session memory from the local file"""
 
     @abstractmethod
-    def conv_list(self, user_name: str = None) -> None:
-        """get user's conversation list"""
-        pass
-
-    @abstractmethod
     def update(self, messages: List[OnceConversation]) -> None:
         pass
 
@@ -49,7 +44,7 @@ class BaseChatHistoryMemory(ABC):
         pass
 
     @abstractmethod
-    def conv_info(self, conv_uid: str = None) -> None:
+    def conv_info(self, conv_uid: Optional[str] = None) -> None:
         pass
 
     @abstractmethod
@@ -57,5 +52,7 @@ class BaseChatHistoryMemory(ABC):
         pass
 
     @staticmethod
-    def conv_list(cls, user_name: str = None) -> None:
-        pass
+    def conv_list(
+        user_name: Optional[str] = None, sys_code: Optional[str] = None
+    ) -> List[Dict]:
+        """get user's conversation list"""
