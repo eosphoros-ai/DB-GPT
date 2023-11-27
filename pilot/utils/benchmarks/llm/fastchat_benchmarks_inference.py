@@ -42,7 +42,7 @@ def generate_stream(
     params: Dict,
     device: str,
     context_len: int,
-    stream_interval: int = 2,
+    stream_interval: int = 1,
     judge_sent_end: bool = False,
 ):
     if hasattr(model, "device"):

@@ -115,16 +115,27 @@ At present, we have introduced several key features to showcase our current capa
 - **SMMF(Service-oriented Multi-model Management Framework)**
 
   We offer extensive model support, including dozens of large language models (LLMs) from both open-source and API agents, such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, and many more.
+  
   - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
   - [vicuna-13b-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5)
   - [LLama2](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
-  - [baichuan2-13b](https://huggingface.co/baichuan-inc)
-  - [baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
+  - [baichuan2-13b](https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat)
+  - [baichuan2-7b](https://huggingface.co/baichuan-inc/Baichuan2-7B-Chat)
   - [chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
   - [chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
+  - [chatglm3-6b](https://huggingface.co/THUDM/chatglm3-6b)
   - [falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
   - [internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
-  - [Qwen-7B-Chat/Qwen-14B-Chat](https://huggingface.co/Qwen/)
+  - [internlm-chat-20b](https://huggingface.co/internlm/internlm-chat-20b)
+  - [qwen-7b-chat](https://huggingface.co/Qwen/Qwen-7B-Chat)
+  - [qwen-14b-chat](https://huggingface.co/Qwen/Qwen-14B-Chat)
+  - [wizardlm-13b](https://huggingface.co/WizardLM/WizardLM-13B-V1.2)
+  - [orca-2-7b](https://huggingface.co/microsoft/Orca-2-7b)
+  - [orca-2-13b](https://huggingface.co/microsoft/Orca-2-13b)
+  - [openchat_3.5](https://huggingface.co/openchat/openchat_3.5)
+  - [zephyr-7b-alpha](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha)
+  - [mistral-7b-instruct-v0.1](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1)
+  - [Yi-34B-Chat](https://huggingface.co/01-ai/Yi-34B-Chat)
 
   - Support API Proxy LLMs
     - [x] [ChatGPT](https://api.openai.com/)

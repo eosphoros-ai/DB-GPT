@@ -53,6 +53,8 @@ LLM_MODEL_CONFIG = {
     "chatglm-6b": os.path.join(MODEL_PATH, "chatglm-6b"),
     "chatglm2-6b": os.path.join(MODEL_PATH, "chatglm2-6b"),
     "chatglm2-6b-int4": os.path.join(MODEL_PATH, "chatglm2-6b-int4"),
+    # https://huggingface.co/THUDM/chatglm3-6b
+    "chatglm3-6b": os.path.join(MODEL_PATH, "chatglm3-6b"),
     "guanaco-33b-merged": os.path.join(MODEL_PATH, "guanaco-33b-merged"),
     "falcon-40b": os.path.join(MODEL_PATH, "falcon-40b"),
     "gorilla-7b": os.path.join(MODEL_PATH, "gorilla-7b"),
@@ -74,6 +76,18 @@ LLM_MODEL_CONFIG = {
     "baichuan-7b": os.path.join(MODEL_PATH, "baichuan-7b"),
     "baichuan2-7b": os.path.join(MODEL_PATH, "Baichuan2-7B-Chat"),
     "baichuan2-13b": os.path.join(MODEL_PATH, "Baichuan2-13B-Chat"),
+    # https://huggingface.co/Qwen/Qwen-7B-Chat
+    "qwen-7b-chat": os.path.join(MODEL_PATH, "Qwen-7B-Chat"),
+    # https://huggingface.co/Qwen/Qwen-7B-Chat-Int8
+    "qwen-7b-chat-int8": os.path.join(MODEL_PATH, "Qwen-7B-Chat-Int8"),
+    # https://huggingface.co/Qwen/Qwen-7B-Chat-Int4
+    "qwen-7b-chat-int4": os.path.join(MODEL_PATH, "Qwen-7B-Chat-Int4"),
+    # https://huggingface.co/Qwen/Qwen-14B-Chat
+    "qwen-14b-chat": os.path.join(MODEL_PATH, "Qwen-14B-Chat"),
+    # https://huggingface.co/Qwen/Qwen-14B-Chat-Int8
+    "qwen-14b-chat-int8": os.path.join(MODEL_PATH, "Qwen-14B-Chat-Int8"),
+    # https://huggingface.co/Qwen/Qwen-14B-Chat-Int4
+    "qwen-14b-chat-int4": os.path.join(MODEL_PATH, "Qwen-14B-Chat-Int4"),
     # (Llama2 based) We only support WizardLM-13B-V1.2 for now, which is trained from Llama-2 13b, see https://huggingface.co/WizardLM/WizardLM-13B-V1.2
     "wizardlm-13b": os.path.join(MODEL_PATH, "WizardLM-13B-V1.2"),
     # wget https://huggingface.co/TheBloke/vicuna-13B-v1.5-GGUF/resolve/main/vicuna-13b-v1.5.Q4_K_M.gguf -O models/ggml-model-q4_0.gguf
@@ -88,6 +102,33 @@ LLM_MODEL_CONFIG = {
     "codellama-13b-sql-sft": os.path.join(MODEL_PATH, "codellama-13b-sql-sft"),
     # For test now
     "opt-125m": os.path.join(MODEL_PATH, "opt-125m"),
+    # https://huggingface.co/microsoft/Orca-2-7b
+    "orca-2-7b": os.path.join(MODEL_PATH, "Orca-2-7b"),
+    # https://huggingface.co/microsoft/Orca-2-13b
+    "orca-2-13b": os.path.join(MODEL_PATH, "Orca-2-13b"),
+    # https://huggingface.co/openchat/openchat_3.5
+    "openchat_3.5": os.path.join(MODEL_PATH, "openchat_3.5"),
+    # https://huggingface.co/hfl/chinese-alpaca-2-7b
+    "chinese-alpaca-2-7b": os.path.join(MODEL_PATH, "chinese-alpaca-2-7b"),
+    # https://huggingface.co/hfl/chinese-alpaca-2-13b
+    "chinese-alpaca-2-13b": os.path.join(MODEL_PATH, "chinese-alpaca-2-13b"),
+    # https://huggingface.co/THUDM/codegeex2-6b
+    "codegeex2-6b": os.path.join(MODEL_PATH, "codegeex2-6b"),
+    # https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha
+    "zephyr-7b-alpha": os.path.join(MODEL_PATH, "zephyr-7b-alpha"),
+    # https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1
+    "mistral-7b-instruct-v0.1": os.path.join(MODEL_PATH, "Mistral-7B-Instruct-v0.1"),
+    # https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca
+    "mistral-7b-openorca": os.path.join(MODEL_PATH, "Mistral-7B-OpenOrca"),
+    # https://huggingface.co/Xwin-LM/Xwin-LM-7B-V0.1
+    "xwin-lm-7b-v0.1": os.path.join(MODEL_PATH, "Xwin-LM-7B-V0.1"),
+    # https://huggingface.co/Xwin-LM/Xwin-LM-13B-V0.1
+    "xwin-lm-13b-v0.1": os.path.join(MODEL_PATH, "Xwin-LM-13B-V0.1"),
+    # https://huggingface.co/Xwin-LM/Xwin-LM-70B-V0.1
+    "xwin-lm-70b-v0.1": os.path.join(MODEL_PATH, "Xwin-LM-70B-V0.1"),
+    # https://huggingface.co/01-ai/Yi-34B-Chat
+    "yi-34b-chat": os.path.join(MODEL_PATH, "Yi-34B-Chat"),
+    "yi-6b-chat": os.path.join(MODEL_PATH, "Yi-6B-Chat"),
 }
 
 EMBEDDING_MODEL_CONFIG = {

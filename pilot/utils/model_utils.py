@@ -1,3 +1,5 @@
+from typing import List, Tuple
+from dataclasses import dataclass
 import logging
 
 logger = logging.getLogger(__name__)
@@ -37,3 +39,46 @@ def _clear_torch_cache(device="cuda"):
                     torch.cuda.ipc_collect()
         else:
             logger.info("No cuda or mps, not support clear torch cache yet")
+
+
+@dataclass
+class GPUInfo:
+    total_memory_gb: float
+    allocated_memory_gb: float
+    cached_memory_gb: float
+    available_memory_gb: float
+
+
+def _get_current_cuda_memory() -> List[GPUInfo]:
+    try:
+        import torch
+    except ImportError:
+        logger.warn("Torch not installed")
+        return []
+    if torch.cuda.is_available():
+        num_gpus = torch.cuda.device_count()
+        gpu_infos = []
+        for gpu_id in range(num_gpus):
+            with torch.cuda.device(gpu_id):
+                device = torch.cuda.current_device()
+                gpu_properties = torch.cuda.get_device_properties(device)
+                total_memory = round(gpu_properties.total_memory / (1.0 * 1024**3), 2)
+                allocated_memory = round(
+                    torch.cuda.memory_allocated() / (1.0 * 1024**3), 2
+                )
+                cached_memory = round(
+                    torch.cuda.memory_reserved() / (1.0 * 1024**3), 2
+                )
+                available_memory = total_memory - allocated_memory
+                gpu_infos.append(
+                    GPUInfo(
+                        total_memory_gb=total_memory,
+                        allocated_memory_gb=allocated_memory,
+                        cached_memory_gb=cached_memory,
+                        available_memory_gb=available_memory,
+                    )
+                )
+        return gpu_infos
+    else:
+        logger.warn("CUDA is not available.")
+        return []
