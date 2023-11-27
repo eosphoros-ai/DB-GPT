@@ -184,7 +184,7 @@ class Config(metaclass=Singleton):
         if self.LOCAL_DB_HOST is None and self.LOCAL_DB_PATH == "":
             self.LOCAL_DB_HOST = "127.0.0.1"
 
-        self.LOCAL_DB_NAME = os.getenv("LOCAL_DB_NAME")
+        self.LOCAL_DB_NAME = os.getenv("LOCAL_DB_NAME", "dbgpt")
         self.LOCAL_DB_PORT = int(os.getenv("LOCAL_DB_PORT", 3306))
         self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
@@ -194,6 +194,8 @@ class Config(metaclass=Singleton):
 
         ### LLM Model Service Configuration
         self.LLM_MODEL = os.getenv("LLM_MODEL", "vicuna-13b-v1.5")
+        self.LLM_MODEL_PATH = os.getenv("LLM_MODEL_PATH")
+
         ### Proxy llm backend, this configuration is only valid when "LLM_MODEL=proxyllm"
         ### When we use the rest API provided by deployment frameworks like fastchat as a proxyllm, "PROXYLLM_BACKEND" is the model they actually deploy.
         ### We need to use "PROXYLLM_BACKEND" to load the prompt of the corresponding scene.
@@ -250,6 +252,19 @@ class Config(metaclass=Singleton):
 
         ### Temporary configuration
         self.USE_FASTCHAT: bool = os.getenv("USE_FASTCHAT", "True").lower() == "true"
+
+        self.MODEL_CACHE_ENABLE: bool = (
+            os.getenv("MODEL_CACHE_ENABLE", "True").lower() == "true"
+        )
+        self.MODEL_CACHE_STORAGE_TYPE: str = os.getenv(
+            "MODEL_CACHE_STORAGE_TYPE", "disk"
+        )
+        self.MODEL_CACHE_MAX_MEMORY_MB: int = int(
+            os.getenv("MODEL_CACHE_MAX_MEMORY_MB", 256)
+        )
+        self.MODEL_CACHE_STORAGE_DISK_DIR: str = os.getenv(
+            "MODEL_CACHE_STORAGE_DISK_DIR"
+        )
 
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""

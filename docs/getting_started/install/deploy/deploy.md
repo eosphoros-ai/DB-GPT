@@ -77,7 +77,7 @@ macos:brew install git-lfs
 ```
 ##### Download LLM Model and Embedding Model
 
-If you use OpenAI llm service, see [LLM Use FAQ](https://db-gpt.readthedocs.io/en/latest/getting_started/faq/llm/llm_faq.html)
+If you use OpenAI llm service, see [How to Use LLM REST API](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/proxyllm/proxyllm.html)
 
 ```{tip}
 If you use openai or Axzure or tongyi llm api service, you don't need to download llm model.

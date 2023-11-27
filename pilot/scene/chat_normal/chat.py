@@ -5,6 +5,7 @@ from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
 
 from pilot.scene.chat_normal.prompt import prompt
+from pilot.utils.tracer import root_tracer, trace
 
 CFG = Config()
 
@@ -21,7 +22,8 @@ class ChatNormal(BaseChat):
             chat_param=chat_param,
         )
 
-    def generate_input_values(self):
+    @trace()
+    async def generate_input_values(self) -> Dict:
         input_values = {"input": self.current_user_input}
         return input_values
 

@@ -3,48 +3,58 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to DB-GPT!
-==================================
-| As large models are released and iterated upon, they are becoming increasingly intelligent. However, in the process of using large models, we face significant challenges in data security and privacy. We need to ensure that our sensitive data and environments remain completely controlled and avoid any data privacy leaks or security risks. Based on this, we have launched the DB-GPT project to build a complete private large model solution for all database-based scenarios. This solution supports local deployment, allowing it to be applied not only in independent private environments but also to be independently deployed and isolated according to business modules, ensuring that the ability of large models is absolutely private, secure, and controllable.
+Overview
+------------------
 
-| **DB-GPT** is an experimental open-source project that uses localized GPT large models to interact with your data and environment. With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.
+| DB-GPT is an open-source framework for large models in the databases fields. It's purpose is to build infrastructure for the domain of large models, making it easier and more convenient to develop applications around databases. By developing various technical capabilities such as:
 
-| **Features**
-Currently, we have released multiple key features, which are listed below to demonstrate our current capabilities:
+1. **SMMF(Service-oriented Multi-model Management Framework)**
+2. **Text2SQL Fine-tuning**
+3. **RAG(Retrieval Augmented Generation) framework and optimization**
+4. **Data-Driven Agents framework collaboration**
+5. **GBI(Generative Business intelligence)**
 
-- SQL language capabilities
-  - SQL generation
-  - SQL diagnosis
+etc, DB-GPT simplifies the construction of large model applications based on databases. 
 
-- Private domain Q&A and data processing
-  - Database knowledge Q&A
-  - Data processing
+| In the era of Data 3.0, enterprises and developers can build their own customized applications with less code, leveraging models and databases.
 
-- Plugins
-  - Support custom plugin execution tasks and natively support the Auto-GPT plugin, such as:
+Features
+^^^^^^^^^^^
 
-- Unified vector storage/indexing of knowledge base
-  - Support for unstructured data such as PDF, Markdown, CSV, and WebURL
+| **1. Private Domain Q&A & Data Processing**
+| Supports custom construction of knowledge bases through methods such as built-in, multi-file format uploads, and plugin-based web scraping. Enables unified vector storage and retrieval of massive structured and unstructured data.
 
-- Multi LLMs Support
-  - Supports multiple large language models, currently supporting Vicuna (7b, 13b), ChatGLM-6b (int4, int8)
-  - TODO: codegen2, codet5p
+| **2.Multi-Data Source & GBI(Generative Business intelligence)**
+| Supports interaction between natural language and various data sources such as Excel, databases, and data warehouses. Also supports analysis reporting. 
+
+| **3.SMMF(Service-oriented Multi-model Management Framework)**
+| Supports a wide range of models, including dozens of large language models such as open-source models and API proxies. Examples include LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, Xinghuo, etc.
+
+| **4.Automated Fine-tuning**
+| A lightweight framework for automated fine-tuning built around large language models, Text2SQL datasets, and methods like LoRA/QLoRA/Pturning. Makes TextSQL fine-tuning as convenient as a production line.
+
+| **5.Data-Driven Multi-Agents & Plugins**
+| Supports executing tasks through custom plugins and natively supports the Auto-GPT plugin model. Agents protocol follows the Agent Protocol standard.
+
+| **6.Privacy and Security**
+| Ensures data privacy and security through techniques such as privatizing large models and proxy de-identification.
+
 
 Getting Started
------------------
-| How to get started using DB-GPT to interact with your data and environment.
-- `Quickstart Guide <./getting_started/getting_started.html>`_
+^^^^^^^^^^^^^^^^^
+
+| Quickstart 
+
+- `Quickstart Guide <./getting_started/getting_started.html>`_ 
 
 | Concepts and terminology
 
 - `Concepts and Terminology  <./getting_started/concepts.html>`_
 
-| Coming soon...
-
-- `Tutorials <.getting_started/tutorials.html>`_
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started
+   :name: getting_started
    :hidden:
 
    getting_started/install.rst
@@ -57,10 +67,9 @@ Getting Started
 
 
 Modules
----------
+^^^^^^^^^
 
-| These modules are the core abstractions with which we can interact with data and environment smoothly.
-It's very important for DB-GPT, DB-GPT also provide standard, extendable interfaces.
+| These modules are the core abstractions with which we can interact with data and environment smoothly. It's very important for DB-GPT, DB-GPT also provide standard, extendable interfaces.
 
 | The docs for each module contain quickstart examples, how to guides, reference docs, and conceptual guides.
 
@@ -78,64 +87,23 @@ It's very important for DB-GPT, DB-GPT also provide standard, extendable interfa
 
 - `Vector <./modules/vector.html>`_: Supported multi vector database.
 
+-------------
+
 .. toctree::
    :maxdepth: 2
    :caption: Modules
    :name: modules
    :hidden:
 
-   ./modules/llms.md
-   ./modules/prompts.md
-   ./modules/plugins.md
-   ./modules/connections.rst
-   ./modules/knowledge.rst
-   ./modules/vector.rst
-
-Use Cases
----------
-
-| Best Practices and built-in implementations for common DB-GPT use cases:
-
-- `Sql generation and diagnosis <./use_cases/sql_generation_and_diagnosis.html>`_: SQL generation and diagnosis.
-
-- `knownledge Based QA <./use_cases/knownledge_based_qa.html>`_: A important scene for user to chat with database documents, codes, bugs and schemas.
-
-- `Chatbots <./use_cases/chatbots.html>`_: Language model love to chat, use multi models to chat.
-
-- `Querying Database Data <./use_cases/query_database_data.html>`_: Query and Analysis data from databases and give charts.
-
-- `Interacting with apis <./use_cases/interacting_with_api.html>`_: Interact with apis, such as create a table, deploy a database cluster, create a database and so on.
-
-- `Tool use with plugins <./use_cases/tool_use_with_plugin>`_: According to Plugin use tools to manage databases autonomoly.
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Use Cases
-   :name: use_cases
-   :hidden:
-
-   ./use_cases/sql_generation_and_diagnosis.md
-   ./use_cases/knownledge_based_qa.md
-   ./use_cases/chatbots.md
-   ./use_cases/query_database_data.md
-   ./use_cases/interacting_with_api.md
-   ./use_cases/tool_use_with_plugin.md
-
-Reference
------------
-| Full documentation on all methods, classes, installation methods, and integration setups for DB-GPT.
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Reference
-   :name: reference
-   :hidden:
-
-   ./reference.md
-
+   modules/llms.md
+   modules/prompts.md
+   modules/plugins.md
+   modules/connections.rst
+   modules/knowledge.rst
+   modules/vector.rst
 
 Resources
-----------
+-----------------
 
 | Additional resources we think may be useful as you develop your application!
 

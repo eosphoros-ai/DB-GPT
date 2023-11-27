@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any, Type
 import os
 
 from pilot.component import ComponentType, SystemApp
+from pilot.configs.config import Config
+from pilot.configs.model_config import MODEL_DISK_CACHE_DIR
 from pilot.utils.executor_utils import DefaultExecutorFactory
 from pilot.embedding_engine.embedding_factory import EmbeddingFactory
 from pilot.server.base import WebWerverParameters
@@ -14,6 +16,8 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+CFG = Config()
 
 
 def initialize_components(
@@ -28,6 +32,11 @@ def initialize_components(
     system_app.register(DefaultExecutorFactory)
     system_app.register_instance(controller)
 
+    # Register global default RAGGraphFactory
+    # from pilot.graph_engine.graph_factory import DefaultRAGGraphFactory
+
+    # system_app.register(DefaultRAGGraphFactory)
+
     from pilot.base_modules.agent.controller import module_agent
 
     system_app.register_instance(module_agent)
@@ -35,6 +44,8 @@ def initialize_components(
     _initialize_embedding_model(
         param, system_app, embedding_model_name, embedding_model_path
     )
+    _initialize_model_cache(system_app)
+    _initialize_awel(system_app)
 
 
 def _initialize_embedding_model(
@@ -126,3 +137,23 @@ class LocalEmbeddingFactory(EmbeddingFactory):
         loader = EmbeddingLoader()
         # Ignore model_name args
         return loader.load(self._default_model_name, model_params)
+
+
+def _initialize_model_cache(system_app: SystemApp):
+    from pilot.cache import initialize_cache
+
+    if not CFG.MODEL_CACHE_ENABLE:
+        logger.info("Model cache is not enable")
+        return
+
+    storage_type = CFG.MODEL_CACHE_STORAGE_TYPE or "disk"
+    max_memory_mb = CFG.MODEL_CACHE_MAX_MEMORY_MB or 256
+    persist_dir = CFG.MODEL_CACHE_STORAGE_DISK_DIR or MODEL_DISK_CACHE_DIR
+    initialize_cache(system_app, storage_type, max_memory_mb, persist_dir)
+
+
+def _initialize_awel(system_app: SystemApp):
+    from pilot.awel import initialize_awel
+    from pilot.configs.model_config import _DAG_DEFINITION_DIR
+
+    initialize_awel(system_app, _DAG_DEFINITION_DIR)

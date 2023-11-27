@@ -1,5 +1,6 @@
 from .base import MemoryStoreType
 from pilot.configs.config import Config
+from pilot.memory.chat_history.base import BaseChatHistoryMemory
 
 CFG = Config()
 
@@ -18,7 +19,15 @@ class ChatHistory:
         self.mem_store_class_map[DbHistoryMemory.store_type] = DbHistoryMemory
         self.mem_store_class_map[MemHistoryMemory.store_type] = MemHistoryMemory
 
-    def get_store_instance(self, chat_session_id):
+    def get_store_instance(self, chat_session_id: str) -> BaseChatHistoryMemory:
+        """New store instance for store chat histories
+
+        Args:
+            chat_session_id (str): conversation session id
+
+        Returns:
+            BaseChatHistoryMemory: Store instance
+        """
         return self.mem_store_class_map.get(CFG.CHAT_HISTORY_STORE_TYPE)(
             chat_session_id
         )

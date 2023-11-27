@@ -18,6 +18,10 @@ BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
     os.getenv("LLAMA_CPP_GPU_ACCELERATION", "true").lower() == "true"
 )
+BUILD_FROM_SOURCE = os.getenv("BUILD_FROM_SOURCE", "false").lower() == "true"
+BUILD_FROM_SOURCE_URL_FAST_CHAT = os.getenv(
+    "BUILD_FROM_SOURCE_URL_FAST_CHAT", "git+https://github.com/lm-sys/FastChat.git"
+)
 
 
 def parse_requirements(file_name: str) -> List[str]:
@@ -298,7 +302,6 @@ def core_requires():
     ]
 
     setup_spec.extras["framework"] = [
-        "fschat",
         "coloredlogs",
         "httpx",
         "sqlparse==0.4.4",
@@ -315,9 +318,22 @@ def core_requires():
         "duckdb-engine",
         "jsonschema",
         # TODO move transformers to default
-        "transformers>=4.31.0",
+        # "transformers>=4.31.0",
+        "transformers>=4.34.0",
         "alembic==1.12.0",
+        # for excel
+        "openpyxl==3.1.2",
+        "chardet==5.1.0",
+        "xlrd==2.0.1",
+        # for cache, TODO pympler has not been updated for a long time and needs to find a new toolkit.
+        "pympler",
     ]
+    if BUILD_FROM_SOURCE:
+        setup_spec.extras["framework"].append(
+            f"fschat @ {BUILD_FROM_SOURCE_URL_FAST_CHAT}"
+        )
+    else:
+        setup_spec.extras["framework"].append("fschat")
 
 
 def knowledge_requires():
@@ -361,6 +377,8 @@ def quantization_requires():
         )
         pkgs = [f"bitsandbytes @ {local_pkg}"]
         print(pkgs)
+    # For chatglm2-6b-int4
+    pkgs += ["cpm_kernels"]
     setup_spec.extras["quantization"] = pkgs
 
 
@@ -406,10 +424,11 @@ def vllm_requires():
     setup_spec.extras["vllm"] = ["vllm"]
 
 
-# def chat_scene():
-#     setup_spec.extras["chat"] = [
-#         ""
-#     ]
+def cache_requires():
+    """
+    pip install "db-gpt[cache]"
+    """
+    setup_spec.extras["cache"] = ["rocksdict", "msgpack"]
 
 
 def default_requires():
@@ -417,7 +436,8 @@ def default_requires():
     pip install "db-gpt[default]"
     """
     setup_spec.extras["default"] = [
-        "tokenizers==0.13.3",
+        # "tokenizers==0.13.3",
+        "tokenizers>=0.14",
         "accelerate>=0.20.3",
         "sentence-transformers",
         "protobuf==3.20.3",
@@ -430,6 +450,7 @@ def default_requires():
     setup_spec.extras["default"] += setup_spec.extras["knowledge"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
     setup_spec.extras["default"] += setup_spec.extras["quantization"]
+    setup_spec.extras["default"] += setup_spec.extras["cache"]
 
 
 def all_requires():
@@ -456,6 +477,7 @@ all_datasource_requires()
 openai_requires()
 gpt4all_requires()
 vllm_requires()
+cache_requires()
 
 # must be last
 default_requires()
@@ -465,7 +487,7 @@ init_install_requires()
 setuptools.setup(
     name="db-gpt",
     packages=find_packages(exclude=("tests", "*.tests", "*.tests.*", "examples")),
-    version="0.4.0",
+    version="0.4.2",
     author="csunny",
     author_email="cfqcsunny@gmail.com",
     description="DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment."

@@ -1,5 +1,6 @@
 from pilot.scene.base_chat import BaseChat
 from pilot.singleton import Singleton
+from pilot.utils.tracer import root_tracer
 
 
 class ChatFactory(metaclass=Singleton):
@@ -13,6 +14,10 @@ class ChatFactory(metaclass=Singleton):
         from pilot.scene.chat_dashboard.chat import ChatDashboard
         from pilot.scene.chat_knowledge.v1.chat import ChatKnowledge
         from pilot.scene.chat_knowledge.inner_db_summary.chat import InnerChatDBSummary
+        from pilot.scene.chat_knowledge.extract_triplet.chat import ExtractTriplet
+        from pilot.scene.chat_knowledge.extract_entity.chat import ExtractEntity
+        from pilot.scene.chat_knowledge.summary.chat import ExtractSummary
+        from pilot.scene.chat_knowledge.refine_summary.chat import ExtractRefineSummary
         from pilot.scene.chat_data.chat_excel.excel_analyze.chat import ChatExcel
         from pilot.scene.chat_agent.chat import ChatAgent
 
@@ -20,7 +25,11 @@ class ChatFactory(metaclass=Singleton):
         implementation = None
         for cls in chat_classes:
             if cls.chat_scene == chat_mode:
-                implementation = cls(**kwargs)
+                metadata = {"cls": str(cls)}
+                with root_tracer.start_span(
+                    "get_implementation_of_chat", metadata=metadata
+                ):
+                    implementation = cls(**kwargs)
         if implementation == None:
             raise Exception(f"Invalid implementation name:{chat_mode}")
         return implementation

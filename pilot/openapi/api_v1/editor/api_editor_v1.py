@@ -107,7 +107,7 @@ async def get_editor_sql(con_uid: str, round: int):
                             .replace("\n", " ")
                         )
                         return Result.succ(json.loads(context))
-    return Result.faild(msg="not have sql!")
+    return Result.failed(msg="not have sql!")
 
 
 @router.post("/v1/editor/sql/run", response_model=Result[SqlRunData])
@@ -116,7 +116,7 @@ async def editor_sql_run(run_param: dict = Body()):
     db_name = run_param["db_name"]
     sql = run_param["sql"]
     if not db_name and not sql:
-        return Result.faild("SQL run param error！")
+        return Result.failed("SQL run param error！")
     conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
 
     try:
@@ -134,6 +134,7 @@ async def editor_sql_run(run_param: dict = Body()):
         )
         return Result.succ(sql_run_data)
     except Exception as e:
+        logging.error("editor_sql_run exception!" + str(e))
         return Result.succ(
             SqlRunData(result_info=str(e), run_cost=0, colunms=[], values=[])
         )
@@ -165,11 +166,12 @@ async def sql_editor_submit(sql_edit_context: ChatSqlEditContext = Body()):
                 if element["type"] == "view":
                     data_loader = DbDataLoader()
                     element["data"]["content"] = data_loader.get_table_view_by_conn(
-                        conn.run(sql_edit_context.new_sql), sql_edit_context.new_speak
+                        conn.run_to_df(sql_edit_context.new_sql),
+                        sql_edit_context.new_speak,
                     )
             history_mem.update(history_messages)
             return Result.succ(None)
-    return Result.faild(msg="Edit Faild!")
+    return Result.failed(msg="Edit Failed!")
 
 
 @router.get("/v1/editor/chart/list", response_model=Result[ChartList])
@@ -191,7 +193,7 @@ async def get_editor_chart_list(con_uid: str):
                     charts=json.loads(element["data"]["content"]),
                 )
                 return Result.succ(chart_list)
-    return Result.faild(msg="Not have charts!")
+    return Result.failed(msg="Not have charts!")
 
 
 @router.post("/v1/editor/chart/info", response_model=Result[ChartDetail])
@@ -210,7 +212,7 @@ async def get_editor_chart_info(param: dict = Body()):
             logger.error(
                 "this dashboard dialogue version too old, can't support editor!"
             )
-            return Result.faild(
+            return Result.failed(
                 msg="this dashboard dialogue version too old, can't support editor!"
             )
         for element in last_round["messages"]:
@@ -234,7 +236,7 @@ async def get_editor_chart_info(param: dict = Body()):
                 )
 
                 return Result.succ(detail)
-    return Result.faild(msg="Can't Find Chart Detail Info!")
+    return Result.failed(msg="Can't Find Chart Detail Info!")
 
 
 @router.post("/v1/editor/chart/run", response_model=Result[ChartRunData])
@@ -244,7 +246,7 @@ async def editor_chart_run(run_param: dict = Body()):
     sql = run_param["sql"]
     chart_type = run_param["chart_type"]
     if not db_name and not sql:
-        return Result.faild("SQL run param error！")
+        return Result.failed("SQL run param error！")
     try:
         dashboard_data_loader: DashboardDataLoader = DashboardDataLoader()
         db_conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
@@ -334,7 +336,7 @@ async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body())
                         )
             except Exception as e:
                 logger.error(f"edit chart exception!{str(e)}", e)
-                return Result.faild(msg=f"Edit chart exception!{str(e)}")
+                return Result.failed(msg=f"Edit chart exception!{str(e)}")
             history_mem.update(history_messages)
             return Result.succ(None)
-    return Result.faild(msg="Edit Faild!")
+    return Result.failed(msg="Edit Failed!")

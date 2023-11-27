@@ -22,24 +22,21 @@
     <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
     </a>
-    <a href="https://discord.gg/vqBrcV7Nd">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/vqBrcV7Nd?compact=true&style=flat" />
+    <a href="https://discord.gg/nASQyBjvY">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/nASQyBjvY?compact=true&style=flat" />
     </a>
     <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/vqBrcV7Nd)|[**文档**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
+[**English**](README.md)|[**Discord**](https://discord.gg/nASQyBjvY)|[**文档**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
 </div>
 
 ## DB-GPT 是什么？
+DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模型领域的基础设施，通过开发多模型管理、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
 
-随着大模型的发布迭代，大模型变得越来越智能，在使用大模型的过程当中，遇到极大的数据安全与隐私挑战。在利用大模型能力的过程中我们的私密数据跟环境需要掌握自己的手里，完全可控，避免任何的数据隐私泄露以及安全风险。基于此，我们发起了DB-GPT项目，为所有以数据库为基础的场景，构建一套完整的私有大模型解决方案。 此方案因为支持本地部署，所以不仅仅可以应用于独立私有环境，而且还可以根据业务模块独立部署隔离，让大模型的能力绝对私有、安全、可控。我们的愿景是让围绕数据库构建大模型应用更简单，更方便。
-
-DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地化的GPT大模型与您的数据和环境进行交互，无数据泄露风险，100% 私密
-
-
+数据3.0 时代，基于模型、数据库，企业/开发者可以用更少的代码搭建自己的专属应用。
 
 ## 目录
 
@@ -55,33 +52,19 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 
 ## 效果演示
 
-示例通过 RTX 4090 GPU 演示
+##### Chat Data
+![chatdata](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/1f77079e-d018-4eee-982b-9b6a66bf1063)
 
 ##### Chat Excel
-![excel](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0474d220-2a9f-449f-a940-92c8a25af390)
-#### Chat Plugin
-![auto_plugin_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/7d95c347-f4b7-4fb6-8dd2-c1c02babaa56)
-#### LLM Management
-![llm_manage](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/501d6b3f-c4ce-4197-9a6f-f016f8150a11)
-#### FastChat && vLLM
-![vllm](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/0c9475d2-45ee-4573-aa5a-814f7fd40213)
-#### Trace
-![trace_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/69bd14b8-14d0-4ca9-9cb7-6cef44a2bc93)
-#### Chat Knowledge
-![kbqa_new](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/72266a48-edef-4c6d-88c6-fbb1a24a6c3e)
+![excel](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/3044e83b-a71e-41fe-a1e2-98e479e0ab59)
 
 #### 根据自然语言对话生成分析图表
-
 <p align="left">
   <img src="./assets/chat_excel/chat_excel_6.png" width="800px" />
 </p>
 
 <p align="left">
   <img src="./assets/dashboard.png" width="800px" />
-</p>
-
-<p align="left">
-  <img src="./assets/chat_dashboard/chat_dashboard_2.png" width="800px" />
 </p>
 
 ## 安装
@@ -91,80 +74,74 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 
-[**教程**](https://db-gpt.readthedocs.io/en/latest/getting_started/install/deploy/deploy.html)
-- [**安装**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/deploy/deploy.html)
-  - [**Install Step by Step**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/deploy/deploy.html)
-  - [**Docker安装**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/docker/docker.html)
-  - [**Docker Compose安装**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/docker_compose/docker_compose.html)
-- [**产品使用手册**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/chatdb/chatdb.html)
-  - [**ChatData**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/chatdb/chatdb.html)
-  - [**ChatKnowledge**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/kbqa/kbqa.html)
-  - [**ChatExcel**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/chatexcel/chatexcel.html)
-  - [**Dashboard**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/dashboard/dashboard.html)
-  - [**LLM 管理**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/model/model.html)
-  - [**Chat Agent**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/application/chatagent/chatagent.html)
-- [**如何部署LLM**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/cluster/cluster.html)
-  - [**Standalone**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/cluster/vms/standalone.html#)
-  - [**Cluster**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/cluster/vms/index.html)
-  - [**vLLM**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/getting_started/install/llm/vllm/vllm.html)
+[**教程**](https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx)
+- [**快速开始**](https://www.yuque.com/eosphoros/dbgpt-docs/ew0kf1plm0bru2ga)
+  - [**源码安装**](https://www.yuque.com/eosphoros/dbgpt-docs/urh3fcx8tu0s9xmb)
+  - [**Docker安装**](https://www.yuque.com/eosphoros/dbgpt-docs/glf87qg4xxcyrp89)
+  - [**Docker Compose安装**](https://www.yuque.com/eosphoros/dbgpt-docs/wwdu11e0v5nkfzin)
+- [**产品使用手册**](https://www.yuque.com/eosphoros/dbgpt-docs/tkspdd0tcy2vlnu4)
+  - [**数据对话**](https://www.yuque.com/eosphoros/dbgpt-docs/gd9hbhi1dextqgbz)
+  - [**知识库**](https://www.yuque.com/eosphoros/dbgpt-docs/ycyz3d9b62fccqxh)
+  - [**ChatExcel**](https://www.yuque.com/eosphoros/dbgpt-docs/prugoype0xd2g4bb)
+  - [**数据库对话**](https://www.yuque.com/eosphoros/dbgpt-docs/wswpv3zcm2c9snmg)
+  - [**报表分析**](https://www.yuque.com/eosphoros/dbgpt-docs/vsv49p33eg4p5xc1)
+  - [**插件**](https://www.yuque.com/eosphoros/dbgpt-docs/pom41m7oqtdd57hm)
+- [**如何部署模型服务**](https://www.yuque.com/eosphoros/dbgpt-docs/vubxiv9cqed5mc6o)
+  - [**单机部署**](https://www.yuque.com/eosphoros/dbgpt-docs/kwg1ed88lu5fgawb)
+  - [**集群部署**](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
+  - [**vLLM**](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
 - [**如何Debug**](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
 - [**FAQ**](https://db-gpt.readthedocs.io/en/latest/getting_started/faq/deploy/deploy_faq.html)
 
 ## 特性一览
-
-目前我们已经发布了多种关键的特性，这里一一列举展示一下当前发布的能力。
-
-- 私域问答&数据处理
+- **私域问答&数据处理&RAG**
 
   支持内置、多文件格式上传、插件自抓取等方式自定义构建知识库，对海量结构化，非结构化数据做统一向量存储与检索
-  
-- 多数据源&可视化
+
+- **多数据源&GBI**
 
   支持自然语言与Excel、数据库、数仓等多种数据源交互，并支持分析报告。
 
-- 自动化微调
+- **自动化微调**
 
   围绕大语言模型、Text2SQL数据集、LoRA/QLoRA/Pturning等微调方法构建的自动化微调轻量框架, 让TextSQL微调像流水线一样方便。详见: [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
-- Multi-Agents&Plugins
+- **Data-Driven Multi-Agents&Plugins**
 
   支持自定义插件执行任务，原生支持Auto-GPT插件模型，Agents协议采用Agent Protocol标准
 
-- 多模型支持与管理
+- **多模型支持与管理**
 
-  海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。
-  - 支持多种大语言模型, 当前已支持如下模型: 
+  海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。当前已支持如下模型: 
+
   - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
   - [vicuna-13b-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5)
   - [LLama2](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
-  - [baichuan2-13b](https://huggingface.co/baichuan-inc)
-  - [baichuan-7B](https://huggingface.co/baichuan-inc/baichuan-7B)
+  - [baichuan2-13b](https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat)
+  - [baichuan2-7b](https://huggingface.co/baichuan-inc/Baichuan2-7B-Chat)
   - [chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
   - [chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
+  - [chatglm3-6b](https://huggingface.co/THUDM/chatglm3-6b)
   - [falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
   - [internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
-  - [Qwen-7B-Chat/Qwen-14B-Chat](https://huggingface.co/Qwen/)
-  - [RWKV-4-Raven](https://huggingface.co/BlinkDL/rwkv-4-raven)
-  - [CAMEL-13B-Combined-Data](https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data)
-  - [dolly-v2-12b](https://huggingface.co/databricks/dolly-v2-12b)
-  - [h2ogpt-gm-oasst1-en-2048-open-llama-7b](https://huggingface.co/h2oai/h2ogpt-gm-oasst1-en-2048-open-llama-7b)
-  - [fastchat-t5-3b-v1.0](https://huggingface.co/lmsys/fastchat-t5)
-  - [mpt-7b-chat](https://huggingface.co/mosaicml/mpt-7b-chat)
-  - [gpt4all-13b-snoozy](https://huggingface.co/nomic-ai/gpt4all-13b-snoozy)
-  - [Nous-Hermes-13b](https://huggingface.co/NousResearch/Nous-Hermes-13b)
-  - [codet5p-6b](https://huggingface.co/Salesforce/codet5p-6b)
-  - [guanaco-33b-merged](https://huggingface.co/timdettmers/guanaco-33b-merged)
-  - [WizardLM-13B-V1.0](https://huggingface.co/WizardLM/WizardLM-13B-V1.0)
-  - [WizardLM/WizardCoder-15B-V1.0](https://huggingface.co/WizardLM/WizardCoder-15B-V1.0)
-  - [Llama2-Chinese-13b-Chat](https://huggingface.co/FlagAlpha/Llama2-Chinese-13b-Chat)
-  - [OpenLLaMa OpenInstruct](https://huggingface.co/VMware/open-llama-7b-open-instruct)
+  - [internlm-chat-20b](https://huggingface.co/internlm/internlm-chat-20b)
+  - [qwen-7b-chat](https://huggingface.co/Qwen/Qwen-7B-Chat)
+  - [qwen-14b-chat](https://huggingface.co/Qwen/Qwen-14B-Chat)
+  - [wizardlm-13b](https://huggingface.co/WizardLM/WizardLM-13B-V1.2)
+  - [orca-2-7b](https://huggingface.co/microsoft/Orca-2-7b)
+  - [orca-2-13b](https://huggingface.co/microsoft/Orca-2-13b)
+  - [openchat_3.5](https://huggingface.co/openchat/openchat_3.5)
+  - [zephyr-7b-alpha](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha)
+  - [mistral-7b-instruct-v0.1](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1)
+  - [Yi-34B-Chat](https://huggingface.co/01-ai/Yi-34B-Chat)
+
   - 支持在线代理模型 
     - [x] [ChatGPT](https://api.openai.com/)
     - [x] [Tongyi](https://www.aliyun.com/product/dashscope)
     - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
     - [x] [ChatGLM](http://open.bigmodel.cn/)
 
-- 隐私安全
+- **隐私安全**
 
   通过私有化大模型、代理脱敏等多种技术保障数据的隐私安全。
 
@@ -192,22 +169,23 @@ DB-GPT 是一个开源的以数据库为基础的GPT实验项目，使用本地�
 | [StarRocks](https://github.com/StarRocks/starrocks)                             | No          |           TODO                              |
 
 ## 架构方案
-DB-GPT基于 [FastChat](https://github.com/lm-sys/FastChat) 构建大模型运行环境。此外，我们通过LangChain提供私域知识库问答能力。同时我们支持插件模式, 在设计上原生支持Auto-GPT插件。我们的愿景是让围绕数据库和LLM构建应用程序更加简便和便捷。
-
 整个DB-GPT的架构，如下图所示
-
 <p align="center">
   <img src="./assets/DB-GPT_zh.png" width="800px" />
 </p>
 
-核心能力主要有以下几个部分。 
-1. 多模型：支持多LLM，如LLaMA/LLaMA2、CodeLLaMA、ChatGLM、QWen、Vicuna以及代理模型ChatGPT、Baichuan、tongyi、wenxin等
-2. 私域知识库问答: 可以根据本地文档（如pdf、word、excel等数据）进行高质量的智能问答。
-3. 统一数据向量存储和索引: 将数据嵌入为向量并存储在向量数据库中，提供内容相似性搜索。  
-4. 多数据源: 用于连接不同的模块和数据源，实现数据的流动和交互。
-5. Agent与插件: 提供Agent和插件机制，使得用户可以自定义并增强系统的行为。  
-6. 隐私和安全: 您可以放心，没有数据泄露的风险，您的数据100%私密和安全。
-7. Text2SQL: 我们通过在大型语言模型监督微调（SFT）来增强文本到SQL的性能
+核心能力主要有以下几个部分:
+- **RAG(Retrieval Augmented Generation)**，RAG是当下落地实践最多，也是最迫切的领域，DB-GPT目前已经实现了一套基于RAG的框架，用户可以基于DB-GPT的RAG能力构建知识类应用。 
+
+- **GBI**：生成式BI是DB-GPT项目的核心能力之一，为构建企业报表分析、业务洞察提供基础的数智化技术保障。 
+
+- **Fine-tune框架**:  模型微调是任何一个企业在垂直、细分领域落地不可或缺的能力，DB-GPT提供了完整的微调框架，实现与DB-GPT项目的无缝打通，在最近的微调中，基于spider的准确率已经做到了82.5%
+
+- **数据驱动的Multi-Agents框架**:  DB-GPT提供了数据驱动的自进化微调框架，目标是可以持续基于数据做决策与执行。 
+
+- **数据工厂**: 数据工厂主要是在大模型时代，做可信知识、数据的清洗加工。 
+
+- **数据源**: 对接各类数据源，实现生产业务数据无缝对接到DB-GPT核心能力。 
 
 ### RAG生产落地实践架构
 <p align="center">
@@ -344,16 +322,6 @@ The MIT License (MIT)
 
 -  SFT模型准确率 
 截止20231010，我们利用本项目基于开源的13B大小的模型微调后，在Spider的评估集上的执行准确率，已经超越GPT-4!
-
-| 模型名称                           | 执行准确率           | 说明                                                                                                                      |
-| ----------------------------------| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| **GPT-4**                         | **0.762**          | [numbersstation-eval-res](https://www.numbersstation.ai/post/nsql-llama-2-7b)                                                  |
-| ChatGPT                           | 0.728              | [numbersstation-eval-res](https://www.numbersstation.ai/post/nsql-llama-2-7b)                                                  | 
-| **CodeLlama-13b-Instruct-hf_lora**| **0.789**          | sft train by our this project,only used spider train dataset ,the same eval  way in this project  with lora SFT                |
-| CodeLlama-13b-Instruct-hf_qlora   | 0.774              | sft train by our this project,only used spider train dataset ,the same eval  way in this project  with qlora and nf4,bit4 SFT  |
-| wizardcoder                       | 0.610              | [text-to-sql-wizardcoder](https://github.com/cuplv/text-to-sql-wizardcoder/tree/main)                                          |  
-| CodeLlama-13b-Instruct-hf         | 0.556              | eval in this project default param                                                                                             |
-| llama2_13b_hf_lora_best           | 0.744              | sft train by our this project,only used spider train dataset ,the same eval  way in this project                               |
 
 [More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
 

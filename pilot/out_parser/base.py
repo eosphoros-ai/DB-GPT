@@ -26,6 +26,10 @@ class BaseOutputParser(ABC):
     def __init__(self, sep: str, is_stream_out: bool = True):
         self.sep = sep
         self.is_stream_out = is_stream_out
+        self.data_schema = None
+
+    def update(self, data_schema):
+        self.data_schema = data_schema
 
     def __post_process_code(self, code):
         sep = "\n```"
@@ -115,7 +119,9 @@ class BaseOutputParser(ABC):
             print("un_stream ai response:", ai_response)
             return ai_response
         else:
-            raise ValueError("Model server error!code=" + resp_obj_ex["error_code"])
+            raise ValueError(
+                f"""Model server error!code={resp_obj_ex["error_code"]}, errmsg is {resp_obj_ex["text"]}"""
+            )
 
     def __illegal_json_ends(self, s):
         temp_json = s
@@ -202,16 +208,23 @@ class BaseOutputParser(ABC):
         if not cleaned_output.startswith("{") or not cleaned_output.endswith("}"):
             logger.info("illegal json processing:\n" + cleaned_output)
             cleaned_output = self.__extract_json(cleaned_output)
+
+        if not cleaned_output or len(cleaned_output) <= 0:
+            return model_out_text
+
         cleaned_output = (
             cleaned_output.strip()
             .replace("\\n", " ")
             .replace("\n", " ")
             .replace("\\", " ")
+            .replace("\_", "_")
         )
         cleaned_output = self.__illegal_json_ends(cleaned_output)
         return cleaned_output
 
-    def parse_view_response(self, ai_text, data) -> str:
+    def parse_view_response(
+        self, ai_text, data, parse_prompt_response: Any = None
+    ) -> str:
         """
         parse the ai response info to user view
         Args:
@@ -242,7 +255,9 @@ class BaseOutputParser(ABC):
 
 
 def _parse_model_response(response: ResponseTye):
-    if isinstance(response, ModelOutput):
+    if response is None:
+        resp_obj_ex = ""
+    elif isinstance(response, ModelOutput):
         resp_obj_ex = asdict(response)
     elif isinstance(response, str):
         resp_obj_ex = json.loads(response)

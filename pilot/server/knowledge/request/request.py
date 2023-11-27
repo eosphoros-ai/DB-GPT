@@ -63,6 +63,8 @@ class DocumentSyncRequest(BaseModel):
     """doc_ids: doc ids"""
     doc_ids: List
 
+    model_name: Optional[str] = None
+
     """Preseparator, this separator is used for pre-splitting before the document is actually split by the text splitter.
     Preseparator are not included in the vectorized text. 
     """
@@ -108,3 +110,19 @@ class SpaceArgumentRequest(BaseModel):
     """argument: argument"""
 
     argument: str
+
+
+class DocumentSummaryRequest(BaseModel):
+    """Sync request"""
+
+    """doc_ids: doc ids"""
+    doc_id: int
+    model_name: str
+    conv_uid: str
+
+
+class EntityExtractRequest(BaseModel):
+    """argument: argument"""
+
+    text: str
+    model_name: str

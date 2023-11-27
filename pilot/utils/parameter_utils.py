@@ -1,8 +1,13 @@
 import argparse
 import os
 from dataclasses import dataclass, fields, MISSING, asdict, field, is_dataclass
-from typing import Any, List, Optional, Type, Union, Callable, Dict
+from typing import Any, List, Optional, Type, Union, Callable, Dict, TYPE_CHECKING
 from collections import OrderedDict
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+
+MISSING_DEFAULT_VALUE = "__MISSING_DEFAULT_VALUE__"
 
 
 @dataclass
@@ -190,6 +195,17 @@ def _genenv_ignoring_key_case(env_key: str, env_prefix: str = None, default_valu
     )
 
 
+def _genenv_ignoring_key_case_with_prefixes(
+    env_key: str, env_prefixes: List[str] = None, default_value=None
+) -> str:
+    if env_prefixes:
+        for env_prefix in env_prefixes:
+            env_var_value = _genenv_ignoring_key_case(env_key, env_prefix)
+            if env_var_value:
+                return env_var_value
+    return _genenv_ignoring_key_case(env_key, default_value=default_value)
+
+
 class EnvArgumentParser:
     @staticmethod
     def get_env_prefix(env_key: str) -> str:
@@ -201,18 +217,16 @@ class EnvArgumentParser:
     def parse_args_into_dataclass(
         self,
         dataclass_type: Type,
-        env_prefix: str = None,
+        env_prefixes: List[str] = None,
         command_args: List[str] = None,
         **kwargs,
     ) -> Any:
         """Parse parameters from environment variables and command lines and populate them into data class"""
         parser = argparse.ArgumentParser()
         for field in fields(dataclass_type):
-            env_var_value = _genenv_ignoring_key_case(field.name, env_prefix)
-            if not env_var_value:
-                # Read without env prefix
-                env_var_value = _genenv_ignoring_key_case(field.name)
-
+            env_var_value = _genenv_ignoring_key_case_with_prefixes(
+                field.name, env_prefixes
+            )
             if env_var_value:
                 env_var_value = env_var_value.strip()
                 if field.type is int or field.type == Optional[int]:
@@ -602,6 +616,64 @@ def _get_dict_from_obj(obj, default_value=None) -> Optional[Dict]:
     if isinstance(obj, dict):
         return obj
     return default_value
+
+
+def _get_base_model_descriptions(model_cls: "BaseModel") -> List[ParameterDescription]:
+    import pydantic
+
+    version = int(pydantic.VERSION.split(".")[0])
+    schema = model_cls.model_json_schema() if version >= 2 else model_cls.schema()
+    required_fields = set(schema.get("required", []))
+    param_descs = []
+    for field_name, field_schema in schema.get("properties", {}).items():
+        field = model_cls.model_fields[field_name]
+        param_type = field_schema.get("type")
+        if not param_type and "anyOf" in field_schema:
+            for any_of in field_schema["anyOf"]:
+                if any_of["type"] != "null":
+                    param_type = any_of["type"]
+                    break
+        if version >= 2:
+            default_value = (
+                field.default
+                if hasattr(field, "default")
+                and str(field.default) != "PydanticUndefined"
+                else None
+            )
+        else:
+            default_value = (
+                field.default
+                if not field.allow_none
+                else (
+                    field.default_factory() if callable(field.default_factory) else None
+                )
+            )
+        description = field_schema.get("description", "")
+        is_required = field_name in required_fields
+        valid_values = None
+        ext_metadata = None
+        if hasattr(field, "field_info"):
+            valid_values = (
+                list(field.field_info.choices)
+                if hasattr(field.field_info, "choices")
+                else None
+            )
+            ext_metadata = (
+                field.field_info.extra if hasattr(field.field_info, "extra") else None
+            )
+        param_class = (f"{model_cls.__module__}.{model_cls.__name__}",)
+        param_desc = ParameterDescription(
+            param_class=param_class,
+            param_name=field_name,
+            param_type=param_type,
+            default_value=default_value,
+            description=description,
+            required=is_required,
+            valid_values=valid_values,
+            ext_metadata=ext_metadata,
+        )
+        param_descs.append(param_desc)
+    return param_descs
 
 
 class _SimpleArgParser:

@@ -9,9 +9,9 @@ sphinx_book_theme
 sphinx_rtd_theme==1.0.0
 sphinx-typlog-theme==0.8.0
 sphinx-panels
+sphinx-tabs==3.4.0
 toml
 myst_nb
 sphinx_copybutton
 pydata-sphinx-theme==0.13.1
-pydantic-settings
 furo

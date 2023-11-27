@@ -15,7 +15,10 @@ class RemoteWorkerManager(LocalWorkerManager):
 
     async def start(self):
         for listener in self.start_listeners:
-            listener(self)
+            if asyncio.iscoroutinefunction(listener):
+                await listener(self)
+            else:
+                listener(self)
 
     async def stop(self, ignore_exception: bool = False):
         pass

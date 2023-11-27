@@ -2,10 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from enum import Enum
-from typing import TypedDict, Optional, Dict, List
+from typing import TypedDict, Optional, Dict, List, Any
+
 from dataclasses import dataclass, asdict
+import time
 from datetime import datetime
 from pilot.utils.parameter_utils import ParameterDescription
+from pilot.utils.model_utils import GPUInfo
 
 
 class Message(TypedDict):
@@ -48,10 +51,100 @@ class WorkerApplyType(str, Enum):
 
 
 @dataclass
+class ModelInferenceMetrics:
+    """A class to represent metrics for assessing the inference performance of a LLM."""
+
+    collect_index: Optional[int] = 0
+
+    start_time_ms: Optional[int] = None
+    """The timestamp (in milliseconds) when the model inference starts."""
+
+    end_time_ms: Optional[int] = None
+    """The timestamp (in milliseconds) when the model inference ends."""
+
+    current_time_ms: Optional[int] = None
+    """The current timestamp (in milliseconds) when the model inference return partially output(stream)."""
+
+    first_token_time_ms: Optional[int] = None
+    """The timestamp (in milliseconds) when the first token is generated."""
+
+    first_completion_time_ms: Optional[int] = None
+    """The timestamp (in milliseconds) when the first completion is generated."""
+
+    first_completion_tokens: Optional[int] = None
+    """The number of tokens when the first completion is generated."""
+
+    prompt_tokens: Optional[int] = None
+    """The number of tokens in the input prompt."""
+
+    completion_tokens: Optional[int] = None
+    """The number of tokens in the generated completion."""
+
+    total_tokens: Optional[int] = None
+    """The total number of tokens (prompt plus completion)."""
+
+    speed_per_second: Optional[float] = None
+    """The average number of tokens generated per second."""
+
+    current_gpu_infos: Optional[List[GPUInfo]] = None
+    """Current gpu information, all devices"""
+
+    avg_gpu_infos: Optional[List[GPUInfo]] = None
+    """Average memory usage across all collection points"""
+
+    @staticmethod
+    def create_metrics(
+        last_metrics: Optional["ModelInferenceMetrics"] = None,
+    ) -> "ModelInferenceMetrics":
+        start_time_ms = last_metrics.start_time_ms if last_metrics else None
+        first_token_time_ms = last_metrics.first_token_time_ms if last_metrics else None
+        first_completion_time_ms = (
+            last_metrics.first_completion_time_ms if last_metrics else None
+        )
+        first_completion_tokens = (
+            last_metrics.first_completion_tokens if last_metrics else None
+        )
+        prompt_tokens = last_metrics.prompt_tokens if last_metrics else None
+        completion_tokens = last_metrics.completion_tokens if last_metrics else None
+        total_tokens = last_metrics.total_tokens if last_metrics else None
+        speed_per_second = last_metrics.speed_per_second if last_metrics else None
+        current_gpu_infos = last_metrics.current_gpu_infos if last_metrics else None
+        avg_gpu_infos = last_metrics.avg_gpu_infos if last_metrics else None
+
+        if not start_time_ms:
+            start_time_ms = time.time_ns() // 1_000_000
+        current_time_ms = time.time_ns() // 1_000_000
+        end_time_ms = current_time_ms
+
+        return ModelInferenceMetrics(
+            start_time_ms=start_time_ms,
+            end_time_ms=end_time_ms,
+            current_time_ms=current_time_ms,
+            first_token_time_ms=first_token_time_ms,
+            first_completion_time_ms=first_completion_time_ms,
+            first_completion_tokens=first_completion_tokens,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+            speed_per_second=speed_per_second,
+            current_gpu_infos=current_gpu_infos,
+            avg_gpu_infos=avg_gpu_infos,
+        )
+
+    def to_dict(self) -> Dict:
+        return asdict(self)
+
+
+@dataclass
 class ModelOutput:
     text: str
     error_code: int
     model_context: Dict = None
+    finish_reason: str = None
+    usage: Dict[str, Any] = None
+    metrics: Optional[ModelInferenceMetrics] = None
+
+    """Some metrics for model inference"""
 
     def to_dict(self) -> Dict:
         return asdict(self)

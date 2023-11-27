@@ -11,6 +11,7 @@ from pilot.common.string_utils import extract_content
 from .prompt import prompt
 from pilot.component import ComponentType
 from pilot.base_modules.agent.controller import ModuleAgent
+from pilot.utils.tracer import root_tracer, trace
 
 CFG = Config()
 
@@ -51,7 +52,8 @@ class ChatAgent(BaseChat):
 
         self.api_call = ApiCall(plugin_generator=self.plugins_prompt_generator)
 
-    def generate_input_values(self):
+    @trace()
+    async def generate_input_values(self) -> Dict[str, str]:
         input_values = {
             "user_goal": self.current_user_input,
             "expand_constraints": self.__list_to_prompt_str(
@@ -62,8 +64,16 @@ class ChatAgent(BaseChat):
         return input_values
 
     def stream_plugin_call(self, text):
-        text = text.replace("\n", " ")
-        return self.api_call.run(text)
+        text = (
+            text.replace("\\n", " ")
+            .replace("\n", " ")
+            .replace("\_", "_")
+            .replace("\\", " ")
+        )
+        with root_tracer.start_span(
+            "ChatAgent.stream_plugin_call.api_call", metadata={"text": text}
+        ):
+            return self.api_call.run(text)
 
     def __list_to_prompt_str(self, list: List) -> str:
         return "\n".join(f"{i + 1 + 1}. {item}" for i, item in enumerate(list))

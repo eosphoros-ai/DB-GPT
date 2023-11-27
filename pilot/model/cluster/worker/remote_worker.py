@@ -13,7 +13,7 @@ class RemoteModelWorker(ModelWorker):
     def __init__(self) -> None:
         self.headers = {}
         # TODO Configured by ModelParameters
-        self.timeout = 180
+        self.timeout = 3600
         self.host = None
         self.port = None
 

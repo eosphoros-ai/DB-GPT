@@ -9,6 +9,7 @@ import requests
 import git
 import threading
 import datetime
+import logging
 from pathlib import Path
 from typing import List
 from urllib.parse import urlparse
@@ -19,7 +20,8 @@ from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 from pilot.configs.config import Config
 from pilot.configs.model_config import PLUGINS_DIR
-from pilot.logs import logger
+
+logger = logging.getLogger(__name__)
 
 
 def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
@@ -109,7 +111,7 @@ def load_native_plugins(cfg: Config):
                 print("save file")
                 cfg.set_plugins(scan_plugins(cfg.debug_mode))
             else:
-                print("get file faild，response code：", response.status_code)
+                print("get file failed，response code：", response.status_code)
         except Exception as e:
             print("load plugin from git exception!" + str(e))
 

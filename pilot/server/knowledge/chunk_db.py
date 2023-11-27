@@ -4,7 +4,12 @@ from typing import List
 from sqlalchemy import Column, String, DateTime, Integer, Text, func
 
 from pilot.base_modules.meta_data.base_dao import BaseDao
-from pilot.base_modules.meta_data.meta_data import Base, engine, session
+from pilot.base_modules.meta_data.meta_data import (
+    Base,
+    engine,
+    session,
+    META_DATA_DATABASE,
+)
 from pilot.configs.config import Config
 
 CFG = Config()
@@ -32,7 +37,10 @@ class DocumentChunkEntity(Base):
 class DocumentChunkDao(BaseDao):
     def __init__(self):
         super().__init__(
-            database="dbgpt", orm_base=Base, db_engine=engine, session=session
+            database=META_DATA_DATABASE,
+            orm_base=Base,
+            db_engine=engine,
+            session=session,
         )
 
     def create_documents_chunks(self, documents: List):
@@ -75,7 +83,7 @@ class DocumentChunkDao(BaseDao):
                 DocumentChunkEntity.meta_info == query.meta_info
             )
 
-        document_chunks = document_chunks.order_by(DocumentChunkEntity.id.desc())
+        document_chunks = document_chunks.order_by(DocumentChunkEntity.id.asc())
         document_chunks = document_chunks.offset((page - 1) * page_size).limit(
             page_size
         )

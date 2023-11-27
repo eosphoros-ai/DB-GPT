@@ -83,7 +83,7 @@ async def agent_hub_update(update_param: PluginHubParam = Body()):
         return Result.succ(None)
     except Exception as e:
         logger.error("Agent Hub Update Error!", e)
-        return Result.faild(code="E0020", msg=f"Agent Hub Update Error! {e}")
+        return Result.failed(code="E0020", msg=f"Agent Hub Update Error! {e}")
 
 
 @router.post("/v1/agent/query", response_model=Result[str])
@@ -133,7 +133,7 @@ async def agent_install(plugin_name: str, user: str = None):
         return Result.succ(None)
     except Exception as e:
         logger.error("Plugin Install Error!", e)
-        return Result.faild(code="E0021", msg=f"Plugin Install Error {e}")
+        return Result.failed(code="E0021", msg=f"Plugin Install Error {e}")
 
 
 @router.post("/v1/agent/uninstall", response_model=Result[str])
@@ -147,7 +147,7 @@ async def agent_uninstall(plugin_name: str, user: str = None):
         return Result.succ(None)
     except Exception as e:
         logger.error("Plugin Uninstall Error!", e)
-        return Result.faild(code="E0022", msg=f"Plugin Uninstall Error {e}")
+        return Result.failed(code="E0022", msg=f"Plugin Uninstall Error {e}")
 
 
 @router.post("/v1/personal/agent/upload", response_model=Result[str])
@@ -160,4 +160,4 @@ async def personal_agent_upload(doc_file: UploadFile = File(...), user: str = No
         return Result.succ(None)
     except Exception as e:
         logger.error("Upload Personal Plugin Error!", e)
-        return Result.faild(code="E0023", msg=f"Upload Personal Plugin Error {e}")
+        return Result.failed(code="E0023", msg=f"Upload Personal Plugin Error {e}")

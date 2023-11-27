@@ -10,7 +10,7 @@ from pilot.configs.model_config import (
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
 from pilot.component import ComponentType
-from pilot.utils.executor_utils import ExecutorFactory
+from pilot.utils.executor_utils import ExecutorFactory, blocking_func_to_async
 
 from pilot.server.knowledge.chunk_db import (
     DocumentChunkEntity,
@@ -31,6 +31,7 @@ from pilot.server.knowledge.request.request import (
     ChunkQueryRequest,
     SpaceArgumentRequest,
     DocumentSyncRequest,
+    DocumentSummaryRequest,
 )
 from enum import Enum
 
@@ -200,6 +201,7 @@ class KnowledgeService:
         # import langchain is very very slow!!!
 
         doc_ids = sync_request.doc_ids
+        self.model_name = sync_request.model_name or CFG.LLM_MODEL
         for doc_id in doc_ids:
             query = KnowledgeDocumentEntity(
                 id=doc_id,
@@ -290,7 +292,6 @@ class KnowledgeService:
                 ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
             ).create()
             executor.submit(self.async_doc_embedding, client, chunk_docs, doc)
-
             logger.info(f"begin save document chunks, doc:{doc.doc_name}")
             # save chunk details
             chunk_entities = [
@@ -307,7 +308,33 @@ class KnowledgeService:
             ]
             document_chunk_dao.create_documents_chunks(chunk_entities)
 
-        return True
+        return doc.id
+
+    async def document_summary(self, request: DocumentSummaryRequest):
+        """get document summary
+        Args:
+            - request: DocumentSummaryRequest
+        """
+        doc_query = KnowledgeDocumentEntity(id=request.doc_id)
+        documents = knowledge_document_dao.get_documents(doc_query)
+        if len(documents) != 1:
+            raise Exception(f"can not found document for {request.doc_id}")
+        document = documents[0]
+        query = DocumentChunkEntity(
+            document_id=request.doc_id,
+        )
+        chunks = document_chunk_dao.get_document_chunks(query, page=1, page_size=100)
+        if len(chunks) == 0:
+            raise Exception(f"can not found chunks for {request.doc_id}")
+        from langchain.schema import Document
+
+        chunk_docs = [Document(page_content=chunk.content) for chunk in chunks]
+        return await self.async_document_summary(
+            model_name=request.model_name,
+            chunk_docs=chunk_docs,
+            doc=document,
+            conn_uid=request.conv_uid,
+        )
 
     def update_knowledge_space(
         self, space_id: int, space_request: KnowledgeSpaceRequest
@@ -390,23 +417,82 @@ class KnowledgeService:
             doc_name=request.doc_name,
             doc_type=request.doc_type,
         )
+        document_query = KnowledgeDocumentEntity(id=request.document_id)
+        documents = knowledge_document_dao.get_documents(document_query)
+
         res = ChunkQueryResponse()
         res.data = document_chunk_dao.get_document_chunks(
             query, page=request.page, page_size=request.page_size
         )
+        res.summary = documents[0].summary
         res.total = document_chunk_dao.get_document_chunks_count(query)
         res.page = request.page
         return res
+
+    def async_knowledge_graph(self, chunk_docs, doc):
+        """async document extract triplets and save into graph db
+        Args:
+            - chunk_docs: List[Document]
+            - doc: KnowledgeDocumentEntity
+        """
+        logger.info(
+            f"async_knowledge_graph, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to graph store"
+        )
+        try:
+            from pilot.graph_engine.graph_factory import RAGGraphFactory
+
+            rag_engine = CFG.SYSTEM_APP.get_component(
+                ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
+            ).create()
+            rag_engine.knowledge_graph(chunk_docs)
+            doc.status = SyncStatus.FINISHED.name
+            doc.result = "document build graph success"
+        except Exception as e:
+            doc.status = SyncStatus.FAILED.name
+            doc.result = "document build graph failed" + str(e)
+            logger.error(f"document build graph failed:{doc.doc_name}, {str(e)}")
+        return knowledge_document_dao.update_knowledge_document(doc)
+
+    async def async_document_summary(self, model_name, chunk_docs, doc, conn_uid):
+        """async document extract summary
+        Args:
+            - model_name: str
+            - chunk_docs: List[Document]
+            - doc: KnowledgeDocumentEntity
+        """
+        texts = [doc.page_content for doc in chunk_docs]
+        from pilot.common.prompt_util import PromptHelper
+
+        prompt_helper = PromptHelper()
+        from pilot.scene.chat_knowledge.summary.prompt import prompt
+
+        texts = prompt_helper.repack(prompt_template=prompt.template, text_chunks=texts)
+        logger.info(
+            f"async_document_summary, doc:{doc.doc_name}, chunk_size:{len(texts)}, begin generate summary"
+        )
+        space_context = self.get_space_context(doc.space)
+        if space_context and space_context.get("summary"):
+            summary = await self._mapreduce_extract_summary(
+                docs=texts,
+                model_name=model_name,
+                max_iteration=int(space_context["summary"]["max_iteration"]),
+                concurrency_limit=int(space_context["summary"]["concurrency_limit"]),
+            )
+        else:
+            summary = await self._mapreduce_extract_summary(
+                docs=texts, model_name=model_name
+            )
+        return await self._llm_extract_summary(summary, conn_uid, model_name)
 
     def async_doc_embedding(self, client, chunk_docs, doc):
         """async document embedding into vector db
         Args:
             - client: EmbeddingEngine Client
             - chunk_docs: List[Document]
-            - doc: doc
+            - doc: KnowledgeDocumentEntity
         """
         logger.info(
-            f"async_doc_embedding, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
+            f"async doc sync, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
         )
         try:
             vector_ids = client.knowledge_embedding_batch(chunk_docs)
@@ -441,6 +527,10 @@ class KnowledgeService:
                 "scene": PROMPT_SCENE_DEFINE,
                 "template": _DEFAULT_TEMPLATE,
             },
+            "summary": {
+                "max_iteration": 5,
+                "concurrency_limit": 3,
+            },
         }
         context_template_string = json.dumps(context_template, indent=4)
         return context_template_string
@@ -462,3 +552,98 @@ class KnowledgeService:
         if space.context is not None:
             return json.loads(spaces[0].context)
         return None
+
+    async def _llm_extract_summary(
+        self, doc: str, conn_uid: str, model_name: str = None
+    ):
+        """Extract triplets from text by llm
+        Args:
+            doc: Document
+            conn_uid: str,chat conversation id
+            model_name: str, model name
+        Returns:
+             chat: BaseChat, refine summary chat.
+        """
+        from pilot.scene.base import ChatScene
+
+        chat_param = {
+            "chat_session_id": conn_uid,
+            "current_user_input": "",
+            "select_param": doc,
+            "model_name": model_name,
+            "model_cache_enable": False,
+        }
+        executor = CFG.SYSTEM_APP.get_component(
+            ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+        ).create()
+        from pilot.openapi.api_v1.api_v1 import CHAT_FACTORY
+
+        chat = await blocking_func_to_async(
+            executor,
+            CHAT_FACTORY.get_implementation,
+            ChatScene.ExtractRefineSummary.value(),
+            **{"chat_param": chat_param},
+        )
+        return chat
+
+    async def _mapreduce_extract_summary(
+        self,
+        docs,
+        model_name: str = None,
+        max_iteration: int = 5,
+        concurrency_limit: int = 3,
+    ):
+        """Extract summary by mapreduce mode
+        map -> multi async call llm to generate summary
+        reduce -> merge the summaries by map process
+        Args:
+            docs:List[str]
+            model_name:model name str
+            max_iteration:max iteration will call llm to summary
+            concurrency_limit:the max concurrency threads to call llm
+        Returns:
+             Document: refine summary context document.
+        """
+        from pilot.scene.base import ChatScene
+        from pilot.common.chat_util import llm_chat_response_nostream
+        import uuid
+
+        tasks = []
+        if len(docs) == 1:
+            return docs[0]
+        else:
+            max_iteration = max_iteration if len(docs) > max_iteration else len(docs)
+            for doc in docs[0:max_iteration]:
+                chat_param = {
+                    "chat_session_id": uuid.uuid1(),
+                    "current_user_input": "",
+                    "select_param": doc,
+                    "model_name": model_name,
+                    "model_cache_enable": True,
+                }
+                tasks.append(
+                    llm_chat_response_nostream(
+                        ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
+                    )
+                )
+            from pilot.common.chat_util import run_async_tasks
+
+            summary_iters = await run_async_tasks(
+                tasks=tasks, concurrency_limit=concurrency_limit
+            )
+            summary_iters = list(
+                filter(
+                    lambda content: "LLMServer Generate Error" not in content,
+                    summary_iters,
+                )
+            )
+            from pilot.common.prompt_util import PromptHelper
+            from pilot.scene.chat_knowledge.summary.prompt import prompt
+
+            prompt_helper = PromptHelper()
+            summary_iters = prompt_helper.repack(
+                prompt_template=prompt.template, text_chunks=summary_iters
+            )
+            return await self._mapreduce_extract_summary(
+                summary_iters, model_name, max_iteration, concurrency_limit
+            )

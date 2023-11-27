@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Union
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -70,14 +70,6 @@ class SystemMessage(BaseMessage):
         return "system"
 
 
-class ModelMessage(BaseModel):
-    """Type of message that interaction between dbgpt-server and llm-server"""
-
-    """Similar to openai's message format"""
-    role: str
-    content: str
-
-
 class ModelMessageRoleType:
     """ "Type of ModelMessage role"""
 
@@ -85,6 +77,77 @@ class ModelMessageRoleType:
     HUMAN = "human"
     AI = "ai"
     VIEW = "view"
+
+
+class ModelMessage(BaseModel):
+    """Type of message that interaction between dbgpt-server and llm-server"""
+
+    """Similar to openai's message format"""
+    role: str
+    content: str
+
+    @staticmethod
+    def from_openai_messages(
+        messages: Union[str, List[Dict[str, str]]]
+    ) -> List["ModelMessage"]:
+        """Openai message format to current ModelMessage format"""
+        if isinstance(messages, str):
+            return [ModelMessage(role=ModelMessageRoleType.HUMAN, content=messages)]
+        result = []
+        for message in messages:
+            msg_role = message["role"]
+            content = message["content"]
+            if msg_role == "system":
+                result.append(
+                    ModelMessage(role=ModelMessageRoleType.SYSTEM, content=content)
+                )
+            elif msg_role == "user":
+                result.append(
+                    ModelMessage(role=ModelMessageRoleType.HUMAN, content=content)
+                )
+            elif msg_role == "assistant":
+                result.append(
+                    ModelMessage(role=ModelMessageRoleType.AI, content=content)
+                )
+            else:
+                raise ValueError(f"Unknown role: {msg_role}")
+        return result
+
+    @staticmethod
+    def to_openai_messages(messages: List["ModelMessage"]) -> List[Dict[str, str]]:
+        """Convert to OpenAI message format and
+        hugggingface [Templates of Chat Models](https://huggingface.co/docs/transformers/v4.34.1/en/chat_templating)
+        """
+        history = []
+        # Add history conversation
+        for message in messages:
+            if message.role == ModelMessageRoleType.HUMAN:
+                history.append({"role": "user", "content": message.content})
+            elif message.role == ModelMessageRoleType.SYSTEM:
+                history.append({"role": "system", "content": message.content})
+            elif message.role == ModelMessageRoleType.AI:
+                history.append({"role": "assistant", "content": message.content})
+            else:
+                pass
+        # Move the last user's information to the end
+        temp_his = history[::-1]
+        last_user_input = None
+        for m in temp_his:
+            if m["role"] == "user":
+                last_user_input = m
+                break
+        if last_user_input:
+            history.remove(last_user_input)
+            history.append(last_user_input)
+        return history
+
+    @staticmethod
+    def to_dict_list(messages: List["ModelMessage"]) -> List[Dict[str, str]]:
+        return list(map(lambda m: m.dict(), messages))
+
+    @staticmethod
+    def build_human_message(content: str) -> "ModelMessage":
+        return ModelMessage(role=ModelMessageRoleType.HUMAN, content=content)
 
 
 class Generation(BaseModel):

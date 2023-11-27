@@ -2,6 +2,7 @@ import os
 import argparse
 import sys
 from typing import List
+import logging
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -39,6 +40,7 @@ from pilot.utils.utils import (
     setup_logging,
     _get_logging_level,
     logging_str_to_uvicorn_level,
+    setup_http_service_logging,
 )
 from pilot.utils.tracer import root_tracer, initialize_tracer, SpanType, SpanTypeRunName
 from pilot.utils.parameter_utils import _get_dict_from_obj
@@ -127,6 +129,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
     setup_logging(
         "pilot", logging_level=param.log_level, logger_filename=param.log_file
     )
+
     # Before start
     system_app.before_start()
 
@@ -141,7 +144,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
 
     model_name = param.model_name or CFG.LLM_MODEL
 
-    model_path = LLM_MODEL_CONFIG.get(model_name)
+    model_path = CFG.LLM_MODEL_PATH or LLM_MODEL_CONFIG.get(model_name)
     if not param.light:
         print("Model Unified Deployment Mode!")
         if not param.remote_embedding:
@@ -180,6 +183,7 @@ def initialize_app(param: WebWerverParameters = None, args: List[str] = None):
 def run_uvicorn(param: WebWerverParameters):
     import uvicorn
 
+    setup_http_service_logging()
     uvicorn.run(
         app,
         host=param.host,
@@ -191,7 +195,11 @@ def run_uvicorn(param: WebWerverParameters):
 def run_webserver(param: WebWerverParameters = None):
     if not param:
         param = _get_webserver_params()
-    initialize_tracer(system_app, os.path.join(LOGDIR, param.tracer_file))
+    initialize_tracer(
+        system_app,
+        os.path.join(LOGDIR, param.tracer_file),
+        tracer_storage_cls=param.tracer_storage_cls,
+    )
 
     with root_tracer.start_span(
         "run_webserver",

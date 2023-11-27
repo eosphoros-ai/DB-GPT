@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, List, Dict, Type, Tuple, TYPE_CHECKING
+from typing import Callable, List, Dict, Type, Tuple, TYPE_CHECKING, Any, Optional
 import dataclasses
 import logging
 import threading
@@ -39,13 +39,26 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 thread_local = threading.local()
+_IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
 
 _OLD_MODELS = [
     "llama-cpp",
     "proxyllm",
     "gptj-6b",
+    "codellama-13b-sql-sft",
+    "codellama-7b",
+    "codellama-7b-sql-sft",
+    "codellama-13b",
 ]
+
+_NEW_HF_CHAT_MODELS = [
+    "yi-34b",
+    "yi-6b",
+]
+
+# The implementation of some models in fastchat will affect the DB-GPT loading model and will be temporarily added to the blacklist.
+_BLACK_LIST_MODLE_PROMPT = ["OpenHermes-2.5-Mistral-7B"]
 
 
 class LLMModelAdaper:
@@ -95,26 +108,25 @@ class LLMModelAdaper:
         """Get the default conv template"""
         raise NotImplementedError
 
-    def model_adaptation(
+    def get_str_prompt(
         self,
         params: Dict,
+        messages: List[ModelMessage],
+        tokenizer: Any,
+        prompt_template: str = None,
+    ) -> Optional[str]:
+        return None
+
+    def get_prompt_with_template(
+        self,
+        params: Dict,
+        messages: List[ModelMessage],
         model_name: str,
         model_path: str,
+        model_context: Dict,
         prompt_template: str = None,
-    ) -> Tuple[Dict, Dict]:
-        """Params adaptation"""
+    ):
         conv = self.get_default_conv_template(model_name, model_path)
-        messages = params.get("messages")
-        # Some model scontext to dbgpt server
-        model_context = {"prompt_echo_len_char": -1, "has_format_prompt": False}
-
-        if messages:
-            # Dict message to ModelMessage
-            messages = [
-                m if isinstance(m, ModelMessage) else ModelMessage(**m)
-                for m in messages
-            ]
-            params["messages"] = messages
 
         if prompt_template:
             logger.info(f"Use prompt template {prompt_template} from config")
@@ -124,10 +136,13 @@ class LLMModelAdaper:
             logger.info(
                 f"No conv from model_path {model_path} or no messages in params, {self}"
             )
-            return params, model_context
+            return None, None, None
 
         conv = conv.copy()
         system_messages = []
+        user_messages = []
+        ai_messages = []
+
         for message in messages:
             role, content = None, None
             if isinstance(message, ModelMessage):
@@ -143,17 +158,71 @@ class LLMModelAdaper:
                 # Support for multiple system messages
                 system_messages.append(content)
             elif role == ModelMessageRoleType.HUMAN:
-                conv.append_message(conv.roles[0], content)
+                # conv.append_message(conv.roles[0], content)
+                user_messages.append(content)
             elif role == ModelMessageRoleType.AI:
-                conv.append_message(conv.roles[1], content)
+                # conv.append_message(conv.roles[1], content)
+                ai_messages.append(content)
             else:
                 raise ValueError(f"Unknown role: {role}")
+
+        can_use_systems: [] = []
         if system_messages:
-            conv.set_system_message("".join(system_messages))
+            if len(system_messages) > 1:
+                ##  Compatible with dbgpt complex scenarios, the last system will protect more complete information entered by the current user
+                user_messages[-1] = system_messages[-1]
+                can_use_systems = system_messages[:-1]
+            else:
+                can_use_systems = system_messages
+
+        for i in range(len(user_messages)):
+            conv.append_message(conv.roles[0], user_messages[i])
+            if i < len(ai_messages):
+                conv.append_message(conv.roles[1], ai_messages[i])
+
+        if isinstance(conv, Conversation):
+            conv.set_system_message("".join(can_use_systems))
+        else:
+            conv.update_system_message("".join(can_use_systems))
 
         # Add a blank message for the assistant.
         conv.append_message(conv.roles[1], None)
         new_prompt = conv.get_prompt()
+        return new_prompt, conv.stop_str, conv.stop_token_ids
+
+    def model_adaptation(
+        self,
+        params: Dict,
+        model_name: str,
+        model_path: str,
+        tokenizer: Any,
+        prompt_template: str = None,
+    ) -> Tuple[Dict, Dict]:
+        """Params adaptation"""
+        messages = params.get("messages")
+        # Some model scontext to dbgpt server
+        model_context = {"prompt_echo_len_char": -1, "has_format_prompt": False}
+        if messages:
+            # Dict message to ModelMessage
+            messages = [
+                m if isinstance(m, ModelMessage) else ModelMessage(**m)
+                for m in messages
+            ]
+            params["messages"] = messages
+
+        new_prompt = self.get_str_prompt(params, messages, tokenizer, prompt_template)
+        conv_stop_str, conv_stop_token_ids = None, None
+        if not new_prompt:
+            (
+                new_prompt,
+                conv_stop_str,
+                conv_stop_token_ids,
+            ) = self.get_prompt_with_template(
+                params, messages, model_name, model_path, model_context, prompt_template
+            )
+            if not new_prompt:
+                return params, model_context
+
         # Overwrite the original prompt
         # TODO remote bos token and eos token from tokenizer_config.json of model
         prompt_echo_len_char = len(new_prompt.replace("</s>", "").replace("<s>", ""))
@@ -162,8 +231,12 @@ class LLMModelAdaper:
         model_context["has_format_prompt"] = True
         params["prompt"] = new_prompt
 
-        # Overwrite model params:
-        params["stop"] = conv.stop_str
+        custom_stop = params.get("stop")
+        custom_stop_token_ids = params.get("stop_token_ids")
+
+        # Prefer the value passed in from the input parameter
+        params["stop"] = custom_stop or conv_stop_str
+        params["stop_token_ids"] = custom_stop_token_ids or conv_stop_token_ids
 
         return params, model_context
 
@@ -216,9 +289,16 @@ class FastChatLLMModelAdaperWrapper(LLMModelAdaper):
         return self._adapter.load_model(model_path, from_pretrained_kwargs)
 
     def get_generate_stream_function(self, model: "TorchNNModule", model_path: str):
-        from fastchat.model.model_adapter import get_generate_stream_function
+        if _IS_BENCHMARK:
+            from pilot.utils.benchmarks.llm.fastchat_benchmarks_inference import (
+                generate_stream,
+            )
 
-        return get_generate_stream_function(model, model_path)
+            return generate_stream
+        else:
+            from fastchat.model.model_adapter import get_generate_stream_function
+
+            return get_generate_stream_function(model, model_path)
 
     def get_default_conv_template(
         self, model_name: str, model_path: str
@@ -231,6 +311,69 @@ class FastChatLLMModelAdaperWrapper(LLMModelAdaper):
             self._adapter.__class__.__module__,
             self._adapter.__class__.__name__,
         )
+
+
+class NewHFChatModelAdapter(LLMModelAdaper):
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        try:
+            import transformers
+            from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel
+        except ImportError as exc:
+            raise ValueError(
+                "Could not import depend python package "
+                "Please install it with `pip install transformers`."
+            ) from exc
+        if not transformers.__version__ >= "4.34.0":
+            raise ValueError(
+                "Current model (Load by HFNewChatAdapter) require transformers.__version__>=4.34.0"
+            )
+        revision = from_pretrained_kwargs.get("revision", "main")
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path,
+                use_fast=self.use_fast_tokenizer,
+                revision=revision,
+                trust_remote_code=True,
+            )
+        except TypeError:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path, use_fast=False, revision=revision, trust_remote_code=True
+            )
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+            )
+        except NameError:
+            model = AutoModel.from_pretrained(
+                model_path, low_cpu_mem_usage=True, **from_pretrained_kwargs
+            )
+        # tokenizer.use_default_system_prompt = False
+        return model, tokenizer
+
+    def get_generate_stream_function(self, model, model_path: str):
+        """Get the generate stream function of the model"""
+        from pilot.model.llm_out.hf_chat_llm import huggingface_chat_generate_stream
+
+        return huggingface_chat_generate_stream
+
+    def get_str_prompt(
+        self,
+        params: Dict,
+        messages: List[ModelMessage],
+        tokenizer: Any,
+        prompt_template: str = None,
+    ) -> Optional[str]:
+        from transformers import AutoTokenizer
+
+        if not tokenizer:
+            raise ValueError("tokenizer is is None")
+        tokenizer: AutoTokenizer = tokenizer
+
+        messages = ModelMessage.to_openai_messages(messages)
+        str_prompt = tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        return str_prompt
 
 
 def get_conv_template(name: str) -> "Conversation":
@@ -260,6 +403,11 @@ def get_llm_model_adapter(
     if model_type == ModelType.VLLM:
         logger.info("Current model type is vllm, return VLLMModelAdaperWrapper")
         return VLLMModelAdaperWrapper()
+
+    use_new_hf_chat_models = any(m in model_name.lower() for m in _NEW_HF_CHAT_MODELS)
+    if use_new_hf_chat_models:
+        logger.info(f"Current model {model_name} use NewHFChatModelAdapter")
+        return NewHFChatModelAdapter()
 
     must_use_old = any(m in model_name for m in _OLD_MODELS)
     if use_fastchat and not must_use_old:
@@ -297,6 +445,7 @@ def _get_fastchat_model_adapter(
         if use_fastchat_monkey_patch:
             model_adapter.get_model_adapter = _fastchat_get_adapter_monkey_patch
         thread_local.model_name = model_name
+        _remove_black_list_model_of_fastchat()
         if caller:
             return caller(model_path)
     finally:
@@ -338,6 +487,24 @@ def _fastchat_get_adapter_monkey_patch(model_path: str, model_name: str = None):
     raise ValueError(
         f"Invalid model adapter for model name {model_name} and model path {model_path}"
     )
+
+
+@cache
+def _remove_black_list_model_of_fastchat():
+    from fastchat.model.model_adapter import model_adapters
+
+    black_list_models = []
+    for adapter in model_adapters:
+        try:
+            if (
+                adapter.get_default_conv_template("/data/not_exist_model_path").name
+                in _BLACK_LIST_MODLE_PROMPT
+            ):
+                black_list_models.append(adapter)
+        except Exception:
+            pass
+    for adapter in black_list_models:
+        model_adapters.remove(adapter)
 
 
 def _dynamic_model_parser() -> Callable[[None], List[Type]]:
@@ -444,17 +611,50 @@ class VLLMModelAdaperWrapper(LLMModelAdaper):
 
 # Covering the configuration of fastcaht, we will regularly feedback the code here to fastchat.
 # We also recommend that you modify it directly in the fastchat repository.
+
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L212
 register_conv_template(
     Conversation(
-        name="internlm-chat",
-        system_message="A chat between a curious <|User|> and an <|Bot|>. The <|Bot|> gives helpful, detailed, and polite answers to the <|User|>'s questions.\n\n",
-        roles=("<|User|>", "<|Bot|>"),
-        sep_style=SeparatorStyle.CHATINTERN,
-        sep="<eoh>",
-        sep2="<eoa>",
-        stop_token_ids=[1, 103028],
-        # TODO feedback stop_str to fastchat
-        stop_str="<eoa>",
+        name="aquila-legacy",
+        system_message="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.\n\n",
+        roles=("### Human: ", "### Assistant: ", "System"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="\n",
+        sep2="</s>",
+        stop_str=["</s>", "[UNK]"],
+    ),
+    override=True,
+)
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L227
+register_conv_template(
+    Conversation(
+        name="aquila",
+        system_message="A chat between a curious human and an artificial intelligence assistant. "
+        "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+        roles=("Human", "Assistant", "System"),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.ADD_COLON_TWO,
+        sep="###",
+        sep2="</s>",
+        stop_str=["</s>", "[UNK]"],
+    ),
+    override=True,
+)
+# source: https://huggingface.co/BAAI/AquilaChat2-34B/blob/4608b75855334b93329a771aee03869dbf7d88cc/predict.py#L242
+register_conv_template(
+    Conversation(
+        name="aquila-v1",
+        roles=("<|startofpiece|>", "<|endofpiece|>", ""),
+        messages=(),
+        offset=0,
+        sep_style=SeparatorStyle.NO_COLON_TWO,
+        sep="",
+        sep2="</s>",
+        stop_str=["</s>", "<|endoftext|>"],
     ),
     override=True,
 )

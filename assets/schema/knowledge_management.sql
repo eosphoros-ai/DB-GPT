@@ -1,5 +1,15 @@
-CREATE DATABASE knowledge_management;
-use knowledge_management;
+-- You can change `dbgpt` to your actual metadata database name in your `.env` file
+-- eg. `LOCAL_DB_NAME=dbgpt`
+
+CREATE DATABASE IF NOT EXISTS dbgpt;
+use dbgpt;
+
+-- For alembic migration tool
+CREATE TABLE `alembic_version` (
+      version_num VARCHAR(32) NOT NULL,
+      CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
+);
+
 CREATE TABLE `knowledge_space` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'auto increment id',
   `name` varchar(100) NOT NULL COMMENT 'knowledge space name',
@@ -26,6 +36,7 @@ CREATE TABLE `knowledge_document` (
   `content` LONGTEXT NOT NULL COMMENT 'knowledge embedding sync result',
   `result` TEXT NULL COMMENT 'knowledge content',
   `vector_ids` LONGTEXT NULL COMMENT 'vector_ids',
+  `summary` LONGTEXT NULL COMMENT 'knowledge summary',
   `gmt_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
   `gmt_modified` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`),
@@ -44,6 +55,102 @@ CREATE TABLE `document_chunk` (
   PRIMARY KEY (`id`),
   KEY `idx_document_id` (`document_id`) COMMENT 'index:document_id'
 ) ENGINE=InnoDB AUTO_INCREMENT=100001 DEFAULT CHARSET=utf8mb4 COMMENT='knowledge document chunk detail';
+
+
+
+CREATE TABLE `connect_config` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `db_type` varchar(255) NOT NULL COMMENT 'db type',
+  `db_name` varchar(255) NOT NULL COMMENT 'db name',
+  `db_path` varchar(255) DEFAULT NULL COMMENT 'file db path',
+  `db_host` varchar(255) DEFAULT NULL COMMENT 'db connect host(not file db)',
+  `db_port` varchar(255) DEFAULT NULL COMMENT 'db cnnect port(not file db)',
+  `db_user` varchar(255) DEFAULT NULL COMMENT 'db user',
+  `db_pwd` varchar(255) DEFAULT NULL COMMENT 'db password',
+  `comment` text COMMENT 'db comment',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_db` (`db_name`),
+  KEY `idx_q_db_type` (`db_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Connection confi';
+
+CREATE TABLE `chat_history` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `conv_uid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Conversation record unique id',
+  `chat_mode` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Conversation scene mode',
+  `summary` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Conversation record summary',
+  `user_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'interlocutor',
+  `messages` text COLLATE utf8mb4_unicode_ci COMMENT 'Conversation details',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Chat history';
+
+CREATE TABLE `chat_feed_back` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `conv_uid` varchar(128) DEFAULT NULL COMMENT 'Conversation ID',
+  `conv_index` int(4) DEFAULT NULL COMMENT 'Round of conversation',
+  `score` int(1) DEFAULT NULL COMMENT 'Score of user',
+  `ques_type` varchar(32) DEFAULT NULL COMMENT 'User question category',
+  `question` longtext DEFAULT NULL COMMENT 'User question',
+  `knowledge_space` varchar(128) DEFAULT NULL COMMENT 'Knowledge space name',
+  `messages` longtext DEFAULT NULL COMMENT 'The details of user feedback',
+  `user_name` varchar(128) DEFAULT NULL COMMENT 'User name',
+  `gmt_created` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
+  `gmt_modified` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_conv` (`conv_uid`,`conv_index`),
+  KEY `idx_conv` (`conv_uid`,`conv_index`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COMMENT='User feedback table';
+
+
+CREATE TABLE `my_plugin` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `tenant` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'user tenant',
+  `user_code` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'user code',
+  `user_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'user name',
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'plugin name',
+  `file_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'plugin package file name',
+  `type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'plugin type',
+  `version` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'plugin version',
+  `use_count` int DEFAULT NULL COMMENT 'plugin total use count',
+  `succ_count` int DEFAULT NULL COMMENT 'plugin total success count',
+  `gmt_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'plugin install time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='User plugin table';
+
+CREATE TABLE `plugin_hub` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'plugin name',
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'plugin description',
+  `author` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'plugin author',
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'plugin author email',
+  `type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'plugin type',
+  `version` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'plugin version',
+  `storage_channel` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'plugin storage channel',
+  `storage_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'plugin download url',
+  `download_param` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'plugin download param',
+  `gmt_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'plugin upload time',
+  `installed` int DEFAULT NULL COMMENT 'plugin already installed count',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Plugin Hub table';
+
+
+CREATE TABLE `prompt_manage` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `chat_scene` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Chat scene',
+  `sub_chat_scene` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Sub chat scene',
+  `prompt_type` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Prompt type: common or private',
+  `prompt_name` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'prompt name',
+  `content` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Prompt content',
+  `user_name` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'User name',
+  `gmt_created` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
+  `gmt_modified` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `prompt_name_uiq` (`prompt_name`),
+  KEY `gmt_created_idx` (`gmt_created`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Prompt management table';
+
+
 
 CREATE DATABASE EXAMPLE_1;
 use EXAMPLE_1;

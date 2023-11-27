@@ -6,6 +6,7 @@ from pilot.configs.config import Config
 from pilot.base_modules.agent.commands.command import execute_command
 from pilot.base_modules.agent import PluginPromptGenerator
 from .prompt import prompt
+from pilot.utils.tracer import root_tracer, trace
 
 CFG = Config()
 
@@ -50,7 +51,8 @@ class ChatWithPlugin(BaseChat):
                     self.plugins_prompt_generator
                 )
 
-    def generate_input_values(self):
+    @trace()
+    async def generate_input_values(self) -> Dict:
         input_values = {
             "input": self.current_user_input,
             "constraints": self.__list_to_prompt_str(

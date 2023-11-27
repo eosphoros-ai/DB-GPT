@@ -6,7 +6,9 @@ LLM Model Name, see /pilot/configs/model_config.LLM_MODEL_CONFIG
 * LLM_MODEL=vicuna-13b 
 
 MODEL_SERVER_ADDRESS
+
 * MODEL_SERVER=http://127.0.0.1:8000 
+
 LIMIT_MODEL_CONCURRENCY
 
 * LIMIT_MODEL_CONCURRENCY=5 
@@ -59,11 +61,11 @@ Embedding Chunk size, default 500
 Embedding Chunk Overlap, default 100
 * KNOWLEDGE_CHUNK_OVERLAP=100
 
-embeding recall top k,5
+embedding recall top k,5
 
 * KNOWLEDGE_SEARCH_TOP_SIZE=5 
 
-embeding recall max token ,2000
+embedding recall max token ,2000
 
 * KNOWLEDGE_SEARCH_MAX_TOKEN=5 
 ```
@@ -81,21 +83,6 @@ embeding recall max token ,2000
 
 #### WEAVIATE
 * VECTOR_STORE_TYPE=Weaviate
-* WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.network
-```
-
-```{admonition} Vector Store SETTINGS
-#### Chroma
-* VECTOR_STORE_TYPE=Chroma
-#### MILVUS
-* VECTOR_STORE_TYPE=Milvus
-* MILVUS_URL=127.0.0.1
-* MILVUS_PORT=19530
-* MILVUS_USERNAME
-* MILVUS_PASSWORD
-* MILVUS_SECURE=
-
-#### WEAVIATE
 * WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.network
 ```
 

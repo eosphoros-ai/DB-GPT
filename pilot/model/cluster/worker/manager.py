@@ -38,7 +38,7 @@ from pilot.utils.parameter_utils import (
     _dict_to_command_args,
     _get_dict_from_obj,
 )
-from pilot.utils.utils import setup_logging
+from pilot.utils.utils import setup_logging, setup_http_service_logging
 from pilot.utils.tracer import initialize_tracer, root_tracer, SpanType, SpanTypeRunName
 from pilot.utils.system_utils import get_system_info
 
@@ -99,9 +99,7 @@ class LocalWorkerManager(WorkerManager):
         )
 
     def _worker_key(self, worker_type: str, model_name: str) -> str:
-        if isinstance(worker_type, WorkerType):
-            worker_type = worker_type.value
-        return f"{model_name}@{worker_type}"
+        return WorkerType.to_worker_key(model_name, worker_type)
 
     async def run_blocking_func(self, func, *args):
         if asyncio.iscoroutinefunction(func):
@@ -121,7 +119,10 @@ class LocalWorkerManager(WorkerManager):
                 _async_heartbeat_sender(self.run_data, 20, self.send_heartbeat_func)
             )
         for listener in self.start_listeners:
-            listener(self)
+            if asyncio.iscoroutinefunction(listener):
+                await listener(self)
+            else:
+                listener(self)
 
     async def stop(self, ignore_exception: bool = False):
         if not self.run_data.stop_event.is_set():
@@ -327,7 +328,7 @@ class LocalWorkerManager(WorkerManager):
             except Exception as e:
                 yield ModelOutput(
                     text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                    error_code=0,
+                    error_code=1,
                 )
                 return
             async with worker_run_data.semaphore:
@@ -357,7 +358,7 @@ class LocalWorkerManager(WorkerManager):
             except Exception as e:
                 return ModelOutput(
                     text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                    error_code=0,
+                    error_code=1,
                 )
             async with worker_run_data.semaphore:
                 if worker_run_data.worker.support_async():
@@ -735,6 +736,8 @@ def _setup_fastapi(
 ):
     if not app:
         app = FastAPI()
+        setup_http_service_logging()
+
     if worker_params.standalone:
         from pilot.model.cluster.controller.controller import initialize_controller
         from pilot.model.cluster.controller.controller import (
@@ -781,7 +784,7 @@ def _parse_worker_params(
         env_prefix = EnvArgumentParser.get_env_prefix(model_name)
     worker_params: ModelWorkerParameters = worker_args.parse_args_into_dataclass(
         ModelWorkerParameters,
-        env_prefix=env_prefix,
+        env_prefixes=[env_prefix],
         model_name=model_name,
         model_path=model_path,
         **kwargs,
@@ -790,7 +793,7 @@ def _parse_worker_params(
     # Read parameters agein with prefix of model name.
     new_worker_params = worker_args.parse_args_into_dataclass(
         ModelWorkerParameters,
-        env_prefix=env_prefix,
+        env_prefixes=[env_prefix],
         model_name=worker_params.model_name,
         model_path=worker_params.model_path,
         **kwargs,
@@ -996,11 +999,17 @@ def run_worker_manager(
     port: int = None,
     embedding_model_name: str = None,
     embedding_model_path: str = None,
+    start_listener: Callable[["WorkerManager"], None] = None,
+    **kwargs,
 ):
     global worker_manager
 
     worker_params: ModelWorkerParameters = _parse_worker_params(
-        model_name=model_name, model_path=model_path, standalone=standalone, port=port
+        model_name=model_name,
+        model_path=model_path,
+        standalone=standalone,
+        port=port,
+        **kwargs,
     )
 
     setup_logging(
@@ -1021,12 +1030,15 @@ def run_worker_manager(
         system_app,
         os.path.join(LOGDIR, worker_params.tracer_file),
         root_operation_name="DB-GPT-WorkerManager-Entry",
+        tracer_storage_cls=worker_params.tracer_storage_cls,
     )
 
     _start_local_worker(worker_manager, worker_params)
     _start_local_embedding_worker(
         worker_manager, embedding_model_name, embedding_model_path
     )
+
+    worker_manager.after_start(start_listener)
 
     if include_router:
         app.include_router(router, prefix="/api")

@@ -3,7 +3,12 @@ from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Integer, Text, func
 
 from pilot.base_modules.meta_data.base_dao import BaseDao
-from pilot.base_modules.meta_data.meta_data import Base, engine, session
+from pilot.base_modules.meta_data.meta_data import (
+    Base,
+    engine,
+    session,
+    META_DATA_DATABASE,
+)
 from pilot.configs.config import Config
 
 CFG = Config()
@@ -26,17 +31,21 @@ class KnowledgeDocumentEntity(Base):
     content = Column(Text)
     result = Column(Text)
     vector_ids = Column(Text)
+    summary = Column(Text)
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
 
     def __repr__(self):
-        return f"KnowledgeDocumentEntity(id={self.id}, space_id={self.space_id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+        return f"KnowledgeDocumentEntity(id={self.id}, space_id={self.space_id}, doc_name='{self.doc_name}', doc_type='{self.doc_type}', chunk_size='{self.chunk_size}', status='{self.status}', last_sync='{self.last_sync}', content='{self.content}', result='{self.result}', summary='{self.summary}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
 
 
 class KnowledgeDocumentDao(BaseDao):
     def __init__(self):
         super().__init__(
-            database="dbgpt", orm_base=Base, db_engine=engine, session=session
+            database=META_DATA_DATABASE,
+            orm_base=Base,
+            db_engine=engine,
+            session=session,
         )
 
     def create_knowledge_document(self, document: KnowledgeDocumentEntity):

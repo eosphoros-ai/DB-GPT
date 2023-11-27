@@ -1,6 +1,10 @@
 from typing import Dict, Optional
 from contextvars import ContextVar
 from functools import wraps
+import asyncio
+import inspect
+import logging
+
 
 from pilot.component import SystemApp, ComponentType
 from pilot.utils.tracer.base import (
@@ -12,6 +16,9 @@ from pilot.utils.tracer.base import (
     TracerContext,
 )
 from pilot.utils.tracer.span_storage import MemorySpanStorage
+from pilot.utils.module_utils import import_from_checked_string
+
+logger = logging.getLogger(__name__)
 
 
 class DefaultTracer(Tracer):
@@ -154,26 +161,51 @@ class TracerManager:
 root_tracer: TracerManager = TracerManager()
 
 
-def trace(operation_name: str, **trace_kwargs):
+def trace(operation_name: Optional[str] = None, **trace_kwargs):
     def decorator(func):
         @wraps(func)
-        async def wrapper(*args, **kwargs):
-            with root_tracer.start_span(operation_name, **trace_kwargs):
+        def sync_wrapper(*args, **kwargs):
+            name = (
+                operation_name if operation_name else _parse_operation_name(func, *args)
+            )
+            with root_tracer.start_span(name, **trace_kwargs):
+                return func(*args, **kwargs)
+
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            name = (
+                operation_name if operation_name else _parse_operation_name(func, *args)
+            )
+            with root_tracer.start_span(name, **trace_kwargs):
                 return await func(*args, **kwargs)
 
-        return wrapper
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
 
     return decorator
+
+
+def _parse_operation_name(func, *args):
+    self_name = None
+    if inspect.signature(func).parameters.get("self"):
+        self_name = args[0].__class__.__name__
+    func_name = func.__name__
+    if self_name:
+        return f"{self_name}.{func_name}"
+    return func_name
 
 
 def initialize_tracer(
     system_app: SystemApp,
     tracer_filename: str,
     root_operation_name: str = "DB-GPT-Web-Entry",
+    tracer_storage_cls: str = None,
 ):
     if not system_app:
         return
-    from pilot.utils.tracer.span_storage import FileSpanStorage
+    from pilot.utils.tracer.span_storage import FileSpanStorage, SpanStorageContainer
 
     trace_context_var = ContextVar(
         "trace_context",
@@ -181,7 +213,15 @@ def initialize_tracer(
     )
     tracer = DefaultTracer(system_app)
 
-    system_app.register_instance(FileSpanStorage(tracer_filename))
+    storage_container = SpanStorageContainer(system_app)
+    storage_container.append_storage(FileSpanStorage(tracer_filename))
+
+    if tracer_storage_cls:
+        logger.info(f"Begin parse storage class {tracer_storage_cls}")
+        storage = import_from_checked_string(tracer_storage_cls, SpanStorage)
+        storage_container.append_storage(storage())
+
+    system_app.register_instance(storage_container)
     system_app.register_instance(tracer)
     root_tracer.initialize(system_app, trace_context_var)
     if system_app.app:

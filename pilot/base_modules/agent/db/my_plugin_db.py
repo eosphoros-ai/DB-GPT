@@ -4,7 +4,12 @@ from sqlalchemy import Column, Integer, String, Index, DateTime, func
 from sqlalchemy import UniqueConstraint
 
 from pilot.base_modules.meta_data.base_dao import BaseDao
-from pilot.base_modules.meta_data.meta_data import Base, engine, session
+from pilot.base_modules.meta_data.meta_data import (
+    Base,
+    engine,
+    session,
+    META_DATA_DATABASE,
+)
 
 
 class MyPluginEntity(Base):
@@ -27,7 +32,7 @@ class MyPluginEntity(Base):
     succ_count = Column(
         Integer, nullable=True, default=0, comment="plugin total success count"
     )
-    created_at = Column(
+    gmt_created = Column(
         DateTime, default=datetime.utcnow, comment="plugin install time"
     )
     UniqueConstraint("user_code", "name", name="uk_name")
@@ -36,7 +41,10 @@ class MyPluginEntity(Base):
 class MyPluginDao(BaseDao[MyPluginEntity]):
     def __init__(self):
         super().__init__(
-            database="dbgpt", orm_base=Base, db_engine=engine, session=session
+            database=META_DATA_DATABASE,
+            orm_base=Base,
+            db_engine=engine,
+            session=session,
         )
 
     def add(self, engity: MyPluginEntity):
@@ -50,7 +58,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
             version=engity.version,
             use_count=engity.use_count or 0,
             succ_count=engity.succ_count or 0,
-            created_at=datetime.now(),
+            gmt_created=datetime.now(),
         )
         session.add(my_plugin)
         session.commit()

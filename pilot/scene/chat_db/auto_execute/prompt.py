@@ -8,23 +8,60 @@ from pilot.scene.chat_db.auto_execute.example import sql_data_example
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = "You are a SQL expert. "
 
-_DEFAULT_TEMPLATE = """
-Given an input question, create a syntactically correct {dialect} sql.
+_PROMPT_SCENE_DEFINE_EN = "You are a database expert. "
+_PROMPT_SCENE_DEFINE_ZH = "你是一个数据库专家. "
 
-Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results. 
-Use as few tables as possible when querying.
-Only use the following tables schema to generate sql:
-{table_info}
-Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
+_DEFAULT_TEMPLATE_EN = """
+Please answer the user's question based on the database selected by the user and some of the available table structure definitions of the database.
+Database name:
+     {db_name}
+Table structure definition:
+     {table_info}
 
-Question: {input}
+Constraint:
+    1.Please understand the user's intention based on the user's question, and use the given table structure definition to create a grammatically correct {dialect} sql. If sql is not required, answer the user's question directly.. 
+    2.Always limit the query to a maximum of {top_k} results unless the user specifies in the question the specific number of rows of data he wishes to obtain.
+    3.You can only use the tables provided in the table structure information to generate sql. If you cannot generate sql based on the provided table structure, please say: "The table structure information provided is not enough to generate sql queries." It is prohibited to fabricate information at will.
+    4.Please be careful not to mistake the relationship between tables and columns when generating SQL.
+    5.Please check the correctness of the SQL and ensure that the query performance is optimized under correct conditions.
+    
+User Question:
+    {user_input}
+Please think step by step and respond according to the following JSON format:
+    {response}
+Ensure the response is correct json and can be parsed by Python json.loads.
 
-Respond in JSON format as following format:
-{response}
-Ensure the response is correct json and can be parsed by Python json.loads
 """
+
+_DEFAULT_TEMPLATE_ZH = """
+请根据用户选择的数据库和该库的部分可用表结构定义来回答用户问题.
+数据库名:
+    {db_name}
+表结构定义:
+    {table_info}
+
+约束:
+    1. 请根据用户问题理解用户意图，使用给出表结构定义创建一个语法正确的 {dialect} sql，如果不需要sql，则直接回答用户问题。
+    2. 除非用户在问题中指定了他希望获得的具体数据行数，否则始终将查询限制为最多 {top_k} 个结果。
+    3. 只能使用表结构信息中提供的表来生成 sql，如果无法根据提供的表结构中生成 sql ，请说：“提供的表结构信息不足以生成 sql 查询。” 禁止随意捏造信息。
+    4. 请注意生成SQL时不要弄错表和列的关系
+    5. 请检查SQL的正确性，并保证正确的情况下优化查询性能
+用户问题:
+    {user_input}
+请一步步思考并按照以下JSON格式回复：
+      {response}
+确保返回正确的json并且可以被Python json.loads方法解析.
+
+"""
+
+_DEFAULT_TEMPLATE = (
+    _DEFAULT_TEMPLATE_EN if CFG.LANGUAGE == "en" else _DEFAULT_TEMPLATE_ZH
+)
+
+PROMPT_SCENE_DEFINE = (
+    _PROMPT_SCENE_DEFINE_EN if CFG.LANGUAGE == "en" else _PROMPT_SCENE_DEFINE_ZH
+)
 
 RESPONSE_FORMAT_SIMPLE = {
     "thoughts": "thoughts summary to say to user",
@@ -33,7 +70,7 @@ RESPONSE_FORMAT_SIMPLE = {
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value
 
-PROMPT_NEED_NEED_STREAM_OUT = False
+PROMPT_NEED_STREAM_OUT = False
 
 # Temperature is a configuration hyperparameter that controls the randomness of language model output.
 # A high temperature produces more unpredictable and creative results, while a low temperature produces more common and conservative output.
@@ -42,16 +79,17 @@ PROMPT_TEMPERATURE = 0.5
 
 prompt = PromptTemplate(
     template_scene=ChatScene.ChatWithDbExecute.value(),
-    input_variables=["input", "table_info", "dialect", "top_k", "response"],
+    input_variables=["table_info", "dialect", "top_k", "response"],
     response_format=json.dumps(RESPONSE_FORMAT_SIMPLE, ensure_ascii=False, indent=4),
     template_define=PROMPT_SCENE_DEFINE,
     template=_DEFAULT_TEMPLATE,
-    stream_out=PROMPT_NEED_NEED_STREAM_OUT,
+    stream_out=PROMPT_NEED_STREAM_OUT,
     output_parser=DbChatOutputParser(
-        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_NEED_STREAM_OUT
+        sep=PROMPT_SEP, is_stream_out=PROMPT_NEED_STREAM_OUT
     ),
     # example_selector=sql_data_example,
     temperature=PROMPT_TEMPERATURE,
+    need_historical_messages=True,
 )
 CFG.prompt_template_registry.register(prompt, is_default=True)
 from . import prompt_baichuan

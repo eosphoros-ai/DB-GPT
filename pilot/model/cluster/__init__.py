@@ -21,6 +21,7 @@ from pilot.model.cluster.controller.controller import (
     run_model_controller,
     BaseModelController,
 )
+from pilot.model.cluster.apiserver.api import run_apiserver
 
 from pilot.model.cluster.worker.remote_manager import RemoteWorkerManager
 
@@ -40,4 +41,5 @@ __all__ = [
     "ModelRegistryClient",
     "RemoteWorkerManager",
     "run_model_controller",
+    "run_apiserver",
 ]
