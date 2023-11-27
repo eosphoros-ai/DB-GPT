@@ -22,3 +22,6 @@ class PromptManageRequest(BaseModel):
 
     """prompt_name: prompt name"""
     prompt_name: str = None
+
+    """用户id"""
+    user_id: str = None

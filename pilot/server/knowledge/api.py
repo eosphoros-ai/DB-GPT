@@ -65,7 +65,7 @@ def space_delete(request: KnowledgeSpaceRequest, user_token: UserRequest = Depen
         KnowledgeSpaceRequest(user_id=user_token.user_id, name=request.name))
     if len(spaces) == 0:
         return Result.faild(code="E000X",
-                            msg=f"knowledge_space {request.name} cannot not be found by user {user_token.user_id}")
+                            msg=f"knowledge_space {request.name} can not be found by user {user_token.user_id}")
     print(f"/space/delete params:")
     try:
         return Result.succ(knowledge_space_service.delete_space(spaces[0].id))
@@ -97,7 +97,7 @@ def arguments_save(space_name: str, argument_request: SpaceArgumentRequest, user
 def document_add(space_name: str, request: KnowledgeDocumentRequest, user_token: UserRequest = Depends(get_user_from_headers)):
     spaces = knowledge_space_service.get_knowledge_space(KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
     if len(spaces) == 0:
-        return Result.faild(code="E000X", msg=f"knowledge_space {space_name} cannot not be found by user {user_token.user_id}")
+        return Result.faild(code="E000X", msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
 
     print(f"/document/add params: {space_name}, {request}, {user_token.user_id}")
     try:
@@ -116,7 +116,7 @@ def document_list(space_name: str, query_request: DocumentQueryRequest, user_tok
         KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
     if len(spaces) == 0:
         return Result.faild(code="E000X",
-                            msg=f"knowledge_space {space_name} cannot not be found by user {user_token.user_id}")
+                            msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
     print(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
@@ -132,7 +132,7 @@ def document_delete(space_name: str, query_request: DocumentQueryRequest, user_t
         KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
     if len(spaces) == 0:
         return Result.faild(code="E000X",
-                            msg=f"knowledge_space {space_name} cannot not be found by user {user_token.user_id}")
+                            msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
     print(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
@@ -154,7 +154,7 @@ async def document_upload(
         KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
     if len(spaces) == 0:
         return Result.faild(code="E000X",
-                            msg=f"knowledge_space {space_name} cannot not be found by user {user_token.user_id}")
+                            msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
     print(f"/document/upload params: {space_name}")
     try:
         space_name_dir = space_name + user_token.user_id
@@ -194,7 +194,7 @@ def document_sync(space_name: str, request: DocumentSyncRequest, user_token: Use
         KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
     if len(spaces) == 0:
         return Result.faild(code="E000X",
-                            msg=f"knowledge_space {space_name} cannot not be found by user {user_token.user_id}")
+                            msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
     logger.info(f"Received params: {space_name}, {request}")
     try:
         knowledge_space_service.sync_knowledge_document(

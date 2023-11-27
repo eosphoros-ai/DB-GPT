@@ -26,9 +26,10 @@ class PromptManageEntity(Base):
     user_name = Column(String(128))
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
+    user_id = Column(String(100))
 
     def __repr__(self):
-        return f"PromptManageEntity(id={self.id}, chat_scene='{self.chat_scene}', sub_chat_scene='{self.sub_chat_scene}', prompt_type='{self.prompt_type}', prompt_name='{self.prompt_name}', content='{self.content}',user_name='{self.user_name}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+        return f"PromptManageEntity(id={self.id}, chat_scene='{self.chat_scene}', sub_chat_scene='{self.sub_chat_scene}', prompt_type='{self.prompt_type}', prompt_name='{self.prompt_name}', content='{self.content}',user_name='{self.user_name}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}', user_id='{self.user_id}')"
 
 
 class PromptManageDao(BaseDao):
@@ -48,6 +49,7 @@ class PromptManageDao(BaseDao):
             user_name=prompt.user_name,
             gmt_created=datetime.now(),
             gmt_modified=datetime.now(),
+            user_id=prompt.user_id,
         )
         session.add(prompt_manage)
         session.commit()
@@ -73,6 +75,10 @@ class PromptManageDao(BaseDao):
         if query.prompt_name is not None:
             prompts = prompts.filter(
                 PromptManageEntity.prompt_name == query.prompt_name
+            )
+        if query.user_id is not None:
+            prompts = prompts.filter(
+                PromptManageEntity.user_id == query.user_id
             )
 
         prompts = prompts.order_by(PromptManageEntity.gmt_created.desc())

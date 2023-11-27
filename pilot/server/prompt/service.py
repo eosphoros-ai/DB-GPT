@@ -16,6 +16,7 @@ class PromptManageService:
     def create_prompt(self, request: PromptManageRequest):
         query = PromptManageRequest(
             prompt_name=request.prompt_name,
+            user_id=request.user_id,
         )
         prompt_name = prompt_manage_dao.get_prompts(query)
         if len(prompt_name) > 0:
@@ -32,6 +33,7 @@ class PromptManageService:
             prompt_type=request.prompt_type,
             prompt_name=request.prompt_name,
             user_name=request.user_name,
+            user_id=request.user_id
         )
         responses = []
         prompts = prompt_manage_dao.get_prompts(query)
@@ -53,7 +55,7 @@ class PromptManageService:
     """update prompt"""
 
     def update_prompt(self, request: PromptManageRequest):
-        query = PromptManageEntity(prompt_name=request.prompt_name)
+        query = PromptManageEntity(prompt_name=request.prompt_name, user_id=request.user_id)
         prompts = prompt_manage_dao.get_prompts(query)
         if len(prompts) != 1:
             raise Exception(
@@ -70,8 +72,8 @@ class PromptManageService:
 
     """delete prompt"""
 
-    def delete_prompt(self, prompt_name: str):
-        query = PromptManageEntity(prompt_name=prompt_name)
+    def delete_prompt(self, prompt_name: str, user_id: str):
+        query = PromptManageEntity(prompt_name=prompt_name, user_id=user_id)
         prompts = prompt_manage_dao.get_prompts(query)
         if len(prompts) == 0:
             raise Exception(f"delete error, no prompt name:{prompt_name} in database ")
