@@ -87,7 +87,7 @@ def wenxin_generate_stream(
         yield "Failed to get access token. please set the correct api_key and secret key."
 
     messages: List[ModelMessage] = params["messages"]
-   
+
     history, systems = __convert_2_wenxin_messages(messages)
     system = ""
     if systems and len(systems) > 0:
