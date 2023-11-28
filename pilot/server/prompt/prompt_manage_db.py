@@ -29,6 +29,7 @@ class PromptManageEntity(Base):
     prompt_name = Column(String(512))
     content = Column(Text)
     user_name = Column(String(128))
+    sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime)
     gmt_modified = Column(DateTime)
 

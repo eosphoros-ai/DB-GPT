@@ -66,6 +66,7 @@ CREATE TABLE `connect_config` (
   `db_user` varchar(255) DEFAULT NULL COMMENT 'db user',
   `db_pwd` varchar(255) DEFAULT NULL COMMENT 'db password',
   `comment` text COMMENT 'db comment',
+  `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_db` (`db_name`),
   KEY `idx_q_db_type` (`db_type`)
@@ -78,6 +79,7 @@ CREATE TABLE `chat_history` (
   `summary` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Conversation record summary',
   `user_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'interlocutor',
   `messages` text COLLATE utf8mb4_unicode_ci COMMENT 'Conversation details',
+  `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT 'Chat history';
 
@@ -110,6 +112,7 @@ CREATE TABLE `my_plugin` (
   `version` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'plugin version',
   `use_count` int DEFAULT NULL COMMENT 'plugin total use count',
   `succ_count` int DEFAULT NULL COMMENT 'plugin total success count',
+  `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
   `gmt_created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'plugin install time',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
@@ -141,6 +144,7 @@ CREATE TABLE `prompt_manage` (
   `prompt_name` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'prompt name',
   `content` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Prompt content',
   `user_name` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'User name',
+  `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
   `gmt_created` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',
   `gmt_modified` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   PRIMARY KEY (`id`),

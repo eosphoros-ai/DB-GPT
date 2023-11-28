@@ -1,7 +1,7 @@
 import json
 import os
 import duckdb
-from typing import List
+from typing import List, Dict, Optional
 
 from pilot.configs.config import Config
 from pilot.memory.chat_history.base import BaseChatHistoryMemory
@@ -37,7 +37,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         if not result:
             # 如果表不存在，则创建新表
             self.connect.execute(
-                "CREATE TABLE chat_history (id integer primary key, conv_uid VARCHAR(100) UNIQUE, chat_mode VARCHAR(50), summary VARCHAR(255),  user_name VARCHAR(100), messages TEXT)"
+                "CREATE TABLE chat_history (id integer primary key, conv_uid VARCHAR(100) UNIQUE, chat_mode VARCHAR(50), summary VARCHAR(255), user_name VARCHAR(100), sys_code VARCHAR(128), messages TEXT)"
             )
             self.connect.execute("CREATE SEQUENCE seq_id START 1;")
 
@@ -61,8 +61,8 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         try:
             cursor = self.connect.cursor()
             cursor.execute(
-                "INSERT INTO chat_history(id, conv_uid, chat_mode summary, user_name, messages)VALUES(nextval('seq_id'),?,?,?,?,?)",
-                [self.chat_seesion_id, chat_mode, summary, user_name, ""],
+                "INSERT INTO chat_history(id, conv_uid, chat_mode summary, user_name, sys_code, messages)VALUES(nextval('seq_id'),?,?,?,?,?,?)",
+                [self.chat_seesion_id, chat_mode, summary, user_name, "", ""],
             )
             cursor.commit()
             self.connect.commit()
@@ -83,12 +83,13 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
             )
         else:
             cursor.execute(
-                "INSERT INTO chat_history(id, conv_uid, chat_mode,  summary, user_name, messages)VALUES(nextval('seq_id'),?,?,?,?,?)",
+                "INSERT INTO chat_history(id, conv_uid, chat_mode, summary, user_name, sys_code, messages)VALUES(nextval('seq_id'),?,?,?,?,?,?)",
                 [
                     self.chat_seesion_id,
                     once_message.chat_mode,
                     once_message.get_user_conv().content,
-                    "",
+                    once_message.user_name,
+                    once_message.sys_code,
                     json.dumps(conversations, ensure_ascii=False),
                 ],
             )
@@ -149,17 +150,26 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
         return None
 
     @staticmethod
-    def conv_list(cls, user_name: str = None) -> None:
+    def conv_list(
+        user_name: Optional[str] = None, sys_code: Optional[str] = None
+    ) -> List[Dict]:
         if os.path.isfile(duckdb_path):
             cursor = duckdb.connect(duckdb_path).cursor()
+            query = "SELECT * FROM chat_history"
+            params = []
+            conditions = []
             if user_name:
-                cursor.execute(
-                    "SELECT * FROM chat_history where user_name=? order by id desc limit 20",
-                    [user_name],
-                )
-            else:
-                cursor.execute("SELECT * FROM chat_history order by id desc limit 20")
-            # 获取查询结果字段名
+                conditions.append("user_name = ?")
+                params.append(user_name)
+            if sys_code:
+                conditions.append("sys_code = ?")
+                params.append(sys_code)
+
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+
+            query += " ORDER BY id DESC LIMIT 20"
+            cursor.execute(query, params)
             fields = [field[0] for field in cursor.description]
             data = []
             for row in cursor.fetchall():

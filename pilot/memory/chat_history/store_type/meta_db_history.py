@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List
+from typing import List, Dict, Optional
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, Boolean, Text
 from sqlalchemy import UniqueConstraint
 from pilot.configs.config import Config
@@ -62,7 +62,8 @@ class DbHistoryMemory(BaseChatHistoryMemory):
             chat_history: ChatHistoryEntity = ChatHistoryEntity()
             chat_history.conv_uid = self.chat_seesion_id
             chat_history.chat_mode = once_message.chat_mode
-            chat_history.user_name = "default"
+            chat_history.user_name = once_message.user_name
+            chat_history.sys_code = once_message.sys_code
             chat_history.summary = once_message.get_user_conv().content
 
         conversations.append(_conversation_to_dic(once_message))
@@ -92,9 +93,11 @@ class DbHistoryMemory(BaseChatHistoryMemory):
         return []
 
     @staticmethod
-    def conv_list(cls, user_name: str = None) -> None:
+    def conv_list(
+        user_name: Optional[str] = None, sys_code: Optional[str] = None
+    ) -> List[Dict]:
         chat_history_dao = ChatHistoryDao()
-        history_list = chat_history_dao.list_last_20()
+        history_list = chat_history_dao.list_last_20(user_name, sys_code)
         result = []
         for history in history_list:
             result.append(history.__dict__)

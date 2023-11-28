@@ -18,7 +18,7 @@ class OnceConversation:
     All the information of a conversation, the current single service in memory, can expand cache and database support distributed services
     """
 
-    def __init__(self, chat_mode):
+    def __init__(self, chat_mode, user_name: str = None, sys_code: str = None):
         self.chat_mode: str = chat_mode
         self.messages: List[BaseMessage] = []
         self.start_date: str = ""
@@ -28,6 +28,8 @@ class OnceConversation:
         self.param_value: str = ""
         self.cost: int = 0
         self.tokens: int = 0
+        self.user_name: str = user_name
+        self.sys_code: str = sys_code
 
     def add_user_message(self, message: str) -> None:
         """Add a user message to the store"""
@@ -113,6 +115,8 @@ def _conversation_to_dic(once: OnceConversation) -> dict:
         "messages": messages_to_dict(once.messages),
         "param_type": once.param_type,
         "param_value": once.param_value,
+        "user_name": once.user_name,
+        "sys_code": once.sys_code,
     }
 
 
@@ -121,7 +125,9 @@ def conversations_to_dict(conversations: List[OnceConversation]) -> List[dict]:
 
 
 def conversation_from_dict(once: dict) -> OnceConversation:
-    conversation = OnceConversation()
+    conversation = OnceConversation(
+        once.get("chat_mode"), once.get("user_name"), once.get("sys_code")
+    )
     conversation.cost = once.get("cost", 0)
     conversation.chat_mode = once.get("chat_mode", "chat_normal")
     conversation.tokens = once.get("tokens", 0)
