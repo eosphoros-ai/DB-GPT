@@ -24,6 +24,7 @@ class ConnectConfigEntity(Base):
     db_user = Column(String(255), nullable=True, comment="db user")
     db_pwd = Column(String(255), nullable=True, comment="db password")
     comment = Column(Text, nullable=True, comment="db comment")
+    sys_code = Column(String(128), index=True, nullable=True, comment="System code")
 
     __table_args__ = (
         UniqueConstraint("db_name", name="uk_db"),

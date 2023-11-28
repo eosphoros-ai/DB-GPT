@@ -2,7 +2,7 @@ import json
 import uuid
 import asyncio
 import os
-import shutil
+import aiofiles
 import logging
 from fastapi import (
     APIRouter,
@@ -17,7 +17,7 @@ from fastapi import (
 
 from fastapi.responses import StreamingResponse
 from fastapi.exceptions import RequestValidationError
-from typing import List
+from typing import List, Optional
 import tempfile
 from concurrent.futures import Executor
 
@@ -48,7 +48,11 @@ from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 from pilot.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from pilot.model.base import FlatSupportedModel
 from pilot.utils.tracer import root_tracer, SpanType
-from pilot.utils.executor_utils import ExecutorFactory, blocking_func_to_async
+from pilot.utils.executor_utils import (
+    ExecutorFactory,
+    blocking_func_to_async,
+    DefaultExecutorFactory,
+)
 
 router = APIRouter()
 CFG = Config()
@@ -68,9 +72,11 @@ def __get_conv_user_message(conversations: dict):
     return ""
 
 
-def __new_conversation(chat_mode, user_id) -> ConversationVo:
+def __new_conversation(chat_mode, user_name: str, sys_code: str) -> ConversationVo:
     unique_id = uuid.uuid1()
-    return ConversationVo(conv_uid=str(unique_id), chat_mode=chat_mode)
+    return ConversationVo(
+        conv_uid=str(unique_id), chat_mode=chat_mode, sys_code=sys_code
+    )
 
 
 def get_db_list():
@@ -141,7 +147,9 @@ def get_worker_manager() -> WorkerManager:
 def get_executor() -> Executor:
     """Get the global default executor"""
     return CFG.SYSTEM_APP.get_component(
-        ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+        ComponentType.EXECUTOR_DEFAULT,
+        ExecutorFactory,
+        or_register_component=DefaultExecutorFactory,
     ).create()
 
 
@@ -166,7 +174,6 @@ async def db_connect_delete(db_name: str = None):
 
 
 async def async_db_summary_embedding(db_name, db_type):
-    # 在这里执行需要异步运行的代码
     db_summary_client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
     db_summary_client.db_summary_embedding(db_name, db_type)
 
@@ -200,16 +207,21 @@ async def db_support_types():
 
 
 @router.get("/v1/chat/dialogue/list", response_model=Result[ConversationVo])
-async def dialogue_list(user_id: str = None):
+async def dialogue_list(
+    user_name: str = None, user_id: str = None, sys_code: str = None
+):
     dialogues: List = []
     chat_history_service = ChatHistory()
     # TODO Change the synchronous call to the asynchronous call
-    datas = chat_history_service.get_store_cls().conv_list(user_id)
+    user_name = user_name or user_id
+    datas = chat_history_service.get_store_cls().conv_list(user_name, sys_code)
     for item in datas:
         conv_uid = item.get("conv_uid")
         summary = item.get("summary")
         chat_mode = item.get("chat_mode")
         model_name = item.get("model_name", CFG.LLM_MODEL)
+        user_name = item.get("user_name")
+        sys_code = item.get("sys_code")
 
         messages = json.loads(item.get("messages"))
         last_round = max(messages, key=lambda x: x["chat_order"])
@@ -223,6 +235,8 @@ async def dialogue_list(user_id: str = None):
             chat_mode=chat_mode,
             model_name=model_name,
             select_param=select_param,
+            user_name=user_name,
+            sys_code=sys_code,
         )
         dialogues.append(conv_vo)
 
@@ -254,9 +268,14 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/dialogue/new", response_model=Result[ConversationVo])
 async def dialogue_new(
-    chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None
+    chat_mode: str = ChatScene.ChatNormal.value(),
+    user_name: str = None,
+    # TODO remove user id
+    user_id: str = None,
+    sys_code: str = None,
 ):
-    conv_vo = __new_conversation(chat_mode, user_id)
+    user_name = user_name or user_id
+    conv_vo = __new_conversation(chat_mode, user_name, sys_code)
     return Result.succ(conv_vo)
 
 
@@ -280,40 +299,40 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
 
 @router.post("/v1/chat/mode/params/file/load")
 async def params_load(
-    conv_uid: str, chat_mode: str, model_name: str, doc_file: UploadFile = File(...)
+    conv_uid: str,
+    chat_mode: str,
+    model_name: str,
+    user_name: Optional[str] = None,
+    sys_code: Optional[str] = None,
+    doc_file: UploadFile = File(...),
 ):
     print(f"params_load: {conv_uid},{chat_mode},{model_name}")
     try:
         if doc_file:
-            ## file save
-            if not os.path.exists(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)):
-                os.makedirs(os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode))
-            # We can not move temp file in windows system when we open file in context of `with`
-            tmp_fd, tmp_path = tempfile.mkstemp(
-                dir=os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)
-            )
-            # TODO Use noblocking file save with aiofiles
-            with os.fdopen(tmp_fd, "wb") as tmp:
-                tmp.write(await doc_file.read())
-            shutil.move(
-                tmp_path,
-                os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode, doc_file.filename),
-            )
-            ## chat prepare
+            # Save the uploaded file
+            upload_dir = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode)
+            os.makedirs(upload_dir, exist_ok=True)
+            upload_path = os.path.join(upload_dir, doc_file.filename)
+            async with aiofiles.open(upload_path, "wb") as f:
+                await f.write(await doc_file.read())
+
+            # Prepare the chat
             dialogue = ConversationVo(
                 conv_uid=conv_uid,
                 chat_mode=chat_mode,
                 select_param=doc_file.filename,
                 model_name=model_name,
+                user_name=user_name,
+                sys_code=sys_code,
             )
             chat: BaseChat = await get_chat_instance(dialogue)
             resp = await chat.prepare()
 
-        ### refresh messages
+        # Refresh messages
         return Result.succ(get_hist_messages(conv_uid))
     except Exception as e:
         logger.error("excel load error!", e)
-        return Result.failed(code="E000X", msg=f"File Load Error {e}")
+        return Result.failed(code="E000X", msg=f"File Load Error {str(e)}")
 
 
 @router.post("/v1/chat/dialogue/delete")
@@ -354,7 +373,9 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
     if not dialogue.chat_mode:
         dialogue.chat_mode = ChatScene.ChatNormal.value()
     if not dialogue.conv_uid:
-        conv_vo = __new_conversation(dialogue.chat_mode, dialogue.user_name)
+        conv_vo = __new_conversation(
+            dialogue.chat_mode, dialogue.user_name, dialogue.sys_code
+        )
         dialogue.conv_uid = conv_vo.conv_uid
 
     if not ChatScene.is_valid_mode(dialogue.chat_mode):
@@ -364,13 +385,12 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
 
     chat_param = {
         "chat_session_id": dialogue.conv_uid,
+        "user_name": dialogue.user_name,
+        "sys_code": dialogue.sys_code,
         "current_user_input": dialogue.user_input,
         "select_param": dialogue.select_param,
         "model_name": dialogue.model_name,
     }
-    # chat: BaseChat = CHAT_FACTORY.get_implementation(
-    #     dialogue.chat_mode, **{"chat_param": chat_param}
-    # )
     chat: BaseChat = await blocking_func_to_async(
         get_executor(),
         CHAT_FACTORY.get_implementation,
@@ -401,8 +421,6 @@ async def chat_completions(dialogue: ConversationVo = Body()):
         "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
     ):
         chat: BaseChat = await get_chat_instance(dialogue)
-    # background_tasks = BackgroundTasks()
-    # background_tasks.add_task(release_model_semaphore)
     headers = {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",

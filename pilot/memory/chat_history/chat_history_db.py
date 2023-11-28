@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, Boolean, Text
 from sqlalchemy import UniqueConstraint
 
@@ -32,7 +32,7 @@ class ChatHistoryEntity(Base):
     messages = Column(
         Text(length=2**31 - 1), nullable=True, comment="Conversation details"
     )
-
+    sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     UniqueConstraint("conv_uid", name="uk_conversation")
     Index("idx_q_user", "user_name")
     Index("idx_q_mode", "chat_mode")
@@ -48,11 +48,15 @@ class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
             session=session,
         )
 
-    def list_last_20(self, user_name: str = None):
+    def list_last_20(
+        self, user_name: Optional[str] = None, sys_code: Optional[str] = None
+    ):
         session = self.get_session()
         chat_history = session.query(ChatHistoryEntity)
         if user_name:
             chat_history = chat_history.filter(ChatHistoryEntity.user_name == user_name)
+        if sys_code:
+            chat_history = chat_history.filter(ChatHistoryEntity.sys_code == sys_code)
 
         chat_history = chat_history.order_by(ChatHistoryEntity.id.desc())
 
