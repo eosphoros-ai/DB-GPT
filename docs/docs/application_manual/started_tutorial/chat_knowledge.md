@@ -27,9 +27,8 @@ Select the knowledge base, click the `Create` button, and fill in the necessary 
 
 
 <p align="left">
-  <img src={'/img/chat_knowledge/create_knowledge_base.png'} width="720px" />
+  <img src={'/img/chat_knowledge/create_knowledge_base.png'} width="720px"/>
 </p>
-
 
 ### Upload documents
 
