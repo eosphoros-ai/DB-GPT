@@ -46,7 +46,7 @@ class ConversationVo(BaseModel):
     """
     user
     """
-    user_name: str = ""
+    user_name: str = None
     """ 
     the scene of chat 
     """
@@ -65,6 +65,8 @@ class ConversationVo(BaseModel):
     If this parameter is not provided, the default is full return.
     """
     incremental: bool = False
+
+    sys_code: Optional[str] = None
 
 
 class MessageVo(BaseModel):
