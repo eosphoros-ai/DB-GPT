@@ -16,6 +16,27 @@ class EmbeddingEngine:
     2.similar_search: similarity search from vector_store
     how to use reference:https://db-gpt.readthedocs.io/en/latest/modules/knowledge.html
     how to integrate:https://db-gpt.readthedocs.io/en/latest/modules/knowledge/pdf/pdf_embedding.html
+    Example:
+    .. code-block:: python
+        embedding_model = "your_embedding_model"
+        vector_store_type = "Chroma"
+        chroma_persist_path = "your_persist_path"
+        vector_store_config = {
+            "vector_store_name": "document_test",
+            "vector_store_type": vector_store_type,
+            "chroma_persist_path": chroma_persist_path,
+        }
+
+        # it can be .md,.pdf,.docx, .csv, .html
+        document_path = "your_path/test.md"
+        embedding_engine = EmbeddingEngine(
+            knowledge_source=document_path,
+            knowledge_type=KnowledgeType.DOCUMENT.value,
+            model_name=embedding_model,
+            vector_store_config=vector_store_config,
+        )
+        # embedding document content to vector store
+        embedding_engine.knowledge_embedding()
     """
 
     def __init__(
@@ -74,7 +95,8 @@ class EmbeddingEngine:
         )
 
     def similar_search(self, text, topk):
-        """vector db similar search
+        """vector db similar search in vector database.
+         Return topk docs.
         Args:
            - text: query text
            - topk: top k
@@ -88,7 +110,7 @@ class EmbeddingEngine:
 
     def similar_search_with_scores(self, text, topk, score_threshold: float = 0.3):
         """
-        similar_search_with_score in vector database..
+        similar_search_with_score in vector database.
         Return docs and relevance scores in the range [0, 1].
         Args:
             doc(str): query text

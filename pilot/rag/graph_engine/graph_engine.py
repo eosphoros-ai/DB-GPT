@@ -6,8 +6,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from pilot.embedding_engine import KnowledgeType
 from pilot.embedding_engine.knowledge_type import get_knowledge_embedding
-from pilot.graph_engine.index_struct import KG
-from pilot.graph_engine.node import TextNode
+from pilot.rag.graph_engine.index_struct import KG
+from pilot.rag.graph_engine.node import TextNode
 from pilot.utils import utils
 
 logger = logging.getLogger(__name__)
@@ -178,7 +178,7 @@ class RAGGraphEngine:
         # return index_struct
 
     def search(self, query):
-        from pilot.graph_engine.graph_search import RAGGraphSearch
+        from pilot.rag.graph_engine.graph_search import RAGGraphSearch
 
         graph_search = RAGGraphSearch(graph_engine=self)
         return graph_search.search(query)

@@ -156,6 +156,7 @@ class MilvusStore(VectorStoreBase):
         index = self.index_params
         # milvus index
         collection.create_index(vector_field, index)
+        collection.load()
         schema = collection.schema
         for x in schema.fields:
             self.fields.append(x.name)
@@ -294,7 +295,7 @@ class MilvusStore(VectorStoreBase):
                     "No relevant docs were retrieved using the relevance score"
                     f" threshold {score_threshold}"
                 )
-        return [doc for doc, score in docs_and_scores]
+        return docs_and_scores
 
     def _search(
         self,

@@ -60,7 +60,7 @@ class ChromaStore(VectorStoreBase):
                 query=text, k=topk, score_threshold=score_threshold
             )
         )
-        return [doc for doc, score in docs_and_scores]
+        return docs_and_scores
 
     def vector_name_exists(self):
         logger.info(f"Check persist_dir: {self.persist_dir}")

@@ -6,8 +6,8 @@ from typing import List, Optional, Dict, Any, Set, Callable
 
 from langchain.schema import Document
 
-from pilot.graph_engine.node import BaseNode, TextNode, NodeWithScore
-from pilot.graph_engine.search import BaseSearch, SearchMode
+from pilot.rag.graph_engine.node import BaseNode, TextNode, NodeWithScore
+from pilot.rag.graph_engine.search import BaseSearch, SearchMode
 
 logger = logging.getLogger(__name__)
 DEFAULT_NODE_SCORE = 1000.0
@@ -45,7 +45,7 @@ class RAGGraphSearch(BaseSearch):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        from pilot.graph_engine.graph_engine import RAGGraphEngine
+        from pilot.rag.graph_engine.graph_engine import RAGGraphEngine
 
         self.graph_engine: RAGGraphEngine = graph_engine
         self.model_name = model_name or self.graph_engine.model_name
