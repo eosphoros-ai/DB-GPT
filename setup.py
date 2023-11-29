@@ -22,6 +22,7 @@ BUILD_FROM_SOURCE = os.getenv("BUILD_FROM_SOURCE", "false").lower() == "true"
 BUILD_FROM_SOURCE_URL_FAST_CHAT = os.getenv(
     "BUILD_FROM_SOURCE_URL_FAST_CHAT", "git+https://github.com/lm-sys/FastChat.git"
 )
+BUILD_VERSION_OPENAI = os.getenv("BUILD_VERSION_OPENAI")
 
 
 def parse_requirements(file_name: str) -> List[str]:
@@ -391,6 +392,10 @@ def core_requires():
         # for cache, TODO pympler has not been updated for a long time and needs to find a new toolkit.
         "pympler",
         "aiofiles",
+        # for cache
+        "msgpack",
+        # for agent
+        "GitPython",
     ]
     if BUILD_FROM_SOURCE:
         setup_spec.extras["framework"].append(
@@ -413,6 +418,7 @@ def knowledge_requires():
         "python-docx",
         "pypdf",
         "python-multipart",
+        "sentence-transformers",
     ]
 
 
@@ -479,26 +485,27 @@ def quantization_requires():
     # For chatglm2-6b-int4
     pkgs += ["cpm_kernels"]
 
-    # Since transformers 4.35.0, the GPT-Q/AWQ model can be loaded using AutoModelForCausalLM.
-    # autoawq requirements:
-    # 1. Compute Capability 7.5 (sm75). Turing and later architectures are supported.
-    # 2. CUDA Toolkit 11.8 and later.
-    autoawq_url = _build_wheels(
-        "autoawq",
-        "0.1.7",
-        base_url_func=lambda v, x, y: f"https://github.com/casper-hansen/AutoAWQ/releases/download/v{v}",
-        supported_cuda_versions=["11.8"],
-    )
-    if autoawq_url:
-        print(f"Install autoawq from {autoawq_url}")
-        pkgs.append(f"autoawq @ {autoawq_url}")
-    else:
-        pkgs.append("autoawq")
+    if os_type != OSType.DARWIN:
+        # Since transformers 4.35.0, the GPT-Q/AWQ model can be loaded using AutoModelForCausalLM.
+        # autoawq requirements:
+        # 1. Compute Capability 7.5 (sm75). Turing and later architectures are supported.
+        # 2. CUDA Toolkit 11.8 and later.
+        autoawq_url = _build_wheels(
+            "autoawq",
+            "0.1.7",
+            base_url_func=lambda v, x, y: f"https://github.com/casper-hansen/AutoAWQ/releases/download/v{v}",
+            supported_cuda_versions=["11.8"],
+        )
+        if autoawq_url:
+            print(f"Install autoawq from {autoawq_url}")
+            pkgs.append(f"autoawq @ {autoawq_url}")
+        else:
+            pkgs.append("autoawq")
 
-    auto_gptq_pkg = _build_autoawq_requires()
-    if auto_gptq_pkg:
-        pkgs.append(auto_gptq_pkg)
-        pkgs.append("optimum")
+        auto_gptq_pkg = _build_autoawq_requires()
+        if auto_gptq_pkg:
+            pkgs.append(auto_gptq_pkg)
+            pkgs.append("optimum")
 
     setup_spec.extras["quantization"] = pkgs
 
@@ -526,7 +533,13 @@ def openai_requires():
     """
     pip install "db-gpt[openai]"
     """
-    setup_spec.extras["openai"] = ["openai", "tiktoken"]
+    setup_spec.extras["openai"] = ["tiktoken"]
+    if BUILD_VERSION_OPENAI:
+        # Read openai sdk version from env
+        setup_spec.extras["openai"].append(f"openai=={BUILD_VERSION_OPENAI}")
+    else:
+        setup_spec.extras["openai"].append("openai")
+
     setup_spec.extras["openai"] += setup_spec.extras["framework"]
     setup_spec.extras["openai"] += setup_spec.extras["knowledge"]
 
@@ -549,7 +562,7 @@ def cache_requires():
     """
     pip install "db-gpt[cache]"
     """
-    setup_spec.extras["cache"] = ["rocksdict", "msgpack"]
+    setup_spec.extras["cache"] = ["rocksdict"]
 
 
 def default_requires():
@@ -560,12 +573,10 @@ def default_requires():
         # "tokenizers==0.13.3",
         "tokenizers>=0.14",
         "accelerate>=0.20.3",
-        "sentence-transformers",
         "protobuf==3.20.3",
         "zhipuai",
         "dashscope",
         "chardet",
-        "GitPython",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["knowledge"]

@@ -75,7 +75,10 @@ def __get_conv_user_message(conversations: dict):
 def __new_conversation(chat_mode, user_name: str, sys_code: str) -> ConversationVo:
     unique_id = uuid.uuid1()
     return ConversationVo(
-        conv_uid=str(unique_id), chat_mode=chat_mode, sys_code=sys_code
+        conv_uid=str(unique_id),
+        chat_mode=chat_mode,
+        user_name=user_name,
+        sys_code=sys_code,
     )
 
 
