@@ -136,8 +136,8 @@ const config = {
       navbar: {
         logo: {
           alt: 'DB-GPT Logo',
-          src: 'img/dbgpt_logo.png',
-          srcDark: 'img/DB-GPT_LOGO_White.png',
+          src: 'img/dbgpt_logo.svg',
+          srcDark: 'img/DB-GPT_LOGO_White.svg',
           href: "/docs/overview"
         },
 

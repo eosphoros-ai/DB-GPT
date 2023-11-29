@@ -66,7 +66,7 @@ class Config(metaclass=Singleton):
 
         # wenxin
         self.wenxin_proxy_api_key = os.getenv("WEN_XIN_API_KEY")
-        self.wenxin_proxy_api_secret = os.getenv("WEN_XIN_SECRET_KEY")
+        self.wenxin_proxy_api_secret = os.getenv("WEN_XIN_API_SECRET")
         self.wenxin_model_version = os.getenv("WEN_XIN_MODEL_VERSION")
         if self.wenxin_proxy_api_key and self.wenxin_proxy_api_secret:
             os.environ["wenxin_proxyllm_proxy_api_key"] = self.wenxin_proxy_api_key
@@ -84,7 +84,7 @@ class Config(metaclass=Singleton):
             os.environ["spark_proxyllm_proxy_api_key"] = self.spark_proxy_api_key
             os.environ["spark_proxyllm_proxy_api_secret"] = self.spark_proxy_api_secret
             os.environ["spark_proxyllm_proxyllm_backend"] = self.spark_api_version
-            os.environ["spark_proxyllm_proxy_app_id"] = self.spark_proxy_api_appid
+            os.environ["spark_proxyllm_proxy_api_app_id"] = self.spark_proxy_api_appid
 
         # baichuan proxy
         self.bc_proxy_api_key = os.getenv("BAICHUAN_PROXY_API_KEY")
