@@ -49,7 +49,6 @@ class ChatFeedBackDao(BaseDao):
 
     def create_or_update_chat_feed_back(self, feed_back: FeedBackBody):
         # Todo: We need to have user information first.
-        def_user_name = ""
 
         session = self.get_session()
         chat_feed_back = ChatFeedBackEntity(
@@ -60,7 +59,7 @@ class ChatFeedBackDao(BaseDao):
             question=feed_back.question,
             knowledge_space=feed_back.knowledge_space,
             messages=feed_back.messages,
-            user_name=def_user_name,
+            user_name=feed_back.user_name,
             gmt_created=datetime.now(),
             gmt_modified=datetime.now(),
         )
@@ -76,7 +75,7 @@ class ChatFeedBackDao(BaseDao):
             result.question = feed_back.question
             result.knowledge_space = feed_back.knowledge_space
             result.messages = feed_back.messages
-            result.user_name = def_user_name
+            result.user_name = feed_back.user_name
             result.gmt_created = datetime.now()
             result.gmt_modified = datetime.now()
         else:
