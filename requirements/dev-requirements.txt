@@ -9,7 +9,7 @@ pytest-mock
 pytest-recording
 pytesseract==0.3.10
 aioresponses
-# python code format
+# python code format, usage `black .`
 black
 # for git hooks
 pre-commit
