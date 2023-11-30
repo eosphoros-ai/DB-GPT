@@ -28,6 +28,9 @@ class Ranker(ABC):
 
     def _filter(self, candidates_with_scores: List):
         """filter duplicate candidates documents"""
+        candidates_with_scores = sorted(
+            candidates_with_scores, key=lambda x: x[1], reverse=True
+        )
         visited_docs = set()
         new_candidates = []
         for candidate_doc, score in candidates_with_scores:

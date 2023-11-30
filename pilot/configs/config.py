@@ -232,7 +232,11 @@ class Config(metaclass=Singleton):
         self.KNOWLEDGE_SEARCH_MAX_TOKEN = int(
             os.getenv("KNOWLEDGE_SEARCH_MAX_TOKEN", 2000)
         )
-        ### Control whether to display the source document of knowledge on the front end.
+        # Whether to enable Chat Knowledge Search Rewrite Mode
+        self.KNOWLEDGE_SEARCH_REWRITE = (
+            os.getenv("KNOWLEDGE_SEARCH_REWRITE", "False").lower() == "true"
+        )
+        # Control whether to display the source document of knowledge on the front end.
         self.KNOWLEDGE_CHAT_SHOW_RELATIONS = (
             os.getenv("KNOWLEDGE_CHAT_SHOW_RELATIONS", "False").lower() == "true"
         )

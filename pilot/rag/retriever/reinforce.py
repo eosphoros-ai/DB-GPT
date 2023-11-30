@@ -29,7 +29,7 @@ class QueryReinforce:
         chat_param = {
             "chat_session_id": uuid.uuid1(),
             "current_user_input": self.query,
-            "select_param": 3,
+            "select_param": 2,
             "model_name": self.model_name,
             "model_cache_enable": False,
         }
