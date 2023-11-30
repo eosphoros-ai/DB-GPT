@@ -29,6 +29,8 @@ class DBType(Enum):
     MSSQL = DbInfo("mssql")
     Postgresql = DbInfo("postgresql")
     Clickhouse = DbInfo("clickhouse")
+    StarRocks = DbInfo("starrocks")
+    
     Spark = DbInfo("spark", True)
 
     def value(self):
