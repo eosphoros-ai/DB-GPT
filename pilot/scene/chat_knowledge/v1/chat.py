@@ -74,6 +74,7 @@ class ChatKnowledge(BaseChat):
             embedding_factory=embedding_factory,
         )
         self.prompt_template.template_is_strict = False
+        self.relations = None
         self.chunk_dao = DocumentChunkDao()
         document_dao = KnowledgeDocumentDao()
         documents = document_dao.get_documents(
@@ -82,10 +83,11 @@ class ChatKnowledge(BaseChat):
         if len(documents) > 0:
             self.document_ids = [document.id for document in documents]
 
+    def stream_plugin_call(self, text):
+        """return summary label"""
+        return f"<summary>{text}</summary>"
+
     async def stream_call(self):
-        input_values = await self.generate_input_values()
-        # Source of knowledge file
-        relations = input_values.get("relations")
         last_output = None
         async for output in super().stream_call():
             last_output = output
@@ -94,12 +96,12 @@ class ChatKnowledge(BaseChat):
         if (
             CFG.KNOWLEDGE_CHAT_SHOW_RELATIONS
             and last_output
-            and type(relations) == list
-            and len(relations) > 0
+            and type(self.relations) == list
+            and len(self.relations) > 0
             and hasattr(last_output, "text")
         ):
             last_output.text = (
-                last_output.text + "\n\nrelations:\n\n" + ",".join(relations)
+                last_output.text + "\n\nrelations:\n\n" + ",".join(self.relations)
             )
         reference = f"\n\n{self.parse_source_view(self.chunks)}"
         last_output = last_output + reference
@@ -107,7 +109,7 @@ class ChatKnowledge(BaseChat):
 
     def stream_call_reinforce_fn(self, text):
         """return reference"""
-        return text + f"\n\n{self.parse_source_view(self.chunks)}"
+        return f"\n\n{self.parse_source_view(self.chunks)}" + text
 
     @trace()
     async def generate_input_values(self) -> Dict:
@@ -120,7 +122,9 @@ class ChatKnowledge(BaseChat):
         query_reinforce = QueryReinforce(
             query=self.current_user_input, model_name=self.llm_model
         )
-        queries = await query_reinforce.rewrite()
+        queries = []
+        if CFG.KNOWLEDGE_SEARCH_REWRITE:
+            queries = await query_reinforce.rewrite()
         queries.append(self.current_user_input)
         from pilot.common.chat_util import run_async_tasks
 
@@ -133,6 +137,7 @@ class ChatKnowledge(BaseChat):
 
         ranker = DefaultRanker(self.top_k)
         docs = ranker.rank(candidates_with_scores)
+        self.chunks = []
         if not docs or len(docs) == 0:
             print("no relevant docs to retrieve")
             context = "no relevant docs to retrieve"
@@ -148,13 +153,13 @@ class ChatKnowledge(BaseChat):
             context = [d.page_content for d in docs]
 
         context = context[: self.max_token]
-        relations = list(
+        self.relations = list(
             set([os.path.basename(str(d.metadata.get("source", ""))) for d in docs])
         )
         input_values = {
             "context": context,
             "question": self.current_user_input,
-            "relations": relations,
+            "relations": self.relations,
         }
         return input_values
 
@@ -163,7 +168,11 @@ class ChatKnowledge(BaseChat):
         format knowledge reference view message to web
         <references title="'References'" references="'[{name:aa.pdf,chunks:[{10:text},{11:text}]},{name:bb.pdf,chunks:[{12,text}]}]'"> </references>
         """
+        import xml.etree.ElementTree as ET
+
+        references_ele = ET.Element("references")
         title = "References"
+        references_ele.set("title", title)
         references_dict = {}
         for chunk in chunks:
             doc_name = chunk.doc_name
@@ -174,7 +183,7 @@ class ChatKnowledge(BaseChat):
                         {
                             "id": chunk.id,
                             "content": chunk.content,
-                            "metadata": chunk.meta_info,
+                            "meta_info": chunk.meta_info,
                         }
                     ],
                 }
@@ -183,12 +192,13 @@ class ChatKnowledge(BaseChat):
                     {
                         "id": chunk.id,
                         "content": chunk.content,
-                        "metadata": chunk.meta_info,
+                        "meta_info": chunk.meta_info,
                     }
                 )
         references_list = list(references_dict.values())
-        html = f"""<references title="{title}" references="{json.dumps(references_list, ensure_ascii=False)}"></references>"""
-        return html
+        references_ele.set("references", json.dumps(references_list))
+        html = ET.tostring(references_ele, encoding="utf-8")
+        return html.decode("utf-8")
 
     @property
     def chat_type(self) -> str:
