@@ -22,15 +22,15 @@
     <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
       <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
     </a>
-    <a href="https://discord.gg/nASQyBjvY">
-      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/nASQyBjvY?compact=true&style=flat" />
+    <a href="https://discord.gg/7uQnPuveTY">
+      <img alt="Discord" src="https://dcbadge.vercel.app/api/server/7uQnPuveTY?compact=true&style=flat" />
     </a>
     <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/nASQyBjvY)|[**文档**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
+[**English**](README.md)|[**Discord**](https://discord.gg/7uQnPuveTY)|[**文档**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
 </div>
 
 ## DB-GPT 是什么？
@@ -90,8 +90,8 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
   - [**单机部署**](https://www.yuque.com/eosphoros/dbgpt-docs/kwg1ed88lu5fgawb)
   - [**集群部署**](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
   - [**vLLM**](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
-- [**如何Debug**](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
-- [**FAQ**](https://db-gpt.readthedocs.io/en/latest/getting_started/faq/deploy/deploy_faq.html)
+- [**如何Debug**](https://www.yuque.com/eosphoros/dbgpt-docs/eyg0ocbc2ce3q95r)
+- [**FAQ**](https://www.yuque.com/eosphoros/dbgpt-docs/gomtc46qonmyt44l)
 
 ## 特性一览
 - **私域问答&数据处理&RAG**
@@ -136,10 +136,12 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
   - [Yi-34B-Chat](https://huggingface.co/01-ai/Yi-34B-Chat)
 
   - 支持在线代理模型 
-    - [x] [ChatGPT](https://api.openai.com/)
-    - [x] [Tongyi](https://www.aliyun.com/product/dashscope)
-    - [x] [Wenxin](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
-    - [x] [ChatGLM](http://open.bigmodel.cn/)
+    - [x] [OpenAI·ChatGPT](https://api.openai.com/)
+    - [x] [阿里·通义](https://www.aliyun.com/product/dashscope)
+    - [x] [百度·文心](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
+    - [x] [智谱·ChatGLM](http://open.bigmodel.cn/)
+    - [x] [讯飞·星火](https://xinghuo.xfyun.cn/)
+    - [x] [Google·Bard](https://bard.google.com/)
 
 - **隐私安全**
 
@@ -288,7 +290,7 @@ The MIT License (MIT)
 ### Agents与插件市场
 - [x] 多Agents框架
 - [x] 自定义Agents
-- [ ] 插件市场
+- [x] 插件市场
 - [ ] CoT集成
 - [ ] 丰富插件样本库
 - [ ] 支持AutoGPT协议
@@ -330,6 +332,5 @@ The MIT License (MIT)
 <p align="center">
   <img src="./assets/wechat.jpg" width="300px" />
 </p>
-
 
 [![Star History Chart](https://api.star-history.com/svg?repos=csunny/DB-GPT&type=Date)](https://star-history.com/#csunny/DB-GPT)
