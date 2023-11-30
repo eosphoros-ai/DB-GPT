@@ -175,7 +175,7 @@ def chatgpt_generate_stream(
             # logger.info(str(r))
             # Azure Openai reponse may have empty choices body in the first chunk
             # to avoid index out of range error
-            if not r.get("choices"):
+            if len(r.choices) == 0:
                 continue
             if r.choices[0].delta.content is not None:
                 content = r.choices[0].delta.content
@@ -191,7 +191,7 @@ def chatgpt_generate_stream(
 
         text = ""
         for r in res:
-            if not r.get("choices"):
+            if len(r.choices) == 0:
                 continue
             if r["choices"][0]["delta"].get("content") is not None:
                 content = r["choices"][0]["delta"]["content"]
