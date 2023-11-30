@@ -68,5 +68,6 @@ Download and install `Microsoft C++ Build Tools` from [visual-cpp-build-tools](h
 
 ##### Q7: `How to migrate meta table chat_history and connect_config from duckdb to mysql`
 ```commandline
- python docker/examples/metadata/duckdb2mysql.py
+1. update your mysql username and password in docker/examples/metadata/duckdb2mysql.py
+2.  python docker/examples/metadata/duckdb2mysql.py
 ```

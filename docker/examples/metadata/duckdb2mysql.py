@@ -6,7 +6,7 @@ import pymysql
 mysql_config = {
     "host": "127.0.0.1",
     "user": "root",
-    "password": "aa12345678",
+    "password": "your_password",
     "db": "dbgpt",
     "charset": "utf8mb4",
     "cursorclass": pymysql.cursors.DictCursor,
