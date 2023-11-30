@@ -66,5 +66,5 @@ mysql> ALTER TABLE knowledge_space ADD COLUMN context TEXT COMMENT "arguments co
 build Mysql KBQA system database schema.
 
 ```bash
-$ mysql -h127.0.0.1 -uroot -paa12345678 < ./assets/schema/knowledge_management.sql
+$ mysql -h127.0.0.1 -uroot -p{your_password} < ./assets/schema/knowledge_management.sql
 ```
