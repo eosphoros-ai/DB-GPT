@@ -1,9 +1,9 @@
-from abc import abstractmethod, ABC
+from abc import ABC
 from typing import List, Tuple, Optional
 
 
 class Ranker(ABC):
-    """base Ranker"""
+    """Base Ranker"""
 
     def __init__(self, topk: int, rank_fn: Optional[callable] = None):
         """

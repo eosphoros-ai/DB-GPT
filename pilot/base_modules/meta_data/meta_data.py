@@ -14,7 +14,7 @@ from pilot.configs.config import Config
 
 
 logger = logging.getLogger(__name__)
-
+# DB-GPT meta_data database config, now support mysql and sqlite
 CFG = Config()
 default_db_path = os.path.join(os.getcwd(), "meta_data")
 
@@ -25,6 +25,7 @@ META_DATA_DATABASE = CFG.LOCAL_DB_NAME
 db_name = META_DATA_DATABASE
 db_path = default_db_path + f"/{db_name}.db"
 connection = sqlite3.connect(db_path)
+
 
 if CFG.LOCAL_DB_TYPE == "mysql":
     engine_temp = create_engine(
@@ -81,16 +82,8 @@ os.makedirs(default_db_path + "/alembic/versions", exist_ok=True)
 
 alembic_cfg.set_main_option("script_location", default_db_path + "/alembic")
 
-# 将模型和会话传递给Alembic配置
 alembic_cfg.attributes["target_metadata"] = Base.metadata
 alembic_cfg.attributes["session"] = session
-
-
-# # 创建表
-# Base.metadata.create_all(engine)
-#
-# # 删除表
-# Base.metadata.drop_all(engine)
 
 
 def ddl_init_and_upgrade(disable_alembic_upgrade: bool):
@@ -105,10 +98,6 @@ def ddl_init_and_upgrade(disable_alembic_upgrade: bool):
         )
         return
 
-    # Base.metadata.create_all(bind=engine)
-    # 生成并应用迁移脚本
-    # command.upgrade(alembic_cfg, 'head')
-    # subprocess.run(["alembic", "revision", "--autogenerate", "-m", "Added account table"])
     with engine.connect() as connection:
         alembic_cfg.attributes["connection"] = connection
         heads = command.heads(alembic_cfg)
