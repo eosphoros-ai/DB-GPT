@@ -22,7 +22,9 @@ class StarRocksConnect(RDBMSDatabase):
         engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> RDBMSDatabase:
-        db_url: str = f"{cls.driver}://{quote(user)}:{quote(pwd)}@{host}:{str(port)}/{db_name}"
+        db_url: str = (
+            f"{cls.driver}://{quote(user)}:{quote(pwd)}@{host}:{str(port)}/{db_name}"
+        )
         return cls.from_uri(db_url, engine_args, **kwargs)
 
     def _sync_tables_from_db(self) -> Iterable[str]:
@@ -32,11 +34,7 @@ class StarRocksConnect(RDBMSDatabase):
                 f'SELECT TABLE_NAME FROM information_schema.tables where TABLE_SCHEMA="{db_name}"'
             )
         )
-        view_results = self.session.execute(
-            text(
-                f'SHOW MATERIALIZED VIEWS'
-            )
-        )       
+        view_results = self.session.execute(text(f"SHOW MATERIALIZED VIEWS"))
         table_results = set(row[0] for row in table_results)
         view_results = set(row[2] for row in view_results)
         self._all_tables = table_results.union(view_results)
@@ -45,11 +43,7 @@ class StarRocksConnect(RDBMSDatabase):
 
     def get_grants(self):
         session = self._db_sessions()
-        cursor = session.execute(
-            text(
-                "SHOW GRANTS"
-            )
-        )
+        cursor = session.execute(text("SHOW GRANTS"))
         grants = cursor.fetchall()
         grants_list = [x[2] for x in grants]
         return grants_list
@@ -57,7 +51,7 @@ class StarRocksConnect(RDBMSDatabase):
     def _get_current_version(self):
         """Get database current version"""
         return int(self.session.execute(text("select current_version()")).scalar())
-    
+
     def get_collation(self):
         """Get collation."""
         # StarRocks 排序是表级别的
@@ -73,9 +67,9 @@ class StarRocksConnect(RDBMSDatabase):
         #     return [user[0] for user in users]
         # except Exception as e:
         #     print("starrocks get users error: ", e)
-            # return []
+        # return []
         return []
-    
+
     def get_fields(self, table_name, db_name="database()"):
         """Get column fields about specified table."""
         session = self._db_sessions()
@@ -100,7 +94,7 @@ class StarRocksConnect(RDBMSDatabase):
 
     def get_charset(self):
         """Get character_set."""
-        
+
         return "utf-8"
 
     def get_show_create_table(self, table_name):
@@ -114,7 +108,11 @@ class StarRocksConnect(RDBMSDatabase):
 
         # return create_sql
         # 这里是要表描述, 返回建表语句会导致token过长而失败
-        cur = self.session.execute(text(f'SELECT TABLE_COMMENT FROM information_schema.tables where TABLE_NAME="{table_name}" and TABLE_SCHEMA=database()'))
+        cur = self.session.execute(
+            text(
+                f'SELECT TABLE_COMMENT FROM information_schema.tables where TABLE_NAME="{table_name}" and TABLE_SCHEMA=database()'
+            )
+        )
         table = cur.fetchone()
         if table:
             return str(table[0])
@@ -132,7 +130,11 @@ class StarRocksConnect(RDBMSDatabase):
         #     comments.append((table_name, table_comment))
         if not db_name:
             db_name = self.get_current_db_name()
-        cur = self.session.execute(text(f'SELECT TABLE_NAME,TABLE_COMMENT FROM information_schema.tables where TABLE_SCHEMA="{db_name}"'))
+        cur = self.session.execute(
+            text(
+                f'SELECT TABLE_NAME,TABLE_COMMENT FROM information_schema.tables where TABLE_SCHEMA="{db_name}"'
+            )
+        )
         tables = cur.fetchall()
         return [(table[0], table[1]) for table in tables]
 
@@ -143,7 +145,11 @@ class StarRocksConnect(RDBMSDatabase):
         session = self._db_sessions()
         cursor = session.execute(text("SHOW DATABASES;"))
         results = cursor.fetchall()
-        return [d[0] for d in results if d[0] not in ["information_schema", "sys", "_statistics_","dataease"]]
+        return [
+            d[0]
+            for d in results
+            if d[0] not in ["information_schema", "sys", "_statistics_", "dataease"]
+        ]
 
     def get_current_db_name(self) -> str:
         return self.session.execute(text("select database()")).scalar()
@@ -160,10 +166,6 @@ class StarRocksConnect(RDBMSDatabase):
     def get_indexes(self, table_name):
         """Get table indexes about specified table."""
         session = self._db_sessions()
-        cursor = session.execute(
-            text(
-                f"SHOW INDEX FROM {table_name}"
-            )
-        )
+        cursor = session.execute(text(f"SHOW INDEX FROM {table_name}"))
         indexes = cursor.fetchall()
         return [(index[2], index[4]) for index in indexes]

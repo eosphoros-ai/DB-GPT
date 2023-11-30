@@ -1,4 +1,3 @@
-
 #! /usr/bin/python3
 # Copyright 2021-present StarRocks, Inc. All rights reserved.
 #
@@ -16,4 +15,8 @@
 
 from sqlalchemy.dialects import registry
 
-registry.register("starrocks", "pilot.connections.rdbms.dialect.starrocks.sqlalchemy.dialect", "StarRocksDialect")
+registry.register(
+    "starrocks",
+    "pilot.connections.rdbms.dialect.starrocks.sqlalchemy.dialect",
+    "StarRocksDialect",
+)

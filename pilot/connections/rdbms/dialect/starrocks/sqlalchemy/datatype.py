@@ -80,12 +80,12 @@ _type_map = {
     "datetime": sqltypes.DATETIME,
     "timestamp": sqltypes.DATETIME,
     # === Structural ===
-    'array': ARRAY,
-    'map': MAP,
-    'struct': STRUCT,
-    'hll': HLL,
-    'percentile': PERCENTILE,
-    'bitmap': BITMAP,
+    "array": ARRAY,
+    "map": MAP,
+    "struct": STRUCT,
+    "hll": HLL,
+    "percentile": PERCENTILE,
+    "bitmap": BITMAP,
 }
 
 

@@ -1,4 +1,3 @@
-
 #! /usr/bin/python3
 # Copyright 2021-present StarRocks, Inc. All rights reserved.
 #
