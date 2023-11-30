@@ -1,24 +1,44 @@
 from typing import List
 
 from pydantic import BaseModel
+from typing import Optional
+from pydantic import BaseModel
 
 
 class PromptManageRequest(BaseModel):
-    """chat_scene: for example: chat_with_db_execute, chat_excel, chat_with_db_qa"""
+    """Model for managing prompts."""
 
-    chat_scene: str = None
+    chat_scene: Optional[str] = None
+    """
+    The chat scene, e.g. chat_with_db_execute, chat_excel, chat_with_db_qa.
+    """
 
-    """sub_chat_scene: sub chat scene"""
-    sub_chat_scene: str = None
+    sub_chat_scene: Optional[str] = None
+    """
+    The sub chat scene.
+    """
 
-    """prompt_type: common or private"""
-    prompt_type: str = None
+    prompt_type: Optional[str] = None
+    """
+    The prompt type, either common or private.
+    """
 
-    """content: prompt content"""
-    content: str = None
+    content: Optional[str] = None
+    """
+    The prompt content.
+    """
 
-    """user_name: user name"""
-    user_name: str = None
+    user_name: Optional[str] = None
+    """
+    The user name.
+    """
 
-    """prompt_name: prompt name"""
-    prompt_name: str = None
+    sys_code: Optional[str] = None
+    """
+    System code
+    """
+
+    prompt_name: Optional[str] = None
+    """
+    The prompt name.
+    """

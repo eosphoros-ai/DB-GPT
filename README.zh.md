@@ -127,6 +127,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
   - [internlm-chat-20b](https://huggingface.co/internlm/internlm-chat-20b)
   - [qwen-7b-chat](https://huggingface.co/Qwen/Qwen-7B-Chat)
   - [qwen-14b-chat](https://huggingface.co/Qwen/Qwen-14B-Chat)
+  - [qwen-72b-chat](https://huggingface.co/Qwen/Qwen-72B-Chat)
   - [wizardlm-13b](https://huggingface.co/WizardLM/WizardLM-13B-V1.2)
   - [orca-2-7b](https://huggingface.co/microsoft/Orca-2-7b)
   - [orca-2-13b](https://huggingface.co/microsoft/Orca-2-13b)
