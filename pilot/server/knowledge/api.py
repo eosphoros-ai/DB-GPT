@@ -182,7 +182,7 @@ async def document_upload(
                 KNOWLEDGE_UPLOAD_ROOT_PATH, space_name_dir, doc_file.filename
             )
             space_res = knowledge_space_service.get_knowledge_space(
-                KnowledgeSpaceRequest(name=space_name)
+                KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name)
             )
             if len(space_res) == 0:
                 # create default space
@@ -193,6 +193,7 @@ async def document_upload(
                         name=space_name,
                         desc="first db-gpt rag application",
                         owner="dbgpt",
+                        user_id=user_token.user_id,
                     )
                 )
             return Result.succ(
