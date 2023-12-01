@@ -49,7 +49,7 @@ Set KNOWLEDGE_SEARCH_TOP_SIZE smaller or set KNOWLEDGE_CHUNK_SIZE smaller, and r
 2.add column context for table knowledge_space
 
 ```commandline
-mysql -h127.0.0.1 -uroot -p{your_password
+mysql -h127.0.0.1 -uroot -p {your_password}
 ```
 
 3.execute sql ddl
