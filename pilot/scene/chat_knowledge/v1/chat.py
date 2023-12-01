@@ -126,7 +126,7 @@ class ChatKnowledge(BaseChat):
 
         # similarity search from vector db
         tasks = [self.execute_similar_search(query) for query in queries]
-        docs_with_scores = await run_async_tasks(tasks=tasks)
+        docs_with_scores = await run_async_tasks(tasks=tasks, concurrency_limit=2)
         candidates_with_scores = reduce(lambda x, y: x + y, docs_with_scores)
         # candidates document rerank
         from pilot.rag.retriever.rerank import DefaultRanker

@@ -14,7 +14,7 @@ _DEFAULT_TEMPLATE_ZH = """请根据以下主题生成{nums}个相关的搜索查
 "---------------------\n"
 "示例："
 "original_query：什么是RAG。"
-"queries：'1. 什么是RAG及其工作原理，2. RAG有哪些应用场景，3. 能否提供RAG在现实世界中的应用实例'"
+"queries：'1. 什么是RAG及其工作原理，2. RAG有哪些应用场景'"
 "---------------------\n"
 "original_query：{original_query}\n"
 "queries：\n"
