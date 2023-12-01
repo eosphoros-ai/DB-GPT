@@ -1,6 +1,10 @@
 # RAG Parameter Adjustment
 Each knowledge space supports argument customization, including the relevant arguments for vector retrieval and the arguments for knowledge question-answering prompts.
 
+As shown in the figure below, clicking on the "Knowledge" will trigger a pop-up dialog box. Click the "Arguments" button to enter the parameter tuning interface.
+![image](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/f02039ea-01d7-493a-acd9-027020d54267)
+
+
 <Tabs
   defaultValue="Embedding"
   values={[
@@ -14,11 +18,11 @@ Each knowledge space supports argument customization, including the relevant arg
 
 :::tip Embedding Arguments
 * topk:the top k vectors based on similarity score.
-* recall_score:set a similarity threshold score for the retrieval of similar vectors.
-* recall_type:recall type. 
+* recall_score:set a similarity threshold score for the retrieval of similar vectors. between 0 and 1. default 0.3.
+* recall_type:recall type. now nly support topk by vector similarity.
 * model:A model used to create vector representations of text or other data.
-* chunk_size:The size of the data chunks used in processing.
-* chunk_overlap:The amount of overlap between adjacent data chunks.
+* chunk_size:The size of the data chunks used in processing.default 500.
+* chunk_overlap:The amount of overlap between adjacent data chunks.default 50.
 :::
  </TabItem>
 
@@ -39,7 +43,7 @@ Each knowledge space supports argument customization, including the relevant arg
 ![image](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/96782ba2-e9a2-4173-a003-49d44bf874cc)
 
 :::tip summary arguments
-* max_iteration: summary max iteration call with llm, default 5.
+* max_iteration: summary max iteration call with llm, default 5. the bigger and better for document summary but time will cost longer.
 * concurrency_limit: default summary concurrency call with llm, default 3.
 :::
 
