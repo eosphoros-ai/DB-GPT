@@ -277,10 +277,13 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value(), user_token:
     result = None
     if ChatScene.ChatWithDbQA.value() == chat_mode:
         result = get_db_list(user_id=user_token.user_id)
+        result = [d for d in result if d['param'] not in ['auth', 'dbgpt']]
     elif ChatScene.ChatWithDbExecute.value() == chat_mode:
         result = get_db_list(user_id=user_token.user_id)
+        result = [d for d in result if d['param'] not in ['auth', 'dbgpt']]
     elif ChatScene.ChatDashboard.value() == chat_mode:
         result = get_db_list(user_id=user_token.user_id)
+        result = [d for d in result if d['param'] not in ['auth', 'dbgpt']]
     elif ChatScene.ChatExecution.value() == chat_mode:
         result = plugins_select_info()
     elif ChatScene.ChatKnowledge.value() == chat_mode:
@@ -289,10 +292,6 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value(), user_token:
         result = knowledge_list()
     else:
         return Result.succ(None)
-    if result and result.get("dbgpt"):
-        del result["dbgpt"]
-    if result and result.get("auth"):
-        del result["auth"]
     return Result.succ(result)
 
 
