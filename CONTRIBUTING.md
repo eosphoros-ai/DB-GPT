@@ -10,7 +10,8 @@ git clone https://github.com/<YOUR-GITHUB-USERNAME>/DB-GPT
 ```
 3. Install the project requirements
 ```
-pip install -r requirements/dev-requirements.txt
+pip install -e ".[default]"
+
 ```
 4. Install pre-commit hooks
 ```

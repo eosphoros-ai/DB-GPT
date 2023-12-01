@@ -78,7 +78,7 @@ Fine-tuning module for Text2SQL/Text2DSL
 - [Connections](/docs/modules/connections) 
 Connect various data sources
 
-- [Obvervablity](/docs/operation_manual/advanced_tutorial/debugging)
+- [Obvervablity](/docs/operation/advanced_tutorial/debugging)
 Observing & monitoring
 
 - [Evaluation](/docs/modules/eval)

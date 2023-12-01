@@ -9,7 +9,6 @@ __pycache__/
 message/
 
 .env
-.idea
 .vscode
 .idea
 .chroma

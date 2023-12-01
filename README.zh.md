@@ -114,27 +114,10 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
   海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。当前已支持如下模型: 
 
-  - [Vicuna](https://huggingface.co/Tribbiani/vicuna-13b)
-  - [vicuna-13b-v1.5](https://huggingface.co/lmsys/vicuna-13b-v1.5)
-  - [LLama2](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
-  - [baichuan2-13b](https://huggingface.co/baichuan-inc/Baichuan2-13B-Chat)
-  - [baichuan2-7b](https://huggingface.co/baichuan-inc/Baichuan2-7B-Chat)
-  - [chatglm-6b](https://huggingface.co/THUDM/chatglm-6b)
-  - [chatglm2-6b](https://huggingface.co/THUDM/chatglm2-6b)
-  - [chatglm3-6b](https://huggingface.co/THUDM/chatglm3-6b)
-  - [falcon-40b](https://huggingface.co/tiiuae/falcon-40b)
-  - [internlm-chat-7b](https://huggingface.co/internlm/internlm-chat-7b)
-  - [internlm-chat-20b](https://huggingface.co/internlm/internlm-chat-20b)
-  - [qwen-7b-chat](https://huggingface.co/Qwen/Qwen-7B-Chat)
-  - [qwen-14b-chat](https://huggingface.co/Qwen/Qwen-14B-Chat)
-  - [qwen-72b-chat](https://huggingface.co/Qwen/Qwen-72B-Chat)
-  - [wizardlm-13b](https://huggingface.co/WizardLM/WizardLM-13B-V1.2)
-  - [orca-2-7b](https://huggingface.co/microsoft/Orca-2-7b)
-  - [orca-2-13b](https://huggingface.co/microsoft/Orca-2-13b)
-  - [openchat_3.5](https://huggingface.co/openchat/openchat_3.5)
-  - [zephyr-7b-alpha](https://huggingface.co/HuggingFaceH4/zephyr-7b-alpha)
-  - [mistral-7b-instruct-v0.1](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1)
-  - [Yi-34B-Chat](https://huggingface.co/01-ai/Yi-34B-Chat)
+  - 新增支持模型
+    - 🔥🔥🔥  [qwen-72b-chat](https://huggingface.co/Qwen/Qwen-72B-Chat)
+    - 🔥🔥🔥  [Yi-34B-Chat](https://huggingface.co/01-ai/Yi-34B-Chat)
+  - [更多开源模型](https://www.yuque.com/eosphoros/dbgpt-docs/iqaaqwriwhp6zslc#qQktR)
 
   - 支持在线代理模型 
     - [x] [OpenAI·ChatGPT](https://api.openai.com/)
@@ -148,28 +131,8 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
   通过私有化大模型、代理脱敏等多种技术保障数据的隐私安全。
 
-- 支持数据源
+- [支持数据源](https://www.yuque.com/eosphoros/dbgpt-docs/rc4r27ybmdwg9472)
 
-| DataSource                                                                      | support     | Notes                                       |
-| ------------------------------------------------------------------------------  | ----------- | ------------------------------------------- |
-| [MySQL](https://www.mysql.com/)                                                 | Yes         |                                             |
-| [PostgresSQL](https://www.postgresql.org/)                                      | Yes         |                                             |
-| [Spark](https://github.com/apache/spark)                                        | Yes         |                                             |
-| [DuckDB](https://github.com/duckdb/duckdb)                                      | Yes         |                                             |
-| [Sqlite](https://github.com/sqlite/sqlite)                                      | Yes         |                                             |
-| [MSSQL](https://github.com/microsoft/mssql-jdbc)                                | Yes         |                                             |
-| [ClickHouse](https://github.com/ClickHouse/ClickHouse)                          | Yes         |                                             |
-| [Oracle](https://github.com/oracle)                                             | No          |           TODO                              |
-| [Redis](https://github.com/redis/redis)                                         | No          |           TODO                              |
-| [MongoDB](https://github.com/mongodb/mongo)                                     | No          |           TODO                              |
-| [HBase](https://github.com/apache/hbase)                                        | No          |           TODO                              |
-| [Doris](https://github.com/apache/doris)                                        | No          |           TODO                              |
-| [DB2](https://github.com/IBM/Db2)                                               | No          |           TODO                              |
-| [Couchbase](https://github.com/couchbase)                                       | No          |           TODO                              |
-| [Elasticsearch](https://github.com/elastic/elasticsearch)                       | No          |           TODO                              |
-| [OceanBase](https://github.com/OceanBase)                                       | No          |           TODO                              |
-| [TiDB](https://github.com/pingcap/tidb)                                         | No          |           TODO                              |
-| [StarRocks](https://github.com/StarRocks/starrocks)                             | No          |           TODO                              |
 
 ## 架构方案
 整个DB-GPT的架构，如下图所示
@@ -266,6 +229,7 @@ The MIT License (MIT)
   - [x] Sqlite
   - [x] MSSQL
   - [x] ClickHouse
+  - [x] StarRocks
   - [ ] Oracle
   - [ ] Redis
   - [ ] MongoDB
@@ -276,7 +240,7 @@ The MIT License (MIT)
   - [ ] Elasticsearch
   - [ ] OceanBase
   - [ ] TiDB
-  - [ ] StarRocks
+
 
 ### 多模型管理与推理优化
 - [x] [集群部署](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)

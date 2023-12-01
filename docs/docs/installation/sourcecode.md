@@ -73,7 +73,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Open AI', value: 'openai'},
     {label: 'Qwen', value: 'qwen'},
     {label: 'ChatGLM', value: 'chatglm'},
-    {label: 'ERNIE Bot', value: 'erniebot'},
+    {label: 'WenXin', value: 'erniebot'},
   ]}>
   <TabItem value="openai" label="open ai">
   Install dependencies
@@ -180,7 +180,7 @@ LLM_MODEL=wenxin_proxyllm
 PROXY_SERVER_URL={your_service_url}
 WEN_XIN_MODEL_VERSION={version}
 WEN_XIN_API_KEY={your-wenxin-sk}
-WEN_XIN_SECRET_KEY={your-wenxin-sct}
+WEN_XIN_API_SECRET={your-wenxin-sct}
 ```
   </TabItem>
 </Tabs>
@@ -218,7 +218,7 @@ mkdir models and cd models
 
 # embedding model
 git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-或者
+or
 git clone https://huggingface.co/moka-ai/m3e-large
 
 # llm model, if you use openai or Azure or tongyi llm api service, you don't need to download llm model
