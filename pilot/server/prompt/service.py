@@ -17,9 +17,15 @@ class PromptManageService:
         query = PromptManageRequest(
             prompt_name=request.prompt_name,
         )
+        err_sys_str = ""
+        if query.sys_code:
+            query.sys_code = request.sys_code
+            err_sys_str = f" and sys_code: {request.sys_code}"
         prompt_name = prompt_manage_dao.get_prompts(query)
         if len(prompt_name) > 0:
-            raise Exception(f"prompt name:{request.prompt_name} have already named")
+            raise Exception(
+                f"prompt name: {request.prompt_name}{err_sys_str} have already named"
+            )
         prompt_manage_dao.create_prompt(request)
         return True
 
@@ -32,6 +38,7 @@ class PromptManageService:
             prompt_type=request.prompt_type,
             prompt_name=request.prompt_name,
             user_name=request.user_name,
+            sys_code=request.sys_code,
         )
         responses = []
         prompts = prompt_manage_dao.get_prompts(query)

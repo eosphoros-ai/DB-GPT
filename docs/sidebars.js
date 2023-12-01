@@ -92,7 +92,7 @@ const sidebars = {
 
     {
       type: "category",
-      label: "Application Manual",
+      label: "Application",
       collapsed: false,
       collapsible: false,
       items: [
@@ -103,27 +103,27 @@ const sidebars = {
           items: [
             {
               type: 'doc',
-              id: 'application_manual/started_tutorial/chat_knowledge',
+              id: 'application/started_tutorial/chat_knowledge',
             },
             {
               type: 'doc',
-              id: 'application_manual/started_tutorial/chat_data',
+              id: 'application/started_tutorial/chat_data',
             },
             {
               type: 'doc',
-              id: 'application_manual/started_tutorial/chat_excel',
+              id: 'application/started_tutorial/chat_excel',
             },
             {
               type: 'doc',
-              id: 'application_manual/started_tutorial/chat_db',
+              id: 'application/started_tutorial/chat_db',
             },
             {
               type: 'doc',
-              id: 'application_manual/started_tutorial/chat_dashboard',
+              id: 'application/started_tutorial/chat_dashboard',
             },
             {
               type: 'doc',
-              id: 'application_manual/started_tutorial/agent',
+              id: 'application/started_tutorial/agent',
             },
           ],
         },
@@ -133,15 +133,15 @@ const sidebars = {
           items: [
             {
               type: 'doc',
-              id: 'application_manual/advanced_tutorial/rag',
+              id: 'application/advanced_tutorial/rag',
             },
             {
               type: 'doc',
-              id: 'application_manual/advanced_tutorial/smmf',
+              id: 'application/advanced_tutorial/smmf',
             },
             {
               type: 'doc',
-              id: 'application_manual/advanced_tutorial/debugging',
+              id: 'application/advanced_tutorial/debugging',
             },
           ],
         },
@@ -151,7 +151,7 @@ const sidebars = {
           items: [
             {
               type: 'doc',
-              id: 'application_manual/fine_tuning_manual/text_to_sql',
+              id: 'application/fine_tuning_manual/text_to_sql',
             },
           ],
         },
