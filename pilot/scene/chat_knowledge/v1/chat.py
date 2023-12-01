@@ -83,10 +83,6 @@ class ChatKnowledge(BaseChat):
         if len(documents) > 0:
             self.document_ids = [document.id for document in documents]
 
-    def stream_plugin_call(self, text):
-        """return summary label"""
-        return f"<summary>{text}</summary>"
-
     async def stream_call(self):
         last_output = None
         async for output in super().stream_call():
@@ -109,7 +105,7 @@ class ChatKnowledge(BaseChat):
 
     def stream_call_reinforce_fn(self, text):
         """return reference"""
-        return f"\n\n{self.parse_source_view(self.chunks)}" + text
+        return text + f"\n\n{self.parse_source_view(self.chunks)}"
 
     @trace()
     async def generate_input_values(self) -> Dict:
