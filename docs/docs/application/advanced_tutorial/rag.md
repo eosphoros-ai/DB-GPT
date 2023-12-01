@@ -67,6 +67,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Weaviate', value: 'Weaviate'},
   ]}>
   <TabItem value="Chroma" label="Chroma">
+
 set ``VECTOR_STORE_TYPE`` in ``.env`` file.
 
 ```shell
@@ -78,16 +79,17 @@ VECTOR_STORE_TYPE=Chroma
 
 <TabItem value="Milvus" label="Milvus">
     
+
 set ``VECTOR_STORE_TYPE`` in ``.env`` file
 
 ```shell
-    ### Milvus vector db config
-    VECTOR_STORE_TYPE=Milvus
-    MILVUS_URL=127.0.0.1
-    MILVUS_PORT=19530
-    #MILVUS_USERNAME
-    #MILVUS_PASSWORD
-    #MILVUS_SECURE=
+### Milvus vector db config
+VECTOR_STORE_TYPE=Milvus
+MILVUS_URL=127.0.0.1
+MILVUS_PORT=19530
+#MILVUS_USERNAME
+#MILVUS_PASSWORD
+#MILVUS_SECURE=
   ```
  </TabItem>
 
@@ -96,9 +98,9 @@ set ``VECTOR_STORE_TYPE`` in ``.env`` file
 set ``VECTOR_STORE_TYPE`` in ``.env`` file
 
 ```shell
-  ### Weaviate vector db config
-  VECTOR_STORE_TYPE=Weaviate
-  #WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.network
+### Weaviate vector db config
+VECTOR_STORE_TYPE=Weaviate
+#WEAVIATE_URL=https://kt-region-m8hcy0wc.weaviate.network
  ```
 
  </TabItem>
