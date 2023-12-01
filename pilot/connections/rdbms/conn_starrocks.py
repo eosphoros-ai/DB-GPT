@@ -29,10 +29,14 @@ class StarRocksConnect(RDBMSDatabase):
 
     def _sync_tables_from_db(self) -> Iterable[str]:
         db_name = self.get_current_db_name()
-        table_results = self.session.execute(text(f'SELECT TABLE_NAME FROM information_schema.tables where TABLE_SCHEMA="{db_name}"' ))
-        #view_results = self.session.execute(text(f'SELECT TABLE_NAME from information_schema.materialized_views where TABLE_SCHEMA="{db_name}"'))
+        table_results = self.session.execute(
+            text(
+                f'SELECT TABLE_NAME FROM information_schema.tables where TABLE_SCHEMA="{db_name}"'
+            )
+        )
+        # view_results = self.session.execute(text(f'SELECT TABLE_NAME from information_schema.materialized_views where TABLE_SCHEMA="{db_name}"'))
         table_results = set(row[0] for row in table_results)
-        #view_results = set(row[0] for row in view_results)
+        # view_results = set(row[0] for row in view_results)
         self._all_tables = table_results
         self._metadata.reflect(bind=self._engine)
         return self._all_tables
@@ -144,4 +148,3 @@ class StarRocksConnect(RDBMSDatabase):
         cursor = session.execute(text(f"SHOW INDEX FROM {table_name}"))
         indexes = cursor.fetchall()
         return [(index[2], index[4]) for index in indexes]
-
