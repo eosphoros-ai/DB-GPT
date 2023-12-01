@@ -99,13 +99,13 @@ class ChatKnowledge(BaseChat):
             last_output.text = (
                 last_output.text + "\n\nrelations:\n\n" + ",".join(self.relations)
             )
-        reference = f"\n\n{self.parse_source_view(self.chunks)}"
+        reference = f"\n\n{self.parse_source_view(self.chunks_with_score)}"
         last_output = last_output + reference
         yield last_output
 
     def stream_call_reinforce_fn(self, text):
         """return reference"""
-        return text + f"\n\n{self.parse_source_view(self.chunks)}"
+        return text + f"\n\n{self.parse_source_view(self.chunks_with_score)}"
 
     @trace()
     async def generate_input_values(self) -> Dict:
@@ -132,25 +132,32 @@ class ChatKnowledge(BaseChat):
         from pilot.rag.retriever.rerank import DefaultRanker
 
         ranker = DefaultRanker(self.top_k)
-        docs = ranker.rank(candidates_with_scores)
-        self.chunks = []
-        if not docs or len(docs) == 0:
+        candidates_with_scores = ranker.rank(candidates_with_scores)
+        self.chunks_with_score = []
+        if not candidates_with_scores or len(candidates_with_scores) == 0:
             print("no relevant docs to retrieve")
             context = "no relevant docs to retrieve"
         else:
-            self.chunks = [
-                self.chunk_dao.get_document_chunks(
-                    query=DocumentChunkEntity(content=d.page_content),
-                    document_ids=self.document_ids,
-                )[0]
-                for d in docs
+            self.chunks_with_score = [
+                (
+                    self.chunk_dao.get_document_chunks(
+                        query=DocumentChunkEntity(content=d.page_content),
+                        document_ids=self.document_ids,
+                    )[0],
+                    score,
+                )
+                for d, score in candidates_with_scores
             ]
-
-            context = [d.page_content for d in docs]
+            context = [doc.page_content for doc, _ in candidates_with_scores]
 
         context = context[: self.max_token]
         self.relations = list(
-            set([os.path.basename(str(d.metadata.get("source", ""))) for d in docs])
+            set(
+                [
+                    os.path.basename(str(d.metadata.get("source", "")))
+                    for d, _ in candidates_with_scores
+                ]
+            )
         )
         input_values = {
             "context": context,
@@ -159,7 +166,7 @@ class ChatKnowledge(BaseChat):
         }
         return input_values
 
-    def parse_source_view(self, chunks: List):
+    def parse_source_view(self, chunks_with_score: List):
         """
         format knowledge reference view message to web
         <references title="'References'" references="'[{name:aa.pdf,chunks:[{10:text},{11:text}]},{name:bb.pdf,chunks:[{12,text}]}]'"> </references>
@@ -170,7 +177,7 @@ class ChatKnowledge(BaseChat):
         title = "References"
         references_ele.set("title", title)
         references_dict = {}
-        for chunk in chunks:
+        for chunk, score in chunks_with_score:
             doc_name = chunk.doc_name
             if doc_name not in references_dict:
                 references_dict[doc_name] = {
@@ -180,6 +187,7 @@ class ChatKnowledge(BaseChat):
                             "id": chunk.id,
                             "content": chunk.content,
                             "meta_info": chunk.meta_info,
+                            "recall_score": score,
                         }
                     ],
                 }
@@ -189,6 +197,7 @@ class ChatKnowledge(BaseChat):
                         "id": chunk.id,
                         "content": chunk.content,
                         "meta_info": chunk.meta_info,
+                        "recall_score": score,
                     }
                 )
         references_list = list(references_dict.values())

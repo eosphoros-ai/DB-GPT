@@ -61,9 +61,9 @@ class DefaultRanker(Ranker):
             candidates_with_scores = sorted(
                 candidates_with_scores, key=lambda x: x[1], reverse=True
             )
-        return [candidate_doc for candidate_doc, score in candidates_with_scores][
-            : self.topk
-        ]
+        return [
+            (candidate_doc, score) for candidate_doc, score in candidates_with_scores
+        ][: self.topk]
 
 
 class RRFRanker(Ranker):
