@@ -1,4 +1,5 @@
 from pydantic.main import BaseModel
+from typing import Optional
 
 
 class FeedBackBody(BaseModel):
@@ -12,14 +13,16 @@ class FeedBackBody(BaseModel):
     """question: human question"""
     question: str
 
-    """knowledge_space: knowledge space"""
-    knowledge_space: str
-
     """score: rating of the llm's answer"""
     score: int
 
     """ques_type: question type"""
     ques_type: str
 
+    user_name: Optional[str] = None
+
     """messages: rating detail"""
-    messages: str
+    messages: Optional[str] = None
+
+    """knowledge_space: knowledge space"""
+    knowledge_space: Optional[str] = None

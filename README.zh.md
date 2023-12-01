@@ -113,7 +113,12 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 - **多模型支持与管理**
 
   海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。当前已支持如下模型: 
-   - [支持开源模型](https://www.yuque.com/eosphoros/dbgpt-docs/iqaaqwriwhp6zslc#qQktR)
+
+  - 新增支持模型
+    - 🔥🔥🔥  [qwen-72b-chat](https://huggingface.co/Qwen/Qwen-72B-Chat)
+    - 🔥🔥🔥  [Yi-34B-Chat](https://huggingface.co/01-ai/Yi-34B-Chat)
+  - [更多开源模型](https://www.yuque.com/eosphoros/dbgpt-docs/iqaaqwriwhp6zslc#qQktR)
+
   - 支持在线代理模型 
     - [x] [OpenAI·ChatGPT](https://api.openai.com/)
     - [x] [阿里·通义](https://www.aliyun.com/product/dashscope)
