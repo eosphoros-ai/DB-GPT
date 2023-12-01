@@ -10,23 +10,13 @@ CFG = Config()
 
 PROMPT_SCENE_DEFINE = """You are a helpful assistant that generates multiple search queries based on a single input query."""
 
-_DEFAULT_TEMPLATE_ZH = """请根据以下主题生成{nums}个相关的搜索查询，这些查询应与原始查询相似并且是人们可能会提出的可回答的搜索问题。请按照以下逗号分隔的格式提供: 'queries：<queries>'：
-"---------------------\n"
-"示例："
-"original_query：什么是RAG。"
-"queries：'1. 什么是RAG及其工作原理，2. RAG有哪些应用场景'"
-"---------------------\n"
+_DEFAULT_TEMPLATE_ZH = """请根据原问题优化生成{nums}个相关的搜索查询，这些查询应与原始查询相似并且是人们可能会提出的可回答的搜索问题。请勿使用任何示例中提到的内容，确保所有生成的查询均独立于示例，仅基于提供的原始查询。请按照以下逗号分隔的格式提供: 'queries：<queries>'：
 "original_query：{original_query}\n"
 "queries：\n"
 """
 
 _DEFAULT_TEMPLATE_EN = """
 Generate {nums} search queries related to: {original_query}, Provide following comma-separated format: 'queries: <queries>'\n":
- "---------------------\n"
-    "Example:"
-    "original query: What is RAG."
-    "queries:'1. what is rag and how does it work, 2. what are the applications of rag, 3. can you provide examples of rag usage in real-world scenarios'"
-    "---------------------\n"
     "original query:: {original_query}\n"
     "queries:\n"
 """

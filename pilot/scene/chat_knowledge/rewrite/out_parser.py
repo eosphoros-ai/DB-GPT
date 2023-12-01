@@ -14,13 +14,11 @@ class QueryRewriteParser(BaseOutputParser):
     def __init__(self, sep: str, is_stream_out: bool):
         super().__init__(sep=sep, is_stream_out=is_stream_out)
 
-    def parse_prompt_response(
-        self, response, max_length: int = 128
-    ) -> List[Tuple[str, str, str]]:
+    def parse_prompt_response(self, response, max_length: int = 128):
         lowercase = True
         try:
             results = []
-            response = response.strip()  # Strip newlines from responses.
+            response = response.strip()
 
             if response.startswith("queries:"):
                 response = response[len("queries:") :]

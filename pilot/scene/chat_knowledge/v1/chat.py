@@ -121,6 +121,7 @@ class ChatKnowledge(BaseChat):
         queries = []
         if CFG.KNOWLEDGE_SEARCH_REWRITE:
             queries = await query_reinforce.rewrite()
+            print("rewrite queries:", queries)
         queries.append(self.current_user_input)
         from pilot.common.chat_util import run_async_tasks
 
