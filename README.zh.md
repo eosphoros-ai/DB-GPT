@@ -224,6 +224,7 @@ The MIT License (MIT)
   - [x] Sqlite
   - [x] MSSQL
   - [x] ClickHouse
+  - [x] StarRocks
   - [ ] Oracle
   - [ ] Redis
   - [ ] MongoDB
@@ -234,7 +235,7 @@ The MIT License (MIT)
   - [ ] Elasticsearch
   - [ ] OceanBase
   - [ ] TiDB
-  - [ ] StarRocks
+
 
 ### 多模型管理与推理优化
 - [x] [集群部署](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)

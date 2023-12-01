@@ -73,7 +73,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Open AI', value: 'openai'},
     {label: 'Qwen', value: 'qwen'},
     {label: 'ChatGLM', value: 'chatglm'},
-    {label: 'ERNIE Bot', value: 'erniebot'},
+    {label: 'WenXin', value: 'erniebot'},
   ]}>
   <TabItem value="openai" label="open ai">
   Install dependencies

@@ -106,10 +106,10 @@ PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
 #### Hardware requirements description
 | Model    		                         |   Quantize   |  VRAM Size   	| 
 |:----------------------------------------:|--------------:|---------------|
-|Baichuan-7b     	                     |   4-bit      |  8GB         	|
-|Baichuan-7b  		                     |   8-bit	    |  12GB        	|
-|Baichuan-13b     	                     |   4-bit      |  12GB        	|
-|Baichuan-13b                            |   8-bit      |  20GB         |
+|Vicuna-7b     	                       |   4-bit      |  8GB         	|
+|Vicuna-7b  		                       |   8-bit	    |  12GB        	|
+|Vicuna-13b     	                     |   4-bit      |  12GB        	|
+|Vicuna-13b                            |   8-bit      |  20GB         |
 
 #### Download LLM
 
