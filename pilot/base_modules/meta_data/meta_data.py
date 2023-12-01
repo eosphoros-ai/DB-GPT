@@ -58,7 +58,7 @@ if CFG.LOCAL_DB_TYPE == "mysql":
         + CFG.LOCAL_DB_HOST
         + ":"
         + str(CFG.LOCAL_DB_PORT)
-        + f"/{db_name}"
+        + f"/{db_name}", pool_pre_ping=True, pool_recycle=300
     )
 else:
     engine = create_engine(f"sqlite:///{db_path}")

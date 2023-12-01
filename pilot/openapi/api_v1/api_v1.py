@@ -120,9 +120,9 @@ def knowledge_list_info():
     return params
 
 
-def knowledge_list():
+def knowledge_list(user_id: str = None):
     """return knowledge space list"""
-    request = KnowledgeSpaceRequest()
+    request = KnowledgeSpaceRequest(user_id=user_id)
     spaces = knowledge_service.get_knowledge_space(request)
     space_list = []
     for space in spaces:
@@ -287,9 +287,9 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value(), user_token:
     elif ChatScene.ChatExecution.value() == chat_mode:
         result = plugins_select_info()
     elif ChatScene.ChatKnowledge.value() == chat_mode:
-        result = knowledge_list()
+        result = knowledge_list(user_id=user_token.user_id)
     elif ChatScene.ChatKnowledge.ExtractRefineSummary.value() == chat_mode:
-        result = knowledge_list()
+        result = knowledge_list(user_id=user_token.user_id)
     else:
         return Result.succ(None)
     return Result.succ(result)
