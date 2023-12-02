@@ -30,7 +30,7 @@
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/7uQnPuveTY)|[**文档**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
+[**English**](README.md)|[**Discord**](https://discord.gg/7uQnPuveTY)|[**文档**](https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
 </div>
 
 ## DB-GPT 是什么？
@@ -163,8 +163,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
 🌐 [AutoDL镜像](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
 
-🌐 [阿里云镜像](http://dbgpt.site/web/#/p/dc4bb97e0bc15302dbf3a5d5571142dd)
-
+🌐 [小程序云部署](https://www.yuque.com/eosphoros/dbgpt-docs/ek12ly8k661tbyn8)
 
 ### 多语言切换
 
@@ -174,7 +173,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
 ### 多模型使用
 
-[使用指南](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
+[使用指南](https://www.yuque.com/eosphoros/dbgpt-docs/huzgcf2abzvqy8uv)
 
 # 贡献
 > 提交代码前请先执行 `black .`
@@ -239,13 +238,12 @@ The MIT License (MIT)
 
 
 ### 多模型管理与推理优化
-- [x] [集群部署](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
+- [x] [集群部署](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
 - [x] [fastchat支持](https://github.com/lm-sys/FastChat)
-- [x] [fastchat支持](https://github.com/lm-sys/FastChat)
-- [x] [vLLM 支持](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
+- [x] [vLLM 支持](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
+- [x] 上层接口兼容Openai
 - [ ] 云原生环境与Ray环境支持
 - [ ] 注册中心引入nacos
-- [ ] 上层接口兼容Openai
 - [ ] Embedding模型扩充，优化
 
 ### Agents与插件市场
