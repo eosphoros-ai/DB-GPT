@@ -139,16 +139,15 @@ class ChatKnowledge(BaseChat):
             print("no relevant docs to retrieve")
             context = "no relevant docs to retrieve"
         else:
-            self.chunks_with_score = [
-                (
-                    self.chunk_dao.get_document_chunks(
-                        query=DocumentChunkEntity(content=d.page_content),
-                        document_ids=self.document_ids,
-                    )[0],
-                    score,
+            self.chunks_with_score = []
+            for d, score in candidates_with_scores:
+                chucks = self.chunk_dao.get_document_chunks(
+                    query=DocumentChunkEntity(content=d.page_content),
+                    document_ids=self.document_ids,
                 )
-                for d, score in candidates_with_scores
-            ]
+                if len(chucks) > 0:
+                    self.chunks_with_score.append((chucks[0], score))
+
             context = [doc.page_content for doc, _ in candidates_with_scores]
 
         context = context[: self.max_token]
