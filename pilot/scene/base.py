@@ -109,7 +109,7 @@ class ChatScene(Enum):
 
     @staticmethod
     def of_mode(mode):
-        return [x for x in ChatScene._value_ if x.code == mode][0]
+        return [x for x in ChatScene if mode == x.value()][0]
 
     @staticmethod
     def is_valid_mode(mode):
