@@ -50,6 +50,7 @@ def _initialize_openai(params: ProxyModelParameters):
     openai_params = {
         "api_type": api_type,
         "api_base": api_base,
+        # "api_key": api_key,
         "api_version": api_version,
         "proxy": params.http_proxy,
     }
@@ -112,32 +113,63 @@ def _build_request(model: ProxyModel, params):
 def chatgpt_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
-    import openai
+    # import openai
+
+    
+
+    # res = openai.ChatCompletion.create(messages=history, **payloads)
+
+    # text = ""
+    # for r in res:
+    #     if r["choices"][0]["delta"].get("content") is not None:
+    #         content = r["choices"][0]["delta"]["content"]
+    #         text += content
+    #         yield text
+
+    from openai import OpenAI
+
+
+
+    client = OpenAI(
+        api_key = model.get_params().proxy_api_key[1:-1] or os.getenv(
+        "OPENAI_API_KEY",
+        os.getenv("AZURE_OPENAI_KEY") if api_type == "azure" else None,
+        )
+    )
 
     history, payloads = _build_request(model, params)
 
-    res = openai.ChatCompletion.create(messages=history, **payloads)
+
+    stream = client.chat.completions.create(
+        messages=history,
+        **payloads
+    )
 
     text = ""
-    for r in res:
-        if r["choices"][0]["delta"].get("content") is not None:
-            content = r["choices"][0]["delta"]["content"]
+    for chunk in stream:
+        if chunk.choices[0].delta.content is not None:
+            content = chunk.choices[0].delta.content
             text += content
             yield text
-
 
 async def async_chatgpt_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
-    import openai
+    from openai import AsyncOpenAI
 
     history, payloads = _build_request(model, params)
 
-    res = await openai.ChatCompletion.acreate(messages=history, **payloads)
+    client = AsyncOpenAI(
+        api_key = model.get_params().proxy_api_key[1:-1] or os.getenv(
+        "OPENAI_API_KEY",
+        os.getenv("AZURE_OPENAI_KEY") if api_type == "azure" else None,
+        )
+    )
+    res = await client.ChatCompletion.create(messages=history, **payloads)
 
     text = ""
     async for r in res:
-        if r["choices"][0]["delta"].get("content") is not None:
-            content = r["choices"][0]["delta"]["content"]
+        if r.choices[0].delta.content is not None:
+            content = r.choices[0].delta.content
             text += content
             yield text
