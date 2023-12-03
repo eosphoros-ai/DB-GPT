@@ -50,7 +50,6 @@ def _initialize_openai(params: ProxyModelParameters):
     openai_params = {
         "api_type": api_type,
         "api_base": api_base,
-        # "api_key": api_key,
         "api_version": api_version,
         "proxy": params.http_proxy,
     }
@@ -113,22 +112,8 @@ def _build_request(model: ProxyModel, params):
 def chatgpt_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
-    # import openai
-
-    
-
-    # res = openai.ChatCompletion.create(messages=history, **payloads)
-
-    # text = ""
-    # for r in res:
-    #     if r["choices"][0]["delta"].get("content") is not None:
-    #         content = r["choices"][0]["delta"]["content"]
-    #         text += content
-    #         yield text
 
     from openai import OpenAI
-
-
 
     client = OpenAI(
         api_key = model.get_params().proxy_api_key[1:-1] or os.getenv(
