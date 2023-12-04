@@ -57,3 +57,11 @@ class LLMMetadata(BaseModel):
             " `send_email(to: string, body: string)`."
         ),
     )
+    model_name: str = Field(
+        default="unknown",
+        description=(
+            "The model's name used for logging, testing, and sanity checking. For some"
+            " models this can be automatically discerned. For other models, like"
+            " locally loaded models, this must be manually specified."
+        ),
+    )
