@@ -30,7 +30,7 @@
   </p>
 
 
-[**简体中文**](README.zh.md) | [**Discord**](https://discord.gg/7uQnPuveTY) | [**Documents**](https://db-gpt.readthedocs.io/en/latest/) | [**Wechat**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**Community**](https://github.com/eosphoros-ai/community)
+[**简体中文**](README.zh.md) | [**Discord**](https://discord.gg/7uQnPuveTY) | [**Documents**](https://docs.dbgpt.site) | [**Wechat**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**Community**](https://github.com/eosphoros-ai/community)
 </div>
 
 ## What is DB-GPT?
@@ -205,9 +205,9 @@ The core capabilities primarily consist of the following components:
   - [ ] StarRocks
 
 ### Multi-Models And vLLM
-- [x] [Cluster Deployment](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
+- [x] [Cluster Deployment](https://docs.dbgpt.site/docs/installation/model_service/cluster)
 - [x] [Fastchat Support](https://github.com/lm-sys/FastChat)
-- [x] [vLLM Support](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
+- [x] [vLLM Support](https://docs.dbgpt.site/docs/installation/advanced_usage/vLLM_inference)
 - [ ] Cloud-native environment and support for Ray environment
 - [ ] Service Registry(eg:nacos)
 - [ ] Compatibility with OpenAI's interfaces
@@ -223,7 +223,7 @@ The core capabilities primarily consist of the following components:
 - [ ] Integration of multi-agents and visualization capabilities, defining LLM+Vis new standards
 
 ### Cost and Observability
-- [x] [debugging](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
+- [x] [debugging](https://docs.dbgpt.site/docs/application_manual/advanced_tutorial/debugging)
 - [ ] Observability
 - [ ] cost & budgets
 

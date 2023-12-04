@@ -1,6 +1,6 @@
 from pilot import EmbeddingEngine, KnowledgeType
 
-url = "https://db-gpt.readthedocs.io/en/latest/getting_started/getting_started.html"
+url = "https://docs.dbgpt.site/docs/overview"
 embedding_model = "your_embedding_model"
 vector_store_type = "Chroma"
 chroma_persist_path = "your_persist_path"

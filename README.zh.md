@@ -30,7 +30,7 @@
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/7uQnPuveTY)|[**文档**](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
+[**English**](README.md)|[**Discord**](https://discord.gg/7uQnPuveTY)|[**文档**](https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
 </div>
 
 ## DB-GPT 是什么？
@@ -60,10 +60,6 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
 #### 根据自然语言对话生成分析图表
 <p align="left">
-  <img src="./assets/chat_excel/chat_excel_6.png" width="800px" />
-</p>
-
-<p align="left">
   <img src="./assets/dashboard.png" width="800px" />
 </p>
 
@@ -79,14 +75,14 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
   - [**源码安装**](https://www.yuque.com/eosphoros/dbgpt-docs/urh3fcx8tu0s9xmb)
   - [**Docker安装**](https://www.yuque.com/eosphoros/dbgpt-docs/glf87qg4xxcyrp89)
   - [**Docker Compose安装**](https://www.yuque.com/eosphoros/dbgpt-docs/wwdu11e0v5nkfzin)
-- [**产品使用手册**](https://www.yuque.com/eosphoros/dbgpt-docs/tkspdd0tcy2vlnu4)
-  - [**数据对话**](https://www.yuque.com/eosphoros/dbgpt-docs/gd9hbhi1dextqgbz)
+- [**使用手册**](https://www.yuque.com/eosphoros/dbgpt-docs/tkspdd0tcy2vlnu4)
   - [**知识库**](https://www.yuque.com/eosphoros/dbgpt-docs/ycyz3d9b62fccqxh)
-  - [**ChatExcel**](https://www.yuque.com/eosphoros/dbgpt-docs/prugoype0xd2g4bb)
+  - [**数据对话**](https://www.yuque.com/eosphoros/dbgpt-docs/gd9hbhi1dextqgbz)
+  - [**Excel对话**](https://www.yuque.com/eosphoros/dbgpt-docs/prugoype0xd2g4bb)
   - [**数据库对话**](https://www.yuque.com/eosphoros/dbgpt-docs/wswpv3zcm2c9snmg)
   - [**报表分析**](https://www.yuque.com/eosphoros/dbgpt-docs/vsv49p33eg4p5xc1)
   - [**插件**](https://www.yuque.com/eosphoros/dbgpt-docs/pom41m7oqtdd57hm)
-- [**如何部署模型服务**](https://www.yuque.com/eosphoros/dbgpt-docs/vubxiv9cqed5mc6o)
+- [**模型服务部署**](https://www.yuque.com/eosphoros/dbgpt-docs/vubxiv9cqed5mc6o)
   - [**单机部署**](https://www.yuque.com/eosphoros/dbgpt-docs/kwg1ed88lu5fgawb)
   - [**集群部署**](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
   - [**vLLM**](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
@@ -106,7 +102,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
   围绕大语言模型、Text2SQL数据集、LoRA/QLoRA/Pturning等微调方法构建的自动化微调轻量框架, 让TextSQL微调像流水线一样方便。详见: [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
-- **Data-Driven Multi-Agents&Plugins**
+- **数据驱动的Agents插件**
 
   支持自定义插件执行任务，原生支持Auto-GPT插件模型，Agents协议采用Agent Protocol标准
 
@@ -145,7 +141,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
 - **GBI**：生成式BI是DB-GPT项目的核心能力之一，为构建企业报表分析、业务洞察提供基础的数智化技术保障。 
 
-- **Fine-tune框架**:  模型微调是任何一个企业在垂直、细分领域落地不可或缺的能力，DB-GPT提供了完整的微调框架，实现与DB-GPT项目的无缝打通，在最近的微调中，基于spider的准确率已经做到了82.5%
+- **微调框架**:  模型微调是任何一个企业在垂直、细分领域落地不可或缺的能力，DB-GPT提供了完整的微调框架，实现与DB-GPT项目的无缝打通，在最近的微调中，基于spider的准确率已经做到了82.5%
 
 - **数据驱动的Multi-Agents框架**:  DB-GPT提供了数据驱动的自进化微调框架，目标是可以持续基于数据做决策与执行。 
 
@@ -167,8 +163,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
 🌐 [AutoDL镜像](https://www.codewithgpu.com/i/eosphoros-ai/DB-GPT/dbgpt)
 
-🌐 [阿里云镜像](http://dbgpt.site/web/#/p/dc4bb97e0bc15302dbf3a5d5571142dd)
-
+🌐 [小程序云部署](https://www.yuque.com/eosphoros/dbgpt-docs/ek12ly8k661tbyn8)
 
 ### 多语言切换
 
@@ -178,7 +173,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
 ### 多模型使用
 
-[使用指南](https://db-gpt.readthedocs.io/projects/db-gpt-docs-zh-cn/zh_CN/latest/modules/llms.html)
+[使用指南](https://www.yuque.com/eosphoros/dbgpt-docs/huzgcf2abzvqy8uv)
 
 # 贡献
 > 提交代码前请先执行 `black .`
@@ -243,13 +238,12 @@ The MIT License (MIT)
 
 
 ### 多模型管理与推理优化
-- [x] [集群部署](https://db-gpt.readthedocs.io/en/latest/getting_started/install/cluster/vms/index.html)
+- [x] [集群部署](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
 - [x] [fastchat支持](https://github.com/lm-sys/FastChat)
-- [x] [fastchat支持](https://github.com/lm-sys/FastChat)
-- [x] [vLLM 支持](https://db-gpt.readthedocs.io/en/latest/getting_started/install/llm/vllm/vllm.html)
+- [x] [vLLM 支持](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
+- [x] 上层接口兼容Openai
 - [ ] 云原生环境与Ray环境支持
 - [ ] 注册中心引入nacos
-- [ ] 上层接口兼容Openai
 - [ ] Embedding模型扩充，优化
 
 ### Agents与插件市场
