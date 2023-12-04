@@ -200,8 +200,27 @@ const sidebars = {
     },
 
     {
-      type: "doc",
-      id:"faq"
+      type: "category",
+      label: "FAQ",
+      collapsed: true,
+      items: [
+        {
+          type: 'doc',
+          id: 'faq/install',
+        }
+        ,{
+          type: 'doc',
+          id: 'faq/llm',
+        }
+        ,{
+          type: 'doc',
+          id: 'faq/kbqa',
+        }
+        ,{
+          type: 'doc',
+          id: 'faq/chatdata',
+        },
+      ],
     },
     
     {

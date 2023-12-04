@@ -56,7 +56,12 @@ class SyncStatus(Enum):
     FINISHED = "FINISHED"
 
 
-# @singleton
+# default summary max iteration call with llm.
+DEFAULT_SUMMARY_MAX_ITERATION = 5
+# default summary concurrency call with llm.
+DEFAULT_SUMMARY_CONCURRENCY_LIMIT = 3
+
+
 class KnowledgeService:
     """KnowledgeService
     Knowledge Management Service:
@@ -425,7 +430,7 @@ class KnowledgeService:
             f"async_knowledge_graph, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to graph store"
         )
         try:
-            from pilot.graph_engine.graph_factory import RAGGraphFactory
+            from pilot.rag.graph_engine.graph_factory import RAGGraphFactory
 
             rag_engine = CFG.SYSTEM_APP.get_component(
                 ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
@@ -502,7 +507,7 @@ class KnowledgeService:
         context_template = {
             "embedding": {
                 "topk": CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
-                "recall_score": 0.0,
+                "recall_score": CFG.KNOWLEDGE_SEARCH_RECALL_SCORE,
                 "recall_type": "TopK",
                 "model": EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL].rsplit("/", 1)[-1],
                 "chunk_size": CFG.KNOWLEDGE_CHUNK_SIZE,
@@ -514,8 +519,8 @@ class KnowledgeService:
                 "template": _DEFAULT_TEMPLATE,
             },
             "summary": {
-                "max_iteration": 5,
-                "concurrency_limit": 3,
+                "max_iteration": DEFAULT_SUMMARY_MAX_ITERATION,
+                "concurrency_limit": DEFAULT_SUMMARY_CONCURRENCY_LIMIT,
             },
         }
         context_template_string = json.dumps(context_template, indent=4)

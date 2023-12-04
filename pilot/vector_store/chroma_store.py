@@ -42,7 +42,25 @@ class ChromaStore(VectorStoreBase):
 
     def similar_search(self, text, topk, **kwargs: Any) -> None:
         logger.info("ChromaStore similar search")
-        return self.vector_store_client.similarity_search(text, topk)
+        return self.vector_store_client.similarity_search(text, topk, **kwargs)
+
+    def similar_search_with_scores(self, text, topk, score_threshold) -> None:
+        """
+        Chroma similar_search_with_score.
+        Return docs and relevance scores in the range [0, 1].
+        Args:
+            text(str): query text
+            topk(int): return docs nums. Defaults to 4.
+            score_threshold(float): score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs,0 is dissimilar, 1 is most similar.
+        """
+        logger.info("ChromaStore similar search")
+        docs_and_scores = (
+            self.vector_store_client.similarity_search_with_relevance_scores(
+                query=text, k=topk, score_threshold=score_threshold
+            )
+        )
+        return docs_and_scores
 
     def vector_name_exists(self):
         logger.info(f"Check persist_dir: {self.persist_dir}")
@@ -58,7 +76,6 @@ class ChromaStore(VectorStoreBase):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         ids = self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
-        self.vector_store_client.persist()
         return ids
 
     def delete_vector_name(self, vector_name):

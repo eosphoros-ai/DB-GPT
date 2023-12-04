@@ -15,6 +15,7 @@ class MilvusStore(VectorStoreBase):
     """Milvus database"""
 
     def __init__(self, ctx: {}) -> None:
+        """MilvusStore init."""
         from pymilvus import Collection, DataType, connections, utility
 
         """init a milvus storage connection.
@@ -155,6 +156,7 @@ class MilvusStore(VectorStoreBase):
         index = self.index_params
         # milvus index
         collection.create_index(vector_field, index)
+        collection.load()
         schema = collection.schema
         for x in schema.fields:
             self.fields.append(x.name)
@@ -178,7 +180,10 @@ class MilvusStore(VectorStoreBase):
         """add text data into Milvus."""
         insert_dict: Any = {self.text_field: list(texts)}
         try:
-            insert_dict[self.vector_field] = self.embedding.embed_documents(list(texts))
+            import numpy as np
+
+            text_vector = self.embedding.embed_documents(list(texts))
+            insert_dict[self.vector_field] = self._normalization_vectors(text_vector)
         except NotImplementedError:
             insert_dict[self.vector_field] = [
                 self.embedding.embed_query(x) for x in texts
@@ -236,7 +241,61 @@ class MilvusStore(VectorStoreBase):
             )
             for doc, _, _ in docs_and_scores
         ]
-        # return [doc for doc, _, _ in docs_and_scores]
+
+    def similar_search_with_scores(self, text, topk, score_threshold):
+        """Perform a search on a query string and return results with score.
+
+        For more information about the search parameters, take a look at the pymilvus
+        documentation found here:
+        https://milvus.io/api-reference/pymilvus/v2.2.6/Collection/search().md
+
+        Args:
+            embedding (List[float]): The embedding vector being searched.
+            k (int, optional): The amount of results to return. Defaults to 4.
+            param (dict): The search params for the specified index.
+                Defaults to None.
+            expr (str, optional): Filtering expression. Defaults to None.
+            timeout (int, optional): How long to wait before timeout error.
+                Defaults to None.
+            kwargs: Collection.search() keyword arguments.
+
+        Returns:
+            List[Tuple[Document, float]]: Result doc and score.
+        """
+        from pymilvus import Collection
+
+        self.col = Collection(self.collection_name)
+        schema = self.col.schema
+        for x in schema.fields:
+            self.fields.append(x.name)
+            if x.auto_id:
+                self.fields.remove(x.name)
+            if x.is_primary:
+                self.primary_field = x.name
+            from pymilvus import DataType
+
+            if x.dtype == DataType.FLOAT_VECTOR or x.dtype == DataType.BINARY_VECTOR:
+                self.vector_field = x.name
+        _, docs_and_scores = self._search(text, topk)
+        if any(score < 0.0 or score > 1.0 for _, score, id in docs_and_scores):
+            import warnings
+
+            warnings.warn(
+                "similarity score need between" f" 0 and 1, got {docs_and_scores}"
+            )
+
+        if score_threshold is not None:
+            docs_and_scores = [
+                (doc, score)
+                for doc, score, id in docs_and_scores
+                if score >= score_threshold
+            ]
+            if len(docs_and_scores) == 0:
+                warnings.warn(
+                    "No relevant docs were retrieved using the relevance score"
+                    f" threshold {score_threshold}"
+                )
+        return docs_and_scores
 
     def _search(
         self,
@@ -257,7 +316,8 @@ class MilvusStore(VectorStoreBase):
             index_type = self.col.indexes[0].params["index_type"]
             param = self.index_params_map[index_type]
         #  query text embedding.
-        data = [self.embedding.embed_query(query)]
+        query_vector = self.embedding.embed_query(query)
+        data = [self._normalization_vectors(query_vector)]
         # Determine result metadata fields.
         output_fields = self.fields[:]
         output_fields.remove(self.vector_field)
@@ -271,7 +331,7 @@ class MilvusStore(VectorStoreBase):
             output_fields=output_fields,
             partition_names=partition_names,
             round_decimal=round_decimal,
-            timeout=timeout,
+            timeout=60,
             **kwargs,
         )
         ret = []
@@ -280,7 +340,7 @@ class MilvusStore(VectorStoreBase):
             ret.append(
                 (
                     Document(page_content=meta.pop(self.text_field), metadata=meta),
-                    result.distance,
+                    self._default_relevance_score_fn(result.distance),
                     result.id,
                 )
             )

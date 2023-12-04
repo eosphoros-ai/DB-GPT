@@ -1,18 +1,22 @@
 import json
 import os
+from functools import reduce
 from typing import Dict, List
 
-from pilot.component import ComponentType
 from pilot.scene.base_chat import BaseChat
 from pilot.scene.base import ChatScene
 from pilot.configs.config import Config
 
 from pilot.configs.model_config import (
-    KNOWLEDGE_UPLOAD_ROOT_PATH,
     EMBEDDING_MODEL_CONFIG,
 )
 
 from pilot.scene.chat_knowledge.v1.prompt import prompt
+from pilot.server.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
+from pilot.server.knowledge.document_db import (
+    KnowledgeDocumentDao,
+    KnowledgeDocumentEntity,
+)
 from pilot.server.knowledge.service import KnowledgeService
 from pilot.utils.executor_utils import blocking_func_to_async
 from pilot.utils.tracer import root_tracer, trace
@@ -47,6 +51,11 @@ class ChatKnowledge(BaseChat):
             if self.space_context is None
             else int(self.space_context["embedding"]["topk"])
         )
+        self.recall_score = (
+            CFG.KNOWLEDGE_SEARCH_RECALL_SCORE
+            if self.space_context is None
+            else float(self.space_context["embedding"]["recall_score"])
+        )
         self.max_token = (
             CFG.KNOWLEDGE_SEARCH_MAX_TOKEN
             if self.space_context is None or self.space_context.get("prompt") is None
@@ -65,11 +74,16 @@ class ChatKnowledge(BaseChat):
             embedding_factory=embedding_factory,
         )
         self.prompt_template.template_is_strict = False
+        self.relations = None
+        self.chunk_dao = DocumentChunkDao()
+        document_dao = KnowledgeDocumentDao()
+        documents = document_dao.get_documents(
+            query=KnowledgeDocumentEntity(space=self.knowledge_space)
+        )
+        if len(documents) > 0:
+            self.document_ids = [document.id for document in documents]
 
     async def stream_call(self):
-        input_values = await self.generate_input_values()
-        # Source of knowledge file
-        relations = input_values.get("relations")
         last_output = None
         async for output in super().stream_call():
             last_output = output
@@ -78,76 +92,118 @@ class ChatKnowledge(BaseChat):
         if (
             CFG.KNOWLEDGE_CHAT_SHOW_RELATIONS
             and last_output
-            and type(relations) == list
-            and len(relations) > 0
+            and type(self.relations) == list
+            and len(self.relations) > 0
             and hasattr(last_output, "text")
         ):
             last_output.text = (
-                last_output.text + "\n\nrelations:\n\n" + ",".join(relations)
+                last_output.text + "\n\nrelations:\n\n" + ",".join(self.relations)
             )
-        reference = f"\n\n{self.parse_source_view(self.sources)}"
+        reference = f"\n\n{self.parse_source_view(self.chunks_with_score)}"
         last_output = last_output + reference
         yield last_output
 
     def stream_call_reinforce_fn(self, text):
         """return reference"""
-        return text + f"\n\n{self.parse_source_view(self.sources)}"
+        return text + f"\n\n{self.parse_source_view(self.chunks_with_score)}"
 
     @trace()
     async def generate_input_values(self) -> Dict:
         if self.space_context and self.space_context.get("prompt"):
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
-        docs = await blocking_func_to_async(
-            self._executor,
-            self.knowledge_embedding_client.similar_search,
-            self.current_user_input,
-            self.top_k,
-        )
-        self.sources = _merge_by_key(
-            list(map(lambda doc: doc.metadata, docs)), "source"
-        )
+        from pilot.rag.retriever.reinforce import QueryReinforce
 
-        if not docs or len(docs) == 0:
+        # query reinforce, get similar queries
+        query_reinforce = QueryReinforce(
+            query=self.current_user_input, model_name=self.llm_model
+        )
+        queries = []
+        if CFG.KNOWLEDGE_SEARCH_REWRITE:
+            queries = await query_reinforce.rewrite()
+            print("rewrite queries:", queries)
+        queries.append(self.current_user_input)
+        from pilot.common.chat_util import run_async_tasks
+
+        # similarity search from vector db
+        tasks = [self.execute_similar_search(query) for query in queries]
+        docs_with_scores = await run_async_tasks(tasks=tasks, concurrency_limit=1)
+        candidates_with_scores = reduce(lambda x, y: x + y, docs_with_scores)
+        # candidates document rerank
+        from pilot.rag.retriever.rerank import DefaultRanker
+
+        ranker = DefaultRanker(self.top_k)
+        candidates_with_scores = ranker.rank(candidates_with_scores)
+        self.chunks_with_score = []
+        if not candidates_with_scores or len(candidates_with_scores) == 0:
             print("no relevant docs to retrieve")
             context = "no relevant docs to retrieve"
         else:
-            context = [d.page_content for d in docs]
+            self.chunks_with_score = []
+            for d, score in candidates_with_scores:
+                chucks = self.chunk_dao.get_document_chunks(
+                    query=DocumentChunkEntity(content=d.page_content),
+                    document_ids=self.document_ids,
+                )
+                if len(chucks) > 0:
+                    self.chunks_with_score.append((chucks[0], score))
+
+            context = [doc.page_content for doc, _ in candidates_with_scores]
+
         context = context[: self.max_token]
-        relations = list(
-            set([os.path.basename(str(d.metadata.get("source", ""))) for d in docs])
+        self.relations = list(
+            set(
+                [
+                    os.path.basename(str(d.metadata.get("source", "")))
+                    for d, _ in candidates_with_scores
+                ]
+            )
         )
         input_values = {
             "context": context,
             "question": self.current_user_input,
-            "relations": relations,
+            "relations": self.relations,
         }
         return input_values
 
-    def parse_source_view(self, sources: List):
+    def parse_source_view(self, chunks_with_score: List):
         """
-        build knowledge reference view message to web
-        {
-            "title":"References",
-            "references":[{
-                "name":"aa.pdf",
-                "pages":["1","2","3"]
-            }]
-        }
+        format knowledge reference view message to web
+        <references title="'References'" references="'[{name:aa.pdf,chunks:[{10:text},{11:text}]},{name:bb.pdf,chunks:[{12,text}]}]'"> </references>
         """
-        references = {"title": "References", "references": []}
-        for item in sources:
-            reference = {}
-            source = item["source"] if "source" in item else ""
-            reference["name"] = source
-            pages = item["pages"] if "pages" in item else []
-            if len(pages) > 0:
-                reference["pages"] = pages
-            references["references"].append(reference)
-        html = (
-            f"""<references>{json.dumps(references, ensure_ascii=False)}</references>"""
-        )
-        return html
+        import xml.etree.ElementTree as ET
+
+        references_ele = ET.Element("references")
+        title = "References"
+        references_ele.set("title", title)
+        references_dict = {}
+        for chunk, score in chunks_with_score:
+            doc_name = chunk.doc_name
+            if doc_name not in references_dict:
+                references_dict[doc_name] = {
+                    "name": doc_name,
+                    "chunks": [
+                        {
+                            "id": chunk.id,
+                            "content": chunk.content,
+                            "meta_info": chunk.meta_info,
+                            "recall_score": score,
+                        }
+                    ],
+                }
+            else:
+                references_dict[doc_name]["chunks"].append(
+                    {
+                        "id": chunk.id,
+                        "content": chunk.content,
+                        "meta_info": chunk.meta_info,
+                        "recall_score": score,
+                    }
+                )
+        references_list = list(references_dict.values())
+        references_ele.set("references", json.dumps(references_list))
+        html = ET.tostring(references_ele, encoding="utf-8")
+        return html.decode("utf-8")
 
     @property
     def chat_type(self) -> str:
@@ -157,26 +213,12 @@ class ChatKnowledge(BaseChat):
         service = KnowledgeService()
         return service.get_space_context(space_name)
 
-
-def _merge_by_key(data, key):
-    result = {}
-    for item in data:
-        if item.get(key):
-            item_key = os.path.basename(item.get(key))
-            if item_key in result:
-                if "pages" in result[item_key] and "page" in item:
-                    result[item_key]["pages"].append(str(item["page"]))
-                elif "page" in item:
-                    result[item_key]["pages"] = [
-                        result[item_key]["pages"],
-                        str(item["page"]),
-                    ]
-            else:
-                if "page" in item:
-                    result[item_key] = {
-                        "source": item_key,
-                        "pages": [str(item["page"])],
-                    }
-                else:
-                    result[item_key] = {"source": item_key}
-    return list(result.values())
+    async def execute_similar_search(self, query):
+        """execute similarity search"""
+        return await blocking_func_to_async(
+            self._executor,
+            self.knowledge_embedding_client.similar_search_with_scores,
+            query,
+            self.top_k,
+            self.recall_score,
+        )
