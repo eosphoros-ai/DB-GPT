@@ -40,7 +40,6 @@ def migrate_table(duckdb_file_path, source_table, destination_table, conn_mysql)
                 cursor_mysql.execute(insert_query, row)
         conn_mysql.commit()
     finally:
-        # 关闭 DuckDB 连接
         conn_duckdb.close()
 
 
