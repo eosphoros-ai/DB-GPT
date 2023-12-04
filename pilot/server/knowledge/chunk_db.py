@@ -61,7 +61,9 @@ class DocumentChunkDao(BaseDao):
         session.commit()
         session.close()
 
-    def get_document_chunks(self, query: DocumentChunkEntity, page=1, page_size=20):
+    def get_document_chunks(
+        self, query: DocumentChunkEntity, page=1, page_size=20, document_ids=None
+    ):
         session = self.get_session()
         document_chunks = session.query(DocumentChunkEntity)
         if query.id is not None:
@@ -74,6 +76,10 @@ class DocumentChunkDao(BaseDao):
             document_chunks = document_chunks.filter(
                 DocumentChunkEntity.doc_type == query.doc_type
             )
+        if query.content is not None:
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.content == query.content
+            )
         if query.doc_name is not None:
             document_chunks = document_chunks.filter(
                 DocumentChunkEntity.doc_name == query.doc_name
@@ -81,6 +87,10 @@ class DocumentChunkDao(BaseDao):
         if query.meta_info is not None:
             document_chunks = document_chunks.filter(
                 DocumentChunkEntity.meta_info == query.meta_info
+            )
+        if document_ids is not None:
+            document_chunks = document_chunks.filter(
+                DocumentChunkEntity.document_id.in_(document_ids)
             )
 
         document_chunks = document_chunks.order_by(DocumentChunkEntity.id.asc())
@@ -115,12 +125,6 @@ class DocumentChunkDao(BaseDao):
         count = document_chunks.scalar()
         session.close()
         return count
-
-    # def update_knowledge_document(self, document:KnowledgeDocumentEntity):
-    #     session = self.get_session()
-    #     updated_space = session.merge(document)
-    #     session.commit()
-    #     return updated_space.id
 
     def delete(self, document_id: int):
         session = self.get_session()

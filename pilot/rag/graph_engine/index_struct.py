@@ -12,8 +12,8 @@ from typing import Dict, List, Optional, Sequence, Set
 from dataclasses_json import DataClassJsonMixin
 
 
-from pilot.graph_engine.index_type import IndexStructType
-from pilot.graph_engine.node import TextNode, BaseNode
+from pilot.rag.graph_engine.index_type import IndexStructType
+from pilot.rag.graph_engine.node import TextNode, BaseNode
 
 # TODO: legacy backport of old Node class
 Node = TextNode

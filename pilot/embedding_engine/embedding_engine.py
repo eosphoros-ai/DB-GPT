@@ -16,6 +16,27 @@ class EmbeddingEngine:
     2.similar_search: similarity search from vector_store
     how to use reference:https://db-gpt.readthedocs.io/en/latest/modules/knowledge.html
     how to integrate:https://db-gpt.readthedocs.io/en/latest/modules/knowledge/pdf/pdf_embedding.html
+    Example:
+    .. code-block:: python
+        embedding_model = "your_embedding_model"
+        vector_store_type = "Chroma"
+        chroma_persist_path = "your_persist_path"
+        vector_store_config = {
+            "vector_store_name": "document_test",
+            "vector_store_type": vector_store_type,
+            "chroma_persist_path": chroma_persist_path,
+        }
+
+        # it can be .md,.pdf,.docx, .csv, .html
+        document_path = "your_path/test.md"
+        embedding_engine = EmbeddingEngine(
+            knowledge_source=document_path,
+            knowledge_type=KnowledgeType.DOCUMENT.value,
+            model_name=embedding_model,
+            vector_store_config=vector_store_config,
+        )
+        # embedding document content to vector store
+        embedding_engine.knowledge_embedding()
     """
 
     def __init__(
@@ -74,7 +95,8 @@ class EmbeddingEngine:
         )
 
     def similar_search(self, text, topk):
-        """vector db similar search
+        """vector db similar search in vector database.
+         Return topk docs.
         Args:
            - text: query text
            - topk: top k
@@ -84,8 +106,22 @@ class EmbeddingEngine:
         )
         # https://github.com/chroma-core/chroma/issues/657
         ans = vector_client.similar_search(text, topk)
-        # except NotEnoughElementsException:
-        # ans = vector_client.similar_search(text, 1)
+        return ans
+
+    def similar_search_with_scores(self, text, topk, score_threshold: float = 0.3):
+        """
+        similar_search_with_score in vector database.
+        Return docs and relevance scores in the range [0, 1].
+        Args:
+            doc(str): query text
+            topk(int): return docs nums. Defaults to 4.
+            score_threshold(float): score_threshold: Optional, a floating point value between 0 to 1 to
+                    filter the resulting set of retrieved docs,0 is dissimilar, 1 is most similar.
+        """
+        vector_client = VectorStoreConnector(
+            self.vector_store_config["vector_store_type"], self.vector_store_config
+        )
+        ans = vector_client.similar_search_with_scores(text, topk, score_threshold)
         return ans
 
     def vector_exist(self):

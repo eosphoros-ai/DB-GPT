@@ -184,7 +184,6 @@ class EmbeddingEngingOperator(MapOperator[ChatContext, ChatContext]):
         from pilot.configs.model_config import EMBEDDING_MODEL_CONFIG
         from pilot.embedding_engine.embedding_engine import EmbeddingEngine
         from pilot.embedding_engine.embedding_factory import EmbeddingFactory
-        from pilot.scene.chat_knowledge.v1.chat import _merge_by_key
 
         # TODO, decompose the current operator into some atomic operators
         knowledge_space = input_value.select_param
@@ -223,7 +222,6 @@ class EmbeddingEngingOperator(MapOperator[ChatContext, ChatContext]):
             input_value.current_user_input,
             top_k,
         )
-        sources = _merge_by_key(list(map(lambda doc: doc.metadata, docs)), "source")
         if not docs or len(docs) == 0:
             print("no relevant docs to retrieve")
             context = "no relevant docs to retrieve"

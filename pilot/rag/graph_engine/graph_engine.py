@@ -6,8 +6,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from pilot.embedding_engine import KnowledgeType
 from pilot.embedding_engine.knowledge_type import get_knowledge_embedding
-from pilot.graph_engine.index_struct import KG
-from pilot.graph_engine.node import TextNode
+from pilot.rag.graph_engine.index_struct import KG
+from pilot.rag.graph_engine.node import TextNode
 from pilot.utils import utils
 
 logger = logging.getLogger(__name__)
@@ -121,64 +121,9 @@ class RAGGraphEngine:
             self.graph_store.upsert_triplet(*triplet)
             index_struct.add_node([subj, obj], text_node)
         return index_struct
-        # num_threads = 5
-        # chunk_size = (
-        #     len(documents)
-        #     if (len(documents) < num_threads)
-        #     else len(documents) // num_threads
-        # )
-        #
-        # import concurrent
-        # triples = []
-        # future_tasks = []
-        # with concurrent.futures.ThreadPoolExecutor() as executor:
-        #     for i in range(num_threads):
-        #         start = i * chunk_size
-        #         end = start + chunk_size if i < num_threads - 1 else None
-        #         # doc = documents[start:end]
-        #         future_tasks.append(
-        #             executor.submit(
-        #                 self._extract_triplets_task,
-        #                 documents[start:end],
-        #                 index_struct,
-        #             )
-        #         )
-        #         # for doc in documents[start:end]:
-        #         #     future_tasks.append(
-        #         #         executor.submit(
-        #         #             self._extract_triplets_task,
-        #         #             doc,
-        #         #             index_struct,
-        #         #         )
-        #         #     )
-        #
-        # # result = [future.result() for future in future_tasks]
-        # completed_futures, _ = concurrent.futures.wait(future_tasks, return_when=concurrent.futures.ALL_COMPLETED)
-        # for future in completed_futures:
-        #     # 获取已完成的future的结果并添加到results列表中
-        #     result = future.result()
-        #     triplets.extend(result)
-        # print(f"total triplets-{triples}")
-        # for triplet in triplets:
-        #     subj, _, obj = triplet
-        #     self.graph_store.upsert_triplet(*triplet)
-        #     # index_struct.add_node([subj, obj], text_node)
-        # return index_struct
-        # for doc in documents:
-        #     triplets = self._extract_triplets(doc.page_content)
-        #     if len(triplets) == 0:
-        #         continue
-        #     text_node = TextNode(text=doc.page_content, metadata=doc.metadata)
-        #     logger.info(f"extracted knowledge triplets: {triplets}")
-        #     for triplet in triplets:
-        #         subj, _, obj = triplet
-        #         self.graph_store.upsert_triplet(*triplet)
-        #         index_struct.add_node([subj, obj], text_node)
-        #
-        # return index_struct
 
     def search(self, query):
-        from pilot.graph_engine.graph_search import RAGGraphSearch
+        from pilot.rag.graph_engine.graph_search import RAGGraphSearch
 
         graph_search = RAGGraphSearch(graph_engine=self)
         return graph_search.search(query)
@@ -200,8 +145,3 @@ class RAGGraphEngine:
             )
             triple_results.extend(triplets)
         return triple_results
-        # for triplet in triplets:
-        #     subj, _, obj = triplet
-        #     self.graph_store.upsert_triplet(*triplet)
-        #     self.graph_store.upsert_triplet(*triplet)
-        #     index_struct.add_node([subj, obj], text_node)
