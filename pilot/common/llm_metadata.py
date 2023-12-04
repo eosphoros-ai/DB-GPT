@@ -5,34 +5,10 @@ DEFAULT_NUM_OUTPUTS = 256
 
 
 class LLMMetadata(BaseModel):
-    model_name: str = (
-        Field(
-            default="unknown",
-            description=(
-                "The model's name used for logging, testing, and sanity checking. For some"
-                " models this can be automatically discerned. For other models, like"
-                " locally loaded models, this must be manually specified."
-            ),
-        ),
-    )
-    context_window: int = (
-        Field(
-            default=DEFAULT_CONTEXT_WINDOW,
-            description=(
-                "Total number of tokens the model can be input and output for one response."
-            ),
-        ),
-    )
-    max_chat_iteration: int = (
-        Field(
-            default=5,
-            description=("""max iteration chat with llm model"""),
-        ),
-    )
-    concurrency_limit: int = (
-        Field(
-            default=3,
-            description=("""concurrency call llm model service thread limit"""),
+    context_window: int = Field(
+        default=DEFAULT_CONTEXT_WINDOW,
+        description=(
+            "Total number of tokens the model can be input and output for one response."
         ),
     )
     num_output: int = Field(
