@@ -7,16 +7,18 @@ CFG = Config()
 
 
 class RdbmsSummary(DBSummary):
-    """Get mysql summary template."""
+    """Get db summary template.
+    summary example:
+    table_name(column1(column1 comment),column2(column2 comment),column3(column3 comment) and index keys, and table comment is {table_comment})
+    """
 
     def __init__(self, name, type):
         self.name = name
         self.type = type
-        self.summary = """{{"database_name": "{name}", "type": "{type}", "tables": "{tables}", "qps": "{qps}", "tps": {tps}}}"""
+        self.summary_template = "{table_name}({columns})"
         self.tables = {}
         self.tables_info = []
         self.vector_tables_info = []
-        # self.tables_summary = {}
 
         self.db = CFG.LOCAL_DB_MANAGE.get_connect(name)
 
@@ -27,65 +29,44 @@ class RdbmsSummary(DBSummary):
             collation=self.db.get_collation(),
         )
         tables = self.db.get_table_names()
-        self.table_comments = self.db.get_table_comments(name)
-        comment_map = {}
-        for table_comment in self.table_comments:
-            self.tables_info.append(
-                "table name:{table_name},table description:{table_comment}".format(
-                    table_name=table_comment[0], table_comment=table_comment[1]
-                )
-            )
-            comment_map[table_comment[0]] = table_comment[1]
-
-            vector_table = json.dumps(
-                {"table_name": table_comment[0], "table_description": table_comment[1]}
-            )
-            self.vector_tables_info.append(
-                vector_table.encode("utf-8").decode("unicode_escape")
-            )
-        self.table_columns_info = []
-        self.table_columns_json = []
-
+        self.table_info_summaries = []
         for table_name in tables:
-            table_summary = RdbmsTableSummary(self.db, name, table_name, comment_map)
-            # self.tables[table_name] = table_summary.get_summary()
-            self.tables[table_name] = table_summary.get_columns()
-            self.table_columns_info.append(table_summary.get_columns())
-            # self.table_columns_json.append(table_summary.get_summary_json())
-            table_profile = (
-                "table name:{table_name},table description:{table_comment}".format(
-                    table_name=table_name,
-                    table_comment=self.db.get_show_create_table(table_name),
-                )
-            )
-            self.table_columns_json.append(table_profile)
-            # self.tables_info.append(table_summary.get_summary())
+            table_profile = self.get_table_summary(table_name)
+            self.table_info_summaries.append(table_profile)
 
-    def get_summary(self):
-        if CFG.SUMMARY_CONFIG == "FAST":
-            return self.vector_tables_info
-        else:
-            return self.summary.format(
-                name=self.name, type=self.type, table_info=";".join(self.tables_info)
-            )
+    def get_table_summary(self, table_name):
+        """Get table summary for table."""
+        columns = []
+        for column in self.db._inspector.get_columns(table_name):
+            if column.get("comment"):
+                columns.append((f"{column['name']} ({column.get('comment')})"))
+            else:
+                columns.append(f"{column['name']}")
 
-    def get_db_summary(self):
-        return self.summary.format(
-            name=self.name,
-            type=self.type,
-            tables=";".join(self.vector_tables_info),
-            qps=1000,
-            tps=1000,
+        column_str = ", ".join(columns)
+        index_keys = []
+        for index_key in self.db._inspector.get_indexes(table_name):
+            key_str = ", ".join(index_key["column_names"])
+            index_keys.append(f"{index_key['name']}(`{key_str}`) ")
+        table_str = self.summary_template.format(
+            table_name=table_name, columns=column_str
         )
-
-    def get_table_summary(self):
-        return self.tables
+        if len(index_keys) > 0:
+            index_key_str = ", ".join(index_keys)
+            table_str += f", and index keys: {index_key_str}"
+        try:
+            comment = self.db._inspector.get_table_comment(table_name)
+        except Exception as e:
+            comment = dict(text=None)
+        if comment.get("text"):
+            table_str += f", and table comment: {comment.get('text')}"
+        return table_str
 
     def get_table_comments(self):
         return self.table_comments
 
-    def table_info_json(self):
-        return self.table_columns_json
+    def table_summaries(self):
+        return self.table_info_summaries
 
 
 class RdbmsTableSummary(TableSummary):
@@ -126,14 +107,6 @@ class RdbmsTableSummary(TableSummary):
             indexes=self.indexes_info,
             size_in_bytes=1000,
             rows=1000,
-        )
-
-    def get_summary(self):
-        return self.summary.format(
-            name=self.name,
-            dbname=self.dbname,
-            fields=";".join(self.fields_info),
-            indexes=";".join(self.indexes_info),
         )
 
     def get_columns(self):
