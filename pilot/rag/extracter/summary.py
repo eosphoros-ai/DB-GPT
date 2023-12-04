@@ -93,36 +93,3 @@ class SummaryExtractor(Extractor):
             return await self._mapreduce_extract_summary(
                 summary_iters, model_name, max_iteration, llm_metadata.concurrency_limit
             )
-
-    # async def _refine_extract_summary(
-    #     self, doc: str, conn_uid: str, model_name: str = None
-    # ):
-    #     """Extract triplets from text by llm
-    #     Args:
-    #         doc: Document
-    #         conn_uid: str,chat conversation id
-    #         model_name: str, model name
-    #     Returns:
-    #          chat: BaseChat, refine summary chat.
-    #     """
-    #     from pilot.scene.base import ChatScene
-    #
-    #     chat_param = {
-    #         "chat_session_id": conn_uid,
-    #         "current_user_input": "",
-    #         "select_param": doc,
-    #         "model_name": model_name,
-    #         "model_cache_enable": False,
-    #     }
-    #     executor = CFG.SYSTEM_APP.get_component(
-    #         ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
-    #     ).create()
-    #     from pilot.openapi.api_v1.api_v1 import CHAT_FACTORY
-    #
-    #     chat = await blocking_func_to_async(
-    #         executor,
-    #         CHAT_FACTORY.get_implementation,
-    #         ChatScene.ExtractRefineSummary.value(),
-    #         **{"chat_param": chat_param},
-    #     )
-    #     return chat
