@@ -11,6 +11,7 @@ from alembic import command
 from alembic.config import Config as AlembicConfig
 from urllib.parse import quote
 from pilot.configs.config import Config
+from urllib.parse import quote_plus as urlquote
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,7 @@ if CFG.LOCAL_DB_TYPE == "mysql":
         f"mysql+pymysql://"
         + quote(CFG.LOCAL_DB_USER)
         + ":"
-        + quote(CFG.LOCAL_DB_PASSWORD)
+        + urlquote(CFG.LOCAL_DB_PASSWORD)
         + "@"
         + CFG.LOCAL_DB_HOST
         + ":"
@@ -54,7 +55,7 @@ if CFG.LOCAL_DB_TYPE == "mysql":
         f"mysql+pymysql://"
         + quote(CFG.LOCAL_DB_USER)
         + ":"
-        + quote(CFG.LOCAL_DB_PASSWORD)
+        + urlquote(CFG.LOCAL_DB_PASSWORD)
         + "@"
         + CFG.LOCAL_DB_HOST
         + ":"

@@ -1,9 +1,10 @@
 from __future__ import annotations
-from urllib.parse import quote
 import warnings
 import sqlparse
 import regex as re
 import pandas as pd
+from urllib.parse import quote
+from urllib.parse import quote_plus as urlquote
 from typing import Any, Iterable, List, Optional
 from pydantic import BaseModel, Field, root_validator, validator, Extra
 from abc import ABC, abstractmethod
@@ -117,7 +118,7 @@ class RDBMSDatabase(BaseConnect):
             + "://"
             + quote(user)
             + ":"
-            + quote(pwd)
+            + urlquote(pwd)
             + "@"
             + host
             + ":"

@@ -1,6 +1,7 @@
 from typing import Iterable, Optional, Any
 from sqlalchemy import text
 from urllib.parse import quote
+from urllib.parse import quote_plus as urlquote
 from pilot.connections.rdbms.base import RDBMSDatabase
 
 
@@ -25,7 +26,7 @@ class PostgreSQLDatabase(RDBMSDatabase):
             + "://"
             + quote(user)
             + ":"
-            + quote(pwd)
+            + urlquote(pwd)
             + "@"
             + host
             + ":"

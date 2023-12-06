@@ -1,6 +1,8 @@
 import re
 from typing import Optional, Any
 from sqlalchemy import text
+from urllib.parse import quote
+from urllib.parse import quote_plus as urlquote
 
 from pilot.connections.rdbms.base import RDBMSDatabase
 
@@ -32,9 +34,9 @@ class ClickhouseConnect(RDBMSDatabase):
         db_url: str = (
             cls.driver
             + "://"
-            + user
+            + quote(user)
             + ":"
-            + pwd
+            + urlquote(pwd)
             + "@"
             + host
             + ":"
