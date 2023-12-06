@@ -114,17 +114,7 @@ class RDBMSDatabase(BaseConnect):
             engine_args (Optional[dict]):other engine_args.
         """
         db_url: str = (
-            cls.driver
-            + "://"
-            + quote(user)
-            + ":"
-            + urlquote(pwd)
-            + "@"
-            + host
-            + ":"
-            + str(port)
-            + "/"
-            + db_name
+            f"{cls.driver}://{quote(user)}:{urlquote(pwd)}@{host}:{str(port)}/{db_name}"
         )
         return cls.from_uri(db_url, engine_args, **kwargs)
 

@@ -82,5 +82,3 @@ class DuckDbConnect(RDBMSDatabase):
 
             results.append(f"{table_name}({','.join(table_colums)});")
         return results
-
-
