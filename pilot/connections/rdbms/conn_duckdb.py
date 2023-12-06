@@ -82,25 +82,3 @@ class DuckDbConnect(RDBMSDatabase):
 
             results.append(f"{table_name}({','.join(table_colums)});")
         return results
-
-
-if __name__ == "__main__":
-    engine = create_engine(
-        "duckdb:////Users/tuyang.yhj/Code/PycharmProjects/DB-GPT/pilot/mock_datas/db-gpt-test.db"
-    )
-    metadata = MetaData(engine)
-
-    results = (
-        engine.connect()
-        .execute("SELECT name FROM sqlite_master WHERE type='table'")
-        .fetchall()
-    )
-
-    print(str(results))
-
-    fields = []
-    results2 = engine.connect().execute(f"""PRAGMA  table_info(user)""").fetchall()
-    for row_col in results2:
-        field_info = list(row_col)
-        fields.append(field_info[1])
-    print(str(fields))
