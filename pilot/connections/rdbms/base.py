@@ -1,9 +1,10 @@
 from __future__ import annotations
-from urllib.parse import quote
 import warnings
 import sqlparse
 import regex as re
 import pandas as pd
+from urllib.parse import quote
+from urllib.parse import quote_plus as urlquote
 from typing import Any, Iterable, List, Optional
 from pydantic import BaseModel, Field, root_validator, validator, Extra
 from abc import ABC, abstractmethod
@@ -113,17 +114,7 @@ class RDBMSDatabase(BaseConnect):
             engine_args (Optional[dict]):other engine_args.
         """
         db_url: str = (
-            cls.driver
-            + "://"
-            + quote(user)
-            + ":"
-            + quote(pwd)
-            + "@"
-            + host
-            + ":"
-            + str(port)
-            + "/"
-            + db_name
+            f"{cls.driver}://{quote(user)}:{urlquote(pwd)}@{host}:{str(port)}/{db_name}"
         )
         return cls.from_uri(db_url, engine_args, **kwargs)
 

@@ -11,6 +11,7 @@ from alembic import command
 from alembic.config import Config as AlembicConfig
 from urllib.parse import quote
 from pilot.configs.config import Config
+from urllib.parse import quote_plus as urlquote
 
 
 logger = logging.getLogger(__name__)
@@ -29,14 +30,7 @@ connection = sqlite3.connect(db_path)
 
 if CFG.LOCAL_DB_TYPE == "mysql":
     engine_temp = create_engine(
-        f"mysql+pymysql://"
-        + quote(CFG.LOCAL_DB_USER)
-        + ":"
-        + quote(CFG.LOCAL_DB_PASSWORD)
-        + "@"
-        + CFG.LOCAL_DB_HOST
-        + ":"
-        + str(CFG.LOCAL_DB_PORT)
+        f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:{urlquote(CFG.LOCAL_DB_PASSWORD)}@{CFG.LOCAL_DB_HOST}:{str(CFG.LOCAL_DB_PORT)}"
     )
     # check and auto create mysqldatabase
     try:
@@ -51,15 +45,7 @@ if CFG.LOCAL_DB_TYPE == "mysql":
         logger.error(f"{db_name} not connect success!")
 
     engine = create_engine(
-        f"mysql+pymysql://"
-        + quote(CFG.LOCAL_DB_USER)
-        + ":"
-        + quote(CFG.LOCAL_DB_PASSWORD)
-        + "@"
-        + CFG.LOCAL_DB_HOST
-        + ":"
-        + str(CFG.LOCAL_DB_PORT)
-        + f"/{db_name}"
+        f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:{urlquote(CFG.LOCAL_DB_PASSWORD)}@{CFG.LOCAL_DB_HOST}:{str(CFG.LOCAL_DB_PORT)}/{db_name}"
     )
 else:
     engine = create_engine(f"sqlite:///{db_path}")
