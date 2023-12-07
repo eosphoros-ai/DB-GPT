@@ -229,7 +229,7 @@ The MIT License (MIT)
   - [ ] Redis
   - [ ] MongoDB
   - [ ] HBase
-  - [ ] Doris
+  - [x] Doris
   - [ ] DB2
   - [ ] Couchbase
   - [ ] Elasticsearch

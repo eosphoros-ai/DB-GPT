@@ -31,6 +31,7 @@ class DBType(Enum):
     Clickhouse = DbInfo("clickhouse")
     StarRocks = DbInfo("starrocks")
     Spark = DbInfo("spark", True)
+    Doris = DbInfo("doris")
 
     def value(self):
         return self._value_.name

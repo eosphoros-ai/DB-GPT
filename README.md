@@ -196,7 +196,7 @@ The core capabilities primarily consist of the following components:
   - [ ] Redis
   - [ ] MongoDB
   - [ ] HBase
-  - [ ] Doris
+  - [x] Doris
   - [ ] DB2
   - [ ] Couchbase
   - [ ] Elasticsearch
