@@ -506,7 +506,6 @@ class BaseChat(ABC):
         )
 
 
-
 def _build_model_operator(
     is_stream: bool = False, dag_name: str = "llm_model_dag"
 ) -> BaseOperator:
