@@ -43,6 +43,7 @@ class ChatWithDbAutoExecute(BaseChat):
             self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
 
         self.top_k: int = 50
+        self.api_call = ApiCall(display_registry=CFG.command_disply)
 
     @trace()
     async def generate_input_values(self) -> Dict:
@@ -76,6 +77,7 @@ class ChatWithDbAutoExecute(BaseChat):
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
             "table_info": table_infos,
+            "display_type": self._generate_numbered_list(),
         }
         return input_values
 
