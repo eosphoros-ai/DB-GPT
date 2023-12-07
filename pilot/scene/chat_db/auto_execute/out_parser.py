@@ -17,7 +17,11 @@ class SqlAction(NamedTuple):
     display: str
 
     def to_dict(self) -> Dict[str, Dict]:
-        return {"sql": self.sql, "thoughts": self.thoughts, "display": self.display, }
+        return {
+            "sql": self.sql,
+            "thoughts": self.thoughts,
+            "display": self.display,
+        }
 
 
 logger = logging.getLogger(__name__)
