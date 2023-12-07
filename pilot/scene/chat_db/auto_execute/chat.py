@@ -43,6 +43,7 @@ class ChatWithDbAutoExecute(BaseChat):
             self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
 
         self.top_k: int = 50
+        self.api_call = ApiCall(display_registry=CFG.command_disply)
 
     @trace()
     async def generate_input_values(self) -> Dict:
@@ -76,6 +77,7 @@ class ChatWithDbAutoExecute(BaseChat):
             "top_k": str(self.top_k),
             "dialect": self.database.dialect,
             "table_info": table_infos,
+            "display_type": self._generate_numbered_list(),
         }
         return input_values
 
@@ -87,3 +89,46 @@ class ChatWithDbAutoExecute(BaseChat):
     def do_action(self, prompt_response):
         print(f"do_action:{prompt_response}")
         return self.database.run_to_df
+
+    def _generate_numbered_list(self) -> str:
+        antv_charts = [
+            {"response_line_chart": "used to display comparative trend analysis data"},
+            {
+                "response_pie_chart": "suitable for scenarios such as proportion and distribution statistics"
+            },
+            {
+                "response_table": "suitable for display with many display columns or non-numeric columns"
+            },
+            # {"response_data_text":" the default display method, suitable for single-line or simple content display"},
+            {
+                "response_scatter_plot": "Suitable for exploring relationships between variables, detecting outliers, etc."
+            },
+            {
+                "response_bubble_chart": "Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."
+            },
+            {
+                "response_donut_chart": "Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc."
+            },
+            {
+                "response_area_chart": "Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc."
+            },
+            {
+                "response_heatmap": "Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."
+            },
+        ]
+
+        # command_strings = []
+        # if CFG.command_disply:
+        #     for name, item in CFG.command_disply.commands.items():
+        #         if item.enabled:
+        #             command_strings.append(f"{name}:{item.description}")
+        # command_strings += [
+        #     str(item)
+        #     for item in CFG.command_disply.commands.values()
+        #     if item.enabled
+        # ]
+        return "\n".join(
+            f"{key}:{value}"
+            for dict_item in antv_charts
+            for key, value in dict_item.items()
+        )
