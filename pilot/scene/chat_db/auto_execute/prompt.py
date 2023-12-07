@@ -25,6 +25,7 @@ Constraint:
     3.You can only use the tables provided in the table structure information to generate sql. If you cannot generate sql based on the provided table structure, please say: "The table structure information provided is not enough to generate sql queries." It is prohibited to fabricate information at will.
     4.Please be careful not to mistake the relationship between tables and columns when generating SQL.
     5.Please check the correctness of the SQL and ensure that the query performance is optimized under correct conditions.
+    6.Please choose the best one from the display methods given below for data rendering, and put the type name into the name parameter value that returns the required format. If you cannot find the most suitable one, use 'Table' as the display method. , the available data display methods are as follows: {display_type}
     
 User Question:
     {user_input}
@@ -47,6 +48,7 @@ _DEFAULT_TEMPLATE_ZH = """
     3. 只能使用表结构信息中提供的表来生成 sql，如果无法根据提供的表结构中生成 sql ，请说：“提供的表结构信息不足以生成 sql 查询。” 禁止随意捏造信息。
     4. 请注意生成SQL时不要弄错表和列的关系
     5. 请检查SQL的正确性，并保证正确的情况下优化查询性能
+    6.请从如下给出的展示方式种选择最优的一种用以进行数据渲染，将类型名称放入返回要求格式的name参数值种，如果找不到最合适的则使用'Table'作为展示方式，可用数据展示方式如下: {display_type}
 用户问题:
     {user_input}
 请一步步思考并按照以下JSON格式回复：
@@ -66,6 +68,7 @@ PROMPT_SCENE_DEFINE = (
 RESPONSE_FORMAT_SIMPLE = {
     "thoughts": "thoughts summary to say to user",
     "sql": "SQL Query to run",
+    "display_type": "Data display method",
 }
 
 PROMPT_SEP = SeparatorStyle.SINGLE.value

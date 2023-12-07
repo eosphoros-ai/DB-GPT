@@ -14,9 +14,10 @@ CFG = Config()
 class SqlAction(NamedTuple):
     sql: str
     thoughts: Dict
+    display: str
 
     def to_dict(self) -> Dict[str, Dict]:
-        return {"sql": self.sql, "thoughts": self.thoughts}
+        return {"sql": self.sql, "thoughts": self.thoughts, "display": self.display, }
 
 
 logger = logging.getLogger(__name__)
@@ -40,19 +41,21 @@ class DbChatOutputParser(BaseOutputParser):
         logger.info(f"clean prompt response: {clean_str}")
         # Compatible with community pure sql output model
         if self.is_sql_statement(clean_str):
-            return SqlAction(clean_str, "")
+            return SqlAction(clean_str, "", "")
         else:
             try:
-                response = json.loads(clean_str)
+                response = json.loads(clean_str, strict=False)
                 for key in sorted(response):
                     if key.strip() == "sql":
                         sql = response[key]
                     if key.strip() == "thoughts":
                         thoughts = response[key]
-                return SqlAction(sql, thoughts)
+                    if key.strip() == "display_type":
+                        display = response[key]
+                return SqlAction(sql, thoughts, display)
             except Exception as e:
-                logger.error("json load faild")
-                return SqlAction("", clean_str)
+                logger.error(f"json load failed:{clean_str}")
+                return SqlAction("", clean_str, "")
 
     def parse_view_response(self, speak, data, prompt_response) -> str:
         param = {}
@@ -63,7 +66,7 @@ class DbChatOutputParser(BaseOutputParser):
                 return f"""{speak}"""
 
             df = data(prompt_response.sql)
-            param["type"] = "response_table"
+            param["type"] = prompt_response.display
             param["sql"] = prompt_response.sql
             param["data"] = json.loads(
                 df.to_json(orient="records", date_format="iso", date_unit="s")
