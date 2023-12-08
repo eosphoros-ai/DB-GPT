@@ -116,8 +116,12 @@ class KnowledgeService:
         query = KnowledgeSpaceEntity(
             name=request.name, vector_type=request.vector_type, owner=request.owner
         )
-        responses = []
         spaces = knowledge_space_dao.get_knowledge_space(query)
+        space_names = [space.name for space in spaces]
+        docs_count = knowledge_document_dao.get_knowledge_documents_count_bulk(
+            space_names
+        )
+        responses = []
         for space in spaces:
             res = SpaceQueryResponse()
             res.id = space.id
@@ -128,9 +132,7 @@ class KnowledgeService:
             res.gmt_created = space.gmt_created
             res.gmt_modified = space.gmt_modified
             res.context = space.context
-            query = KnowledgeDocumentEntity(space=space.name)
-            doc_count = knowledge_document_dao.get_knowledge_documents_count(query)
-            res.docs = doc_count
+            res.docs = docs_count.get(space.name, 0)
             responses.append(res)
         return responses
 
