@@ -17,8 +17,8 @@
 
 """
 
-from pilot.awel import HttpTrigger, DAG, MapOperator
-from pilot.scene.operator._experimental import (
+from dbgpt.core.awel import HttpTrigger, DAG, MapOperator
+from dbgpt.app.scene.operator._experimental import (
     ChatContext,
     PromptManagerOperator,
     ChatHistoryStorageOperator,
@@ -26,10 +26,9 @@ from pilot.scene.operator._experimental import (
     EmbeddingEngingOperator,
     BaseChatOperator,
 )
-from pilot.scene.base import ChatScene
-from pilot.openapi.api_view_model import ConversationVo
-from pilot.model.base import ModelOutput
-from pilot.model.operator.model_operator import ModelOperator
+from dbgpt.app.scene import ChatScene
+from dbgpt.app.openapi.api_view_model import ConversationVo
+from dbgpt.model.operator.model_operator import ModelOperator
 
 
 class RequestParseOperator(MapOperator[ConversationVo, ChatContext]):

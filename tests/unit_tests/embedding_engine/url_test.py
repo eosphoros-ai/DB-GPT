@@ -1,4 +1,4 @@
-from pilot import EmbeddingEngine, KnowledgeType
+from dbgpt import EmbeddingEngine, KnowledgeType
 
 url = "https://docs.dbgpt.site/docs/overview"
 embedding_model = "your_embedding_model"
