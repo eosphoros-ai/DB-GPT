@@ -141,6 +141,14 @@ const sidebars = {
             },
             {
               type: 'doc',
+              id: 'application/advanced_tutorial/cli',
+            },
+            {
+              type: 'doc',
+              id: 'application/advanced_tutorial/api',
+            },
+            {
+              type: 'doc',
               id: 'application/advanced_tutorial/debugging',
             },
           ],
