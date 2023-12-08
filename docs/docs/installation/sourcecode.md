@@ -373,7 +373,7 @@ bash ./scripts/examples/load_examples.sh
 ## Run service
 The DB-GPT service is packaged into a server, and the entire DB-GPT service can be started through the following command.
 ```python
-python pilot/server/dbgpt_server.py
+python dbgpt/app/dbgpt_server.py
 ```
 
 ## Visit website
