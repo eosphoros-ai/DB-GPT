@@ -244,7 +244,7 @@ class OpenAILLM(BaseLLMOperator):
         self, model_request: ModelRequest
     ) -> AsyncIterator[ModelOutput]:
         try:
-            chat_completion = await self._send_request(model_request, stream=False)
+            chat_completion = await self._send_request(model_request, stream=True)
             text = ""
             for r in chat_completion:
                 if len(r.choices) == 0:
