@@ -2,10 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Optional, Type
 import logging
 from concurrent.futures import Executor
-from dbgpt.util.cache.storage.base import CacheStorage, StorageItem
-from dbgpt.util.cache.base import (
-    K,
-    V,
+from dbgpt.storage.cache.storage.base import CacheStorage
+from dbgpt.core.interface.cache import K, V
+from dbgpt.core import (
     CacheKey,
     CacheValue,
     CacheConfig,
@@ -103,13 +102,13 @@ class LocalCacheManager(CacheManager):
 def initialize_cache(
     system_app: SystemApp, storage_type: str, max_memory_mb: int, persist_dir: str
 ):
-    from dbgpt.util.cache.protocal.json_protocal import JsonSerializer
-    from dbgpt.util.cache.storage.base import MemoryCacheStorage
+    from dbgpt.util.serialization.json_serialization import JsonSerializer
+    from dbgpt.storage.cache.storage.base import MemoryCacheStorage
 
     cache_storage = None
     if storage_type == "disk":
         try:
-            from dbgpt.util.cache.storage.disk.disk_storage import DiskCacheStorage
+            from dbgpt.storage.cache.storage.disk.disk_storage import DiskCacheStorage
 
             cache_storage = DiskCacheStorage(
                 persist_dir, mem_table_buffer_mb=max_memory_mb

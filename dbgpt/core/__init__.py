@@ -12,6 +12,14 @@ from dbgpt.core.interface.message import (
 )
 from dbgpt.core.interface.prompt import PromptTemplate, PromptTemplateOperator
 from dbgpt.core.interface.output_parser import BaseOutputParser
+from dbgpt.core.interface.serialization import Serializable, Serializer
+from dbgpt.core.interface.cache import (
+    CacheKey,
+    CacheValue,
+    CacheClient,
+    CachePolicy,
+    CacheConfig,
+)
 
 __ALL__ = [
     "ModelInferenceMetrics",
@@ -20,8 +28,16 @@ __ALL__ = [
     "BaseLLMOperator",
     "RequestBuildOperator",
     "ModelMessage",
-    "ModelMessageRoleType" "OnceConversation",
+    "ModelMessageRoleType",
+    "OnceConversation",
     "PromptTemplate",
     "PromptTemplateOperator",
     "BaseOutputParser",
+    "Serializable",
+    "Serializer",
+    "CacheKey",
+    "CacheValue",
+    "CacheClient",
+    "CachePolicy",
+    "CacheConfig",
 ]

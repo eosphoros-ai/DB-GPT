@@ -5,12 +5,11 @@ from collections import OrderedDict
 import msgpack
 import logging
 
-from dbgpt.util.cache.base import (
+from dbgpt.core.interface.cache import (
     K,
     V,
     CacheKey,
     CacheValue,
-    CacheClient,
     CacheConfig,
     RetrievalPolicy,
     CachePolicy,

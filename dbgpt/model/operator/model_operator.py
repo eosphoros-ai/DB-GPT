@@ -11,7 +11,7 @@ from dbgpt.component import ComponentType
 from dbgpt.core.awel.operator.base import BaseOperator
 from dbgpt.core import ModelOutput
 from dbgpt.model.cluster import WorkerManager, WorkerManagerFactory
-from dbgpt.util.cache import LLMCacheClient, CacheManager, LLMCacheKey, LLMCacheValue
+from dbgpt.storage.cache import LLMCacheClient, CacheManager, LLMCacheKey, LLMCacheValue
 
 logger = logging.getLogger(__name__)
 

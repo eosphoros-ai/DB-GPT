@@ -1,18 +1,16 @@
 from typing import Optional
 import logging
-from dbgpt.util.cache.base import (
+from rocksdict import Rdict, Options
+
+from dbgpt.core.interface.cache import (
     K,
     V,
     CacheKey,
     CacheValue,
     CacheConfig,
     RetrievalPolicy,
-    CachePolicy,
 )
-from dbgpt.util.cache.storage.base import StorageItem, CacheStorage
-from rocksdict import Rdict
-from rocksdict import Rdict, Options, SliceTransform, PlainTableFactoryOptions
-
+from dbgpt.storage.cache.storage.base import StorageItem, CacheStorage
 
 logger = logging.getLogger(__name__)
 

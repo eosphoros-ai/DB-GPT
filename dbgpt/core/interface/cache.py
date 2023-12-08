@@ -1,32 +1,13 @@
-from abc import ABC, abstractmethod, abstractclassmethod
-from typing import Any, TypeVar, Generic, Optional, Type, Dict
+from abc import ABC, abstractmethod
+
+from typing import Any, TypeVar, Generic, Optional
 from dataclasses import dataclass
 from enum import Enum
 
-T = TypeVar("T", bound="Serializable")
+from dbgpt.core.interface.serialization import Serializable
 
 K = TypeVar("K")
 V = TypeVar("V")
-
-
-class Serializable(ABC):
-    @abstractmethod
-    def serialize(self) -> bytes:
-        """Convert the object into bytes for storage or transmission.
-
-        Returns:
-            bytes: The byte array after serialization
-        """
-
-    @abstractmethod
-    def to_dict(self) -> Dict:
-        """Convert the object's state to a dictionary."""
-
-    # @staticmethod
-    # @abstractclassmethod
-    # def from_dict(cls: Type["Serializable"], obj_dict: Dict) -> "Serializable":
-    #     """Deserialize a dictionary to an Serializable object.
-    #     """
 
 
 class RetrievalPolicy(str, Enum):
@@ -80,30 +61,6 @@ class CacheValue(Serializable, ABC, Generic[V]):
     @abstractmethod
     def get_value(self) -> V:
         """Get the underlying real value."""
-
-
-class Serializer(ABC):
-    """The serializer abstract class for serializing cache keys and values."""
-
-    @abstractmethod
-    def serialize(self, obj: Serializable) -> bytes:
-        """Serialize a cache object.
-
-        Args:
-            obj (Serializable): The object to serialize
-        """
-
-    @abstractmethod
-    def deserialize(self, data: bytes, cls: Type[Serializable]) -> Serializable:
-        """Deserialize data back into a cache object of the specified type.
-
-        Args:
-            data (bytes): The byte array to deserialize
-            cls (Type[Serializable]): The type of current object
-
-        Returns:
-            Serializable: The serializable object
-        """
 
 
 class CacheClient(ABC, Generic[K, V]):

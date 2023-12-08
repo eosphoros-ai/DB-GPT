@@ -544,7 +544,7 @@ def _build_model_operator(
         ModelSaveCacheOperator,
         ModelStreamSaveCacheOperator,
     )
-    from dbgpt.util.cache import CacheManager
+    from dbgpt.storage.cache import CacheManager
 
     # Fetch worker and cache managers from the system configuration
     worker_manager = CFG.SYSTEM_APP.get_component(

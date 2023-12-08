@@ -139,7 +139,7 @@ class LocalEmbeddingFactory(EmbeddingFactory):
 
 
 def _initialize_model_cache(system_app: SystemApp):
-    from dbgpt.util.cache import initialize_cache
+    from dbgpt.storage.cache import initialize_cache
 
     if not CFG.MODEL_CACHE_ENABLE:
         logger.info("Model cache is not enable")

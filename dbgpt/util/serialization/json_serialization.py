@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Type
 import json
 
-from dbgpt.util.cache.base import Serializable, Serializer
+from dbgpt.core.interface.serialization import Serializable, Serializer
 
 JSON_ENCODING = "utf-8"
 
