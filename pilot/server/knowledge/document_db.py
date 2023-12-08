@@ -150,7 +150,7 @@ class KnowledgeDocumentDao(BaseDao):
         counts_query = (
             session.query(
                 KnowledgeDocumentEntity.space,
-                func.count(KnowledgeDocumentEntity.id).label('document_count')
+                func.count(KnowledgeDocumentEntity.id).label("document_count"),
             )
             .filter(KnowledgeDocumentEntity.space.in_(space_names))
             .group_by(KnowledgeDocumentEntity.space)

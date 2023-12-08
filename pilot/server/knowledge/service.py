@@ -118,7 +118,9 @@ class KnowledgeService:
         )
         spaces = knowledge_space_dao.get_knowledge_space(query)
         space_names = [space.name for space in spaces]
-        docs_count = knowledge_document_dao.get_knowledge_documents_count_bulk(space_names)
+        docs_count = knowledge_document_dao.get_knowledge_documents_count_bulk(
+            space_names
+        )
         responses = []
         for space in spaces:
             res = SpaceQueryResponse()
