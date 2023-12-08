@@ -19,7 +19,7 @@ services:
       - dbgptnet
   webserver:
     image: eosphorosai/dbgpt:latest
-    command: python3 pilot/server/dbgpt_server.py
+    command: python3 dbgpt/app/dbgpt_server.py
     environment:
       - LOCAL_DB_HOST=db
       - LOCAL_DB_PASSWORD=aa123456

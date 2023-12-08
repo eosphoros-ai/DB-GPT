@@ -9,9 +9,9 @@
         curl -X GET http://127.0.0.1:5000/api/v1/awel/trigger/examples/hello\?name\=zhangsan
 
 """
-from pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field
 
-from pilot.awel import DAG, HttpTrigger, MapOperator
+from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 
 
 class TriggerReqBody(BaseModel):

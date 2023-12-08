@@ -1,4 +1,4 @@
-from pilot import EmbeddingEngine, KnowledgeType
+from dbgpt import EmbeddingEngine, KnowledgeType
 
 embedding_model = "your_embedding_model"
 vector_store_type = "Chroma"

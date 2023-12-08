@@ -292,7 +292,7 @@ def torch_requires(
             )
             torchvision_url = _build_wheels(
                 "torchvision",
-                torch_version,
+                torchvision_version,
                 base_url_func=lambda v, x, y: f"https://download.pytorch.org/whl/{x}",
                 supported_cuda_versions=supported_versions,
             )
@@ -636,7 +636,7 @@ setuptools.setup(
     extras_require=setup_spec.extras,
     entry_points={
         "console_scripts": [
-            "dbgpt=pilot.scripts.cli_scripts:main",
+            "dbgpt=dbgpt.cli.cli_scripts:main",
         ],
     },
 )

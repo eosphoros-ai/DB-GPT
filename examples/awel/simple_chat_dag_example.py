@@ -13,12 +13,10 @@
         }'
 """
 from typing import Dict
-from pydantic import BaseModel, Field
-
-from pilot.awel import DAG, HttpTrigger, MapOperator
-from pilot.scene.base_message import ModelMessage
-from pilot.model.base import ModelOutput
-from pilot.model.operator.model_operator import ModelOperator
+from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
+from dbgpt.core import ModelMessage
+from dbgpt.model.operator.model_operator import ModelOperator
 
 
 class TriggerReqBody(BaseModel):
