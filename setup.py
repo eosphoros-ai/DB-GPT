@@ -375,10 +375,8 @@ def core_requires():
         "auto-gpt-plugin-template",
         "gTTS==2.3.1",
         "langchain>=0.0.286",
-        # 从固定==2.0.22改动到可变版本是发现其余dependencies都是>=1.4，同时如pydoris是<2
+        # change from fixed version 2.0.22 to variable version, because other dependencies are >=1.4, such as pydoris is <2
         "SQLAlchemy>=1.4,<3",
-        # for doris
-        "pydoris>=1.0.2,<2.0.0",
         "fastapi==0.98.0",
         "pymysql",
         "duckdb==0.8.1",
@@ -529,7 +527,14 @@ def all_datasource_requires():
     pip install "db-gpt[datasource]"
     """
 
-    setup_spec.extras["datasource"] = ["pymssql", "pymysql", "pyspark", "psycopg2"]
+    setup_spec.extras["datasource"] = [
+        "pymssql",
+        "pymysql",
+        "pyspark",
+        "psycopg2",
+        # for doris
+        "pydoris>=1.0.2,<2.0.0",
+    ]
 
 
 def openai_requires():
