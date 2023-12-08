@@ -375,6 +375,15 @@ The DB-GPT service is packaged into a server, and the entire DB-GPT service can 
 ```python
 python dbgpt/app/dbgpt_server.py
 ```
+:::info NOTE
+### Run service
+
+If you are running version v0.4.3 or earlier, please start with the following command:
+
+```python
+python pilot/server/dbgpt_server.py
+```
+:::
 
 ## Visit website
 Open the browser and visit [`http://localhost:5000`](http://localhost:5000)
