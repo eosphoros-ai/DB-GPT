@@ -152,7 +152,7 @@ bash ./scripts/examples/load_examples.sh
 ## Run service
 
 ```python
-python pilot/server/dbgpt_server.py
+python dbgpt/app/dbgpt_server.py
 ```
 
 

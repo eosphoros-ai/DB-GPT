@@ -1,7 +1,5 @@
-import pytest
-
-from pilot import vector_store
-from pilot.vector_store.base import VectorStoreBase
+from dbgpt.storage import vector_store
+from dbgpt.storage.vector_store.base import VectorStoreBase
 
 
 def test_vetorestore_imports() -> None:

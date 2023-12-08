@@ -26,9 +26,9 @@ sdist/
 
 var/
 wheels/
-models/
+/models/
 # Soft link
-models
+/models
 plugins/
 
 pip-wheel-metadata/
