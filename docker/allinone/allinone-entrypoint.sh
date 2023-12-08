@@ -14,4 +14,4 @@ ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASS
 FLUSH PRIVILEGES;
 "
 
-python3 pilot/server/dbgpt_server.py
+python3 dbgpt/app/dbgpt_server.py
