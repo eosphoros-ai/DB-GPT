@@ -32,10 +32,10 @@ Optionally, you can also specify the gpu ID to use before the starting command, 
 
 ````shell
 # Specify 1 gpu
-CUDA_VISIBLE_DEVICES=0 python3 pilot/server/dbgpt_server.py
+CUDA_VISIBLE_DEVICES=0 python3 dbgpt/app/dbgpt_server.py
 
 # Specify 4 gpus
-CUDA_VISIBLE_DEVICES=3,4,5,6 python3 pilot/server/dbgpt_server.py
+CUDA_VISIBLE_DEVICES=3,4,5,6 python3 dbgpt/app/dbgpt_server.py
 ````
 
 You can modify the setting `MAX_GPU_MEMORY=xxGib` in `.env` file to configure the maximum memory used by each GPU.
