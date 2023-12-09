@@ -286,6 +286,18 @@ The MIT License (MIT)
 
 [More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
+## 引用
+如果您觉得我们的项目有用，请考虑引用我们的项目：
+
+```bibtex
+@software{db-gpt,
+    author = {DB-GPT Team},
+    title = {{DB-GPT}},
+    url = {https://github.com/eosphoros-ai/DB-GPT},
+    year = {2023}
+}
+```
+
 ## 联系我们
 
 <p align="center">
