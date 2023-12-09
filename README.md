@@ -247,7 +247,19 @@ As of October 10, 2023, through the fine-tuning of an open-source model with 13 
 [More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
 ## Licence
+The MIT License (MIT)
 
+## Citation
+Please consider citing our project if you find it useful:
+
+```bibtex
+@software{db-gpt,
+    author = {DB-GPT Team},
+    title = {{DB-GPT}},
+    url = {https://github.com/eosphoros-ai/DB-GPT},
+    year = {2023}
+}
+```
 
 ## Contact Information
 We are working on building a community, if you have any ideas for building the community, feel free to contact us.
