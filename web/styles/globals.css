@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  color: var(--joy-palette-text-primary, var(--joy-palette-neutral-800, #25252d));
+  font-family: var(--joy-fontFamily-body, var(--joy-Josefin Sans, sans-serif));
+  font-size: var(--joy-fontSize-md, 1rem);
+  line-height: var(--joy-lineHeight-md, 1.5);
+  background-color: var(--joy-palette-background-body);
+}
+
+body .ant-btn-primary {
+  background-color: #1677ff;
+}
+
+.ant-pagination .ant-pagination-prev * {
+  color: rgb(39, 155, 255) !important;
+}
+
+.ant-pagination .ant-pagination-next * {
+  color: rgb(39, 155, 255) !important;
+}
+
+.ant-pagination .ant-pagination-item a {
+  color: rgb(176, 176, 191);
+}
+
+.ant-pagination .ant-pagination-item.ant-pagination-item-active {
+  background-color: rgb(39, 155, 255) !important;
+}
+
+.ant-pagination .ant-pagination-item.ant-pagination-item-active a {
+  color: white !important;
+}
+
+table tr td {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.dark :where(.css-dev-only-do-not-override-18iikkb).ant-tabs .ant-tabs-tab-btn {
+  color: white;
+}
+:where(.css-dev-only-do-not-override-18iikkb).ant-form-item .ant-form-item-label > label {
+  height: 36px;
+}
