@@ -107,18 +107,18 @@ def _build_request(model: ProxyModel, params):
         elif message.role == ModelMessageRoleType.AI:
             history.append({"role": "assistant", "content": message.content})
         else:
-            pass
+            history.append(message)
 
     # Move the last user's information to the end
-    temp_his = history[::-1]
-    last_user_input = None
-    for m in temp_his:
-        if m["role"] == "user":
-            last_user_input = m
-            break
-    if last_user_input:
-        history.remove(last_user_input)
-        history.append(last_user_input)
+    # temp_his = history[::-1]
+    # last_user_input = None
+    # for m in temp_his:
+    #     if m["role"] == "user":
+    #         last_user_input = m
+    #         break
+    # if last_user_input:
+    #     history.remove(last_user_input)
+    #     history.append(last_user_input)
 
     payloads = {
         "temperature": params.get("temperature"),

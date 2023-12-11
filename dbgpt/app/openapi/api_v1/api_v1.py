@@ -45,6 +45,9 @@ from dbgpt.util.executor_utils import (
     DefaultExecutorFactory,
 )
 
+
+from pilot.dbgpts.test.plan_excute_test import test_plan_excute
+
 router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()
@@ -180,6 +183,14 @@ async def test_connect(db_config: DBConfig = Body()):
         return Result.succ(True)
     except Exception as e:
         return Result.failed(code="E1001", msg=str(e))
+
+
+
+@router.post("/v1/chat/dbgpts/test", response_model=Result[str])
+async def db_summary(goal: str):
+    return Result.succ(await test_plan_excute(goal))
+
+
 
 
 @router.post("/v1/chat/db/summary", response_model=Result[bool])

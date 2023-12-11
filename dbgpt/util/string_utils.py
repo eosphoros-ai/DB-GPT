@@ -72,6 +72,13 @@ def extract_content_open_ending(long_string, s1, s2, is_include: bool = False):
         start_index = long_string.find(s1, start_index + 1)
     return match_map
 
+def str_to_bool(s):
+    if s.lower() in ('true', 't', '1', 'yes', 'y'):
+        return True
+    elif s.lower() in ('false', 'f', '0', 'no', 'n'):
+        return False
+    else:
+        return False
 
 if __name__ == "__main__":
     s = "abcd123efghijkjhhh456xxx123aa456yyy123bb456xx123"
