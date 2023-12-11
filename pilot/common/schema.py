@@ -14,6 +14,14 @@ class ExampleType(Enum):
     FEW_SHOT = "few_shot"
 
 
+class Status(Enum):
+    TODO = "todo"
+    RUNNING = "running"
+    FAILED = "failed"
+    COMPLETED = "completed"
+
+
+
 class DbInfo:
     def __init__(self, name, is_file_db: bool = False):
         self.name = name

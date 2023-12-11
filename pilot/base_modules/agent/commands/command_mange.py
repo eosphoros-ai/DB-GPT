@@ -11,7 +11,8 @@ from pilot.common.json_utils import serialize
 from datetime import datetime
 from typing import Any, Callable, Optional, List
 from pydantic import BaseModel
-from pilot.base_modules.agent.common.schema import Status, ApiTagType
+from pilot.base_modules.agent.common.schema import ApiTagType
+from pilot.common.schema import Status
 from pilot.base_modules.agent.commands.command import execute_command
 from pilot.base_modules.agent.commands.generator import PluginPromptGenerator
 from pilot.common.string_utils import extract_content_open_ending, extract_content
@@ -30,13 +31,13 @@ class Command:
     """
 
     def __init__(
-        self,
-        name: str,
-        description: str,
-        method: Callable[..., Any],
-        signature: str = "",
-        enabled: bool = True,
-        disabled_reason: Optional[str] = None,
+            self,
+            name: str,
+            description: str,
+            method: Callable[..., Any],
+            signature: str = "",
+            enabled: bool = True,
+            disabled_reason: Optional[str] = None,
     ):
         self.name = name
         self.description = description
@@ -132,23 +133,23 @@ class CommandRegistry:
             attr = getattr(module, attr_name)
             # Register decorated functions
             if hasattr(attr, AUTO_GPT_COMMAND_IDENTIFIER) and getattr(
-                attr, AUTO_GPT_COMMAND_IDENTIFIER
+                    attr, AUTO_GPT_COMMAND_IDENTIFIER
             ):
                 self.register(attr.command)
             # Register command classes
             elif (
-                inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
+                    inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
             ):
                 cmd_instance = attr()
                 self.register(cmd_instance)
 
 
 def command(
-    name: str,
-    description: str,
-    signature: str = "",
-    enabled: bool = True,
-    disabled_reason: Optional[str] = None,
+        name: str,
+        description: str,
+        signature: str = "",
+        enabled: bool = True,
+        disabled_reason: Optional[str] = None,
 ) -> Callable[..., Any]:
     """The command decorator is used to create Command objects from ordinary functions."""
 
@@ -196,10 +197,10 @@ class ApiCall:
     name_end = "</name>"
 
     def __init__(
-        self,
-        plugin_generator: Any = None,
-        display_registry: Any = None,
-        backend_rendering: bool = False,
+            self,
+            plugin_generator: Any = None,
+            display_registry: Any = None,
+            backend_rendering: bool = False,
     ):
         # self.name: str = ""
         # self.status: Status = Status.TODO.value
@@ -236,6 +237,12 @@ class ApiCall:
                 else:
                     i += 1
         return False
+
+    def check_have_plugin_call(self, all_context):
+        if all_context.find(self.agent_prefix) >=0:
+            return True
+        else:
+            return False
 
     def check_last_plugin_call_ready(self, all_context):
         start_agent_count = all_context.count(self.agent_prefix)
@@ -446,6 +453,7 @@ class ApiCall:
                         value.end_time = datetime.now().timestamp() * 1000
         return self.api_view_context(llm_text, True)
 
+
     def display_sql_llmvis(self, llm_text, sql_run_func):
         """
         Render charts using the Antv standard protocol
@@ -491,3 +499,31 @@ class ApiCall:
             raise ValueError("Api parsing exception," + str(e))
 
         return self.api_view_context(llm_text, True)
+
+    @staticmethod
+    def default_chart_type_promot():
+        antv_charts = [
+            {"response_line_chart": "used to display comparative trend analysis data"},
+            {"response_pie_chart": "suitable for scenarios such as proportion and distribution statistics"},
+            {"response_table": "suitable for display with many display columns or non-numeric columns"},
+            # {"response_data_text":" the default display method, suitable for single-line or simple content display"},
+            {
+                "response_scatter_plot": "Suitable for exploring relationships between variables, detecting outliers, etc."},
+            {
+                "response_bubble_chart": "Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."
+            },
+            {
+                "response_donut_chart": "Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc."
+            },
+            {
+                "response_area_chart": "Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc."
+            },
+            {
+                "response_heatmap": "Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."
+            },
+        ]
+        return "\n".join(
+            f"{key}:{value}"
+            for dict_item in antv_charts
+            for key, value in dict_item.items()
+        )

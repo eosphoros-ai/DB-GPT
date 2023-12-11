@@ -115,7 +115,7 @@ class BaseOutputParser(ABC):
             ai_response = ai_response.replace("\*", "*")
             ai_response = ai_response.replace("\t", "")
 
-            ai_response = ai_response.strip().replace("\\n", " ").replace("\n", " ")
+            # ai_response = ai_response.strip().replace("\\n", " ").replace("\n", " ")
             print("un_stream ai response:", ai_response)
             return ai_response
         else:
