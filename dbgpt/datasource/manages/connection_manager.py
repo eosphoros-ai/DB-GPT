@@ -1,3 +1,4 @@
+from typing import List, Type
 from dbgpt.datasource import ConnectConfigDao
 from dbgpt.storage.schema import DBType
 from dbgpt.component import SystemApp, ComponentType
@@ -21,7 +22,7 @@ from dbgpt.datasource.rdbms.conn_doris import DorisConnect
 class ConnectManager:
     """db connect manager"""
 
-    def get_all_subclasses(self, cls):
+    def get_all_subclasses(self, cls: Type[BaseConnect]) -> List[Type[BaseConnect]]:
         subclasses = cls.__subclasses__()
         for subclass in subclasses:
             subclasses += self.get_all_subclasses(subclass)
@@ -31,7 +32,7 @@ class ConnectManager:
         chat_classes = self.get_all_subclasses(BaseConnect)
         support_types = []
         for cls in chat_classes:
-            if cls.db_type:
+            if cls.db_type and cls.is_normal_type():
                 support_types.append(DBType.of_db_type(cls.db_type))
         return support_types
 
@@ -39,7 +40,7 @@ class ConnectManager:
         chat_classes = self.get_all_subclasses(BaseConnect)
         result = None
         for cls in chat_classes:
-            if cls.db_type == db_type:
+            if cls.db_type == db_type and cls.is_normal_type():
                 result = cls
         if not result:
             raise ValueError("Unsupported Db Type！" + db_type)
