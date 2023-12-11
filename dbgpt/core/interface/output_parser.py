@@ -251,3 +251,13 @@ def _parse_model_response(response: ResponseTye):
     else:
         raise ValueError(f"Unsupported response type {type(response)}")
     return resp_obj_ex
+
+
+class SQLOutputParser(BaseOutputParser):
+    def __init__(self, is_stream_out: bool = False, **kwargs):
+        super().__init__(is_stream_out=is_stream_out, **kwargs)
+
+    def parse_model_nostream_resp(self, response: ResponseTye, sep: str):
+        model_out_text = super().parse_model_nostream_resp(response, sep)
+        clean_str = super().parse_prompt_response(model_out_text)
+        return json.loads(clean_str, strict=True)

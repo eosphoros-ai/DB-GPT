@@ -1,4 +1,4 @@
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel
 
 
 class DBConfig(BaseModel):
