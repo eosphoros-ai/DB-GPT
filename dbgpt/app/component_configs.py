@@ -36,7 +36,7 @@ def initialize_components(
 
     # system_app.register(DefaultRAGGraphFactory)
 
-    from dbgpt.agent.controller import module_agent
+    from dbgpt.serve.agent.hub.controller import module_agent
 
     system_app.register_instance(module_agent)
 
