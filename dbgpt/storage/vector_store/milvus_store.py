@@ -6,15 +6,30 @@ import os
 from typing import Any, Iterable, List, Optional, Tuple
 
 
-from dbgpt.storage.vector_store.base import VectorStoreBase
+from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 
 logger = logging.getLogger(__name__)
+
+
+class MilvusVectorConfig(VectorStoreConfig):
+    """Milvus vector store config."""
+
+    uri: str = (os.getenv("MILVUS_URL", "http://localhost"),)
+    port: str = (os.getenv("MILVUS_PORT", "19530"),)
+    secure: str = (os.getenv("MILVUS_SECURE"),)
+    token: str = ("",)
+    alias: str = ("default",)
+    primary_field: str = ("pk_id",)
+    text_field: str = ("content",)
+    embedding_field: str = ("vector",)
+    metadata_field: str = ("metadata",)
+    consistency_level: str = ("Strong",)
 
 
 class MilvusStore(VectorStoreBase):
     """Milvus database"""
 
-    def __init__(self, ctx: {}) -> None:
+    def __init__(self, vector_store_config: MilvusVectorConfig) -> None:
         """MilvusStore init."""
         from pymilvus import connections
 
@@ -26,15 +41,15 @@ class MilvusStore(VectorStoreBase):
         # self.configure(cfg)
 
         connect_kwargs = {}
-        self.uri = ctx.get("MILVUS_URL", os.getenv("MILVUS_URL"))
-        self.port = ctx.get("MILVUS_PORT", os.getenv("MILVUS_PORT"))
-        self.username = ctx.get("MILVUS_USERNAME", os.getenv("MILVUS_USERNAME"))
-        self.password = ctx.get("MILVUS_PASSWORD", os.getenv("MILVUS_PASSWORD"))
-        self.secure = ctx.get("MILVUS_SECURE", os.getenv("MILVUS_SECURE"))
-        self.collection_name = ctx.get("vector_store_name", None)
-        self.embedding = ctx.get("embeddings", None)
+        self.uri = vector_store_config.uri
+        self.port = vector_store_config.port
+        self.username = vector_store_config.user
+        self.password = vector_store_config.password
+        self.secure = vector_store_config.secure
+        self.collection_name = vector_store_config.name
+        self.embedding = vector_store_config.embedding_fn
         self.fields = []
-        self.alias = "default"
+        self.alias = vector_store_config.alias
 
         # use HNSW by default.
         self.index_params = {
@@ -55,10 +70,10 @@ class MilvusStore(VectorStoreBase):
             "ANNOY": {"params": {"search_k": 10}},
         }
         # default collection schema
-        self.primary_field = "pk_id"
-        self.vector_field = "vector"
-        self.text_field = "content"
-        self.metadata_field = "metadata"
+        self.primary_field = vector_store_config.primary_field
+        self.vector_field = vector_store_config.embedding_field
+        self.text_field = vector_store_config.text_field
+        self.metadata_field = vector_store_config.metadata_field
 
         if (self.username is None) != (self.password is None):
             raise ValueError(

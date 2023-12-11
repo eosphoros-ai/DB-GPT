@@ -1,5 +1,29 @@
 from abc import ABC, abstractmethod
 import math
+from typing import Optional, Callable
+
+from pydantic import Field, BaseModel
+
+
+class VectorStoreConfig(BaseModel):
+    """Vector store config."""
+
+    name: str = Field(
+        default="dbgpt",
+        description="The name of vector store, if not set, will use the default name.",
+    )
+    user: Optional[str] = Field(
+        default=None,
+        description="The user of vector store, if not set, will use the default user.",
+    )
+    password: Optional[str] = Field(
+        default=None,
+        description="The password of vector store, if not set, will use the default password.",
+    )
+    embedding_fn: Optional[Callable] = Field(
+        default=None,
+        description="The embedding function of vector store, if not set, will use the default embedding function.",
+    )
 
 
 class VectorStoreBase(ABC):

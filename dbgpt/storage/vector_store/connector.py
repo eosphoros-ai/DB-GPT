@@ -1,32 +1,62 @@
+import os
+from typing import Optional
+
+from fsspec import Callback
+
 from dbgpt.storage import vector_store
-from dbgpt.storage.vector_store.base import VectorStoreBase
+from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 
 connector = {}
 
 
 class VectorStoreConnector:
+
     """VectorStoreConnector, can connect different vector db provided load document api_v1 and similar search api_v1.
     1.load_document:knowledge document source into vector store.(Chroma, Milvus, Weaviate)
     2.similar_search: similarity search from vector_store
 
+    code example:
+    >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
+
+    >>> vector_store_config = VectorStoreConfig
+    >>> vector_store_connector = VectorStoreConnector(vector_store_type="Chroma")
     """
 
-    def __init__(self, vector_store_type, ctx: {}) -> None:
+    def __init__(
+        self, vector_store_type: str, vector_store_config: VectorStoreConfig = None
+    ) -> None:
         """initialize vector store connector.
         Args:
             - vector_store_type: vector store type Milvus, Chroma, Weaviate
             - ctx: vector store config params.
         """
-        self.ctx = ctx
+        self._vector_store_config = vector_store_config
         self._register()
 
         if self._match(vector_store_type):
             self.connector_class = connector.get(vector_store_type)
         else:
-            raise Exception(f"Vector Type Not support. {0}", vector_store_type)
+            raise Exception(f"Vector Store Type Not support. {0}", vector_store_type)
 
         print(self.connector_class)
-        self.client = self.connector_class(ctx)
+        self.client = self.connector_class(vector_store_config)
+
+    @classmethod
+    def from_default(
+        cls,
+        vector_store_type: str = None,
+        embedding_fn: Callback = None,
+        vector_store_config: Optional[VectorStoreConfig] = None,
+    ) -> "VectorStoreConnector":
+        """initialize default vector store connector."""
+        vector_store_type = vector_store_type or os.getenv(
+            "VECTOR_STORE_TYPE", "Chroma"
+        )
+        from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
+
+        vector_store_config = vector_store_config or ChromaVectorConfig()
+        vector_store_config.embedding_fn = embedding_fn
+        return cls(vector_store_type, vector_store_config)
 
     def load_document(self, docs):
         """load document in vector database."""

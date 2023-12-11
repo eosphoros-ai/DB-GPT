@@ -4,27 +4,40 @@ from typing import Any
 
 from chromadb.config import Settings
 from chromadb import PersistentClient
-from dbgpt.storage.vector_store.base import VectorStoreBase
+from pydantic import Field
+
+from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 from dbgpt.configs.model_config import PILOT_PATH
 
 logger = logging.getLogger(__name__)
 
 
+class ChromaVectorConfig(VectorStoreConfig):
+    """Chroma vector store config."""
+
+    persist_path: str = Field(
+        default=os.getenv("CHROMA_PERSIST_PATH", None),
+        description="The password of vector store, if not set, will use the default password.",
+    )
+    collection_metadata = Field(
+        default={"hnsw:space": "cosine"},
+        description="the index metadata of vector store, if not set, will use the default metadata.",
+    )
+
+
 class ChromaStore(VectorStoreBase):
     """chroma database"""
 
-    def __init__(self, ctx: {}) -> None:
+    def __init__(self, chroma_vector_config: ChromaVectorConfig) -> None:
         from langchain.vectorstores import Chroma
 
-        self.ctx = ctx
-        chroma_path = ctx.get(
-            "CHROMA_PERSIST_PATH",
-            os.path.join(PILOT_PATH, "data"),
+        chroma_path = chroma_vector_config.persist_path or os.path.join(
+            PILOT_PATH, "data"
         )
         self.persist_dir = os.path.join(
-            chroma_path, ctx["vector_store_name"] + ".vectordb"
+            chroma_path, chroma_vector_config.name + ".vectordb"
         )
-        self.embeddings = ctx.get("embeddings", None)
+        self.embeddings = chroma_vector_config.embedding_fn
         chroma_settings = Settings(
             # chroma_db_impl="duckdb+parquet", => deprecated configuration of Chroma
             persist_directory=self.persist_dir,
@@ -32,7 +45,7 @@ class ChromaStore(VectorStoreBase):
         )
         client = PersistentClient(path=self.persist_dir, settings=chroma_settings)
 
-        collection_metadata = {"hnsw:space": "cosine"}
+        collection_metadata = chroma_vector_config.collection_metadata
         self.vector_store_client = Chroma(
             persist_directory=self.persist_dir,
             embedding_function=self.embeddings,

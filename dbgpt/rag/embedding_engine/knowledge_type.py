@@ -8,18 +8,6 @@ from dbgpt.rag.embedding_engine.string_embedding import StringEmbedding
 from dbgpt.rag.embedding_engine.url_embedding import URLEmbedding
 from dbgpt.rag.embedding_engine.word_embedding import WordEmbedding
 
-DocumentEmbeddingType = {
-    ".txt": (MarkdownEmbedding, {}),
-    ".md": (MarkdownEmbedding, {}),
-    ".html": (MarkdownEmbedding, {}),
-    ".pdf": (PDFEmbedding, {}),
-    ".doc": (WordEmbedding, {}),
-    ".docx": (WordEmbedding, {}),
-    ".csv": (CSVEmbedding, {}),
-    ".ppt": (PPTEmbedding, {}),
-    ".pptx": (PPTEmbedding, {}),
-}
-
 
 class KnowledgeType(Enum):
     DOCUMENT = "DOCUMENT"
