@@ -33,8 +33,11 @@ class GptsMessagesEntity(Base):
 
     role = Column(String(255), nullable=False, comment="The role of the current message content")
 
-    gmt_created = Column(
+    created_at = Column(
         DateTime, default=datetime.utcnow, comment="create time"
+    )
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="last update time"
     )
 
     Index("idx_q_messages", "conv_id", "rounds", "sender")

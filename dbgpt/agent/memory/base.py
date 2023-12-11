@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Un
 from dataclasses import dataclass, asdict, fields
 import dataclasses
 from datetime import datetime
-from dbgpt.common.schema import Status
+from dbgpt.agent.common.schema import Status
 
 
 @dataclass

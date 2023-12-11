@@ -3,8 +3,8 @@ import json
 from pilot.dbgpts.agents.agent import Agent
 from pilot.dbgpts.agents.conversable_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
-from pilot.json_utils.utilities import find_json_objects
-from pilot.common.schema import Status
+from dbgpt.jison_utils.utilities import find_json_objects
+from dbgpt.agent.common.schema import Status
 from ..memory.gpts_memory import GptsMemory, GptsPlan, GptsMessage
 from .planning_group_chat import PlanChat
 

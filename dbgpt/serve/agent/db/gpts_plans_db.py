@@ -10,7 +10,7 @@ from dbgpt.storage.metadata.meta_data import (
     session,
     META_DATA_DATABASE,
 )
-from pilot.common.schema import Status
+from dbgpt.agent.common.schema import Status
 
 
 class GptsPlansEntity(Base):

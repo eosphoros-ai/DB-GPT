@@ -1,6 +1,6 @@
 from pilot.dbgpts.agents.conversable_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
-from pilot.common.code_utils import (
+from dbgpt.util.code_utils import (
     UNKNOWN,
     execute_code,
     extract_code,
@@ -39,11 +39,14 @@ When you find an answer, verify the answer carefully. Include verifiable evidenc
 Reply "TERMINATE" in the end when everything is done.
     """
 
+    DEFAULT_DESCRIBE = """CodeEngineer.According to the current planning steps, write python/shell code to solve the problem, such as: data crawling, data sorting and conversion, etc. Wrap the code in a code block of the specified script type. Users cannot modify your code. So don't suggest incomplete code that needs to be modified by others.
+    Don't include multiple code blocks in one response. Don't ask others to copy and paste the results.
+    """
     def __init__(
         self,
-        name: str,
-        describe: Optional[str],
         memory: GptsMemory,
+        name: str = "CodeEngineer",
+        describe: Optional[str] = DEFAULT_DESCRIBE,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",

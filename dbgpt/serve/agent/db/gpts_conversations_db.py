@@ -3,13 +3,14 @@ from typing import List
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, Text
 from sqlalchemy import UniqueConstraint
 
-from pilot.base_modules.meta_data.base_dao import BaseDao
-from pilot.base_modules.meta_data.meta_data import (
+from dbgpt.storage.metadata import BaseDao
+from dbgpt.storage.metadata.meta_data import (
     Base,
     engine,
     session,
     META_DATA_DATABASE,
 )
+
 
 
 class GptsConversationsEntity(Base):
@@ -22,16 +23,23 @@ class GptsConversationsEntity(Base):
 
     conv_id = Column(String(255), nullable=True, comment="The unique id of the conversation record")
     user_goal = Column(Text, nullable=True, comment="User's goals content")
-    user_code = Column(String(255), nullable=False, comment="user code")
-    user_name = Column(String(255), nullable=True, comment="user name")
+
+    gpts_name = Column(String(255), nullable=True, comment="The gpts name")
+    state = Column(String(255), nullable=True, comment="The gpts state")
+
+
     max_auto_reply_round =  Column(Integer, nullable=False, comment="max auto reply round")
     auto_reply_count = Column(Integer, nullable=False, comment="auto reply count")
 
-    gpts_name = Column(String(255), nullable=True, comment="The gpts name")
-    goal_introdiction = Column(String(255), nullable=True, comment="The introdiction if goal")
 
-    gmt_created = Column(
+    user_code = Column(String(255), nullable=False, comment="user code")
+    system_app = Column(String(255), nullable=True, comment="system app ")
+
+    created_at = Column(
         DateTime, default=datetime.utcnow, comment="create time"
+    )
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="last update time"
     )
 
     UniqueConstraint("conv_id", name="uk_gpts_conversations")

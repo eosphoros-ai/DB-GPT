@@ -2,7 +2,7 @@ from typing import List, Optional
 import pandas as pd
 from dataclasses import fields
 from dbgpt.agent.memory.gpts_memory import GptsPlansMemory, GptsPlan, GptsMessageMemory, GptsMessage
-from dbgpt.agent.common.schema import Status
+
 from ..db.gpts_plans_db import GptsPlansEntity, GptsPlansDao
 from ..db.gpts_messages_db import GptsMessagesDao, GptsMessagesEntity
 

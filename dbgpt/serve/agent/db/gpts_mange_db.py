@@ -3,8 +3,8 @@ from typing import List
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, Text, Boolean
 from sqlalchemy import UniqueConstraint
 
-from pilot.base_modules.meta_data.base_dao import BaseDao
-from pilot.base_modules.meta_data.meta_data import (
+from dbgpt.storage.metadata import BaseDao
+from dbgpt.storage.metadata.meta_data import (
     Base,
     engine,
     session,
@@ -20,23 +20,22 @@ class GptsInstanceEntity(Base):
     }
     id = Column(Integer, primary_key=True, comment="autoincrement id")
 
+
     gpts_name = Column(String(255), nullable=False, comment="Current AI assistant name")
     gpts_describe= Column(String(2255), nullable=False, comment="Current AI assistant describe")
-    gpts_db_names = Column(Text, nullable=True, comment="List of structured database names contained in the current gpts")
-    search_web = Column(Boolean, nullable=True, comment="Is it possible to retrieve information from the internet")
-    gpts_knowledge_names = Column(Text, nullable=True, comment="List of unstructured database names contained in the current gpts")
+    resource_db = Column(Text, nullable=True, comment="List of structured database names contained in the current gpts")
+    resource_internet = Column(Boolean, nullable=True, comment="Is it possible to retrieve information from the internet")
+    resource_knowledge = Column(Text, nullable=True, comment="List of unstructured database names contained in the current gpts")
     gpts_agents = Column(Text, nullable=True, comment="List of agents names contained in the current gpts")
     gpts_models = Column(Text, nullable=True, comment="List of llm model names contained in the current gpts")
+    language = Column(String(100), nullable=True, comment="gpts language")
+
     user_code = Column(String(255), nullable=False, comment="user code")
-    user_name = Column(String(255), nullable=True, comment="user name")
+    system_app = Column(String(255), nullable=True, comment="user name")
 
-    planner_system = Column(Text, nullable=True, comment="Planner system messages")
-
-    gmt_created = Column(
-        DateTime, default=datetime.utcnow, comment="gpts create time"
-    )
+    created_at = Column(DateTime, default=datetime.utcnow, comment="create time")
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="last update time")
     UniqueConstraint("gpts_name", name="uk_gpts")
-
 
 
 class GptsInstanceDao(BaseDao[GptsInstanceEntity]):
@@ -48,21 +47,20 @@ class GptsInstanceDao(BaseDao[GptsInstanceEntity]):
             session=session,
         )
 
-    def add(self, engity: GptsPlansEntity):
+    def add(self, engity: GptsInstanceEntity):
         session = self.get_session()
-        my_plugin = MyPluginEntity(
-            tenant=engity.tenant,
-            user_code=engity.user_code,
-            user_name=engity.user_name,
-            name=engity.name,
-            type=engity.type,
-            version=engity.version,
-            use_count=engity.use_count or 0,
-            succ_count=engity.succ_count or 0,
-            gmt_created=datetime.now(),
-        )
-        session.add(my_plugin)
+        session.add(engity)
         session.commit()
-        id = my_plugin.id
+        id = engity.id
         session.close()
         return id
+
+    def get_by_name(self, name:str)->GptsInstanceEntity:
+        session = self.get_session()
+        gpts_instance = session.query(GptsInstanceEntity)
+        if name:
+            gpts_instance = gpts_instance.filter(GptsInstanceEntity.gpts_name == name)
+        result = gpts_instance.first()
+        session.close()
+        return result
+
