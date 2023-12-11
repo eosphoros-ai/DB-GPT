@@ -53,7 +53,7 @@ class SimpleTaskOutput(TaskOutput[T], Generic[T]):
 
     @property
     def is_empty(self) -> bool:
-        return not self._data
+        return self._data is None
 
     async def _apply_func(self, func) -> Any:
         if asyncio.iscoroutinefunction(func):

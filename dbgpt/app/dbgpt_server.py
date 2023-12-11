@@ -5,13 +5,13 @@ from typing import List
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
-from dbgpt._private.config import Config
 from dbgpt.configs.model_config import (
     LLM_MODEL_CONFIG,
     EMBEDDING_MODEL_CONFIG,
     LOGDIR,
     ROOT_PATH,
 )
+from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 
 from dbgpt.app.base import (
@@ -29,7 +29,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from dbgpt.app.knowledge.api import router as knowledge_router
 from dbgpt.app.prompt.api import router as prompt_router
 from dbgpt.app.llm_manage.api import router as llm_manage_api
-
 
 from dbgpt.app.openapi.api_v1.api_v1 import router as api_v1
 from dbgpt.app.openapi.base import validation_exception_handler
@@ -59,7 +58,7 @@ def swagger_monkey_patch(*args, **kwargs):
         *args,
         **kwargs,
         swagger_js_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js",
-        swagger_css_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css"
+        swagger_css_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css",
     )
 
 
@@ -79,12 +78,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 app.include_router(api_v1, prefix="/api", tags=["Chat"])
 app.include_router(api_editor_route_v1, prefix="/api", tags=["Editor"])
 app.include_router(llm_manage_api, prefix="/api", tags=["LLM Manage"])
 app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
-
 
 app.include_router(knowledge_router, tags=["Knowledge"])
 app.include_router(prompt_router, tags=["Prompt"])
@@ -133,7 +130,8 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
 
     # Before start
     system_app.before_start()
-
+    model_name = param.model_name or CFG.LLM_MODEL
+    param.model_name = model_name
     print(param)
 
     embedding_model_name = CFG.EMBEDDING_MODEL
@@ -142,8 +140,6 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
     server_init(param, system_app)
     model_start_listener = _create_model_start_listener(system_app)
     initialize_components(param, system_app, embedding_model_name, embedding_model_path)
-
-    model_name = param.model_name or CFG.LLM_MODEL
 
     model_path = CFG.LLM_MODEL_PATH or LLM_MODEL_CONFIG.get(model_name)
     if not param.light:
