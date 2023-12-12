@@ -8,7 +8,6 @@ import re
 from .agent import Agent, AgentContext
 from .conversable_agent import ConversableAgent
 from ..common.schema import Status
-from pilot.json_utils.utilities import find_json_objects
 
 from dbgpt.util.string_utils import str_to_bool
 from ..memory.gpts_memory import GptsMemory, GptsPlan, GptsMessage
