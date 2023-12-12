@@ -13,7 +13,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi import Depends, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from pydantic import BaseSettings
@@ -30,10 +30,7 @@ from fastchat.protocol.openai_api_protocol import (
     ModelPermission,
     UsageInfo,
 )
-from fastchat.protocol.api_protocol import (
-    APIChatCompletionRequest,
-)
-from fastchat.serve.openai_api_server import create_error_response, check_requests
+from fastchat.protocol.api_protocol import APIChatCompletionRequest, ErrorResponse
 from fastchat.constants import ErrorCode
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
@@ -83,6 +80,68 @@ async def check_api_key(
     else:
         # api_keys not set; allow all
         return None
+
+
+def create_error_response(code: int, message: str) -> JSONResponse:
+    """Copy from fastchat.serve.openai_api_server.check_requests
+
+    We can't use fastchat.serve.openai_api_server because it has too many dependencies.
+    """
+    return JSONResponse(
+        ErrorResponse(message=message, code=code).dict(), status_code=400
+    )
+
+
+def check_requests(request) -> Optional[JSONResponse]:
+    """Copy from fastchat.serve.openai_api_server.create_error_response
+
+    We can't use fastchat.serve.openai_api_server because it has too many dependencies.
+    """
+    # Check all params
+    if request.max_tokens is not None and request.max_tokens <= 0:
+        return create_error_response(
+            ErrorCode.PARAM_OUT_OF_RANGE,
+            f"{request.max_tokens} is less than the minimum of 1 - 'max_tokens'",
+        )
+    if request.n is not None and request.n <= 0:
+        return create_error_response(
+            ErrorCode.PARAM_OUT_OF_RANGE,
+            f"{request.n} is less than the minimum of 1 - 'n'",
+        )
+    if request.temperature is not None and request.temperature < 0:
+        return create_error_response(
+            ErrorCode.PARAM_OUT_OF_RANGE,
+            f"{request.temperature} is less than the minimum of 0 - 'temperature'",
+        )
+    if request.temperature is not None and request.temperature > 2:
+        return create_error_response(
+            ErrorCode.PARAM_OUT_OF_RANGE,
+            f"{request.temperature} is greater than the maximum of 2 - 'temperature'",
+        )
+    if request.top_p is not None and request.top_p < 0:
+        return create_error_response(
+            ErrorCode.PARAM_OUT_OF_RANGE,
+            f"{request.top_p} is less than the minimum of 0 - 'top_p'",
+        )
+    if request.top_p is not None and request.top_p > 1:
+        return create_error_response(
+            ErrorCode.PARAM_OUT_OF_RANGE,
+            f"{request.top_p} is greater than the maximum of 1 - 'temperature'",
+        )
+    if request.top_k is not None and (request.top_k > -1 and request.top_k < 1):
+        return create_error_response(
+            ErrorCode.PARAM_OUT_OF_RANGE,
+            f"{request.top_k} is out of Range. Either set top_k to -1 or >=1.",
+        )
+    if request.stop is not None and (
+        not isinstance(request.stop, str) and not isinstance(request.stop, list)
+    ):
+        return create_error_response(
+            ErrorCode.PARAM_OUT_OF_RANGE,
+            f"{request.stop} is not valid under any of the given schemas - 'stop'",
+        )
+
+    return None
 
 
 class APIServer(BaseComponent):
