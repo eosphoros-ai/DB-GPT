@@ -2,7 +2,7 @@ from typing import List, Optional
 import pandas as pd
 from dataclasses import fields
 from .base import GptsPlansMemory, GptsPlan, GptsMessageMemory, GptsMessage
-from dbgpt.common.schema import Status
+from dbgpt.agent.common.schema import Status
 
 
 class DefaultGptsPlansMemory(GptsPlansMemory):
@@ -57,7 +57,6 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
 
 class DefaultGptsMessageMemory(GptsMessageMemory):
 
-
     def __init__(self):
         self.df = pd.DataFrame(columns= [field.name for field in fields(GptsMessage)] )
 
@@ -65,7 +64,7 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
         self.df.loc[len(self.df)] = message.to_dict()
 
     def get_by_agent(self, agent: str) -> Optional[List[GptsMessage]]:
-        result = self.df.query(f"sender=='{agent}'and receiver=='{agent}'")
+        result = self.df.query(f"sender=='{agent}' or receiver=='{agent}'")
         messages = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))
@@ -74,6 +73,15 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
 
     def get_between_agents(self, agent1: str, agent2: str) -> Optional[List[GptsMessage]]:
         result = self.df.query(f"(sender=='{agent1}' and receiver=='{agent2}') or (sender=='{agent2}' and receiver=='{agent1}')")
+        messages = []
+        for row in result.itertuples(index=False, name=None):
+            row_dict = dict(zip(self.df.columns, row))
+            messages.append(GptsMessage.from_dict(row_dict))
+        return messages
+
+
+    def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessage]]:
+        result = self.df.query(f"conv_id=='{conv_id}'")
         messages = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))

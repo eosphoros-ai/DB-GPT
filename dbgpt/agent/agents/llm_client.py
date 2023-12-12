@@ -6,14 +6,15 @@ from typing import List, Optional, Dict, Callable
 import logging
 import diskcache
 import json
-from pilot.utils.executor_utils import ExecutorFactory, blocking_func_to_async
-from pilot.awel import BaseOperator, SimpleCallDataInputSource, InputOperator, DAG
-from pilot.model.operator.model_operator import ModelOperator, ModelStreamOperator
-from pilot.common.error_types import LLMChatError
-from pilot.out_parser.base import BaseOutputParser
-from pilot.configs.config import Config
-from pilot.component import ComponentType
-from pilot.utils.tracer import root_tracer, trace
+from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
+from dbgpt.core.awel import BaseOperator, SimpleCallDataInputSource, InputOperator, DAG
+from dbgpt.util.error_types import LLMChatError
+from dbgpt.util.tracer import root_tracer, trace
+from dbgpt.core.interface.output_parser import BaseOutputParser
+from dbgpt.model.operator.model_operator import ModelOperator, ModelStreamOperator
+
+from dbgpt.component import ComponentType, SystemApp
+from dbgpt._private.config import Config
 
 logger = logging.getLogger(__name__)
 CFG = Config()
@@ -225,16 +226,16 @@ class AIWrapper:
         Returns:
             BaseOperator: The final operator in the constructed DAG, typically a join node.
         """
-        from pilot.model.cluster import WorkerManagerFactory
-        from pilot.awel import JoinOperator
-        from pilot.model.operator.model_operator import (
+        from dbgpt.model.cluster import WorkerManagerFactory
+        from dbgpt.core.awel import JoinOperator
+        from dbgpt.model.operator.model_operator import (
             ModelCacheBranchOperator,
             CachedModelStreamOperator,
             CachedModelOperator,
             ModelSaveCacheOperator,
             ModelStreamSaveCacheOperator,
         )
-        from pilot.cache import CacheManager
+        from dbgpt.storage.cache import CacheManager
 
         # Fetch worker and cache managers from the system configuration
         worker_manager = CFG.SYSTEM_APP.get_component(

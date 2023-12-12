@@ -116,14 +116,17 @@ class Agent:
 
         """
 
+
 class AgentContext(BaseModel):
     conv_id: str
     gpts_name: Optional[str]
-    resources: Optional[Dict] = {}
-    db_type: Optional[str] = "mysql"
-    db_name: Optional[str] = None
+
+    resource_db: Optional[Dict] = {}
+    resource_knowledge: Optional[Dict] = {}
+    resource_internet: Optional[Dict] = {}
     llm_models: Optional[List[str]] = None
     agents: Optional[List[str]] = None
+
     max_chat_round: Optional[int] = 50
     max_retry_round: Optional[int] = 3
     max_new_tokens:Optional[int] = 1024

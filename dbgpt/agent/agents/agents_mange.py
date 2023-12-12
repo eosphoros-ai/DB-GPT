@@ -19,12 +19,10 @@ class AgentsMange:
         self._agents= defaultdict()
         self._chat_group = None
 
-
-
-    def init_agents(self):
         agent_cls = get_all_subclasses(ConversableAgent)
         for cls in agent_cls:
-            self.register_agent(cls)
+            self._agents[cls.name] = cls
+
 
     def register_agent(self, cls):
         self._agents[cls.name] = cls

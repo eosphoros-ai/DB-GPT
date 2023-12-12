@@ -197,3 +197,12 @@ class GptsMessageMemory( ABC):
         """
 
 
+    def get_by_conv_id(self, conv_id: str)->Optional[List[GptsMessage]]:
+        """
+        Query messages by conv id
+        Args:
+            conv_id:
+
+        Returns:
+
+        """

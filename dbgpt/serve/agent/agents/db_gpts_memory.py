@@ -1,6 +1,4 @@
 from typing import List, Optional
-import pandas as pd
-from dataclasses import fields
 from dbgpt.agent.memory.gpts_memory import GptsPlansMemory, GptsPlan, GptsMessageMemory, GptsMessage
 
 from ..db.gpts_plans_db import GptsPlansEntity, GptsPlansDao
@@ -49,7 +47,7 @@ class MetaDbGptsPlansMemory(GptsPlansMemory):
         self.gpts_plan.remove_by_conv_id(conv_id=conv_id)
 
 
-class DefaultGptsMessageMemory(GptsMessageMemory):
+class MetaDbGptsMessageMemory(GptsMessageMemory):
 
     def __init__(self):
         self.gpts_message = GptsMessagesDao()
@@ -70,3 +68,7 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
         for item in db_results:
             results.append(GptsMessage.from_dict(item.__dict__))
         return results
+
+    def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessage]]:
+
+        return super().get_by_conv_id(conv_id)

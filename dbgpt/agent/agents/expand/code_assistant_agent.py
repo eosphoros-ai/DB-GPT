@@ -1,4 +1,4 @@
-from pilot.dbgpts.agents.conversable_agent import ConversableAgent
+from ..conversable_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 from dbgpt.util.code_utils import (
     UNKNOWN,

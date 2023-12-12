@@ -1,24 +1,21 @@
-from pilot.dbgpts.agents.conversable_agent import ConversableAgent
+from ..conversable_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
-from pilot.common.code_utils import (
-    UNKNOWN,
-    execute_code,
-    extract_code,
-    infer_lang,
-)
+
 from ..agent import Agent
 from ...memory.gpts_memory import GptsMemory
+
+
+
 try:
     from termcolor import colored
 except ImportError:
 
     def colored(x, *args, **kwargs):
         return x
-from pilot.base_modules.agent.commands.command_mange import ApiCall
-from pilot.configs.config import Config
 
 
-CFG = Config()
+
+
 class DashboardAssistantAgent(ConversableAgent):
     """(In preview) Assistant agent, designed to solve a task with LLM.
 

@@ -1,6 +1,7 @@
 """Utilities for the json_fixes package."""
 import json
 from datetime import date, datetime
+from dataclasses import dataclass, asdict, is_dataclass
 import os.path
 import re
 import logging
@@ -18,12 +19,13 @@ def serialize(obj):
         return obj.isoformat()
 
 
-class DateTimeEncoder(json.JSONEncoder):
+class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, obj):
+        if is_dataclass(obj):
+            return asdict(obj)
         if isinstance(obj, datetime):
             return obj.isoformat()
         return super().default(obj)
-
 
 
 def extract_char_position(error_message: str) -> int:

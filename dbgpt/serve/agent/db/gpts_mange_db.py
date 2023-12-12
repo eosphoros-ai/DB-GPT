@@ -26,8 +26,8 @@ class GptsInstanceEntity(Base):
     resource_db = Column(Text, nullable=True, comment="List of structured database names contained in the current gpts")
     resource_internet = Column(Boolean, nullable=True, comment="Is it possible to retrieve information from the internet")
     resource_knowledge = Column(Text, nullable=True, comment="List of unstructured database names contained in the current gpts")
-    gpts_agents = Column(Text, nullable=True, comment="List of agents names contained in the current gpts")
-    gpts_models = Column(Text, nullable=True, comment="List of llm model names contained in the current gpts")
+    gpts_agents = Column(String(1000), nullable=True, comment="List of agents names contained in the current gpts")
+    gpts_models = Column(String(1000), nullable=True, comment="List of llm model names contained in the current gpts")
     language = Column(String(100), nullable=True, comment="gpts language")
 
     user_code = Column(String(255), nullable=False, comment="user code")

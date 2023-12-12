@@ -71,6 +71,16 @@ class GptsMessagesDao(BaseDao[GptsMessagesEntity]):
         session.close()
         return result
 
+
+    def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessagesEntity]]:
+        session = self.get_session()
+        gpts_messages = session.query(GptsMessagesEntity)
+        if conv_id:
+            gpts_messages = gpts_messages.filter(GptsMessagesEntity.conv_id == conv_id)
+        result = gpts_messages.all()
+        session.close()
+        return result
+
     def get_between_agents(self, agent1: str, agent2: str) -> Optional[List[GptsMessagesEntity]]:
         session = self.get_session()
         gpts_messages = session.query(GptsMessagesEntity)
