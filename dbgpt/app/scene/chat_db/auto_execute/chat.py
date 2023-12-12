@@ -52,6 +52,7 @@ class ChatWithDbAutoExecute(BaseChat):
         except ImportError:
             raise ValueError("Could not import DBSummaryClient. ")
         client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
+        table_infos = None
         try:
             with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
                 table_infos = await blocking_func_to_async(

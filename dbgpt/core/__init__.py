@@ -11,7 +11,7 @@ from dbgpt.core.interface.message import (
     OnceConversation,
 )
 from dbgpt.core.interface.prompt import PromptTemplate, PromptTemplateOperator
-from dbgpt.core.interface.output_parser import BaseOutputParser
+from dbgpt.core.interface.output_parser import BaseOutputParser, SQLOutputParser
 from dbgpt.core.interface.serialization import Serializable, Serializer
 from dbgpt.core.interface.cache import (
     CacheKey,
@@ -33,6 +33,7 @@ __ALL__ = [
     "PromptTemplate",
     "PromptTemplateOperator",
     "BaseOutputParser",
+    "SQLOutputParser",
     "Serializable",
     "Serializer",
     "CacheKey",
