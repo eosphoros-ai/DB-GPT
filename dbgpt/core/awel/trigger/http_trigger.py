@@ -119,7 +119,18 @@ async def _trigger_dag(
         raise ValueError("HttpTrigger just support one leaf node in dag")
     end_node = end_node[0]
     if not streaming_response:
-        return await end_node.call(call_data={"data": body})
+        headers = response_headers
+        media_type = response_media_type if response_media_type else "text/plain"
+        if not headers:
+            headers = {
+                "Cache-Control": "no-cache",
+                "Transfer-Encoding": "chunked",
+            }
+        return Response(
+            await end_node.call(call_data={"data": body}),
+            headers=headers,
+            media_type=media_type,
+        )
     else:
         headers = response_headers
         media_type = response_media_type if response_media_type else "text/event-stream"
