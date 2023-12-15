@@ -1,8 +1,9 @@
-from typing import Any
+from typing import Any, List
 import logging
 
 from pydantic import Field
 
+from dbgpt.rag.chunk import Chunk
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 from dbgpt._private.config import Config
 
@@ -52,8 +53,9 @@ class PGVectorStore(VectorStoreBase):
             logger.error("vector_name_exists error", e.message)
             return False
 
-    def load_document(self, documents) -> None:
-        return self.vector_store_client.from_documents(documents)
+    def load_document(self, chunks: List[Chunk]) -> List[str]:
+        lc_documents = [Chunk.chunk2langchain(chunk) for chunk in chunks]
+        return self.vector_store_client.from_documents(lc_documents)
 
     def delete_vector_name(self, vector_name):
         return self.vector_store_client.delete_collection()

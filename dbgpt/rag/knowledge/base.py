@@ -1,0 +1,105 @@
+from abc import abstractmethod, ABC
+from enum import Enum
+from typing import Optional, Any, List
+
+from dbgpt.rag.chunk import Document
+from dbgpt.rag.text_splitter.pre_text_splitter import PreTextSplitter
+from dbgpt.rag.text_splitter.text_splitter import (
+    RecursiveCharacterTextSplitter,
+    MarkdownHeaderTextSplitter,
+    ParagraphTextSplitter,
+)
+
+
+class KnowledgeType(Enum):
+    DOCUMENT = (
+        "DOCUMENT",
+        "Upload a document, document type can be .pdf, .csv, .md, .pptx, .docx, .txt",
+    )
+    URL = ("URL", "Fetch the content of a URL")
+    TEXT = ("TEXT", "Fill your raw text")
+
+    def __new__(cls, value, description):
+        """Customize the Enum class"""
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.description = description
+        return obj
+
+    @classmethod
+    def get_by_value(cls, value):
+        """Get Enum member by value"""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"{value} is not a valid value for {cls.__name__}")
+
+
+class ChunkStrategy(Enum):
+    """chunk strategy"""
+
+    CHUNK_BY_SIZE = (RecursiveCharacterTextSplitter, ['chunk_size', 'chunk_overlap'])
+    CHUNK_BY_PAGE = (RecursiveCharacterTextSplitter, [])
+    CHUNK_BY_PARAGRAPH = (ParagraphTextSplitter, ['separator'])
+    CHUNK_BY_SEPARATOR = (PreTextSplitter, ['separator'])
+    CHUNK_BY_MARKDOWN_HEADER = (MarkdownHeaderTextSplitter, [])
+
+    def __init__(self, splitter_class, parameters):
+        self.splitter_class = splitter_class
+        self.parameters = parameters
+
+    def match(self, *args, **kwargs):
+        return self.value[0](*args, **kwargs)
+
+
+class Knowledge(ABC):
+    def __init__(
+        self,
+        path: Optional[str] = None,
+        knowledge_type: Optional[KnowledgeType] = None,
+        data_loader: Optional = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize with Knowledge arguments."""
+        self._path = path
+        self._type = knowledge_type
+        self._data_loader = data_loader
+
+    def load(self):
+        """Load knowledge from data_loader"""
+        documents = self._load()
+        return self._post_process(documents)
+
+    def type(self) -> KnowledgeType:
+        """Get knowledge type"""
+        return self._type
+
+    def _post_process(self, docs: List[Document]) -> List[Document]:
+        """Post process knowledge from data_loader"""
+        return docs
+
+    @abstractmethod
+    def _load(self):
+        """Preprocess knowledge from data_loader"""
+
+    def support_chunk_strategy(self) -> List[ChunkStrategy]:
+        """support chunk strategy"""
+        return [
+            ChunkStrategy.CHUNK_BY_SIZE,
+            ChunkStrategy.CHUNK_BY_PAGE,
+            ChunkStrategy.CHUNK_BY_PARAGRAPH,
+            ChunkStrategy.CHUNK_BY_QA,
+            ChunkStrategy.CHUNK_BY_MARKDOWN_HEADER,
+            ChunkStrategy.CHUNK_BY_SEPARATOR,
+        ]
+
+    def default_chunk_strategy(self) -> ChunkStrategy:
+        return ChunkStrategy.CHUNK_BY_SIZE
+
+    def support_chunk_strategy(self):
+        return [
+            ChunkStrategy.CHUNK_BY_SIZE,
+            ChunkStrategy.CHUNK_BY_PAGE,
+            ChunkStrategy.CHUNK_BY_PARAGRAPH,
+            ChunkStrategy.CHUNK_BY_SEPARATOR,
+        ]

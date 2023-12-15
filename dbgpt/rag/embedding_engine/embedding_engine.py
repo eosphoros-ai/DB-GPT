@@ -8,8 +8,8 @@ from dbgpt.rag.embedding_engine.embedding_factory import (
 )
 from dbgpt.rag.embedding_engine.knowledge_type import (
     get_knowledge_embedding,
-    KnowledgeType,
 )
+from dbgpt.rag.knowledge.base import KnowledgeType
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 

@@ -5,7 +5,7 @@ import logging
 import os
 from typing import Any, Iterable, List, Optional, Tuple
 
-
+from dbgpt.rag.chunk import Chunk
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 
 logger = logging.getLogger(__name__)
@@ -219,12 +219,12 @@ class MilvusStore(VectorStoreBase):
         self.col.flush()
         return res.primary_keys
 
-    def load_document(self, documents) -> None:
+    def load_document(self, chunks: List[Chunk]) -> List[str]:
         """load document in vector database."""
         # self.init_schema_and_load(self.collection_name, documents)
         batch_size = 500
         batched_list = [
-            documents[i : i + batch_size] for i in range(0, len(documents), batch_size)
+            chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)
         ]
         doc_ids = []
         for doc_batch in batched_list:

@@ -1,8 +1,9 @@
 from typing import List, Optional
 import chardet
 
-from langchain.docstore.document import Document
 from langchain.document_loaders.base import BaseLoader
+
+from dbgpt.rag.chunk import Document
 
 
 class EncodeTextLoader(BaseLoader):
@@ -23,4 +24,4 @@ class EncodeTextLoader(BaseLoader):
             else:
                 text = raw_text.decode(result["encoding"])
         metadata = {"source": self.file_path}
-        return [Document(page_content=text, metadata=metadata)]
+        return [Document(content=text, metadata=metadata)]

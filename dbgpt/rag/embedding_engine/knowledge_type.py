@@ -9,25 +9,6 @@ from dbgpt.rag.embedding_engine.url_embedding import URLEmbedding
 from dbgpt.rag.embedding_engine.word_embedding import WordEmbedding
 
 
-class KnowledgeType(Enum):
-    DOCUMENT = "DOCUMENT"
-    URL = "URL"
-    TEXT = "TEXT"
-    OSS = "OSS"
-    S3 = "S3"
-    NOTION = "NOTION"
-    MYSQL = "MYSQL"
-    TIDB = "TIDB"
-    CLICKHOUSE = "CLICKHOUSE"
-    OCEANBASE = "OCEANBASE"
-    ELASTICSEARCH = "ELASTICSEARCH"
-    HIVE = "HIVE"
-    PRESTO = "PRESTO"
-    KAFKA = "KAFKA"
-    SPARK = "SPARK"
-    YOUTUBE = "YOUTUBE"
-
-
 def get_knowledge_embedding(
     knowledge_type,
     knowledge_source,
@@ -65,31 +46,3 @@ def get_knowledge_embedding(
                 text_splitter=text_splitter,
             )
             return embedding
-        case KnowledgeType.OSS.value:
-            raise Exception("OSS have not integrate")
-        case KnowledgeType.S3.value:
-            raise Exception("S3 have not integrate")
-        case KnowledgeType.NOTION.value:
-            raise Exception("NOTION have not integrate")
-        case KnowledgeType.MYSQL.value:
-            raise Exception("MYSQL have not integrate")
-        case KnowledgeType.TIDB.value:
-            raise Exception("TIDB have not integrate")
-        case KnowledgeType.CLICKHOUSE.value:
-            raise Exception("CLICKHOUSE have not integrate")
-        case KnowledgeType.OCEANBASE.value:
-            raise Exception("OCEANBASE have not integrate")
-        case KnowledgeType.ELASTICSEARCH.value:
-            raise Exception("ELASTICSEARCH have not integrate")
-        case KnowledgeType.HIVE.value:
-            raise Exception("HIVE have not integrate")
-        case KnowledgeType.PRESTO.value:
-            raise Exception("PRESTO have not integrate")
-        case KnowledgeType.KAFKA.value:
-            raise Exception("KAFKA have not integrate")
-        case KnowledgeType.SPARK.value:
-            raise Exception("SPARK have not integrate")
-        case KnowledgeType.YOUTUBE.value:
-            raise Exception("YOUTUBE have not integrate")
-        case _:
-            raise Exception("unknown knowledge type")

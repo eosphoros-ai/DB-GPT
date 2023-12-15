@@ -1,7 +1,6 @@
 import asyncio
 from typing import Coroutine, List, Any
 
-
 from dbgpt.app.scene import BaseChat, ChatFactory
 
 chat_factory = ChatFactory()
@@ -43,3 +42,16 @@ async def run_async_tasks(
 
     # outputs: List[Any] = asyncio.run(_gather())
     return await _gather()
+
+
+def run_tasks(
+    tasks: List[Coroutine],
+) -> List[Any]:
+    """Run a list of async tasks."""
+    tasks_to_execute: List[Any] = tasks
+
+    async def _gather() -> List[Any]:
+        return await asyncio.gather(*tasks_to_execute)
+
+    outputs: List[Any] = asyncio.run(_gather())
+    return outputs

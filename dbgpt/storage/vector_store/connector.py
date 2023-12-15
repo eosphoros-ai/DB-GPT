@@ -1,8 +1,9 @@
 import os
-from typing import Optional
+from typing import Optional, List
 
 from fsspec import Callback
 
+from dbgpt.rag.chunk import Chunk
 from dbgpt.storage import vector_store
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 
@@ -14,6 +15,7 @@ class VectorStoreConnector:
     """VectorStoreConnector, can connect different vector db provided load document api_v1 and similar search api_v1.
     1.load_document:knowledge document source into vector store.(Chroma, Milvus, Weaviate)
     2.similar_search: similarity search from vector_store
+    3.similar_search_with_scores: similarity search with similarity score from vector_store
 
     code example:
     >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
@@ -58,27 +60,37 @@ class VectorStoreConnector:
         vector_store_config.embedding_fn = embedding_fn
         return cls(vector_store_type, vector_store_config)
 
-    def load_document(self, docs):
-        """load document in vector database."""
-        return self.client.load_document(docs)
+    def load_document(self, chunks: List[Chunk]) -> List[str]:
+        """load document in vector database.
+        Args:
+            - chunks: document chunks.
+        Return chunk ids.
+        """
+        return self.client.load_document(chunks)
 
-    def similar_search(self, doc: str, topk: int):
+    def similar_search(self, doc: str, topk: int) -> List[Chunk]:
         """similar search in vector database.
         Args:
            - doc: query text
            - topk: topk
+        Return:
+            - chunks: chunks.
         """
         return self.client.similar_search(doc, topk)
 
-    def similar_search_with_scores(self, doc: str, topk: int, score_threshold: float):
+    def similar_search_with_scores(
+        self, doc: str, topk: int, score_threshold: float
+    ) -> List[Chunk]:
         """
         similar_search_with_score in vector database..
         Return docs and relevance scores in the range [0, 1].
         Args:
-            doc(str): query text
-            topk(int): return docs nums. Defaults to 4.
-            score_threshold(float): score_threshold: Optional, a floating point value between 0 to 1 to
+            - doc(str): query text
+            - topk(int): return docs nums. Defaults to 4.
+            - score_threshold(float): score_threshold: Optional, a floating point value between 0 to 1 to
                     filter the resulting set of retrieved docs,0 is dissimilar, 1 is most similar.
+        Return:
+            - chunks: chunks.
         """
         return self.client.similar_search_with_scores(doc, topk, score_threshold)
 

@@ -2,6 +2,7 @@ import json
 import logging
 from datetime import datetime
 
+from dbgpt.rag.embedding_engine import KnowledgeType
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 from dbgpt._private.config import Config
@@ -194,7 +195,7 @@ class KnowledgeService:
         """
         from dbgpt.rag.embedding_engine.embedding_engine import EmbeddingEngine
         from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
-        from dbgpt.rag.embedding_engine.pre_text_splitter import PreTextSplitter
+        from dbgpt.rag.text_splitter.pre_text_splitter import PreTextSplitter
         from langchain.text_splitter import (
             RecursiveCharacterTextSplitter,
             SpacyTextSplitter,
@@ -234,6 +235,11 @@ class KnowledgeService:
             if sync_request.chunk_overlap:
                 chunk_overlap = sync_request.chunk_overlap
             separators = sync_request.separators or None
+            from dbgpt.rag.chunk_manager import ChunkParameters
+
+            chunk_parameters = ChunkParameters(
+                chunk_size=chunk_size, chunk_overlap=chunk_overlap
+            )
             if CFG.LANGUAGE == "en":
                 text_splitter = RecursiveCharacterTextSplitter(
                     separators=separators,
@@ -266,6 +272,7 @@ class KnowledgeService:
                     pre_separator=sync_request.pre_separator,
                     text_splitter_impl=text_splitter,
                 )
+                chunk_parameters.text_splitter = text_splitter
             embedding_factory = CFG.SYSTEM_APP.get_component(
                 "embedding_factory", EmbeddingFactory
             )
@@ -280,7 +287,18 @@ class KnowledgeService:
                 text_splitter=text_splitter,
                 embedding_factory=embedding_factory,
             )
-            chunk_docs = client.read()
+            from dbgpt.serve.rag.assembler.base import EmbeddingAssembler
+            from dbgpt.rag.knowledge import KnowledgeFactory
+
+            knowledge = KnowledgeFactory.from_file_path(
+                file_path=doc.content, knowledge_type=KnowledgeType.DOCUMENT
+            )
+            assembler = EmbeddingAssembler.load_from_knowledge(
+                knowledge=knowledge,
+                chunk_parameters=chunk_parameters,
+                embedding_model=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+            )
+            chunk_docs = assembler.get_chunks()
             # update document status
             doc.status = SyncStatus.RUNNING.name
             doc.chunk_size = len(chunk_docs)
@@ -289,7 +307,7 @@ class KnowledgeService:
             executor = CFG.SYSTEM_APP.get_component(
                 ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
             ).create()
-            executor.submit(self.async_doc_embedding, client, chunk_docs, doc)
+            executor.submit(self.async_doc_embedding, assembler, chunk_docs, doc)
             logger.info(f"begin save document chunks, doc:{doc.doc_name}")
             # save chunk details
             chunk_entities = [
@@ -297,7 +315,7 @@ class KnowledgeService:
                     doc_name=doc.doc_name,
                     doc_type=doc.doc_type,
                     document_id=doc.id,
-                    content=chunk_doc.page_content,
+                    content=chunk_doc.content,
                     meta_info=str(chunk_doc.metadata),
                     gmt_created=datetime.now(),
                     gmt_modified=datetime.now(),
@@ -477,18 +495,19 @@ class KnowledgeService:
             )
         return await self._llm_extract_summary(summary, conn_uid, model_name)
 
-    def async_doc_embedding(self, client, chunk_docs, doc):
+    def async_doc_embedding(self, assembler, chunk_docs, doc):
         """async document embedding into vector db
         Args:
             - client: EmbeddingEngine Client
             - chunk_docs: List[Document]
             - doc: KnowledgeDocumentEntity
         """
+
         logger.info(
-            f"async doc sync, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
+            f"async doc embedding sync, doc:{doc.doc_name}, chunks length is {len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
         )
         try:
-            vector_ids = client.knowledge_embedding_batch(chunk_docs)
+            vector_ids = assembler.persist()
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document embedding success"
             if vector_ids is not None:

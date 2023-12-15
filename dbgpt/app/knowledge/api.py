@@ -30,6 +30,7 @@ from dbgpt.app.knowledge.request.request import (
 )
 
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
+from dbgpt.rag.knowledge.base import ChunkStrategy
 from dbgpt.util.tracer import root_tracer, SpanType
 
 logger = logging.getLogger(__name__)
@@ -101,6 +102,35 @@ def document_add(space_name: str, request: KnowledgeDocumentRequest):
         # return Result.succ([])
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document add error {e}")
+
+
+@router.get("/knowledge/document/chunkstrategies")
+def chunk_strategies():
+    print(f"/document/chunkstrategies:")
+    try:
+        return Result.succ([{"name": strategy.name, "parameters": strategy.value[1]} for strategy in ChunkStrategy])
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"chunkstrategies error {e}")
+
+
+@router.get("/knowledge/document/types")
+def knowledge_types(document: str):
+    print(f"/document/types")
+    try:
+        from dbgpt.rag.knowledge.base import KnowledgeType
+
+        return Result.succ(
+            [
+                {
+                    "type": knowledge_type.value[0],
+                    "description": knowledge_type.value[1],
+                }
+                for knowledge_type in KnowledgeType
+            ]
+        )
+        # return Result.succ([])
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"document types {e}")
 
 
 @router.post("/knowledge/{space_name}/document/list")

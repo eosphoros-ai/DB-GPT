@@ -8,6 +8,7 @@ from dbgpt._private.config import Config
 
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
+    PILOT_PATH,
 )
 
 from dbgpt.app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
@@ -16,6 +17,7 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentEntity,
 )
 from dbgpt.app.knowledge.service import KnowledgeService
+from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
 
@@ -66,10 +68,28 @@ class ChatKnowledge(BaseChat):
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
-        self.knowledge_embedding_client = EmbeddingEngine(
-            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-            vector_store_config=vector_store_config,
-            embedding_factory=embedding_factory,
+        # self.knowledge_embedding_client = EmbeddingEngine(
+        #     model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+        #     vector_store_config=vector_store_config,
+        #     embedding_factory=embedding_factory,
+        # )
+        from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+        from dbgpt.storage.vector_store.connector import VectorStoreConnector
+
+        embedding_fn = embedding_factory.create(
+            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+        )
+        config = ChromaVectorConfig(
+            persist_path=PILOT_PATH + "/data",
+            name=self.knowledge_space,
+        )
+        config.embedding_fn = embedding_fn
+        vector_store_connector = VectorStoreConnector(
+            vector_store_type=CFG.VECTOR_STORE_TYPE,
+            vector_store_config=config,
+        )
+        self.embedding_retriever = EmbeddingRetriever(
+            top_k=self.top_k, vector_store_connector=vector_store_connector
         )
         self.prompt_template.template_is_strict = False
         self.relations = None
@@ -138,22 +158,22 @@ class ChatKnowledge(BaseChat):
             context = "no relevant docs to retrieve"
         else:
             self.chunks_with_score = []
-            for d, score in candidates_with_scores:
+            for chunk in candidates_with_scores:
                 chucks = self.chunk_dao.get_document_chunks(
-                    query=DocumentChunkEntity(content=d.page_content),
+                    query=DocumentChunkEntity(content=chunk.content),
                     document_ids=self.document_ids,
                 )
                 if len(chucks) > 0:
-                    self.chunks_with_score.append((chucks[0], score))
+                    self.chunks_with_score.append((chucks[0], chunk.score))
 
-            context = [doc.page_content for doc, _ in candidates_with_scores]
+            context = [doc.content for doc in candidates_with_scores]
 
         context = context[: self.max_token]
         self.relations = list(
             set(
                 [
                     os.path.basename(str(d.metadata.get("source", "")))
-                    for d, _ in candidates_with_scores
+                    for d in candidates_with_scores
                 ]
             )
         )
@@ -213,10 +233,6 @@ class ChatKnowledge(BaseChat):
 
     async def execute_similar_search(self, query):
         """execute similarity search"""
-        return await blocking_func_to_async(
-            self._executor,
-            self.knowledge_embedding_client.similar_search_with_scores,
-            query,
-            self.top_k,
-            self.recall_score,
+        return await self.embedding_retriever.aretrieve_with_scores(
+            query, self.recall_score
         )

@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 import math
-from typing import Optional, Callable
+from typing import Optional, Callable, List
 
 from pydantic import Field, BaseModel
+
+from dbgpt.rag.chunk import Chunk
 
 
 class VectorStoreConfig(BaseModel):
@@ -30,13 +32,38 @@ class VectorStoreBase(ABC):
     """base class for vector store database"""
 
     @abstractmethod
-    def load_document(self, documents) -> None:
-        """load document in vector database."""
+    def load_document(self, chunks: List[Chunk]) -> List[str]:
+        """load document in vector database.
+        Args:
+            - chunks: document chunks.
+        Return:
+            - ids: chunks ids.
+        """
         pass
 
     @abstractmethod
-    def similar_search(self, text, topk) -> None:
-        """similar search in vector database."""
+    def similar_search(self, text, topk) -> List[Chunk]:
+        """similar search in vector database.
+        Args:
+            - text: query text
+            - topk: topk
+        Return:
+            - chunks: chunks.
+        """
+        pass
+
+    @abstractmethod
+    def similar_search_with_scores(
+        self, text, topk, score_threshold: float
+    ) -> List[Chunk]:
+        """similar search in vector database with scores.
+        Args:
+            - text: query text
+            - topk: topk
+            - score_threshold: score_threshold: Optional, a floating point value between 0 to 1
+        Return:
+            - chunks: chunks.
+        """
         pass
 
     @abstractmethod
@@ -46,12 +73,17 @@ class VectorStoreBase(ABC):
 
     @abstractmethod
     def delete_by_ids(self, ids):
-        """delete vector by ids."""
-        pass
+        """delete vector by ids.
+        Args:
+            - ids: vector ids
+        """
 
     @abstractmethod
     def delete_vector_name(self, vector_name):
-        """delete vector name."""
+        """delete vector name.
+        Args:
+            - vector_name: vector store name
+        """
         pass
 
     def _normalization_vectors(self, vectors):

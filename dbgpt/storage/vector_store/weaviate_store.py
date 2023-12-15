@@ -1,10 +1,13 @@
 import os
 import logging
+from typing import List
+
 from langchain.schema import Document
 from pydantic import Field
 
 from dbgpt._private.config import Config
 from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
+from dbgpt.rag.chunk import Chunk
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 
 logger = logging.getLogger(__name__)
@@ -133,11 +136,11 @@ class WeaviateStore(VectorStoreBase):
         # Create the schema in Weaviate
         self.vector_store_client.schema.create(schema)
 
-    def load_document(self, documents: list) -> None:
+    def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load documents into Weaviate"""
         logger.info("Weaviate load document")
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
+        texts = [doc.content for doc in chunks]
+        metadatas = [doc.metadata for doc in chunks]
 
         # Import data
         with self.vector_store_client.batch as batch:
@@ -147,7 +150,7 @@ class WeaviateStore(VectorStoreBase):
             for i in range(len(texts)):
                 properties = {
                     "metadata": metadatas[i]["source"],
-                    "page_content": texts[i],
+                    "content": texts[i],
                 }
 
                 self.vector_store_client.batch.add_data_object(
