@@ -109,7 +109,7 @@ def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
     os.makedirs(default_meta_data_path, exist_ok=True)
     if CFG.LOCAL_DB_TYPE == "mysql":
-        db_url = f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:{urlquote(CFG.LOCAL_DB_PASSWORD)}@{CFG.LOCAL_DB_HOST}:{str(CFG.LOCAL_DB_PORT)}"
+        db_url = f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:{urlquote(CFG.LOCAL_DB_PASSWORD)}@{CFG.LOCAL_DB_HOST}:{str(CFG.LOCAL_DB_PORT)}/{db_name}"
     else:
         sqlite_db_path = os.path.join(default_meta_data_path, f"{db_name}.db")
         db_url = f"sqlite:///{sqlite_db_path}"
