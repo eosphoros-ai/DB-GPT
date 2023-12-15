@@ -56,6 +56,10 @@ class SQLiteConnect(RDBMSDatabase):
         print(fields)
         return [(field[1], field[2], field[3], field[4], field[5]) for field in fields]
 
+    def get_simple_fields(self, table_name):
+        """Get column fields about specified table."""
+        return self.get_fields(table_name)
+
     def get_users(self):
         return []
 
@@ -88,8 +92,9 @@ class SQLiteConnect(RDBMSDatabase):
         self._metadata.reflect(bind=self._engine)
         return self._all_tables
 
-    def _write(self, session, write_sql):
+    def _write(self, write_sql):
         print(f"Write[{write_sql}]")
+        session = self.session
         result = session.execute(text(write_sql))
         session.commit()
         # TODO  Subsequent optimization of dynamically specified database submission loss target problem
