@@ -75,9 +75,8 @@ class LLMCacheValueData:
 
 
 class LLMCacheKey(CacheKey[LLMCacheKeyData]):
-    def __init__(self, serializer: Serializer = None, **kwargs) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__()
-        self._serializer = serializer
         self.config = LLMCacheKeyData(**kwargs)
 
     def __hash__(self) -> int:
@@ -96,30 +95,23 @@ class LLMCacheKey(CacheKey[LLMCacheKeyData]):
     def to_dict(self) -> Dict:
         return asdict(self.config)
 
-    def serialize(self) -> bytes:
-        return self._serializer.serialize(self)
-
     def get_value(self) -> LLMCacheKeyData:
         return self.config
 
 
 class LLMCacheValue(CacheValue[LLMCacheValueData]):
-    def __init__(self, serializer: Serializer = None, **kwargs) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__()
-        self._serializer = serializer
         self.value = LLMCacheValueData.from_dict(**kwargs)
 
     def to_dict(self) -> Dict:
         return self.value.to_dict()
 
-    def serialize(self) -> bytes:
-        return self._serializer.serialize(self)
-
     def get_value(self) -> LLMCacheValueData:
         return self.value
 
     def __str__(self) -> str:
-        return f"vaue: {str(self.value)}"
+        return f"value: {str(self.value)}"
 
 
 class LLMCacheClient(CacheClient[LLMCacheKeyData, LLMCacheValueData]):
@@ -146,7 +138,11 @@ class LLMCacheClient(CacheClient[LLMCacheKeyData, LLMCacheValueData]):
         return await self.get(key, cache_config) is not None
 
     def new_key(self, **kwargs) -> LLMCacheKey:
-        return LLMCacheKey(serializer=self._cache_manager.serializer, **kwargs)
+        key = LLMCacheKey(**kwargs)
+        key.set_serializer(self._cache_manager.serializer)
+        return key
 
     def new_value(self, **kwargs) -> LLMCacheValue:
-        return LLMCacheValue(serializer=self._cache_manager.serializer, **kwargs)
+        value = LLMCacheValue(**kwargs)
+        value.set_serializer(self._cache_manager.serializer)
+        return value

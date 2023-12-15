@@ -2,13 +2,8 @@ from datetime import datetime
 
 from sqlalchemy import Column, Integer, Text, String, DateTime
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
+from dbgpt.storage.metadata import BaseDao, Model
+
 from dbgpt._private.config import Config
 
 from dbgpt.app.prompt.request.request import PromptManageRequest
@@ -16,7 +11,7 @@ from dbgpt.app.prompt.request.request import PromptManageRequest
 CFG = Config()
 
 
-class PromptManageEntity(Base):
+class PromptManageEntity(Model):
     __tablename__ = "prompt_manage"
     __table_args__ = {
         "mysql_charset": "utf8mb4",
@@ -38,16 +33,8 @@ class PromptManageEntity(Base):
 
 
 class PromptManageDao(BaseDao):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
-
     def create_prompt(self, prompt: PromptManageRequest):
-        session = self.get_session()
+        session = self.get_raw_session()
         prompt_manage = PromptManageEntity(
             chat_scene=prompt.chat_scene,
             sub_chat_scene=prompt.sub_chat_scene,
@@ -64,7 +51,7 @@ class PromptManageDao(BaseDao):
         session.close()
 
     def get_prompts(self, query: PromptManageEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         prompts = session.query(PromptManageEntity)
         if query.chat_scene is not None:
             prompts = prompts.filter(PromptManageEntity.chat_scene == query.chat_scene)
@@ -93,13 +80,13 @@ class PromptManageDao(BaseDao):
         return result
 
     def update_prompt(self, prompt: PromptManageEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         session.merge(prompt)
         session.commit()
         session.close()
 
     def delete_prompt(self, prompt: PromptManageEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         if prompt:
             session.delete(prompt)
             session.commit()

@@ -2,16 +2,10 @@ from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, func
 from sqlalchemy import UniqueConstraint
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
+from dbgpt.storage.metadata import BaseDao, Model
 
 
-class MyPluginEntity(Base):
+class MyPluginEntity(Model):
     __tablename__ = "my_plugin"
     __table_args__ = {
         "mysql_charset": "utf8mb4",
@@ -39,16 +33,8 @@ class MyPluginEntity(Base):
 
 
 class MyPluginDao(BaseDao[MyPluginEntity]):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
-
     def add(self, engity: MyPluginEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         my_plugin = MyPluginEntity(
             tenant=engity.tenant,
             user_code=engity.user_code,
@@ -68,13 +54,13 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         return id
 
     def update(self, entity: MyPluginEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         updated = session.merge(entity)
         session.commit()
         return updated.id
 
     def get_by_user(self, user: str) -> list[MyPluginEntity]:
-        session = self.get_session()
+        session = self.get_raw_session()
         my_plugins = session.query(MyPluginEntity)
         if user:
             my_plugins = my_plugins.filter(MyPluginEntity.user_code == user)
@@ -83,7 +69,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         return result
 
     def get_by_user_and_plugin(self, user: str, plugin: str) -> MyPluginEntity:
-        session = self.get_session()
+        session = self.get_raw_session()
         my_plugins = session.query(MyPluginEntity)
         if user:
             my_plugins = my_plugins.filter(MyPluginEntity.user_code == user)
@@ -93,7 +79,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         return result
 
     def list(self, query: MyPluginEntity, page=1, page_size=20) -> list[MyPluginEntity]:
-        session = self.get_session()
+        session = self.get_raw_session()
         my_plugins = session.query(MyPluginEntity)
         all_count = my_plugins.count()
         if query.id is not None:
@@ -122,7 +108,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         return result, total_pages, all_count
 
     def count(self, query: MyPluginEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         my_plugins = session.query(func.count(MyPluginEntity.id))
         if query.id is not None:
             my_plugins = my_plugins.filter(MyPluginEntity.id == query.id)
@@ -143,7 +129,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         return count
 
     def delete(self, plugin_id: int):
-        session = self.get_session()
+        session = self.get_raw_session()
         if plugin_id is None:
             raise Exception("plugin_id is None")
         query = MyPluginEntity(id=plugin_id)

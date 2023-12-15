@@ -4,6 +4,7 @@ from aioresponses import aioresponses
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from httpx import AsyncClient, HTTPError
+import importlib.metadata as metadata
 
 from dbgpt.component import SystemApp
 from dbgpt.util.openai_utils import chat_completion_stream, chat_completion
@@ -190,12 +191,26 @@ async def test_chat_completions_with_openai_lib_async_stream(
         )
 
         stream_stream_resp = ""
-        async for stream_resp in await openai.ChatCompletion.acreate(
-            model=model_name,
-            messages=[{"role": "user", "content": "Hello! What is your name?"}],
-            stream=True,
-        ):
+        if metadata.version("openai") >= "1.0.0":
+            from openai import OpenAI
+
+            client = OpenAI(
+                **{"base_url": "http://test/api/v1", "api_key": client_api_key}
+            )
+            res = await client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": "Hello! What is your name?"}],
+                stream=True,
+            )
+        else:
+            res = openai.ChatCompletion.acreate(
+                model=model_name,
+                messages=[{"role": "user", "content": "Hello! What is your name?"}],
+                stream=True,
+            )
+        async for stream_resp in res:
             stream_stream_resp = stream_resp.choices[0]["delta"].get("content", "")
+
         assert stream_stream_resp == expected_messages
 
 
