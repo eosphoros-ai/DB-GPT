@@ -97,6 +97,8 @@ Configure the proxy and modify LLM_MODEL, PROXY_API_URL and API_KEY in the `.env
 LLM_MODEL=chatgpt_proxyllm
 PROXY_API_KEY={your-openai-sk}
 PROXY_SERVER_URL=https://api.openai.com/v1/chat/completions
+# If you use gpt-4
+# PROXYLLM_BACKEND=gpt-4
 ```
   </TabItem>
   <TabItem value="qwen" label="通义千问">

@@ -2,17 +2,12 @@ from datetime import datetime
 
 from sqlalchemy import Column, Integer, Text, String, DateTime
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
+from dbgpt.storage.metadata import BaseDao, Model
+
 from dbgpt.app.openapi.api_v1.feedback.feed_back_model import FeedBackBody
 
 
-class ChatFeedBackEntity(Base):
+class ChatFeedBackEntity(Model):
     __tablename__ = "chat_feed_back"
     __table_args__ = {
         "mysql_charset": "utf8mb4",
@@ -39,18 +34,10 @@ class ChatFeedBackEntity(Base):
 
 
 class ChatFeedBackDao(BaseDao):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
-
     def create_or_update_chat_feed_back(self, feed_back: FeedBackBody):
         # Todo: We need to have user information first.
 
-        session = self.get_session()
+        session = self.get_raw_session()
         chat_feed_back = ChatFeedBackEntity(
             conv_uid=feed_back.conv_uid,
             conv_index=feed_back.conv_index,
@@ -84,7 +71,7 @@ class ChatFeedBackDao(BaseDao):
         session.close()
 
     def get_chat_feed_back(self, conv_uid: str, conv_index: int):
-        session = self.get_session()
+        session = self.get_raw_session()
         result = (
             session.query(ChatFeedBackEntity)
             .filter(ChatFeedBackEntity.conv_uid == conv_uid)

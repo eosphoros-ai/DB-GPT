@@ -87,7 +87,7 @@ class DuckdbHistoryMemory(BaseChatHistoryMemory):
                 [
                     self.chat_seesion_id,
                     once_message.chat_mode,
-                    once_message.get_user_conv().content,
+                    once_message.get_latest_user_message().content,
                     once_message.user_name,
                     once_message.sys_code,
                     json.dumps(conversations, ensure_ascii=False),

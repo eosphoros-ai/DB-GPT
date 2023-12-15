@@ -2,20 +2,14 @@ from datetime import datetime
 
 from sqlalchemy import Column, Integer, Text, String, DateTime
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
+from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 
 CFG = Config()
 
 
-class KnowledgeSpaceEntity(Base):
+class KnowledgeSpaceEntity(Model):
     __tablename__ = "knowledge_space"
     __table_args__ = {
         "mysql_charset": "utf8mb4",
@@ -35,16 +29,8 @@ class KnowledgeSpaceEntity(Base):
 
 
 class KnowledgeSpaceDao(BaseDao):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
-
     def create_knowledge_space(self, space: KnowledgeSpaceRequest):
-        session = self.get_session()
+        session = self.get_raw_session()
         knowledge_space = KnowledgeSpaceEntity(
             name=space.name,
             vector_type=CFG.VECTOR_STORE_TYPE,
@@ -58,7 +44,7 @@ class KnowledgeSpaceDao(BaseDao):
         session.close()
 
     def get_knowledge_space(self, query: KnowledgeSpaceEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         knowledge_spaces = session.query(KnowledgeSpaceEntity)
         if query.id is not None:
             knowledge_spaces = knowledge_spaces.filter(
@@ -97,14 +83,14 @@ class KnowledgeSpaceDao(BaseDao):
         return result
 
     def update_knowledge_space(self, space: KnowledgeSpaceEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         session.merge(space)
         session.commit()
         session.close()
         return True
 
     def delete_knowledge_space(self, space: KnowledgeSpaceEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         if space:
             session.delete(space)
             session.commit()

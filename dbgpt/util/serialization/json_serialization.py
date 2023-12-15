@@ -41,4 +41,6 @@ class JsonSerializer(Serializer):
         # Convert bytes back to JSON and then to the specified class
         json_data = json.loads(data.decode(JSON_ENCODING))
         # Assume that the cls has an __init__ that accepts a dictionary
-        return cls(**json_data)
+        obj = cls(**json_data)
+        obj.set_serializer(self)
+        return obj

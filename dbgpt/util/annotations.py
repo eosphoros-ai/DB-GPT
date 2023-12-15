@@ -39,6 +39,31 @@ def PublicAPI(*args, **kwargs):
     return decorator
 
 
+def DeveloperAPI(*args, **kwargs):
+    """Decorator to mark a function or class as a developer API.
+
+    Developer APIs are low-level APIs for advanced users and may change cross major versions.
+
+    Examples:
+        >>> from dbgpt.util.annotations import DeveloperAPI
+        >>> @DeveloperAPI
+        ... def foo():
+        ...     pass
+
+    """
+    if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
+        return DeveloperAPI()(args[0])
+
+    def decorator(obj):
+        _modify_docstring(
+            obj,
+            "**DeveloperAPI:** This API is for advanced users and may change cross major versions.",
+        )
+        return obj
+
+    return decorator
+
+
 def _modify_docstring(obj, message: str = None):
     if not message:
         return

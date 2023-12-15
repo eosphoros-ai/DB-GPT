@@ -70,7 +70,9 @@ class ChatHistoryManager:
 
     def _new_chat(self, input_values: Dict) -> List[ModelMessage]:
         self.current_message.chat_order = len(self.history_message) + 1
-        self.current_message.add_user_message(self._chat_ctx.current_user_input)
+        self.current_message.add_user_message(
+            self._chat_ctx.current_user_input, check_duplicate_type=True
+        )
         self.current_message.start_date = datetime.datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S"
         )
