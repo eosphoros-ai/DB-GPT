@@ -32,11 +32,13 @@ class ChatHistoryEntity(Base):
     messages = Column(
         Text(length=2**31 - 1), nullable=True, comment="Conversation details"
     )
+    share_id = Column(String(255), nullable=True, comment="interlocutor")
 
     UniqueConstraint("conv_uid", name="uk_conversation")
     Index("idx_q_user", "user_name")
     Index("idx_q_mode", "chat_mode")
     Index("idx_q_conv", "summary")
+    Index("idx_share_id", "share_id")
 
 
 class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
@@ -80,6 +82,15 @@ class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
         finally:
             session.close()
 
+    def update_chat_history(self, chat_history: ChatHistoryEntity):
+        session = self.get_session()
+        try:
+            updated_chat_history = session.merge(chat_history)
+            session.commit()
+            return updated_chat_history.id
+        finally:
+            session.close()
+
     def delete(self, conv_uid: int):
         session = self.get_session()
         if conv_uid is None:
@@ -95,6 +106,18 @@ class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
         session = self.get_session()
         chat_history = session.query(ChatHistoryEntity)
         chat_history = chat_history.filter(ChatHistoryEntity.conv_uid == conv_uid)
+        result = chat_history.first()
+        session.close()
+        return result
+
+    def get_by_uid_and_user(self, conv_uid: str, user_name: str, share_id: str = None):
+        session = self.get_session()
+        chat_history = session.query(ChatHistoryEntity)
+        chat_history = chat_history.filter(ChatHistoryEntity.conv_uid == conv_uid)
+        if share_id is not None:
+            chat_history = chat_history.filter(ChatHistoryEntity.share_id == share_id)
+        else:
+            chat_history = chat_history.filter(ChatHistoryEntity.user_name == user_name)
         result = chat_history.first()
         session.close()
         return result

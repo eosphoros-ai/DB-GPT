@@ -24,6 +24,7 @@ import tempfile
 from concurrent.futures import Executor
 
 from pilot.component import ComponentType
+from pilot.memory import ChatHistoryDao, ChatHistoryEntity
 from pilot.openapi.api_view_model import (
     Result,
     ConversationVo,
@@ -61,6 +62,7 @@ CFG = Config()
 CHAT_FACTORY = ChatFactory()
 logger = logging.getLogger(__name__)
 knowledge_service = KnowledgeService()
+chat_history_dao = ChatHistoryDao()
 
 model_semaphore = None
 global_counter = 0
@@ -373,8 +375,26 @@ def get_hist_messages(conv_uid: str):
     return message_vos
 
 
+@router.get("/v1/chat/dialogue/share_id")
+async def share_dialogue(conv_uid: str):
+    try:
+        ch: ChatHistoryEntity = chat_history_dao.get_by_uid(conv_uid)
+        if ch:
+            if ch.share_id is not None:
+                return Result.succ({"share_id": ch.share_id})
+            ch.share_id = uuid.uuid4().hex
+            if chat_history_dao.update_chat_history(ch) is not None:
+                return Result.succ({"share_id": ch.share_id})
+        return Result.failed(code="E000X", msg=f"dialogue {conv_uid} is not exist!")
+    except Exception as ex:
+        return Result.failed(code="E000X", msg=f"Share dialogue exception: {str(ex)}")
+
+
 @router.get("/v1/chat/dialogue/messages/history", response_model=Result[MessageVo])
-async def dialogue_history_messages(con_uid: str):
+async def dialogue_history_messages(con_uid: str, share_id: str = None, user_token: UserRequest = Depends(get_user_from_headers)):
+    chat_history: ChatHistoryEntity = chat_history_dao.get_by_uid_and_user(conv_uid=con_uid, user_name=user_token.user_id, share_id=share_id)
+    if chat_history is None:
+        return Result.failed(code="E000X", msg=f"You don't have permission of current dialogue.")
     print(f"dialogue_history_messages:{con_uid}")
     # TODO Change the synchronous call to the asynchronous call
     return Result.succ(get_hist_messages(con_uid))
