@@ -8,7 +8,8 @@ from dataclasses import dataclass, field
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.util.parameter_utils import BaseParameters
-from dbgpt.storage.metadata.meta_data import ddl_init_and_upgrade
+
+from dbgpt.util._db_migration_utils import _ddl_init_and_upgrade
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -36,8 +37,8 @@ def server_init(param: "WebServerParameters", system_app: SystemApp):
     # init config
     cfg = Config()
     cfg.SYSTEM_APP = system_app
-
-    ddl_init_and_upgrade(param.disable_alembic_upgrade)
+    # Initialize db storage first
+    _initialize_db_storage(param)
 
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
@@ -81,6 +82,46 @@ def _create_model_start_listener(system_app: SystemApp):
         async_db_summary(system_app)
 
     return startup_event
+
+
+def _initialize_db_storage(param: "WebServerParameters"):
+    """Initialize the db storage.
+
+    Now just support sqlite and mysql. If db type is sqlite, the db path is `pilot/meta_data/{db_name}.db`.
+    """
+    default_meta_data_path = _initialize_db(
+        try_to_create_db=not param.disable_alembic_upgrade
+    )
+    _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
+
+
+def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
+    """Initialize the database
+
+    Now just support sqlite and mysql. If db type is sqlite, the db path is `pilot/meta_data/{db_name}.db`.
+    """
+    from dbgpt.configs.model_config import PILOT_PATH
+    from dbgpt.storage.metadata.db_manager import initialize_db
+    from urllib.parse import quote_plus as urlquote, quote
+
+    CFG = Config()
+    db_name = CFG.LOCAL_DB_NAME
+    default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
+    os.makedirs(default_meta_data_path, exist_ok=True)
+    if CFG.LOCAL_DB_TYPE == "mysql":
+        db_url = f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:{urlquote(CFG.LOCAL_DB_PASSWORD)}@{CFG.LOCAL_DB_HOST}:{str(CFG.LOCAL_DB_PORT)}"
+    else:
+        sqlite_db_path = os.path.join(default_meta_data_path, f"{db_name}.db")
+        db_url = f"sqlite:///{sqlite_db_path}"
+    engine_args = {
+        "pool_size": CFG.LOCAL_DB_POOL_SIZE,
+        "max_overflow": CFG.LOCAL_DB_POOL_OVERFLOW,
+        "pool_timeout": 30,
+        "pool_recycle": 3600,
+        "pool_pre_ping": True,
+    }
+    initialize_db(db_url, db_name, engine_args, try_to_create_db=try_to_create_db)
+    return default_meta_data_path
 
 
 @dataclass

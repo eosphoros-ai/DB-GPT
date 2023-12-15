@@ -59,18 +59,12 @@ class AgentHub:
                     else:
                         my_plugin_entity.user_code = Default_User
 
-                    with self.hub_dao.get_session() as session:
-                        try:
-                            if my_plugin_entity.id is None:
-                                session.add(my_plugin_entity)
-                            else:
-                                session.merge(my_plugin_entity)
-                            session.merge(plugin_entity)
-                            session.commit()
-                            session.close()
-                        except Exception as e:
-                            logger.error("install merge roll back!" + str(e))
-                            session.rollback()
+                    with self.hub_dao.session() as session:
+                        if my_plugin_entity.id is None:
+                            session.add(my_plugin_entity)
+                        else:
+                            session.merge(my_plugin_entity)
+                        session.merge(plugin_entity)
                 except Exception as e:
                     logger.error("install pluguin exception!", e)
                     raise ValueError(f"Install Plugin {plugin_name} Faild! {str(e)}")
@@ -87,19 +81,15 @@ class AgentHub:
         my_plugin_entity = self.my_plugin_dao.get_by_user_and_plugin(user, plugin_name)
         if plugin_entity is not None:
             plugin_entity.installed = plugin_entity.installed - 1
-        with self.hub_dao.get_session() as session:
-            try:
-                my_plugin_q = session.query(MyPluginEntity).filter(
-                    MyPluginEntity.name == plugin_name
-                )
-                if user:
-                    my_plugin_q.filter(MyPluginEntity.user_code == user)
-                my_plugin_q.delete()
-                if plugin_entity is not None:
-                    session.merge(plugin_entity)
-                session.commit()
-            except:
-                session.rollback()
+        with self.hub_dao.session() as session:
+            my_plugin_q = session.query(MyPluginEntity).filter(
+                MyPluginEntity.name == plugin_name
+            )
+            if user:
+                my_plugin_q.filter(MyPluginEntity.user_code == user)
+            my_plugin_q.delete()
+            if plugin_entity is not None:
+                session.merge(plugin_entity)
 
         if plugin_entity is not None:
             # delete package file if not use
