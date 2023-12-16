@@ -3,19 +3,13 @@ import pytz
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, DDL
 from sqlalchemy import UniqueConstraint
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
+from dbgpt.storage.metadata import BaseDao, Model
 
 # TODO We should consider that the production environment does not have permission to execute the DDL
 char_set_sql = DDL("ALTER TABLE plugin_hub CONVERT TO CHARACTER SET utf8mb4")
 
 
-class PluginHubEntity(Base):
+class PluginHubEntity(Model):
     __tablename__ = "plugin_hub"
     __table_args__ = {
         "mysql_charset": "utf8mb4",
@@ -43,16 +37,8 @@ class PluginHubEntity(Base):
 
 
 class PluginHubDao(BaseDao[PluginHubEntity]):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
-
     def add(self, engity: PluginHubEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         timezone = pytz.timezone("Asia/Shanghai")
         plugin_hub = PluginHubEntity(
             name=engity.name,
@@ -71,7 +57,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         return id
 
     def update(self, entity: PluginHubEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         try:
             updated = session.merge(entity)
             session.commit()
@@ -82,7 +68,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
     def list(
         self, query: PluginHubEntity, page=1, page_size=20
     ) -> list[PluginHubEntity]:
-        session = self.get_session()
+        session = self.get_raw_session()
         plugin_hubs = session.query(PluginHubEntity)
         all_count = plugin_hubs.count()
 
@@ -111,7 +97,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         return result, total_pages, all_count
 
     def get_by_storage_url(self, storage_url):
-        session = self.get_session()
+        session = self.get_raw_session()
         plugin_hubs = session.query(PluginHubEntity)
         plugin_hubs = plugin_hubs.filter(PluginHubEntity.storage_url == storage_url)
         result = plugin_hubs.all()
@@ -119,7 +105,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         return result
 
     def get_by_name(self, name: str) -> PluginHubEntity:
-        session = self.get_session()
+        session = self.get_raw_session()
         plugin_hubs = session.query(PluginHubEntity)
         plugin_hubs = plugin_hubs.filter(PluginHubEntity.name == name)
         result = plugin_hubs.first()
@@ -127,7 +113,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         return result
 
     def count(self, query: PluginHubEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         plugin_hubs = session.query(func.count(PluginHubEntity.id))
         if query.id is not None:
             plugin_hubs = plugin_hubs.filter(PluginHubEntity.id == query.id)
@@ -146,7 +132,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         return count
 
     def delete(self, plugin_id: int):
-        session = self.get_session()
+        session = self.get_raw_session()
         if plugin_id is None:
             raise Exception("plugin_id is None")
         plugin_hubs = session.query(PluginHubEntity)

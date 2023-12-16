@@ -52,14 +52,14 @@ class DbHistoryMemory(BaseChatHistoryMemory):
             if context:
                 conversations = json.loads(context)
             else:
-                chat_history.summary = once_message.get_user_conv().content
+                chat_history.summary = once_message.get_latest_user_message().content
         else:
             chat_history: ChatHistoryEntity = ChatHistoryEntity()
             chat_history.conv_uid = self.chat_seesion_id
             chat_history.chat_mode = once_message.chat_mode
             chat_history.user_name = once_message.user_name
             chat_history.sys_code = once_message.sys_code
-            chat_history.summary = once_message.get_user_conv().content
+            chat_history.summary = once_message.get_latest_user_message().content
 
         conversations.append(_conversation_to_dict(once_message))
         chat_history.messages = json.dumps(conversations, ensure_ascii=False)

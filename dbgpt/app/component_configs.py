@@ -13,7 +13,6 @@ from dbgpt.app.base import WebServerParameters
 if TYPE_CHECKING:
     from langchain.embeddings.base import Embeddings
 
-
 logger = logging.getLogger(__name__)
 
 CFG = Config()

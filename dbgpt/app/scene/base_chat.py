@@ -146,7 +146,9 @@ class BaseChat(ABC):
         input_values = await self.generate_input_values()
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
-        self.current_message.add_user_message(self.current_user_input)
+        self.current_message.add_user_message(
+            self.current_user_input, check_duplicate_type=True
+        )
         self.current_message.start_date = datetime.datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S"
         )
@@ -221,7 +223,7 @@ class BaseChat(ABC):
                 view_msg = self.stream_plugin_call(msg)
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
-            self.current_message.add_ai_message(msg)
+            self.current_message.add_ai_message(msg, update_if_exist=True)
             view_msg = self.stream_call_reinforce_fn(view_msg)
             self.current_message.add_view_message(view_msg)
             span.end()
@@ -257,7 +259,7 @@ class BaseChat(ABC):
                 )
             )
             ### model result deal
-            self.current_message.add_ai_message(ai_response_text)
+            self.current_message.add_ai_message(ai_response_text, update_if_exist=True)
             prompt_define_response = (
                 self.prompt_template.output_parser.parse_prompt_response(
                     ai_response_text
@@ -320,7 +322,7 @@ class BaseChat(ABC):
                 )
             )
             ### model result deal
-            self.current_message.add_ai_message(ai_response_text)
+            self.current_message.add_ai_message(ai_response_text, update_if_exist=True)
             prompt_define_response = None
             prompt_define_response = (
                 self.prompt_template.output_parser.parse_prompt_response(
@@ -596,7 +598,7 @@ def _load_system_message(
     prompt_template: PromptTemplate,
     str_message: bool = True,
 ):
-    system_convs = current_message.get_system_conv()
+    system_convs = current_message.get_system_messages()
     system_text = ""
     system_messages = []
     for system_conv in system_convs:
@@ -614,7 +616,7 @@ def _load_user_message(
     prompt_template: PromptTemplate,
     str_message: bool = True,
 ):
-    user_conv = current_message.get_user_conv()
+    user_conv = current_message.get_latest_user_message()
     user_messages = []
     if user_conv:
         user_text = user_conv.type + ":" + user_conv.content + prompt_template.sep

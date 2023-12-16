@@ -71,3 +71,66 @@ Download and install `Microsoft C++ Build Tools` from [visual-cpp-build-tools](h
 1. update your mysql username and password in docker/examples/metadata/duckdb2mysql.py
 2.  python docker/examples/metadata/duckdb2mysql.py
 ```
+
+##### Q8: `How to manage and migrate my database`
+
+You can use the command of `dbgpt db migration` to manage and migrate your database.
+
+See the following command for details.
+```commandline
+dbgpt db migration --help
+```
+
+First, you need to create a migration script(just once unless you clean it).
+This command with create a `alembic` directory in your `pilot/meta_data` directory and a initial migration script in it.
+```commandline
+dbgpt db migration init
+```
+
+Then you can upgrade your database with the following command.
+```commandline
+dbgpt db migration upgrade
+```
+
+Every time you change the model or pull the latest code from DB-GPT repository, you need to create a new migration script.
+```commandline
+
+dbgpt db migration migrate -m "your message"
+```
+
+Then you can upgrade your database with the following command.
+```commandline
+dbgpt db migration upgrade
+```
+
+
+##### Q9: `alembic.util.exc.CommandError: Target database is not up to date.`
+
+**Solution 1:**
+
+Run the following command to upgrade the database.
+```commandline
+dbgpt db migration upgrade
+```
+
+**Solution 2:**
+
+Run the following command to clean the migration script and migration history.
+```commandline
+dbgpt db migration clean -y
+```
+
+**Solution 3:**
+
+If you have already run the above command, but the error still exists, 
+you can try the following command to clean the migration script, migration history and your data.
+warning: This command will delete all your data!!! Please use it with caution.
+
+```commandline
+dbgpt db migration clean --drop_all_tables -y --confirm_drop_all_tables
+```
+or 
+```commandline
+rm -rf pilot/meta_data/alembic/versions/*
+rm -rf pilot/meta_data/alembic/dbgpt.db
+```

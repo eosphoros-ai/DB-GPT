@@ -91,6 +91,10 @@ class BaseConnect(ABC):
         """Get column fields about specified table."""
         pass
 
+    def get_simple_fields(self, table_name):
+        """Get column fields about specified table."""
+        return self.get_fields(table_name)
+
     def get_show_create_table(self, table_name):
         """Get the creation table sql about specified table."""
         pass
