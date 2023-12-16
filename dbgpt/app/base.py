@@ -2,6 +2,7 @@ import signal
 import os
 import threading
 import sys
+import logging
 from typing import Optional
 from dataclasses import dataclass, field
 
@@ -13,6 +14,8 @@ from dbgpt.util._db_migration_utils import _ddl_init_and_upgrade
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
+
+logger = logging.getLogger(__name__)
 
 
 def signal_handler(sig, frame):
@@ -110,6 +113,8 @@ def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
     os.makedirs(default_meta_data_path, exist_ok=True)
     if CFG.LOCAL_DB_TYPE == "mysql":
         db_url = f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:{urlquote(CFG.LOCAL_DB_PASSWORD)}@{CFG.LOCAL_DB_HOST}:{str(CFG.LOCAL_DB_PORT)}/{db_name}"
+        # Try to create database, if failed, will raise exception
+        _create_mysql_database(db_name, db_url, try_to_create_db)
     else:
         sqlite_db_path = os.path.join(default_meta_data_path, f"{db_name}.db")
         db_url = f"sqlite:///{sqlite_db_path}"
@@ -122,6 +127,48 @@ def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
     }
     initialize_db(db_url, db_name, engine_args, try_to_create_db=try_to_create_db)
     return default_meta_data_path
+
+
+def _create_mysql_database(db_name: str, db_url: str, try_to_create_db: bool = False):
+    """Create mysql database if not exists
+
+    Args:
+        db_name (str): The database name
+        db_url (str): The database url, include host, port, user, password and database name
+        try_to_create_db (bool, optional): Whether to try to create database. Defaults to False.
+
+    Raises:
+        Exception: Raise exception if database operation failed
+    """
+    from sqlalchemy import create_engine, DDL
+    from sqlalchemy.exc import SQLAlchemyError, OperationalError
+
+    if not try_to_create_db:
+        logger.info(f"Skipping creation of database {db_name}")
+        return
+    engine = create_engine(db_url)
+
+    try:
+        # Try to connect to the database
+        with engine.connect() as conn:
+            logger.info(f"Database {db_name} already exists")
+            return
+    except OperationalError as oe:
+        # If the error indicates that the database does not exist, try to create it
+        if "Unknown database" in str(oe):
+            try:
+                # Create the database
+                no_db_name_url = db_url.rsplit("/", 1)[0]
+                engine_no_db = create_engine(no_db_name_url)
+                with engine_no_db.connect() as conn:
+                    conn.execute(DDL(f"CREATE DATABASE {db_name}"))
+                    logger.info(f"Database {db_name} successfully created")
+            except SQLAlchemyError as e:
+                logger.error(f"Failed to create database {db_name}: {e}")
+                raise
+        else:
+            logger.error(f"Error connecting to database {db_name}: {oe}")
+            raise
 
 
 @dataclass
