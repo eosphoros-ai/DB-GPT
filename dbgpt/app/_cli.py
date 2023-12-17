@@ -210,7 +210,8 @@ def clean(
 @add_migration_options
 def list(alembic_ini_path: str, script_location: str):
     """List all versions in the migration history, marking the current one"""
-    raise Exception("TODO: dbgpt/app/dbgpt_server.py")
+    from alembic.script import ScriptDirectory
+
     from alembic.runtime.migration import MigrationContext
 
     alembic_cfg, db_manager = _get_migration_config(alembic_ini_path, script_location)

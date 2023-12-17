@@ -10,7 +10,6 @@ from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.util.parameter_utils import BaseParameters
 
-from dbgpt.util._db_migration_utils import _ddl_init_and_upgrade
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -92,10 +91,16 @@ def _initialize_db_storage(param: "WebServerParameters"):
 
     Now just support sqlite and mysql. If db type is sqlite, the db path is `pilot/meta_data/{db_name}.db`.
     """
+    # Import all models to make sure they are registered with SQLAlchemy.
+    from dbgpt.app.initialization.db_model_initialization import _MODELS
+
     default_meta_data_path = _initialize_db(
         try_to_create_db=not param.disable_alembic_upgrade
     )
-    _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
+    if not param.disable_alembic_upgrade:
+        from dbgpt.util._db_migration_utils import _ddl_init_and_upgrade
+
+        _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
 
 
 def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
