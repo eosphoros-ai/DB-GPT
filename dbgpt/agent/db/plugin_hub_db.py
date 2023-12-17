@@ -11,10 +11,6 @@ char_set_sql = DDL("ALTER TABLE plugin_hub CONVERT TO CHARACTER SET utf8mb4")
 
 class PluginHubEntity(Model):
     __tablename__ = "plugin_hub"
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     id = Column(
         Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
     )

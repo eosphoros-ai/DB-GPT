@@ -7,10 +7,6 @@ from dbgpt.storage.metadata import BaseDao, Model
 
 class MyPluginEntity(Model):
     __tablename__ = "my_plugin"
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     id = Column(Integer, primary_key=True, comment="autoincrement id")
     tenant = Column(String(255), nullable=True, comment="user's tenant")
     user_code = Column(String(255), nullable=False, comment="user code")

@@ -9,10 +9,6 @@ from dbgpt.app.openapi.api_v1.feedback.feed_back_model import FeedBackBody
 
 class ChatFeedBackEntity(Model):
     __tablename__ = "chat_feed_back"
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     id = Column(Integer, primary_key=True)
     conv_uid = Column(String(128))
     conv_index = Column(Integer)

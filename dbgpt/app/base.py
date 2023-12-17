@@ -112,7 +112,13 @@ def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
     os.makedirs(default_meta_data_path, exist_ok=True)
     if CFG.LOCAL_DB_TYPE == "mysql":
-        db_url = f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:{urlquote(CFG.LOCAL_DB_PASSWORD)}@{CFG.LOCAL_DB_HOST}:{str(CFG.LOCAL_DB_PORT)}/{db_name}"
+        db_url = (
+            f"mysql+pymysql://{quote(CFG.LOCAL_DB_USER)}:"
+            f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
+            f"{CFG.LOCAL_DB_HOST}:"
+            f"{str(CFG.LOCAL_DB_PORT)}/"
+            f"{db_name}?charset=utf8mb4&collation=utf8mb4_unicode_ci"
+        )
         # Try to create database, if failed, will raise exception
         _create_mysql_database(db_name, db_url, try_to_create_db)
     else:
@@ -161,7 +167,11 @@ def _create_mysql_database(db_name: str, db_url: str, try_to_create_db: bool = F
                 no_db_name_url = db_url.rsplit("/", 1)[0]
                 engine_no_db = create_engine(no_db_name_url)
                 with engine_no_db.connect() as conn:
-                    conn.execute(DDL(f"CREATE DATABASE {db_name}"))
+                    conn.execute(
+                        DDL(
+                            f"CREATE DATABASE {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+                        )
+                    )
                     logger.info(f"Database {db_name} successfully created")
             except SQLAlchemyError as e:
                 logger.error(f"Failed to create database {db_name}: {e}")

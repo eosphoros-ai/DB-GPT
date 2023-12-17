@@ -10,10 +10,6 @@ CFG = Config()
 
 class KnowledgeDocumentEntity(Model):
     __tablename__ = "knowledge_document"
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     id = Column(Integer, primary_key=True)
     doc_name = Column(String(100))
     doc_type = Column(String(100))

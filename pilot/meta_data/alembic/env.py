@@ -33,9 +33,10 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    engine = db.engine
     target_metadata = db.metadata
-    url = config.get_main_option(engine.url)
+    url = config.get_main_option("sqlalchemy.url")
+    assert target_metadata is not None
+    assert url is not None
     context.configure(
         url=url,
         target_metadata=target_metadata,
