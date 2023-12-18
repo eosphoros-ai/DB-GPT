@@ -176,7 +176,7 @@ class KnowledgeDocumentDao(BaseDao):
         return updated_space.id
 
     #
-    def delete(self, query: KnowledgeDocumentEntity):
+    def raw_delete(self, query: KnowledgeDocumentEntity):
         session = self.get_raw_session()
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:

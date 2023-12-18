@@ -28,7 +28,7 @@ class MyPluginEntity(Model):
     UniqueConstraint("user_code", "name", name="uk_name")
 
 
-class MyPluginDao(BaseDao[MyPluginEntity]):
+class MyPluginDao(BaseDao):
     def add(self, engity: MyPluginEntity):
         session = self.get_raw_session()
         my_plugin = MyPluginEntity(
@@ -49,7 +49,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         session.close()
         return id
 
-    def update(self, entity: MyPluginEntity):
+    def raw_update(self, entity: MyPluginEntity):
         session = self.get_raw_session()
         updated = session.merge(entity)
         session.commit()
@@ -124,7 +124,7 @@ class MyPluginDao(BaseDao[MyPluginEntity]):
         session.close()
         return count
 
-    def delete(self, plugin_id: int):
+    def raw_delete(self, plugin_id: int):
         session = self.get_raw_session()
         if plugin_id is None:
             raise Exception("plugin_id is None")

@@ -16,6 +16,7 @@ from dbgpt.component import SystemApp
 
 from dbgpt.app.base import (
     server_init,
+    _migration_db_storage,
     WebServerParameters,
     _create_model_start_listener,
 )
@@ -75,7 +76,9 @@ app.add_middleware(
 def mount_routers(app: FastAPI):
     """Lazy import to avoid high time cost"""
     from dbgpt.app.knowledge.api import router as knowledge_router
-    from dbgpt.app.prompt.api import router as prompt_router
+
+    # from dbgpt.app.prompt.api import router as prompt_router
+    # prompt has been removed to dbgpt.serve.prompt
     from dbgpt.app.llm_manage.api import router as llm_manage_api
 
     from dbgpt.app.openapi.api_v1.api_v1 import router as api_v1
@@ -90,7 +93,7 @@ def mount_routers(app: FastAPI):
     app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
 
     app.include_router(knowledge_router, tags=["Knowledge"])
-    app.include_router(prompt_router, tags=["Prompt"])
+    # app.include_router(prompt_router, tags=["Prompt"])
 
 
 def mount_static_files(app: FastAPI):
@@ -141,8 +144,6 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
         "dbgpt", logging_level=param.log_level, logger_filename=param.log_file
     )
 
-    # Before start
-    system_app.before_start()
     model_name = param.model_name or CFG.LLM_MODEL
     param.model_name = model_name
     print(param)
@@ -154,6 +155,12 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
     mount_routers(app)
     model_start_listener = _create_model_start_listener(system_app)
     initialize_components(param, system_app, embedding_model_name, embedding_model_path)
+
+    # Before start, after initialize_components
+    # TODO: initialize_worker_manager_in_client as a component register in system_app
+    system_app.before_start()
+    # Migration db storage, so you db models must be imported before this
+    _migration_db_storage(param)
 
     model_path = CFG.LLM_MODEL_PATH or LLM_MODEL_CONFIG.get(model_name)
     if not param.light:

@@ -32,7 +32,7 @@ class PluginHubEntity(Model):
     Index("idx_q_type", "type")
 
 
-class PluginHubDao(BaseDao[PluginHubEntity]):
+class PluginHubDao(BaseDao):
     def add(self, engity: PluginHubEntity):
         session = self.get_raw_session()
         timezone = pytz.timezone("Asia/Shanghai")
@@ -52,7 +52,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         session.close()
         return id
 
-    def update(self, entity: PluginHubEntity):
+    def raw_update(self, entity: PluginHubEntity):
         session = self.get_raw_session()
         try:
             updated = session.merge(entity)
@@ -127,7 +127,7 @@ class PluginHubDao(BaseDao[PluginHubEntity]):
         session.close()
         return count
 
-    def delete(self, plugin_id: int):
+    def raw_delete(self, plugin_id: int):
         session = self.get_raw_session()
         if plugin_id is None:
             raise Exception("plugin_id is None")

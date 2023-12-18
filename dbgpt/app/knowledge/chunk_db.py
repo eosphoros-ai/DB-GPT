@@ -108,7 +108,7 @@ class DocumentChunkDao(BaseDao):
         session.close()
         return count
 
-    def delete(self, document_id: int):
+    def raw_delete(self, document_id: int):
         session = self.get_raw_session()
         if document_id is None:
             raise Exception("document_id is None")

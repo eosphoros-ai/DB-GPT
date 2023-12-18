@@ -23,6 +23,7 @@ def initialize_components(
     # Lazy import to avoid high time cost
     from dbgpt.model.cluster.controller.controller import controller
     from dbgpt.app.initialization.embedding_component import _initialize_embedding_model
+    from dbgpt.app.initialization.serve_initialization import register_serve_apps
 
     # Register global default executor factory first
     system_app.register(DefaultExecutorFactory)
@@ -42,6 +43,8 @@ def initialize_components(
     )
     _initialize_model_cache(system_app)
     _initialize_awel(system_app)
+    # Register serve apps
+    register_serve_apps(system_app)
 
 
 def _initialize_model_cache(system_app: SystemApp):

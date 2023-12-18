@@ -60,7 +60,7 @@ class ChatHistoryMessageEntity(Model):
     gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
 
 
-class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
+class ChatHistoryDao(BaseDao):
     def list_last_20(
         self, user_name: Optional[str] = None, sys_code: Optional[str] = None
     ):
@@ -77,7 +77,7 @@ class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
         session.close()
         return result
 
-    def update(self, entity: ChatHistoryEntity):
+    def raw_update(self, entity: ChatHistoryEntity):
         session = self.get_raw_session()
         try:
             updated = session.merge(entity)
@@ -97,7 +97,7 @@ class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
         finally:
             session.close()
 
-    def delete(self, conv_uid: int):
+    def raw_delete(self, conv_uid: int):
         if conv_uid is None:
             raise Exception("conv_uid is None")
         with self.session() as session:

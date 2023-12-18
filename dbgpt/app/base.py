@@ -91,15 +91,26 @@ def _initialize_db_storage(param: "WebServerParameters"):
 
     Now just support sqlite and mysql. If db type is sqlite, the db path is `pilot/meta_data/{db_name}.db`.
     """
+    _initialize_db(try_to_create_db=not param.disable_alembic_upgrade)
+
+
+def _migration_db_storage(param: "WebServerParameters"):
+    """Migration the db storage."""
     # Import all models to make sure they are registered with SQLAlchemy.
     from dbgpt.app.initialization.db_model_initialization import _MODELS
 
-    default_meta_data_path = _initialize_db(
-        try_to_create_db=not param.disable_alembic_upgrade
-    )
+    from dbgpt.configs.model_config import PILOT_PATH
+
+    default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
     if not param.disable_alembic_upgrade:
         from dbgpt.util._db_migration_utils import _ddl_init_and_upgrade
+        from dbgpt.storage.metadata.db_manager import db
 
+        # try to create all tables
+        try:
+            db.create_all()
+        except Exception as e:
+            logger.warning(f"Create all tables stored in this metadata error: {str(e)}")
         _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
 
 
@@ -136,7 +147,7 @@ def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
         "pool_recycle": 3600,
         "pool_pre_ping": True,
     }
-    initialize_db(db_url, db_name, engine_args, try_to_create_db=try_to_create_db)
+    initialize_db(db_url, db_name, engine_args)
     return default_meta_data_path
 
 

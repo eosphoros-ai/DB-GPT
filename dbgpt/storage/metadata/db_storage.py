@@ -103,7 +103,8 @@ class SQLAlchemyStorage(StorageInterface[T, BaseModel]):
         with self.session() as session:
             query = session.query(self._model_class)
             for key, value in spec.conditions.items():
-                query = query.filter(getattr(self._model_class, key) == value)
+                if value is not None:
+                    query = query.filter(getattr(self._model_class, key) == value)
             if spec.limit is not None:
                 query = query.limit(spec.limit)
             if spec.offset is not None:
@@ -124,5 +125,6 @@ class SQLAlchemyStorage(StorageInterface[T, BaseModel]):
         with self.session() as session:
             query = session.query(self._model_class)
             for key, value in spec.conditions.items():
-                query = query.filter(getattr(self._model_class, key) == value)
+                if value is not None:
+                    query = query.filter(getattr(self._model_class, key) == value)
             return query.count()

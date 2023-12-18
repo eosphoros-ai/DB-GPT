@@ -28,7 +28,7 @@ class ConnectConfigEntity(Model):
     )
 
 
-class ConnectConfigDao(BaseDao[ConnectConfigEntity]):
+class ConnectConfigDao(BaseDao):
     """db connect config dao"""
 
     def update(self, entity: ConnectConfigEntity):
