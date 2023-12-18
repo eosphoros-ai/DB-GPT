@@ -21,7 +21,6 @@ class Serve(BaseComponent):
         self._system_app = None
         self._api_prefix = api_prefix
         self._tags = tags
-        super().__init__(system_app)
 
     def init_app(self, system_app: SystemApp):
         self._system_app = system_app
