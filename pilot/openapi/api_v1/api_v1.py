@@ -392,6 +392,9 @@ async def share_dialogue(conv_uid: str):
 
 @router.get("/v1/chat/dialogue/messages/history", response_model=Result[MessageVo])
 async def dialogue_history_messages(con_uid: str, share_id: str = None, user_token: UserRequest = Depends(get_user_from_headers)):
+    ch: ChatHistoryEntity = chat_history_dao.get_by_uid(conv_uid=con_uid)
+    if ch is None:
+        return Result.succ([])
     chat_history: ChatHistoryEntity = chat_history_dao.get_by_uid_and_user(conv_uid=con_uid, user_name=user_token.user_id, share_id=share_id)
     if chat_history is None:
         return Result.failed(code="E000X", msg=f"You don't have permission of current dialogue.")
