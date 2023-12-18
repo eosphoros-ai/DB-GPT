@@ -655,6 +655,11 @@ class StorageConversation(OnceConversation, StorageItem):
         super().__init__(chat_mode, user_name, sys_code, summary, **kwargs)
         self.conv_uid = conv_uid
         self._message_ids = message_ids
+        # Record the message index last time saved to the storage,
+        # next time save messages which index is _has_stored_message_index + 1
+        self._has_stored_message_index = (
+            len(kwargs["messages"]) - 1 if "messages" in kwargs else -1
+        )
         self.save_message_independent = save_message_independent
         self._id = ConversationIdentifier(conv_uid)
         if conv_storage is None:
@@ -695,7 +700,9 @@ class StorageConversation(OnceConversation, StorageItem):
         self._message_ids = [
             message.identifier.str_identifier for message in message_list
         ]
-        self.message_storage.save_list(message_list)
+        messages_to_save = message_list[self._has_stored_message_index + 1 :]
+        self._has_stored_message_index = len(message_list) - 1
+        self.message_storage.save_list(messages_to_save)
         # Save conversation
         self.conv_storage.save_or_update(self)
 
@@ -729,6 +736,7 @@ class StorageConversation(OnceConversation, StorageItem):
         messages = [message.to_message() for message in message_list]
         conversation.messages = messages
         self._message_ids = message_ids
+        self._has_stored_message_index = len(messages) - 1
         self.from_conversation(conversation)
 
 

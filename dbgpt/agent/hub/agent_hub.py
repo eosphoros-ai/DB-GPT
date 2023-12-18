@@ -159,7 +159,7 @@ class AgentHub:
                 plugin_hub_info.name = git_plugin._name
                 plugin_hub_info.version = git_plugin._version
                 plugin_hub_info.description = git_plugin._description
-                self.hub_dao.update(plugin_hub_info)
+                self.hub_dao.raw_update(plugin_hub_info)
         except Exception as e:
             raise ValueError(f"Update Agent Hub Db Info Faild!{str(e)}")
 
@@ -194,7 +194,7 @@ class AgentHub:
             my_plugin_entiy.user_name = user
             my_plugin_entiy.tenant = ""
             my_plugin_entiy.file_name = doc_file.filename
-            self.my_plugin_dao.update(my_plugin_entiy)
+            self.my_plugin_dao.raw_update(my_plugin_entiy)
 
     def reload_my_plugins(self):
         logger.info(f"load_plugins start!")

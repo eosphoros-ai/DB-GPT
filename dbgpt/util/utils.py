@@ -6,7 +6,6 @@ import logging.handlers
 from typing import Any, List
 
 import os
-import sys
 import asyncio
 
 from dbgpt.configs.model_config import LOGDIR
@@ -80,17 +79,6 @@ def _build_logger(logger_name, logging_level=None, logger_filename: str = None):
     if not logging.getLogger().handlers:
         setup_logging_level(logging_level=logging_level)
     logging.getLogger().handlers[0].setFormatter(formatter)
-
-    # Redirect stdout and stderr to loggers
-    # stdout_logger = logging.getLogger("stdout")
-    # stdout_logger.setLevel(logging.INFO)
-    # sl_1 = StreamToLogger(stdout_logger, logging.INFO)
-    # sys.stdout = sl_1
-    #
-    # stderr_logger = logging.getLogger("stderr")
-    # stderr_logger.setLevel(logging.ERROR)
-    # sl = StreamToLogger(stderr_logger, logging.ERROR)
-    # sys.stderr = sl
 
     # Add a file handler for all loggers
     if handler is None and logger_filename:

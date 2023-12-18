@@ -13,10 +13,6 @@ CFG = Config()
 
 class PromptManageEntity(Model):
     __tablename__ = "prompt_manage"
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     id = Column(Integer, primary_key=True)
     chat_scene = Column(String(100))
     sub_chat_scene = Column(String(100))
