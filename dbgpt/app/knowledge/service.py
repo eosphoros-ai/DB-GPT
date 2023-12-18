@@ -287,8 +287,8 @@ class KnowledgeService:
                 text_splitter=text_splitter,
                 embedding_factory=embedding_factory,
             )
-            from dbgpt.serve.rag.assembler.base import EmbeddingAssembler
-            from dbgpt.rag.knowledge import KnowledgeFactory
+            from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
+            from dbgpt.rag.knowledge.factory import KnowledgeFactory
 
             knowledge = KnowledgeFactory.from_file_path(
                 file_path=doc.content, knowledge_type=KnowledgeType.DOCUMENT
