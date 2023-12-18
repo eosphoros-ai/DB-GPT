@@ -108,12 +108,24 @@ def migrate(alembic_ini_path: str, script_location: str, message: str):
 
 @migration.command()
 @add_migration_options
-def upgrade(alembic_ini_path: str, script_location: str):
+@click.option(
+    "--sql-output",
+    type=str,
+    default=None,
+    help="Generate SQL script for migration instead of applying it. ex: --sql-output=upgrade.sql",
+)
+def upgrade(alembic_ini_path: str, script_location: str, sql_output: str):
     """Upgrade database to target version"""
-    from dbgpt.util._db_migration_utils import upgrade_database
+    from dbgpt.util._db_migration_utils import (
+        upgrade_database,
+        generate_sql_for_upgrade,
+    )
 
     alembic_cfg, db_manager = _get_migration_config(alembic_ini_path, script_location)
-    upgrade_database(alembic_cfg, db_manager.engine)
+    if sql_output:
+        generate_sql_for_upgrade(alembic_cfg, db_manager.engine, output_file=sql_output)
+    else:
+        upgrade_database(alembic_cfg, db_manager.engine)
 
 
 @migration.command()
@@ -199,6 +211,7 @@ def clean(
 def list(alembic_ini_path: str, script_location: str):
     """List all versions in the migration history, marking the current one"""
     from alembic.script import ScriptDirectory
+
     from alembic.runtime.migration import MigrationContext
 
     alembic_cfg, db_manager = _get_migration_config(alembic_ini_path, script_location)
@@ -259,8 +272,8 @@ def _get_migration_config(
     from dbgpt.storage.metadata.db_manager import db as db_manager
     from dbgpt.util._db_migration_utils import create_alembic_config
 
-    # Must import dbgpt_server for initialize db metadata
-    from dbgpt.app.dbgpt_server import initialize_app as _
+    # Import all models to make sure they are registered with SQLAlchemy.
+    from dbgpt.app.initialization.db_model_initialization import _MODELS
     from dbgpt.app.base import _initialize_db
 
     # initialize db

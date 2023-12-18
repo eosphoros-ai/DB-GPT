@@ -367,9 +367,9 @@ class KnowledgeService:
         # delete chunks
         documents = knowledge_document_dao.get_documents(document_query)
         for document in documents:
-            document_chunk_dao.delete(document.id)
+            document_chunk_dao.raw_delete(document.id)
         # delete documents
-        knowledge_document_dao.delete(document_query)
+        knowledge_document_dao.raw_delete(document_query)
         # delete space
         return knowledge_space_dao.delete_knowledge_space(space)
 
@@ -395,9 +395,9 @@ class KnowledgeService:
             # delete vector by ids
             vector_client.delete_by_ids(vector_ids)
         # delete chunks
-        document_chunk_dao.delete(documents[0].id)
+        document_chunk_dao.raw_delete(documents[0].id)
         # delete document
-        return knowledge_document_dao.delete(document_query)
+        return knowledge_document_dao.raw_delete(document_query)
 
     def get_document_chunks(self, request: ChunkQueryRequest):
         """get document chunks
