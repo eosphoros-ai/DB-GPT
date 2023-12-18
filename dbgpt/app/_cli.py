@@ -272,8 +272,8 @@ def _get_migration_config(
     from dbgpt.storage.metadata.db_manager import db as db_manager
     from dbgpt.util._db_migration_utils import create_alembic_config
 
-    # Must import dbgpt_server for initialize db metadata
-    from dbgpt.app.dbgpt_server import initialize_app as _
+    # Import all models to make sure they are registered with SQLAlchemy.
+    from dbgpt.app.initialization.db_model_initialization import _MODELS
     from dbgpt.app.base import _initialize_db
 
     # initialize db

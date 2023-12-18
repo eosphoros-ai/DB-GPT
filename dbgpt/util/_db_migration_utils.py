@@ -77,8 +77,13 @@ def create_migration_script(
         current_rev = context.get_current_revision()
         head_rev = script_dir.get_current_head()
 
+    logger.info(
+        f"alembic migration current revision: {current_rev}, latest revision: {head_rev}"
+    )
     should_create_revision = (
-        current_rev != head_rev or create_new_revision_if_noting_to_update
+        (current_rev is None and head_rev is None)
+        or current_rev != head_rev
+        or create_new_revision_if_noting_to_update
     )
     if should_create_revision:
         with engine.connect() as connection:
@@ -265,6 +270,7 @@ def _check_database_migration_status(alembic_cfg: AlembicConfig, engine: Engine)
     if current_rev != head_rev:
         logger.error(
             "Database is not at the latest revision. "
+            f"Current revision: {current_rev}, latest revision: {head_rev}\n"
             "Please apply existing migration scripts before generating new ones. "
             "Check the listed file paths for migration scripts.\n"
             f"Also you can try the following solutions:\n{_MIGRATION_SOLUTION}\n"
@@ -353,8 +359,9 @@ def _ddl_init_and_upgrade(
     try:
         latest_revision_before = _get_latest_revision(alembic_cfg, db.engine)
         # create_new_revision_if_noting_to_update=False avoid creating a lot of empty migration scripts
+        # TODO Set create_new_revision_if_noting_to_update=False, not working now.
         new_script_path = create_migration_script(
-            alembic_cfg, db.engine, create_new_revision_if_noting_to_update=False
+            alembic_cfg, db.engine, create_new_revision_if_noting_to_update=True
         )
         upgrade_database(alembic_cfg, db.engine)
     except CommandError as e:

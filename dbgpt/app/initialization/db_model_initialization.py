@@ -8,6 +8,7 @@ from dbgpt.app.knowledge.space_db import KnowledgeSpaceEntity
 from dbgpt.app.openapi.api_v1.feedback.feed_back_db import ChatFeedBackEntity
 
 # from dbgpt.app.prompt.prompt_manage_db import PromptManageEntity
+from dbgpt.serve.prompt.models.models import ServeEntity as PromptManageEntity
 from dbgpt.datasource.manages.connect_config_db import ConnectConfigEntity
 from dbgpt.storage.chat_history.chat_history_db import (
     ChatHistoryEntity,
@@ -17,7 +18,7 @@ from dbgpt.storage.chat_history.chat_history_db import (
 _MODELS = [
     PluginHubEntity,
     MyPluginEntity,
-    # PromptManageEntity,
+    PromptManageEntity,
     KnowledgeSpaceEntity,
     KnowledgeDocumentEntity,
     DocumentChunkEntity,
