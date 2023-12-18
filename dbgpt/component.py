@@ -7,6 +7,7 @@ from enum import Enum
 import logging
 import asyncio
 from dbgpt.util.annotations import PublicAPI
+from dbgpt.util import AppConfig
 
 # Checking for type hints during runtime
 if TYPE_CHECKING:
@@ -87,16 +88,26 @@ _EMPTY_DEFAULT_COMPONENT = "_EMPTY_DEFAULT_COMPONENT"
 class SystemApp(LifeCycle):
     """Main System Application class that manages the lifecycle and registration of components."""
 
-    def __init__(self, asgi_app: Optional["FastAPI"] = None) -> None:
+    def __init__(
+        self,
+        asgi_app: Optional["FastAPI"] = None,
+        app_config: Optional[AppConfig] = None,
+    ) -> None:
         self.components: Dict[
             str, BaseComponent
         ] = {}  # Dictionary to store registered components.
         self._asgi_app = asgi_app
+        self._app_config = app_config or AppConfig()
 
     @property
     def app(self) -> Optional["FastAPI"]:
         """Returns the internal ASGI app."""
         return self._asgi_app
+
+    @property
+    def config(self) -> AppConfig:
+        """Returns the internal AppConfig."""
+        return self._app_config
 
     def register(self, component: Type[BaseComponent], *args, **kwargs) -> T:
         """Register a new component by its type.

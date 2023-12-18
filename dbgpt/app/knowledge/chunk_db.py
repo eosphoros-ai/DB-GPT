@@ -11,10 +11,6 @@ CFG = Config()
 
 class DocumentChunkEntity(Model):
     __tablename__ = "document_chunk"
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     id = Column(Integer, primary_key=True)
     document_id = Column(Integer)
     doc_name = Column(String(100))
@@ -112,7 +108,7 @@ class DocumentChunkDao(BaseDao):
         session.close()
         return count
 
-    def delete(self, document_id: int):
+    def raw_delete(self, document_id: int):
         session = self.get_raw_session()
         if document_id is None:
             raise Exception("document_id is None")

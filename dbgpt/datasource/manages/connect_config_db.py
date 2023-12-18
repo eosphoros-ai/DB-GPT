@@ -25,11 +25,10 @@ class ConnectConfigEntity(Model):
     __table_args__ = (
         UniqueConstraint("db_name", name="uk_db"),
         Index("idx_q_db_type", "db_type"),
-        {"mysql_charset": "utf8mb4", "mysql_collate": "utf8mb4_unicode_ci"},
     )
 
 
-class ConnectConfigDao(BaseDao[ConnectConfigEntity]):
+class ConnectConfigDao(BaseDao):
     """db connect config dao"""
 
     def update(self, entity: ConnectConfigEntity):
