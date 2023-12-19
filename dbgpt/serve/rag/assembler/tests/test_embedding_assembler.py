@@ -40,20 +40,29 @@ def mock_db_connection():
 def mock_chunk_parameters():
     return MagicMock(spec=ChunkParameters)
 
+
 @pytest.fixture
 def mock_embedding_factory():
     return MagicMock(spec=EmbeddingFactory)
 
+
 @pytest.fixture
 def mock_vector_store_connector():
     return MagicMock(spec=VectorStoreConnector)
+
 
 @pytest.fixture
 def mock_knowledge():
     return MagicMock(spec=Knowledge)
 
 
-def test_load_knowledge(mock_db_connection, mock_knowledge, mock_chunk_parameters, mock_embedding_factory, mock_vector_store_connector):
+def test_load_knowledge(
+    mock_db_connection,
+    mock_knowledge,
+    mock_chunk_parameters,
+    mock_embedding_factory,
+    mock_vector_store_connector,
+):
     mock_chunk_parameters.chunk_strategy = "CHUNK_BY_SIZE"
     mock_chunk_parameters.text_splitter = CharacterTextSplitter()
     mock_chunk_parameters.splitter_type = SplitterType.USER_DEFINE
@@ -61,14 +70,14 @@ def test_load_knowledge(mock_db_connection, mock_knowledge, mock_chunk_parameter
         connection=mock_db_connection,
         chunk_parameters=mock_chunk_parameters,
         embedding_factory=mock_embedding_factory,
-        vector_store_connector=mock_vector_store_connector
+        vector_store_connector=mock_vector_store_connector,
     )
     assembler.load_knowledge(knowledge=mock_knowledge)
     assert len(assembler._chunks) == 1
 
 
 def test_get_chunks(mock_db_connection, mock_chunk_parameters):
-    test_chunks = ['chunk1', 'chunk2', 'chunk3']
+    test_chunks = ["chunk1", "chunk2", "chunk3"]
 
     assembler = DBStructAssembler.load_from_connection(
         connection=mock_db_connection,

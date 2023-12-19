@@ -8,6 +8,7 @@ from dbgpt.rag.embedding_engine.embeddings import HuggingFaceEmbeddings
 if TYPE_CHECKING:
     from dbgpt.rag.embedding_engine.embeddings import Embeddings
 
+
 class EmbeddingFactory(BaseComponent, ABC):
     name = "embedding_factory"
 

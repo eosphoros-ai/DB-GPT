@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import math
-from typing import Optional, Callable, List
+from typing import Optional, Callable, List, Any
 
 from pydantic import Field, BaseModel
 
@@ -22,7 +22,7 @@ class VectorStoreConfig(BaseModel):
         default=None,
         description="The password of vector store, if not set, will use the default password.",
     )
-    embedding_fn: Optional[Callable] = Field(
+    embedding_fn: Optional[Any] = Field(
         default=None,
         description="The embedding function of vector store, if not set, will use the default embedding function.",
     )

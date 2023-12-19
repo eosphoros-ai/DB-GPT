@@ -53,6 +53,7 @@ class DBSummaryClient:
             vector_store_config=vector_store_config,
         )
         from dbgpt.rag.retriever.db_struct import DBStructRetriever
+
         retriever = DBStructRetriever(
             top_k=topk, vector_store_connector=vector_connector
         )

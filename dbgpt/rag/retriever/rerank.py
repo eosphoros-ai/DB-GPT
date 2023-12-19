@@ -35,10 +35,10 @@ class Ranker(ABC):
         )
         visited_docs = set()
         new_candidates = []
-        for candidate_doc in candidates_with_scores:
-            if candidate_doc.content not in visited_docs:
-                new_candidates.append(candidate_doc)
-                visited_docs.add(candidate_doc.content)
+        for candidate_chunk in candidates_with_scores:
+            if candidate_chunk.content not in visited_docs:
+                new_candidates.append(candidate_chunk)
+                visited_docs.add(candidate_chunk.content)
         return new_candidates
 
 

@@ -9,9 +9,7 @@ async def main():
     pdf_path = "../../../DB-GPT/docs/docs/awel.md"
     knowledge = KnowledgeFactory.from_file_path(pdf_path)
     embedding_model_path = "{your_embedding_model_path}"
-    chunk_parameters = ChunkParameters(
-        chunk_strategy="CHUNK_BY_SIZE"
-    )
+    chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
     #
     assembler = EmbeddingAssembler.load_from_knowledge(
         knowledge=knowledge,
