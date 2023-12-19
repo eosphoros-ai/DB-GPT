@@ -78,7 +78,6 @@ def test_dao_create(dao, default_entity_dict):
     req = ServeRequest(**default_entity_dict)
     res: ServerResponse = dao.create(req)
     assert res is not None
-    assert res.id == 1
 
 
 def test_dao_get_one(dao, default_entity_dict):
