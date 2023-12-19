@@ -77,8 +77,6 @@ def mount_routers(app: FastAPI):
     """Lazy import to avoid high time cost"""
     from dbgpt.app.knowledge.api import router as knowledge_router
 
-    # from dbgpt.app.prompt.api import router as prompt_router
-    # prompt has been removed to dbgpt.serve.prompt
     from dbgpt.app.llm_manage.api import router as llm_manage_api
 
     from dbgpt.app.openapi.api_v1.api_v1 import router as api_v1
@@ -93,7 +91,6 @@ def mount_routers(app: FastAPI):
     app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
 
     app.include_router(knowledge_router, tags=["Knowledge"])
-    # app.include_router(prompt_router, tags=["Prompt"])
 
 
 def mount_static_files(app: FastAPI):

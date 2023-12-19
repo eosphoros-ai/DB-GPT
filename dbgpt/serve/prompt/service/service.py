@@ -13,10 +13,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
 
     name = SERVE_SERVICE_COMPONENT_NAME
 
-    def __init__(self, system_app: SystemApp):
+    def __init__(self, system_app: SystemApp, dao: Optional[ServeDao] = None):
         self._system_app = None
         self._serve_config: ServeConfig = None
-        self._dao: ServeDao = None
+        self._dao: ServeDao = dao
         super().__init__(system_app)
 
     def init_app(self, system_app: SystemApp) -> None:
@@ -28,7 +28,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self._serve_config = ServeConfig.from_app_config(
             system_app.config, SERVE_CONFIG_KEY_PREFIX
         )
-        self._dao = ServeDao(self._serve_config)
+        self._dao = self._dao or ServeDao(self._serve_config)
         self._system_app = system_app
 
     @property
@@ -40,6 +40,22 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def config(self) -> ServeConfig:
         """Returns the internal ServeConfig."""
         return self._serve_config
+
+    def create(self, request: ServeRequest) -> ServerResponse:
+        """Create a new Prompt entity
+
+        Args:
+            request (ServeRequest): The request
+
+        Returns:
+            ServerResponse: The response
+        """
+
+        if not request.user_name:
+            request.user_name = self.config.default_user
+        if not request.sys_code:
+            request.sys_code = self.config.default_sys_code
+        return super().create(request)
 
     def update(self, request: ServeRequest) -> ServerResponse:
         """Update a Prompt entity

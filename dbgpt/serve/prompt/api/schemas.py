@@ -1,73 +1,78 @@
 # Define your Pydantic schemas here
 from typing import Optional
 from dbgpt._private.pydantic import BaseModel, Field
+from ..config import SERVE_APP_NAME_HUMP
 
 
 class ServeRequest(BaseModel):
     """Prompt request model"""
 
-    chat_scene: Optional[str] = None
-    """
-    The chat scene, e.g. chat_with_db_execute, chat_excel, chat_with_db_qa.
-    """
+    class Config:
+        title = f"ServeRequest for {SERVE_APP_NAME_HUMP}"
 
-    sub_chat_scene: Optional[str] = None
-    """
-    The sub chat scene.
-    """
+    chat_scene: Optional[str] = Field(
+        None,
+        description="The chat scene, e.g. chat_with_db_execute, chat_excel, chat_with_db_qa.",
+        examples=["chat_with_db_execute", "chat_excel", "chat_with_db_qa"],
+    )
 
-    prompt_type: Optional[str] = None
-    """
-    The prompt type, either common or private.
-    """
+    sub_chat_scene: Optional[str] = Field(
+        None,
+        description="The sub chat scene.",
+        examples=["sub_scene_1", "sub_scene_2", "sub_scene_3"],
+    )
 
-    content: Optional[str] = None
-    """
-    The prompt content.
-    """
+    prompt_type: Optional[str] = Field(
+        None,
+        description="The prompt type, either common or private.",
+        examples=["common", "private"],
+    )
+    prompt_name: Optional[str] = Field(
+        None,
+        description="The prompt name.",
+        examples=["code_assistant", "joker", "data_analysis_expert"],
+    )
+    content: Optional[str] = Field(
+        None,
+        description="The prompt content.",
+        examples=[
+            "Write a qsort function in python",
+            "Tell me a joke about AI",
+            "You are a data analysis expert.",
+        ],
+    )
 
-    user_name: Optional[str] = None
-    """
-    The user name.
-    """
+    user_name: Optional[str] = Field(
+        None,
+        description="The user name.",
+        examples=["zhangsan", "lisi", "wangwu"],
+    )
 
-    sys_code: Optional[str] = None
-    """
-    System code
-    """
-
-    prompt_name: Optional[str] = None
-    """
-    The prompt name.
-    """
+    sys_code: Optional[str] = Field(
+        None,
+        description="The system code.",
+        examples=["dbgpt", "auth_manager", "data_platform"],
+    )
 
 
-class ServerResponse(BaseModel):
+class ServerResponse(ServeRequest):
     """Prompt response model"""
 
-    id: int = None
-    """chat_scene: for example: chat_with_db_execute, chat_excel, chat_with_db_qa"""
+    class Config:
+        title = f"ServerResponse for {SERVE_APP_NAME_HUMP}"
 
-    chat_scene: str = None
-
-    """sub_chat_scene: sub chat scene"""
-    sub_chat_scene: str = None
-
-    """prompt_type: common or private"""
-    prompt_type: str = None
-
-    """content: prompt content"""
-    content: str = None
-
-    """user_name: user name"""
-    user_name: str = None
-
-    sys_code: Optional[str] = None
-    """
-    System code
-    """
-
-    """prompt_name: prompt name"""
-    prompt_name: str = None
-    gmt_created: str = None
-    gmt_modified: str = None
+    id: Optional[int] = Field(
+        None,
+        description="The prompt id.",
+        examples=[1, 2, 3],
+    )
+    gmt_created: Optional[str] = Field(
+        None,
+        description="The prompt created time.",
+        examples=["2021-08-01 12:00:00", "2021-08-01 12:00:01", "2021-08-01 12:00:02"],
+    )
+    gmt_modified: Optional[str] = Field(
+        None,
+        description="The prompt modified time.",
+        examples=["2021-08-01 12:00:00", "2021-08-01 12:00:01", "2021-08-01 12:00:02"],
+    )
