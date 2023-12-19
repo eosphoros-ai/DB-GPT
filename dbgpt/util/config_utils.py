@@ -3,8 +3,8 @@ from typing import Any, Dict, Optional
 
 
 class AppConfig:
-    def __init__(self):
-        self.configs = {}
+    def __init__(self, configs: Optional[Dict[str, Any]] = None) -> None:
+        self.configs = configs or {}
 
     def set(self, key: str, value: Any) -> None:
         """Set config value by key

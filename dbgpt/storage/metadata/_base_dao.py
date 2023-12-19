@@ -153,7 +153,8 @@ class BaseDao(Generic[T, REQ, RES]):
             if entry is None:
                 raise Exception("Invalid request")
             for key, value in update_request.dict().items():
-                setattr(entry, key, value)
+                if value is not None:
+                    setattr(entry, key, value)
             session.merge(entry)
             return self.get_one(self.to_request(entry))
 
