@@ -161,6 +161,10 @@ const sidebars = {
               type: 'doc',
               id: 'application/fine_tuning_manual/text_to_sql',
             },
+            {
+              type: 'doc',
+              id: 'application/fine_tuning_manual/dbgpt_hub',
+            },
           ],
         },
       ],
@@ -224,10 +228,6 @@ const sidebars = {
           type: 'doc',
           id: 'faq/kbqa',
         }
-        ,{
-          type: 'doc',
-          id: 'faq/chatdata',
-        },
       ],
     },
     
