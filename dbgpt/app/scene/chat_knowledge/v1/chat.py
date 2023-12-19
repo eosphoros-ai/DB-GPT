@@ -18,7 +18,6 @@ from dbgpt.app.knowledge.document_db import (
 )
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
 
 CFG = Config()
@@ -37,7 +36,6 @@ class ChatKnowledge(BaseChat):
             - model_name:(str) llm model name
             - select_param:(str) space name
         """
-        from dbgpt.rag.embedding_engine.embedding_engine import EmbeddingEngine
         from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
 
         self.knowledge_space = chat_param["select_param"]
@@ -61,25 +59,17 @@ class ChatKnowledge(BaseChat):
             if self.space_context is None or self.space_context.get("prompt") is None
             else int(self.space_context["prompt"]["max_token"])
         )
-        vector_store_config = {
-            "vector_store_name": self.knowledge_space,
-            "vector_store_type": CFG.VECTOR_STORE_TYPE,
-        }
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
-        # self.knowledge_embedding_client = EmbeddingEngine(
-        #     model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-        #     vector_store_config=vector_store_config,
-        #     embedding_factory=embedding_factory,
-        # )
         from dbgpt.rag.retriever.embedding import EmbeddingRetriever
         from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
         embedding_fn = embedding_factory.create(
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
-        config = ChromaVectorConfig(
+        from dbgpt.storage.vector_store.base import VectorStoreConfig
+        config = VectorStoreConfig(
             persist_path=PILOT_PATH + "/data",
             name=self.knowledge_space,
         )
@@ -142,7 +132,6 @@ class ChatKnowledge(BaseChat):
             print("rewrite queries:", queries)
         queries.append(self.current_user_input)
         from dbgpt._private.chat_util import run_async_tasks
-
         # similarity search from vector db
         tasks = [self.execute_similar_search(query) for query in queries]
         docs_with_scores = await run_async_tasks(tasks=tasks, concurrency_limit=1)

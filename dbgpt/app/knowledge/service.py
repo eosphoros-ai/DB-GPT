@@ -8,7 +8,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt._private.config import Config
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
-    KNOWLEDGE_UPLOAD_ROOT_PATH,
+    KNOWLEDGE_UPLOAD_ROOT_PATH, PILOT_PATH,
 )
 from dbgpt.component import ComponentType
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
@@ -193,15 +193,12 @@ class KnowledgeService:
             - space: Knowledge Space Name
             - sync_request: DocumentSyncRequest
         """
-        from dbgpt.rag.embedding_engine.embedding_engine import EmbeddingEngine
         from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
         from dbgpt.rag.text_splitter.pre_text_splitter import PreTextSplitter
         from langchain.text_splitter import (
             RecursiveCharacterTextSplitter,
             SpacyTextSplitter,
         )
-
-        # import langchain is very very slow!!!
 
         doc_ids = sync_request.doc_ids
         self.model_name = sync_request.model_name or CFG.LLM_MODEL
@@ -276,17 +273,20 @@ class KnowledgeService:
             embedding_factory = CFG.SYSTEM_APP.get_component(
                 "embedding_factory", EmbeddingFactory
             )
-            client = EmbeddingEngine(
-                knowledge_source=doc.content,
-                knowledge_type=doc.doc_type.upper(),
-                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-                vector_store_config={
-                    "vector_store_name": space_name,
-                    "vector_store_type": CFG.VECTOR_STORE_TYPE,
-                },
-                text_splitter=text_splitter,
-                embedding_factory=embedding_factory,
+            embedding_fn = embedding_factory.create(
+                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
             )
+            from dbgpt.storage.vector_store.base import VectorStoreConfig
+            config = VectorStoreConfig(
+                persist_path=PILOT_PATH + "/data",
+                name=space_name,
+            )
+            config.embedding_fn = embedding_fn
+            vector_store_connector = VectorStoreConnector(
+                vector_store_type=CFG.VECTOR_STORE_TYPE,
+                vector_store_config=config,
+            )
+
             from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
             from dbgpt.rag.knowledge.factory import KnowledgeFactory
 
@@ -296,7 +296,7 @@ class KnowledgeService:
             assembler = EmbeddingAssembler.load_from_knowledge(
                 knowledge=knowledge,
                 chunk_parameters=chunk_parameters,
-                embedding_model=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+                vector_store_connector=vector_store_connector
             )
             chunk_docs = assembler.get_chunks()
             # update document status

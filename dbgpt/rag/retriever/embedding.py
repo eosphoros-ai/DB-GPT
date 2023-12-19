@@ -99,6 +99,7 @@ class EmbeddingRetriever(BaseRetriever):
         )
 
     async def _similarity_search_with_score(self, query, score_threshold):
+        """Similar search with score."""
         return self._vector_store_connector.similar_search_with_scores(
             query, self._top_k, score_threshold
         )

@@ -108,13 +108,18 @@ def document_add(space_name: str, request: KnowledgeDocumentRequest):
 def chunk_strategies():
     print(f"/document/chunkstrategies:")
     try:
-        return Result.succ([{"name": strategy.name, "parameters": strategy.value[1]} for strategy in ChunkStrategy])
+        return Result.succ(
+            [
+                {"name": strategy.name, "parameters": strategy.value[1]}
+                for strategy in ChunkStrategy
+            ]
+        )
     except Exception as e:
         return Result.failed(code="E000X", msg=f"chunkstrategies error {e}")
 
 
 @router.get("/knowledge/document/types")
-def knowledge_types(document: str):
+def knowledge_types():
     print(f"/document/types")
     try:
         from dbgpt.rag.knowledge.base import KnowledgeType
@@ -122,8 +127,8 @@ def knowledge_types(document: str):
         return Result.succ(
             [
                 {
-                    "type": knowledge_type.value[0],
-                    "description": knowledge_type.value[1],
+                    "type": knowledge_type.value,
+                    "description": knowledge_type.description,
                 }
                 for knowledge_type in KnowledgeType
             ]

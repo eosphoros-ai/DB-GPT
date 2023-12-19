@@ -246,7 +246,7 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def __init__(self, separators: Optional[List[str]] = None, **kwargs: Any):
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
-        self._separators = separators or ["\n\n", "\n", " ", ""]
+        self._separators = separators or ["###", "\n", " ", ""]
 
     def split_text(
         self, text: str, separator: Optional[str] = None, **kwargs
@@ -668,7 +668,12 @@ class MarkdownHeaderTextSplitter(TextSplitter):
 class ParagraphTextSplitter(CharacterTextSplitter):
     """Implementation of splitting text that looks at paragraphs."""
 
-    def __init__(self, separator="\n", chunk_size: Optional[int] = 0, chunk_overlap: Optional[int] = 0):
+    def __init__(
+        self,
+        separator="\n",
+        chunk_size: Optional[int] = 0,
+        chunk_overlap: Optional[int] = 0,
+    ):
         self._separator = separator
         if self._separator is None:
             self._separator = "\n"
@@ -682,3 +687,25 @@ class ParagraphTextSplitter(CharacterTextSplitter):
         paragraphs = text.strip().split(self._separator)
         paragraphs = [p.strip() for p in paragraphs if p.strip() != ""]
         return paragraphs
+
+
+class SeparatorTextSplitter(CharacterTextSplitter):
+    """SeparatorTextSplitter"""
+
+    def __init__(self, separator: str = "\n\n", filters: list = [], **kwargs: Any):
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs)
+        self._separator = separator
+        self._filter = filters
+
+    def split_text(
+        self, text: str, separator: Optional[str] = None, **kwargs
+    ) -> List[str]:
+        """Split incoming text and return chunks."""
+        if separator is None:
+            separator = self._separator
+        if separator:
+            splits = text.split(separator)
+        else:
+            splits = list(text)
+        return self._merge_splits(splits, separator, chunk_overlap=0, **kwargs)

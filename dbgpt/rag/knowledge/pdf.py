@@ -27,9 +27,10 @@ class PDFKnowledge(Knowledge):
             documents = self._loader.load()
         else:
             import pypdf
+
             pages = []
             documents = []
-            with open(self._path, 'rb') as file:
+            with open(self._path, "rb") as file:
                 reader = pypdf.PdfReader(file)
                 for page_num in range(len(reader.pages)):
                     page = reader.pages[page_num]

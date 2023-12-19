@@ -1,7 +1,6 @@
 import os
-from typing import Optional, List
+from typing import Optional, List, Callable
 
-from fsspec import Callback
 
 from dbgpt.rag.chunk import Chunk
 from dbgpt.storage import vector_store
@@ -47,7 +46,7 @@ class VectorStoreConnector:
     def from_default(
         cls,
         vector_store_type: str = None,
-        embedding_fn: Callback = None,
+        embedding_fn: Optional[Callable] = None,
         vector_store_config: Optional[VectorStoreConfig] = None,
     ) -> "VectorStoreConnector":
         """initialize default vector store connector."""

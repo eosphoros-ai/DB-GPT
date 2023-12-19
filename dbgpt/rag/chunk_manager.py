@@ -93,6 +93,10 @@ class ChunkManager:
 
         raise NotImplementedError
 
+    @property
+    def chunk_parameters(self) -> ChunkParameters:
+        return self._chunk_parameters
+
     def set_text_splitter(
         self,
         text_splitter,

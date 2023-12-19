@@ -7,7 +7,7 @@ from dbgpt.rag.chunk import Chunk
 class Ranker(ABC):
     """Base Ranker"""
 
-    def __init__(self, topk: int, rank_fn: Optional[callable] = None):
+    def __init__(self, topk: int, rank_fn: Optional[callable] = None) -> None:
         """
         abstract base ranker
         Args:
@@ -17,7 +17,7 @@ class Ranker(ABC):
         self.topk = topk
         self.rank_fn = rank_fn
 
-    def rank(self, candidates_with_scores: List[Chunk]):
+    def rank(self, candidates_with_scores: List, topk: int) -> List[Chunk]:
         """rank algorithm implementation return topk documents by candidates similarity score
         Args:
             candidates_with_scores: List[Tuple]
@@ -28,17 +28,17 @@ class Ranker(ABC):
 
         pass
 
-    def _filter(self, candidates_with_scores: List):
+    def _filter(self, candidates_with_scores: List) -> List[Chunk]:
         """filter duplicate candidates documents"""
         candidates_with_scores = sorted(
             candidates_with_scores, key=lambda x: x.score, reverse=True
         )
         visited_docs = set()
         new_candidates = []
-        for candidate_chunk in candidates_with_scores:
-            if candidate_chunk.content not in visited_docs:
-                new_candidates.append(candidate_chunk)
-                visited_docs.add(candidate_chunk.content)
+        for candidate_doc in candidates_with_scores:
+            if candidate_doc.content not in visited_docs:
+                new_candidates.append(candidate_doc)
+                visited_docs.add(candidate_doc.content)
         return new_candidates
 
 
@@ -48,7 +48,7 @@ class DefaultRanker(Ranker):
     def __init__(self, topk: int, rank_fn: Optional[callable] = None):
         super().__init__(topk, rank_fn)
 
-    def rank(self, candidates_with_scores: List[Chunk]) -> List[Chunk]:
+    def rank(self, candidates_with_scores: List[Tuple]):
         """Default rank algorithm implementation
         return topk documents by candidates similarity score
         Args:
@@ -72,7 +72,7 @@ class RRFRanker(Ranker):
     def __init__(self, topk: int, rank_fn: Optional[callable] = None):
         super().__init__(topk, rank_fn)
 
-    def rank(self, candidates_with_scores: List):
+    def rank(self, candidates_with_scores: List, topk: int):
         """RRF rank algorithm implementation
         This code implements an algorithm called Reciprocal Rank Fusion (RRF), is a method for combining multiple result sets with different relevance indicators into a single result set. RRF requires no tuning, and the different relevance indicators do not have to be related to each other to achieve high-quality results.
         RRF uses the following formula to determine the score for ranking each document:

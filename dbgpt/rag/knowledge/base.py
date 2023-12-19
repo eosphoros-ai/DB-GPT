@@ -8,6 +8,7 @@ from dbgpt.rag.text_splitter.text_splitter import (
     RecursiveCharacterTextSplitter,
     MarkdownHeaderTextSplitter,
     ParagraphTextSplitter,
+    CharacterTextSplitter,
 )
 
 
@@ -38,10 +39,10 @@ class KnowledgeType(Enum):
 class ChunkStrategy(Enum):
     """chunk strategy"""
 
-    CHUNK_BY_SIZE = (RecursiveCharacterTextSplitter, ['chunk_size', 'chunk_overlap'])
+    CHUNK_BY_SIZE = (RecursiveCharacterTextSplitter, ["chunk_size", "chunk_overlap"])
     CHUNK_BY_PAGE = (RecursiveCharacterTextSplitter, [])
-    CHUNK_BY_PARAGRAPH = (ParagraphTextSplitter, ['separator'])
-    CHUNK_BY_SEPARATOR = (PreTextSplitter, ['separator'])
+    CHUNK_BY_PARAGRAPH = (ParagraphTextSplitter, ["separator"])
+    CHUNK_BY_SEPARATOR = (CharacterTextSplitter, ["separator"])
     CHUNK_BY_MARKDOWN_HEADER = (MarkdownHeaderTextSplitter, [])
 
     def __init__(self, splitter_class, parameters):
@@ -68,13 +69,13 @@ class Knowledge(ABC):
     def load(self):
         """Load knowledge from data_loader"""
         documents = self._load()
-        return self._post_process(documents)
+        return self._postprocess(documents)
 
     def type(self) -> KnowledgeType:
         """Get knowledge type"""
         return self._type
 
-    def _post_process(self, docs: List[Document]) -> List[Document]:
+    def _postprocess(self, docs: List[Document]) -> List[Document]:
         """Post process knowledge from data_loader"""
         return docs
 
@@ -88,7 +89,6 @@ class Knowledge(ABC):
             ChunkStrategy.CHUNK_BY_SIZE,
             ChunkStrategy.CHUNK_BY_PAGE,
             ChunkStrategy.CHUNK_BY_PARAGRAPH,
-            ChunkStrategy.CHUNK_BY_QA,
             ChunkStrategy.CHUNK_BY_MARKDOWN_HEADER,
             ChunkStrategy.CHUNK_BY_SEPARATOR,
         ]

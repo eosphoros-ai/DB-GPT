@@ -20,8 +20,8 @@ class ChromaVectorConfig(VectorStoreConfig):
         default=os.getenv("CHROMA_PERSIST_PATH", None),
         description="The password of vector store, if not set, will use the default password.",
     )
-    collection_metadata = Field(
-        default={"hnsw:space": "cosine"},
+    collection_metadata: dict = Field(
+        default=None,
         description="the index metadata of vector store, if not set, will use the default metadata.",
     )
 
@@ -29,16 +29,17 @@ class ChromaVectorConfig(VectorStoreConfig):
 class ChromaStore(VectorStoreBase):
     """chroma database"""
 
-    def __init__(self, chroma_vector_config: ChromaVectorConfig) -> None:
+    def __init__(self, vector_store_config: ChromaVectorConfig) -> None:
         from langchain.vectorstores import Chroma
 
-        chroma_path = chroma_vector_config.persist_path or os.path.join(
-            PILOT_PATH, "data"
+        chroma_vector_config = vector_store_config.dict()
+        chroma_path = chroma_vector_config.get(
+            "persist_path", os.path.join(PILOT_PATH, "data")
         )
         self.persist_dir = os.path.join(
-            chroma_path, chroma_vector_config.name + ".vectordb"
+            chroma_path, vector_store_config.name + ".vectordb"
         )
-        self.embeddings = chroma_vector_config.embedding_fn
+        self.embeddings = vector_store_config.embedding_fn
         chroma_settings = Settings(
             # chroma_db_impl="duckdb+parquet", => deprecated configuration of Chroma
             persist_directory=self.persist_dir,
@@ -46,7 +47,9 @@ class ChromaStore(VectorStoreBase):
         )
         client = PersistentClient(path=self.persist_dir, settings=chroma_settings)
 
-        collection_metadata = chroma_vector_config.collection_metadata
+        collection_metadata = chroma_vector_config.get("collection_metadata") or {
+            "hnsw:space": "cosine"
+        }
         self.vector_store_client = Chroma(
             persist_directory=self.persist_dir,
             embedding_function=self.embeddings,

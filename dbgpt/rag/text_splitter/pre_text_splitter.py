@@ -17,6 +17,7 @@ def _single_document_split(
 
 class PreTextSplitter(TextSplitter):
     """Split text by pre separator"""
+
     def __init__(self, separator: str, text_splitter_impl: TextSplitter):
         """Initialize with Knowledge arguments.
         Args:
@@ -32,6 +33,7 @@ class PreTextSplitter(TextSplitter):
 
     def split_documents(self, documents: Iterable[Document]) -> List[Chunk]:
         """Split documents by pre separator"""
+
         def generator() -> Iterable[Document]:
             for doc in documents:
                 yield from _single_document_split(doc, pre_separator=self.pre_separator)
