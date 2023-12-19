@@ -62,6 +62,7 @@ def replace_template_variables(content: str, app_name: str):
 
 def copy_template_files(src_dir: str, dst_dir: str, app_name: str):
     for root, dirs, files in os.walk(src_dir):
+        dirs[:] = [d for d in dirs if not _should_ignore(d)]
         relative_path = os.path.relpath(root, src_dir)
         if relative_path == ".":
             relative_path = ""
@@ -70,6 +71,8 @@ def copy_template_files(src_dir: str, dst_dir: str, app_name: str):
         os.makedirs(target_dir, exist_ok=True)
 
         for file in files:
+            if _should_ignore(file):
+                continue
             try:
                 with open(os.path.join(root, file), "r") as f:
                     content = f.read()
@@ -81,3 +84,9 @@ def copy_template_files(src_dir: str, dst_dir: str, app_name: str):
             except Exception as e:
                 click.echo(f"Error copying file {file} from {src_dir} to {dst_dir}")
                 raise e
+
+
+def _should_ignore(file_or_dir: str):
+    """Return True if the given file or directory should be ignored.""" ""
+    ignore_patterns = [".pyc", "__pycache__"]
+    return any(pattern in file_or_dir for pattern in ignore_patterns)

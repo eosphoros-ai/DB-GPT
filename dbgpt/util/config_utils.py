@@ -3,15 +3,18 @@ from typing import Any, Dict, Optional
 
 
 class AppConfig:
-    def __init__(self):
-        self.configs = {}
+    def __init__(self, configs: Optional[Dict[str, Any]] = None) -> None:
+        self.configs = configs or {}
 
-    def set(self, key: str, value: Any) -> None:
+    def set(self, key: str, value: Any, overwrite: bool = False) -> None:
         """Set config value by key
         Args:
             key (str): The key of config
             value (Any): The value of config
+            overwrite (bool, optional): Whether to overwrite the value if key exists. Defaults to False.
         """
+        if key in self.configs and not overwrite:
+            raise KeyError(f"Config key {key} already exists")
         self.configs[key] = value
 
     def get(self, key, default: Optional[Any] = None) -> Any:

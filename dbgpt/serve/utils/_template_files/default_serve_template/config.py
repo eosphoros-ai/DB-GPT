@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from typing import Optional
+from dataclasses import dataclass, field
 
 from dbgpt.serve.core import BaseServeConfig
 
@@ -17,3 +18,6 @@ class ServeConfig(BaseServeConfig):
     """Parameters for the serve command"""
 
     # TODO: add your own parameters here
+    api_keys: Optional[str] = field(
+        default=None, metadata={"help": "API keys for the endpoint, if None, allow all"}
+    )
