@@ -7,7 +7,6 @@ from dbgpt.rag.chunk_manager import ChunkParameters, SplitterType
 from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.rag.text_splitter.text_splitter import CharacterTextSplitter
-from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler
 from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 

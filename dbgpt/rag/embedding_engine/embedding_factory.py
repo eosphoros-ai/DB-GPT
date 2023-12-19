@@ -3,10 +3,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Type, TYPE_CHECKING
 
 from dbgpt.component import BaseComponent
+from dbgpt.rag.embedding_engine.embeddings import HuggingFaceEmbeddings
 
 if TYPE_CHECKING:
-    from langchain.embeddings.base import Embeddings
-
+    from dbgpt.rag.embedding_engine.embeddings import Embeddings
 
 class EmbeddingFactory(BaseComponent, ABC):
     name = "embedding_factory"
@@ -41,6 +41,4 @@ class DefaultEmbeddingFactory(EmbeddingFactory):
         if embedding_cls:
             return embedding_cls(**new_kwargs)
         else:
-            from langchain.embeddings import HuggingFaceEmbeddings
-
             return HuggingFaceEmbeddings(**new_kwargs)

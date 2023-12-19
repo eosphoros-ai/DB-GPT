@@ -16,7 +16,7 @@ from dbgpt._private.pydantic import Field, PrivateAttr, BaseModel
 
 from dbgpt.util.global_helper import globals_helper
 from dbgpt._private.llm_metadata import LLMMetadata
-from dbgpt.rag.embedding_engine.loader.token_splitter import TokenTextSplitter
+from dbgpt.rag.text_splitter.token_splitter import TokenTextSplitter
 
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1

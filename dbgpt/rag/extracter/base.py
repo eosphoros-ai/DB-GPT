@@ -15,5 +15,5 @@ class Extractor(ABC):
         """Extracts chunks.
 
         Args:
-            nodes (Sequence[Document]): nodes to extract metadata from
+            chunks (Sequence[Document]): nodes to extract metadata from
         """
