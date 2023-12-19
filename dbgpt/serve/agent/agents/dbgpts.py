@@ -6,17 +6,35 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Un
 from dataclasses import dataclass, asdict, fields
 import dataclasses
 
+from dbgpt.agent.agents.agent import AgentResource
+
 
 
 
 class AgentMode(Enum):
     PLAN_EXCUTE = "plan_excute"
 
+@dataclass
+class DbGptsInstance:
+    gpts_name: str
+    gpts_describe: str
+    gpts_agents: list[str]
+    resource_db: Optional[AgentResource] = None
+    resource_internet: Optional[AgentResource] = None
+    resource_knowledge:Optional[AgentResource] = None
+    gpts_models: Optional[Dict[str, List[str]]] = None
+    language: str = "en"
+    user_code: str = None
+    sys_code: str = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)
+
 
 @dataclass
 class DbGptsMessage:
     sender: str
-    reciver: str
+    receiver: str
     content: str
     action_report: str
 
@@ -24,7 +42,7 @@ class DbGptsMessage:
     def from_dict(d: Dict[str, Any])->DbGptsMessage:
         return DbGptsMessage(
             sender=d["sender"],
-            reciver=d["reciver"],
+            receiver=d["receiver"],
             content=d['content'],
             model_name=d["model_name"],
             agent_name=d["agent_name"],

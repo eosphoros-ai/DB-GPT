@@ -18,19 +18,20 @@ class GptsConversationsEntity(Base):
         "mysql_charset": "utf8mb4",
         "mysql_collate": "utf8mb4_unicode_ci",
     }
+
     id = Column(Integer, primary_key=True, comment="autoincrement id")
 
-    conv_id = Column(String(255), nullable=True, comment="The unique id of the conversation record")
-    user_goal = Column(Text, nullable=True, comment="User's goals content")
+    conv_id = Column(String(255), nullable=False, comment="The unique id of the conversation record")
+    user_goal = Column(Text, nullable=False, comment="User's goals content")
 
-    gpts_name = Column(String(255), nullable=True, comment="The gpts name")
+    gpts_name = Column(String(255), nullable=False, comment="The gpts name")
     state = Column(String(255), nullable=True, comment="The gpts state")
 
     max_auto_reply_round = Column(Integer, nullable=False, comment="max auto reply round")
     auto_reply_count = Column(Integer, nullable=False, comment="auto reply count")
 
-    user_code = Column(String(255), nullable=False, comment="user code")
-    system_app = Column(String(255), nullable=True, comment="system app ")
+    user_code = Column(String(255), nullable=True, comment="user code")
+    sys_code = Column(String(255), nullable=True, comment="system app ")
 
     created_at = Column(
         DateTime, default=datetime.utcnow, comment="create time"
@@ -39,9 +40,11 @@ class GptsConversationsEntity(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="last update time"
     )
 
-    UniqueConstraint("conv_id", name="uk_gpts_conversations")
-    Index("idx_q_gpts", "gpts_name")
-    Index("idx_q_content", "goal_introdiction")
+    __table_args__ = (
+        UniqueConstraint('conv_id', name='uk_gpts_conversations'),
+        Index('idx_gpts_name', 'gpts_name'),
+    )
+
 
 
 class GptsConversationsDao(BaseDao[GptsConversationsEntity]):
@@ -61,6 +64,15 @@ class GptsConversationsDao(BaseDao[GptsConversationsEntity]):
         session.close()
         return id
 
+    def get_by_conv_id(self, conv_id:str):
+        session = self.get_session()
+        gpts_conv = session.query(GptsConversationsEntity)
+        if conv_id:
+            gpts_conv = gpts_conv.filter(GptsConversationsEntity.conv_id == conv_id)
+        result = gpts_conv.first()
+        session.close()
+        return result
+
     def get_convs(self, user_code: str = None, system_app: str = None):
         session = self.get_session()
         gpts_conversations = session.query(GptsConversationsEntity)
@@ -72,3 +84,14 @@ class GptsConversationsDao(BaseDao[GptsConversationsEntity]):
         result = gpts_conversations.limit(20).order_by(desc(GptsConversationsEntity.id)).all()
         session.close()
         return result
+
+
+    def update(self, conv_id:str, state:str):
+        session = self.get_session()
+        gpts_convs = session.query(GptsConversationsEntity)
+        gpts_convs = gpts_convs.filter(GptsConversationsEntity.conv_id == conv_id)
+        gpts_convs.update({
+            GptsConversationsEntity.state: state
+        }, synchronize_session='fetch')
+        session.commit()
+        session.close()

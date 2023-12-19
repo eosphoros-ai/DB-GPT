@@ -25,6 +25,7 @@ def __convert_2_tongyi_messages(messages: List[ModelMessage]):
     if len(system_messages) > 0:
         if len(system_messages) < 2:
             tongyi_messages.insert(0, {"role": "system", "content": system_messages[0]})
+            tongyi_messages.append({"role": "user", "content": last_usr_message})
         else:
             tongyi_messages.append({"role": "user", "content": system_messages[1]})
     else:

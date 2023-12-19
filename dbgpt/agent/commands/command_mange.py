@@ -15,7 +15,7 @@ from dbgpt.util.string_utils import extract_content_open_ending, extract_content
 
 # Unique identifier for auto-gpt commands
 AUTO_GPT_COMMAND_IDENTIFIER = "auto_gpt_command"
-
+logger = logging.getLogger(__name__)
 
 class Command:
     """A class representing a command.
@@ -488,3 +488,115 @@ class ApiCall:
             raise ValueError("Api parsing exception," + str(e))
 
         return self.api_view_context(llm_text, True)
+
+
+    def display_only_sql_vis(self, sql, display, speak, sql_2_df_func):
+
+        api_call_element = ET.Element("chart-view")
+        err_msg = None
+        try:
+            if not sql or len(sql) <= 0:
+                return f"""{speak}"""
+
+            param = {}
+            df = sql_2_df_func(sql)
+            param["type"] = display
+            param["sql"] = sql
+            param["data"] = json.loads(
+                df.to_json(orient="records", date_format="iso", date_unit="s")
+            )
+            view_json_str = json.dumps(param, default=serialize, ensure_ascii=False)
+        except Exception as e:
+            logger.error("parse_view_response error!" + str(e))
+            err_param = {}
+            err_param["sql"] = f"{sql}"
+            err_param["type"] = "response_table"
+            # err_param["err_msg"] = str(e)
+            err_param["data"] = []
+            err_msg = str(e)
+            view_json_str = json.dumps(err_param, default=serialize, ensure_ascii=False)
+
+        # api_call_element.text = view_json_str
+        api_call_element.set("content", view_json_str)
+        result = ET.tostring(api_call_element, encoding="utf-8")
+        if err_msg:
+            return f"""{speak} \\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result.decode("utf-8")}"""
+        else:
+            return speak + "\n" + result.decode("utf-8")
+
+
+    def display_dashboard_vis(self, charts: List[dict], sql_2_df_func):
+
+        err_msg = None
+        view_json_str=None
+        try:
+            if not charts or len(charts) <= 0:
+                return f"""Have no chart data!"""
+            charts_info = []
+            for chart in charts:
+
+                param = {}
+                sql = chart.get("sql", "")
+                param["sql"] = sql
+                param["type"] = chart.get("display_type", "response_table")
+                param["title"] = chart.get("title", "")
+                param["describe"] = chart.get("thought", "")
+                try:
+                    df = sql_2_df_func(sql)
+                    param["data"] = json.loads(
+                        df.to_json(orient="records", date_format="iso", date_unit="s")
+                    )
+                except Exception as e:
+                    param["data"] = []
+                    param["err_msg"] = str(e)
+
+                charts_info.append(param)
+            view_json_str = json.dumps(param, default=serialize, ensure_ascii=False)
+
+        except Exception as e:
+            logger.error("parse_view_response error!" + str(e))
+            return f"```error\nReport rendering exception！{str(e)}\n```"
+
+        result = f"```vis-dashboard\n{view_json_str}\n```"
+        if err_msg:
+            return f"""\\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result}"""
+        else:
+            return  result
+
+
+    @staticmethod
+    def default_chart_type_promot() -> str:
+        """this function is moved from excel_analyze/chat.py,and used by subclass.
+        Returns:
+
+        """
+        antv_charts = [
+            {"response_line_chart": "used to display comparative trend analysis data"},
+            {
+                "response_pie_chart": "suitable for scenarios such as proportion and distribution statistics"
+            },
+            {
+                "response_table": "suitable for display with many display columns or non-numeric columns"
+            },
+            # {"response_data_text":" the default display method, suitable for single-line or simple content display"},
+            {
+                "response_scatter_plot": "Suitable for exploring relationships between variables, detecting outliers, etc."
+            },
+            {
+                "response_bubble_chart": "Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."
+            },
+            {
+                "response_donut_chart": "Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc."
+            },
+            {
+                "response_area_chart": "Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc."
+            },
+            {
+                "response_heatmap": "Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."
+            },
+        ]
+        return "\n".join(
+            f"{key}:{value}"
+            for dict_item in antv_charts
+            for key, value in dict_item.items()
+        )

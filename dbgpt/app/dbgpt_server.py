@@ -48,22 +48,18 @@ from dbgpt.util.tracer import root_tracer, initialize_tracer, SpanType, SpanType
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
 
+import dbgpt.serve.agent.db
+
 static_file_path = os.path.join(ROOT_PATH, "dbgpt", "app/static")
 
 CFG = Config()
 
-
-def swagger_monkey_patch(*args, **kwargs):
-    return get_swagger_ui_html(
-        *args,
-        **kwargs,
-        swagger_js_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js",
-        swagger_css_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css",
-    )
-
-
-app = FastAPI()
-applications.get_swagger_ui_html = swagger_monkey_patch
+app = FastAPI(
+    title="DBGPT OPEN API",
+    description="This is dbgpt, with auto docs for the API and everything",
+    version="0.5.0",
+    openapi_tags=[],)
+# applications.get_swagger_ui_html = swagger_monkey_patch
 
 system_app = SystemApp(app)
 

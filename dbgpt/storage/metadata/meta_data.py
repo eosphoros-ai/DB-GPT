@@ -14,7 +14,6 @@ from dbgpt._private.config import Config
 from dbgpt.configs.model_config import PILOT_PATH
 from urllib.parse import quote_plus as urlquote
 
-
 logger = logging.getLogger(__name__)
 # DB-GPT metadata database config, now support mysql and sqlite
 CFG = Config()

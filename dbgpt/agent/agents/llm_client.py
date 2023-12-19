@@ -122,29 +122,29 @@ class AIWrapper:
             use_cache = context.get("use_cache", True)
             if not use_cache:
                 cache_seed = None
-        # Try to load the response from cache
-        if cache_seed is not None:
-            with diskcache.Cache(f"{self.cache_path_root}/{cache_seed}") as cache:
-                # Try to get the response from cache
-                key = self._get_key(params)
-                response = cache.get(key, None)
-                if response is not None:
-                    # check the filter
-                    pass_filter = filter_func is None or filter_func(context=context, response=response)
-                    if pass_filter :
-                        # Return the response if it passes the filter
-                        # TODO: add response.cost
-                        return response
+        # # Try to load the response from cache
+        # if cache_seed is not None:
+        #     with diskcache.Cache(f"{self.cache_path_root}/{cache_seed}") as cache:
+        #         # Try to get the response from cache
+        #         key = self._get_key(params)
+        #         response = cache.get(key, None)
+        #         if response is not None:
+        #             # check the filter
+        #             pass_filter = filter_func is None or filter_func(context=context, response=response)
+        #             if pass_filter :
+        #                 # Return the response if it passes the filter
+        #                 # TODO: add response.cost
+        #                 return response
         try:
              response = await self._completions_create(llm_model, params)
         except LLMChatError as e:
             logger.debug(f"{llm_model} generate failed!{str(e)}")
             raise e
         else:
-            if cache_seed is not None:
-                # Cache the response
-                with diskcache.Cache(f"{self.cache_path_root}/{cache_seed}") as cache:
-                    cache.set(key, response)
+            # if cache_seed is not None:
+            #     # Cache the response
+            #     with diskcache.Cache(f"{self.cache_path_root}/{cache_seed}") as cache:
+            #         cache.set(key, response)
 
             # check the filter
             pass_filter = filter_func is None or filter_func(context=context, response=response)

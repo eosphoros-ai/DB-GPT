@@ -37,38 +37,42 @@ class SQLAssistantAgent(ConversableAgent):
     - Make sure to only return SQL.
     """
 
+    DEFAULT_DESCRIBE = """You can analyze data with a known structure through SQL and generate a single analysis chart for a given target. Please note that you do not have the ability to obtain and process data and can only perform data analysis based on a given structure. If the task goal cannot or does not need to be solved by SQL analysis, please do not use"""
+
+    NAME = "SqlEngineer"
     def __init__(
             self,
-            name: str,
-            describe: Optional[str],
             memory: GptsMemory,
+            agent_context: 'AgentContext',
+            model_priority: Optional[List[str]] = None,
+            describe: Optional[str] = DEFAULT_DESCRIBE,
             is_termination_msg: Optional[Callable[[Dict], bool]] = None,
             max_consecutive_auto_reply: Optional[int] = None,
             human_input_mode: Optional[str] = "NEVER",
-            agent_context: 'AgentContext' = None,
+
             **kwargs,
     ):
         super().__init__(
-            name,
-            memory,
-            describe,
-            self.DEFAULT_SYSTEM_MESSAGE,
-            is_termination_msg,
-            max_consecutive_auto_reply,
-            human_input_mode,
-            agent_context,
+            name=self.NAME,
+            memory=memory,
+            model_priority=model_priority,
+            describe=describe,
+            system_message=self.DEFAULT_SYSTEM_MESSAGE,
+            is_termination_msg=is_termination_msg,
+            max_consecutive_auto_reply=max_consecutive_auto_reply,
+            human_input_mode=human_input_mode,
+            agent_context=agent_context,
             **kwargs,
         )
-
         self.register_reply(
             Agent,
             SQLAssistantAgent.generate_analysis_chart_reply
         )
         self.agent_context = agent_context
-        self.db_connect = CFG.LOCAL_DB_MANAGE.get_connect(self.agent_context.db_name)
+        self.db_connect = CFG.LOCAL_DB_MANAGE.get_connect(self.agent_context.resource_db.get('name', None))
 
     async def a_receive(self, message: Union[Dict, str], sender: Agent, reviewer: "Agent",
-                        request_reply: Optional[bool] = None, silent: Optional[bool] = False,  is_plan_goals: Optional[bool] = False):
+                        request_reply: Optional[bool] = None, silent: Optional[bool] = False):
         ### If it is a message sent to yourself, go to repair sytem prompt
         params = {
             "data_structure": self.agent_context.resources['db'],
@@ -83,7 +87,6 @@ class SQLAssistantAgent(ConversableAgent):
             message: Optional[str] = None,
             sender: Optional[Agent] = None,
             reviewer: "Agent" = None,
-            is_plan_goals: Optional[bool] = False,
             config: Optional[Union[Dict, Literal[False]]] = None,
     ):
         """Generate a reply using code execution."""

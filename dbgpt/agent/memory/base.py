@@ -13,6 +13,7 @@ class GptsPlan:
     conv_id: str
     sub_task_num: int
     sub_task_content: Optional[str]
+    sub_task_title: Optional[str] = None
     sub_task_agent: Optional[str] = None
     resource_name: Optional[str] = None
     rely: Optional[str] = None
@@ -21,8 +22,6 @@ class GptsPlan:
     max_retry_times: Optional[int] = 5
     state: Optional[str] = Status.TODO.value
     result: Optional[str] = None
-    created_at: datetime = datetime.utcnow
-    updated_at: datetime = datetime.utcnow
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> GptsPlan:
@@ -38,8 +37,6 @@ class GptsPlan:
             max_retry_times=d["max_retry_times"],
             state=d["state"],
             result=d["result"],
-            created_at=d["created_at"],
-            updated_at=d["updated_at"],
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -51,15 +48,16 @@ class GptsMessage:
     """Gpts plan"""
     conv_id: str
     sender: str
+
     receiver: str
     role: str
     content: str
-
-    rounds: Optional[int] = 0
+    rounds: Optional[int]
+    current_gogal: str = None
     context: Optional[str] = None
     review_info: Optional[str] = None
     action_report: Optional[str] = None
-
+    model_name: Optional[str] = None
     created_at: datetime = datetime.utcnow
     updated_at: datetime = datetime.utcnow
 
@@ -72,6 +70,7 @@ class GptsMessage:
             role=d["role"],
             content=d["content"],
             rounds=d["rounds"],
+            current_gogal=d['current_gogal'],
             context=d["context"],
             review_info=d["review_info"],
             action_report=d["action_report"],
@@ -140,7 +139,7 @@ class GptsPlansMemory(ABC):
             None
         """
 
-    def update_task(self,  conv_id: str,  task_num: int,  state: str, retry_times:int, agent: str = None, model:str=None):
+    def update_task(self,  conv_id: str,  task_num: int,  state: str, retry_times:int, agent: str = None, model:str=None, result:str = None):
         """
         Update planning step information
         Args:
@@ -175,7 +174,7 @@ class GptsMessageMemory( ABC):
 
         """
 
-    def get_by_agent(self, agent: str)->Optional[List[GptsMessage]]:
+    def get_by_agent(self, conv_id:str, agent: str)->Optional[List[GptsMessage]]:
         """
         Query information related to an agent
         Args:
@@ -186,7 +185,7 @@ class GptsMessageMemory( ABC):
         """
 
 
-    def get_between_agents(self, agent1: str, agent2: str)->Optional[List[GptsMessage]]:
+    def get_between_agents(self, conv_id:str, agent1: str, agent2: str, current_gogal:Optional[str] = None)->Optional[List[GptsMessage]]:
         """
         Query information related to an agent
         Args:
@@ -200,6 +199,16 @@ class GptsMessageMemory( ABC):
     def get_by_conv_id(self, conv_id: str)->Optional[List[GptsMessage]]:
         """
         Query messages by conv id
+        Args:
+            conv_id:
+
+        Returns:
+
+        """
+
+    def get_last_message(self, conv_id:str)->Optional[GptsMessage]:
+        """
+        Query last message
         Args:
             conv_id:
 

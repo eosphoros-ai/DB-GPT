@@ -31,26 +31,25 @@ Solve tasks using your coding and language skills.
 In the following cases, suggest python code (in a python coding block) or shell script (in a sh coding block) for the user to execute.
     1. When you need to collect info, use the code to output the info you need, for example, browse or search the web, download/read a file, print the content of a webpage or a file, get the current date/time, check the operating system. After sufficient info is printed and the task is ready to be solved based on your language skill, you can solve the task by yourself.
     2. When you need to perform some task with code, use the code to perform the task and output the result. Finish the task smartly.
-Solve the task step by step if you need to. If a plan is not provided, explain your plan first. Be clear which step uses code, and which step uses your language skill.
+Solve the task step by step if you need to. Be clear which step uses code, and which step uses your language skill.
 When using code, you must indicate the script type in the code block. The user cannot provide any other feedback or perform any other action beyond executing the code you suggest. The user can't modify your code. So do not suggest incomplete code which requires users to modify. Don't use a code block if it's not intended to be executed by the user.
 If you want the user to save the code in a file before executing it, put # filename: <filename> inside the code block as the first line. Don't include multiple code blocks in one response. Do not ask users to copy and paste the result. Instead, use 'print' function for the output when relevant. Check the execution result returned by the user.
 If the result indicates there is an error, fix the error and output the code again. Suggest the full code instead of partial code or code changes. If the error can't be fixed or if the task is not solved even after the code is executed successfully, analyze the problem, revisit your assumption, collect additional info you need, and think of a different approach to try.
-When you find an answer, verify the answer carefully. Include verifiable evidence in your response if possible.
-Reply "TERMINATE" in the end when everything is done.
+When you find an answer, verify the answer carefully. Please try to simplify the output of the code to ensure that the output data of the code you generate is concise and complete.
     """
-
-    DEFAULT_DESCRIBE = """CodeEngineer.According to the current planning steps, write python/shell code to solve the problem, such as: data crawling, data sorting and conversion, etc. Wrap the code in a code block of the specified script type. Users cannot modify your code. So don't suggest incomplete code that needs to be modified by others.
-    Don't include multiple code blocks in one response. Don't ask others to copy and paste the results.
+    NAME = "CodeEngineer"
+    DEFAULT_DESCRIBE = """According to the current planning steps, write python/shell code to solve the problem, such as: data crawling, data sorting and conversion, etc. Wrap the code in a code block of the specified script type. Users cannot modify your code. So don't suggest incomplete code that needs to be modified by others.
+          Don't include multiple code blocks in one response. Don't ask others to copy and paste the results
     """
     def __init__(
         self,
         memory: GptsMemory,
-        name: str = "CodeEngineer",
+        agent_context: 'AgentContext',
+        model_priority: Optional[List[str]] = None,
         describe: Optional[str] = DEFAULT_DESCRIBE,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
-        agent_context: 'AgentContext' = None,
         code_execution_config: Optional[Union[Dict, Literal[False]]] = None,
         **kwargs,
     ):
@@ -72,14 +71,15 @@ Reply "TERMINATE" in the end when everything is done.
                 [ConversableAgent](conversable_agent#__init__).
         """
         super().__init__(
-            name,
-            memory,
-            describe,
-            self.DEFAULT_SYSTEM_MESSAGE,
-            is_termination_msg,
-            max_consecutive_auto_reply,
-            human_input_mode,
-            agent_context,
+            name=self.NAME,
+            memory=memory,
+            model_priority=model_priority,
+            describe=describe,
+            system_message=self.DEFAULT_SYSTEM_MESSAGE,
+            is_termination_msg=is_termination_msg,
+            max_consecutive_auto_reply=max_consecutive_auto_reply,
+            human_input_mode=human_input_mode,
+            agent_context=agent_context,
             **kwargs,
         )
         self._code_execution_config: Union[Dict, Literal[False]] = (
@@ -97,7 +97,6 @@ Reply "TERMINATE" in the end when everything is done.
         message: Optional[str] = None,
         sender: Optional[Agent] = None,
         reviewer: "Agent" = None,
-        is_plan_goals: Optional[bool] = False,
         config: Optional[Union[Dict, Literal[False]]] = None,
     ):
         """Generate a reply using code execution."""

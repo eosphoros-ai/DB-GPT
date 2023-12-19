@@ -41,7 +41,10 @@ class GptsPlansEntity(Base):
     updated_at = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="last update time"
     )
-    UniqueConstraint("conv_id", "sub_task_num", name="uk_sub_task")
+    __table_args__ = (
+        UniqueConstraint("conv_id", "sub_task_num", name="uk_sub_task"),
+    )
+
 
 
 class GptsPlansDao(BaseDao[GptsPlansEntity]):
@@ -93,7 +96,7 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         if not conv_id:
             return []
         gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).filter(
-            GptsPlansEntity.status == Status.TODO.value)
+            GptsPlansEntity.state == Status.TODO.value)
         result = gpts_plans.all()
         session.close()
         return result
@@ -103,13 +106,13 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         gpts_plans = session.query(GptsPlansEntity)
         gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).filter(GptsPlansEntity.sub_task_num == task_num)
         gpts_plans.update({
-            GptsPlansEntity.state: Status.COMPLETED.value,
+            GptsPlansEntity.state: Status.COMPLETE.value,
             GptsPlansEntity.result: result
         }, synchronize_session='fetch')
         session.commit()
         session.close()
 
-    def update_task(self, conv_id: str, task_num: int, state: str, retry_times: int, agent: str = None):
+    def update_task(self, conv_id: str, task_num: int, state: str, retry_times: int, agent: str = None, model: str = None, result:str = None):
         session = self.get_session()
         gpts_plans = session.query(GptsPlansEntity)
         gpts_plans = gpts_plans.filter(
@@ -117,25 +120,20 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
             GptsPlansEntity.sub_task_num == task_num)
         gpts_plans.update({
             GptsPlansEntity.state: state,
-            GptsPlansEntity.agent_model: agent,
-            GptsPlansEntity.retry_times: retry_times
+            GptsPlansEntity.sub_task_agent: agent,
+            GptsPlansEntity.agent_model: model,
+            GptsPlansEntity.retry_times: retry_times,
+            GptsPlansEntity.result: result
         }, synchronize_session='fetch')
         session.commit()
         session.close()
-
-
-    def get_todo_plans(self, conv_id: str) -> list[GptsPlansEntity]:
-        return self.get_todo_plans(conv_id)
-
 
     def remove_by_conv_id(self, conv_id: str):
         session = self.get_session()
         if conv_id is None:
             raise Exception("conv_id is None")
-        query = GptsPlansEntity(conv_id=conv_id)
+
         gpts_plans = session.query(GptsPlansEntity)
-        if query.id is not None:
-            gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == query.conv_id)
-        gpts_plans.delete()
+        gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).delete()
         session.commit()
         session.close()

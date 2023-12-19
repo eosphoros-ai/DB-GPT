@@ -12,29 +12,27 @@ class UserProxyAgent(ConversableAgent):
     """(In preview) A proxy agent for the user, that can execute code and provide feedback to the other agents.
 
     """
-
+    NAME = "User"
+    DEFAULT_DESCRIBE = "A human admin. Interact with the planner to discuss the plan. Plan execution needs to be approved by this admin.",
     def __init__(
         self,
-        name: str,
-        describe: Optional[str],
         memory: GptsMemory,
+        agent_context: 'AgentContext',
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "ALWAYS",
-        agent_context: 'AgentContext' = None,
         default_auto_reply: Optional[Union[str, Dict, None]] = "",
 
     ):
         super().__init__(
-            name,
-            memory,
-            describe,
-            describe,
-            is_termination_msg,
-            max_consecutive_auto_reply,
-            human_input_mode,
-            agent_context,
-            default_auto_reply,
+            name=self.NAME,
+            memory=memory,
+            describe=self.DEFAULT_DESCRIBE,
+            system_message=self.DEFAULT_DESCRIBE,
+            is_termination_msg=is_termination_msg,
+            max_consecutive_auto_reply=max_consecutive_auto_reply,
+            human_input_mode=human_input_mode,
+            agent_context=agent_context,
         )
         self.register_reply(Agent, UserProxyAgent.check_termination_and_human_reply)
 
@@ -52,14 +50,19 @@ class UserProxyAgent(ConversableAgent):
         reply = input(prompt)
         return reply
 
-    async def a_generate_reply(self, messages: Optional[List[Dict]] = None, sender: Optional[Agent] = None,
-                               is_plan_goals: Optional[bool] = False, ) -> Union[str, Dict, None]:
+    async def a_reasoning_reply(
+        self,
+        messages: Union[List[Dict]],
+        sender: "Agent",
+        reviewer: "Agent",
+        request_reply: Optional[bool] = None,
+        silent: Optional[bool] = False) -> Union[str, Dict, None]:
 
         message = messages[-1]
 
         if message["role"] != "function":
             message["name"] = sender.name
-        return message['content']
+        return message['content'], None
 
 
     async def check_termination_and_human_reply(

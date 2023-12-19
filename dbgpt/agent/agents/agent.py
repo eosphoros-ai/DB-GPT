@@ -1,6 +1,11 @@
-from typing import Dict, List, Optional, Union
-from pydantic import BaseModel, Extra, root_validator
+from __future__ import annotations
+
+from typing import Dict, List, Optional, Union, Any
+from dataclasses import dataclass, asdict, fields
+import dataclasses
 from ..memory.gpts_memory import GptsMemory
+
+
 class Agent:
     """
     An interface for AI agent.
@@ -43,7 +48,6 @@ class Agent:
         recipient: "Agent",
         reviewer: "Agent",
         request_reply: Optional[bool] = None,
-        is_plan_goals: Optional[bool] = False,
     ):
         """(Abstract async method) Send a message to another agent."""
 
@@ -54,8 +58,7 @@ class Agent:
         sender: "Agent",
         reviewer: "Agent",
         request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False,
-        is_plan_goals: Optional[bool] = False,
+        silent: Optional[bool] = False
     ):
         """(Abstract async method) Receive a message from another agent."""
 
@@ -80,7 +83,6 @@ class Agent:
         self,
         messages: Optional[List[Dict]] = None,
         sender: Optional["Agent"] = None,
-        is_plan_goals: Optional[bool] = False,
         **kwargs,
     ) -> Union[str, Dict, None]:
         """(Abstract async method) Generate a reply based on the received messages.
@@ -92,38 +94,87 @@ class Agent:
             str or dict or None: the generated reply. If None, no reply is generated.
         """
 
-
-    async def a_generate_action_reply(
+    async def a_reasoning_reply(
         self,
-        messages: Optional[List[Dict]] = None,
-        **kwargs,
-    ) -> Union[str, Dict, None]:
-        """(Abstract async method) Generate agent reply based on the generated llm message.
+        messages: Union[List[str]],
+        sender: "Agent",
+        reviewer: "Agent",
+        request_reply: Optional[bool] = None,
+        silent: Optional[bool] = False)-> Union[str, Dict, None]:
+        """
+        Based on the requirements of the current agent, reason about the current task goal through LLM
         Args:
-            messages (list[dict]): a list of messages received.
-            sender: sender of an Agent instance.
+            message:
+            sender:
+            reviewer:
+            request_reply:
+            silent:
+
         Returns:
             str or dict or None: the generated reply. If None, no reply is generated.
         """
 
-    async def a_agent_reply_evolution(self,   sender: Optional["Agent"] = None):
+
+    async def a_action_reply(
+        self,
+        messages: Optional[str],
+        sender: "Agent",
+        **kwargs,
+    ) -> Union[str, Dict, None]:
+        """
+        Parse the inference results for the current target and execute the inference results using the current agent's executor
+        Args:
+            messages (list[dict]): a list of messages received.
+            sender: sender of an Agent instance.
+            **kwargs:
+        Returns:
+             str or dict or None: the agent action reply. If None, no reply is generated.
         """
 
+    async def a_verify_reply(
+        self,
+        action_reply: Optional[Dict],
+        sender: "Agent",
+        **kwargs,
+    ) -> Union[str, Dict, None]:
+        """
+        Verify whether the current execution results meet the target expectations
         Args:
+            messages:
             sender:
+            **kwargs:
 
         Returns:
 
         """
 
 
-class AgentContext(BaseModel):
+@dataclass
+class AgentResource:
+    type: str
+    name: str
+    introduce: str
+
+    @staticmethod
+    def from_dict(d: Dict[str, Any]) -> AgentResource:
+        if d is None: return None
+        return AgentResource(
+            type=d.get("type"),
+            name=d.get("name"),
+            introduce=d.get("introduce"),
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)
+
+@dataclass
+class AgentContext:
     conv_id: str
     gpts_name: Optional[str]
 
-    resource_db: Optional[Dict] = {}
-    resource_knowledge: Optional[Dict] = {}
-    resource_internet: Optional[Dict] = {}
+    resource_db: Optional[AgentResource] = None
+    resource_knowledge: Optional[AgentResource] = None
+    resource_internet: Optional[AgentResource] = None
     llm_models: Optional[List[str]] = None
     agents: Optional[List[str]] = None
 
@@ -133,6 +184,6 @@ class AgentContext(BaseModel):
     temperature:Optional[float] = 0.5
     allow_format_str_template:Optional[bool] = False
 
-    class Config:
-        """Configuration for this pydantic object."""
-        extra = Extra.forbid
+
+    def to_dict(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)

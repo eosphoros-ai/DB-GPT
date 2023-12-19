@@ -7,7 +7,6 @@ from dbgpt.agent.agents.expand.sql_assistant_agent import SQLAssistantAgent
 from dbgpt.agent.agents.agent import AgentContext
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 
-
 async def test_plan_excute(message: str):
     context: AgentContext = AgentContext(conv_id="test456", gpts_name="测试助手2")
     context.db_name = 'dbgpt-test'

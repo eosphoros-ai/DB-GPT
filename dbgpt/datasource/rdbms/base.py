@@ -319,7 +319,7 @@ class RDBMSDatabase(BaseConnect):
         """
         print(f"Query[{query}]")
         if not query:
-            return []
+            return [],None
         cursor = self.session.execute(text(query))
         if cursor.returns_rows:
             if fetch == "all":
@@ -332,7 +332,7 @@ class RDBMSDatabase(BaseConnect):
 
             result = list(result)
             return field_names, result
-        return []
+        return [],None
 
     def run(self, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""

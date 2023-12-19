@@ -19,7 +19,9 @@ from dbgpt.serve.agent.model import (
     PluginHubFilter,
 )
 from dbgpt.serve.agent.hub.agent_hub import AgentHub
-from  dbgpt.serve.agent.db.plugin_hub_db import PluginHubEntity
+from  dbgpt.serve.agent.db.plugin_hub_db import PluginHubEntity, PluginHubDao
+from dbgpt.serve.agent.db.my_plugin_db import MyPluginEntity, MyPluginDao
+
 from dbgpt.agent.plugins_util import scan_plugins
 from dbgpt.agent.commands.generator import PluginPromptGenerator
 
