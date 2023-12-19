@@ -122,6 +122,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
     - [x] [智谱·ChatGLM](http://open.bigmodel.cn/)
     - [x] [讯飞·星火](https://xinghuo.xfyun.cn/)
     - [x] [Google·Bard](https://bard.google.com/)
+    - [x] [Google·Gemini](https://makersuite.google.com/app/apikey)
 
 - **隐私安全**
 

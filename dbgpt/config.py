@@ -61,7 +61,7 @@ class Config(metaclass=Singleton):
         if self.zhipu_proxy_api_key:
             os.environ["zhipu_proxyllm_proxy_api_key"] = self.zhipu_proxy_api_key
             os.environ["zhipu_proxyllm_proxyllm_backend"] = os.getenv(
-                "ZHIPU_MODEL_VERSION", "chatglm_pro"
+                "ZHIPU_MODEL_VERSION"
             )
 
         # wenxin
