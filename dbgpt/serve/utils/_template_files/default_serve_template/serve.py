@@ -2,7 +2,13 @@ from typing import List, Optional
 from dbgpt.component import BaseComponent, SystemApp
 
 from .api.endpoints import router, init_endpoints
-from .config import SERVE_APP_NAME, SERVE_APP_NAME_HUMP, APP_NAME
+from .config import (
+    SERVE_APP_NAME,
+    SERVE_APP_NAME_HUMP,
+    APP_NAME,
+    SERVE_CONFIG_KEY_PREFIX,
+    ServeConfig,
+)
 
 
 class Serve(BaseComponent):

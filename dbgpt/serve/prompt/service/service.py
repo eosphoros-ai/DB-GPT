@@ -41,6 +41,22 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """Returns the internal ServeConfig."""
         return self._serve_config
 
+    def create(self, request: ServeRequest) -> ServerResponse:
+        """Create a new Prompt entity
+
+        Args:
+            request (ServeRequest): The request
+
+        Returns:
+            ServerResponse: The response
+        """
+
+        if not request.user_name:
+            request.user_name = self.config.default_user
+        if not request.sys_code:
+            request.sys_code = self.config.default_sys_code
+        return super().create(request)
+
     def update(self, request: ServeRequest) -> ServerResponse:
         """Update a Prompt entity
 

@@ -16,4 +16,6 @@ class BaseServeConfig(BaseParameters):
             config_prefix (str): Configuration prefix
         """
         config_dict = config.get_all_by_prefix(config_prefix)
+        # remove prefix
+        config_dict = {k[len(config_prefix) :]: v for k, v in config_dict.items()}
         return cls(**config_dict)

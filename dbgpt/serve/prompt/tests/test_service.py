@@ -48,6 +48,28 @@ def test_config_exists(service: Service):
     assert service.config is not None
 
 
+@pytest.mark.parametrize(
+    "system_app",
+    [
+        {
+            "app_config": {
+                "DEBUG": True,
+                "dbgpt.serve.prompt.default_user": "dbgpt",
+                "dbgpt.serve.prompt.default_sys_code": "dbgpt",
+            }
+        }
+    ],
+    indirect=True,
+)
+def test_config_default_user(service: Service):
+    system_app: SystemApp = service._system_app
+    assert system_app.config.get("DEBUG") is True
+    assert system_app.config.get("dbgpt.serve.prompt.default_user") == "dbgpt"
+    assert service.config is not None
+    assert service.config.default_user == "dbgpt"
+    assert service.config.default_sys_code == "dbgpt"
+
+
 def test_service_create(service: Service, default_entity_dict):
     entity: ServerResponse = service.create(ServeRequest(**default_entity_dict))
     with db.session() as session:

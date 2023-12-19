@@ -1,5 +1,8 @@
 from typing import Optional, List
-from fastapi import APIRouter, Depends, Query
+from functools import cache
+from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
+
 
 from dbgpt.component import SystemApp
 from dbgpt.serve.core import Result
@@ -20,14 +23,79 @@ def get_service() -> Service:
     return global_system_app.get_component(SERVE_SERVICE_COMPONENT_NAME, Service)
 
 
+get_bearer_token = HTTPBearer(auto_error=False)
+
+
+@cache
+def _parse_api_keys(api_keys: str) -> List[str]:
+    """Parse the string api keys to a list
+
+    Args:
+        api_keys (str): The string api keys
+
+    Returns:
+        List[str]: The list of api keys
+    """
+    if not api_keys:
+        return []
+    return [key.strip() for key in api_keys.split(",")]
+
+
+async def check_api_key(
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
+    service: Service = Depends(get_service),
+) -> Optional[str]:
+    """Check the api key
+
+    If the api key is not set, allow all.
+
+    Your can pass the token in you request header like this:
+
+    .. code-block:: python
+
+        import requests
+        client_api_key = "your_api_key"
+        headers = {"Authorization": "Bearer " + client_api_key }
+        res = requests.get("http://test/hello", headers=headers)
+        assert res.status_code == 200
+
+    """
+    if service.config.api_keys:
+        api_keys = _parse_api_keys(service.config.api_keys)
+        if auth is None or (token := auth.credentials) not in api_keys:
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "error": {
+                        "message": "",
+                        "type": "invalid_request_error",
+                        "param": None,
+                        "code": "invalid_api_key",
+                    }
+                },
+            )
+        return token
+    else:
+        # api_keys not set; allow all
+        return None
+
+
 @router.get("/health")
 async def health():
     """Health check endpoint"""
     return {"status": "ok"}
 
 
+@router.get("/test_auth", dependencies=[Depends(check_api_key)])
+async def test_auth():
+    """Test auth endpoint"""
+    return {"status": "ok"}
+
+
 # TODO: Compatible with old API, will be modified in the future
-@router.post("/add", response_model=Result[ServerResponse])
+@router.post(
+    "/add", response_model=Result[ServerResponse], dependencies=[Depends(check_api_key)]
+)
 async def create(
     request: ServeRequest, service: Service = Depends(get_service)
 ) -> Result[ServerResponse]:
@@ -42,7 +110,11 @@ async def create(
     return Result.succ(service.create(request))
 
 
-@router.post("/update", response_model=Result[ServerResponse])
+@router.post(
+    "/update",
+    response_model=Result[ServerResponse],
+    dependencies=[Depends(check_api_key)],
+)
 async def update(
     request: ServeRequest, service: Service = Depends(get_service)
 ) -> Result[ServerResponse]:
@@ -57,7 +129,9 @@ async def update(
     return Result.succ(service.update(request))
 
 
-@router.post("/delete", response_model=Result[None])
+@router.post(
+    "/delete", response_model=Result[None], dependencies=[Depends(check_api_key)]
+)
 async def delete(
     request: ServeRequest, service: Service = Depends(get_service)
 ) -> Result[None]:
@@ -72,7 +146,11 @@ async def delete(
     return Result.succ(service.delete(request))
 
 
-@router.post("/list", response_model=Result[List[ServerResponse]])
+@router.post(
+    "/list",
+    response_model=Result[List[ServerResponse]],
+    dependencies=[Depends(check_api_key)],
+)
 async def query(
     request: ServeRequest, service: Service = Depends(get_service)
 ) -> Result[List[ServerResponse]]:
@@ -87,7 +165,11 @@ async def query(
     return Result.succ(service.get_list(request))
 
 
-@router.post("/query_page", response_model=Result[PaginationResult[ServerResponse]])
+@router.post(
+    "/query_page",
+    response_model=Result[PaginationResult[ServerResponse]],
+    dependencies=[Depends(check_api_key)],
+)
 async def query_page(
     request: ServeRequest,
     page: Optional[int] = Query(default=1, description="current page"),
