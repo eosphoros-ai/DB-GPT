@@ -8,16 +8,14 @@ from dbgpt.storage.metadata import BaseDao, Model
 
 class ChatHistoryEntity(Model):
     __tablename__ = "chat_history"
+    __table_args__ = (UniqueConstraint("conv_uid", name="uk_conv_uid"),)
     id = Column(
         Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
     )
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     conv_uid = Column(
         String(255),
-        unique=True,
+        # Change from False to True, the alembic migration will fail, so we use UniqueConstraint to replace it
+        unique=False,
         nullable=False,
         comment="Conversation record unique id",
     )
@@ -41,13 +39,12 @@ class ChatHistoryEntity(Model):
 
 class ChatHistoryMessageEntity(Model):
     __tablename__ = "chat_history_message"
+    __table_args__ = (
+        UniqueConstraint("conv_uid", "index", name="uk_conversation_message"),
+    )
     id = Column(
         Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
     )
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     conv_uid = Column(
         String(255),
         unique=False,
@@ -61,10 +58,9 @@ class ChatHistoryMessageEntity(Model):
     )
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
     gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
-    UniqueConstraint("conv_uid", "index", name="uk_conversation_message")
 
 
-class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
+class ChatHistoryDao(BaseDao):
     def list_last_20(
         self, user_name: Optional[str] = None, sys_code: Optional[str] = None
     ):
@@ -81,7 +77,7 @@ class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
         session.close()
         return result
 
-    def update(self, entity: ChatHistoryEntity):
+    def raw_update(self, entity: ChatHistoryEntity):
         session = self.get_raw_session()
         try:
             updated = session.merge(entity)
@@ -101,7 +97,7 @@ class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
         finally:
             session.close()
 
-    def delete(self, conv_uid: int):
+    def raw_delete(self, conv_uid: int):
         if conv_uid is None:
             raise Exception("conv_uid is None")
         with self.session() as session:

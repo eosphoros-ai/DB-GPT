@@ -16,28 +16,22 @@ from dbgpt.component import SystemApp
 
 from dbgpt.app.base import (
     server_init,
+    _migration_db_storage,
     WebServerParameters,
     _create_model_start_listener,
 )
+
+# initialize_components import time cost about 0.1s
 from dbgpt.app.component_configs import initialize_components
 
+# fastapi import time cost about 0.05s
 from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, applications
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from dbgpt.app.knowledge.api import router as knowledge_router
-from dbgpt.app.prompt.api import router as prompt_router
-from dbgpt.app.llm_manage.api import router as llm_manage_api
 
-from dbgpt.app.openapi.api_v1.api_v1 import router as api_v1
 from dbgpt.app.openapi.base import validation_exception_handler
-from dbgpt.app.openapi.api_v1.editor.api_editor_v1 import router as api_editor_route_v1
-from dbgpt.app.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
-from dbgpt.agent.commands.disply_type.show_chart_gen import (
-    static_message_img_path,
-)
-from dbgpt.model.cluster import initialize_worker_manager_in_client
 from dbgpt.util.utils import (
     setup_logging,
     _get_logging_level,
@@ -78,16 +72,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_v1, prefix="/api", tags=["Chat"])
-app.include_router(api_editor_route_v1, prefix="/api", tags=["Editor"])
-app.include_router(llm_manage_api, prefix="/api", tags=["LLM Manage"])
-app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
 
-app.include_router(knowledge_router, tags=["Knowledge"])
-app.include_router(prompt_router, tags=["Prompt"])
+def mount_routers(app: FastAPI):
+    """Lazy import to avoid high time cost"""
+    from dbgpt.app.knowledge.api import router as knowledge_router
+
+    # from dbgpt.app.prompt.api import router as prompt_router
+    # prompt has been removed to dbgpt.serve.prompt
+    from dbgpt.app.llm_manage.api import router as llm_manage_api
+
+    from dbgpt.app.openapi.api_v1.api_v1 import router as api_v1
+    from dbgpt.app.openapi.api_v1.editor.api_editor_v1 import (
+        router as api_editor_route_v1,
+    )
+    from dbgpt.app.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
+
+    app.include_router(api_v1, prefix="/api", tags=["Chat"])
+    app.include_router(api_editor_route_v1, prefix="/api", tags=["Editor"])
+    app.include_router(llm_manage_api, prefix="/api", tags=["LLM Manage"])
+    app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
+
+    app.include_router(knowledge_router, tags=["Knowledge"])
+    # app.include_router(prompt_router, tags=["Prompt"])
 
 
-def mount_static_files(app):
+def mount_static_files(app: FastAPI):
+    from dbgpt.agent.commands.disply_type.show_chart_gen import (
+        static_message_img_path,
+    )
+
     os.makedirs(static_message_img_path, exist_ok=True)
     app.mount(
         "/images",
@@ -122,14 +135,15 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
     if not param:
         param = _get_webserver_params(args)
 
+    # import after param is initialized, accelerate --help speed
+    from dbgpt.model.cluster import initialize_worker_manager_in_client
+
     if not param.log_level:
         param.log_level = _get_logging_level()
     setup_logging(
         "dbgpt", logging_level=param.log_level, logger_filename=param.log_file
     )
 
-    # Before start
-    system_app.before_start()
     model_name = param.model_name or CFG.LLM_MODEL
     param.model_name = model_name
     print(param)
@@ -138,8 +152,15 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
     embedding_model_path = EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
 
     server_init(param, system_app)
+    mount_routers(app)
     model_start_listener = _create_model_start_listener(system_app)
     initialize_components(param, system_app, embedding_model_name, embedding_model_path)
+
+    # Before start, after initialize_components
+    # TODO: initialize_worker_manager_in_client as a component register in system_app
+    system_app.before_start()
+    # Migration db storage, so you db models must be imported before this
+    _migration_db_storage(param)
 
     model_path = CFG.LLM_MODEL_PATH or LLM_MODEL_CONFIG.get(model_name)
     if not param.light:
