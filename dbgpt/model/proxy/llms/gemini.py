@@ -47,7 +47,17 @@ def gemini_generate_stream(
 
     import google.generativeai as genai
 
-    genai.configure(api_key=proxy_api_key)
+    if model_params.proxy_api_base:
+        from google.api_core import client_options
+
+        client_opts = client_options.ClientOptions(
+            api_endpoint=model_params.proxy_api_base
+        )
+        genai.configure(
+            api_key=proxy_api_key, transport="rest", client_options=client_opts
+        )
+    else:
+        genai.configure(api_key=proxy_api_key)
     model = genai.GenerativeModel(
         model_name=proxyllm_backend,
         generation_config=generation_config,
