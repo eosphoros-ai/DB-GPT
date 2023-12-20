@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Optional, Any, List
 
 from dbgpt.rag.chunk import Document
-from dbgpt.rag.text_splitter.pre_text_splitter import PreTextSplitter
 from dbgpt.rag.text_splitter.text_splitter import (
     RecursiveCharacterTextSplitter,
     MarkdownHeaderTextSplitter,
@@ -12,20 +11,24 @@ from dbgpt.rag.text_splitter.text_splitter import (
 )
 
 
-class KnowledgeType(Enum):
-    DOCUMENT = (
-        "DOCUMENT",
-        "Upload a document, document type can be .pdf, .csv, .md, .pptx, .docx, .txt",
-    )
-    URL = ("URL", "Fetch the content of a URL")
-    TEXT = ("TEXT", "Fill your raw text")
+class DocumentType(Enum):
+    PDF = "pdf"
+    CSV = "csv"
+    MARKDOWN = "md"
+    PPTX = "pptx"
+    DOCX = "docx"
+    TXT = "txt"
+    HTML = "html"
 
-    def __new__(cls, value, description):
-        """Customize the Enum class"""
-        obj = object.__new__(cls)
-        obj._value_ = value
-        obj.description = description
-        return obj
+
+class KnowledgeType(Enum):
+    DOCUMENT = "DOCUMENT"
+    URL = "URL"
+    TEXT = "TEXT"
+
+    @property
+    def type(self):
+        return DocumentType
 
     @classmethod
     def get_by_value(cls, value):
@@ -39,10 +42,22 @@ class KnowledgeType(Enum):
 class ChunkStrategy(Enum):
     """chunk strategy"""
 
-    CHUNK_BY_SIZE = (RecursiveCharacterTextSplitter, ["chunk_size", "chunk_overlap"])
+    CHUNK_BY_SIZE = (
+        RecursiveCharacterTextSplitter,
+        [
+            {"param_name": "chunk_size", "param_type": "int"},
+            {"param_name": "chunk_overlap", "param_type": "int"},
+        ],
+    )
     CHUNK_BY_PAGE = (RecursiveCharacterTextSplitter, [])
-    CHUNK_BY_PARAGRAPH = (ParagraphTextSplitter, ["separator"])
-    CHUNK_BY_SEPARATOR = (CharacterTextSplitter, ["separator"])
+    CHUNK_BY_PARAGRAPH = (
+        ParagraphTextSplitter,
+        [{"param_name": "separator", "param_type": "str"}],
+    )
+    CHUNK_BY_SEPARATOR = (
+        CharacterTextSplitter,
+        [{"param_name": "separator", "param_type": "str"}],
+    )
     CHUNK_BY_MARKDOWN_HEADER = (MarkdownHeaderTextSplitter, [])
 
     def __init__(self, splitter_class, parameters):
@@ -54,6 +69,8 @@ class ChunkStrategy(Enum):
 
 
 class Knowledge(ABC):
+    type: KnowledgeType = None
+
     def __init__(
         self,
         path: Optional[str] = None,
@@ -71,9 +88,14 @@ class Knowledge(ABC):
         documents = self._load()
         return self._postprocess(documents)
 
-    def type(self) -> KnowledgeType:
+    @classmethod
+    def type(cls) -> KnowledgeType:
         """Get knowledge type"""
-        return self._type
+
+    @classmethod
+    def document_type(cls) -> Any:
+        """Get document type"""
+        return None
 
     def _postprocess(self, docs: List[Document]) -> List[Document]:
         """Post process knowledge from data_loader"""
@@ -83,7 +105,8 @@ class Knowledge(ABC):
     def _load(self):
         """Preprocess knowledge from data_loader"""
 
-    def support_chunk_strategy(self) -> List[ChunkStrategy]:
+    @classmethod
+    def support_chunk_strategy(cls) -> List[ChunkStrategy]:
         """support chunk strategy"""
         return [
             ChunkStrategy.CHUNK_BY_SIZE,

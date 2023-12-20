@@ -4,16 +4,16 @@ from typing import List, Tuple
 from dbgpt.rag.chunk import Chunk
 
 
-class RetrieverMode(str, Enum):
-    """Retriever mode.
+class RetrieverStrategy(str, Enum):
+    """Retriever strategy.
     Args:
-        - KEYWORD: keyword retriever
         - EMBEDDING: embedding retriever
+        - KEYWORD: keyword retriever
         - HYBRID: hybrid retriever
     """
 
-    KEYWORD = "keyword"
     EMBEDDING = "embedding"
+    KEYWORD = "keyword"
     HYBRID = "hybrid"
 
 
@@ -24,6 +24,8 @@ class BaseRetriever(ABC):
         """
         Args:
             query (str): query text
+        Returns:
+            List[Chunk]: list of chunks
         """
         return self._retrieve(query)
 
@@ -31,6 +33,8 @@ class BaseRetriever(ABC):
         """
         Args:
             query (str): async query text
+        Returns:
+            List[Chunk]: list of chunks
         """
         return await self._aretrieve(query)
 
@@ -49,6 +53,8 @@ class BaseRetriever(ABC):
         Args:
             query (str): query text
             score_threshold (float): score threshold
+        Returns:
+            List[Chunk]: list of chunks
         """
         return await self._aretrieve_with_score(query, score_threshold)
 
@@ -57,6 +63,8 @@ class BaseRetriever(ABC):
         """Retrieve knowledge chunks.
         Args:
             query (str): query text
+        Returns:
+            List[Chunk]: list of chunks
         """
 
     @abstractmethod
@@ -64,6 +72,8 @@ class BaseRetriever(ABC):
         """Async Retrieve knowledge chunks.
         Args:
             query (str): query text
+        Returns:
+            List[Chunk]: list of chunks
         """
 
     @abstractmethod
@@ -72,6 +82,8 @@ class BaseRetriever(ABC):
         Args:
             query (str): query text
             score_threshold (float): score threshold
+        Returns:
+            List[Chunk]: list of chunks
         """
 
     @abstractmethod
@@ -82,4 +94,6 @@ class BaseRetriever(ABC):
         Args:
             query (str): query text
             score_threshold (float): score threshold
+        Returns:
+            List[Chunk]: list of chunks
         """

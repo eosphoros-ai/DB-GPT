@@ -1,7 +1,12 @@
 from typing import Optional, Any, List
 
 from dbgpt.rag.chunk import Document
-from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType, ChunkStrategy
+from dbgpt.rag.knowledge.base import (
+    Knowledge,
+    KnowledgeType,
+    ChunkStrategy,
+    DocumentType,
+)
 
 
 class PDFKnowledge(Knowledge):
@@ -15,7 +20,12 @@ class PDFKnowledge(Knowledge):
         language: Optional[str] = "zh",
         **kwargs: Any,
     ) -> None:
-        """Initialize with Knowledge arguments."""
+        """Initialize with PDF Knowledge arguments.
+        Args:
+            file_path:(Optional[str]) file path
+            knowledge_type:(KnowledgeType) knowledge type
+            loader:(Optional[Any]) loader
+        """
         self._path = file_path
         self._type = knowledge_type
         self._loader = loader
@@ -57,9 +67,22 @@ class PDFKnowledge(Knowledge):
             return documents
         return [Document.langchain2doc(lc_document) for lc_document in documents]
 
-    def support_chunk_strategy(self):
+    @classmethod
+    def support_chunk_strategy(cls) -> List[ChunkStrategy]:
         return [
             ChunkStrategy.CHUNK_BY_SIZE,
             ChunkStrategy.CHUNK_BY_PAGE,
             ChunkStrategy.CHUNK_BY_SEPARATOR,
         ]
+
+    @classmethod
+    def default_chunk_strategy(cls) -> ChunkStrategy:
+        return ChunkStrategy.CHUNK_BY_SIZE
+
+    @classmethod
+    def type(cls) -> KnowledgeType:
+        return KnowledgeType.DOCUMENT
+
+    @classmethod
+    def document_type(cls) -> DocumentType:
+        return DocumentType.PDF

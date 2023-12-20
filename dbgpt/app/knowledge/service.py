@@ -2,13 +2,15 @@ import json
 import logging
 from datetime import datetime
 
-from dbgpt.rag.embedding_engine import KnowledgeType
+from dbgpt.rag.knowledge.base import KnowledgeType
+from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 from dbgpt._private.config import Config
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
-    KNOWLEDGE_UPLOAD_ROOT_PATH, PILOT_PATH,
+    KNOWLEDGE_UPLOAD_ROOT_PATH,
+    PILOT_PATH,
 )
 from dbgpt.component import ComponentType
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
@@ -277,11 +279,8 @@ class KnowledgeService:
                 model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
             )
             from dbgpt.storage.vector_store.base import VectorStoreConfig
-            config = VectorStoreConfig(
-                persist_path=PILOT_PATH + "/data",
-                name=space_name,
-            )
-            config.embedding_fn = embedding_fn
+
+            config = VectorStoreConfig(name=space_name, embedding_fn=embedding_fn)
             vector_store_connector = VectorStoreConnector(
                 vector_store_type=CFG.VECTOR_STORE_TYPE,
                 vector_store_config=config,
@@ -290,13 +289,14 @@ class KnowledgeService:
             from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
             from dbgpt.rag.knowledge.factory import KnowledgeFactory
 
-            knowledge = KnowledgeFactory.from_file_path(
-                file_path=doc.content, knowledge_type=KnowledgeType.DOCUMENT
+            knowledge = KnowledgeFactory.create(
+                datasource=doc.content,
+                knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
             )
             assembler = EmbeddingAssembler.load_from_knowledge(
                 knowledge=knowledge,
                 chunk_parameters=chunk_parameters,
-                vector_store_connector=vector_store_connector
+                vector_store_connector=vector_store_connector,
             )
             chunk_docs = assembler.get_chunks()
             # update document status
@@ -372,15 +372,13 @@ class KnowledgeService:
         if len(spaces) == 0:
             raise Exception(f"delete error, no space name:{space_name} in database")
         space = spaces[0]
-        vector_config = {}
-        vector_config["vector_store_name"] = space.name
-        vector_config["vector_store_type"] = CFG.VECTOR_STORE_TYPE
-        vector_config["chroma_persist_path"] = KNOWLEDGE_UPLOAD_ROOT_PATH
-        vector_client = VectorStoreConnector(
-            vector_store_type=CFG.VECTOR_STORE_TYPE, ctx=vector_config
+        config = VectorStoreConfig(name=space.name)
+        vector_store_connector = VectorStoreConnector(
+            vector_store_type=CFG.VECTOR_STORE_TYPE,
+            vector_store_config=config,
         )
         # delete vectors
-        vector_client.delete_vector_name(space.name)
+        vector_store_connector.delete_vector_name(space.name)
         document_query = KnowledgeDocumentEntity(space=space.name)
         # delete chunks
         documents = knowledge_document_dao.get_documents(document_query)
@@ -403,15 +401,13 @@ class KnowledgeService:
             raise Exception(f"there are no or more than one document called {doc_name}")
         vector_ids = documents[0].vector_ids
         if vector_ids is not None:
-            vector_config = {}
-            vector_config["vector_store_name"] = space_name
-            vector_config["vector_store_type"] = CFG.VECTOR_STORE_TYPE
-            vector_config["chroma_persist_path"] = KNOWLEDGE_UPLOAD_ROOT_PATH
-            vector_client = VectorStoreConnector(
-                vector_store_type=CFG.VECTOR_STORE_TYPE, ctx=vector_config
+            config = VectorStoreConfig(name=space_name)
+            vector_store_connector = VectorStoreConnector(
+                vector_store_type=CFG.VECTOR_STORE_TYPE,
+                vector_store_config=config,
             )
             # delete vector by ids
-            vector_client.delete_by_ids(vector_ids)
+            vector_store_connector.delete_by_ids(vector_ids)
         # delete chunks
         document_chunk_dao.raw_delete(documents[0].id)
         # delete document

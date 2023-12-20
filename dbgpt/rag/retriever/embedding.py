@@ -17,7 +17,6 @@ class EmbeddingRetriever(BaseRetriever):
         query_rewrite: bool = False,
         rerank: Ranker = None,
         vector_store_connector: VectorStoreConnector = None,
-        **kwargs
     ):
         """
         Args:
@@ -25,6 +24,31 @@ class EmbeddingRetriever(BaseRetriever):
             query_rewrite (bool): query rewrite
             rerank (Ranker): rerank
             vector_store_connector (VectorStoreConnector): vector store connector
+            code example:
+            .. code-block:: python
+            >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
+            >>> from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
+            >>> from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+            >>> from dbgpt.rag.embedding_engine.embedding_factory import DefaultEmbeddingFactory
+
+            embedding_factory = DefaultEmbeddingFactory()
+            from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+            from dbgpt.storage.vector_store.connector import VectorStoreConnector
+
+            embedding_fn = embedding_factory.create(
+                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+            )
+            vector_name = "test"
+            config = ChromaVectorConfig(name=vector_name, embedding_fn=embedding_fn)
+            vector_store_connector = VectorStoreConnector(
+                vector_store_type=""Chroma"",
+                vector_store_config=config,
+            )
+            embedding_retriever = EmbeddingRetriever(
+                top_k=3, vector_store_connector=vector_store_connector
+            )
+            chunks = embedding_retriever.retrieve("your query text")
+            print(f"embedding retriever results:{[chunk.content for chunk in chunks]}")
         """
         self._top_k = top_k
         self._query_rewrite = query_rewrite
@@ -35,6 +59,8 @@ class EmbeddingRetriever(BaseRetriever):
         """Retrieve knowledge chunks.
         Args:
             query (str): query text
+        Return:
+            List[Chunk]: list of chunks
         """
         queries = [query]
         candidates = [
@@ -49,6 +75,8 @@ class EmbeddingRetriever(BaseRetriever):
         Args:
             query (str): query text
             score_threshold (float): score threshold
+        Return:
+            List[Chunk]: list of chunks with score
         """
         queries = [query]
         candidates_with_score = [
@@ -65,6 +93,8 @@ class EmbeddingRetriever(BaseRetriever):
         """Retrieve knowledge chunks.
         Args:
             query (str): query text
+        Return:
+            List[Chunk]: list of chunks
         """
         queries = [query]
         candidates = [self._similarity_search(query) for query in queries]
@@ -78,6 +108,8 @@ class EmbeddingRetriever(BaseRetriever):
         Args:
             query (str): query text
             score_threshold (float): score threshold
+        Return:
+            List[Chunk]: list of chunks with score
         """
         queries = [query]
         candidates_with_score = [
@@ -98,7 +130,9 @@ class EmbeddingRetriever(BaseRetriever):
             self._top_k,
         )
 
-    async def _similarity_search_with_score(self, query, score_threshold):
+    async def _similarity_search_with_score(
+        self, query, score_threshold
+    ) -> List[Chunk]:
         """Similar search with score."""
         return self._vector_store_connector.similar_search_with_scores(
             query, self._top_k, score_threshold

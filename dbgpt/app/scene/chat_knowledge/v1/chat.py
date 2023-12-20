@@ -69,11 +69,8 @@ class ChatKnowledge(BaseChat):
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
-        config = VectorStoreConfig(
-            persist_path=PILOT_PATH + "/data",
-            name=self.knowledge_space,
-        )
-        config.embedding_fn = embedding_fn
+
+        config = VectorStoreConfig(name=self.knowledge_space, embedding_fn=embedding_fn)
         vector_store_connector = VectorStoreConnector(
             vector_store_type=CFG.VECTOR_STORE_TYPE,
             vector_store_config=config,
@@ -132,15 +129,11 @@ class ChatKnowledge(BaseChat):
             print("rewrite queries:", queries)
         queries.append(self.current_user_input)
         from dbgpt._private.chat_util import run_async_tasks
+
         # similarity search from vector db
         tasks = [self.execute_similar_search(query) for query in queries]
-        docs_with_scores = await run_async_tasks(tasks=tasks, concurrency_limit=1)
-        candidates_with_scores = reduce(lambda x, y: x + y, docs_with_scores)
-        # candidates document rerank
-        from dbgpt.rag.retriever.rerank import DefaultRanker
-
-        ranker = DefaultRanker(self.top_k)
-        candidates_with_scores = ranker.rank(candidates_with_scores)
+        candidates_with_scores = await run_async_tasks(tasks=tasks, concurrency_limit=1)
+        candidates_with_scores = reduce(lambda x, y: x + y, candidates_with_scores)
         self.chunks_with_score = []
         if not candidates_with_scores or len(candidates_with_scores) == 0:
             print("no relevant docs to retrieve")

@@ -30,7 +30,52 @@ class DBStructRetriever(BaseRetriever):
             query_rewrite (bool): query rewrite
             rerank (Ranker): rerank
             vector_store_connector (VectorStoreConnector): vector store connector
+        code example:
+        .. code-block:: python
+            >>> from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
+            >>> from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler
+            >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
+            >>> from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
+            >>> from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+
+            def _create_temporary_connection():
+                connect = SQLiteTempConnect.create_temporary_db()
+                connect.create_temp_tables(
+                    {
+                        "user": {
+                            "columns": {
+                                "id": "INTEGER PRIMARY KEY",
+                                "name": "TEXT",
+                                "age": "INTEGER",
+                            },
+                            "data": [
+                                (1, "Tom", 10),
+                                (2, "Jerry", 16),
+                                (3, "Jack", 18),
+                                (4, "Alice", 20),
+                                (5, "Bob", 22),
+                            ],
+                        }
+                    }
+                )
+                return connect
+            connection = _create_temporary_connection()
+            vector_store_config = ChromaVectorConfig(name="vector_store_name")
+            embedding_model_path = "{your_embedding_model_path}"
+            embedding_fn = embedding_factory.create(
+                model_name=embedding_model_path
+            )
+            vector_connector = VectorStoreConnector.from_default(
+                "Chroma",
+                vector_store_config=vector_store_config,
+                embedding_fn=embedding_fn
+            )
+            # get db struct retriever
+            retriever = DBStructRetriever(top_k=3, vector_store_connector=vector_connector)
+            chunks = retriever.retrieve("show columns from table")
+            print(f"db struct rag example results:{[chunk.content for chunk in chunks]}")
         """
+
         self._top_k = top_k
         self._is_embeddings = is_embeddings
         self._connection = connection
@@ -79,7 +124,7 @@ class DBStructRetriever(BaseRetriever):
             from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 
             table_summaries = await run_async_tasks(
-                tasks=[self._aparse_db_summary(self._connection)], concurrency_limit=1
+                tasks=[self._aparse_db_summary()], concurrency_limit=1
             )
             return [Chunk(content=table_summary) for table_summary in table_summaries]
 
@@ -100,8 +145,8 @@ class DBStructRetriever(BaseRetriever):
             self._top_k,
         )
 
-    async def _aparse_db_summary(self, query) -> List[Chunk]:
+    async def _aparse_db_summary(self) -> List[Chunk]:
         """Similar search."""
         from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 
-        return _parse_db_summary(self._connection)
+        return _parse_db_summary()

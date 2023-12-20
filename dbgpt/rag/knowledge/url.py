@@ -14,7 +14,14 @@ class URLKnowledge(Knowledge):
         loader: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize with Knowledge arguments."""
+        """Initialize with Knowledge arguments.
+        Args:
+            url:(Optional[str]) url
+            knowledge_type:(KnowledgeType) knowledge type
+            source_column:(Optional[str]) source column
+            encoding:(Optional[str]) csv encoding
+            loader:(Optional[Any]) loader
+        """
         self._path = url
         self._type = knowledge_type
         self._loader = loader
@@ -32,13 +39,17 @@ class URLKnowledge(Knowledge):
             documents = web_reader.load()
         return [Document.langchain2doc(lc_document) for lc_document in documents]
 
-    def support_chunk_strategy(self):
+    @classmethod
+    def support_chunk_strategy(cls) -> List[ChunkStrategy]:
         return [
             ChunkStrategy.CHUNK_BY_SIZE,
-            ChunkStrategy.CHUNK_BY_PARAGRAPH,
-            ChunkStrategy.CHUNK_BY_PAGE,
             ChunkStrategy.CHUNK_BY_SEPARATOR,
         ]
 
-    def default_chunk_strategy(self) -> ChunkStrategy:
+    @classmethod
+    def default_chunk_strategy(cls) -> ChunkStrategy:
         return ChunkStrategy.CHUNK_BY_SIZE
+
+    @classmethod
+    def type(cls):
+        return KnowledgeType.URL
