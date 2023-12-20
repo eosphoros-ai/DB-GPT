@@ -173,8 +173,8 @@ class AgentContext:
     llm_models: Optional[List[str]] = None
     agents: Optional[List[str]] = None
 
-    max_chat_round: Optional[int] = 50
-    max_retry_round: Optional[int] = 3
+    max_chat_round: Optional[int] = 100
+    max_retry_round: Optional[int] = 10
     max_new_tokens:Optional[int] = 1024
     temperature:Optional[float] = 0.5
     allow_format_str_template:Optional[bool] = False

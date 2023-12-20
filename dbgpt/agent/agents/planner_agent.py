@@ -174,4 +174,4 @@ class PlannerAgent(ConversableAgent):
                 ["{},{}".format(index + 1, item.get('content')) for index, item in enumerate(json_objects[0])])
         else:
             content = fail_reason
-        return True, {"is_exe_success": rensponse_succ, "content": content}
+        return True, {"is_exe_success": rensponse_succ, "content": content, "view": content}

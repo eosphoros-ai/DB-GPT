@@ -198,14 +198,14 @@ class MultiAgents(BaseComponent, ABC):
                 "model": message.model_name,
                 "markdown": view_info
             })
-        messages_content = json.dumps(messages_view)
+        messages_content = json.dumps(messages_view, ensure_ascii=False, cls=EnhancedJSONEncoder)
         return f"```agent-messages\n{messages_content}\n```"
 
     @staticmethod
     def _messages_to_plan_vis(messages: List[Dict]):
         if messages is None or len(messages) <=0:
             return ""
-        messages_content = json.dumps(messages)
+        messages_content = json.dumps(messages, ensure_ascii=False, cls=EnhancedJSONEncoder)
         return f"```agent-plans\n{messages_content}\n```"
 
 
@@ -220,7 +220,7 @@ class MultiAgents(BaseComponent, ABC):
         plans_info_map = defaultdict()
         for plan in plans:
             plans_info_map[plan.sub_task_content] = {
-                "name": plan.sub_task_title,
+                "name": plan.sub_task_content,
                 "num": plan.sub_task_num,
                 "status": plan.state,
                 "agent": plan.sub_task_agent,
@@ -238,14 +238,26 @@ class MultiAgents(BaseComponent, ABC):
     async def chat_completions(self, conv_id: str, user_code: str = None, system_app: str = None):
         is_complete = False
         while True:
-            if is_complete:
-                return
             gpts_conv = self.gpts_conversations.get_by_conv_id(conv_id)
             if  gpts_conv:
-                is_complete = True if gpts_conv.state in [Status.COMPLETE.value, Status.FAILED.value] else False
-
+                is_complete = True if gpts_conv.state in [Status.COMPLETE.value, Status.WAITING.value, Status.FAILED.value] else False
             yield await self._one_plan_chat_competions(conv_id, user_code, system_app)
-            await asyncio.sleep(10)
+            if is_complete:
+                return
+            else:
+                await asyncio.sleep(5)
+
+    async def stable_message(self, conv_id: str, user_code: str = None, system_app: str = None):
+        gpts_conv = self.gpts_conversations.get_by_conv_id(conv_id)
+        if gpts_conv:
+            is_complete = True if gpts_conv.state in [Status.COMPLETE.value, Status.WAITING.value,
+                                                      Status.FAILED.value] else False
+            if is_complete:
+                return await self._one_plan_chat_competions(conv_id, user_code, system_app)
+            else:
+                raise ValueError("The conversation has not been completed yet, so we cannot directly obtain information.")
+        else:
+            raise ValueError("No conversation record found!")
 
     def gpts_conv_list(self, user_code: str = None, system_app: str = None):
         return self.gpts_conversations.get_convs(user_code, system_app)
@@ -286,7 +298,7 @@ async def create_dbgpts(gpts_instance: DbGptsInstance = Body()):
 async def stream_generator(conv_id: str):
     async for chunk in multi_agents.chat_completions(conv_id ):
         if chunk:
-            yield f"data: {json.dumps(chunk, ensure_ascii=False, cls=EnhancedJSONEncoder)}\n\n"
+            yield f"data: {chunk}\n\n"
 
 
 @router.post("/v1/dbbgpts/chat/plan/completions", response_model=Result[str])
@@ -327,8 +339,6 @@ async def plan_chat_messages( conv_id: str, user_code: str = None, sys_code: str
         headers=headers,
         media_type="text/plain",
     )
-
-
 
 
 

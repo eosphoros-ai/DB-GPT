@@ -43,28 +43,32 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
         self.df.loc[(self.df['conv_id'] == conv_id) & (self.df['sub_task_num'] == task_num), ['state', 'result']] = {
             "state": Status.COMPLETED.value, "result": result}
 
-    def update_task(self, conv_id: str, task_num: int, state: str, retry_times: int, agent: str = None, model=None, result:str= None):
+    def update_task(self, conv_id: str, task_num: int, state: str, retry_times: int, agent: str = None, model=None,
+                    result: str = None):
+        update_param = {}
+        update_param['state'] = state
+        update_param['retry_times'] = retry_times
+        update_param['result'] = result
+        if agent:
+            update_param['sub_task_agent'] = agent
+        if model:
+            update_param['agent_model'] = model
         self.df.loc[(self.df['conv_id'] == conv_id) & (self.df['sub_task_num'] == task_num),
-                    ['state', 'retry_times', 'sub_task_agent', 'agent_model']] = {"state": state,
-                                                                                  "retry_times": retry_times,
-                                                                                  "sub_task_agent": agent,
-                                                                                  "agent_model": model,
-                                                                                  "result": result}
-
-
+                    ['state', 'retry_times', 'sub_task_agent', 'agent_model']] = update_param
 
     def remove_by_conv_id(self, conv_id: str):
-        self.df.drop(self.df[self.df['conv_id']==conv_id].index, inplace=True)
+        self.df.drop(self.df[self.df['conv_id'] == conv_id].index, inplace=True)
+
 
 class DefaultGptsMessageMemory(GptsMessageMemory):
 
     def __init__(self):
-        self.df = pd.DataFrame(columns= [field.name for field in fields(GptsMessage)] )
+        self.df = pd.DataFrame(columns=[field.name for field in fields(GptsMessage)])
 
     def append(self, message: GptsMessage):
         self.df.loc[len(self.df)] = message.to_dict()
 
-    def get_by_agent(self,conv_id:str, agent: str) -> Optional[List[GptsMessage]]:
+    def get_by_agent(self, conv_id: str, agent: str) -> Optional[List[GptsMessage]]:
         result = self.df.query(f"conv_id=='{conv_id}' and (sender=='{agent}' or receiver=='{agent}')")
         messages = []
         for row in result.itertuples(index=False, name=None):
@@ -72,14 +76,15 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
             messages.append(GptsMessage.from_dict(row_dict))
         return messages
 
-    def get_between_agents(self,conv_id:str, agent1: str, agent2: str, current_gogal:Optional[str] = None) -> Optional[List[GptsMessage]]:
-        result = self.df.query(f"conv_id=='{conv_id}' and ((sender=='{agent1}' and receiver=='{agent2}') or (sender=='{agent2}' and receiver=='{agent1}')) and current_gogal={current_gogal}")
+    def get_between_agents(self, conv_id: str, agent1: str, agent2: str, current_gogal: Optional[str] = None) -> \
+    Optional[List[GptsMessage]]:
+        result = self.df.query(
+            f"conv_id=='{conv_id}' and ((sender=='{agent1}' and receiver=='{agent2}') or (sender=='{agent2}' and receiver=='{agent1}')) and current_gogal={current_gogal}")
         messages = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))
             messages.append(GptsMessage.from_dict(row_dict))
         return messages
-
 
     def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessage]]:
         result = self.df.query(f"conv_id=='{conv_id}'")

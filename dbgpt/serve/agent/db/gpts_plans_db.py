@@ -96,7 +96,7 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         if not conv_id:
             return []
         gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).filter(
-            GptsPlansEntity.state.in_(Status.TODO.value, Status.RETRYING.value))
+            GptsPlansEntity.state.in_([Status.TODO.value, Status.RETRYING.value]))
         result = gpts_plans.order_by(GptsPlansEntity.sub_task_num).all()
         session.close()
         return result
@@ -118,13 +118,16 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         gpts_plans = gpts_plans.filter(
             GptsPlansEntity.conv_id == conv_id).filter(
             GptsPlansEntity.sub_task_num == task_num)
-        gpts_plans.update({
-            GptsPlansEntity.state: state,
-            GptsPlansEntity.sub_task_agent: agent,
-            GptsPlansEntity.agent_model: model,
-            GptsPlansEntity.retry_times: retry_times,
-            GptsPlansEntity.result: result
-        }, synchronize_session='fetch')
+        update_param = {}
+        update_param[ GptsPlansEntity.state] = state
+        update_param[ GptsPlansEntity.retry_times] = retry_times
+        update_param[ GptsPlansEntity.result] = result
+        if agent:
+            update_param[GptsPlansEntity.sub_task_agent] = agent
+        if model:
+            update_param[GptsPlansEntity.agent_model] = model
+
+        gpts_plans.update(update_param, synchronize_session='fetch')
         session.commit()
         session.close()
 

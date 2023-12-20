@@ -152,7 +152,7 @@ class PlanChat:
         # Return the result
         try:
             return self.agent_by_name(name), model
-        except ValueError:
+        except Exception as e:
             logger.warning(f"auto select speaker failed!{str(e)}")
             return self.next_agent(last_speaker, agents), model
 
@@ -303,6 +303,9 @@ class PlanChatManager(ConversableAgent):
                                     }
                                 }
                             else:
+                                self.memory.plans_memory.update_task(self.agent_context.conv_id, now_plan.sub_task_num,
+                                                                     Status.FAILED.value, now_plan.retry_times + 1,
+                                                                     speaker.name, "", plan_result)
                                 final_message = {"content": f"ReTask [{now_plan.sub_task_content}] was retried more than the maximum number of times and still failed.{now_plan.result} "}
                                 break
                         else:
@@ -320,32 +323,26 @@ class PlanChatManager(ConversableAgent):
                         # Tell the speaker the dependent history information
                         await self.a_process_rely_message(conv_id=self.agent_context.conv_id, now_plan=now_plan,
                                                           speaker=speaker)
-                        current_goal_message = {
-                            "content": now_plan.sub_task_content,
-                            "current_gogal":  now_plan.sub_task_content,
-                            "context": {
-                                "plan_task": now_plan.sub_task_content,
-                                "plan_task_num": now_plan.sub_task_num,
-                            }
-                        }
                         await self.a_send(message=current_goal_message, recipient=speaker, reviewer=reviewer, request_reply=False)
                         verify_pass, reply = await speaker.a_generate_reply(current_goal_message, self, reviewer)
 
                         plan_result = ""
-                        if reply:
-                            action_report = reply.get("action_report", None)
-                            if action_report:
-                                plan_result = action_report.get("content", "")
 
-                        if verify_pass and reply:
+
+                        if verify_pass :
+                            if reply:
+                                action_report = reply.get("action_report", None)
+                                if action_report:
+                                    plan_result = action_report.get("content", "")
                             ### The current planned Agent generation verification is successful
                             ##Plan executed successfully
                             self.memory.plans_memory.complete_task(self.agent_context.conv_id, now_plan.sub_task_num,plan_result)
                             await speaker.a_send(reply, self, reviewer, request_reply=False)
                         else:
+                            plan_result = reply['content']
                             self.memory.plans_memory.update_task(self.agent_context.conv_id, now_plan.sub_task_num,
                                                                  Status.RETRYING.value, now_plan.retry_times + 1,
-                                                                 sender.name, "", plan_result)
+                                                                 speaker.name, "", plan_result)
 
                         final_message = self.last_message(speaker)
                     except Exception as e:

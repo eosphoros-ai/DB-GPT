@@ -462,6 +462,7 @@ class ConversableAgent(Agent):
         if need_retry:
             ## Before optimization, wrong answers are stored in memory
             self.append_message(message, None, sender)
+            await self.a_send(message=message, recipient=sender, reviewer=reviewer, request_reply=False)
             ## Send error messages to yourself for retrieval optimization and increase the number of retrievals
             retry_message ={}
             retry_message['context'] = message.get('context', None)
