@@ -13,7 +13,6 @@ from sqlalchemy import (
     MetaData,
 )
 
-
 class ClickhouseConnect(RDBMSDatabase):
     """Connect Clickhouse Database fetch MetaData
     Args:
@@ -71,6 +70,11 @@ class ClickhouseConnect(RDBMSDatabase):
         cls.client = client
         return cls(client, **kwargs)
 
+    @property
+    def dialect(self) -> str:
+        """Return string representation of dialect to use."""
+        pass
+    
     def get_table_names(self):
         """Get all table names."""
         session = self.client
