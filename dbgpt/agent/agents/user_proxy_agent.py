@@ -1,4 +1,4 @@
-from .conversable_agent import ConversableAgent
+from .base_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 from .agent import Agent
 from ..memory.gpts_memory import GptsMemory
@@ -52,17 +52,27 @@ class UserProxyAgent(ConversableAgent):
 
     async def a_reasoning_reply(
         self,
-        messages: Union[List[Dict]],
-        sender: "Agent",
-        reviewer: "Agent",
-        request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False) -> Union[str, Dict, None]:
+        messages: Union[List[Dict]]) -> Union[str, Dict, None]:
 
         message = messages[-1]
-
-        if message["role"] != "function":
-            message["name"] = sender.name
         return message['content'], None
+
+    async def a_receive(
+            self,
+            message: Optional[Dict],
+            sender: Agent,
+            reviewer: "Agent",
+            request_reply: Optional[bool] = True,
+            silent: Optional[bool] = False,
+    ):
+        self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter + 1
+        self._process_received_message(message, sender, silent)
+
+        if (request_reply is False or request_reply is None):
+            logger.info("Messages that do not require a reply")
+            return
+
+        verify_paas, reply = await self.a_generate_reply(message=message, sender=sender, reviewer=reviewer, silent=silent)
 
 
     async def check_termination_and_human_reply(
@@ -73,66 +83,4 @@ class UserProxyAgent(ConversableAgent):
             config: Optional[Union[Dict, Literal[False]]] = None,
     ) -> Tuple[bool, Union[str, Dict, None]]:
         """Check if the conversation should be terminated, and if human reply is provided."""
-        if config is None:
-            config = self
-        if message is None:
-            messages = self._oai_messages[sender]
-            message = messages[-1].get("content", "")
-        reply = ""
-        no_human_input_msg = ""
-        if self.human_input_mode == "ALWAYS":
-            reply = self.get_human_input(
-                f"Provide feedback to {sender.name}. Press enter to skip and use auto-reply, or type 'exit' to end the conversation: "
-            )
-            no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
-            # if the human input is empty, and the message is a termination message, then we will terminate the conversation
-            reply = reply if reply or not self._is_termination_msg(message) else "exit"
-        else:
-            if self._consecutive_auto_reply_counter[sender] >= self._max_consecutive_auto_reply_dict[sender]:
-                if self.human_input_mode == "NEVER":
-                    reply = "exit"
-                else:
-                    # self.human_input_mode == "TERMINATE":
-                    terminate = self._is_termination_msg(message)
-                    reply = self.get_human_input(
-                        f"Please give feedback to {sender.name}. Press enter or type 'exit' to stop the conversation: "
-                        if terminate
-                        else f"Please give feedback to {sender.name}. Press enter to skip and use auto-reply, or type 'exit' to stop the conversation: "
-                    )
-                    no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
-                    # if the human input is empty, and the message is a termination message, then we will terminate the conversation
-                    reply = reply if reply or not terminate else "exit"
-            elif self._is_termination_msg(message):
-                if self.human_input_mode == "NEVER":
-                    reply = "exit"
-                else:
-                    # self.human_input_mode == "TERMINATE":
-                    reply = self.get_human_input(
-                        f"Please give feedback to {sender.name}. Press enter or type 'exit' to stop the conversation: "
-                    )
-                    no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
-                    # if the human input is empty, and the message is a termination message, then we will terminate the conversation
-                    reply = reply or "exit"
-
-        # print the no_human_input_msg
-        if no_human_input_msg:
-            print(colored(f"\n>>>>>>>> {no_human_input_msg}", "red"), flush=True)
-
-        # stop the conversation
-        if reply == "exit":
-            # reset the consecutive_auto_reply_counter
-            self._consecutive_auto_reply_counter[sender] = 0
-            return True, None
-
-        # send the human reply
-        if reply or self._max_consecutive_auto_reply_dict[sender] == 0:
-            # reset the consecutive_auto_reply_counter
-            self._consecutive_auto_reply_counter[sender] = 0
-            return True, reply
-
-        # increment the consecutive_auto_reply_counter
-        self._consecutive_auto_reply_counter[sender] += 1
-        if self.human_input_mode != "NEVER":
-            print(colored("\n>>>>>>>> USING AUTO REPLY...", "red"), flush=True)
-
-        return False, None
+        return True, None

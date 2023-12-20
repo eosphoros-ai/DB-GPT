@@ -1,14 +1,12 @@
-import json
-
 from .agent import Agent, AgentContext
-from .conversable_agent import ConversableAgent
+from .base_agent import ConversableAgent
 
 
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 from dbgpt.util.json_utils import find_json_objects
 from dbgpt.agent.common.schema import Status
-from ..memory.gpts_memory import GptsMemory, GptsPlan, GptsMessage
-from .planning_group_chat import PlanChat
+from ..memory.gpts_memory import GptsMemory, GptsPlan
+from dbgpt.agent.agents.plan_group_chat import PlanChat
 from .agents_mange import agent_mange
 from dbgpt._private.config import Config
 

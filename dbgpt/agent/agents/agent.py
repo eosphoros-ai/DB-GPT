@@ -47,7 +47,7 @@ class Agent:
         message: Union[Dict, str],
         recipient: "Agent",
         reviewer: "Agent",
-        request_reply: Optional[bool] = None,
+        request_reply: Optional[bool] = True,
     ):
         """(Abstract async method) Send a message to another agent."""
 
@@ -81,8 +81,10 @@ class Agent:
 
     async def a_generate_reply(
         self,
-        messages: Optional[List[Dict]] = None,
-        sender: Optional["Agent"] = None,
+        message: Optional[Dict],
+        sender: Agent,
+        reviewer: "Agent",
+        silent: Optional[bool] = False,
         **kwargs,
     ) -> Union[str, Dict, None]:
         """(Abstract async method) Generate a reply based on the received messages.
@@ -96,19 +98,11 @@ class Agent:
 
     async def a_reasoning_reply(
         self,
-        messages: Union[List[str]],
-        sender: "Agent",
-        reviewer: "Agent",
-        request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False)-> Union[str, Dict, None]:
+        messages: Union[List[str]])-> Union[str, Dict, None]:
         """
         Based on the requirements of the current agent, reason about the current task goal through LLM
         Args:
             message:
-            sender:
-            reviewer:
-            request_reply:
-            silent:
 
         Returns:
             str or dict or None: the generated reply. If None, no reply is generated.

@@ -31,7 +31,8 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
         return plans
 
     def get_todo_plans(self, conv_id: str) -> List[GptsPlan]:
-        result = self.df.query(f"conv_id=='{conv_id}' and state=='todo'")
+        todo_states = [Status.TODO.value, Status.RETRYING.value]
+        result = self.df.query(f"conv_id=='{conv_id}' and state in @todo_states")
         plans = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))

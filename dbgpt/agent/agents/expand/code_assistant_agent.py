@@ -1,4 +1,6 @@
-from ..conversable_agent import ConversableAgent
+import json
+
+from ..base_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 from dbgpt.util.code_utils import (
     UNKNOWN,
@@ -26,6 +28,8 @@ class CodeAssistantAgent(ConversableAgent):
     This agent doesn't execute code by default, and expects the user to execute the code.
     """
 
+
+
     DEFAULT_SYSTEM_MESSAGE = """You are a helpful AI assistant.
 Solve tasks using your coding and language skills.
 In the following cases, suggest python code (in a python coding block) or shell script (in a sh coding block) for the user to execute.
@@ -37,6 +41,12 @@ If you want the user to save the code in a file before executing it, put # filen
 If the result indicates there is an error, fix the error and output the code again. Suggest the full code instead of partial code or code changes. If the error can't be fixed or if the task is not solved even after the code is executed successfully, analyze the problem, revisit your assumption, collect additional info you need, and think of a different approach to try.
 When you find an answer, verify the answer carefully. Please try to simplify the output of the code to ensure that the output data of the code you generate is concise and complete.
     """
+    CHECK_RESULT_SYSTEM_MESSAGE = f"""
+            You are an expert in action reporting analysis.
+            Please determine whether the given task results are the output required by the task background, including format and content.
+            If the generated results are as expected and relevant to the task content, True is returned, otherwise False is returned. Only returns True or False.
+           """
+
     NAME = "CodeEngineer"
     DEFAULT_DESCRIBE = """According to the current planning steps, write python/shell code to solve the problem, such as: data crawling, data sorting and conversion, etc. Wrap the code in a code block of the specified script type. Users cannot modify your code. So don't suggest incomplete code that needs to be modified by others.
           Don't include multiple code blocks in one response. Don't ask others to copy and paste the results
@@ -92,6 +102,16 @@ When you find an answer, verify the answer carefully. Please try to simplify the
         )
 
 
+
+    def _vis_code_idea(self, code, exit_success, log, language):
+        param = {}
+        param['exit_success'] = exit_success
+        param['language'] = language
+        param['code'] = code
+        param['log'] = log
+
+        return f"```vis-code\n{json.dumps(param)}\n```"
+
     async def generate_code_execution_reply(
         self,
         message: Optional[str] = None,
@@ -126,10 +146,44 @@ When you find an answer, verify the answer carefully. Please try to simplify the
         exit_success =  True if exitcode == 0 else False
         if exit_success:
             return True, {"is_exe_success": exit_success,
-                          "content": f"{logs}"}
+                          "content": f"{logs}",
+                          "view": self._vis_code_idea(code_blocks, exit_success, logs, code_blocks[0][0])}
         else:
             return True, {"is_exe_success": exit_success,
-                          "content": f"exitcode: {exitcode} (execution failed)\nCode output: {logs}"}
+                          "content": f"exitcode: {exitcode} (execution failed)\n {logs}",
+                          "view": self._vis_code_idea(code_blocks, exit_success, logs, code_blocks[0][0])}
+
+
+    async def a_verify(self, message: Optional[Dict]):
+        self.update_system_message(self.CHECK_RESULT_SYSTEM_MESSAGE)
+        task_gogal = message.get("current_gogal", None)
+        action_report =  message.get('action_report', None)
+        task_result = ""
+        if action_report:
+            task_result = action_report.get("content", "")
+
+
+
+        final, check_reult, model = await self.a_reasoning_reply(
+            self.messages
+            + [
+                {
+                    "role": "user",
+                    "content": f"""Please understand the following task background and goals, and judge whether the generated results achieve the goals.
+                    Task Background: {self.system_message}
+                    Task Gogal: {task_gogal}
+                    Task Result: {task_result}
+                    Only True or False is returned.
+                    """
+                }
+            ]
+        )
+        sucess = str_to_bool(check_reult)
+        fail_reason = None
+        if sucess == False:
+            fail_reason = "The goal has not been completed yet, please read the history and continue to press to complete your Task goal."
+        return sucess,fail_reason
+
 
     @property
     def use_docker(self) -> Union[bool, str, None]:

@@ -4,10 +4,10 @@ import copy
 import json
 import logging
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
-from .agent import Agent, AgentContext
-from .llm_client import AIWrapper
-from ..memory.gpts_memory import GptsMemory
-from ..memory.base import GptsMessage
+from dbgpt.agent.agents.agent import Agent, AgentContext
+from dbgpt.agent.agents.llm_client import AIWrapper
+from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.agent.memory.base import GptsMessage
 from dbgpt.util.error_types import LLMChatError
 from dbgpt.core.interface.message import ModelMessageRoleType
 

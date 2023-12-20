@@ -96,8 +96,8 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         if not conv_id:
             return []
         gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).filter(
-            GptsPlansEntity.state == Status.TODO.value)
-        result = gpts_plans.all()
+            GptsPlansEntity.state.in_(Status.TODO.value, Status.RETRYING.value))
+        result = gpts_plans.order_by(GptsPlansEntity.sub_task_num).all()
         session.close()
         return result
 

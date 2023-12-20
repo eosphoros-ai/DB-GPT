@@ -1,6 +1,6 @@
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.agents.planner_agent import PlannerAgent
-from dbgpt.agent.agents.planning_group_chat import PlanChat, PlanChatManager
+from dbgpt.agent.agents.base_agent import PlanChat, PlanChatManager
 from dbgpt.agent.agents.expand.code_assistant_agent import CodeAssistantAgent
 from dbgpt.agent.agents.expand.sql_assistant_agent import SQLAssistantAgent
 

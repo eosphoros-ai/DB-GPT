@@ -13,7 +13,8 @@ class ApiTagType(Enum):
 
 class Status(Enum):
     TODO = "todo"
-    RUNNING = "running"
-    WAITING = "waiting"
-    FAILED = "failed"
+    RUNNING  = "running"
+    WAITING  = "waiting"
+    RETRYING = "retrying"
+    FAILED =  "failed"
     COMPLETE = "complete"

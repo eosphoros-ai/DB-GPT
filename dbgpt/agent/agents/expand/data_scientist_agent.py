@@ -1,6 +1,6 @@
 import json
 
-from ..conversable_agent import ConversableAgent
+from ..base_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 import logging
 from ..agent import Agent
@@ -107,21 +107,26 @@ class DataScientistAgent(ConversableAgent):
         fail_reason = "The required json format answer was not generated."
         json_count = len(json_objects)
         rensponse_succ = True
+        view = None
+        content = None
         if json_count != 1:
             ### Answer failed, turn on automatic repair
             rensponse_succ = False
         else:
+
             try:
                 content = json.dumps(json_objects[0])
+                vis_client = ApiCall()
+                view = vis_client.display_only_sql_vis(json_objects[0], self.db_connect.run_to_df)
             except Exception as e:
                 fail_reason = f"There is a format problem with the json of the answer，{str(e)}"
         if not rensponse_succ:
             content = fail_reason
-        return True, {"is_exe_success": rensponse_succ, "content": content}
+        return True, {"is_exe_success": rensponse_succ, "content": content, "view": view}
 
 
-
-    async def a_verify_reply(self, action_reply: Optional[Dict], sender: "Agent", **kwargs):
+    async def a_verify(self, message: Optional[Dict]):
+        action_reply = message.get("action_report", None)
         if  action_reply.get("is_exe_success", False) ==False:
             return False, f"Please check your answer, {action_reply.get('content', '')}."
         action_reply_obj =  json.loads(action_reply.get('content', ''))

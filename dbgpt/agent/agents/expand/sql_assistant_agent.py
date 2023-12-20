@@ -1,5 +1,5 @@
-from ..conversable_agent import ConversableAgent
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from dbgpt.agent.agents.base_agent  import ConversableAgent
+from typing import Callable, Dict, List, Literal, Optional, Union
 
 from ..agent import Agent
 from ...memory.gpts_memory import GptsMemory

@@ -83,4 +83,7 @@ class MetaDbGptsMessageMemory(GptsMessageMemory):
 
     def get_last_message(self, conv_id: str) -> Optional[GptsMessage]:
         db_result= self.gpts_message.get_last_message(conv_id)
-        return GptsMessage.from_dict(db_result.__dict__)
+        if db_result:
+            return GptsMessage.from_dict(db_result.__dict__)
+        else:
+            return None

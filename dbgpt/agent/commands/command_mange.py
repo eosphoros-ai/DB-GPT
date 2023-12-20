@@ -17,6 +17,7 @@ from dbgpt.util.string_utils import extract_content_open_ending, extract_content
 AUTO_GPT_COMMAND_IDENTIFIER = "auto_gpt_command"
 logger = logging.getLogger(__name__)
 
+
 class Command:
     """A class representing a command.
 
@@ -27,13 +28,13 @@ class Command:
     """
 
     def __init__(
-        self,
-        name: str,
-        description: str,
-        method: Callable[..., Any],
-        signature: str = "",
-        enabled: bool = True,
-        disabled_reason: Optional[str] = None,
+            self,
+            name: str,
+            description: str,
+            method: Callable[..., Any],
+            signature: str = "",
+            enabled: bool = True,
+            disabled_reason: Optional[str] = None,
     ):
         self.name = name
         self.description = description
@@ -129,23 +130,23 @@ class CommandRegistry:
             attr = getattr(module, attr_name)
             # Register decorated functions
             if hasattr(attr, AUTO_GPT_COMMAND_IDENTIFIER) and getattr(
-                attr, AUTO_GPT_COMMAND_IDENTIFIER
+                    attr, AUTO_GPT_COMMAND_IDENTIFIER
             ):
                 self.register(attr.command)
             # Register command classes
             elif (
-                inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
+                    inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
             ):
                 cmd_instance = attr()
                 self.register(cmd_instance)
 
 
 def command(
-    name: str,
-    description: str,
-    signature: str = "",
-    enabled: bool = True,
-    disabled_reason: Optional[str] = None,
+        name: str,
+        description: str,
+        signature: str = "",
+        enabled: bool = True,
+        disabled_reason: Optional[str] = None,
 ) -> Callable[..., Any]:
     """The command decorator is used to create Command objects from ordinary functions."""
 
@@ -193,10 +194,10 @@ class ApiCall:
     name_end = "</name>"
 
     def __init__(
-        self,
-        plugin_generator: Any = None,
-        display_registry: Any = None,
-        backend_rendering: bool = False,
+            self,
+            plugin_generator: Any = None,
+            display_registry: Any = None,
+            backend_rendering: bool = False,
     ):
         # self.name: str = ""
         # self.status: Status = Status.TODO.value
@@ -489,10 +490,8 @@ class ApiCall:
 
         return self.api_view_context(llm_text, True)
 
+    def display_only_sql_vis(self, sql_chart: dict, sql_2_df_func):
 
-    def display_only_sql_vis(self, sql, display, speak, sql_2_df_func):
-
-        api_call_element = ET.Element("chart-view")
         err_msg = None
         try:
             if not sql or len(sql) <= 0:
@@ -500,8 +499,12 @@ class ApiCall:
 
             param = {}
             df = sql_2_df_func(sql)
-            param["type"] = display
+
             param["sql"] = sql
+            param["type"] = chart.get("display_type", "response_table")
+            param["title"] = chart.get("title", "")
+            param["describe"] = chart.get("thought", "")
+
             param["data"] = json.loads(
                 df.to_json(orient="records", date_format="iso", date_unit="s")
             )
@@ -517,18 +520,16 @@ class ApiCall:
             view_json_str = json.dumps(err_param, default=serialize, ensure_ascii=False)
 
         # api_call_element.text = view_json_str
-        api_call_element.set("content", view_json_str)
-        result = ET.tostring(api_call_element, encoding="utf-8")
+        result = f"```vis-chart\n{view_json_str}\n```"
         if err_msg:
-            return f"""{speak} \\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result.decode("utf-8")}"""
+            return f"""<span style=\"color:red\">ERROR!</span>{err_msg} \n {result}"""
         else:
-            return speak + "\n" + result.decode("utf-8")
-
+            return result
 
     def display_dashboard_vis(self, charts: List[dict], sql_2_df_func):
 
         err_msg = None
-        view_json_str=None
+        view_json_str = None
         try:
             if not charts or len(charts) <= 0:
                 return f"""Have no chart data!"""
@@ -561,8 +562,7 @@ class ApiCall:
         if err_msg:
             return f"""\\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result}"""
         else:
-            return  result
-
+            return result
 
     @staticmethod
     def default_chart_type_promot() -> str:

@@ -1,16 +1,14 @@
-import json
 import logging
 import sys
-import random
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 import re
-from .agent import Agent, AgentContext
-from .conversable_agent import ConversableAgent
-from ..common.schema import Status
+from dbgpt.agent.agents.agent import Agent, AgentContext
+from dbgpt.agent.agents.bak.conversable_agent import ConversableAgent
+from dbgpt.agent.common.schema import Status
 
 from dbgpt.util.string_utils import str_to_bool
-from ..memory.gpts_memory import GptsMemory, GptsPlan, GptsMessage
+from dbgpt.agent.memory.gpts_memory import GptsMemory, GptsPlan
 
 logger = logging.getLogger(__name__)
 
@@ -73,13 +71,7 @@ class PlanChat:
     Read the following conversation.
     Then select the next role from {[agent.name for agent in agents]} to play. The role can be selected repeatedly.Only return the role."""
 
-    def check_task_result_msg(self, speaker, plan_contents: List[str]):
-        """Return the message for check task result  ."""
-        return f"""
-            You are an expert in action reporting analysis.
-            Please determine whether the given task results are the output required by the task background, including format and content.
-            If the generated results are as expected and relevant to the task content, True is returned, otherwise False is returned. Only returns True or False.
-           """
+
 
     async def a_check_plan_expected(self, all_plan_contexts: List[str], now_task_content: str, task_result: str,
                                     last_speaker: Agent, selector: ConversableAgent):

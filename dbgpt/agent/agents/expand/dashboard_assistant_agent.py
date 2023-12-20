@@ -1,6 +1,6 @@
 import json
 
-from ..conversable_agent import ConversableAgent
+from ..base_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from ..agent import Agent
@@ -93,6 +93,8 @@ class DashboardAssistantAgent(ConversableAgent):
         fail_reason = "Please recheck your answer，no usable plans generated in correct format，"
         json_count = len(json_objects)
         rensponse_succ = True
+        view = None
+        content = None
         if json_count != 1:
             ### Answer failed, turn on automatic repair
             fail_reason += f"There are currently {json_count} json contents"
@@ -100,14 +102,14 @@ class DashboardAssistantAgent(ConversableAgent):
         else:
             try:
                 chart_objs = json_objects[0]
-
+                content = json.dumps(chart_objs)
                 vis_client = ApiCall()
-                content = vis_client.display_dashboard_vis(chart_objs, self.db_connect.run_to_df)
+                view = vis_client.display_dashboard_vis(chart_objs, self.db_connect.run_to_df)
             except Exception as e:
                 fail_reason += f"Return json structure error and cannot be converted to a sql-rendered chart，{str(e)}"
                 rensponse_succ = False
 
         if not rensponse_succ:
             content = fail_reason
-        return True, {"is_exe_success": rensponse_succ, "content": content}
+        return True, {"is_exe_success": rensponse_succ, "content": content, "view": view}
 

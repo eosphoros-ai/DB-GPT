@@ -31,7 +31,7 @@ from dbgpt.agent.common.schema import Status
 from dbgpt.agent.agents.agents_mange import AgentsMange
 from dbgpt.agent.agents.planner_agent import PlannerAgent
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
-from dbgpt.agent.agents.planning_group_chat import PlanChat, PlanChatManager
+from dbgpt.agent.agents.plan_group_chat import PlanChat, PlanChatManager
 from dbgpt.agent.agents.agent import AgentContext
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 
@@ -184,11 +184,19 @@ class MultiAgents(BaseComponent, ABC):
             return ""
         messages_view = []
         for message in messages:
+            action_report_str = message.action_report
+            view_info = message.content
+            if action_report_str and len(action_report_str)>0:
+                action_report = json.loads(action_report_str)
+                if action_report:
+                    if "view" in action_report:
+                        view_info = action_report['view']
+
             messages_view.append({
                 "sender": message.sender,
                 "receiver": message.receiver,
                 "model": message.model_name,
-                "markdown": message.content  # TODO view message
+                "markdown": view_info
             })
         messages_content = json.dumps(messages_view)
         return f"```agent-messages\n{messages_content}\n```"
