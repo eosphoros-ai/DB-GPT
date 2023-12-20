@@ -63,4 +63,3 @@ def test_get_table_comments(db):
 
 def test_get_columns_comments(db):
     assert db.get_column_comments("default", "my_first_table")[0][1] == ""
-

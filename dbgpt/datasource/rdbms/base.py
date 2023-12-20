@@ -562,8 +562,7 @@ class RDBMSDatabase(BaseConnect):
         )
         column_comments = cursor.fetchall()
         return [
-            (column_comment[0], column_comment[1])
-            for column_comment in column_comments
+            (column_comment[0], column_comment[1]) for column_comment in column_comments
         ]
 
     def get_database_list(self):

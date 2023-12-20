@@ -27,13 +27,14 @@ _create_table_sql = """
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """
 
+
 @pytest.fixture
 def db():
     conn = MySQLConnect.from_uri_db(
         "localhost",
         3307,
         "root",
-        "********", 
+        "********",
         "test",
         engine_args={"connect_args": {"charset": "utf8mb4"}},
     )
