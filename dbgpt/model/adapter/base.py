@@ -176,7 +176,10 @@ class LLMModelAdapter(ABC):
         Returns:
             List[Dict[str, str]]: The transformed model messages
         """
-        return ModelMessage.to_openai_messages(messages)
+        if not self.support_system_message:
+            return self._transform_to_no_system_messages(messages)
+        else:
+            return ModelMessage.to_openai_messages(messages)
 
     def _transform_to_no_system_messages(
         self, messages: List[ModelMessage]
