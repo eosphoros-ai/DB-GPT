@@ -133,8 +133,9 @@ class Agent:
 
     async def a_verify_reply(
         self,
-        action_reply: Optional[Dict],
+        message: Optional[Dict],
         sender: "Agent",
+        reviewer: "Agent",
         **kwargs,
     ) -> Union[str, Dict, None]:
         """

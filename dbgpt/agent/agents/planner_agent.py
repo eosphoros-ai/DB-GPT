@@ -10,6 +10,9 @@ from dbgpt.agent.common.schema import Status
 from ..memory.gpts_memory import GptsMemory, GptsPlan, GptsMessage
 from .planning_group_chat import PlanChat
 from .agents_mange import agent_mange
+from dbgpt._private.config import Config
+
+CFG = Config()
 
 class PlannerAgent(ConversableAgent):
     """ Planner agent, realizing task goal planning decomposition through LLM"""
@@ -102,11 +105,14 @@ class PlannerAgent(ConversableAgent):
             PlannerAgent._a_planning
         )
 
+
     agent_mange.all_agents()
     def build_param(self, agent_context: AgentContext):
         resources = []
         if agent_context.resource_db is not None:
-            resources.append(f"{agent_context.resource_db.get('type')}:{agent_context.resource_db.get('name')}\n{agent_context.resource_db.get('introduce')}")
+            db_connect = CFG.LOCAL_DB_MANAGE.get_connect(agent_context.resource_db.get('name'))
+
+            resources.append(f"{agent_context.resource_db.get('type')}:{agent_context.resource_db.get('name')}\n{db_connect.get_table_info()}")
         if agent_context.resource_knowledge is not None:
             resources.append(f"{agent_context.resource_knowledge.get('type')}:{agent_context.resource_knowledge.get('name')}\n{agent_context.resource_knowledge.get('introduce')}")
         if agent_context.resource_internet is not None:

@@ -33,20 +33,20 @@ class DataScientistAgent(ConversableAgent):
 
 
     DEFAULT_SYSTEM_MESSAGE = """You are a helpful AI assistant who is good at writing SQL for various databases.
-    Based on the given data structure information, and on the premise of satisfying the following constraints, use the correct {dialect} SQL to analyze and solve tasks.
-    Data Structure information:
-    {data_structure}
-    Constraint:
-    1.Please choose the best one from the display methods given below for data rendering, and put the type name into the name parameter value that returns the required format. If you cannot find the most suitable one, use 'Table' as the display method. , the available data display methods are as follows: {disply_type}
-    2.Please check the sql you generated, do not use column names that do not exist in the data structure, and do not make mistakes in the relationship between column names and tables.
-    3.Pay attention to the data association between tables, which can be analyzed through joint query and analysis of multiple tables.
-    Please think step by step and return in the following json format
-    {{
-        "display_type":"The chart rendering method selected for the current sql",
-        "sql": "Analysis sql of the current step task",
-        "thought":"thoughts summary to say to user"
-    }}
-    Ensure the response is correct json and can be parsed by Python json.loads.
+      Based on the given data structure information, use the correct {dialect} SQL to analyze and solve the task, subject to the following constraints.
+      Data structure information:
+      {data_structure}
+      constraint:
+      1. Please choose the best one from the display methods given below for data display, and put the type name into the name parameter value that returns the required format. If you can't find the most suitable display method, use Table as the display method. , the available data display methods are as follows: {disply_type}
+      2. Please check the sql you generated. It is forbidden to use column names that do not exist in the table, and it is forbidden to make up fields and tables that do not exist.
+      3. Pay attention to the data association between tables and tables, and you can use multiple tables at the same time to generate a SQL.
+      Please think step by step and return it in the following json format
+      {{
+          "display_type":"The chart rendering method currently selected by SQL",
+          "sql": "Analysis sql of the current step task",
+          "thought":"Summary of thoughts to the user"
+      }}
+      Make sure the response is correct json and can be parsed by Python json.loads.
     """
     DEFAULT_DESCRIBE = """Using the local database, it is possible to generate analysis SQL to obtain data based on the table structure, and at the same time generate visual charts of the corresponding data. """
     NAME = "DataScientist"
@@ -104,15 +104,17 @@ class DataScientistAgent(ConversableAgent):
         """Generate a reply using code execution."""
 
         json_objects = find_json_objects(message)
-        fail_reason = "Please recheck your answer，no usable analyze sql generated in correct format，"
+        fail_reason = "The required json format answer was not generated."
         json_count = len(json_objects)
         rensponse_succ = True
         if json_count != 1:
             ### Answer failed, turn on automatic repair
-            fail_reason += f"There are currently {json_count} json contents"
             rensponse_succ = False
         else:
-            content = json.dumps(json_objects[0])
+            try:
+                content = json.dumps(json_objects[0])
+            except Exception as e:
+                fail_reason = f"There is a format problem with the json of the answer，{str(e)}"
         if not rensponse_succ:
             content = fail_reason
         return True, {"is_exe_success": rensponse_succ, "content": content}
@@ -121,7 +123,7 @@ class DataScientistAgent(ConversableAgent):
 
     async def a_verify_reply(self, action_reply: Optional[Dict], sender: "Agent", **kwargs):
         if  action_reply.get("is_exe_success", False) ==False:
-            return False, f"Please check your answer, Execution failed, error reason:{action_reply.get('content', '')}."
+            return False, f"Please check your answer, {action_reply.get('content', '')}."
         action_reply_obj =  json.loads(action_reply.get('content', ''))
         sql = action_reply_obj.get("sql", None)
         if not sql:
@@ -134,5 +136,5 @@ class DataScientistAgent(ConversableAgent):
                 logger.info(f"reply check success! There are {len(values)} rows of data")
                 return True, None
         except Exception as e:
-            return False, f"Please check your answer. The generated SQL check fails and has the following error:{str(e)}"
+            return False, f"SQL execution error, please re-read the historical information to fix this SQL. The error message is as follows:{str(e)}"
 

@@ -551,7 +551,7 @@ class ApiCall:
                     param["err_msg"] = str(e)
 
                 charts_info.append(param)
-            view_json_str = json.dumps(param, default=serialize, ensure_ascii=False)
+            view_json_str = json.dumps(charts_info, default=serialize, ensure_ascii=False)
 
         except Exception as e:
             logger.error("parse_view_response error!" + str(e))
