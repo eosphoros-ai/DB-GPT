@@ -536,6 +536,7 @@ def all_datasource_requires():
         # mysqlclient 2.2.x have pkg-config issue on 3.10+
         "mysqlclient==2.1.0",
         "pydoris>=1.0.2,<2.0.0",
+        "clickhouse-connect",
     ]
 
 

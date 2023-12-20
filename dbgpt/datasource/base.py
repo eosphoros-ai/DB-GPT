@@ -58,6 +58,14 @@ class BaseConnect(ABC):
         """
         pass
 
+    def get_column_comments(self, db_name, table_name):
+        """Get column comments.
+
+        Args:
+            table_name (_type_): _description_
+        """
+        pass
+
     def run(self, command: str, fetch: str = "all") -> List:
         """Execute sql command.
 

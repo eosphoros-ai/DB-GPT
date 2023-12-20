@@ -292,20 +292,21 @@ class RDBMSDatabase(BaseConnect):
             query (str): SQL query to run
             fetch (str): fetch type
         """
+        result = []
+
         print(f"Query[{query}]")
         if not query:
-            return []
+            return result
         cursor = self.session.execute(text(query))
         if cursor.returns_rows:
             if fetch == "all":
                 result = cursor.fetchall()
             elif fetch == "one":
-                result = cursor.fetchone()[0]  # type: ignore
+                result = [cursor.fetchone()]
             else:
                 raise ValueError("Fetch parameter must be either 'one' or 'all'")
             field_names = tuple(i[0:] for i in cursor.keys())
 
-            result = list(result)
             result.insert(0, field_names)
             return result
 
@@ -538,7 +539,8 @@ class RDBMSDatabase(BaseConnect):
     def get_table_comments(self, db_name):
         cursor = self.session.execute(
             text(
-                f"""SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = '{db_name}'""".format(
+                f"""SELECT table_name, table_comment    FROM information_schema.tables  
+                    WHERE table_schema = '{db_name}'""".format(
                     db_name
                 )
             )
@@ -546,6 +548,22 @@ class RDBMSDatabase(BaseConnect):
         table_comments = cursor.fetchall()
         return [
             (table_comment[0], table_comment[1]) for table_comment in table_comments
+        ]
+
+    def get_column_comments(self, db_name, table_name):
+        cursor = self.session.execute(
+            text(
+                f"""SELECT column_name, column_comment FROM information_schema.columns 
+                    WHERE table_schema = '{db_name}' and table_name = '{table_name}'
+                """.format(
+                    db_name, table_name
+                )
+            )
+        )
+        column_comments = cursor.fetchall()
+        return [
+            (column_comment[0], column_comment[1])
+            for column_comment in column_comments
         ]
 
     def get_database_list(self):
