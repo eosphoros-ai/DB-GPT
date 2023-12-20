@@ -13,7 +13,11 @@ def db():
     temp_db_file.close()
     conn = SQLiteConnect.from_file_path(temp_db_file.name)
     yield conn
-    os.unlink(temp_db_file.name)
+    try:
+        # TODO: Failed on windows
+        os.unlink(temp_db_file.name)
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 
 def test_get_table_names(db):

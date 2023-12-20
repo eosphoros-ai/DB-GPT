@@ -1,5 +1,6 @@
 # Testing and dev dependencies
 pytest
+pytest-cov
 asynctest
 pytest-asyncio
 pytest-benchmark
