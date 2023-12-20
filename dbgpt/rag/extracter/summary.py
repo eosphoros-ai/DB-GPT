@@ -47,7 +47,7 @@ class SummaryExtractor(Extractor):
              Document: refine summary context document.
         """
         from dbgpt.app.scene import ChatScene
-        from dbgpt._private.chat_util import llm_chat_response_nostream
+        from dbgpt.util.chat_util import llm_chat_response_nostream
         import uuid
 
         tasks = []
@@ -72,7 +72,7 @@ class SummaryExtractor(Extractor):
                         ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
                     )
                 )
-            from dbgpt._private.chat_util import run_async_tasks
+            from dbgpt.util.chat_util import run_async_tasks
 
             summary_iters = await run_async_tasks(
                 tasks=tasks, concurrency_limit=llm_metadata.concurrency_limit

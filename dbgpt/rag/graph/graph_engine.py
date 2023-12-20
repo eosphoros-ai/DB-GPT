@@ -4,10 +4,10 @@ from typing import Any, Optional, Callable, Tuple, List
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from dbgpt.rag.embedding_engine import KnowledgeType
-from dbgpt.rag.embedding_engine.knowledge_type import get_knowledge_embedding
-from dbgpt.rag.graph_engine.index_struct import KG
-from dbgpt.rag.graph_engine.node import TextNode
+from dbgpt.rag.embedding import KnowledgeType
+from dbgpt.rag.embedding.knowledge_type import get_knowledge_embedding
+from dbgpt.rag.graph.index_struct import KG
+from dbgpt.rag.graph.node import TextNode
 from dbgpt.util import utils
 
 logger = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ class RAGGraphEngine:
     def _llm_extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract triplets from text by llm"""
         from dbgpt.app.scene import ChatScene
-        from dbgpt._private.chat_util import llm_chat_response_nostream
+        from dbgpt.util.chat_util import llm_chat_response_nostream
         import uuid
 
         chat_param = {
@@ -123,7 +123,7 @@ class RAGGraphEngine:
         return index_struct
 
     def search(self, query):
-        from dbgpt.rag.graph_engine.graph_search import RAGGraphSearch
+        from dbgpt.rag.graph.graph_search import RAGGraphSearch
 
         graph_search = RAGGraphSearch(graph_engine=self)
         return graph_search.search(query)

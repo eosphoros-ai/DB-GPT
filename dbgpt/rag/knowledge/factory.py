@@ -14,7 +14,7 @@ class KnowledgeFactory:
         file_path: Optional[str] = None,
         knowledge_type: Optional[KnowledgeType] = KnowledgeType.DOCUMENT,
     ):
-        """Initialize with Knowledge arguments.
+        """Initialize with Knowledge Factory arguments.
         Args:
             param file_path: path of the file to convert
             param knowledge_type: type of knowledge
@@ -32,7 +32,8 @@ class KnowledgeFactory:
         Args:
              datasource: path of the file to convert
              knowledge_type: type of knowledge
-        code example:
+        Example:
+            .. code-block:: python
             >>> from dbgpt.rag.knowledge.factory import KnowledgeFactory
             >>> url_knowlege = KnowledgeFactory.create(datasource="https://www.baidu.com", knowledge_type=KnowledgeType.URL)
             >>> doc_knowlege = KnowledgeFactory.create(datasource="path/to/document.pdf", knowledge_type=KnowledgeType.DOCUMENT)
@@ -59,7 +60,8 @@ class KnowledgeFactory:
         Args:
             param file_path: path of the file to convert
             param knowledge_type: type of knowledge
-        code example:
+        Example:
+            .. code-block:: python
             >>> from dbgpt.rag.knowledge.factory import KnowledgeFactory
             >>> doc_knowlege = KnowledgeFactory.create(datasource="path/to/document.pdf", knowledge_type=KnowledgeType.DOCUMENT)
         """
@@ -77,7 +79,8 @@ class KnowledgeFactory:
         Args:
             param url: url of the file to convert
             param knowledge_type: type of knowledge
-        code example:
+        Example:
+            .. code-block:: python
             >>> from dbgpt.rag.knowledge.factory import KnowledgeFactory
             >>> url_knowlege = KnowledgeFactory.create(datasource="https://www.baidu.com", knowledge_type=KnowledgeType.URL)
         """

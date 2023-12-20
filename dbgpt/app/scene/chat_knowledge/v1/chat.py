@@ -8,7 +8,6 @@ from dbgpt._private.config import Config
 
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
-    PILOT_PATH,
 )
 
 from dbgpt.app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
@@ -17,7 +16,6 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentEntity,
 )
 from dbgpt.app.knowledge.service import KnowledgeService
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.util.tracer import trace
 
 CFG = Config()
@@ -36,7 +34,7 @@ class ChatKnowledge(BaseChat):
             - model_name:(str) llm model name
             - select_param:(str) space name
         """
-        from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
         self.knowledge_space = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatKnowledge
@@ -128,7 +126,7 @@ class ChatKnowledge(BaseChat):
             queries = await query_reinforce.rewrite()
             print("rewrite queries:", queries)
         queries.append(self.current_user_input)
-        from dbgpt._private.chat_util import run_async_tasks
+        from dbgpt.util.chat_util import run_async_tasks
 
         # similarity search from vector db
         tasks = [self.execute_similar_search(query) for query in queries]

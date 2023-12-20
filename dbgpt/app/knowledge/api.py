@@ -13,7 +13,7 @@ from dbgpt.configs.model_config import (
 from dbgpt.app.openapi.api_v1.api_v1 import no_stream_generator, stream_generator
 
 from dbgpt.app.openapi.api_view_model import Result
-from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
@@ -297,7 +297,7 @@ async def entity_extract(request: EntityExtractRequest):
     logger.info(f"Received params: {request}")
     try:
         from dbgpt.app.scene import ChatScene
-        from dbgpt._private.chat_util import llm_chat_response_nostream
+        from dbgpt.util.chat_util import llm_chat_response_nostream
         import uuid
 
         chat_param = {

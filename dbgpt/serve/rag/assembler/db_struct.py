@@ -4,7 +4,7 @@ from typing import Optional, Any, List
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkParameters, ChunkManager
-from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import Knowledge, ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.db_struct import DBStructRetriever
@@ -15,7 +15,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 class DBStructAssembler(BaseAssembler):
     """DBStructAssembler
-    code example:
+    Example:
         .. code-block:: python
             from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
             from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler
@@ -51,7 +51,7 @@ class DBStructAssembler(BaseAssembler):
         """
         if connection is None:
             raise ValueError("datasource connection must be provided.")
-        from dbgpt.rag.embedding_engine.embedding_factory import DefaultEmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 
         embedding_factory = embedding_factory or DefaultEmbeddingFactory(
             default_model_name=os.getenv("EMBEDDING_MODEL")
@@ -89,7 +89,7 @@ class DBStructAssembler(BaseAssembler):
         Returns:
              DBStructAssembler
         """
-        from dbgpt.rag.embedding_engine.embedding_factory import DefaultEmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 
         embedding_factory = embedding_factory or DefaultEmbeddingFactory(
             default_model_name=embedding_model or os.getenv("EMBEDDING_MODEL_PATH")

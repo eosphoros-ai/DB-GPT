@@ -3,13 +3,15 @@ from abc import ABC, abstractmethod
 from typing import Any, Type, TYPE_CHECKING
 
 from dbgpt.component import BaseComponent
-from dbgpt.rag.embedding_engine.embeddings import HuggingFaceEmbeddings
+from dbgpt.rag.embedding.embeddings import HuggingFaceEmbeddings
 
 if TYPE_CHECKING:
-    from dbgpt.rag.embedding_engine.embeddings import Embeddings
+    from dbgpt.rag.embedding.embeddings import Embeddings
 
 
 class EmbeddingFactory(BaseComponent, ABC):
+    """Abstract base class for EmbeddingFactory."""
+
     name = "embedding_factory"
 
     @abstractmethod

@@ -23,7 +23,7 @@ class QueryReinforce:
 
     async def rewrite(self) -> List[str]:
         """query rewrite"""
-        from dbgpt._private.chat_util import llm_chat_response_nostream
+        from dbgpt.util.chat_util import llm_chat_response_nostream
         import uuid
 
         chat_param = {
@@ -38,7 +38,7 @@ class QueryReinforce:
                 ChatScene.QueryRewrite.value(), **{"chat_param": chat_param}
             )
         ]
-        from dbgpt._private.chat_util import run_async_tasks
+        from dbgpt.util.chat_util import run_async_tasks
 
         queries = await run_async_tasks(tasks=tasks, concurrency_limit=1)
         queries = list(

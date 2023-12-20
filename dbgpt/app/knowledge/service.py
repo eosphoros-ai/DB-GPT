@@ -9,8 +9,6 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt._private.config import Config
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
-    KNOWLEDGE_UPLOAD_ROOT_PATH,
-    PILOT_PATH,
 )
 from dbgpt.component import ComponentType
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
@@ -195,7 +193,7 @@ class KnowledgeService:
             - space: Knowledge Space Name
             - sync_request: DocumentSyncRequest
         """
-        from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
         from dbgpt.rag.text_splitter.pre_text_splitter import PreTextSplitter
         from langchain.text_splitter import (
             RecursiveCharacterTextSplitter,
@@ -446,7 +444,7 @@ class KnowledgeService:
             f"async_knowledge_graph, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to graph store"
         )
         try:
-            from dbgpt.rag.graph_engine.graph_factory import RAGGraphFactory
+            from dbgpt.rag.graph.graph_factory import RAGGraphFactory
 
             rag_engine = CFG.SYSTEM_APP.get_component(
                 ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
@@ -612,7 +610,7 @@ class KnowledgeService:
              Document: refine summary context document.
         """
         from dbgpt.app.scene import ChatScene
-        from dbgpt._private.chat_util import llm_chat_response_nostream
+        from dbgpt.util.chat_util import llm_chat_response_nostream
         import uuid
 
         tasks = []
@@ -633,7 +631,7 @@ class KnowledgeService:
                         ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
                     )
                 )
-            from dbgpt._private.chat_util import run_async_tasks
+            from dbgpt.util.chat_util import run_async_tasks
 
             summary_iters = await run_async_tasks(
                 tasks=tasks, concurrency_limit=concurrency_limit

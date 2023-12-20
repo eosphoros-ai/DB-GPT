@@ -1,7 +1,7 @@
 from functools import reduce
 from typing import List
 
-from dbgpt._private.chat_util import run_async_tasks
+from dbgpt.util.chat_util import run_async_tasks
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.rag.retriever.rerank import Ranker, DefaultRanker
@@ -29,7 +29,7 @@ class EmbeddingRetriever(BaseRetriever):
             >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
             >>> from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
             >>> from dbgpt.rag.retriever.embedding import EmbeddingRetriever
-            >>> from dbgpt.rag.embedding_engine.embedding_factory import DefaultEmbeddingFactory
+            >>> from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 
             embedding_factory = DefaultEmbeddingFactory()
             from dbgpt.rag.retriever.embedding import EmbeddingRetriever

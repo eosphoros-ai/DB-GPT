@@ -4,7 +4,7 @@ import pytest
 
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
 from dbgpt.rag.chunk_manager import ChunkParameters, SplitterType
-from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.rag.text_splitter.text_splitter import CharacterTextSplitter
 from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler

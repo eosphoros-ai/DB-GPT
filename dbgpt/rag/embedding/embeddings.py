@@ -63,7 +63,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain.embeddings import HuggingFaceEmbeddings
+            from .embeddings import HuggingFaceEmbeddings
 
             model_name = "sentence-transformers/all-mpnet-base-v2"
             model_kwargs = {'device': 'cpu'}

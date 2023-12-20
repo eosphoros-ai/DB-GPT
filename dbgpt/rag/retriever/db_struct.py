@@ -1,7 +1,7 @@
 from functools import reduce
 from typing import List, Optional
 
-from dbgpt._private.chat_util import run_async_tasks
+from dbgpt.util.chat_util import run_async_tasks
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever

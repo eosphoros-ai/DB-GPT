@@ -3,7 +3,7 @@ from typing import Optional, Any, List
 
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkParameters
-from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.serve.rag.assembler.base import BaseAssembler
@@ -12,7 +12,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 class EmbeddingAssembler(BaseAssembler):
     """Embedding Assembler
-    code example:
+    Example:
        .. code-block:: python
            from dbgpt.rag.assembler import EmbeddingAssembler
            pdf_path = "path/to/document.pdf"
@@ -42,7 +42,7 @@ class EmbeddingAssembler(BaseAssembler):
         """
         if knowledge is None:
             raise ValueError("knowledge datasource must be provided.")
-        from dbgpt.rag.embedding_engine.embedding_factory import DefaultEmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 
         embedding_factory = embedding_factory or DefaultEmbeddingFactory(
             default_model_name=os.getenv("EMBEDDING_MODEL")
@@ -79,7 +79,7 @@ class EmbeddingAssembler(BaseAssembler):
         Returns:
              EmbeddingAssembler
         """
-        from dbgpt.rag.embedding_engine.embedding_factory import DefaultEmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 
         embedding_factory = embedding_factory or DefaultEmbeddingFactory(
             default_model_name=embedding_model or os.getenv("EMBEDDING_MODEL_PATH")

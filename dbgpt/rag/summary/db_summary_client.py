@@ -22,7 +22,7 @@ class DBSummaryClient:
 
     def __init__(self, system_app: SystemApp):
         self.system_app = system_app
-        from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
         embedding_factory = self.system_app.get_component(
             "embedding_factory", EmbeddingFactory

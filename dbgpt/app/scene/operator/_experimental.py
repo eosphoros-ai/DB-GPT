@@ -188,7 +188,7 @@ class EmbeddingEngingOperator(MapOperator[ChatContext, ChatContext]):
 
     async def map(self, input_value: ChatContext) -> ChatContext:
         from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
-        from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
         # TODO, decompose the current operator into some atomic operators
         knowledge_space = input_value.select_param

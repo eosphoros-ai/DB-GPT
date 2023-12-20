@@ -14,7 +14,7 @@ from dbgpt.app.knowledge.request.request import (
     DocumentQueryRequest,
 )
 
-from dbgpt.rag.embedding_engine.knowledge_type import KnowledgeType
+from dbgpt.rag.embedding.knowledge_type import KnowledgeType
 from dbgpt.app.knowledge.request.request import DocumentSyncRequest
 
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest

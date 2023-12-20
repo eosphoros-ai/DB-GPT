@@ -20,7 +20,7 @@ class DefaultRAGGraphFactory(RAGGraphFactory):
         super().__init__(system_app=system_app)
         self._default_model_name = default_model_name
         self.kwargs = kwargs
-        from dbgpt.rag.graph_engine.graph_engine import RAGGraphEngine
+        from dbgpt.rag.graph.graph_engine import RAGGraphEngine
 
         self.rag_engine = RAGGraphEngine(model_name="proxyllm")
 

@@ -6,8 +6,8 @@ from typing import List, Optional, Dict, Any, Set, Callable
 
 from langchain.schema import Document
 
-from dbgpt.rag.graph_engine.node import BaseNode, TextNode, NodeWithScore
-from dbgpt.rag.graph_engine.search import BaseSearch, SearchMode
+from dbgpt.rag.graph.node import BaseNode, TextNode, NodeWithScore
+from dbgpt.rag.graph.search import BaseSearch, SearchMode
 
 logger = logging.getLogger(__name__)
 DEFAULT_NODE_SCORE = 1000.0
@@ -19,7 +19,7 @@ class RAGGraphSearch(BaseSearch):
     """RAG Graph Search.
 
     args:
-        graph_engine RAGGraphEngine.
+        graph RAGGraphEngine.
         model_name (str): model name
             (see :ref:`Prompt-Templates`).
         text_qa_template (Optional[BasePromptTemplate]): A Question Answering Prompt
@@ -45,7 +45,7 @@ class RAGGraphSearch(BaseSearch):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        from dbgpt.rag.graph_engine.graph_engine import RAGGraphEngine
+        from dbgpt.rag.graph.graph_engine import RAGGraphEngine
 
         self.graph_engine: RAGGraphEngine = graph_engine
         self.model_name = model_name or self.graph_engine.model_name
@@ -78,7 +78,7 @@ class RAGGraphSearch(BaseSearch):
     async def _extract_entities_by_llm(self, text: str) -> Set[str]:
         """extract subject entities from text by llm"""
         from dbgpt.app.scene import ChatScene
-        from dbgpt._private.chat_util import llm_chat_response_nostream
+        from dbgpt.util.chat_util import llm_chat_response_nostream
         import uuid
 
         chat_param = {
