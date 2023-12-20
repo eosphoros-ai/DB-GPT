@@ -124,6 +124,10 @@ LLM_MODEL_CONFIG = {
     "zephyr-7b-alpha": os.path.join(MODEL_PATH, "zephyr-7b-alpha"),
     # https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1
     "mistral-7b-instruct-v0.1": os.path.join(MODEL_PATH, "Mistral-7B-Instruct-v0.1"),
+    # https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1
+    "mixtral-8x7b-instruct-v0.1": os.path.join(
+        MODEL_PATH, "Mixtral-8x7B-Instruct-v0.1"
+    ),
     # https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca
     "mistral-7b-openorca": os.path.join(MODEL_PATH, "Mistral-7B-OpenOrca"),
     # https://huggingface.co/Xwin-LM/Xwin-LM-7B-V0.1

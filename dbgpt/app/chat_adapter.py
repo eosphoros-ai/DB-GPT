@@ -245,7 +245,7 @@ class WizardLMChatAdapter(BaseChatAdpter):
 
 class LlamaCppChatAdapter(BaseChatAdpter):
     def match(self, model_path: str):
-        from dbgpt.model.adapter import LlamaCppAdapater
+        from dbgpt.model.adapter.old_adapter import LlamaCppAdapater
 
         if "llama-cpp" == model_path:
             return True

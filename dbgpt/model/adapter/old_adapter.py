@@ -9,7 +9,7 @@ import os
 import re
 import logging
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, TYPE_CHECKING, Optional
 from functools import cache
 from transformers import (
     AutoModel,
@@ -17,6 +17,9 @@ from transformers import (
     AutoTokenizer,
     LlamaTokenizer,
 )
+
+from dbgpt.model.adapter.base import LLMModelAdapter
+from dbgpt.model.adapter.template import ConversationAdapter, PromptType
 from dbgpt.model.base import ModelType
 
 from dbgpt.model.parameter import (
@@ -24,8 +27,12 @@ from dbgpt.model.parameter import (
     LlamaCppModelParameters,
     ProxyModelParameters,
 )
+from dbgpt.model.conversation import Conversation
 from dbgpt.configs.model_config import get_device
 from dbgpt._private.config import Config
+
+if TYPE_CHECKING:
+    from dbgpt.app.chat_adapter import BaseChatAdpter
 
 logger = logging.getLogger(__name__)
 
@@ -90,17 +97,6 @@ def get_llm_model_adapter(model_name: str, model_path: str) -> BaseLLMAdaper:
     raise ValueError(
         f"Invalid model adapter for model name {model_name} and model path {model_path}"
     )
-
-
-def _parse_model_param_class(model_name: str, model_path: str) -> ModelParameters:
-    try:
-        llm_adapter = get_llm_model_adapter(model_name, model_path)
-        return llm_adapter.model_param_class()
-    except Exception as e:
-        logger.warn(
-            f"Parse model parameters with model name {model_name} and model {model_path} failed {str(e)}, return `ModelParameters`"
-        )
-        return ModelParameters
 
 
 # TODO support cpu? for practise we support gpt4all or chatglm-6b-int4?
@@ -424,6 +420,87 @@ class InternLMAdapter(BaseLLMAdaper):
             model_path, use_fast=False, trust_remote_code=True, revision=revision
         )
         return model, tokenizer
+
+
+class OldLLMModelAdapterWrapper(LLMModelAdapter):
+    """Wrapping old adapter, which may be removed later"""
+
+    def __init__(self, adapter: BaseLLMAdaper, chat_adapter: "BaseChatAdpter") -> None:
+        self._adapter = adapter
+        self._chat_adapter = chat_adapter
+
+    def new_adapter(self, **kwargs) -> "LLMModelAdapter":
+        return OldLLMModelAdapterWrapper(self._adapter, self._chat_adapter)
+
+    def use_fast_tokenizer(self) -> bool:
+        return self._adapter.use_fast_tokenizer()
+
+    def model_type(self) -> str:
+        return self._adapter.model_type()
+
+    def model_param_class(self, model_type: str = None) -> ModelParameters:
+        return self._adapter.model_param_class(model_type)
+
+    def get_default_conv_template(
+        self, model_name: str, model_path: str
+    ) -> Optional[ConversationAdapter]:
+        conv_template = self._chat_adapter.get_conv_template(model_path)
+        return OldConversationAdapter(conv_template) if conv_template else None
+
+    def load(self, model_path: str, from_pretrained_kwargs: dict):
+        return self._adapter.loader(model_path, from_pretrained_kwargs)
+
+    def get_generate_stream_function(self, model, model_path: str):
+        return self._chat_adapter.get_generate_stream_func(model_path)
+
+    def __str__(self) -> str:
+        return "{}({}.{})".format(
+            self.__class__.__name__,
+            self._adapter.__class__.__module__,
+            self._adapter.__class__.__name__,
+        )
+
+
+class OldConversationAdapter(ConversationAdapter):
+    """Wrapping old Conversation, which may be removed later"""
+
+    def __init__(self, conv: Conversation) -> None:
+        self._conv = conv
+
+    @property
+    def prompt_type(self) -> PromptType:
+        return PromptType.DBGPT
+
+    @property
+    def roles(self) -> Tuple[str]:
+        return self._conv.roles
+
+    @property
+    def sep(self) -> Optional[str]:
+        return self._conv.sep
+
+    @property
+    def stop_str(self) -> str:
+        return self._conv.stop_str
+
+    @property
+    def stop_token_ids(self) -> Optional[List[int]]:
+        return self._conv.stop_token_ids
+
+    def get_prompt(self) -> str:
+        return self._conv.get_prompt()
+
+    def set_system_message(self, system_message: str) -> None:
+        self._conv.update_system_message(system_message)
+
+    def append_message(self, role: str, message: str) -> None:
+        self._conv.append_message(role, message)
+
+    def update_last_message(self, message: str) -> None:
+        self._conv.update_last_message(message)
+
+    def copy(self) -> "ConversationAdapter":
+        return OldConversationAdapter(self._conv.copy())
 
 
 register_llm_model_adapters(VicunaLLMAdapater)

@@ -405,7 +405,7 @@ def stop_model_controller(port: int):
 
 
 def _model_dynamic_factory() -> Callable[[None], List[Type]]:
-    from dbgpt.model.model_adapter import _dynamic_model_parser
+    from dbgpt.model.adapter.model_adapter import _dynamic_model_parser
 
     param_class = _dynamic_model_parser()
     fix_class = [ModelWorkerParameters]
