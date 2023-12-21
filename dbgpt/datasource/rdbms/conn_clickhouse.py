@@ -83,7 +83,7 @@ class ClickhouseConnect(RDBMSDatabase):
             tables = [row[0] for block in stream for row in block]
             return tables
 
-    def get_indexes(self, table_name) -> List[Dict]:
+    def get_indexes(self, table_name: str) -> List[Dict]:
         """Get table indexes about specified table.
         Args:
             table_name (str): table name
@@ -131,10 +131,10 @@ class ClickhouseConnect(RDBMSDatabase):
         ans = re.sub(r"\s*SETTINGS\s*\s*\w+\s*", " ", ans, flags=re.IGNORECASE)
         return ans
 
-    def get_columns(self, table_name) -> List[Dict]:
+    def get_columns(self, table_name: str) -> List[Dict]:
         """Get columns.
         Args:
-            table_name (_type_): _description_
+            table_name (str): str
         Returns:
             columns: List[Dict], which contains name: str, type: str, default_expression: str, is_in_primary_key: bool, comment: str
             eg:[{'name': 'id', 'type': 'UInt64', 'default_expression': '', 'is_in_primary_key': True, 'comment': 'id'}, ...]
@@ -227,7 +227,7 @@ class ClickhouseConnect(RDBMSDatabase):
     def get_current_db_name(self):
         return self.client.database
 
-    def get_table_comments(self, db_name):
+    def get_table_comments(self, db_name: str):
         session = self.client
 
         _query_sql = f"""

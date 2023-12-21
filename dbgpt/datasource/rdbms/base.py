@@ -230,7 +230,7 @@ class RDBMSDatabase(BaseConnect):
     def get_columns(self, table_name: str) -> List[Dict]:
         """Get columns.
         Args:
-            table_name (_type_): _description_
+            table_name (str): table name
         Returns:
             columns: List[Dict], which contains name: str, type: str, default_expression: str, is_in_primary_key: bool, comment: str
             eg:[{'name': 'id', 'type': 'int', 'default_expression': '', 'is_in_primary_key': True, 'comment': 'id'}, ...]
@@ -485,10 +485,10 @@ class RDBMSDatabase(BaseConnect):
                 return token.get_real_name()
         return None
 
-    def get_indexes(self, table_name) -> List[Dict]:
+    def get_indexes(self, table_name: str) -> List[Dict]:
         """Get table indexes about specified table.
         Args:
-            table_name:table name
+            table_name:(str) table name
         Returns:
             List[Dict]:eg:[{'name': 'idx_key', 'column_names': ['id']}]
         """
@@ -548,7 +548,7 @@ class RDBMSDatabase(BaseConnect):
         except Exception as e:
             return []
 
-    def get_table_comments(self, db_name):
+    def get_table_comments(self, db_name: str):
         cursor = self.session.execute(
             text(
                 f"""SELECT table_name, table_comment    FROM information_schema.tables  
