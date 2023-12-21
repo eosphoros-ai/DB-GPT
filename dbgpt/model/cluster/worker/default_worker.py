@@ -6,7 +6,8 @@ import time
 import traceback
 
 from dbgpt.configs.model_config import get_device
-from dbgpt.model.model_adapter import get_llm_model_adapter, LLMModelAdaper
+from dbgpt.model.adapter.base import LLMModelAdapter
+from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
 from dbgpt.core import ModelOutput, ModelInferenceMetrics
 from dbgpt.model.loader import ModelLoader, _get_model_real_path
 from dbgpt.model.parameter import ModelParameters
@@ -27,7 +28,7 @@ class DefaultModelWorker(ModelWorker):
         self.model = None
         self.tokenizer = None
         self._model_params = None
-        self.llm_adapter: LLMModelAdaper = None
+        self.llm_adapter: LLMModelAdapter = None
         self._support_async = False
 
     def load_worker(self, model_name: str, model_path: str, **kwargs) -> None:
