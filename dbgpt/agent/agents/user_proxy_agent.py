@@ -69,13 +69,6 @@ class UserProxyAgent(ConversableAgent):
         self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter + 1
         self._process_received_message(message, sender, silent)
 
-        if (request_reply is False or request_reply is None):
-            logger.info("Messages that do not require a reply")
-            return
-
-        verify_paas, reply = await self.a_generate_reply(message=message, sender=sender, reviewer=reviewer, silent=silent)
-
-
     async def check_termination_and_human_reply(
             self,
             message: Optional[str] = None,

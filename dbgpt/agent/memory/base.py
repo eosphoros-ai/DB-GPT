@@ -70,6 +70,7 @@ class GptsMessage:
             role=d["role"],
             content=d["content"],
             rounds=d["rounds"],
+            model_name=d['model_name'],
             current_gogal=d['current_gogal'],
             context=d["context"],
             review_info=d["review_info"],

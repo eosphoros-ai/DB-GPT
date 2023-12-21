@@ -43,9 +43,9 @@ If the result indicates there is an error, fix the error and output the code aga
 When you find an answer, verify the answer carefully. Please try to simplify the output of the code to ensure that the output data of the code you generate is concise and complete.
     """
     CHECK_RESULT_SYSTEM_MESSAGE = f"""
-        You are a helpful AI assistant.
-        You are using your coding and language skills to complete the  task gogal. Please combine the provided  task  gogal and the code execution result to determine whether the execution result returned by the current code answers or completes the task objective.
-        Returns True if the execution result has answered or completed the goal, otherwise returns False. Only returns True or False.
+        You are a useful artificial intelligence assistant.
+        You are using your coding and language skills to complete the mission objectives, and so far you have successfully completed coding and executing successfully. Please read and understand the task objectives and code execution results to determine whether you have completed the goals that need to be achieved by the code in the task objectives.
+        Returns True if the execution result answers or completes the goal, otherwise returns False. Only returns True or False.
     """
 
     NAME = "CodeEngineer"
@@ -168,9 +168,9 @@ When you find an answer, verify the answer carefully. Please try to simplify the
              [
                 {
                     "role": "user",
-                    "content": f"""Please understand the following task goals, and judge whether the generated results achieve the goals.
+                    "content": f"""Please understand the following task goals and judge whether the code execution results achieve the goals.
                     Task Gogal: {task_gogal}
-                    Code Result: {task_result}
+                    Code Execution Result: {task_result}
                     Only True or False is returned.
                     """
                 }
@@ -179,7 +179,7 @@ When you find an answer, verify the answer carefully. Please try to simplify the
         sucess = str_to_bool(check_reult)
         fail_reason = None
         if sucess == False:
-            fail_reason = "The goal has not been completed yet, please read the history and continue to press to complete your Task goal."
+            fail_reason = "The execution result of the code you wrote is judged as not answering the task question. Please re-understand and complete the task."
         return sucess,fail_reason
 
 

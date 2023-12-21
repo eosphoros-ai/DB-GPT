@@ -115,12 +115,15 @@ class DataScientistAgent(ConversableAgent):
 
             try:
                 content = json.dumps(json_objects[0])
+            except Exception as e:
+                content = f"There is a format problem with the json of the answer，{str(e)}"
+                rensponse_succ = False
+            try:
                 vis_client = ApiCall()
                 view = vis_client.display_only_sql_vis(json_objects[0], self.db_connect.run_to_df)
             except Exception as e:
-                fail_reason = f"There is a format problem with the json of the answer，{str(e)}"
-        if not rensponse_succ:
-            content = fail_reason
+                view =f"```vis-convert-error\n{content}\n```"
+
         return True, {"is_exe_success": rensponse_succ, "content": content, "view": view}
 
 

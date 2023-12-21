@@ -259,6 +259,10 @@ class PlanChatManager(ConversableAgent):
                     speaker.append_rely_message({"content": rely_task.sub_task_content}, "user")
                     speaker.append_rely_message({"content": rely_task.result}, "assistant")
 
+
+    async def a_verify_reply(self, message: Optional[Dict], sender: "Agent", reviewer: "Agent", **kwargs) -> Union[str, Dict, None]:
+        return True, message
+
     async def a_run_chat(
             self,
             message: Optional[str] = None,
@@ -281,6 +285,7 @@ class PlanChatManager(ConversableAgent):
                                   request_reply=False)
                 verify_pass, reply = await self.planner.a_generate_reply({"content": message, "current_gogal": message},
                                                                          self, reviewer)
+
                 await self.planner.a_send(message=reply, recipient=self, reviewer=reviewer, request_reply=False)
                 if not verify_pass:
                     final_message = reply
@@ -291,8 +296,8 @@ class PlanChatManager(ConversableAgent):
                 if not todo_plans or len(todo_plans) <= 0:
                     ### The plan has been fully executed and a success message is sent to the user.
                     # complete
-                    final_message = {"content": f"TERMINATE"}
-                    break
+                    complete_message = {"content": f"TERMINATE", "is_exe_success": True}
+                    return True, complete_message
                 else:
                     now_plan: GptsPlan = todo_plans[0]
                     # There is no need to broadcast the message to other agents, it will be automatically obtained from the collective memory according to the dependency relationship.
@@ -311,8 +316,8 @@ class PlanChatManager(ConversableAgent):
                                 self.memory.plans_memory.update_task(self.agent_context.conv_id, now_plan.sub_task_num,
                                                                      Status.FAILED.value, now_plan.retry_times + 1,
                                                                      speaker.name, "", plan_result)
-                                final_message = {"content": f"ReTask [{now_plan.sub_task_content}] was retried more than the maximum number of times and still failed.{now_plan.result} "}
-                                break
+                                faild_report = {"content": f"ReTask [{now_plan.sub_task_content}] was retried more than the maximum number of times and still failed.{now_plan.result}", "is_exe_success": False}
+                                return True, faild_report
                         else:
                             current_goal_message = {
                                 "content": now_plan.sub_task_content,
@@ -323,12 +328,17 @@ class PlanChatManager(ConversableAgent):
                                 }
                             }
 
+
                         # select the next speaker
                         speaker, model = await groupchat.a_select_speaker(speaker, self, now_plan.sub_task_content, now_plan.sub_task_agent)
                         # Tell the speaker the dependent history information
-                        await self.a_process_rely_message(conv_id=self.agent_context.conv_id, now_plan=now_plan,
-                                                          speaker=speaker)
-                        await self.a_send(message=current_goal_message, recipient=speaker, reviewer=reviewer, request_reply=False)
+
+                        await self.a_process_rely_message(conv_id=self.agent_context.conv_id, now_plan=now_plan,speaker=speaker)
+
+                        is_recovery = False
+                        if message == current_goal_message["content"]:
+                            is_recovery = True
+                        await self.a_send(message=current_goal_message, recipient=speaker, reviewer=reviewer, request_reply=False, is_recovery=is_recovery)
                         verify_pass, reply = await speaker.a_generate_reply(current_goal_message, self, reviewer)
 
                         plan_result = ""
@@ -352,7 +362,7 @@ class PlanChatManager(ConversableAgent):
                         final_message = self.last_message(speaker)
                     except Exception as e:
                         logger.error(f"An exception was encountered during the execution of the current plan step.{str(e)}")
-                        final_message = {"content": str(e)}
-                        return True, final_message
+                        error_report = {"content": f"An exception was encountered during the execution of the current plan step.{str(e)}", "is_exe_success": False}
+                        return True, error_report
 
-        return True, final_message
+        return True, {"content": f"Maximum number of dialogue rounds exceeded.{self.MAX_CONSECUTIVE_AUTO_REPLY}", "is_exe_success": False}

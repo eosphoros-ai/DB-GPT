@@ -293,12 +293,12 @@ class ConversableAgent(Agent):
 
             review_info = message.get("review_info", None)
             if review_info:
-                approve_print = f"***** Review results: {'Pass' if review_info.get('approve') else 'Reject'}.{review_info.get('comments')}"
+                approve_print = f">>>>>>>>{sender.name} Review info: \n {'Pass' if review_info.get('approve') else 'Reject'}.{review_info.get('comments')}"
                 print(colored(approve_print, "green"), flush=True)
 
             action_report = message.get("action_report", None)
             if action_report:
-                action_print = f">>>>>>>>{self.name} Action report: \n execution result:{'execution succeeded' if action_report['is_exe_success'] else 'execution failed'},\noutput:{action_report['content']}"
+                action_print = f">>>>>>>>{sender.name} Action report: \n{'execution succeeded' if action_report['is_exe_success'] else 'execution failed'},\n{action_report['content']}"
                 print(colored(action_print, "blue"), flush=True)
         print("\n", "-" * 80, flush=True, sep="")
 
@@ -385,8 +385,11 @@ class ConversableAgent(Agent):
 
         ## 1.LLM Reasonging
         await self.a_system_fill_param()
-        await asyncio.sleep(5)  ##TODO  Rate limit reached for gpt-3.5-turbo
-        ai_reply, model = await self.a_reasoning_reply(messages=self.process_now_message(sender,  message.get("current_gogal", None)))
+        await asyncio.sleep(20)  ##TODO  Rate limit reached for gpt-3.5-turbo
+        current_messages = self.process_now_message(sender,  message.get("current_gogal", None))
+        if current_messages is None or len(current_messages) <=0:
+            current_messages = [message]
+        ai_reply, model = await self.a_reasoning_reply(messages=current_messages)
         new_message['content'] = ai_reply
         new_message['model_name'] = model
         ## 2.Review of reasoning results
@@ -564,7 +567,10 @@ class ConversableAgent(Agent):
 
         if old_model:
             filtered_list = [item for item in all_modes if item != old_model]
-            return filtered_list[0]
+            if filtered_list is None or len(filtered_list) <=1:
+                return filtered_list[0]
+            else:
+                return all_modes[0]
         else:
             return all_modes[0]
 

@@ -494,12 +494,14 @@ class ApiCall:
 
         err_msg = None
         try:
-            if not sql or len(sql) <= 0:
-                return f"""{speak}"""
+
 
             param = {}
             df = sql_2_df_func(sql)
+            if not sql or len(sql) <= 0:
+                return None
 
+            sql = chart.get("sql", None)
             param["sql"] = sql
             param["type"] = chart.get("display_type", "response_table")
             param["title"] = chart.get("title", "")

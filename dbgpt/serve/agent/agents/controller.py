@@ -189,8 +189,8 @@ class MultiAgents(BaseComponent, ABC):
             if action_report_str and len(action_report_str)>0:
                 action_report = json.loads(action_report_str)
                 if action_report:
-                    if "view" in action_report:
-                        view_info = action_report['view']
+                    view =  action_report.get("view", None)
+                    view_info = view if view else action_report.get("content", "")
 
             messages_view.append({
                 "sender": message.sender,

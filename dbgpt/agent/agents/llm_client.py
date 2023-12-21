@@ -23,7 +23,7 @@ CFG = Config()
 class AIWrapper:
     cache_path_root: str = ".cache"
     extra_kwargs = {"cache_seed", "filter_func", "allow_format_str_template", "context", "llm_model"}
-    def __init__(self, ):
+    def __init__(self):
         self._model_operator: BaseOperator = self._build_model_operator()
         self._model_stream_operator: BaseOperator = self._build_model_operator(
             is_stream=True, dag_name="llm_stream_model_dag"
@@ -235,7 +235,7 @@ class AIWrapper:
         from dbgpt.storage.cache import CacheManager
 
         # Fetch worker and cache managers from the system configuration
-        workeworker_managerr_manager = CFG.SYSTEM_APP.get_component(
+        worker_manager = CFG.SYSTEM_APP.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         cache_manager: CacheManager = CFG.SYSTEM_APP.get_component(
