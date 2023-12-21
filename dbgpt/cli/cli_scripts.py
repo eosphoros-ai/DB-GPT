@@ -51,6 +51,18 @@ def install():
     pass
 
 
+@click.group()
+def db():
+    """Manage your metadata database and your datasources."""
+    pass
+
+
+@click.group()
+def new():
+    """New a template"""
+    pass
+
+
 stop_all_func_list = []
 
 
@@ -64,6 +76,8 @@ def stop_all():
 cli.add_command(start)
 cli.add_command(stop)
 cli.add_command(install)
+cli.add_command(db)
+cli.add_command(new)
 add_command_alias(stop_all, name="all", parent_group=stop)
 
 try:
@@ -96,10 +110,13 @@ try:
         start_webserver,
         stop_webserver,
         _stop_all_dbgpt_server,
+        migration,
     )
 
     add_command_alias(start_webserver, name="webserver", parent_group=start)
     add_command_alias(stop_webserver, name="webserver", parent_group=stop)
+    # Add migration command
+    add_command_alias(migration, name="migration", parent_group=db)
     stop_all_func_list.append(_stop_all_dbgpt_server)
 
 except ImportError as e:
@@ -119,6 +136,13 @@ try:
     add_command_alias(trace_cli_group, name="trace", parent_group=cli)
 except ImportError as e:
     logging.warning(f"Integrating dbgpt trace command line tool failed: {e}")
+
+try:
+    from dbgpt.serve.utils.cli import serve
+
+    add_command_alias(serve, name="serve", parent_group=new)
+except ImportError as e:
+    logging.warning(f"Integrating dbgpt serve command line tool failed: {e}")
 
 
 def main():

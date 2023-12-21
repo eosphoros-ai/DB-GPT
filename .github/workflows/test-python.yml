@@ -1,0 +1,99 @@
+name: Test Python
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - dbgpt/**
+      - pilot/meta_data/**
+      - .github/workflows/test-python.yml
+  push:
+    branches:
+      - main
+    paths:
+      - dbgpt/**
+      - pilot/meta_data/**
+      - .github/workflows/test-python.yml
+
+concurrency:
+  group: ${{ github.event.number || github.run_id }}
+  cancel-in-progress: true
+
+#permissions:
+#  contents: read
+#  pull-requests: write
+#
+jobs:
+  test-python:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # TODO: Add windows-latest support
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[openai]"
+          pip install -r requirements/dev-requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest dbgpt --cov=dbgpt --cov-report=xml:coverage-${{ matrix.python-version }}-${{ matrix.os }}.xml --cov-report=html:htmlcov-${{ matrix.python-version }}-${{ matrix.os }} --junitxml=pytest_report-${{ matrix.python-version }}-${{ matrix.os }}.xml
+
+      - name: Generate coverage report summary
+        if: matrix.os == 'ubuntu-latest'
+        id: cov-report
+        run: |
+          coverage_file="coverage-${{ matrix.python-version }}-${{ matrix.os }}.xml"
+          # Pase the coverage file and get the line rate for each package(two level)
+          coverage_summary=$(grep -oP '<package name="\K[^"]+' $coverage_file | awk -F"." '{ if (NF == 2) print $0 }' | while read -r package_name; do
+            line_rate=$(grep -oP "<package name=\"$package_name\" line-rate=\"\K[^\"]+" $coverage_file)
+            echo "$package_name line-rate: $line_rate"
+          done)
+          echo "Coverage Summary: $coverage_summary"
+          echo "::set-output name=summary::$coverage_summary"
+
+      - name: Generate test report summary
+        if: matrix.os == 'ubuntu-latest'
+        id: test-report
+        run: |
+          test_file="pytest_report-${{ matrix.python-version }}-${{ matrix.os }}.xml"
+          total_tests=$(grep -oP 'tests="\K\d+' $test_file)
+          failures=$(grep -oP 'failures="\K\d+' $test_file)
+          skipped=$(grep -oP 'skipped="\K\d+' $test_file)
+          test_summary="Total tests: $total_tests, Failures: $failures, Skipped: $skipped"
+          echo "Test Summary: $test_summary"
+          echo "::set-output name=summary::$test_summary"
+
+# TODO: Add comment on PR
+#      - name: Comment on PR
+#        if: github.event_name == 'pull_request_target' && matrix.os == 'ubuntu-latest'
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          PR_COMMENT="## Test Coverage and Report Summary\n${{ steps.cov-report.outputs.summary }}\n${{ steps.test-report.outputs.summary }}"
+#          PR_COMMENTS_URL=$(jq -r .pull_request.comments_url < "$GITHUB_EVENT_PATH")
+#          curl -s -S -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/json" -X POST --data "{ \"body\": \"$PR_COMMENT\" }" "$PR_COMMENTS_URL"
+#
+      - name: Upload test and coverage results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-and-coverage-results-${{ matrix.python-version }}-${{ matrix.os }}
+          path: |
+            pytest_report-${{ matrix.python-version }}-${{ matrix.os }}.xml
+            coverage-${{ matrix.python-version }}-${{ matrix.os }}.xml
+            htmlcov-${{ matrix.python-version }}-${{ matrix.os }}/*
+          if-no-files-found: ignore

@@ -6,7 +6,8 @@ import time
 import traceback
 
 from dbgpt.configs.model_config import get_device
-from dbgpt.model.model_adapter import get_llm_model_adapter, LLMModelAdaper
+from dbgpt.model.adapter.base import LLMModelAdapter
+from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
 from dbgpt.core import ModelOutput, ModelInferenceMetrics
 from dbgpt.model.loader import ModelLoader, _get_model_real_path
 from dbgpt.model.parameter import ModelParameters
@@ -19,12 +20,7 @@ from dbgpt.util.system_utils import get_system_info
 logger = logging.getLogger(__name__)
 
 _torch_imported = False
-try:
-    import torch
-
-    _torch_imported = True
-except ImportError:
-    pass
+torch = None
 
 
 class DefaultModelWorker(ModelWorker):
@@ -32,7 +28,7 @@ class DefaultModelWorker(ModelWorker):
         self.model = None
         self.tokenizer = None
         self._model_params = None
-        self.llm_adapter: LLMModelAdaper = None
+        self.llm_adapter: LLMModelAdapter = None
         self._support_async = False
 
     def load_worker(self, model_name: str, model_path: str, **kwargs) -> None:
@@ -95,6 +91,8 @@ class DefaultModelWorker(ModelWorker):
     def start(
         self, model_params: ModelParameters = None, command_args: List[str] = None
     ) -> None:
+        # Lazy load torch
+        _try_import_torch()
         if not model_params:
             model_params = self.parse_parameters(command_args)
         self._model_params = model_params
@@ -436,3 +434,14 @@ def _new_metrics_from_model_output(
             ].available_memory_gb
 
     return metrics
+
+
+def _try_import_torch():
+    global torch
+    global _torch_imported
+    try:
+        import torch
+
+        _torch_imported = True
+    except ImportError:
+        pass

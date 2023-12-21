@@ -1,7 +1,6 @@
 import asyncio
 from typing import Any, Callable
 
-import httpx
 from dbgpt.model.base import ModelInstance, WorkerApplyOutput, WorkerSupportedModel
 from dbgpt.model.cluster.base import *
 from dbgpt.model.cluster.registry import ModelRegistry
@@ -34,6 +33,9 @@ class RemoteWorkerManager(LocalWorkerManager):
         success_handler: Callable = None,
         error_handler: Callable = None,
     ) -> Any:
+        # Lazy import to avoid high time cost
+        import httpx
+
         url = worker_run_data.worker.worker_addr + endpoint
         headers = {**worker_run_data.worker.headers, **(additional_headers or {})}
         timeout = worker_run_data.worker.timeout

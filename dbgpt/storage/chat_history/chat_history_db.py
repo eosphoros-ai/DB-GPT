@@ -1,27 +1,20 @@
 from typing import Optional
-from sqlalchemy import Column, Integer, String, Index, Text
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, Index, Text, DateTime
 from sqlalchemy import UniqueConstraint
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
+from dbgpt.storage.metadata import BaseDao, Model
 
 
-class ChatHistoryEntity(Base):
+class ChatHistoryEntity(Model):
     __tablename__ = "chat_history"
+    __table_args__ = (UniqueConstraint("conv_uid", name="uk_conv_uid"),)
     id = Column(
         Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
     )
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     conv_uid = Column(
         String(255),
+        # Change from False to True, the alembic migration will fail, so we use UniqueConstraint to replace it
         unique=False,
         nullable=False,
         comment="Conversation record unique id",
@@ -32,26 +25,46 @@ class ChatHistoryEntity(Base):
     messages = Column(
         Text(length=2**31 - 1), nullable=True, comment="Conversation details"
     )
+    message_ids = Column(
+        Text(length=2**31 - 1), nullable=True, comment="Message ids, split by comma"
+    )
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
-    UniqueConstraint("conv_uid", name="uk_conversation")
+    gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
+    gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
+
     Index("idx_q_user", "user_name")
     Index("idx_q_mode", "chat_mode")
     Index("idx_q_conv", "summary")
 
 
-class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
+class ChatHistoryMessageEntity(Model):
+    __tablename__ = "chat_history_message"
+    __table_args__ = (
+        UniqueConstraint("conv_uid", "index", name="uk_conversation_message"),
+    )
+    id = Column(
+        Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
+    )
+    conv_uid = Column(
+        String(255),
+        unique=False,
+        nullable=False,
+        comment="Conversation record unique id",
+    )
+    index = Column(Integer, nullable=False, comment="Message index")
+    round_index = Column(Integer, nullable=False, comment="Message round index")
+    message_detail = Column(
+        Text(length=2**31 - 1), nullable=True, comment="Message details, json format"
+    )
+    gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
+    gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
 
+
+class ChatHistoryDao(BaseDao):
     def list_last_20(
         self, user_name: Optional[str] = None, sys_code: Optional[str] = None
     ):
-        session = self.get_session()
+        session = self.get_raw_session()
         chat_history = session.query(ChatHistoryEntity)
         if user_name:
             chat_history = chat_history.filter(ChatHistoryEntity.user_name == user_name)
@@ -64,8 +77,8 @@ class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
         session.close()
         return result
 
-    def update(self, entity: ChatHistoryEntity):
-        session = self.get_session()
+    def raw_update(self, entity: ChatHistoryEntity):
+        session = self.get_raw_session()
         try:
             updated = session.merge(entity)
             session.commit()
@@ -74,7 +87,7 @@ class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
             session.close()
 
     def update_message_by_uid(self, message: str, conv_uid: str):
-        session = self.get_session()
+        session = self.get_raw_session()
         try:
             chat_history = session.query(ChatHistoryEntity)
             chat_history = chat_history.filter(ChatHistoryEntity.conv_uid == conv_uid)
@@ -84,21 +97,13 @@ class ChatHistoryDao(BaseDao[ChatHistoryEntity]):
         finally:
             session.close()
 
-    def delete(self, conv_uid: int):
-        session = self.get_session()
+    def raw_delete(self, conv_uid: int):
         if conv_uid is None:
             raise Exception("conv_uid is None")
-
-        chat_history = session.query(ChatHistoryEntity)
-        chat_history = chat_history.filter(ChatHistoryEntity.conv_uid == conv_uid)
-        chat_history.delete()
-        session.commit()
-        session.close()
+        with self.session() as session:
+            chat_history = session.query(ChatHistoryEntity)
+            chat_history = chat_history.filter(ChatHistoryEntity.conv_uid == conv_uid)
+            chat_history.delete()
 
     def get_by_uid(self, conv_uid: str) -> ChatHistoryEntity:
-        session = self.get_session()
-        chat_history = session.query(ChatHistoryEntity)
-        chat_history = chat_history.filter(ChatHistoryEntity.conv_uid == conv_uid)
-        result = chat_history.first()
-        session.close()
-        return result
+        return ChatHistoryEntity.query.filter_by(conv_uid=conv_uid).first()

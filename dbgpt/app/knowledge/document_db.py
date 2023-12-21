@@ -2,24 +2,14 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, DateTime, Integer, Text, func
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
+from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt._private.config import Config
 
 CFG = Config()
 
 
-class KnowledgeDocumentEntity(Base):
+class KnowledgeDocumentEntity(Model):
     __tablename__ = "knowledge_document"
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     id = Column(Integer, primary_key=True)
     doc_name = Column(String(100))
     doc_type = Column(String(100))
@@ -39,16 +29,8 @@ class KnowledgeDocumentEntity(Base):
 
 
 class KnowledgeDocumentDao(BaseDao):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
-
     def create_knowledge_document(self, document: KnowledgeDocumentEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         knowledge_document = KnowledgeDocumentEntity(
             doc_name=document.doc_name,
             doc_type=document.doc_type,
@@ -69,7 +51,7 @@ class KnowledgeDocumentDao(BaseDao):
         return doc_id
 
     def get_knowledge_documents(self, query, page=1, page_size=20):
-        session = self.get_session()
+        session = self.get_raw_session()
         print(f"current session:{session}")
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
@@ -104,7 +86,7 @@ class KnowledgeDocumentDao(BaseDao):
         return result
 
     def get_documents(self, query):
-        session = self.get_session()
+        session = self.get_raw_session()
         print(f"current session:{session}")
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
@@ -136,7 +118,7 @@ class KnowledgeDocumentDao(BaseDao):
         return result
 
     def get_knowledge_documents_count_bulk(self, space_names):
-        session = self.get_session()
+        session = self.get_raw_session()
         """
         Perform a batch query to count the number of documents for each knowledge space.
 
@@ -161,7 +143,7 @@ class KnowledgeDocumentDao(BaseDao):
         return docs_count
 
     def get_knowledge_documents_count(self, query):
-        session = self.get_session()
+        session = self.get_raw_session()
         knowledge_documents = session.query(func.count(KnowledgeDocumentEntity.id))
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(
@@ -188,14 +170,14 @@ class KnowledgeDocumentDao(BaseDao):
         return count
 
     def update_knowledge_document(self, document: KnowledgeDocumentEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         updated_space = session.merge(document)
         session.commit()
         return updated_space.id
 
     #
-    def delete(self, query: KnowledgeDocumentEntity):
-        session = self.get_session()
+    def raw_delete(self, query: KnowledgeDocumentEntity):
+        session = self.get_raw_session()
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(

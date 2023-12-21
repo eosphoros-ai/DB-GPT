@@ -270,7 +270,12 @@ class RDBMSDatabase(BaseConnect):
             """Format the error message"""
             return f"Error: {e}"
 
-    def __write(self, write_sql):
+    def _write(self, write_sql: str):
+        """Run a SQL write command and return the results as a list of tuples.
+
+        Args:
+            write_sql (str): SQL write command to run
+        """
         print(f"Write[{write_sql}]")
         db_cache = self._engine.url.database
         result = self.session.execute(text(write_sql))
@@ -280,16 +285,12 @@ class RDBMSDatabase(BaseConnect):
         print(f"SQL[{write_sql}], result:{result.rowcount}")
         return result.rowcount
 
-    def __query(self, query, fetch: str = "all"):
-        """
-        only for query
+    def _query(self, query: str, fetch: str = "all"):
+        """Run a SQL query and return the results as a list of tuples.
+
         Args:
-            session:
-            query:
-            fetch:
-
-        Returns:
-
+            query (str): SQL query to run
+            fetch (str): fetch type
         """
         print(f"Query[{query}]")
         if not query:
@@ -308,6 +309,10 @@ class RDBMSDatabase(BaseConnect):
             result.insert(0, field_names)
             return result
 
+    def query_table_schema(self, table_name):
+        sql = f"select * from {table_name} limit 1"
+        return self._query(sql)
+
     def query_ex(self, query, fetch: str = "all"):
         """
         only for query
@@ -325,7 +330,7 @@ class RDBMSDatabase(BaseConnect):
             if fetch == "all":
                 result = cursor.fetchall()
             elif fetch == "one":
-                result = cursor.fetchone()[0]  # type: ignore
+                result = cursor.fetchone()  # type: ignore
             else:
                 raise ValueError("Fetch parameter must be either 'one' or 'all'")
             field_names = list(i[0:] for i in cursor.keys())
@@ -342,12 +347,12 @@ class RDBMSDatabase(BaseConnect):
         parsed, ttype, sql_type, table_name = self.__sql_parse(command)
         if ttype == sqlparse.tokens.DML:
             if sql_type == "SELECT":
-                return self.__query(command, fetch)
+                return self._query(command, fetch)
             else:
-                self.__write(command)
+                self._write(command)
                 select_sql = self.convert_sql_write_to_select(command)
                 print(f"write result query:{select_sql}")
-                return self.__query(select_sql)
+                return self._query(select_sql)
 
         else:
             print(f"DDL execution determines whether to enable through configuration ")
@@ -360,10 +365,11 @@ class RDBMSDatabase(BaseConnect):
                 result.insert(0, field_names)
                 print("DDL Result:" + str(result))
                 if not result:
-                    return self.__query(f"SHOW COLUMNS FROM {table_name}")
+                    # return self._query(f"SHOW COLUMNS FROM {table_name}")
+                    return self.get_simple_fields(table_name)
                 return result
             else:
-                return self.__query(f"SHOW COLUMNS FROM {table_name}")
+                return self.get_simple_fields(table_name)
 
     def run_to_df(self, command: str, fetch: str = "all"):
         result_lst = self.run(command, fetch)
@@ -451,12 +457,22 @@ class RDBMSDatabase(BaseConnect):
         sql = sql.strip()
         parsed = sqlparse.parse(sql)[0]
         sql_type = parsed.get_type()
-        table_name = parsed.get_name()
+        if sql_type == "CREATE":
+            table_name = self._extract_table_name_from_ddl(parsed)
+        else:
+            table_name = parsed.get_name()
 
         first_token = parsed.token_first(skip_ws=True, skip_cm=False)
         ttype = first_token.ttype
         print(f"SQL:{sql}, ttype:{ttype}, sql_type:{sql_type}, table:{table_name}")
         return parsed, ttype, sql_type, table_name
+
+    def _extract_table_name_from_ddl(self, parsed):
+        """Extract table name from CREATE TABLE statement.""" ""
+        for token in parsed.tokens:
+            if token.ttype is None and isinstance(token, sqlparse.sql.Identifier):
+                return token.get_real_name()
+        return None
 
     def get_indexes(self, table_name):
         """Get table indexes about specified table."""
@@ -484,6 +500,10 @@ class RDBMSDatabase(BaseConnect):
         )
         fields = cursor.fetchall()
         return [(field[0], field[1], field[2], field[3], field[4]) for field in fields]
+
+    def get_simple_fields(self, table_name):
+        """Get column fields about specified table."""
+        return self._query(f"SHOW COLUMNS FROM {table_name}")
 
     def get_charset(self):
         """Get character_set."""

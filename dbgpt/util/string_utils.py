@@ -80,9 +80,11 @@ def str_to_bool(s):
     else:
         return False
 
-if __name__ == "__main__":
-    s = "abcd123efghijkjhhh456xxx123aa456yyy123bb456xx123"
-    s1 = "123"
-    s2 = "456"
+def _to_str(x, charset="utf8", errors="strict"):
+    if x is None or isinstance(x, str):
+        return x
 
-    print(extract_content_open_ending(s, s1, s2, True))
+    if isinstance(x, bytes):
+        return x.decode(charset, errors)
+
+    return str(x)

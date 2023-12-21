@@ -83,3 +83,9 @@ Observing & monitoring
 
 - [Evaluation](/docs/modules/eval)
 Evaluate framework performance and accuracy
+
+## Community
+If you encounter any problems during the process, you can submit an [issue](https://github.com/eosphoros-ai/DB-GPT/issues) and communicate with us.
+
+We welcome [discussions](https://github.com/orgs/eosphoros-ai/discussions) in the community
+

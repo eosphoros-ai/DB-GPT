@@ -61,7 +61,7 @@ class Config(metaclass=Singleton):
         if self.zhipu_proxy_api_key:
             os.environ["zhipu_proxyllm_proxy_api_key"] = self.zhipu_proxy_api_key
             os.environ["zhipu_proxyllm_proxyllm_backend"] = os.getenv(
-                "ZHIPU_MODEL_VERSION"
+                "ZHIPU_MODEL_VERSION", "chatglm_pro"
             )
 
         # wenxin
@@ -182,6 +182,7 @@ class Config(metaclass=Singleton):
         self.LOCAL_DB_USER = os.getenv("LOCAL_DB_USER", "root")
         self.LOCAL_DB_PASSWORD = os.getenv("LOCAL_DB_PASSWORD", "aa123456")
         self.LOCAL_DB_POOL_SIZE = int(os.getenv("LOCAL_DB_POOL_SIZE", 10))
+        self.LOCAL_DB_POOL_OVERFLOW = int(os.getenv("LOCAL_DB_POOL_OVERFLOW", 20))
 
         self.CHAT_HISTORY_STORE_TYPE = os.getenv("CHAT_HISTORY_STORE_TYPE", "db")
 
