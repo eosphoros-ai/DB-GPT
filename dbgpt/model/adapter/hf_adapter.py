@@ -1,11 +1,15 @@
+from abc import ABC, abstractmethod
 from typing import Dict, Optional, List, Any
+import logging
 
 from dbgpt.core import ModelMessage
 from dbgpt.model.base import ModelType
 from dbgpt.model.adapter.base import LLMModelAdapter, register_model_adapter
 
+logger = logging.getLogger(__name__)
 
-class NewHFChatModelAdapter(LLMModelAdapter):
+
+class NewHFChatModelAdapter(LLMModelAdapter, ABC):
     """Model adapter for new huggingface chat models
 
     See https://huggingface.co/docs/transformers/main/en/chat_templating
@@ -31,6 +35,7 @@ class NewHFChatModelAdapter(LLMModelAdapter):
         model_path = model_path.lower() if model_path else None
         return self.do_match(model_name) or self.do_match(model_path)
 
+    @abstractmethod
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
         raise NotImplementedError()
 
@@ -89,7 +94,8 @@ class NewHFChatModelAdapter(LLMModelAdapter):
             raise ValueError("tokenizer is is None")
         tokenizer: AutoTokenizer = tokenizer
 
-        messages = ModelMessage.to_openai_messages(messages)
+        messages = self.transform_model_messages(messages)
+        logger.debug(f"The messages after transform: \n{messages}")
         str_prompt = tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )

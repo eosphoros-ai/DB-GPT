@@ -227,6 +227,7 @@ def _try_load_default_quantization_model(
             return _handle_model_and_tokenizer(
                 model, tokenizer, device, num_gpus, model_params
             )
+        return None, None
     except Exception as e:
         logger.warning(
             f"Load default quantization model {model_params.model_name} failed, error: {str(e)}"

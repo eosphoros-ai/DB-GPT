@@ -113,7 +113,9 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/microsoft/Orca-2-13b
     "orca-2-13b": os.path.join(MODEL_PATH, "Orca-2-13b"),
     # https://huggingface.co/openchat/openchat_3.5
-    "openchat_3.5": os.path.join(MODEL_PATH, "openchat_3.5"),
+    "openchat-3.5": os.path.join(MODEL_PATH, "openchat_3.5"),
+    # https://huggingface.co/openchat/openchat-3.5-1210
+    "openchat-3.5-1210": os.path.join(MODEL_PATH, "openchat-3.5-1210"),
     # https://huggingface.co/hfl/chinese-alpaca-2-7b
     "chinese-alpaca-2-7b": os.path.join(MODEL_PATH, "chinese-alpaca-2-7b"),
     # https://huggingface.co/hfl/chinese-alpaca-2-13b

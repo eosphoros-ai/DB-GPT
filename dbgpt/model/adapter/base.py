@@ -176,6 +176,7 @@ class LLMModelAdapter(ABC):
         Returns:
             List[Dict[str, str]]: The transformed model messages
         """
+        logger.info(f"support_system_message: {self.support_system_message}")
         if not self.support_system_message:
             return self._transform_to_no_system_messages(messages)
         else:
@@ -432,4 +433,5 @@ def get_model_adapter(
         new_adapter.model_path = model_path
         if conv_factory:
             new_adapter.conv_factory = conv_factory
-    return adapter
+        return new_adapter
+    return None
