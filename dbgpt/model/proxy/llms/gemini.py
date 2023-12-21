@@ -1,13 +1,9 @@
-from typing import List
+from typing import List, Tuple, Dict, Any
 
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel
-from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+from dbgpt.core.interface.message import ModelMessage, parse_model_messages
 
 GEMINI_DEFAULT_MODEL = "gemini-pro"
-
-# global history for the easy to support history
-# TODO refactor the history thing in the future
-history = []
 
 
 def gemini_generate_stream(
@@ -63,15 +59,51 @@ def gemini_generate_stream(
         generation_config=generation_config,
         safety_settings=safety_settings,
     )
-    messages = params["messages"][0].content
-    chat = model.start_chat(history=history)
-    response = chat.send_message(messages, stream=True)
+    messages: List[ModelMessage] = params["messages"]
+    user_prompt, gemini_hist = _transform_to_gemini_messages(messages)
+    chat = model.start_chat(history=gemini_hist)
+    response = chat.send_message(user_prompt, stream=True)
     text = ""
     for chunk in response:
         text += chunk.text
+        print(text)
         yield text
-    # only keep the last five message
-    if len(history) > 10:
-        history = chat.history[2:]
-    else:
-        history = chat.history
+
+
+def _transform_to_gemini_messages(
+    messages: List[ModelMessage],
+) -> Tuple[str, List[Dict[str, Any]]]:
+    """Transform messages to gemini format
+
+    See https://github.com/GoogleCloudPlatform/generative-ai/blob/main/gemini/getting-started/intro_gemini_python.ipynb
+
+    Args:
+        messages (List[ModelMessage]): messages
+
+    Returns:
+        Tuple[str, List[Dict[str, Any]]]: user_prompt, gemini_hist
+
+    Examples:
+        .. code-block:: python
+
+            messages = [
+                ModelMessage(role="human", content="Hello"),
+                ModelMessage(role="ai", content="Hi there!"),
+                ModelMessage(role="human", content="How are you?"),
+            ]
+            user_prompt, gemini_hist = _transform_to_gemini_messages(messages)
+            assert user_prompt == "How are you?"
+            assert gemini_hist == [
+                {"role": "user", "parts": {"text": "Hello"}},
+                {"role": "model", "parts": {"text": "Hi there!"}}
+            ]
+    """
+    user_prompt, system_messages, history_messages = parse_model_messages(messages)
+    if system_messages:
+        user_prompt = "".join(system_messages) + "\n" + user_prompt
+    gemini_hist = []
+    if history_messages:
+        for user_message, model_message in history_messages:
+            gemini_hist.append({"role": "user", "parts": {"text": user_message}})
+            gemini_hist.append({"role": "model", "parts": {"text": model_message}})
+    return user_prompt, gemini_hist
