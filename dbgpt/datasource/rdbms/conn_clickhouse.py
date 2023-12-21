@@ -60,6 +60,7 @@ class ClickhouseConnect(RDBMSDatabase):
         client = clickhouse_connect.get_client(
             host=host,
             user=user,
+            password=pwd,
             port=port,
             connect_timeout=15,
             database=db_name,
