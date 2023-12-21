@@ -4,7 +4,7 @@ import regex as re
 import pandas as pd
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Dict
 import sqlalchemy
 from sqlalchemy import (
     MetaData,
@@ -226,6 +226,16 @@ class RDBMSDatabase(BaseConnect):
             tables.append(table_info)
         final_str = "\n\n".join(tables)
         return final_str
+
+    def get_columns(self, table_name: str) -> Any:
+        """Get columns.
+        Args:
+            table_name (_type_): _description_
+        Returns:
+            columns: List[Dict], which contains name: str, type: str, default_expression: str, is_in_primary_key: bool, comment: str
+            eg:[{'name': 'id', 'type': 'int', 'default_expression': '', 'is_in_primary_key': True, 'comment': 'id'}, ...]
+        """
+        return self._inspector.get_columns(table_name)
 
     def _get_sample_rows(self, table: Table) -> str:
         # build the select command
@@ -475,12 +485,14 @@ class RDBMSDatabase(BaseConnect):
                 return token.get_real_name()
         return None
 
-    def get_indexes(self, table_name):
-        """Get table indexes about specified table."""
-        session = self._db_sessions()
-        cursor = session.execute(text(f"SHOW INDEXES FROM {table_name}"))
-        indexes = cursor.fetchall()
-        return [(index[2], index[4]) for index in indexes]
+    def get_indexes(self, table_name) -> List[Dict]:
+        """Get table indexes about specified table.
+        Args:
+            table_name:table name
+        Returns:
+            List[Dict]:eg:[{'name': 'idx_key', 'column_names': ['id']}]
+        """
+        return self._inspector.get_indexes(table_name)
 
     def get_show_create_table(self, table_name):
         """Get table show create table about specified table."""
@@ -549,6 +561,16 @@ class RDBMSDatabase(BaseConnect):
         return [
             (table_comment[0], table_comment[1]) for table_comment in table_comments
         ]
+
+    def get_table_comment(self, table_name: str) -> Dict:
+        """Get table comments.
+
+        Args:
+            table_name (str): table name
+        Returns:
+            comment: Dict, which contains text: Optional[str], eg:["text": "comment"]
+        """
+        return self._inspector.get_table_comment(table_name)
 
     def get_column_comments(self, db_name, table_name):
         cursor = self.session.execute(

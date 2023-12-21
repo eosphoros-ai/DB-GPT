@@ -1,7 +1,7 @@
 import re
 import sqlparse
 import clickhouse_connect
-from typing import List, Optional, Any, Iterable
+from typing import List, Optional, Any, Iterable, Dict
 from sqlalchemy import text
 from urllib.parse import quote
 from sqlalchemy.schema import CreateTable
@@ -60,7 +60,6 @@ class ClickhouseConnect(RDBMSDatabase):
         client = clickhouse_connect.get_client(
             host=host,
             user=user,
-            password=pwd,
             port=port,
             connect_timeout=15,
             database=db_name,
@@ -84,9 +83,24 @@ class ClickhouseConnect(RDBMSDatabase):
             tables = [row[0] for block in stream for row in block]
             return tables
 
-    def get_indexes(self, table_name):
-        """Get table indexes about specified table."""
-        return ""
+    def get_indexes(self, table_name) -> List[Dict]:
+        """Get table indexes about specified table.
+        Args:
+            table_name (str): table name
+        Returns:
+            indexes: List[Dict], eg:[{'name': 'idx_key', 'column_names': ['id']}]
+        """
+        session = self.client
+
+        _query_sql = f""" 
+                    SELECT name AS table, primary_key, from system.tables where database ='{self.client.database}' and table = '{table_name}'
+                """
+        with session.query_row_block_stream(_query_sql) as stream:
+            indexes = [block for block in stream]
+            return [
+                {"name": "primary_key", "column_names": column_names.split(",")}
+                for table, column_names in indexes[0]
+            ]
 
     @property
     def table_info(self) -> str:
@@ -116,6 +130,20 @@ class ClickhouseConnect(RDBMSDatabase):
         )
         ans = re.sub(r"\s*SETTINGS\s*\s*\w+\s*", " ", ans, flags=re.IGNORECASE)
         return ans
+
+    def get_columns(self, table_name) -> List[Dict]:
+        """Get columns.
+        Args:
+            table_name (_type_): _description_
+        Returns:
+            columns: List[Dict], which contains name: str, type: str, default_expression: str, is_in_primary_key: bool, comment: str
+            eg:[{'name': 'id', 'type': 'UInt64', 'default_expression': '', 'is_in_primary_key': True, 'comment': 'id'}, ...]
+        """
+        fields = self.get_fields(table_name)
+        return [
+            {"name": name, "comment": comment, "type": column_type}
+            for name, column_type, _, _, comment in fields[0]
+        ]
 
     def get_fields(self, table_name):
         """Get column fields about specified table."""
@@ -210,6 +238,24 @@ class ClickhouseConnect(RDBMSDatabase):
         with session.query_row_block_stream(_query_sql) as stream:
             table_comments = [row for block in stream for row in block]
             return table_comments
+
+    def get_table_comment(self, table_name: str) -> Dict:
+        """Get table comment.
+        Args:
+            table_name (str): table name
+        Returns:
+            comment: Dict, which contains text: Optional[str], eg:["text": "comment"]
+        """
+        session = self.client
+
+        _query_sql = f"""
+                SELECT table, comment FROM system.tables WHERE database = '{self.client.database}'and table = '{table_name}'""".format(
+            self.client.database
+        )
+
+        with session.query_row_block_stream(_query_sql) as stream:
+            table_comments = [row for block in stream for row in block]
+            return [{"text": comment} for table_name, comment in table_comments][0]
 
     def get_column_comments(self, db_name, table_name):
         session = self.client
