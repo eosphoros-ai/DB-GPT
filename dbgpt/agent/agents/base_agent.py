@@ -22,16 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 class ConversableAgent(Agent):
-
-
+    DEFAULT_SYSTEM_MESSAGE= "You are a helpful AI Assistant."
     MAX_CONSECUTIVE_AUTO_REPLY = 100  # maximum number of consecutive auto replies (subject to future change)
-
     def __init__(
             self,
             name: str,
             memory: GptsMemory,
             model_priority: Optional[List[str]] = None,
-            describe: Optional[str] = "You are a helpful AI Assistant.",
+            describe: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
             system_message: Optional[str] = "You are a helpful AI Assistant.",
             is_termination_msg: Optional[Callable[[Dict], bool]] = None,
             max_consecutive_auto_reply: Optional[int] = None,
@@ -254,9 +252,10 @@ class ConversableAgent(Agent):
             reviewer: "Agent",
             request_reply: Optional[bool] = True,
             silent: Optional[bool] = False,
+            is_recovery: Optional[bool]=False,
     ):
         await recipient.a_receive(message=message, sender=self, reviewer=reviewer, request_reply=request_reply,
-                                  silent=silent)
+                                  silent=silent, is_recovery=is_recovery)
 
     def _print_received_message(self, message: Union[Dict, str], sender: Agent):
         # print the message received
@@ -370,6 +369,8 @@ class ConversableAgent(Agent):
             cut_messages.extend(current_gogal_messages[-3:])
         return cut_messages
 
+    async def a_system_fill_param(self):
+        self.update_system_message(self.DEFAULT_SYSTEM_MESSAGE)
 
     async def a_generate_reply(self,
                       message: Optional[Dict],
@@ -381,7 +382,10 @@ class ConversableAgent(Agent):
         new_message = {}
         new_message['context'] = message.get('context', None)
         new_message['current_gogal'] = message.get('current_gogal', None)
+
         ## 1.LLM Reasonging
+        await self.a_system_fill_param()
+        await asyncio.sleep(5)  ##TODO  Rate limit reached for gpt-3.5-turbo
         ai_reply, model = await self.a_reasoning_reply(messages=self.process_now_message(sender,  message.get("current_gogal", None)))
         new_message['content'] = ai_reply
         new_message['model_name'] = model
@@ -412,10 +416,16 @@ class ConversableAgent(Agent):
             reviewer: "Agent",
             request_reply: Optional[bool] = True,
             silent: Optional[bool] = False,
+            is_recovery: Optional[bool] = False,
     ):
-        self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter + 1
-        self._process_received_message(message, sender, silent)
 
+        if not is_recovery:
+            self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter + 1
+            self._process_received_message(message, sender, silent)
+
+        else:
+            logger.info("Process received retrying")
+            self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter
         if (request_reply is False or request_reply is None):
             logger.info("Messages that do not require a reply")
             return
@@ -461,7 +471,6 @@ class ConversableAgent(Agent):
         need_retry, fail_reason = await self._optimization_check(message)
         if need_retry:
             ## Before optimization, wrong answers are stored in memory
-            self.append_message(message, None, sender)
             await self.a_send(message=message, recipient=sender, reviewer=reviewer, request_reply=False)
             ## Send error messages to yourself for retrieval optimization and increase the number of retrievals
             retry_message ={}
@@ -487,22 +496,16 @@ class ConversableAgent(Agent):
             **context
     ):
         last_message: GptsMessage = self.memory.message_memory.get_last_message(self.agent_context.conv_id)
-        sender = agent_map[last_message.sender]
-        receiver = agent_map[last_message.receiver]
-
-        await  receiver.a_retry(sender=sender, reviewer=self, last_message= last_message)
-
-
-    async def a_retry(self, sender: Agent, reviewer: Agent, last_message:GptsMessage):
         self.consecutive_auto_reply_counter = last_message.rounds
-        await self.a_reply(message={
+        message = {
             "content": last_message.content,
             "context": json.loads(last_message.context) if last_message.context else None,
             "current_gogal": last_message.current_gogal,
             "review_info": json.loads(last_message.review_info) if last_message.review_info else None,
             "action_report": json.loads(last_message.action_report) if last_message.action_report else None,
             "model_name": last_message.model_name
-        }, sender=sender, reviewer=reviewer)
+        }
+        await self.a_send(message, recipient, reviewer,request_reply=True, silent=silent, is_recovery=True)
 
 
     async def a_initiate_chat(
@@ -578,7 +581,6 @@ class ConversableAgent(Agent):
         Returns:
             str or dict or None: reply. None if no reply is generated.
         """
-        await asyncio.sleep(20)  ##TODO  Rate limit reached for gpt-3.5-turbo
         last_model = None
         last_err = None
         retry_count = 0

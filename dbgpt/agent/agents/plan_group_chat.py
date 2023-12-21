@@ -240,10 +240,13 @@ class PlanChatManager(ConversableAgent):
     async def a_reasoning_reply(
         self,
         messages: Union[List[Dict]]) -> Union[str, Dict, None]:
-
-        message = messages[-1]
-        self.plan_chat.messages.append(message)
-        return message['content'],  None
+        if messages is None or len(messages)<=0:
+            message = None
+            return None, None
+        else:
+            message = messages[-1]
+            self.plan_chat.messages.append(message)
+            return message['content'], None
 
     async def a_process_rely_message(self, conv_id: str, now_plan: GptsPlan, speaker: ConversableAgent):
         speaker.reset_rely_message()
@@ -269,20 +272,22 @@ class PlanChatManager(ConversableAgent):
         groupchat = config
 
         final_message = None
-        plans = self.memory.plans_memory.get_by_conv_id(self.agent_context.conv_id)
-        if not plans or len(plans) <= 0:
-            ###Have no plan, generate a new plan TODO init plan use planmanger
-            await self.a_send({"content": message,  "current_gogal":  message}, self.planner, reviewer, request_reply=False)
-            verify_pass, reply = await self.planner.a_generate_reply({"content": message,  "current_gogal":  message}, self, reviewer)
-            await self.planner.a_send(message=reply, recipient=self, reviewer=reviewer,  request_reply=False)
-            if verify_pass:
-                # Because the cycle is broken due to the generation of plan, it is restored again.
-                await self.a_run_chat(message, sender, reviewer, config)
+
+        for i in range(groupchat.max_round):
+            plans = self.memory.plans_memory.get_by_conv_id(self.agent_context.conv_id)
+            if not plans or len(plans) <= 0:
+                ###Have no plan, generate a new plan TODO init plan use planmanger
+                await self.a_send({"content": message, "current_gogal": message}, self.planner, reviewer,
+                                  request_reply=False)
+                verify_pass, reply = await self.planner.a_generate_reply({"content": message, "current_gogal": message},
+                                                                         self, reviewer)
+                await self.planner.a_send(message=reply, recipient=self, reviewer=reviewer, request_reply=False)
+                if not verify_pass:
+                    final_message = reply
+                    if i > 10:
+                        break
             else:
-                final_message = reply
-        else:
-            for i in range(groupchat.max_round):
-                todo_plans: list[GptsPlan] = self.memory.plans_memory.get_todo_plans(self.agent_context.conv_id)
+                todo_plans = [plan for plan in plans if plan.state in [Status.TODO.value, Status.RETRYING.value]]
                 if not todo_plans or len(todo_plans) <= 0:
                     ### The plan has been fully executed and a success message is sent to the user.
                     # complete
@@ -346,8 +351,8 @@ class PlanChatManager(ConversableAgent):
 
                         final_message = self.last_message(speaker)
                     except Exception as e:
-                        logger.error(f"An exception was encountered during the execution of the current plan step.{str(e)}", e)
+                        logger.error(f"An exception was encountered during the execution of the current plan step.{str(e)}")
                         final_message = {"content": str(e)}
-                        break
+                        return True, final_message
 
         return True, final_message

@@ -71,16 +71,13 @@ class SQLAssistantAgent(ConversableAgent):
         self.agent_context = agent_context
         self.db_connect = CFG.LOCAL_DB_MANAGE.get_connect(self.agent_context.resource_db.get('name', None))
 
-    async def a_receive(self, message: Union[Dict, str], sender: Agent, reviewer: "Agent",
-                        request_reply: Optional[bool] = None, silent: Optional[bool] = False):
-        ### If it is a message sent to yourself, go to repair sytem prompt
+    async def a_system_fill_param(self):
         params = {
-            "data_structure": self.agent_context.resources['db'],
+            "data_structure": self.db_connect.get_table_info(),
             "disply_type": ApiCall.default_chart_type_promot(),
+            "dialect": self.db_connect.db_type
         }
         self.update_system_message(self.DEFAULT_SYSTEM_MESSAGE.format(**params))
-        return await super().a_receive(message, sender, reviewer, request_reply, silent)
-
 
     async def generate_analysis_chart_reply(
             self,

@@ -120,17 +120,10 @@ class PlannerAgent(ConversableAgent):
             "agents": "\n".join([f"- {item}:{agent_mange.get_describe_by_name(item)}" for item in agent_context.agents]),
         }
 
-    async def a_receive(self, message: Union[Dict, str], sender: Agent, reviewer: "Agent",
-                        request_reply: Optional[bool] = None, silent: Optional[bool] = False):
 
-
+    async def a_system_fill_param(self):
         params = self.build_param(self.agent_context)
-        ### If it is a message sent to yourself, go to repair sytem prompt
-        if sender is self:
-            self.update_system_message(self.REPAIR_SYSTEM_MESSAGE.format(**params))
-        else:
-            self.update_system_message(self.DEFAULT_SYSTEM_MESSAGE.format(**params))
-        return await super().a_receive(message, sender, reviewer, request_reply, silent)
+        self.update_system_message(self.DEFAULT_SYSTEM_MESSAGE.format(**params))
 
     async def _a_planning(self,
                           message: Optional[str] = None,

@@ -64,6 +64,7 @@ class UserProxyAgent(ConversableAgent):
             reviewer: "Agent",
             request_reply: Optional[bool] = True,
             silent: Optional[bool] = False,
+            is_recovery: Optional[bool] = False,
     ):
         self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter + 1
         self._process_received_message(message, sender, silent)

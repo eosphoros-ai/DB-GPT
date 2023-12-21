@@ -48,6 +48,7 @@ class Agent:
         recipient: "Agent",
         reviewer: "Agent",
         request_reply: Optional[bool] = True,
+        is_recovery: Optional[bool] = False,
     ):
         """(Abstract async method) Send a message to another agent."""
 
@@ -58,7 +59,8 @@ class Agent:
         sender: "Agent",
         reviewer: "Agent",
         request_reply: Optional[bool] = None,
-        silent: Optional[bool] = False
+        silent: Optional[bool] = False,
+        is_recovery: Optional[bool] = False,
     ):
         """(Abstract async method) Receive a message from another agent."""
 

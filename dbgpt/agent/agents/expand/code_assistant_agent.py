@@ -10,6 +10,7 @@ from dbgpt.util.code_utils import (
 )
 from ..agent import Agent
 from ...memory.gpts_memory import GptsMemory
+from dbgpt.util.string_utils import str_to_bool
 try:
     from termcolor import colored
 except ImportError:
@@ -42,10 +43,10 @@ If the result indicates there is an error, fix the error and output the code aga
 When you find an answer, verify the answer carefully. Please try to simplify the output of the code to ensure that the output data of the code you generate is concise and complete.
     """
     CHECK_RESULT_SYSTEM_MESSAGE = f"""
-            You are an expert in action reporting analysis.
-            Please determine whether the given task results are the output required by the task background, including format and content.
-            If the generated results are as expected and relevant to the task content, True is returned, otherwise False is returned. Only returns True or False.
-           """
+        You are a helpful AI assistant.
+        You are using your coding and language skills to complete the  task gogal. Please combine the provided  task  gogal and the code execution result to determine whether the execution result returned by the current code answers or completes the task objective.
+        Returns True if the execution result has answered or completed the goal, otherwise returns False. Only returns True or False.
+    """
 
     NAME = "CodeEngineer"
     DEFAULT_DESCRIBE = """According to the current planning steps, write python/shell code to solve the problem, such as: data crawling, data sorting and conversion, etc. Wrap the code in a code block of the specified script type. Users cannot modify your code. So don't suggest incomplete code that needs to be modified by others.
@@ -53,8 +54,8 @@ When you find an answer, verify the answer carefully. Please try to simplify the
     """
     def __init__(
         self,
-        memory: GptsMemory,
         agent_context: 'AgentContext',
+        memory: GptsMemory = None,
         model_priority: Optional[List[str]] = None,
         describe: Optional[str] = DEFAULT_DESCRIBE,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
@@ -100,6 +101,7 @@ When you find an answer, verify the answer carefully. Please try to simplify the
             Agent,
             CodeAssistantAgent.generate_code_execution_reply
         )
+
 
 
 
@@ -162,17 +164,13 @@ When you find an answer, verify the answer carefully. Please try to simplify the
         if action_report:
             task_result = action_report.get("content", "")
 
-
-
-        final, check_reult, model = await self.a_reasoning_reply(
-            self.messages
-            + [
+        check_reult, model = await self.a_reasoning_reply(
+             [
                 {
                     "role": "user",
-                    "content": f"""Please understand the following task background and goals, and judge whether the generated results achieve the goals.
-                    Task Background: {self.system_message}
+                    "content": f"""Please understand the following task goals, and judge whether the generated results achieve the goals.
                     Task Gogal: {task_gogal}
-                    Task Result: {task_result}
+                    Code Result: {task_result}
                     Only True or False is returned.
                     """
                 }
