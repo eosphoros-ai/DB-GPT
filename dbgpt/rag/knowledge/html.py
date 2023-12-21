@@ -53,7 +53,7 @@ class HTMLKnowledge(Knowledge):
         for d in documents:
             import markdown
 
-            content = markdown.markdown(d.page_content)
+            content = markdown.markdown(d.content)
             from bs4 import BeautifulSoup
 
             soup = BeautifulSoup(content, "html.parser")

@@ -1,5 +1,5 @@
 from typing import Optional, Any, List
-
+import csv
 from dbgpt.rag.chunk import Document
 from dbgpt.rag.knowledge.base import (
     KnowledgeType,
@@ -15,7 +15,7 @@ class CSVKnowledge(Knowledge):
     def __init__(
         self,
         file_path: Optional[str] = None,
-        knowledge_type: KnowledgeType = KnowledgeType.DOCUMENT,
+        knowledge_type: Optional[KnowledgeType] = KnowledgeType.DOCUMENT,
         source_column: Optional[str] = None,
         encoding: Optional[str] = "utf-8",
         loader: Optional[Any] = None,
@@ -42,7 +42,7 @@ class CSVKnowledge(Knowledge):
         else:
             docs = []
             with open(self._path, newline="", encoding=self._encoding) as csvfile:
-                csv_reader = csv.DictReader(csvfile, **self.csv_args)  # type: ignore
+                csv_reader = csv.DictReader(csvfile)
                 for i, row in enumerate(csv_reader):
                     strs = []
                     for k, v in row.items():
