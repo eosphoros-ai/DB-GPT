@@ -16,6 +16,7 @@
     (102, 'Sort your data based on your commonly-used queries', today(),     2.718   ),
     (101, 'Granules are the smallest chunks of data read',      now() + 5,   3.14159 )
     """
+from typing import Dict, List
 
 import pytest
 
@@ -50,7 +51,9 @@ def test_get_table_names(db):
 
 
 def test_get_indexes(db):
-    assert db.get_indexes("") == ""
+    assert [index.get("name") for index in db.get_indexes("my_first_table")][
+        0
+    ] == "primary_key"
 
 
 def test_get_fields(db):
