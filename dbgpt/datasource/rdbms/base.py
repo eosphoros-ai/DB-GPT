@@ -227,7 +227,7 @@ class RDBMSDatabase(BaseConnect):
         final_str = "\n\n".join(tables)
         return final_str
 
-    def get_columns(self, table_name: str) -> Any:
+    def get_columns(self, table_name: str) -> List[Dict]:
         """Get columns.
         Args:
             table_name (_type_): _description_
