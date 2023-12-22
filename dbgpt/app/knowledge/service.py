@@ -1,8 +1,17 @@
 import json
 import logging
 from datetime import datetime
+from typing import List
 
+from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import KnowledgeType
+from dbgpt.rag.knowledge.factory import KnowledgeFactory
+from dbgpt.rag.text_splitter.text_splitter import (
+    RecursiveCharacterTextSplitter,
+    SpacyTextSplitter,
+)
+from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
@@ -33,6 +42,7 @@ from dbgpt.app.knowledge.request.request import (
     SpaceArgumentRequest,
     DocumentSyncRequest,
     DocumentSummaryRequest,
+    KnowledgeSyncRequest,
 )
 from enum import Enum
 
@@ -187,18 +197,44 @@ class KnowledgeService:
         res.page = request.page
         return res
 
+    def batch_document_sync(
+        self, space_name, sync_requests: List[KnowledgeSyncRequest]
+    ) -> List[int]:
+        """batch sync knowledge document chunk into vector store
+        Args:
+            - space: Knowledge Space Name
+            - sync_requests: List[KnowledgeSyncRequest]
+        Returns:
+            - List[int]: document ids
+        """
+        doc_ids = []
+        for sync_request in sync_requests:
+            query = KnowledgeDocumentEntity(
+                id=sync_request.doc_id,
+                space=space_name,
+            )
+            doc = knowledge_document_dao.get_knowledge_documents(query)[0]
+            if (
+                doc.status == SyncStatus.RUNNING.name
+                or doc.status == SyncStatus.FINISHED.name
+            ):
+                raise Exception(
+                    f" doc:{doc.doc_name} status is {doc.status}, can not sync"
+                )
+            # space_context = self.get_space_context(space_name)
+            self._sync_knowledge_document(
+                space_name, doc, sync_request.chunk_parameters
+            )
+            doc_ids.append(doc.id)
+        return doc_ids
+
     def sync_knowledge_document(self, space_name, sync_request: DocumentSyncRequest):
         """sync knowledge document chunk into vector store
         Args:
             - space: Knowledge Space Name
             - sync_request: DocumentSyncRequest
         """
-        from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
         from dbgpt.rag.text_splitter.pre_text_splitter import PreTextSplitter
-        from langchain.text_splitter import (
-            RecursiveCharacterTextSplitter,
-            SpacyTextSplitter,
-        )
 
         doc_ids = sync_request.doc_ids
         self.model_name = sync_request.model_name or CFG.LLM_MODEL
@@ -270,59 +306,48 @@ class KnowledgeService:
                     text_splitter_impl=text_splitter,
                 )
                 chunk_parameters.text_splitter = text_splitter
-            embedding_factory = CFG.SYSTEM_APP.get_component(
-                "embedding_factory", EmbeddingFactory
-            )
-            embedding_fn = embedding_factory.create(
-                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-            )
-            from dbgpt.storage.vector_store.base import VectorStoreConfig
-
-            config = VectorStoreConfig(name=space_name, embedding_fn=embedding_fn)
-            vector_store_connector = VectorStoreConnector(
-                vector_store_type=CFG.VECTOR_STORE_TYPE,
-                vector_store_config=config,
-            )
-
-            from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
-            from dbgpt.rag.knowledge.factory import KnowledgeFactory
-
-            knowledge = KnowledgeFactory.create(
-                datasource=doc.content,
-                knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
-            )
-            assembler = EmbeddingAssembler.load_from_knowledge(
-                knowledge=knowledge,
-                chunk_parameters=chunk_parameters,
-                vector_store_connector=vector_store_connector,
-            )
-            chunk_docs = assembler.get_chunks()
-            # update document status
-            doc.status = SyncStatus.RUNNING.name
-            doc.chunk_size = len(chunk_docs)
-            doc.gmt_modified = datetime.now()
-            knowledge_document_dao.update_knowledge_document(doc)
-            executor = CFG.SYSTEM_APP.get_component(
-                ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
-            ).create()
-            executor.submit(self.async_doc_embedding, assembler, chunk_docs, doc)
-            logger.info(f"begin save document chunks, doc:{doc.doc_name}")
-            # save chunk details
-            chunk_entities = [
-                DocumentChunkEntity(
-                    doc_name=doc.doc_name,
-                    doc_type=doc.doc_type,
-                    document_id=doc.id,
-                    content=chunk_doc.content,
-                    meta_info=str(chunk_doc.metadata),
-                    gmt_created=datetime.now(),
-                    gmt_modified=datetime.now(),
-                )
-                for chunk_doc in chunk_docs
-            ]
-            document_chunk_dao.create_documents_chunks(chunk_entities)
-
+            self._sync_knowledge_document(space_name, doc, chunk_parameters)
         return doc.id
+
+    def _sync_knowledge_document(
+        self,
+        space_name,
+        doc: KnowledgeDocumentEntity,
+        chunk_parameters: ChunkParameters,
+    ):
+        """sync knowledge document chunk into vector store"""
+        embedding_factory = CFG.SYSTEM_APP.get_component(
+            "embedding_factory", EmbeddingFactory
+        )
+        embedding_fn = embedding_factory.create(
+            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+        )
+        from dbgpt.storage.vector_store.base import VectorStoreConfig
+
+        config = VectorStoreConfig(name=space_name, embedding_fn=embedding_fn)
+        vector_store_connector = VectorStoreConnector(
+            vector_store_type=CFG.VECTOR_STORE_TYPE,
+            vector_store_config=config,
+        )
+        knowledge = KnowledgeFactory.create(
+            datasource=doc.content,
+            knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
+        )
+        assembler = EmbeddingAssembler.load_from_knowledge(
+            knowledge=knowledge,
+            chunk_parameters=chunk_parameters,
+            vector_store_connector=vector_store_connector,
+        )
+        chunk_docs = assembler.get_chunks()
+        doc.status = SyncStatus.RUNNING.name
+        doc.chunk_size = len(chunk_docs)
+        doc.gmt_modified = datetime.now()
+        knowledge_document_dao.update_knowledge_document(doc)
+        executor = CFG.SYSTEM_APP.get_component(
+            ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+        ).create()
+        executor.submit(self.async_doc_embedding, assembler, chunk_docs, doc)
+        logger.info(f"begin save document chunks, doc:{doc.doc_name}")
 
     async def document_summary(self, request: DocumentSummaryRequest):
         """get document summary
@@ -507,6 +532,20 @@ class KnowledgeService:
             if vector_ids is not None:
                 doc.vector_ids = ",".join(vector_ids)
             logger.info(f"async document embedding, success:{doc.doc_name}")
+            # save chunk details
+            chunk_entities = [
+                DocumentChunkEntity(
+                    doc_name=doc.doc_name,
+                    doc_type=doc.doc_type,
+                    document_id=doc.id,
+                    content=chunk_doc.content,
+                    meta_info=str(chunk_doc.metadata),
+                    gmt_created=datetime.now(),
+                    gmt_modified=datetime.now(),
+                )
+                for chunk_doc in chunk_docs
+            ]
+            document_chunk_dao.create_documents_chunks(chunk_entities)
         except Exception as e:
             doc.status = SyncStatus.FAILED.name
             doc.result = "document embedding failed" + str(e)

@@ -54,11 +54,11 @@ class ChunkStrategy(Enum):
     CHUNK_BY_PAGE = (PageTextSplitter, [])
     CHUNK_BY_PARAGRAPH = (
         ParagraphTextSplitter,
-        [{"param_name": "separator", "param_type": "str"}],
+        [{"param_name": "separator", "param_type": "string"}],
     )
     CHUNK_BY_SEPARATOR = (
         SeparatorTextSplitter,
-        [{"param_name": "separator", "param_type": "str"}],
+        [{"param_name": "separator", "param_type": "string"}],
     )
     CHUNK_BY_MARKDOWN_HEADER = (MarkdownHeaderTextSplitter, [])
 

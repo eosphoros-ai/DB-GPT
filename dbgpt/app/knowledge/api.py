@@ -2,7 +2,9 @@ import os
 import shutil
 import tempfile
 import logging
+from typing import List
 
+import deprecated
 from fastapi import APIRouter, File, UploadFile, Form
 
 from dbgpt._private.config import Config
@@ -27,6 +29,7 @@ from dbgpt.app.knowledge.request.request import (
     SpaceArgumentRequest,
     EntityExtractRequest,
     DocumentSummaryRequest,
+    KnowledgeSyncRequest,
 )
 
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
@@ -220,6 +223,18 @@ def document_sync(space_name: str, request: DocumentSyncRequest):
             space_name=space_name, sync_request=request
         )
         return Result.succ([])
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"document sync error {e}")
+
+
+@router.post("/knowledge/{space_name}/document/sync_batch")
+def batch_document_sync(space_name: str, request: List[KnowledgeSyncRequest]):
+    logger.info(f"Received params: {space_name}, {request}")
+    try:
+        doc_ids = knowledge_space_service.batch_document_sync(
+            space_name=space_name, sync_requests=request
+        )
+        return Result.succ({"tasks": doc_ids})
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document sync error {e}")
 
