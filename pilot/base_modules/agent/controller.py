@@ -152,6 +152,7 @@ async def agent_uninstall(plugin_name: str, user: str = None):
 
 @router.post("/v1/personal/agent/upload", response_model=Result[str])
 async def personal_agent_upload(doc_file: UploadFile = File(...), user: str = None):
+    return Result.failed(code="E0023", msg=f"You do not have permission to upload agent tool.")
     logger.info(f"personal_agent_upload:{doc_file.filename},{user}")
     try:
         agent_hub = AgentHub(PLUGINS_DIR)
