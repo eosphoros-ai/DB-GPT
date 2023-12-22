@@ -3,16 +3,9 @@ from typing import List
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, Text, Boolean
 from sqlalchemy import UniqueConstraint
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
+from dbgpt.storage.metadata import BaseDao, Model
 
-
-class GptsInstanceEntity(Base):
+class GptsInstanceEntity(Model):
     __tablename__ = "gpts_instance"
     __table_args__ = {
         "mysql_charset": "utf8mb4",
@@ -39,17 +32,10 @@ class GptsInstanceEntity(Base):
     __table_args__ = (
         UniqueConstraint("gpts_name", name="uk_gpts"),
     )
-class GptsInstanceDao(BaseDao[GptsInstanceEntity]):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
+class GptsInstanceDao(BaseDao):
 
     def add(self, engity: GptsInstanceEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         session.add(engity)
         session.commit()
         id = engity.id
@@ -57,7 +43,7 @@ class GptsInstanceDao(BaseDao[GptsInstanceEntity]):
         return id
 
     def get_by_name(self, name:str)->GptsInstanceEntity:
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_instance = session.query(GptsInstanceEntity)
         if name:
             gpts_instance = gpts_instance.filter(GptsInstanceEntity.gpts_name == name)

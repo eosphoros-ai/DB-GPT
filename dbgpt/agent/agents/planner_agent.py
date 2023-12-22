@@ -9,6 +9,7 @@ from ..memory.gpts_memory import GptsMemory, GptsPlan
 from dbgpt.agent.agents.plan_group_chat import PlanChat
 from .agents_mange import agent_mange
 from dbgpt._private.config import Config
+from dbgpt.core.awel import BaseOperator
 
 CFG = Config()
 
@@ -80,6 +81,7 @@ class PlannerAgent(ConversableAgent):
             self,
             memory: GptsMemory,
             plan_chat: PlanChat,
+            llm_operator: Optional[BaseOperator] = None,
             is_termination_msg: Optional[Callable[[Dict], bool]] = None,
             max_consecutive_auto_reply: Optional[int] = None,
             human_input_mode: Optional[str] = "NEVER",
@@ -89,6 +91,7 @@ class PlannerAgent(ConversableAgent):
         super().__init__(
             name=self.NAME,
             memory=memory,
+            llm_operator=llm_operator,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
             is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,

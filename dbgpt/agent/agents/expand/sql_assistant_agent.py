@@ -4,7 +4,7 @@ from typing import Callable, Dict, List, Literal, Optional, Union
 from ..agent import Agent
 from ...memory.gpts_memory import GptsMemory
 from ...commands.command_mange import ApiCall
-
+from dbgpt.core.awel import BaseOperator
 try:
     from termcolor import colored
 except ImportError:
@@ -44,6 +44,7 @@ class SQLAssistantAgent(ConversableAgent):
             self,
             memory: GptsMemory,
             agent_context: 'AgentContext',
+            llm_operator: Optional[BaseOperator] = None,
             model_priority: Optional[List[str]] = None,
             describe: Optional[str] = DEFAULT_DESCRIBE,
             is_termination_msg: Optional[Callable[[Dict], bool]] = None,
@@ -55,6 +56,7 @@ class SQLAssistantAgent(ConversableAgent):
         super().__init__(
             name=self.NAME,
             memory=memory,
+            llm_operator=llm_operator,
             model_priority=model_priority,
             describe=describe,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,

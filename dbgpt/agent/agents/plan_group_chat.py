@@ -8,7 +8,7 @@ import re
 from .agent import Agent, AgentContext
 from .base_agent import ConversableAgent
 from ..common.schema import Status
-
+from dbgpt.core.awel import BaseOperator
 from dbgpt.util.string_utils import str_to_bool
 from ..memory.gpts_memory import GptsMemory, GptsPlan, GptsMessage
 
@@ -209,6 +209,7 @@ class PlanChatManager(ConversableAgent):
             plan_chat: PlanChat,
             planner: Agent,
             memory: GptsMemory,
+            llm_operator: Optional[BaseOperator] = None,
             # unlimited consecutive auto reply by default
             max_consecutive_auto_reply: Optional[int] = sys.maxsize,
             human_input_mode: Optional[str] = "NEVER",
@@ -220,6 +221,7 @@ class PlanChatManager(ConversableAgent):
             name=self.NAME,
             describe=describe,
             memory=memory,
+            llm_operator=llm_operator,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
             agent_context=agent_context,

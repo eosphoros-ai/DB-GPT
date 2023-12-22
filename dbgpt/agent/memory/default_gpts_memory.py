@@ -79,7 +79,7 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
     def get_between_agents(self, conv_id: str, agent1: str, agent2: str, current_gogal: Optional[str] = None) -> \
     Optional[List[GptsMessage]]:
         result = self.df.query(
-            f"conv_id=='{conv_id}' and ((sender=='{agent1}' and receiver=='{agent2}') or (sender=='{agent2}' and receiver=='{agent1}')) and current_gogal={current_gogal}")
+            f"conv_id=='{conv_id}' and ((sender=='{agent1}' and receiver=='{agent2}') or (sender=='{agent2}' and receiver=='{agent1}')) and current_gogal=='{current_gogal}'")
         messages = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))

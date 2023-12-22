@@ -133,7 +133,7 @@ def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
             f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
             f"{CFG.LOCAL_DB_HOST}:"
             f"{str(CFG.LOCAL_DB_PORT)}/"
-            f"{db_name}?charset=utf8mb4&collation=utf8mb4_unicode_ci"
+            f"{db_name}?charset=utf8mb4"
         )
         # Try to create database, if failed, will raise exception
         _create_mysql_database(db_name, db_url, try_to_create_db)

@@ -15,7 +15,7 @@ except ImportError:
     def colored(x, *args, **kwargs):
         return x
 from dbgpt._private.config import Config
-
+from dbgpt.core.awel import BaseOperator
 CFG = Config()
 
 
@@ -52,6 +52,7 @@ class DashboardAssistantAgent(ConversableAgent):
             self,
             memory: GptsMemory,
             agent_context: 'AgentContext',
+            llm_operator: Optional[BaseOperator] = None,
             model_priority: Optional[List[str]] = None,
             describe: Optional[str] = DEFAULT_DESCRIBE,
             is_termination_msg: Optional[Callable[[Dict], bool]] = None,
@@ -63,6 +64,7 @@ class DashboardAssistantAgent(ConversableAgent):
             name=self.NAME,
             memory=memory,
             model_priority=model_priority,
+            llm_operator=llm_operator,
             describe=describe,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
             is_termination_msg=is_termination_msg,

@@ -14,7 +14,8 @@ from fastapi.responses import StreamingResponse
 
 from abc import ABC
 from typing import List
-
+from dbgpt.core.awel import BaseOperator, SimpleCallDataInputSource, InputOperator, DAG
+from dbgpt.model.operator.model_operator import ModelOperator, ModelStreamOperator
 from dbgpt.app.openapi.api_view_model import (
     Result,
     ConversationVo
@@ -46,6 +47,7 @@ from dbgpt.agent.agents.agents_mange import agent_mange
 from dbgpt._private.config import Config
 from dbgpt.model.cluster.controller.controller import BaseModelController
 from dbgpt.agent.memory.gpts_memory import GptsMessage
+from dbgpt.core.interface.output_parser import BaseOutputParser
 
 CFG = Config()
 
@@ -65,6 +67,7 @@ class MultiAgents(BaseComponent, ABC):
         self.gpts_intance = GptsInstanceDao()
         self.gpts_conversations = GptsConversationsDao()
         self.memory = GptsMemory(plans_memory=MetaDbGptsPlansMemory(), message_memory=MetaDbGptsMessageMemory())
+
 
     def gpts_create(self, entity: GptsInstanceEntity):
         self.gpts_intance.add(entity)
@@ -94,6 +97,7 @@ class MultiAgents(BaseComponent, ABC):
         context.resource_knowledge = resource_knowledge
         context.agents = agents_names
 
+        self.llm_operator = self._build_model_operator()
         model_controller = CFG.SYSTEM_APP.get_component(
             ComponentType.MODEL_CONTROLLER, BaseModelController
         )
@@ -114,7 +118,7 @@ class MultiAgents(BaseComponent, ABC):
             cls = agent_mange.get_by_name(name)
             model_priority=self._get_model_priority(name, llm_models_priority)
 
-            agent = cls(agent_context=context, memory=self.memory, model_priority=model_priority)
+            agent = cls(agent_context=context, memory=self.memory, model_priority=model_priority, llm_operator=self.llm_operator)
             agents.append(agent)
             agent_map[name] = agent
 
@@ -122,12 +126,13 @@ class MultiAgents(BaseComponent, ABC):
         planner = PlannerAgent(
             agent_context=context,
             memory=self.memory,
+            llm_operator = self.llm_operator,
             plan_chat=groupchat,
             model_priority=self._get_model_priority(PlannerAgent.NAME, llm_models_priority)
         )
         agent_map[planner.name] = planner
 
-        manager = PlanChatManager(plan_chat=groupchat, model_priority=self._get_model_priority(PlanChatManager.NAME, llm_models_priority), planner=planner, agent_context=context, memory=self.memory)
+        manager = PlanChatManager(plan_chat=groupchat, model_priority=self._get_model_priority(PlanChatManager.NAME, llm_models_priority), planner=planner, agent_context=context, memory=self.memory,llm_operator = self.llm_operator)
         agent_map[manager.name] = manager
 
         user_proxy = UserProxyAgent(
@@ -178,70 +183,13 @@ class MultiAgents(BaseComponent, ABC):
         self.gpts_conversations.update(conv_id, Status.COMPLETE.value)
         return conv_id
 
-    @staticmethod
-    def _messages_to_agents_vis(messages: List[GptsMessage]):
-        if messages is None or len(messages) <=0:
-            return ""
-        messages_view = []
-        for message in messages:
-            action_report_str = message.action_report
-            view_info = message.content
-            if action_report_str and len(action_report_str)>0:
-                action_report = json.loads(action_report_str)
-                if action_report:
-                    view =  action_report.get("view", None)
-                    view_info = view if view else action_report.get("content", "")
-
-            messages_view.append({
-                "sender": message.sender,
-                "receiver": message.receiver,
-                "model": message.model_name,
-                "markdown": view_info
-            })
-        messages_content = json.dumps(messages_view, ensure_ascii=False, cls=EnhancedJSONEncoder)
-        return f"```agent-messages\n{messages_content}\n```"
-
-    @staticmethod
-    def _messages_to_plan_vis(messages: List[Dict]):
-        if messages is None or len(messages) <=0:
-            return ""
-        messages_content = json.dumps(messages, ensure_ascii=False, cls=EnhancedJSONEncoder)
-        return f"```agent-plans\n{messages_content}\n```"
-
-
-    async def _one_plan_chat_competions(self,  conv_id: str, user_code: str = None, system_app: str = None):
-        plans = self.memory.plans_memory.get_by_conv_id(conv_id=conv_id)
-        messages = self.memory.message_memory.get_by_conv_id(conv_id=conv_id)
-
-        messages_group = defaultdict(list)
-        for item in messages:
-            messages_group[item.current_gogal].append(item)
-
-        plans_info_map = defaultdict()
-        for plan in plans:
-            plans_info_map[plan.sub_task_content] = {
-                "name": plan.sub_task_content,
-                "num": plan.sub_task_num,
-                "status": plan.state,
-                "agent": plan.sub_task_agent,
-                "markdown": self._messages_to_agents_vis(messages_group.get(plan.sub_task_content))
-            }
-
-        normal_messages = []
-        if messages_group:
-            for key, value in messages_group.items():
-                if key not in plans_info_map:
-                    normal_messages.extend(value)
-        return f"{self._messages_to_agents_vis(normal_messages)}\n{self._messages_to_plan_vis(list(plans_info_map.values()))}"
-
-
     async def chat_completions(self, conv_id: str, user_code: str = None, system_app: str = None):
         is_complete = False
         while True:
             gpts_conv = self.gpts_conversations.get_by_conv_id(conv_id)
             if  gpts_conv:
                 is_complete = True if gpts_conv.state in [Status.COMPLETE.value, Status.WAITING.value, Status.FAILED.value] else False
-            yield await self._one_plan_chat_competions(conv_id, user_code, system_app)
+            yield await self.memory.one_plan_chat_competions(conv_id)
             if is_complete:
                 return
             else:
@@ -253,7 +201,7 @@ class MultiAgents(BaseComponent, ABC):
             is_complete = True if gpts_conv.state in [Status.COMPLETE.value, Status.WAITING.value,
                                                       Status.FAILED.value] else False
             if is_complete:
-                return await self._one_plan_chat_competions(conv_id, user_code, system_app)
+                return await self.self.memory.one_plan_chat_competions(conv_id)
             else:
                 raise ValueError("The conversation has not been completed yet, so we cannot directly obtain information.")
         else:
@@ -262,6 +210,90 @@ class MultiAgents(BaseComponent, ABC):
     def gpts_conv_list(self, user_code: str = None, system_app: str = None):
         return self.gpts_conversations.get_convs(user_code, system_app)
 
+    def _build_model_operator(self,
+                              is_stream: bool = False, dag_name: str = "llm_model_dag"
+                              ) -> BaseOperator:
+        """Builds and returns a model processing workflow (DAG) operator.
+
+        This function constructs a Directed Acyclic Graph (DAG) for processing data using a model.
+        It includes caching and branching logic to either fetch results from a cache or process
+        data using the model. It supports both streaming and non-streaming modes.
+
+        .. code-block:: python
+            input_node >> cache_check_branch_node
+            cache_check_branch_node >> model_node >> save_cached_node >> join_node
+            cache_check_branch_node >> cached_node >> join_node
+
+        equivalent to::
+
+                              -> model_node -> save_cached_node ->
+                             /                                    \
+            input_node -> cache_check_branch_node                   ---> join_node
+                            \                                     /
+                             -> cached_node ------------------- ->
+
+        Args:
+            is_stream (bool): Flag to determine if the operator should process data in streaming mode.
+            dag_name (str): Name of the DAG.
+
+        Returns:
+            BaseOperator: The final operator in the constructed DAG, typically a join node.
+        """
+        from dbgpt.model.cluster import WorkerManagerFactory
+        from dbgpt.core.awel import JoinOperator
+        from dbgpt.model.operator.model_operator import (
+            ModelCacheBranchOperator,
+            CachedModelStreamOperator,
+            CachedModelOperator,
+            ModelSaveCacheOperator,
+            ModelStreamSaveCacheOperator,
+        )
+        from dbgpt.storage.cache import CacheManager
+
+        # Fetch worker and cache managers from the system configuration
+        worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        cache_manager: CacheManager = CFG.SYSTEM_APP.get_component(
+            ComponentType.MODEL_CACHE_MANAGER, CacheManager
+        )
+        # Define task names for the model and cache nodes
+        model_task_name = "llm_model_node"
+        cache_task_name = "llm_model_cache_node"
+
+        with DAG(dag_name):
+            # Create an input node
+            input_node = InputOperator(SimpleCallDataInputSource())
+            # Determine if the workflow should operate in streaming mode
+            if is_stream:
+                model_node = ModelStreamOperator(worker_manager, task_name=model_task_name)
+                cached_node = CachedModelStreamOperator(
+                    cache_manager, task_name=cache_task_name
+                )
+                save_cached_node = ModelStreamSaveCacheOperator(cache_manager)
+            else:
+                model_node = ModelOperator(worker_manager, task_name=model_task_name)
+                cached_node = CachedModelOperator(cache_manager, task_name=cache_task_name)
+                save_cached_node = ModelSaveCacheOperator(cache_manager)
+
+            # Create a branch node to decide between fetching from cache or processing with the model
+            cache_check_branch_node = ModelCacheBranchOperator(
+                cache_manager,
+                model_task_name="llm_model_node",
+                cache_task_name="llm_model_cache_node",
+            )
+            # Create a join node to merge outputs from the model and cache nodes, just keep the first not empty output
+            join_node = JoinOperator(
+                combine_function=lambda model_out, cache_out: cache_out or model_out
+            )
+
+            # Define the workflow structure using the >> operator
+            input_node >> cache_check_branch_node
+            cache_check_branch_node >> model_node >> save_cached_node >> join_node
+            cache_check_branch_node >> cached_node >> join_node
+            out_parse_task = BaseOutputParser(is_stream_out=False)
+            join_node  >> out_parse_task
+        return out_parse_task
 
 multi_agents = MultiAgents()
 

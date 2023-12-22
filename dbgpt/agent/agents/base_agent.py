@@ -1,15 +1,15 @@
 import asyncio
-from collections import defaultdict
 import copy
 import json
 import logging
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 from .agent import Agent, AgentContext
-from .llm_client import AIWrapper
+from dbgpt.agent.agents.llm.llm_client import AIWrapper
 from ..memory.gpts_memory import GptsMemory
 from ..memory.base import GptsMessage
 from dbgpt.util.error_types import LLMChatError
 from dbgpt.core.interface.message import ModelMessageRoleType
+from dbgpt.core.awel import BaseOperator
 
 try:
     from termcolor import colored
@@ -28,6 +28,7 @@ class ConversableAgent(Agent):
             self,
             name: str,
             memory: GptsMemory,
+            llm_operator:Optional[BaseOperator] = None,
             model_priority: Optional[List[str]] = None,
             describe: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
             system_message: Optional[str] = "You are a helpful AI Assistant.",
@@ -51,7 +52,7 @@ class ConversableAgent(Agent):
         )
 
 
-        self.client = AIWrapper()
+        self.client = AIWrapper(model_operator=llm_operator)
 
         self.model_priority = model_priority
         self.human_input_mode = human_input_mode
@@ -385,7 +386,7 @@ class ConversableAgent(Agent):
 
         ## 1.LLM Reasonging
         await self.a_system_fill_param()
-        await asyncio.sleep(20)  ##TODO  Rate limit reached for gpt-3.5-turbo
+        await asyncio.sleep(5)  ##TODO  Rate limit reached for gpt-3.5-turbo
         current_messages = self.process_now_message(sender,  message.get("current_gogal", None))
         if current_messages is None or len(current_messages) <=0:
             current_messages = [message]
@@ -567,8 +568,8 @@ class ConversableAgent(Agent):
 
         if old_model:
             filtered_list = [item for item in all_modes if item != old_model]
-            if filtered_list is None or len(filtered_list) <=1:
-                return filtered_list[0]
+            if filtered_list  and len(filtered_list) >= 1:
+                return  filtered_list[0]
             else:
                 return all_modes[0]
         else:
@@ -606,6 +607,8 @@ class ConversableAgent(Agent):
                 retry_count +=1
                 last_model = llm_model
                 last_err  = str(e)
+                await asyncio.sleep(10) ## TODO，Rate limit reached for gpt-3.5-turbo
+
         if last_err:
             raise ValueError(last_err)
 

@@ -1,11 +1,10 @@
 import asyncio
-from collections import defaultdict
 import copy
 import json
 import logging
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 from dbgpt.agent.agents.agent import Agent, AgentContext
-from dbgpt.agent.agents.llm_client import AIWrapper
+from dbgpt.agent.agents.llm.llm_client import AIWrapper
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.agent.memory.base import GptsMessage
 from dbgpt.util.error_types import LLMChatError

@@ -3,16 +3,10 @@ from typing import List
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, Text, desc
 from sqlalchemy import UniqueConstraint
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
 
+from dbgpt.storage.metadata import BaseDao, Model
 
-class GptsConversationsEntity(Base):
+class GptsConversationsEntity(Model):
     __tablename__ = "gpts_conversations"
     __table_args__ = {
         "mysql_charset": "utf8mb4",
@@ -47,17 +41,10 @@ class GptsConversationsEntity(Base):
 
 
 
-class GptsConversationsDao(BaseDao[GptsConversationsEntity]):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
+class GptsConversationsDao(BaseDao):
 
     def add(self, engity: GptsConversationsEntity):
-        session = self.get_session()
+        session = self.get_raw_session()
         session.add(engity)
         session.commit()
         id = engity.id
@@ -65,7 +52,7 @@ class GptsConversationsDao(BaseDao[GptsConversationsEntity]):
         return id
 
     def get_by_conv_id(self, conv_id:str):
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_conv = session.query(GptsConversationsEntity)
         if conv_id:
             gpts_conv = gpts_conv.filter(GptsConversationsEntity.conv_id == conv_id)
@@ -74,7 +61,7 @@ class GptsConversationsDao(BaseDao[GptsConversationsEntity]):
         return result
 
     def get_convs(self, user_code: str = None, system_app: str = None):
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_conversations = session.query(GptsConversationsEntity)
         if user_code:
             gpts_conversations = gpts_conversations.filter(GptsConversationsEntity.user_code == user_code)
@@ -87,7 +74,7 @@ class GptsConversationsDao(BaseDao[GptsConversationsEntity]):
 
 
     def update(self, conv_id:str, state:str):
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_convs = session.query(GptsConversationsEntity)
         gpts_convs = gpts_convs.filter(GptsConversationsEntity.conv_id == conv_id)
         gpts_convs.update({

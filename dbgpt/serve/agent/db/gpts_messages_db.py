@@ -3,16 +3,9 @@ from typing import List, Optional
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, Text, or_, and_,desc
 from sqlalchemy import UniqueConstraint
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
+from dbgpt.storage.metadata import BaseDao, Model
 
-
-class GptsMessagesEntity(Base):
+class GptsMessagesEntity(Model):
     __tablename__ = "gpts_messages"
     __table_args__ = {
         "mysql_charset": "utf8mb4",
@@ -45,17 +38,10 @@ class GptsMessagesEntity(Base):
 
 
 
-class GptsMessagesDao(BaseDao[GptsMessagesEntity]):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
+class GptsMessagesDao(BaseDao):
 
     def append(self, entity: dict):
-        session = self.get_session()
+        session = self.get_raw_session()
         message = GptsMessagesEntity(
             conv_id = entity.get("conv_id"),
             sender=entity.get("sender"),
@@ -76,7 +62,7 @@ class GptsMessagesDao(BaseDao[GptsMessagesEntity]):
         return id
 
     def get_by_agent(self,conv_id:str, agent: str) -> Optional[List[GptsMessagesEntity]]:
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_messages = session.query(GptsMessagesEntity)
         if agent:
             gpts_messages = gpts_messages.filter(GptsMessagesEntity.conv_id==conv_id).filter(
@@ -87,7 +73,7 @@ class GptsMessagesDao(BaseDao[GptsMessagesEntity]):
 
 
     def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessagesEntity]]:
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_messages = session.query(GptsMessagesEntity)
         if conv_id:
             gpts_messages = gpts_messages.filter(GptsMessagesEntity.conv_id == conv_id)
@@ -96,7 +82,7 @@ class GptsMessagesDao(BaseDao[GptsMessagesEntity]):
         return result
 
     def get_between_agents(self,conv_id:str, agent1: str, agent2: str, current_gogal:Optional[str] = None) -> Optional[List[GptsMessagesEntity]]:
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_messages = session.query(GptsMessagesEntity)
         if agent1 and agent2:
             gpts_messages = gpts_messages.filter(GptsMessagesEntity.conv_id==conv_id).filter(or_(
@@ -109,7 +95,7 @@ class GptsMessagesDao(BaseDao[GptsMessagesEntity]):
         return result
 
     def get_last_message(self, conv_id: str) -> Optional[GptsMessagesEntity]:
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_messages = session.query(GptsMessagesEntity)
         if conv_id:
             gpts_messages = gpts_messages.filter(GptsMessagesEntity.conv_id == conv_id).order_by(desc(GptsMessagesEntity.rounds))

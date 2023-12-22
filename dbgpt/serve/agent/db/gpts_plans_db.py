@@ -3,17 +3,9 @@ from typing import List
 from sqlalchemy import Column, Integer, String, Index, DateTime, func, Text
 from sqlalchemy import UniqueConstraint
 
-from dbgpt.storage.metadata import BaseDao
-from dbgpt.storage.metadata.meta_data import (
-    Base,
-    engine,
-    session,
-    META_DATA_DATABASE,
-)
-from dbgpt.agent.common.schema import Status
+from dbgpt.storage.metadata import BaseDao, Model
 
-
-class GptsPlansEntity(Base):
+class GptsPlansEntity(Model):
     __tablename__ = "gpts_plans"
     __table_args__ = {
         "mysql_charset": "utf8mb4",
@@ -47,23 +39,17 @@ class GptsPlansEntity(Base):
 
 
 
-class GptsPlansDao(BaseDao[GptsPlansEntity]):
-    def __init__(self):
-        super().__init__(
-            database=META_DATA_DATABASE,
-            orm_base=Base,
-            db_engine=engine,
-            session=session,
-        )
+class GptsPlansDao(BaseDao):
+
 
     def batch_save(self, plans: list[dict]):
-        session = self.get_session()
+        session = self.get_raw_session()
         session.bulk_insert_mappings(GptsPlansEntity, plans)
         session.commit()
         session.close()
 
     def get_by_conv_id(self, conv_id: str) -> list[GptsPlansEntity]:
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         if conv_id:
             gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id)
@@ -72,7 +58,7 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         return result
 
     def get_by_task_id(self, task_id: int) -> list[GptsPlansEntity]:
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         if task_id:
             gpts_plans = gpts_plans.filter(GptsPlansEntity.id == task_id)
@@ -81,7 +67,7 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         return result
 
     def get_by_conv_id_and_num(self, conv_id: str, task_nums: list) -> list[GptsPlansEntity]:
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         if conv_id:
             gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).filter(
@@ -91,7 +77,7 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         return result
 
     def get_todo_plans(self, conv_id: str) -> list[GptsPlansEntity]:
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         if not conv_id:
             return []
@@ -102,7 +88,7 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         return result
 
     def complete_task(self, conv_id: str, task_num: int, result: str):
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         gpts_plans = gpts_plans.filter(GptsPlansEntity.conv_id == conv_id).filter(GptsPlansEntity.sub_task_num == task_num)
         gpts_plans.update({
@@ -113,7 +99,7 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         session.close()
 
     def update_task(self, conv_id: str, task_num: int, state: str, retry_times: int, agent: str = None, model: str = None, result:str = None):
-        session = self.get_session()
+        session = self.get_raw_session()
         gpts_plans = session.query(GptsPlansEntity)
         gpts_plans = gpts_plans.filter(
             GptsPlansEntity.conv_id == conv_id).filter(
@@ -132,7 +118,7 @@ class GptsPlansDao(BaseDao[GptsPlansEntity]):
         session.close()
 
     def remove_by_conv_id(self, conv_id: str):
-        session = self.get_session()
+        session = self.get_raw_session()
         if conv_id is None:
             raise Exception("conv_id is None")
 

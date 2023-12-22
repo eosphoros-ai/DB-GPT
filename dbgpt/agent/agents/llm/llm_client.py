@@ -15,6 +15,8 @@ from dbgpt.model.operator.model_operator import ModelOperator, ModelStreamOperat
 
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt._private.config import Config
+from dbgpt.core import SQLOutputParser, OpenAILLM, PromptTemplate
+from ..llm.llm import GptsRequestBuildOperator
 
 logger = logging.getLogger(__name__)
 CFG = Config()
@@ -23,16 +25,21 @@ CFG = Config()
 class AIWrapper:
     cache_path_root: str = ".cache"
     extra_kwargs = {"cache_seed", "filter_func", "allow_format_str_template", "context", "llm_model"}
-    def __init__(self):
-        self._model_operator: BaseOperator = self._build_model_operator()
-        self._model_stream_operator: BaseOperator = self._build_model_operator(
-            is_stream=True, dag_name="llm_stream_model_dag"
-        )
-        self.llm_echo = False
-        self.sep = "###" ###TODO
-        self.model_cache_enable= False
-        self.out_parser = BaseOutputParser(sep= self.sep, is_stream_out=False) ###TODO
+    def __init__(self, model_operator:BaseOperator=None):
 
+        self.llm_echo = False
+        self.sep = "###"  ###TODO
+        self.model_cache_enable = False
+
+        if not model_operator:
+            with DAG("sdk_agents_llm_dag") as dag:
+                out_parse_task = BaseOutputParser()
+                model_pre_handle_task = GptsRequestBuildOperator()
+                llm_task = OpenAILLM()
+                model_pre_handle_task >> llm_task >> out_parse_task
+            self._model_operator = out_parse_task
+        else:
+            self._model_operator = model_operator
 
     @classmethod
     def instantiate(
@@ -151,7 +158,7 @@ class AIWrapper:
 
     def _get_span_metadata(self, payload: Dict) -> Dict:
         metadata = {k: v for k, v in payload.items()}
-        del metadata["prompt"]
+
         metadata["messages"] = list(
             map(lambda m: m if isinstance(m, dict) else m.dict(), metadata["messages"])
         )
@@ -184,97 +191,14 @@ class AIWrapper:
             model_output= await self._model_operator.call(
                 call_data={"data": payload}
             )
-            ai_response_text = (
-                self.out_parser.parse_model_nostream_resp(
-                    model_output, self.sep
-                )
-            )
-            return ai_response_text
+            # ai_response_text = (
+            #     self.out_parser.parse_model_nostream_resp(
+            #         model_output, self.prompt_template.sep
+            #     )
+            # )
+
+            return model_output
         except Exception as e:
+            print(e)
             logger.error("model response parase faild！" + str(e))
             raise LLMChatError(original_exception=e) from e
-
-    def _build_model_operator(self,
-            is_stream: bool = False, dag_name: str = "llm_model_dag"
-    ) -> BaseOperator:
-        """Builds and returns a model processing workflow (DAG) operator.
-
-        This function constructs a Directed Acyclic Graph (DAG) for processing data using a model.
-        It includes caching and branching logic to either fetch results from a cache or process
-        data using the model. It supports both streaming and non-streaming modes.
-
-        .. code-block:: python
-            input_node >> cache_check_branch_node
-            cache_check_branch_node >> model_node >> save_cached_node >> join_node
-            cache_check_branch_node >> cached_node >> join_node
-
-        equivalent to::
-
-                              -> model_node -> save_cached_node ->
-                             /                                    \
-            input_node -> cache_check_branch_node                   ---> join_node
-                            \                                     /
-                             -> cached_node ------------------- ->
-
-        Args:
-            is_stream (bool): Flag to determine if the operator should process data in streaming mode.
-            dag_name (str): Name of the DAG.
-
-        Returns:
-            BaseOperator: The final operator in the constructed DAG, typically a join node.
-        """
-        from dbgpt.model.cluster import WorkerManagerFactory
-        from dbgpt.core.awel import JoinOperator
-        from dbgpt.model.operator.model_operator import (
-            ModelCacheBranchOperator,
-            CachedModelStreamOperator,
-            CachedModelOperator,
-            ModelSaveCacheOperator,
-            ModelStreamSaveCacheOperator,
-        )
-        from dbgpt.storage.cache import CacheManager
-
-        # Fetch worker and cache managers from the system configuration
-        worker_manager = CFG.SYSTEM_APP.get_component(
-            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-        ).create()
-        cache_manager: CacheManager = CFG.SYSTEM_APP.get_component(
-            ComponentType.MODEL_CACHE_MANAGER, CacheManager
-        )
-        # Define task names for the model and cache nodes
-        model_task_name = "llm_model_node"
-        cache_task_name = "llm_model_cache_node"
-
-        with DAG(dag_name):
-            # Create an input node
-            input_node = InputOperator(SimpleCallDataInputSource())
-            # Determine if the workflow should operate in streaming mode
-            if is_stream:
-                model_node = ModelStreamOperator(worker_manager, task_name=model_task_name)
-                cached_node = CachedModelStreamOperator(
-                    cache_manager, task_name=cache_task_name
-                )
-                save_cached_node = ModelStreamSaveCacheOperator(cache_manager)
-            else:
-                model_node = ModelOperator(worker_manager, task_name=model_task_name)
-                cached_node = CachedModelOperator(cache_manager, task_name=cache_task_name)
-                save_cached_node = ModelSaveCacheOperator(cache_manager)
-
-            # Create a branch node to decide between fetching from cache or processing with the model
-            cache_check_branch_node = ModelCacheBranchOperator(
-                cache_manager,
-                model_task_name="llm_model_node",
-                cache_task_name="llm_model_cache_node",
-            )
-            # Create a join node to merge outputs from the model and cache nodes, just keep the first not empty output
-            join_node = JoinOperator(
-                combine_function=lambda model_out, cache_out: cache_out or model_out
-            )
-
-            # Define the workflow structure using the >> operator
-            input_node >> cache_check_branch_node
-            cache_check_branch_node >> model_node >> save_cached_node >> join_node
-            cache_check_branch_node >> cached_node >> join_node
-
-        return join_node
-
