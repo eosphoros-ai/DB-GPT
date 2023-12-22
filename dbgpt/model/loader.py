@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
-from dataclasses import asdict
 import logging
 from dbgpt.configs.model_config import get_device
 from dbgpt.model.base import ModelType
-from dbgpt.model.model_adapter import get_llm_model_adapter, LLMModelAdaper
+from dbgpt.model.adapter.base import LLMModelAdapter
+from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
 from dbgpt.model.parameter import (
     ModelParameters,
     LlamaCppModelParameters,
@@ -117,7 +117,7 @@ class ModelLoader:
             raise Exception(f"Unkown model type {model_type}")
 
     def loader_with_params(
-        self, model_params: ModelParameters, llm_adapter: LLMModelAdaper
+        self, model_params: ModelParameters, llm_adapter: LLMModelAdapter
     ):
         model_type = llm_adapter.model_type()
         self.prompt_template = model_params.prompt_template
@@ -133,7 +133,7 @@ class ModelLoader:
             raise Exception(f"Unkown model type {model_type}")
 
 
-def huggingface_loader(llm_adapter: LLMModelAdaper, model_params: ModelParameters):
+def huggingface_loader(llm_adapter: LLMModelAdapter, model_params: ModelParameters):
     import torch
     from dbgpt.model.compression import compress_module
 
@@ -174,6 +174,12 @@ def huggingface_loader(llm_adapter: LLMModelAdaper, model_params: ModelParameter
     else:
         raise ValueError(f"Invalid device: {device}")
 
+    model, tokenizer = _try_load_default_quantization_model(
+        llm_adapter, device, num_gpus, model_params, kwargs
+    )
+    if model:
+        return model, tokenizer
+
     can_quantization = _check_quantization(model_params)
 
     if can_quantization and (num_gpus > 1 or model_params.load_4bit):
@@ -192,6 +198,46 @@ def huggingface_loader(llm_adapter: LLMModelAdaper, model_params: ModelParameter
         # TODO merge current code into `load_huggingface_quantization_model`
         compress_module(model, model_params.device)
 
+    return _handle_model_and_tokenizer(model, tokenizer, device, num_gpus, model_params)
+
+
+def _try_load_default_quantization_model(
+    llm_adapter: LLMModelAdapter,
+    device: str,
+    num_gpus: int,
+    model_params: ModelParameters,
+    kwargs: Dict[str, Any],
+):
+    """Try load default quantization model(Support by huggingface default)"""
+    cloned_kwargs = {k: v for k, v in kwargs.items()}
+    try:
+        model, tokenizer = None, None
+        if device != "cuda":
+            return None, None
+        elif model_params.load_8bit and llm_adapter.support_8bit:
+            cloned_kwargs["load_in_8bit"] = True
+            model, tokenizer = llm_adapter.load(model_params.model_path, cloned_kwargs)
+        elif model_params.load_4bit and llm_adapter.support_4bit:
+            cloned_kwargs["load_in_4bit"] = True
+            model, tokenizer = llm_adapter.load(model_params.model_path, cloned_kwargs)
+        if model:
+            logger.info(
+                f"Load default quantization model {model_params.model_name} success"
+            )
+            return _handle_model_and_tokenizer(
+                model, tokenizer, device, num_gpus, model_params
+            )
+        return None, None
+    except Exception as e:
+        logger.warning(
+            f"Load default quantization model {model_params.model_name} failed, error: {str(e)}"
+        )
+        return None, None
+
+
+def _handle_model_and_tokenizer(
+    model, tokenizer, device: str, num_gpus: int, model_params: ModelParameters
+):
     if (
         (device == "cuda" and num_gpus == 1 and not model_params.cpu_offloading)
         or device == "mps"
@@ -209,7 +255,7 @@ def huggingface_loader(llm_adapter: LLMModelAdaper, model_params: ModelParameter
 
 
 def load_huggingface_quantization_model(
-    llm_adapter: LLMModelAdaper,
+    llm_adapter: LLMModelAdapter,
     model_params: ModelParameters,
     kwargs: Dict,
     max_memory: Dict[int, str],
@@ -344,7 +390,9 @@ def load_huggingface_quantization_model(
     return model, tokenizer
 
 
-def llamacpp_loader(llm_adapter: LLMModelAdaper, model_params: LlamaCppModelParameters):
+def llamacpp_loader(
+    llm_adapter: LLMModelAdapter, model_params: LlamaCppModelParameters
+):
     try:
         from dbgpt.model.llm.llama_cpp.llama_cpp import LlamaCppModel
     except ImportError as exc:
@@ -358,7 +406,7 @@ def llamacpp_loader(llm_adapter: LLMModelAdaper, model_params: LlamaCppModelPara
     return model, tokenizer
 
 
-def proxyllm_loader(llm_adapter: LLMModelAdaper, model_params: ProxyModelParameters):
+def proxyllm_loader(llm_adapter: LLMModelAdapter, model_params: ProxyModelParameters):
     from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
     logger.info("Load proxyllm")

@@ -4,7 +4,7 @@ import regex as re
 import pandas as pd
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Dict
 import sqlalchemy
 from sqlalchemy import (
     MetaData,
@@ -227,6 +227,16 @@ class RDBMSDatabase(BaseConnect):
         final_str = "\n\n".join(tables)
         return final_str
 
+    def get_columns(self, table_name: str) -> List[Dict]:
+        """Get columns.
+        Args:
+            table_name (str): table name
+        Returns:
+            columns: List[Dict], which contains name: str, type: str, default_expression: str, is_in_primary_key: bool, comment: str
+            eg:[{'name': 'id', 'type': 'int', 'default_expression': '', 'is_in_primary_key': True, 'comment': 'id'}, ...]
+        """
+        return self._inspector.get_columns(table_name)
+
     def _get_sample_rows(self, table: Table) -> str:
         # build the select command
         command = select(table).limit(self._sample_rows_in_table_info)
@@ -292,20 +302,21 @@ class RDBMSDatabase(BaseConnect):
             query (str): SQL query to run
             fetch (str): fetch type
         """
+        result = []
+
         print(f"Query[{query}]")
         if not query:
-            return []
+            return result
         cursor = self.session.execute(text(query))
         if cursor.returns_rows:
             if fetch == "all":
                 result = cursor.fetchall()
             elif fetch == "one":
-                result = cursor.fetchone()[0]  # type: ignore
+                result = [cursor.fetchone()]
             else:
                 raise ValueError("Fetch parameter must be either 'one' or 'all'")
             field_names = tuple(i[0:] for i in cursor.keys())
 
-            result = list(result)
             result.insert(0, field_names)
             return result
 
@@ -474,12 +485,14 @@ class RDBMSDatabase(BaseConnect):
                 return token.get_real_name()
         return None
 
-    def get_indexes(self, table_name):
-        """Get table indexes about specified table."""
-        session = self._db_sessions()
-        cursor = session.execute(text(f"SHOW INDEXES FROM {table_name}"))
-        indexes = cursor.fetchall()
-        return [(index[2], index[4]) for index in indexes]
+    def get_indexes(self, table_name: str) -> List[Dict]:
+        """Get table indexes about specified table.
+        Args:
+            table_name:(str) table name
+        Returns:
+            List[Dict]:eg:[{'name': 'idx_key', 'column_names': ['id']}]
+        """
+        return self._inspector.get_indexes(table_name)
 
     def get_show_create_table(self, table_name):
         """Get table show create table about specified table."""
@@ -535,10 +548,11 @@ class RDBMSDatabase(BaseConnect):
         except Exception as e:
             return []
 
-    def get_table_comments(self, db_name):
+    def get_table_comments(self, db_name: str):
         cursor = self.session.execute(
             text(
-                f"""SELECT table_name, table_comment    FROM information_schema.tables   WHERE table_schema = '{db_name}'""".format(
+                f"""SELECT table_name, table_comment    FROM information_schema.tables  
+                    WHERE table_schema = '{db_name}'""".format(
                     db_name
                 )
             )
@@ -546,6 +560,31 @@ class RDBMSDatabase(BaseConnect):
         table_comments = cursor.fetchall()
         return [
             (table_comment[0], table_comment[1]) for table_comment in table_comments
+        ]
+
+    def get_table_comment(self, table_name: str) -> Dict:
+        """Get table comments.
+
+        Args:
+            table_name (str): table name
+        Returns:
+            comment: Dict, which contains text: Optional[str], eg:["text": "comment"]
+        """
+        return self._inspector.get_table_comment(table_name)
+
+    def get_column_comments(self, db_name, table_name):
+        cursor = self.session.execute(
+            text(
+                f"""SELECT column_name, column_comment FROM information_schema.columns 
+                    WHERE table_schema = '{db_name}' and table_name = '{table_name}'
+                """.format(
+                    db_name, table_name
+                )
+            )
+        )
+        column_comments = cursor.fetchall()
+        return [
+            (column_comment[0], column_comment[1]) for column_comment in column_comments
         ]
 
     def get_database_list(self):

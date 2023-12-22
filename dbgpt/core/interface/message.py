@@ -157,14 +157,13 @@ class ModelMessage(BaseModel):
             else:
                 pass
         # Move the last user's information to the end
-        temp_his = history[::-1]
-        last_user_input = None
-        for m in temp_his:
-            if m["role"] == "user":
-                last_user_input = m
+        last_user_input_index = None
+        for i in range(len(history) - 1, -1, -1):
+            if history[i]["role"] == "user":
+                last_user_input_index = i
                 break
-        if last_user_input:
-            history.remove(last_user_input)
+        if last_user_input_index:
+            last_user_input = history.pop(last_user_input_index)
             history.append(last_user_input)
         return history
 
