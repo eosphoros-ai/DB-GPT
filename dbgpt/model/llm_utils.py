@@ -37,7 +37,7 @@ def list_supported_models():
 def _list_supported_models(
     worker_type: str, model_config: Dict[str, str]
 ) -> List[SupportedModel]:
-    from dbgpt.model.model_adapter import get_llm_model_adapter
+    from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
     from dbgpt.model.loader import _get_model_real_path
 
     ret = []

@@ -67,6 +67,23 @@ def conversation_with_messages():
     return conv
 
 
+@pytest.fixture
+def human_model_message():
+    return ModelMessage(role=ModelMessageRoleType.HUMAN, content="Hello")
+
+
+@pytest.fixture
+def ai_model_message():
+    return ModelMessage(role=ModelMessageRoleType.AI, content="Hi there")
+
+
+@pytest.fixture
+def system_model_message():
+    return ModelMessage(
+        role=ModelMessageRoleType.SYSTEM, content="You are a helpful chatbot!"
+    )
+
+
 def test_init(basic_conversation):
     assert basic_conversation.chat_mode == "chat_normal"
     assert basic_conversation.user_name == "user1"
@@ -370,3 +387,43 @@ def test_parse_model_messages_multiple_system_messages():
     assert user_prompt == "How are you?"
     assert system_messages == ["System start", "System check"]
     assert history_messages == [["Hey", "Hello!"]]
+
+
+def test_to_openai_messages(
+    human_model_message, ai_model_message, system_model_message
+):
+    none_messages = ModelMessage.to_openai_messages([])
+    assert none_messages == []
+
+    single_messages = ModelMessage.to_openai_messages([human_model_message])
+    assert single_messages == [{"role": "user", "content": human_model_message.content}]
+
+    normal_messages = ModelMessage.to_openai_messages(
+        [
+            system_model_message,
+            human_model_message,
+            ai_model_message,
+            human_model_message,
+        ]
+    )
+    assert normal_messages == [
+        {"role": "system", "content": system_model_message.content},
+        {"role": "user", "content": human_model_message.content},
+        {"role": "assistant", "content": ai_model_message.content},
+        {"role": "user", "content": human_model_message.content},
+    ]
+
+    shuffle_messages = ModelMessage.to_openai_messages(
+        [
+            system_model_message,
+            human_model_message,
+            human_model_message,
+            ai_model_message,
+        ]
+    )
+    assert shuffle_messages == [
+        {"role": "system", "content": system_model_message.content},
+        {"role": "user", "content": human_model_message.content},
+        {"role": "assistant", "content": ai_model_message.content},
+        {"role": "user", "content": human_model_message.content},
+    ]
