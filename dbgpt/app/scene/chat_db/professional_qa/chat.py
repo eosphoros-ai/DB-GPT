@@ -28,7 +28,6 @@ class ChatWithDbQA(BaseChat):
 
         if self.db_name:
             self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
-            self.db_connect = self.database.session
             self.tables = self.database.get_table_names()
 
         self.top_k = (

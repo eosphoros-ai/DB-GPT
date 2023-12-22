@@ -63,32 +63,16 @@ npm run dev
 npm run compile
 
 # copy compile file to DB-GPT static file dictory
-cp -r -f /Db-GPT-Web/out/* /DB-GPT/pilot/server/static/
+cp -rf out/* ../dbgpt/app/static 
 
 ```
 
 ## 📚 Documentation
 
-For full documentation, visit [document](https://db-gpt.readthedocs.io/en/latest/index.html).
+For full documentation, visit [document](https://docs.dbgpt.site/).
 
-## 📺 Screenshots
-Run on an RTX 4090 GPU.
-
-#### Agent
-![Agent](./screenshots/agent.gif)
-#### ChatExcel
-![ChatExcel](./screenshots/chatexcel.gif)
-#### Knowledge
-![Knowledge](./screenshots/knowledge.gif)
-#### Models
-![models](./screenshots/models.gif)
-#### FastChat
-![FastChat](./screenshots/fastchat.gif)
-#### vllm
-![vllm](./screenshots/vllm.gif)
 
 ## Usage
-
   [react-markdown](https://github.com/remarkjs/react-markdown#readme) for markdown support.
   [ant-design](https://github.com/ant-design/ant-design) for ui components.
   [next.js](https://github.com/vercel/next.js) for server side rendering.

@@ -197,6 +197,7 @@ class ConnectConfigDao(BaseDao):
         else:
             raise ValueError("Cannot get database by name" + db_name)
 
+        print(result)
         fields = [field[0] for field in result.cursor.description]
         row_dict = {}
         row_1 = list(result.cursor.fetchall()[0])

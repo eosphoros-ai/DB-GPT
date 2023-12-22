@@ -34,7 +34,7 @@ def db():
         "localhost",
         3307,
         "root",
-        "******",
+        "********",
         "test",
         engine_args={"connect_args": {"charset": "utf8mb4"}},
     )
