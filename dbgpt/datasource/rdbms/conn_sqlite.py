@@ -37,7 +37,14 @@ class SQLiteConnect(RDBMSDatabase):
         """Get table indexes about specified table."""
         cursor = self.session.execute(text(f"PRAGMA index_list({table_name})"))
         indexes = cursor.fetchall()
-        return [(index[1], index[3]) for index in indexes]
+        result = []
+        for idx in indexes:
+            index_name = idx[1]
+            cursor = self.session.execute(text(f"PRAGMA index_info({index_name})"))
+            index_infos = cursor.fetchall()
+            column_names = [index_info[2] for index_info in index_infos]
+            result.append({"name": index_name, "column_names": column_names})
+        return result
 
     def get_show_create_table(self, table_name):
         """Get table show create table about specified table."""

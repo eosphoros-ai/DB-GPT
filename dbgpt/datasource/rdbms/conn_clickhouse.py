@@ -1,13 +1,8 @@
 import re
 import sqlparse
-import clickhouse_connect
 from typing import List, Optional, Any, Iterable, Dict
 from sqlalchemy import text
-from urllib.parse import quote
-from sqlalchemy.schema import CreateTable
-from urllib.parse import quote_plus as urlquote
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
-from clickhouse_connect.driver import httputil
 from dbgpt.storage.schema import DBType
 from sqlalchemy import (
     MetaData,
@@ -56,6 +51,11 @@ class ClickhouseConnect(RDBMSDatabase):
         engine_args: Optional[dict] = None,
         **kwargs: Any,
     ) -> RDBMSDatabase:
+        import clickhouse_connect
+        from clickhouse_connect.driver import httputil
+
+        # Lazy import
+
         big_pool_mgr = httputil.get_pool_manager(maxsize=16, num_pools=12)
         client = clickhouse_connect.get_client(
             host=host,

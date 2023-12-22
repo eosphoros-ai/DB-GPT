@@ -99,19 +99,10 @@ class MyLLMStreamingOperator(TransformStreamAbsOperator[ModelOutput, str]):
             yield output
 
 
-class MyModelToolOperator(MapOperator[TriggerReqBody, Dict[str, Any]]):
+class MyModelToolOperator(LLMMixin, MapOperator[TriggerReqBody, Dict[str, Any]]):
     def __init__(self, llm_client: LLMClient = None, **kwargs):
-        super().__init__(**kwargs)
         self._llm_client = llm_client
-
-    @property
-    def llm_client(self) -> LLMClient:
-        if not self._llm_client:
-            worker_manager = self.system_app.get_component(
-                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-            ).create()
-            self._llm_client = DefaultLLMClient(worker_manager)
-        return self._llm_client
+        MapOperator.__init__(self, **kwargs)
 
     async def map(self, input_value: TriggerReqBody) -> Dict[str, Any]:
         prompt_tokens = await self.llm_client.count_token(
