@@ -211,7 +211,9 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         Returns:
             AsyncIterator[OUT]: An asynchronous iterator over the output stream.
         """
-        out_ctx = await self._runner.execute_workflow(self, call_data)
+        out_ctx = await self._runner.execute_workflow(
+            self, call_data, streaming_call=True
+        )
         return out_ctx.current_task_context.task_output.output_stream
 
     def _blocking_call_stream(

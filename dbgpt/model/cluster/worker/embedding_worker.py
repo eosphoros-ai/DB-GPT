@@ -2,6 +2,7 @@ import logging
 from typing import Dict, List, Type, Optional
 
 from dbgpt.configs.model_config import get_device
+from dbgpt.core import ModelMetadata
 from dbgpt.model.loader import _get_model_real_path
 from dbgpt.model.parameter import (
     EmbeddingModelParameters,
@@ -88,6 +89,14 @@ class EmbeddingsModelWorker(ModelWorker):
     def generate(self, params: Dict):
         """Generate non stream result"""
         raise NotImplementedError("Not supported generate for embeddings model")
+
+    def count_token(self, prompt: str) -> int:
+        raise NotImplementedError("Not supported count_token for embeddings model")
+
+    def get_model_metadata(self, params: Dict) -> ModelMetadata:
+        raise NotImplementedError(
+            "Not supported get_model_metadata for embeddings model"
+        )
 
     def embeddings(self, params: Dict) -> List[List[float]]:
         model = params.get("model")

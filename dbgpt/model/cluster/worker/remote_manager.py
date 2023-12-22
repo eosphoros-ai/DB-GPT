@@ -133,21 +133,28 @@ class RemoteWorkerManager(LocalWorkerManager):
         self, model_name: str, instances: List[ModelInstance]
     ) -> List[WorkerRunData]:
         worker_instances = []
-        for ins in instances:
-            worker = RemoteModelWorker()
-            worker.load_worker(model_name, model_name, host=ins.host, port=ins.port)
-            wr = WorkerRunData(
-                host=ins.host,
-                port=ins.port,
-                worker_key=ins.model_name,
-                worker=worker,
-                worker_params=None,
-                model_params=None,
-                stop_event=asyncio.Event(),
-                semaphore=asyncio.Semaphore(100),  # Not limit in client
+        for instance in instances:
+            worker_instances.append(
+                self._build_single_worker_instance(model_name, instance)
             )
-            worker_instances.append(wr)
         return worker_instances
+
+    def _build_single_worker_instance(self, model_name: str, instance: ModelInstance):
+        worker = RemoteModelWorker()
+        worker.load_worker(
+            model_name, model_name, host=instance.host, port=instance.port
+        )
+        wr = WorkerRunData(
+            host=instance.host,
+            port=instance.port,
+            worker_key=instance.model_name,
+            worker=worker,
+            worker_params=None,
+            model_params=None,
+            stop_event=asyncio.Event(),
+            semaphore=asyncio.Semaphore(100),  # Not limit in client
+        )
+        return wr
 
     async def get_model_instances(
         self, worker_type: str, model_name: str, healthy_only: bool = True
@@ -157,6 +164,20 @@ class RemoteWorkerManager(LocalWorkerManager):
             worker_key, healthy_only
         )
         return self._build_worker_instances(model_name, instances)
+
+    async def get_all_model_instances(
+        self, worker_type: str, healthy_only: bool = True
+    ) -> List[WorkerRunData]:
+        instances: List[
+            ModelInstance
+        ] = await self.model_registry.get_all_model_instances(healthy_only=healthy_only)
+        result = []
+        for instance in instances:
+            name, wt = WorkerType.parse_worker_key(instance.model_name)
+            if wt != worker_type:
+                continue
+            result.append(self._build_single_worker_instance(name, instance))
+        return result
 
     def sync_get_model_instances(
         self, worker_type: str, model_name: str, healthy_only: bool = True

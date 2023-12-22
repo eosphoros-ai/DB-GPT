@@ -1,9 +1,12 @@
 from dbgpt.core.interface.llm import (
     ModelInferenceMetrics,
+    ModelRequest,
     ModelOutput,
-    OpenAILLM,
-    BaseLLMOperator,
+    LLMClient,
+    LLMOperator,
+    StreamingLLMOperator,
     RequestBuildOperator,
+    ModelMetadata,
 )
 from dbgpt.core.interface.message import (
     ModelMessage,
@@ -37,11 +40,15 @@ from dbgpt.core.interface.storage import (
 
 __ALL__ = [
     "ModelInferenceMetrics",
+    "ModelRequest",
     "ModelOutput",
-    "OpenAILLM",
-    "BaseLLMOperator",
+    "Operator",
     "RequestBuildOperator",
+    "ModelMetadata",
     "ModelMessage",
+    "LLMClient",
+    "LLMOperator",
+    "StreamingLLMOperator",
     "ModelMessageRoleType",
     "OnceConversation",
     "StorageConversation",
