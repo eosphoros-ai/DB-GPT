@@ -8,6 +8,8 @@ from dbgpt.rag.text_splitter.text_splitter import (
     MarkdownHeaderTextSplitter,
     ParagraphTextSplitter,
     CharacterTextSplitter,
+    PageTextSplitter,
+    SeparatorTextSplitter,
 )
 
 
@@ -49,13 +51,13 @@ class ChunkStrategy(Enum):
             {"param_name": "chunk_overlap", "param_type": "int"},
         ],
     )
-    CHUNK_BY_PAGE = (RecursiveCharacterTextSplitter, [])
+    CHUNK_BY_PAGE = (PageTextSplitter, [])
     CHUNK_BY_PARAGRAPH = (
         ParagraphTextSplitter,
         [{"param_name": "separator", "param_type": "str"}],
     )
     CHUNK_BY_SEPARATOR = (
-        CharacterTextSplitter,
+        SeparatorTextSplitter,
         [{"param_name": "separator", "param_type": "str"}],
     )
     CHUNK_BY_MARKDOWN_HEADER = (MarkdownHeaderTextSplitter, [])

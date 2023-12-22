@@ -41,13 +41,13 @@ class PPTXKnowledge(Knowledge):
             pr = Presentation(self._path)
             docs = []
             for slide in pr.slides:
+                content = ""
                 for shape in slide.shapes:
                     if hasattr(shape, "text") and shape.text:
-                        docs.append(
-                            Document(
-                                content=shape.text, metadata={"source": slide.slide_id}
-                            )
-                        )
+                        content += shape.text
+                docs.append(
+                    Document(content=content, metadata={"source": slide.slide_id})
+                )
             return docs
         return [Document.langchain2doc(lc_document) for lc_document in documents]
 

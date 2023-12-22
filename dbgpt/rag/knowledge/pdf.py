@@ -46,7 +46,7 @@ class PDFKnowledge(Knowledge):
                     page = reader.pages[page_num]
                     pages.append((page.extract_text(), page_num))
 
-            cleaned_pages = []
+            # cleaned_pages = []
             for page, page_num in pages:
                 lines = page.splitlines()
 
@@ -59,10 +59,10 @@ class PDFKnowledge(Knowledge):
                     digits = [word for word in words if any(i.isdigit() for i in word)]
                     cleaned_lines.append(line)
                 page = "\n".join(cleaned_lines)
-                cleaned_pages.append(page)
+                # cleaned_pages.append(page)
                 metadata = {"source": self._path, "page": page_num}
-                text = "\f".join(cleaned_pages)
-                document = Document(content=text, metadata=metadata)
+                # text = "\f".join(cleaned_pages)
+                document = Document(content=page, metadata=metadata)
                 documents.append(document)
             return documents
         return [Document.langchain2doc(lc_document) for lc_document in documents]

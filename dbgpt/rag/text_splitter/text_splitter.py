@@ -419,6 +419,7 @@ class MarkdownHeaderTextSplitter(TextSplitter):
                 aggregated_chunks[-1]["content"] += "  \n" + line["content"]
             else:
                 # Otherwise, append the current line to the aggregated list
+                line["content"] = f"{line['metadata']}, " + line["content"]
                 aggregated_chunks.append(line)
 
         return [
@@ -692,7 +693,7 @@ class ParagraphTextSplitter(CharacterTextSplitter):
 class SeparatorTextSplitter(CharacterTextSplitter):
     """SeparatorTextSplitter"""
 
-    def __init__(self, separator: str = "\n\n", filters: list = [], **kwargs: Any):
+    def __init__(self, separator: str = "\n", filters: list = [], **kwargs: Any):
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
         self._separator = separator
@@ -709,3 +710,34 @@ class SeparatorTextSplitter(CharacterTextSplitter):
         else:
             splits = list(text)
         return self._merge_splits(splits, separator, chunk_overlap=0, **kwargs)
+
+
+class PageTextSplitter(TextSplitter):
+    """PageTextSplitter"""
+
+    def __init__(self, separator: str = "\n\n", filters: list = [], **kwargs: Any):
+        """Create a new TextSplitter."""
+        super().__init__(**kwargs)
+        self._separator = separator
+        self._filter = filters
+
+    def split_text(
+        self, text: str, separator: Optional[str] = None, **kwargs
+    ) -> List[str]:
+        """Split incoming text and return chunks."""
+        return text
+
+    def create_documents(
+        self,
+        texts: List[str],
+        metadatas: Optional[List[dict]] = None,
+        separator: Optional[str] = None,
+        **kwargs,
+    ) -> List[Chunk]:
+        """Create documents from a list of texts."""
+        _metadatas = metadatas or [{}] * len(texts)
+        chunks = []
+        for i, text in enumerate(texts):
+            new_doc = Chunk(content=text, metadata=copy.deepcopy(_metadatas[i]))
+            chunks.append(new_doc)
+        return chunks

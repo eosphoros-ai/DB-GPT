@@ -116,7 +116,7 @@ def chunk_strategies():
             [
                 {
                     "name": strategy.name,
-                    "parameters": [strategy.value[1]],
+                    "parameters": strategy.value[1],
                     "suffix": [
                         knowledge.document_type().value
                         for knowledge in KnowledgeFactory.subclasses()

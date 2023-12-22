@@ -42,7 +42,7 @@ class ChunkParameters(BaseModel):
         description="chunk overlap",
     )
     separator: str = Field(
-        default=None,
+        default="\n",
         description="chunk separator",
     )
 
@@ -124,8 +124,11 @@ class ChunkManager:
             support_chunk_strategy.name
             for support_chunk_strategy in self._knowledge.support_chunk_strategy()
         ]:
+            current_type = self._knowledge.type().value
+            if self._knowledge.document_type():
+                current_type = self._knowledge.document_type().value
             raise ValueError(
-                f"{self._knowledge.type().value} knowledge not supported chunk strategy {self._chunk_strategy} "
+                f"{current_type} knowledge not supported chunk strategy {self._chunk_strategy} "
             )
         strategy = ChunkStrategy[self._chunk_strategy]
         return strategy.match(
