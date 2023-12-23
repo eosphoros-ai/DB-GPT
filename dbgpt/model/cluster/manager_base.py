@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from concurrent.futures import Future
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
-from dbgpt.core import ModelOutput
+from dbgpt.core import ModelOutput, ModelMetadata
 from dbgpt.model.base import WorkerSupportedModel, WorkerApplyOutput
 from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.cluster.base import WorkerStartupRequest, WorkerApplyRequest
@@ -38,6 +38,11 @@ class WorkerRunData:
         port = self.port
         return f"model {model_name}@{model_type}({host}:{port})"
 
+    @property
+    def stopped(self):
+        """Check if the worker is stopped""" ""
+        return self.stop_event.is_set()
+
 
 class WorkerManager(ABC):
     @abstractmethod
@@ -61,6 +66,20 @@ class WorkerManager(ABC):
         self, worker_type: str, model_name: str, healthy_only: bool = True
     ) -> List[WorkerRunData]:
         """Asynchronous get model instances by worker type and model name"""
+
+    @abstractmethod
+    async def get_all_model_instances(
+        self, worker_type: str, healthy_only: bool = True
+    ) -> List[WorkerRunData]:
+        """Asynchronous get all model instances
+
+        Args:
+            worker_type (str): worker type
+            healthy_only (bool, optional): only return healthy instances. Defaults to True.
+
+        Returns:
+            List[WorkerRunData]: worker run data list
+        """
 
     @abstractmethod
     def sync_get_model_instances(
@@ -110,6 +129,25 @@ class WorkerManager(ABC):
 
         This function may be passed to a third-party system call for synchronous calls.
         We must provide a synchronous version.
+        """
+
+    @abstractmethod
+    async def count_token(self, params: Dict) -> int:
+        """Count token of prompt
+
+        Args:
+            params (Dict): parameters, eg. {"prompt": "hello", "model": "vicuna-13b-v1.5"}
+
+        Returns:
+            int: token count
+        """
+
+    @abstractmethod
+    async def get_model_metadata(self, params: Dict) -> ModelMetadata:
+        """Get model metadata
+
+        Args:
+            params (Dict): parameters, eg. {"model": "vicuna-13b-v1.5"}
         """
 
     @abstractmethod

@@ -70,7 +70,7 @@ def _initialize_openai_v1(params: ProxyModelParameters):
     api_type = params.proxy_api_type or os.getenv("OPENAI_API_TYPE", "open_ai")
 
     base_url = params.proxy_api_base or os.getenv(
-        "OPENAI_API_TYPE",
+        "OPENAI_API_BASE",
         os.getenv("AZURE_OPENAI_ENDPOINT") if api_type == "azure" else None,
     )
     api_key = params.proxy_api_key or os.getenv(

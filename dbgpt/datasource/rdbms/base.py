@@ -1,7 +1,6 @@
 from __future__ import annotations
 import sqlparse
 import regex as re
-import pandas as pd
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 from typing import Any, Iterable, List, Optional, Dict
@@ -383,6 +382,10 @@ class RDBMSDatabase(BaseConnect):
                 return self.get_simple_fields(table_name)
 
     def run_to_df(self, command: str, fetch: str = "all"):
+        import pandas as pd
+
+        # Pandas has too much dependence and the import time is too long
+        # TODO: Remove the dependency on pandas
         result_lst = self.run(command, fetch)
         colunms = result_lst[0]
         values = result_lst[1:]

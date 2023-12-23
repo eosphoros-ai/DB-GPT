@@ -47,7 +47,8 @@ def test_run_no_throw(db):
 def test_get_indexes(db):
     db.run("CREATE TABLE test (name TEXT);")
     db.run("CREATE INDEX idx_name ON test(name);")
-    assert db.get_indexes("test") == [("idx_name", "c")]
+    indexes = db.get_indexes("test")
+    assert indexes == [{"name": "idx_name", "column_names": ["name"]}]
 
 
 def test_get_indexes_empty(db):
