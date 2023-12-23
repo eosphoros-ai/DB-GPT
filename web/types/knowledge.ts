@@ -78,6 +78,34 @@ export type IDocumentResponse = {
   total: number;
 };
 
+export type IStrategyParameter = {
+  param_name: string;
+  param_type: string;
+};
+
+export type IChunkStrategyResponse = {
+  name: string;
+  parameters: Array<IStrategyParameter>;
+  suffix: Array<string>;
+  type: Array<string>;
+};
+
+export type IStrategyProps = {
+  chunk_strategy: string;
+  chunk_size?: number;
+  chunk_overlap?: number;
+};
+
+export type ISyncBatchParameter = {
+  doc_id: number;
+  name?: string;
+  chunk_parameters: IStrategyProps;
+};
+
+export type ISyncBatchResponse = {
+  tasks: Array<number>;
+};
+
 export type ChunkListParams = {
   document_id?: string | number;
   page: number;
@@ -109,6 +137,12 @@ export type StepChangeParams = {
   label: 'forward' | 'back' | 'finish';
   spaceName?: string;
   docType?: string;
+  files?: Array<File>;
+};
+
+export type File = {
+  name: string;
+  doc_id: number;
 };
 
 export type SummaryParams = {

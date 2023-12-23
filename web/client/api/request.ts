@@ -19,8 +19,11 @@ import {
   DocumentParams,
   IArguments,
   IChunkList,
+  IChunkStrategyResponse,
   IDocumentResponse,
   ISpace,
+  ISyncBatchParameter,
+  ISyncBatchResponse,
 } from '@/types/knowledge';
 import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
 
@@ -138,8 +141,16 @@ export const addSpace = (data: AddKnowledgeParams) => {
   return POST<AddKnowledgeParams, Array<any>>(`/knowledge/space/add`, data);
 };
 
+export const getChunkStrategies = () => {
+  return GET<null, Array<IChunkStrategyResponse>>('/knowledge/document/chunkstrategies');
+};
+
 export const syncDocument = (spaceName: string, data: Record<string, Array<number>>) => {
   return POST<Record<string, Array<number>>, string | null>(`/knowledge/${spaceName}/document/sync`, data);
+};
+
+export const syncBatchDocument = (spaceName: string, data: Array<ISyncBatchParameter>) => {
+  return POST<Array<ISyncBatchParameter>, ISyncBatchResponse>(`/knowledge/${spaceName}/document/sync_batch`, data);
 };
 
 export const uploadDocument = (knowLedgeName: string, data: FormData) => {
