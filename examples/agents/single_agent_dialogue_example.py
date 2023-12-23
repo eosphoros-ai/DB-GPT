@@ -24,8 +24,8 @@ if __name__ == "__main__":
 
 
 
-    os.environ["OPENAI_API_KEY"] = "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"
-    os.environ["OPENAI_API_BASE"] = "http://43.134.122.188:3000/api/openai/v1"
+    os.environ["OPENAI_API_KEY"] = "xxx"
+    os.environ["OPENAI_API_BASE"] = "http://xxx:3000/api/openai/v1"
 
     asyncio.run(user_proxy.a_initiate_chat(
         recipient =coder,
