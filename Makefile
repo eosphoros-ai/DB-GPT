@@ -21,7 +21,20 @@ testenv: setup ## Set up the Python test environment
 
 .PHONY: fmt
 fmt: setup ## Format Python code
+	# TODO: Use isort to sort Python imports.
+	# https://github.com/PyCQA/isort
+	# $(VENV_BIN)/isort .
+	# https://github.com/psf/black
 	$(VENV_BIN)/black .
+	# TODO: Use blackdoc to format Python doctests.
+	# https://blackdoc.readthedocs.io/en/latest/
+	# $(VENV_BIN)/blackdoc .
+	# TODO: Type checking of Python code.
+	# https://github.com/python/mypy
+	# $(VENV_BIN)/mypy dbgpt
+	# TODO: uUse flake8 to enforce Python style guide.
+	# https://flake8.pycqa.org/en/latest/
+	# $(VENV_BIN)/flake8 dbgpt
 
 .PHONY: pre-commit
 pre-commit: fmt test ## Run formatting and unit tests before committing

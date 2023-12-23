@@ -12,3 +12,5 @@ pytesseract==0.3.10
 aioresponses
 # for git hooks
 pre-commit
+# Type checking
+mypy==0.991
