@@ -61,7 +61,7 @@ class Config(metaclass=Singleton):
         if self.zhipu_proxy_api_key:
             os.environ["zhipu_proxyllm_proxy_api_key"] = self.zhipu_proxy_api_key
             os.environ["zhipu_proxyllm_proxyllm_backend"] = os.getenv(
-                "ZHIPU_MODEL_VERSION", "chatglm_pro"
+                "ZHIPU_MODEL_VERSION"
             )
 
         # wenxin
@@ -94,6 +94,14 @@ class Config(metaclass=Singleton):
             os.environ["bc_proxyllm_proxy_api_key"] = self.bc_proxy_api_key
             os.environ["bc_proxyllm_proxy_api_secret"] = self.bc_proxy_api_secret
             os.environ["bc_proxyllm_proxyllm_backend"] = self.bc_model_version
+
+        # gemini proxy
+        self.gemini_proxy_api_key = os.getenv("GEMINI_PROXY_API_KEY")
+        if self.gemini_proxy_api_key:
+            os.environ["gemini_proxyllm_proxy_api_key"] = self.gemini_proxy_api_key
+            os.environ["gemini_proxyllm_proxyllm_backend"] = os.getenv(
+                "GEMINI_MODEL_VERSION", "gemini-pro"
+            )
 
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 

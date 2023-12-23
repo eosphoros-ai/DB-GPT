@@ -324,6 +324,71 @@ def test_load_from_storage(storage_conversation, in_memory_storage):
     assert isinstance(new_conversation.messages[1], AIMessage)
 
 
+def test_parse_model_messages_no_history_messages():
+    messages = [
+        ModelMessage(role=ModelMessageRoleType.HUMAN, content="Hello"),
+    ]
+    user_prompt, system_messages, history_messages = parse_model_messages(messages)
+    assert user_prompt == "Hello"
+    assert system_messages == []
+    assert history_messages == []
+
+
+def test_parse_model_messages_single_round_conversation():
+    messages = [
+        ModelMessage(role=ModelMessageRoleType.HUMAN, content="Hello"),
+        ModelMessage(role=ModelMessageRoleType.AI, content="Hi there!"),
+        ModelMessage(role=ModelMessageRoleType.HUMAN, content="Hello again"),
+    ]
+    user_prompt, system_messages, history_messages = parse_model_messages(messages)
+    assert user_prompt == "Hello again"
+    assert system_messages == []
+    assert history_messages == [["Hello", "Hi there!"]]
+
+
+def test_parse_model_messages_two_round_conversation_with_system_message():
+    messages = [
+        ModelMessage(
+            role=ModelMessageRoleType.SYSTEM, content="System initializing..."
+        ),
+        ModelMessage(role=ModelMessageRoleType.HUMAN, content="How's the weather?"),
+        ModelMessage(role=ModelMessageRoleType.AI, content="It's sunny!"),
+        ModelMessage(role=ModelMessageRoleType.HUMAN, content="Great to hear!"),
+    ]
+    user_prompt, system_messages, history_messages = parse_model_messages(messages)
+    assert user_prompt == "Great to hear!"
+    assert system_messages == ["System initializing..."]
+    assert history_messages == [["How's the weather?", "It's sunny!"]]
+
+
+def test_parse_model_messages_three_round_conversation():
+    messages = [
+        ModelMessage(role=ModelMessageRoleType.HUMAN, content="Hi"),
+        ModelMessage(role=ModelMessageRoleType.AI, content="Hello!"),
+        ModelMessage(role=ModelMessageRoleType.HUMAN, content="What's up?"),
+        ModelMessage(role=ModelMessageRoleType.AI, content="Not much, you?"),
+        ModelMessage(role=ModelMessageRoleType.HUMAN, content="Same here."),
+    ]
+    user_prompt, system_messages, history_messages = parse_model_messages(messages)
+    assert user_prompt == "Same here."
+    assert system_messages == []
+    assert history_messages == [["Hi", "Hello!"], ["What's up?", "Not much, you?"]]
+
+
+def test_parse_model_messages_multiple_system_messages():
+    messages = [
+        ModelMessage(role=ModelMessageRoleType.SYSTEM, content="System start"),
+        ModelMessage(role=ModelMessageRoleType.HUMAN, content="Hey"),
+        ModelMessage(role=ModelMessageRoleType.AI, content="Hello!"),
+        ModelMessage(role=ModelMessageRoleType.SYSTEM, content="System check"),
+        ModelMessage(role=ModelMessageRoleType.HUMAN, content="How are you?"),
+    ]
+    user_prompt, system_messages, history_messages = parse_model_messages(messages)
+    assert user_prompt == "How are you?"
+    assert system_messages == ["System start", "System check"]
+    assert history_messages == [["Hey", "Hello!"]]
+
+
 def test_to_openai_messages(
     human_model_message, ai_model_message, system_model_message
 ):
