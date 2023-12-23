@@ -364,23 +364,40 @@ def core_requires():
         "prettytable",
         "cachetools",
     ]
-
-    setup_spec.extras["framework"] = [
-        "coloredlogs",
+    # Just use by DB-GPT internal, we should find the smallest dependency set for run we core unit test.
+    # The dependency "framework" is too large for now.
+    setup_spec.extras["simple_framework"] = setup_spec.extras["core"] + [
+        "pydantic<2,>=1",
         "httpx",
+        "fastapi==0.98.0",
+        "shortuuid",
+        # change from fixed version 2.0.22 to variable version, because other dependencies are >=1.4, such as pydoris is <2
+        "SQLAlchemy>=1.4,<3",
+        # for cache
+        "msgpack",
+        # for cache, TODO pympler has not been updated for a long time and needs to find a new toolkit.
+        "pympler",
         "sqlparse==0.4.4",
+        "duckdb==0.8.1",
+        "duckdb-engine",
+    ]
+    # TODO: remove fschat from simple_framework
+    if BUILD_FROM_SOURCE:
+        setup_spec.extras["simple_framework"].append(
+            f"fschat @ {BUILD_FROM_SOURCE_URL_FAST_CHAT}"
+        )
+    else:
+        setup_spec.extras["simple_framework"].append("fschat")
+
+    setup_spec.extras["framework"] = setup_spec.extras["simple_framework"] + [
+        "coloredlogs",
         "seaborn",
         # https://github.com/eosphoros-ai/DB-GPT/issues/551
         "pandas==2.0.3",
         "auto-gpt-plugin-template",
         "gTTS==2.3.1",
         "langchain>=0.0.286",
-        # change from fixed version 2.0.22 to variable version, because other dependencies are >=1.4, such as pydoris is <2
-        "SQLAlchemy>=1.4,<3",
-        "fastapi==0.98.0",
         "pymysql",
-        "duckdb==0.8.1",
-        "duckdb-engine",
         "jsonschema",
         # TODO move transformers to default
         # "transformers>=4.31.0",
@@ -390,20 +407,10 @@ def core_requires():
         "openpyxl==3.1.2",
         "chardet==5.1.0",
         "xlrd==2.0.1",
-        # for cache, TODO pympler has not been updated for a long time and needs to find a new toolkit.
-        "pympler",
         "aiofiles",
-        # for cache
-        "msgpack",
         # for agent
         "GitPython",
     ]
-    if BUILD_FROM_SOURCE:
-        setup_spec.extras["framework"].append(
-            f"fschat @ {BUILD_FROM_SOURCE_URL_FAST_CHAT}"
-        )
-    else:
-        setup_spec.extras["framework"].append("fschat")
 
 
 def knowledge_requires():
