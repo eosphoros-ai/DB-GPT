@@ -3,7 +3,7 @@ import pytest_asyncio
 from contextlib import contextmanager, asynccontextmanager
 from typing import List, Iterator, Dict, Tuple
 from dbgpt.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
-from dbgpt.core import ModelOutput
+from dbgpt.core import ModelOutput, ModelMetadata
 from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.cluster.worker.manager import (
     WorkerManager,
@@ -79,6 +79,14 @@ class MockModelWorker(ModelWorker):
         for out in self.generate_stream(params):
             output = out
         return output
+
+    def count_token(self, prompt: str) -> int:
+        return len(prompt)
+
+    def get_model_metadata(self, params: Dict) -> ModelMetadata:
+        return ModelMetadata(
+            model=self.model_parameters.model_name,
+        )
 
     def embeddings(self, params: Dict) -> List[List[float]]:
         return self._embeddings

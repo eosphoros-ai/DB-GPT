@@ -60,6 +60,7 @@ LLM_MODEL_CONFIG = {
     "wenxin_proxyllm": "wenxin_proxyllm",
     "tongyi_proxyllm": "tongyi_proxyllm",
     "zhipu_proxyllm": "zhipu_proxyllm",
+    "gemini_proxyllm": "gemini_proxyllm",
     "bc_proxyllm": "bc_proxyllm",
     "spark_proxyllm": "spark_proxyllm",
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),

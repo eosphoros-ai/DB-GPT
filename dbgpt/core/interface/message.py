@@ -202,19 +202,65 @@ def _messages_from_dict(messages: List[Dict]) -> List[BaseMessage]:
     return [_message_from_dict(m) for m in messages]
 
 
-def _parse_model_messages(
+def parse_model_messages(
     messages: List[ModelMessage],
 ) -> Tuple[str, List[str], List[List[str, str]]]:
     """
-    Parameters:
-        messages: List of message from base chat.
+    Parse model messages to extract the user prompt, system messages, and a history of conversation.
+
+    This function analyzes a list of ModelMessage objects, identifying the role of each message (e.g., human, system, ai)
+    and categorizes them accordingly. The last message is expected to be from the user (human), and it's treated as
+    the current user prompt. System messages are extracted separately, and the conversation history is compiled into
+    pairs of human and AI messages.
+
+    Args:
+        messages (List[ModelMessage]): List of messages from a chat conversation.
+
     Returns:
-        A tuple contains user prompt, system message list and history message list
-        str: user prompt
-        List[str]: system messages
-        List[List[str]]: history message of user and assistant
+        tuple: A tuple containing the user prompt, list of system messages, and the conversation history.
+               The conversation history is a list of message pairs, each containing a user message and the corresponding AI response.
+
+    Examples:
+        .. code-block:: python
+
+            # Example 1: Single round of conversation
+            messages = [
+                ModelMessage(role="human", content="Hello"),
+                ModelMessage(role="ai", content="Hi there!"),
+                ModelMessage(role="human", content="How are you?"),
+            ]
+            user_prompt, system_messages, history = parse_model_messages(messages)
+            # user_prompt: "How are you?"
+            # system_messages: []
+            # history: [["Hello", "Hi there!"]]
+
+            # Example 2: Conversation with system messages
+            messages = [
+                ModelMessage(role="system", content="System initializing..."),
+                ModelMessage(role="human", content="Is it sunny today?"),
+                ModelMessage(role="ai", content="Yes, it's sunny."),
+                ModelMessage(role="human", content="Great!"),
+            ]
+            user_prompt, system_messages, history = parse_model_messages(messages)
+            # user_prompt: "Great!"
+            # system_messages: ["System initializing..."]
+            # history: [["Is it sunny today?", "Yes, it's sunny."]]
+
+            # Example 3: Multiple rounds with system message
+            messages = [
+                ModelMessage(role="human", content="Hi"),
+                ModelMessage(role="ai", content="Hello!"),
+                ModelMessage(role="system", content="Error 404"),
+                ModelMessage(role="human", content="What's the error?"),
+                ModelMessage(role="ai", content="Just a joke."),
+                ModelMessage(role="human", content="Funny!"),
+            ]
+            user_prompt, system_messages, history = parse_model_messages(messages)
+            # user_prompt: "Funny!"
+            # system_messages: ["Error 404"]
+            # history: [["Hi", "Hello!"], ["What's the error?", "Just a joke."]]
     """
-    user_prompt = ""
+
     system_messages: List[str] = []
     history_messages: List[List[str]] = [[]]
 
