@@ -56,7 +56,7 @@ export default function DocPanel(props: IProps) {
       }),
     );
     setDocuments(data?.data);
-    setTotal(data?.total);
+    setTotal(data?.total || 0);
     setIsLoading(false);
   }
 
@@ -175,7 +175,7 @@ export default function DocPanel(props: IProps) {
                 >
                   <p className="mt-2 font-semibold ">{t('Size')}:</p>
                   <p>{document.chunk_size} chunks</p>
-                  <p className="mt-2 font-semibold ">{t('Last_Synch')}:</p>
+                  <p className="mt-2 font-semibold ">{t('Last_Sync')}:</p>
                   <p>{moment(document.last_sync).format('YYYY-MM-DD HH:MM:SS')}</p>
                   <p className="mt-2 mb-2">{renderResultTag(document.status, document.result)}</p>
                 </Card>

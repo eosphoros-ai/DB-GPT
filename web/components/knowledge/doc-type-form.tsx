@@ -12,19 +12,19 @@ export default function DocTypeForm(props: IProps) {
   const { handleStepChange } = props;
   const docTypeList = [
     {
-      type: 'text',
+      type: 'TEXT',
       title: t('Text'),
       subTitle: t('Fill your raw text'),
       iconType: 'TEXT',
     },
     {
-      type: 'webPage',
+      type: 'URL',
       title: t('URL'),
       subTitle: t('Fetch_the_content_of_a_URL'),
       iconType: 'WEBPAGE',
     },
     {
-      type: 'file',
+      type: 'DOCUMENT',
       title: t('Document'),
       subTitle: t('Upload_a_document'),
       iconType: 'DOCUMENT',
