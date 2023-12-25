@@ -8,14 +8,18 @@ import diskcache
 import json
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.core.awel import BaseOperator, SimpleCallDataInputSource, InputOperator, DAG
+
 from dbgpt.util.error_types import LLMChatError
 from dbgpt.util.tracer import root_tracer, trace
 from dbgpt.core.interface.output_parser import BaseOutputParser
+from dbgpt.core import LLMOperator
+from dbgpt.model import OpenAILLMClient
+
 from dbgpt.model.operator.model_operator import ModelOperator, ModelStreamOperator
 
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt._private.config import Config
-from dbgpt.core import SQLOutputParser, OpenAILLM, PromptTemplate
+from dbgpt.core import SQLOutputParser, PromptTemplate
 from ..llm.llm import GptsRequestBuildOperator
 
 logger = logging.getLogger(__name__)
@@ -24,9 +28,15 @@ CFG = Config()
 
 class AIWrapper:
     cache_path_root: str = ".cache"
-    extra_kwargs = {"cache_seed", "filter_func", "allow_format_str_template", "context", "llm_model"}
-    def __init__(self, model_operator:BaseOperator=None):
+    extra_kwargs = {
+        "cache_seed",
+        "filter_func",
+        "allow_format_str_template",
+        "context",
+        "llm_model",
+    }
 
+    def __init__(self, model_operator: BaseOperator = None):
         self.llm_echo = False
         self.sep = "###"  ###TODO
         self.model_cache_enable = False
@@ -35,7 +45,8 @@ class AIWrapper:
             with DAG("sdk_agents_llm_dag") as dag:
                 out_parse_task = BaseOutputParser()
                 model_pre_handle_task = GptsRequestBuildOperator()
-                llm_task = OpenAILLM()
+                llm_task = LLMOperator(OpenAILLMClient())
+
                 model_pre_handle_task >> llm_task >> out_parse_task
             self._model_operator = out_parse_task
         else:
@@ -60,7 +71,9 @@ class AIWrapper:
         prompt = create_config.get("prompt")
         messages = create_config.get("messages")
         if (prompt is None) == (messages is None):
-            raise ValueError("Either prompt or messages should be in create config but not both.")
+            raise ValueError(
+                "Either prompt or messages should be in create config but not both."
+            )
 
         context = extra_kwargs.get("context")
         if context is None:
@@ -72,13 +85,17 @@ class AIWrapper:
         params = create_config.copy()
         if prompt is not None:
             # Instantiate the prompt
-            params["prompt"] = self.instantiate(prompt, context, allow_format_str_template)
+            params["prompt"] = self.instantiate(
+                prompt, context, allow_format_str_template
+            )
         elif context:
             # Instantiate the messages
             params["messages"] = [
                 {
                     **m,
-                    "content": self.instantiate(m["content"], context, allow_format_str_template),
+                    "content": self.instantiate(
+                        m["content"], context, allow_format_str_template
+                    ),
                 }
                 if m.get("content")
                 else m
@@ -140,7 +157,7 @@ class AIWrapper:
         #                 # TODO: add response.cost
         #                 return response
         try:
-             response = await self._completions_create(llm_model, params)
+            response = await self._completions_create(llm_model, params)
         except LLMChatError as e:
             logger.debug(f"{llm_model} generate failed!{str(e)}")
             raise e
@@ -151,7 +168,9 @@ class AIWrapper:
             #         cache.set(key, response)
 
             # check the filter
-            pass_filter = filter_func is None or filter_func(context=context, response=response)
+            pass_filter = filter_func is None or filter_func(
+                context=context, response=response
+            )
             if pass_filter:
                 # Return the response if it passes the filter
                 return response
@@ -173,10 +192,10 @@ class AIWrapper:
     async def _completions_create(self, llm_model, params):
         payload = {
             "model": llm_model,
-            "prompt": params.get('prompt'),
+            "prompt": params.get("prompt"),
             "messages": self._llm_messages_convert(params),
-            "temperature": float(params.get('temperature')),
-            "max_new_tokens": int(params.get('max_new_tokens')),
+            "temperature": float(params.get("temperature")),
+            "max_new_tokens": int(params.get("max_new_tokens")),
             # "stop": self.prompt_template.sep,
             "echo": self.llm_echo,
         }
@@ -188,9 +207,7 @@ class AIWrapper:
         payload["span_id"] = span.span_id
         payload["model_cache_enable"] = self.model_cache_enable
         try:
-            model_output= await self._model_operator.call(
-                call_data={"data": payload}
-            )
+            model_output = await self._model_operator.call(call_data={"data": payload})
             # ai_response_text = (
             #     self.out_parser.parse_model_nostream_resp(
             #         model_output, self.prompt_template.sep

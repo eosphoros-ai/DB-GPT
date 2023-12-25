@@ -2,27 +2,31 @@ from .base_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 from .agent import Agent
 from ..memory.gpts_memory import GptsMemory
+
 try:
     from termcolor import colored
 except ImportError:
+
     def colored(x, *args, **kwargs):
         return x
 
-class UserProxyAgent(ConversableAgent):
-    """(In preview) A proxy agent for the user, that can execute code and provide feedback to the other agents.
 
-    """
+class UserProxyAgent(ConversableAgent):
+    """(In preview) A proxy agent for the user, that can execute code and provide feedback to the other agents."""
+
     NAME = "User"
-    DEFAULT_DESCRIBE = "A human admin. Interact with the planner to discuss the plan. Plan execution needs to be approved by this admin.",
+    DEFAULT_DESCRIBE = (
+        "A human admin. Interact with the planner to discuss the plan. Plan execution needs to be approved by this admin.",
+    )
+
     def __init__(
         self,
         memory: GptsMemory,
-        agent_context: 'AgentContext',
+        agent_context: "AgentContext",
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "ALWAYS",
         default_auto_reply: Optional[Union[str, Dict, None]] = "",
-
     ):
         super().__init__(
             name=self.NAME,
@@ -51,30 +55,29 @@ class UserProxyAgent(ConversableAgent):
         return reply
 
     async def a_reasoning_reply(
-        self,
-        messages: Union[List[Dict]]) -> Union[str, Dict, None]:
-
+        self, messages: Union[List[Dict]]
+    ) -> Union[str, Dict, None]:
         message = messages[-1]
-        return message['content'], None
+        return message["content"], None
 
     async def a_receive(
-            self,
-            message: Optional[Dict],
-            sender: Agent,
-            reviewer: "Agent",
-            request_reply: Optional[bool] = True,
-            silent: Optional[bool] = False,
-            is_recovery: Optional[bool] = False,
+        self,
+        message: Optional[Dict],
+        sender: Agent,
+        reviewer: "Agent",
+        request_reply: Optional[bool] = True,
+        silent: Optional[bool] = False,
+        is_recovery: Optional[bool] = False,
     ):
         self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter + 1
         self._process_received_message(message, sender, silent)
 
     async def check_termination_and_human_reply(
-            self,
-            message: Optional[str] = None,
-            sender: Optional[Agent] = None,
-            reviewer: "Agent" = None,
-            config: Optional[Union[Dict, Literal[False]]] = None,
+        self,
+        message: Optional[str] = None,
+        sender: Optional[Agent] = None,
+        reviewer: "Agent" = None,
+        config: Optional[Union[Dict, Literal[False]]] = None,
     ) -> Tuple[bool, Union[str, Dict, None]]:
         """Check if the conversation should be terminated, and if human reply is provided."""
         return True, None

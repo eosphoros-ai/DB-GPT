@@ -6,6 +6,7 @@ from dbgpt.core.awel import MapOperator
 
 from dbgpt.core.interface.llm import ModelRequest
 
+
 class GptsRequestBuildOperator(MapOperator[Union[Dict, str], ModelRequest], ABC):
     def __init__(self, model: str = None, **kwargs):
         self._model = model
@@ -15,7 +16,7 @@ class GptsRequestBuildOperator(MapOperator[Union[Dict, str], ModelRequest], ABC)
         if isinstance(input_value, str):
             return ModelRequest._build(self._model, input_value)
         elif isinstance(input_value, dict):
-            parm ={
+            parm = {
                 "model": input_value.get("model"),
                 "messages": input_value.get("messages"),
                 "temperature": input_value.get("temperature", None),
@@ -30,5 +31,3 @@ class GptsRequestBuildOperator(MapOperator[Union[Dict, str], ModelRequest], ABC)
             return ModelRequest(**parm)
         else:
             raise ValueError("Requset input Error!")
-
-

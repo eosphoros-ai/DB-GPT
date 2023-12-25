@@ -18,39 +18,43 @@ except ImportError:
     def colored(x, *args, **kwargs):
         return x
 
+
 logger = logging.getLogger(__name__)
 
 
 class ConversableAgent(Agent):
-    DEFAULT_SYSTEM_MESSAGE= "You are a helpful AI Assistant."
-    MAX_CONSECUTIVE_AUTO_REPLY = 100  # maximum number of consecutive auto replies (subject to future change)
-    def __init__(
-            self,
-            name: str,
-            memory: GptsMemory,
-            llm_operator:Optional[BaseOperator] = None,
-            model_priority: Optional[List[str]] = None,
-            describe: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-            system_message: Optional[str] = "You are a helpful AI Assistant.",
-            is_termination_msg: Optional[Callable[[Dict], bool]] = None,
-            max_consecutive_auto_reply: Optional[int] = None,
-            human_input_mode: Optional[str] = "TERMINATE",
-            agent_context: Optional[AgentContext] = None,
-            default_auto_reply: Optional[Union[str, Dict, None]] = "",
-    ):
+    DEFAULT_SYSTEM_MESSAGE = "You are a helpful AI Assistant."
+    MAX_CONSECUTIVE_AUTO_REPLY = (
+        100  # maximum number of consecutive auto replies (subject to future change)
+    )
 
+    def __init__(
+        self,
+        name: str,
+        memory: GptsMemory,
+        llm_operator: Optional[BaseOperator] = None,
+        model_priority: Optional[List[str]] = None,
+        describe: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+        system_message: Optional[str] = "You are a helpful AI Assistant.",
+        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
+        max_consecutive_auto_reply: Optional[int] = None,
+        human_input_mode: Optional[str] = "TERMINATE",
+        agent_context: Optional[AgentContext] = None,
+        default_auto_reply: Optional[Union[str, Dict, None]] = "",
+    ):
         super().__init__(name, memory, describe)
 
         # a dictionary of conversations, default value is list
         # self._oai_messages = defaultdict(list)
-        self._oai_system_message = [{"content": system_message, "role": ModelMessageRoleType.SYSTEM}]
+        self._oai_system_message = [
+            {"content": system_message, "role": ModelMessageRoleType.SYSTEM}
+        ]
         self._rely_messages = []
         self._is_termination_msg = (
             is_termination_msg
             if is_termination_msg is not None
             else (lambda x: x.get("content") == "TERMINATE")
         )
-
 
         self.client = AIWrapper(model_operator=llm_operator)
 
@@ -72,17 +76,14 @@ class ConversableAgent(Agent):
 
         self.agent_context: AgentContext = agent_context
 
-
-
     def register_reply(
-            self,
-            trigger: Union[Type[Agent], str, Agent, Callable[[Agent], bool], List],
-            reply_func: Callable,
-            position: int = 0,
-            config: Optional[Any] = None,
-            reset_config: Optional[Callable] = None,
+        self,
+        trigger: Union[Type[Agent], str, Agent, Callable[[Agent], bool], List],
+        reply_func: Callable,
+        position: int = 0,
+        config: Optional[Any] = None,
+        reset_config: Optional[Callable] = None,
     ):
-
         if not isinstance(trigger, (type, str, Agent, Callable, list)):
             raise ValueError(
                 "trigger must be a class, a string, an agent, a callable or a list."
@@ -112,7 +113,7 @@ class ConversableAgent(Agent):
         self._oai_system_message[0]["content"] = system_message
 
     def update_max_consecutive_auto_reply(
-            self, value: int, sender: Optional[Agent] = None
+        self, value: int, sender: Optional[Agent] = None
     ):
         """Update the maximum number of consecutive auto replies.
 
@@ -138,7 +139,9 @@ class ConversableAgent(Agent):
     @property
     def chat_messages(self) -> Dict[Agent, List[Dict]]:
         """A dictionary of conversations from agent to list of messages."""
-        all_gpts_messages = self.memory.message_memory.get_by_agent(self.agent_context.conv_id, self.name)
+        all_gpts_messages = self.memory.message_memory.get_by_agent(
+            self.agent_context.conv_id, self.name
+        )
         return self._gpts_message_to_ai_message(all_gpts_messages)
 
     def last_message(self, agent: Optional[Agent] = None) -> Optional[Dict]:
@@ -165,8 +168,10 @@ class ConversableAgent(Agent):
                 "More than one conversation is found. Please specify the sender to get the last message."
             )
 
-        agent_messages = self.memory.message_memory.get_between_agents(self.agent_context.conv_id, self.name, agent.name)
-        if len(agent_messages) <=0:
+        agent_messages = self.memory.message_memory.get_between_agents(
+            self.agent_context.conv_id, self.name, agent.name
+        )
+        if len(agent_messages) <= 0:
             raise KeyError(
                 f"The agent '{agent.name}' is not present in any conversation. No history available for this agent."
             )
@@ -185,17 +190,17 @@ class ConversableAgent(Agent):
         else:
             return dict(message)
 
-    def append_rely_message(self, message: Optional[Dict], role)->bool:
+    def append_rely_message(self, message: Optional[Dict], role) -> bool:
         message = self._message_to_dict(message)
         message["role"] = role
         # create oai message to be appended to the oai conversation that can be passed to oai directly.
         self._rely_messages.append(message)
 
-    def reset_rely_message(self)->bool:
+    def reset_rely_message(self) -> bool:
         # create oai message to be appended to the oai conversation that can be passed to oai directly.
         self._rely_messages = []
 
-    def append_message(self, message: Optional[Dict], role, sender: Agent)->bool:
+    def append_message(self, message: Optional[Dict], role, sender: Agent) -> bool:
         """
             Put the received message content into the collective message memory
         Args:
@@ -209,7 +214,16 @@ class ConversableAgent(Agent):
         """
         oai_message = {
             k: message[k]
-            for k in ("content", "function_call", "name", "context", "action_report", "review_info", "current_gogal", "model_name")
+            for k in (
+                "content",
+                "function_call",
+                "name",
+                "context",
+                "action_report",
+                "review_info",
+                "current_gogal",
+                "model_name",
+            )
             if k in message
         }
         if "content" not in oai_message:
@@ -226,41 +240,55 @@ class ConversableAgent(Agent):
             ] = "assistant"  # only messages with role 'assistant' can have a function call.
             oai_message["function_call"] = dict(oai_message["function_call"])
 
-
-
         gpts_message: GptsMessage = GptsMessage(
-            conv_id= self.agent_context.conv_id,
-            sender= sender.name,
+            conv_id=self.agent_context.conv_id,
+            sender=sender.name,
             receiver=self.name,
             role=role,
-            rounds= self.consecutive_auto_reply_counter,
+            rounds=self.consecutive_auto_reply_counter,
             current_gogal=oai_message.get("current_gogal", None),
             content=oai_message.get("content", None),
-            context= json.dumps(oai_message['context']) if 'context' in oai_message else None,
-            review_info= json.dumps(oai_message['review_info']) if 'review_info' in oai_message else None,
-            action_report= json.dumps(oai_message['action_report']) if 'action_report' in oai_message else None,
-            model_name= oai_message.get("model_name", None)
+            context=json.dumps(oai_message["context"])
+            if "context" in oai_message
+            else None,
+            review_info=json.dumps(oai_message["review_info"])
+            if "review_info" in oai_message
+            else None,
+            action_report=json.dumps(oai_message["action_report"])
+            if "action_report" in oai_message
+            else None,
+            model_name=oai_message.get("model_name", None),
         )
-
 
         self.memory.message_memory.append(gpts_message)
         return True
 
     async def a_send(
-            self,
-            message: Optional[Dict],
-            recipient: Agent,
-            reviewer: "Agent",
-            request_reply: Optional[bool] = True,
-            silent: Optional[bool] = False,
-            is_recovery: Optional[bool]=False,
+        self,
+        message: Optional[Dict],
+        recipient: Agent,
+        reviewer: "Agent",
+        request_reply: Optional[bool] = True,
+        silent: Optional[bool] = False,
+        is_recovery: Optional[bool] = False,
     ):
-        await recipient.a_receive(message=message, sender=self, reviewer=reviewer, request_reply=request_reply,
-                                  silent=silent, is_recovery=is_recovery)
+        await recipient.a_receive(
+            message=message,
+            sender=self,
+            reviewer=reviewer,
+            request_reply=request_reply,
+            silent=silent,
+            is_recovery=is_recovery,
+        )
 
     def _print_received_message(self, message: Union[Dict, str], sender: Agent):
         # print the message received
-        print(colored(sender.name, "yellow"), "(to", f"{self.name})-[{message.get('model_name', '')}]:\n", flush=True)
+        print(
+            colored(sender.name, "yellow"),
+            "(to",
+            f"{self.name})-[{message.get('model_name', '')}]:\n",
+            flush=True,
+        )
         message = self._message_to_dict(message)
 
         if message.get("role") == "function":
@@ -303,14 +331,14 @@ class ConversableAgent(Agent):
                 print(colored(action_print, "blue"), flush=True)
         print("\n", "-" * 80, flush=True, sep="")
 
-
-
     def _process_received_message(self, message, sender, silent):
         message = self._message_to_dict(message)
         # When the agent receives a message, the role of the message is "user". (If 'role' exists and is 'function', it will remain unchanged.)
         valid = self.append_message(message, None, sender)
         if not valid:
-            raise ValueError("Received message can't be converted into a valid ChatCompletion message. Either content or function_call must be provided.")
+            raise ValueError(
+                "Received message can't be converted into a valid ChatCompletion message. Either content or function_call must be provided."
+            )
         if not silent:
             self._print_received_message(message, sender)
 
@@ -318,7 +346,6 @@ class ConversableAgent(Agent):
         return True, None
 
     def _process_action_reply(self, action_reply: Optional[Union[str, Dict, None]]):
-
         if isinstance(action_reply, str):
             return {"is_exe_success": True, "content": action_reply}
         elif isinstance(action_reply, dict):
@@ -328,7 +355,9 @@ class ConversableAgent(Agent):
         else:
             return dict(action_reply)
 
-    def _gpts_message_to_ai_message(self, gpts_messages:List[GptsMessage])->List[Dict]:
+    def _gpts_message_to_ai_message(
+        self, gpts_messages: List[GptsMessage]
+    ) -> List[Dict]:
         oai_messages: list[dict] = []
         ###Based on the current agent, all messages received are user, and all messages sent are assistant.
         for item in gpts_messages:
@@ -342,20 +371,30 @@ class ConversableAgent(Agent):
                     role = ModelMessageRoleType.AI
                 else:
                     continue
-            oai_messages.append({
-                "content": item.content,
-                "role": role,
-                "context": json.loads(item.context) if item.context is not None else None,
-                "review_info": json.loads(item.review_info) if item.review_info is not None else None,
-                "action_report": json.loads(item.action_report) if item.action_report is not None else None,
-            })
+            oai_messages.append(
+                {
+                    "content": item.content,
+                    "role": role,
+                    "context": json.loads(item.context)
+                    if item.context is not None
+                    else None,
+                    "review_info": json.loads(item.review_info)
+                    if item.review_info is not None
+                    else None,
+                    "action_report": json.loads(item.action_report)
+                    if item.action_report is not None
+                    else None,
+                }
+            )
         return oai_messages
 
-
-
-    def process_now_message(self, sender, current_gogal:Optional[str] = None):
+    def process_now_message(self, sender, current_gogal: Optional[str] = None):
         ### Convert and tailor the information in collective memory into contextual memory available to the current Agent
-        current_gogal_messages = self._gpts_message_to_ai_message(self.memory.message_memory.get_between_agents(self.agent_context.conv_id, self.name, sender.name, current_gogal))
+        current_gogal_messages = self._gpts_message_to_ai_message(
+            self.memory.message_memory.get_between_agents(
+                self.agent_context.conv_id, self.name, sender.name, current_gogal
+            )
+        )
 
         ### relay messages
         cut_messages = []
@@ -373,35 +412,35 @@ class ConversableAgent(Agent):
     async def a_system_fill_param(self):
         self.update_system_message(self.DEFAULT_SYSTEM_MESSAGE)
 
-    async def a_generate_reply(self,
-                      message: Optional[Dict],
-                      sender: Agent,
-                      reviewer: "Agent",
-                      silent: Optional[bool] = False,
-                      ):
+    async def a_generate_reply(
+        self,
+        message: Optional[Dict],
+        sender: Agent,
+        reviewer: "Agent",
+        silent: Optional[bool] = False,
+    ):
         ## 0.New message build
         new_message = {}
-        new_message['context'] = message.get('context', None)
-        new_message['current_gogal'] = message.get('current_gogal', None)
+        new_message["context"] = message.get("context", None)
+        new_message["current_gogal"] = message.get("current_gogal", None)
 
         ## 1.LLM Reasonging
         await self.a_system_fill_param()
         await asyncio.sleep(5)  ##TODO  Rate limit reached for gpt-3.5-turbo
-        current_messages = self.process_now_message(sender,  message.get("current_gogal", None))
-        if current_messages is None or len(current_messages) <=0:
+        current_messages = self.process_now_message(
+            sender, message.get("current_gogal", None)
+        )
+        if current_messages is None or len(current_messages) <= 0:
             current_messages = [message]
         ai_reply, model = await self.a_reasoning_reply(messages=current_messages)
-        new_message['content'] = ai_reply
-        new_message['model_name'] = model
+        new_message["content"] = ai_reply
+        new_message["model_name"] = model
         ## 2.Review of reasoning results
         approve = True
         comments = None
         if reviewer and ai_reply:
             approve, comments = await reviewer.a_review(ai_reply, self)
-        new_message['review_info'] = {
-            "approve": approve,
-            "comments": comments
-        }
+        new_message["review_info"] = {"approve": approve, "comments": comments}
         ## 3.reasoning result action
         if approve:
             excute_reply = await self.a_action_reply(
@@ -409,58 +448,67 @@ class ConversableAgent(Agent):
                 sender=sender,
                 reviewer=reviewer,
             )
-            new_message['action_report'] = self._process_action_reply(excute_reply)
+            new_message["action_report"] = self._process_action_reply(excute_reply)
         ## 4.核对回答
         return await self.a_verify_reply(new_message, sender, reviewer)
 
     async def a_receive(
-            self,
-            message: Optional[Dict],
-            sender: Agent,
-            reviewer: "Agent",
-            request_reply: Optional[bool] = True,
-            silent: Optional[bool] = False,
-            is_recovery: Optional[bool] = False,
+        self,
+        message: Optional[Dict],
+        sender: Agent,
+        reviewer: "Agent",
+        request_reply: Optional[bool] = True,
+        silent: Optional[bool] = False,
+        is_recovery: Optional[bool] = False,
     ):
-
         if not is_recovery:
-            self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter + 1
+            self.consecutive_auto_reply_counter = (
+                sender.consecutive_auto_reply_counter + 1
+            )
             self._process_received_message(message, sender, silent)
 
         else:
             logger.info("Process received retrying")
             self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter
-        if (request_reply is False or request_reply is None):
+        if request_reply is False or request_reply is None:
             logger.info("Messages that do not require a reply")
             return
 
-        verify_paas, reply = await self.a_generate_reply(message=message, sender=sender, reviewer=reviewer, silent=silent)
+        verify_paas, reply = await self.a_generate_reply(
+            message=message, sender=sender, reviewer=reviewer, silent=silent
+        )
 
         if verify_paas:
-            await self.a_send(message=reply, recipient=sender, reviewer=reviewer,  silent=silent)
+            await self.a_send(
+                message=reply, recipient=sender, reviewer=reviewer, silent=silent
+            )
         else:
             self._current_retry_counter += 1
-            logger.info("The generated answer failed to verify, so send it to yourself for optimization.")
+            logger.info(
+                "The generated answer failed to verify, so send it to yourself for optimization."
+            )
             ### TODO 自优化最大轮次后，异常退出
-            await sender.a_send(message=reply, recipient=self, reviewer=reviewer,  silent=silent)
+            await sender.a_send(
+                message=reply, recipient=self, reviewer=reviewer, silent=silent
+            )
 
     async def a_verify(self, message: Optional[Dict]):
-        return True,message
+        return True, message
 
     async def _optimization_check(self, message: Optional[Dict]):
         need_retry = False
         fail_reason = ""
         ## Check approval results
         if "review_info" in message:
-            review_info = message.get('review_info')
-            if review_info and not review_info.get('approve'):
-                fail_reason =  review_info.get('comments')
+            review_info = message.get("review_info")
+            if review_info and not review_info.get("approve"):
+                fail_reason = review_info.get("comments")
                 need_retry = True
         ## Check execution results
         if "action_report" in message and not need_retry:
-            action_report = message['action_report']
+            action_report = message["action_report"]
             if action_report:
-                if not action_report['is_exe_success']:
+                if not action_report["is_exe_success"]:
                     fail_reason = action_report["content"]
                     need_retry = True
         ##  Verify the correctness of the results
@@ -471,17 +519,24 @@ class ConversableAgent(Agent):
                 fail_reason = verfiy_msg
         return need_retry, fail_reason
 
-    async def a_verify_reply(self, message: Optional[Dict], sender: "Agent", reviewer: "Agent", **kwargs) -> Union[str, Dict, None]:
+    async def a_verify_reply(
+        self, message: Optional[Dict], sender: "Agent", reviewer: "Agent", **kwargs
+    ) -> Union[str, Dict, None]:
         need_retry, fail_reason = await self._optimization_check(message)
         if need_retry:
             ## Before optimization, wrong answers are stored in memory
-            await self.a_send(message=message, recipient=sender, reviewer=reviewer, request_reply=False)
+            await self.a_send(
+                message=message,
+                recipient=sender,
+                reviewer=reviewer,
+                request_reply=False,
+            )
             ## Send error messages to yourself for retrieval optimization and increase the number of retrievals
-            retry_message ={}
-            retry_message['context'] = message.get('context', None)
-            retry_message['current_gogal'] = message.get('current_gogal', None)
-            retry_message['model_name'] = message.get('model_name', None)
-            retry_message['content'] = fail_reason
+            retry_message = {}
+            retry_message["context"] = message.get("context", None)
+            retry_message["current_gogal"] = message.get("current_gogal", None)
+            retry_message["model_name"] = message.get("model_name", None)
+            retry_message["content"] = fail_reason
             ## Use the original sender to send the retry message to yourself
             return False, retry_message
         else:
@@ -489,38 +544,60 @@ class ConversableAgent(Agent):
             self._current_retry_counter = 0
             return True, message
 
-
     async def a_retry_chat(
-            self,
-            recipient: "ConversableAgent",
-            agent_map: dict,
-            reviewer: "Agent" = None,
-            clear_history: Optional[bool] = True,
-            silent: Optional[bool] = False,
-            **context
+        self,
+        recipient: "ConversableAgent",
+        agent_map: dict,
+        reviewer: "Agent" = None,
+        clear_history: Optional[bool] = True,
+        silent: Optional[bool] = False,
+        **context,
     ):
-        last_message: GptsMessage = self.memory.message_memory.get_last_message(self.agent_context.conv_id)
+        last_message: GptsMessage = self.memory.message_memory.get_last_message(
+            self.agent_context.conv_id
+        )
         self.consecutive_auto_reply_counter = last_message.rounds
         message = {
             "content": last_message.content,
-            "context": json.loads(last_message.context) if last_message.context else None,
+            "context": json.loads(last_message.context)
+            if last_message.context
+            else None,
             "current_gogal": last_message.current_gogal,
-            "review_info": json.loads(last_message.review_info) if last_message.review_info else None,
-            "action_report": json.loads(last_message.action_report) if last_message.action_report else None,
-            "model_name": last_message.model_name
+            "review_info": json.loads(last_message.review_info)
+            if last_message.review_info
+            else None,
+            "action_report": json.loads(last_message.action_report)
+            if last_message.action_report
+            else None,
+            "model_name": last_message.model_name,
         }
-        await self.a_send(message, recipient, reviewer,request_reply=True, silent=silent, is_recovery=True)
-
+        await self.a_send(
+            message,
+            recipient,
+            reviewer,
+            request_reply=True,
+            silent=silent,
+            is_recovery=True,
+        )
 
     async def a_initiate_chat(
-            self,
-            recipient: "ConversableAgent",
-            reviewer: "Agent" = None,
-            clear_history: Optional[bool] = True,
-            silent: Optional[bool] = False,
-            **context,
+        self,
+        recipient: "ConversableAgent",
+        reviewer: "Agent" = None,
+        clear_history: Optional[bool] = True,
+        silent: Optional[bool] = False,
+        **context,
     ):
-        await self.a_send({"content": self.generate_init_message(**context), "current_gogal": self.generate_init_message(**context)}, recipient, reviewer,request_reply=True, silent=silent)
+        await self.a_send(
+            {
+                "content": self.generate_init_message(**context),
+                "current_gogal": self.generate_init_message(**context),
+            },
+            recipient,
+            reviewer,
+            request_reply=True,
+            silent=silent,
+        )
 
     def reset(self):
         """Reset the agent."""
@@ -533,11 +610,9 @@ class ConversableAgent(Agent):
             else:
                 reply_func_tuple["config"] = copy.copy(reply_func_tuple["init_config"])
 
-
     def reset_consecutive_auto_reply_counter(self):
         """Reset the consecutive_auto_reply_counter of the sender."""
         self.consecutive_auto_reply_counter = 0
-
 
     def clear_history(self, agent: Optional[Agent] = None):
         """Clear the chat history of the agent.
@@ -559,7 +634,7 @@ class ConversableAgent(Agent):
         """
         all_modes = self.agent_context.llm_models
         model_priority = self.model_priority
-        if model_priority  and len(model_priority) >0:
+        if model_priority and len(model_priority) > 0:
             for model in model_priority:
                 if old_model and model == old_model:
                     continue
@@ -568,16 +643,16 @@ class ConversableAgent(Agent):
 
         if old_model:
             filtered_list = [item for item in all_modes if item != old_model]
-            if filtered_list  and len(filtered_list) >= 1:
-                return  filtered_list[0]
+            if filtered_list and len(filtered_list) >= 1:
+                return filtered_list[0]
             else:
                 return all_modes[0]
         else:
             return all_modes[0]
 
     async def a_reasoning_reply(
-        self,
-        messages: Union[List[Dict]]) -> Union[str, Dict, None]:
+        self, messages: Union[List[Dict]]
+    ) -> Union[str, Dict, None]:
         """(async) Reply based on the conversation history and the sender.
         Args:
             messages: a list of messages in the conversation history.
@@ -592,31 +667,34 @@ class ConversableAgent(Agent):
         last_err = None
         retry_count = 0
         while retry_count < 3:
-            llm_model =self._select_llm_model(last_model)
+            llm_model = self._select_llm_model(last_model)
             try:
-                response = await  self.client.create(
+                response = await self.client.create(
                     context=messages[-1].pop("context", None),
                     messages=self._oai_system_message + messages,
                     llm_model=llm_model,
                     max_new_tokens=self.agent_context.max_new_tokens,
-                    temperature=self.agent_context.temperature
+                    temperature=self.agent_context.temperature,
                 )
-                return  response, llm_model
+                return response, llm_model
             except LLMChatError as e:
-                logger.error(f"model:{llm_model} generate Failed!{str(e)}" )
-                retry_count +=1
+                logger.error(f"model:{llm_model} generate Failed!{str(e)}")
+                retry_count += 1
                 last_model = llm_model
-                last_err  = str(e)
-                await asyncio.sleep(10) ## TODO，Rate limit reached for gpt-3.5-turbo
+                last_err = str(e)
+                await asyncio.sleep(10)  ## TODO，Rate limit reached for gpt-3.5-turbo
 
         if last_err:
             raise ValueError(last_err)
 
-
-    async def a_action_reply(self, message: Optional[str] = None,
-                                      sender: Optional[Agent] = None,
-                                      reviewer: "Agent" = None,
-                                      exclude: Optional[List[Callable]] = None, **kwargs) -> Union[str, Dict, None]:
+    async def a_action_reply(
+        self,
+        message: Optional[str] = None,
+        sender: Optional[Agent] = None,
+        reviewer: "Agent" = None,
+        exclude: Optional[List[Callable]] = None,
+        **kwargs,
+    ) -> Union[str, Dict, None]:
         for reply_func_tuple in self._reply_func_list:
             reply_func = reply_func_tuple["reply_func"]
             if exclude and reply_func in exclude:

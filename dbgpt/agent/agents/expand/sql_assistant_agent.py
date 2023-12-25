@@ -1,16 +1,19 @@
-from dbgpt.agent.agents.base_agent  import ConversableAgent
+from dbgpt.agent.agents.base_agent import ConversableAgent
 from typing import Callable, Dict, List, Literal, Optional, Union
 
 from ..agent import Agent
 from ...memory.gpts_memory import GptsMemory
 from ...commands.command_mange import ApiCall
 from dbgpt.core.awel import BaseOperator
+
 try:
     from termcolor import colored
 except ImportError:
 
     def colored(x, *args, **kwargs):
         return x
+
+
 from dbgpt._private.config import Config
 
 CFG = Config()
@@ -40,18 +43,18 @@ class SQLAssistantAgent(ConversableAgent):
     DEFAULT_DESCRIBE = """You can analyze data with a known structure through SQL and generate a single analysis chart for a given target. Please note that you do not have the ability to obtain and process data and can only perform data analysis based on a given structure. If the task goal cannot or does not need to be solved by SQL analysis, please do not use"""
 
     NAME = "SqlEngineer"
-    def __init__(
-            self,
-            memory: GptsMemory,
-            agent_context: 'AgentContext',
-            llm_operator: Optional[BaseOperator] = None,
-            model_priority: Optional[List[str]] = None,
-            describe: Optional[str] = DEFAULT_DESCRIBE,
-            is_termination_msg: Optional[Callable[[Dict], bool]] = None,
-            max_consecutive_auto_reply: Optional[int] = None,
-            human_input_mode: Optional[str] = "NEVER",
 
-            **kwargs,
+    def __init__(
+        self,
+        memory: GptsMemory,
+        agent_context: "AgentContext",
+        llm_operator: Optional[BaseOperator] = None,
+        model_priority: Optional[List[str]] = None,
+        describe: Optional[str] = DEFAULT_DESCRIBE,
+        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
+        max_consecutive_auto_reply: Optional[int] = None,
+        human_input_mode: Optional[str] = "NEVER",
+        **kwargs,
     ):
         super().__init__(
             name=self.NAME,
@@ -66,27 +69,26 @@ class SQLAssistantAgent(ConversableAgent):
             agent_context=agent_context,
             **kwargs,
         )
-        self.register_reply(
-            Agent,
-            SQLAssistantAgent.generate_analysis_chart_reply
-        )
+        self.register_reply(Agent, SQLAssistantAgent.generate_analysis_chart_reply)
         self.agent_context = agent_context
-        self.db_connect = CFG.LOCAL_DB_MANAGE.get_connect(self.agent_context.resource_db.get('name', None))
+        self.db_connect = CFG.LOCAL_DB_MANAGE.get_connect(
+            self.agent_context.resource_db.get("name", None)
+        )
 
     async def a_system_fill_param(self):
         params = {
             "data_structure": self.db_connect.get_table_info(),
             "disply_type": ApiCall.default_chart_type_promot(),
-            "dialect": self.db_connect.db_type
+            "dialect": self.db_connect.db_type,
         }
         self.update_system_message(self.DEFAULT_SYSTEM_MESSAGE.format(**params))
 
     async def generate_analysis_chart_reply(
-            self,
-            message: Optional[str] = None,
-            sender: Optional[Agent] = None,
-            reviewer: "Agent" = None,
-            config: Optional[Union[Dict, Literal[False]]] = None,
+        self,
+        message: Optional[str] = None,
+        sender: Optional[Agent] = None,
+        reviewer: "Agent" = None,
+        config: Optional[Union[Dict, Literal[False]]] = None,
     ):
         """Generate a reply using code execution."""
 
@@ -98,14 +100,15 @@ class SQLAssistantAgent(ConversableAgent):
         if self.api_call.check_have_plugin_call(message):
             exit_success = True
             try:
-                chart_vis = self.api_call.display_sql_llmvis(message, self.db_connect.run_to_df)
+                chart_vis = self.api_call.display_sql_llmvis(
+                    message, self.db_connect.run_to_df
+                )
             except Exception as e:
                 err_info = f"{str(e)}"
                 exit_success = False
-            output = chart_vis if exit_success else  err_info
+            output = chart_vis if exit_success else err_info
         else:
             exit_success = False
             output = message
 
-        return True, {"is_exe_success": exit_success,
-                      "content": f"{output}"}
+        return True, {"is_exe_success": exit_success, "content": f"{output}"}

@@ -28,13 +28,13 @@ class Command:
     """
 
     def __init__(
-            self,
-            name: str,
-            description: str,
-            method: Callable[..., Any],
-            signature: str = "",
-            enabled: bool = True,
-            disabled_reason: Optional[str] = None,
+        self,
+        name: str,
+        description: str,
+        method: Callable[..., Any],
+        signature: str = "",
+        enabled: bool = True,
+        disabled_reason: Optional[str] = None,
     ):
         self.name = name
         self.description = description
@@ -130,23 +130,23 @@ class CommandRegistry:
             attr = getattr(module, attr_name)
             # Register decorated functions
             if hasattr(attr, AUTO_GPT_COMMAND_IDENTIFIER) and getattr(
-                    attr, AUTO_GPT_COMMAND_IDENTIFIER
+                attr, AUTO_GPT_COMMAND_IDENTIFIER
             ):
                 self.register(attr.command)
             # Register command classes
             elif (
-                    inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
+                inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
             ):
                 cmd_instance = attr()
                 self.register(cmd_instance)
 
 
 def command(
-        name: str,
-        description: str,
-        signature: str = "",
-        enabled: bool = True,
-        disabled_reason: Optional[str] = None,
+    name: str,
+    description: str,
+    signature: str = "",
+    enabled: bool = True,
+    disabled_reason: Optional[str] = None,
 ) -> Callable[..., Any]:
     """The command decorator is used to create Command objects from ordinary functions."""
 
@@ -194,10 +194,10 @@ class ApiCall:
     name_end = "</name>"
 
     def __init__(
-            self,
-            plugin_generator: Any = None,
-            display_registry: Any = None,
-            backend_rendering: bool = False,
+        self,
+        plugin_generator: Any = None,
+        display_registry: Any = None,
+        backend_rendering: bool = False,
     ):
         # self.name: str = ""
         # self.status: Status = Status.TODO.value
@@ -405,7 +405,7 @@ class ApiCall:
                             value.api_result = execute_command(
                                 value.name, value.args, self.plugin_generator
                             )
-                            value.status = Status.COMPLETED.value
+                            value.status = Status.COMPLETE.value
                         except Exception as e:
                             value.status = Status.FAILED.value
                             value.err_msg = str(e)
@@ -437,7 +437,7 @@ class ApiCall:
                                         "response_table", **param
                                     )
 
-                            value.status = Status.COMPLETED.value
+                            value.status = Status.COMPLETE.value
                         except Exception as e:
                             value.status = Status.FAILED.value
                             value.err_msg = str(e)
@@ -475,12 +475,13 @@ class ApiCall:
                                             date_unit="s",
                                         )
                                     )
-                                    value.status = Status.COMPLETED.value
+                                    value.status = Status.COMPLETE.value
                                 else:
                                     value.status = Status.FAILED.value
                                     value.err_msg = "No executable sql！"
 
                             except Exception as e:
+                                logging.error(f"data prepare exception！{str(e)}")
                                 value.status = Status.FAILED.value
                                 value.err_msg = str(e)
                             value.end_time = datetime.now().timestamp() * 1000
@@ -490,18 +491,15 @@ class ApiCall:
 
         return self.api_view_context(llm_text, True)
 
-    def display_only_sql_vis(self, sql_chart: dict, sql_2_df_func):
-
+    def display_only_sql_vis(self, chart: dict, sql_2_df_func):
         err_msg = None
         try:
-
-
+            sql = chart.get("sql", None)
             param = {}
             df = sql_2_df_func(sql)
             if not sql or len(sql) <= 0:
                 return None
 
-            sql = chart.get("sql", None)
             param["sql"] = sql
             param["type"] = chart.get("display_type", "response_table")
             param["title"] = chart.get("title", "")
@@ -528,16 +526,15 @@ class ApiCall:
         else:
             return result
 
-    def display_dashboard_vis(self, charts: List[dict], sql_2_df_func):
-
+    def display_dashboard_vis(self, charts: List[dict], sql_2_df_func, title:str=None):
         err_msg = None
         view_json_str = None
+
+        chart_items = []
         try:
             if not charts or len(charts) <= 0:
                 return f"""Have no chart data!"""
-            charts_info = []
             for chart in charts:
-
                 param = {}
                 sql = chart.get("sql", "")
                 param["sql"] = sql
@@ -552,9 +549,16 @@ class ApiCall:
                 except Exception as e:
                     param["data"] = []
                     param["err_msg"] = str(e)
+                chart_items.append(f"```vis-chart-item\n{json.dumps(param, default=serialize, ensure_ascii=False)}\n```")
 
-                charts_info.append(param)
-            view_json_str = json.dumps(charts_info, default=serialize, ensure_ascii=False)
+            dashboard_param = {
+                "markdown": json.dumps(chart_items,  default=serialize, ensure_ascii=False),
+                "chart_count": len(chart_items),
+                "title": title
+            }
+            view_json_str = json.dumps(
+                dashboard_param, default=serialize, ensure_ascii=False
+            )
 
         except Exception as e:
             logger.error("parse_view_response error!" + str(e))
@@ -562,7 +566,9 @@ class ApiCall:
 
         result = f"```vis-dashboard\n{view_json_str}\n```"
         if err_msg:
-            return f"""\\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result}"""
+            return (
+                f"""\\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result}"""
+            )
         else:
             return result
 

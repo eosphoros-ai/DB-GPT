@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 LLM_DEFAULT_RESPONSE_FORMAT = "llm_response_format_1"
 
 
-
 def serialize(obj):
     if isinstance(obj, date):
         return obj.isoformat()
@@ -46,8 +45,6 @@ def extract_char_position(error_message: str) -> int:
         raise ValueError("Character position not found in the error message.")
 
 
-
-
 def find_json_objects(text):
     json_objects = []
     inside_string = False
@@ -73,13 +70,13 @@ def find_json_objects(text):
             char = "\\t"
 
         # Handle opening brackets
-        if char in '{[' and not inside_string:
+        if char in "{[" and not inside_string:
             stack.append(char)
             if len(stack) == 1:
                 start_index = i
         # Handle closing brackets
-        if char in '}]' and not inside_string and stack:
-            if (char == '}' and stack[-1] == '{') or (char == ']' and stack[-1] == '['):
+        if char in "}]" and not inside_string and stack:
+            if (char == "}" and stack[-1] == "{") or (char == "]" and stack[-1] == "["):
                 stack.pop()
                 if not stack:
                     end_index = i + 1

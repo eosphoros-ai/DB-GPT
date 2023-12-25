@@ -46,7 +46,6 @@ from dbgpt.util.executor_utils import (
 )
 
 
-
 router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()
@@ -182,8 +181,6 @@ async def test_connect(db_config: DBConfig = Body()):
         return Result.succ(True)
     except Exception as e:
         return Result.failed(code="E1001", msg=str(e))
-
-
 
 
 @router.post("/v1/chat/db/summary", response_model=Result[bool])

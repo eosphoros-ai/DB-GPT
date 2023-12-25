@@ -52,7 +52,6 @@ class Agent:
     ):
         """(Abstract async method) Send a message to another agent."""
 
-
     async def a_receive(
         self,
         message: Union[Dict],
@@ -64,9 +63,7 @@ class Agent:
     ):
         """(Abstract async method) Receive a message from another agent."""
 
-
-
-    async def a_review(self,   message: Union[Dict, str], censored:"Agent"):
+    async def a_review(self, message: Union[Dict, str], censored: "Agent"):
         """
 
         Args:
@@ -79,7 +76,6 @@ class Agent:
 
     def reset(self):
         """(Abstract method) Reset the agent."""
-
 
     async def a_generate_reply(
         self,
@@ -99,8 +95,8 @@ class Agent:
         """
 
     async def a_reasoning_reply(
-        self,
-        messages: Union[List[str]])-> Union[str, Dict, None]:
+        self, messages: Union[List[str]]
+    ) -> Union[str, Dict, None]:
         """
         Based on the requirements of the current agent, reason about the current task goal through LLM
         Args:
@@ -109,7 +105,6 @@ class Agent:
         Returns:
             str or dict or None: the generated reply. If None, no reply is generated.
         """
-
 
     async def a_action_reply(
         self,
@@ -154,7 +149,8 @@ class AgentResource:
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> AgentResource:
-        if d is None: return None
+        if d is None:
+            return None
         return AgentResource(
             type=d.get("type"),
             name=d.get("name"),
@@ -163,6 +159,7 @@ class AgentResource:
 
     def to_dict(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)
+
 
 @dataclass
 class AgentContext:
@@ -177,10 +174,9 @@ class AgentContext:
 
     max_chat_round: Optional[int] = 100
     max_retry_round: Optional[int] = 10
-    max_new_tokens:Optional[int] = 1024
-    temperature:Optional[float] = 0.5
-    allow_format_str_template:Optional[bool] = False
-
+    max_new_tokens: Optional[int] = 1024
+    temperature: Optional[float] = 0.5
+    allow_format_str_template: Optional[bool] = False
 
     def to_dict(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)

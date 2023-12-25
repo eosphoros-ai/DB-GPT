@@ -52,7 +52,8 @@ app = FastAPI(
     title="DBGPT OPEN API",
     description="This is dbgpt, with auto docs for the API and everything",
     version="0.5.0",
-    openapi_tags=[],)
+    openapi_tags=[],
+)
 # applications.get_swagger_ui_html = swagger_monkey_patch
 
 system_app = SystemApp(app)

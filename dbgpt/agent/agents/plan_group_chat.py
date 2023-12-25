@@ -73,12 +73,17 @@ class PlanChat:
     Read the following conversation.
     Then select the next role from {[agent.name for agent in agents]} to play. The role can be selected repeatedly.Only return the role."""
 
-
-    async def a_select_speaker(self, last_speaker: Agent, selector: ConversableAgent, now_plan_context: str, pre_allocated: str = None):
+    async def a_select_speaker(
+        self,
+        last_speaker: Agent,
+        selector: ConversableAgent,
+        now_plan_context: str,
+        pre_allocated: str = None,
+    ):
         """Select the next speaker."""
         if (
-                self.speaker_selection_method.lower()
-                not in self._VALID_SPEAKER_SELECTION_METHODS
+            self.speaker_selection_method.lower()
+            not in self._VALID_SPEAKER_SELECTION_METHODS
         ):
             raise ValueError(
                 f"GroupChat speaker_selection_method is set to '{self.speaker_selection_method}'. "
@@ -90,9 +95,9 @@ class PlanChat:
         # Warn if GroupChat is underpopulated
 
         if (
-                n_agents <= 2
-                and self.speaker_selection_method.lower() != "round_robin"
-                and self.allow_repeat_speaker
+            n_agents <= 2
+            and self.speaker_selection_method.lower() != "round_robin"
+            and self.allow_repeat_speaker
         ):
             logger.warning(
                 f"GroupChat is underpopulated with {n_agents} agents. "
@@ -132,7 +137,7 @@ class PlanChat:
                         "content": f"""Read and understand the following task content and assign the appropriate role to complete the task.
                                     Task content: {now_plan_context}
                                     select the role from: {[agent.name for agent in agents]},
-                                    Please only return the role, such as: {agents[0].name}"""
+                                    Please only return the role, such as: {agents[0].name}""",
                     }
                 ]
             )
@@ -165,9 +170,11 @@ class PlanChat:
         mentions = dict()
         for agent in agents:
             regex = (
-                    r"(?<=\W)" + re.escape(agent.name) + r"(?=\W)"
+                r"(?<=\W)" + re.escape(agent.name) + r"(?=\W)"
             )  # Finds agent mentions, taking word boundaries into account
-            count = len(re.findall(regex, " " + message_content + " "))  # Pad the message to help with matching
+            count = len(
+                re.findall(regex, " " + message_content + " ")
+            )  # Pad the message to help with matching
             if count > 0:
                 mentions[agent.name] = count
         return mentions
@@ -203,19 +210,21 @@ class PlanChat:
 
 class PlanChatManager(ConversableAgent):
     """(In preview) A chat manager agent that can manage a group chat of multiple agents."""
+
     NAME = "plan_manager"
+
     def __init__(
-            self,
-            plan_chat: PlanChat,
-            planner: Agent,
-            memory: GptsMemory,
-            llm_operator: Optional[BaseOperator] = None,
-            # unlimited consecutive auto reply by default
-            max_consecutive_auto_reply: Optional[int] = sys.maxsize,
-            human_input_mode: Optional[str] = "NEVER",
-            describe: Optional[str] = "Plan chat manager.",
-            agent_context: 'AgentContext' = None,
-            **kwargs,
+        self,
+        plan_chat: PlanChat,
+        planner: Agent,
+        memory: GptsMemory,
+        llm_operator: Optional[BaseOperator] = None,
+        # unlimited consecutive auto reply by default
+        max_consecutive_auto_reply: Optional[int] = sys.maxsize,
+        human_input_mode: Optional[str] = "NEVER",
+        describe: Optional[str] = "Plan chat manager.",
+        agent_context: "AgentContext" = None,
+        **kwargs,
     ):
         super().__init__(
             name=self.NAME,
@@ -240,37 +249,46 @@ class PlanChatManager(ConversableAgent):
         self.planner = planner
 
     async def a_reasoning_reply(
-        self,
-        messages: Union[List[Dict]]) -> Union[str, Dict, None]:
-        if messages is None or len(messages)<=0:
+        self, messages: Union[List[Dict]]
+    ) -> Union[str, Dict, None]:
+        if messages is None or len(messages) <= 0:
             message = None
             return None, None
         else:
             message = messages[-1]
             self.plan_chat.messages.append(message)
-            return message['content'], None
+            return message["content"], None
 
-    async def a_process_rely_message(self, conv_id: str, now_plan: GptsPlan, speaker: ConversableAgent):
+    async def a_process_rely_message(
+        self, conv_id: str, now_plan: GptsPlan, speaker: ConversableAgent
+    ):
         speaker.reset_rely_message()
         if now_plan.rely and len(now_plan.rely) > 0:
             rely_tasks_list = now_plan.rely.split(",")
-            rely_tasks = self.memory.plans_memory.get_by_conv_id_and_num(conv_id, rely_tasks_list)
+            rely_tasks = self.memory.plans_memory.get_by_conv_id_and_num(
+                conv_id, rely_tasks_list
+            )
             if rely_tasks:
                 rely_task_count = len(rely_tasks)
                 for rely_task in rely_tasks:
-                    speaker.append_rely_message({"content": rely_task.sub_task_content}, "user")
-                    speaker.append_rely_message({"content": rely_task.result}, "assistant")
+                    speaker.append_rely_message(
+                        {"content": rely_task.sub_task_content}, "user"
+                    )
+                    speaker.append_rely_message(
+                        {"content": rely_task.result}, "assistant"
+                    )
 
-
-    async def a_verify_reply(self, message: Optional[Dict], sender: "Agent", reviewer: "Agent", **kwargs) -> Union[str, Dict, None]:
+    async def a_verify_reply(
+        self, message: Optional[Dict], sender: "Agent", reviewer: "Agent", **kwargs
+    ) -> Union[str, Dict, None]:
         return True, message
 
     async def a_run_chat(
-            self,
-            message: Optional[str] = None,
-            sender: Optional[Agent] = None,
-            reviewer: Agent = None,
-            config: Optional[PlanChat] = None,
+        self,
+        message: Optional[str] = None,
+        sender: Optional[Agent] = None,
+        reviewer: Agent = None,
+        config: Optional[PlanChat] = None,
     ):
         """Run a group chat asynchronously."""
 
@@ -283,18 +301,32 @@ class PlanChatManager(ConversableAgent):
             plans = self.memory.plans_memory.get_by_conv_id(self.agent_context.conv_id)
             if not plans or len(plans) <= 0:
                 ###Have no plan, generate a new plan TODO init plan use planmanger
-                await self.a_send({"content": message, "current_gogal": message}, self.planner, reviewer,
-                                  request_reply=False)
-                verify_pass, reply = await self.planner.a_generate_reply({"content": message, "current_gogal": message},
-                                                                         self, reviewer)
+                await self.a_send(
+                    {"content": message, "current_gogal": message},
+                    self.planner,
+                    reviewer,
+                    request_reply=False,
+                )
+                verify_pass, reply = await self.planner.a_generate_reply(
+                    {"content": message, "current_gogal": message}, self, reviewer
+                )
 
-                await self.planner.a_send(message=reply, recipient=self, reviewer=reviewer, request_reply=False)
+                await self.planner.a_send(
+                    message=reply,
+                    recipient=self,
+                    reviewer=reviewer,
+                    request_reply=False,
+                )
                 if not verify_pass:
                     final_message = reply
                     if i > 10:
                         break
             else:
-                todo_plans = [plan for plan in plans if plan.state in [Status.TODO.value, Status.RETRYING.value]]
+                todo_plans = [
+                    plan
+                    for plan in plans
+                    if plan.state in [Status.TODO.value, Status.RETRYING.value]
+                ]
                 if not todo_plans or len(todo_plans) <= 0:
                     ### The plan has been fully executed and a success message is sent to the user.
                     # complete
@@ -312,13 +344,22 @@ class PlanChatManager(ConversableAgent):
                                     "context": {
                                         "plan_task": now_plan.sub_task_content,
                                         "plan_task_num": now_plan.sub_task_num,
-                                    }
+                                    },
                                 }
                             else:
-                                self.memory.plans_memory.update_task(self.agent_context.conv_id, now_plan.sub_task_num,
-                                                                     Status.FAILED.value, now_plan.retry_times + 1,
-                                                                     speaker.name, "", plan_result)
-                                faild_report = {"content": f"ReTask [{now_plan.sub_task_content}] was retried more than the maximum number of times and still failed.{now_plan.result}", "is_exe_success": False}
+                                self.memory.plans_memory.update_task(
+                                    self.agent_context.conv_id,
+                                    now_plan.sub_task_num,
+                                    Status.FAILED.value,
+                                    now_plan.retry_times + 1,
+                                    speaker.name,
+                                    "",
+                                    plan_result,
+                                )
+                                faild_report = {
+                                    "content": f"ReTask [{now_plan.sub_task_content}] was retried more than the maximum number of times and still failed.{now_plan.result}",
+                                    "is_exe_success": False,
+                                }
                                 return True, faild_report
                         else:
                             current_goal_message = {
@@ -327,44 +368,78 @@ class PlanChatManager(ConversableAgent):
                                 "context": {
                                     "plan_task": now_plan.sub_task_content,
                                     "plan_task_num": now_plan.sub_task_num,
-                                }
+                                },
                             }
 
-
                         # select the next speaker
-                        speaker, model = await groupchat.a_select_speaker(speaker, self, now_plan.sub_task_content, now_plan.sub_task_agent)
+                        speaker, model = await groupchat.a_select_speaker(
+                            speaker,
+                            self,
+                            now_plan.sub_task_content,
+                            now_plan.sub_task_agent,
+                        )
                         # Tell the speaker the dependent history information
 
-                        await self.a_process_rely_message(conv_id=self.agent_context.conv_id, now_plan=now_plan,speaker=speaker)
+                        await self.a_process_rely_message(
+                            conv_id=self.agent_context.conv_id,
+                            now_plan=now_plan,
+                            speaker=speaker,
+                        )
 
                         is_recovery = False
                         if message == current_goal_message["content"]:
                             is_recovery = True
-                        await self.a_send(message=current_goal_message, recipient=speaker, reviewer=reviewer, request_reply=False, is_recovery=is_recovery)
-                        verify_pass, reply = await speaker.a_generate_reply(current_goal_message, self, reviewer)
+                        await self.a_send(
+                            message=current_goal_message,
+                            recipient=speaker,
+                            reviewer=reviewer,
+                            request_reply=False,
+                            is_recovery=is_recovery,
+                        )
+                        verify_pass, reply = await speaker.a_generate_reply(
+                            current_goal_message, self, reviewer
+                        )
 
                         plan_result = ""
 
-
-                        if verify_pass :
+                        if verify_pass:
                             if reply:
                                 action_report = reply.get("action_report", None)
                                 if action_report:
                                     plan_result = action_report.get("content", "")
                             ### The current planned Agent generation verification is successful
                             ##Plan executed successfully
-                            self.memory.plans_memory.complete_task(self.agent_context.conv_id, now_plan.sub_task_num,plan_result)
-                            await speaker.a_send(reply, self, reviewer, request_reply=False)
+                            self.memory.plans_memory.complete_task(
+                                self.agent_context.conv_id,
+                                now_plan.sub_task_num,
+                                plan_result,
+                            )
+                            await speaker.a_send(
+                                reply, self, reviewer, request_reply=False
+                            )
                         else:
-                            plan_result = reply['content']
-                            self.memory.plans_memory.update_task(self.agent_context.conv_id, now_plan.sub_task_num,
-                                                                 Status.RETRYING.value, now_plan.retry_times + 1,
-                                                                 speaker.name, "", plan_result)
-
-                        final_message = self.last_message(speaker)
+                            plan_result = reply["content"]
+                            self.memory.plans_memory.update_task(
+                                self.agent_context.conv_id,
+                                now_plan.sub_task_num,
+                                Status.RETRYING.value,
+                                now_plan.retry_times + 1,
+                                speaker.name,
+                                "",
+                                plan_result,
+                            )
                     except Exception as e:
-                        logger.error(f"An exception was encountered during the execution of the current plan step.{str(e)}")
-                        error_report = {"content": f"An exception was encountered during the execution of the current plan step.{str(e)}", "is_exe_success": False}
+
+                        logger.exception(
+                            f"An exception was encountered during the execution of the current plan step.{str(e)}"
+                        )
+                        error_report = {
+                            "content": f"An exception was encountered during the execution of the current plan step.{str(e)}",
+                            "is_exe_success": False,
+                        }
                         return True, error_report
 
-        return True, {"content": f"Maximum number of dialogue rounds exceeded.{self.MAX_CONSECUTIVE_AUTO_REPLY}", "is_exe_success": False}
+        return True, {
+            "content": f"Maximum number of dialogue rounds exceeded.{self.MAX_CONSECUTIVE_AUTO_REPLY}",
+            "is_exe_success": False,
+        }

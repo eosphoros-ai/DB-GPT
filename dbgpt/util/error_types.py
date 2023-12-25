@@ -1,9 +1,8 @@
-
-
 class LLMChatError(Exception):
     """
-        llm conversation result generates exception
+    llm conversation result generates exception
     """
+
     def __init__(self, message="LLM Chat Generrate Error!", original_exception=None):
         super().__init__(message)
         self.message = message

@@ -44,7 +44,9 @@ def content_str(content: Union[str, List]) -> str:
         if item["type"] == "text":
             rst += item["text"]
         else:
-            assert isinstance(item, dict) and item["type"] == "image_url", "Wrong content format."
+            assert (
+                isinstance(item, dict) and item["type"] == "image_url"
+            ), "Wrong content format."
             rst += "<image>"
     return rst
 
@@ -53,7 +55,11 @@ def infer_lang(code):
     """infer the language for the code.
     TODO: make it robust.
     """
-    if code.startswith("python ") or code.startswith("pip") or code.startswith("python3 "):
+    if (
+        code.startswith("python ")
+        or code.startswith("pip")
+        or code.startswith("python3 ")
+    ):
         return "sh"
 
     # check if code is a valid python code
@@ -68,7 +74,9 @@ def infer_lang(code):
 # TODO: In the future move, to better support https://spec.commonmark.org/0.30/#fenced-code-blocks
 #       perhaps by using a full Markdown parser.
 def extract_code(
-    text: Union[str, List], pattern: str = CODE_BLOCK_PATTERN, detect_single_line_code: bool = False
+    text: Union[str, List],
+    pattern: str = CODE_BLOCK_PATTERN,
+    detect_single_line_code: bool = False,
 ) -> List[Tuple[str, str]]:
     """Extract code from a text.
 
@@ -107,7 +115,11 @@ def extract_code(
 
 
 if __name__ == "__main__":
-    print(extract_code("""```python import requests from bs4 import BeautifulSoup from datetime import datetime, timedelta  # Define the search query query = "LLM application"  # Define the time range (last week) end_date = datetime.now().strftime("%Y-%m-%d") start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")  # Create the search URL url = f"https://arxiv.org/search/advanced?advanced=&terms-0-operator=AND&terms-0-term={query}&terms-0-field=title&classification-physics_archives=all&classification-include_cross_list=include&date-filter_by=specific_date&date-year=&date-from_date={start_date}&date-to_date={end_date}&date-date_type=submitted_date&abstracts=show&size=200&order=-announced_date_first"  # Send a GET request to the search URL response = requests.get(url)  # Parse the HTML content soup = BeautifulSoup(response.content, "html.parser")  # Find all the paper titles and authors titles = soup.find_all("p", class_="title is-5 mathjax") authors = soup.find_all("p", class_="authors")  # Print the results for i in range(len(titles)):     print(f"Title: {titles[i].text.strip()}")     print(f"Authors: {authors[i].text.strip()}")     print("-------------------------") ```  This code uses the `requests` library to send a GET request to the advanced search page of arXiv. It searches for papers with the specified query ("LLM application") that were submitted in the last week. The code then uses `BeautifulSoup` to parse the HTML content of the search results page and extracts the paper titles and authors. Finally, it prints the titles and authors of the found papers."""))
+    print(
+        extract_code(
+            """```python import requests from bs4 import BeautifulSoup from datetime import datetime, timedelta  # Define the search query query = "LLM application"  # Define the time range (last week) end_date = datetime.now().strftime("%Y-%m-%d") start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")  # Create the search URL url = f"https://arxiv.org/search/advanced?advanced=&terms-0-operator=AND&terms-0-term={query}&terms-0-field=title&classification-physics_archives=all&classification-include_cross_list=include&date-filter_by=specific_date&date-year=&date-from_date={start_date}&date-to_date={end_date}&date-date_type=submitted_date&abstracts=show&size=200&order=-announced_date_first"  # Send a GET request to the search URL response = requests.get(url)  # Parse the HTML content soup = BeautifulSoup(response.content, "html.parser")  # Find all the paper titles and authors titles = soup.find_all("p", class_="title is-5 mathjax") authors = soup.find_all("p", class_="authors")  # Print the results for i in range(len(titles)):     print(f"Title: {titles[i].text.strip()}")     print(f"Authors: {authors[i].text.strip()}")     print("-------------------------") ```  This code uses the `requests` library to send a GET request to the advanced search page of arXiv. It searches for papers with the specified query ("LLM application") that were submitted in the last week. The code then uses `BeautifulSoup` to parse the HTML content of the search results page and extracts the paper titles and authors. Finally, it prints the titles and authors of the found papers."""
+        )
+    )
 
 
 _IMPROVE_FUNCTION_CONFIG = {
@@ -119,12 +131,11 @@ The current implementation of the function is as follows:
 }
 
 
-
 _IMPROVE_CODE_CONFIG = {
     "prompt": """Analyze the code in the following files and return a list of suggestions for improvement{followup}, to achieve the objective of '{objective}'.
 {code}
 """,
-    "model": 'DEFAULT_MODEL',
+    "model": "DEFAULT_MODEL",
     "request_timeout": 900,
 }
 
@@ -153,7 +164,9 @@ def improve_code(files, objective, suggest_only=True, **config):
 """
     params = {**_IMPROVE_CODE_CONFIG, **config}
     followup = "" if suggest_only else " followed by the improved code"
-    response = oai.Completion.create({"objective": objective, "code": code, "followup": followup}, **params)
+    response = oai.Completion.create(
+        {"objective": objective, "code": code, "followup": followup}, **params
+    )
     return oai.Completion.extract_text(response)[0], response["cost"]
 
 
@@ -257,7 +270,9 @@ def execute_code(
             f".\\{filename}" if WIN32 else filename,
         ]
         if WIN32:
-            logger.warning("SIGALRM is not supported on Windows. No timeout will be enforced.")
+            logger.warning(
+                "SIGALRM is not supported on Windows. No timeout will be enforced."
+            )
             result = subprocess.run(
                 cmd,
                 cwd=work_dir,
@@ -362,7 +377,9 @@ def execute_code(
     if original_filename is None:
         os.remove(filepath)
     if exit_code:
-        logs = logs.replace(f"/workspace/{filename if original_filename is None else ''}", "")
+        logs = logs.replace(
+            f"/workspace/{filename if original_filename is None else ''}", ""
+        )
     # return the exit code, logs and image
     return exit_code, logs, f"python:{tag}"
 
@@ -457,9 +474,13 @@ def eval_function_completions(
         for i in range(n):
             response = responses[i] = _remove_check(responses[i])
             code = (
-                f"{response}\n{assertions}" if response.startswith("def") else f"{definition}{response}\n{assertions}"
+                f"{response}\n{assertions}"
+                if response.startswith("def")
+                else f"{definition}{response}\n{assertions}"
             )
-            succeed_assertions = execute_code(code, timeout=timeout, use_docker=use_docker)[0] == 0
+            succeed_assertions = (
+                execute_code(code, timeout=timeout, use_docker=use_docker)[0] == 0
+            )
             if succeed_assertions:
                 break
     else:
@@ -545,12 +566,12 @@ _FUNC_COMPLETION_STOP = ["\nclass", "\ndef", "\nif", "\nprint"]
 #     cost += assertion_filter.cost + response["cost"]
 #     return assertion_filter.responses[assertion_filter.metrics["index_selected"]], cost, response["config_id"]
 
-    # for i, config in enumerate(configs):
-    #     response = oai.Completion.create({"definition": definition}, **config)
-    #     cost += oai.Completion.cost(response)
-    #     responses = oai.Completion.extract_text(response)
-    #     metrics = eval_function_completions(responses, definition, assertions=assertions)
-    #     assertions = metrics["assertions"]
-    #     cost += metrics["gen_cost"]
-    #     if metrics["succeed_assertions"] or i == len(configs) - 1:
-    #         return responses[metrics["index_selected"]], cost, i
+# for i, config in enumerate(configs):
+#     response = oai.Completion.create({"definition": definition}, **config)
+#     cost += oai.Completion.cost(response)
+#     responses = oai.Completion.extract_text(response)
+#     metrics = eval_function_completions(responses, definition, assertions=assertions)
+#     assertions = metrics["assertions"]
+#     cost += metrics["gen_cost"]
+#     if metrics["succeed_assertions"] or i == len(configs) - 1:
+#         return responses[metrics["index_selected"]], cost, i

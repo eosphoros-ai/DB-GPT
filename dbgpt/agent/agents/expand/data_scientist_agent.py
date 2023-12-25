@@ -9,12 +9,14 @@ from dbgpt._private.config import Config
 from dbgpt.agent.commands.command_mange import ApiCall
 from dbgpt.util.json_utils import find_json_objects
 from dbgpt.core.awel import BaseOperator
+
 try:
     from termcolor import colored
 except ImportError:
 
     def colored(x, *args, **kwargs):
         return x
+
 
 CFG = Config()
 logger = logging.getLogger(__name__)
@@ -30,7 +32,6 @@ class DataScientistAgent(ConversableAgent):
     and `code_execution_config` is default to False.
     This agent doesn't execute code by default, and expects the user to execute the code.
     """
-
 
     DEFAULT_SYSTEM_MESSAGE = """You are a helpful AI assistant who is good at writing SQL for various databases.
       Based on the given data structure information, use the correct {dialect} SQL to analyze and solve the task, subject to the following constraints.
@@ -52,17 +53,16 @@ class DataScientistAgent(ConversableAgent):
     NAME = "DataScientist"
 
     def __init__(
-            self,
-            memory: GptsMemory,
-            agent_context: 'AgentContext',
-            llm_operator: Optional[BaseOperator] = None,
-            model_priority: Optional[List[str]] = None,
-            describe: Optional[str] = DEFAULT_DESCRIBE,
-            is_termination_msg: Optional[Callable[[Dict], bool]] = None,
-            max_consecutive_auto_reply: Optional[int] = None,
-            human_input_mode: Optional[str] = "NEVER",
-
-            **kwargs,
+        self,
+        memory: GptsMemory,
+        agent_context: "AgentContext",
+        llm_operator: Optional[BaseOperator] = None,
+        model_priority: Optional[List[str]] = None,
+        describe: Optional[str] = DEFAULT_DESCRIBE,
+        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
+        max_consecutive_auto_reply: Optional[int] = None,
+        human_input_mode: Optional[str] = "NEVER",
+        **kwargs,
     ):
         super().__init__(
             name=self.NAME,
@@ -78,29 +78,26 @@ class DataScientistAgent(ConversableAgent):
             **kwargs,
         )
 
-        self.register_reply(
-            Agent,
-            DataScientistAgent.generate_analysis_chart_reply
-        )
+        self.register_reply(Agent, DataScientistAgent.generate_analysis_chart_reply)
         self.agent_context = agent_context
-        self.db_connect = CFG.LOCAL_DB_MANAGE.get_connect(self.agent_context.resource_db.get('name', None))
-
+        self.db_connect = CFG.LOCAL_DB_MANAGE.get_connect(
+            self.agent_context.resource_db.get("name", None)
+        )
 
     async def a_system_fill_param(self):
         params = {
             "data_structure": self.db_connect.get_table_info(),
             "disply_type": ApiCall.default_chart_type_promot(),
-            "dialect": self.db_connect.db_type
+            "dialect": self.db_connect.db_type,
         }
         self.update_system_message(self.DEFAULT_SYSTEM_MESSAGE.format(**params))
 
-
     async def generate_analysis_chart_reply(
-            self,
-            message: Optional[str] = None,
-            sender: Optional[Agent] = None,
-            reviewer: "Agent" = None,
-            config: Optional[Union[Dict, Literal[False]]] = None,
+        self,
+        message: Optional[str] = None,
+        sender: Optional[Agent] = None,
+        reviewer: "Agent" = None,
+        config: Optional[Union[Dict, Literal[False]]] = None,
     ):
         """Generate a reply using code execution."""
 
@@ -114,36 +111,55 @@ class DataScientistAgent(ConversableAgent):
             ### Answer failed, turn on automatic repair
             rensponse_succ = False
         else:
-
             try:
                 content = json.dumps(json_objects[0])
             except Exception as e:
-                content = f"There is a format problem with the json of the answer，{str(e)}"
+                content = (
+                    f"There is a format problem with the json of the answer，{str(e)}"
+                )
                 rensponse_succ = False
             try:
                 vis_client = ApiCall()
-                view = vis_client.display_only_sql_vis(json_objects[0], self.db_connect.run_to_df)
+                view = vis_client.display_only_sql_vis(
+                    json_objects[0], self.db_connect.run_to_df
+                )
             except Exception as e:
-                view =f"```vis-convert-error\n{content}\n```"
+                view = f"```vis-convert-error\n{content}\n```"
 
-        return True, {"is_exe_success": rensponse_succ, "content": content, "view": view}
-
+        return True, {
+            "is_exe_success": rensponse_succ,
+            "content": content,
+            "view": view,
+        }
 
     async def a_verify(self, message: Optional[Dict]):
         action_reply = message.get("action_report", None)
-        if  action_reply.get("is_exe_success", False) ==False:
-            return False, f"Please check your answer, {action_reply.get('content', '')}."
-        action_reply_obj =  json.loads(action_reply.get('content', ''))
+        if action_reply.get("is_exe_success", False) == False:
+            return (
+                False,
+                f"Please check your answer, {action_reply.get('content', '')}.",
+            )
+        action_reply_obj = json.loads(action_reply.get("content", ""))
         sql = action_reply_obj.get("sql", None)
         if not sql:
-            return False, "Please check your answer, the sql information that needs to be generated is not found."
+            return (
+                False,
+                "Please check your answer, the sql information that needs to be generated is not found.",
+            )
         try:
             columns, values = self.db_connect.query_ex(sql)
-            if not values or len(values)<=0:
-                return False, "Please check your answer, the generated SQL cannot query any data."
+            if not values or len(values) <= 0:
+                return (
+                    False,
+                    "Please check your answer, the generated SQL cannot query any data.",
+                )
             else:
-                logger.info(f"reply check success! There are {len(values)} rows of data")
+                logger.info(
+                    f"reply check success! There are {len(values)} rows of data"
+                )
                 return True, None
         except Exception as e:
-            return False, f"SQL execution error, please re-read the historical information to fix this SQL. The error message is as follows:{str(e)}"
-
+            return (
+                False,
+                f"SQL execution error, please re-read the historical information to fix this SQL. The error message is as follows:{str(e)}",
+            )

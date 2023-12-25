@@ -35,9 +35,11 @@ def initialize_components(
     # system_app.register(DefaultRAGGraphFactory)
 
     from dbgpt.serve.agent.hub.controller import module_agent
+
     system_app.register_instance(module_agent)
 
     from dbgpt.serve.agent.agents.controller import multi_agents
+
     system_app.register_instance(multi_agents)
 
     _initialize_embedding_model(

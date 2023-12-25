@@ -8,22 +8,27 @@ from .default_gpts_memory import DefaultGptsPlansMemory, DefaultGptsMessageMemor
 
 
 class GptsMemory:
-    def __init__(self, plans_memory: Optional[GptsPlansMemory]=None, message_memory: Optional[GptsMessageMemory]=None):
-        self._plans_memory: GptsPlansMemory = plans_memory if plans_memory is not None else DefaultGptsPlansMemory()
-        self._message_memory: GptsMessageMemory = message_memory if message_memory is not None else DefaultGptsMessageMemory()
-
+    def __init__(
+        self,
+        plans_memory: Optional[GptsPlansMemory] = None,
+        message_memory: Optional[GptsMessageMemory] = None,
+    ):
+        self._plans_memory: GptsPlansMemory = (
+            plans_memory if plans_memory is not None else DefaultGptsPlansMemory()
+        )
+        self._message_memory: GptsMessageMemory = (
+            message_memory if message_memory is not None else DefaultGptsMessageMemory()
+        )
 
     @property
     def plans_memory(self):
         return self._plans_memory
 
-
     @property
     def message_memory(self):
         return self._message_memory
 
-
-    async def one_plan_chat_competions(self,  conv_id: str):
+    async def one_plan_chat_competions(self, conv_id: str):
         plans = self.plans_memory.get_by_conv_id(conv_id=conv_id)
         messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
 
@@ -38,7 +43,9 @@ class GptsMemory:
                 "num": plan.sub_task_num,
                 "status": plan.state,
                 "agent": plan.sub_task_agent,
-                "markdown": self._messages_to_agents_vis(messages_group.get(plan.sub_task_content))
+                "markdown": self._messages_to_agents_vis(
+                    messages_group.get(plan.sub_task_content)
+                ),
             }
 
         normal_messages = []
@@ -62,18 +69,24 @@ class GptsMemory:
                     view = action_report.get("view", None)
                     view_info = view if view else action_report.get("content", "")
 
-            messages_view.append({
-                "sender": message.sender,
-                "receiver": message.receiver,
-                "model": message.model_name,
-                "markdown": view_info
-            })
-        messages_content = json.dumps(messages_view, ensure_ascii=False, cls=EnhancedJSONEncoder)
+            messages_view.append(
+                {
+                    "sender": message.sender,
+                    "receiver": message.receiver,
+                    "model": message.model_name,
+                    "markdown": view_info,
+                }
+            )
+        messages_content = json.dumps(
+            messages_view, ensure_ascii=False, cls=EnhancedJSONEncoder
+        )
         return f"```agent-messages\n{messages_content}\n```"
 
     @staticmethod
     def _messages_to_plan_vis(messages: List[Dict]):
         if messages is None or len(messages) <= 0:
             return ""
-        messages_content = json.dumps(messages, ensure_ascii=False, cls=EnhancedJSONEncoder)
+        messages_content = json.dumps(
+            messages, ensure_ascii=False, cls=EnhancedJSONEncoder
+        )
         return f"```agent-plans\n{messages_content}\n```"

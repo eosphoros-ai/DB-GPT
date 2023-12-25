@@ -17,21 +17,20 @@ def get_all_subclasses(cls):
         all_subclasses.extend(get_all_subclasses(subclass))
     return all_subclasses
 
-class AgentsMange:
 
+class AgentsMange:
     def __init__(self):
-        self._agents= defaultdict()
+        self._agents = defaultdict()
 
     def register_agent(self, cls):
         self._agents[cls.NAME] = cls
 
-
-    def get_by_name(self, name:str)->Optional[Type[Agent]]:
+    def get_by_name(self, name: str) -> Optional[Type[Agent]]:
         if name not in self._agents:
             raise ValueError(f"Agent:{name} not register!")
         return self._agents[name]
 
-    def get_describe_by_name(self, name:str)->Optional[Type[Agent]]:
+    def get_describe_by_name(self, name: str) -> Optional[Type[Agent]]:
         return self._agents[name].DEFAULT_DESCRIBE
 
     def all_agents(self):
@@ -40,10 +39,10 @@ class AgentsMange:
             result[name] = cls.DEFAULT_DESCRIBE
         return result
 
+
 agent_mange = AgentsMange()
 
 agent_mange.register_agent(CodeAssistantAgent)
 agent_mange.register_agent(DashboardAssistantAgent)
 agent_mange.register_agent(DataScientistAgent)
 agent_mange.register_agent(SQLAssistantAgent)
-

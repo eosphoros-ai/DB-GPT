@@ -10,6 +10,7 @@ from dbgpt.agent.common.schema import Status
 @dataclass
 class GptsPlan:
     """Gpts plan"""
+
     conv_id: str
     sub_task_num: int
     sub_task_content: Optional[str]
@@ -30,7 +31,7 @@ class GptsPlan:
             sub_task_num=d["sub_task_num"],
             sub_task_content=d["sub_task_content"],
             sub_task_agent=d["sub_task_agent"],
-            resource_name=d['resource_name'],
+            resource_name=d["resource_name"],
             rely=d["rely"],
             agent_model=d["agent_model"],
             retry_times=d["retry_times"],
@@ -46,6 +47,7 @@ class GptsPlan:
 @dataclass
 class GptsMessage:
     """Gpts plan"""
+
     conv_id: str
     sender: str
 
@@ -70,8 +72,8 @@ class GptsMessage:
             role=d["role"],
             content=d["content"],
             rounds=d["rounds"],
-            model_name=d['model_name'],
-            current_gogal=d['current_gogal'],
+            model_name=d["model_name"],
+            current_gogal=d["current_gogal"],
             context=d["context"],
             review_info=d["review_info"],
             action_report=d["action_report"],
@@ -81,8 +83,6 @@ class GptsMessage:
 
     def to_dict(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)
-
-
 
 
 class GptsPlansMemory(ABC):
@@ -105,8 +105,9 @@ class GptsPlansMemory(ABC):
             List of planning steps
         """
 
-
-    def get_by_conv_id_and_num(self, conv_id: str, task_nums: List[int]) -> List[GptsPlan]:
+    def get_by_conv_id_and_num(
+        self, conv_id: str, task_nums: List[int]
+    ) -> List[GptsPlan]:
         """
         get
         Args:
@@ -128,7 +129,7 @@ class GptsPlansMemory(ABC):
             List of planning steps
         """
 
-    def complete_task(self, conv_id: str,  task_num: int,  result: str):
+    def complete_task(self, conv_id: str, task_num: int, result: str):
         """
         Complete designated planning step
         Args:
@@ -140,7 +141,16 @@ class GptsPlansMemory(ABC):
             None
         """
 
-    def update_task(self,  conv_id: str,  task_num: int,  state: str, retry_times:int, agent: str = None, model:str=None, result:str = None):
+    def update_task(
+        self,
+        conv_id: str,
+        task_num: int,
+        state: str,
+        retry_times: int,
+        agent: str = None,
+        model: str = None,
+        result: str = None,
+    ):
         """
         Update planning step information
         Args:
@@ -154,7 +164,7 @@ class GptsPlansMemory(ABC):
 
         """
 
-    def remove_by_conv_id(self, conv_id:str):
+    def remove_by_conv_id(self, conv_id: str):
         """
         Delete planning
         Args:
@@ -164,8 +174,9 @@ class GptsPlansMemory(ABC):
 
         """
 
-class GptsMessageMemory( ABC):
-    def append(self, message:GptsMessage):
+
+class GptsMessageMemory(ABC):
+    def append(self, message: GptsMessage):
         """
         Add a message
         Args:
@@ -175,7 +186,7 @@ class GptsMessageMemory( ABC):
 
         """
 
-    def get_by_agent(self, conv_id:str, agent: str)->Optional[List[GptsMessage]]:
+    def get_by_agent(self, conv_id: str, agent: str) -> Optional[List[GptsMessage]]:
         """
         Query information related to an agent
         Args:
@@ -185,8 +196,13 @@ class GptsMessageMemory( ABC):
             messages
         """
 
-
-    def get_between_agents(self, conv_id:str, agent1: str, agent2: str, current_gogal:Optional[str] = None)->Optional[List[GptsMessage]]:
+    def get_between_agents(
+        self,
+        conv_id: str,
+        agent1: str,
+        agent2: str,
+        current_gogal: Optional[str] = None,
+    ) -> Optional[List[GptsMessage]]:
         """
         Query information related to an agent
         Args:
@@ -196,8 +212,7 @@ class GptsMessageMemory( ABC):
             messages
         """
 
-
-    def get_by_conv_id(self, conv_id: str)->Optional[List[GptsMessage]]:
+    def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessage]]:
         """
         Query messages by conv id
         Args:
@@ -207,7 +222,7 @@ class GptsMessageMemory( ABC):
 
         """
 
-    def get_last_message(self, conv_id:str)->Optional[GptsMessage]:
+    def get_last_message(self, conv_id: str) -> Optional[GptsMessage]:
         """
         Query last message
         Args:

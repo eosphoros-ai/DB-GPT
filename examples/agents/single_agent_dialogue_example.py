@@ -6,29 +6,25 @@ import asyncio
 import os
 
 if __name__ == "__main__":
-
     context: AgentContext = AgentContext(conv_id="test456", gpts_name="测试助手2")
     context.llm_models = ["gpt-3.5-turbo"]
 
     default_memory = GptsMemory()
-    coder = CodeAssistantAgent(
-        memory=default_memory,
-        agent_context=context
+    coder = CodeAssistantAgent(memory=default_memory, agent_context=context)
+
+    user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
+
+    os.environ["OPENAI_API_KEY"] = "sk-xx"
+    os.environ["OPENAI_API_BASE"] = "https://xx:80/v1"
+
+    asyncio.run(
+        user_proxy.a_initiate_chat(
+            recipient=coder,
+            reviewer=user_proxy,
+            # message="式计算下321 * 123等于多少", #用python代码的方式计算下321 * 123等于多少
+            message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
+        )
     )
 
-    user_proxy = UserProxyAgent(
-        memory=default_memory,
-        agent_context=context
-    )
-
-
-
-
-    os.environ["OPENAI_API_KEY"] = "xxx"
-    os.environ["OPENAI_API_BASE"] = "http://xxx:3000/api/openai/v1"
-
-    asyncio.run(user_proxy.a_initiate_chat(
-        recipient =coder,
-        reviewer = user_proxy,
-        message="用python代码的方式计算下321 * 123等于多少",
-    ))
+    ## dbgpt-vis message infos
+    print(asyncio.run( default_memory.one_plan_chat_competions("test456")))
