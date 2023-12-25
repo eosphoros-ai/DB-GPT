@@ -174,13 +174,12 @@ or
 git clone https://huggingface.co/moka-ai/m3e-large
 ```
 
-Configure the proxy and modify LLM_MODEL, PROXY_API_URL and API_KEY in the `.env`file
+Configure the proxy and modify LLM_MODEL, MODEL_VERSION, API_KEY and API_SECRET in the `.env`file
 
 ```python
 # .env
 LLM_MODEL=wenxin_proxyllm
-PROXY_SERVER_URL={your_service_url}
-WEN_XIN_MODEL_VERSION={version}
+WEN_XIN_MODEL_VERSION={version} # ERNIE-Bot or ERNIE-Bot-turbo
 WEN_XIN_API_KEY={your-wenxin-sk}
 WEN_XIN_API_SECRET={your-wenxin-sct}
 ```

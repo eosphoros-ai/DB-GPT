@@ -8,10 +8,16 @@ from dbgpt.core.awel import (
     JoinOperator,
     MapOperator,
 )
-from dbgpt.core import SQLOutputParser, OpenAILLM, RequestBuildOperator, PromptTemplate
+from dbgpt.core import (
+    SQLOutputParser,
+    LLMOperator,
+    RequestBuildOperator,
+    PromptTemplate,
+)
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
 from dbgpt.datasource.operator.datasource_operator import DatasourceOperator
 from dbgpt.rag.operator.datasource import DatasourceRetrieverOperator
+from dbgpt.model import OpenAILLMClient
 
 
 def _create_temporary_connection():
@@ -115,7 +121,7 @@ with DAG("simple_sdk_llm_sql_example") as dag:
     prompt_input_task = JoinOperator(combine_function=_join_func)
     prompt_task = PromptTemplate.from_template(_sql_prompt())
     model_pre_handle_task = RequestBuildOperator(model="gpt-3.5-turbo")
-    llm_task = OpenAILLM()
+    llm_task = LLMOperator(OpenAILLMClient())
     out_parse_task = SQLOutputParser()
     sql_parse_task = MapOperator(map_function=lambda x: x["sql"])
     db_query_task = DatasourceOperator(connection=db_connection)

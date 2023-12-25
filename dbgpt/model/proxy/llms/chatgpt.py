@@ -70,7 +70,7 @@ def _initialize_openai_v1(params: ProxyModelParameters):
     api_type = params.proxy_api_type or os.getenv("OPENAI_API_TYPE", "open_ai")
 
     base_url = params.proxy_api_base or os.getenv(
-        "OPENAI_API_TYPE",
+        "OPENAI_API_BASE",
         os.getenv("AZURE_OPENAI_ENDPOINT") if api_type == "azure" else None,
     )
     api_key = params.proxy_api_key or os.getenv(
@@ -107,18 +107,17 @@ def _build_request(model: ProxyModel, params):
         elif message.role == ModelMessageRoleType.AI:
             history.append({"role": "assistant", "content": message.content})
         else:
-            history.append(message)
+            pass
 
     # Move the last user's information to the end
-    # temp_his = history[::-1]
-    # last_user_input = None
-    # for m in temp_his:
-    #     if m["role"] == "user":
-    #         last_user_input = m
-    #         break
-    # if last_user_input:
-    #     history.remove(last_user_input)
-    #     history.append(last_user_input)
+    last_user_input_index = None
+    for i in range(len(history) - 1, -1, -1):
+        if history[i]["role"] == "user":
+            last_user_input_index = i
+            break
+    if last_user_input_index:
+        last_user_input = history.pop(last_user_input_index)
+        history.append(last_user_input)
 
     payloads = {
         "temperature": params.get("temperature"),

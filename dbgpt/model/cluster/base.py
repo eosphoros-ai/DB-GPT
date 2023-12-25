@@ -30,6 +30,15 @@ class EmbeddingsRequest(BaseModel):
     span_id: str = None
 
 
+class CountTokenRequest(BaseModel):
+    model: str
+    prompt: str
+
+
+class ModelMetadataRequest(BaseModel):
+    model: str
+
+
 class WorkerApplyRequest(BaseModel):
     model: str
     apply_type: WorkerApplyType

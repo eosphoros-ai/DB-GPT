@@ -76,7 +76,7 @@ def _parse_table_summary(
         table_name(column1(column1 comment),column2(column2 comment),column3(column3 comment) and index keys, and table comment: {table_comment})
     """
     columns = []
-    for column in conn._inspector.get_columns(table_name):
+    for column in conn.get_columns(table_name):
         if column.get("comment"):
             columns.append(f"{column['name']} ({column.get('comment')})")
         else:
@@ -84,7 +84,7 @@ def _parse_table_summary(
 
     column_str = ", ".join(columns)
     index_keys = []
-    for index_key in conn._inspector.get_indexes(table_name):
+    for index_key in conn.get_indexes(table_name):
         key_str = ", ".join(index_key["column_names"])
         index_keys.append(f"{index_key['name']}(`{key_str}`) ")
     table_str = summary_template.format(table_name=table_name, columns=column_str)
@@ -92,7 +92,7 @@ def _parse_table_summary(
         index_key_str = ", ".join(index_keys)
         table_str += f", and index keys: {index_key_str}"
     try:
-        comment = conn._inspector.get_table_comment(table_name)
+        comment = conn.get_table_comment(table_name)
     except Exception:
         comment = dict(text=None)
     if comment.get("text"):

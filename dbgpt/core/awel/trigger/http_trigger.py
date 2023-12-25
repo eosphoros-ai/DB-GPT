@@ -130,8 +130,9 @@ async def _trigger_dag(
                 "Connection": "keep-alive",
                 "Transfer-Encoding": "chunked",
             }
+        generator = await end_node.call_stream(call_data={"data": body})
         return StreamingResponse(
-            end_node.call_stream(call_data={"data": body}),
+            generator,
             headers=headers,
             media_type=media_type,
         )

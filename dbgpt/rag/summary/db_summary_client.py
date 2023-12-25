@@ -1,5 +1,6 @@
 import logging
 
+import traceback
 from dbgpt.component import SystemApp
 from dbgpt._private.config import Config
 from dbgpt.configs.model_config import (
@@ -67,8 +68,9 @@ class DBSummaryClient:
             try:
                 self.db_summary_embedding(item["db_name"], item["db_type"])
             except Exception as e:
+                message = traceback.format_exc()
                 logger.warn(
-                    f'{item["db_name"]}, {item["db_type"]} summary error!{str(e)}', e
+                    f'{item["db_name"]}, {item["db_type"]} summary error!{str(e)}, detail: {message}'
                 )
 
     def init_db_profile(self, db_summary_client, dbname, embeddings):
