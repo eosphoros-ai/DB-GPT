@@ -183,19 +183,24 @@ class KnowledgeService:
         Args:
             - space: Knowledge Space Name
             - request: DocumentQueryRequest
+        Returns:
+            - res DocumentQueryResponse
         """
-        query = KnowledgeDocumentEntity(
-            doc_name=request.doc_name,
-            doc_type=request.doc_type,
-            space=space,
-            status=request.status,
-        )
         res = DocumentQueryResponse()
-        res.data = knowledge_document_dao.get_knowledge_documents(
-            query, page=request.page, page_size=request.page_size
-        )
-        res.total = knowledge_document_dao.get_knowledge_documents_count(query)
-        res.page = request.page
+        if request.doc_ids and len(request.doc_ids) > 0:
+            res.data = knowledge_document_dao.documents_by_ids(request.doc_ids)
+        else:
+            query = KnowledgeDocumentEntity(
+                doc_name=request.doc_name,
+                doc_type=request.doc_type,
+                space=space,
+                status=request.status,
+            )
+            res.data = knowledge_document_dao.get_knowledge_documents(
+                query, page=request.page, page_size=request.page_size
+            )
+            res.total = knowledge_document_dao.get_knowledge_documents_count(query)
+            res.page = request.page
         return res
 
     def batch_document_sync(
