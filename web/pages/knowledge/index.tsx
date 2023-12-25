@@ -39,6 +39,7 @@ const Knowledge = () => {
       getSpaces();
       setSpaceName('');
       setDocType('');
+      getSpaces();
     } else if (label === 'forward') {
       activeStep === 0 && getSpaces();
       setActiveStep((step) => step + 1);
@@ -93,7 +94,7 @@ const Knowledge = () => {
         {activeStep === 0 && <SpaceForm handleStepChange={handleStepChange} />}
         {activeStep === 1 && <DocTypeForm handleStepChange={handleStepChange} />}
         {activeStep === 2 && <DocUploadForm spaceName={spaceName} docType={docType} handleStepChange={handleStepChange} />}
-        {activeStep === 3 && <Segmentation spaceName={spaceName} docType={docType} files={files} handleStepChange={handleStepChange} />}
+        {activeStep === 3 && <Segmentation spaceName={spaceName} docType={docType} uploadFiles={files} handleStepChange={handleStepChange} />}
       </Modal>
     </div>
   );

@@ -84,6 +84,7 @@ export type IStrategyParameter = {
 };
 
 export type IChunkStrategyResponse = {
+  strategy: string;
   name: string;
   parameters: Array<IStrategyParameter>;
   suffix: Array<string>;
@@ -143,6 +144,7 @@ export type StepChangeParams = {
 export type File = {
   name: string;
   doc_id: number;
+  status?: string;
 };
 
 export type SummaryParams = {

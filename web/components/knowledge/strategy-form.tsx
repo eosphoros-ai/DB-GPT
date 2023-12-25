@@ -1,5 +1,5 @@
 import { IChunkStrategyResponse } from '@/types/knowledge';
-import { Alert, Button, Form, FormListFieldData, Input, InputNumber, Radio, RadioChangeEvent } from 'antd';
+import { Alert, Form, FormListFieldData, Input, InputNumber, Radio, RadioChangeEvent } from 'antd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 const { TextArea } = Input;
@@ -25,6 +25,7 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
   const [selectedStrategy, setSelectedStrategy] = useState<string>();
   const { t } = useTranslation();
   const DEFAULT_STRATEGY = {
+    strategy: t('Automatic'),
     name: t('Automatic'),
     desc: t('Automatic_desc'),
   };
@@ -33,8 +34,6 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
     setSelectedStrategy(e.target.value);
   }
 
-  function syncDocument() {}
-
   function renderStrategyParamForm() {
     if (!selectedStrategy) {
       return null;
@@ -42,7 +41,7 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
     if (selectedStrategy === DEFAULT_STRATEGY.name) {
       return <p className="my-4">{DEFAULT_STRATEGY.desc}</p>;
     }
-    const parameters = ableStrategies?.filter((i) => i.name === selectedStrategy)[0].parameters;
+    const parameters = ableStrategies?.filter((i) => i.strategy === selectedStrategy)[0].parameters;
     if (!parameters || !parameters.length) {
       return <Alert className="my-2" type="warning" message={t('No_parameter')} />;
     }
@@ -55,7 +54,7 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
             name={[field!.name, 'chunk_parameters', param.param_name]}
             rules={[{ required: true, message: t('Please_input_the_name') }]}
           >
-            {param.param_type === 'int' ? <InputNumber className="w-full" min={1} /> : <TextArea className="w-full" rows={4} maxLength={6} />}
+            {param.param_type === 'int' ? <InputNumber className="w-full" min={1} /> : <TextArea className="w-full" rows={2} maxLength={6} />}
           </Form.Item>
         ))}
       </div>
@@ -63,22 +62,17 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
   }
   return (
     <>
-      <Form.Item name={[field!.name, 'chunk_parameters', 'chunk_strategy']} initialValue={DEFAULT_STRATEGY.name}>
+      <Form.Item name={[field!.name, 'chunk_parameters', 'chunk_strategy']} initialValue={DEFAULT_STRATEGY.strategy}>
         <Radio.Group style={{ marginTop: 16 }} onChange={radioChange}>
-          <Radio value={DEFAULT_STRATEGY.name}>{DEFAULT_STRATEGY.name}</Radio>
+          <Radio value={DEFAULT_STRATEGY.strategy}>{DEFAULT_STRATEGY.name}</Radio>
           {ableStrategies.map((strategy) => (
-            <Radio key={`strategy_radio_${strategy.name}`} value={strategy.name}>
+            <Radio key={`strategy_radio_${strategy.strategy}`} value={strategy.strategy}>
               {strategy.name}
             </Radio>
           ))}
         </Radio.Group>
       </Form.Item>
       {renderStrategyParamForm()}
-      <Form.Item className="mt-2" wrapperCol={{ offset: 8, span: 16 }}>
-        <Button type="primary" onClick={syncDocument}>
-          {t('Sync')}
-        </Button>
-      </Form.Item>
     </>
   );
 }

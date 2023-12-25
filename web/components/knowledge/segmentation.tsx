@@ -1,15 +1,17 @@
-import { apiInterceptors, getChunkStrategies, syncBatchDocument } from '@/client/api';
+import { apiInterceptors, getChunkStrategies, getDocumentList, syncBatchDocument } from '@/client/api';
 import { File, IChunkStrategyResponse, ISyncBatchParameter, StepChangeParams } from '@/types/knowledge';
 import { Alert, Button, Collapse, Form, Spin, message } from 'antd';
+import Icon from '@ant-design/icons';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StrategyForm from './strategy-form';
+import { DoneIcon, PendingIcon, SyncIcon } from '@/components/icons';
 
 type IProps = {
   spaceName: string;
   docType: string;
   handleStepChange: (params: StepChangeParams) => void;
-  files?: Array<File>;
+  uploadFiles: Array<File>;
 };
 
 type FieldType = {
@@ -17,11 +19,13 @@ type FieldType = {
 };
 
 export default function Segmentation(props: IProps) {
-  const { spaceName, docType, files, handleStepChange } = props;
+  const { spaceName, docType, uploadFiles, handleStepChange } = props;
   const { t } = useTranslation();
   const [form] = Form.useForm();
+  const [files, setFiles] = useState(uploadFiles);
   const [loading, setLoading] = useState<boolean>();
   const [strategies, setStrategies] = useState<Array<IChunkStrategyResponse>>([]);
+  const [syncStatus, setSyncStatus] = useState<string>('');
 
   async function getStrategies() {
     setLoading(true);
@@ -39,18 +43,32 @@ export default function Segmentation(props: IProps) {
       setLoading(true);
       const [, result] = await apiInterceptors(syncBatchDocument(spaceName, data.fileStrategies));
       setLoading(false);
-      if (result?.tasks?.length > 0) {
-        handleStepChange({
-          label: 'finish',
-        });
-        return message.success(`Segemation task start successfully. task id: ${result?.tasks.join(',')}`);
+      if (result?.tasks && result?.tasks?.length > 0) {
+        message.success(`Segemation task start successfully. task id: ${result?.tasks.join(',')}`);
+        setSyncStatus('RUNNING');
+        const docIds = data.fileStrategies.map((i) => i.doc_id);
+        const intervalId = setInterval(async () => {
+          const status = await updateSyncStatus(docIds);
+          if (status === 'FINISHED') {
+            clearInterval(intervalId);
+            setSyncStatus('FINISHED');
+            message.success('Congratulation, All files sync successfully.');
+            handleStepChange({
+              label: 'finish',
+            });
+          }
+        }, 3000);
       }
     }
   };
 
   function checkParameter(data: FieldType) {
-    const { fileStrategies } = data;
     let checked = true;
+    if (syncStatus === 'RUNNING') {
+      checked = false;
+      message.warning('The task is still running, do not submit it again.');
+    }
+    const { fileStrategies } = data;
     fileStrategies.map((item) => {
       if (!item?.chunk_parameters?.chunk_strategy) {
         message.error(`Please select chunk strategy for ${item.name}.`);
@@ -58,6 +76,29 @@ export default function Segmentation(props: IProps) {
       }
     });
     return checked;
+  }
+
+  async function updateSyncStatus(docIds: Array<number>) {
+    const [, docs] = await apiInterceptors(
+      getDocumentList(spaceName, {
+        doc_ids: docIds,
+      }),
+    );
+    if (docs?.data && docs?.data.length > 0) {
+      const copy = [...files!];
+      // set file status one by one
+      docs?.data.map((doc) => {
+        const file = copy?.filter((file) => file.doc_id === doc.id)?.[0];
+        if (file) {
+          file.status = doc.status;
+        }
+      });
+      setFiles(copy);
+      // all doc sync finished
+      if (docs?.data.every((item) => item.status === 'FINISHED')) {
+        return 'FINISHED';
+      }
+    }
   }
 
   function renderStrategy() {
@@ -71,15 +112,14 @@ export default function Segmentation(props: IProps) {
             case 'TEXT':
             case 'URL':
               return fields?.map((field) => (
-                // field [{name: 0, key: 0, isListField: true, fieldKey: 0}, {name: 1, key: 1, isListField: true, fieldKey: 1}]
                 <StrategyForm strategies={strategies} docType={docType} fileName={files![field.name].name} field={field} />
               ));
             case 'DOCUMENT':
               return (
-                <Collapse defaultActiveKey={0}>
+                <Collapse defaultActiveKey={0} size={files.length > 5 ? 'small' : 'middle'}>
                   {fields?.map((field) => (
                     // field [{name: 0, key: 0, isListField: true, fieldKey: 0}, {name: 1, key: 1, isListField: true, fieldKey: 1}]
-                    <Collapse.Panel header={`${field.name}. ${files![field.name].name}`} key={field.key}>
+                    <Collapse.Panel header={`${field.name + 1}. ${files![field.name].name}`} key={field.key} extra={renderSyncStatus(field.name)}>
                       <StrategyForm strategies={strategies} docType={docType} fileName={files![field.name].name} field={field} />
                     </Collapse.Panel>
                   ))}
@@ -89,6 +129,18 @@ export default function Segmentation(props: IProps) {
         }}
       </Form.List>
     );
+  }
+
+  function renderSyncStatus(index: number) {
+    const status = files![index].status;
+    switch (status) {
+      case 'FINISHED':
+        return <Icon component={DoneIcon} />;
+      case 'RUNNING':
+        return <Icon className="rotate-animation" component={SyncIcon} />;
+      default:
+        return <Icon component={PendingIcon} />;
+    }
   }
 
   return (
@@ -116,7 +168,7 @@ export default function Segmentation(props: IProps) {
             }}
             className="mr-4"
           >{`${t('Back')}`}</Button>
-          <Button type="primary" htmlType="submit" loading={loading}>
+          <Button type="primary" htmlType="submit" loading={loading || syncStatus === 'RUNNING'}>
             {t('Process')}
           </Button>
         </Form.Item>
