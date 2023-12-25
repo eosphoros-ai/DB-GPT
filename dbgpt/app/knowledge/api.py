@@ -4,7 +4,6 @@ import tempfile
 import logging
 from typing import List
 
-import deprecated
 from fastapi import APIRouter, File, UploadFile, Form
 
 from dbgpt._private.config import Config
@@ -118,7 +117,9 @@ def chunk_strategies():
         return Result.succ(
             [
                 {
-                    "name": strategy.name,
+                    "strategy": strategy.name,
+                    "name": strategy.value[2],
+                    "description": strategy.value[3],
                     "parameters": strategy.value[1],
                     "suffix": [
                         knowledge.document_type().value

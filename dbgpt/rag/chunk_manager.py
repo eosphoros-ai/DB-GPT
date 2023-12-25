@@ -63,9 +63,8 @@ class ChunkManager:
             extractor: (Optional[Extractor]) Extractor to use for summarization.
         """
         self._knowledge = knowledge
-        from dbgpt.rag.extracter.summary import SummaryExtractor
 
-        self._extractor = extractor or SummaryExtractor()
+        self._extractor = extractor
         self._chunk_parameters = chunk_parameter or ChunkParameters()
         self._chunk_strategy = (
             chunk_parameter.chunk_strategy
@@ -118,8 +117,8 @@ class ChunkManager:
         """Select text splitter by chunk strategy."""
         if self._text_splitter:
             return self._text_splitter
-        if not self._chunk_strategy:
-            self._chunk_strategy = self._knowledge.default_chunk_strategy()
+        if not self._chunk_strategy or "Automatic" == self._chunk_strategy:
+            self._chunk_strategy = self._knowledge.default_chunk_strategy().name
         if self._chunk_strategy not in [
             support_chunk_strategy.name
             for support_chunk_strategy in self._knowledge.support_chunk_strategy()

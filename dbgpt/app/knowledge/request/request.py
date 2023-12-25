@@ -45,6 +45,8 @@ class DocumentQueryRequest(BaseModel):
     """doc_name: doc path"""
 
     doc_name: str = None
+    """doc_ids: doc ids"""
+    doc_ids: Optional[List] = None
     """doc_type: doc type"""
     doc_type: str = None
     """status: status"""

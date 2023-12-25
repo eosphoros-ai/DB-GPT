@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from typing import List
 
+from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import KnowledgeType
@@ -283,7 +284,7 @@ class KnowledgeService:
             else:
                 if separators and len(separators) > 1:
                     raise ValueError(
-                        "SpacyTextSplitter do not support multiple separators"
+                        "SpacyTextSplitter do not support multipsle separators"
                     )
                 try:
                     separator = "\n\n" if not separators else separators[0]
@@ -314,7 +315,7 @@ class KnowledgeService:
         space_name,
         doc: KnowledgeDocumentEntity,
         chunk_parameters: ChunkParameters,
-    ):
+    ) -> List[Chunk]:
         """sync knowledge document chunk into vector store"""
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
@@ -348,6 +349,7 @@ class KnowledgeService:
         ).create()
         executor.submit(self.async_doc_embedding, assembler, chunk_docs, doc)
         logger.info(f"begin save document chunks, doc:{doc.doc_name}")
+        return chunk_docs
 
     async def document_summary(self, request: DocumentSummaryRequest):
         """get document summary
@@ -359,15 +361,18 @@ class KnowledgeService:
         if len(documents) != 1:
             raise Exception(f"can not found document for {request.doc_id}")
         document = documents[0]
-        query = DocumentChunkEntity(
-            document_id=request.doc_id,
+        chunk_docs = self._sync_knowledge_document(
+            space_name=document.space,
+            doc=document,
+            chunk_parameters=ChunkParameters(
+                chunk_strategy="CHUNK_BY_SIZE",
+                chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
+                chunk_overlap=CFG.KNOWLEDGE_CHUNK_OVERLAP,
+            ),
         )
-        chunks = document_chunk_dao.get_document_chunks(query, page=1, page_size=100)
-        if len(chunks) == 0:
+        if len(chunk_docs) == 0:
             raise Exception(f"can not found chunks for {request.doc_id}")
-        from langchain.schema import Document
 
-        chunk_docs = [Document(page_content=chunk.content) for chunk in chunks]
         return await self.async_document_summary(
             model_name=request.model_name,
             chunk_docs=chunk_docs,
@@ -490,7 +495,7 @@ class KnowledgeService:
             - chunk_docs: List[Document]
             - doc: KnowledgeDocumentEntity
         """
-        texts = [doc.page_content for doc in chunk_docs]
+        texts = [doc.content for doc in chunk_docs]
         from dbgpt.util.prompt_util import PromptHelper
 
         prompt_helper = PromptHelper()

@@ -50,21 +50,34 @@ class ChunkStrategy(Enum):
             {"param_name": "chunk_size", "param_type": "int"},
             {"param_name": "chunk_overlap", "param_type": "int"},
         ],
+        "chunk size",
+        "split document by chunk size",
     )
-    CHUNK_BY_PAGE = (PageTextSplitter, [])
+    CHUNK_BY_PAGE = (PageTextSplitter, [], "page", "split document by page")
     CHUNK_BY_PARAGRAPH = (
         ParagraphTextSplitter,
         [{"param_name": "separator", "param_type": "string"}],
+        "paragraph",
+        "split document by paragraph",
     )
     CHUNK_BY_SEPARATOR = (
         SeparatorTextSplitter,
         [{"param_name": "separator", "param_type": "string"}],
+        "separator",
+        "split document by separator",
     )
-    CHUNK_BY_MARKDOWN_HEADER = (MarkdownHeaderTextSplitter, [])
+    CHUNK_BY_MARKDOWN_HEADER = (
+        MarkdownHeaderTextSplitter,
+        [],
+        "markdown header",
+        "split document by markdown header",
+    )
 
-    def __init__(self, splitter_class, parameters):
+    def __init__(self, splitter_class, parameters, alias, description):
         self.splitter_class = splitter_class
         self.parameters = parameters
+        self.alias = alias
+        self.description = description
 
     def match(self, *args, **kwargs):
         return self.value[0](*args, **kwargs)
