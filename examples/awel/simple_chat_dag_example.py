@@ -6,7 +6,8 @@
 
     .. code-block:: shell
 
-        curl -X POST http://127.0.0.1:5000/api/v1/awel/trigger/examples/simple_chat \
+        DBGPT_SERVER="http://127.0.0.1:5000"
+        curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_chat \
         -H "Content-Type: application/json" -d '{
             "model": "proxyllm",
             "user_input": "hello"
@@ -52,3 +53,14 @@ with DAG("dbgpt_awel_simple_dag_example") as dag:
     # type(out) == ModelOutput
     model_parse_task = MapOperator(lambda out: out.to_dict())
     trigger >> request_handle_task >> model_task >> model_parse_task
+
+
+if __name__ == "__main__":
+    if dag.leaf_nodes[0].dev_mode:
+        # Development mode, you can run the dag locally for debugging.
+        from dbgpt.core.awel import setup_dev_environment
+
+        setup_dev_environment([dag], port=5555)
+    else:
+        # Production mode, DB-GPT will automatically load and execute the current file after startup.
+        pass

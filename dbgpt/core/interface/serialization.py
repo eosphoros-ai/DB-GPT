@@ -1,6 +1,7 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Type, Dict
+from typing import Dict, Type
 
 
 class Serializable(ABC):

@@ -10,9 +10,11 @@ from dbgpt.core.awel import (
 )
 from dbgpt.core import (
     SQLOutputParser,
+    PromptTemplate,
+)
+from dbgpt.core.operator import (
     LLMOperator,
     RequestBuildOperator,
-    PromptTemplate,
 )
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
 from dbgpt.datasource.operator.datasource_operator import DatasourceOperator

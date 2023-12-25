@@ -1,10 +1,12 @@
-import pytest
 from typing import Dict, Type, Union
+
+import pytest
+
 from dbgpt.core.interface.storage import (
+    InMemoryStorage,
+    QuerySpec,
     ResourceIdentifier,
     StorageError,
-    QuerySpec,
-    InMemoryStorage,
     StorageItem,
 )
 from dbgpt.util.serialization.json_serialization import JsonSerializer

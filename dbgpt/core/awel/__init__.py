@@ -7,6 +7,7 @@ The stability of this API cannot be guaranteed at present.
 
 """
 
+from typing import List, Optional
 from dbgpt.component import SystemApp
 
 from .dag.base import DAGContext, DAG
@@ -68,6 +69,7 @@ __all__ = [
     "UnstreamifyAbsOperator",
     "TransformStreamAbsOperator",
     "HttpTrigger",
+    "setup_dev_environment",
 ]
 
 
@@ -85,3 +87,29 @@ def initialize_awel(system_app: SystemApp, dag_filepath: str):
     initialize_runner(DefaultWorkflowRunner())
     # Load all dags
     dag_manager.load_dags()
+
+
+def setup_dev_environment(
+    dags: List[DAG], host: Optional[str] = "0.0.0.0", port: Optional[int] = 5555
+) -> None:
+    """Setup a development environment for AWEL.
+
+    Just using in development environment, not production environment.
+    """
+    import uvicorn
+    from fastapi import FastAPI
+    from dbgpt.component import SystemApp
+    from .trigger.trigger_manager import DefaultTriggerManager
+    from .dag.base import DAGVar
+
+    app = FastAPI()
+    system_app = SystemApp(app)
+    DAGVar.set_current_system_app(system_app)
+    trigger_manager = DefaultTriggerManager()
+    system_app.register_instance(trigger_manager)
+
+    for dag in dags:
+        for trigger in dag.trigger_nodes:
+            trigger_manager.register_trigger(trigger)
+    trigger_manager.after_register()
+    uvicorn.run(app, host=host, port=port)

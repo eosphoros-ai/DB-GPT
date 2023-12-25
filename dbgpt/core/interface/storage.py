@@ -1,10 +1,10 @@
-from typing import Generic, TypeVar, Type, Optional, Dict, Any, List
 from abc import ABC, abstractmethod
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from dbgpt.core.interface.serialization import Serializable, Serializer
-from dbgpt.util.serialization.json_serialization import JsonSerializer
 from dbgpt.util.annotations import PublicAPI
 from dbgpt.util.pagination_utils import PaginationResult
+from dbgpt.util.serialization.json_serialization import JsonSerializer
 
 
 @PublicAPI(stability="beta")

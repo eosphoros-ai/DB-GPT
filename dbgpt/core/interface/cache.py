@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-
-from typing import Any, TypeVar, Generic, Optional
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Generic, Optional, TypeVar
 
 from dbgpt.core.interface.serialization import Serializable
 

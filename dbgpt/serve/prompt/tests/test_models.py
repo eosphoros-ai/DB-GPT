@@ -1,9 +1,12 @@
 from typing import List
+
 import pytest
+
 from dbgpt.storage.metadata import db
-from ..config import ServeConfig
+
 from ..api.schemas import ServeRequest, ServerResponse
-from ..models.models import ServeEntity, ServeDao
+from ..config import ServeConfig
+from ..models.models import ServeDao, ServeEntity
 
 
 @pytest.fixture(autouse=True)
@@ -34,6 +37,8 @@ def default_entity_dict():
         "content": "Write a qsort function in python.",
         "user_name": "zhangsan",
         "sys_code": "dbgpt",
+        "prompt_language": "zh",
+        "model": "vicuna-13b-v1.5",
     }
 
 
@@ -60,7 +65,14 @@ def test_entity_create(default_entity_dict):
 def test_entity_unique_key(default_entity_dict):
     ServeEntity.create(**default_entity_dict)
     with pytest.raises(Exception):
-        ServeEntity.create(**{"prompt_name": "my_prompt_1", "sys_code": "dbgpt"})
+        ServeEntity.create(
+            **{
+                "prompt_name": "my_prompt_1",
+                "sys_code": "dbgpt",
+                "prompt_language": "zh",
+                "model": "vicuna-13b-v1.5",
+            }
+        )
 
 
 def test_entity_get(default_entity_dict):
