@@ -129,8 +129,8 @@ export const saveArguments = (knowledgeName: string, data: ArgumentsParams) => {
 export const getSpaceList = () => {
   return POST<any, Array<ISpace>>('/knowledge/space/list', {});
 };
-export const getDocumentList = (knowLedgeName: string, data: Record<string, number>) => {
-  return POST<Record<string, number>, IDocumentResponse>(`/knowledge/${knowLedgeName}/document/list`, data);
+export const getDocumentList = (spaceName: string, data: Record<string, number | Array<number>>) => {
+  return POST<Record<string, number | Array<number>>, IDocumentResponse>(`/knowledge/${spaceName}/document/list`, data);
 };
 
 export const addDocument = (knowledgeName: string, data: DocumentParams) => {
