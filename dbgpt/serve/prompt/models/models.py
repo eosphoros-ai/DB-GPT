@@ -28,13 +28,13 @@ class ServeEntity(Model):
     chat_scene = Column(String(100), comment="Chat scene")
     sub_chat_scene = Column(String(100), comment="Sub chat scene")
     prompt_type = Column(String(100), comment="Prompt type(eg: common, private)")
-    prompt_name = Column(String(512), comment="Prompt name")
+    prompt_name = Column(String(128), comment="Prompt name")
     content = Column(Text, comment="Prompt content")
     input_variables = Column(
         String(1024), nullable=True, comment="Prompt input variables(split by comma))"
     )
     model = Column(
-        String(128),
+        String(64),
         nullable=True,
         comment="Prompt model name(we can use different models for different prompt",
     )
