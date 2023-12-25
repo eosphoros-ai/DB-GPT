@@ -29,6 +29,9 @@ fmt: setup ## Format Python code
 	# TODO: Use blackdoc to format Python doctests.
 	# https://blackdoc.readthedocs.io/en/latest/
 	# $(VENV_BIN)/blackdoc .
+	# TODO: style checking of Python code.
+	# https://github.com/pylint-dev/pylint
+	# $(VENV_BIN)/pylint dbgpt
 	# TODO: Type checking of Python code.
 	# https://github.com/python/mypy
 	# $(VENV_BIN)/mypy dbgpt

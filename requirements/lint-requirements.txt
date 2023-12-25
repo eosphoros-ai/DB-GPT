@@ -9,3 +9,4 @@ flake8-simplify==0.19.3
 flake8-tidy-imports==4.8.0
 isort==5.10.1
 pyupgrade==3.1.0
+pylint==3.0.3
