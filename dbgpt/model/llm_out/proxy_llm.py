@@ -34,7 +34,7 @@ def proxyllm_generate_stream(
     model_name = model_params.model_name
     default_error_message = f"{model_name} LLM is not supported"
     generator_function = generator_mapping.get(
-        model_name, lambda: default_error_message
+        model_name, lambda *args: [default_error_message]
     )
 
     yield from generator_function(model, tokenizer, params, device, context_len)
