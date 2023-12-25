@@ -2,9 +2,11 @@ import asyncio
 from dbgpt.core.awel import DAG
 from dbgpt.core import (
     BaseOutputParser,
-    RequestBuildOperator,
     PromptTemplate,
+)
+from dbgpt.core.operator import (
     LLMOperator,
+    RequestBuildOperator,
 )
 from dbgpt.model import OpenAILLMClient
 

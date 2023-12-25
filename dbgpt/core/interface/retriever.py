@@ -1,4 +1,5 @@
 from abc import abstractmethod
+
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.task.base import IN, OUT
 

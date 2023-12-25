@@ -1,7 +1,7 @@
 import pytest
 
-from dbgpt.core.interface.tests.conftest import in_memory_storage
 from dbgpt.core.interface.message import *
+from dbgpt.core.interface.tests.conftest import in_memory_storage
 
 
 @pytest.fixture

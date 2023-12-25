@@ -1,7 +1,8 @@
 from typing import Dict, Optional, Set, List
 import logging
 
-from ..dag.base import DAGContext
+from dbgpt.component import SystemApp
+from ..dag.base import DAGContext, DAGVar
 from ..operator.base import WorkflowRunner, BaseOperator, CALL_DATA
 from ..operator.common_operator import BranchOperator, JoinOperator, TriggerOperator
 from ..task.base import TaskContext, TaskState
@@ -18,19 +19,29 @@ class DefaultWorkflowRunner(WorkflowRunner):
         call_data: Optional[CALL_DATA] = None,
         streaming_call: bool = False,
     ) -> DAGContext:
-        # Create DAG context
-        dag_ctx = DAGContext(streaming_call=streaming_call)
+        # Save node output
+        # dag = node.dag
+        node_outputs: Dict[str, TaskContext] = {}
         job_manager = JobManager.build_from_end_node(node, call_data)
+        # Create DAG context
+        dag_ctx = DAGContext(
+            streaming_call=streaming_call,
+            node_to_outputs=node_outputs,
+            node_name_to_ids=job_manager._node_name_to_ids,
+        )
         logger.info(
             f"Begin run workflow from end operator, id: {node.node_id}, call_data: {call_data}"
         )
-        dag = node.dag
-        # Save node output
-        node_outputs: Dict[str, TaskContext] = {}
         skip_node_ids = set()
+        system_app: SystemApp = DAGVar.get_current_system_app()
+
+        await job_manager.before_dag_run()
         await self._execute_node(
-            job_manager, node, dag_ctx, node_outputs, skip_node_ids
+            job_manager, node, dag_ctx, node_outputs, skip_node_ids, system_app
         )
+        if not streaming_call and node.dag:
+            # streaming call not work for dag end
+            await node.dag._after_dag_end()
 
         return dag_ctx
 
@@ -41,6 +52,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
         dag_ctx: DAGContext,
         node_outputs: Dict[str, TaskContext],
         skip_node_ids: Set[str],
+        system_app: SystemApp,
     ):
         # Skip run node
         if node.node_id in node_outputs:
@@ -50,7 +62,12 @@ class DefaultWorkflowRunner(WorkflowRunner):
         for upstream_node in node.upstream:
             if isinstance(upstream_node, BaseOperator):
                 await self._execute_node(
-                    job_manager, upstream_node, dag_ctx, node_outputs, skip_node_ids
+                    job_manager,
+                    upstream_node,
+                    dag_ctx,
+                    node_outputs,
+                    skip_node_ids,
+                    system_app,
                 )
 
         inputs = [
@@ -73,6 +90,9 @@ class DefaultWorkflowRunner(WorkflowRunner):
             logger.debug(
                 f"Begin run operator, node id: {node.node_id}, node name: {node.node_name}, cls: {node}"
             )
+            if system_app is not None and node.system_app is None:
+                node.set_system_app(system_app)
+
             await node._run(dag_ctx)
             node_outputs[node.node_id] = dag_ctx.current_task_context
             task_ctx.set_current_state(TaskState.SUCCESS)

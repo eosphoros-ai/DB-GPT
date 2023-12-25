@@ -146,6 +146,16 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     def current_dag_context(self) -> DAGContext:
         return self._dag_ctx
 
+    @property
+    def dev_mode(self) -> bool:
+        """Whether the operator is in dev mode.
+        In production mode, the default runner is not None.
+
+        Returns:
+            bool: Whether the operator is in dev mode. True if the default runner is None.
+        """
+        return default_runner is None
+
     async def _run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
         if not self.node_id:
             raise ValueError(f"The DAG Node ID can't be empty, current node {self}")

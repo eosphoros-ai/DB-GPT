@@ -171,7 +171,7 @@ class ModelCacheBranchOperator(BranchOperator[Dict, Dict]):
         self._model_task_name = model_task_name
         self._cache_task_name = cache_task_name
 
-    async def branchs(self) -> Dict[BranchFunc[Dict], Union[BaseOperator, str]]:
+    async def branches(self) -> Dict[BranchFunc[Dict], Union[BaseOperator, str]]:
         """Defines branch logic based on cache availability.
 
         Returns:
@@ -233,7 +233,7 @@ class ModelStreamSaveCacheOperator(
         outputs = []
         async for out in input_value:
             if not llm_cache_key:
-                llm_cache_key = await self.current_dag_context.get_share_data(
+                llm_cache_key = await self.current_dag_context.get_from_share_data(
                     _LLM_MODEL_INPUT_VALUE_KEY
                 )
             outputs.append(out)
@@ -265,7 +265,7 @@ class ModelSaveCacheOperator(MapOperator[ModelOutput, ModelOutput]):
         Returns:
             ModelOutput: The same input model output.
         """
-        llm_cache_key: LLMCacheKey = await self.current_dag_context.get_share_data(
+        llm_cache_key: LLMCacheKey = await self.current_dag_context.get_from_share_data(
             _LLM_MODEL_INPUT_VALUE_KEY
         )
         llm_cache_value: LLMCacheValue = self._client.new_value(output=input_value)
