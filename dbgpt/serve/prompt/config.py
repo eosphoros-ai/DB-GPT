@@ -1,8 +1,7 @@
-from typing import Optional
 from dataclasses import dataclass, field
+from typing import Optional
 
 from dbgpt.serve.core import BaseServeConfig
-
 
 APP_NAME = "prompt"
 SERVE_APP_NAME = "dbgpt_serve_prompt"

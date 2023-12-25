@@ -1,15 +1,15 @@
 import pytest
+from fastapi import FastAPI
 from httpx import AsyncClient
 
-from fastapi import FastAPI
 from dbgpt.component import SystemApp
+from dbgpt.serve.core.tests.conftest import asystem_app, client
 from dbgpt.storage.metadata import db
 from dbgpt.util import PaginationResult
-from ..config import SERVE_CONFIG_KEY_PREFIX
-from ..api.endpoints import router, init_endpoints
-from ..api.schemas import ServeRequest, ServerResponse
 
-from dbgpt.serve.core.tests.conftest import client, asystem_app
+from ..api.endpoints import init_endpoints, router
+from ..api.schemas import ServeRequest, ServerResponse
+from ..config import SERVE_CONFIG_KEY_PREFIX
 
 
 @pytest.fixture(autouse=True)

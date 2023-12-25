@@ -1,11 +1,13 @@
-from typing import Optional, List
+from typing import List, Optional
+
 from dbgpt.component import BaseComponent, SystemApp
+from dbgpt.serve.core import BaseService
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.util.pagination_utils import PaginationResult
-from dbgpt.serve.core import BaseService
-from ..models.models import ServeDao, ServeEntity
+
 from ..api.schemas import ServeRequest, ServerResponse
-from ..config import SERVE_SERVICE_COMPONENT_NAME, SERVE_CONFIG_KEY_PREFIX, ServeConfig
+from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
+from ..models.models import ServeDao, ServeEntity
 
 
 class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):

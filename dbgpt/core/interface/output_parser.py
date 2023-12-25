@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import json
-from abc import ABC
 import logging
+from abc import ABC
 from dataclasses import asdict
 from typing import Any, Dict, TypeVar, Union
 
-from dbgpt.core.awel import MapOperator
 from dbgpt.core import ModelOutput
+from dbgpt.core.awel import MapOperator
 
 T = TypeVar("T")
 ResponseTye = Union[str, bytes, ModelOutput]
