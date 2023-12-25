@@ -1,11 +1,9 @@
 from dbgpt.core.interface.llm import (
     ModelInferenceMetrics,
     ModelRequest,
+    ModelRequestContext,
     ModelOutput,
     LLMClient,
-    LLMOperator,
-    StreamingLLMOperator,
-    RequestBuildOperator,
     ModelMetadata,
 )
 from dbgpt.core.interface.message import (
@@ -17,7 +15,11 @@ from dbgpt.core.interface.message import (
     ConversationIdentifier,
     MessageIdentifier,
 )
-from dbgpt.core.interface.prompt import PromptTemplate, PromptTemplateOperator
+from dbgpt.core.interface.prompt import (
+    PromptTemplate,
+    PromptManager,
+    StoragePromptTemplate,
+)
 from dbgpt.core.interface.output_parser import BaseOutputParser, SQLOutputParser
 from dbgpt.core.interface.serialization import Serializable, Serializer
 from dbgpt.core.interface.cache import (
@@ -38,17 +40,15 @@ from dbgpt.core.interface.storage import (
     StorageError,
 )
 
+
 __ALL__ = [
     "ModelInferenceMetrics",
     "ModelRequest",
+    "ModelRequestContext",
     "ModelOutput",
-    "Operator",
-    "RequestBuildOperator",
     "ModelMetadata",
     "ModelMessage",
     "LLMClient",
-    "LLMOperator",
-    "StreamingLLMOperator",
     "ModelMessageRoleType",
     "OnceConversation",
     "StorageConversation",
@@ -56,7 +56,8 @@ __ALL__ = [
     "ConversationIdentifier",
     "MessageIdentifier",
     "PromptTemplate",
-    "PromptTemplateOperator",
+    "PromptManager",
+    "StoragePromptTemplate",
     "BaseOutputParser",
     "SQLOutputParser",
     "Serializable",

@@ -1,4 +1,14 @@
-from typing import Generic, Dict, List, Union, Callable, Any, AsyncIterator, Awaitable
+from typing import (
+    Generic,
+    Dict,
+    List,
+    Union,
+    Callable,
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Optional,
+)
 import asyncio
 import logging
 
@@ -162,7 +172,9 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
     """
 
     def __init__(
-        self, branches: Dict[BranchFunc[IN], Union[BaseOperator, str]], **kwargs
+        self,
+        branches: Optional[Dict[BranchFunc[IN], Union[BaseOperator, str]]] = None,
+        **kwargs,
     ):
         """
         Initializes a BranchDAGNode with a branching function.
@@ -203,7 +215,7 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
 
         branches = self._branches
         if not branches:
-            branches = await self.branchs()
+            branches = await self.branches()
 
         branch_func_tasks = []
         branch_nodes: List[str] = []
@@ -229,7 +241,7 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
         curr_task_ctx.update_metadata("skip_node_names", skip_node_names)
         return parent_output
 
-    async def branchs(self) -> Dict[BranchFunc[IN], Union[BaseOperator, str]]:
+    async def branches(self) -> Dict[BranchFunc[IN], Union[BaseOperator, str]]:
         raise NotImplementedError
 
 

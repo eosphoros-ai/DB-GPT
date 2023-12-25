@@ -34,16 +34,9 @@ class SQLAlchemyStorage(StorageInterface[T, BaseModel]):
         query_class=BaseQuery,
     ):
         super().__init__(serializer=serializer, adapter=adapter)
-        if isinstance(db_url_or_db, str) or isinstance(db_url_or_db, URL):
-            db_manager = DatabaseManager()
-            db_manager.init_db(db_url_or_db, engine_args, base, query_class)
-            self.db_manager = db_manager
-        elif isinstance(db_url_or_db, DatabaseManager):
-            self.db_manager = db_url_or_db
-        else:
-            raise ValueError(
-                f"db_url_or_db should be either url or a DatabaseManager, got {type(db_url_or_db)}"
-            )
+        self.db_manager = DatabaseManager.build_from(
+            db_url_or_db, engine_args, base, query_class
+        )
         self._model_class = model_class
 
     @contextmanager

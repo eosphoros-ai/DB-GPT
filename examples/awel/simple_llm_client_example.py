@@ -2,45 +2,58 @@
 
     DB-GPT will automatically load and execute the current file after startup.
 
-    Example:
+    Examples:
 
-    .. code-block:: shell
+        Call with non-streaming response.
+        .. code-block:: shell
 
-        DBGPT_SERVER="http://127.0.0.1:5000"
-        curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/generate \
-        -H "Content-Type: application/json" -d '{
-            "model": "proxyllm",
-            "messages": "hello"
-        }'
+            DBGPT_SERVER="http://127.0.0.1:5000"
+            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/chat/completions \
+            -H "Content-Type: application/json" -d '{
+                "model": "proxyllm",
+                "messages": "hello"
+            }'
 
-        curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/generate_stream \
-        -H "Content-Type: application/json" -d '{
-            "model": "proxyllm",
-            "messages": "hello",
-            "stream": true
-        }'
+        Call with streaming response.
+        .. code-block:: shell
 
-        curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/count_token \
-        -H "Content-Type: application/json" -d '{
-            "model": "proxyllm",
-            "messages": "hello"
-        }'
+            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/chat/completions \
+            -H "Content-Type: application/json" -d '{
+                "model": "proxyllm",
+                "messages": "hello",
+                "stream": true
+            }'
+
+        Call model and count token.
+         .. code-block:: shell
+
+            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/count_token \
+            -H "Content-Type: application/json" -d '{
+                "model": "proxyllm",
+                "messages": "hello"
+            }'
 
 """
-from typing import Dict, Any, AsyncIterator, Optional, Union, List
+from typing import Dict, Any, Optional, Union, List
+import logging
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.component import ComponentType
-from dbgpt.core.awel import DAG, HttpTrigger, MapOperator, TransformStreamAbsOperator
-from dbgpt.core import (
-    ModelMessage,
-    LLMClient,
+from dbgpt.core.awel import (
+    DAG,
+    HttpTrigger,
+    MapOperator,
+    JoinOperator,
+)
+from dbgpt.core import LLMClient
+
+from dbgpt.core.operator import (
+    LLMBranchOperator,
     LLMOperator,
     StreamingLLMOperator,
-    ModelOutput,
-    ModelRequest,
+    RequestBuildOperator,
 )
-from dbgpt.model import DefaultLLMClient
-from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt.model import OpenAIStreamingOperator, MixinLLMOperator
+
+logger = logging.getLogger(__name__)
 
 
 class TriggerReqBody(BaseModel):
@@ -51,58 +64,24 @@ class TriggerReqBody(BaseModel):
     stream: Optional[bool] = Field(default=False, description="Whether return stream")
 
 
-class RequestHandleOperator(MapOperator[TriggerReqBody, ModelRequest]):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    async def map(self, input_value: TriggerReqBody) -> ModelRequest:
-        messages = [ModelMessage.build_human_message(input_value.messages)]
-        await self.current_dag_context.save_to_share_data(
-            "request_model_name", input_value.model
-        )
-        return ModelRequest(
-            model=input_value.model,
-            messages=messages,
-            echo=False,
-        )
+class MyLLMOperator(MixinLLMOperator, LLMOperator):
+    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
+        super().__init__(llm_client)
+        LLMOperator.__init__(self, llm_client, **kwargs)
 
 
-class LLMMixin:
-    @property
-    def llm_client(self) -> LLMClient:
-        if not self._llm_client:
-            worker_manager = self.system_app.get_component(
-                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-            ).create()
-            self._llm_client = DefaultLLMClient(worker_manager)
-        return self._llm_client
+class MyStreamingLLMOperator(MixinLLMOperator, StreamingLLMOperator):
+    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
+        super().__init__(llm_client)
+        StreamingLLMOperator.__init__(self, llm_client, **kwargs)
 
 
-class MyLLMOperator(LLMMixin, LLMOperator):
-    def __init__(self, llm_client: LLMClient = None, **kwargs):
-        super().__init__(llm_client, **kwargs)
-
-
-class MyStreamingLLMOperator(LLMMixin, StreamingLLMOperator):
-    def __init__(self, llm_client: LLMClient = None, **kwargs):
-        super().__init__(llm_client, **kwargs)
-
-
-class MyLLMStreamingOperator(TransformStreamAbsOperator[ModelOutput, str]):
-    async def transform_stream(
-        self, input_value: AsyncIterator[ModelOutput]
-    ) -> AsyncIterator[str]:
-        from dbgpt.model.utils.chatgpt_utils import _to_openai_stream
-
-        model = await self.current_dag_context.get_share_data("request_model_name")
-        async for output in _to_openai_stream(model, input_value):
-            yield output
-
-
-class MyModelToolOperator(LLMMixin, MapOperator[TriggerReqBody, Dict[str, Any]]):
-    def __init__(self, llm_client: LLMClient = None, **kwargs):
-        self._llm_client = llm_client
-        MapOperator.__init__(self, **kwargs)
+class MyModelToolOperator(
+    MixinLLMOperator, MapOperator[TriggerReqBody, Dict[str, Any]]
+):
+    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
+        super().__init__(llm_client)
+        MapOperator.__init__(self, llm_client, **kwargs)
 
     async def map(self, input_value: TriggerReqBody) -> Dict[str, Any]:
         prompt_tokens = await self.llm_client.count_token(
@@ -118,25 +97,27 @@ class MyModelToolOperator(LLMMixin, MapOperator[TriggerReqBody, Dict[str, Any]])
 with DAG("dbgpt_awel_simple_llm_client_generate") as client_generate_dag:
     # Receive http request and trigger dag to run.
     trigger = HttpTrigger(
-        "/examples/simple_client/generate", methods="POST", request_body=TriggerReqBody
-    )
-    request_handle_task = RequestHandleOperator()
-    model_task = MyLLMOperator()
-    model_parse_task = MapOperator(lambda out: out.to_dict())
-    trigger >> request_handle_task >> model_task >> model_parse_task
-
-with DAG("dbgpt_awel_simple_llm_client_generate_stream") as client_generate_stream_dag:
-    # Receive http request and trigger dag to run.
-    trigger = HttpTrigger(
-        "/examples/simple_client/generate_stream",
+        "/examples/simple_client/chat/completions",
         methods="POST",
         request_body=TriggerReqBody,
-        streaming_response=True,
+        streaming_predict_func=lambda req: req.stream,
     )
-    request_handle_task = RequestHandleOperator()
-    model_task = MyStreamingLLMOperator()
-    openai_format_stream_task = MyLLMStreamingOperator()
-    trigger >> request_handle_task >> model_task >> openai_format_stream_task
+    request_handle_task = RequestBuildOperator()
+    llm_task = MyLLMOperator(task_name="llm_task")
+    streaming_llm_task = MyStreamingLLMOperator(task_name="streaming_llm_task")
+    branch_task = LLMBranchOperator(
+        stream_task_name="streaming_llm_task", no_stream_task_name="llm_task"
+    )
+    model_parse_task = MapOperator(lambda out: out.to_dict())
+    openai_format_stream_task = OpenAIStreamingOperator()
+    result_join_task = JoinOperator(
+        combine_function=lambda not_stream_out, stream_out: not_stream_out or stream_out
+    )
+
+    trigger >> request_handle_task >> branch_task
+    branch_task >> llm_task >> model_parse_task >> result_join_task
+    branch_task >> streaming_llm_task >> openai_format_stream_task >> result_join_task
+
 
 with DAG("dbgpt_awel_simple_llm_client_count_token") as client_count_token_dag:
     # Receive http request and trigger dag to run.
@@ -147,3 +128,15 @@ with DAG("dbgpt_awel_simple_llm_client_count_token") as client_count_token_dag:
     )
     model_task = MyModelToolOperator()
     trigger >> model_task
+
+
+if __name__ == "__main__":
+    if client_generate_dag.leaf_nodes[0].dev_mode:
+        # Development mode, you can run the dag locally for debugging.
+        from dbgpt.core.awel import setup_dev_environment
+
+        dags = [client_generate_dag, client_count_token_dag]
+        setup_dev_environment(dags, port=5555)
+    else:
+        # Production mode, DB-GPT will automatically load and execute the current file after startup.
+        pass

@@ -1,33 +1,64 @@
 """This is an auto-generated model file
 You can define your own models and DAOs here
 """
-from typing import Union, Any, Dict
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Index, Text, DateTime, UniqueConstraint
-from dbgpt.storage.metadata import Model, BaseDao, db
+from typing import Any, Dict, Union
+
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text, UniqueConstraint
+
+from dbgpt.storage.metadata import BaseDao, Model, db
+
 from ..api.schemas import ServeRequest, ServerResponse
-from ..config import ServeConfig, SERVER_APP_TABLE_NAME
+from ..config import SERVER_APP_TABLE_NAME, ServeConfig
 
 
 class ServeEntity(Model):
     __tablename__ = "prompt_manage"
     __table_args__ = (
-        UniqueConstraint("prompt_name", "sys_code", name="uk_prompt_name_sys_code"),
+        UniqueConstraint(
+            "prompt_name",
+            "sys_code",
+            "prompt_language",
+            "model",
+            name="uk_prompt_name_sys_code",
+        ),
     )
     id = Column(Integer, primary_key=True, comment="Auto increment id")
 
-    chat_scene = Column(String(100))
-    sub_chat_scene = Column(String(100))
-    prompt_type = Column(String(100))
-    prompt_name = Column(String(512))
-    content = Column(Text)
-    user_name = Column(String(128))
+    chat_scene = Column(String(100), comment="Chat scene")
+    sub_chat_scene = Column(String(100), comment="Sub chat scene")
+    prompt_type = Column(String(100), comment="Prompt type(eg: common, private)")
+    prompt_name = Column(String(256), comment="Prompt name")
+    content = Column(Text, comment="Prompt content")
+    input_variables = Column(
+        String(1024), nullable=True, comment="Prompt input variables(split by comma))"
+    )
+    model = Column(
+        String(128),
+        nullable=True,
+        comment="Prompt model name(we can use different models for different prompt",
+    )
+    prompt_language = Column(
+        String(32), index=True, nullable=True, comment="Prompt language(eg:en, zh-cn)"
+    )
+    prompt_format = Column(
+        String(32),
+        index=True,
+        nullable=True,
+        default="f-string",
+        comment="Prompt format(eg: f-string, jinja2)",
+    )
+    user_name = Column(String(128), index=True, nullable=True, comment="User name")
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
     gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
 
     def __repr__(self):
-        return f"ServeEntity(id={self.id}, chat_scene='{self.chat_scene}', sub_chat_scene='{self.sub_chat_scene}', prompt_type='{self.prompt_type}', prompt_name='{self.prompt_name}', content='{self.content}',user_name='{self.user_name}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+        return (
+            f"ServeEntity(id={self.id}, chat_scene='{self.chat_scene}', sub_chat_scene='{self.sub_chat_scene}', "
+            f"prompt_type='{self.prompt_type}', prompt_name='{self.prompt_name}', content='{self.content}',"
+            f"user_name='{self.user_name}', gmt_created='{self.gmt_created}', gmt_modified='{self.gmt_modified}')"
+        )
 
 
 class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
