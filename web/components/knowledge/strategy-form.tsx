@@ -53,6 +53,7 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
             label={`${param.param_name}: ${param.param_type}`}
             name={[field!.name, 'chunk_parameters', param.param_name]}
             rules={[{ required: true, message: t('Please_input_the_name') }]}
+            initialValue={param.default_value}
           >
             {param.param_type === 'int' ? <InputNumber className="w-full" min={1} /> : <TextArea className="w-full" rows={2} maxLength={6} />}
           </Form.Item>
