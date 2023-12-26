@@ -3,7 +3,7 @@ from typing import Optional, Any, List
 
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkManager, ChunkParameters
-from dbgpt.rag.extracter.base import Extractor
+from dbgpt.rag.extractor.base import Extractor
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.rag.retriever.base import BaseRetriever
 
@@ -36,7 +36,6 @@ class BaseAssembler(ABC):
         """Load knowledge Pipeline."""
         documents = knowledge.load()
         self._chunks = self._chunk_manager.split(documents)
-        self._extract_info(self._chunks)
 
     @abstractmethod
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
@@ -46,6 +45,6 @@ class BaseAssembler(ABC):
     def persist(self, chunks: List[Chunk]) -> None:
         """Persist chunks."""
 
-    @abstractmethod
-    def get_chunks(self) -> List[str]:
+    def get_chunks(self) -> List[Chunk]:
         """Return chunks."""
+        return self._chunks

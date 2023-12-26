@@ -5,6 +5,7 @@ from typing import Dict, List
 
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
+from dbgpt.component import ComponentType
 
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
@@ -16,6 +17,9 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentEntity,
 )
 from dbgpt.app.knowledge.service import KnowledgeService
+from dbgpt.model import DefaultLLMClient
+from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.util.tracer import trace
 
 CFG = Config()
@@ -73,8 +77,19 @@ class ChatKnowledge(BaseChat):
             vector_store_type=CFG.VECTOR_STORE_TYPE,
             vector_store_config=config,
         )
+        query_rewrite = None
+        if CFG.KNOWLEDGE_SEARCH_REWRITE:
+            worker_manager = CFG.SYSTEM_APP.get_component(
+                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+            ).create()
+            llm_client = DefaultLLMClient(worker_manager=worker_manager)
+            query_rewrite = QueryRewrite(
+                llm_client=llm_client, model_name=self.llm_model, language=CFG.LANGUAGE
+            )
         self.embedding_retriever = EmbeddingRetriever(
-            top_k=self.top_k, vector_store_connector=vector_store_connector
+            top_k=self.top_k,
+            vector_store_connector=vector_store_connector,
+            query_rewrite=query_rewrite,
         )
         self.prompt_template.template_is_strict = False
         self.relations = None
@@ -115,21 +130,9 @@ class ChatKnowledge(BaseChat):
         if self.space_context and self.space_context.get("prompt"):
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
-        from dbgpt.rag.retriever.reinforce import QueryReinforce
-
-        # query reinforce, get similar queries
-        query_reinforce = QueryReinforce(
-            query=self.current_user_input, model_name=self.llm_model
-        )
-        queries = []
-        if CFG.KNOWLEDGE_SEARCH_REWRITE:
-            queries = await query_reinforce.rewrite()
-            print("rewrite queries:", queries)
-        queries.append(self.current_user_input)
         from dbgpt.util.chat_util import run_async_tasks
 
-        # similarity search from vector db
-        tasks = [self.execute_similar_search(query) for query in queries]
+        tasks = [self.execute_similar_search(self.current_user_input)]
         candidates_with_scores = await run_async_tasks(tasks=tasks, concurrency_limit=1)
         candidates_with_scores = reduce(lambda x, y: x + y, candidates_with_scores)
         self.chunks_with_score = []

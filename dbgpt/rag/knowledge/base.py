@@ -47,8 +47,8 @@ class ChunkStrategy(Enum):
     CHUNK_BY_SIZE = (
         RecursiveCharacterTextSplitter,
         [
-            {"param_name": "chunk_size", "param_type": "int"},
-            {"param_name": "chunk_overlap", "param_type": "int"},
+            {"param_name": "chunk_size", "param_type": "int", "default_value": 512},
+            {"param_name": "chunk_overlap", "param_type": "int", "default_value": 50},
         ],
         "chunk size",
         "split document by chunk size",
@@ -56,13 +56,13 @@ class ChunkStrategy(Enum):
     CHUNK_BY_PAGE = (PageTextSplitter, [], "page", "split document by page")
     CHUNK_BY_PARAGRAPH = (
         ParagraphTextSplitter,
-        [{"param_name": "separator", "param_type": "string"}],
+        [{"param_name": "separator", "param_type": "string", "default_value": "\n"}],
         "paragraph",
         "split document by paragraph",
     )
     CHUNK_BY_SEPARATOR = (
         SeparatorTextSplitter,
-        [{"param_name": "separator", "param_type": "string"}],
+        [{"param_name": "separator", "param_type": "string", "default_value": "\n"}],
         "separator",
         "split document by separator",
     )
@@ -137,7 +137,5 @@ class Knowledge(ABC):
     def support_chunk_strategy(self):
         return [
             ChunkStrategy.CHUNK_BY_SIZE,
-            ChunkStrategy.CHUNK_BY_PAGE,
-            ChunkStrategy.CHUNK_BY_PARAGRAPH,
             ChunkStrategy.CHUNK_BY_SEPARATOR,
         ]

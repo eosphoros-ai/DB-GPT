@@ -1,6 +1,8 @@
 from functools import reduce
-from typing import List
+from typing import List, Optional
 
+from dbgpt.core import LLMClient
+from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.util.chat_util import run_async_tasks
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever
@@ -14,14 +16,14 @@ class EmbeddingRetriever(BaseRetriever):
     def __init__(
         self,
         top_k: int = 4,
-        query_rewrite: bool = False,
+        query_rewrite: Optional[QueryRewrite] = None,
         rerank: Ranker = None,
         vector_store_connector: VectorStoreConnector = None,
     ):
         """
         Args:
             top_k (int): top k
-            query_rewrite (bool): query rewrite
+            query_rewrite (Optional[QueryRewrite]): query rewrite
             rerank (Ranker): rerank
             vector_store_connector (VectorStoreConnector): vector store connector
             code example:
@@ -97,6 +99,9 @@ class EmbeddingRetriever(BaseRetriever):
             List[Chunk]: list of chunks
         """
         queries = [query]
+        if self._query_rewrite:
+            new_queries = await self._query_rewrite.rewrite(origin_query=query, nums=1)
+            queries.extend(new_queries)
         candidates = [self._similarity_search(query) for query in queries]
         candidates = await run_async_tasks(tasks=candidates, concurrency_limit=1)
         return candidates
@@ -112,6 +117,9 @@ class EmbeddingRetriever(BaseRetriever):
             List[Chunk]: list of chunks with score
         """
         queries = [query]
+        if self._query_rewrite:
+            new_queries = await self._query_rewrite.rewrite(origin_query=query, nums=1)
+            queries.extend(new_queries)
         candidates_with_score = [
             self._similarity_search_with_score(query, score_threshold)
             for query in queries

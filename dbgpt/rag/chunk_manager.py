@@ -4,7 +4,7 @@ from typing import Optional, List, Any
 from pydantic import BaseModel, Field
 
 from dbgpt.rag.chunk import Chunk
-from dbgpt.rag.extracter.base import Extractor
+from dbgpt.rag.extractor.base import Extractor
 from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge
 
 

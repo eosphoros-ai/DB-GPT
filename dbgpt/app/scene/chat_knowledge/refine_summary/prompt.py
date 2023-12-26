@@ -19,7 +19,6 @@ _DEFAULT_TEMPLATE_ZH = (
 _DEFAULT_TEMPLATE_EN = """
 We have provided an existing summary up to a certain point: {existing_answer}\nWe have the opportunity to refine the existing summary (only if needed) with some more context below. 
 \nBased on the previous reasoning, please summarize the final conclusion in accordance with points 1.2.and 3.
-
 """
 
 _DEFAULT_TEMPLATE = (

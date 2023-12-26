@@ -3,6 +3,7 @@ import logging
 from datetime import datetime
 from typing import List
 
+from dbgpt.model import DefaultLLMClient
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
@@ -366,6 +367,12 @@ class KnowledgeService:
         if len(documents) != 1:
             raise Exception(f"can not found document for {request.doc_id}")
         document = documents[0]
+        from dbgpt.model.cluster import WorkerManagerFactory
+
+        worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+
         chunk_docs = self._sync_knowledge_document(
             space_name=document.space,
             doc=document,
@@ -375,14 +382,20 @@ class KnowledgeService:
                 chunk_overlap=CFG.KNOWLEDGE_CHUNK_OVERLAP,
             ),
         )
+        from dbgpt.rag.extractor.summary import SummaryExtractor
+
+        extractor = SummaryExtractor(
+            model_name=request.model_name,
+            llm_client=DefaultLLMClient(worker_manager=worker_manager),
+            language=CFG.LANGUAGE,
+        )
+        summary = await extractor.aextract(chunks=chunk_docs)
+
         if len(chunk_docs) == 0:
             raise Exception(f"can not found chunks for {request.doc_id}")
 
-        return await self.async_document_summary(
-            model_name=request.model_name,
-            chunk_docs=chunk_docs,
-            doc=document,
-            conn_uid=request.conv_uid,
+        return await self._llm_extract_summary(
+            summary, request.conv_uid, request.model_name
         )
 
     def update_knowledge_space(
@@ -492,37 +505,6 @@ class KnowledgeService:
             doc.result = "document build graph failed" + str(e)
             logger.error(f"document build graph failed:{doc.doc_name}, {str(e)}")
         return knowledge_document_dao.update_knowledge_document(doc)
-
-    async def async_document_summary(self, model_name, chunk_docs, doc, conn_uid):
-        """async document extract summary
-        Args:
-            - model_name: str
-            - chunk_docs: List[Document]
-            - doc: KnowledgeDocumentEntity
-        """
-        texts = [doc.content for doc in chunk_docs]
-        from dbgpt.util.prompt_util import PromptHelper
-
-        prompt_helper = PromptHelper()
-        from dbgpt.app.scene.chat_knowledge.summary.prompt import prompt
-
-        texts = prompt_helper.repack(prompt_template=prompt.template, text_chunks=texts)
-        logger.info(
-            f"async_document_summary, doc:{doc.doc_name}, chunk_size:{len(texts)}, begin generate summary"
-        )
-        space_context = self.get_space_context(doc.space)
-        if space_context and space_context.get("summary"):
-            summary = await self._mapreduce_extract_summary(
-                docs=texts,
-                model_name=model_name,
-                max_iteration=int(space_context["summary"]["max_iteration"]),
-                concurrency_limit=int(space_context["summary"]["concurrency_limit"]),
-            )
-        else:
-            summary = await self._mapreduce_extract_summary(
-                docs=texts, model_name=model_name
-            )
-        return await self._llm_extract_summary(summary, conn_uid, model_name)
 
     def async_doc_embedding(self, assembler, chunk_docs, doc):
         """async document embedding into vector db
@@ -639,65 +621,3 @@ class KnowledgeService:
             **{"chat_param": chat_param},
         )
         return chat
-
-    async def _mapreduce_extract_summary(
-        self,
-        docs,
-        model_name: str = None,
-        max_iteration: int = 5,
-        concurrency_limit: int = 3,
-    ):
-        """Extract summary by mapreduce mode
-        map -> multi async call llm to generate summary
-        reduce -> merge the summaries by map process
-        Args:
-            docs:List[str]
-            model_name:model name str
-            max_iteration:max iteration will call llm to summary
-            concurrency_limit:the max concurrency threads to call llm
-        Returns:
-             Document: refine summary context document.
-        """
-        from dbgpt.app.scene import ChatScene
-        from dbgpt.util.chat_util import llm_chat_response_nostream
-        import uuid
-
-        tasks = []
-        if len(docs) == 1:
-            return docs[0]
-        else:
-            max_iteration = max_iteration if len(docs) > max_iteration else len(docs)
-            for doc in docs[0:max_iteration]:
-                chat_param = {
-                    "chat_session_id": uuid.uuid1(),
-                    "current_user_input": "",
-                    "select_param": doc,
-                    "model_name": model_name,
-                    "model_cache_enable": True,
-                }
-                tasks.append(
-                    llm_chat_response_nostream(
-                        ChatScene.ExtractSummary.value(), **{"chat_param": chat_param}
-                    )
-                )
-            from dbgpt.util.chat_util import run_async_tasks
-
-            summary_iters = await run_async_tasks(
-                tasks=tasks, concurrency_limit=concurrency_limit
-            )
-            summary_iters = list(
-                filter(
-                    lambda content: "LLMServer Generate Error" not in content,
-                    summary_iters,
-                )
-            )
-            from dbgpt.util.prompt_util import PromptHelper
-            from dbgpt.app.scene.chat_knowledge.summary.prompt import prompt
-
-            prompt_helper = PromptHelper()
-            summary_iters = prompt_helper.repack(
-                prompt_template=prompt.template, text_chunks=summary_iters
-            )
-            return await self._mapreduce_extract_summary(
-                summary_iters, model_name, max_iteration, concurrency_limit
-            )

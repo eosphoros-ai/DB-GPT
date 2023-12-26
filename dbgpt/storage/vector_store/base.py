@@ -11,7 +11,7 @@ class VectorStoreConfig(BaseModel):
     """Vector store config."""
 
     name: str = Field(
-        default="dbgpt",
+        default="dbgpt_collection",
         description="The name of vector store, if not set, will use the default name.",
     )
     user: Optional[str] = Field(

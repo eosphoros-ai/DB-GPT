@@ -35,7 +35,7 @@ class EmbeddingAssembler(BaseAssembler):
         """Initialize with Embedding Assembler arguments.
         Args:
             knowledge: (Knowledge) Knowledge datasource.
-            chunk_manager: (Optional[ChunkManager]) ChunkManager to use for chunking.
+            chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for chunking.
             embedding_model: (Optional[str]) Embedding model to use.
             embedding_factory: (Optional[EmbeddingFactory]) EmbeddingFactory to use.
             vector_store_connector: (Optional[VectorStoreConnector]) VectorStoreConnector to use.
@@ -91,10 +91,6 @@ class EmbeddingAssembler(BaseAssembler):
             embedding_factory=embedding_factory,
             vector_store_connector=vector_store_connector,
         )
-
-    def get_chunks(self) -> List[Chunk]:
-        """Return chunk ids."""
-        return self._chunks
 
     def persist(self) -> List[str]:
         """Persist chunks into vector store."""

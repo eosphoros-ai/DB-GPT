@@ -139,7 +139,7 @@ def chunk_strategies():
             ]
         )
     except Exception as e:
-        return Result.failed(code="E000X", msg=f"chunkstrategies error {e}")
+        return Result.failed(code="E000X", msg=f"chunk strategies error {e}")
 
 
 @router.post("/knowledge/{space_name}/document/list")
