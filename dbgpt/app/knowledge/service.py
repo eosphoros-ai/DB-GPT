@@ -14,6 +14,7 @@ from dbgpt.rag.text_splitter.text_splitter import (
     SpacyTextSplitter,
 )
 from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
+from dbgpt.serve.rag.assembler.summary import SummaryAssembler
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
@@ -372,26 +373,37 @@ class KnowledgeService:
         worker_manager = CFG.SYSTEM_APP.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
-
-        chunk_docs = self._sync_knowledge_document(
-            space_name=document.space,
-            doc=document,
-            chunk_parameters=ChunkParameters(
-                chunk_strategy="CHUNK_BY_SIZE",
-                chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
-                chunk_overlap=CFG.KNOWLEDGE_CHUNK_OVERLAP,
-            ),
+        chunk_parameters = ChunkParameters(
+            chunk_strategy="CHUNK_BY_SIZE",
+            chunk_size=CFG.KNOWLEDGE_CHUNK_SIZE,
+            chunk_overlap=CFG.KNOWLEDGE_CHUNK_OVERLAP,
         )
-        from dbgpt.rag.extractor.summary import SummaryExtractor
-
-        extractor = SummaryExtractor(
+        chunk_entities = document_chunk_dao.get_document_chunks(
+            DocumentChunkEntity(document_id=document.id)
+        )
+        if (
+            document.status not in [SyncStatus.RUNNING.name]
+            and len(chunk_entities) == 0
+        ):
+            self._sync_knowledge_document(
+                space_name=document.space,
+                doc=document,
+                chunk_parameters=chunk_parameters,
+            )
+        knowledge = KnowledgeFactory.create(
+            datasource=document.content,
+            knowledge_type=KnowledgeType.get_by_value(document.doc_type),
+        )
+        assembler = SummaryAssembler(
+            knowledge=knowledge,
             model_name=request.model_name,
             llm_client=DefaultLLMClient(worker_manager=worker_manager),
             language=CFG.LANGUAGE,
+            chunk_parameters=chunk_parameters,
         )
-        summary = await extractor.aextract(chunks=chunk_docs)
+        summary = await assembler.generate_summary()
 
-        if len(chunk_docs) == 0:
+        if len(assembler.get_chunks()) == 0:
             raise Exception(f"can not found chunks for {request.doc_id}")
 
         return await self._llm_extract_summary(

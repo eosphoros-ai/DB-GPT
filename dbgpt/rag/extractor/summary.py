@@ -34,7 +34,7 @@ class SummaryExtractor(Extractor):
         self._llm_client = llm_client
         self._model_name = model_name
         self.llm_metadata = llm_metadata or LLMMetadata
-        self._language = language or "zh"
+        self._language = language
         self._concurrency_limit_with_llm = concurrency_limit_with_llm
         self._prompt_template = (
             SUMMARY_PROMPT_TEMPLATE_EN
@@ -97,7 +97,7 @@ class SummaryExtractor(Extractor):
         if len(docs) == 1:
             return docs[0]
         else:
-            summary_outs = self._llm_run_tasks(
+            summary_outs = await self._llm_run_tasks(
                 chunk_texts=docs[0 : self._max_iteration_with_llm]
             )
             from dbgpt.util.prompt_util import PromptHelper
