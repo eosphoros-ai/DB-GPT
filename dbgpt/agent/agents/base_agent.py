@@ -664,7 +664,7 @@ class ConversableAgent(Agent):
         return now_model.model
 
     async def a_reasoning_reply(
-        self, messages: Union[List[Dict]]
+        self, messages: Optional[List[Dict]] = None
     ) -> Union[str, Dict, None]:
         """(async) Reply based on the conversation history and the sender.
         Args:
