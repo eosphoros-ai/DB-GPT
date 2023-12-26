@@ -3,7 +3,7 @@ import logging
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from dbgpt._private.config import Config
-from dbgpt.agent.commands.command_mange import ApiCall
+from dbgpt.agent.plugin.commands.command_mange import ApiCall
 from dbgpt.core.awel import BaseOperator
 from dbgpt.util.json_utils import find_json_objects
 

@@ -140,35 +140,6 @@ _IMPROVE_CODE_CONFIG = {
 }
 
 
-def improve_code(files, objective, suggest_only=True, **config):
-    """(openai<1) Improve the code to achieve a given objective.
-
-    Args:
-        files (list): A list of file names containing the source code.
-        objective (str): The objective to achieve.
-        suggest_only (bool): Whether to return only the suggestions or the improved code.
-        config (Optional, dict): The configuration for the API call.
-
-    Returns:
-        str: The improved code if suggest_only=False; a list of suggestions if suggest_only=True (default).
-        float: The cost of the generation.
-    """
-    code = ""
-    for file_name in files:
-        # read the entire file into a string
-        with open(file_name, "r") as f:
-            file_string = f.read()
-        code += f"""{file_name}:
-{file_string}
-
-"""
-    params = {**_IMPROVE_CODE_CONFIG, **config}
-    followup = "" if suggest_only else " followed by the improved code"
-    response = oai.Completion.create(
-        {"objective": objective, "code": code, "followup": followup}, **params
-    )
-    return oai.Completion.extract_text(response)[0], response["cost"]
-
 
 def timeout_handler(signum, frame):
     raise TimeoutError("Timed out!")
@@ -395,25 +366,6 @@ assertions:""",
     "stop": "\n\n",
 }
 
-
-def generate_assertions(definition: str, **config) -> Tuple[str, float]:
-    """(openai<1) Generate assertions for a function.
-
-    Args:
-        definition (str): The function definition, including the signature and docstr.
-        config (Optional, dict): The configuration for the API call.
-
-    Returns:
-        str: The generated assertions.
-        float: The cost of the generation.
-    """
-    params = {**_GENERATE_ASSERTIONS_CONFIG, **config}
-    response = oai.Completion.create(
-        {"definition": definition},
-        **params,
-    )
-    assertions = oai.Completion.extract_text(response)[0]
-    return assertions, response["cost"]
 
 
 def _remove_check(response):

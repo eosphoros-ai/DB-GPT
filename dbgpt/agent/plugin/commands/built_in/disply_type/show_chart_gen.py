@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 from pandas import DataFrame
 
-from dbgpt.agent.commands.command_mange import command
+from ...command_mange import command
 
 matplotlib.use("Agg")
 import logging

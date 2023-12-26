@@ -2,8 +2,8 @@ from typing import List, Dict
 
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
-from dbgpt.agent.commands.command import execute_command
-from dbgpt.agent import PluginPromptGenerator
+from dbgpt.agent.plugin.commands.command import execute_command
+from dbgpt.agent.plugin.generator import PluginPromptGenerator
 from dbgpt.util.tracer import trace
 
 CFG = Config()
