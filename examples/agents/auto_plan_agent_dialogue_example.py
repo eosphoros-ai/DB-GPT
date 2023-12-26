@@ -36,6 +36,7 @@ if __name__ == "__main__":
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)
     context.llm_models =  [ModelMetadata(model="gpt-3.5-turbo")]
+    context.gpts_name = "代码分析助手"
 
     default_memory = GptsMemory()
     coder = CodeAssistantAgent(memory=default_memory, agent_context=context)
