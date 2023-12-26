@@ -250,7 +250,7 @@ class PlanChatManager(ConversableAgent):
         self.planner = planner
 
     async def a_reasoning_reply(
-        self, messages: Union[List[Dict]]
+        self, messages: Optional[List[Dict]] = None
     ) -> Union[str, Dict, None]:
         if messages is None or len(messages) <= 0:
             message = None

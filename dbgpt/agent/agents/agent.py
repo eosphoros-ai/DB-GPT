@@ -6,7 +6,9 @@ from dataclasses import asdict, dataclass, fields
 from typing import Any, Dict, List, Optional, Union
 
 from ..memory.gpts_memory import GptsMemory
+from dbgpt.core import LLMClient
 from dbgpt.core.interface.llm import ModelMetadata
+
 
 
 class Agent:
@@ -48,8 +50,8 @@ class Agent:
     async def a_send(
         self,
         message: Union[Dict, str],
-        recipient: "Agent",
-        reviewer: "Agent",
+        recipient: Agent,
+        reviewer: Agent,
         request_reply: Optional[bool] = True,
         is_recovery: Optional[bool] = False,
     ):
@@ -57,16 +59,16 @@ class Agent:
 
     async def a_receive(
         self,
-        message: Union[Dict],
-        sender: "Agent",
-        reviewer: "Agent",
+        message: Optional[Dict],
+        sender: Agent,
+        reviewer: Agent,
         request_reply: Optional[bool] = None,
         silent: Optional[bool] = False,
         is_recovery: Optional[bool] = False,
     ):
         """(Abstract async method) Receive a message from another agent."""
 
-    async def a_review(self, message: Union[Dict, str], censored: "Agent"):
+    async def a_review(self, message: Union[Dict, str], censored: Agent):
         """
 
         Args:
@@ -84,21 +86,21 @@ class Agent:
         self,
         message: Optional[Dict],
         sender: Agent,
-        reviewer: "Agent",
+        reviewer: Agent,
         silent: Optional[bool] = False,
         **kwargs,
     ) -> Union[str, Dict, None]:
         """(Abstract async method) Generate a reply based on the received messages.
 
         Args:
-            messages (list[dict]): a list of messages received.
+            messages (Optional[Dict]): a dict of messages received from other agents.
             sender: sender of an Agent instance.
         Returns:
             str or dict or None: the generated reply. If None, no reply is generated.
         """
 
     async def a_reasoning_reply(
-        self, messages: Union[List[str]]
+        self, messages: Optional[List[Dict]]
     ) -> Union[str, Dict, None]:
         """
         Based on the requirements of the current agent, reason about the current task goal through LLM
@@ -112,7 +114,7 @@ class Agent:
     async def a_action_reply(
         self,
         messages: Optional[str],
-        sender: "Agent",
+        sender: Agent,
         **kwargs,
     ) -> Union[str, Dict, None]:
         """
@@ -128,8 +130,8 @@ class Agent:
     async def a_verify_reply(
         self,
         message: Optional[Dict],
-        sender: "Agent",
-        reviewer: "Agent",
+        sender: Agent,
+        reviewer: Agent,
         **kwargs,
     ) -> Union[str, Dict, None]:
         """
@@ -151,7 +153,7 @@ class AgentResource:
     introduce: str
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]) -> AgentResource:
+    def from_dict(d: Dict[str, Any]) -> Optional[AgentResource]:
         if d is None:
             return None
         return AgentResource(
@@ -167,7 +169,7 @@ class AgentResource:
 @dataclass
 class AgentContext:
     conv_id: str
-    llm_provider: Optional["LLMClient"]
+    llm_provider: LLMClient
 
     gpts_name: Optional[str] = None
     resource_db: Optional[AgentResource] = None

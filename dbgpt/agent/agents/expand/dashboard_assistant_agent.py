@@ -5,7 +5,7 @@ from dbgpt.agent.plugin.commands.command_mange import ApiCall
 from dbgpt.util.json_utils import find_json_objects
 
 from ...memory.gpts_memory import GptsMemory
-from ..agent import Agent
+from ..agent import Agent, AgentContext
 from ..base_agent import ConversableAgent
 
 try:
@@ -54,7 +54,7 @@ class DashboardAssistantAgent(ConversableAgent):
     def __init__(
         self,
         memory: GptsMemory,
-        agent_context: "AgentContext",
+        agent_context: AgentContext,
         describe: Optional[str] = DEFAULT_DESCRIBE,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
@@ -82,7 +82,7 @@ class DashboardAssistantAgent(ConversableAgent):
         self,
         message: Optional[str] = None,
         sender: Optional[Agent] = None,
-        reviewer: "Agent" = None,
+        reviewer: Optional[Agent] = None,
         config: Optional[Union[Dict, Literal[False]]] = None,
     ):
         """Generate a reply using code execution."""

@@ -1,7 +1,7 @@
 import json
 import logging
 import traceback
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Union
 
 from dbgpt.core import LLMClient
 from dbgpt.core.interface.output_parser import BaseOutputParser
@@ -34,7 +34,7 @@ class AIWrapper:
     @classmethod
     def instantiate(
         cls,
-        template: str | Callable | None,
+        template: Optional[Union[str, Callable]] = None,
         context: Optional[Dict] = None,
         allow_format_str_template: Optional[bool] = False,
     ):

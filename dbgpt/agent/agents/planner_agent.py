@@ -82,7 +82,7 @@ class PlannerAgent(ConversableAgent):
         self,
         memory: GptsMemory,
         plan_chat: PlanChat,
-        agent_context: "AgentContext",
+        agent_context: AgentContext,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
@@ -135,7 +135,7 @@ class PlannerAgent(ConversableAgent):
         self,
         message: Optional[str] = None,
         sender: Optional[Agent] = None,
-        reviewer: "Agent" = None,
+        reviewer: Optional[Agent] = None,
         config: Optional[Any] = None,
     ) -> Tuple[bool, Union[str, Dict, None]]:
         json_objects = find_json_objects(message)
