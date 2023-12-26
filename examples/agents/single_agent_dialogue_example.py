@@ -24,7 +24,6 @@ import os
 
 
 if __name__ == "__main__":
-
     from dbgpt.model import OpenAILLMClient
 
     llm_client = OpenAILLMClient()
@@ -40,7 +39,7 @@ if __name__ == "__main__":
         user_proxy.a_initiate_chat(
             recipient=coder,
             reviewer=user_proxy,
-            message="式计算下321 * 123等于多少", #用python代码的方式计算下321 * 123等于多少
+            message="式计算下321 * 123等于多少",  # 用python代码的方式计算下321 * 123等于多少
             # message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
         )
     )

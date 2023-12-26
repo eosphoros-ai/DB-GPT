@@ -86,7 +86,6 @@ class PlannerAgent(ConversableAgent):
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
-
         **kwargs,
     ):
         super().__init__(

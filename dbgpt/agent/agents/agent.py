@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Union
 from ..memory.gpts_memory import GptsMemory
 from dbgpt.core.interface.llm import ModelMetadata
 
+
 class Agent:
     """
     An interface for AI agent.
@@ -166,7 +167,7 @@ class AgentResource:
 @dataclass
 class AgentContext:
     conv_id: str
-    llm_provider: Optional['LLMClient']
+    llm_provider: Optional["LLMClient"]
 
     gpts_name: Optional[str] = None
     resource_db: Optional[AgentResource] = None

@@ -226,7 +226,6 @@ class PlanChatManager(ConversableAgent):
         max_consecutive_auto_reply: Optional[int] = sys.maxsize,
         human_input_mode: Optional[str] = "NEVER",
         describe: Optional[str] = "Plan chat manager.",
-
         **kwargs,
     ):
         super().__init__(
@@ -431,7 +430,6 @@ class PlanChatManager(ConversableAgent):
                                 plan_result,
                             )
                     except Exception as e:
-
                         logger.exception(
                             f"An exception was encountered during the execution of the current plan step.{str(e)}"
                         )

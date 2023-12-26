@@ -104,17 +104,15 @@ class MultiAgents(BaseComponent, ABC):
         worker_manager = CFG.SYSTEM_APP.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
-        llm_task =  DefaultLLMClient(worker_manager)
-        context: AgentContext = AgentContext(
-            conv_id=conv_id, llm_provider=llm_task
-        )
+        llm_task = DefaultLLMClient(worker_manager)
+        context: AgentContext = AgentContext(conv_id=conv_id, llm_provider=llm_task)
         context.gpts_name = gpts_instance.gpts_name
         context.resource_db = resource_db
         context.resource_internet = resource_internet
         context.resource_knowledge = resource_knowledge
         context.agents = agents_names
 
-        context.llm_models =  await llm_task.models()
+        context.llm_models = await llm_task.models()
         context.model_priority = llm_models_priority
 
         agent_map = defaultdict()
@@ -129,9 +127,6 @@ class MultiAgents(BaseComponent, ABC):
             )
             agents.append(agent)
             agent_map[name] = agent
-
-
-
 
         groupchat = PlanChat(agents=agents, messages=[], max_round=50)
         planner = PlannerAgent(

@@ -133,7 +133,6 @@ _IMPROVE_CODE_CONFIG = {
 }
 
 
-
 def timeout_handler(signum, frame):
     raise TimeoutError("Timed out!")
 
@@ -202,6 +201,7 @@ def execute_code(
 
     try:
         import docker
+
         try:
             docker.version
         except AttributeError:
@@ -209,7 +209,6 @@ def execute_code(
     except ImportError:
         docker = None
 
-    
     if use_docker is None:
         if docker is None:
             use_docker = False
@@ -369,7 +368,6 @@ assertions:""",
     "max_tokens": 256,
     "stop": "\n\n",
 }
-
 
 
 def _remove_check(response):

@@ -636,7 +636,6 @@ class ConversableAgent(Agent):
         else:
             return None
 
-
     def _filter_health_models(self, need_uses: Optional[list]):
         all_modes = self.agent_context.llm_models
         can_uses = []
@@ -644,7 +643,6 @@ class ConversableAgent(Agent):
             if item.model in need_uses:
                 can_uses.append(item)
         return can_uses
-
 
     def _select_llm_model(self, old_model: str = None):
         """
@@ -662,7 +660,7 @@ class ConversableAgent(Agent):
         if old_model:
             filtered_list = [item for item in all_modes if item.model != old_model]
             if filtered_list and len(filtered_list) >= 1:
-                now_model= filtered_list[0]
+                now_model = filtered_list[0]
         return now_model.model
 
     async def a_reasoning_reply(

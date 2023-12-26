@@ -4,10 +4,8 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
+
 class PluginLoader:
-
-
-
     def load_plugins(
         self, generator: PluginPromptGenerator, my_plugins: List[str]
     ) -> PluginPromptGenerator:

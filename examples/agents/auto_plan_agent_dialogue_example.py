@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)
-    context.llm_models =  [ModelMetadata(model="gpt-3.5-turbo")]
+    context.llm_models = [ModelMetadata(model="gpt-3.5-turbo")]
     context.gpts_name = "代码分析助手"
 
     default_memory = GptsMemory()
@@ -62,8 +62,8 @@ if __name__ == "__main__":
         user_proxy.a_initiate_chat(
             recipient=manager,
             reviewer=user_proxy,
-            message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
-            # message="find papers on LLM applications from arxiv in the last week, create a markdown table of different domains.",
+            # message="load data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
+            message="find papers on LLM applications from arxiv in the last week, create a markdown table of different domains.",
         )
     )
 
