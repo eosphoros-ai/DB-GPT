@@ -13,6 +13,7 @@ from ..common.schema import Status
 from ..memory.gpts_memory import GptsMemory, GptsMessage, GptsPlan
 from .agent import Agent, AgentContext
 from .base_agent import ConversableAgent
+from dbgpt.core.interface.message import ModelMessageRoleType
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +136,7 @@ class PlanChat:
                 self.messages
                 + [
                     {
-                        "role": "user",
+                        "role": ModelMessageRoleType.HUMAN,
                         "content": f"""Read and understand the following task content and assign the appropriate role to complete the task.
                                     Task content: {now_plan_context}
                                     select the role from: {[agent.name for agent in agents]},

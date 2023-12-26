@@ -8,6 +8,7 @@ from dbgpt.util.string_utils import str_to_bool
 from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent
 from ..base_agent import ConversableAgent
+from dbgpt.core.interface.message import ModelMessageRoleType
 
 try:
     from termcolor import colored
@@ -170,7 +171,7 @@ When you find an answer, verify the answer carefully. Please try to simplify the
         check_reult, model = await self.a_reasoning_reply(
             [
                 {
-                    "role": "user",
+                    "role":  ModelMessageRoleType.HUMAN,
                     "content": f"""Please understand the following task objectives and results and give your judgment:
                         Task Gogal: {task_gogal}
                         Execution Result: {task_result}
