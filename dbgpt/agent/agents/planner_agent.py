@@ -92,7 +92,6 @@ class PlannerAgent(ConversableAgent):
         super().__init__(
             name=self.NAME,
             memory=memory,
-            llm_operator=llm_operator,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
             is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,

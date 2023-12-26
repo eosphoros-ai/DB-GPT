@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass, fields
 from typing import Any, Dict, List, Optional, Union
 
 from ..memory.gpts_memory import GptsMemory
-from dbgpt.core import LLMClient
+from dbgpt.core.interface.llm import ModelMetadata
 
 class Agent:
     """
@@ -166,13 +166,13 @@ class AgentResource:
 @dataclass
 class AgentContext:
     conv_id: str
-    llm_provider: Optional[LLMClient]
+    llm_provider: Optional['LLMClient']
 
     gpts_name: Optional[str] = None
     resource_db: Optional[AgentResource] = None
     resource_knowledge: Optional[AgentResource] = None
     resource_internet: Optional[AgentResource] = None
-    llm_models: Optional[List[str]] = None
+    llm_models: Optional[List[ModelMetadata]] = None
     model_priority: Optional[dict] = None
     agents: Optional[List[str]] = None
 

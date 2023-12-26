@@ -44,6 +44,7 @@ from dbgpt.agent.agents.agents_mange import agent_mange
 from dbgpt._private.config import Config
 from dbgpt.model.cluster.controller.controller import BaseModelController
 from dbgpt.agent.memory.gpts_memory import GptsMessage
+from dbgpt.model.cluster import WorkerManager, WorkerManagerFactory
 
 from dbgpt.model.cluster.client import DefaultLLMClient
 
@@ -100,7 +101,10 @@ class MultiAgents(BaseComponent, ABC):
         )
 
         ### init chat param
-        llm_task =  DefaultLLMClient()
+        worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        llm_task =  DefaultLLMClient(worker_manager)
         context: AgentContext = AgentContext(
             conv_id=conv_id, llm_provider=llm_task
         )
@@ -110,7 +114,7 @@ class MultiAgents(BaseComponent, ABC):
         context.resource_knowledge = resource_knowledge
         context.agents = agents_names
 
-        context.llm_models =  llm_task.models()
+        context.llm_models =  await llm_task.models()
         context.model_priority = llm_models_priority
 
         agent_map = defaultdict()

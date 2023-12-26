@@ -637,29 +637,33 @@ class ConversableAgent(Agent):
             return None
 
 
+    def _filter_health_models(self, need_uses: Optional[list]):
+        all_modes = self.agent_context.llm_models
+        can_uses = []
+        for item in all_modes:
+            if item.model in need_uses:
+                can_uses.append(item)
+        return can_uses
+
+
     def _select_llm_model(self, old_model: str = None):
         """
         LLM model selector, currently only supports manual selection, more strategies will be opened in the future
         Returns:
-
         """
         all_modes = self.agent_context.llm_models
         model_priority = self._get_model_priority()
         if model_priority and len(model_priority) > 0:
-            for model in model_priority:
-                if old_model and model == old_model:
-                    continue
-                if model in all_modes:
-                    return model
+            can_uses = self._filter_health_models(model_priority)
+            if len(can_uses) > 0:
+                return can_uses[0].model
 
+        now_model = all_modes[0]
         if old_model:
-            filtered_list = [item for item in all_modes if item != old_model]
+            filtered_list = [item for item in all_modes if item.model != old_model]
             if filtered_list and len(filtered_list) >= 1:
-                return filtered_list[0]
-            else:
-                return all_modes[0]
-        else:
-            return all_modes[0]
+                now_model= filtered_list[0]
+        return now_model.model
 
     async def a_reasoning_reply(
         self, messages: Union[List[Dict]]
