@@ -1,3 +1,20 @@
+"""Agents: auto plan agents example?
+
+    Examples:
+     
+        Execute the following command in the terminal:
+        Set env params.
+        .. code-block:: shell
+
+            export OPENAI_API_KEY=sk-xx
+            export OPENAI_API_BASE=https://xx:80/v1
+
+        run example.
+        ..code-block:: shell
+            python examples/agents/auto_plan_agent_dialogue_example.py 
+"""
+
+
 from dbgpt.agent.agents.planner_agent import PlannerAgent
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.agents.plan_group_chat import PlanChat, PlanChatManager
@@ -38,9 +55,6 @@ if __name__ == "__main__":
     )
 
     user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
-
-    os.environ["OPENAI_API_KEY"] = "sk-xx"
-    os.environ["OPENAI_API_BASE"] = "https://xx:80/v1"
 
     asyncio.run(
         user_proxy.a_initiate_chat(
