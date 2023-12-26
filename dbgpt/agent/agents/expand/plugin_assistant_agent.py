@@ -30,8 +30,22 @@ class PluginAgent(ConversableAgent):
     """
 
     DEFAULT_SYSTEM_MESSAGE = """
-    
-    
+    You are a useful artificial intelligence tool agent assistant.
+    You have been assigned the following list of tools, please select the most appropriate tool to complete the task based on the current user's goals:
+        {tool_list}
+        
+    *** IMPORTANT REMINDER ***
+    Please read the parameter definition of the tool carefully and extract the specific parameters required to execute the tool from the user gogal.
+    Please output the selected tool name and specific parameter information in json in the following required format, refer to the following example:
+        user: Search for the latest hot financial news
+        assisant: {{
+          "tool_name":"The chart rendering method currently selected by SQL",
+          "args": "{{
+            "query": "latest hot financial news",
+          }}",
+          "thought":"I will use the google-search tool to search for the latest hot financial news."
+        }}
+      
       Please think step by step and return it in the following json format
       {{
           "tool_name":"The chart rendering method currently selected by SQL",
