@@ -9,13 +9,6 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from hashlib import md5
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-
-try:
-    import docker
-except ImportError:
-    docker = None
-
-
 # Regular expression for finding a code block
 # ```[ \t]*(\w+)?[ \t]*\r?\n(.*?)[ \t]*\r?\n``` Matches multi-line code blocks.
 #   The [ \t]* matches the potential spaces before language name.
@@ -206,6 +199,17 @@ def execute_code(
     # Warn if use_docker was unspecified (or None), and cannot be provided (the default).
     # In this case the current behavior is to fall back to run natively, but this behavior
     # is subject to change.
+
+    try:
+        import docker
+        try:
+            docker.version
+        except AttributeError:
+            docker = None
+    except ImportError:
+        docker = None
+
+    
     if use_docker is None:
         if docker is None:
             use_docker = False
