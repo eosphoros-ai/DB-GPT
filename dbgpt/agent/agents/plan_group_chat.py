@@ -226,7 +226,6 @@ class PlanChatManager(ConversableAgent):
         max_consecutive_auto_reply: Optional[int] = sys.maxsize,
         human_input_mode: Optional[str] = "NEVER",
         describe: Optional[str] = "Plan chat manager.",
-
         **kwargs,
     ):
         super().__init__(

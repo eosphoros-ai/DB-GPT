@@ -636,7 +636,6 @@ class ConversableAgent(Agent):
         else:
             return None
 
-
     def _select_llm_model(self, old_model: str = None):
         """
         LLM model selector, currently only supports manual selection, more strategies will be opened in the future

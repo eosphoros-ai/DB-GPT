@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Union
 from ..memory.gpts_memory import GptsMemory
 from dbgpt.core import LLMClient
 
+
 class Agent:
     """
     An interface for AI agent.

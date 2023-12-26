@@ -171,7 +171,7 @@ When you find an answer, verify the answer carefully. Please try to simplify the
         check_reult, model = await self.a_reasoning_reply(
             [
                 {
-                    "role":  ModelMessageRoleType.HUMAN,
+                    "role": ModelMessageRoleType.HUMAN,
                     "content": f"""Please understand the following task objectives and results and give your judgment:
                         Task Gogal: {task_gogal}
                         Execution Result: {task_result}

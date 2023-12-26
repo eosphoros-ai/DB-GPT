@@ -56,8 +56,7 @@ class UserProxyAgent(ConversableAgent):
         return reply
 
     async def a_reasoning_reply(
-        self, 
-        messages: Optional[List[Dict]] = None
+        self, messages: Optional[List[Dict]] = None
     ) -> Union[str, Dict, None]:
         if not messages is None:
             message = messages[-1]
