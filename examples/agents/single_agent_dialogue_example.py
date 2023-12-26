@@ -27,4 +27,4 @@ if __name__ == "__main__":
     )
 
     ## dbgpt-vis message infos
-    print(asyncio.run( default_memory.one_plan_chat_competions("test456")))
+    print(asyncio.run(default_memory.one_plan_chat_competions("test456")))

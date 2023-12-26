@@ -1,14 +1,15 @@
 import json
-
-from ..base_agent import ConversableAgent
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 import logging
-from ..agent import Agent
-from ...memory.gpts_memory import GptsMemory
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+
 from dbgpt._private.config import Config
 from dbgpt.agent.commands.command_mange import ApiCall
-from dbgpt.util.json_utils import find_json_objects
 from dbgpt.core.awel import BaseOperator
+from dbgpt.util.json_utils import find_json_objects
+
+from ...memory.gpts_memory import GptsMemory
+from ..agent import Agent
+from ..base_agent import ConversableAgent
 
 try:
     from termcolor import colored

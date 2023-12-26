@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
-from .agent import Agent
 
+from .agent import Agent
 from .expand.code_assistant_agent import CodeAssistantAgent
 from .expand.dashboard_assistant_agent import DashboardAssistantAgent
 from .expand.data_scientist_agent import DataScientistAgent

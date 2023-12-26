@@ -1,10 +1,9 @@
 from abc import ABC
-from typing import Optional, Dict, List, Any, Union, AsyncIterator
+from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
-from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.core.awel import MapOperator
-
 from dbgpt.core.interface.llm import ModelRequest
+from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 
 
 class GptsRequestBuildOperator(MapOperator[Union[Dict, str], ModelRequest], ABC):

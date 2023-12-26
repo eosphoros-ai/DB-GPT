@@ -1,17 +1,13 @@
 import json
-
-from ..base_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
-from dbgpt.util.code_utils import (
-    UNKNOWN,
-    execute_code,
-    extract_code,
-    infer_lang,
-)
-from ..agent import Agent
-from ...memory.gpts_memory import GptsMemory
-from dbgpt.util.string_utils import str_to_bool
+
 from dbgpt.core.awel import BaseOperator
+from dbgpt.util.code_utils import UNKNOWN, execute_code, extract_code, infer_lang
+from dbgpt.util.string_utils import str_to_bool
+
+from ...memory.gpts_memory import GptsMemory
+from ..agent import Agent
+from ..base_agent import ConversableAgent
 
 try:
     from termcolor import colored
@@ -58,17 +54,17 @@ When you find an answer, verify the answer carefully. Please try to simplify the
     """
 
     def __init__(
-            self,
-            agent_context: "AgentContext",
-            memory: GptsMemory = None,
-            llm_operator: Optional[BaseOperator] = None,
-            model_priority: Optional[List[str]] = None,
-            describe: Optional[str] = DEFAULT_DESCRIBE,
-            is_termination_msg: Optional[Callable[[Dict], bool]] = None,
-            max_consecutive_auto_reply: Optional[int] = None,
-            human_input_mode: Optional[str] = "NEVER",
-            code_execution_config: Optional[Union[Dict, Literal[False]]] = None,
-            **kwargs,
+        self,
+        agent_context: "AgentContext",
+        memory: GptsMemory = None,
+        llm_operator: Optional[BaseOperator] = None,
+        model_priority: Optional[List[str]] = None,
+        describe: Optional[str] = DEFAULT_DESCRIBE,
+        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
+        max_consecutive_auto_reply: Optional[int] = None,
+        human_input_mode: Optional[str] = "NEVER",
+        code_execution_config: Optional[Union[Dict, Literal[False]]] = None,
+        **kwargs,
     ):
         """
         Args:
@@ -116,11 +112,11 @@ When you find an answer, verify the answer carefully. Please try to simplify the
         return f"```vis-code\n{json.dumps(param)}\n```"
 
     async def generate_code_execution_reply(
-            self,
-            message: Optional[str] = None,
-            sender: Optional[Agent] = None,
-            reviewer: "Agent" = None,
-            config: Optional[Union[Dict, Literal[False]]] = None,
+        self,
+        message: Optional[str] = None,
+        sender: Optional[Agent] = None,
+        reviewer: "Agent" = None,
+        config: Optional[Union[Dict, Literal[False]]] = None,
     ):
         """Generate a reply using code execution."""
         code_execution_config = (
@@ -240,7 +236,7 @@ When you find an answer, verify the answer carefully. Please try to simplify the
                 )
             elif lang in ["python", "Python"]:
                 if code.startswith("# filename: "):
-                    filename = code[11: code.find("\n")].strip()
+                    filename = code[11 : code.find("\n")].strip()
                 else:
                     filename = None
                 exitcode, logs, image = self.run_code(

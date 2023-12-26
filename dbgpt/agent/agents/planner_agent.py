@@ -1,14 +1,14 @@
+from typing import Any, Callable, Dict, Optional, Tuple, Union
+
+from dbgpt._private.config import Config
+from dbgpt.agent.agents.plan_group_chat import PlanChat
+from dbgpt.agent.common.schema import Status
+from dbgpt.core.awel import BaseOperator
+from dbgpt.util.json_utils import find_json_objects
+
+from ..memory.gpts_memory import GptsMemory, GptsPlan
 from .agent import Agent, AgentContext
 from .base_agent import ConversableAgent
-
-
-from typing import Any, Callable, Dict, Optional, Tuple, Union
-from dbgpt.util.json_utils import find_json_objects
-from dbgpt.agent.common.schema import Status
-from ..memory.gpts_memory import GptsMemory, GptsPlan
-from dbgpt.agent.agents.plan_group_chat import PlanChat
-from dbgpt._private.config import Config
-from dbgpt.core.awel import BaseOperator
 
 CFG = Config()
 
@@ -125,10 +125,7 @@ class PlannerAgent(ConversableAgent):
         return {
             "all_resources": "\n".join([f"- {item}" for item in resources]),
             "agents": "\n".join(
-                [
-                    f"- {item.name}:{item.describe}"
-                    for item in self.plan_chat.agents
-                ]
+                [f"- {item.name}:{item.describe}" for item in self.plan_chat.agents]
             ),
         }
 

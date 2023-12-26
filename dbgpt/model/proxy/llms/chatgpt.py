@@ -107,7 +107,6 @@ def __convert_2_gpt_messages(messages: List[ModelMessage]):
             gpt_messages.append({"role": "user", "content": last_usr_message})
             gpt_messages.append({"role": "assistant", "content": last_ai_message})
 
-
     if len(system_messages) > 0:
         if len(system_messages) < 2:
             gpt_messages.insert(0, {"role": "system", "content": system_messages[0]})

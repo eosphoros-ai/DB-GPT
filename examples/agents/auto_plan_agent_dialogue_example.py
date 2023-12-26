@@ -16,7 +16,6 @@ if __name__ == "__main__":
     context: AgentContext = AgentContext(conv_id="test123", gpts_name="测试助手1")
     context.llm_models = ["gpt-3.5-turbo"]
 
-
     default_memory = GptsMemory()
     coder = CodeAssistantAgent(memory=default_memory, agent_context=context)
     ## TODO  add other agent
@@ -26,23 +25,19 @@ if __name__ == "__main__":
         agent_context=context,
         memory=default_memory,
         plan_chat=groupchat,
-
     )
 
     manager = PlanChatManager(
         plan_chat=groupchat,
-
         planner=planner,
         agent_context=context,
         memory=default_memory,
     )
 
-
     user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
 
     os.environ["OPENAI_API_KEY"] = "sk-xx"
     os.environ["OPENAI_API_BASE"] = "https://xx:80/v1"
-
 
     asyncio.run(
         user_proxy.a_initiate_chat(
@@ -54,4 +49,4 @@ if __name__ == "__main__":
     )
 
     ## dbgpt-vis message infos
-    print(asyncio.run( default_memory.one_plan_chat_competions("test123")))
+    print(asyncio.run(default_memory.one_plan_chat_competions("test123")))

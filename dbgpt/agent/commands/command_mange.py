@@ -4,14 +4,14 @@ import inspect
 import json
 import logging
 import xml.etree.ElementTree as ET
-
-from dbgpt.util.json_utils import serialize
 from datetime import datetime
-from typing import Any, Callable, Optional, List
+from typing import Any, Callable, List, Optional
+
 from dbgpt._private.pydantic import BaseModel
-from dbgpt.agent.common.schema import Status
 from dbgpt.agent.commands.command import execute_command
-from dbgpt.util.string_utils import extract_content_open_ending, extract_content
+from dbgpt.agent.common.schema import Status
+from dbgpt.util.json_utils import serialize
+from dbgpt.util.string_utils import extract_content, extract_content_open_ending
 
 # Unique identifier for auto-gpt commands
 AUTO_GPT_COMMAND_IDENTIFIER = "auto_gpt_command"
@@ -526,7 +526,9 @@ class ApiCall:
         else:
             return result
 
-    def display_dashboard_vis(self, charts: List[dict], sql_2_df_func, title:str=None):
+    def display_dashboard_vis(
+        self, charts: List[dict], sql_2_df_func, title: str = None
+    ):
         err_msg = None
         view_json_str = None
 
@@ -549,12 +551,16 @@ class ApiCall:
                 except Exception as e:
                     param["data"] = []
                     param["err_msg"] = str(e)
-                chart_items.append(f"```vis-chart-item\n{json.dumps(param, default=serialize, ensure_ascii=False)}\n```")
+                chart_items.append(
+                    f"```vis-chart-item\n{json.dumps(param, default=serialize, ensure_ascii=False)}\n```"
+                )
 
             dashboard_param = {
-                "markdown": json.dumps(chart_items,  default=serialize, ensure_ascii=False),
+                "markdown": json.dumps(
+                    chart_items, default=serialize, ensure_ascii=False
+                ),
                 "chart_count": len(chart_items),
-                "title": title
+                "title": title,
             }
             view_json_str = json.dumps(
                 dashboard_param, default=serialize, ensure_ascii=False

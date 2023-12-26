@@ -1,16 +1,18 @@
 import json
 import logging
-import sys
 import random
+import re
+import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
-import re
-from .agent import Agent, AgentContext
-from .base_agent import ConversableAgent
-from ..common.schema import Status
+
 from dbgpt.core.awel import BaseOperator
 from dbgpt.util.string_utils import str_to_bool
-from ..memory.gpts_memory import GptsMemory, GptsPlan, GptsMessage
+
+from ..common.schema import Status
+from ..memory.gpts_memory import GptsMemory, GptsMessage, GptsPlan
+from .agent import Agent, AgentContext
+from .base_agent import ConversableAgent
 
 logger = logging.getLogger(__name__)
 

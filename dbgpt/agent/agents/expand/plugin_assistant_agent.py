@@ -1,12 +1,13 @@
 import json
-
-from ..base_agent import ConversableAgent
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 import logging
-from ..agent import Agent
-from ...memory.gpts_memory import GptsMemory
-from dbgpt.util.json_utils import find_json_objects
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+
 from dbgpt.core.awel import BaseOperator
+from dbgpt.util.json_utils import find_json_objects
+
+from ...memory.gpts_memory import GptsMemory
+from ..agent import Agent
+from ..base_agent import ConversableAgent
 
 try:
     from termcolor import colored
@@ -14,6 +15,7 @@ except ImportError:
 
     def colored(x, *args, **kwargs):
         return x
+
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +90,6 @@ class PluginAgent(ConversableAgent):
 
         self.register_reply(Agent, PluginAgent.tool_call)
         self.agent_context = agent_context
-
 
     async def a_system_fill_param(self):
         params = {

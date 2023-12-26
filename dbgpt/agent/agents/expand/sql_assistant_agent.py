@@ -1,10 +1,11 @@
-from dbgpt.agent.agents.base_agent import ConversableAgent
 from typing import Callable, Dict, List, Literal, Optional, Union
 
-from ..agent import Agent
-from ...memory.gpts_memory import GptsMemory
-from ...commands.command_mange import ApiCall
+from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.core.awel import BaseOperator
+
+from ...commands.command_mange import ApiCall
+from ...memory.gpts_memory import GptsMemory
+from ..agent import Agent
 
 try:
     from termcolor import colored

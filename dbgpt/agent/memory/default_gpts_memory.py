@@ -1,8 +1,11 @@
-from typing import List, Optional
-import pandas as pd
 from dataclasses import fields
-from .base import GptsPlansMemory, GptsPlan, GptsMessageMemory, GptsMessage
+from typing import List, Optional
+
+import pandas as pd
+
 from dbgpt.agent.common.schema import Status
+
+from .base import GptsMessage, GptsMessageMemory, GptsPlan, GptsPlansMemory
 
 
 class DefaultGptsPlansMemory(GptsPlansMemory):
@@ -43,7 +46,9 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
         return plans
 
     def complete_task(self, conv_id: str, task_num: int, result: str):
-        condition = (self.df["conv_id"] == conv_id) & (self.df["sub_task_num"] == task_num)
+        condition = (self.df["conv_id"] == conv_id) & (
+            self.df["sub_task_num"] == task_num
+        )
         self.df.loc[condition, "state"] = Status.COMPLETE.value
         self.df.loc[condition, "result"] = result
 
@@ -57,7 +62,9 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
         model=None,
         result: str = None,
     ):
-        condition = (self.df["conv_id"] == conv_id) & (self.df["sub_task_num"] == task_num)
+        condition = (self.df["conv_id"] == conv_id) & (
+            self.df["sub_task_num"] == task_num
+        )
         self.df.loc[condition, "state"] = state
         self.df.loc[condition, "retry_times"] = retry_times
         self.df.loc[condition, "result"] = result

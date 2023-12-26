@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Union, Any
-from dataclasses import dataclass, asdict, fields
 import dataclasses
+from dataclasses import asdict, dataclass, fields
+from typing import Any, Dict, List, Optional, Union
+
 from ..memory.gpts_memory import GptsMemory
 
 

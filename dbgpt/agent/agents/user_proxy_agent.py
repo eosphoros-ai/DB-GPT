@@ -1,7 +1,8 @@
-from .base_agent import ConversableAgent
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
-from .agent import Agent
+
 from ..memory.gpts_memory import GptsMemory
+from .agent import Agent
+from .base_agent import ConversableAgent
 
 try:
     from termcolor import colored
