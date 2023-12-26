@@ -1,29 +1,16 @@
-from __future__ import annotations
-
-import asyncio
 import json
 import logging
-import os
-import sys
-from typing import Callable, Dict, List, Optional
+import traceback
+from typing import Callable, Dict, Optional
 
-import diskcache
-
-from dbgpt._private.config import Config
-from dbgpt.component import ComponentType, SystemApp
-from dbgpt.core import LLMOperator, PromptTemplate, SQLOutputParser
-from dbgpt.core.awel import DAG, BaseOperator, InputOperator, SimpleCallDataInputSource
+from dbgpt.core import LLMClient
 from dbgpt.core.interface.output_parser import BaseOutputParser
-from dbgpt.model import OpenAILLMClient
-from dbgpt.model.operator.model_operator import ModelOperator, ModelStreamOperator
 from dbgpt.util.error_types import LLMChatError
-from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
-from dbgpt.util.tracer import root_tracer, trace
+from dbgpt.util.tracer import root_tracer
 
-from ..llm.llm import GptsRequestBuildOperator
+from ..llm.llm import _build_model_request
 
 logger = logging.getLogger(__name__)
-CFG = Config()
 
 
 class AIWrapper:
@@ -36,21 +23,13 @@ class AIWrapper:
         "llm_model",
     }
 
-    def __init__(self, model_operator: BaseOperator = None):
+    def __init__(
+        self, llm_client: LLMClient, output_parser: Optional[BaseOutputParser] = None
+    ):
         self.llm_echo = False
-        self.sep = "###"  ###TODO
         self.model_cache_enable = False
-
-        if not model_operator:
-            with DAG("sdk_agents_llm_dag") as dag:
-                out_parse_task = BaseOutputParser()
-                model_pre_handle_task = GptsRequestBuildOperator()
-                llm_task = LLMOperator(OpenAILLMClient())
-
-                model_pre_handle_task >> llm_task >> out_parse_task
-            self._model_operator = out_parse_task
-        else:
-            self._model_operator = model_operator
+        self._llm_client = llm_client
+        self._output_parser = output_parser or BaseOutputParser()
 
     @classmethod
     def instantiate(
@@ -162,12 +141,6 @@ class AIWrapper:
             logger.debug(f"{llm_model} generate failed!{str(e)}")
             raise e
         else:
-            # if cache_seed is not None:
-            #     # Cache the response
-            #     with diskcache.Cache(f"{self.cache_path_root}/{cache_seed}") as cache:
-            #         cache.set(key, response)
-
-            # check the filter
             pass_filter = filter_func is None or filter_func(
                 context=context, response=response
             )
@@ -196,26 +169,24 @@ class AIWrapper:
             "messages": self._llm_messages_convert(params),
             "temperature": float(params.get("temperature")),
             "max_new_tokens": int(params.get("max_new_tokens")),
-            # "stop": self.prompt_template.sep,
             "echo": self.llm_echo,
         }
         logger.info(f"Request: \n{payload}")
-        ai_response_text = ""
         span = root_tracer.start_span(
-            "BaseChat.nostream_call", metadata=self._get_span_metadata(payload)
+            "Agent.llm_client.no_streaming_call",
+            metadata=self._get_span_metadata(payload),
         )
         payload["span_id"] = span.span_id
         payload["model_cache_enable"] = self.model_cache_enable
         try:
-            model_output = await self._model_operator.call(call_data={"data": payload})
-            # ai_response_text = (
-            #     self.out_parser.parse_model_nostream_resp(
-            #         model_output, self.prompt_template.sep
-            #     )
-            # )
-
-            return model_output
+            model_request = _build_model_request(payload)
+            model_output = await self._llm_client.generate(model_request)
+            parsed_output = await self._output_parser.map(model_output)
+            return parsed_output
         except Exception as e:
-            print(e)
-            logger.error("model response parase faild！" + str(e))
+            logger.error(
+                f"Call LLMClient error, {str(e)}, detail: {traceback.format_exc()}"
+            )
             raise LLMChatError(original_exception=e) from e
+        finally:
+            span.end()
