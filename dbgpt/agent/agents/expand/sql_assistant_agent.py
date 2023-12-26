@@ -3,7 +3,7 @@ from typing import Callable, Dict, List, Literal, Optional, Union
 from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.core.awel import BaseOperator
 
-from ...commands.command_mange import ApiCall
+from dbgpt.agent.plugin.commands.command_mange import ApiCall
 from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent
 

@@ -61,9 +61,9 @@ def server_init(param: "WebServerParameters", system_app: SystemApp):
     cfg.command_registry = command_registry
 
     command_disply_commands = [
-        "dbgpt.agent.plugin.commands.disply_type.show_chart_gen",
-        "dbgpt.agent.plugin.commands.disply_type.show_table_gen",
-        "dbgpt.agent.plugin.commands.disply_type.show_text_gen",
+        "dbgpt.agent.plugin.commands.built_in.disply_type.show_chart_gen",
+        "dbgpt.agent.plugin.commands.built_in.disply_type.show_table_gen",
+        "dbgpt.agent.plugin.commands.built_in.disply_type.show_text_gen",
     ]
     command_disply_registry = CommandRegistry()
     for command in command_disply_commands:
