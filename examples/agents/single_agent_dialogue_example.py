@@ -6,7 +6,11 @@ import asyncio
 import os
 
 if __name__ == "__main__":
-    context: AgentContext = AgentContext(conv_id="test456", gpts_name="测试助手2")
+
+    from dbgpt.model import OpenAILLMClient
+
+    llm_client = OpenAILLMClient()
+    context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)
     context.llm_models = ["gpt-3.5-turbo"]
 
     default_memory = GptsMemory()
@@ -21,8 +25,8 @@ if __name__ == "__main__":
         user_proxy.a_initiate_chat(
             recipient=coder,
             reviewer=user_proxy,
-            # message="式计算下321 * 123等于多少", #用python代码的方式计算下321 * 123等于多少
-            message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
+            message="式计算下321 * 123等于多少", #用python代码的方式计算下321 * 123等于多少
+            # message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
         )
     )
 

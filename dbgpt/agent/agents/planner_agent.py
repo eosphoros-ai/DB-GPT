@@ -82,11 +82,11 @@ class PlannerAgent(ConversableAgent):
         self,
         memory: GptsMemory,
         plan_chat: PlanChat,
-        llm_operator: Optional[BaseOperator] = None,
+        agent_context: "AgentContext",
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
-        agent_context: "AgentContext" = None,
+
         **kwargs,
     ):
         super().__init__(

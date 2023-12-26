@@ -33,15 +33,13 @@ class ConversableAgent(Agent):
     def __init__(
         self,
         name: str,
-        memory: GptsMemory,
-        llm_operator: Optional[BaseOperator] = None,
-        model_priority: Optional[List[str]] = None,
         describe: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-        system_message: Optional[str] = "You are a helpful AI Assistant.",
+        memory: GptsMemory = GptsMemory(),
+        agent_context: Optional[AgentContext] = None,
+        system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "TERMINATE",
-        agent_context: Optional[AgentContext] = None,
         default_auto_reply: Optional[Union[str, Dict, None]] = "",
     ):
         super().__init__(name, memory, describe)
@@ -58,9 +56,8 @@ class ConversableAgent(Agent):
             else (lambda x: x.get("content") == "TERMINATE")
         )
 
-        self.client = AIWrapper(model_operator=llm_operator)
+        self.client = AIWrapper(llm_client=agent_context.llm_provider)
 
-        self.model_priority = model_priority
         self.human_input_mode = human_input_mode
         self._max_consecutive_auto_reply = (
             max_consecutive_auto_reply
@@ -451,7 +448,7 @@ class ConversableAgent(Agent):
                 reviewer=reviewer,
             )
             new_message["action_report"] = self._process_action_reply(excute_reply)
-        ## 4.核对回答
+        ## 4.verify reply
         return await self.a_verify_reply(new_message, sender, reviewer)
 
     async def a_receive(
@@ -628,6 +625,18 @@ class ConversableAgent(Agent):
         # else:
         #     self._oai_messages[agent].clear()
 
+    def _get_model_priority(self):
+        llm_models_priority = self.agent_context.model_priority
+        if llm_models_priority:
+            if self.name in llm_models_priority:
+                model_priority = llm_models_priority[self.name]
+            else:
+                model_priority = llm_models_priority["default"]
+            return model_priority
+        else:
+            return None
+
+
     def _select_llm_model(self, old_model: str = None):
         """
         LLM model selector, currently only supports manual selection, more strategies will be opened in the future
@@ -635,7 +644,7 @@ class ConversableAgent(Agent):
 
         """
         all_modes = self.agent_context.llm_models
-        model_priority = self.model_priority
+        model_priority = self._get_model_priority()
         if model_priority and len(model_priority) > 0:
             for model in model_priority:
                 if old_model and model == old_model:

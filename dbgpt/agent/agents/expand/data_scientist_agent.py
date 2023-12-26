@@ -57,8 +57,6 @@ class DataScientistAgent(ConversableAgent):
         self,
         memory: GptsMemory,
         agent_context: "AgentContext",
-        llm_operator: Optional[BaseOperator] = None,
-        model_priority: Optional[List[str]] = None,
         describe: Optional[str] = DEFAULT_DESCRIBE,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
@@ -68,9 +66,7 @@ class DataScientistAgent(ConversableAgent):
         super().__init__(
             name=self.NAME,
             memory=memory,
-            model_priority=model_priority,
             describe=describe,
-            llm_operator=llm_operator,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
             is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,

@@ -220,19 +220,18 @@ class PlanChatManager(ConversableAgent):
         plan_chat: PlanChat,
         planner: Agent,
         memory: GptsMemory,
-        llm_operator: Optional[BaseOperator] = None,
+        agent_context: "AgentContext",
         # unlimited consecutive auto reply by default
         max_consecutive_auto_reply: Optional[int] = sys.maxsize,
         human_input_mode: Optional[str] = "NEVER",
         describe: Optional[str] = "Plan chat manager.",
-        agent_context: "AgentContext" = None,
+
         **kwargs,
     ):
         super().__init__(
             name=self.NAME,
             describe=describe,
             memory=memory,
-            llm_operator=llm_operator,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
             agent_context=agent_context,

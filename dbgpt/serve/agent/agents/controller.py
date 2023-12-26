@@ -44,7 +44,8 @@ from dbgpt.agent.agents.agents_mange import agent_mange
 from dbgpt._private.config import Config
 from dbgpt.model.cluster.controller.controller import BaseModelController
 from dbgpt.agent.memory.gpts_memory import GptsMessage
-from dbgpt.core.interface.output_parser import BaseOutputParser
+
+from dbgpt.model.cluster.client import DefaultLLMClient
 
 CFG = Config()
 
@@ -70,14 +71,6 @@ class MultiAgents(BaseComponent, ABC):
 
     def gpts_create(self, entity: GptsInstanceEntity):
         self.gpts_intance.add(entity)
-
-    def _get_model_priority(self, name, llm_models_priority):
-        model_priority = None
-        if name in llm_models_priority:
-            model_priority = llm_models_priority[name]
-        else:
-            model_priority = llm_models_priority["default"]
-        return model_priority
 
     async def plan_chat(
         self,
@@ -107,26 +100,18 @@ class MultiAgents(BaseComponent, ABC):
         )
 
         ### init chat param
+        llm_task =  DefaultLLMClient()
         context: AgentContext = AgentContext(
-            conv_id=conv_id, gpts_name=gpts_instance.gpts_name
+            conv_id=conv_id, llm_provider=llm_task
         )
+        context.gpts_name = gpts_instance.gpts_name
         context.resource_db = resource_db
         context.resource_internet = resource_internet
         context.resource_knowledge = resource_knowledge
         context.agents = agents_names
 
-        self.llm_operator = self._build_model_operator()
-        model_controller = CFG.SYSTEM_APP.get_component(
-            ComponentType.MODEL_CONTROLLER, BaseModelController
-        )
-        types = set()
-        models = await model_controller.get_all_instances(healthy_only=True)
-        for model in models:
-            worker_name, worker_type = model.model_name.split("@")
-            if worker_type == "llm":
-                types.add(worker_name)
-
-        context.llm_models = list(types)
+        context.llm_models =  llm_task.models()
+        context.model_priority = llm_models_priority
 
         agent_map = defaultdict()
 
@@ -134,38 +119,29 @@ class MultiAgents(BaseComponent, ABC):
         agents = []
         for name in agents_names:
             cls = agent_mange.get_by_name(name)
-            model_priority = self._get_model_priority(name, llm_models_priority)
-
             agent = cls(
                 agent_context=context,
                 memory=self.memory,
-                model_priority=model_priority,
-                llm_operator=self.llm_operator,
             )
             agents.append(agent)
             agent_map[name] = agent
+
+
+
 
         groupchat = PlanChat(agents=agents, messages=[], max_round=50)
         planner = PlannerAgent(
             agent_context=context,
             memory=self.memory,
-            llm_operator=self.llm_operator,
             plan_chat=groupchat,
-            model_priority=self._get_model_priority(
-                PlannerAgent.NAME, llm_models_priority
-            ),
         )
         agent_map[planner.name] = planner
 
         manager = PlanChatManager(
-            plan_chat=groupchat,
-            model_priority=self._get_model_priority(
-                PlanChatManager.NAME, llm_models_priority
-            ),
-            planner=planner,
             agent_context=context,
             memory=self.memory,
-            llm_operator=self.llm_operator,
+            plan_chat=groupchat,
+            planner=planner,
         )
         agent_map[manager.name] = manager
 
@@ -259,95 +235,6 @@ class MultiAgents(BaseComponent, ABC):
 
     def gpts_conv_list(self, user_code: str = None, system_app: str = None):
         return self.gpts_conversations.get_convs(user_code, system_app)
-
-    def _build_model_operator(
-        self, is_stream: bool = False, dag_name: str = "llm_model_dag"
-    ) -> BaseOperator:
-        """Builds and returns a model processing workflow (DAG) operator.
-
-        This function constructs a Directed Acyclic Graph (DAG) for processing data using a model.
-        It includes caching and branching logic to either fetch results from a cache or process
-        data using the model. It supports both streaming and non-streaming modes.
-
-        .. code-block:: python
-            input_node >> cache_check_branch_node
-            cache_check_branch_node >> model_node >> save_cached_node >> join_node
-            cache_check_branch_node >> cached_node >> join_node
-
-        equivalent to::
-
-                              -> model_node -> save_cached_node ->
-                             /                                    \
-            input_node -> cache_check_branch_node                   ---> join_node
-                            \                                     /
-                             -> cached_node ------------------- ->
-
-        Args:
-            is_stream (bool): Flag to determine if the operator should process data in streaming mode.
-            dag_name (str): Name of the DAG.
-
-        Returns:
-            BaseOperator: The final operator in the constructed DAG, typically a join node.
-        """
-        from dbgpt.model.cluster import WorkerManagerFactory
-        from dbgpt.core.awel import JoinOperator
-        from dbgpt.model.operator.model_operator import (
-            ModelCacheBranchOperator,
-            CachedModelStreamOperator,
-            CachedModelOperator,
-            ModelSaveCacheOperator,
-            ModelStreamSaveCacheOperator,
-        )
-        from dbgpt.storage.cache import CacheManager
-
-        # Fetch worker and cache managers from the system configuration
-        worker_manager = CFG.SYSTEM_APP.get_component(
-            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-        ).create()
-        cache_manager: CacheManager = CFG.SYSTEM_APP.get_component(
-            ComponentType.MODEL_CACHE_MANAGER, CacheManager
-        )
-        # Define task names for the model and cache nodes
-        model_task_name = "llm_model_node"
-        cache_task_name = "llm_model_cache_node"
-
-        with DAG(dag_name):
-            # Create an input node
-            input_node = InputOperator(SimpleCallDataInputSource())
-            # Determine if the workflow should operate in streaming mode
-            if is_stream:
-                model_node = ModelStreamOperator(
-                    worker_manager, task_name=model_task_name
-                )
-                cached_node = CachedModelStreamOperator(
-                    cache_manager, task_name=cache_task_name
-                )
-                save_cached_node = ModelStreamSaveCacheOperator(cache_manager)
-            else:
-                model_node = ModelOperator(worker_manager, task_name=model_task_name)
-                cached_node = CachedModelOperator(
-                    cache_manager, task_name=cache_task_name
-                )
-                save_cached_node = ModelSaveCacheOperator(cache_manager)
-
-            # Create a branch node to decide between fetching from cache or processing with the model
-            cache_check_branch_node = ModelCacheBranchOperator(
-                cache_manager,
-                model_task_name="llm_model_node",
-                cache_task_name="llm_model_cache_node",
-            )
-            # Create a join node to merge outputs from the model and cache nodes, just keep the first not empty output
-            join_node = JoinOperator(
-                combine_function=lambda model_out, cache_out: cache_out or model_out
-            )
-
-            # Define the workflow structure using the >> operator
-            input_node >> cache_check_branch_node
-            cache_check_branch_node >> model_node >> save_cached_node >> join_node
-            cache_check_branch_node >> cached_node >> join_node
-            out_parse_task = BaseOutputParser(is_stream_out=False)
-            join_node >> out_parse_task
-        return out_parse_task
 
 
 multi_agents = MultiAgents()

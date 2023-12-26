@@ -19,11 +19,10 @@ from dbgpt.serve.agent.model import (
     PluginHubFilter,
 )
 from dbgpt.serve.agent.hub.agent_hub import AgentHub
-from dbgpt.serve.agent.db.plugin_hub_db import PluginHubEntity, PluginHubDao
-from dbgpt.serve.agent.db.my_plugin_db import MyPluginEntity, MyPluginDao
+from dbgpt.serve.agent.db.plugin_hub_db import PluginHubEntity
 
-from dbgpt.agent.plugins_util import scan_plugins
-from dbgpt.agent.commands.generator import PluginPromptGenerator
+from dbgpt.agent.plugin.plugins_util import scan_plugins
+from dbgpt.agent.plugin.generator import PluginPromptGenerator
 
 from dbgpt.configs.model_config import PLUGINS_DIR
 from dbgpt.component import BaseComponent, ComponentType, SystemApp

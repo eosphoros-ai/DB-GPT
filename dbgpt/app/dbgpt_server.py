@@ -26,8 +26,7 @@ from dbgpt.app.component_configs import initialize_components
 
 # fastapi import time cost about 0.05s
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI, applications
-from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -41,8 +40,6 @@ from dbgpt.util.utils import (
 from dbgpt.util.tracer import root_tracer, initialize_tracer, SpanType, SpanTypeRunName
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
-
-import dbgpt.serve.agent.db
 
 static_file_path = os.path.join(ROOT_PATH, "dbgpt", "app/static")
 
@@ -91,7 +88,7 @@ def mount_routers(app: FastAPI):
 
 
 def mount_static_files(app: FastAPI):
-    from dbgpt.agent.commands.disply_type.show_chart_gen import (
+    from dbgpt.agent.plugin.commands.built_in.disply_type import (
         static_message_img_path,
     )
 

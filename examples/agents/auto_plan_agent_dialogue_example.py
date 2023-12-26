@@ -13,7 +13,10 @@ import asyncio
 import os
 
 if __name__ == "__main__":
-    context: AgentContext = AgentContext(conv_id="test123", gpts_name="测试助手1")
+    from dbgpt.model import OpenAILLMClient
+
+    llm_client = OpenAILLMClient()
+    context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)
     context.llm_models = ["gpt-3.5-turbo"]
 
     default_memory = GptsMemory()
