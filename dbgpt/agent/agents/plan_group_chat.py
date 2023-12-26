@@ -431,7 +431,6 @@ class PlanChatManager(ConversableAgent):
                                 plan_result,
                             )
                     except Exception as e:
-
                         logger.exception(
                             f"An exception was encountered during the execution of the current plan step.{str(e)}"
                         )
