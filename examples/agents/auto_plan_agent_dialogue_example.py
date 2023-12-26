@@ -25,6 +25,7 @@ from dbgpt.agent.agents.agents_mange import agent_mange
 
 from dbgpt.agent.agents.agent import AgentContext
 from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.core.interface.llm import ModelMetadata
 
 import asyncio
 import os
@@ -34,7 +35,7 @@ if __name__ == "__main__":
 
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)
-    context.llm_models = ["gpt-3.5-turbo"]
+    context.llm_models =  [ModelMetadata(model="gpt-3.5-turbo")]
 
     default_memory = GptsMemory()
     coder = CodeAssistantAgent(memory=default_memory, agent_context=context)

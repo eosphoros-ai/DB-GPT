@@ -172,7 +172,7 @@ class AgentContext:
     resource_db: Optional[AgentResource] = None
     resource_knowledge: Optional[AgentResource] = None
     resource_internet: Optional[AgentResource] = None
-    llm_models: Optional[List[ModelMetadata]] = None
+    llm_models: Optional[List[Union[ModelMetadata, str]]] = None
     model_priority: Optional[dict] = None
     agents: Optional[List[str]] = None
 
