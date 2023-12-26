@@ -29,7 +29,7 @@ class AIWrapper:
         self.llm_echo = False
         self.model_cache_enable = False
         self._llm_client = llm_client
-        self._output_parser = output_parser or BaseOutputParser()
+        self._output_parser = output_parser or BaseOutputParser(is_stream_out=False)
 
     @classmethod
     def instantiate(
@@ -181,7 +181,7 @@ class AIWrapper:
         try:
             model_request = _build_model_request(payload)
             model_output = await self._llm_client.generate(model_request)
-            parsed_output = await self._output_parser.map(model_output)
+            parsed_output =  self._output_parser.parse_model_nostream_resp(model_output, "###")
             return parsed_output
         except Exception as e:
             logger.error(

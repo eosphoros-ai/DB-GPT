@@ -8,6 +8,7 @@ from dbgpt.util.string_utils import str_to_bool
 from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent
 from ..base_agent import ConversableAgent
+from dbgpt.core.interface.message import ModelMessageRoleType
 
 try:
     from termcolor import colored
@@ -57,8 +58,6 @@ When you find an answer, verify the answer carefully. Please try to simplify the
         self,
         agent_context: "AgentContext",
         memory: GptsMemory = None,
-        llm_operator: Optional[BaseOperator] = None,
-        model_priority: Optional[List[str]] = None,
         describe: Optional[str] = DEFAULT_DESCRIBE,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
@@ -86,8 +85,6 @@ When you find an answer, verify the answer carefully. Please try to simplify the
         super().__init__(
             name=self.NAME,
             memory=memory,
-            llm_operator=llm_operator,
-            model_priority=model_priority,
             describe=describe,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
             is_termination_msg=is_termination_msg,
@@ -174,7 +171,7 @@ When you find an answer, verify the answer carefully. Please try to simplify the
         check_reult, model = await self.a_reasoning_reply(
             [
                 {
-                    "role": "user",
+                    "role":  ModelMessageRoleType.HUMAN,
                     "content": f"""Please understand the following task objectives and results and give your judgment:
                         Task Gogal: {task_gogal}
                         Execution Result: {task_result}

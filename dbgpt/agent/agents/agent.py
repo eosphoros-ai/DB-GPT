@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import dataclasses
+from collections import defaultdict
 from dataclasses import asdict, dataclass, fields
 from typing import Any, Dict, List, Optional, Union
 
 from ..memory.gpts_memory import GptsMemory
-
+from dbgpt.core import LLMClient
 
 class Agent:
     """
@@ -165,12 +166,14 @@ class AgentResource:
 @dataclass
 class AgentContext:
     conv_id: str
-    gpts_name: Optional[str]
+    llm_provider: Optional[LLMClient]
 
+    gpts_name: Optional[str] = None
     resource_db: Optional[AgentResource] = None
     resource_knowledge: Optional[AgentResource] = None
     resource_internet: Optional[AgentResource] = None
     llm_models: Optional[List[str]] = None
+    model_priority: Optional[dict] = None
     agents: Optional[List[str]] = None
 
     max_chat_round: Optional[int] = 100
