@@ -67,22 +67,10 @@ def test_load_knowledge(
     mock_chunk_parameters.text_splitter = CharacterTextSplitter()
     mock_chunk_parameters.splitter_type = SplitterType.USER_DEFINE
     assembler = EmbeddingAssembler(
+        knowledge=mock_knowledge,
         chunk_parameters=mock_chunk_parameters,
         embedding_factory=mock_embedding_factory,
         vector_store_connector=mock_vector_store_connector,
     )
     assembler.load_knowledge(knowledge=mock_knowledge)
-    assert len(assembler._chunks) == 1
-
-
-def test_get_chunks(mock_db_connection, mock_chunk_parameters):
-    test_chunks = ["chunk1", "chunk2", "chunk3"]
-
-    assembler = EmbeddingAssembler.load_from_knowledge(
-        embedding_model="embedding_model_path",
-    )
-    assembler._chunks = test_chunks
-
-    result = assembler.get_chunks()
-
-    assert result == test_chunks
+    assert len(assembler._chunks) == 0

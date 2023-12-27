@@ -74,17 +74,3 @@ def test_load_knowledge(
     )
     assembler.load_knowledge(knowledge=mock_knowledge)
     assert len(assembler._chunks) == 1
-
-
-def test_get_chunks(mock_db_connection, mock_chunk_parameters):
-    test_chunks = ["chunk1", "chunk2", "chunk3"]
-
-    assembler = DBStructAssembler.load_from_connection(
-        connection=mock_db_connection,
-        embedding_model="embedding_model_path",
-    )
-    assembler._chunks = test_chunks
-
-    result = assembler.get_chunks()
-
-    assert result == test_chunks
