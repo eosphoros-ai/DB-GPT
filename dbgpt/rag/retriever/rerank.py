@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 from dbgpt.rag.chunk import Chunk
 
@@ -48,7 +48,7 @@ class DefaultRanker(Ranker):
     def __init__(self, topk: int, rank_fn: Optional[callable] = None):
         super().__init__(topk, rank_fn)
 
-    def rank(self, candidates_with_scores: List[Tuple]):
+    def rank(self, candidates_with_scores: List[Chunk], topk: int) -> List[Chunk]:
         """Default rank algorithm implementation
         return topk documents by candidates similarity score
         Args:

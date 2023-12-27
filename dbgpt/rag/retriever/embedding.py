@@ -1,7 +1,6 @@
 from functools import reduce
 from typing import List, Optional
 
-from dbgpt.core import LLMClient
 from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.util.chat_util import run_async_tasks
 from dbgpt.rag.chunk import Chunk
