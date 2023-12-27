@@ -1,18 +1,18 @@
 from datetime import datetime
 from typing import List, Optional
+
 from sqlalchemy import (
     Column,
+    DateTime,
+    Index,
     Integer,
     String,
-    Index,
-    DateTime,
-    func,
     Text,
-    or_,
     and_,
     desc,
+    func,
+    or_,
 )
-from sqlalchemy import UniqueConstraint
 
 from dbgpt.storage.metadata import BaseDao, Model
 

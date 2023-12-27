@@ -27,6 +27,7 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/isort dbgpt/agent/
 	$(VENV_BIN)/isort dbgpt/core/
 	$(VENV_BIN)/isort dbgpt/serve/core/
+	$(VENV_BIN)/isort dbgpt/serve/agent/
 	$(VENV_BIN)/isort dbgpt/serve/conversation/
 	$(VENV_BIN)/isort dbgpt/serve/utils/_template_files
 	# https://github.com/psf/black

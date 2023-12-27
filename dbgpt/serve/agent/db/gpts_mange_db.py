@@ -1,7 +1,6 @@
 from datetime import datetime
-from typing import List
-from sqlalchemy import Column, Integer, String, Index, DateTime, func, Text, Boolean
-from sqlalchemy import UniqueConstraint
+
+from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
 from dbgpt.storage.metadata import BaseDao, Model
 

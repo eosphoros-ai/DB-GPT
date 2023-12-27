@@ -1,10 +1,9 @@
 from datetime import datetime
-from typing import List
-from sqlalchemy import Column, Integer, String, Index, DateTime, func, Text
-from sqlalchemy import UniqueConstraint
 
-from dbgpt.storage.metadata import BaseDao, Model
+from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
+
 from dbgpt.agent.common.schema import Status
+from dbgpt.storage.metadata import BaseDao, Model
 
 
 class GptsPlansEntity(Model):
