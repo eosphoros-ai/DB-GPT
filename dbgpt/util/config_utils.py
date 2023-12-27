@@ -1,3 +1,4 @@
+import os
 from functools import cache
 from typing import Any, Dict, Optional
 
@@ -33,3 +34,19 @@ class AppConfig:
             prefix (str): The prefix of config
         """
         return {k: v for k, v in self.configs.items() if k.startswith(prefix)}
+
+    def get_current_lang(self, default: Optional[str] = None) -> str:
+        """Get current language
+
+        Args:
+            default (Optional[str], optional): The default language if not found. Defaults to None.
+
+        Returns:
+            str: The language of user running environment
+        """
+        env_lang = (
+            "zh"
+            if os.getenv("LANG") and os.getenv("LANG").startswith("zh")
+            else default
+        )
+        return self.get("dbgpt.app.global.language", env_lang)

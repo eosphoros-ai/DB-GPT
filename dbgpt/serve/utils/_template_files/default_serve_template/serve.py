@@ -1,6 +1,9 @@
-from typing import List, Optional
-from dbgpt.component import BaseComponent, SystemApp
-
+from typing import List, Optional, Union
+import logging
+from dbgpt.component import SystemApp
+from sqlalchemy import URL
+from dbgpt.storage.metadata import DatabaseManager
+from dbgpt.serve.core import BaseServe
 from .api.endpoints import router, init_endpoints
 from .config import (
     SERVE_APP_NAME,
@@ -10,8 +13,10 @@ from .config import (
     ServeConfig,
 )
 
+logger = logging.getLogger(__name__)
 
-class Serve(BaseComponent):
+
+class Serve(BaseServe):
     """Serve component for DB-GPT"""
 
     name = SERVE_APP_NAME
@@ -20,25 +25,36 @@ class Serve(BaseComponent):
         self,
         system_app: SystemApp,
         api_prefix: Optional[str] = f"/api/v1/serve/{APP_NAME}",
-        tags: Optional[List[str]] = None,
+        api_tags: Optional[List[str]] = None,
+        db_url_or_db: Union[str, URL, DatabaseManager] = None,
+        try_create_tables: Optional[bool] = False,
     ):
-        if tags is None:
-            tags = [SERVE_APP_NAME_HUMP]
-        self._system_app = None
-        self._api_prefix = api_prefix
-        self._tags = tags
+        if api_tags is None:
+            api_tags = [SERVE_APP_NAME_HUMP]
+        super().__init__(
+            system_app, api_prefix, api_tags, db_url_or_db, try_create_tables
+        )
+        self._db_manager: Optional[DatabaseManager] = None
 
     def init_app(self, system_app: SystemApp):
+        if self._app_has_initiated:
+            return
         self._system_app = system_app
         self._system_app.app.include_router(
-            router, prefix=self._api_prefix, tags=self._tags
+            router, prefix=self._api_prefix, tags=self._api_tags
         )
         init_endpoints(self._system_app)
+        self._app_has_initiated = True
 
-    def before_start(self):
-        """Called before the start of the application.
+    def on_init(self):
+        """Called when init the application.
 
-        You can do some initialization here.
+        You can do some initialization here. You can't get other components here because they may be not initialized yet
         """
         # import your own module here to ensure the module is loaded before the application starts
         from .models.models import ServeEntity
+
+    def before_start(self):
+        """Called before the start of the application."""
+        # TODO: Your code here
+        self._db_manager = self.create_or_get_db_manager()

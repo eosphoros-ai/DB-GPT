@@ -217,6 +217,10 @@ async def dialogue_list(
         model_name = item.get("model_name", CFG.LLM_MODEL)
         user_name = item.get("user_name")
         sys_code = item.get("sys_code")
+        if not item.get("messages"):
+            # Skip the empty messages
+            # TODO support new conversation and message mode
+            continue
 
         messages = json.loads(item.get("messages"))
         last_round = max(messages, key=lambda x: x["chat_order"])

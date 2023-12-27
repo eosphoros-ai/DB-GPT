@@ -183,6 +183,11 @@ class DatabaseManager:
         """Get the engine.""" ""
         return self._engine
 
+    @property
+    def is_initialized(self) -> bool:
+        """Whether the database manager is initialized.""" ""
+        return self._engine is not None and self._session is not None
+
     @contextmanager
     def session(self) -> Session:
         """Get the session with context manager.
@@ -200,7 +205,7 @@ class DatabaseManager:
             RuntimeError: The database manager is not initialized.
             Exception: Any exception.
         """
-        if not self._session:
+        if not self.is_initialized:
             raise RuntimeError("The database manager is not initialized.")
         session = self._session()
         try:

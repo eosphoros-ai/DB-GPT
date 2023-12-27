@@ -16,7 +16,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
-from pydantic import BaseSettings
 
 from fastchat.protocol.openai_api_protocol import (
     ChatCompletionResponse,
@@ -42,6 +41,7 @@ from dbgpt.model.parameter import ModelAPIServerParameters, WorkerType
 from dbgpt.model.cluster import ModelRegistry
 from dbgpt.model.cluster.manager_base import WorkerManager, WorkerManagerFactory
 from dbgpt.util.utils import setup_logging
+from dbgpt._private.pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class APIServerException(Exception):
         self.message = message
 
 
-class APISettings(BaseSettings):
+class APISettings(BaseModel):
     api_keys: Optional[List[str]] = None
 
 

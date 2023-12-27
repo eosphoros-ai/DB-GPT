@@ -139,7 +139,7 @@ class FileSpanStorage(SpanStorage):
     def _write_to_file(self, spans: List[Span]):
         self._roll_over_if_needed()
 
-        with open(self.filename, "a") as file:
+        with open(self.filename, "a", encoding="utf8") as file:
             for span in spans:
                 span_data = span.to_dict()
                 try:

@@ -369,6 +369,7 @@ def core_requires():
     setup_spec.extras["simple_framework"] = setup_spec.extras["core"] + [
         "pydantic<2,>=1",
         "httpx",
+        "jinja2",
         "fastapi==0.98.0",
         "shortuuid",
         # change from fixed version 2.0.22 to variable version, because other dependencies are >=1.4, such as pydoris is <2

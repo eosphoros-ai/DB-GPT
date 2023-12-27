@@ -31,3 +31,13 @@ else:
         validator,
         PrivateAttr,
     )
+
+
+def model_to_json(model, **kwargs):
+    """Convert a pydantic model to json"""
+    if PYDANTIC_VERSION == 1:
+        return model.json(**kwargs)
+    else:
+        if "ensure_ascii" in kwargs:
+            del kwargs["ensure_ascii"]
+        return model.model_dump_json(**kwargs)

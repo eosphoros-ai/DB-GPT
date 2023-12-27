@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Generic, AsyncIterator
-from ..task.base import OUT, IN, TaskOutput, TaskContext
+from typing import AsyncIterator, Generic
+
 from ..dag.base import DAGContext
+from ..task.base import IN, OUT, TaskContext, TaskOutput
 from .base import BaseOperator
 
 

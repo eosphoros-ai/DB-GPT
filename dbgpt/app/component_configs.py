@@ -46,9 +46,9 @@ def initialize_components(
         param, system_app, embedding_model_name, embedding_model_path
     )
     _initialize_model_cache(system_app)
-    _initialize_awel(system_app)
+    _initialize_awel(system_app, param)
     # Register serve apps
-    register_serve_apps(system_app)
+    register_serve_apps(system_app, CFG)
 
 
 def _initialize_model_cache(system_app: SystemApp):
@@ -64,8 +64,14 @@ def _initialize_model_cache(system_app: SystemApp):
     initialize_cache(system_app, storage_type, max_memory_mb, persist_dir)
 
 
-def _initialize_awel(system_app: SystemApp):
+def _initialize_awel(system_app: SystemApp, param: WebServerParameters):
     from dbgpt.core.awel import initialize_awel
     from dbgpt.configs.model_config import _DAG_DEFINITION_DIR
 
-    initialize_awel(system_app, _DAG_DEFINITION_DIR)
+    # Add default dag definition dir
+    dag_dirs = [_DAG_DEFINITION_DIR]
+    if param.awel_dirs:
+        dag_dirs += param.awel_dirs.strip().split(",")
+    dag_dirs = [x.strip() for x in dag_dirs]
+
+    initialize_awel(system_app, dag_dirs)

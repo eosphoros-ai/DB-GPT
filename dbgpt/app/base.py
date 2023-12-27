@@ -40,7 +40,7 @@ def server_init(param: "WebServerParameters", system_app: SystemApp):
     cfg = Config()
     cfg.SYSTEM_APP = system_app
     # Initialize db storage first
-    _initialize_db_storage(param)
+    _initialize_db_storage(param, system_app)
 
     # load_native_plugins(cfg)
     signal.signal(signal.SIGINT, signal_handler)
@@ -86,12 +86,14 @@ def _create_model_start_listener(system_app: SystemApp):
     return startup_event
 
 
-def _initialize_db_storage(param: "WebServerParameters"):
+def _initialize_db_storage(param: "WebServerParameters", system_app: SystemApp):
     """Initialize the db storage.
 
     Now just support sqlite and mysql. If db type is sqlite, the db path is `pilot/meta_data/{db_name}.db`.
     """
-    _initialize_db(try_to_create_db=not param.disable_alembic_upgrade)
+    _initialize_db(
+        try_to_create_db=not param.disable_alembic_upgrade, system_app=system_app
+    )
 
 
 def _migration_db_storage(param: "WebServerParameters"):
@@ -114,7 +116,9 @@ def _migration_db_storage(param: "WebServerParameters"):
         _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
 
 
-def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
+def _initialize_db(
+    try_to_create_db: Optional[bool] = False, system_app: Optional[SystemApp] = None
+) -> str:
     """Initialize the database
 
     Now just support sqlite and mysql. If db type is sqlite, the db path is `pilot/meta_data/{db_name}.db`.
@@ -147,7 +151,11 @@ def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
         "pool_recycle": 3600,
         "pool_pre_ping": True,
     }
-    initialize_db(db_url, db_name, engine_args)
+    db = initialize_db(db_url, db_name, engine_args)
+    if system_app:
+        from dbgpt.storage.metadata import UnifiedDBManagerFactory
+
+        system_app.register(UnifiedDBManagerFactory, db)
     return default_meta_data_path
 
 
@@ -271,5 +279,11 @@ class WebServerParameters(BaseParameters):
         default=False,
         metadata={
             "help": "Whether to disable alembic to initialize and upgrade database metadata",
+        },
+    )
+    awel_dirs: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The directories to search awel files, split by `,`",
         },
     )

@@ -1,8 +1,10 @@
-from typing import Dict, Optional
 import logging
+from typing import Dict, List
+
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
-from .loader import DAGLoader, LocalFileDAGLoader
+
 from .base import DAG
+from .loader import LocalFileDAGLoader
 
 logger = logging.getLogger(__name__)
 
@@ -10,9 +12,9 @@ logger = logging.getLogger(__name__)
 class DAGManager(BaseComponent):
     name = ComponentType.AWEL_DAG_MANAGER
 
-    def __init__(self, system_app: SystemApp, dag_filepath: str):
+    def __init__(self, system_app: SystemApp, dag_dirs: List[str]):
         super().__init__(system_app)
-        self.dag_loader = LocalFileDAGLoader(dag_filepath)
+        self.dag_loader = LocalFileDAGLoader(dag_dirs)
         self.system_app = system_app
         self.dag_map: Dict[str, DAG] = {}
 

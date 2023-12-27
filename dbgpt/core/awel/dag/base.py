@@ -1,15 +1,16 @@
-from abc import ABC, abstractmethod
-from typing import Optional, Dict, List, Sequence, Union, Any, Set
-import uuid
-import contextvars
-import threading
 import asyncio
+import contextvars
 import logging
+import threading
+import uuid
+from abc import ABC, abstractmethod
 from collections import deque
-from functools import cache
 from concurrent.futures import Executor
+from functools import cache
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
 from dbgpt.component import SystemApp
+
 from ..resource.base import ResourceGroup
 from ..task.base import TaskContext, TaskOutput
 
@@ -501,6 +502,9 @@ class DAG:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         DAGVar.exit_dag()
+
+    def __repr__(self):
+        return f"DAG(dag_id={self.dag_id})"
 
 
 def _get_nodes(node: DAGNode, is_upstream: Optional[bool] = True) -> set[DAGNode]:

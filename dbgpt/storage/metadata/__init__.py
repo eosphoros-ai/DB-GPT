@@ -5,6 +5,7 @@ from dbgpt.storage.metadata.db_manager import (
     create_model,
     BaseModel,
 )
+from dbgpt.storage.metadata.db_factory import UnifiedDBManagerFactory
 from dbgpt.storage.metadata._base_dao import BaseDao
 
 __ALL__ = [
@@ -14,4 +15,5 @@ __ALL__ = [
     "create_model",
     "BaseModel",
     "BaseDao",
+    "UnifiedDBManagerFactory",
 ]
