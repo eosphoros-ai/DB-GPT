@@ -55,7 +55,7 @@ class ConversableAgent(Agent):
             if is_termination_msg is not None
             else (lambda x: x.get("content") == "TERMINATE")
         )
-        
+
         self.client = AIWrapper(llm_client=agent_context.llm_provider)
 
         self.human_input_mode = human_input_mode
@@ -513,7 +513,10 @@ class ConversableAgent(Agent):
                     fail_reason = action_report["content"]
                     need_retry = True
                 else:
-                    if not action_report["content"] or len(action_report["content"].strip()) <1:
+                    if (
+                        not action_report["content"]
+                        or len(action_report["content"].strip()) < 1
+                    ):
                         fail_reason = f'The code is executed successfully but the output:{action_report["content"]} is invalid or empty. Please reanalyze the target to generate valid code.'
                         need_retry = True
         ##  Verify the correctness of the results

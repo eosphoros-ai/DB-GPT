@@ -114,9 +114,6 @@ class PluginAgent(ConversableAgent):
             rensponse_succ = False
         else:
             try:
-
-
-
                 view = ""
             except Exception as e:
                 view = f"```vis-convert-error\n{content}\n```"

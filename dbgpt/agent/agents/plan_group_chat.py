@@ -274,12 +274,14 @@ class PlanChatManager(ConversableAgent):
                 rely_prompt = "Read the result data of the dependent steps in the above historical message to complete the current goal:"
                 for rely_task in rely_tasks:
                     speaker.append_rely_message(
-                        {"content": rely_task.sub_task_content}, ModelMessageRoleType.HUMAN
+                        {"content": rely_task.sub_task_content},
+                        ModelMessageRoleType.HUMAN,
                     )
                     speaker.append_rely_message(
                         {"content": rely_task.result}, ModelMessageRoleType.AI
                     )
-        return  rely_prompt
+        return rely_prompt
+
     async def a_verify_reply(
         self, message: Optional[Dict], sender: "Agent", reviewer: "Agent", **kwargs
     ) -> Union[str, Dict, None]:
@@ -337,8 +339,6 @@ class PlanChatManager(ConversableAgent):
                 else:
                     now_plan: GptsPlan = todo_plans[0]
 
-
-
                     # There is no need to broadcast the message to other agents, it will be automatically obtained from the collective memory according to the dependency relationship.
                     try:
                         if Status.RETRYING.value == now_plan.state:
@@ -390,7 +390,9 @@ class PlanChatManager(ConversableAgent):
                             speaker=speaker,
                         )
 
-                        current_goal_message['content'] = rely_prompt + current_goal_message['content']
+                        current_goal_message["content"] = (
+                            rely_prompt + current_goal_message["content"]
+                        )
 
                         is_recovery = False
                         if message == current_goal_message["content"]:

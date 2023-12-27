@@ -15,6 +15,7 @@ from datetime import datetime
 
 from .base import GptsMessageMemory, GptsPlansMemory, GptsPlan, GptsMessage
 
+
 @dataclass
 class GptsPlanIdentifier(ResourceIdentifier):
     identifier_split: str = dataclasses.field(default="___$$$$___", init=False)
@@ -52,12 +53,13 @@ class GptsPlanIdentifier(ResourceIdentifier):
         return {
             "conv_id": self.conv_id,
             "sub_task_num": self.sub_task_num,
-
         }
+
 
 @dataclass
 class GptsPlanStorage(StorageItem):
     """Gpts plan"""
+
     conv_id: str
     sub_task_num: int
     sub_task_content: Optional[str]
@@ -119,7 +121,6 @@ class GptsPlanStorage(StorageItem):
         self.from_object(other)
 
 
-
 @dataclass
 class GptsMessageIdentifier(ResourceIdentifier):
     identifier_split: str = dataclasses.field(default="___$$$$___", init=False)
@@ -129,7 +130,12 @@ class GptsMessageIdentifier(ResourceIdentifier):
     rounds: Optional[int]
 
     def __post_init__(self):
-        if self.conv_id is None or self.sender is None or self.receiver is None or self.rounds is None:
+        if (
+            self.conv_id is None
+            or self.sender is None
+            or self.receiver is None
+            or self.rounds is None
+        ):
             raise ValueError("conv_id and sub_task_num cannot be None")
 
         if any(
@@ -166,6 +172,7 @@ class GptsMessageIdentifier(ResourceIdentifier):
             "receiver": self.receiver,
             "rounds": self.rounds,
         }
+
 
 @dataclass
 class GptsMessageStorage(StorageItem):
@@ -209,7 +216,6 @@ class GptsMessageStorage(StorageItem):
     def to_dict(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)
 
-
     def _check(self):
         if self.conv_id is None:
             raise ValueError("conv_id cannot be None")
@@ -244,11 +250,8 @@ class GptsMessageStorage(StorageItem):
         )
 
     @staticmethod
-    def from_gpts_message(
-            gpts_message: GptsMessage
-    ) -> "StoragePromptTemplate":
-        """Convert a GptsMessage to a storage e.
-        """
+    def from_gpts_message(gpts_message: GptsMessage) -> "StoragePromptTemplate":
+        """Convert a GptsMessage to a storage e."""
         return GptsMessageStorage(
             conv_id=gpts_message.conv_id,
             sender=gpts_message.sender,
@@ -282,8 +285,6 @@ class GptsMessageStorage(StorageItem):
         self.from_object(other)
 
 
-
-
 class GptsMessageManager(GptsMessageMemory):
     """The manager class for GptsMessage.
 
@@ -291,9 +292,7 @@ class GptsMessageManager(GptsMessageMemory):
 
     """
 
-    def __init__(
-        self, storage: Optional[StorageInterface[GptsMessage, Any]] = None
-    ):
+    def __init__(self, storage: Optional[StorageInterface[GptsMessage, Any]] = None):
         if storage is None:
             storage = InMemoryStorage()
         self._storage = storage
@@ -303,11 +302,8 @@ class GptsMessageManager(GptsMessageMemory):
         """The storage interface for prompt templates."""
         return self._storage
 
-
-
     def append(self, message: GptsMessage):
         self.storage.save(GptsMessageStorage.from_gpts_message(message))
-
 
     def get_by_agent(self, conv_id: str, agent: str) -> Optional[List[GptsMessage]]:
         query_spec = QuerySpec(
@@ -343,7 +339,13 @@ class GptsMessageManager(GptsMessageMemory):
                 queries = temp_queries
         return queries
 
-    def get_between_agents(self, conv_id: str, agent1: str, agent2: str, current_gogal: Optional[str] = None) -> Optional[List[GptsMessage]]:
+    def get_between_agents(
+        self,
+        conv_id: str,
+        agent1: str,
+        agent2: str,
+        current_gogal: Optional[str] = None,
+    ) -> Optional[List[GptsMessage]]:
         return super().get_between_agents(conv_id, agent1, agent2, current_gogal)
 
     def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessage]]:
@@ -351,8 +353,6 @@ class GptsMessageManager(GptsMessageMemory):
 
     def get_last_message(self, conv_id: str) -> Optional[GptsMessage]:
         return super().get_last_message(conv_id)
-
-
 
     def prefer_query(
         self,
@@ -441,5 +441,3 @@ class GptsMessageManager(GptsMessageMemory):
             if temp_queries:
                 queries = temp_queries
         return queries
-
-

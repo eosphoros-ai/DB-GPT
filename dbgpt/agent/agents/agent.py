@@ -10,7 +10,6 @@ from dbgpt.core import LLMClient
 from dbgpt.core.interface.llm import ModelMetadata
 
 
-
 class Agent:
     """
     An interface for AI agent.
