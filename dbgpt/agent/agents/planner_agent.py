@@ -3,13 +3,14 @@ from typing import Any, Callable, Dict, Optional, Tuple, Union
 from dbgpt._private.config import Config
 from dbgpt.agent.agents.plan_group_chat import PlanChat
 from dbgpt.agent.common.schema import Status
-from dbgpt.core.awel import BaseOperator
 from dbgpt.util.json_utils import find_json_objects
 
-from ..memory.gpts_memory import GptsMemory, GptsPlan
+from ..memory.base import GptsPlan
+from ..memory.gpts_memory import GptsMemory
 from .agent import Agent, AgentContext
 from .base_agent import ConversableAgent
 
+# TODO: remove global config
 CFG = Config()
 
 

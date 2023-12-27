@@ -1,6 +1,7 @@
 import logging
-from .generator import PluginPromptGenerator
 from typing import List
+
+from .generator import PluginPromptGenerator
 
 logger = logging.getLogger(__name__)
 

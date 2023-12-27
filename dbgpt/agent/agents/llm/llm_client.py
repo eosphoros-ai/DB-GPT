@@ -97,9 +97,9 @@ class AIWrapper:
         Returns:
             tuple: A unique identifier which can be used as a key for a dict.
         """
-        NON_CACHE_KEY = ["api_key", "base_url", "api_type", "api_version"]
+        non_cache_key = ["api_key", "base_url", "api_type", "api_version"]
         copied = False
-        for key in NON_CACHE_KEY:
+        for key in non_cache_key:
             if key in config:
                 config, copied = config.copy() if not copied else config, True
                 config.pop(key)
