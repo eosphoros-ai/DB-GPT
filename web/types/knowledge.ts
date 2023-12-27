@@ -81,6 +81,7 @@ export type IDocumentResponse = {
 export type IStrategyParameter = {
   param_name: string;
   param_type: string;
+  default_value?: string | number;
 };
 
 export type IChunkStrategyResponse = {
