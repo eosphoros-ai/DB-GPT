@@ -5,7 +5,7 @@ import Icon from '@ant-design/icons';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StrategyForm from './strategy-form';
-import { DoneIcon, PendingIcon, SyncIcon } from '@/components/icons';
+import { DoneIcon, PendingIcon, SyncIcon, FileError } from '@/components/icons';
 
 type IProps = {
   spaceName: string;
@@ -95,7 +95,7 @@ export default function Segmentation(props: IProps) {
       });
       setFiles(copy);
       // all doc sync finished
-      if (docs?.data.every((item) => item.status === 'FINISHED')) {
+      if (docs?.data.every((item) => item.status === 'FINISHED' || item.status === 'FAILED')) {
         return 'FINISHED';
       }
     }
@@ -138,6 +138,8 @@ export default function Segmentation(props: IProps) {
         return <Icon component={DoneIcon} />;
       case 'RUNNING':
         return <Icon className="rotate-animation" component={SyncIcon} />;
+      case 'FAILED':
+        return <Icon component={FileError} />;
       default:
         return <Icon component={PendingIcon} />;
     }
