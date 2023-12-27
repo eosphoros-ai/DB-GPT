@@ -109,7 +109,7 @@ class CodeAssistantAgent(ConversableAgent):
         param["code"] = code
         param["log"] = log
 
-        return f"```vis-code\n{json.dumps(param)}\n```"
+        return f"```vis-code\n{json.dumps(param, ensure_ascii=False)}\n```"
 
     async def generate_code_execution_reply(
         self,

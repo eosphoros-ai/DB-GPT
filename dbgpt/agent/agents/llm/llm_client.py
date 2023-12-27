@@ -103,7 +103,7 @@ class AIWrapper:
             if key in config:
                 config, copied = config.copy() if not copied else config, True
                 config.pop(key)
-        return json.dumps(config, sort_keys=True)
+        return json.dumps(config, sort_keys=True, ensure_ascii=False)
 
     async def create(self, **config):
         # merge the input config with the i-th config in the config list

@@ -109,7 +109,7 @@ class DataScientistAgent(ConversableAgent):
             rensponse_succ = False
         else:
             try:
-                content = json.dumps(json_objects[0])
+                content = json.dumps(json_objects[0], ensure_ascii=False)
             except Exception as e:
                 content = (
                     f"There is a format problem with the json of the answer，{str(e)}"

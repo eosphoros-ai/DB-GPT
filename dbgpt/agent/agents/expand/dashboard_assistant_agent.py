@@ -103,7 +103,7 @@ class DashboardAssistantAgent(ConversableAgent):
         else:
             try:
                 chart_objs = json_objects[0]
-                content = json.dumps(chart_objs)
+                content = json.dumps(chart_objs, ensure_ascii=False)
                 vis_client = ApiCall()
                 view = vis_client.display_dashboard_vis(
                     chart_objs, self.db_connect.run_to_df

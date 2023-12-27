@@ -249,13 +249,13 @@ class ConversableAgent(Agent):
             rounds=self.consecutive_auto_reply_counter,
             current_gogal=oai_message.get("current_gogal", None),
             content=oai_message.get("content", None),
-            context=json.dumps(oai_message["context"])
+            context=json.dumps(oai_message["context"], ensure_ascii=False)
             if "context" in oai_message
             else None,
-            review_info=json.dumps(oai_message["review_info"])
+            review_info=json.dumps(oai_message["review_info"], ensure_ascii=False)
             if "review_info" in oai_message
             else None,
-            action_report=json.dumps(oai_message["action_report"])
+            action_report=json.dumps(oai_message["action_report"], ensure_ascii=False)
             if "action_report" in oai_message
             else None,
             model_name=oai_message.get("model_name", None),
@@ -300,7 +300,7 @@ class ConversableAgent(Agent):
             print(message["content"], flush=True)
             print(colored("*" * len(func_print), "green"), flush=True)
         else:
-            content = json.dumps(message.get("content"))
+            content = json.dumps(message.get("content"), ensure_ascii=False)
             if content is not None:
                 if "context" in message:
                     content = AIWrapper.instantiate(

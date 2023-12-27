@@ -19,10 +19,6 @@ from dbgpt.storage.metadata import BaseDao, Model
 
 class GptsMessagesEntity(Model):
     __tablename__ = "gpts_messages"
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     id = Column(Integer, primary_key=True, comment="autoincrement id")
 
     conv_id = Column(
