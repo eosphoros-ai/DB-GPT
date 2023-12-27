@@ -1,6 +1,7 @@
+from typing import Dict
+
 import pytest
 import pytest_asyncio
-from typing import Dict
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from httpx import AsyncClient

@@ -55,8 +55,9 @@ async def check_api_key(
     .. code-block:: python
 
         import requests
+
         client_api_key = "your_api_key"
-        headers = {"Authorization": "Bearer " + client_api_key }
+        headers = {"Authorization": "Bearer " + client_api_key}
         res = requests.get("http://test/hello", headers=headers)
         assert res.status_code == 200
 

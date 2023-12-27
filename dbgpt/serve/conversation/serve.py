@@ -1,15 +1,17 @@
-from typing import List, Optional, Union
 import logging
-from dbgpt.component import SystemApp
+from typing import List, Optional, Union
+
 from sqlalchemy import URL
+
+from dbgpt.component import SystemApp
 from dbgpt.core import StorageInterface
-from dbgpt.storage.metadata import DatabaseManager
 from dbgpt.serve.core import BaseServe
+from dbgpt.storage.metadata import DatabaseManager
 
 from .config import (
+    APP_NAME,
     SERVE_APP_NAME,
     SERVE_APP_NAME_HUMP,
-    APP_NAME,
     SERVE_CONFIG_KEY_PREFIX,
     ServeConfig,
 )
@@ -72,16 +74,16 @@ class Serve(BaseServe):
     def before_start(self):
         """Called before the start of the application."""
         # TODO: Your code here
-        from dbgpt.storage.metadata.db_storage import SQLAlchemyStorage
-        from dbgpt.util.serialization.json_serialization import JsonSerializer
         from dbgpt.storage.chat_history.chat_history_db import (
             ChatHistoryEntity,
             ChatHistoryMessageEntity,
         )
         from dbgpt.storage.chat_history.storage_adapter import (
-            DBStorageConversationItemAdapter,
             DBMessageStorageItemAdapter,
+            DBStorageConversationItemAdapter,
         )
+        from dbgpt.storage.metadata.db_storage import SQLAlchemyStorage
+        from dbgpt.util.serialization.json_serialization import JsonSerializer
 
         self._db_manager = self.create_or_get_db_manager()
 

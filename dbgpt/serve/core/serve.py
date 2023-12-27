@@ -1,8 +1,10 @@
-from abc import ABC
-from typing import Optional, Union, List
 import logging
-from dbgpt.component import BaseComponent, SystemApp, ComponentType
+from abc import ABC
+from typing import List, Optional, Union
+
 from sqlalchemy import URL
+
+from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.storage.metadata import DatabaseManager
 
 logger = logging.getLogger(__name__)
@@ -36,7 +38,7 @@ class BaseServe(BaseComponent, ABC):
         Returns:
             DatabaseManager: The database manager
         """
-        from dbgpt.storage.metadata import Model, db, UnifiedDBManagerFactory
+        from dbgpt.storage.metadata import Model, UnifiedDBManagerFactory, db
 
         # If you need to use the database, you can get the database manager here
         db_manager_factory: UnifiedDBManagerFactory = self._system_app.get_component(

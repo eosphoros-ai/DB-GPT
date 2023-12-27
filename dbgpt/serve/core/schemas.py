@@ -1,4 +1,4 @@
-from typing import TypeVar, Generic, Any, Optional
+from typing import Any, Generic, Optional, TypeVar
 
 from dbgpt._private.pydantic import BaseModel, Field
 

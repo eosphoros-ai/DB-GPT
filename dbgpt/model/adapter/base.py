@@ -158,17 +158,19 @@ class LLMModelAdapter(ABC):
 
         Default is the OpenAI format, example:
             .. code-block:: python
+
                 return_messages = [
                     {"role": "system", "content": "You are a helpful assistant"},
                     {"role": "user", "content": "Hello"},
-                    {"role": "assistant", "content": "Hi"}
+                    {"role": "assistant", "content": "Hi"},
                 ]
 
         But some model may need to transform the messages to other format(e.g. There is no system message), such as:
             .. code-block:: python
+
                 return_messages = [
                     {"role": "user", "content": "Hello"},
-                    {"role": "assistant", "content": "Hi"}
+                    {"role": "assistant", "content": "Hi"},
                 ]
         Args:
             messages (List[ModelMessage]): The model messages
@@ -191,10 +193,11 @@ class LLMModelAdapter(ABC):
 
         Merge the system messages to the last user message, example:
             .. code-block:: python
+
                 return_messages = [
                     {"role": "system", "content": "You are a helpful assistant"},
                     {"role": "user", "content": "Hello"},
-                    {"role": "assistant", "content": "Hi"}
+                    {"role": "assistant", "content": "Hi"},
                 ]
             =>
                 return_messages = [
