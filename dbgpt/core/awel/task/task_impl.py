@@ -1,22 +1,22 @@
-from abc import ABC, abstractmethod
-from typing import (
-    Callable,
-    Coroutine,
-    Iterator,
-    AsyncIterator,
-    List,
-    Generic,
-    TypeVar,
-    Any,
-    Tuple,
-    Dict,
-    Union,
-    Optional,
-)
 import asyncio
 import logging
-from .base import TaskOutput, TaskContext, TaskState, InputContext, InputSource, T
+from abc import ABC, abstractmethod
+from typing import (
+    Any,
+    AsyncIterator,
+    Callable,
+    Coroutine,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
+from .base import InputContext, InputSource, T, TaskContext, TaskOutput, TaskState
 
 logger = logging.getLogger(__name__)
 

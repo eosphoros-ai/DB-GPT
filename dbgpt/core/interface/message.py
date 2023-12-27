@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core.awel import MapOperator
@@ -175,6 +175,22 @@ class ModelMessage(BaseModel):
     @staticmethod
     def build_human_message(content: str) -> "ModelMessage":
         return ModelMessage(role=ModelMessageRoleType.HUMAN, content=content)
+
+    @staticmethod
+    def get_printable_message(messages: List["ModelMessage"]) -> str:
+        """Get the printable message"""
+        str_msg = ""
+        for message in messages:
+            curr_message = (
+                f"(Round {message.round_index}) {message.role}: {message.content} "
+            )
+            str_msg += curr_message.rstrip() + "\n"
+
+        return str_msg
+
+
+_SingleRoundMessage = List[ModelMessage]
+_MultiRoundMessageMapper = Callable[[List[_SingleRoundMessage]], List[ModelMessage]]
 
 
 def _message_to_dict(message: BaseMessage) -> Dict:

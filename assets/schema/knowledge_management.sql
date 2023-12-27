@@ -175,6 +175,7 @@ CREATE TABLE IF NOT EXISTS `prompt_manage`
     `model` varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Prompt model name(we can use different models for different prompt)',
     `prompt_language` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Prompt language(eg:en, zh-cn)',
     `prompt_format` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT 'f-string' COMMENT 'Prompt format(eg: f-string, jinja2)',
+    `prompt_desc`    varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Prompt description',
     `user_name`      varchar(128) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'User name',
     `sys_code`       varchar(128)                            DEFAULT NULL COMMENT 'System code',
     `gmt_created`    timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time',

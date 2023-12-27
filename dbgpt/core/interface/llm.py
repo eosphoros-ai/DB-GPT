@@ -114,6 +114,9 @@ class ModelRequestContext:
     span_id: Optional[str] = None
     """The span id of the model inference."""
 
+    chat_mode: Optional[str] = None
+    """The chat mode of the model inference."""
+
     extra: Optional[Dict[str, Any]] = field(default_factory=dict)
     """The extra information of the model inference."""
 
@@ -195,7 +198,13 @@ class ModelRequest:
         # Skip None fields
         return {k: v for k, v in asdict(new_reqeust).items() if v}
 
-    def _get_messages(self) -> List[ModelMessage]:
+    def get_messages(self) -> List[ModelMessage]:
+        """Get the messages.
+
+        If the messages is not a list of ModelMessage, it will be converted to a list of ModelMessage.
+        Returns:
+            List[ModelMessage]: The messages.
+        """
         return list(
             map(
                 lambda m: m if isinstance(m, ModelMessage) else ModelMessage(**m),
@@ -209,7 +218,7 @@ class ModelRequest:
         Returns:
             Optional[ModelMessage]: The single user message.
         """
-        messages = self._get_messages()
+        messages = self.get_messages()
         if len(messages) != 1 and messages[0].role != ModelMessageRoleType.HUMAN:
             raise ValueError("The messages is not a single user message")
         return messages[0]

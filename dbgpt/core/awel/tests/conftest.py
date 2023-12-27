@@ -1,14 +1,16 @@
+from contextlib import asynccontextmanager, contextmanager
+from typing import AsyncIterator, List
+
 import pytest
 import pytest_asyncio
-from typing import AsyncIterator, List
-from contextlib import contextmanager, asynccontextmanager
+
 from .. import (
-    WorkflowRunner,
-    InputOperator,
     DAGContext,
-    TaskState,
     DefaultWorkflowRunner,
+    InputOperator,
     SimpleInputSource,
+    TaskState,
+    WorkflowRunner,
 )
 from ..task.task_impl import _is_async_iterator
 

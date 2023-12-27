@@ -48,6 +48,7 @@ class ServeEntity(Model):
         default="f-string",
         comment="Prompt format(eg: f-string, jinja2)",
     )
+    prompt_desc = Column(String(512), nullable=True, comment="Prompt description")
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
@@ -96,6 +97,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             prompt_type=entity.prompt_type,
             prompt_name=entity.prompt_name,
             content=entity.content,
+            prompt_desc=entity.prompt_desc,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
         )
@@ -119,6 +121,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             prompt_type=entity.prompt_type,
             prompt_name=entity.prompt_name,
             content=entity.content,
+            prompt_desc=entity.prompt_desc,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
             gmt_created=gmt_created_str,

@@ -17,10 +17,28 @@ logger = logging.getLogger(__name__)
 
 
 class LifeCycle:
-    """This class defines hooks for lifecycle events of a component."""
+    """This class defines hooks for lifecycle events of a component.
+
+    Execution order of lifecycle hooks:
+    1. on_init
+    2. before_start(async_before_start)
+    3. after_start(async_after_start)
+    4. before_stop(async_before_stop)
+    """
+
+    def on_init(self):
+        """Called when the component is being initialized."""
+        pass
+
+    async def async_on_init(self):
+        """Asynchronous version of on_init."""
+        pass
 
     def before_start(self):
-        """Called before the component starts."""
+        """Called before the component starts.
+
+        This method is called after the component has been initialized and before it is started.
+        """
         pass
 
     async def async_before_start(self):
@@ -59,6 +77,7 @@ class ComponentType(str, Enum):
     RAG_GRAPH_DEFAULT = "dbgpt_rag_engine_default"
     AWEL_TRIGGER_MANAGER = "dbgpt_awel_trigger_manager"
     AWEL_DAG_MANAGER = "dbgpt_awel_dag_manager"
+    UNIFIED_METADATA_DB_MANAGER_FACTORY = "dbgpt_unified_metadata_db_manager_factory"
 
 
 @PublicAPI(stability="beta")
@@ -176,6 +195,16 @@ class SystemApp(LifeCycle):
         if not isinstance(component, component_type):
             raise TypeError(f"Component {name} is not of type {component_type}")
         return component
+
+    def on_init(self):
+        """Invoke the on_init hooks for all registered components."""
+        for _, v in self.components.items():
+            v.on_init()
+
+    async def async_on_init(self):
+        """Asynchronously invoke the on_init hooks for all registered components."""
+        tasks = [v.async_on_init() for _, v in self.components.items()]
+        await asyncio.gather(*tasks)
 
     def before_start(self):
         """Invoke the before_start hooks for all registered components."""

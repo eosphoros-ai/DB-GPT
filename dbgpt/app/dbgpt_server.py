@@ -146,14 +146,13 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
     mount_routers(app)
     model_start_listener = _create_model_start_listener(system_app)
     initialize_components(param, system_app, embedding_model_name, embedding_model_path)
+    system_app.on_init()
 
-    # Before start, after initialize_components
-    # TODO: initialize_worker_manager_in_client as a component register in system_app
-    system_app.before_start()
     # Migration db storage, so you db models must be imported before this
     _migration_db_storage(param)
 
     model_path = CFG.LLM_MODEL_PATH or LLM_MODEL_CONFIG.get(model_name)
+    # TODO: initialize_worker_manager_in_client as a component register in system_app
     if not param.light:
         print("Model Unified Deployment Mode!")
         if not param.remote_embedding:
@@ -186,6 +185,9 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
         CFG.SERVER_LIGHT_MODE = True
 
     mount_static_files(app)
+
+    # Before start, after on_init
+    system_app.before_start()
     return param
 
 

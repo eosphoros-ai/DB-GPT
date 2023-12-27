@@ -1,24 +1,26 @@
-import pytest
 from typing import List
+
+import pytest
+
 from .. import (
     DAG,
-    WorkflowRunner,
-    DAGContext,
-    TaskState,
-    InputOperator,
-    MapOperator,
-    JoinOperator,
     BranchOperator,
+    DAGContext,
+    InputOperator,
+    JoinOperator,
+    MapOperator,
     ReduceStreamOperator,
     SimpleInputSource,
+    TaskState,
+    WorkflowRunner,
 )
 from .conftest import (
-    runner,
+    _is_async_iterator,
     input_node,
     input_nodes,
+    runner,
     stream_input_node,
     stream_input_nodes,
-    _is_async_iterator,
 )
 
 

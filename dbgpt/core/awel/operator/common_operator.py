@@ -1,27 +1,19 @@
+import asyncio
+import logging
 from typing import (
-    Generic,
-    Dict,
-    List,
-    Union,
-    Callable,
     Any,
     AsyncIterator,
     Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    List,
     Optional,
+    Union,
 )
-import asyncio
-import logging
 
 from ..dag.base import DAGContext
-from ..task.base import (
-    TaskContext,
-    TaskOutput,
-    IN,
-    OUT,
-    InputContext,
-    InputSource,
-)
-
+from ..task.base import IN, OUT, InputContext, InputSource, TaskContext, TaskOutput
 from .base import BaseOperator
 
 logger = logging.getLogger(__name__)

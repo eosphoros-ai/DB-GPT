@@ -1,32 +1,32 @@
-from abc import ABC, abstractmethod, ABCMeta
-
+import asyncio
+import functools
+from abc import ABC, ABCMeta, abstractmethod
+from inspect import signature
 from types import FunctionType
 from typing import (
-    List,
-    Generic,
-    TypeVar,
-    AsyncIterator,
-    Iterator,
-    Union,
     Any,
+    AsyncIterator,
     Dict,
+    Generic,
+    Iterator,
+    List,
     Optional,
+    TypeVar,
+    Union,
     cast,
 )
-import functools
-from inspect import signature
-import asyncio
-from dbgpt.component import SystemApp, ComponentType
+
+from dbgpt.component import ComponentType, SystemApp
 from dbgpt.util.executor_utils import (
-    ExecutorFactory,
-    DefaultExecutorFactory,
-    blocking_func_to_async,
-    BlockingFunction,
     AsyncToSyncIterator,
+    BlockingFunction,
+    DefaultExecutorFactory,
+    ExecutorFactory,
+    blocking_func_to_async,
 )
 
-from ..dag.base import DAGNode, DAGContext, DAGVar, DAG
-from ..task.base import TaskOutput, OUT, T
+from ..dag.base import DAG, DAGContext, DAGNode, DAGVar
+from ..task.base import OUT, T, TaskOutput
 
 F = TypeVar("F", bound=FunctionType)
 

@@ -169,9 +169,7 @@ class StoragePromptTemplate(StorageItem):
     def to_prompt_template(self) -> PromptTemplate:
         """Convert the storage prompt template to a prompt template."""
         input_variables = (
-            None
-            if not self.input_variables
-            else self.input_variables.strip().split(",")
+            [] if not self.input_variables else self.input_variables.strip().split(",")
         )
         return PromptTemplate(
             input_variables=input_variables,
@@ -457,6 +455,33 @@ class PromptManager:
             prompt_template, prompt_name, **kwargs
         )
         self.storage.save(storage_prompt_template)
+
+    def query_or_save(
+        self, prompt_template: PromptTemplate, prompt_name: str, **kwargs
+    ) -> StoragePromptTemplate:
+        """Query a prompt template from storage, if not found, save it.
+
+        Args:
+            prompt_template (PromptTemplate): The prompt template to save.
+            prompt_name (str): The name of the prompt template.
+            kwargs (Dict): Other params to build the storage prompt template.
+                More details in :meth:`~StoragePromptTemplate.from_prompt_template`.
+
+        Returns:
+            StoragePromptTemplate: The storage prompt template.
+        """
+        storage_prompt_template = StoragePromptTemplate.from_prompt_template(
+            prompt_template, prompt_name, **kwargs
+        )
+        exist_prompt_template = self.storage.load(
+            storage_prompt_template.identifier, StoragePromptTemplate
+        )
+        if exist_prompt_template:
+            return exist_prompt_template
+        self.save(prompt_template, prompt_name, **kwargs)
+        return self.storage.load(
+            storage_prompt_template.identifier, StoragePromptTemplate
+        )
 
     def list(self, **kwargs) -> List[StoragePromptTemplate]:
         """List prompt templates from storage.

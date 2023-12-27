@@ -1,10 +1,10 @@
 import asyncio
-from typing import List, Set, Optional, Dict
-import uuid
 import logging
-from ..dag.base import DAG, DAGLifecycle
+import uuid
+from typing import Dict, List, Optional, Set
 
-from ..operator.base import BaseOperator, CALL_DATA
+from ..dag.base import DAG, DAGLifecycle
+from ..operator.base import CALL_DATA, BaseOperator
 
 logger = logging.getLogger(__name__)
 
