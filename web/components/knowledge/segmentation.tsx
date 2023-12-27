@@ -18,6 +18,8 @@ type FieldType = {
   fileStrategies: Array<ISyncBatchParameter>;
 };
 
+let intervalId: string | number | NodeJS.Timeout | undefined;
+
 export default function Segmentation(props: IProps) {
   const { spaceName, docType, uploadFiles, handleStepChange } = props;
   const { t } = useTranslation();
@@ -36,6 +38,9 @@ export default function Segmentation(props: IProps) {
 
   useEffect(() => {
     getStrategies();
+    return () => {
+      intervalId && clearInterval(intervalId);
+    };
   }, []);
 
   const handleFinish = async (data: FieldType) => {
@@ -47,7 +52,7 @@ export default function Segmentation(props: IProps) {
         message.success(`Segemation task start successfully. task id: ${result?.tasks.join(',')}`);
         setSyncStatus('RUNNING');
         const docIds = data.fileStrategies.map((i) => i.doc_id);
-        const intervalId = setInterval(async () => {
+        intervalId = setInterval(async () => {
           const status = await updateSyncStatus(docIds);
           if (status === 'FINISHED') {
             clearInterval(intervalId);

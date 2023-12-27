@@ -87,6 +87,7 @@ const Knowledge = () => {
         width={1000}
         afterClose={() => {
           setActiveStep(0);
+          getSpaces();
         }}
         footer={null}
       >
