@@ -33,9 +33,9 @@ class ConversableAgent(Agent):
     def __init__(
         self,
         name: str,
-        describe: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
+        describe: str = DEFAULT_SYSTEM_MESSAGE,
         memory: GptsMemory = GptsMemory(),
-        agent_context: Optional[AgentContext] = None,
+        agent_context: AgentContext = None,
         system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
@@ -55,7 +55,7 @@ class ConversableAgent(Agent):
             if is_termination_msg is not None
             else (lambda x: x.get("content") == "TERMINATE")
         )
-
+        
         self.client = AIWrapper(llm_client=agent_context.llm_provider)
 
         self.human_input_mode = human_input_mode
@@ -72,8 +72,9 @@ class ConversableAgent(Agent):
         self.dialogue_memory_rounds = 5
         self._default_auto_reply = default_auto_reply
         self._reply_func_list = []
+        self._max_consecutive_auto_reply_dict = {}
 
-        self.agent_context: AgentContext = agent_context
+        self.agent_context = agent_context
 
     def register_reply(
         self,
@@ -136,7 +137,8 @@ class ConversableAgent(Agent):
         )
 
     @property
-    def chat_messages(self) -> Dict[Agent, List[Dict]]:
+    # def chat_messages(self) -> Dict[Agent, List[Dict]]:
+    def chat_messages(self) -> Any:
         """A dictionary of conversations from agent to list of messages."""
         all_gpts_messages = self.memory.message_memory.get_by_agent(
             self.agent_context.conv_id, self.name
@@ -189,13 +191,13 @@ class ConversableAgent(Agent):
         else:
             return dict(message)
 
-    def append_rely_message(self, message: Optional[Dict], role) -> bool:
+    def append_rely_message(self, message: Union[Dict, str], role) -> None:
         message = self._message_to_dict(message)
         message["role"] = role
         # create oai message to be appended to the oai conversation that can be passed to oai directly.
         self._rely_messages.append(message)
 
-    def reset_rely_message(self) -> bool:
+    def reset_rely_message(self) -> None:
         # create oai message to be appended to the oai conversation that can be passed to oai directly.
         self._rely_messages = []
 
@@ -355,9 +357,9 @@ class ConversableAgent(Agent):
             return dict(action_reply)
 
     def _gpts_message_to_ai_message(
-        self, gpts_messages: List[GptsMessage]
+        self, gpts_messages: Optional[List[GptsMessage]]
     ) -> List[Dict]:
-        oai_messages: list[dict] = []
+        oai_messages: List[Dict] = []
         ###Based on the current agent, all messages received are user, and all messages sent are assistant.
         for item in gpts_messages:
             role = ""
@@ -668,7 +670,7 @@ class ConversableAgent(Agent):
         return now_model.model
 
     async def a_reasoning_reply(
-        self, messages: Union[List[Dict]]
+        self, messages: Optional[List[Dict]] = None
     ) -> Union[str, Dict, None]:
         """(async) Reply based on the conversation history and the sender.
         Args:

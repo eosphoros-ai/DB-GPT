@@ -6,7 +6,7 @@ from dbgpt.util.code_utils import UNKNOWN, execute_code, extract_code, infer_lan
 from dbgpt.util.string_utils import str_to_bool
 
 from ...memory.gpts_memory import GptsMemory
-from ..agent import Agent
+from ..agent import Agent, AgentContext
 from ..base_agent import ConversableAgent
 from dbgpt.core.interface.message import ModelMessageRoleType
 
@@ -59,8 +59,8 @@ class CodeAssistantAgent(ConversableAgent):
 
     def __init__(
         self,
-        agent_context: "AgentContext",
-        memory: GptsMemory = None,
+        agent_context: AgentContext,
+        memory: Optional[GptsMemory] = None,
         describe: Optional[str] = DEFAULT_DESCRIBE,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
@@ -115,7 +115,7 @@ class CodeAssistantAgent(ConversableAgent):
         self,
         message: Optional[str] = None,
         sender: Optional[Agent] = None,
-        reviewer: "Agent" = None,
+        reviewer: Optional[Agent] = None,
         config: Optional[Union[Dict, Literal[False]]] = None,
     ):
         """Generate a reply using code execution."""

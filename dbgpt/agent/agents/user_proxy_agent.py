@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
 
 from ..memory.gpts_memory import GptsMemory
-from .agent import Agent
+from .agent import Agent, AgentContext
 from .base_agent import ConversableAgent
 
 try:
@@ -23,7 +23,7 @@ class UserProxyAgent(ConversableAgent):
     def __init__(
         self,
         memory: GptsMemory,
-        agent_context: "AgentContext",
+        agent_context: AgentContext,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "ALWAYS",
@@ -56,16 +56,21 @@ class UserProxyAgent(ConversableAgent):
         return reply
 
     async def a_reasoning_reply(
-        self, messages: Union[List[Dict]]
+        self, messages: Optional[List[Dict]] = None
     ) -> Union[str, Dict, None]:
-        message = messages[-1]
-        return message["content"], None
+        if messages is None or len(messages) <= 0:
+            message = None
+            return None, None
+        else:
+            message = messages[-1]
+            self.plan_chat.messages.append(message)
+            return message["content"], None
 
     async def a_receive(
         self,
         message: Optional[Dict],
         sender: Agent,
-        reviewer: "Agent",
+        reviewer: Agent,
         request_reply: Optional[bool] = True,
         silent: Optional[bool] = False,
         is_recovery: Optional[bool] = False,
@@ -77,7 +82,7 @@ class UserProxyAgent(ConversableAgent):
         self,
         message: Optional[str] = None,
         sender: Optional[Agent] = None,
-        reviewer: "Agent" = None,
+        reviewer: Agent = None,
         config: Optional[Union[Dict, Literal[False]]] = None,
     ) -> Tuple[bool, Union[str, Dict, None]]:
         """Check if the conversation should be terminated, and if human reply is provided."""
