@@ -557,9 +557,7 @@ class ApiCall:
                 )
 
             dashboard_param = {
-                "markdown": json.dumps(
-                    chart_items, default=serialize, ensure_ascii=False
-                ),
+                "markdown": "\n".join(chart_items),
                 "chart_count": len(chart_items),
                 "title": title,
             }

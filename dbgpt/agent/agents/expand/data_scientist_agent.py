@@ -50,7 +50,7 @@ class DataScientistAgent(ConversableAgent):
       }}
       Make sure the response is correct json and can be parsed by Python json.loads.
     """
-    DEFAULT_DESCRIBE = """Using the local database, it is possible to generate analysis SQL to obtain data based on the table structure, and at the same time generate visual charts of the corresponding data. """
+    DEFAULT_DESCRIBE = """It is possible use the local database to generate analysis SQL to obtain data based on the table structure, and at the same time generate visual charts of the corresponding data. Note that only local databases can be queried."""
     NAME = "DataScientist"
 
     def __init__(

@@ -8,6 +8,11 @@ from dbgpt.agent.common.schema import Status
 from .base import GptsMessage, GptsMessageMemory, GptsPlan, GptsPlansMemory
 
 
+
+
+
+
+
 class DefaultGptsPlansMemory(GptsPlansMemory):
     def __init__(self):
         self.df = pd.DataFrame(columns=[field.name for field in fields(GptsPlan)])
@@ -17,7 +22,7 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
         self.df = pd.concat([self.df, new_rows], ignore_index=True)
 
     def get_by_conv_id(self, conv_id: str) -> List[GptsPlan]:
-        result = self.df.query(f"conv_id=='{conv_id}'")
+        result = self.df.query(f"conv_id==@conv_id")
         plans = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))
@@ -28,7 +33,7 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
         self, conv_id: str, task_nums: List[int]
     ) -> List[GptsPlan]:
         result = self.df.query(
-            f"conv_id=='{conv_id}' and sub_task_num in [{','.join(task_nums)}]"
+            f"conv_id==@conv_id and sub_task_num in @task_nums"
         )
         plans = []
         for row in result.itertuples(index=False, name=None):
@@ -38,7 +43,7 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
 
     def get_todo_plans(self, conv_id: str) -> List[GptsPlan]:
         todo_states = [Status.TODO.value, Status.RETRYING.value]
-        result = self.df.query(f"conv_id=='{conv_id}' and state in @todo_states")
+        result = self.df.query(f"conv_id==@conv_id and state in @todo_states")
         plans = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))
@@ -87,8 +92,9 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
         self.df.loc[len(self.df)] = message.to_dict()
 
     def get_by_agent(self, conv_id: str, agent: str) -> Optional[List[GptsMessage]]:
+
         result = self.df.query(
-            f"conv_id=='{conv_id}' and (sender=='{agent}' or receiver=='{agent}')"
+            f"conv_id==@conv_id and (sender==@agent or receiver==@agent)"
         )
         messages = []
         for row in result.itertuples(index=False, name=None):
@@ -104,7 +110,7 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
         current_gogal: Optional[str] = None,
     ) -> Optional[List[GptsMessage]]:
         result = self.df.query(
-            f"conv_id=='{conv_id}' and ((sender=='{agent1}' and receiver=='{agent2}') or (sender=='{agent2}' and receiver=='{agent1}')) and current_gogal=='{current_gogal}'"
+            f"conv_id==@conv_id and ((sender==@agent1 and receiver==@agent2) or (sender==@agent2 and receiver==@agent1)) and current_gogal==@current_gogal"
         )
         messages = []
         for row in result.itertuples(index=False, name=None):
@@ -113,7 +119,7 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
         return messages
 
     def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessage]]:
-        result = self.df.query(f"conv_id=='{conv_id}'")
+        result = self.df.query(f"conv_id==@conv_id")
         messages = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))

@@ -510,6 +510,10 @@ class ConversableAgent(Agent):
                 if not action_report["is_exe_success"]:
                     fail_reason = action_report["content"]
                     need_retry = True
+                else:
+                    if not action_report["content"] or len(action_report["content"].strip()) <1:
+                        fail_reason = f'The code is executed successfully but the output:{action_report["content"]} is invalid or empty. Please reanalyze the target to generate valid code.'
+                        need_retry = True
         ##  Verify the correctness of the results
         if not need_retry:
             verify_pass, verfiy_msg = await self.a_verify(message)

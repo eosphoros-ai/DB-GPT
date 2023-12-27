@@ -35,7 +35,8 @@ if __name__ == "__main__":
 
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)
-    context.llm_models = [ModelMetadata(model="gpt-3.5-turbo")]
+    # context.llm_models = [ModelMetadata(model="gpt-3.5-turbo")]
+    context.llm_models = [ModelMetadata(model="gpt-4-vision-preview")]
     context.gpts_name = "代码分析助手"
 
     default_memory = GptsMemory()
@@ -62,10 +63,11 @@ if __name__ == "__main__":
         user_proxy.a_initiate_chat(
             recipient=manager,
             reviewer=user_proxy,
-            # message="load data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
-            message="find papers on LLM applications from arxiv in the last week, create a markdown table of different domains.",
+            message="Obtain simple information about issues in the repository 'eosphoros-ai/DB-GPT' in the past three days and analyze the data. Create a Markdown table grouped by day and status.",
+            # message="Find papers on gpt-4 in the past three weeks on arxiv, and organize their titles, authors, and links into a markdown table",
+            # message="find papers on LLM applications from arxiv in the last month, create a markdown table of different domains.",
         )
     )
 
     ## dbgpt-vis message infos
-    print(asyncio.run(default_memory.one_plan_chat_competions("test123")))
+    print(asyncio.run(default_memory.one_plan_chat_competions("test456")))
