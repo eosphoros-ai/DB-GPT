@@ -1,14 +1,14 @@
 """ Image Generation Module for AutoGPT."""
 import io
+import logging
 import uuid
 from base64 import b64decode
-import logging
 
 import requests
 from PIL import Image
 
-from dbgpt.agent.commands.command_mange import command
 from dbgpt._private.config import Config
+from ..command_mange import command
 
 logger = logging.getLogger(__name__)
 CFG = Config()

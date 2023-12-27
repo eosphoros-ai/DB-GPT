@@ -4,10 +4,10 @@
 import json
 from typing import Dict
 
-from .exception_not_commands import NotCommands
-from .generator import PluginPromptGenerator
-
 from dbgpt._private.config import Config
+
+from .exception_not_commands import NotCommands
+from dbgpt.agent.plugin.generator import PluginPromptGenerator
 
 
 def _resolve_pathlike_command_args(command_args):

@@ -4,7 +4,7 @@ import logging
 from typing import Dict
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
-from dbgpt.agent.commands.command_mange import ApiCall
+from dbgpt.agent.plugin.commands.command_mange import ApiCall
 from dbgpt.app.scene.chat_data.chat_excel.excel_reader import ExcelReader
 from dbgpt.app.scene.chat_data.chat_excel.excel_learning.chat import ExcelLearning
 from dbgpt.util.path_utils import has_path

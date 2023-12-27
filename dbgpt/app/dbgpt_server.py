@@ -26,8 +26,7 @@ from dbgpt.app.component_configs import initialize_components
 
 # fastapi import time cost about 0.05s
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI, applications
-from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -46,18 +45,13 @@ static_file_path = os.path.join(ROOT_PATH, "dbgpt", "app/static")
 
 CFG = Config()
 
-
-def swagger_monkey_patch(*args, **kwargs):
-    return get_swagger_ui_html(
-        *args,
-        **kwargs,
-        swagger_js_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui-bundle.js",
-        swagger_css_url="https://cdn.bootcdn.net/ajax/libs/swagger-ui/4.10.3/swagger-ui.css",
-    )
-
-
-app = FastAPI()
-applications.get_swagger_ui_html = swagger_monkey_patch
+app = FastAPI(
+    title="DBGPT OPEN API",
+    description="This is dbgpt, with auto docs for the API and everything",
+    version="0.5.0",
+    openapi_tags=[],
+)
+# applications.get_swagger_ui_html = swagger_monkey_patch
 
 system_app = SystemApp(app)
 
@@ -94,7 +88,7 @@ def mount_routers(app: FastAPI):
 
 
 def mount_static_files(app: FastAPI):
-    from dbgpt.agent.commands.disply_type.show_chart_gen import (
+    from dbgpt.agent.plugin.commands.built_in.disply_type import (
         static_message_img_path,
     )
 

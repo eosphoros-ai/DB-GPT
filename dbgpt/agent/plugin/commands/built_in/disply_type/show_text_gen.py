@@ -1,8 +1,8 @@
+import logging
+
 from pandas import DataFrame
 
-from dbgpt.agent.commands.command_mange import command
-
-import logging
+from ...command_mange import command
 
 logger = logging.getLogger(__name__)
 

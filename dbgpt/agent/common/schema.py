@@ -6,13 +6,15 @@ class PluginStorageType(Enum):
     Oss = "oss"
 
 
-class Status(Enum):
-    TODO = "todo"
-    RUNNING = "running"
-    FAILED = "failed"
-    COMPLETED = "completed"
-
-
 class ApiTagType(Enum):
     API_VIEW = "dbgpt_view"
     API_CALL = "dbgpt_call"
+
+
+class Status(Enum):
+    TODO = "todo"
+    RUNNING = "running"
+    WAITING = "waiting"
+    RETRYING = "retrying"
+    FAILED = "failed"
+    COMPLETE = "complete"

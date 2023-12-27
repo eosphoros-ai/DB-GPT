@@ -32,7 +32,7 @@ def async_db_summary(system_app: SystemApp):
 
 
 def server_init(param: "WebServerParameters", system_app: SystemApp):
-    from dbgpt.agent.commands.command_mange import CommandRegistry
+    from dbgpt.agent.plugin.commands.command_mange import CommandRegistry
 
     # logger.info(f"args: {args}")
 
@@ -47,8 +47,8 @@ def server_init(param: "WebServerParameters", system_app: SystemApp):
 
     # Loader plugins and commands
     command_categories = [
-        "dbgpt.agent.commands.built_in.audio_text",
-        "dbgpt.agent.commands.built_in.image_gen",
+        "dbgpt.agent.plugin.commands.built_in.audio_text",
+        "dbgpt.agent.plugin.commands.built_in.image_gen",
     ]
     # exclude commands
     command_categories = [
@@ -61,9 +61,9 @@ def server_init(param: "WebServerParameters", system_app: SystemApp):
     cfg.command_registry = command_registry
 
     command_disply_commands = [
-        "dbgpt.agent.commands.disply_type.show_chart_gen",
-        "dbgpt.agent.commands.disply_type.show_table_gen",
-        "dbgpt.agent.commands.disply_type.show_text_gen",
+        "dbgpt.agent.plugin.commands.built_in.disply_type.show_chart_gen",
+        "dbgpt.agent.plugin.commands.built_in.disply_type.show_table_gen",
+        "dbgpt.agent.plugin.commands.built_in.disply_type.show_text_gen",
     ]
     command_disply_registry = CommandRegistry()
     for command in command_disply_commands:
@@ -133,7 +133,7 @@ def _initialize_db(try_to_create_db: Optional[bool] = False) -> str:
             f"{urlquote(CFG.LOCAL_DB_PASSWORD)}@"
             f"{CFG.LOCAL_DB_HOST}:"
             f"{str(CFG.LOCAL_DB_PORT)}/"
-            f"{db_name}?charset=utf8mb4&collation=utf8mb4_unicode_ci"
+            f"{db_name}?charset=utf8mb4"
         )
         # Try to create database, if failed, will raise exception
         _create_mysql_database(db_name, db_url, try_to_create_db)

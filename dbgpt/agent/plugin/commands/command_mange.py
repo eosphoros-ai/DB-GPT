@@ -4,17 +4,19 @@ import inspect
 import json
 import logging
 import xml.etree.ElementTree as ET
-
-from dbgpt.util.json_utils import serialize
 from datetime import datetime
-from typing import Any, Callable, Optional, List
+from typing import Any, Callable, List, Optional
+
 from dbgpt._private.pydantic import BaseModel
+
+from .command import execute_command
 from dbgpt.agent.common.schema import Status
-from dbgpt.agent.commands.command import execute_command
-from dbgpt.util.string_utils import extract_content_open_ending, extract_content
+from dbgpt.util.json_utils import serialize
+from dbgpt.util.string_utils import extract_content, extract_content_open_ending
 
 # Unique identifier for auto-gpt commands
 AUTO_GPT_COMMAND_IDENTIFIER = "auto_gpt_command"
+logger = logging.getLogger(__name__)
 
 
 class Command:
@@ -404,7 +406,7 @@ class ApiCall:
                             value.api_result = execute_command(
                                 value.name, value.args, self.plugin_generator
                             )
-                            value.status = Status.COMPLETED.value
+                            value.status = Status.COMPLETE.value
                         except Exception as e:
                             value.status = Status.FAILED.value
                             value.err_msg = str(e)
@@ -436,7 +438,7 @@ class ApiCall:
                                         "response_table", **param
                                     )
 
-                            value.status = Status.COMPLETED.value
+                            value.status = Status.COMPLETE.value
                         except Exception as e:
                             value.status = Status.FAILED.value
                             value.err_msg = str(e)
@@ -474,12 +476,13 @@ class ApiCall:
                                             date_unit="s",
                                         )
                                     )
-                                    value.status = Status.COMPLETED.value
+                                    value.status = Status.COMPLETE.value
                                 else:
                                     value.status = Status.FAILED.value
                                     value.err_msg = "No executable sql！"
 
                             except Exception as e:
+                                logging.error(f"data prepare exception！{str(e)}")
                                 value.status = Status.FAILED.value
                                 value.err_msg = str(e)
                             value.end_time = datetime.now().timestamp() * 1000
@@ -488,3 +491,125 @@ class ApiCall:
             raise ValueError("Api parsing exception," + str(e))
 
         return self.api_view_context(llm_text, True)
+
+    def display_only_sql_vis(self, chart: dict, sql_2_df_func):
+        err_msg = None
+        try:
+            sql = chart.get("sql", None)
+            param = {}
+            df = sql_2_df_func(sql)
+            if not sql or len(sql) <= 0:
+                return None
+
+            param["sql"] = sql
+            param["type"] = chart.get("display_type", "response_table")
+            param["title"] = chart.get("title", "")
+            param["describe"] = chart.get("thought", "")
+
+            param["data"] = json.loads(
+                df.to_json(orient="records", date_format="iso", date_unit="s")
+            )
+            view_json_str = json.dumps(param, default=serialize, ensure_ascii=False)
+        except Exception as e:
+            logger.error("parse_view_response error!" + str(e))
+            err_param = {}
+            err_param["sql"] = f"{sql}"
+            err_param["type"] = "response_table"
+            # err_param["err_msg"] = str(e)
+            err_param["data"] = []
+            err_msg = str(e)
+            view_json_str = json.dumps(err_param, default=serialize, ensure_ascii=False)
+
+        # api_call_element.text = view_json_str
+        result = f"```vis-chart\n{view_json_str}\n```"
+        if err_msg:
+            return f"""<span style=\"color:red\">ERROR!</span>{err_msg} \n {result}"""
+        else:
+            return result
+
+    def display_dashboard_vis(
+        self, charts: List[dict], sql_2_df_func, title: str = None
+    ):
+        err_msg = None
+        view_json_str = None
+
+        chart_items = []
+        try:
+            if not charts or len(charts) <= 0:
+                return f"""Have no chart data!"""
+            for chart in charts:
+                param = {}
+                sql = chart.get("sql", "")
+                param["sql"] = sql
+                param["type"] = chart.get("display_type", "response_table")
+                param["title"] = chart.get("title", "")
+                param["describe"] = chart.get("thought", "")
+                try:
+                    df = sql_2_df_func(sql)
+                    param["data"] = json.loads(
+                        df.to_json(orient="records", date_format="iso", date_unit="s")
+                    )
+                except Exception as e:
+                    param["data"] = []
+                    param["err_msg"] = str(e)
+                chart_items.append(
+                    f"```vis-chart-item\n{json.dumps(param, default=serialize, ensure_ascii=False)}\n```"
+                )
+
+            dashboard_param = {
+                "markdown": "\n".join(chart_items),
+                "chart_count": len(chart_items),
+                "title": title,
+            }
+            view_json_str = json.dumps(
+                dashboard_param, default=serialize, ensure_ascii=False
+            )
+
+        except Exception as e:
+            logger.error("parse_view_response error!" + str(e))
+            return f"```error\nReport rendering exception！{str(e)}\n```"
+
+        result = f"```vis-dashboard\n{view_json_str}\n```"
+        if err_msg:
+            return (
+                f"""\\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result}"""
+            )
+        else:
+            return result
+
+    @staticmethod
+    def default_chart_type_promot() -> str:
+        """this function is moved from excel_analyze/chat.py,and used by subclass.
+        Returns:
+
+        """
+        antv_charts = [
+            {"response_line_chart": "used to display comparative trend analysis data"},
+            {
+                "response_pie_chart": "suitable for scenarios such as proportion and distribution statistics"
+            },
+            {
+                "response_table": "suitable for display with many display columns or non-numeric columns"
+            },
+            # {"response_data_text":" the default display method, suitable for single-line or simple content display"},
+            {
+                "response_scatter_plot": "Suitable for exploring relationships between variables, detecting outliers, etc."
+            },
+            {
+                "response_bubble_chart": "Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."
+            },
+            {
+                "response_donut_chart": "Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc."
+            },
+            {
+                "response_area_chart": "Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc."
+            },
+            {
+                "response_heatmap": "Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."
+            },
+        ]
+        return "\n".join(
+            f"{key}:{value}"
+            for dict_item in antv_charts
+            for key, value in dict_item.items()
+        )

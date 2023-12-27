@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 message/
-
+dbgpt/util/extensions/
 .env*
 .vscode
 .idea

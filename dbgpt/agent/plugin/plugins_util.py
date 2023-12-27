@@ -1,17 +1,17 @@
 """加载组件"""
 
-import json
-import os
-import glob
-import zipfile
-import git
-import threading
 import datetime
+import glob
+import json
 import logging
+import os
+import threading
+import zipfile
 from pathlib import Path
 from typing import List
 from zipimport import zipimporter
 
+import git
 import requests
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
