@@ -12,16 +12,17 @@ from dbgpt.app.openapi.api_view_model import (
     Result,
 )
 
-from .model import (
+from dbgpt.serve.agent.model import (
     PluginHubParam,
     PagenationFilter,
     PagenationResult,
     PluginHubFilter,
 )
-from .hub.agent_hub import AgentHub
-from .db.plugin_hub_db import PluginHubEntity
-from .plugins_util import scan_plugins
-from .commands.generator import PluginPromptGenerator
+from dbgpt.serve.agent.hub.agent_hub import AgentHub
+from dbgpt.serve.agent.db.plugin_hub_db import PluginHubEntity
+
+from dbgpt.agent.plugin.plugins_util import scan_plugins
+from dbgpt.agent.plugin.generator import PluginPromptGenerator
 
 from dbgpt.configs.model_config import PLUGINS_DIR
 from dbgpt.component import BaseComponent, ComponentType, SystemApp

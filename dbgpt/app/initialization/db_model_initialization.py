@@ -1,7 +1,7 @@
 """Import all models to make sure they are registered with SQLAlchemy.
 """
-from dbgpt.agent.db.my_plugin_db import MyPluginEntity
-from dbgpt.agent.db.plugin_hub_db import PluginHubEntity
+from dbgpt.serve.agent.db.my_plugin_db import MyPluginEntity
+from dbgpt.serve.agent.db.plugin_hub_db import PluginHubEntity
 from dbgpt.app.knowledge.chunk_db import DocumentChunkEntity
 from dbgpt.app.knowledge.document_db import KnowledgeDocumentEntity
 from dbgpt.app.knowledge.space_db import KnowledgeSpaceEntity

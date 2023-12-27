@@ -45,6 +45,7 @@ from dbgpt.util.executor_utils import (
     DefaultExecutorFactory,
 )
 
+
 router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()

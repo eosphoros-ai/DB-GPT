@@ -1,20 +1,22 @@
+import os
+import uuid
+
+import matplotlib
+import pandas as pd
+import seaborn as sns
 from pandas import DataFrame
 
-from dbgpt.agent.commands.command_mange import command
-import pandas as pd
-import uuid
-import os
-import matplotlib
-import seaborn as sns
+from ...command_mange import command
 
 matplotlib.use("Agg")
+import logging
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.font_manager import FontManager
-from dbgpt.util.string_utils import is_scientific_notation
-from dbgpt.configs.model_config import PILOT_PATH
 
-import logging
+from dbgpt.configs.model_config import PILOT_PATH
+from dbgpt.util.string_utils import is_scientific_notation
 
 logger = logging.getLogger(__name__)
 

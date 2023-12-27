@@ -9,8 +9,9 @@ import tempfile
 
 from ..db.plugin_hub_db import PluginHubEntity, PluginHubDao
 from ..db.my_plugin_db import MyPluginDao, MyPluginEntity
-from ..common.schema import PluginStorageType
-from ..plugins_util import scan_plugins, update_from_git
+
+from dbgpt.agent.common.schema import PluginStorageType
+from dbgpt.agent.plugin.plugins_util import scan_plugins, update_from_git
 
 logger = logging.getLogger(__name__)
 Default_User = "default"

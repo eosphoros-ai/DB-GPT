@@ -73,6 +73,15 @@ def extract_content_open_ending(long_string, s1, s2, is_include: bool = False):
     return match_map
 
 
+def str_to_bool(s):
+    if s.lower() in ("true", "t", "1", "yes", "y"):
+        return True
+    elif s.lower() in ("false", "f", "0", "no", "n"):
+        return False
+    else:
+        return False
+
+
 def _to_str(x, charset="utf8", errors="strict"):
     if x is None or isinstance(x, str):
         return x

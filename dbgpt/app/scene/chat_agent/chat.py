@@ -3,10 +3,10 @@ import logging
 
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
-from dbgpt.agent.commands.command_mange import ApiCall
-from dbgpt.agent import PluginPromptGenerator
+from dbgpt.agent.plugin.commands.command_mange import ApiCall
+from dbgpt.agent.plugin.generator import PluginPromptGenerator
 from dbgpt.component import ComponentType
-from dbgpt.agent.controller import ModuleAgent
+from dbgpt.serve.agent.hub.controller import ModuleAgent
 from dbgpt.util.tracer import root_tracer, trace
 
 CFG = Config()
