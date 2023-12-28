@@ -30,6 +30,7 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/isort dbgpt/serve/agent/
 	$(VENV_BIN)/isort dbgpt/serve/conversation/
 	$(VENV_BIN)/isort dbgpt/serve/utils/_template_files
+	$(VENV_BIN)/isort --extend-skip="examples/notebook" examples
 	# https://github.com/psf/black
 	$(VENV_BIN)/black --extend-exclude="examples/notebook" .
 	# TODO: Use blackdoc to format Python doctests.
@@ -39,6 +40,7 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/blackdoc dbgpt/agent/
 	$(VENV_BIN)/blackdoc dbgpt/model/
 	$(VENV_BIN)/blackdoc dbgpt/serve/
+	$(VENV_BIN)/blackdoc examples
 	# TODO: Type checking of Python code.
 	# https://github.com/python/mypy
 	# $(VENV_BIN)/mypy dbgpt

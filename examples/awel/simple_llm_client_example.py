@@ -34,24 +34,19 @@
             }'
 
 """
-from typing import Dict, Any, Optional, Union, List
 import logging
-from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.core.awel import (
-    DAG,
-    HttpTrigger,
-    MapOperator,
-    JoinOperator,
-)
-from dbgpt.core import LLMClient
+from typing import Any, Dict, List, Optional, Union
 
+from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt.core import LLMClient
+from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.core.operator import (
     LLMBranchOperator,
     LLMOperator,
-    StreamingLLMOperator,
     RequestBuildOperator,
+    StreamingLLMOperator,
 )
-from dbgpt.model import OpenAIStreamingOperator, MixinLLMOperator
+from dbgpt.model import MixinLLMOperator, OpenAIStreamingOperator
 
 logger = logging.getLogger(__name__)
 

@@ -1,25 +1,20 @@
 import asyncio
-from typing import Dict, List
 import json
+from typing import Dict, List
+
+from dbgpt.core import PromptTemplate, SQLOutputParser
 from dbgpt.core.awel import (
     DAG,
     InputOperator,
-    SimpleCallDataInputSource,
     JoinOperator,
     MapOperator,
+    SimpleCallDataInputSource,
 )
-from dbgpt.core import (
-    SQLOutputParser,
-    PromptTemplate,
-)
-from dbgpt.core.operator import (
-    LLMOperator,
-    RequestBuildOperator,
-)
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
+from dbgpt.core.operator import LLMOperator, RequestBuildOperator
 from dbgpt.datasource.operator.datasource_operator import DatasourceOperator
-from dbgpt.rag.operator.datasource import DatasourceRetrieverOperator
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
 from dbgpt.model import OpenAILLMClient
+from dbgpt.rag.operator.datasource import DatasourceRetrieverOperator
 
 
 def _create_temporary_connection():

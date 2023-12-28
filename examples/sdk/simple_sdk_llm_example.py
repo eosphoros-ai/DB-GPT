@@ -1,13 +1,8 @@
 import asyncio
+
+from dbgpt.core import BaseOutputParser, PromptTemplate
 from dbgpt.core.awel import DAG
-from dbgpt.core import (
-    BaseOutputParser,
-    PromptTemplate,
-)
-from dbgpt.core.operator import (
-    LLMOperator,
-    RequestBuildOperator,
-)
+from dbgpt.core.operator import LLMOperator, RequestBuildOperator
 from dbgpt.model import OpenAILLMClient
 
 with DAG("simple_sdk_llm_example_dag") as dag:
