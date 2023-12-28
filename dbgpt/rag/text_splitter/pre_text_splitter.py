@@ -18,20 +18,20 @@ def _single_document_split(
 class PreTextSplitter(TextSplitter):
     """Split text by pre separator"""
 
-    def __init__(self, separator: str, text_splitter_impl: TextSplitter):
+    def __init__(self, pre_separator: str, text_splitter_impl: TextSplitter):
         """Initialize with Knowledge arguments.
         Args:
             pre_separator: pre separator
             text_splitter_impl: text splitter impl
         """
-        self.pre_separator = separator
+        self.pre_separator = pre_separator
         self._impl = text_splitter_impl
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str, **kwargs) -> List[str]:
         """Split text by pre separator"""
         return self._impl.split_text(text)
 
-    def split_documents(self, documents: Iterable[Document]) -> List[Chunk]:
+    def split_documents(self, documents: Iterable[Document], **kwargs) -> List[Chunk]:
         """Split documents by pre separator"""
 
         def generator() -> Iterable[Document]:
