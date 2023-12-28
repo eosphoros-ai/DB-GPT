@@ -266,6 +266,19 @@ class Config(metaclass=Singleton):
             "MODEL_CACHE_STORAGE_DISK_DIR"
         )
 
+        self.KS_EMBED_PREFIX = "dbgpt_ks_"
+        self.DB_SUMMARY_EMBED_PREFIX = "dbgpt_ds_"
+
+        ### OSS conifg
+        self.OSS_BUCKET = os.getenv("OSS_BUCKET", "")
+        self.OSS_ACCESS_KEY_ID = os.getenv("OSS_ACCESS_KEY_ID", "")
+        self.OSS_ACCESS_KEY_SECRET = os.getenv("OSS_ACCESS_KEY_SECRET", "")
+        self.OSS_ENDPOINT = os.getenv("OSS_ENDPOINT", "")
+
+        self.DB_GPT_CHAT_KS = os.getenv("DB_GPT_CHAT_KS", "dbgpt_chat")
+        self.DB_GPT_CHAT_ADMIN = os.getenv("DB_GPT_CHAT_USER_ID", "dbgpt_chat")
+        self.IDENTIFY_SPLIT = os.getenv("IDENTIFY_SPLIT", "<<<<<<<<<<---------->>>>>>>>>>")
+
     def set_debug_mode(self, value: bool) -> None:
         """Set the debug mode value"""
         self.debug_mode = value

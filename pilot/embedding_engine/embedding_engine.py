@@ -56,6 +56,8 @@ class EmbeddingEngine:
 
     def knowledge_embedding_batch(self, docs):
         """Deprecation"""
+
+        self.knowledge_embedding_client = self.init_knowledge_embedding()
         # docs = self.knowledge_embedding_client.read_batch()
         return self.knowledge_embedding_client.index_to_store(docs)
 

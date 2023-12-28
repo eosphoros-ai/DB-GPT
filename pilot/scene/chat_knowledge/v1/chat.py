@@ -113,12 +113,12 @@ class ChatKnowledge(BaseChat):
             context = "no relevant docs to retrieve"
         else:
             context = [d.page_content for d in docs]
-        context = context[: self.max_token]
+        ctx = "".join(context)[:int(self.max_token * 0.8)]
         relations = list(
             set([os.path.basename(str(d.metadata.get("source", ""))) for d in docs])
         )
         input_values = {
-            "context": context,
+            "context": ctx,
             "question": self.current_user_input,
             "relations": relations,
         }

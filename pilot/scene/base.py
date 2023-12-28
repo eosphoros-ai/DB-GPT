@@ -107,6 +107,12 @@ class ChatScene(Enum):
         "extract_entity", "Extract Entity", "Extract Entity", ["Extract Select"], True
     )
 
+    DbGPTChat = Scene(
+        code="dbgpt_chat",
+        name="DB-GPT Chat",
+        describe="DB-GPT QA",
+    )
+
     @staticmethod
     def of_mode(mode):
         return [x for x in ChatScene._value_ if x.code == mode][0]

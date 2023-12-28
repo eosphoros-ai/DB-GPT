@@ -59,6 +59,16 @@ class KnowledgeSpaceDao(BaseDao):
         session.commit()
         session.close()
 
+    def get_knowledge_space_by_ids(self, ids):
+        session = self.get_session()
+        if ids:
+            knowledge_spaces = session.query(KnowledgeSpaceEntity).filter(KnowledgeSpaceEntity.id.in_(ids))
+        else:
+            return []
+        knowledge_spaces_list = knowledge_spaces.all()
+        session.close()
+        return knowledge_spaces_list
+
     def get_knowledge_space(self, query: KnowledgeSpaceEntity):
         session = self.get_session()
         knowledge_spaces = session.query(KnowledgeSpaceEntity)

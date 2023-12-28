@@ -10,6 +10,7 @@ from pilot.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
+from pilot.log.common_task_log_db import CommonTaskType, CommonTaskLogDao
 from pilot.openapi.api_v1.api_v1 import no_stream_generator, stream_generator
 
 from pilot.openapi.api_view_model import Result
@@ -31,6 +32,7 @@ from pilot.server.knowledge.request.request import (
 
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
 from pilot.user import UserRequest, get_user_from_headers
+from pilot.user.user_permission_db import UserPermissionEntity, UserPermissionDao
 from pilot.utils.tracer import root_tracer, SpanType
 
 logger = logging.getLogger(__name__)
@@ -40,6 +42,21 @@ router = APIRouter()
 
 
 knowledge_space_service = KnowledgeService()
+user_permission_dao = UserPermissionDao()
+
+common_log_dao = CommonTaskLogDao()
+
+
+@router.post("/knowledge/public_space/add")
+def space_public_add(request: KnowledgeSpaceRequest):
+    print(f"/space/add params: {request}")
+    if not request.user_id:
+        raise f"user_id cannot be null when add public knowledge space."
+    try:
+        knowledge_space_service.create_knowledge_space(request)
+        return Result.succ([])
+    except Exception as e:
+        return Result.failed(code="E000X", msg=f"space add error {e}")
 
 
 @router.post("/knowledge/space/add")
@@ -58,17 +75,27 @@ def space_list(request: KnowledgeSpaceRequest, user_token: UserRequest = Depends
     print(f"/space/list params:")
     try:
         request.user_id = user_token.user_id
-        return Result.succ(knowledge_space_service.get_knowledge_space(request))
+        ks = knowledge_space_service.get_knowledge_space(request)
+        permissions = user_permission_dao.get_permissions(UserPermissionEntity(user_id=user_token.user_id, resource_type="KNOWLEDGE_SPACE"))
+        if len(permissions) > 0:
+            resource_ids = [p.resource_id for p in permissions]
+            permission_spaces = knowledge_space_service.get_knowledge_space_by_ids(resource_ids)
+            ks.extend(permission_spaces)
+        return Result.succ(ks)
     except Exception as e:
         return Result.failed(code="E000X", msg=f"space list error {e}")
 
 
 @router.post("/knowledge/space/delete")
-def space_delete(request: KnowledgeSpaceRequest, user_token: UserRequest = Depends(get_user_from_headers)):
+def space_delete(request: KnowledgeSpaceRequest, user_token: UserRequest = Depends(get_user_from_headers),
+                 common_log_dao=None):
+    common_log_dao.create_simple_log(type=CommonTaskType.DELETE_KS.value,
+                                     param_idx=user_token.user_id,
+                                     msg=f"delete knowledge space, user={user_token.user_id}, request_info={request}")
     spaces = knowledge_space_service.get_knowledge_space(
         KnowledgeSpaceRequest(user_id=user_token.user_id, name=request.name))
     if len(spaces) == 0:
-        return Result.faild(code="E000X",
+        return Result.failed(code="E000X",
                             msg=f"knowledge_space {request.name} can not be found by user {user_token.user_id}")
     print(f"/space/delete params:")
     try:
@@ -79,6 +106,8 @@ def space_delete(request: KnowledgeSpaceRequest, user_token: UserRequest = Depen
 
 @router.post("/knowledge/{space_name}/arguments")
 def arguments(space_name: str, user_token: UserRequest = Depends(get_user_from_headers)):
+    if space_name == CFG.DB_GPT_CHAT_KS:
+        user_token.user_id = CFG.DB_GPT_CHAT_ADMIN
     print(f"/knowledge/space/arguments params:")
     try:
         return Result.succ(knowledge_space_service.arguments(space_name, user_token.user_id))
@@ -99,9 +128,11 @@ def arguments_save(space_name: str, argument_request: SpaceArgumentRequest, user
 
 @router.post("/knowledge/{space_name}/document/add")
 def document_add(space_name: str, request: KnowledgeDocumentRequest, user_token: UserRequest = Depends(get_user_from_headers)):
+    if space_name == CFG.DB_GPT_CHAT_KS:
+        user_token.user_id = CFG.DB_GPT_CHAT_ADMIN
     spaces = knowledge_space_service.get_knowledge_space(KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
     if len(spaces) == 0:
-        return Result.faild(code="E000X", msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
+        return Result.failed(code="E000X", msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
 
     print(f"/document/add params: {space_name}, {request}, {user_token.user_id}")
     try:
@@ -116,10 +147,12 @@ def document_add(space_name: str, request: KnowledgeDocumentRequest, user_token:
 
 @router.post("/knowledge/{space_name}/document/list")
 def document_list(space_name: str, query_request: DocumentQueryRequest, user_token: UserRequest = Depends(get_user_from_headers)):
+    if space_name == CFG.DB_GPT_CHAT_KS:
+        user_token.user_id = CFG.DB_GPT_CHAT_ADMIN
     spaces = knowledge_space_service.get_knowledge_space(
         KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
     if len(spaces) == 0:
-        return Result.faild(code="E000X",
+        return Result.failed(code="E000X",
                             msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
     print(f"/document/list params: {space_name}, {query_request}")
     try:
@@ -132,11 +165,22 @@ def document_list(space_name: str, query_request: DocumentQueryRequest, user_tok
 
 @router.post("/knowledge/{space_name}/document/delete")
 def document_delete(space_name: str, query_request: DocumentQueryRequest, user_token: UserRequest = Depends(get_user_from_headers)):
-    spaces = knowledge_space_service.get_knowledge_space(
-        KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
-    if len(spaces) == 0:
-        return Result.faild(code="E000X",
-                            msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
+    common_log_dao.create_simple_log(type=CommonTaskType.DELETE_KS_DOC.value,
+                                     param_idx=user_token.user_id,
+                                     msg=f"delete knowledge doc, user={user_token.user_id}, space_name={space_name}, doc_info={query_request}")
+    if space_name == CFG.DB_GPT_CHAT_KS:
+        spaces = knowledge_space_service.get_knowledge_space(
+            KnowledgeSpaceRequest(user_id=CFG.DB_GPT_CHAT_ADMIN, name=space_name))
+        if len(spaces) == 0:
+            return Result.failed(code="E000X", msg=f"space {space_name} is not exist.")
+        if not user_permission_dao.has_permission(user_token.user_id, 'KNOWLEDGE_SPACE', spaces[0].id):
+            return Result.failed(code="E000X", msg=f"You don't have the permission to delete current doc.")
+    else:
+        spaces = knowledge_space_service.get_knowledge_space(
+            KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
+        if len(spaces) == 0:
+            return Result.failed(code="E000X",
+                                msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
     print(f"/document/list params: {space_name}, {query_request}")
     try:
         return Result.succ(
@@ -154,10 +198,13 @@ async def document_upload(
     doc_file: UploadFile = File(...),
     user_token: UserRequest = Depends(get_user_from_headers)
 ):
+    print(f"document_upload user={user_token}")
+    if space_name == CFG.DB_GPT_CHAT_KS:
+        user_token.user_id = CFG.DB_GPT_CHAT_ADMIN
     spaces = knowledge_space_service.get_knowledge_space(
         KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
     if len(spaces) == 0:
-        return Result.faild(code="E000X",
+        return Result.failed(code="E000X",
                             msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
     print(f"/document/upload params: {space_name}")
     try:
@@ -208,10 +255,13 @@ async def document_upload(
 
 @router.post("/knowledge/{space_name}/document/sync")
 def document_sync(space_name: str, request: DocumentSyncRequest, user_token: UserRequest = Depends(get_user_from_headers)):
+    if space_name == CFG.DB_GPT_CHAT_KS:
+        user_token.user_id = CFG.DB_GPT_CHAT_ADMIN
     spaces = knowledge_space_service.get_knowledge_space(
         KnowledgeSpaceRequest(user_id=user_token.user_id, name=space_name))
+    print(f"document_upload user={user_token}")
     if len(spaces) == 0:
-        return Result.faild(code="E000X",
+        return Result.failed(code="E000X",
                             msg=f"knowledge_space {space_name} can not be found by user {user_token.user_id}")
     logger.info(f"Received params: {space_name}, {request}")
     try:
@@ -234,6 +284,8 @@ def document_list(space_name: str, query_request: ChunkQueryRequest, user_token:
 
 @router.post("/knowledge/{vector_name}/query")
 def similar_query(space_name: str, query_request: KnowledgeQueryRequest, user_token: UserRequest = Depends(get_user_from_headers)):
+    if space_name == CFG.DB_GPT_CHAT_KS:
+        user_token.user_id = CFG.DB_GPT_CHAT_ADMIN
     print(f"Received params: {space_name}, {query_request}")
     embedding_factory = CFG.SYSTEM_APP.get_component(
         "embedding_factory", EmbeddingFactory

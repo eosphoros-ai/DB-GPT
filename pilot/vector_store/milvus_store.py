@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
+from datetime import datetime
 from typing import Any, Iterable, List, Optional, Tuple
 
-
+from pilot.log.common_task_log_db import CommonTaskLogEntity, CommonTaskType, CommonTaskState
 from pilot.vector_store.base import VectorStoreBase
 
 logger = logging.getLogger(__name__)
@@ -184,11 +186,11 @@ class MilvusStore(VectorStoreBase):
                 self.embedding.embed_query(x) for x in texts
             ]
         # Collect the metadata into the insert dict.
-        # self.fields.extend(metadatas[0].keys())
         if len(self.fields) > 2 and metadatas is not None:
             for d in metadatas:
-                # for key, value in d.items():
-                insert_dict.setdefault("metadata", []).append(json.dumps(d))
+                for key, value in d.items():
+                    if key in self.fields:
+                        insert_dict.setdefault(key, []).append(value)
         # Convert dict to list of lists for insertion
         insert_list = [insert_dict[x] for x in self.fields]
         # Insert into the collection.
@@ -196,20 +198,40 @@ class MilvusStore(VectorStoreBase):
             insert_list, partition_name=partition_name, timeout=timeout
         )
         # make sure data is searchable.
-        self.col.flush()
+        flush_thread = threading.Thread(target=self.col.flush)
+        flush_thread.start()
+        # self.col.flush()
         return res.primary_keys
 
-    def load_document(self, documents) -> None:
+    def load_document(self, documents, common_task_log_dao=None) -> list[str]:
         """load document in vector database."""
         # self.init_schema_and_load(self.collection_name, documents)
         batch_size = 500
+        total_chunks = len(documents)
         batched_list = [
-            documents[i : i + batch_size] for i in range(0, len(documents), batch_size)
+            documents[i: i + batch_size] for i in range(0, len(documents), batch_size)
         ]
         doc_ids = []
+        common_task_log = common_task_log_dao.create_common_task_log(
+            CommonTaskLogEntity(
+                type=CommonTaskType.ZIP_EMBEDDING_EXEC.value,
+                state=CommonTaskState.RUNNING.value,
+                param_idx=str(self.collection_name),
+                task_result="",
+                msg="",
+                task_param=f"embedding docs[chunks={str(total_chunks)}]",
+            )
+        )
+        if not common_task_log:
+            raise f"create common task log error!"
+        batch_id = 0
         for doc_batch in batched_list:
+            common_task_log.msg += f"\n{str(datetime.now())} --- current embedding batch={str(++batch_id)}, {batch_size} chunks for each batch, total chunks={str(total_chunks)}"
+            common_task_log_dao.update_task_log(common_task_log)
             doc_ids.extend(self.init_schema_and_load(self.collection_name, doc_batch))
         doc_ids = [str(doc_id) for doc_id in doc_ids]
+        common_task_log.state = CommonTaskState.FINISHED.value
+        common_task_log_dao.update_task_log(common_task_log)
         return doc_ids
 
     def similar_search(self, text, topk):
@@ -227,16 +249,7 @@ class MilvusStore(VectorStoreBase):
             if x.dtype == DataType.FLOAT_VECTOR or x.dtype == DataType.BINARY_VECTOR:
                 self.vector_field = x.name
         _, docs_and_scores = self._search(text, topk)
-        from langchain.schema import Document
-
-        return [
-            Document(
-                metadata=json.loads(doc.metadata.get("metadata", "")),
-                page_content=doc.page_content,
-            )
-            for doc, _, _ in docs_and_scores
-        ]
-        # return [doc for doc, _, _ in docs_and_scores]
+        return [doc for doc, _, _ in docs_and_scores]
 
     def _search(
         self,

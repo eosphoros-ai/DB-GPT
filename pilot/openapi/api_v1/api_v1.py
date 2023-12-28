@@ -54,6 +54,8 @@ from pilot.memory.chat_history.chat_hisotry_factory import ChatHistory
 from pilot.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from pilot.model.base import FlatSupportedModel
 from pilot.user import UserDao, UserRequest, get_user_from_headers
+from pilot.user.permission_request import UserPermissionRequest
+from pilot.user.user_permission_db import UserPermissionEntity, UserPermissionDao
 from pilot.utils.tracer import root_tracer, SpanType
 from pilot.utils.executor_utils import ExecutorFactory, blocking_func_to_async
 
@@ -69,6 +71,8 @@ global_counter = 0
 
 GITHUB_CLIENT_ID = "a7353895f4f0821801d9"
 GITHUB_CLIENT_SECRET = "14aff2bd2253841faab4c8efab9debeffbbff03e"
+
+permission_dao = UserPermissionDao()
 
 
 def __get_conv_user_message(conversations: dict):
@@ -252,6 +256,7 @@ async def dialogue_scenes():
         ChatScene.ChatKnowledge,
         ChatScene.ChatDashboard,
         ChatScene.ChatAgent,
+        ChatScene.DbGPTChat,
     ]
     for scene in new_modes:
         scene_vo = ChatSceneVo(
@@ -346,7 +351,7 @@ async def add_user(user_req: UserRequest):
     user = user_dao.add_user_if_not_exist(user_req)
     if user is not None:
         return Result.succ(user)
-    return Result.faild(msg=f"user(channel={user_req.user_channel}, user_no={user_req.user_no}) is not valid!")
+    return Result.failed(msg=f"user(channel={user_req.user_channel}, user_no={user_req.user_no}) is not valid!")
 
 
 @router.post("/v1/chat/dialogue/delete")
@@ -501,6 +506,22 @@ async def chat_completions(dialogue: ConversationVo = Body(), user_token: UserRe
         )
 
 
+@router.post("/v1/permission/add")
+async def add_permission(permission: UserPermissionRequest):
+    return Result.succ(permission_dao.create_permission(UserPermissionEntity(
+        user_id=permission.user_id,
+        resource_type=permission.resource_type,
+        resource_id=permission.resource_id,
+        permission_code=permission.permission_code
+    )))
+
+
+@router.post("/v1/permission/delete")
+async def delete_permission(permission: UserPermissionRequest):
+    permission_dao.delete_permission(UserPermissionEntity(id=permission.id))
+    return Result.succ([])
+
+
 @router.get("/v1/model/types")
 async def model_types(controller: BaseModelController = Depends(get_model_controller)):
     logger.info(f"/controller/model/types")
@@ -554,7 +575,7 @@ async def github_access_token(code: str = None):
         return await add_user(UserRequest(user_no=str(user_info["login"]), user_name=user_info["name"], user_channel="github", nick_name=user_info["name"], role="normal", avatar_url=user_info["avatar_url"]))
     except Exception as e:
         logger.info(f"github login error: {e}")
-        return Result.faild(f"login error: {e}")
+        return Result.failed(f"login error: {e}")
 
 
 async def no_stream_generator(chat):

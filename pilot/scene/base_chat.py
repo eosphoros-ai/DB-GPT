@@ -143,7 +143,7 @@ class BaseChat(ABC):
         return speak_to_user
 
     async def __call_base(self):
-        input_values = await self.generate_input_values()
+        input_values = self.generate_input_values()
         ### Chat sequence advance
         self.current_message.chat_order = len(self.history_message) + 1
         self.current_message.add_user_message(self.current_user_input)

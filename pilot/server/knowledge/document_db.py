@@ -145,6 +145,36 @@ class KnowledgeDocumentDao(BaseDao):
         session.close()
         return result
 
+    def get_knowledge_documents_count_bulk(self, space_ids):
+        session = self.get_session()
+        """
+        Perform a batch query to count the number of documents for each knowledge space.
+
+        Args:
+            space_names: A list of knowledge space names to query for document counts.
+            session: A SQLAlchemy session object.
+
+        Returns:
+            A dictionary mapping each space name to its document count.
+        """
+        # 构建一个查询，聚合每个知识空间的文档数量
+        counts_query = (
+            session.query(
+                KnowledgeDocumentEntity.space_id,
+                func.count(KnowledgeDocumentEntity.id).label('document_count')
+            )
+            .filter(KnowledgeDocumentEntity.space_id.in_(space_ids))
+            .group_by(KnowledgeDocumentEntity.space_id)
+        )
+
+        # 执行查询并获取结果
+        results = counts_query.all()
+        # 将结果转换为字典
+        docs_count = {result.space_id: result.document_count for result in results}
+        session.close()
+        return docs_count
+
+
     def get_knowledge_documents_count(self, query):
         session = self.get_session()
         knowledge_documents = session.query(func.count(KnowledgeDocumentEntity.id))

@@ -20,6 +20,7 @@ class ChatFactory(metaclass=Singleton):
         from pilot.scene.chat_knowledge.refine_summary.chat import ExtractRefineSummary
         from pilot.scene.chat_data.chat_excel.excel_analyze.chat import ChatExcel
         from pilot.scene.chat_agent.chat import ChatAgent
+        from pilot.scene.dbgpt_chat.chat import ChatWithDbGPT
 
         chat_classes = BaseChat.__subclasses__()
         implementation = None

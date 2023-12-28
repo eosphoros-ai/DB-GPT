@@ -1,14 +1,13 @@
+from pilot.base_modules.meta_data.base_dao import BaseDao
+from pilot.base_modules.meta_data.meta_data import Base, engine, session
 from pilot.configs.config import Config
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, DateTime
-from pilot.connections.rdbms.base_dao import BaseDao
+from sqlalchemy import Column, String, DateTime
 from pilot.user.user_request import UserRequest
 import uuid
 
 CFG = Config()
-Base = declarative_base()
 
 DB_AUTH = "auth"
 TABLE_USER = "user"
@@ -36,14 +35,14 @@ class UserDao(BaseDao):
           create database `auth` firstly.
         """
         super().__init__(
-            database=DB_AUTH, orm_base=Base, create_not_exist_table=False
+            database=DB_AUTH, orm_base=Base, db_engine=engine, session=session
         )
 
     def get_by_user_id(self, user_id: str):
         """
           get user info by user_id
         """
-        session = self.Session()
+        session = self.get_session()
         user_query = session.query(UserEntity).filter(UserEntity.user_id == user_id)
         result = user_query.all()
         session.close()
@@ -56,7 +55,7 @@ class UserDao(BaseDao):
         """
           query user by user_no
         """
-        session = self.Session()
+        session = self.get_session()
         user_query = session.query(UserEntity).filter(
             UserEntity.user_no == user_no
         ).filter(
@@ -78,7 +77,7 @@ class UserDao(BaseDao):
         if user_req.user_no is not None and user_req.user_channel is not None:
             result = self.get_by_user_no_and_channel(user_req.user_no, user_req.user_channel)
             if len(result) == 0:
-                session = self.Session()
+                session = self.get_session()
                 user = UserEntity(
                     user_id=uuid.uuid4().hex,
                     nick_name=user_req.nick_name,
@@ -100,7 +99,7 @@ class UserDao(BaseDao):
         """
           query user by user_no
         """
-        session = self.Session()
+        session = self.get_session()
         user_query = session.query(UserEntity).order_by(
             UserEntity.gmt_created.desc()
         )
@@ -109,14 +108,14 @@ class UserDao(BaseDao):
         return result
 
     def update_user(self, user: UserEntity):
-        session = self.Session()
+        session = self.get_session()
         session.merge(user)
         session.commit()
         session.close()
         return True
 
     def delete_user(self, user: UserEntity):
-        session = self.Session()
+        session = self.get_session()
         if user:
             session.delete(user)
             session.commit()

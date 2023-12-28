@@ -1,7 +1,11 @@
 import json
 import logging
+import os
+import zipfile
 from datetime import datetime
 
+from pilot.embedding_engine.identify_textsplitter import IdentifyTextSplitter
+from pilot.log.common_task_log_db import CommonTaskLogEntity, CommonTaskType, CommonTaskState, CommonTaskLogDao
 from pilot.vector_store.connector import VectorStoreConnector
 
 from pilot.configs.config import Config
@@ -48,6 +52,8 @@ document_chunk_dao = DocumentChunkDao()
 logger = logging.getLogger(__name__)
 CFG = Config()
 
+
+common_task_log_dao = CommonTaskLogDao()
 
 class SyncStatus(Enum):
     TODO = "TODO"
@@ -108,6 +114,12 @@ class KnowledgeService:
         )
         return knowledge_document_dao.create_knowledge_document(document)
 
+    def get_knowledge_space_by_ids(self, ids):
+        """
+          get knowledge space by ids.
+        """
+        return knowledge_space_dao.get_knowledge_space_by_ids(ids)
+
     def get_knowledge_space(self, request: KnowledgeSpaceRequest):
         """get knowledge space
         Args:
@@ -116,8 +128,15 @@ class KnowledgeService:
         query = KnowledgeSpaceEntity(
             name=request.name, vector_type=request.vector_type, owner=request.owner, user_id=request.user_id
         )
-        responses = []
         spaces = knowledge_space_dao.get_knowledge_space(query)
+
+        # 获取所有space名称
+        space_ids = [space.id for space in spaces]
+
+        # 批量查询文档数量
+        docs_count = knowledge_document_dao.get_knowledge_documents_count_bulk(space_ids)
+
+        responses = []
         for space in spaces:
             res = SpaceQueryResponse()
             res.id = space.id
@@ -128,9 +147,8 @@ class KnowledgeService:
             res.gmt_created = space.gmt_created
             res.gmt_modified = space.gmt_modified
             res.context = space.context
-            query = KnowledgeDocumentEntity(space=space.name)
-            doc_count = knowledge_document_dao.get_knowledge_documents_count(query)
-            res.docs = doc_count
+            # 为每个空间设置文档计数
+            res.docs = docs_count.get(space.id, 0)
             responses.append(res)
         return responses
 
@@ -201,7 +219,6 @@ class KnowledgeService:
         # import langchain is very very slow!!!
 
         doc_ids = sync_request.doc_ids
-        self.model_name = sync_request.model_name or CFG.LLM_MODEL
         for doc_id in doc_ids:
             query = KnowledgeDocumentEntity(
                 id=doc_id,
@@ -215,83 +232,115 @@ class KnowledgeService:
                 raise Exception(
                     f" doc:{doc.doc_name} status is {doc.status}, can not sync"
                 )
+            try:
+                # update document status
+                doc.status = SyncStatus.RUNNING.name
+                knowledge_document_dao.update_knowledge_document(doc)
 
-            knowledge_spaces = knowledge_space_dao.get_knowledge_space(KnowledgeSpaceEntity(id=space_id))
-            if len(knowledge_spaces) == 0:
-                continue
-            ks = knowledge_spaces[0]
-            space_context = self.get_space_context(ks.name, user_id)
-            chunk_size = (
-                CFG.KNOWLEDGE_CHUNK_SIZE
-                if space_context is None
-                else int(space_context["embedding"]["chunk_size"])
-            )
-            chunk_overlap = (
-                CFG.KNOWLEDGE_CHUNK_OVERLAP
-                if space_context is None
-                else int(space_context["embedding"]["chunk_overlap"])
-            )
-            if sync_request.chunk_size:
-                chunk_size = sync_request.chunk_size
-            if sync_request.chunk_overlap:
-                chunk_overlap = sync_request.chunk_overlap
-            separators = sync_request.separators or None
-            if CFG.LANGUAGE == "en":
-                text_splitter = RecursiveCharacterTextSplitter(
-                    separators=separators,
-                    chunk_size=chunk_size,
-                    chunk_overlap=chunk_overlap,
-                    length_function=len,
+                knowledge_spaces = knowledge_space_dao.get_knowledge_space(KnowledgeSpaceEntity(id=space_id))
+                if len(knowledge_spaces) == 0:
+                    continue
+                ks = knowledge_spaces[0]
+                space_context = self.get_space_context(ks.name, user_id)
+                chunk_size = (
+                    CFG.KNOWLEDGE_CHUNK_SIZE
+                    if space_context is None
+                    else int(space_context["embedding"]["chunk_size"])
                 )
-            else:
-                if separators and len(separators) > 1:
-                    raise ValueError(
-                        "SpacyTextSplitter do not support multiple separators"
-                    )
-                try:
-                    separator = "\n\n" if not separators else separators[0]
-                    text_splitter = SpacyTextSplitter(
-                        separator=separator,
-                        pipeline="zh_core_web_sm",
-                        chunk_size=chunk_size,
-                        chunk_overlap=chunk_overlap,
-                    )
-                except Exception:
-                    text_splitter = RecursiveCharacterTextSplitter(
-                        separators=separators,
-                        chunk_size=chunk_size,
-                        chunk_overlap=chunk_overlap,
-                    )
-            if sync_request.pre_separator:
-                logger.info(f"Use preseparator, {sync_request.pre_separator}")
-                text_splitter = PreTextSplitter(
-                    pre_separator=sync_request.pre_separator,
-                    text_splitter_impl=text_splitter,
+                chunk_overlap = (
+                    CFG.KNOWLEDGE_CHUNK_OVERLAP
+                    if space_context is None
+                    else int(space_context["embedding"]["chunk_overlap"])
                 )
-            embedding_factory = CFG.SYSTEM_APP.get_component(
-                "embedding_factory", EmbeddingFactory
-            )
-            client = EmbeddingEngine(
-                knowledge_source=doc.content,
-                knowledge_type=doc.doc_type.upper(),
-                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-                vector_store_config={
-                    "vector_store_name": ks.name + ks.user_id,
-                    "vector_store_type": CFG.VECTOR_STORE_TYPE,
-                },
-                text_splitter=text_splitter,
-                embedding_factory=embedding_factory,
-            )
-            chunk_docs = client.read()
-            # update document status
-            doc.status = SyncStatus.RUNNING.name
-            doc.chunk_size = len(chunk_docs)
-            doc.gmt_modified = datetime.now()
-            knowledge_document_dao.update_knowledge_document(doc)
-            executor = CFG.SYSTEM_APP.get_component(
-                ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
-            ).create()
-            executor.submit(self.async_doc_embedding, client, chunk_docs, doc)
+                if sync_request.chunk_size:
+                    chunk_size = sync_request.chunk_size
+                if sync_request.chunk_overlap:
+                    chunk_overlap = sync_request.chunk_overlap
+                separators = sync_request.separators or None
+
+                if separators is not None or "_identify_split" in doc.doc_name:
+                    text_splitter = IdentifyTextSplitter([CFG.IDENTIFY_SPLIT])
+                else:
+                    if CFG.LANGUAGE == "en":
+                        text_splitter = RecursiveCharacterTextSplitter(
+                            separators=separators,
+                            chunk_size=chunk_size,
+                            chunk_overlap=chunk_overlap,
+                            length_function=len,
+                        )
+                    else:
+                        if separators and len(separators) > 1:
+                            raise ValueError(
+                                "SpacyTextSplitter do not support multiple separators"
+                            )
+                        try:
+                            separator = "\n\n" if not separators else separators[0]
+                            text_splitter = SpacyTextSplitter(
+                                separator=separator,
+                                pipeline="zh_core_web_sm",
+                                chunk_size=chunk_size,
+                                chunk_overlap=chunk_overlap,
+                            )
+                        except Exception:
+                            text_splitter = RecursiveCharacterTextSplitter(
+                                separators=separators,
+                                chunk_size=chunk_size,
+                                chunk_overlap=chunk_overlap,
+                            )
+                if sync_request.pre_separator:
+                    logger.info(f"Use preseparator, {sync_request.pre_separator}")
+                    text_splitter = PreTextSplitter(
+                        pre_separator=sync_request.pre_separator,
+                        text_splitter_impl=text_splitter,
+                    )
+                embedding_factory = CFG.SYSTEM_APP.get_component(
+                    "embedding_factory", EmbeddingFactory
+                )
+                tmp_file_path = doc.content
+                # download from oss
+                # if doc.doc_type == 'DOCUMENT':
+                #     tmp_file_name = str(uuid.uuid4().hex) + doc.doc_name
+                #     tmp_file_path = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, tmp_file_name)
+                #     download_status = get_object_to_file(oss_key=doc.oss_file_key, local_file_path=tmp_file_path,
+                #                                          bucket=CFG.OSS_BUCKET)
+                #     logger.info(f"download doc {doc.doc_name} to {tmp_file_path} success={download_status}")
+                # else:
+                #     tmp_file_path = doc.content
+
+                client = EmbeddingEngine(
+                    knowledge_source=doc.content,
+                    knowledge_type=doc.doc_type.upper(),
+                    model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+                    vector_store_config={
+                        "vector_store_name": CFG.KS_EMBED_PREFIX + str(ks.id),
+                        "vector_store_type": CFG.VECTOR_STORE_TYPE,
+                    },
+                    text_splitter=text_splitter,
+                    embedding_factory=embedding_factory,
+                )
+                # if doc.doc_type == 'DOCUMENT' and not wait_for_file_exist(tmp_file_path):
+                #     doc.status = SyncStatus.FAILED.name
+                #     knowledge_document_dao.update_knowledge_document(doc)
+                #     raise f"doc sync failed, file path {tmp_file_path} not exist"
+
+                # 确保当前内容能够被正常加载
+                if tmp_file_path.endswith(".zip"):
+                    client.knowledge_source = "xxx.md"
+
+                # TODO 异步处理split_chunks 和 embeddings工作
+                chunk_docs = get_chuncks(tmp_file_path, embedding_factory, doc, ks, client, text_splitter)
+                doc.chunk_size = len(chunk_docs)
+                doc.gmt_modified = datetime.now()
+                knowledge_document_dao.update_knowledge_document(doc)
+                executor = CFG.SYSTEM_APP.get_component(
+                    ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+                ).create()
+                executor.submit(self.async_doc_embedding, client, chunk_docs, doc)
+            except Exception as ex:
+                doc.status = SyncStatus.FAILED.name
+                knowledge_document_dao.update_knowledge_document(doc)
+                raise f"doc sync failed, {ex}"
+
             logger.info(f"begin save document chunks, doc:{doc.doc_name}")
             # save chunk details
             chunk_entities = [
@@ -308,7 +357,12 @@ class KnowledgeService:
             ]
             document_chunk_dao.create_documents_chunks(chunk_entities)
 
-        return doc.id
+            # delete file when embedding success.
+            # if doc.doc_type == 'DOCUMENT':
+            #     logger.info(f"start delete tmp_file {tmp_file_path}")
+            #     delete_file(tmp_file_path)
+
+        return True
 
     async def document_summary(self, request: DocumentSummaryRequest):
         """get document summary
@@ -647,3 +701,106 @@ class KnowledgeService:
             return await self._mapreduce_extract_summary(
                 summary_iters, model_name, max_iteration, concurrency_limit
             )
+
+
+def get_chuncks(tmp_file_path, embedding_factory, doc, ks, client, text_splitter):
+    """
+      Split file into chunks, support zip file.
+    """
+    from pilot.embedding_engine.embedding_engine import EmbeddingEngine
+    if tmp_file_path.endswith(".zip"):
+        current_read_index: int = 0
+        succeed_read_num: int = 0
+        total_emd_number: int = 0
+        task_result = {
+            "current_embed_index": current_read_index,
+            "total_emd_number": total_emd_number,
+        }
+        common_task_log = common_task_log_dao.create_common_task_log(
+            CommonTaskLogEntity(
+                type=CommonTaskType.ZIP_EMBEDDING_READ.value,
+                state=CommonTaskState.RUNNING.value,
+                param_idx=str(ks.name),
+                task_result=json.dumps(task_result),
+                msg="",
+            )
+        )
+        if not common_task_log:
+            raise f"create common task log error!"
+        # 将下载的zip文件解压，然后通过一个异步任务拆解为多个docs -> chunk_docs
+        # 解压文件并记录日志
+        chunk_docs = []
+        with zipfile.ZipFile(tmp_file_path, 'r') as zip_ref:
+            zip_ref.extractall(KNOWLEDGE_UPLOAD_ROOT_PATH)
+
+        log: str = f"\n{str(datetime.now())} --- unzip file {doc.doc_name} success."
+        common_task_log.msg = common_task_log.msg + log
+        common_task_log_dao.update_task_log(common_task_log)
+
+        # 计算需要embeddings的文件数
+        directory = os.path.join(KNOWLEDGE_UPLOAD_ROOT_PATH, doc.doc_name.replace(".zip", ""))
+        total_emd_number = count_files(directory)
+        interval: int = 100
+        common_task_log.msg += f"\n{str(datetime.now())} --- total_emd_number is {total_emd_number}"
+        common_task_log_dao.update_task_log(common_task_log)
+
+        # 遍历文件夹将所有文件
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                file_path = os.path.join(root, file)
+                print(file_path)
+                if os.path.isfile(file_path):
+                    current_read_index += 1
+                    # 每100个文件做一次记录
+                    if current_read_index % interval == 0:
+                        common_task_log.msg += f"\n{str(datetime.now())} --- curren readfile index is {current_read_index}"
+                        common_task_log_dao.update_task_log(common_task_log)
+
+                    try:
+                        with open(file_path, 'r') as infile:
+                            if "_identify_split" in file_path or "_identify_split" in tmp_file_path:
+                                text_splitter = IdentifyTextSplitter([CFG.IDENTIFY_SPLIT])
+                            client = EmbeddingEngine(
+                                knowledge_source=file_path,
+                                knowledge_type=doc.doc_type.upper(),
+                                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
+                                vector_store_config={
+                                    "vector_store_name": CFG.KS_EMBED_PREFIX + str(ks.id),
+                                    "vector_store_type": CFG.VECTOR_STORE_TYPE,
+                                },
+                                text_splitter=text_splitter,
+                                embedding_factory=embedding_factory,
+                            )
+                            sub_chunk_docs = client.read()
+                            chunk_docs.extend(sub_chunk_docs)
+                            succeed_read_num += 1
+                    except Exception as ex:
+                        print(f"文件{file_path}读取异常, {str(ex)}")
+                        common_task_log.msg += f"\n{str(datetime.now())} --- embed file {file_path} failed, current_index={current_read_index}, {str(ex)}"
+                        common_task_log_dao.update_task_log(common_task_log)
+        if succeed_read_num == total_emd_number:
+            common_task_log.state = CommonTaskState.FINISHED.value
+        else:
+            common_task_log.state = CommonTaskState.FAILED.value
+            common_task_log.msg += f"\n succeed={succeed_read_num} total={total_emd_number}"
+        common_task_log_dao.update_task_log(common_task_log)
+    else:
+        chunk_docs = client.read()
+    return chunk_docs
+
+
+def count_files(directory: str):
+    """
+      count files in folder.
+
+      params:
+        directory:
+    """
+    count: int = 0
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            file_path = os.path.join(root, file)
+            if os.path.isfile(file_path):
+                count += 1
+
+    return count
