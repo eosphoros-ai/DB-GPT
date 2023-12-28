@@ -73,6 +73,112 @@ class MultiAgents(BaseComponent, ABC):
     def gpts_create(self, entity: GptsInstanceEntity):
         self.gpts_intance.add(entity)
 
+    def _build_agent_context(
+        self,
+        name: str,
+        conv_id: str,
+    ):
+        gpts_instance: GptsInstanceEntity = self.gpts_intance.get_by_name(name)
+        if gpts_instance is None:
+            raise ValueError(f"can't find dbgpts!{name}")
+        agents_names = json.loads(gpts_instance.gpts_agents)
+        llm_models_priority = json.loads(gpts_instance.gpts_models)
+        resource_db = (
+            json.loads(gpts_instance.resource_db) if gpts_instance.resource_db else None
+        )
+        resource_knowledge = (
+            json.loads(gpts_instance.resource_knowledge)
+            if gpts_instance.resource_knowledge
+            else None
+        )
+        resource_internet = (
+            json.loads(gpts_instance.resource_internet)
+            if gpts_instance.resource_internet
+            else None
+        )
+        ### init chat param
+        worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        llm_task = DefaultLLMClient(worker_manager)
+        context: AgentContext = AgentContext(conv_id=conv_id, llm_provider=llm_task)
+        context.gpts_name = gpts_instance.gpts_name
+        context.resource_db = resource_db
+        context.resource_internet = resource_internet
+        context.resource_knowledge = resource_knowledge
+        context.agents = agents_names
+
+        context.llm_models = await llm_task.models()
+        context.model_priority = llm_models_priority
+
+        agent_map = defaultdict()
+
+        ### default plan excute mode
+        agents = []
+        for name in agents_names:
+            cls = agent_mange.get_by_name(name)
+            agent = cls(
+                agent_context=context,
+                memory=self.memory,
+            )
+            agents.append(agent)
+            agent_map[name] = agent
+
+    async def awel_layout_chat(
+        self,
+        name: str,
+        user_query: str,
+        conv_id: str,
+        user_code: str = None,
+        sys_code: str = None,
+    ):
+        gpts_instance: GptsInstanceEntity = self.gpts_intance.get_by_name(name)
+        if gpts_instance is None:
+            raise ValueError(f"can't find dbgpts!{name}")
+        agents_names = json.loads(gpts_instance.gpts_agents)
+        llm_models_priority = json.loads(gpts_instance.gpts_models)
+        resource_db = (
+            json.loads(gpts_instance.resource_db) if gpts_instance.resource_db else None
+        )
+        resource_knowledge = (
+            json.loads(gpts_instance.resource_knowledge)
+            if gpts_instance.resource_knowledge
+            else None
+        )
+        resource_internet = (
+            json.loads(gpts_instance.resource_internet)
+            if gpts_instance.resource_internet
+            else None
+        )
+
+        ### init chat param
+        worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        llm_task = DefaultLLMClient(worker_manager)
+        context: AgentContext = AgentContext(conv_id=conv_id, llm_provider=llm_task)
+        context.gpts_name = gpts_instance.gpts_name
+        context.resource_db = resource_db
+        context.resource_internet = resource_internet
+        context.resource_knowledge = resource_knowledge
+        context.agents = agents_names
+
+        context.llm_models = await llm_task.models()
+        context.model_priority = llm_models_priority
+
+        agent_map = defaultdict()
+
+        ### default plan excute mode
+        agents = []
+        for name in agents_names:
+            cls = agent_mange.get_by_name(name)
+            agent = cls(
+                agent_context=context,
+                memory=self.memory,
+            )
+            agents.append(agent)
+            agent_map[name] = agent
+
     async def plan_chat(
         self,
         name: str,

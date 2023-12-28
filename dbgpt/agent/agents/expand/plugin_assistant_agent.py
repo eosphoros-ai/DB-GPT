@@ -8,6 +8,12 @@ from dbgpt.util.json_utils import find_json_objects
 from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent, AgentContext
 from ..base_agent import ConversableAgent
+from ...plugin.loader import PluginLoader
+from ...plugin.commands.command_mange import execute_command
+
+from dbgpt.vis import vis_client, VisPlugin
+
+from ...common.schema import Status
 
 try:
     from termcolor import colored
@@ -20,7 +26,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class PluginAgent(ConversableAgent):
+class PluginAssistantAgent(ConversableAgent):
     """(In preview) Assistant agent, designed to solve a task with LLM.
 
     AssistantAgent is a subclass of ConversableAgent configured with a default system message.
@@ -42,19 +48,19 @@ class PluginAgent(ConversableAgent):
         user: Search for the latest hot financial news
         assisant: {{
           "tool_name":"The chart rendering method currently selected by SQL",
-          "args": "{{
+          "args": {{
             "query": "latest hot financial news",
-          }}",
+          }},
           "thought":"I will use the google-search tool to search for the latest hot financial news."
         }}
       
       Please think step by step and return it in the following json format
       {{
           "tool_name":"The chart rendering method currently selected by SQL",
-          "args": "{{
+          "args": {{
             "arg name1": "arg value1",
             "arg name2": "arg value2",
-          }}",
+          }},
           "thought":"Summary of thoughts to the user"
       }}
       Make sure the response is correct json and can be parsed by Python json.loads.
@@ -66,6 +72,7 @@ class PluginAgent(ConversableAgent):
         self,
         memory: GptsMemory,
         agent_context: AgentContext,
+        plugin_path: str,
         describe: Optional[str] = DEFAULT_DESCRIBE,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
@@ -84,17 +91,20 @@ class PluginAgent(ConversableAgent):
             **kwargs,
         )
 
-        self.register_reply(Agent, PluginAgent.tool_call)
+        self.register_reply(Agent, PluginAssistantAgent.a_tool_call)
         self.agent_context = agent_context
+        self._plugin_loader = PluginLoader()
+        self.plugin_generator = self._plugin_loader.load_plugins(
+            plugin_path=plugin_path
+        )
 
     async def a_system_fill_param(self):
         params = {
-            "tool_infos": self.db_connect.get_table_info(),
-            "dialect": self.db_connect.db_type,
+            "tool_list": self.plugin_generator.generate_commands_string(),
         }
         self.update_system_message(self.DEFAULT_SYSTEM_MESSAGE.format(**params))
 
-    async def tool_call(
+    async def a_tool_call(
         self,
         message: Optional[str] = None,
         sender: Optional[Agent] = None,
@@ -104,22 +114,42 @@ class PluginAgent(ConversableAgent):
         """Generate a reply using code execution."""
 
         json_objects = find_json_objects(message)
-        fail_reason = "The required json format answer was not generated."
         json_count = len(json_objects)
+
         rensponse_succ = True
         view = None
-        content = None
+        tool_result = None
+        err_msg = None
         if json_count != 1:
             ### Answer failed, turn on automatic repair
             rensponse_succ = False
+            err_msg = "Your answer has multiple json contents, which is not the required return format."
         else:
+            too_name = json_objects[0].get("tool_name", None)
+            args = json_objects[0].get("args", None)
+
             try:
-                view = ""
+                tool_result = execute_command(too_name, args, self.plugin_generator)
+                status = Status.COMPLETE.value
             except Exception as e:
-                view = f"```vis-convert-error\n{content}\n```"
+                logger.exception(f"Tool [{too_name}] excute Failed!")
+                status = Status.FAILED.value
+                err_msg = f"Tool [{too_name}] excute Failed!{str(e)}"
+                rensponse_succ = False
+
+            plugin_param = {
+                "name": too_name,
+                "args": args,
+                "status": status,
+                "logo": None,
+                "result": tool_result,
+                "err_msg": err_msg,
+            }
+            vis_tag = vis_client.get(VisPlugin.vis_tag())
+            view = await vis_tag.disply(**plugin_param)
 
         return True, {
             "is_exe_success": rensponse_succ,
-            "content": content,
+            "content": tool_result if rensponse_succ else err_msg,
             "view": view,
         }

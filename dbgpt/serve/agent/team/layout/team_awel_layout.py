@@ -1,0 +1,111 @@
+import logging
+import sys
+
+from typing import Dict, Any, Optional, Union, List
+from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt.core.awel import DAG, HttpTrigger, MapOperator, JoinOperator, BaseOperator
+from dbgpt.agent.agents.base_agent import ConversableAgent
+from dbgpt.agent.agents.agent import Agent, AgentContext, AgentGenerateContext
+from dbgpt.serve.agent.team.team_base import Team
+from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.serve.agent.team.layout.agent_operator import AgentOperator
+
+logger = logging.getLogger(__name__)
+
+
+class AwelLayoutChatManger(ConversableAgent, Team):
+    NAME = "layout_manager"
+
+    def __init__(
+        self,
+        memory: GptsMemory,
+        agent_context: AgentContext,
+        # unlimited consecutive auto reply by default
+        max_consecutive_auto_reply: Optional[int] = sys.maxsize,
+        human_input_mode: Optional[str] = "NEVER",
+        describe: Optional[str] = "layout chat manager.",
+        **kwargs,
+    ):
+        ConversableAgent.__init__(
+            self,
+            name=self.NAME,
+            describe=describe,
+            memory=memory,
+            max_consecutive_auto_reply=max_consecutive_auto_reply,
+            human_input_mode=human_input_mode,
+            agent_context=agent_context,
+            **kwargs,
+        )
+        Team.__init__(self)
+        # Order of register_reply is important.
+
+        # Allow async chat if initiated using a_initiate_chat
+        self.register_reply(
+            Agent,
+            AwelLayoutChatManger.a_run_chat,
+        )
+
+    async def a_reasoning_reply(
+        self, messages: Optional[List[Dict]] = None
+    ) -> Union[str, Dict, None]:
+        if messages is None or len(messages) <= 0:
+            message = None
+            return None, None
+        else:
+            message = messages[-1]
+            self.messages.append(message)
+            return message["content"], None
+
+    async def a_verify_reply(
+        self, message: Optional[Dict], sender: "Agent", reviewer: "Agent", **kwargs
+    ) -> Union[str, Dict, None]:
+        return True, message
+
+    async def a_run_chat(
+        self,
+        message: Optional[str] = None,
+        sender: Optional[Agent] = None,
+        reviewer: Agent = None,
+        config: Optional[Any] = None,
+    ):
+        try:
+            last_node: AgentOperator = None
+            with DAG(
+                f"layout_agents_{self.agent_context.gpts_name}_{self.agent_context.conv_id}"
+            ) as dag:
+                for agent in self.agents:
+                    now_node = AgentOperator(agent=agent)
+                    if not last_node:
+                        last_node = now_node
+                    else:
+                        last_node >> now_node
+                        last_node = now_node
+
+            start_message = {
+                "content": message,
+                "current_gogal": message,
+            }
+            start_message_context: AgentGenerateContext = AgentGenerateContext(
+                message=start_message, sender=self, reviewer=reviewer
+            )
+            final_generate_context: AgentGenerateContext = await last_node.call(
+                call_data={"data": start_message_context}
+            )
+            last_message = final_generate_context.rely_messages[-1]
+
+            last_agent = last_node.agent
+            await last_agent.a_send(
+                last_message, self, start_message_context.reviewer, False
+            )
+
+            return True, {
+                "is_exe_success": True,
+                "content": last_message.get("content", None),
+                "view": last_message.get("view", None),
+            }
+        except Exception as e:
+            logger.exception("DAG run failed!")
+            return True, {
+                "content": f"AWEL task process [{dag.dag_id}] execution exception! {str(e)}",
+                "is_exe_success": False,
+            }

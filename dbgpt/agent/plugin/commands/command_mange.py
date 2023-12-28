@@ -552,14 +552,14 @@ class ApiCall:
                 except Exception as e:
                     param["data"] = []
                     param["err_msg"] = str(e)
-                chart_items.append(
-                    f"```vis-chart-item\n{json.dumps(param, default=serialize, ensure_ascii=False)}\n```"
-                )
+                chart_items.append(param)
 
             dashboard_param = {
-                "markdown": "\n".join(chart_items),
+                "data": chart_items,
                 "chart_count": len(chart_items),
                 "title": title,
+                "display_strategy": "default",
+                "style": "default",
             }
             view_json_str = json.dumps(
                 dashboard_param, default=serialize, ensure_ascii=False

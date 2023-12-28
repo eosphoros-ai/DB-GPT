@@ -8,7 +8,7 @@
         .. code-block:: shell
 
             DBGPT_SERVER="http://127.0.0.1:5000"
-            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/chat/completions \
+            curl -X POST $DBGPT_SERVER/api/v1/layout/trigger/examples/simple_client/chat/completions \
             -H "Content-Type: application/json" -d '{
                 "model": "proxyllm",
                 "messages": "hello"
@@ -17,7 +17,7 @@
         Call with streaming response.
         .. code-block:: shell
 
-            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/chat/completions \
+            curl -X POST $DBGPT_SERVER/api/v1/layout/trigger/examples/simple_client/chat/completions \
             -H "Content-Type: application/json" -d '{
                 "model": "proxyllm",
                 "messages": "hello",
@@ -27,7 +27,7 @@
         Call model and count token.
          .. code-block:: shell
 
-            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/count_token \
+            curl -X POST $DBGPT_SERVER/api/v1/layout/trigger/examples/simple_client/count_token \
             -H "Content-Type: application/json" -d '{
                 "model": "proxyllm",
                 "messages": "hello"

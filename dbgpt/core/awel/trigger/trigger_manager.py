@@ -20,7 +20,7 @@ class HttpTriggerManager(TriggerManager):
     def __init__(
         self,
         router: Optional["APIRouter"] = None,
-        router_prefix: Optional[str] = "/api/v1/awel/trigger",
+        router_prefix: Optional[str] = "/api/v1/layout/trigger",
     ) -> None:
         if not router:
             from fastapi import APIRouter

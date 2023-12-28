@@ -10,7 +10,7 @@ from dbgpt.core.awel import BaseOperator
 from dbgpt.util.string_utils import str_to_bool
 
 from ..common.schema import Status
-from ..memory.gpts_memory import GptsMemory, GptsMessage, GptsPlan
+from ..memory.gpts_memory import GptsMemory, GptsPlan
 from .agent import Agent, AgentContext
 from .base_agent import ConversableAgent
 from dbgpt.core.interface.message import ModelMessageRoleType
@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PlanChat:
-    """(In preview) A group chat class that contains the following data fields:
+    """(In preview) A team chat class that contains the following data fields:
     - agents: a list of participating agents.
-    - messages: a list of messages in the group chat.
+    - messages: a list of messages in the team chat.
     - max_round: the maximum number of rounds.
     - admin_name: the name of the admin agent if there is one. Default is "Admin".
         KeyBoardInterrupt will make the admin agent take over.
@@ -51,11 +51,11 @@ class PlanChat:
 
     @property
     def agent_names(self) -> List[str]:
-        """Return the names of the agents in the group chat."""
+        """Return the names of the agents in the team chat."""
         return [agent.name for agent in self.agents]
 
     def reset(self):
-        """Reset the group chat."""
+        """Reset the team chat."""
         self.messages.clear()
 
     def agent_by_name(self, name: str) -> Agent:
@@ -212,7 +212,7 @@ class PlanChat:
 
 
 class PlanChatManager(ConversableAgent):
-    """(In preview) A chat manager agent that can manage a group chat of multiple agents."""
+    """(In preview) A chat manager agent that can manage a team chat of multiple agents."""
 
     NAME = "plan_manager"
 
@@ -294,7 +294,7 @@ class PlanChatManager(ConversableAgent):
         reviewer: Agent = None,
         config: Optional[PlanChat] = None,
     ):
-        """Run a group chat asynchronously."""
+        """Run a team chat asynchronously."""
 
         speaker = sender
         groupchat = config

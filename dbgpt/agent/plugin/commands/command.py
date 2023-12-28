@@ -79,8 +79,9 @@ def execute_command(
     Returns:
         str: The result of the command
     """
-
-    cmd = plugin_generator.command_registry.commands.get(command_name)
+    cmd = None
+    if plugin_generator.command_registry:
+        cmd = plugin_generator.command_registry.commands.get(command_name)
 
     # If the command is found, call it with the provided arguments
     if cmd:

@@ -10,7 +10,7 @@
             DBGPT_SERVER="http://127.0.0.1:5000"
             MODEL="gpt-3.5-turbo"
             # Fist round
-            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_history/multi_round/chat/completions \
+            curl -X POST $DBGPT_SERVER/api/v1/layout/trigger/examples/simple_history/multi_round/chat/completions \
             -H "Content-Type: application/json" -d '{
                 "model": "gpt-3.5-turbo",
                 "context": {
@@ -20,7 +20,7 @@
             }'
 
             # Second round
-            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_history/multi_round/chat/completions \
+            curl -X POST $DBGPT_SERVER/api/v1/layout/trigger/examples/simple_history/multi_round/chat/completions \
             -H "Content-Type: application/json" -d '{
                 "model": "gpt-3.5-turbo",
                 "context": {
@@ -32,7 +32,7 @@
         Call with streaming response.
         .. code-block:: shell
 
-            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_history/multi_round/chat/completions \
+            curl -X POST $DBGPT_SERVER/api/v1/layout/trigger/examples/simple_history/multi_round/chat/completions \
             -H "Content-Type: application/json" -d '{
                 "model": "gpt-3.5-turbo",
                 "context": {
@@ -43,7 +43,7 @@
             }'
 
             # Second round
-            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_history/multi_round/chat/completions \
+            curl -X POST $DBGPT_SERVER/api/v1/layout/trigger/examples/simple_history/multi_round/chat/completions \
             -H "Content-Type: application/json" -d '{
                 "model": "gpt-3.5-turbo",
                 "context": {

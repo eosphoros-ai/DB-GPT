@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import dataclasses
 from collections import defaultdict
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass, fields, field
 from typing import Any, Dict, List, Optional, Union
 
 from ..memory.gpts_memory import GptsMemory
 from dbgpt.core import LLMClient
 from dbgpt.core.interface.llm import ModelMetadata
+
+from dbgpt.util import BaseParameters
+from dbgpt.util.annotations import PublicAPI
 
 
 class Agent:
@@ -87,6 +90,7 @@ class Agent:
         sender: Agent,
         reviewer: Agent,
         silent: Optional[bool] = False,
+        rely_messages: Optional[List[Dict]] = None,
         **kwargs,
     ) -> Union[str, Dict, None]:
         """(Abstract async method) Generate a reply based on the received messages.
@@ -186,3 +190,20 @@ class AgentContext:
 
     def to_dict(self) -> Dict[str, Any]:
         return dataclasses.asdict(self)
+
+
+@dataclass
+@PublicAPI(stability="beta")
+class AgentGenerateContext:
+    """A class to represent the input of a Agent."""
+
+    message: Optional[Dict]
+    sender: Agent
+    reviewer: Agent
+    silent: Optional[bool] = False
+
+    rely_messages: List[Dict] = field(default_factory=list)
+    final: Optional[bool] = True
+
+    def to_dict(self) -> Dict:
+        return asdict(self)

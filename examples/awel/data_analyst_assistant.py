@@ -10,7 +10,7 @@
             # First terminal
             export OPENAI_API_KEY=xxx
             export OPENAI_API_BASE=https://api.openai.com/v1
-            python examples/awel/simple_chat_history_example.py
+            python examples/layout/simple_chat_history_example.py
 
 
         Code fix command, return no streaming response
@@ -23,7 +23,7 @@
             DBGPT_SERVER="http://127.0.0.1:5555"
             MODEL="gpt-3.5-turbo"
             # Fist round
-            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/data_analyst/copilot \
+            curl -X POST $DBGPT_SERVER/api/v1/layout/trigger/examples/data_analyst/copilot \
             -H "Content-Type: application/json" -d '{
                 "command": "dbgpt_awel_data_analyst_code_fix",
                 "model": "gpt-3.5-turbo",

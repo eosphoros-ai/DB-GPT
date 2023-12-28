@@ -11,7 +11,10 @@ from dbgpt.util.error_types import LLMChatError
 
 from ..memory.base import GptsMessage
 from ..memory.gpts_memory import GptsMemory
-from .agent import Agent, AgentContext
+from .agent import Agent, AgentContext, AgentGenerateContext
+
+from dbgpt.core.awel.operator.common_operator import MapOperator
+
 
 try:
     from termcolor import colored
@@ -389,17 +392,32 @@ class ConversableAgent(Agent):
             )
         return oai_messages
 
-    def process_now_message(self, sender, current_gogal: Optional[str] = None):
+    def process_now_message(
+        self,
+        current_message: Optional[Dict],
+        sender,
+        rely_messages: Optional[List[Dict]] = None,
+    ):
+        current_gogal = current_message.get("current_gogal", None)
         ### Convert and tailor the information in collective memory into contextual memory available to the current Agent
         current_gogal_messages = self._gpts_message_to_ai_message(
             self.memory.message_memory.get_between_agents(
                 self.agent_context.conv_id, self.name, sender.name, current_gogal
             )
         )
-
+        if current_gogal_messages is None or len(current_gogal_messages) <= 0:
+            current_message["role"] = ModelMessageRoleType.HUMAN
+            current_gogal_messages = [current_message]
         ### relay messages
         cut_messages = []
-        cut_messages.extend(self._rely_messages)
+        if rely_messages:
+            for rely_message in rely_messages:
+                action_report = rely_message.get("action_report", None)
+                if action_report:
+                    rely_message["content"] = action_report["content"]
+            cut_messages.extend(rely_messages)
+        else:
+            cut_messages.extend(self._rely_messages)
 
         if len(current_gogal_messages) < self.dialogue_memory_rounds:
             cut_messages.extend(current_gogal_messages)
@@ -419,6 +437,7 @@ class ConversableAgent(Agent):
         sender: Agent,
         reviewer: "Agent",
         silent: Optional[bool] = False,
+        rely_messages: Optional[List[Dict]] = None,
     ):
         ## 0.New message build
         new_message = {}
@@ -428,11 +447,7 @@ class ConversableAgent(Agent):
         ## 1.LLM Reasonging
         await self.a_system_fill_param()
         await asyncio.sleep(5)  ##TODO  Rate limit reached for gpt-3.5-turbo
-        current_messages = self.process_now_message(
-            sender, message.get("current_gogal", None)
-        )
-        if current_messages is None or len(current_messages) <= 0:
-            current_messages = [message]
+        current_messages = self.process_now_message(message, sender, rely_messages)
         ai_reply, model = await self.a_reasoning_reply(messages=current_messages)
         new_message["content"] = ai_reply
         new_message["model_name"] = model

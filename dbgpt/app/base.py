@@ -284,6 +284,6 @@ class WebServerParameters(BaseParameters):
     awel_dirs: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The directories to search awel files, split by `,`",
+            "help": "The directories to search layout files, split by `,`",
         },
     )
