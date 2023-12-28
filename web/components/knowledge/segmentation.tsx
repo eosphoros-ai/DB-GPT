@@ -5,7 +5,7 @@ import Icon from '@ant-design/icons';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import StrategyForm from './strategy-form';
-import { DoneIcon, PendingIcon, SyncIcon } from '@/components/icons';
+import { DoneIcon, PendingIcon, SyncIcon, FileError } from '@/components/icons';
 
 type IProps = {
   spaceName: string;
@@ -17,6 +17,8 @@ type IProps = {
 type FieldType = {
   fileStrategies: Array<ISyncBatchParameter>;
 };
+
+let intervalId: string | number | NodeJS.Timeout | undefined;
 
 export default function Segmentation(props: IProps) {
   const { spaceName, docType, uploadFiles, handleStepChange } = props;
@@ -36,6 +38,9 @@ export default function Segmentation(props: IProps) {
 
   useEffect(() => {
     getStrategies();
+    return () => {
+      intervalId && clearInterval(intervalId);
+    };
   }, []);
 
   const handleFinish = async (data: FieldType) => {
@@ -47,7 +52,7 @@ export default function Segmentation(props: IProps) {
         message.success(`Segemation task start successfully. task id: ${result?.tasks.join(',')}`);
         setSyncStatus('RUNNING');
         const docIds = data.fileStrategies.map((i) => i.doc_id);
-        const intervalId = setInterval(async () => {
+        intervalId = setInterval(async () => {
           const status = await updateSyncStatus(docIds);
           if (status === 'FINISHED') {
             clearInterval(intervalId);
@@ -95,7 +100,7 @@ export default function Segmentation(props: IProps) {
       });
       setFiles(copy);
       // all doc sync finished
-      if (docs?.data.every((item) => item.status === 'FINISHED')) {
+      if (docs?.data.every((item) => item.status === 'FINISHED' || item.status === 'FAILED')) {
         return 'FINISHED';
       }
     }
@@ -138,6 +143,8 @@ export default function Segmentation(props: IProps) {
         return <Icon component={DoneIcon} />;
       case 'RUNNING':
         return <Icon className="rotate-animation" component={SyncIcon} />;
+      case 'FAILED':
+        return <Icon component={FileError} />;
       default:
         return <Icon component={PendingIcon} />;
     }
