@@ -1,9 +1,12 @@
 from typing import List
+
 import pytest
+
 from dbgpt.storage.metadata import db
-from ..config import ServeConfig
+
 from ..api.schemas import ServeRequest, ServerResponse
-from ..models.models import ServeEntity, ServeDao
+from ..config import ServeConfig
+from ..models.models import ServeDao, ServeEntity
 
 
 @pytest.fixture(autouse=True)

@@ -1,14 +1,17 @@
-from typing import List, Optional, Union
 import logging
-from dbgpt.component import SystemApp
+from typing import List, Optional, Union
+
 from sqlalchemy import URL
-from dbgpt.storage.metadata import DatabaseManager
+
+from dbgpt.component import SystemApp
 from dbgpt.serve.core import BaseServe
-from .api.endpoints import router, init_endpoints
+from dbgpt.storage.metadata import DatabaseManager
+
+from .api.endpoints import init_endpoints, router
 from .config import (
+    APP_NAME,
     SERVE_APP_NAME,
     SERVE_APP_NAME_HUMP,
-    APP_NAME,
     SERVE_CONFIG_KEY_PREFIX,
     ServeConfig,
 )

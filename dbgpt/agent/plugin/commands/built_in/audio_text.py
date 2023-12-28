@@ -4,6 +4,7 @@ import json
 import requests
 
 from dbgpt._private.config import Config
+
 from ..command_mange import command
 
 CFG = Config()

@@ -1,11 +1,13 @@
 from typing import List
-import pytest
-from dbgpt.component import SystemApp
-from dbgpt.storage.metadata import db
-from dbgpt.serve.core.tests.conftest import system_app
 
-from ..models.models import ServeEntity
+import pytest
+
+from dbgpt.component import SystemApp
+from dbgpt.serve.core.tests.conftest import system_app
+from dbgpt.storage.metadata import db
+
 from ..api.schemas import ServeRequest, ServerResponse
+from ..models.models import ServeEntity
 from ..service.service import Service
 
 

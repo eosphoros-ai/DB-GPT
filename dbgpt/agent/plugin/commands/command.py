@@ -5,9 +5,9 @@ import json
 from typing import Dict
 
 from dbgpt._private.config import Config
+from dbgpt.agent.plugin.generator import PluginPromptGenerator
 
 from .exception_not_commands import NotCommands
-from dbgpt.agent.plugin.generator import PluginPromptGenerator
 
 
 def _resolve_pathlike_command_args(command_args):

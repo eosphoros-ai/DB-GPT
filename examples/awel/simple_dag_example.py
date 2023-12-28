@@ -10,7 +10,6 @@
 
 """
 from dbgpt._private.pydantic import BaseModel, Field
-
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 
 

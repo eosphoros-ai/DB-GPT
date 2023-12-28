@@ -1,6 +1,6 @@
-from typing import TypedDict, Optional, Dict, List
 from dataclasses import dataclass
-from typing import TypeVar, Generic, Any
+from typing import Any, Dict, Generic, List, Optional, TypedDict, TypeVar
+
 from dbgpt._private.pydantic import BaseModel, Field
 
 T = TypeVar("T")

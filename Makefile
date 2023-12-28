@@ -24,11 +24,23 @@ fmt: setup ## Format Python code
 	# TODO: Use isort to sort Python imports.
 	# https://github.com/PyCQA/isort
 	# $(VENV_BIN)/isort .
+	$(VENV_BIN)/isort dbgpt/agent/
+	$(VENV_BIN)/isort dbgpt/core/
+	$(VENV_BIN)/isort dbgpt/serve/core/
+	$(VENV_BIN)/isort dbgpt/serve/agent/
+	$(VENV_BIN)/isort dbgpt/serve/conversation/
+	$(VENV_BIN)/isort dbgpt/serve/utils/_template_files
+	$(VENV_BIN)/isort --extend-skip="examples/notebook" examples
 	# https://github.com/psf/black
-	$(VENV_BIN)/black .
+	$(VENV_BIN)/black --extend-exclude="examples/notebook" .
 	# TODO: Use blackdoc to format Python doctests.
 	# https://blackdoc.readthedocs.io/en/latest/
 	# $(VENV_BIN)/blackdoc .
+	$(VENV_BIN)/blackdoc dbgpt/core/
+	$(VENV_BIN)/blackdoc dbgpt/agent/
+	$(VENV_BIN)/blackdoc dbgpt/model/
+	$(VENV_BIN)/blackdoc dbgpt/serve/
+	$(VENV_BIN)/blackdoc examples
 	# TODO: Type checking of Python code.
 	# https://github.com/python/mypy
 	# $(VENV_BIN)/mypy dbgpt

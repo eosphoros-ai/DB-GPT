@@ -1,21 +1,11 @@
-import json
 import logging
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Callable, Dict, Literal, Optional, Union
 
-from dbgpt.core.awel import BaseOperator
 from dbgpt.util.json_utils import find_json_objects
 
 from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent, AgentContext
 from ..base_agent import ConversableAgent
-
-try:
-    from termcolor import colored
-except ImportError:
-
-    def colored(x, *args, **kwargs):
-        return x
-
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +78,7 @@ class PluginAgent(ConversableAgent):
         self.agent_context = agent_context
 
     async def a_system_fill_param(self):
+        # TODO no db_connect attribute
         params = {
             "tool_infos": self.db_connect.get_table_info(),
             "dialect": self.db_connect.db_type,
@@ -106,12 +97,12 @@ class PluginAgent(ConversableAgent):
         json_objects = find_json_objects(message)
         fail_reason = "The required json format answer was not generated."
         json_count = len(json_objects)
-        rensponse_succ = True
+        response_success = True
         view = None
         content = None
         if json_count != 1:
-            ### Answer failed, turn on automatic repair
-            rensponse_succ = False
+            # Answer failed, turn on automatic repair
+            response_success = False
         else:
             try:
                 view = ""
@@ -119,7 +110,7 @@ class PluginAgent(ConversableAgent):
                 view = f"```vis-convert-error\n{content}\n```"
 
         return True, {
-            "is_exe_success": rensponse_succ,
+            "is_exe_success": response_success,
             "content": content,
             "view": view,
         }

@@ -1,31 +1,22 @@
 import logging
-from fastapi import (
-    APIRouter,
-    Body,
-    UploadFile,
-    File,
-)
 from abc import ABC
 from typing import List
 
-from dbgpt.app.openapi.api_view_model import (
-    Result,
-)
+from fastapi import APIRouter, Body, File, UploadFile
 
+from dbgpt.agent.plugin.generator import PluginPromptGenerator
+from dbgpt.agent.plugin.plugins_util import scan_plugins
+from dbgpt.app.openapi.api_view_model import Result
+from dbgpt.component import BaseComponent, ComponentType, SystemApp
+from dbgpt.configs.model_config import PLUGINS_DIR
+from dbgpt.serve.agent.db.plugin_hub_db import PluginHubEntity
+from dbgpt.serve.agent.hub.agent_hub import AgentHub
 from dbgpt.serve.agent.model import (
-    PluginHubParam,
     PagenationFilter,
     PagenationResult,
     PluginHubFilter,
+    PluginHubParam,
 )
-from dbgpt.serve.agent.hub.agent_hub import AgentHub
-from dbgpt.serve.agent.db.plugin_hub_db import PluginHubEntity
-
-from dbgpt.agent.plugin.plugins_util import scan_plugins
-from dbgpt.agent.plugin.generator import PluginPromptGenerator
-
-from dbgpt.configs.model_config import PLUGINS_DIR
-from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

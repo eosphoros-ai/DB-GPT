@@ -1,8 +1,9 @@
 import dataclasses
-from dataclasses import asdict, dataclass, fields
-import json
-from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from dbgpt.agent.common.schema import Status
 from dbgpt.core.interface.storage import (
     InMemoryStorage,
     QuerySpec,
@@ -10,10 +11,8 @@ from dbgpt.core.interface.storage import (
     StorageInterface,
     StorageItem,
 )
-from dbgpt.agent.common.schema import Status
-from datetime import datetime
 
-from .base import GptsMessageMemory, GptsPlansMemory, GptsPlan, GptsMessage
+from .base import GptsMessage, GptsMessageMemory
 
 
 @dataclass
@@ -290,6 +289,7 @@ class GptsMessageManager(GptsMessageMemory):
 
     Simple wrapper for the storage interface.
 
+    TODO: Import gpts storage with storage interface.
     """
 
     def __init__(self, storage: Optional[StorageInterface[GptsMessage, Any]] = None):

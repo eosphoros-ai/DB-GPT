@@ -14,9 +14,10 @@
         }'
 """
 from typing import Dict
+
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 from dbgpt.core import ModelMessage
+from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 from dbgpt.model.operator.model_operator import ModelOperator
 
 
