@@ -1,21 +1,13 @@
+from typing import Dict
+
 import pytest
 import pytest_asyncio
-from typing import Dict
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from httpx import AsyncClient
 
 from dbgpt.component import SystemApp
 from dbgpt.util import AppConfig
-
-app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
 
 
 def create_system_app(param: Dict) -> SystemApp:
@@ -24,7 +16,17 @@ def create_system_app(param: Dict) -> SystemApp:
         app_config = AppConfig(configs=app_config)
     elif not isinstance(app_config, AppConfig):
         raise RuntimeError("app_config must be AppConfig or dict")
-    return SystemApp(app, app_config)
+
+    test_app = FastAPI()
+    test_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
+
+    return SystemApp(test_app, app_config)
 
 
 @pytest_asyncio.fixture
@@ -51,9 +53,12 @@ async def client(request, asystem_app: SystemApp):
         del param["api_keys"]
     if client_api_key:
         headers["Authorization"] = "Bearer " + client_api_key
-    async with AsyncClient(app=app, base_url=base_url, headers=headers) as client:
+
+    test_app = asystem_app.app
+
+    async with AsyncClient(app=test_app, base_url=base_url, headers=headers) as client:
         for router in routers:
-            app.include_router(router)
+            test_app.include_router(router)
         if app_caller:
-            app_caller(app, asystem_app)
+            app_caller(test_app, asystem_app)
         yield client

@@ -1,10 +1,10 @@
+import hashlib
+import logging
+import os
+import sys
+import traceback
 from abc import ABC, abstractmethod
 from typing import List
-import os
-import hashlib
-import sys
-import logging
-import traceback
 
 from .base import DAG
 
@@ -18,17 +18,19 @@ class DAGLoader(ABC):
 
 
 class LocalFileDAGLoader(DAGLoader):
-    def __init__(self, filepath: str) -> None:
-        super().__init__()
-        self._filepath = filepath
+    def __init__(self, dag_dirs: List[str]) -> None:
+        self._dag_dirs = dag_dirs
 
     def load_dags(self) -> List[DAG]:
-        if not os.path.exists(self._filepath):
-            return []
-        if os.path.isdir(self._filepath):
-            return _process_directory(self._filepath)
-        else:
-            return _process_file(self._filepath)
+        dags = []
+        for filepath in self._dag_dirs:
+            if not os.path.exists(filepath):
+                continue
+            if os.path.isdir(filepath):
+                dags += _process_directory(filepath)
+            else:
+                dags += _process_file(filepath)
+        return dags
 
 
 def _process_directory(directory: str) -> List[DAG]:

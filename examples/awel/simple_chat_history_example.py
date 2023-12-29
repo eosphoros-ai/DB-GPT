@@ -55,27 +55,23 @@
 
 
 """
-from typing import Dict, Any, Optional, Union, List
 import logging
+from typing import Dict, List, Optional, Union
+
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.core.awel import (
-    DAG,
-    HttpTrigger,
-    MapOperator,
-    JoinOperator,
-)
-from dbgpt.core import LLMClient, InMemoryStorage
+from dbgpt.core import InMemoryStorage, LLMClient
+from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.core.operator import (
+    BufferedConversationMapperOperator,
     LLMBranchOperator,
     LLMOperator,
-    StreamingLLMOperator,
-    RequestBuildOperator,
-    PreConversationOperator,
     PostConversationOperator,
     PostStreamingConversationOperator,
-    BufferedConversationMapperOperator,
+    PreConversationOperator,
+    RequestBuildOperator,
+    StreamingLLMOperator,
 )
-from dbgpt.model import OpenAIStreamingOperator, MixinLLMOperator
+from dbgpt.model import MixinLLMOperator, OpenAIStreamingOperator
 
 logger = logging.getLogger(__name__)
 

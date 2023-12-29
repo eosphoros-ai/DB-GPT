@@ -1,9 +1,10 @@
-from typing import Dict, Optional, Set, List
 import logging
+from typing import Dict, List, Optional, Set
 
 from dbgpt.component import SystemApp
+
 from ..dag.base import DAGContext, DAGVar
-from ..operator.base import WorkflowRunner, BaseOperator, CALL_DATA
+from ..operator.base import CALL_DATA, BaseOperator, WorkflowRunner
 from ..operator.common_operator import BranchOperator, JoinOperator, TriggerOperator
 from ..task.base import TaskContext, TaskState
 from ..task.task_impl import DefaultInputContext, DefaultTaskContext, SimpleTaskOutput

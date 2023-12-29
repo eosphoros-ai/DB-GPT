@@ -24,6 +24,8 @@ from dbgpt.core.interface.llm import ModelMetadata, LLMClient
 from dbgpt.core.interface.llm import ModelOutput, ModelRequest
 from dbgpt.model.cluster.client import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt._private.pydantic import model_to_json
+from dbgpt.model.utils.token_utils import ProxyTokenizerWrapper
 
 if TYPE_CHECKING:
     import httpx
@@ -151,6 +153,7 @@ class OpenAILLMClient(LLMClient):
         self._context_length = context_length
         self._client = openai_client
         self._openai_kwargs = openai_kwargs or {}
+        self._tokenizer = ProxyTokenizerWrapper()
 
     @property
     def client(self) -> ClientType:
@@ -175,6 +178,9 @@ class OpenAILLMClient(LLMClient):
     async def generate(self, request: ModelRequest) -> ModelOutput:
         messages = request.to_openai_messages()
         payload = self._build_request(request)
+        logger.info(
+            f"Send request to openai, payload: {payload}\n\n messages:\n{messages}"
+        )
         try:
             chat_completion = await self.client.chat.completions.create(
                 messages=messages, **payload
@@ -193,6 +199,9 @@ class OpenAILLMClient(LLMClient):
     ) -> AsyncIterator[ModelOutput]:
         messages = request.to_openai_messages()
         payload = self._build_request(request, True)
+        logger.info(
+            f"Send request to openai, payload: {payload}\n\n messages:\n{messages}"
+        )
         try:
             chat_completion = await self.client.chat.completions.create(
                 messages=messages, **payload
@@ -231,10 +240,11 @@ class OpenAILLMClient(LLMClient):
     async def count_token(self, model: str, prompt: str) -> int:
         """Count the number of tokens in a given prompt.
 
-        TODO: Get the real number of tokens from the openai api or tiktoken package
+        Args:
+            model (str): The model name.
+            prompt (str): The prompt.
         """
-
-        raise NotImplementedError()
+        return self._tokenizer.count_token(prompt, model)
 
 
 class OpenAIStreamingOperator(TransformStreamAbsOperator[ModelOutput, str]):
@@ -321,7 +331,7 @@ async def _to_openai_stream(
     chunk = ChatCompletionStreamResponse(
         id=id, choices=[choice_data], model=model or ""
     )
-    yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+    yield f"data: {model_to_json(chunk, exclude_unset=True, ensure_ascii=False)}\n\n"
 
     previous_text = ""
     finish_stream_events = []
@@ -356,7 +366,7 @@ async def _to_openai_stream(
             if model_output.finish_reason is not None:
                 finish_stream_events.append(chunk)
             continue
-        yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+        yield f"data: {model_to_json(chunk, exclude_unset=True, ensure_ascii=False)}\n\n"
     for finish_chunk in finish_stream_events:
-        yield f"data: {finish_chunk.json(exclude_none=True, ensure_ascii=False)}\n\n"
+        yield f"data: {model_to_json(finish_chunk, exclude_none=True, ensure_ascii=False)}\n\n"
     yield "data: [DONE]\n\n"

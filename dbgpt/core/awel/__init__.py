@@ -8,38 +8,36 @@ The stability of this API cannot be guaranteed at present.
 """
 
 from typing import List, Optional
+
 from dbgpt.component import SystemApp
 
-from .dag.base import DAGContext, DAG
-
+from .dag.base import DAG, DAGContext
 from .operator.base import BaseOperator, WorkflowRunner
 from .operator.common_operator import (
-    JoinOperator,
-    ReduceStreamOperator,
-    MapOperator,
+    BranchFunc,
     BranchOperator,
     InputOperator,
-    BranchFunc,
+    JoinOperator,
+    MapOperator,
+    ReduceStreamOperator,
 )
-
 from .operator.stream_operator import (
     StreamifyAbsOperator,
-    UnstreamifyAbsOperator,
     TransformStreamAbsOperator,
+    UnstreamifyAbsOperator,
 )
-
-from .task.base import TaskState, TaskOutput, TaskContext, InputContext, InputSource
+from .runner.local_runner import DefaultWorkflowRunner
+from .task.base import InputContext, InputSource, TaskContext, TaskOutput, TaskState
 from .task.task_impl import (
-    SimpleInputSource,
-    SimpleCallDataInputSource,
-    DefaultTaskContext,
     DefaultInputContext,
-    SimpleTaskOutput,
+    DefaultTaskContext,
+    SimpleCallDataInputSource,
+    SimpleInputSource,
     SimpleStreamTaskOutput,
+    SimpleTaskOutput,
     _is_async_iterator,
 )
 from .trigger.http_trigger import HttpTrigger
-from .runner.local_runner import DefaultWorkflowRunner
 
 __all__ = [
     "initialize_awel",
@@ -73,16 +71,16 @@ __all__ = [
 ]
 
 
-def initialize_awel(system_app: SystemApp, dag_filepath: str):
-    from .dag.dag_manager import DAGManager
+def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
     from .dag.base import DAGVar
-    from .trigger.trigger_manager import DefaultTriggerManager
+    from .dag.dag_manager import DAGManager
     from .operator.base import initialize_runner
+    from .trigger.trigger_manager import DefaultTriggerManager
 
     DAGVar.set_current_system_app(system_app)
 
     system_app.register(DefaultTriggerManager)
-    dag_manager = DAGManager(system_app, dag_filepath)
+    dag_manager = DAGManager(system_app, dag_dirs)
     system_app.register_instance(dag_manager)
     initialize_runner(DefaultWorkflowRunner())
     # Load all dags
@@ -90,7 +88,11 @@ def initialize_awel(system_app: SystemApp, dag_filepath: str):
 
 
 def setup_dev_environment(
-    dags: List[DAG], host: Optional[str] = "0.0.0.0", port: Optional[int] = 5555
+    dags: List[DAG],
+    host: Optional[str] = "0.0.0.0",
+    port: Optional[int] = 5555,
+    logging_level: Optional[str] = None,
+    logger_filename: Optional[str] = None,
 ) -> None:
     """Setup a development environment for AWEL.
 
@@ -98,9 +100,16 @@ def setup_dev_environment(
     """
     import uvicorn
     from fastapi import FastAPI
+
     from dbgpt.component import SystemApp
-    from .trigger.trigger_manager import DefaultTriggerManager
+    from dbgpt.util.utils import setup_logging
+
     from .dag.base import DAGVar
+    from .trigger.trigger_manager import DefaultTriggerManager
+
+    if not logger_filename:
+        logger_filename = "dbgpt_awel_dev.log"
+    setup_logging("dbgpt", logging_level=logging_level, logger_filename=logger_filename)
 
     app = FastAPI()
     system_app = SystemApp(app)

@@ -43,6 +43,15 @@ class ServeRequest(BaseModel):
             "You are a data analysis expert.",
         ],
     )
+    prompt_desc: Optional[str] = Field(
+        None,
+        description="The prompt description.",
+        examples=[
+            "This is a prompt for code assistant.",
+            "This is a prompt for joker.",
+            "This is a prompt for data analysis expert.",
+        ],
+    )
 
     user_name: Optional[str] = Field(
         None,

@@ -1,18 +1,13 @@
 from datetime import datetime
-from typing import List
-from sqlalchemy import Column, Integer, String, Index, DateTime, func, Text
-from sqlalchemy import UniqueConstraint
 
-from dbgpt.storage.metadata import BaseDao, Model
+from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
+
 from dbgpt.agent.common.schema import Status
+from dbgpt.storage.metadata import BaseDao, Model
 
 
 class GptsPlansEntity(Model):
     __tablename__ = "gpts_plans"
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     id = Column(Integer, primary_key=True, comment="autoincrement id")
 
     conv_id = Column(

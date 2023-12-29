@@ -1,6 +1,7 @@
 import json
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Callable, Dict, Literal, Optional, Union
 
+from dbgpt._private.config import Config
 from dbgpt.agent.plugin.commands.command_mange import ApiCall
 from dbgpt.util.json_utils import find_json_objects
 
@@ -8,17 +9,7 @@ from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent, AgentContext
 from ..base_agent import ConversableAgent
 
-try:
-    from termcolor import colored
-except ImportError:
-
-    def colored(x, *args, **kwargs):
-        return x
-
-
-from dbgpt._private.config import Config
-from dbgpt.core.awel import BaseOperator
-
+# TODO: remove global config
 CFG = Config()
 
 
@@ -93,29 +84,29 @@ class DashboardAssistantAgent(ConversableAgent):
             "Please recheck your answer，no usable plans generated in correct format，"
         )
         json_count = len(json_objects)
-        rensponse_succ = True
+        response_success = True
         view = None
         content = None
         if json_count != 1:
-            ### Answer failed, turn on automatic repair
+            # Answer failed, turn on automatic repair
             fail_reason += f"There are currently {json_count} json contents"
-            rensponse_succ = False
+            response_success = False
         else:
             try:
                 chart_objs = json_objects[0]
-                content = json.dumps(chart_objs)
+                content = json.dumps(chart_objs, ensure_ascii=False)
                 vis_client = ApiCall()
                 view = vis_client.display_dashboard_vis(
                     chart_objs, self.db_connect.run_to_df
                 )
             except Exception as e:
                 fail_reason += f"Return json structure error and cannot be converted to a sql-rendered chart，{str(e)}"
-                rensponse_succ = False
+                response_success = False
 
-        if not rensponse_succ:
+        if not response_success:
             content = fail_reason
         return True, {
-            "is_exe_success": rensponse_succ,
+            "is_exe_success": response_success,
             "content": content,
             "view": view,
         }

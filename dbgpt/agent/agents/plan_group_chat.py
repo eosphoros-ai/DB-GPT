@@ -1,19 +1,16 @@
-import json
 import logging
-import random
 import re
 import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
-from dbgpt.core.awel import BaseOperator
-from dbgpt.util.string_utils import str_to_bool
+from dbgpt.core.interface.message import ModelMessageRoleType
 
 from ..common.schema import Status
-from ..memory.gpts_memory import GptsMemory, GptsMessage, GptsPlan
+from ..memory.base import GptsPlan
+from ..memory.gpts_memory import GptsMemory
 from .agent import Agent, AgentContext
 from .base_agent import ConversableAgent
-from dbgpt.core.interface.message import ModelMessageRoleType
 
 logger = logging.getLogger(__name__)
 

@@ -1,0 +1,23 @@
+# Please run command `pre-commit install` to install pre-commit hook
+repos:
+  - repo: local
+    hooks:
+      - id: python-fmt
+        name: Python Format
+        entry: make fmt
+        language: system
+        exclude: '^dbgpt/app/static/|^web/'
+        types: [python]
+        stages: [commit]
+        pass_filenames: false
+        args: []
+      - id: python-test
+        name: Python Unit Test
+        entry: make test
+        language: system
+        exclude: '^dbgpt/app/static/|^web/'
+        types: [python]
+        stages: [commit]
+        pass_filenames: false
+        args: []
+

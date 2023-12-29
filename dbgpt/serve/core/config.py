@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from dbgpt.component import AppConfig
 from dbgpt.util import BaseParameters
 

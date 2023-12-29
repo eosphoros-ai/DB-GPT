@@ -1,24 +1,16 @@
 import json
 import logging
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Callable, Dict, Literal, Optional, Union
 
 from dbgpt._private.config import Config
 from dbgpt.agent.plugin.commands.command_mange import ApiCall
-from dbgpt.core.awel import BaseOperator
 from dbgpt.util.json_utils import find_json_objects
 
 from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent, AgentContext
 from ..base_agent import ConversableAgent
 
-try:
-    from termcolor import colored
-except ImportError:
-
-    def colored(x, *args, **kwargs):
-        return x
-
-
+# TODO: remove global config
 CFG = Config()
 logger = logging.getLogger(__name__)
 
@@ -101,20 +93,20 @@ class DataScientistAgent(ConversableAgent):
         json_objects = find_json_objects(message)
         fail_reason = "The required json format answer was not generated."
         json_count = len(json_objects)
-        rensponse_succ = True
+        response_success = True
         view = None
         content = None
         if json_count != 1:
-            ### Answer failed, turn on automatic repair
-            rensponse_succ = False
+            # Answer failed, turn on automatic repair
+            response_success = False
         else:
             try:
-                content = json.dumps(json_objects[0])
+                content = json.dumps(json_objects[0], ensure_ascii=False)
             except Exception as e:
                 content = (
                     f"There is a format problem with the json of the answer，{str(e)}"
                 )
-                rensponse_succ = False
+                response_success = False
             try:
                 vis_client = ApiCall()
                 view = vis_client.display_only_sql_vis(
@@ -124,13 +116,14 @@ class DataScientistAgent(ConversableAgent):
                 view = f"```vis-convert-error\n{content}\n```"
 
         return True, {
-            "is_exe_success": rensponse_succ,
+            "is_exe_success": response_success,
             "content": content,
             "view": view,
         }
 
     async def a_verify(self, message: Optional[Dict]):
         action_reply = message.get("action_report", None)
+        # TODO None has no method get
         if action_reply.get("is_exe_success", False) == False:
             return (
                 False,

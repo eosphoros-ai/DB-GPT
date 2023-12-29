@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import dataclasses
-from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass, fields
+from abc import ABC
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional
 
 from dbgpt.agent.common.schema import Status
 

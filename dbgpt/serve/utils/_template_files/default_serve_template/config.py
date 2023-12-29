@@ -1,8 +1,7 @@
-from typing import Optional
 from dataclasses import dataclass, field
+from typing import Optional
 
 from dbgpt.serve.core import BaseServeConfig
-
 
 APP_NAME = "{__template_app_name__all_lower__}"
 SERVE_APP_NAME = "dbgpt_serve_{__template_app_name__all_lower__}"

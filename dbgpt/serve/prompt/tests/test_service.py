@@ -75,7 +75,7 @@ def test_config_default_user(service: Service):
 def test_service_create(service: Service, default_entity_dict):
     entity: ServerResponse = service.create(ServeRequest(**default_entity_dict))
     with db.session() as session:
-        db_entity: ServeEntity = session.query(ServeEntity).get(entity.id)
+        db_entity: ServeEntity = session.get(ServeEntity, entity.id)
         assert db_entity.id == entity.id
         assert db_entity.chat_scene == "chat_data"
         assert db_entity.sub_chat_scene == "excel"
@@ -92,7 +92,7 @@ def test_service_update(service: Service, default_entity_dict):
     service.create(ServeRequest(**default_entity_dict))
     entity: ServerResponse = service.update(ServeRequest(**default_entity_dict))
     with db.session() as session:
-        db_entity: ServeEntity = session.query(ServeEntity).get(entity.id)
+        db_entity: ServeEntity = session.get(ServeEntity, entity.id)
         assert db_entity.id == entity.id
         assert db_entity.chat_scene == "chat_data"
         assert db_entity.sub_chat_scene == "excel"
@@ -109,7 +109,7 @@ def test_service_get(service: Service, default_entity_dict):
     service.create(ServeRequest(**default_entity_dict))
     entity: ServerResponse = service.get(ServeRequest(**default_entity_dict))
     with db.session() as session:
-        db_entity: ServeEntity = session.query(ServeEntity).get(entity.id)
+        db_entity: ServeEntity = session.get(ServeEntity, entity.id)
         assert db_entity.id == entity.id
         assert db_entity.chat_scene == "chat_data"
         assert db_entity.sub_chat_scene == "excel"

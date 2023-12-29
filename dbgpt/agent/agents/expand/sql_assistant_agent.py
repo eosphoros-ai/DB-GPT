@@ -1,22 +1,13 @@
-from typing import Callable, Dict, List, Literal, Optional, Union
+from typing import Callable, Dict, Literal, Optional, Union
 
+from dbgpt._private.config import Config
 from dbgpt.agent.agents.base_agent import ConversableAgent
-from dbgpt.core.awel import BaseOperator
-
 from dbgpt.agent.plugin.commands.command_mange import ApiCall
+
 from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent, AgentContext
 
-try:
-    from termcolor import colored
-except ImportError:
-
-    def colored(x, *args, **kwargs):
-        return x
-
-
-from dbgpt._private.config import Config
-
+# TODO: remove global config
 CFG = Config()
 
 

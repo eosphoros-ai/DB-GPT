@@ -10,6 +10,14 @@ import asyncio
 
 from dbgpt.configs.model_config import LOGDIR
 
+try:
+    from termcolor import colored
+except ImportError:
+
+    def colored(x, *args, **kwargs):
+        return x
+
+
 server_error_msg = (
     "**NETWORK ERROR DUE TO HIGH TRAFFIC. PLEASE REGENERATE OR REFRESH THIS PAGE.**"
 )

@@ -1,13 +1,14 @@
 from typing import List, Optional
+
+from dbgpt.agent.memory.base import GptsPlan
 from dbgpt.agent.memory.gpts_memory import (
-    GptsPlansMemory,
-    GptsPlan,
-    GptsMessageMemory,
     GptsMessage,
+    GptsMessageMemory,
+    GptsPlansMemory,
 )
 
-from ..db.gpts_plans_db import GptsPlansEntity, GptsPlansDao
 from ..db.gpts_messages_db import GptsMessagesDao, GptsMessagesEntity
+from ..db.gpts_plans_db import GptsPlansDao, GptsPlansEntity
 
 
 class MetaDbGptsPlansMemory(GptsPlansMemory):

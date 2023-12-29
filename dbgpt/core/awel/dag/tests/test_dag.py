@@ -1,6 +1,8 @@
-import pytest
-import threading
 import asyncio
+import threading
+
+import pytest
+
 from ..base import DAG, DAGVar
 
 

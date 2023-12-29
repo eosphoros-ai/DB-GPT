@@ -1,11 +1,11 @@
-from abc import ABC, abstractmethod
-from typing import Any, TYPE_CHECKING, Optional
 import logging
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from fastapi import APIRouter
 
-from dbgpt.component import SystemApp, BaseComponent, ComponentType
+from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
 logger = logging.getLogger(__name__)
 

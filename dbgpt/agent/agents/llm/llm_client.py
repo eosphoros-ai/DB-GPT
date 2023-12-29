@@ -97,13 +97,13 @@ class AIWrapper:
         Returns:
             tuple: A unique identifier which can be used as a key for a dict.
         """
-        NON_CACHE_KEY = ["api_key", "base_url", "api_type", "api_version"]
+        non_cache_key = ["api_key", "base_url", "api_type", "api_version"]
         copied = False
-        for key in NON_CACHE_KEY:
+        for key in non_cache_key:
             if key in config:
                 config, copied = config.copy() if not copied else config, True
                 config.pop(key)
-        return json.dumps(config, sort_keys=True)
+        return json.dumps(config, sort_keys=True, ensure_ascii=False)
 
     async def create(self, **config):
         # merge the input config with the i-th config in the config list

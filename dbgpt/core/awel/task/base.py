@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
-    TypeVar,
-    Generic,
-    Optional,
-    AsyncIterator,
-    Union,
-    Callable,
     Any,
+    AsyncIterator,
+    Callable,
     Dict,
+    Generic,
     List,
+    Optional,
+    TypeVar,
+    Union,
 )
 
 IN = TypeVar("IN")

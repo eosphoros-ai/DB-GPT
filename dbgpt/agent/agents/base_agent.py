@@ -5,21 +5,13 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from dbgpt.agent.agents.llm.llm_client import AIWrapper
-from dbgpt.core.awel import BaseOperator
 from dbgpt.core.interface.message import ModelMessageRoleType
 from dbgpt.util.error_types import LLMChatError
+from dbgpt.util.utils import colored
 
 from ..memory.base import GptsMessage
 from ..memory.gpts_memory import GptsMemory
 from .agent import Agent, AgentContext
-
-try:
-    from termcolor import colored
-except ImportError:
-
-    def colored(x, *args, **kwargs):
-        return x
-
 
 logger = logging.getLogger(__name__)
 
@@ -249,13 +241,13 @@ class ConversableAgent(Agent):
             rounds=self.consecutive_auto_reply_counter,
             current_gogal=oai_message.get("current_gogal", None),
             content=oai_message.get("content", None),
-            context=json.dumps(oai_message["context"])
+            context=json.dumps(oai_message["context"], ensure_ascii=False)
             if "context" in oai_message
             else None,
-            review_info=json.dumps(oai_message["review_info"])
+            review_info=json.dumps(oai_message["review_info"], ensure_ascii=False)
             if "review_info" in oai_message
             else None,
-            action_report=json.dumps(oai_message["action_report"])
+            action_report=json.dumps(oai_message["action_report"], ensure_ascii=False)
             if "action_report" in oai_message
             else None,
             model_name=oai_message.get("model_name", None),
@@ -300,7 +292,7 @@ class ConversableAgent(Agent):
             print(message["content"], flush=True)
             print(colored("*" * len(func_print), "green"), flush=True)
         else:
-            content = json.dumps(message.get("content"))
+            content = json.dumps(message.get("content"), ensure_ascii=False)
             if content is not None:
                 if "context" in message:
                     content = AIWrapper.instantiate(
@@ -360,7 +352,7 @@ class ConversableAgent(Agent):
         self, gpts_messages: Optional[List[GptsMessage]]
     ) -> List[Dict]:
         oai_messages: List[Dict] = []
-        ###Based on the current agent, all messages received are user, and all messages sent are assistant.
+        # Based on the current agent, all messages received are user, and all messages sent are assistant.
         for item in gpts_messages:
             role = ""
             if item.role:
@@ -390,21 +382,21 @@ class ConversableAgent(Agent):
         return oai_messages
 
     def process_now_message(self, sender, current_gogal: Optional[str] = None):
-        ### Convert and tailor the information in collective memory into contextual memory available to the current Agent
+        # Convert and tailor the information in collective memory into contextual memory available to the current Agent
         current_gogal_messages = self._gpts_message_to_ai_message(
             self.memory.message_memory.get_between_agents(
                 self.agent_context.conv_id, self.name, sender.name, current_gogal
             )
         )
 
-        ### relay messages
+        # relay messages
         cut_messages = []
         cut_messages.extend(self._rely_messages)
 
         if len(current_gogal_messages) < self.dialogue_memory_rounds:
             cut_messages.extend(current_gogal_messages)
         else:
-            ### TODO 基于token预算来分配历史信息
+            # TODO: allocate historical information based on token budget
             cut_messages.extend(current_gogal_messages[:2])
             # end_round = self.dialogue_memory_rounds - 2
             cut_messages.extend(current_gogal_messages[-3:])
@@ -488,7 +480,7 @@ class ConversableAgent(Agent):
             logger.info(
                 "The generated answer failed to verify, so send it to yourself for optimization."
             )
-            ### TODO 自优化最大轮次后，异常退出
+            # TODO: Exit after the maximum number of rounds of self-optimization
             await sender.a_send(
                 message=reply, recipient=self, reviewer=reviewer, silent=silent
             )
