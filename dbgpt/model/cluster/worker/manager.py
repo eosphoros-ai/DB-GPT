@@ -197,7 +197,7 @@ class LocalWorkerManager(WorkerManager):
             return True
         else:
             # TODO Update worker
-            logger.warn(f"Instance {worker_key} exist")
+            logger.warning(f"Instance {worker_key} exist")
             return False
 
     def _remove_worker(self, worker_params: ModelWorkerParameters) -> None:
@@ -229,7 +229,7 @@ class LocalWorkerManager(WorkerManager):
         )
         if not success:
             msg = f"Add worker {model_name}@{worker_type}, worker instances is exist"
-            logger.warn(f"{msg}, worker_params: {worker_params}")
+            logger.warning(f"{msg}, worker_params: {worker_params}")
             self._remove_worker(worker_params)
             raise Exception(msg)
         supported_types = WorkerType.values()

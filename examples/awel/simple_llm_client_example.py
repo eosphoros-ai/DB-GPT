@@ -7,7 +7,7 @@
         Call with non-streaming response.
         .. code-block:: shell
 
-            DBGPT_SERVER="http://127.0.0.1:5000"
+            DBGPT_SERVER="http://127.0.0.1:5555"
             curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/chat/completions \
             -H "Content-Type: application/json" -d '{
                 "model": "proxyllm",
