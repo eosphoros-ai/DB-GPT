@@ -77,6 +77,7 @@ def space_list(request: KnowledgeSpaceRequest, user_token: UserRequest = Depends
         request.user_id = user_token.user_id
         ks = knowledge_space_service.get_knowledge_space(request)
         permissions = user_permission_dao.get_permissions(UserPermissionEntity(user_id=user_token.user_id, resource_type="KNOWLEDGE_SPACE"))
+        print(f"has permissions {str(len(permissions))}")
         if len(permissions) > 0:
             resource_ids = [p.resource_id for p in permissions]
             permission_spaces = knowledge_space_service.get_knowledge_space_by_ids(resource_ids)
