@@ -120,7 +120,11 @@ class KnowledgeService:
             content=request.content,
             result="",
         )
-        return knowledge_document_dao.create_knowledge_document(document)
+        doc_id = knowledge_document_dao.create_knowledge_document(document)
+        if doc_id is None:
+            raise Exception(f"create document failed, {request.doc_name}")
+        return doc_id
+
 
     def get_knowledge_space(self, request: KnowledgeSpaceRequest):
         """get knowledge space
@@ -229,10 +233,20 @@ class KnowledgeService:
                 raise Exception(
                     f" doc:{doc.doc_name} status is {doc.status}, can not sync"
                 )
-            # space_context = self.get_space_context(space_name)
-            self._sync_knowledge_document(
-                space_name, doc, sync_request.chunk_parameters
-            )
+            chunk_parameters = sync_request.chunk_parameters
+            if "Automatic" == chunk_parameters.chunk_strategy:
+                space_context = self.get_space_context(space_name)
+                chunk_parameters.chunk_size = (
+                    CFG.KNOWLEDGE_CHUNK_SIZE
+                    if space_context is None
+                    else int(space_context["embedding"]["chunk_size"])
+                )
+                chunk_parameters.chunk_overlap = (
+                    CFG.KNOWLEDGE_CHUNK_OVERLAP
+                    if space_context is None
+                    else int(space_context["embedding"]["chunk_overlap"])
+                )
+            self._sync_knowledge_document(space_name, doc, chunk_parameters)
             doc_ids.append(doc.id)
         return doc_ids
 

@@ -20,6 +20,7 @@ from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.retriever.rewrite import QueryRewrite
+from dbgpt.util.prompt_util import PromptHelper
 from dbgpt.util.tracer import trace
 
 CFG = Config()
@@ -78,13 +79,15 @@ class ChatKnowledge(BaseChat):
             vector_store_config=config,
         )
         query_rewrite = None
+        self.worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        self.llm_client = DefaultLLMClient(worker_manager=self.worker_manager)
         if CFG.KNOWLEDGE_SEARCH_REWRITE:
-            worker_manager = CFG.SYSTEM_APP.get_component(
-                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-            ).create()
-            llm_client = DefaultLLMClient(worker_manager=worker_manager)
             query_rewrite = QueryRewrite(
-                llm_client=llm_client, model_name=self.llm_model, language=CFG.LANGUAGE
+                llm_client=self.llm_client,
+                model_name=self.llm_model,
+                language=CFG.LANGUAGE,
             )
         self.embedding_retriever = EmbeddingRetriever(
             top_k=self.top_k,
@@ -149,9 +152,7 @@ class ChatKnowledge(BaseChat):
                 if len(chucks) > 0:
                     self.chunks_with_score.append((chucks[0], chunk.score))
 
-            context = [doc.content for doc in candidates_with_scores]
-
-        context = context[: self.max_token]
+            context = "\n".join([doc.content for doc in candidates_with_scores])
         self.relations = list(
             set(
                 [
@@ -165,6 +166,19 @@ class ChatKnowledge(BaseChat):
             "question": self.current_user_input,
             "relations": self.relations,
         }
+        prompt = self.prompt_template.format(**input_values)
+        model_metadata = await self.worker_manager.get_model_metadata(
+            {"model": self.llm_model}
+        )
+        try:
+            current_token_count = self.llm_client.count_token(prompt)
+        except Exception:
+            prompt_util = PromptHelper(context_window=model_metadata.context_length)
+            current_token_count = prompt_util.token_count(prompt)
+        if current_token_count > model_metadata.context_length:
+            input_values["context"] = input_values["context"][
+                : current_token_count - model_metadata.context_length
+            ]
         return input_values
 
     def parse_source_view(self, chunks_with_score: List):

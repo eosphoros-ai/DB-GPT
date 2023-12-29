@@ -93,6 +93,11 @@ class PromptHelper(BaseModel):
             separator=separator,
         )
 
+    def token_count(self, prompt_template: str) -> int:
+        """Get token count of prompt template."""
+        empty_prompt_txt = get_empty_prompt_txt(prompt_template)
+        return len(self._tokenizer(empty_prompt_txt))
+
     @classmethod
     def from_llm_metadata(
         cls,
