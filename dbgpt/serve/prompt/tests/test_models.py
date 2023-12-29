@@ -47,9 +47,11 @@ def test_table_exist():
 
 
 def test_entity_create(default_entity_dict):
-    entity: ServeEntity = ServeEntity.create(**default_entity_dict)
     with db.session() as session:
-        db_entity: ServeEntity = session.query(ServeEntity).get(entity.id)
+        entity: ServeEntity = ServeEntity(**default_entity_dict)
+        session.add(entity)
+        session.commit()
+        db_entity: ServeEntity = session.get(ServeEntity, entity.id)
         assert db_entity.id == entity.id
         assert db_entity.chat_scene == "chat_data"
         assert db_entity.sub_chat_scene == "excel"
@@ -63,78 +65,96 @@ def test_entity_create(default_entity_dict):
 
 
 def test_entity_unique_key(default_entity_dict):
-    ServeEntity.create(**default_entity_dict)
+    with db.session() as session:
+        entity = ServeEntity(**default_entity_dict)
+        session.add(entity)
     with pytest.raises(Exception):
-        ServeEntity.create(
-            **{
-                "prompt_name": "my_prompt_1",
-                "sys_code": "dbgpt",
-                "prompt_language": "zh",
-                "model": "vicuna-13b-v1.5",
-            }
-        )
+        with db.session() as session:
+            entity = ServeEntity(
+                **{
+                    "prompt_name": "my_prompt_1",
+                    "sys_code": "dbgpt",
+                    "prompt_language": "zh",
+                    "model": "vicuna-13b-v1.5",
+                }
+            )
+            session.add(entity)
 
 
 def test_entity_get(default_entity_dict):
-    entity: ServeEntity = ServeEntity.create(**default_entity_dict)
-    db_entity: ServeEntity = ServeEntity.get(entity.id)
-    assert db_entity.id == entity.id
-    assert db_entity.chat_scene == "chat_data"
-    assert db_entity.sub_chat_scene == "excel"
-    assert db_entity.prompt_type == "common"
-    assert db_entity.prompt_name == "my_prompt_1"
-    assert db_entity.content == "Write a qsort function in python."
-    assert db_entity.user_name == "zhangsan"
-    assert db_entity.sys_code == "dbgpt"
-    assert db_entity.gmt_created is not None
-    assert db_entity.gmt_modified is not None
+    with db.session() as session:
+        entity = ServeEntity(**default_entity_dict)
+        session.add(entity)
+        session.commit()
+        db_entity: ServeEntity = session.get(ServeEntity, entity.id)
+        assert db_entity.id == entity.id
+        assert db_entity.chat_scene == "chat_data"
+        assert db_entity.sub_chat_scene == "excel"
+        assert db_entity.prompt_type == "common"
+        assert db_entity.prompt_name == "my_prompt_1"
+        assert db_entity.content == "Write a qsort function in python."
+        assert db_entity.user_name == "zhangsan"
+        assert db_entity.sys_code == "dbgpt"
+        assert db_entity.gmt_created is not None
+        assert db_entity.gmt_modified is not None
 
 
 def test_entity_update(default_entity_dict):
-    entity: ServeEntity = ServeEntity.create(**default_entity_dict)
-    entity.update(prompt_name="my_prompt_2")
-    db_entity: ServeEntity = ServeEntity.get(entity.id)
-    assert db_entity.id == entity.id
-    assert db_entity.chat_scene == "chat_data"
-    assert db_entity.sub_chat_scene == "excel"
-    assert db_entity.prompt_type == "common"
-    assert db_entity.prompt_name == "my_prompt_2"
-    assert db_entity.content == "Write a qsort function in python."
-    assert db_entity.user_name == "zhangsan"
-    assert db_entity.sys_code == "dbgpt"
-    assert db_entity.gmt_created is not None
-    assert db_entity.gmt_modified is not None
+    with db.session() as session:
+        entity = ServeEntity(**default_entity_dict)
+        session.add(entity)
+        session.commit()
+        entity.prompt_name = "my_prompt_2"
+        session.merge(entity)
+        db_entity: ServeEntity = session.get(ServeEntity, entity.id)
+        assert db_entity.id == entity.id
+        assert db_entity.chat_scene == "chat_data"
+        assert db_entity.sub_chat_scene == "excel"
+        assert db_entity.prompt_type == "common"
+        assert db_entity.prompt_name == "my_prompt_2"
+        assert db_entity.content == "Write a qsort function in python."
+        assert db_entity.user_name == "zhangsan"
+        assert db_entity.sys_code == "dbgpt"
+        assert db_entity.gmt_created is not None
+        assert db_entity.gmt_modified is not None
 
 
 def test_entity_delete(default_entity_dict):
-    entity: ServeEntity = ServeEntity.create(**default_entity_dict)
-    entity.delete()
-    db_entity: ServeEntity = ServeEntity.get(entity.id)
-    assert db_entity is None
+    with db.session() as session:
+        entity = ServeEntity(**default_entity_dict)
+        session.add(entity)
+        session.commit()
+        session.delete(entity)
+        session.commit()
+        db_entity: ServeEntity = session.get(ServeEntity, entity.id)
+        assert db_entity is None
 
 
 def test_entity_all():
-    for i in range(10):
-        ServeEntity.create(
-            chat_scene="chat_data",
-            sub_chat_scene="excel",
-            prompt_type="common",
-            prompt_name=f"my_prompt_{i}",
-            content="Write a qsort function in python.",
-            user_name="zhangsan",
-            sys_code="dbgpt",
-        )
-    entities = ServeEntity.all()
-    assert len(entities) == 10
-    for entity in entities:
-        assert entity.chat_scene == "chat_data"
-        assert entity.sub_chat_scene == "excel"
-        assert entity.prompt_type == "common"
-        assert entity.content == "Write a qsort function in python."
-        assert entity.user_name == "zhangsan"
-        assert entity.sys_code == "dbgpt"
-        assert entity.gmt_created is not None
-        assert entity.gmt_modified is not None
+    with db.session() as session:
+        for i in range(10):
+            entity = ServeEntity(
+                chat_scene="chat_data",
+                sub_chat_scene="excel",
+                prompt_type="common",
+                prompt_name=f"my_prompt_{i}",
+                content="Write a qsort function in python.",
+                user_name="zhangsan",
+                sys_code="dbgpt",
+            )
+            session.add(entity)
+    with db.session() as session:
+        entities = session.query(ServeEntity).all()
+        assert len(entities) == 10
+        for entity in entities:
+            assert entity.chat_scene == "chat_data"
+            assert entity.sub_chat_scene == "excel"
+            assert entity.prompt_type == "common"
+            assert entity.content == "Write a qsort function in python."
+            assert entity.user_name == "zhangsan"
+            assert entity.sys_code == "dbgpt"
+            assert entity.gmt_created is not None
+            assert entity.gmt_modified is not None
 
 
 def test_dao_create(dao, default_entity_dict):

@@ -105,12 +105,6 @@ class ChatHistoryDao(BaseDao):
             chat_history = chat_history.filter(ChatHistoryEntity.conv_uid == conv_uid)
             chat_history.delete()
 
-    def get_by_uid(self, conv_uid: str) -> ChatHistoryEntity:
-        # return ChatHistoryEntity.query.filter_by(conv_uid=conv_uid).first()
-
-        session = self.get_raw_session()
-        chat_history = session.query(ChatHistoryEntity)
-        chat_history = chat_history.filter(ChatHistoryEntity.conv_uid == conv_uid)
-        result = chat_history.first()
-        session.close()
-        return result
+    def get_by_uid(self, conv_uid: str) -> Optional[ChatHistoryEntity]:
+        with self.session(commit=False) as session:
+            return session.query(ChatHistoryEntity).filter_by(conv_uid=conv_uid).first()

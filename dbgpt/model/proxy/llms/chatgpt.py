@@ -92,11 +92,11 @@ def _initialize_openai_v1(params: ProxyModelParameters):
 
 
 def __convert_2_gpt_messages(messages: List[ModelMessage]):
-    chat_round = 0
     gpt_messages = []
     last_usr_message = ""
     system_messages = []
 
+    # TODO: We can't change message order in low level
     for message in messages:
         if message.role == ModelMessageRoleType.HUMAN or message.role == "user":
             last_usr_message = message.content
