@@ -132,5 +132,22 @@ class Mixtral8x7BAdapter(NewHFChatModelAdapter):
         )
 
 
+class SOLARAdapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = False
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "solar-" in lower_model_name_or_path
+            and "instruct" in lower_model_name_or_path
+        )
+
+
 register_model_adapter(YiAdapter)
 register_model_adapter(Mixtral8x7BAdapter)
+register_model_adapter(SOLARAdapter)
