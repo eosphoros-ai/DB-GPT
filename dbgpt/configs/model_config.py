@@ -131,6 +131,8 @@ LLM_MODEL_CONFIG = {
     "mixtral-8x7b-instruct-v0.1": os.path.join(
         MODEL_PATH, "Mixtral-8x7B-Instruct-v0.1"
     ),
+    # https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0
+    "solar-10.7b-instruct-v1.0": os.path.join(MODEL_PATH, "SOLAR-10.7B-Instruct-v1.0"),
     # https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca
     "mistral-7b-openorca": os.path.join(MODEL_PATH, "Mistral-7B-OpenOrca"),
     # https://huggingface.co/Xwin-LM/Xwin-LM-7B-V0.1
