@@ -5,8 +5,8 @@ from dbgpt.rag.text_splitter.text_splitter import (
 )
 
 
-def test_md_header_text_splitter_1() -> None:
-    """Test markdown splitter by header: Case 1."""
+def test_md_header_text_splitter() -> None:
+    """unit test markdown splitter by header"""
 
     markdown_document = (
         "# dbgpt\n\n"
@@ -25,11 +25,11 @@ def test_md_header_text_splitter_1() -> None:
     output = markdown_splitter.split_text(markdown_document)
     expected_output = [
         Chunk(
-            content="my name is dbgpt",
+            content="{'Header 1': 'dbgpt', 'Header 2': 'description'}, my name is dbgpt",
             metadata={"Header 1": "dbgpt", "Header 2": "description"},
         ),
         Chunk(
-            content="my name is aries",
+            content="{'Header 1': 'dbgpt', 'Header 2': 'content'}, my name is aries",
             metadata={"Header 1": "dbgpt", "Header 2": "content"},
         ),
     ]

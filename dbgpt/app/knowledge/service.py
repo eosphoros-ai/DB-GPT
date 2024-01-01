@@ -125,7 +125,6 @@ class KnowledgeService:
             raise Exception(f"create document failed, {request.doc_name}")
         return doc_id
 
-
     def get_knowledge_space(self, request: KnowledgeSpaceRequest):
         """get knowledge space
         Args:
