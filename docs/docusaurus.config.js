@@ -170,6 +170,17 @@ const config = {
             className: 'header-community-link',
           },
           {
+            href: 'https://arxiv.org/pdf/2312.17449.pdf',
+            position: 'left',
+            label: "Paper",
+            className: 'header-paper-link',
+          },
+          {
+            href: 'https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx',
+            position: 'left',
+            label: "中文文档",
+          }, 
+          {
             href: 'https://github.com/eosphoros-ai/DB-GPT',
             position: 'right',
             className: 'header-github-link',
@@ -179,11 +190,6 @@ const config = {
             position: 'right',
             label: "HuggingFace",
             className: 'header-huggingface-link',
-          },
-          {
-            href: 'https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx',
-            position: 'left',
-            label: "中文文档",
           },
         ],
       },
