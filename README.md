@@ -33,7 +33,8 @@
   </p>
 
 
-[**简体中文**](README.zh.md) | [**Discord**](https://discord.gg/7uQnPuveTY) | [**Documents**](https://docs.dbgpt.site) | [**Wechat**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**Community**](https://github.com/eosphoros-ai/community)
+[**简体中文**](README.zh.md) | [**Discord**](https://discord.gg/7uQnPuveTY) | [**Documents**](https://docs.dbgpt.site) | [**Wechat**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**Community**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
+
 </div>
 
 ## What is DB-GPT?
@@ -255,14 +256,15 @@ As of October 10, 2023, through the fine-tuning of an open-source model with 13 
 The MIT License (MIT)
 
 ## Citation
-Please consider citing our project if you find it useful:
+If you find `DB-GPT` useful for your research or development, please cite the following <a href="https://arxiv.org/abs/2312.17449" target="_blank">paper</a>:
 
 ```bibtex
-@software{db-gpt,
-    author = {DB-GPT Team},
-    title = {{DB-GPT}},
-    url = {https://github.com/eosphoros-ai/DB-GPT},
-    year = {2023}
+@article{xue2023dbgpt,
+      title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
+      author={Siqiao Xue and Caigao Jiang and Wenhui Shi and Fangyin Chen and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Danrui Qi and Hong Yi and Shaodong Liu and Faqiang Chen},
+      year={2023},
+      journal={arXiv preprint arXiv:2312.17449},
+      url={https://arxiv.org/abs/2312.17449}
 }
 ```
 
