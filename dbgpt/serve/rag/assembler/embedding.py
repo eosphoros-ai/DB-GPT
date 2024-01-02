@@ -12,19 +12,19 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 class EmbeddingAssembler(BaseAssembler):
     """Embedding Assembler
+
     Example:
-       .. code-block:: python
 
-           from dbgpt.rag.assembler import EmbeddingAssembler
+    .. code-block:: python
 
-           pdf_path = "path/to/document.pdf"
-           knowledge = KnowledgeFactory.from_file_path(pdf_path)
-           assembler = EmbeddingAssembler.load_from_knowledge(
-               knowledge=knowledge, embedding_model="text2vec"
-           )
-           assembler.persist()
-           # get db struct retriever
-           retriever = assembler.as_retriever(top_k=3)
+        from dbgpt.rag.assembler import EmbeddingAssembler
+
+        pdf_path = "path/to/document.pdf"
+        knowledge = KnowledgeFactory.from_file_path(pdf_path)
+        assembler = EmbeddingAssembler.load_from_knowledge(
+            knowledge=knowledge,
+            embedding_model="text2vec",
+        )
     """
 
     def __init__(
