@@ -9,6 +9,7 @@ import DocUploadForm from '@/components/knowledge/doc-upload-form';
 import SpaceForm from '@/components/knowledge/space-form';
 import DocTypeForm from '@/components/knowledge/doc-type-form';
 import Segmentation from '@/components/knowledge/segmentation';
+import classNames from 'classnames';
 
 const Knowledge = () => {
   const [spaceList, setSpaceList] = useState<Array<ISpace> | null>([]);
@@ -94,7 +95,12 @@ const Knowledge = () => {
         <Steps current={activeStep} items={addKnowledgeSteps} />
         {activeStep === 0 && <SpaceForm handleStepChange={handleStepChange} />}
         {activeStep === 1 && <DocTypeForm handleStepChange={handleStepChange} />}
-        {activeStep === 2 && <DocUploadForm spaceName={spaceName} docType={docType} handleStepChange={handleStepChange} />}
+        <DocUploadForm
+          className={classNames({ hidden: activeStep !== 2 })}
+          spaceName={spaceName}
+          docType={docType}
+          handleStepChange={handleStepChange}
+        />
         {activeStep === 3 && <Segmentation spaceName={spaceName} docType={docType} uploadFiles={files} handleStepChange={handleStepChange} />}
       </Modal>
     </div>

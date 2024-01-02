@@ -6,6 +6,7 @@ import { apiInterceptors, addDocument, uploadDocument } from '@/client/api';
 import { RcFile, UploadChangeParam } from 'antd/es/upload';
 import { File, StepChangeParams } from '@/types/knowledge';
 import { UploadRequestOption as RcCustomRequestOptions } from 'rc-upload/lib/interface';
+import classNames from 'classnames';
 
 type FileParams = {
   file: RcFile;
@@ -13,6 +14,7 @@ type FileParams = {
 };
 
 type IProps = {
+  className: string;
   handleStepChange: (params: StepChangeParams) => void;
   spaceName: string;
   docType: string;
@@ -30,7 +32,7 @@ const { Dragger } = Upload;
 const { TextArea } = Input;
 
 export default function DocUploadForm(props: IProps) {
-  const { handleStepChange, spaceName, docType } = props;
+  const { className, handleStepChange, spaceName, docType } = props;
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [spinning, setSpinning] = useState<boolean>(false);
@@ -186,7 +188,7 @@ export default function DocUploadForm(props: IProps) {
       <Form
         form={form}
         size="large"
-        className="mt-4"
+        className={classNames('mt-4', className)}
         layout="vertical"
         name="basic"
         initialValues={{ remember: true }}
