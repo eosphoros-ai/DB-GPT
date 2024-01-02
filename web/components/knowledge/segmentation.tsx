@@ -142,7 +142,7 @@ export default function Segmentation(props: IProps) {
       case 'FINISHED':
         return <Icon component={DoneIcon} />;
       case 'RUNNING':
-        return <Icon className="rotate-animation" component={SyncIcon} />;
+        return <Icon className="animate-spin animate-infinite" component={SyncIcon} />;
       case 'FAILED':
         return <Icon component={FileError} />;
       default:

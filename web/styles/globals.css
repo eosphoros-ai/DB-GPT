@@ -69,6 +69,3 @@ table tr td {
     transform: rotate(360deg);
   }
 }
-.rotate-animation {
-  animation: rotate 2s linear infinite;
-}
