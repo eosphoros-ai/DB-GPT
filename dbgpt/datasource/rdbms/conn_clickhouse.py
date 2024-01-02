@@ -93,7 +93,7 @@ class ClickhouseConnect(RDBMSDatabase):
         """
         session = self.client
 
-        _query_sql = f""" 
+        _query_sql = f"""
                     SELECT name AS table, primary_key, from system.tables where database ='{self.client.database}' and table = '{table_name}'
                 """
         with session.query_row_block_stream(_query_sql) as stream:
@@ -150,7 +150,7 @@ class ClickhouseConnect(RDBMSDatabase):
         """Get column fields about specified table."""
         session = self.client
 
-        _query_sql = f""" 
+        _query_sql = f"""
             SELECT name, type, default_expression, is_in_primary_key, comment  from system.columns where table='{table_name}'
         """.format(
             table_name
@@ -275,7 +275,7 @@ class ClickhouseConnect(RDBMSDatabase):
 
         _sql = f"""
             SELECT concat(TABLE_NAME, '(', arrayStringConcat(groupArray(column_name), '-'), ')') AS schema_info
-            FROM information_schema.COLUMNS
+            FROM INFORMATION_SCHEMA.COLUMNS
             WHERE table_schema = '{self.get_current_db_name()}'
             GROUP BY TABLE_NAME
         """
