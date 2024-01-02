@@ -14,13 +14,17 @@ class EmbeddingAssembler(BaseAssembler):
     """Embedding Assembler
     Example:
        .. code-block:: python
+
            from dbgpt.rag.assembler import EmbeddingAssembler
+
            pdf_path = "path/to/document.pdf"
            knowledge = KnowledgeFactory.from_file_path(pdf_path)
            assembler = EmbeddingAssembler.load_from_knowledge(
-               knowledge=knowledge,
-               embedding_model="text2vec",
-       )
+               knowledge=knowledge, embedding_model="text2vec"
+           )
+           assembler.persist()
+           # get db struct retriever
+           retriever = assembler.as_retriever(top_k=3)
     """
 
     def __init__(
@@ -98,6 +102,7 @@ class EmbeddingAssembler(BaseAssembler):
 
     def _extract_info(self, chunks) -> List[Chunk]:
         """Extract info from chunks."""
+        pass
 
     def as_retriever(self, top_k: Optional[int] = 4) -> EmbeddingRetriever:
         """

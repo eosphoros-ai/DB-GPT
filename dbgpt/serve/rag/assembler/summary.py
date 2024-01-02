@@ -14,6 +14,7 @@ class SummaryAssembler(BaseAssembler):
     """Summary Assembler
     Example:
        .. code-block:: python
+
            pdf_path = "../../../DB-GPT/docs/docs/awel.md"
            OPEN_AI_KEY = "{your_api_key}"
            OPEN_AI_BASE = "{your_api_base}"
@@ -24,7 +25,7 @@ class SummaryAssembler(BaseAssembler):
                knowledge=knowledge,
                chunk_parameters=chunk_parameters,
                llm_client=llm_client,
-               model_name="gpt-3.5-turbo"
+               model_name="gpt-3.5-turbo",
            )
            summary = await assembler.generate_summary()
     """

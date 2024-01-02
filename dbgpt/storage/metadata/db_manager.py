@@ -299,7 +299,8 @@ class DatabaseManager:
         session_options.setdefault("class_", Session)
         session_options.setdefault("query_cls", self.Query)
         session_factory = sessionmaker(bind=self._engine, **session_options)
-        self._session = scoped_session(session_factory)
+        # self._session = scoped_session(session_factory)
+        self._session = session_factory
         self._base.metadata.bind = self._engine
 
     def init_default_db(
