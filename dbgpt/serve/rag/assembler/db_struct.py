@@ -17,10 +17,12 @@ class DBStructAssembler(BaseAssembler):
     """DBStructAssembler
     Example:
         .. code-block:: python
+
             from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
             from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler
             from dbgpt.storage.vector_store.connector import VectorStoreConnector
             from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
+
             connection = SQLiteTempConnect.create_temporary_db()
             assembler = DBStructAssembler.load_from_connection(
                 connection=connection,

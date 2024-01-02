@@ -1,8 +1,7 @@
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
 from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-
+from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 """DB struct rag example.
     pre-requirements:
