@@ -67,6 +67,7 @@ In DB-GPT, seamless support for FastChat, vLLM and llama.cpp is directly provide
 
 #### Proxy Models
   - [OpenAI·ChatGPT](https://api.openai.com/)
+  - [百川·Baichuan](https://platform.baichuan-ai.com/)
   - [Alibaba·通义](https://www.aliyun.com/product/dashscope)
   - [Google·Bard](https://bard.google.com/)
   - [Baidu·文心](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)

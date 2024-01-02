@@ -119,6 +119,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
   - 支持在线代理模型 
     - [x] [OpenAI·ChatGPT](https://api.openai.com/)
+    - [x] [百川·Baichuan](https://platform.baichuan-ai.com/)
     - [x] [阿里·通义](https://www.aliyun.com/product/dashscope)
     - [x] [百度·文心](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
     - [x] [智谱·ChatGLM](http://open.bigmodel.cn/)
