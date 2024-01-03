@@ -1,11 +1,24 @@
-from typing import Any
+from typing import Any, List
 import logging
-from dbgpt.storage.vector_store.base import VectorStoreBase
+
+from pydantic import Field
+
+from dbgpt.rag.chunk import Chunk
+from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 from dbgpt._private.config import Config
 
 logger = logging.getLogger(__name__)
 
 CFG = Config()
+
+
+class PGVectorConfig(VectorStoreConfig):
+    """PG vector store config."""
+
+    connection_string: str = Field(
+        default=None,
+        description="the connection string of vector store, if not set, will use the default connection string.",
+    )
 
 
 class PGVectorStore(VectorStoreBase):
@@ -14,15 +27,14 @@ class PGVectorStore(VectorStoreBase):
     To use this, you should have the ``pgvector`` python package installed.
     """
 
-    def __init__(self, ctx: dict) -> None:
+    def __init__(self, vector_store_config: PGVectorConfig) -> None:
         """init pgvector storage"""
 
         from langchain.vectorstores import PGVector
 
-        self.ctx = ctx
-        self.connection_string = ctx.get("connection_string", None)
-        self.embeddings = ctx.get("embeddings", None)
-        self.collection_name = ctx.get("vector_store_name", None)
+        self.connection_string = vector_store_config.connection_string
+        self.embeddings = vector_store_config.embedding_fn
+        self.collection_name = vector_store_config.name
 
         self.vector_store_client = PGVector(
             embedding_function=self.embeddings,
@@ -41,8 +53,9 @@ class PGVectorStore(VectorStoreBase):
             logger.error("vector_name_exists error", e.message)
             return False
 
-    def load_document(self, documents) -> None:
-        return self.vector_store_client.from_documents(documents)
+    def load_document(self, chunks: List[Chunk]) -> List[str]:
+        lc_documents = [Chunk.chunk2langchain(chunk) for chunk in chunks]
+        return self.vector_store_client.from_documents(lc_documents)
 
     def delete_vector_name(self, vector_name):
         return self.vector_store_client.delete_collection()

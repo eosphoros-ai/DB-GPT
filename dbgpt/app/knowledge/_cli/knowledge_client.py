@@ -14,10 +14,10 @@ from dbgpt.app.knowledge.request.request import (
     DocumentQueryRequest,
 )
 
-from dbgpt.rag.embedding_engine.knowledge_type import KnowledgeType
 from dbgpt.app.knowledge.request.request import DocumentSyncRequest
 
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
+from dbgpt.rag.knowledge.base import KnowledgeType
 
 HTTP_HEADERS = {"Content-Type": "application/json"}
 

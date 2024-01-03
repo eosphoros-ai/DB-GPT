@@ -25,12 +25,15 @@
     <a href="https://discord.gg/7uQnPuveTY">
       <img alt="Discord" src="https://dcbadge.vercel.app/api/server/7uQnPuveTY?compact=true&style=flat" />
     </a>
+    <a href="https://join.slack.com/t/slack-inu2564/shared_invite/zt-29rcnyw2b-N~ubOD9kFc7b7MDOAM1otA">
+      <img alt="Slack" src="https://badgen.net/badge/Slack/Join%20DB-GPT/0abd59?icon=slack" />
+    </a>
     <a href="https://codespaces.new/eosphoros-ai/DB-GPT">
       <img alt="Open in GitHub Codespaces" src="https://github.com/codespaces/badge.svg" />
     </a>
   </p>
 
-[**English**](README.md)|[**Discord**](https://discord.gg/7uQnPuveTY)|[**文档**](https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx)|[**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC)|[**社区**](https://github.com/eosphoros-ai/community)
+[**English**](README.md) | [**Discord**](https://discord.gg/7uQnPuveTY) | [**文档**](https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx) | [**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**社区**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
 </div>
 
 ## DB-GPT 是什么？
@@ -119,6 +122,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
   - 支持在线代理模型 
     - [x] [OpenAI·ChatGPT](https://api.openai.com/)
+    - [x] [百川·Baichuan](https://platform.baichuan-ai.com/)
     - [x] [阿里·通义](https://www.aliyun.com/product/dashscope)
     - [x] [百度·文心](https://cloud.baidu.com/product/wenxinworkshop?track=dingbutonglan)
     - [x] [智谱·ChatGLM](http://open.bigmodel.cn/)
@@ -290,14 +294,15 @@ The MIT License (MIT)
 [More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
 ## 引用
-如果您觉得我们的项目有用，请考虑引用我们的项目：
+如果您发现`DB-GPT`对您的研究或开发有用，请引用以下<a href="https://arxiv.org/abs/2312.17449" target="_blank">论文</a>：
 
 ```bibtex
-@software{db-gpt,
-    author = {DB-GPT Team},
-    title = {{DB-GPT}},
-    url = {https://github.com/eosphoros-ai/DB-GPT},
-    year = {2023}
+@article{xue2023dbgpt,
+      title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
+      author={Siqiao Xue and Caigao Jiang and Wenhui Shi and Fangyin Chen and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Danrui Qi and Hong Yi and Shaodong Liu and Faqiang Chen},
+      year={2023},
+      journal={arXiv preprint arXiv:2312.17449},
+      url={https://arxiv.org/abs/2312.17449}
 }
 ```
 

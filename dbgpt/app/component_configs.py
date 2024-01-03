@@ -30,7 +30,7 @@ def initialize_components(
     system_app.register_instance(controller)
 
     # Register global default RAGGraphFactory
-    # from dbgpt.graph_engine.graph_factory import DefaultRAGGraphFactory
+    # from dbgpt.graph.graph_factory import DefaultRAGGraphFactory
 
     # system_app.register(DefaultRAGGraphFactory)
 

@@ -2,16 +2,20 @@ from typing import Dict, Optional, List
 from dataclasses import dataclass
 import datetime
 import os
+
+from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.interface.prompt import PromptTemplate
 from dbgpt._private.config import Config
 from dbgpt.app.scene import ChatScene
 from dbgpt.core.interface.message import OnceConversation
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
-
+from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 
 from dbgpt.storage.chat_history.base import BaseChatHistoryMemory
 from dbgpt.storage.chat_history.chat_hisotry_factory import ChatHistory
+from dbgpt.storage.vector_store.base import VectorStoreConfig
+from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 # TODO move global config
 CFG = Config()
@@ -184,23 +188,14 @@ class EmbeddingEngingOperator(MapOperator[ChatContext, ChatContext]):
 
     async def map(self, input_value: ChatContext) -> ChatContext:
         from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
-        from dbgpt.rag.embedding_engine.embedding_engine import EmbeddingEngine
-        from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
         # TODO, decompose the current operator into some atomic operators
         knowledge_space = input_value.select_param
-        vector_store_config = {
-            "vector_store_name": knowledge_space,
-            "vector_store_type": CFG.VECTOR_STORE_TYPE,
-        }
         embedding_factory = self.system_app.get_component(
             "embedding_factory", EmbeddingFactory
         )
-        knowledge_embedding_client = EmbeddingEngine(
-            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-            vector_store_config=vector_store_config,
-            embedding_factory=embedding_factory,
-        )
+
         space_context = await self._get_space_context(knowledge_space)
         top_k = (
             CFG.KNOWLEDGE_SEARCH_TOP_SIZE
@@ -219,16 +214,28 @@ class EmbeddingEngingOperator(MapOperator[ChatContext, ChatContext]):
             ]
             input_value.prompt_template.template = space_context["prompt"]["template"]
 
+        config = VectorStoreConfig(
+            name=knowledge_space,
+            embedding_fn=embedding_factory.create(
+                EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+            ),
+        )
+        vector_store_connector = VectorStoreConnector(
+            vector_store_type=CFG.VECTOR_STORE_TYPE,
+            vector_store_config=config,
+        )
+        embedding_retriever = EmbeddingRetriever(
+            top_k=top_k, vector_store_connector=vector_store_connector
+        )
         docs = await self.blocking_func_to_async(
-            knowledge_embedding_client.similar_search,
+            embedding_retriever.retrieve,
             input_value.current_user_input,
-            top_k,
         )
         if not docs or len(docs) == 0:
             print("no relevant docs to retrieve")
             context = "no relevant docs to retrieve"
         else:
-            context = [d.page_content for d in docs]
+            context = [d.content for d in docs]
         context = context[:max_token]
         relations = list(
             set([os.path.basename(str(d.metadata.get("source", ""))) for d in docs])

@@ -39,11 +39,21 @@ Document addition currently supports multiple types, such as plain text, URL cra
 </p>
 
 
-Select the corresponding document and click `Finish`.
+Select one or more corresponding documents and click `next`.
 
 
 <p align="left">
   <img src={'/img/chat_knowledge/upload_doc_finish.png'} width="720px" />
+</p>
+
+###  Documents Segmentation
+
+Choose Document Segmentation, you can choose to segment the document by chunk size, separator, paragraph or markdown header. The default is to segment the document by chunk size.
+
+and click Process, it will take a few minutes to complete the document segmentation.
+
+<p align="left">
+  <img src={'/img/chat_knowledge/doc_segmentation.png'} width="720px" />
 </p>
 
 
@@ -63,7 +73,7 @@ Click the `Chat`button to start a conversation with the knowledge base.
 
 
 <p align="left">
-  <img src={'/img/chat_knowledge/chat.gif'} width="720px" />
+  <img src={'/img/chat_knowledge/chat.png'} width="720px" />
 </p>
 
 

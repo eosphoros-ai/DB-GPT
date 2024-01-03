@@ -1,30 +1,45 @@
 import os
 import logging
-from typing import Any
+from typing import Any, List
 
 from chromadb.config import Settings
 from chromadb import PersistentClient
-from dbgpt.storage.vector_store.base import VectorStoreBase
+from pydantic import Field
+
+from dbgpt.rag.chunk import Chunk
+from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 from dbgpt.configs.model_config import PILOT_PATH
 
 logger = logging.getLogger(__name__)
 
 
+class ChromaVectorConfig(VectorStoreConfig):
+    """Chroma vector store config."""
+
+    persist_path: str = Field(
+        default=os.getenv("CHROMA_PERSIST_PATH", None),
+        description="The password of vector store, if not set, will use the default password.",
+    )
+    collection_metadata: dict = Field(
+        default=None,
+        description="the index metadata of vector store, if not set, will use the default metadata.",
+    )
+
+
 class ChromaStore(VectorStoreBase):
     """chroma database"""
 
-    def __init__(self, ctx: {}) -> None:
+    def __init__(self, vector_store_config: ChromaVectorConfig) -> None:
         from langchain.vectorstores import Chroma
 
-        self.ctx = ctx
-        chroma_path = ctx.get(
-            "CHROMA_PERSIST_PATH",
-            os.path.join(PILOT_PATH, "data"),
+        chroma_vector_config = vector_store_config.dict()
+        chroma_path = chroma_vector_config.get(
+            "persist_path", os.path.join(PILOT_PATH, "data")
         )
         self.persist_dir = os.path.join(
-            chroma_path, ctx["vector_store_name"] + ".vectordb"
+            chroma_path, vector_store_config.name + ".vectordb"
         )
-        self.embeddings = ctx.get("embeddings", None)
+        self.embeddings = vector_store_config.embedding_fn
         chroma_settings = Settings(
             # chroma_db_impl="duckdb+parquet", => deprecated configuration of Chroma
             persist_directory=self.persist_dir,
@@ -32,7 +47,9 @@ class ChromaStore(VectorStoreBase):
         )
         client = PersistentClient(path=self.persist_dir, settings=chroma_settings)
 
-        collection_metadata = {"hnsw:space": "cosine"}
+        collection_metadata = chroma_vector_config.get("collection_metadata") or {
+            "hnsw:space": "cosine"
+        }
         self.vector_store_client = Chroma(
             persist_directory=self.persist_dir,
             embedding_function=self.embeddings,
@@ -41,11 +58,15 @@ class ChromaStore(VectorStoreBase):
             collection_metadata=collection_metadata,
         )
 
-    def similar_search(self, text, topk, **kwargs: Any) -> None:
+    def similar_search(self, text, topk, **kwargs: Any) -> List[Chunk]:
         logger.info("ChromaStore similar search")
-        return self.vector_store_client.similarity_search(text, topk, **kwargs)
+        lc_documents = self.vector_store_client.similarity_search(text, topk, **kwargs)
+        return [
+            Chunk(content=doc.page_content, metadata=doc.metadata)
+            for doc in lc_documents
+        ]
 
-    def similar_search_with_scores(self, text, topk, score_threshold) -> None:
+    def similar_search_with_scores(self, text, topk, score_threshold) -> List[Chunk]:
         """
         Chroma similar_search_with_score.
         Return docs and relevance scores in the range [0, 1].
@@ -55,15 +76,19 @@ class ChromaStore(VectorStoreBase):
             score_threshold(float): score_threshold: Optional, a floating point value between 0 to 1 to
                     filter the resulting set of retrieved docs,0 is dissimilar, 1 is most similar.
         """
-        logger.info("ChromaStore similar search")
+        logger.info("ChromaStore similar search with scores")
         docs_and_scores = (
             self.vector_store_client.similarity_search_with_relevance_scores(
                 query=text, k=topk, score_threshold=score_threshold
             )
         )
-        return docs_and_scores
+        return [
+            Chunk(content=doc.page_content, metadata=doc.metadata, score=score)
+            for doc, score in docs_and_scores
+        ]
 
     def vector_name_exists(self):
+        """is vector store name exist."""
         logger.info(f"Check persist_dir: {self.persist_dir}")
         if not os.path.exists(self.persist_dir):
             return False
@@ -72,11 +97,12 @@ class ChromaStore(VectorStoreBase):
         files = list(filter(lambda f: f != "chroma.sqlite3", files))
         return len(files) > 0
 
-    def load_document(self, documents):
+    def load_document(self, chunks: List[Chunk]) -> List[str]:
         logger.info("ChromaStore load document")
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        ids = self.vector_store_client.add_texts(texts=texts, metadatas=metadatas)
+        texts = [chunk.content for chunk in chunks]
+        metadatas = [chunk.metadata for chunk in chunks]
+        ids = [chunk.chunk_id for chunk in chunks]
+        self.vector_store_client.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return ids
 
     def delete_vector_name(self, vector_name):

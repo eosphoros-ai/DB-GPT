@@ -3,6 +3,8 @@ from typing import List, Optional
 from dbgpt._private.pydantic import BaseModel
 from fastapi import UploadFile
 
+from dbgpt.rag.chunk_manager import ChunkParameters
+
 
 class KnowledgeQueryRequest(BaseModel):
     """query: knowledge query"""
@@ -43,6 +45,8 @@ class DocumentQueryRequest(BaseModel):
     """doc_name: doc path"""
 
     doc_name: str = None
+    """doc_ids: doc ids"""
+    doc_ids: Optional[List] = None
     """doc_type: doc type"""
     doc_type: str = None
     """status: status"""
@@ -74,6 +78,20 @@ class DocumentSyncRequest(BaseModel):
 
     """Custom chunk overlap"""
     chunk_overlap: Optional[int] = None
+
+
+class KnowledgeSyncRequest(BaseModel):
+    """Sync request"""
+
+    """doc_ids: doc ids"""
+    doc_id: int
+
+    """model_name: model name"""
+    model_name: Optional[str] = None
+
+    """chunk_parameters: chunk parameters 
+    """
+    chunk_parameters: ChunkParameters
 
 
 class ChunkQueryRequest(BaseModel):

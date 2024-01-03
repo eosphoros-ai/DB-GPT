@@ -1,10 +1,12 @@
-import { Button, Form, Input, Switch, Upload, message, Spin } from 'antd';
+import { Button, Form, Input, Upload, Spin, message } from 'antd';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { InboxOutlined } from '@ant-design/icons';
-import { apiInterceptors, addDocument, uploadDocument, syncDocument } from '@/client/api';
+import { apiInterceptors, addDocument, uploadDocument } from '@/client/api';
 import { RcFile, UploadChangeParam } from 'antd/es/upload';
-import { StepChangeParams } from '@/types/knowledge';
+import { File, StepChangeParams } from '@/types/knowledge';
+import { UploadRequestOption as RcCustomRequestOptions } from 'rc-upload/lib/interface';
+import classNames from 'classnames';
 
 type FileParams = {
   file: RcFile;
@@ -12,13 +14,13 @@ type FileParams = {
 };
 
 type IProps = {
+  className: string;
   handleStepChange: (params: StepChangeParams) => void;
   spaceName: string;
   docType: string;
 };
 
 type FieldType = {
-  synchChecked: boolean;
   docName: string;
   textSource: string;
   originFileObj: FileParams;
@@ -30,18 +32,19 @@ const { Dragger } = Upload;
 const { TextArea } = Input;
 
 export default function DocUploadForm(props: IProps) {
-  const { handleStepChange, spaceName, docType } = props;
+  const { className, handleStepChange, spaceName, docType } = props;
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [spinning, setSpinning] = useState<boolean>(false);
+  const [files, setFiles] = useState<Array<File>>([]);
 
-  const handleFinish = async (data: FieldType) => {
-    const { synchChecked, docName, textSource, originFileObj, text, webPageUrl } = data;
-    let res;
+  const upload = async (data: FieldType) => {
+    const { docName, textSource, text, webPageUrl } = data;
+    let docId;
     setSpinning(true);
     switch (docType) {
-      case 'webPage':
-        res = await apiInterceptors(
+      case 'URL':
+        [, docId] = await apiInterceptors(
           addDocument(spaceName as string, {
             doc_name: docName,
             content: webPageUrl,
@@ -49,16 +52,8 @@ export default function DocUploadForm(props: IProps) {
           }),
         );
         break;
-      case 'file':
-        const formData = new FormData();
-        formData.append('doc_name', docName || originFileObj.file.name);
-        formData.append('doc_file', originFileObj.file);
-        formData.append('doc_type', 'DOCUMENT');
-
-        res = await apiInterceptors(uploadDocument(spaceName as string, formData));
-        break;
-      default:
-        res = await apiInterceptors(
+      case 'TEXT':
+        [, docId] = await apiInterceptors(
           addDocument(spaceName as string, {
             doc_name: docName,
             source: textSource,
@@ -68,38 +63,60 @@ export default function DocUploadForm(props: IProps) {
         );
         break;
     }
-    synchChecked && handleSync?.(spaceName as string, res?.[1] as number);
     setSpinning(false);
-    handleStepChange({ label: 'finish' });
-  };
-
-  const handleSync = async (knowledgeName: string, id: number) => {
-    await apiInterceptors(syncDocument(knowledgeName, { doc_ids: [id] }));
+    if (docType === 'DOCUMENT' && files.length < 1) {
+      return message.error('Upload failed, please re-upload.');
+    } else if (docType !== 'DOCUMENT' && !docId) {
+      return message.error('Upload failed, please re-upload.');
+    }
+    handleStepChange({
+      label: 'forward',
+      files:
+        docType === 'DOCUMENT'
+          ? files
+          : [
+              {
+                name: docName,
+                doc_id: docId || -1,
+              },
+            ],
+    });
   };
 
   const handleFileChange = ({ file, fileList }: UploadChangeParam) => {
-    if (!form.getFieldsValue().docName) {
-      form.setFieldValue('docName', file.name);
-    }
     if (fileList.length === 0) {
       form.setFieldValue('originFileObj', null);
     }
   };
 
-  const beforeUpload = () => {
-    const curFile = form.getFieldsValue().originFileObj;
-    if (!curFile) {
-      return false;
+  const uploadFile = async (options: RcCustomRequestOptions) => {
+    const { onSuccess, onError, file } = options;
+    const formData = new FormData();
+    const filename = file?.name;
+    formData.append('doc_name', filename);
+    formData.append('doc_file', file);
+    formData.append('doc_type', 'DOCUMENT');
+    const [, docId] = await apiInterceptors(uploadDocument(spaceName, formData));
+    if (Number.isInteger(docId)) {
+      onSuccess && onSuccess(docId || 0);
+      setFiles((files) => {
+        files.push({
+          name: filename,
+          doc_id: docId || -1,
+        });
+        return files;
+      });
+    } else {
+      onError && onError({ name: '', message: '' });
     }
-    message.warning(t('Limit_Upload_File_Count_Tips'));
-    return Upload.LIST_IGNORE;
   };
-
-  const renderChooseType = () => {};
 
   const renderText = () => {
     return (
       <>
+        <Form.Item<FieldType> label={`${t('Name')}:`} name="docName" rules={[{ required: true, message: t('Please_input_the_name') }]}>
+          <Input className="mb-5 h-12" placeholder={t('Please_input_the_name')} />
+        </Form.Item>
         <Form.Item<FieldType>
           label={`${t('Text_Source')}:`}
           name="textSource"
@@ -107,7 +124,6 @@ export default function DocUploadForm(props: IProps) {
         >
           <Input className="mb-5  h-12" placeholder={t('Please_input_the_text_source')} />
         </Form.Item>
-
         <Form.Item<FieldType> label={`${t('Text')}:`} name="text" rules={[{ required: true, message: t('Please_input_the_description') }]}>
           <TextArea rows={4} />
         </Form.Item>
@@ -118,7 +134,14 @@ export default function DocUploadForm(props: IProps) {
   const renderWebPage = () => {
     return (
       <>
-        <Form.Item<FieldType> label={`${t('Web_Page_URL')}:`} name="webPageUrl" rules={[{ required: true, message: t('Please_input_the_owner') }]}>
+        <Form.Item<FieldType> label={`${t('Name')}:`} name="docName" rules={[{ required: true, message: t('Please_input_the_name') }]}>
+          <Input className="mb-5 h-12" placeholder={t('Please_input_the_name')} />
+        </Form.Item>
+        <Form.Item<FieldType>
+          label={`${t('Web_Page_URL')}:`}
+          name="webPageUrl"
+          rules={[{ required: true, message: t('Please_input_the_Web_Page_URL') }]}
+        >
           <Input className="mb-5  h-12" placeholder={t('Please_input_the_Web_Page_URL')} />
         </Form.Item>
       </>
@@ -128,8 +151,14 @@ export default function DocUploadForm(props: IProps) {
   const renderDocument = () => {
     return (
       <>
-        <Form.Item<FieldType> name="originFileObj" rules={[{ required: true, message: t('Please_input_the_owner') }]}>
-          <Dragger onChange={handleFileChange} beforeUpload={beforeUpload} multiple={false} accept=".pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,.txt,.md">
+        <Form.Item<FieldType> name="originFileObj" rules={[{ required: true, message: t('Please_select_file') }]}>
+          <Dragger
+            multiple
+            onChange={handleFileChange}
+            maxCount={10}
+            accept=".pdf,.ppt,.pptx,.xls,.xlsx,.doc,.docx,.txt,.md"
+            customRequest={uploadFile}
+          >
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
@@ -145,9 +174,9 @@ export default function DocUploadForm(props: IProps) {
 
   const renderFormContainer = () => {
     switch (docType) {
-      case 'webPage':
+      case 'URL':
         return renderWebPage();
-      case 'file':
+      case 'DOCUMENT':
         return renderDocument();
       default:
         return renderText();
@@ -159,20 +188,14 @@ export default function DocUploadForm(props: IProps) {
       <Form
         form={form}
         size="large"
-        className="mt-4"
+        className={classNames('mt-4', className)}
         layout="vertical"
         name="basic"
         initialValues={{ remember: true }}
         autoComplete="off"
-        onFinish={handleFinish}
+        onFinish={upload}
       >
-        <Form.Item<FieldType> label={`${t('Name')}:`} name="docName" rules={[{ required: true, message: t('Please_input_the_name') }]}>
-          <Input className="mb-5 h-12" placeholder={t('Please_input_the_name')} />
-        </Form.Item>
         {renderFormContainer()}
-        <Form.Item<FieldType> label={`${t('Synch')}:`} name="synchChecked" initialValue={true}>
-          <Switch className="bg-slate-400" defaultChecked />
-        </Form.Item>
         <Form.Item>
           <Button
             onClick={() => {
@@ -180,8 +203,8 @@ export default function DocUploadForm(props: IProps) {
             }}
             className="mr-4"
           >{`${t('Back')}`}</Button>
-          <Button type="primary" htmlType="submit">
-            {t('Finish')}
+          <Button type="primary" loading={spinning} htmlType="submit">
+            {t('Next')}
           </Button>
         </Form.Item>
       </Form>

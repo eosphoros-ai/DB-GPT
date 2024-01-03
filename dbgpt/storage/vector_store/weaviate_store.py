@@ -1,19 +1,36 @@
 import os
 import logging
+from typing import List
+
 from langchain.schema import Document
+from pydantic import Field
 
 from dbgpt._private.config import Config
 from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
-from dbgpt.storage.vector_store.base import VectorStoreBase
+from dbgpt.rag.chunk import Chunk
+from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 
 logger = logging.getLogger(__name__)
 CFG = Config()
 
 
+class WeaviateVectorConfig(VectorStoreConfig):
+    """Weaviate vector store config."""
+
+    weaviate_url: str = Field(
+        default=os.getenv("WEAVIATE_URL", None),
+        description="weaviate url address, if not set, will use the default url.",
+    )
+    persist_path: str = Field(
+        default=os.getenv("WEAVIATE_PERSIST_PATH", None),
+        description="weaviate persist path.",
+    )
+
+
 class WeaviateStore(VectorStoreBase):
     """Weaviate database"""
 
-    def __init__(self, ctx: dict) -> None:
+    def __init__(self, vector_store_config: WeaviateVectorConfig) -> None:
         """Initialize with Weaviate client."""
         try:
             import weaviate
@@ -23,12 +40,11 @@ class WeaviateStore(VectorStoreBase):
                 "Please install it with `pip install weaviate-client`."
             )
 
-        self.ctx = ctx
-        self.weaviate_url = ctx.get("WEAVIATE_URL", os.getenv("WEAVIATE_URL"))
-        self.embedding = ctx.get("embeddings", None)
-        self.vector_name = ctx["vector_store_name"]
+        self.weaviate_url = vector_store_config.weaviate_url
+        self.embedding = vector_store_config.embedding_fn
+        self.vector_name = vector_store_config.name
         self.persist_dir = os.path.join(
-            KNOWLEDGE_UPLOAD_ROOT_PATH, self.vector_name + ".vectordb"
+            vector_store_config.persist_path, vector_store_config.name + ".vectordb"
         )
 
         self.vector_store_client = weaviate.Client(self.weaviate_url)
@@ -120,11 +136,11 @@ class WeaviateStore(VectorStoreBase):
         # Create the schema in Weaviate
         self.vector_store_client.schema.create(schema)
 
-    def load_document(self, documents: list) -> None:
+    def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load documents into Weaviate"""
         logger.info("Weaviate load document")
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
+        texts = [doc.content for doc in chunks]
+        metadatas = [doc.metadata for doc in chunks]
 
         # Import data
         with self.vector_store_client.batch as batch:
@@ -134,7 +150,7 @@ class WeaviateStore(VectorStoreBase):
             for i in range(len(texts)):
                 properties = {
                     "metadata": metadatas[i]["source"],
-                    "page_content": texts[i],
+                    "content": texts[i],
                 }
 
                 self.vector_store_client.batch.add_data_object(
