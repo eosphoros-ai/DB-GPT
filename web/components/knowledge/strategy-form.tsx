@@ -25,7 +25,7 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
   const [selectedStrategy, setSelectedStrategy] = useState<string>();
   const { t } = useTranslation();
   const DEFAULT_STRATEGY = {
-    strategy: t('Automatic'),
+    strategy: 'Automatic',
     name: t('Automatic'),
     desc: t('Automatic_desc'),
   };
