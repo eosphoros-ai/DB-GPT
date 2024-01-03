@@ -577,6 +577,18 @@ class ApiCall:
         else:
             return result
 
+    def display_summary_vis(self, summary):
+        """
+        Display Summary
+        Args:
+            summary: LLM generated summary content
+
+        Returns:
+           ChartView protocol text
+        """
+
+        return self.api_view_context(summary, True)
+
     @staticmethod
     def default_chart_type_promot() -> str:
         """this function is moved from excel_analyze/chat.py,and used by subclass.
