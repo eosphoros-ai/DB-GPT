@@ -1,5 +1,5 @@
 import { IChunkStrategyResponse } from '@/types/knowledge';
-import { Alert, Form, FormListFieldData, Input, InputNumber, Radio, RadioChangeEvent } from 'antd';
+import { Alert, Checkbox, Form, FormListFieldData, Input, InputNumber, Radio, RadioChangeEvent } from 'antd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 const { TextArea } = Input;
@@ -54,12 +54,24 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
             name={[field!.name, 'chunk_parameters', param.param_name]}
             rules={[{ required: true, message: t('Please_input_the_name') }]}
             initialValue={param.default_value}
+            valuePropName={param.param_type === 'boolean' ? 'checked' : 'value'}
           >
-            {param.param_type === 'int' ? <InputNumber className="w-full" min={1} /> : <TextArea className="w-full" rows={2} maxLength={6} />}
+            {renderParamByType(param.param_type)}
           </Form.Item>
         ))}
       </div>
     );
+  }
+
+  function renderParamByType(type: string) {
+    switch (type) {
+      case 'int':
+        return <InputNumber className="w-full" min={1} />;
+      case 'string':
+        return <TextArea className="w-full" rows={2} />;
+      case 'boolean':
+        return <Checkbox />;
+    }
   }
   return (
     <>
