@@ -62,15 +62,6 @@ class SummaryAssistantAgent(ConversableAgent):
     ):
         """Generate a reply with summary."""
 
-        # if not message is None:
-        #     exit_success = True
-        #     output = "The generated summary is shown above."
-        # else:
-        #     exit_success = False
-        #     output = "Nothing is generated, please check your input."
-
-        # return True, {"is_exe_success": exit_success, "content": f"{output}"}
-
         response_success = True
         view = None
         content = None
