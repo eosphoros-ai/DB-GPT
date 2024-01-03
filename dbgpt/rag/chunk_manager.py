@@ -45,6 +45,10 @@ class ChunkParameters(BaseModel):
         default="\n",
         description="chunk separator",
     )
+    enable_merge: bool = Field(
+        default=None,
+        description="enable chunk merge by chunk_size.",
+    )
 
 
 class ChunkManager:
@@ -134,4 +138,5 @@ class ChunkManager:
             chunk_size=self._chunk_parameters.chunk_size,
             chunk_overlap=self._chunk_parameters.chunk_overlap,
             separator=self._chunk_parameters.separator,
+            enable_merge=self._chunk_parameters.enable_merge,
         )

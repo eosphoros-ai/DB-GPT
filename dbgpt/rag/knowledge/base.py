@@ -62,7 +62,14 @@ class ChunkStrategy(Enum):
     )
     CHUNK_BY_SEPARATOR = (
         SeparatorTextSplitter,
-        [{"param_name": "separator", "param_type": "string", "default_value": "\n"}],
+        [
+            {"param_name": "separator", "param_type": "string", "default_value": "\n"},
+            {
+                "param_name": "enable_merge",
+                "param_type": "boolean",
+                "default_value": False,
+            },
+        ],
         "separator",
         "split document by separator",
     )
@@ -80,6 +87,7 @@ class ChunkStrategy(Enum):
         self.description = description
 
     def match(self, *args, **kwargs):
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return self.value[0](*args, **kwargs)
 
 
