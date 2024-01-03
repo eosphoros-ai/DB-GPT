@@ -261,7 +261,7 @@ If you find `DB-GPT` useful for your research or development, please cite the fo
 ```bibtex
 @article{xue2023dbgpt,
       title={DB-GPT: Empowering Database Interactions with Private Large Language Models}, 
-      author={Siqiao Xue and Caigao Jiang and Wenhui Shi and Fangyin Chen and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Danrui Qi and Hong Yi and Shaodong Liu and Faqiang Chen},
+      author={Siqiao Xue and Caigao Jiang and Wenhui Shi and Fangyin Cheng and Keting Chen and Hongjun Yang and Zhiping Zhang and Jianshan He and Hongyang Zhang and Ganglin Wei and Wang Zhao and Fan Zhou and Danrui Qi and Hong Yi and Shaodong Liu and Faqiang Chen},
       year={2023},
       journal={arXiv preprint arXiv:2312.17449},
       url={https://arxiv.org/abs/2312.17449}
