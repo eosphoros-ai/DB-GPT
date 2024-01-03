@@ -10,14 +10,27 @@ else
 	VENV_BIN=$(VENV)/bin
 endif
 
-setup: ## Set up the Python development environment
+setup: $(VENV)/bin/activate
+
+$(VENV)/bin/activate: $(VENV)/.venv-timestamp
+
+$(VENV)/.venv-timestamp: setup.py
+	# Create new virtual environment if setup.py has changed
 	python3 -m venv $(VENV)
 	$(VENV_BIN)/pip install --upgrade pip
 	$(VENV_BIN)/pip install -r requirements/dev-requirements.txt
 	$(VENV_BIN)/pip install -r requirements/lint-requirements.txt
+	touch $(VENV)/.venv-timestamp
 
-testenv: setup ## Set up the Python test environment
-	$(VENV_BIN)/pip install -e ".[default]"
+testenv: $(VENV)/.testenv
+
+$(VENV)/.testenv: $(VENV)/bin/activate
+	# $(VENV_BIN)/pip install -e ".[framework]"
+	# $(VENV_BIN)/pip install -e ".[knowledge]"
+	# the openai optional dependency is include framework and knowledge dependencies
+	$(VENV_BIN)/pip install -e ".[openai]"
+	touch $(VENV)/.testenv
+
 
 .PHONY: fmt
 fmt: setup ## Format Python code
@@ -51,8 +64,7 @@ fmt: setup ## Format Python code
 .PHONY: pre-commit
 pre-commit: fmt test ## Run formatting and unit tests before committing
 
-.PHONY: test
-test: testenv ## Run unit tests
+test: $(VENV)/.testenv ## Run unit tests
 	$(VENV_BIN)/pytest dbgpt
 
 .PHONY: coverage
