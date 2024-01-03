@@ -89,7 +89,7 @@ class Config(metaclass=Singleton):
         # baichuan proxy
         self.bc_proxy_api_key = os.getenv("BAICHUAN_PROXY_API_KEY")
         self.bc_model_name = os.getenv("BAICHUN_MODEL_NAME", "Baichuan2-Turbo-192k")
-        if self.bc_proxy_api_key and self.bc_proxy_api_secret:
+        if self.bc_proxy_api_key and self.bc_model_name:
             os.environ["bc_proxyllm_proxy_api_key"] = self.bc_proxy_api_key
             os.environ["bc_proxyllm_proxyllm_backend"] = self.bc_model_name
 
