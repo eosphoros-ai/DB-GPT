@@ -50,11 +50,12 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
         {parameters?.map((param) => (
           <Form.Item
             key={`param_${param.param_name}`}
-            label={`${param.param_name}: ${param.param_type}`}
+            label={param.param_name}
             name={[field!.name, 'chunk_parameters', param.param_name]}
             rules={[{ required: true, message: t('Please_input_the_name') }]}
             initialValue={param.default_value}
             valuePropName={param.param_type === 'boolean' ? 'checked' : 'value'}
+            tooltip={param.description}
           >
             {renderParamByType(param.param_type)}
           </Form.Item>
