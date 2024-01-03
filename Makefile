@@ -17,7 +17,7 @@ setup: ## Set up the Python development environment
 	$(VENV_BIN)/pip install -r requirements/lint-requirements.txt
 
 testenv: setup ## Set up the Python test environment
-	$(VENV_BIN)/pip install -e ".[simple_framework]"
+	$(VENV_BIN)/pip install -e ".[default]"
 
 .PHONY: fmt
 fmt: setup ## Format Python code

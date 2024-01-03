@@ -5,49 +5,111 @@ import logging
 import os
 from typing import Any, Iterable, List, Optional, Tuple
 
+from pydantic import Field
 
-from dbgpt.storage.vector_store.base import VectorStoreBase
+from dbgpt.rag.chunk import Chunk, Document
+from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+from dbgpt.util import string_utils
 
 logger = logging.getLogger(__name__)
+
+
+class MilvusVectorConfig(VectorStoreConfig):
+    """Milvus vector store config."""
+
+    uri: str = Field(
+        default="localhost",
+        description="The uri of milvus store, if not set, will use the default uri.",
+    )
+    port: str = Field(
+        default="19530",
+        description="The port of milvus store, if not set, will use the default port.",
+    )
+
+    alias: str = Field(
+        default="default",
+        description="The alias of milvus store, if not set, will use the default alias.",
+    )
+    user: str = Field(
+        default=None,
+        description="The user of milvus store, if not set, will use the default user.",
+    )
+    password: str = Field(
+        default=None,
+        description="The password of milvus store, if not set, will use the default password.",
+    )
+    primary_field: str = Field(
+        default="pk_id",
+        description="The primary field of milvus store, if not set, will use the default primary field.",
+    )
+    text_field: str = Field(
+        default="content",
+        description="The text field of milvus store, if not set, will use the default text field.",
+    )
+    embedding_field: str = Field(
+        default="vector",
+        description="The embedding field of milvus store, if not set, will use the default embedding field.",
+    )
+    metadata_field: str = Field(
+        default="metadata",
+        description="The metadata field of milvus store, if not set, will use the default metadata field.",
+    )
+    secure: str = Field(
+        default="",
+        description="The secure of milvus store, if not set, will use the default secure.",
+    )
 
 
 class MilvusStore(VectorStoreBase):
     """Milvus database"""
 
-    def __init__(self, ctx: {}) -> None:
-        """MilvusStore init."""
+    def __init__(self, vector_store_config: MilvusVectorConfig) -> None:
+        """MilvusStore init.
+        Args:
+            vector_store_config (MilvusVectorConfig): MilvusStore config.
+            refer to https://milvus.io/docs/v2.0.x/manage_connection.md
+        """
         from pymilvus import connections
 
-        """init a milvus storage connection.
-
-        Args:
-            ctx ({}): MilvusStore global config.
-        """
-        # self.configure(cfg)
-
         connect_kwargs = {}
-        self.uri = ctx.get("MILVUS_URL", os.getenv("MILVUS_URL"))
-        self.port = ctx.get("MILVUS_PORT", os.getenv("MILVUS_PORT"))
-        self.username = ctx.get("MILVUS_USERNAME", os.getenv("MILVUS_USERNAME"))
-        self.password = ctx.get("MILVUS_PASSWORD", os.getenv("MILVUS_PASSWORD"))
-        self.secure = ctx.get("MILVUS_SECURE", os.getenv("MILVUS_SECURE"))
-        self.collection_name = ctx.get("vector_store_name", None)
-        self.embedding = ctx.get("embeddings", None)
+        milvus_vector_config = vector_store_config.dict()
+        self.uri = milvus_vector_config.get("uri") or os.getenv(
+            "MILVUS_URL", "localhost"
+        )
+        self.port = milvus_vector_config.get("post") or os.getenv(
+            "MILVUS_PORT", "19530"
+        )
+        self.username = milvus_vector_config.get("user") or os.getenv("MILVUS_USER")
+        self.password = milvus_vector_config.get("password") or os.getenv(
+            "MILVUS_PASSWORD"
+        )
+        self.secure = milvus_vector_config.get("secure") or os.getenv("MILVUS_SECURE")
+
+        self.collection_name = (
+            milvus_vector_config.get("name") or vector_store_config.name
+        )
+        if string_utils.is_all_chinese(self.collection_name):
+            bytes_str = self.collection_name.encode("utf-8")
+            hex_str = bytes_str.hex()
+            self.collection_name = hex_str
+
+        self.embedding = vector_store_config.embedding_fn
         self.fields = []
-        self.alias = "default"
+        self.alias = milvus_vector_config.get("alias") or "default"
 
         # use HNSW by default.
         self.index_params = {
-            "metric_type": "L2",
             "index_type": "HNSW",
+            "metric_type": "COSINE",
             "params": {"M": 8, "efConstruction": 64},
         }
+
         # use HNSW by default.
         self.index_params_map = {
             "IVF_FLAT": {"params": {"nprobe": 10}},
             "IVF_SQ8": {"params": {"nprobe": 10}},
             "IVF_PQ": {"params": {"nprobe": 10}},
-            "HNSW": {"params": {"ef": 10}},
+            "HNSW": {"params": {"M": 8, "efConstruction": 64}},
             "RHNSW_FLAT": {"params": {"ef": 10}},
             "RHNSW_SQ": {"params": {"ef": 10}},
             "RHNSW_PQ": {"params": {"ef": 10}},
@@ -55,10 +117,10 @@ class MilvusStore(VectorStoreBase):
             "ANNOY": {"params": {"search_k": 10}},
         }
         # default collection schema
-        self.primary_field = "pk_id"
-        self.vector_field = "vector"
-        self.text_field = "content"
-        self.metadata_field = "metadata"
+        self.primary_field = milvus_vector_config.get("primary_field") or "pk_id"
+        self.vector_field = milvus_vector_config.get("embedding_field") or "vector"
+        self.text_field = milvus_vector_config.get("text_field") or "content"
+        self.metadata_field = milvus_vector_config.get("metadata_field") or "metadata"
 
         if (self.username is None) != (self.password is None):
             raise ValueError(
@@ -75,13 +137,13 @@ class MilvusStore(VectorStoreBase):
             # secure=self.secure,
         )
 
-    def init_schema_and_load(self, vector_name, documents):
+    def init_schema_and_load(self, vector_name, documents) -> List[str]:
         """Create a Milvus collection, indexes it with HNSW, load document.
         Args:
             vector_name (Embeddings): your collection name.
             documents (List[str]): Text to insert.
         Returns:
-            VectorStore: The MilvusStore vector store.
+            List[str]: document ids.
         """
         try:
             from pymilvus import (
@@ -105,7 +167,7 @@ class MilvusStore(VectorStoreBase):
                 alias="default"
                 # secure=self.secure,
             )
-        texts = [d.page_content for d in documents]
+        texts = [d.content for d in documents]
         metadatas = [d.metadata for d in documents]
         embeddings = self.embedding.embed_query(texts[0])
 
@@ -183,7 +245,7 @@ class MilvusStore(VectorStoreBase):
             import numpy as np
 
             text_vector = self.embedding.embed_documents(list(texts))
-            insert_dict[self.vector_field] = self._normalization_vectors(text_vector)
+            insert_dict[self.vector_field] = text_vector
         except NotImplementedError:
             insert_dict[self.vector_field] = [
                 self.embedding.embed_query(x) for x in texts
@@ -204,12 +266,11 @@ class MilvusStore(VectorStoreBase):
         self.col.flush()
         return res.primary_keys
 
-    def load_document(self, documents) -> None:
+    def load_document(self, chunks: List[Chunk]) -> List[str]:
         """load document in vector database."""
-        # self.init_schema_and_load(self.collection_name, documents)
         batch_size = 500
         batched_list = [
-            documents[i : i + batch_size] for i in range(0, len(documents), batch_size)
+            chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)
         ]
         doc_ids = []
         for doc_batch in batched_list:
@@ -217,7 +278,7 @@ class MilvusStore(VectorStoreBase):
         doc_ids = [str(doc_id) for doc_id in doc_ids]
         return doc_ids
 
-    def similar_search(self, text, topk):
+    def similar_search(self, text, topk) -> List[Chunk]:
         from pymilvus import Collection, DataType
 
         """similar_search in vector database."""
@@ -232,17 +293,16 @@ class MilvusStore(VectorStoreBase):
             if x.dtype == DataType.FLOAT_VECTOR or x.dtype == DataType.BINARY_VECTOR:
                 self.vector_field = x.name
         _, docs_and_scores = self._search(text, topk)
-        from langchain.schema import Document
 
         return [
-            Document(
+            Chunk(
                 metadata=json.loads(doc.metadata.get("metadata", "")),
-                page_content=doc.page_content,
+                content=doc.content,
             )
             for doc, _, _ in docs_and_scores
         ]
 
-    def similar_search_with_scores(self, text, topk, score_threshold):
+    def similar_search_with_scores(self, text, topk, score_threshold) -> List[Chunk]:
         """Perform a search on a query string and return results with score.
 
         For more information about the search parameters, take a look at the pymilvus
@@ -286,7 +346,12 @@ class MilvusStore(VectorStoreBase):
 
         if score_threshold is not None:
             docs_and_scores = [
-                (doc, score)
+                Chunk(
+                    metadata=doc.metadata,
+                    content=doc.content,
+                    score=score,
+                    chunk_id=id,
+                )
                 for doc, score, id in docs_and_scores
                 if score >= score_threshold
             ]
@@ -308,22 +373,19 @@ class MilvusStore(VectorStoreBase):
         timeout: Optional[int] = None,
         **kwargs: Any,
     ):
-        from langchain.docstore.document import Document
-
         self.col.load()
         # use default index params.
         if param is None:
             index_type = self.col.indexes[0].params["index_type"]
-            param = self.index_params_map[index_type]
+            param = self.index_params_map[index_type].get("params")
         #  query text embedding.
         query_vector = self.embedding.embed_query(query)
-        data = [self._normalization_vectors(query_vector)]
         # Determine result metadata fields.
         output_fields = self.fields[:]
         output_fields.remove(self.vector_field)
         # milvus search.
         res = self.col.search(
-            data,
+            [query_vector],
             self.vector_field,
             param,
             k,
@@ -339,13 +401,13 @@ class MilvusStore(VectorStoreBase):
             meta = {x: result.entity.get(x) for x in output_fields}
             ret.append(
                 (
-                    Document(page_content=meta.pop(self.text_field), metadata=meta),
-                    self._default_relevance_score_fn(result.distance),
+                    Chunk(content=meta.pop(self.text_field), metadata=meta),
+                    result.distance,
                     result.id,
                 )
             )
 
-        return data[0], ret
+        return ret[0], ret
 
     def vector_name_exists(self):
         from pymilvus import utility

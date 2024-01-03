@@ -139,8 +139,9 @@ class BaseDao(Generic[T, REQ, RES]):
             RES: The response schema object.
         """
         entry = self.from_request(request)
-        with self.session() as session:
+        with self.session(commit=False) as session:
             session.add(entry)
+            session.commit()
             return self.get_one(self.to_request(entry))
 
     def update(self, query_request: QUERY_SPEC, update_request: REQ) -> RES:

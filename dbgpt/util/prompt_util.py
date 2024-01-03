@@ -16,7 +16,7 @@ from dbgpt._private.pydantic import Field, PrivateAttr, BaseModel
 
 from dbgpt.util.global_helper import globals_helper
 from dbgpt._private.llm_metadata import LLMMetadata
-from dbgpt.rag.embedding_engine.loader.token_splitter import TokenTextSplitter
+from dbgpt.rag.text_splitter.token_splitter import TokenTextSplitter
 
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
@@ -92,6 +92,11 @@ class PromptHelper(BaseModel):
             chunk_size_limit=chunk_size_limit,
             separator=separator,
         )
+
+    def token_count(self, prompt_template: str) -> int:
+        """Get token count of prompt template."""
+        empty_prompt_txt = get_empty_prompt_txt(prompt_template)
+        return len(self._tokenizer(empty_prompt_txt))
 
     @classmethod
     def from_llm_metadata(

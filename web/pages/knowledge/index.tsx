@@ -2,21 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import { Button, Modal, Steps } from 'antd';
 import SpaceCard from '@/components/knowledge/space-card';
-import { ISpace, StepChangeParams } from '@/types/knowledge';
+import { File, ISpace, StepChangeParams } from '@/types/knowledge';
 import { apiInterceptors, getSpaceList } from '@/client/api';
 import { useTranslation } from 'react-i18next';
 import DocUploadForm from '@/components/knowledge/doc-upload-form';
 import SpaceForm from '@/components/knowledge/space-form';
 import DocTypeForm from '@/components/knowledge/doc-type-form';
+import Segmentation from '@/components/knowledge/segmentation';
+import classNames from 'classnames';
 
 const Knowledge = () => {
   const [spaceList, setSpaceList] = useState<Array<ISpace> | null>([]);
   const [isAddShow, setIsAddShow] = useState<boolean>(false);
   const [activeStep, setActiveStep] = useState<number>(0);
   const [spaceName, setSpaceName] = useState<string>('');
+  const [files, setFiles] = useState<Array<File>>([]);
   const [docType, setDocType] = useState<string>('');
   const { t } = useTranslation();
-  const addKnowledgeSteps = [{ title: t('Knowledge_Space_Config') }, { title: t('Choose_a_Datasource_type') }, { title: t('Setup_the_Datasource') }];
+  const addKnowledgeSteps = [
+    { title: t('Knowledge_Space_Config') },
+    { title: t('Choose_a_Datasource_type') },
+    { title: t('Upload') },
+    { title: t('Segmentation') },
+  ];
 
   async function getSpaces() {
     const [_, data] = await apiInterceptors(getSpaceList());
@@ -26,18 +34,20 @@ const Knowledge = () => {
     getSpaces();
   }, []);
 
-  const handleStepChange = ({ label, spaceName, docType }: StepChangeParams) => {
+  const handleStepChange = ({ label, spaceName, docType, files }: StepChangeParams) => {
     if (label === 'finish') {
       setIsAddShow(false);
       getSpaces();
       setSpaceName('');
       setDocType('');
+      getSpaces();
     } else if (label === 'forward') {
       activeStep === 0 && getSpaces();
       setActiveStep((step) => step + 1);
     } else {
       setActiveStep((step) => step - 1);
     }
+    files && setFiles(files);
     spaceName && setSpaceName(spaceName);
     docType && setDocType(docType);
   };
@@ -78,13 +88,20 @@ const Knowledge = () => {
         width={1000}
         afterClose={() => {
           setActiveStep(0);
+          getSpaces();
         }}
         footer={null}
       >
         <Steps current={activeStep} items={addKnowledgeSteps} />
         {activeStep === 0 && <SpaceForm handleStepChange={handleStepChange} />}
         {activeStep === 1 && <DocTypeForm handleStepChange={handleStepChange} />}
-        {activeStep === 2 && <DocUploadForm spaceName={spaceName} docType={docType} handleStepChange={handleStepChange} />}
+        <DocUploadForm
+          className={classNames({ hidden: activeStep !== 2 })}
+          spaceName={spaceName}
+          docType={docType}
+          handleStepChange={handleStepChange}
+        />
+        {activeStep === 3 && <Segmentation spaceName={spaceName} docType={docType} uploadFiles={files} handleStepChange={handleStepChange} />}
       </Modal>
     </div>
   );

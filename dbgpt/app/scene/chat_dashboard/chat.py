@@ -63,14 +63,11 @@ class ChatDashboard(BaseChat):
         try:
             table_infos = await blocking_func_to_async(
                 self._executor,
-                client.get_similar_tables,
+                client.get_db_summary,
                 self.db_name,
                 self.current_user_input,
                 self.top_k,
             )
-            # table_infos = client.get_similar_tables(
-            #     dbname=self.db_name, query=self.current_user_input, topk=self.top_k
-            # )
             print("dashboard vector find tables:{}", table_infos)
         except Exception as e:
             print("db summary find error!" + str(e))
