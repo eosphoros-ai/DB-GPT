@@ -682,6 +682,7 @@ class SeparatorTextSplitter(CharacterTextSplitter):
 
     def __init__(self, separator: str = "\n", filters: list = [], **kwargs: Any):
         """Create a new TextSplitter."""
+        self._merge = kwargs.pop("enable_merge") or False
         super().__init__(**kwargs)
         self._separator = separator
         self._filter = filters
@@ -696,7 +697,9 @@ class SeparatorTextSplitter(CharacterTextSplitter):
             splits = text.split(separator)
         else:
             splits = list(text)
-        return self._merge_splits(splits, separator, chunk_overlap=0, **kwargs)
+        if self._merge:
+            return self._merge_splits(splits, separator, chunk_overlap=0, **kwargs)
+        return list(filter(None, text.split(separator)))
 
 
 class PageTextSplitter(TextSplitter):

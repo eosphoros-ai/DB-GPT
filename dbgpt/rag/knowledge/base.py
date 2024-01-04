@@ -47,8 +47,18 @@ class ChunkStrategy(Enum):
     CHUNK_BY_SIZE = (
         RecursiveCharacterTextSplitter,
         [
-            {"param_name": "chunk_size", "param_type": "int", "default_value": 512},
-            {"param_name": "chunk_overlap", "param_type": "int", "default_value": 50},
+            {
+                "param_name": "chunk_size",
+                "param_type": "int",
+                "default_value": 512,
+                "description": "The size of the data chunks used in processing.",
+            },
+            {
+                "param_name": "chunk_overlap",
+                "param_type": "int",
+                "default_value": 50,
+                "description": "The amount of overlap between adjacent data chunks.",
+            },
         ],
         "chunk size",
         "split document by chunk size",
@@ -56,13 +66,33 @@ class ChunkStrategy(Enum):
     CHUNK_BY_PAGE = (PageTextSplitter, [], "page", "split document by page")
     CHUNK_BY_PARAGRAPH = (
         ParagraphTextSplitter,
-        [{"param_name": "separator", "param_type": "string", "default_value": "\n"}],
+        [
+            {
+                "param_name": "separator",
+                "param_type": "string",
+                "default_value": "\\n",
+                "description": "paragraph separator",
+            }
+        ],
         "paragraph",
         "split document by paragraph",
     )
     CHUNK_BY_SEPARATOR = (
         SeparatorTextSplitter,
-        [{"param_name": "separator", "param_type": "string", "default_value": "\n"}],
+        [
+            {
+                "param_name": "separator",
+                "param_type": "string",
+                "default_value": "\\n",
+                "description": "chunk separator",
+            },
+            {
+                "param_name": "enable_merge",
+                "param_type": "boolean",
+                "default_value": False,
+                "description": "Whether to merge according to the chunk_size after splitting by the separator.",
+            },
+        ],
         "separator",
         "split document by separator",
     )
@@ -80,6 +110,7 @@ class ChunkStrategy(Enum):
         self.description = description
 
     def match(self, *args, **kwargs):
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return self.value[0](*args, **kwargs)
 
 
