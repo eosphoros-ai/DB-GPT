@@ -127,7 +127,8 @@ def _build_request(model: ProxyModel, params):
 
     messages: List[ModelMessage] = params["messages"]
 
-    history = __convert_2_gpt_messages(messages)
+    # history = __convert_2_gpt_messages(messages)
+    history = ModelMessage.to_openai_messages(messages)
     payloads = {
         "temperature": params.get("temperature"),
         "max_tokens": params.get("max_new_tokens"),
