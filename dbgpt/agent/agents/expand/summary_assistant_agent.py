@@ -19,15 +19,19 @@ class SummaryAssistantAgent(ConversableAgent):
     This agent doesn't execute code by default, and expects the user to execute the code.
     """
 
-    DEFAULT_SYSTEM_MESSAGE = """You are a great summary writter to summarize the provided text content according to user questions.
+    DEFAULT_SYSTEM_MESSAGE = (
+        """You are a great summary writter to summarize the provided text content according to user questions.
            Please complete this task step by step following instructions below:
            1. You need to first detect user's question that you need to answer with your summarization.
            2. Output the extracted user's question with the format - The User's Question: user's question.
            3. Then you need to summarize the historical messages 
            4. Output the summarization only related to user's question with the format - The Summarization: the summarization.
         """
+    )
 
-    DEFAULT_DESCRIBE = """Summarize provided text content according to use questions and output the summaraization."""
+    DEFAULT_DESCRIBE = (
+        """Summarize provided text content according to user's questions and output the summaraization."""
+    )
 
     NAME = "Summarizer"
 
