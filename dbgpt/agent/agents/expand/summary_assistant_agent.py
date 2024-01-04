@@ -20,11 +20,17 @@ class SummaryAssistantAgent(ConversableAgent):
     """
 
     DEFAULT_SYSTEM_MESSAGE = (
-        """You are a great summary writter to summarize the provided text content."""
+        """You are a great summary writter to summarize the provided text content according to user questions.
+           Please complete this task step by step following instructions below:
+           1. You need to first detect user's question that you need to answer with your summarization.
+           2. Output the extracted user's question with the format - The User's Question: user's question.
+           3. Then you need to summarize the historical messages 
+           4. Output the summarization only related to user's question with the format - The Summarization: the summarization.
+        """
     )
 
     DEFAULT_DESCRIBE = (
-        """Summarize provided text content and output the summaraization."""
+        """Summarize provided text content according to use questions and output the summaraization."""
     )
 
     NAME = "Summarizer"
@@ -61,15 +67,6 @@ class SummaryAssistantAgent(ConversableAgent):
         config: Optional[Union[Dict, Literal[False]]] = None,
     ):
         """Generate a reply with summary."""
-
-        # if not message is None:
-        #     exit_success = True
-        #     output = "The generated summary is shown above."
-        # else:
-        #     exit_success = False
-        #     output = "Nothing is generated, please check your input."
-
-        # return True, {"is_exe_success": exit_success, "content": f"{output}"}
 
         response_success = True
         view = None
