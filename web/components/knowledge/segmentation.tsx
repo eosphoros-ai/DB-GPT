@@ -82,6 +82,7 @@ export default function Segmentation(props: IProps) {
       }
       const strategy = strategies.filter((item) => item.strategy === name)[0];
       const newParam: any = {};
+      // remove unused parameter, otherwise api will failed.
       strategy.parameters.forEach((param) => {
         const paramName = param.param_name;
         newParam[paramName] = (item?.chunk_parameters as any)[paramName];
