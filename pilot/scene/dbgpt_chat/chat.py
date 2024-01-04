@@ -7,6 +7,7 @@ from pilot.scene.base import ChatScene
 from pilot.scene.base_chat import BaseChat
 from pilot.server.knowledge.api import knowledge_space_service
 from pilot.server.knowledge.request.request import KnowledgeSpaceRequest
+from .prompt import prompt
 
 CFG = Config()
 
