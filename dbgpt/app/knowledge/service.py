@@ -7,7 +7,7 @@ from dbgpt.model import DefaultLLMClient
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-from dbgpt.rag.knowledge.base import KnowledgeType
+from dbgpt.rag.knowledge.base import KnowledgeType, ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.text_splitter.text_splitter import (
     RecursiveCharacterTextSplitter,
@@ -234,7 +234,7 @@ class KnowledgeService:
                     f" doc:{doc.doc_name} status is {doc.status}, can not sync"
                 )
             chunk_parameters = sync_request.chunk_parameters
-            if "Automatic" == chunk_parameters.chunk_strategy:
+            if chunk_parameters.chunk_strategy != ChunkStrategy.CHUNK_BY_SIZE.name:
                 space_context = self.get_space_context(space_name)
                 chunk_parameters.chunk_size = (
                     CFG.KNOWLEDGE_CHUNK_SIZE
