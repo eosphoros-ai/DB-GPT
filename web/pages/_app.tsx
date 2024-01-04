@@ -11,11 +11,21 @@ import '../styles/globals.css';
 import '../nprogress.css';
 import '../app/i18n';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils';
-import { ConfigProvider, theme } from 'antd';
+import { ConfigProvider, MappingAlgorithm, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import enUS from 'antd/locale/en_US';
 
 type ThemeMode = ReturnType<typeof useColorScheme>['mode'];
+
+const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
+  return {
+    ...theme.darkAlgorithm(seedToken, mapToken),
+    colorBgBase: '#232734',
+    colorBorder: '#232734',
+    colorPrimaryHover: '#232734',
+    colorBgContainer: '#232734',
+  };
+};
 
 function getDefaultTheme(): ThemeMode {
   const theme = localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode;
@@ -66,13 +76,14 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
       locale={i18n.language === 'en' ? enUS : zhCN}
       theme={{
         token: {
+          colorPrimary: '#0069FE',
           borderRadius: 4,
         },
-        algorithm: mode === 'dark' ? theme.darkAlgorithm : undefined,
+        algorithm: mode === 'dark' ? antdDarkTheme : undefined,
       }}
     >
       <div className="flex w-screen h-screen overflow-hidden">
-        <div className={classNames('transition-[width]', isMenuExpand ? 'w-64' : 'w-20', 'hidden', 'md:block')}>
+        <div className={classNames('transition-[width]', isMenuExpand ? 'w-60' : 'w-20', 'hidden', 'md:block')}>
           <SideBar />
         </div>
         <div className="flex flex-col flex-1 relative overflow-hidden">{children}</div>

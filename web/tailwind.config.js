@@ -8,6 +8,14 @@ module.exports = {
       fontFamily: {
         sans: ['"Josefin Sans"', ...defaultTheme.fontFamily.sans],
       },
+      colors: {
+        theme: {
+          primary: '#0069fe',
+          light: '#f7f7f7',
+          dark: '#151622',
+          'dark-container': '#232734',
+        },
+      },
     },
   },
   darkMode: 'class',

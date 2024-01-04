@@ -8,11 +8,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { defaultAdvicesFilter } from './advisor/utils';
 import { AutoChartProps, ChartType, CustomAdvisorConfig, CustomChart, Specification } from './types';
 import { customCharts } from './charts';
+import { useColorScheme } from '@mui/joy';
 
 const { Option } = Select;
 
 export const AutoChart = (props: AutoChartProps) => {
   const { data, chartType, scopeOfCharts, ruleConfig } = props;
+
+  const { mode } = useColorScheme();
 
   const [advisor, setAdvisor] = useState<Advisor>();
   const [advices, setAdvices] = useState<Advice[]>([]);
@@ -54,7 +57,15 @@ export const AutoChart = (props: AutoChartProps) => {
       const chartTypeInput = renderChartType ?? advices[0].type;
       const spec: Specification = advices?.find((item: Advice) => item.type === chartTypeInput)?.spec ?? undefined;
       if (spec) {
-        return <Chart key={chartTypeInput} options={spec} />;
+        return (
+          <Chart
+            key={chartTypeInput}
+            options={{
+              ...spec,
+              theme: mode,
+            }}
+          />
+        );
       }
     }
   }, [advices, renderChartType]);
@@ -62,13 +73,13 @@ export const AutoChart = (props: AutoChartProps) => {
   if (renderChartType) {
     return (
       <div>
-        <Row justify="start">
+        <Row justify="start" className="mb-2">
           <Col>{i18n.t('Advices')}</Col>
           <Col style={{ marginLeft: 24 }}>
             <Select
+              className="w-52"
               value={renderChartType}
               placeholder={'Chart Switcher'}
-              style={{ width: '180px' }}
               onChange={(value) => setRenderChartType(value)}
               size={'small'}
             >
@@ -78,10 +89,7 @@ export const AutoChart = (props: AutoChartProps) => {
                 return (
                   <Option key={item.type} value={item.type}>
                     <Tooltip title={name} placement={'right'}>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <DownOutlined />
-                        <div style={{ marginLeft: '2px' }}>{name}</div>
-                      </div>
+                      <div>{name}</div>
                     </Tooltip>
                   </Option>
                 );

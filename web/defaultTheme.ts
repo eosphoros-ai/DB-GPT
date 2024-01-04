@@ -17,11 +17,11 @@ export const joyTheme = extendTheme({
           plainHoverColor: '#131318',
           plainHoverBg: '#EBEBEF',
           plainActiveBg: '#D8D8DF',
-          plainDisabledColor: '#B9B9C6'
+          plainDisabledColor: '#B9B9C6',
         },
         background: {
-          body: '#fff',
-          surface: '#fff'
+          body: '#F7F7F7',
+          surface: '#fff',
         },
         text: {
           primary: '#505050',
@@ -46,15 +46,15 @@ export const joyTheme = extendTheme({
           plainActiveBg: '#434356',
           plainDisabledColor: '#434356',
           outlinedBorder: '#353539',
-          outlinedHoverBorder: '#454651'
+          outlinedHoverBorder: '#454651',
         },
         text: {
-          primary: '#EBEBEF'
+          primary: '#FDFDFC',
         },
         background: {
-          body: '#212121',
+          body: '#151622',
           surface: '#51525beb',
-        }
+        },
       },
     },
   },
@@ -62,15 +62,7 @@ export const joyTheme = extendTheme({
     body: 'Josefin Sans, sans-serif',
     display: 'Josefin Sans, sans-serif',
   },
-  typography: {
-    display1: {
-      background:
-        'linear-gradient(-30deg, var(--joy-palette-primary-900), var(--joy-palette-primary-400))',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-    },
-  },
   zIndex: {
-    modal: 1001
-  }
+    modal: 1001,
+  },
 });

@@ -181,6 +181,7 @@ const resources = {
       Advices: 'Advices',
       Retry: 'Retry',
       Load_more: 'load more',
+      new_chat: 'New Chat',
     },
   },
   zh: {
@@ -362,6 +363,7 @@ const resources = {
       Advices: '自动推荐',
       Retry: '重试',
       Load_more: '加载更多',
+      new_chat: '创建会话',
     },
   },
 };

@@ -59,7 +59,7 @@ const Knowledge = () => {
   }
 
   return (
-    <div className="bg-[#FAFAFA] dark:bg-[#212121] w-full h-full">
+    <div className="bg-[#FAFAFA] dark:bg-transparent w-full h-full">
       <div className="page-body p-4 md:p-6 h-full overflow-auto">
         <Button
           type="primary"
