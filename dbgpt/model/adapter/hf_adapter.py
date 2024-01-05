@@ -87,6 +87,7 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         messages: List[ModelMessage],
         tokenizer: Any,
         prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
     ) -> Optional[str]:
         from transformers import AutoTokenizer
 
@@ -94,7 +95,7 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
             raise ValueError("tokenizer is is None")
         tokenizer: AutoTokenizer = tokenizer
 
-        messages = self.transform_model_messages(messages)
+        messages = self.transform_model_messages(messages, convert_to_compatible_format)
         logger.debug(f"The messages after transform: \n{messages}")
         str_prompt = tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True

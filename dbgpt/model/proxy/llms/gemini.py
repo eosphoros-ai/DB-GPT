@@ -12,7 +12,6 @@ def gemini_generate_stream(
     """Zhipu ai, see: https://open.bigmodel.cn/dev/api#overview"""
     model_params = model.get_params()
     print(f"Model: {model}, model_params: {model_params}")
-    global history
 
     # TODO proxy model use unified config?
     proxy_api_key = model_params.proxy_api_key

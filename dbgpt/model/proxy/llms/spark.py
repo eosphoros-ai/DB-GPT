@@ -56,6 +56,9 @@ def spark_generate_stream(
             del messages[index]
             break
 
+    # TODO: Support convert_to_compatible_format config
+    convert_to_compatible_format = params.get("convert_to_compatible_format", False)
+
     history = []
     # Add history conversation
     for message in messages:

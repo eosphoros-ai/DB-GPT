@@ -20,8 +20,13 @@ from typing import (
 from dbgpt.component import ComponentType
 from dbgpt.core.operator import BaseLLM
 from dbgpt.core.awel import TransformStreamAbsOperator, BaseOperator
-from dbgpt.core.interface.llm import ModelMetadata, LLMClient
-from dbgpt.core.interface.llm import ModelOutput, ModelRequest
+from dbgpt.core.interface.llm import (
+    ModelOutput,
+    ModelRequest,
+    ModelMetadata,
+    LLMClient,
+    MessageConverter,
+)
 from dbgpt.model.cluster.client import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt._private.pydantic import model_to_json
@@ -175,7 +180,13 @@ class OpenAILLMClient(LLMClient):
             payload["max_tokens"] = request.max_new_tokens
         return payload
 
-    async def generate(self, request: ModelRequest) -> ModelOutput:
+    async def generate(
+        self,
+        request: ModelRequest,
+        message_converter: Optional[MessageConverter] = None,
+    ) -> ModelOutput:
+        request = await self.covert_message(request, message_converter)
+
         messages = request.to_openai_messages()
         payload = self._build_request(request)
         logger.info(
@@ -195,8 +206,11 @@ class OpenAILLMClient(LLMClient):
             )
 
     async def generate_stream(
-        self, request: ModelRequest
+        self,
+        request: ModelRequest,
+        message_converter: Optional[MessageConverter] = None,
     ) -> AsyncIterator[ModelOutput]:
+        request = await self.covert_message(request, message_converter)
         messages = request.to_openai_messages()
         payload = self._build_request(request, True)
         logger.info(
@@ -247,7 +261,7 @@ class OpenAILLMClient(LLMClient):
         return self._tokenizer.count_token(prompt, model)
 
 
-class OpenAIStreamingOperator(TransformStreamAbsOperator[ModelOutput, str]):
+class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]):
     """Transform ModelOutput to openai stream format."""
 
     async def transform_stream(
@@ -264,40 +278,6 @@ class OpenAIStreamingOperator(TransformStreamAbsOperator[ModelOutput, str]):
 
         async for output in _to_openai_stream(input_value, None, model_caller):
             yield output
-
-
-class MixinLLMOperator(BaseLLM, BaseOperator, ABC):
-    """Mixin class for LLM operator.
-
-    This class extends BaseOperator by adding LLM capabilities.
-    """
-
-    def __init__(self, default_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(default_client)
-        self._default_llm_client = default_client
-
-    @property
-    def llm_client(self) -> LLMClient:
-        if not self._llm_client:
-            worker_manager_factory: WorkerManagerFactory = (
-                self.system_app.get_component(
-                    ComponentType.WORKER_MANAGER_FACTORY,
-                    WorkerManagerFactory,
-                    default_component=None,
-                )
-            )
-            if worker_manager_factory:
-                self._llm_client = DefaultLLMClient(worker_manager_factory.create())
-            else:
-                if self._default_llm_client is None:
-                    from dbgpt.model import OpenAILLMClient
-
-                    self._default_llm_client = OpenAILLMClient()
-                logger.info(
-                    f"Can't find worker manager factory, use default llm client {self._default_llm_client}."
-                )
-                self._llm_client = self._default_llm_client
-        return self._llm_client
 
 
 async def _to_openai_stream(

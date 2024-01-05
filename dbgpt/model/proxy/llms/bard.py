@@ -13,6 +13,8 @@ def bard_generate_stream(
     proxy_api_key = model_params.proxy_api_key
     proxy_server_url = model_params.proxy_server_url
 
+    convert_to_compatible_format = params.get("convert_to_compatible_format", False)
+
     history = []
     messages: List[ModelMessage] = params["messages"]
     for message in messages:
@@ -25,14 +27,15 @@ def bard_generate_stream(
         else:
             pass
 
-    last_user_input_index = None
-    for i in range(len(history) - 1, -1, -1):
-        if history[i]["role"] == "user":
-            last_user_input_index = i
-            break
-    if last_user_input_index:
-        last_user_input = history.pop(last_user_input_index)
-        history.append(last_user_input)
+    if convert_to_compatible_format:
+        last_user_input_index = None
+        for i in range(len(history) - 1, -1, -1):
+            if history[i]["role"] == "user":
+                last_user_input_index = i
+                break
+        if last_user_input_index:
+            last_user_input = history.pop(last_user_input_index)
+            history.append(last_user_input)
 
     msgs = []
     for msg in history:
