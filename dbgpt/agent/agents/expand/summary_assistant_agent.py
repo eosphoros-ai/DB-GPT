@@ -74,7 +74,7 @@ class SummaryAssistantAgent(ConversableAgent):
         else:
             try:
                 vis_client = ApiCall()
-                content = "The generated summary is shown above."
+                content = message
                 view = content
             except Exception as e:
                 fail_reason += f"Return summarization error，{str(e)}"
