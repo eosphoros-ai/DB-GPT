@@ -11,7 +11,7 @@
 
         run example.
         ..code-block:: shell
-            python examples/agents/single_agent_dialogue_example.py
+            python examples/agents/single_summary_agent_dialogue_example.py
 """
 
 import asyncio
@@ -66,7 +66,7 @@ if __name__ == "__main__":
             Nuclear thermal rocket
             Nuclear pulse propulsion
             Nuclear electric rocket
-            """, 
+            """,
         )
     )
 
