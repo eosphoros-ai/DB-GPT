@@ -132,9 +132,14 @@ def setup_dev_environment(
 
     for dag in dags:
         if show_dag_graph:
-            dag_graph_file = dag.visualize_dag()
-            if dag_graph_file:
-                logger.info(f"Visualize DAG {str(dag)} to {dag_graph_file}")
+            try:
+                dag_graph_file = dag.visualize_dag()
+                if dag_graph_file:
+                    logger.info(f"Visualize DAG {str(dag)} to {dag_graph_file}")
+            except Exception as e:
+                logger.warning(
+                    f"Visualize DAG {str(dag)} failed: {e}, if your system has no graphviz, you can install it by `pip install graphviz` or `sudo apt install graphviz`"
+                )
         for trigger in dag.trigger_nodes:
             trigger_manager.register_trigger(trigger)
     trigger_manager.after_register()
