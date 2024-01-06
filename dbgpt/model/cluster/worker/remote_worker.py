@@ -122,7 +122,7 @@ class RemoteModelWorker(ModelWorker):
                 json=params,
                 timeout=self.timeout,
             )
-            return ModelMetadata(**response.json())
+            return ModelMetadata.from_dict(response.json())
 
     def get_model_metadata(self, params: Dict) -> ModelMetadata:
         """Get model metadata"""

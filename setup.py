@@ -411,6 +411,8 @@ def core_requires():
         "aiofiles",
         # for agent
         "GitPython",
+        # For AWEL dag visualization, graphviz is a small package, also we can move it to default.
+        "graphviz",
     ]
 
 

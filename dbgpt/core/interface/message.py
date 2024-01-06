@@ -636,18 +636,26 @@ class OnceConversation:
                 )
         return messages
 
-    def get_history_message(self) -> List[BaseMessage]:
+    def get_history_message(
+        self, include_system_message: bool = False
+    ) -> List[BaseMessage]:
         """Get the history message
 
         Not include the system messages.
+
+        Args:
+            include_system_message (bool): Whether to include the system message
 
         Returns:
             List[BaseMessage]: The history messages
         """
         messages = []
         for message in self.messages:
-            if message.pass_to_model and message.type != "system":
-                messages.append(message)
+            if message.pass_to_model:
+                if include_system_message:
+                    messages.append(message)
+                elif message.type != "system":
+                    messages.append(message)
         return messages
 
 
