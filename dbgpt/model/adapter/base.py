@@ -148,7 +148,7 @@ class LLMModelAdapter(ABC):
                 self.model_name, self.model_path
             )
             return conv_template.sep
-        except RuntimeError:
+        except Exception:
             return "\n"
 
     def transform_model_messages(
