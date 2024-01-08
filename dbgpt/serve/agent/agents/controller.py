@@ -11,8 +11,7 @@ from fastapi.responses import StreamingResponse
 from dbgpt._private.config import Config
 from dbgpt.agent.agents.agent import Agent, AgentContext
 from dbgpt.agent.agents.agents_mange import agent_mange
-from dbgpt.agent.agents.plan_group_chat import PlanChat, PlanChatManager
-from dbgpt.agent.agents.planner_agent import PlannerAgent
+
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.common.schema import Status
 from dbgpt.agent.memory.gpts_memory import GptsMemory
@@ -21,6 +20,7 @@ from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.model.cluster.client import DefaultLLMClient
 from dbgpt.serve.agent.model import PagenationFilter, PluginHubFilter
+from dbgpt.serve.agent.team.plan.team_auto_plan import AutoPlanChatManager
 
 from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEntity
 from ..db.gpts_mange_db import GptsInstanceDao, GptsInstanceEntity
@@ -148,15 +148,6 @@ class MultiAgents(BaseComponent, ABC):
                 memory=self.memory,
             )
             agents.append(agent)
-            agent_map[name] = agent
-
-        groupchat = PlanChat(agents=agents, messages=[], max_round=50)
-        planner = PlannerAgent(
-            agent_context=context,
-            memory=self.memory,
-            plan_chat=groupchat,
-        )
-        agent_map[planner.name] = planner
 
         manager = await self._build_chat_manger(context, mode, agents)
         user_proxy = UserProxyAgent(memory=self.memory, agent_context=context)
@@ -212,9 +203,6 @@ class MultiAgents(BaseComponent, ABC):
     ):
         context = await self._build_agent_context(name, conv_id)
 
-        # create agent instance
-        agent_map = defaultdict()
-
         ### default plan excute mode
         agents = []
         for name in context.agents:
@@ -226,24 +214,13 @@ class MultiAgents(BaseComponent, ABC):
             agents.append(agent)
             agent_map[name] = agent
 
-        groupchat = PlanChat(agents=agents, messages=[], max_round=50)
-        planner = PlannerAgent(
+        manager = AutoPlanChatManager(
             agent_context=context,
             memory=self.memory,
-            plan_chat=groupchat,
         )
-        agent_map[planner.name] = planner
-
-        manager = PlanChatManager(
-            agent_context=context,
-            memory=self.memory,
-            plan_chat=groupchat,
-            planner=planner,
-        )
-        agent_map[manager.name] = manager
+        manager.hire(agents)
 
         user_proxy = UserProxyAgent(memory=self.memory, agent_context=context)
-        agent_map[user_proxy.name] = user_proxy
 
         gpts_conversation = self.gpts_conversations.get_by_conv_id(conv_id)
         if gpts_conversation is None:
@@ -277,7 +254,6 @@ class MultiAgents(BaseComponent, ABC):
             try:
                 await user_proxy.a_retry_chat(
                     recipient=manager,
-                    agent_map=agent_map,
                     memory=self.memory,
                 )
             except Exception as e:

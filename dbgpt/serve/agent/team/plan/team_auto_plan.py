@@ -9,7 +9,6 @@ from dbgpt.core.interface.message import ModelMessageRoleType
 
 from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.agent.agents.agent import Agent, AgentContext
-from dbgpt.serve.agent.team.base import MangerAgent
 from dbgpt.agent.common.schema import Status
 from dbgpt.agent.memory.base import GptsPlan
 from dbgpt.agent.memory.gpts_memory import GptsMemory
