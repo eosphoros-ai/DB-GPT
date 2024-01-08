@@ -26,7 +26,10 @@ from dbgpt.core.interface.llm import ModelMetadata
 
 import asyncio
 
-test_dir = os.path.join(os.path.dirname(__file__), "test_files")
+
+current_dir = os.getcwd()
+parent_dir = os.path.dirname(current_dir)
+test_plugin_dir = os.path.join(parent_dir, "test_files")
 
 if __name__ == "__main__":
     from dbgpt.model import OpenAILLMClient
@@ -46,7 +49,7 @@ if __name__ == "__main__":
     tool_enginer = PluginAssistantAgent(
         agent_context=context,
         memory=default_memory,
-        plugin_path=test_dir,
+        plugin_path=test_plugin_dir,
     )
     summarizer = SummaryAssistantAgent(
         agent_context=context,

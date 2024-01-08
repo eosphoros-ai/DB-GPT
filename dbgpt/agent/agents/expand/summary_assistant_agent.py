@@ -21,7 +21,7 @@ class SummaryAssistantAgent(ConversableAgent):
            1. You need to first detect user's question that you need to answer with your summarization.
            2. Output the extracted user's question with the format - The User's Question: user's question.
            3. Then you need to summarize the historical messages 
-           4. Output the summarization only related to user's question.
+           4. Output the summarization only related to user's question.Make sure to answer only the content of the summary.
         """
 
     DEFAULT_DESCRIBE = """Summarize provided text content according to user's questions and output the summaraization."""
