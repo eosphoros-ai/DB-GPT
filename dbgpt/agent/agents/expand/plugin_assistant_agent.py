@@ -2,16 +2,14 @@ import logging
 from typing import Callable, Dict, Literal, Optional, Union
 
 from dbgpt.util.json_utils import find_json_objects
-
-from ...memory.gpts_memory import GptsMemory
-from ..agent import Agent, AgentContext
-from ..base_agent import ConversableAgent
-from ...plugin.loader import PluginLoader
-from ...plugin.commands.command_mange import execute_command
-
-from dbgpt.vis import vis_client, VisPlugin
+from dbgpt.vis import VisPlugin, vis_client
 
 from ...common.schema import Status
+from ...memory.gpts_memory import GptsMemory
+from ...plugin.commands.command_mange import execute_command
+from ...plugin.loader import PluginLoader
+from ..agent import Agent, AgentContext
+from ..base_agent import ConversableAgent
 
 try:
     from termcolor import colored

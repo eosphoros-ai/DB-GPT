@@ -1,16 +1,15 @@
 import logging
 import sys
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
-from dbgpt.core.interface.message import ModelMessageRoleType
-
-from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.agent.agents.agent import Agent, AgentContext
+from dbgpt.agent.agents.agents_mange import mentioned_agents, participant_roles
+from dbgpt.agent.agents.base_agent import ConversableAgent
+from dbgpt.agent.agents.base_team import MangerAgent
 from dbgpt.agent.common.schema import Status
 from dbgpt.agent.memory.base import GptsPlan
 from dbgpt.agent.memory.gpts_memory import GptsMemory
-from dbgpt.agent.agents.base_team import MangerAgent
-from dbgpt.agent.agents.agents_mange import mentioned_agents, participant_roles
+from dbgpt.core.interface.message import ModelMessageRoleType
 
 from .planner_agent import PlannerAgent
 

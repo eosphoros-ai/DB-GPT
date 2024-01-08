@@ -14,18 +14,16 @@
             python examples/agents/auto_plan_agent_dialogue_example.py
 """
 
+import asyncio
 import os
-from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
-from dbgpt.serve.agent.team.layout.team_awel_layout import AwelLayoutChatManger
-from dbgpt.agent.agents.expand.plugin_assistant_agent import PluginAssistantAgent
-from dbgpt.agent.agents.expand.summary_assistant_agent import SummaryAssistantAgent
 
 from dbgpt.agent.agents.agent import AgentContext
+from dbgpt.agent.agents.expand.plugin_assistant_agent import PluginAssistantAgent
+from dbgpt.agent.agents.expand.summary_assistant_agent import SummaryAssistantAgent
+from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.core.interface.llm import ModelMetadata
-
-import asyncio
-
+from dbgpt.serve.agent.team.layout.team_awel_layout import AwelLayoutChatManger
 
 current_dir = os.getcwd()
 parent_dir = os.path.dirname(current_dir)

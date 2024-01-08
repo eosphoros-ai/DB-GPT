@@ -1,7 +1,8 @@
 import logging
 from pathlib import Path
-from .generator import PluginPromptGenerator
 from typing import List, Optional
+
+from .generator import PluginPromptGenerator
 from .plugins_util import scan_plugins
 
 logger = logging.getLogger(__name__)

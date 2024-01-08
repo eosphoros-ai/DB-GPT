@@ -3,7 +3,7 @@ import logging
 import uuid
 from abc import ABC
 from collections import defaultdict
-from typing import List, Dict
+from typing import Dict, List
 
 from fastapi import APIRouter, Body
 from fastapi.responses import StreamingResponse
@@ -11,7 +11,6 @@ from fastapi.responses import StreamingResponse
 from dbgpt._private.config import Config
 from dbgpt.agent.agents.agent import Agent, AgentContext
 from dbgpt.agent.agents.agents_mange import agent_mange
-
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.common.schema import Status
 from dbgpt.agent.memory.gpts_memory import GptsMemory
@@ -24,10 +23,10 @@ from dbgpt.serve.agent.team.plan.team_auto_plan import AutoPlanChatManager
 
 from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEntity
 from ..db.gpts_mange_db import GptsInstanceDao, GptsInstanceEntity
-from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
-from .dbgpts import DbGptsInstance
 from ..team.base import TeamMode
 from ..team.layout.team_awel_layout import AwelLayoutChatManger
+from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
+from .dbgpts import DbGptsInstance
 
 CFG = Config()
 

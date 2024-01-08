@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dbgpt.core import LLMClient
 from dbgpt.core.interface.llm import ModelMetadata
+from dbgpt.util.annotations import PublicAPI
 
 from ..memory.gpts_memory import GptsMemory
-from dbgpt.util.annotations import PublicAPI
 
 
 class Agent:

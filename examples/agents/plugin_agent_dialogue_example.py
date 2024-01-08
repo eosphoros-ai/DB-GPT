@@ -14,13 +14,14 @@
             python examples/agents/single_agent_dialogue_example.py
 """
 
+import asyncio
+import os
+
+from dbgpt.agent.agents.agent import AgentContext
 from dbgpt.agent.agents.expand.plugin_assistant_agent import PluginAssistantAgent
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
-from dbgpt.agent.agents.agent import AgentContext
 from dbgpt.core.interface.llm import ModelMetadata
-import asyncio
-import os
 
 if __name__ == "__main__":
     from dbgpt.model import OpenAILLMClient

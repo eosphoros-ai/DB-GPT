@@ -10,7 +10,7 @@
             # First terminal
             export OPENAI_API_KEY=xxx
             export OPENAI_API_BASE=https://api.openai.com/v1
-            python examples/layout/simple_chat_history_example.py
+            python examples/awel/simple_chat_history_example.py
 
 
         Code fix command, return no streaming response

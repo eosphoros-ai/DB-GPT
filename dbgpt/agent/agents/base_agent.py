@@ -13,7 +13,6 @@ from ..memory.base import GptsMessage
 from ..memory.gpts_memory import GptsMemory
 from .agent import Agent, AgentContext
 
-
 logger = logging.getLogger(__name__)
 
 

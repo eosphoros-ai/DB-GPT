@@ -70,3 +70,12 @@ with DAG("simple_rag_example") as dag:
         >> model_task
         >> output_parser_task
     )
+
+
+if __name__ == "__main__":
+    if dag.leaf_nodes[0].dev_mode:
+        from dbgpt.core.awel import setup_dev_environment
+
+        setup_dev_environment([dag])
+    else:
+        pass
