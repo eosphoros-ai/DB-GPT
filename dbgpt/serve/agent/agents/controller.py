@@ -3,12 +3,13 @@ import logging
 import uuid
 from abc import ABC
 from collections import defaultdict
+from typing import List, Dict
 
 from fastapi import APIRouter, Body
 from fastapi.responses import StreamingResponse
 
 from dbgpt._private.config import Config
-from dbgpt.agent.agents.agent import AgentContext
+from dbgpt.agent.agents.agent import Agent, AgentContext
 from dbgpt.agent.agents.agents_mange import agent_mange
 from dbgpt.agent.agents.plan_group_chat import PlanChat, PlanChatManager
 from dbgpt.agent.agents.planner_agent import PlannerAgent
@@ -25,6 +26,8 @@ from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEn
 from ..db.gpts_mange_db import GptsInstanceDao, GptsInstanceEntity
 from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
 from .dbgpts import DbGptsInstance
+from ..team.base import TeamMode
+from ..team.layout.team_awel_layout import AwelLayoutChatManger
 
 CFG = Config()
 
@@ -51,11 +54,11 @@ class MultiAgents(BaseComponent, ABC):
     def gpts_create(self, entity: GptsInstanceEntity):
         self.gpts_intance.add(entity)
 
-    def _build_agent_context(
+    async def _build_agent_context(
         self,
         name: str,
         conv_id: str,
-    ):
+    ) -> AgentContext:
         gpts_instance: GptsInstanceEntity = self.gpts_intance.get_by_name(name)
         if gpts_instance is None:
             raise ValueError(f"can't find dbgpts!{name}")
@@ -88,67 +91,57 @@ class MultiAgents(BaseComponent, ABC):
 
         context.llm_models = await llm_task.models()
         context.model_priority = llm_models_priority
+        return context
 
-        agent_map = defaultdict()
+    async def _build_chat_manger(
+        self, context: AgentContext, mode: TeamMode, agents: List[Agent]
+    ):
+        if mode == TeamMode.SINGLE_AGENT:
+            manager = agents[0]
+        else:
+            if TeamMode.AUTO_PLAN == mode:
+                manager = PlanChatManager(
+                    agent_context=context,
+                    memory=self.memory,
+                    plan_chat=groupchat,
+                    planner=planner,
+                )
+            elif TeamMode.AWEL_LAYOUT == mode:
+                manager = AwelLayoutChatManger(
+                    agent_context=context,
+                    memory=self.memory,
+                )
+            else:
+                raise ValueError(f"Unknown Agent Team Mode!{mode}")
+            manager.hire(agents)
 
-        ### default plan excute mode
-        agents = []
-        for name in agents_names:
-            cls = agent_mange.get_by_name(name)
-            agent = cls(
-                agent_context=context,
-                memory=self.memory,
-            )
-            agents.append(agent)
-            agent_map[name] = agent
+        return manager
 
-    async def awel_layout_chat(
+    async def agent_team_chat(
         self,
         name: str,
+        mode: TeamMode,
         user_query: str,
         conv_id: str,
         user_code: str = None,
         sys_code: str = None,
     ):
-        gpts_instance: GptsInstanceEntity = self.gpts_intance.get_by_name(name)
-        if gpts_instance is None:
-            raise ValueError(f"can't find dbgpts!{name}")
-        agents_names = json.loads(gpts_instance.gpts_agents)
-        llm_models_priority = json.loads(gpts_instance.gpts_models)
-        resource_db = (
-            json.loads(gpts_instance.resource_db) if gpts_instance.resource_db else None
-        )
-        resource_knowledge = (
-            json.loads(gpts_instance.resource_knowledge)
-            if gpts_instance.resource_knowledge
-            else None
-        )
-        resource_internet = (
-            json.loads(gpts_instance.resource_internet)
-            if gpts_instance.resource_internet
-            else None
-        )
+        """Initiate an Agent-based conversation
+        Args:
+            name:
+            mode:
+            user_query:
+            conv_id:
+            user_code:
+            sys_code:
 
-        ### init chat param
-        worker_manager = CFG.SYSTEM_APP.get_component(
-            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-        ).create()
-        llm_task = DefaultLLMClient(worker_manager)
-        context: AgentContext = AgentContext(conv_id=conv_id, llm_provider=llm_task)
-        context.gpts_name = gpts_instance.gpts_name
-        context.resource_db = resource_db
-        context.resource_internet = resource_internet
-        context.resource_knowledge = resource_knowledge
-        context.agents = agents_names
+        Returns:
 
-        context.llm_models = await llm_task.models()
-        context.model_priority = llm_models_priority
-
+        """
+        context = await self._build_agent_context(name, conv_id)
         agent_map = defaultdict()
-
-        ### default plan excute mode
         agents = []
-        for name in agents_names:
+        for name in context.agents:
             cls = agent_mange.get_by_name(name)
             agent = cls(
                 agent_context=context,
@@ -156,6 +149,58 @@ class MultiAgents(BaseComponent, ABC):
             )
             agents.append(agent)
             agent_map[name] = agent
+
+        groupchat = PlanChat(agents=agents, messages=[], max_round=50)
+        planner = PlannerAgent(
+            agent_context=context,
+            memory=self.memory,
+            plan_chat=groupchat,
+        )
+        agent_map[planner.name] = planner
+
+        manager = await self._build_chat_manger(context, mode, agents)
+        user_proxy = UserProxyAgent(memory=self.memory, agent_context=context)
+
+        gpts_conversation = self.gpts_conversations.get_by_conv_id(conv_id)
+        if gpts_conversation is None:
+            self.gpts_conversations.add(
+                GptsConversationsEntity(
+                    conv_id=conv_id,
+                    user_goal=user_query,
+                    gpts_name=name,
+                    state=Status.RUNNING.value,
+                    max_auto_reply_round=context.max_chat_round,
+                    auto_reply_count=0,
+                    user_code=user_code,
+                    sys_code=sys_code,
+                )
+            )
+
+            ## dbgpts conversation save
+            try:
+                await user_proxy.a_initiate_chat(
+                    recipient=manager,
+                    message=user_query,
+                    memory=self.memory,
+                )
+            except Exception as e:
+                logger.error(f"chat abnormal termination！{str(e)}", e)
+                self.gpts_conversations.update(conv_id, Status.FAILED.value)
+
+        else:
+            # retry chat
+            self.gpts_conversations.update(conv_id, Status.RUNNING.value)
+            try:
+                await user_proxy.a_retry_chat(
+                    recipient=manager,
+                    memory=self.memory,
+                )
+            except Exception as e:
+                logger.error(f"chat abnormal termination！{str(e)}", e)
+                self.gpts_conversations.update(conv_id, Status.FAILED.value)
+
+        self.gpts_conversations.update(conv_id, Status.COMPLETE.value)
+        return conv_id
 
     async def plan_chat(
         self,
@@ -165,45 +210,14 @@ class MultiAgents(BaseComponent, ABC):
         user_code: str = None,
         sys_code: str = None,
     ):
-        gpts_instance: GptsInstanceEntity = self.gpts_intance.get_by_name(name)
-        if gpts_instance is None:
-            raise ValueError(f"can't find dbgpts!{name}")
-        agents_names = json.loads(gpts_instance.gpts_agents)
-        llm_models_priority = json.loads(gpts_instance.gpts_models)
-        resource_db = (
-            json.loads(gpts_instance.resource_db) if gpts_instance.resource_db else None
-        )
-        resource_knowledge = (
-            json.loads(gpts_instance.resource_knowledge)
-            if gpts_instance.resource_knowledge
-            else None
-        )
-        resource_internet = (
-            json.loads(gpts_instance.resource_internet)
-            if gpts_instance.resource_internet
-            else None
-        )
+        context = await self._build_agent_context(name, conv_id)
 
-        ### init chat param
-        worker_manager = CFG.SYSTEM_APP.get_component(
-            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-        ).create()
-        llm_task = DefaultLLMClient(worker_manager)
-        context: AgentContext = AgentContext(conv_id=conv_id, llm_provider=llm_task)
-        context.gpts_name = gpts_instance.gpts_name
-        context.resource_db = resource_db
-        context.resource_internet = resource_internet
-        context.resource_knowledge = resource_knowledge
-        context.agents = agents_names
-
-        context.llm_models = await llm_task.models()
-        context.model_priority = llm_models_priority
-
+        # create agent instance
         agent_map = defaultdict()
 
         ### default plan excute mode
         agents = []
-        for name in agents_names:
+        for name in context.agents:
             cls = agent_mange.get_by_name(name)
             agent = cls(
                 agent_context=context,
@@ -237,7 +251,7 @@ class MultiAgents(BaseComponent, ABC):
                 GptsConversationsEntity(
                     conv_id=conv_id,
                     user_goal=user_query,
-                    gpts_name=gpts_instance.gpts_name,
+                    gpts_name=name,
                     state=Status.RUNNING.value,
                     max_auto_reply_round=context.max_chat_round,
                     auto_reply_count=0,

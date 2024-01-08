@@ -11,9 +11,7 @@ from dbgpt.util.utils import colored
 
 from ..memory.base import GptsMessage
 from ..memory.gpts_memory import GptsMemory
-from .agent import Agent, AgentContext, AgentGenerateContext
-
-from dbgpt.core.awel.operator.common_operator import MapOperator
+from .agent import Agent, AgentContext
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +34,7 @@ class ConversableAgent(Agent):
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "TERMINATE",
         default_auto_reply: Optional[Union[str, Dict, None]] = "",
+        is_terminal_agent: bool = False,
     ):
         super().__init__(name, memory, describe)
 
@@ -60,8 +59,9 @@ class ConversableAgent(Agent):
             else self.MAX_CONSECUTIVE_AUTO_REPLY
         )
         self.consecutive_auto_reply_counter: int = 0
-
         self._current_retry_counter: int = 0
+        self._max_retry_count: int = 5
+        self._is_terminal_agent = is_terminal_agent
 
         ## By default, the memory of 4 rounds of dialogue is retained.
         self.dialogue_memory_rounds = 5
@@ -93,6 +93,10 @@ class ConversableAgent(Agent):
                 "reset_config": reset_config,
             },
         )
+
+    @property
+    def is_terminal_agent(self):
+        return self._is_terminal_agent
 
     @property
     def system_message(self):
@@ -200,7 +204,6 @@ class ConversableAgent(Agent):
         """
             Put the received message content into the collective message memory
         Args:
-            conv_id:
             message:
             role:
             sender:
@@ -427,7 +430,7 @@ class ConversableAgent(Agent):
         self,
         message: Optional[Dict],
         sender: Agent,
-        reviewer: "Agent",
+        reviewer: Agent,
         silent: Optional[bool] = False,
         rely_messages: Optional[List[Dict]] = None,
     ):
@@ -481,6 +484,9 @@ class ConversableAgent(Agent):
         if request_reply is False or request_reply is None:
             logger.info("Messages that do not require a reply")
             return
+        if self._is_termination_msg(message) or sender.is_terminal_agent:
+            logger.info(f"TERMINATE!")
+            return
 
         verify_paas, reply = await self.a_generate_reply(
             message=message, sender=sender, reviewer=reviewer, silent=silent
@@ -491,14 +497,26 @@ class ConversableAgent(Agent):
                 message=reply, recipient=sender, reviewer=reviewer, silent=silent
             )
         else:
-            self._current_retry_counter += 1
-            logger.info(
-                "The generated answer failed to verify, so send it to yourself for optimization."
-            )
-            # TODO: Exit after the maximum number of rounds of self-optimization
-            await sender.a_send(
-                message=reply, recipient=self, reviewer=reviewer, silent=silent
-            )
+            # Exit after the maximum number of rounds of self-optimization
+            if self._current_retry_counter >= self._max_retry_count:
+                # If the maximum number of retries is exceeded, the abnormal answer will be returned directly.
+                logger.warning(
+                    f"More than {self._current_retry_counter} times and still no valid answer is output."
+                )
+                reply[
+                    "content"
+                ] = f"After n optimizations, the following problems still exist:{reply['content']}"
+                await self.a_send(
+                    message=reply, recipient=sender, reviewer=reviewer, silent=silent
+                )
+            else:
+                self._current_retry_counter += 1
+                logger.info(
+                    "The generated answer failed to verify, so send it to yourself for optimization."
+                )
+                await sender.a_send(
+                    message=reply, recipient=self, reviewer=reviewer, silent=silent
+                )
 
     async def a_verify(self, message: Optional[Dict]):
         return True, message
@@ -562,7 +580,6 @@ class ConversableAgent(Agent):
     async def a_retry_chat(
         self,
         recipient: "ConversableAgent",
-        agent_map: dict,
         reviewer: "Agent" = None,
         clear_history: Optional[bool] = True,
         silent: Optional[bool] = False,

@@ -21,8 +21,9 @@ import os
 from dbgpt.agent.agents.agent import AgentContext
 from dbgpt.agent.agents.agents_mange import agent_mange
 from dbgpt.agent.agents.expand.code_assistant_agent import CodeAssistantAgent
-from dbgpt.agent.agents.expand.plugin_assistant_agent import PluginAgent
-from dbgpt.agent.agents.plan_group_chat import PlanChat, PlanChatManager
+
+from dbgpt.serve.agent.team.plan.team_auto_plan import AutoPlanChatManager
+
 from dbgpt.agent.agents.planner_agent import PlannerAgent
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
@@ -33,27 +34,19 @@ if __name__ == "__main__":
 
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)
-    # context.llm_models = [ModelMetadata(model="gpt-3.5-turbo")]
-    context.llm_models = [ModelMetadata(model="gpt-4-vision-preview")]
+    context.llm_models = [ModelMetadata(model="gpt-3.5-turbo")]
+    # context.llm_models = [ModelMetadata(model="gpt-4-vision-preview")]
     context.gpts_name = "代码分析助手"
 
     default_memory = GptsMemory()
     coder = CodeAssistantAgent(memory=default_memory, agent_context=context)
     ## TODO  add other agent
 
-    groupchat = PlanChat(agents=[coder], messages=[], max_round=50)
-    planner = PlannerAgent(
-        agent_context=context,
-        memory=default_memory,
-        plan_chat=groupchat,
-    )
-
-    manager = PlanChatManager(
-        plan_chat=groupchat,
-        planner=planner,
+    manager = AutoPlanChatManager(
         agent_context=context,
         memory=default_memory,
     )
+    manager.hire([coder])
 
     user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
 

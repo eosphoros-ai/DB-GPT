@@ -6,14 +6,15 @@ from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator, JoinOperator, BaseOperator
 from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.agent.agents.agent import Agent, AgentContext, AgentGenerateContext
-from dbgpt.serve.agent.team.team_base import Team
+from dbgpt.agent.agents.base_team import MangerAgent
+
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.serve.agent.team.layout.agent_operator import AgentOperator
 
 logger = logging.getLogger(__name__)
 
 
-class AwelLayoutChatManger(ConversableAgent, Team):
+class AwelLayoutChatManger(MangerAgent):
     NAME = "layout_manager"
 
     def __init__(
@@ -26,8 +27,7 @@ class AwelLayoutChatManger(ConversableAgent, Team):
         describe: Optional[str] = "layout chat manager.",
         **kwargs,
     ):
-        ConversableAgent.__init__(
-            self,
+        super().__init__(
             name=self.NAME,
             describe=describe,
             memory=memory,
@@ -36,30 +36,11 @@ class AwelLayoutChatManger(ConversableAgent, Team):
             agent_context=agent_context,
             **kwargs,
         )
-        Team.__init__(self)
-        # Order of register_reply is important.
-
         # Allow async chat if initiated using a_initiate_chat
         self.register_reply(
             Agent,
             AwelLayoutChatManger.a_run_chat,
         )
-
-    async def a_reasoning_reply(
-        self, messages: Optional[List[Dict]] = None
-    ) -> Union[str, Dict, None]:
-        if messages is None or len(messages) <= 0:
-            message = None
-            return None, None
-        else:
-            message = messages[-1]
-            self.messages.append(message)
-            return message["content"], None
-
-    async def a_verify_reply(
-        self, message: Optional[Dict], sender: "Agent", reviewer: "Agent", **kwargs
-    ) -> Union[str, Dict, None]:
-        return True, message
 
     async def a_run_chat(
         self,

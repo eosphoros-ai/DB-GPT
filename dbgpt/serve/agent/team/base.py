@@ -1,10 +1,14 @@
+import logging
+import sys
 from enum import Enum
 
 from pydantic import BaseModel, Field
 from typing import Dict, Any, Optional, Union, List
-import logging
 
 from dbgpt.agent.agents.agent import Agent
+from dbgpt.agent.agents.base_agent import ConversableAgent
+from dbgpt.agent.agents.agent import Agent, AgentContext
+from dbgpt.agent.memory.gpts_memory import GptsMemory
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +16,7 @@ logger = logging.getLogger(__name__)
 class TeamMode(Enum):
     AUTO_PLAN = "auto_plan"
     AWEL_LAYOUT = "awel_layout"
-    SINGLE_AGEN = "singe_agent"
+    SINGLE_AGENT = "singe_agent"
 
 
 def content_str(content: Union[str, List, None]) -> str:
@@ -60,57 +64,3 @@ def content_str(content: Union[str, List, None]) -> str:
                 f"Wrong content format: unknown type {item['type']} within the content"
             )
     return rst
-
-
-class Team:
-    def __init__(self):
-        self.agents: List[Agent] = []
-        self.messages: List[Dict] = []
-        self.max_round: Optional[int] = 10
-        self.mode_name: TeamMode
-
-    def hire(self, agents: list[Agent]):
-        """Hire roles to cooperate"""
-        self.agents.extend(agents)
-
-    @property
-    def agent_names(self) -> List[str]:
-        """Return the names of the agents in the group chat."""
-        return [agent.name for agent in self.agents]
-
-    def agent_by_name(self, name: str) -> Agent:
-        """Returns the agent with a given name."""
-        return self.agents[self.agent_names.index(name)]
-
-    async def a_select_speaker(self, last_speaker: Agent, selector: Agent):
-        pass
-
-    def reset(self):
-        """Reset the group chat."""
-        self.messages.clear()
-
-    def append(self, message: Dict):
-        """Append a message to the group chat.
-        We cast the content to str here so that it can be managed by text-based
-        model.
-        """
-        message["content"] = content_str(message["content"])
-        self.messages.append(message)
-
-    async def a_run_chat(
-        self,
-        message: Optional[str] = None,
-        sender: Optional[Agent] = None,
-        reviewer: Agent = None,
-    ):
-        """
-        Install the current organization method to open the conversation
-        Args:
-            message:
-            sender:
-            reviewer:
-
-        Returns:
-
-        """
-        pass

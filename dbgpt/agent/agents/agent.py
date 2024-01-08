@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from dbgpt.core import LLMClient
 from dbgpt.core.interface.llm import ModelMetadata
 
-from dbgpt.util import BaseParameters
+from ..memory.gpts_memory import GptsMemory
 from dbgpt.util.annotations import PublicAPI
 
 
@@ -44,6 +44,10 @@ class Agent:
     def describe(self) -> str:
         """Get the name of the agent."""
         return self._describe
+
+    @property
+    def is_terminal_agent(self) -> bool:
+        return False
 
     async def a_send(
         self,
@@ -104,10 +108,9 @@ class Agent:
     async def a_reasoning_reply(
         self, messages: Optional[List[Dict]]
     ) -> Union[str, Dict, None]:
-        """
-        Based on the requirements of the current agent, reason about the current task goal through LLM
+        """Based on the requirements of the current agent, reason about the current task goal through LLM
         Args:
-            message:
+            messages:
 
         Returns:
             str or dict or None: the generated reply. If None, no reply is generated.
@@ -201,8 +204,8 @@ class AgentGenerateContext:
     reviewer: Agent
     silent: Optional[bool] = False
 
-    rely_messages: List[Dict] = field(default_factory=list)
+    rely_messages: List[Dict] = dataclasses.field(default_factory=list)
     final: Optional[bool] = True
 
     def to_dict(self) -> Dict:
-        return asdict(self)
+        return dataclasses.asdict(self)

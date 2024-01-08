@@ -1,9 +1,6 @@
 from typing import Callable, Dict, Literal, Optional, Union
 
-from dbgpt._private.config import Config
 from dbgpt.agent.agents.base_agent import ConversableAgent
-from dbgpt.agent.plugin.commands.command_mange import ApiCall
-
 from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent, AgentContext
 
@@ -24,7 +21,7 @@ class SummaryAssistantAgent(ConversableAgent):
            1. You need to first detect user's question that you need to answer with your summarization.
            2. Output the extracted user's question with the format - The User's Question: user's question.
            3. Then you need to summarize the historical messages 
-           4. Output the summarization only related to user's question with the format - The Summarization: the summarization.
+           4. Output the summarization only related to user's question.
         """
 
     DEFAULT_DESCRIBE = """Summarize provided text content according to user's questions and output the summaraization."""
@@ -63,7 +60,7 @@ class SummaryAssistantAgent(ConversableAgent):
         config: Optional[Union[Dict, Literal[False]]] = None,
     ):
         """Generate a reply with summary."""
-
+        fail_reason = None
         response_success = True
         view = None
         content = None
@@ -73,7 +70,6 @@ class SummaryAssistantAgent(ConversableAgent):
             response_success = False
         else:
             try:
-                vis_client = ApiCall()
                 content = message
                 view = content
             except Exception as e:
