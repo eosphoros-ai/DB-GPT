@@ -1,10 +1,8 @@
 import logging
 import sys
 
-from typing import Dict, Any, Optional, Union, List
-from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.core.awel import DAG, HttpTrigger, MapOperator, JoinOperator, BaseOperator
-from dbgpt.agent.agents.base_agent import ConversableAgent
+from typing import Any, Optional
+from dbgpt.core.awel import DAG
 from dbgpt.agent.agents.agent import Agent, AgentContext, AgentGenerateContext
 from dbgpt.agent.agents.base_team import MangerAgent
 

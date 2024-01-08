@@ -1,9 +1,7 @@
 import logging
 import sys
-from enum import Enum
 
-from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional, Union, List
+from typing import Dict, Optional, Union, List
 
 from dbgpt.agent.agents.agent import Agent
 from dbgpt.agent.agents.base_agent import ConversableAgent

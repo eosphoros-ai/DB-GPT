@@ -7,7 +7,7 @@ from dbgpt.agent.memory.gpts_memory import (
     GptsPlansMemory,
 )
 
-from ..db.gpts_messages_db import GptsMessagesDao, GptsMessagesEntity
+from ..db.gpts_messages_db import GptsMessagesDao
 from ..db.gpts_plans_db import GptsPlansDao, GptsPlansEntity
 
 

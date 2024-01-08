@@ -1,8 +1,6 @@
-import json
 import logging
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Callable, Dict, Literal, Optional, Union
 
-from dbgpt.core.awel import BaseOperator
 from dbgpt.util.json_utils import find_json_objects
 
 from ...memory.gpts_memory import GptsMemory
@@ -125,20 +123,20 @@ class PluginAssistantAgent(ConversableAgent):
             rensponse_succ = False
             err_msg = "Your answer has multiple json contents, which is not the required return format."
         else:
-            too_name = json_objects[0].get("tool_name", None)
+            tool_name = json_objects[0].get("tool_name", None)
             args = json_objects[0].get("args", None)
 
             try:
-                tool_result = execute_command(too_name, args, self.plugin_generator)
+                tool_result = execute_command(tool_name, args, self.plugin_generator)
                 status = Status.COMPLETE.value
             except Exception as e:
-                logger.exception(f"Tool [{too_name}] excute Failed!")
+                logger.exception(f"Tool [{tool_name}] excute Failed!")
                 status = Status.FAILED.value
-                err_msg = f"Tool [{too_name}] excute Failed!{str(e)}"
+                err_msg = f"Tool [{tool_name}] excute Failed!{str(e)}"
                 rensponse_succ = False
 
             plugin_param = {
-                "name": too_name,
+                "name": tool_name,
                 "args": args,
                 "status": status,
                 "logo": None,

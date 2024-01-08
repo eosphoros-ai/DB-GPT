@@ -1,8 +1,6 @@
-import dataclasses
 from abc import ABC
-from typing import Any, AsyncIterator, Dict, Optional, Union
+from typing import Dict, Optional
 
-from dbgpt._private.pydantic import BaseModel
 from dbgpt.core.awel import (
     BranchFunc,
     BranchOperator,
@@ -11,7 +9,7 @@ from dbgpt.core.awel import (
 
 from dbgpt.agent.agents.agent import AgentGenerateContext, Agent
 from dbgpt.core.interface.message import ModelMessageRoleType
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Dict, List, Optional
 
 
 class BaseAgentOperator:
