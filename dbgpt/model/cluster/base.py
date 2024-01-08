@@ -22,6 +22,8 @@ class PromptRequest(BaseModel):
     span_id: str = None
     metrics: bool = False
     """Whether to return metrics of inference"""
+    version: str = "v2"
+    """Message version, default to v2"""
 
 
 class EmbeddingsRequest(BaseModel):

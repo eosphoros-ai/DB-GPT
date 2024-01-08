@@ -180,3 +180,7 @@ thirdparty
 # typescript
 *.tsbuildinfo
 /web/next-env.d.ts
+
+# Ignore awel DAG visualization files
+/examples/**/*.gv
+/examples/**/*.gv.pdf

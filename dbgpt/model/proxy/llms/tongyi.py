@@ -53,8 +53,12 @@ def tongyi_generate_stream(
         proxyllm_backend = Generation.Models.qwen_turbo  # By Default qwen_turbo
 
     messages: List[ModelMessage] = params["messages"]
+    convert_to_compatible_format = params.get("convert_to_compatible_format", False)
 
-    history = __convert_2_tongyi_messages(messages)
+    if convert_to_compatible_format:
+        history = __convert_2_tongyi_messages(messages)
+    else:
+        history = ModelMessage.to_openai_messages(messages)
     gen = Generation()
     res = gen.call(
         proxyllm_backend,

@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.core.awel import MapOperator
 from dbgpt.core.interface.storage import (
     InMemoryStorage,
     ResourceIdentifier,
@@ -114,6 +113,50 @@ class ModelMessage(BaseModel):
     content: str
     round_index: Optional[int] = 0
 
+    @property
+    def pass_to_model(self) -> bool:
+        """Whether the message will be passed to the model
+
+        The view message will not be passed to the model
+
+        Returns:
+            bool: Whether the message will be passed to the model
+        """
+        return self.role in [
+            ModelMessageRoleType.SYSTEM,
+            ModelMessageRoleType.HUMAN,
+            ModelMessageRoleType.AI,
+        ]
+
+    @staticmethod
+    def from_base_messages(messages: List[BaseMessage]) -> List["ModelMessage"]:
+        result = []
+        for message in messages:
+            content, round_index = message.content, message.round_index
+            if isinstance(message, HumanMessage):
+                result.append(
+                    ModelMessage(
+                        role=ModelMessageRoleType.HUMAN,
+                        content=content,
+                        round_index=round_index,
+                    )
+                )
+            elif isinstance(message, AIMessage):
+                result.append(
+                    ModelMessage(
+                        role=ModelMessageRoleType.AI,
+                        content=content,
+                        round_index=round_index,
+                    )
+                )
+            elif isinstance(message, SystemMessage):
+                result.append(
+                    ModelMessage(
+                        role=ModelMessageRoleType.SYSTEM, content=message.content
+                    )
+                )
+        return result
+
     @staticmethod
     def from_openai_messages(
         messages: Union[str, List[Dict[str, str]]]
@@ -142,9 +185,15 @@ class ModelMessage(BaseModel):
         return result
 
     @staticmethod
-    def to_openai_messages(messages: List["ModelMessage"]) -> List[Dict[str, str]]:
+    def to_openai_messages(
+        messages: List["ModelMessage"], convert_to_compatible_format: bool = False
+    ) -> List[Dict[str, str]]:
         """Convert to OpenAI message format and
         hugggingface [Templates of Chat Models](https://huggingface.co/docs/transformers/v4.34.1/en/chat_templating)
+
+        Args:
+            messages (List["ModelMessage"]): The model messages
+            convert_to_compatible_format (bool): Whether to convert to compatible format
         """
         history = []
         # Add history conversation
@@ -157,15 +206,16 @@ class ModelMessage(BaseModel):
                 history.append({"role": "assistant", "content": message.content})
             else:
                 pass
-        # Move the last user's information to the end
-        last_user_input_index = None
-        for i in range(len(history) - 1, -1, -1):
-            if history[i]["role"] == "user":
-                last_user_input_index = i
-                break
-        if last_user_input_index:
-            last_user_input = history.pop(last_user_input_index)
-            history.append(last_user_input)
+        if convert_to_compatible_format:
+            # Move the last user's information to the end
+            last_user_input_index = None
+            for i in range(len(history) - 1, -1, -1):
+                if history[i]["role"] == "user":
+                    last_user_input_index = i
+                    break
+            if last_user_input_index:
+                last_user_input = history.pop(last_user_input_index)
+                history.append(last_user_input)
         return history
 
     @staticmethod
@@ -189,8 +239,8 @@ class ModelMessage(BaseModel):
         return str_msg
 
 
-_SingleRoundMessage = List[ModelMessage]
-_MultiRoundMessageMapper = Callable[[List[_SingleRoundMessage]], List[ModelMessage]]
+_SingleRoundMessage = List[BaseMessage]
+_MultiRoundMessageMapper = Callable[[List[_SingleRoundMessage]], List[BaseMessage]]
 
 
 def _message_to_dict(message: BaseMessage) -> Dict:
@@ -338,7 +388,8 @@ class OnceConversation:
         """Start a new round of conversation
 
         Example:
-            >>> conversation = OnceConversation()
+
+            >>> conversation = OnceConversation("chat_normal")
             >>> # The chat order will be 0, then we start a new round of conversation
             >>> assert conversation.chat_order == 0
             >>> conversation.start_new_round()
@@ -583,6 +634,28 @@ class OnceConversation:
                         round_index=message.round_index,
                     )
                 )
+        return messages
+
+    def get_history_message(
+        self, include_system_message: bool = False
+    ) -> List[BaseMessage]:
+        """Get the history message
+
+        Not include the system messages.
+
+        Args:
+            include_system_message (bool): Whether to include the system message
+
+        Returns:
+            List[BaseMessage]: The history messages
+        """
+        messages = []
+        for message in self.messages:
+            if message.pass_to_model:
+                if include_system_message:
+                    messages.append(message)
+                elif message.type != "system":
+                    messages.append(message)
         return messages
 
 

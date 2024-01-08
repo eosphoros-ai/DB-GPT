@@ -8,7 +8,12 @@ import traceback
 from dbgpt.configs.model_config import get_device
 from dbgpt.model.adapter.base import LLMModelAdapter
 from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
-from dbgpt.core import ModelOutput, ModelInferenceMetrics, ModelMetadata
+from dbgpt.core import (
+    ModelOutput,
+    ModelInferenceMetrics,
+    ModelMetadata,
+    ModelExtraMedata,
+)
 from dbgpt.model.loader import ModelLoader, _get_model_real_path
 from dbgpt.model.parameter import ModelParameters
 from dbgpt.model.cluster.worker_base import ModelWorker
@@ -196,9 +201,13 @@ class DefaultModelWorker(ModelWorker):
         raise NotImplementedError
 
     def get_model_metadata(self, params: Dict) -> ModelMetadata:
+        ext_metadata = ModelExtraMedata(
+            prompt_sep=self.llm_adapter.get_default_message_separator()
+        )
         return ModelMetadata(
             model=self.model_name,
             context_length=self.context_len,
+            ext_metadata=ext_metadata,
         )
 
     async def async_get_model_metadata(self, params: Dict) -> ModelMetadata:

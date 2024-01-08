@@ -67,6 +67,11 @@ pre-commit: fmt test ## Run formatting and unit tests before committing
 test: $(VENV)/.testenv ## Run unit tests
 	$(VENV_BIN)/pytest dbgpt
 
+.PHONY: test-doc
+test-doc: $(VENV)/.testenv ## Run doctests
+	# -k "not test_" skips tests that are not doctests.
+	$(VENV_BIN)/pytest --doctest-modules -k "not test_" dbgpt/core
+
 .PHONY: coverage
 coverage: setup ## Run tests and report coverage
 	$(VENV_BIN)/pytest dbgpt --cov=dbgpt

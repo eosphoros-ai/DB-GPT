@@ -10,11 +10,12 @@ needed), or truncating them so that they fit in a single LLM call.
 
 import logging
 from string import Formatter
-from typing import Callable, List, Optional, Sequence
+from typing import Callable, List, Optional, Sequence, Set
 
 from dbgpt._private.pydantic import Field, PrivateAttr, BaseModel
 
 from dbgpt.util.global_helper import globals_helper
+from dbgpt.core.interface.prompt import get_template_vars
 from dbgpt._private.llm_metadata import LLMMetadata
 from dbgpt.rag.text_splitter.token_splitter import TokenTextSplitter
 
@@ -230,15 +231,3 @@ def get_empty_prompt_txt(template: str) -> str:
     all_kwargs = {**partial_kargs, **empty_kwargs}
     prompt = template.format(**all_kwargs)
     return prompt
-
-
-def get_template_vars(template_str: str) -> List[str]:
-    """Get template variables from a template string."""
-    variables = []
-    formatter = Formatter()
-
-    for _, variable_name, _, _ in formatter.parse(template_str):
-        if variable_name:
-            variables.append(variable_name)
-
-    return variables

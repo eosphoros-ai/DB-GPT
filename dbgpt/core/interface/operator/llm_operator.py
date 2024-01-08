@@ -1,11 +1,12 @@
 import dataclasses
 from abc import ABC
-from typing import Any, AsyncIterator, Dict, Optional, Union
+from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel
 from dbgpt.core.awel import (
     BranchFunc,
     BranchOperator,
+    DAGContext,
     MapOperator,
     StreamifyAbsOperator,
 )
@@ -22,20 +23,30 @@ RequestInput = Union[
     str,
     Dict[str, Any],
     BaseModel,
+    ModelMessage,
+    List[ModelMessage],
 ]
 
 
-class RequestBuildOperator(MapOperator[RequestInput, ModelRequest], ABC):
+class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest], ABC):
+    """Build the model request from the input value."""
+
     def __init__(self, model: Optional[str] = None, **kwargs):
         self._model = model
         super().__init__(**kwargs)
 
     async def map(self, input_value: RequestInput) -> ModelRequest:
         req_dict = {}
+        if not input_value:
+            raise ValueError("input_value is not set")
         if isinstance(input_value, str):
             req_dict = {"messages": [ModelMessage.build_human_message(input_value)]}
         elif isinstance(input_value, dict):
             req_dict = input_value
+        elif isinstance(input_value, ModelMessage):
+            req_dict = {"messages": [input_value]}
+        elif isinstance(input_value, list) and isinstance(input_value[0], ModelMessage):
+            req_dict = {"messages": input_value}
         elif dataclasses.is_dataclass(input_value):
             req_dict = dataclasses.asdict(input_value)
         elif isinstance(input_value, BaseModel):
@@ -76,6 +87,7 @@ class BaseLLM:
     """The abstract operator for a LLM."""
 
     SHARE_DATA_KEY_MODEL_NAME = "share_data_key_model_name"
+    SHARE_DATA_KEY_MODEL_OUTPUT = "share_data_key_model_output"
 
     def __init__(self, llm_client: Optional[LLMClient] = None):
         self._llm_client = llm_client
@@ -87,8 +99,16 @@ class BaseLLM:
             raise ValueError("llm_client is not set")
         return self._llm_client
 
+    async def save_model_output(
+        self, current_dag_context: DAGContext, model_output: ModelOutput
+    ) -> None:
+        """Save the model output to the share data."""
+        await current_dag_context.save_to_share_data(
+            self.SHARE_DATA_KEY_MODEL_OUTPUT, model_output
+        )
 
-class LLMOperator(BaseLLM, MapOperator[ModelRequest, ModelOutput], ABC):
+
+class BaseLLMOperator(BaseLLM, MapOperator[ModelRequest, ModelOutput], ABC):
     """The operator for a LLM.
 
     Args:
@@ -105,10 +125,12 @@ class LLMOperator(BaseLLM, MapOperator[ModelRequest, ModelOutput], ABC):
         await self.current_dag_context.save_to_share_data(
             self.SHARE_DATA_KEY_MODEL_NAME, request.model
         )
-        return await self.llm_client.generate(request)
+        model_output = await self.llm_client.generate(request)
+        await self.save_model_output(self.current_dag_context, model_output)
+        return model_output
 
 
-class StreamingLLMOperator(
+class BaseStreamingLLMOperator(
     BaseLLM, StreamifyAbsOperator[ModelRequest, ModelOutput], ABC
 ):
     """The streaming operator for a LLM.
@@ -127,8 +149,12 @@ class StreamingLLMOperator(
         await self.current_dag_context.save_to_share_data(
             self.SHARE_DATA_KEY_MODEL_NAME, request.model
         )
+        model_output = None
         async for output in self.llm_client.generate_stream(request):
+            model_output = output
             yield output
+        if model_output:
+            await self.save_model_output(self.current_dag_context, model_output)
 
 
 class LLMBranchOperator(BranchOperator[ModelRequest, ModelRequest]):
