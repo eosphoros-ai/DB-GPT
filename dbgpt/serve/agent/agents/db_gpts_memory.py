@@ -15,7 +15,7 @@ class MetaDbGptsPlansMemory(GptsPlansMemory):
     def __init__(self):
         self.gpts_plan = GptsPlansDao()
 
-    def batch_save(self, plans: list[GptsPlan]):
+    def batch_save(self, plans: List[GptsPlan]):
         self.gpts_plan.batch_save([item.to_dict() for item in plans])
 
     def get_by_conv_id(self, conv_id: str) -> List[GptsPlan]:

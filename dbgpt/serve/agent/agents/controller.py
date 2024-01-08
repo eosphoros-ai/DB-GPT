@@ -100,7 +100,7 @@ class MultiAgents(BaseComponent, ABC):
             manager = agents[0]
         else:
             if TeamMode.AUTO_PLAN == mode:
-                manager = PlanChatManager(
+                manager = AutoPlanChatManager(
                     agent_context=context,
                     memory=self.memory,
                     plan_chat=groupchat,

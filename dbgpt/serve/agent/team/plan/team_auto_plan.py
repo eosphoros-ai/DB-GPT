@@ -28,7 +28,7 @@ class AutoPlanChatManager(MangerAgent):
     def __init__(
         self,
         memory: GptsMemory,
-        agent_context: "AgentContext",
+        agent_context: AgentContext,
         # unlimited consecutive auto reply by default
         max_consecutive_auto_reply: Optional[int] = sys.maxsize,
         human_input_mode: Optional[str] = "NEVER",

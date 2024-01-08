@@ -9,6 +9,7 @@ from dbgpt.agent.agents.agent import Agent
 from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.agent.agents.agent import Agent, AgentContext
 from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.serve.agent.team.base import TeamMode
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class Team:
         self.max_round: Optional[int] = 10
         self.mode_name: TeamMode
 
-    def hire(self, agents: list[Agent]):
+    def hire(self, agents: List[Agent]):
         """Hire roles to cooperate"""
         self.agents.extend(agents)
 
@@ -158,6 +159,6 @@ class MangerAgent(ConversableAgent, Team):
             return message["content"], None
 
     async def a_verify_reply(
-        self, message: Optional[Dict], sender: "Agent", reviewer: "Agent", **kwargs
+        self, message: Optional[Dict], sender: Agent, reviewer: Agent, **kwargs
     ) -> Union[str, Dict, None]:
         return True, message
