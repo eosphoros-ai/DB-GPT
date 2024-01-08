@@ -1,6 +1,7 @@
 from abc import ABC
-from typing import List
 from enum import Enum
+from typing import List
+
 from dbgpt._private.pydantic import BaseModel
 
 

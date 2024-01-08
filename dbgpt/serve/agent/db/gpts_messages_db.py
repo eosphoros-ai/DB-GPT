@@ -1,28 +1,24 @@
 from datetime import datetime
 from typing import List, Optional
+
 from sqlalchemy import (
     Column,
+    DateTime,
+    Index,
     Integer,
     String,
-    Index,
-    DateTime,
-    func,
     Text,
-    or_,
     and_,
     desc,
+    func,
+    or_,
 )
-from sqlalchemy import UniqueConstraint
 
 from dbgpt.storage.metadata import BaseDao, Model
 
 
 class GptsMessagesEntity(Model):
     __tablename__ = "gpts_messages"
-    __table_args__ = {
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-    }
     id = Column(Integer, primary_key=True, comment="autoincrement id")
 
     conv_id = Column(

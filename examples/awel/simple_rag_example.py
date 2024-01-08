@@ -17,17 +17,17 @@
 
 """
 
-from dbgpt.core.awel import HttpTrigger, DAG, MapOperator
-from dbgpt.app.scene.operator._experimental import (
-    ChatContext,
-    PromptManagerOperator,
-    ChatHistoryStorageOperator,
-    ChatHistoryOperator,
-    EmbeddingEngingOperator,
-    BaseChatOperator,
-)
-from dbgpt.app.scene import ChatScene
 from dbgpt.app.openapi.api_view_model import ConversationVo
+from dbgpt.app.scene import ChatScene
+from dbgpt.app.scene.operator._experimental import (
+    BaseChatOperator,
+    ChatContext,
+    ChatHistoryOperator,
+    ChatHistoryStorageOperator,
+    EmbeddingEngingOperator,
+    PromptManagerOperator,
+)
+from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 from dbgpt.model.operator.model_operator import ModelOperator
 
 

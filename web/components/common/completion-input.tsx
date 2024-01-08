@@ -41,9 +41,9 @@ function CompletionInput({ children, loading, onSubmit, handleFinish, ...props }
     setDocuments(data?.data!);
   }
 
-  const onUploadFinish = () => {
+  const onUploadFinish = async () => {
     uploadCountRef.current += 1;
-    fetchDocuments();
+    await fetchDocuments();
   };
 
   return (

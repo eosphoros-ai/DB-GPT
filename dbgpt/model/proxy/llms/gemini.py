@@ -12,7 +12,6 @@ def gemini_generate_stream(
     """Zhipu ai, see: https://open.bigmodel.cn/dev/api#overview"""
     model_params = model.get_params()
     print(f"Model: {model}, model_params: {model_params}")
-    global history
 
     # TODO proxy model use unified config?
     proxy_api_key = model_params.proxy_api_key
@@ -95,7 +94,7 @@ def _transform_to_gemini_messages(
             assert user_prompt == "How are you?"
             assert gemini_hist == [
                 {"role": "user", "parts": {"text": "Hello"}},
-                {"role": "model", "parts": {"text": "Hi there!"}}
+                {"role": "model", "parts": {"text": "Hi there!"}},
             ]
     """
     user_prompt, system_messages, history_messages = parse_model_messages(messages)

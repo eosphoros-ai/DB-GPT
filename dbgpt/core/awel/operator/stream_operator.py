@@ -27,7 +27,7 @@ class StreamifyAbsOperator(BaseOperator[OUT], ABC, Generic[IN, OUT]):
         .. code-block:: python
 
             class MyStreamOperator(StreamifyAbsOperator[int, int]):
-                async def streamify(self, input_value: int) -> AsyncIterator[int]
+                async def streamify(self, input_value: int) -> AsyncIterator[int]:
                     for i in range(input_value):
                         yield i
         """
@@ -54,7 +54,7 @@ class UnstreamifyAbsOperator(BaseOperator[OUT], Generic[IN, OUT]):
         .. code-block:: python
 
             class MyUnstreamOperator(UnstreamifyAbsOperator[int, int]):
-                async def unstreamify(self, input_value: AsyncIterator[int]) -> int
+                async def unstreamify(self, input_value: AsyncIterator[int]) -> int:
                     value_cnt = 0
                     async for v in input_value:
                         value_cnt += 1
@@ -85,7 +85,9 @@ class TransformStreamAbsOperator(BaseOperator[OUT], Generic[IN, OUT]):
         .. code-block:: python
 
             class MyTransformStreamOperator(TransformStreamAbsOperator[int, int]):
-                async def unstreamify(self, input_value: AsyncIterator[int]) -> AsyncIterator[int]
+                async def unstreamify(
+                    self, input_value: AsyncIterator[int]
+                ) -> AsyncIterator[int]:
                     async for v in input_value:
                         yield v + 1
         """

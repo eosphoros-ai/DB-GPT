@@ -1,15 +1,8 @@
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
 
 from ..memory.gpts_memory import GptsMemory
 from .agent import Agent, AgentContext
 from .base_agent import ConversableAgent
-
-try:
-    from termcolor import colored
-except ImportError:
-
-    def colored(x, *args, **kwargs):
-        return x
 
 
 class UserProxyAgent(ConversableAgent):

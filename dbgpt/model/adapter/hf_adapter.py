@@ -87,6 +87,7 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         messages: List[ModelMessage],
         tokenizer: Any,
         prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
     ) -> Optional[str]:
         from transformers import AutoTokenizer
 
@@ -94,7 +95,7 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
             raise ValueError("tokenizer is is None")
         tokenizer: AutoTokenizer = tokenizer
 
-        messages = self.transform_model_messages(messages)
+        messages = self.transform_model_messages(messages, convert_to_compatible_format)
         logger.debug(f"The messages after transform: \n{messages}")
         str_prompt = tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
@@ -132,5 +133,22 @@ class Mixtral8x7BAdapter(NewHFChatModelAdapter):
         )
 
 
+class SOLARAdapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = False
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "solar-" in lower_model_name_or_path
+            and "instruct" in lower_model_name_or_path
+        )
+
+
 register_model_adapter(YiAdapter)
 register_model_adapter(Mixtral8x7BAdapter)
+register_model_adapter(SOLARAdapter)

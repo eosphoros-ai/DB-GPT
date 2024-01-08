@@ -62,7 +62,12 @@ class Serve(BaseServe):
 
             app = FastAPI()
             system_app = SystemApp(app)
-            system_app.register(Serve, api_prefix="/api/v1/prompt", db_url_or_db="sqlite:///:memory:", try_create_tables=True)
+            system_app.register(
+                Serve,
+                api_prefix="/api/v1/prompt",
+                db_url_or_db="sqlite:///:memory:",
+                try_create_tables=True,
+            )
             system_app.on_init()
             # Run before start hook
             system_app.before_start()

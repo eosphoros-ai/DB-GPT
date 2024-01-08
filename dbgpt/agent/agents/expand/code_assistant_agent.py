@@ -1,21 +1,14 @@
 import json
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Callable, Dict, Literal, Optional, Union
 
-from dbgpt.core.awel import BaseOperator
+from dbgpt.core.interface.message import ModelMessageRoleType
 from dbgpt.util.code_utils import UNKNOWN, execute_code, extract_code, infer_lang
 from dbgpt.util.string_utils import str_to_bool
+from dbgpt.util.utils import colored
 
 from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent, AgentContext
 from ..base_agent import ConversableAgent
-from dbgpt.core.interface.message import ModelMessageRoleType
-
-try:
-    from termcolor import colored
-except ImportError:
-
-    def colored(x, *args, **kwargs):
-        return x
 
 
 class CodeAssistantAgent(ConversableAgent):
@@ -109,7 +102,7 @@ class CodeAssistantAgent(ConversableAgent):
         param["code"] = code
         param["log"] = log
 
-        return f"```vis-code\n{json.dumps(param)}\n```"
+        return f"```vis-code\n{json.dumps(param, ensure_ascii=False)}\n```"
 
     async def generate_code_execution_reply(
         self,
@@ -171,7 +164,7 @@ class CodeAssistantAgent(ConversableAgent):
         if action_report:
             task_result = action_report.get("content", "")
 
-        check_reult, model = await self.a_reasoning_reply(
+        check_result, model = await self.a_reasoning_reply(
             [
                 {
                     "role": ModelMessageRoleType.HUMAN,
@@ -183,11 +176,11 @@ class CodeAssistantAgent(ConversableAgent):
                 }
             ]
         )
-        sucess = str_to_bool(check_reult)
+        success = str_to_bool(check_result)
         fail_reason = None
-        if sucess == False:
+        if not success:
             fail_reason = "The execution result of the code you wrote is judged as not answering the task question. Please re-understand and complete the task."
-        return sucess, fail_reason
+        return success, fail_reason
 
     @property
     def use_docker(self) -> Union[bool, str, None]:
@@ -219,6 +212,7 @@ class CodeAssistantAgent(ConversableAgent):
     def execute_code_blocks(self, code_blocks):
         """Execute the code blocks and return the result."""
         logs_all = ""
+        exitcode = -1
         for i, code_block in enumerate(code_blocks):
             lang, code = code_block
             if not lang:

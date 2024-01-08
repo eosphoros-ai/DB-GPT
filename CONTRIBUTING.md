@@ -15,7 +15,7 @@ pip install -e ".[default]"
 ```
 4. Install pre-commit hooks
 ```
-pre-commit install --allow-missing-config
+pre-commit install
 ```
 5. Create a new branch for your changes using the following command:
 

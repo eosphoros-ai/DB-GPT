@@ -100,7 +100,7 @@ def test_update_user(db: DatabaseManager, User: Type[BaseModel], user_dao, user_
 
     # Verify that the user is updated in the database
     with db.session() as session:
-        user = session.query(User).get(created_user_response.id)
+        user = session.get(User, created_user_response.id)
         assert user.age == 35
 
 
@@ -121,7 +121,7 @@ def test_update_user_partial(
 
     # Verify that the user is updated in the database
     with db.session() as session:
-        user = session.query(User).get(created_user_response.id)
+        user = session.get(User, created_user_response.id)
         assert user.age == user_req.age
         assert user.password == "newpassword"
 

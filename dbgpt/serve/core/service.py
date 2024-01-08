@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Generic
+
 from dbgpt.component import BaseComponent
-from dbgpt.storage.metadata._base_dao import BaseDao, T, REQ, RES
 from dbgpt.serve.core.config import BaseServeConfig
+from dbgpt.storage.metadata._base_dao import REQ, RES, BaseDao, T
 
 
 class BaseService(BaseComponent, Generic[T, REQ, RES], ABC):

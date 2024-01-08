@@ -1,45 +1,56 @@
+from dbgpt.core.interface.cache import (
+    CacheClient,
+    CacheConfig,
+    CacheKey,
+    CachePolicy,
+    CacheValue,
+)
 from dbgpt.core.interface.llm import (
+    DefaultMessageConverter,
+    LLMClient,
+    MessageConverter,
+    ModelExtraMedata,
     ModelInferenceMetrics,
+    ModelMetadata,
+    ModelOutput,
     ModelRequest,
     ModelRequestContext,
-    ModelOutput,
-    LLMClient,
-    ModelMetadata,
 )
 from dbgpt.core.interface.message import (
+    AIMessage,
+    BaseMessage,
+    ConversationIdentifier,
+    HumanMessage,
+    MessageIdentifier,
+    MessageStorageItem,
     ModelMessage,
     ModelMessageRoleType,
     OnceConversation,
     StorageConversation,
-    MessageStorageItem,
-    ConversationIdentifier,
-    MessageIdentifier,
-)
-from dbgpt.core.interface.prompt import (
-    PromptTemplate,
-    PromptManager,
-    StoragePromptTemplate,
+    SystemMessage,
 )
 from dbgpt.core.interface.output_parser import BaseOutputParser, SQLOutputParser
-from dbgpt.core.interface.serialization import Serializable, Serializer
-from dbgpt.core.interface.cache import (
-    CacheKey,
-    CacheValue,
-    CacheClient,
-    CachePolicy,
-    CacheConfig,
+from dbgpt.core.interface.prompt import (
+    BasePromptTemplate,
+    ChatPromptTemplate,
+    HumanPromptTemplate,
+    MessagesPlaceholder,
+    PromptManager,
+    PromptTemplate,
+    StoragePromptTemplate,
+    SystemPromptTemplate,
 )
+from dbgpt.core.interface.serialization import Serializable, Serializer
 from dbgpt.core.interface.storage import (
+    DefaultStorageItemAdapter,
+    InMemoryStorage,
+    QuerySpec,
     ResourceIdentifier,
+    StorageError,
+    StorageInterface,
     StorageItem,
     StorageItemAdapter,
-    StorageInterface,
-    InMemoryStorage,
-    DefaultStorageItemAdapter,
-    QuerySpec,
-    StorageError,
 )
-
 
 __ALL__ = [
     "ModelInferenceMetrics",
@@ -50,14 +61,26 @@ __ALL__ = [
     "ModelMessage",
     "LLMClient",
     "ModelMessageRoleType",
+    "ModelExtraMedata",
+    "MessageConverter",
+    "DefaultMessageConverter",
     "OnceConversation",
     "StorageConversation",
+    "BaseMessage",
+    "SystemMessage",
+    "AIMessage",
+    "HumanMessage",
     "MessageStorageItem",
     "ConversationIdentifier",
     "MessageIdentifier",
     "PromptTemplate",
     "PromptManager",
     "StoragePromptTemplate",
+    "BasePromptTemplate",
+    "ChatPromptTemplate",
+    "MessagesPlaceholder",
+    "SystemPromptTemplate",
+    "HumanPromptTemplate",
     "BaseOutputParser",
     "SQLOutputParser",
     "Serializable",

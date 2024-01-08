@@ -39,12 +39,39 @@ Document addition currently supports multiple types, such as plain text, URL cra
 </p>
 
 
-Select the corresponding document and click `Finish`.
+Select one or more corresponding documents and click `next`.
 
 
 <p align="left">
   <img src={'/img/chat_knowledge/upload_doc_finish.png'} width="720px" />
 </p>
+
+###  Documents Segmentation
+
+Choose Document Segmentation, you can choose to segment the document by chunk size, separator, paragraph or markdown header. The default is to segment the document by chunk size.
+
+and click Process, it will take a few minutes to complete the document segmentation.
+
+<p align="left">
+  <img src={'/img/chat_knowledge/doc_segmentation.png'} width="720px" />
+</p>
+
+:::tip
+**Automatic: The document is automatically segmented according to the document type.**
+
+**Chunk size: The number of words in each segment of the document. The default is 512 words.**
+    - chunk size: The number of words in each segment of the document. The default is 512 words.
+    - chunk overlap: The number of words overlapped between each segment of the document. The default is 50 words.
+** Separator:segmentation by separator ** 
+    - separator: The separator of the document. The default is `\n`.
+    - enable_merge: Whether to merge the separator chunks according to chunk_size after splits. The default is `False`.
+** Page: page segmentation, only support .pdf and .pptx document.**
+
+** Paragraph: paragraph segmentation, only support .docx document.**
+    - separator: The paragraph separator of the document. The default is `\n`.
+
+** Markdown header: markdown header segmentation, only support .md document.**
+:::
 
 
 ### Waiting for document vectorization
@@ -63,7 +90,7 @@ Click the `Chat`button to start a conversation with the knowledge base.
 
 
 <p align="left">
-  <img src={'/img/chat_knowledge/chat.gif'} width="720px" />
+  <img src={'/img/chat_knowledge/chat.png'} width="720px" />
 </p>
 
 

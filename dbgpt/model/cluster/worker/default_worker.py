@@ -8,7 +8,12 @@ import traceback
 from dbgpt.configs.model_config import get_device
 from dbgpt.model.adapter.base import LLMModelAdapter
 from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
-from dbgpt.core import ModelOutput, ModelInferenceMetrics, ModelMetadata
+from dbgpt.core import (
+    ModelOutput,
+    ModelInferenceMetrics,
+    ModelMetadata,
+    ModelExtraMedata,
+)
 from dbgpt.model.loader import ModelLoader, _get_model_real_path
 from dbgpt.model.parameter import ModelParameters
 from dbgpt.model.cluster.worker_base import ModelWorker
@@ -189,16 +194,20 @@ class DefaultModelWorker(ModelWorker):
         return output
 
     def count_token(self, prompt: str) -> int:
-        return _try_to_count_token(prompt, self.tokenizer)
+        return _try_to_count_token(prompt, self.tokenizer, self.model)
 
     async def async_count_token(self, prompt: str) -> int:
         # TODO if we deploy the model by vllm, it can't work, we should run transformer _try_to_count_token to async
         raise NotImplementedError
 
     def get_model_metadata(self, params: Dict) -> ModelMetadata:
+        ext_metadata = ModelExtraMedata(
+            prompt_sep=self.llm_adapter.get_default_message_separator()
+        )
         return ModelMetadata(
             model=self.model_name,
             context_length=self.context_len,
+            ext_metadata=ext_metadata,
         )
 
     async def async_get_model_metadata(self, params: Dict) -> ModelMetadata:
@@ -454,12 +463,13 @@ def _new_metrics_from_model_output(
     return metrics
 
 
-def _try_to_count_token(prompt: str, tokenizer) -> int:
+def _try_to_count_token(prompt: str, tokenizer, model) -> int:
     """Try to count token of prompt
 
     Args:
         prompt (str): prompt
         tokenizer ([type]): tokenizer
+        model ([type]): model
 
     Returns:
         int: token count, if error return -1
@@ -467,6 +477,11 @@ def _try_to_count_token(prompt: str, tokenizer) -> int:
     TODO: More implementation
     """
     try:
+        from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+
+        if isinstance(model, ProxyModel):
+            return model.count_token(prompt)
+        # Only support huggingface model now
         return len(tokenizer(prompt).input_ids[0])
     except Exception as e:
         logger.warning(f"Count token error, detail: {e}, return -1")

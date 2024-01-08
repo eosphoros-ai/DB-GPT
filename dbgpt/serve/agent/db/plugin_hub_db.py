@@ -1,7 +1,16 @@
 from datetime import datetime
+
 import pytz
-from sqlalchemy import Column, Integer, String, Index, DateTime, func, DDL
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import (
+    DDL,
+    Column,
+    DateTime,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+    func,
+)
 
 from dbgpt.storage.metadata import BaseDao, Model
 

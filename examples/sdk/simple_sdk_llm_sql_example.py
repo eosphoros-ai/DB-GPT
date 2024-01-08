@@ -1,25 +1,24 @@
 import asyncio
-from typing import Dict, List
 import json
+from typing import Dict, List
+
+from dbgpt.core import SQLOutputParser
 from dbgpt.core.awel import (
     DAG,
     InputOperator,
-    SimpleCallDataInputSource,
     JoinOperator,
     MapOperator,
-)
-from dbgpt.core import (
-    SQLOutputParser,
-    PromptTemplate,
+    SimpleCallDataInputSource,
 )
 from dbgpt.core.operator import (
-    LLMOperator,
-    RequestBuildOperator,
+    BaseLLMOperator,
+    PromptBuilderOperator,
+    RequestBuilderOperator,
 )
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
 from dbgpt.datasource.operator.datasource_operator import DatasourceOperator
-from dbgpt.rag.operator.datasource import DatasourceRetrieverOperator
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
 from dbgpt.model import OpenAILLMClient
+from dbgpt.rag.operator.datasource import DatasourceRetrieverOperator
 
 
 def _create_temporary_connection():
@@ -121,9 +120,9 @@ with DAG("simple_sdk_llm_sql_example") as dag:
     retriever_task = DatasourceRetrieverOperator(connection=db_connection)
     # Merge the input data and the table structure information.
     prompt_input_task = JoinOperator(combine_function=_join_func)
-    prompt_task = PromptTemplate.from_template(_sql_prompt())
-    model_pre_handle_task = RequestBuildOperator(model="gpt-3.5-turbo")
-    llm_task = LLMOperator(OpenAILLMClient())
+    prompt_task = PromptBuilderOperator(_sql_prompt())
+    model_pre_handle_task = RequestBuilderOperator(model="gpt-3.5-turbo")
+    llm_task = BaseLLMOperator(OpenAILLMClient())
     out_parse_task = SQLOutputParser()
     sql_parse_task = MapOperator(map_function=lambda x: x["sql"])
     db_query_task = DatasourceOperator(connection=db_connection)

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Dict, List, Optional
 
 from dbgpt.util.json_utils import EnhancedJSONEncoder
 
-from .base import GptsMessage, GptsMessageMemory, GptsPlan, GptsPlansMemory
+from .base import GptsMessage, GptsMessageMemory, GptsPlansMemory
 from .default_gpts_memory import DefaultGptsMessageMemory, DefaultGptsPlansMemory
 
 

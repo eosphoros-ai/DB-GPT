@@ -1,5 +1,5 @@
 import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, syncDocument, uploadDocument } from '@/client/api';
+import { apiInterceptors, uploadDocument } from '@/client/api';
 
 import useSummary from '@/hooks/use-summary';
 import { PaperClipOutlined } from '@ant-design/icons';
@@ -15,12 +15,8 @@ export default function DocUpload(props: IProps) {
   const { dbParam, setDocId } = useContext(ChatContext);
   const { onUploadFinish, handleFinish } = props;
   const summary = useSummary();
-
   const [loading, setLoading] = useState<boolean>(false);
 
-  const handleSync = async (knowledgeName: string, id: number) => {
-    await apiInterceptors(syncDocument(knowledgeName, { doc_ids: [id] }));
-  };
   const handleUpload = async (data: any) => {
     setLoading(true);
     const formData = new FormData();
@@ -36,7 +32,6 @@ export default function DocUpload(props: IProps) {
     }
     setDocId(res[1]);
     onUploadFinish();
-    await handleSync(dbParam || 'default', res?.[1] as number);
     setLoading(false);
     handleFinish?.(true);
     await summary(res[1]);

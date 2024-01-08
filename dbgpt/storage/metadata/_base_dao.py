@@ -51,7 +51,9 @@ class BaseDao(Generic[T, REQ, RES]):
 
 
         Example:
+
             .. code-block:: python
+
                 user = User(name="Edward Snowden")
                 session = self.get_raw_session()
                 session.add(user)
@@ -61,7 +63,7 @@ class BaseDao(Generic[T, REQ, RES]):
         return self._db_manager._session()
 
     @contextmanager
-    def session(self) -> Session:
+    def session(self, commit: Optional[bool] = True) -> Session:
         """Provide a transactional scope around a series of operations.
 
         If raise an exception, the session will be roll back automatically, otherwise it will be committed.
@@ -71,13 +73,16 @@ class BaseDao(Generic[T, REQ, RES]):
                 with self.session() as session:
                     session.query(User).filter(User.name == 'Edward Snowden').first()
 
+        Args:
+            commit (Optional[bool], optional): Whether to commit the session. Defaults to True.
+
         Returns:
             Session: A session object.
 
         Raises:
             Exception: Any exception will be raised.
         """
-        with self._db_manager.session() as session:
+        with self._db_manager.session(commit=commit) as session:
             yield session
 
     def from_request(self, request: QUERY_SPEC) -> T:
@@ -134,8 +139,9 @@ class BaseDao(Generic[T, REQ, RES]):
             RES: The response schema object.
         """
         entry = self.from_request(request)
-        with self.session() as session:
+        with self.session(commit=False) as session:
             session.add(entry)
+            session.commit()
             return self.get_one(self.to_request(entry))
 
     def update(self, query_request: QUERY_SPEC, update_request: REQ) -> RES:

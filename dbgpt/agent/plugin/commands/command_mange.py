@@ -8,11 +8,11 @@ from datetime import datetime
 from typing import Any, Callable, List, Optional
 
 from dbgpt._private.pydantic import BaseModel
-
-from .command import execute_command
 from dbgpt.agent.common.schema import Status
 from dbgpt.util.json_utils import serialize
 from dbgpt.util.string_utils import extract_content, extract_content_open_ending
+
+from .command import execute_command
 
 # Unique identifier for auto-gpt commands
 AUTO_GPT_COMMAND_IDENTIFIER = "auto_gpt_command"

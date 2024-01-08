@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import dataclasses
-from collections import defaultdict
-from dataclasses import asdict, dataclass, fields, field
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from ..memory.gpts_memory import GptsMemory
 from dbgpt.core import LLMClient
 from dbgpt.core.interface.llm import ModelMetadata
 
@@ -14,8 +11,7 @@ from dbgpt.util.annotations import PublicAPI
 
 
 class Agent:
-    """
-    An interface for AI agent.
+    """An interface for AI agent.
     An agent can communicate with other agents and perform actions.
     """
 
@@ -36,16 +32,16 @@ class Agent:
         self._memory = memory
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Get the name of the agent."""
         return self._name
 
     @property
-    def memory(self):
+    def memory(self) -> GptsMemory:
         return self._memory
 
     @property
-    def describe(self):
+    def describe(self) -> str:
         """Get the name of the agent."""
         return self._describe
 
@@ -56,7 +52,7 @@ class Agent:
         reviewer: Agent,
         request_reply: Optional[bool] = True,
         is_recovery: Optional[bool] = False,
-    ):
+    ) -> None:
         """(Abstract async method) Send a message to another agent."""
 
     async def a_receive(
@@ -67,10 +63,12 @@ class Agent:
         request_reply: Optional[bool] = None,
         silent: Optional[bool] = False,
         is_recovery: Optional[bool] = False,
-    ):
+    ) -> None:
         """(Abstract async method) Receive a message from another agent."""
 
-    async def a_review(self, message: Union[Dict, str], censored: Agent):
+    async def a_review(
+        self, message: Union[Dict, str], censored: Agent
+    ) -> Tuple[bool, Any]:
         """
 
         Args:
@@ -78,10 +76,11 @@ class Agent:
             censored:
 
         Returns:
-
+            bool: whether the message is censored
+            Any: the censored message
         """
 
-    def reset(self):
+    def reset(self) -> None:
         """(Abstract method) Reset the agent."""
 
     async def a_generate_reply(
@@ -149,7 +148,7 @@ class Agent:
         """
 
 
-@dataclass
+@dataclasses.dataclass
 class AgentResource:
     type: str
     name: str
@@ -169,7 +168,7 @@ class AgentResource:
         return dataclasses.asdict(self)
 
 
-@dataclass
+@dataclasses.dataclass
 class AgentContext:
     conv_id: str
     llm_provider: LLMClient
@@ -192,7 +191,7 @@ class AgentContext:
         return dataclasses.asdict(self)
 
 
-@dataclass
+@dataclasses.dataclass
 @PublicAPI(stability="beta")
 class AgentGenerateContext:
     """A class to represent the input of a Agent."""

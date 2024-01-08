@@ -46,6 +46,7 @@ class WorkflowRunner(ABC, Generic[T]):
         node: "BaseOperator",
         call_data: Optional[CALL_DATA] = None,
         streaming_call: bool = False,
+        dag_ctx: Optional[DAGContext] = None,
     ) -> DAGContext:
         """Execute the workflow starting from a given operator.
 
@@ -53,7 +54,7 @@ class WorkflowRunner(ABC, Generic[T]):
             node (RunnableDAGNode): The starting node of the workflow to be executed.
             call_data (CALL_DATA): The data pass to root operator node.
             streaming_call (bool): Whether the call is a streaming call.
-
+            dag_ctx (DAGContext): The context of the DAG when this node is run, Defaults to None.
         Returns:
             DAGContext: The context after executing the workflow, containing the final state and data.
         """
@@ -174,18 +175,22 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             TaskOutput[OUT]: The task output after this node has been run.
         """
 
-    async def call(self, call_data: Optional[CALL_DATA] = None) -> OUT:
+    async def call(
+        self,
+        call_data: Optional[CALL_DATA] = None,
+        dag_ctx: Optional[DAGContext] = None,
+    ) -> OUT:
         """Execute the node and return the output.
 
         This method is a high-level wrapper for executing the node.
 
         Args:
             call_data (CALL_DATA): The data pass to root operator node.
-
+            dag_ctx (DAGContext): The context of the DAG when this node is run, Defaults to None.
         Returns:
             OUT: The output of the node after execution.
         """
-        out_ctx = await self._runner.execute_workflow(self, call_data)
+        out_ctx = await self._runner.execute_workflow(self, call_data, dag_ctx=dag_ctx)
         return out_ctx.current_task_context.task_output.output
 
     def _blocking_call(
@@ -209,7 +214,9 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         return loop.run_until_complete(self.call(call_data))
 
     async def call_stream(
-        self, call_data: Optional[CALL_DATA] = None
+        self,
+        call_data: Optional[CALL_DATA] = None,
+        dag_ctx: Optional[DAGContext] = None,
     ) -> AsyncIterator[OUT]:
         """Execute the node and return the output as a stream.
 
@@ -217,12 +224,13 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         Args:
             call_data (CALL_DATA): The data pass to root operator node.
+            dag_ctx (DAGContext): The context of the DAG when this node is run, Defaults to None.
 
         Returns:
             AsyncIterator[OUT]: An asynchronous iterator over the output stream.
         """
         out_ctx = await self._runner.execute_workflow(
-            self, call_data, streaming_call=True
+            self, call_data, streaming_call=True, dag_ctx=dag_ctx
         )
         return out_ctx.current_task_context.task_output.output_stream
 
