@@ -1,7 +1,7 @@
 """Agents: auto plan agents example?
 
     Examples:
-     
+
         Execute the following command in the terminal:
         Set env params.
         .. code-block:: shell
@@ -11,21 +11,23 @@
 
         run example.
         ..code-block:: shell
-            python examples/agents/auto_plan_agent_dialogue_example.py 
+            python examples/agents/auto_plan_agent_dialogue_example.py
 """
-
 
 import asyncio
 import os
 
 from dbgpt.agent.agents.agent import AgentContext
-from dbgpt.agent.agents.agents_mange import agent_mange
-from dbgpt.agent.agents.expand.code_assistant_agent import CodeAssistantAgent
-from dbgpt.agent.agents.planner_agent import PlannerAgent
+from dbgpt.agent.agents.expand.plugin_assistant_agent import PluginAssistantAgent
+from dbgpt.agent.agents.expand.summary_assistant_agent import SummaryAssistantAgent
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.core.interface.llm import ModelMetadata
-from dbgpt.serve.agent.team.plan.team_auto_plan import AutoPlanChatManager
+from dbgpt.serve.agent.team.layout.team_awel_layout import AwelLayoutChatManger
+
+current_dir = os.getcwd()
+parent_dir = os.path.dirname(current_dir)
+test_plugin_dir = os.path.join(parent_dir, "test_files")
 
 if __name__ == "__main__":
     from dbgpt.model import OpenAILLMClient
@@ -33,18 +35,26 @@ if __name__ == "__main__":
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)
     context.llm_models = [ModelMetadata(model="gpt-3.5-turbo")]
-    # context.llm_models = [ModelMetadata(model="gpt-4-vision-preview")]
-    context.gpts_name = "代码分析助手"
+    context.gpts_name = "信息析助手"
 
     default_memory = GptsMemory()
-    coder = CodeAssistantAgent(memory=default_memory, agent_context=context)
-    ## TODO  add other agent
-
-    manager = AutoPlanChatManager(
+    manager = AwelLayoutChatManger(
         agent_context=context,
         memory=default_memory,
     )
-    manager.hire([coder])
+
+    ### agents
+    tool_enginer = PluginAssistantAgent(
+        agent_context=context,
+        memory=default_memory,
+        plugin_path=test_plugin_dir,
+    )
+    summarizer = SummaryAssistantAgent(
+        agent_context=context,
+        memory=default_memory,
+    )
+
+    manager.hire([tool_enginer, summarizer])
 
     user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
 
@@ -52,7 +62,8 @@ if __name__ == "__main__":
         user_proxy.a_initiate_chat(
             recipient=manager,
             reviewer=user_proxy,
-            message="Obtain simple information about issues in the repository 'eosphoros-ai/DB-GPT' in the past three days and analyze the data. Create a Markdown table grouped by day and status.",
+            message="查询成都今天天气",
+            # message="查询今天的最新热点财经新闻",
             # message="Find papers on gpt-4 in the past three weeks on arxiv, and organize their titles, authors, and links into a markdown table",
             # message="find papers on LLM applications from arxiv in the last month, create a markdown table of different domains.",
         )

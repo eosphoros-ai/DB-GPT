@@ -29,6 +29,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
 
 from dbgpt.app.openapi.base import validation_exception_handler
 from dbgpt.util.utils import (
@@ -51,6 +52,24 @@ app = FastAPI(
     version="0.5.0",
     openapi_tags=[],
 )
+
+app.mount(
+    "/swagger_static",
+    StaticFiles(directory=static_file_path),
+    name="swagger_static",
+)
+
+
+@app.get("/doc", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title="Custom Swagger UI",
+        swagger_js_url="/swagger_static/swagger-ui-bundle.js",
+        swagger_css_url="/swagger_static/swagger-ui.css",
+    )
+
+
 # applications.get_swagger_ui_html = swagger_monkey_patch
 
 system_app = SystemApp(app)
