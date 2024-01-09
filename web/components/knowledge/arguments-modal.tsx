@@ -47,7 +47,7 @@ export default function ArgumentsModal({ space, argumentsShow, setArgumentsShow 
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item<IArguments> tooltip={t(`Recall_Type`)} rules={[{ required: true }]} label={t('recall_type')} name={['embedding', 'recall_type']}>
+          <Form.Item<IArguments> tooltip={t(`recall_type`)} rules={[{ required: true }]} label={t('recall_type')} name={['embedding', 'recall_type']}>
             <Input className="mb-5  h-12" />
           </Form.Item>
         </Col>

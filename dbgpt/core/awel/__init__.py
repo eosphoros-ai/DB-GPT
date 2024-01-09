@@ -7,6 +7,7 @@ The stability of this API cannot be guaranteed at present.
 
 """
 
+import logging
 from typing import List, Optional
 
 from dbgpt.component import SystemApp
@@ -38,6 +39,8 @@ from .task.task_impl import (
     _is_async_iterator,
 )
 from .trigger.http_trigger import HttpTrigger
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     "initialize_awel",
@@ -89,14 +92,24 @@ def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
 
 def setup_dev_environment(
     dags: List[DAG],
-    host: Optional[str] = "0.0.0.0",
+    host: Optional[str] = "127.0.0.1",
     port: Optional[int] = 5555,
     logging_level: Optional[str] = None,
     logger_filename: Optional[str] = None,
+    show_dag_graph: Optional[bool] = True,
 ) -> None:
     """Setup a development environment for AWEL.
 
     Just using in development environment, not production environment.
+
+    Args:
+        dags (List[DAG]): The DAGs.
+        host (Optional[str], optional): The host. Defaults to "127.0.0.1"
+        port (Optional[int], optional): The port. Defaults to 5555.
+        logging_level (Optional[str], optional): The logging level. Defaults to None.
+        logger_filename (Optional[str], optional): The logger filename. Defaults to None.
+        show_dag_graph (Optional[bool], optional): Whether show the DAG graph. Defaults to True.
+            If True, the DAG graph will be saved to a file and open it automatically.
     """
     import uvicorn
     from fastapi import FastAPI
@@ -118,6 +131,15 @@ def setup_dev_environment(
     system_app.register_instance(trigger_manager)
 
     for dag in dags:
+        if show_dag_graph:
+            try:
+                dag_graph_file = dag.visualize_dag()
+                if dag_graph_file:
+                    logger.info(f"Visualize DAG {str(dag)} to {dag_graph_file}")
+            except Exception as e:
+                logger.warning(
+                    f"Visualize DAG {str(dag)} failed: {e}, if your system has no graphviz, you can install it by `pip install graphviz` or `sudo apt install graphviz`"
+                )
         for trigger in dag.trigger_nodes:
             trigger_manager.register_trigger(trigger)
     trigger_manager.after_register()

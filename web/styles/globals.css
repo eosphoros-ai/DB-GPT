@@ -64,3 +64,8 @@ table tr td {
 :where(.css-dev-only-do-not-override-18iikkb).ant-form-item .ant-form-item-label > label {
   height: 36px;
 }
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}

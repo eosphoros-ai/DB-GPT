@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from sqlalchemy import Column, String, DateTime, Integer, Text, func
 
@@ -51,6 +52,12 @@ class KnowledgeDocumentDao(BaseDao):
         return doc_id
 
     def get_knowledge_documents(self, query, page=1, page_size=20):
+        """Get a list of documents that match the given query.
+        Args:
+            query: A KnowledgeDocumentEntity object containing the query parameters.
+            page: The page number to return.
+            page_size: The number of documents to return per page.
+        """
         session = self.get_raw_session()
         print(f"current session:{session}")
         knowledge_documents = session.query(KnowledgeDocumentEntity)
@@ -80,6 +87,23 @@ class KnowledgeDocumentDao(BaseDao):
         )
         knowledge_documents = knowledge_documents.offset((page - 1) * page_size).limit(
             page_size
+        )
+        result = knowledge_documents.all()
+        session.close()
+        return result
+
+    def documents_by_ids(self, ids) -> List[KnowledgeDocumentEntity]:
+        """Get a list of documents by their IDs.
+        Args:
+            ids: A list of document IDs.
+        Returns:
+            A list of KnowledgeDocumentEntity objects.
+        """
+        session = self.get_raw_session()
+        print(f"current session:{session}")
+        knowledge_documents = session.query(KnowledgeDocumentEntity)
+        knowledge_documents = knowledge_documents.filter(
+            KnowledgeDocumentEntity.id.in_(ids)
         )
         result = knowledge_documents.all()
         session.close()

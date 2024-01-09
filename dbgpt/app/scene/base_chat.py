@@ -11,6 +11,7 @@ from dbgpt.component import ComponentType
 from dbgpt.core.interface.prompt import PromptTemplate
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.core.interface.message import OnceConversation
+from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.util import get_or_create_event_loop
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 from dbgpt.util.tracer import root_tracer, trace
@@ -58,6 +59,9 @@ class BaseChat(ABC):
             chat_param["model_name"] if chat_param["model_name"] else CFG.LLM_MODEL
         )
         self.llm_echo = False
+        self.worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
         self.model_cache_enable = chat_param.get("model_cache_enable", False)
 
         ### load prompt template
@@ -97,6 +101,11 @@ class BaseChat(ABC):
         self._model_stream_operator: BaseOperator = _build_model_operator(
             is_stream=True, dag_name="llm_stream_model_dag"
         )
+
+        # Get the message version, default is v1 in app
+        # In v1, we will transform the message to compatible format of specific model
+        # In the future, we will upgrade the message version to v2, and the message will be compatible with all models
+        self._message_version = chat_param.get("message_version", "v1")
 
     class Config:
         """Configuration for this pydantic object."""
@@ -162,6 +171,10 @@ class BaseChat(ABC):
                 "BaseChat.__call_base.prompt_template.format", metadata=metadata
             ):
                 current_prompt = self.prompt_template.format(**input_values)
+                ### prompt context token adapt according to llm max context length
+                current_prompt = await self.prompt_context_token_adapt(
+                    prompt=current_prompt
+                )
             self.current_message.add_system_message(current_prompt)
 
         llm_messages = self.generate_llm_messages()
@@ -169,6 +182,7 @@ class BaseChat(ABC):
             # Not new server mode, we convert the message format(List[ModelMessage]) to list of dict
             # fix the error of "Object of type ModelMessage is not JSON serializable" when passing the payload to request.post
             llm_messages = list(map(lambda m: m.dict(), llm_messages))
+
         payload = {
             "model": self.llm_model,
             "prompt": self.generate_llm_text(),
@@ -176,6 +190,7 @@ class BaseChat(ABC):
             "temperature": float(self.prompt_template.temperature),
             "max_new_tokens": int(self.prompt_template.max_new_tokens),
             "echo": self.llm_echo,
+            "version": self._message_version,
         }
         return payload
 
@@ -430,6 +445,39 @@ class BaseChat(ABC):
             if message.type == "view":
                 return message.content
         return None
+
+    async def prompt_context_token_adapt(self, prompt) -> str:
+        """prompt token adapt according to llm max context length"""
+        model_metadata = await self.worker_manager.get_model_metadata(
+            {"model": self.llm_model}
+        )
+        current_token_count = await self.worker_manager.count_token(
+            {"model": self.llm_model, "prompt": prompt}
+        )
+        if current_token_count == -1:
+            logger.warning(
+                "tiktoken not installed, please `pip install tiktoken` first"
+            )
+        template_define_token_count = 0
+        if len(self.prompt_template.template_define) > 0:
+            template_define_token_count = await self.worker_manager.count_token(
+                {
+                    "model": self.llm_model,
+                    "prompt": self.prompt_template.template_define,
+                }
+            )
+            current_token_count += template_define_token_count
+        if (
+            current_token_count + self.prompt_template.max_new_tokens
+        ) > model_metadata.context_length:
+            prompt = prompt[
+                : (
+                    model_metadata.context_length
+                    - self.prompt_template.max_new_tokens
+                    - template_define_token_count
+                )
+            ]
+        return prompt
 
     def generate(self, p) -> str:
         """

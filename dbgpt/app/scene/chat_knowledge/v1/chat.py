@@ -5,6 +5,7 @@ from typing import Dict, List
 
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
+from dbgpt.component import ComponentType
 
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
@@ -16,7 +17,9 @@ from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentEntity,
 )
 from dbgpt.app.knowledge.service import KnowledgeService
-from dbgpt.util.executor_utils import blocking_func_to_async
+from dbgpt.model import DefaultLLMClient
+from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.util.tracer import trace
 
 CFG = Config()
@@ -35,8 +38,7 @@ class ChatKnowledge(BaseChat):
             - model_name:(str) llm model name
             - select_param:(str) space name
         """
-        from dbgpt.rag.embedding_engine.embedding_engine import EmbeddingEngine
-        from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+        from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
         self.knowledge_space = chat_param["select_param"]
         chat_param["chat_mode"] = ChatScene.ChatKnowledge
@@ -59,17 +61,37 @@ class ChatKnowledge(BaseChat):
             if self.space_context is None or self.space_context.get("prompt") is None
             else int(self.space_context["prompt"]["max_token"])
         )
-        vector_store_config = {
-            "vector_store_name": self.knowledge_space,
-            "vector_store_type": CFG.VECTOR_STORE_TYPE,
-        }
         embedding_factory = CFG.SYSTEM_APP.get_component(
             "embedding_factory", EmbeddingFactory
         )
-        self.knowledge_embedding_client = EmbeddingEngine(
-            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
-            vector_store_config=vector_store_config,
-            embedding_factory=embedding_factory,
+        from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+        from dbgpt.storage.vector_store.connector import VectorStoreConnector
+
+        embedding_fn = embedding_factory.create(
+            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+        )
+        from dbgpt.storage.vector_store.base import VectorStoreConfig
+
+        config = VectorStoreConfig(name=self.knowledge_space, embedding_fn=embedding_fn)
+        vector_store_connector = VectorStoreConnector(
+            vector_store_type=CFG.VECTOR_STORE_TYPE,
+            vector_store_config=config,
+        )
+        query_rewrite = None
+        self.worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        self.llm_client = DefaultLLMClient(worker_manager=self.worker_manager)
+        if CFG.KNOWLEDGE_SEARCH_REWRITE:
+            query_rewrite = QueryRewrite(
+                llm_client=self.llm_client,
+                model_name=self.llm_model,
+                language=CFG.LANGUAGE,
+            )
+        self.embedding_retriever = EmbeddingRetriever(
+            top_k=self.top_k,
+            vector_store_connector=vector_store_connector,
+            query_rewrite=query_rewrite,
         )
         self.prompt_template.template_is_strict = False
         self.relations = None
@@ -110,50 +132,31 @@ class ChatKnowledge(BaseChat):
         if self.space_context and self.space_context.get("prompt"):
             self.prompt_template.template_define = self.space_context["prompt"]["scene"]
             self.prompt_template.template = self.space_context["prompt"]["template"]
-        from dbgpt.rag.retriever.reinforce import QueryReinforce
+        from dbgpt.util.chat_util import run_async_tasks
 
-        # query reinforce, get similar queries
-        query_reinforce = QueryReinforce(
-            query=self.current_user_input, model_name=self.llm_model
-        )
-        queries = []
-        if CFG.KNOWLEDGE_SEARCH_REWRITE:
-            queries = await query_reinforce.rewrite()
-            print("rewrite queries:", queries)
-        queries.append(self.current_user_input)
-        from dbgpt._private.chat_util import run_async_tasks
-
-        # similarity search from vector db
-        tasks = [self.execute_similar_search(query) for query in queries]
-        docs_with_scores = await run_async_tasks(tasks=tasks, concurrency_limit=1)
-        candidates_with_scores = reduce(lambda x, y: x + y, docs_with_scores)
-        # candidates document rerank
-        from dbgpt.rag.retriever.rerank import DefaultRanker
-
-        ranker = DefaultRanker(self.top_k)
-        candidates_with_scores = ranker.rank(candidates_with_scores)
+        tasks = [self.execute_similar_search(self.current_user_input)]
+        candidates_with_scores = await run_async_tasks(tasks=tasks, concurrency_limit=1)
+        candidates_with_scores = reduce(lambda x, y: x + y, candidates_with_scores)
         self.chunks_with_score = []
         if not candidates_with_scores or len(candidates_with_scores) == 0:
             print("no relevant docs to retrieve")
             context = "no relevant docs to retrieve"
         else:
             self.chunks_with_score = []
-            for d, score in candidates_with_scores:
+            for chunk in candidates_with_scores:
                 chucks = self.chunk_dao.get_document_chunks(
-                    query=DocumentChunkEntity(content=d.page_content),
+                    query=DocumentChunkEntity(content=chunk.content),
                     document_ids=self.document_ids,
                 )
                 if len(chucks) > 0:
-                    self.chunks_with_score.append((chucks[0], score))
+                    self.chunks_with_score.append((chucks[0], chunk.score))
 
-            context = [doc.page_content for doc, _ in candidates_with_scores]
-
-        context = context[: self.max_token]
+            context = "\n".join([doc.content for doc in candidates_with_scores])
         self.relations = list(
             set(
                 [
                     os.path.basename(str(d.metadata.get("source", "")))
-                    for d, _ in candidates_with_scores
+                    for d in candidates_with_scores
                 ]
             )
         )
@@ -201,7 +204,8 @@ class ChatKnowledge(BaseChat):
         references_list = list(references_dict.values())
         references_ele.set("references", json.dumps(references_list))
         html = ET.tostring(references_ele, encoding="utf-8")
-        return html.decode("utf-8")
+        reference = html.decode("utf-8")
+        return reference.replace("\\n", "")
 
     @property
     def chat_type(self) -> str:
@@ -213,10 +217,6 @@ class ChatKnowledge(BaseChat):
 
     async def execute_similar_search(self, query):
         """execute similarity search"""
-        return await blocking_func_to_async(
-            self._executor,
-            self.knowledge_embedding_client.similar_search_with_scores,
-            query,
-            self.top_k,
-            self.recall_score,
+        return await self.embedding_retriever.aretrieve_with_scores(
+            query, self.recall_score
         )

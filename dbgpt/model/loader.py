@@ -166,11 +166,22 @@ def huggingface_loader(llm_adapter: LLMModelAdapter, model_params: ModelParamete
 
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
-        from dbgpt.model.llm.monkey_patch import (
-            replace_llama_attn_with_non_inplace_operations,
-        )
 
-        replace_llama_attn_with_non_inplace_operations()
+        import transformers
+
+        version = tuple(int(v) for v in transformers.__version__.split("."))
+        if version < (4, 35, 0):
+            from dbgpt.model.llm.monkey_patch import (
+                replace_llama_attn_with_non_inplace_operations,
+            )
+
+            # NOTE: Recent transformers library seems to fix the mps issue, also
+            # it has made some changes causing compatibility issues with our
+            # original patch. So we only apply the patch for older versions.
+
+            # Avoid bugs in mps backend by not using in-place operations.
+            replace_llama_attn_with_non_inplace_operations()
+
     else:
         raise ValueError(f"Invalid device: {device}")
 

@@ -1,31 +1,41 @@
+from dbgpt.core.interface.operator.composer_operator import (
+    ChatComposerInput,
+    ChatHistoryPromptComposerOperator,
+)
 from dbgpt.core.interface.operator.llm_operator import (
     BaseLLM,
+    BaseLLMOperator,
+    BaseStreamingLLMOperator,
     LLMBranchOperator,
-    LLMOperator,
-    RequestBuildOperator,
-    StreamingLLMOperator,
+    RequestBuilderOperator,
 )
 from dbgpt.core.interface.operator.message_operator import (
     BaseConversationOperator,
     BufferedConversationMapperOperator,
     ConversationMapperOperator,
-    PostConversationOperator,
-    PostStreamingConversationOperator,
-    PreConversationOperator,
+    PreChatHistoryLoadOperator,
 )
-from dbgpt.core.interface.prompt import PromptTemplateOperator
+from dbgpt.core.interface.operator.prompt_operator import (
+    DynamicPromptBuilderOperator,
+    HistoryDynamicPromptBuilderOperator,
+    HistoryPromptBuilderOperator,
+    PromptBuilderOperator,
+)
 
 __ALL__ = [
     "BaseLLM",
     "LLMBranchOperator",
-    "LLMOperator",
-    "RequestBuildOperator",
-    "StreamingLLMOperator",
+    "BaseLLMOperator",
+    "RequestBuilderOperator",
+    "BaseStreamingLLMOperator",
     "BaseConversationOperator",
     "BufferedConversationMapperOperator",
     "ConversationMapperOperator",
-    "PostConversationOperator",
-    "PostStreamingConversationOperator",
-    "PreConversationOperator",
-    "PromptTemplateOperator",
+    "PreChatHistoryLoadOperator",
+    "PromptBuilderOperator",
+    "DynamicPromptBuilderOperator",
+    "HistoryPromptBuilderOperator",
+    "HistoryDynamicPromptBuilderOperator",
+    "ChatComposerInput",
+    "ChatHistoryPromptComposerOperator",
 ]

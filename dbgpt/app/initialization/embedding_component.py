@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Type, TYPE_CHECKING
 from dbgpt.component import ComponentType, SystemApp
-from dbgpt.rag.embedding_engine.embedding_factory import EmbeddingFactory
+from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
 if TYPE_CHECKING:
     from langchain.embeddings.base import Embeddings
