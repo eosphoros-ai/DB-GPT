@@ -318,10 +318,16 @@ class ConversableAgent(Agent):
                 logger.warning(
                     f"More than {self.current_retry_counter} times and still no valid answer is output."
                 )
-                raise ValueError(
-                    f"After {self.current_retry_counter} rounds of re-optimization, we still cannot get an effective answer."
+                reply[
+                    "content"
+                ] = f"After trying {self.current_retry_counter} times, I still can't generate a valid answer. The current problem is:{reply['content']}!"
+                reply["is_termination"] = True
+                await self.a_send(
+                    message=reply, recipient=sender, reviewer=reviewer, silent=silent
                 )
-
+                # raise ValueError(
+                #     f"After {self.current_retry_counter} rounds of re-optimization, we still cannot get an effective answer."
+                # )
             else:
                 self.current_retry_counter += 1
                 logger.info(
