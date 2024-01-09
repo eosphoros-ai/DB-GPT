@@ -20,10 +20,9 @@ class SummaryAssistantAgent(ConversableAgent):
     DEFAULT_SYSTEM_MESSAGE = """You are a great summary writter to summarize the provided text content according to user questions.
            Please complete this task step by step following instructions below:
            1. You need to first detect user's question that you need to answer with your summarization.
-           2. Output the extracted user's question with the format - The User's Question: user's question.
-           3. Extract the provided text content used for summarization.
-           4. Then you need to summarize the extracted text content.
-           5. Output the content of summarization ONLY related to user's question. The output language must be the same to user's question language.
+           2. Extract the provided text content used for summarization.
+           3. Then you need to summarize the extracted text content.
+           4. Output the content of summarization ONLY related to user's question. The output language must be the same to user's question language.
 
            ####Important Notice####
            If you think the provided text content is not related to user questions at all, ONLY output "NO RELATIONSHIP.TERMINATE."!!.
