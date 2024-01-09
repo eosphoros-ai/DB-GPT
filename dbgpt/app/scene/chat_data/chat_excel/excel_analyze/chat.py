@@ -20,7 +20,8 @@ class ChatExcel(BaseChat):
     """a Excel analyzer to analyze Excel Data"""
 
     chat_scene: str = ChatScene.ChatExcel.value()
-    chat_retention_rounds = 5
+    keep_start_rounds = 1
+    keep_end_rounds = 2
 
     def __init__(self, chat_param: Dict):
         """Chat Excel Module Initialization

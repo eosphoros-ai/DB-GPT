@@ -10,7 +10,7 @@ CFG = Config()
 class ChatNormal(BaseChat):
     chat_scene: str = ChatScene.ChatNormal.value()
 
-    chat_retention_rounds: int = 10
+    keep_end_rounds: int = 10
 
     """Number of results to return from the query"""
 

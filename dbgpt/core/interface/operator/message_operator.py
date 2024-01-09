@@ -240,49 +240,62 @@ class ConversationMapperOperator(
 
 
 class BufferedConversationMapperOperator(ConversationMapperOperator):
-    """The buffered conversation mapper operator.
+    """
+    The buffered conversation mapper operator which can be configured to keep
+    a certain number of starting and/or ending rounds of a conversation.
+
+    Args:
+        keep_start_rounds (Optional[int]): Number of initial rounds to keep.
+        keep_end_rounds (Optional[int]): Number of final rounds to keep.
 
     Examples:
+        # Keeping the first 2 and the last 1 rounds of a conversation
+        import asyncio
+        from dbgpt.core.interface.message import AIMessage, HumanMessage
+        from dbgpt.core.operator import BufferedConversationMapperOperator
 
-        Transform with history messages
-
-        .. code-block:: python
-
-            import asyncio
-            from dbgpt.core import HumanMessage, AIMessage, SystemMessage
-            from dbgpt.core.operator import BufferedConversationMapperOperator
-
-            # With history
-            messages = [
-                HumanMessage(content="Hi", round_index=1),
-                AIMessage(content="Hello!", round_index=1),
-                SystemMessage(content="Error 404", round_index=2),
-                HumanMessage(content="What's the error?", round_index=2),
-                AIMessage(content="Just a joke.", round_index=2),
-            ]
-            operator = BufferedConversationMapperOperator(last_k_round=1)
-            # Just keep the last one round, so the first round messages will be removed
-            assert asyncio.run(operator.map_messages(messages)) == [
-                SystemMessage(content="Error 404", round_index=2),
-                HumanMessage(content="What's the error?", round_index=2),
-                AIMessage(content="Just a joke.", round_index=2),
-            ]
+        operator = BufferedConversationMapperOperator(keep_start_rounds=2, keep_end_rounds=1)
+        messages = [
+            # Assume each HumanMessage and AIMessage belongs to separate rounds
+            HumanMessage(content="Hi", round_index=1),
+            AIMessage(content="Hello!", round_index=1),
+            HumanMessage(content="How are you?", round_index=2),
+            AIMessage(content="I'm good, thanks!", round_index=2),
+            HumanMessage(content="What's new today?", round_index=3),
+            AIMessage(content="Lots of things!", round_index=3),
+        ]
+        # This will keep rounds 1, 2, and 3
+        assert asyncio.run(operator.map_messages(messages)) == [
+            HumanMessage(content="Hi", round_index=1),
+            AIMessage(content="Hello!", round_index=1),
+            HumanMessage(content="How are you?", round_index=2),
+            AIMessage(content="I'm good, thanks!", round_index=2),
+            HumanMessage(content="What's new today?", round_index=3),
+            AIMessage(content="Lots of things!", round_index=3),
+        ]
     """
 
     def __init__(
         self,
-        last_k_round: Optional[int] = 2,
+        keep_start_rounds: Optional[int] = None,
+        keep_end_rounds: Optional[int] = None,
         message_mapper: _MultiRoundMessageMapper = None,
         **kwargs,
     ):
-        self._last_k_round = last_k_round
+        # Validate the input parameters
+        if keep_start_rounds is not None and keep_start_rounds < 0:
+            raise ValueError("keep_start_rounds must be non-negative")
+        if keep_end_rounds is not None and keep_end_rounds < 0:
+            raise ValueError("keep_end_rounds must be non-negative")
+
+        self._keep_start_rounds = keep_start_rounds
+        self._keep_end_rounds = keep_end_rounds
         if message_mapper:
 
             def new_message_mapper(
                 messages_by_round: List[List[BaseMessage]],
             ) -> List[BaseMessage]:
-                # Apply keep k round messages first, then apply the custom message mapper
-                messages_by_round = self._keep_last_round_messages(messages_by_round)
+                messages_by_round = self._filter_round_messages(messages_by_round)
                 return message_mapper(messages_by_round)
 
         else:
@@ -290,24 +303,118 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             def new_message_mapper(
                 messages_by_round: List[List[BaseMessage]],
             ) -> List[BaseMessage]:
-                messages_by_round = self._keep_last_round_messages(messages_by_round)
+                messages_by_round = self._filter_round_messages(messages_by_round)
                 return _merge_multi_round_messages(messages_by_round)
 
         super().__init__(new_message_mapper, **kwargs)
 
-    def _keep_last_round_messages(
+    def _filter_round_messages(
         self, messages_by_round: List[List[BaseMessage]]
     ) -> List[List[BaseMessage]]:
-        """Keep the last k round messages.
+        """Filters the messages to keep only the specified starting and/or ending rounds.
+
+        Examples:
+
+            >>> from dbgpt.core import AIMessage, HumanMessage
+            >>> from dbgpt.core.operator import BufferedConversationMapperOperator
+            >>> messages = [
+            ...     [
+            ...         HumanMessage(content="Hi", round_index=1),
+            ...         AIMessage(content="Hello!", round_index=1),
+            ...     ],
+            ...     [
+            ...         HumanMessage(content="How are you?", round_index=2),
+            ...         AIMessage(content="I'm good, thanks!", round_index=2),
+            ...     ],
+            ...     [
+            ...         HumanMessage(content="What's new today?", round_index=3),
+            ...         AIMessage(content="Lots of things!", round_index=3),
+            ...     ],
+            ... ]
+
+            # Test keeping only the first 2 rounds
+            >>> operator = BufferedConversationMapperOperator(keep_start_rounds=2)
+            >>> assert operator._filter_round_messages(messages) == [
+            ...     [
+            ...         HumanMessage(content="Hi", round_index=1),
+            ...         AIMessage(content="Hello!", round_index=1),
+            ...     ],
+            ...     [
+            ...         HumanMessage(content="How are you?", round_index=2),
+            ...         AIMessage(content="I'm good, thanks!", round_index=2),
+            ...     ],
+            ... ]
+
+            # Test keeping only the last 2 rounds
+            >>> operator = BufferedConversationMapperOperator(keep_end_rounds=2)
+            >>> assert operator._filter_round_messages(messages) == [
+            ...     [
+            ...         HumanMessage(content="How are you?", round_index=2),
+            ...         AIMessage(content="I'm good, thanks!", round_index=2),
+            ...     ],
+            ...     [
+            ...         HumanMessage(content="What's new today?", round_index=3),
+            ...         AIMessage(content="Lots of things!", round_index=3),
+            ...     ],
+            ... ]
+
+            # Test keeping the first 2 and last 1 rounds
+            >>> operator = BufferedConversationMapperOperator(
+            ...     keep_start_rounds=2, keep_end_rounds=1
+            ... )
+            >>> assert operator._filter_round_messages(messages) == [
+            ...     [
+            ...         HumanMessage(content="Hi", round_index=1),
+            ...         AIMessage(content="Hello!", round_index=1),
+            ...     ],
+            ...     [
+            ...         HumanMessage(content="How are you?", round_index=2),
+            ...         AIMessage(content="I'm good, thanks!", round_index=2),
+            ...     ],
+            ...     [
+            ...         HumanMessage(content="What's new today?", round_index=3),
+            ...         AIMessage(content="Lots of things!", round_index=3),
+            ...     ],
+            ... ]
+
+            # Test without specifying start or end rounds (keep all rounds)
+            >>> operator = BufferedConversationMapperOperator()
+            >>> assert operator._filter_round_messages(messages) == [
+            ...     [
+            ...         HumanMessage(content="Hi", round_index=1),
+            ...         AIMessage(content="Hello!", round_index=1),
+            ...     ],
+            ...     [
+            ...         HumanMessage(content="How are you?", round_index=2),
+            ...         AIMessage(content="I'm good, thanks!", round_index=2),
+            ...     ],
+            ...     [
+            ...         HumanMessage(content="What's new today?", round_index=3),
+            ...         AIMessage(content="Lots of things!", round_index=3),
+            ...     ],
+            ... ]
 
         Args:
-            messages_by_round (List[List[BaseMessage]]): The messages by round.
+                messages_by_round (List[List[BaseMessage]]): The messages grouped by round.
 
-        Returns:
-            List[List[BaseMessage]]: The latest round messages.
+            Returns:
+                List[List[BaseMessage]]: Filtered list of messages.
         """
-        index = self._last_k_round
-        return messages_by_round[-index:]
+        total_rounds = len(messages_by_round)
+        if self._keep_start_rounds is not None and self._keep_end_rounds is not None:
+            if self._keep_start_rounds + self._keep_end_rounds > total_rounds:
+                # Avoid overlapping when the sum of start and end rounds exceeds total rounds
+                return messages_by_round
+            return (
+                messages_by_round[: self._keep_start_rounds]
+                + messages_by_round[-self._keep_end_rounds :]
+            )
+        elif self._keep_start_rounds is not None:
+            return messages_by_round[: self._keep_start_rounds]
+        elif self._keep_end_rounds is not None:
+            return messages_by_round[-self._keep_end_rounds :]
+        else:
+            return messages_by_round
 
 
 EvictionPolicyType = Callable[[List[List[BaseMessage]]], List[List[BaseMessage]]]

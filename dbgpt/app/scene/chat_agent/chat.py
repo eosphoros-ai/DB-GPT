@@ -18,7 +18,7 @@ class ChatAgent(BaseChat):
     """Chat With Agent through plugin"""
 
     chat_scene: str = ChatScene.ChatAgent.value()
-    chat_retention_rounds = 0
+    keep_end_rounds = 0
 
     def __init__(self, chat_param: Dict):
         """Chat Agent Module Initialization

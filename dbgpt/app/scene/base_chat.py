@@ -61,7 +61,8 @@ class BaseChat(ABC):
     chat_scene: str = None
     llm_model: Any = None
     # By default, keep the last two rounds of conversation records as the context
-    chat_retention_rounds: int = 0
+    keep_start_rounds: int = 0
+    keep_end_rounds: int = 0
 
     class Config:
         """Configuration for this pydantic object."""
@@ -209,14 +210,19 @@ class BaseChat(ABC):
         #             prompt=current_prompt
         #         )
         #     self.current_message.add_system_message(current_prompt)
-        last_k_round = (
-            self.chat_retention_rounds
+
+        keep_start_rounds = (
+            self.keep_start_rounds
             if self.prompt_template.need_historical_messages
             else 0
         )
+        keep_end_rounds = (
+            self.keep_end_rounds if self.prompt_template.need_historical_messages else 0
+        )
         node = AppChatComposerOperator(
             prompt=self.prompt_template.prompt,
-            last_k_round=last_k_round,
+            keep_start_rounds=keep_start_rounds,
+            keep_end_rounds=keep_end_rounds,
             str_history=self.prompt_template.str_history,
         )
         node_input = {

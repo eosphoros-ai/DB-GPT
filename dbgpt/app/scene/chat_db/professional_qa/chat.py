@@ -11,7 +11,7 @@ CFG = Config()
 class ChatWithDbQA(BaseChat):
     chat_scene: str = ChatScene.ChatWithDbQA.value()
 
-    chat_retention_rounds = 5
+    keep_end_rounds = 5
 
     """As a DBA, Chat DB Module, chat with combine DB meta schema """
 
