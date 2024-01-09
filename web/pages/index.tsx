@@ -12,7 +12,7 @@ import CompletionInput from '@/components/common/completion-input';
 import { useTranslation } from 'react-i18next';
 import { STORAGE_INIT_MESSAGE_KET } from '@/utils';
 import Icon from '@ant-design/icons/lib/components/Icon';
-import { ColorfulDB, ColorfulPlugin, ColorfulDashboard, ColorfulData, ColorfulExcel, ColorfulDoc } from '@/components/icons';
+import { ColorfulDB, ColorfulPlugin, ColorfulDashboard, ColorfulData, ColorfulExcel, ColorfulDoc, ColorfulChat } from '@/components/icons';
 import classNames from 'classnames';
 
 const Home: NextPage = () => {
@@ -62,6 +62,8 @@ const Home: NextPage = () => {
         return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulDashboard} />;
       case 'chat_agent':
         return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulPlugin} />;
+      case 'dbgpt_chat':
+        return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulChat} />;
       default:
         return null;
     }
@@ -93,7 +95,7 @@ const Home: NextPage = () => {
               >
                 <div
                   className={classNames(
-                    'flex flex-row justify-center min-h-min bg-white dark:bg-[#232734] dark:text-white rounded p-4 cursor-pointer hover:-translate-y-1 transition-[transform_shadow] duration-300 hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.1)]',
+                    'flex flex-row justify-center h-[102px] min-h-min bg-white dark:bg-[#232734] dark:text-white rounded p-4 cursor-pointer hover:-translate-y-1 transition-[transform_shadow] duration-300 hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.1)]',
                     { 'grayscale !cursor-no-drop': scene.show_disable },
                   )}
                 >

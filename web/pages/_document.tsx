@@ -2,11 +2,7 @@ import { createCache, StyleProvider } from '@ant-design/cssinjs';
 import Document, { DocumentContext, Head, Html, Main, NextScript } from 'next/document';
 import { doExtraStyle } from '../genAntdCss';
 
-interface Props {
-  currentUrl: string;
-}
-
-class MyDocument extends Document<Props> {
+class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
     const cache = createCache();
     let fileName = '';
@@ -15,13 +11,12 @@ class MyDocument extends Document<Props> {
       originalRenderPage({
         enhanceApp: (App) => (props) =>
           (
-            <StyleProvider cache={cache}>
+            <StyleProvider cache={cache} hashPriority="high">
               <App {...props} />
             </StyleProvider>
           ),
       });
     const initialProps = await Document.getInitialProps(ctx);
-    const currentUrl = ctx.req?.url;
 
     fileName = doExtraStyle({
       cache,
@@ -29,7 +24,6 @@ class MyDocument extends Document<Props> {
 
     return {
       ...initialProps,
-      currentUrl,
       styles: (
         <>
           {initialProps.styles}

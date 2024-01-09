@@ -43,14 +43,14 @@ type RouteItem = {
 };
 
 function menuItemStyle(active?: boolean) {
-  return `flex items-center h-12 hover:bg-theme-primary dark:hover:bg-theme-dark hover:text-white text-base w-full transition-colors whitespace-nowrap px-4 ${
-    active ? 'bg-theme-primary text-white dark:bg-theme-dark' : ''
+  return `flex items-center h-12 hover:bg-[#F1F5F9] dark:hover:bg-theme-dark text-base w-full transition-colors whitespace-nowrap px-4 ${
+    active ? 'bg-[#F1F5F9] dark:bg-theme-dark' : ''
   }`;
 }
 
 function smallMenuItemStyle(active?: boolean) {
-  return `flex items-center justify-center mx-auto rounded w-14 h-14 text-xl hover:text-white hover:bg-theme-primary dark:hover:bg-theme-dark transition-colors cursor-pointer ${
-    active ? 'bg-theme-primary text-white dark:bg-theme-dark' : ''
+  return `flex items-center justify-center mx-auto rounded w-14 h-14 text-xl hover:bg-[#F1F5F9] dark:hover:bg-theme-dark transition-colors cursor-pointer ${
+    active ? 'bg-[#F1F5F9] dark:bg-theme-dark' : ''
   }`;
 }
 

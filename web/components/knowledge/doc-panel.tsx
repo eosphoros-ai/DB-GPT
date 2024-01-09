@@ -185,7 +185,7 @@ export default function DocPanel(props: IProps) {
           {hasMore && (
             <Divider>
               <span className="cursor-pointer" onClick={loadMoreDocuments}>
-                {t('Load_More')}
+                {t('Load_more')}
               </span>
             </Divider>
           )}

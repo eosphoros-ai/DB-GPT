@@ -74,7 +74,7 @@ export default function Segmentation(props: IProps) {
       message.warning('The task is still running, do not submit it again.');
     }
     const { fileStrategies } = data;
-    fileStrategies.map((item) => {
+    fileStrategies?.map((item) => {
       if (!item?.chunk_parameters?.chunk_strategy) {
         message.error(`Please select chunk strategy for ${item.name}.`);
         checked = false;

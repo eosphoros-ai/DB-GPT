@@ -18,6 +18,7 @@ module.exports = {
       },
     },
   },
+  important: true,
   darkMode: 'class',
   /**
    * @see https://www.tailwindcss-animated.com/configurator.html
