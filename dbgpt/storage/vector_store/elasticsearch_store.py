@@ -10,13 +10,13 @@ CFG = Config()
 
 
 class ElasticSearchStore(VectorStoreBase):
-    """`Postgres.PGVector` vector store.
+    """`Elasticsearch` vector store.
 
-    To use this, you should have the ``pgvector`` python package installed.
+    To use this, you should have the ``elasticsearch`` python package installed.
     """
 
     def __init__(self, ctx: dict) -> None:
-        """init pgvector storage"""
+        """init elasticsearch storage"""
 
         self.ctx = ctx
         self.connection_string = ctx.get("connection_string", None)
@@ -24,9 +24,7 @@ class ElasticSearchStore(VectorStoreBase):
         self.collection_name = ctx.get("vector_store_name", None)
 
         self.vector_store_client = Elasticsearch(
-            embedding_function=self.embeddings,
-            collection_name=self.collection_name,
-            connection_string=self.connection_string,
+            host=[self.connection_string]
         )
 
     def similar_search(self, text, topk, **kwargs: Any) -> None:
