@@ -1,7 +1,7 @@
 import { Popover, ConfigProvider, Button, Modal, Badge } from 'antd';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { DeleteTwoTone, MessageTwoTone, WarningOutlined } from '@ant-design/icons';
+import { DeleteFilled, MessageTwoTone, WarningOutlined } from '@ant-design/icons';
 import { ISpace } from '@/types/knowledge';
 import DocPanel from './doc-panel';
 import moment from 'moment';
@@ -87,14 +87,13 @@ export default function SpaceCard(props: IProps) {
               {renderVectorIcon(space.vector_type)}
               <span className="dark:text-white ml-2">{space?.name}</span>
             </div>
-            <DeleteTwoTone
+            <DeleteFilled
+              className="text-[#ff1b2e] !text-lg"
               onClick={(e) => {
                 e.stopPropagation();
                 e.nativeEvent.stopImmediatePropagation();
                 showDeleteConfirm();
               }}
-              twoToneColor="#CD2029"
-              className="!text-2xl"
             />
           </div>
           <div className="text-sm mt-2  p-6 pt-2 h-40">
