@@ -554,9 +554,12 @@ class OnceConversation:
         self.messages = conversation.messages
         self.start_date = conversation.start_date
         self.chat_order = conversation.chat_order
-        self.model_name = conversation.model_name
-        self.param_type = conversation.param_type
-        self.param_value = conversation.param_value
+        if not self.model_name and conversation.model_name:
+            self.model_name = conversation.model_name
+        if not self.param_type and conversation.param_type:
+            self.param_type = conversation.param_type
+        if not self.param_value and conversation.param_value:
+            self.param_value = conversation.param_value
         self.cost = conversation.cost
         self.tokens = conversation.tokens
         self.user_name = conversation.user_name
@@ -951,10 +954,32 @@ class StorageConversation(OnceConversation, StorageItem):
         conversation.chat_order = (
             max(m.round_index for m in real_messages) if real_messages else 0
         )
+        self._append_additional_kwargs(conversation, real_messages)
         self._message_ids = message_ids
         self._has_stored_message_index = len(real_messages) - 1
         self.save_message_independent = conversation.save_message_independent
         self.from_conversation(conversation)
+
+    def _append_additional_kwargs(
+        self, conversation: StorageConversation, messages: List[BaseMessage]
+    ) -> None:
+        """Parse the additional kwargs and append to the conversation
+
+        Args:
+            conversation (StorageConversation): The conversation
+            messages (List[BaseMessage]): The messages
+        """
+        param_type = None
+        param_value = None
+        for message in messages[::-1]:
+            if message.additional_kwargs:
+                param_type = message.additional_kwargs.get("param_type")
+                param_value = message.additional_kwargs.get("param_value")
+                break
+        if not conversation.param_type:
+            conversation.param_type = param_type
+        if not conversation.param_value:
+            conversation.param_value = param_value
 
     def delete(self) -> None:
         """Delete all the messages and conversation from the storage"""
