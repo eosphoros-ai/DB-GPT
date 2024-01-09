@@ -23,6 +23,7 @@ from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.core.interface.llm import ModelMetadata
 
+
 def summary_example_with_success():
     from dbgpt.model import OpenAILLMClient
 
@@ -73,8 +74,8 @@ def summary_example_with_success():
     ## dbgpt-vis message infos
     print(asyncio.run(default_memory.one_plan_chat_competions("summarize")))
 
-def summary_example_with_faliure():
 
+def summary_example_with_faliure():
     from dbgpt.model import OpenAILLMClient
 
     llm_client = OpenAILLMClient()
@@ -110,16 +111,18 @@ def summary_example_with_faliure():
 
 
 if __name__ == "__main__":
-    print("\033[92m=======================Start The Summary Assistant with Successful Results==================\033[0m")
+    print(
+        "\033[92m=======================Start The Summary Assistant with Successful Results==================\033[0m"
+    )
     summary_example_with_success()
-    print("\033[92m=======================The Summary Assistant with Successful Results Ended==================\n\n\033[91m")
+    print(
+        "\033[92m=======================The Summary Assistant with Successful Results Ended==================\n\n\033[91m"
+    )
 
-    print("\033[91m=======================Start The Summary Assistant with Fail Results==================\033[91m")
+    print(
+        "\033[91m=======================Start The Summary Assistant with Fail Results==================\033[91m"
+    )
     summary_example_with_faliure()
-    print("\033[91m=======================The Summary Assistant with Fail Results Ended==================\033[91m")
-    
-    
-
-   
-
-    
+    print(
+        "\033[91m=======================The Summary Assistant with Fail Results Ended==================\033[91m"
+    )
