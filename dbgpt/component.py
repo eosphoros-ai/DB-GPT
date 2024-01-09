@@ -80,6 +80,9 @@ class ComponentType(str, Enum):
     UNIFIED_METADATA_DB_MANAGER_FACTORY = "dbgpt_unified_metadata_db_manager_factory"
 
 
+_EMPTY_DEFAULT_COMPONENT = "_EMPTY_DEFAULT_COMPONENT"
+
+
 @PublicAPI(stability="beta")
 class BaseComponent(LifeCycle, ABC):
     """Abstract Base Component class. All custom components should extend this."""
@@ -98,10 +101,36 @@ class BaseComponent(LifeCycle, ABC):
         with the main system app.
         """
 
+    @classmethod
+    def get_instance(
+        cls,
+        system_app: SystemApp,
+        default_component=_EMPTY_DEFAULT_COMPONENT,
+        or_register_component: Type[BaseComponent] = None,
+        *args,
+        **kwargs,
+    ) -> BaseComponent:
+        """Get the current component instance.
+
+        Args:
+            system_app (SystemApp): The system app
+            default_component : The default component instance if not retrieve by name
+            or_register_component (Type[BaseComponent]): The new component to register if not retrieve by name
+
+        Returns:
+            BaseComponent: The component instance
+        """
+        return system_app.get_component(
+            cls.name,
+            cls,
+            default_component=default_component,
+            or_register_component=or_register_component,
+            *args,
+            **kwargs,
+        )
+
 
 T = TypeVar("T", bound=BaseComponent)
-
-_EMPTY_DEFAULT_COMPONENT = "_EMPTY_DEFAULT_COMPONENT"
 
 
 @PublicAPI(stability="beta")

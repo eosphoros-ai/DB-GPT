@@ -73,7 +73,7 @@ class BaseServe(BaseComponent, ABC):
         Returns:
             Optional[BaseServe]: The current serve component.
         """
-        return system_app.get_component(cls.name, cls, default_component=None)
+        return cls.get_instance(system_app, default_component=None)
 
     @classmethod
     def call_on_current_serve(

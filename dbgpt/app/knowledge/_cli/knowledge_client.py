@@ -1,22 +1,20 @@
-import os
-import requests
 import json
 import logging
-
-from urllib.parse import urljoin
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urljoin
 
-from dbgpt.app.openapi.api_view_model import Result
+import requests
+
 from dbgpt.app.knowledge.request.request import (
-    KnowledgeQueryRequest,
-    KnowledgeDocumentRequest,
     ChunkQueryRequest,
     DocumentQueryRequest,
+    DocumentSyncRequest,
+    KnowledgeDocumentRequest,
+    KnowledgeQueryRequest,
+    KnowledgeSpaceRequest,
 )
-
-from dbgpt.app.knowledge.request.request import DocumentSyncRequest
-
-from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
+from dbgpt.app.openapi.api_view_model import Result
 from dbgpt.rag.knowledge.base import KnowledgeType
 
 HTTP_HEADERS = {"Content-Type": "application/json"}

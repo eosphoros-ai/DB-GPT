@@ -1,5 +1,9 @@
 from enum import Enum
-from typing import List
+from typing import List, Optional
+
+from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt.core import BaseOutputParser, ChatPromptTemplate
+from dbgpt.core._private.example_base import ExampleSelector
 
 
 class Scene:
@@ -135,3 +139,49 @@ class ChatScene(Enum):
 
     def is_inner(self):
         return self._value_.is_inner
+
+
+class AppScenePromptTemplateAdapter(BaseModel):
+    """The template of the scene.
+
+    Include some fields that in :class:`dbgpt.core.PromptTemplate`
+    """
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
+    prompt: ChatPromptTemplate = Field(..., description="The prompt of this scene")
+    template_scene: Optional[str] = Field(
+        default=None, description="The scene of this template"
+    )
+    template_is_strict: Optional[bool] = Field(
+        default=True, description="Whether strict"
+    )
+
+    output_parser: Optional[BaseOutputParser] = Field(
+        default=None, description="The output parser of this scene"
+    )
+    sep: Optional[str] = Field(
+        default="###", description="The default separator of this scene"
+    )
+
+    stream_out: Optional[bool] = Field(
+        default=True, description="Whether to stream out"
+    )
+    example_selector: Optional[ExampleSelector] = Field(
+        default=None, description="Example selector"
+    )
+    need_historical_messages: Optional[bool] = Field(
+        default=False, description="Whether to need historical messages"
+    )
+    temperature: Optional[float] = Field(
+        default=0.6, description="The default temperature of this scene"
+    )
+    max_new_tokens: Optional[int] = Field(
+        default=1024, description="The default max new tokens of this scene"
+    )
+    str_history: Optional[bool] = Field(
+        default=False, description="Whether transform history to str"
+    )

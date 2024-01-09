@@ -1,20 +1,20 @@
 import logging
-
-import duckdb
 import os
-import sqlparse
-import pandas as pd
+
 import chardet
+import duckdb
 import numpy as np
+import pandas as pd
+import sqlparse
 from pyparsing import (
     CaselessKeyword,
+    Forward,
+    Literal,
+    Optional,
+    Regex,
     Word,
     alphanums,
     delimitedList,
-    Forward,
-    Optional,
-    Literal,
-    Regex,
 )
 
 from dbgpt.util.pd_utils import csv_colunm_foramt

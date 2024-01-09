@@ -216,18 +216,27 @@ class HistoryPromptBuilderOperator(
     BasePromptBuilderOperator, JoinOperator[List[ModelMessage]]
 ):
     def __init__(
-        self, prompt: ChatPromptTemplate, history_key: Optional[str] = None, **kwargs
+        self,
+        prompt: ChatPromptTemplate,
+        history_key: Optional[str] = None,
+        check_storage: bool = True,
+        str_history: bool = False,
+        **kwargs,
     ):
         self._prompt = prompt
         self._history_key = history_key
-
+        self._str_history = str_history
+        BasePromptBuilderOperator.__init__(self, check_storage=check_storage)
         JoinOperator.__init__(self, combine_function=self.merge_history, **kwargs)
 
     @rearrange_args_by_type
     async def merge_history(
         self, history: List[BaseMessage], prompt_dict: Dict[str, Any]
     ) -> List[ModelMessage]:
-        prompt_dict[self._history_key] = history
+        if self._str_history:
+            prompt_dict[self._history_key] = BaseMessage.messages_to_string(history)
+        else:
+            prompt_dict[self._history_key] = history
         return await self.format_prompt(self._prompt, prompt_dict)
 
 
@@ -239,9 +248,16 @@ class HistoryDynamicPromptBuilderOperator(
     The prompt template is dynamic, and it created by parent operator.
     """
 
-    def __init__(self, history_key: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        history_key: Optional[str] = None,
+        check_storage: bool = True,
+        str_history: bool = False,
+        **kwargs,
+    ):
         self._history_key = history_key
-
+        self._str_history = str_history
+        BasePromptBuilderOperator.__init__(self, check_storage=check_storage)
         JoinOperator.__init__(self, combine_function=self.merge_history, **kwargs)
 
     @rearrange_args_by_type
@@ -251,5 +267,8 @@ class HistoryDynamicPromptBuilderOperator(
         history: List[BaseMessage],
         prompt_dict: Dict[str, Any],
     ) -> List[ModelMessage]:
-        prompt_dict[self._history_key] = history
+        if self._str_history:
+            prompt_dict[self._history_key] = BaseMessage.messages_to_string(history)
+        else:
+            prompt_dict[self._history_key] = history
         return await self.format_prompt(prompt, prompt_dict)

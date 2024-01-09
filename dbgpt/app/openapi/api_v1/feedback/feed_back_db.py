@@ -1,10 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Text, String, DateTime
-
-from dbgpt.storage.metadata import BaseDao, Model
+from sqlalchemy import Column, DateTime, Integer, String, Text
 
 from dbgpt.app.openapi.api_v1.feedback.feed_back_model import FeedBackBody
+from dbgpt.storage.metadata import BaseDao, Model
 
 
 class ChatFeedBackEntity(Model):
