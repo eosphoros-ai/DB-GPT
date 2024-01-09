@@ -6,7 +6,10 @@ from dbgpt.core.interface.cache import (
     CacheValue,
 )
 from dbgpt.core.interface.llm import (
+    DefaultMessageConverter,
     LLMClient,
+    MessageConverter,
+    ModelExtraMedata,
     ModelInferenceMetrics,
     ModelMetadata,
     ModelOutput,
@@ -14,19 +17,28 @@ from dbgpt.core.interface.llm import (
     ModelRequestContext,
 )
 from dbgpt.core.interface.message import (
+    AIMessage,
+    BaseMessage,
     ConversationIdentifier,
+    HumanMessage,
     MessageIdentifier,
     MessageStorageItem,
     ModelMessage,
     ModelMessageRoleType,
     OnceConversation,
     StorageConversation,
+    SystemMessage,
 )
 from dbgpt.core.interface.output_parser import BaseOutputParser, SQLOutputParser
 from dbgpt.core.interface.prompt import (
+    BasePromptTemplate,
+    ChatPromptTemplate,
+    HumanPromptTemplate,
+    MessagesPlaceholder,
     PromptManager,
     PromptTemplate,
     StoragePromptTemplate,
+    SystemPromptTemplate,
 )
 from dbgpt.core.interface.serialization import Serializable, Serializer
 from dbgpt.core.interface.storage import (
@@ -49,14 +61,26 @@ __ALL__ = [
     "ModelMessage",
     "LLMClient",
     "ModelMessageRoleType",
+    "ModelExtraMedata",
+    "MessageConverter",
+    "DefaultMessageConverter",
     "OnceConversation",
     "StorageConversation",
+    "BaseMessage",
+    "SystemMessage",
+    "AIMessage",
+    "HumanMessage",
     "MessageStorageItem",
     "ConversationIdentifier",
     "MessageIdentifier",
     "PromptTemplate",
     "PromptManager",
     "StoragePromptTemplate",
+    "BasePromptTemplate",
+    "ChatPromptTemplate",
+    "MessagesPlaceholder",
+    "SystemPromptTemplate",
+    "HumanPromptTemplate",
     "BaseOutputParser",
     "SQLOutputParser",
     "Serializable",

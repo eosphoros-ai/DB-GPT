@@ -19,17 +19,21 @@ class DefaultWorkflowRunner(WorkflowRunner):
         node: BaseOperator,
         call_data: Optional[CALL_DATA] = None,
         streaming_call: bool = False,
+        dag_ctx: Optional[DAGContext] = None,
     ) -> DAGContext:
         # Save node output
         # dag = node.dag
-        node_outputs: Dict[str, TaskContext] = {}
         job_manager = JobManager.build_from_end_node(node, call_data)
-        # Create DAG context
-        dag_ctx = DAGContext(
-            streaming_call=streaming_call,
-            node_to_outputs=node_outputs,
-            node_name_to_ids=job_manager._node_name_to_ids,
-        )
+        if not dag_ctx:
+            # Create DAG context
+            node_outputs: Dict[str, TaskContext] = {}
+            dag_ctx = DAGContext(
+                streaming_call=streaming_call,
+                node_to_outputs=node_outputs,
+                node_name_to_ids=job_manager._node_name_to_ids,
+            )
+        else:
+            node_outputs = dag_ctx._node_to_outputs
         logger.info(
             f"Begin run workflow from end operator, id: {node.node_id}, call_data: {call_data}"
         )

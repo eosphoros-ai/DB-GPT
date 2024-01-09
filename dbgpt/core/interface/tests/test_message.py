@@ -413,13 +413,18 @@ def test_to_openai_messages(
         {"role": "user", "content": human_model_message.content},
     ]
 
+
+def test_to_openai_messages_convert_to_compatible_format(
+    human_model_message, ai_model_message, system_model_message
+):
     shuffle_messages = ModelMessage.to_openai_messages(
         [
             system_model_message,
             human_model_message,
             human_model_message,
             ai_model_message,
-        ]
+        ],
+        convert_to_compatible_format=True,
     )
     assert shuffle_messages == [
         {"role": "system", "content": system_model_message.content},

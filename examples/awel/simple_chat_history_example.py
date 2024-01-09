@@ -12,7 +12,7 @@
             # Fist round
             curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_history/multi_round/chat/completions \
             -H "Content-Type: application/json" -d '{
-                "model": "gpt-3.5-turbo",
+                "model": "'"$MODEL"'",
                 "context": {
                     "conv_uid": "uuid_conv_1234"
                 },
@@ -22,7 +22,7 @@
             # Second round
             curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_history/multi_round/chat/completions \
             -H "Content-Type: application/json" -d '{
-                "model": "gpt-3.5-turbo",
+                "model": "'"$MODEL"'",
                 "context": {
                     "conv_uid": "uuid_conv_1234"
                 },
@@ -34,7 +34,7 @@
 
             curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_history/multi_round/chat/completions \
             -H "Content-Type: application/json" -d '{
-                "model": "gpt-3.5-turbo",
+                "model": "'"$MODEL"'",
                 "context": {
                     "conv_uid": "uuid_conv_stream_1234"
                 },
@@ -45,7 +45,7 @@
             # Second round
             curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_history/multi_round/chat/completions \
             -H "Content-Type: application/json" -d '{
-                "model": "gpt-3.5-turbo",
+                "model": "'"$MODEL"'",
                 "context": {
                     "conv_uid": "uuid_conv_stream_1234"
                 },
@@ -59,19 +59,27 @@ import logging
 from typing import Dict, List, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.core import InMemoryStorage, LLMClient
+from dbgpt.core import (
+    ChatPromptTemplate,
+    HumanPromptTemplate,
+    InMemoryStorage,
+    MessagesPlaceholder,
+    ModelMessage,
+    ModelRequest,
+    ModelRequestContext,
+    SystemPromptTemplate,
+)
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.core.operator import (
-    BufferedConversationMapperOperator,
+    ChatComposerInput,
+    ChatHistoryPromptComposerOperator,
     LLMBranchOperator,
+)
+from dbgpt.model.operator import (
     LLMOperator,
-    PostConversationOperator,
-    PostStreamingConversationOperator,
-    PreConversationOperator,
-    RequestBuildOperator,
+    OpenAIStreamingOutputOperator,
     StreamingLLMOperator,
 )
-from dbgpt.model import MixinLLMOperator, OpenAIStreamingOperator
 
 logger = logging.getLogger(__name__)
 
@@ -100,16 +108,15 @@ class TriggerReqBody(BaseModel):
     )
 
 
-class MyLLMOperator(MixinLLMOperator, LLMOperator):
-    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(llm_client)
-        LLMOperator.__init__(self, llm_client, **kwargs)
-
-
-class MyStreamingLLMOperator(MixinLLMOperator, StreamingLLMOperator):
-    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(llm_client)
-        StreamingLLMOperator.__init__(self, llm_client, **kwargs)
+async def build_model_request(
+    messages: List[ModelMessage], req_body: TriggerReqBody
+) -> ModelRequest:
+    return ModelRequest.build_request(
+        model=req_body.model,
+        messages=messages,
+        context=req_body.context,
+        stream=req_body.stream,
+    )
 
 
 with DAG("dbgpt_awel_simple_chat_history") as multi_round_dag:
@@ -120,56 +127,53 @@ with DAG("dbgpt_awel_simple_chat_history") as multi_round_dag:
         request_body=TriggerReqBody,
         streaming_predict_func=lambda req: req.stream,
     )
-    # Transform request body to model request.
-    request_handle_task = RequestBuildOperator()
-    # Pre-process conversation, use InMemoryStorage to store conversation.
-    pre_conversation_task = PreConversationOperator(
-        storage=InMemoryStorage(), message_storage=InMemoryStorage()
+    prompt = ChatPromptTemplate(
+        messages=[
+            SystemPromptTemplate.from_template("You are a helpful chatbot."),
+            MessagesPlaceholder(variable_name="chat_history"),
+            HumanPromptTemplate.from_template("{user_input}"),
+        ]
     )
-    # Keep last k round conversation.
-    history_conversation_task = BufferedConversationMapperOperator(last_k_round=5)
 
-    # Save conversation to storage.
-    post_conversation_task = PostConversationOperator()
-    # Save streaming conversation to storage.
-    post_streaming_conversation_task = PostStreamingConversationOperator()
+    composer_operator = ChatHistoryPromptComposerOperator(
+        prompt_template=prompt,
+        last_k_round=5,
+        storage=InMemoryStorage(),
+        message_storage=InMemoryStorage(),
+    )
 
-    # Use LLMOperator to generate response.
-    llm_task = MyLLMOperator(task_name="llm_task")
-    streaming_llm_task = MyStreamingLLMOperator(task_name="streaming_llm_task")
+    # Use BaseLLMOperator to generate response.
+    llm_task = LLMOperator(task_name="llm_task")
+    streaming_llm_task = StreamingLLMOperator(task_name="streaming_llm_task")
     branch_task = LLMBranchOperator(
         stream_task_name="streaming_llm_task", no_stream_task_name="llm_task"
     )
     model_parse_task = MapOperator(lambda out: out.to_dict())
-    openai_format_stream_task = OpenAIStreamingOperator()
+    openai_format_stream_task = OpenAIStreamingOutputOperator()
     result_join_task = JoinOperator(
         combine_function=lambda not_stream_out, stream_out: not_stream_out or stream_out
     )
 
-    (
-        trigger
-        >> request_handle_task
-        >> pre_conversation_task
-        >> history_conversation_task
-        >> branch_task
+    req_handle_task = MapOperator(
+        lambda req: ChatComposerInput(
+            context=ModelRequestContext(
+                conv_uid=req.context.conv_uid, stream=req.stream
+            ),
+            prompt_dict={"user_input": req.messages},
+            model_dict={
+                "model": req.model,
+                "context": req.context,
+                "stream": req.stream,
+            },
+        )
     )
 
+    trigger >> req_handle_task >> composer_operator >> branch_task
+
     # The branch of no streaming response.
-    (
-        branch_task
-        >> llm_task
-        >> post_conversation_task
-        >> model_parse_task
-        >> result_join_task
-    )
+    branch_task >> llm_task >> model_parse_task >> result_join_task
     # The branch of streaming response.
-    (
-        branch_task
-        >> streaming_llm_task
-        >> post_streaming_conversation_task
-        >> openai_format_stream_task
-        >> result_join_task
-    )
+    branch_task >> streaming_llm_task >> openai_format_stream_task >> result_join_task
 
 if __name__ == "__main__":
     if multi_round_dag.leaf_nodes[0].dev_mode:

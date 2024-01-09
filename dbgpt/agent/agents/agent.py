@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dbgpt.core import LLMClient
 from dbgpt.core.interface.llm import ModelMetadata
+from dbgpt.util.annotations import PublicAPI
 
 from ..memory.gpts_memory import GptsMemory
 
@@ -43,6 +44,10 @@ class Agent:
     def describe(self) -> str:
         """Get the name of the agent."""
         return self._describe
+
+    @property
+    def is_terminal_agent(self) -> bool:
+        return False
 
     async def a_send(
         self,
@@ -88,6 +93,7 @@ class Agent:
         sender: Agent,
         reviewer: Agent,
         silent: Optional[bool] = False,
+        rely_messages: Optional[List[Dict]] = None,
         **kwargs,
     ) -> Union[str, Dict, None]:
         """(Abstract async method) Generate a reply based on the received messages.
@@ -102,10 +108,9 @@ class Agent:
     async def a_reasoning_reply(
         self, messages: Optional[List[Dict]]
     ) -> Union[str, Dict, None]:
-        """
-        Based on the requirements of the current agent, reason about the current task goal through LLM
+        """Based on the requirements of the current agent, reason about the current task goal through LLM
         Args:
-            message:
+            messages:
 
         Returns:
             str or dict or None: the generated reply. If None, no reply is generated.
@@ -186,4 +191,21 @@ class AgentContext:
     allow_format_str_template: Optional[bool] = False
 
     def to_dict(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)
+
+
+@dataclasses.dataclass
+@PublicAPI(stability="beta")
+class AgentGenerateContext:
+    """A class to represent the input of a Agent."""
+
+    message: Optional[Dict]
+    sender: Agent
+    reviewer: Agent
+    silent: Optional[bool] = False
+
+    rely_messages: List[Dict] = dataclasses.field(default_factory=list)
+    final: Optional[bool] = True
+
+    def to_dict(self) -> Dict:
         return dataclasses.asdict(self)

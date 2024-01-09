@@ -8,9 +8,10 @@
         .. code-block:: shell
 
             DBGPT_SERVER="http://127.0.0.1:5555"
+            MODEL="gpt-3.5-turbo"
             curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/chat/completions \
             -H "Content-Type: application/json" -d '{
-                "model": "proxyllm",
+                "model": "'"$MODEL"'",
                 "messages": "hello"
             }'
 
@@ -19,7 +20,7 @@
 
             curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/chat/completions \
             -H "Content-Type: application/json" -d '{
-                "model": "proxyllm",
+                "model": "'"$MODEL"'",
                 "messages": "hello",
                 "stream": true
             }'
@@ -29,7 +30,7 @@
 
             curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_client/count_token \
             -H "Content-Type: application/json" -d '{
-                "model": "proxyllm",
+                "model": "'"$MODEL"'",
                 "messages": "hello"
             }'
 
@@ -40,13 +41,13 @@ from typing import Any, Dict, List, Optional, Union
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core import LLMClient
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
-from dbgpt.core.operator import (
-    LLMBranchOperator,
+from dbgpt.core.operator import LLMBranchOperator, RequestBuilderOperator
+from dbgpt.model.operator import (
     LLMOperator,
-    RequestBuildOperator,
+    MixinLLMOperator,
+    OpenAIStreamingOutputOperator,
     StreamingLLMOperator,
 )
-from dbgpt.model import MixinLLMOperator, OpenAIStreamingOperator
 
 logger = logging.getLogger(__name__)
 
@@ -57,18 +58,6 @@ class TriggerReqBody(BaseModel):
     )
     model: str = Field(..., description="Model name")
     stream: Optional[bool] = Field(default=False, description="Whether return stream")
-
-
-class MyLLMOperator(MixinLLMOperator, LLMOperator):
-    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(llm_client)
-        LLMOperator.__init__(self, llm_client, **kwargs)
-
-
-class MyStreamingLLMOperator(MixinLLMOperator, StreamingLLMOperator):
-    def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(llm_client)
-        StreamingLLMOperator.__init__(self, llm_client, **kwargs)
 
 
 class MyModelToolOperator(
@@ -97,14 +86,14 @@ with DAG("dbgpt_awel_simple_llm_client_generate") as client_generate_dag:
         request_body=TriggerReqBody,
         streaming_predict_func=lambda req: req.stream,
     )
-    request_handle_task = RequestBuildOperator()
-    llm_task = MyLLMOperator(task_name="llm_task")
-    streaming_llm_task = MyStreamingLLMOperator(task_name="streaming_llm_task")
+    request_handle_task = RequestBuilderOperator()
+    llm_task = LLMOperator(task_name="llm_task")
+    streaming_llm_task = StreamingLLMOperator(task_name="streaming_llm_task")
     branch_task = LLMBranchOperator(
         stream_task_name="streaming_llm_task", no_stream_task_name="llm_task"
     )
     model_parse_task = MapOperator(lambda out: out.to_dict())
-    openai_format_stream_task = OpenAIStreamingOperator()
+    openai_format_stream_task = OpenAIStreamingOutputOperator()
     result_join_task = JoinOperator(
         combine_function=lambda not_stream_out, stream_out: not_stream_out or stream_out
     )

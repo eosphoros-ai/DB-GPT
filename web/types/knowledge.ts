@@ -82,6 +82,7 @@ export type IStrategyParameter = {
   param_name: string;
   param_type: string;
   default_value?: string | number;
+  description: string;
 };
 
 export type IChunkStrategyResponse = {

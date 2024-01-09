@@ -1,6 +1,6 @@
 import logging
 from abc import ABC
-from typing import List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 from sqlalchemy import URL
 
@@ -60,3 +60,44 @@ class BaseServe(BaseComponent, ABC):
             finally:
                 self._not_create_table = False
         return init_db
+
+    @classmethod
+    def get_current_serve(cls, system_app: SystemApp) -> Optional["BaseServe"]:
+        """Get the current serve component.
+
+        None if the serve component is not exist.
+
+        Args:
+            system_app (SystemApp): The system app
+
+        Returns:
+            Optional[BaseServe]: The current serve component.
+        """
+        return system_app.get_component(cls.name, cls, default_component=None)
+
+    @classmethod
+    def call_on_current_serve(
+        cls,
+        system_app: SystemApp,
+        func: Callable[["BaseServe"], Optional[Any]],
+        default_value: Optional[Any] = None,
+    ) -> Optional[Any]:
+        """Call the function on the current serve component.
+
+        Return default_value if the serve component is not exist or the function return None.
+
+        Args:
+            system_app (SystemApp): The system app
+            func (Callable[[BaseServe], Any]): The function to call
+            default_value (Optional[Any], optional): The default value. Defaults to None.
+
+        Returns:
+            Optional[Any]: The result of the function
+        """
+        serve = cls.get_current_serve(system_app)
+        if not serve:
+            return default_value
+        result = func(serve)
+        if not result:
+            result = default_value
+        return result
