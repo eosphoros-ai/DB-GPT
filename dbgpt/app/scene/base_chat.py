@@ -102,6 +102,11 @@ class BaseChat(ABC):
             is_stream=True, dag_name="llm_stream_model_dag"
         )
 
+        # Get the message version, default is v1 in app
+        # In v1, we will transform the message to compatible format of specific model
+        # In the future, we will upgrade the message version to v2, and the message will be compatible with all models
+        self._message_version = chat_param.get("message_version", "v1")
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -185,6 +190,7 @@ class BaseChat(ABC):
             "temperature": float(self.prompt_template.temperature),
             "max_new_tokens": int(self.prompt_template.max_new_tokens),
             "echo": self.llm_echo,
+            "version": self._message_version,
         }
         return payload
 

@@ -113,8 +113,10 @@ class ChromaStore(VectorStoreBase):
 
     def delete_by_ids(self, ids):
         logger.info(f"begin delete chroma ids...")
-        collection = self.vector_store_client._collection
-        collection.delete(ids=ids)
+        ids = ids.split(",")
+        if len(ids) > 0:
+            collection = self.vector_store_client._collection
+            collection.delete(ids=ids)
 
     def _clean_persist_folder(self):
         for root, dirs, files in os.walk(self.persist_dir, topdown=False):

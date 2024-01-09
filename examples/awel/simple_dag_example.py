@@ -31,3 +31,11 @@ with DAG("simple_dag_example") as dag:
     trigger = HttpTrigger("/examples/hello", request_body=TriggerReqBody)
     map_node = RequestHandleOperator()
     trigger >> map_node
+
+if __name__ == "__main__":
+    if dag.leaf_nodes[0].dev_mode:
+        from dbgpt.core.awel import setup_dev_environment
+
+        setup_dev_environment([dag])
+    else:
+        pass

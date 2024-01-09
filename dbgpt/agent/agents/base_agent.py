@@ -33,6 +33,7 @@ class ConversableAgent(Agent):
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "TERMINATE",
         default_auto_reply: Optional[Union[str, Dict, None]] = "",
+        is_terminal_agent: bool = False,
     ):
         super().__init__(name, memory, describe)
 
@@ -57,8 +58,9 @@ class ConversableAgent(Agent):
             else self.MAX_CONSECUTIVE_AUTO_REPLY
         )
         self.consecutive_auto_reply_counter: int = 0
-
         self._current_retry_counter: int = 0
+        self._max_retry_count: int = 5
+        self._is_terminal_agent = is_terminal_agent
 
         ## By default, the memory of 4 rounds of dialogue is retained.
         self.dialogue_memory_rounds = 5
@@ -90,6 +92,10 @@ class ConversableAgent(Agent):
                 "reset_config": reset_config,
             },
         )
+
+    @property
+    def is_terminal_agent(self):
+        return self._is_terminal_agent
 
     @property
     def system_message(self):
@@ -197,7 +203,6 @@ class ConversableAgent(Agent):
         """
             Put the received message content into the collective message memory
         Args:
-            conv_id:
             message:
             role:
             sender:
@@ -381,17 +386,32 @@ class ConversableAgent(Agent):
             )
         return oai_messages
 
-    def process_now_message(self, sender, current_gogal: Optional[str] = None):
-        # Convert and tailor the information in collective memory into contextual memory available to the current Agent
+    def process_now_message(
+        self,
+        current_message: Optional[Dict],
+        sender,
+        rely_messages: Optional[List[Dict]] = None,
+    ):
+        current_gogal = current_message.get("current_gogal", None)
+        ### Convert and tailor the information in collective memory into contextual memory available to the current Agent
         current_gogal_messages = self._gpts_message_to_ai_message(
             self.memory.message_memory.get_between_agents(
                 self.agent_context.conv_id, self.name, sender.name, current_gogal
             )
         )
-
-        # relay messages
+        if current_gogal_messages is None or len(current_gogal_messages) <= 0:
+            current_message["role"] = ModelMessageRoleType.HUMAN
+            current_gogal_messages = [current_message]
+        ### relay messages
         cut_messages = []
-        cut_messages.extend(self._rely_messages)
+        if rely_messages:
+            for rely_message in rely_messages:
+                action_report = rely_message.get("action_report", None)
+                if action_report:
+                    rely_message["content"] = action_report["content"]
+            cut_messages.extend(rely_messages)
+        else:
+            cut_messages.extend(self._rely_messages)
 
         if len(current_gogal_messages) < self.dialogue_memory_rounds:
             cut_messages.extend(current_gogal_messages)
@@ -409,8 +429,9 @@ class ConversableAgent(Agent):
         self,
         message: Optional[Dict],
         sender: Agent,
-        reviewer: "Agent",
+        reviewer: Agent,
         silent: Optional[bool] = False,
+        rely_messages: Optional[List[Dict]] = None,
     ):
         ## 0.New message build
         new_message = {}
@@ -420,11 +441,7 @@ class ConversableAgent(Agent):
         ## 1.LLM Reasonging
         await self.a_system_fill_param()
         await asyncio.sleep(5)  ##TODO  Rate limit reached for gpt-3.5-turbo
-        current_messages = self.process_now_message(
-            sender, message.get("current_gogal", None)
-        )
-        if current_messages is None or len(current_messages) <= 0:
-            current_messages = [message]
+        current_messages = self.process_now_message(message, sender, rely_messages)
         ai_reply, model = await self.a_reasoning_reply(messages=current_messages)
         new_message["content"] = ai_reply
         new_message["model_name"] = model
@@ -466,6 +483,9 @@ class ConversableAgent(Agent):
         if request_reply is False or request_reply is None:
             logger.info("Messages that do not require a reply")
             return
+        if self._is_termination_msg(message) or sender.is_terminal_agent:
+            logger.info(f"TERMINATE!")
+            return
 
         verify_paas, reply = await self.a_generate_reply(
             message=message, sender=sender, reviewer=reviewer, silent=silent
@@ -476,14 +496,26 @@ class ConversableAgent(Agent):
                 message=reply, recipient=sender, reviewer=reviewer, silent=silent
             )
         else:
-            self._current_retry_counter += 1
-            logger.info(
-                "The generated answer failed to verify, so send it to yourself for optimization."
-            )
-            # TODO: Exit after the maximum number of rounds of self-optimization
-            await sender.a_send(
-                message=reply, recipient=self, reviewer=reviewer, silent=silent
-            )
+            # Exit after the maximum number of rounds of self-optimization
+            if self._current_retry_counter >= self._max_retry_count:
+                # If the maximum number of retries is exceeded, the abnormal answer will be returned directly.
+                logger.warning(
+                    f"More than {self._current_retry_counter} times and still no valid answer is output."
+                )
+                reply[
+                    "content"
+                ] = f"After n optimizations, the following problems still exist:{reply['content']}"
+                await self.a_send(
+                    message=reply, recipient=sender, reviewer=reviewer, silent=silent
+                )
+            else:
+                self._current_retry_counter += 1
+                logger.info(
+                    "The generated answer failed to verify, so send it to yourself for optimization."
+                )
+                await sender.a_send(
+                    message=reply, recipient=self, reviewer=reviewer, silent=silent
+                )
 
     async def a_verify(self, message: Optional[Dict]):
         return True, message
@@ -547,7 +579,6 @@ class ConversableAgent(Agent):
     async def a_retry_chat(
         self,
         recipient: "ConversableAgent",
-        agent_map: dict,
         reviewer: "Agent" = None,
         clear_history: Optional[bool] = True,
         silent: Optional[bool] = False,

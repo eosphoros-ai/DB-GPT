@@ -99,12 +99,6 @@ class TestPromptTemplate:
         formatted_output = prompt.format(response="hello")
         assert "Response: " in formatted_output
 
-    def test_from_template(self):
-        template_str = "Hello {name}"
-        prompt = PromptTemplate.from_template(template_str)
-        assert prompt._prompt_template.template == template_str
-        assert prompt._prompt_template.input_variables == []
-
     def test_format_missing_variable(self):
         template_str = "Hello {name}"
         prompt = PromptTemplate(

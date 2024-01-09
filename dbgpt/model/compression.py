@@ -52,7 +52,7 @@ def compress_module(module, target_device):
 
 
 def compress(tensor, config):
-    """Simulate group-wise quantization."""
+    """Simulate team-wise quantization."""
     if not config.enabled:
         return tensor
 
@@ -105,7 +105,7 @@ def compress(tensor, config):
 
 
 def decompress(packed_data, config):
-    """Simulate group-wise dequantization."""
+    """Simulate team-wise dequantization."""
     if not config.enabled:
         return packed_data
 
