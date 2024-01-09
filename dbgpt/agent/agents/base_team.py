@@ -61,10 +61,6 @@ class Team:
         self.agents: List[Agent] = []
         self.messages: List[Dict] = []
         self.max_round: Optional[int] = 10
-<<<<<<< HEAD
-        self.mode_name: TeamMode
-=======
->>>>>>> e11b72c724c0cbfabd8b4f6d5f969016353c2f0b
 
     def hire(self, agents: List[Agent]):
         """Hire roles to cooperate"""
