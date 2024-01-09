@@ -23,7 +23,7 @@ from dbgpt.agent.agents.expand.summary_assistant_agent import SummaryAssistantAg
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.core.interface.llm import ModelMetadata
-from dbgpt.serve.agent.team.layout.team_awel_layout import AwelLayoutChatManger
+from dbgpt.serve.agent.team.layout.team_awel_layout import AwelLayoutChatManager
 
 current_dir = os.getcwd()
 parent_dir = os.path.dirname(current_dir)
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     context.gpts_name = "信息析助手"
 
     default_memory = GptsMemory()
-    manager = AwelLayoutChatManger(
+    manager = AwelLayoutChatManager(
         agent_context=context,
         memory=default_memory,
     )

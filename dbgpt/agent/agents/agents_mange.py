@@ -58,7 +58,7 @@ def mentioned_agents(message_content: str, agents: List[Agent]) -> Dict:
     return mentions
 
 
-class AgentsMange:
+class AgentsManage:
     def __init__(self):
         self._agents = defaultdict()
 
@@ -80,7 +80,7 @@ class AgentsMange:
         return result
 
 
-agent_mange = AgentsMange()
+agent_mange = AgentsManage()
 
 agent_mange.register_agent(CodeAssistantAgent)
 agent_mange.register_agent(DashboardAssistantAgent)

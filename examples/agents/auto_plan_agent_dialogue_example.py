@@ -21,7 +21,6 @@ import os
 from dbgpt.agent.agents.agent import AgentContext
 from dbgpt.agent.agents.agents_mange import agent_mange
 from dbgpt.agent.agents.expand.code_assistant_agent import CodeAssistantAgent
-from dbgpt.agent.agents.planner_agent import PlannerAgent
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.core.interface.llm import ModelMetadata

@@ -24,7 +24,7 @@ from dbgpt.serve.agent.team.plan.team_auto_plan import AutoPlanChatManager
 from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEntity
 from ..db.gpts_mange_db import GptsInstanceDao, GptsInstanceEntity
 from ..team.base import TeamMode
-from ..team.layout.team_awel_layout import AwelLayoutChatManger
+from ..team.layout.team_awel_layout import AwelLayoutChatManager
 from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
 from .dbgpts import DbGptsInstance
 
@@ -102,11 +102,9 @@ class MultiAgents(BaseComponent, ABC):
                 manager = AutoPlanChatManager(
                     agent_context=context,
                     memory=self.memory,
-                    plan_chat=groupchat,
-                    planner=planner,
                 )
             elif TeamMode.AWEL_LAYOUT == mode:
-                manager = AwelLayoutChatManger(
+                manager = AwelLayoutChatManager(
                     agent_context=context,
                     memory=self.memory,
                 )
@@ -138,7 +136,6 @@ class MultiAgents(BaseComponent, ABC):
 
         """
         context = await self._build_agent_context(name, conv_id)
-        agent_map = defaultdict()
         agents = []
         for name in context.agents:
             cls = agent_mange.get_by_name(name)
@@ -211,7 +208,6 @@ class MultiAgents(BaseComponent, ABC):
                 memory=self.memory,
             )
             agents.append(agent)
-            agent_map[name] = agent
 
         manager = AutoPlanChatManager(
             agent_context=context,
