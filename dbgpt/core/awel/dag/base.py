@@ -185,7 +185,7 @@ class DAGLifecycle:
 
 class DAGNode(DAGLifecycle, DependencyMixin, ABC):
     resource_group: Optional[ResourceGroup] = None
-    """The resource team of current DAGNode"""
+    """The resource group of current DAGNode"""
 
     def __init__(
         self,

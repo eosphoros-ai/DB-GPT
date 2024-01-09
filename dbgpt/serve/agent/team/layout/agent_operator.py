@@ -1,15 +1,9 @@
 from abc import ABC
-from typing import Dict, Optional
-
-from dbgpt.core.awel import (
-    BranchFunc,
-    BranchOperator,
-    MapOperator,
-)
-
-from dbgpt.agent.agents.agent import AgentGenerateContext, Agent
-from dbgpt.core.interface.message import ModelMessageRoleType
 from typing import Dict, List, Optional
+
+from dbgpt.agent.agents.agent import Agent, AgentGenerateContext
+from dbgpt.core.awel import BranchFunc, BranchOperator, MapOperator
+from dbgpt.core.interface.message import ModelMessageRoleType
 
 
 class BaseAgentOperator:

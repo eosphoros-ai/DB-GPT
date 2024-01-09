@@ -1,11 +1,9 @@
 import logging
 import sys
+from typing import Dict, List, Optional, Union
 
-from typing import Dict, Optional, Union, List
-
-from dbgpt.agent.agents.agent import Agent
-from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.agent.agents.agent import Agent, AgentContext
+from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.serve.agent.team.base import TeamMode
 

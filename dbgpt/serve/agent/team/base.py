@@ -1,7 +1,6 @@
 import logging
 from enum import Enum
-
-from typing import Union, List
+from typing import List, Union
 
 logger = logging.getLogger(__name__)
 

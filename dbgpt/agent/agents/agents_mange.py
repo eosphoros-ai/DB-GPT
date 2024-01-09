@@ -1,14 +1,15 @@
-from collections import defaultdict
-from typing import Optional, Type, List, Dict
 import logging
 import re
+from collections import defaultdict
+from typing import Dict, List, Optional, Type
+
 from .agent import Agent
 from .expand.code_assistant_agent import CodeAssistantAgent
 from .expand.dashboard_assistant_agent import DashboardAssistantAgent
 from .expand.data_scientist_agent import DataScientistAgent
+from .expand.plugin_assistant_agent import PluginAssistantAgent
 from .expand.sql_assistant_agent import SQLAssistantAgent
 from .expand.summary_assistant_agent import SummaryAssistantAgent
-from .expand.plugin_assistant_agent import PluginAssistantAgent
 
 logger = logging.getLogger(__name__)
 

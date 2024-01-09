@@ -1,12 +1,11 @@
 import logging
 import sys
-
 from typing import Any, Optional
-from dbgpt.core.awel import DAG
+
 from dbgpt.agent.agents.agent import Agent, AgentContext, AgentGenerateContext
 from dbgpt.agent.agents.base_team import MangerAgent
-
 from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.core.awel import DAG
 from dbgpt.serve.agent.team.layout.agent_operator import AgentOperator
 
 logger = logging.getLogger(__name__)
