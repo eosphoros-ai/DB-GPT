@@ -23,7 +23,7 @@
             DBGPT_SERVER="http://127.0.0.1:5555"
             MODEL="gpt-3.5-turbo"
             # Fist round
-            curl -X POST $DBGPT_SERVER/api/v1/layout/trigger/examples/data_analyst/copilot \
+            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/data_analyst/copilot \
             -H "Content-Type: application/json" -d '{
                 "command": "dbgpt_awel_data_analyst_code_fix",
                 "model": "'"$MODEL"'",
