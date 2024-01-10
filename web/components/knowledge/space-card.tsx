@@ -81,7 +81,7 @@ export default function SpaceCard(props: IProps) {
         trigger="click"
         content={<DocPanel space={space} onAddDoc={props.onAddDoc} onDeleteDoc={onDeleteDoc} />}
       >
-        <Badge className="mr-4 mb-4 min-w-[200px] sm:w-60 lg:w-72" count={space.docs || 0}>
+        <Badge className="mb-4 min-w-[200px] sm:w-60 lg:w-72" count={space.docs || 0}>
           <div className="flex justify-between mx-6 mt-3">
             <div className="text-lg font-bold text-black truncate">
               {renderVectorIcon(space.vector_type)}

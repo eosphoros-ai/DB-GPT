@@ -22,7 +22,6 @@ const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
     ...theme.darkAlgorithm(seedToken, mapToken),
     colorBgBase: '#232734',
     colorBorder: '#828282',
-    colorPrimaryHover: '#f7f7f7',
     colorBgContainer: '#232734',
   };
 };
