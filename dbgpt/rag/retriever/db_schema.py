@@ -1,6 +1,7 @@
 from functools import reduce
 from typing import List, Optional
 
+from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 from dbgpt.util.chat_util import run_async_tasks
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.rag.chunk import Chunk
@@ -9,14 +10,13 @@ from dbgpt.rag.retriever.rerank import Ranker, DefaultRanker
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 
-class DBStructRetriever(BaseRetriever):
-    """DBStruct retriever."""
+class DBSchemaRetriever(BaseRetriever):
+    """DBSchema retriever."""
 
     def __init__(
         self,
         top_k: int = 4,
         connection: Optional[RDBMSDatabase] = None,
-        is_embeddings: bool = True,
         query_rewrite: bool = False,
         rerank: Ranker = None,
         vector_store_connector: Optional[VectorStoreConnector] = None,
@@ -26,14 +26,13 @@ class DBStructRetriever(BaseRetriever):
         Args:
             top_k (int): top k
             connection (Optional[RDBMSDatabase]): RDBMSDatabase connection.
-            is_embeddings (bool): Whether to query by embeddings in the vector store, Defaults to True.
             query_rewrite (bool): query rewrite
             rerank (Ranker): rerank
             vector_store_connector (VectorStoreConnector): vector store connector
         code example:
         .. code-block:: python
             >>> from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
-            >>> from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler
+            >>> from dbgpt.serve.rag.assembler.db_schema import DBSchemaAssembler
             >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
             >>> from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
             >>> from dbgpt.rag.retriever.embedding import EmbeddingRetriever
@@ -71,16 +70,18 @@ class DBStructRetriever(BaseRetriever):
                 embedding_fn=embedding_fn
             )
             # get db struct retriever
-            retriever = DBStructRetriever(top_k=3, vector_store_connector=vector_connector)
+            retriever = DBSchemaRetriever(top_k=3, vector_store_connector=vector_connector)
             chunks = retriever.retrieve("show columns from table")
             print(f"db struct rag example results:{[chunk.content for chunk in chunks]}")
         """
 
         self._top_k = top_k
-        self._is_embeddings = is_embeddings
         self._connection = connection
         self._query_rewrite = query_rewrite
         self._vector_store_connector = vector_store_connector
+        self._need_embeddings = False
+        if self._vector_store_connector:
+            self._need_embeddings = True
         self._rerank = rerank or DefaultRanker(self._top_k)
 
     def _retrieve(self, query: str) -> List[Chunk]:
@@ -88,7 +89,7 @@ class DBStructRetriever(BaseRetriever):
         Args:
             query (str): query text
         """
-        if self._is_embeddings:
+        if self._need_embeddings:
             queries = [query]
             candidates = [
                 self._vector_store_connector.similar_search(query, self._top_k)
@@ -97,8 +98,6 @@ class DBStructRetriever(BaseRetriever):
             candidates = reduce(lambda x, y: x + y, candidates)
             return candidates
         else:
-            from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
-
             table_summaries = _parse_db_summary(self._connection)
             return [Chunk(content=table_summary) for table_summary in table_summaries]
 
@@ -115,7 +114,7 @@ class DBStructRetriever(BaseRetriever):
         Args:
             query (str): query text
         """
-        if self._is_embeddings:
+        if self._need_embeddings:
             queries = [query]
             candidates = [self._similarity_search(query) for query in queries]
             candidates = await run_async_tasks(tasks=candidates, concurrency_limit=1)
@@ -145,7 +144,7 @@ class DBStructRetriever(BaseRetriever):
             self._top_k,
         )
 
-    async def _aparse_db_summary(self) -> List[Chunk]:
+    async def _aparse_db_summary(self) -> List[str]:
         """Similar search."""
         from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 

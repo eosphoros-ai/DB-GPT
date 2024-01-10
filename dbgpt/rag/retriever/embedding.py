@@ -99,7 +99,12 @@ class EmbeddingRetriever(BaseRetriever):
         """
         queries = [query]
         if self._query_rewrite:
-            new_queries = await self._query_rewrite.rewrite(origin_query=query, nums=1)
+            candidates_tasks = [self._similarity_search(query) for query in queries]
+            chunks = await self._run_async_tasks(candidates_tasks)
+            context = "\n".join([chunk.content for chunk in chunks])
+            new_queries = await self._query_rewrite.rewrite(
+                origin_query=query, context=context, nums=1
+            )
             queries.extend(new_queries)
         candidates = [self._similarity_search(query) for query in queries]
         candidates = await run_async_tasks(tasks=candidates, concurrency_limit=1)
@@ -117,7 +122,12 @@ class EmbeddingRetriever(BaseRetriever):
         """
         queries = [query]
         if self._query_rewrite:
-            new_queries = await self._query_rewrite.rewrite(origin_query=query, nums=1)
+            candidates_tasks = [self._similarity_search(query) for query in queries]
+            chunks = await self._run_async_tasks(candidates_tasks)
+            context = "\n".join([chunk.content for chunk in chunks])
+            new_queries = await self._query_rewrite.rewrite(
+                origin_query=query, context=context, nums=1
+            )
             queries.extend(new_queries)
         candidates_with_score = [
             self._similarity_search_with_score(query, score_threshold)
@@ -136,6 +146,12 @@ class EmbeddingRetriever(BaseRetriever):
             query,
             self._top_k,
         )
+
+    async def _run_async_tasks(self, tasks) -> List[Chunk]:
+        """Run async tasks."""
+        candidates = await run_async_tasks(tasks=tasks, concurrency_limit=1)
+        candidates = reduce(lambda x, y: x + y, candidates)
+        return candidates
 
     async def _similarity_search_with_score(
         self, query, score_threshold

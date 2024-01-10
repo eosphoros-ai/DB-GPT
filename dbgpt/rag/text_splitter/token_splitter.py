@@ -1,7 +1,7 @@
 """Token splitter."""
 from typing import Callable, List, Optional
 
-from dbgpt._private.pydantic import Field, PrivateAttr, BaseModel
+from pydantic import BaseModel, Field, PrivateAttr
 
 from dbgpt.util.global_helper import globals_helper
 from dbgpt.util.splitter_utils import split_by_sep, split_by_char

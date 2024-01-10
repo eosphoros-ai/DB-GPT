@@ -7,24 +7,24 @@ from dbgpt.rag.chunk_manager import ChunkParameters, ChunkManager
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import Knowledge, ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
-from dbgpt.rag.retriever.db_struct import DBStructRetriever
+from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 from dbgpt.serve.rag.assembler.base import BaseAssembler
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 
-class DBStructAssembler(BaseAssembler):
-    """DBStructAssembler
+class DBSchemaAssembler(BaseAssembler):
+    """DBSchemaAssembler
     Example:
         .. code-block:: python
 
             from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
-            from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler
+            from dbgpt.serve.rag.assembler.db_struct import DBSchemaAssembler
             from dbgpt.storage.vector_store.connector import VectorStoreConnector
             from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 
             connection = SQLiteTempConnect.create_temporary_db()
-            assembler = DBStructAssembler.load_from_connection(
+            assembler = DBSchemaAssembler.load_from_connection(
                 connection=connection,
                 embedding_model=embedding_model_path,
             )
@@ -53,18 +53,21 @@ class DBStructAssembler(BaseAssembler):
         """
         if connection is None:
             raise ValueError("datasource connection must be provided.")
+        self._connection = connection
+        self._vector_store_connector = vector_store_connector
         from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 
-        embedding_factory = embedding_factory or DefaultEmbeddingFactory(
-            default_model_name=os.getenv("EMBEDDING_MODEL")
-        )
-        self._connection = connection
-        if embedding_model:
-            embedding_fn = embedding_factory.create(model_name=embedding_model)
-        self._vector_store_connector = (
-            vector_store_connector
-            or VectorStoreConnector.from_default(embedding_fn=embedding_fn)
-        )
+        self._embedding_model = embedding_model
+        if self._embedding_model:
+            embedding_factory = embedding_factory or DefaultEmbeddingFactory(
+                default_model_name=self._embedding_model
+            )
+            self.embedding_fn = embedding_factory.create(self._embedding_model)
+        if self._vector_store_connector.vector_store_config.embedding_fn is None:
+            self._vector_store_connector.vector_store_config.embedding_fn = (
+                self.embedding_fn
+            )
+
         super().__init__(
             chunk_parameters=chunk_parameters,
             **kwargs,
@@ -79,7 +82,7 @@ class DBStructAssembler(BaseAssembler):
         embedding_model: Optional[str] = None,
         embedding_factory: Optional[EmbeddingFactory] = None,
         vector_store_connector: Optional[VectorStoreConnector] = None,
-    ) -> "DBStructAssembler":
+    ) -> "DBSchemaAssembler":
         """Load document embedding into vector store from path.
         Args:
             connection: (RDBMSDatabase) RDBMSDatabase connection.
@@ -89,13 +92,9 @@ class DBStructAssembler(BaseAssembler):
             embedding_factory: (Optional[EmbeddingFactory]) EmbeddingFactory to use.
             vector_store_connector: (Optional[VectorStoreConnector]) VectorStoreConnector to use.
         Returns:
-             DBStructAssembler
+             DBSchemaAssembler
         """
-        from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
-
-        embedding_factory = embedding_factory or DefaultEmbeddingFactory(
-            default_model_name=embedding_model or os.getenv("EMBEDDING_MODEL_PATH")
-        )
+        embedding_factory = embedding_factory
         chunk_parameters = chunk_parameters or ChunkParameters(
             chunk_strategy=ChunkStrategy.CHUNK_BY_SIZE.name, chunk_overlap=0
         )
@@ -136,14 +135,14 @@ class DBStructAssembler(BaseAssembler):
     def _extract_info(self, chunks) -> List[Chunk]:
         """Extract info from chunks."""
 
-    def as_retriever(self, top_k: Optional[int] = 4) -> DBStructRetriever:
+    def as_retriever(self, top_k: Optional[int] = 4) -> DBSchemaRetriever:
         """
         Args:
             top_k:(Optional[int]), default 4
         Returns:
-            DBStructRetriever
+            DBSchemaRetriever
         """
-        return DBStructRetriever(
+        return DBSchemaRetriever(
             top_k=top_k,
             connection=self._connection,
             is_embeddings=True,

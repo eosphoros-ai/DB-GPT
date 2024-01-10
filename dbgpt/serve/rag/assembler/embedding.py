@@ -46,17 +46,19 @@ class EmbeddingAssembler(BaseAssembler):
         """
         if knowledge is None:
             raise ValueError("knowledge datasource must be provided.")
+        self._vector_store_connector = vector_store_connector
         from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 
-        embedding_factory = embedding_factory or DefaultEmbeddingFactory(
-            default_model_name=os.getenv("EMBEDDING_MODEL")
-        )
-        if embedding_model:
-            embedding_fn = embedding_factory.create(model_name=embedding_model)
-        self._vector_store_connector = (
-            vector_store_connector
-            or VectorStoreConnector.from_default(embedding_fn=embedding_fn)
-        )
+        self._embedding_model = embedding_model
+        if self._embedding_model:
+            embedding_factory = embedding_factory or DefaultEmbeddingFactory(
+                default_model_name=self._embedding_model
+            )
+            self.embedding_fn = embedding_factory.create(self._embedding_model)
+        if self._vector_store_connector.vector_store_config.embedding_fn is None:
+            self._vector_store_connector.vector_store_config.embedding_fn = (
+                self.embedding_fn
+            )
 
         super().__init__(
             knowledge=knowledge,
