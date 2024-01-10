@@ -95,7 +95,7 @@ with DAG("simple_sdk_rag_retriever_example") as dag:
     request_handle_task = RequestHandleOperator()
     query_parser = MapOperator(map_function=lambda x: x["query"])
     context_join_operator = JoinOperator(combine_function=_context_join_fn)
-    rewrite_operator = QueryRewriteOperator()
+    rewrite_operator = QueryRewriteOperator(llm_client=OpenAILLMClient())
     retriever_context_operator = EmbeddingRetrieverOperator(
         top_k=3,
         vector_store_connector=vector_connector,
