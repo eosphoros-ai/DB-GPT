@@ -1,14 +1,15 @@
-import json
 import base64
-import hmac
 import hashlib
-from websockets.sync.client import connect
+import hmac
+import json
 from datetime import datetime
-from typing import List
 from time import mktime
-from urllib.parse import urlencode
-from urllib.parse import urlparse
+from typing import List
+from urllib.parse import urlencode, urlparse
 from wsgiref.handlers import format_date_time
+
+from websockets.sync.client import connect
+
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 

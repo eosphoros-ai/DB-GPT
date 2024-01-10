@@ -1,15 +1,14 @@
 import json
 import os
+from typing import Dict, List, Optional
+
 import duckdb
-from typing import List, Dict, Optional
 
 from dbgpt._private.config import Config
 from dbgpt.configs.model_config import PILOT_PATH
+from dbgpt.core.interface.message import OnceConversation, _conversation_to_dict
 from dbgpt.storage.chat_history.base import BaseChatHistoryMemory
-from dbgpt.core.interface.message import (
-    OnceConversation,
-    _conversation_to_dict,
-)
+
 from ..base import MemoryStoreType
 
 default_db_path = os.path.join(PILOT_PATH, "message")

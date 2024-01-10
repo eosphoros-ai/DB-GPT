@@ -1,8 +1,10 @@
-from typing import Type
 import logging
-from .base import MemoryStoreType
+from typing import Type
+
 from dbgpt._private.config import Config
 from dbgpt.storage.chat_history.base import BaseChatHistoryMemory
+
+from .base import MemoryStoreType
 
 # TODO remove global variable
 CFG = Config()

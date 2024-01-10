@@ -1,16 +1,19 @@
-from typing import List, Dict, Type
 import json
+from typing import Dict, List, Type
+
 from sqlalchemy.orm import Session
-from dbgpt.core.interface.storage import StorageItemAdapter
+
 from dbgpt.core.interface.message import (
-    StorageConversation,
+    BaseMessage,
     ConversationIdentifier,
     MessageIdentifier,
     MessageStorageItem,
-    _messages_from_dict,
+    StorageConversation,
     _conversation_to_dict,
-    BaseMessage,
+    _messages_from_dict,
 )
+from dbgpt.core.interface.storage import StorageItemAdapter
+
 from .chat_history_db import ChatHistoryEntity, ChatHistoryMessageEntity
 
 

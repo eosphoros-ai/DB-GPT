@@ -1,8 +1,9 @@
-from typing import Dict, Any, Awaitable, Callable, Optional, Iterator
-import httpx
 import asyncio
-import logging
 import json
+import logging
+from typing import Any, Awaitable, Callable, Dict, Iterator, Optional
+
+import httpx
 
 logger = logging.getLogger(__name__)
 MessageCaller = Callable[[str], Awaitable[None]]

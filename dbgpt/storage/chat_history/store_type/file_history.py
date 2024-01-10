@@ -1,9 +1,8 @@
-from typing import List
+import datetime
 import json
 import os
-import datetime
-from dbgpt.storage.chat_history.base import BaseChatHistoryMemory
 from pathlib import Path
+from typing import List
 
 from dbgpt._private.config import Config
 from dbgpt.core.interface.message import (
@@ -11,7 +10,7 @@ from dbgpt.core.interface.message import (
     _conversation_from_dict,
     _conversations_to_dict,
 )
-from dbgpt.storage.chat_history.base import MemoryStoreType
+from dbgpt.storage.chat_history.base import BaseChatHistoryMemory, MemoryStoreType
 
 CFG = Config()
 

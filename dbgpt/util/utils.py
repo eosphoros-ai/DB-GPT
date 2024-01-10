@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
+import asyncio
 import logging
 import logging.handlers
-from typing import Any, List
-
 import os
-import asyncio
+from typing import Any, List
 
 from dbgpt.configs.model_config import LOGDIR
 

@@ -1,12 +1,11 @@
 import json
 import logging
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
 from dbgpt._private.config import Config
 from dbgpt.core.interface.message import OnceConversation, _conversation_to_dict
-from dbgpt.storage.chat_history.base import BaseChatHistoryMemory
-from dbgpt.storage.chat_history.chat_history_db import ChatHistoryEntity, ChatHistoryDao
-
-from dbgpt.storage.chat_history.base import MemoryStoreType
+from dbgpt.storage.chat_history.base import BaseChatHistoryMemory, MemoryStoreType
+from dbgpt.storage.chat_history.chat_history_db import ChatHistoryDao, ChatHistoryEntity
 
 CFG = Config()
 logger = logging.getLogger(__name__)

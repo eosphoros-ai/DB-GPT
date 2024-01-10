@@ -1,8 +1,8 @@
 import argparse
 import os
-from dataclasses import dataclass, fields, MISSING, asdict, field, is_dataclass
-from typing import Any, List, Optional, Type, Union, Callable, Dict, TYPE_CHECKING
 from collections import OrderedDict
+from dataclasses import MISSING, asdict, dataclass, field, fields, is_dataclass
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 
 if TYPE_CHECKING:
     from dbgpt._private.pydantic import BaseModel

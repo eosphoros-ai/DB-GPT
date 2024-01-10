@@ -1,4 +1,4 @@
-from dbgpt.component import SystemApp, BaseComponent, ComponentType
+from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
 from .db_manager import DatabaseManager
 

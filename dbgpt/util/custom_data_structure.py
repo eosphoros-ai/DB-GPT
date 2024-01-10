@@ -1,5 +1,4 @@
-from collections import OrderedDict
-from collections import deque
+from collections import OrderedDict, deque
 
 
 class FixedSizeDict(OrderedDict):

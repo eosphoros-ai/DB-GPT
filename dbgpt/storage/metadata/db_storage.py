@@ -1,18 +1,19 @@
 from contextlib import contextmanager
+from typing import Dict, List, Optional, Type, Union
 
-from typing import Type, List, Optional, Union, Dict
+from sqlalchemy import URL
+from sqlalchemy.orm import DeclarativeMeta, Session
+
 from dbgpt.core import Serializer
 from dbgpt.core.interface.storage import (
-    StorageInterface,
     QuerySpec,
     ResourceIdentifier,
+    StorageInterface,
     StorageItemAdapter,
     T,
 )
-from sqlalchemy import URL
-from sqlalchemy.orm import Session, DeclarativeMeta
 
-from .db_manager import BaseModel, DatabaseManager, BaseQuery
+from .db_manager import BaseModel, BaseQuery, DatabaseManager
 
 
 def _copy_public_properties(src: BaseModel, dest: BaseModel):

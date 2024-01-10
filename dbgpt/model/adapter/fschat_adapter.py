@@ -2,17 +2,17 @@
 
 You can import fastchat only in this file, so that the user does not need to install fastchat if he does not use it.
 """
+import logging
 import os
 import threading
-import logging
 from functools import cache
-from typing import TYPE_CHECKING, Callable, Tuple, List, Optional
+from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 
 try:
     from fastchat.conversation import (
         Conversation,
-        register_conv_template,
         SeparatorStyle,
+        register_conv_template,
     )
 except ImportError as exc:
     raise ValueError(
@@ -20,8 +20,8 @@ except ImportError as exc:
         "Please install fastchat by command `pip install fschat` "
     ) from exc
 
-from dbgpt.model.adapter.template import ConversationAdapter, PromptType
 from dbgpt.model.adapter.base import LLMModelAdapter
+from dbgpt.model.adapter.template import ConversationAdapter, PromptType
 
 if TYPE_CHECKING:
     from fastchat.model.model_adapter import BaseModelAdapter

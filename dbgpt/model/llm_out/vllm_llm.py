@@ -1,9 +1,9 @@
-from typing import Dict
 import os
-from vllm import AsyncLLMEngine
-from vllm.utils import random_uuid
-from vllm.sampling_params import SamplingParams
+from typing import Dict
 
+from vllm import AsyncLLMEngine
+from vllm.sampling_params import SamplingParams
+from vllm.utils import random_uuid
 
 _IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 

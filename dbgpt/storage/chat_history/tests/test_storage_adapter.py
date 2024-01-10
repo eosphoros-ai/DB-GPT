@@ -1,20 +1,21 @@
-import pytest
 from typing import List
 
-from dbgpt.util.pagination_utils import PaginationResult
-from dbgpt.util.serialization.json_serialization import JsonSerializer
-from dbgpt.core.interface.message import StorageConversation, HumanMessage, AIMessage
+import pytest
+
+from dbgpt.core.interface.message import AIMessage, HumanMessage, StorageConversation
 from dbgpt.core.interface.storage import QuerySpec
-from dbgpt.storage.metadata import db
-from dbgpt.storage.metadata.db_storage import SQLAlchemyStorage
 from dbgpt.storage.chat_history.chat_history_db import (
     ChatHistoryEntity,
     ChatHistoryMessageEntity,
 )
 from dbgpt.storage.chat_history.storage_adapter import (
-    DBStorageConversationItemAdapter,
     DBMessageStorageItemAdapter,
+    DBStorageConversationItemAdapter,
 )
+from dbgpt.storage.metadata import db
+from dbgpt.storage.metadata.db_storage import SQLAlchemyStorage
+from dbgpt.util.pagination_utils import PaginationResult
+from dbgpt.util.serialization.json_serialization import JsonSerializer
 
 
 @pytest.fixture

@@ -1,8 +1,8 @@
 import logging
 import re
-from typing import Optional, List, Any, Type, Dict
+from typing import Any, Dict, List, Optional, Type
 
-from sqlalchemy import Numeric, Integer, Float
+from sqlalchemy import Float, Integer, Numeric
 from sqlalchemy.sql import sqltypes
 from sqlalchemy.sql.type_api import TypeEngine
 

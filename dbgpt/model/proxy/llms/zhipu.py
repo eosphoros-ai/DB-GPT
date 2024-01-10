@@ -1,7 +1,7 @@
 from typing import List
 
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 CHATGLM_DEFAULT_MODEL = "chatglm_pro"
 

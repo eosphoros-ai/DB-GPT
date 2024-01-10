@@ -1,22 +1,22 @@
 from typing import List, Type
-from dbgpt.datasource import ConnectConfigDao
-from dbgpt.storage.schema import DBType
-from dbgpt.component import SystemApp, ComponentType
-from dbgpt.util.executor_utils import ExecutorFactory
 
-from dbgpt.datasource.db_conn_info import DBConfig
-from dbgpt.rag.summary.db_summary_client import DBSummaryClient
+from dbgpt.component import ComponentType, SystemApp
+from dbgpt.datasource import ConnectConfigDao
 from dbgpt.datasource.base import BaseConnect
-from dbgpt.datasource.rdbms.conn_mysql import MySQLConnect
-from dbgpt.datasource.rdbms.conn_duckdb import DuckDbConnect
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteConnect
-from dbgpt.datasource.rdbms.conn_mssql import MSSQLConnect
+from dbgpt.datasource.conn_spark import SparkConnect
+from dbgpt.datasource.db_conn_info import DBConfig
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.datasource.rdbms.conn_clickhouse import ClickhouseConnect
-from dbgpt.datasource.rdbms.conn_postgresql import PostgreSQLDatabase
-from dbgpt.datasource.rdbms.conn_starrocks import StarRocksConnect
-from dbgpt.datasource.conn_spark import SparkConnect
 from dbgpt.datasource.rdbms.conn_doris import DorisConnect
+from dbgpt.datasource.rdbms.conn_duckdb import DuckDbConnect
+from dbgpt.datasource.rdbms.conn_mssql import MSSQLConnect
+from dbgpt.datasource.rdbms.conn_mysql import MySQLConnect
+from dbgpt.datasource.rdbms.conn_postgresql import PostgreSQLDatabase
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteConnect
+from dbgpt.datasource.rdbms.conn_starrocks import StarRocksConnect
+from dbgpt.rag.summary.db_summary_client import DBSummaryClient
+from dbgpt.storage.schema import DBType
+from dbgpt.util.executor_utils import ExecutorFactory
 
 
 class ConnectManager:

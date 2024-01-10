@@ -2,8 +2,9 @@
     Run unit test with command: pytest dbgpt/datasource/rdbms/tests/test_conn_duckdb.py
 """
 
-import pytest
 import tempfile
+
+import pytest
 
 from dbgpt.datasource.rdbms.conn_duckdb import DuckDbConnect
 
