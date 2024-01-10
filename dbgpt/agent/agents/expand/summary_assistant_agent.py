@@ -84,7 +84,7 @@ class SummaryAssistantAgent(ConversableAgent):
                     content = message
                     view = content
             except Exception as e:
-                fail_reason = f"Return summarization erro, {str(e)}"
+                fail_reason = f"Return summarization error, {str(e)}"
                 response_success = False
 
         if not response_success:
