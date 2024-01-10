@@ -1,6 +1,6 @@
-from typing import List, Tuple
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
+from typing import List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +17,9 @@ def _clear_model_cache(device="cuda"):
 
 
 def _clear_torch_cache(device="cuda"):
-    import torch
     import gc
+
+    import torch
 
     gc.collect()
     if device != "cpu":

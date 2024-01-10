@@ -5,31 +5,26 @@ We have integrated fastchat. For details, see: dbgpt/model/model_adapter.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import logging
 import os
 import re
-import logging
-from pathlib import Path
-from typing import List, Tuple, TYPE_CHECKING, Optional
 from functools import cache
-from transformers import (
-    AutoModel,
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    LlamaTokenizer,
-)
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
+from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer
+
+from dbgpt._private.config import Config
+from dbgpt.configs.model_config import get_device
 from dbgpt.model.adapter.base import LLMModelAdapter
 from dbgpt.model.adapter.template import ConversationAdapter, PromptType
 from dbgpt.model.base import ModelType
-
+from dbgpt.model.conversation import Conversation
 from dbgpt.model.parameter import (
-    ModelParameters,
     LlamaCppModelParameters,
+    ModelParameters,
     ProxyModelParameters,
 )
-from dbgpt.model.conversation import Conversation
-from dbgpt.configs.model_config import get_device
-from dbgpt._private.config import Config
 
 if TYPE_CHECKING:
     from dbgpt.app.chat_adapter import BaseChatAdpter

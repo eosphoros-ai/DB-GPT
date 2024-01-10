@@ -1,37 +1,30 @@
 import json
-import time
-from fastapi import (
-    APIRouter,
-    Body,
-)
-
-from typing import List
 import logging
+import time
+from typing import List
+
+from fastapi import APIRouter, Body, Depends
 
 from dbgpt._private.config import Config
-
-from dbgpt.app.scene import ChatFactory
-
-from dbgpt.app.openapi.api_view_model import (
-    Result,
+from dbgpt.app.openapi.api_v1.editor.service import EditorService
+from dbgpt.app.openapi.api_v1.editor.sql_editor import (
+    ChartRunData,
+    DataNode,
+    SqlRunData,
 )
+from dbgpt.app.openapi.api_view_model import Result
 from dbgpt.app.openapi.editor_view_model import (
-    ChatDbRounds,
-    ChartList,
     ChartDetail,
+    ChartList,
     ChatChartEditContext,
+    ChatDbRounds,
     ChatSqlEditContext,
     DbTable,
 )
-
-from dbgpt.app.openapi.api_v1.editor.sql_editor import (
-    DataNode,
-    ChartRunData,
-    SqlRunData,
-)
-from dbgpt.core.interface.message import OnceConversation
+from dbgpt.app.scene import ChatFactory
 from dbgpt.app.scene.chat_dashboard.data_loader import DashboardDataLoader
-from dbgpt.app.scene.chat_db.data_loader import DbDataLoader
+from dbgpt.core.interface.message import OnceConversation
+from dbgpt.serve.conversation.serve import Serve as ConversationServe
 from dbgpt.storage.chat_history.chat_hisotry_factory import ChatHistory
 
 router = APIRouter()
@@ -39,6 +32,14 @@ CFG = Config()
 CHAT_FACTORY = ChatFactory()
 
 logger = logging.getLogger(__name__)
+
+
+def get_conversation_serve() -> ConversationServe:
+    return ConversationServe.get_instance(CFG.SYSTEM_APP)
+
+
+def get_edit_service() -> EditorService:
+    return EditorService.get_instance(CFG.SYSTEM_APP)
 
 
 @router.get("/v1/editor/db/tables", response_model=Result[DbTable])
@@ -69,48 +70,21 @@ async def get_editor_tables(
 
 
 @router.get("/v1/editor/sql/rounds", response_model=Result[ChatDbRounds])
-async def get_editor_sql_rounds(con_uid: str):
+async def get_editor_sql_rounds(
+    con_uid: str, editor_service: EditorService = Depends(get_edit_service)
+):
     logger.info("get_editor_sql_rounds:{con_uid}")
-    chat_history_fac = ChatHistory()
-    history_mem = chat_history_fac.get_store_instance(con_uid)
-    history_messages: List[OnceConversation] = history_mem.get_messages()
-    if history_messages:
-        result: List = []
-        for once in history_messages:
-            round_name: str = ""
-            for element in once["messages"]:
-                if element["type"] == "human":
-                    round_name = element["data"]["content"]
-            if once.get("param_value"):
-                round: ChatDbRounds = ChatDbRounds(
-                    round=once["chat_order"],
-                    db_name=once["param_value"],
-                    round_name=round_name,
-                )
-                result.append(round)
-    return Result.succ(result)
+    return Result.succ(editor_service.get_editor_sql_rounds(con_uid))
 
 
 @router.get("/v1/editor/sql", response_model=Result[dict])
-async def get_editor_sql(con_uid: str, round: int):
+async def get_editor_sql(
+    con_uid: str, round: int, editor_service: EditorService = Depends(get_edit_service)
+):
     logger.info(f"get_editor_sql:{con_uid},{round}")
-    chat_history_fac = ChatHistory()
-    history_mem = chat_history_fac.get_store_instance(con_uid)
-    history_messages: List[OnceConversation] = history_mem.get_messages()
-    if history_messages:
-        for once in history_messages:
-            if int(once["chat_order"]) == round:
-                for element in once["messages"]:
-                    if element["type"] == "ai":
-                        logger.info(
-                            f'history ai json resp:{element["data"]["content"]}'
-                        )
-                        context = (
-                            element["data"]["content"]
-                            .replace("\\n", " ")
-                            .replace("\n", " ")
-                        )
-                        return Result.succ(json.loads(context))
+    context = editor_service.get_editor_sql_by_round(con_uid, round)
+    if context:
+        return Result.succ(context)
     return Result.failed(msg="not have sql!")
 
 
@@ -120,7 +94,7 @@ async def editor_sql_run(run_param: dict = Body()):
     db_name = run_param["db_name"]
     sql = run_param["sql"]
     if not db_name and not sql:
-        return Result.failed("SQL run param error！")
+        return Result.failed(msg="SQL run param error！")
     conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
 
     try:
@@ -145,102 +119,43 @@ async def editor_sql_run(run_param: dict = Body()):
 
 
 @router.post("/v1/sql/editor/submit")
-async def sql_editor_submit(sql_edit_context: ChatSqlEditContext = Body()):
+async def sql_editor_submit(
+    sql_edit_context: ChatSqlEditContext = Body(),
+    editor_service: EditorService = Depends(get_edit_service),
+):
     logger.info(f"sql_editor_submit:{sql_edit_context.__dict__}")
 
-    chat_history_fac = ChatHistory()
-    history_mem = chat_history_fac.get_store_instance(sql_edit_context.conv_uid)
-    history_messages: List[OnceConversation] = history_mem.get_messages()
-    if history_messages:
-        conn = CFG.LOCAL_DB_MANAGE.get_connect(sql_edit_context.db_name)
-
-        edit_round = list(
-            filter(
-                lambda x: x["chat_order"] == sql_edit_context.conv_round,
-                history_messages,
-            )
-        )[0]
-        if edit_round:
-            for element in edit_round["messages"]:
-                if element["type"] == "ai":
-                    db_resp = json.loads(element["data"]["content"])
-                    db_resp["thoughts"] = sql_edit_context.new_speak
-                    db_resp["sql"] = sql_edit_context.new_sql
-                    element["data"]["content"] = json.dumps(db_resp)
-                if element["type"] == "view":
-                    data_loader = DbDataLoader()
-                    element["data"]["content"] = data_loader.get_table_view_by_conn(
-                        conn.run_to_df(sql_edit_context.new_sql),
-                        sql_edit_context.new_speak,
-                    )
-            history_mem.update(history_messages)
-            return Result.succ(None)
-    return Result.failed(msg="Edit Failed!")
+    conn = CFG.LOCAL_DB_MANAGE.get_connect(sql_edit_context.db_name)
+    try:
+        editor_service.sql_editor_submit_and_save(sql_edit_context, conn)
+        return Result.succ(None)
+    except Exception as e:
+        logger.error(f"edit sql exception!{str(e)}")
+        return Result.failed(msg=f"Edit sql exception!{str(e)}")
 
 
 @router.get("/v1/editor/chart/list", response_model=Result[ChartList])
-async def get_editor_chart_list(con_uid: str):
+async def get_editor_chart_list(
+    con_uid: str,
+    editor_service: EditorService = Depends(get_edit_service),
+):
     logger.info(
         f"get_editor_sql_rounds:{con_uid}",
     )
-    chat_history_fac = ChatHistory()
-    history_mem = chat_history_fac.get_store_instance(con_uid)
-    history_messages: List[OnceConversation] = history_mem.get_messages()
-    if history_messages:
-        last_round = max(history_messages, key=lambda x: x["chat_order"])
-        db_name = last_round["param_value"]
-        for element in last_round["messages"]:
-            if element["type"] == "ai":
-                chart_list: ChartList = ChartList(
-                    round=last_round["chat_order"],
-                    db_name=db_name,
-                    charts=json.loads(element["data"]["content"]),
-                )
-                return Result.succ(chart_list)
+    chart_list = editor_service.get_editor_chart_list(con_uid)
+    if chart_list:
+        return Result.succ(chart_list)
     return Result.failed(msg="Not have charts!")
 
 
 @router.post("/v1/editor/chart/info", response_model=Result[ChartDetail])
-async def get_editor_chart_info(param: dict = Body()):
+async def get_editor_chart_info(
+    param: dict = Body(), editor_service: EditorService = Depends(get_edit_service)
+):
     logger.info(f"get_editor_chart_info:{param}")
     conv_uid = param["con_uid"]
     chart_title = param["chart_title"]
-
-    chat_history_fac = ChatHistory()
-    history_mem = chat_history_fac.get_store_instance(conv_uid)
-    history_messages: List[OnceConversation] = history_mem.get_messages()
-    if history_messages:
-        last_round = max(history_messages, key=lambda x: x["chat_order"])
-        db_name = last_round["param_value"]
-        if not db_name:
-            logger.error(
-                "this dashboard dialogue version too old, can't support editor!"
-            )
-            return Result.failed(
-                msg="this dashboard dialogue version too old, can't support editor!"
-            )
-        for element in last_round["messages"]:
-            if element["type"] == "view":
-                view_data: dict = json.loads(element["data"]["content"])
-                charts: List = view_data.get("charts")
-                find_chart = list(
-                    filter(lambda x: x["chart_name"] == chart_title, charts)
-                )[0]
-
-                conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
-                detail: ChartDetail = ChartDetail(
-                    chart_uid=find_chart["chart_uid"],
-                    chart_type=find_chart["chart_type"],
-                    chart_desc=find_chart["chart_desc"],
-                    chart_sql=find_chart["chart_sql"],
-                    db_name=db_name,
-                    chart_name=find_chart["chart_name"],
-                    chart_value=find_chart["values"],
-                    table_value=conn.run(find_chart["chart_sql"]),
-                )
-
-                return Result.succ(detail)
-    return Result.failed(msg="Can't Find Chart Detail Info!")
+    return editor_service.get_editor_chart_info(conv_uid, chart_title, CFG)
 
 
 @router.post("/v1/editor/chart/run", response_model=Result[ChartRunData])

@@ -1,46 +1,45 @@
-import os
 import argparse
+import os
 import sys
 from typing import List
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
-from dbgpt.configs.model_config import (
-    LLM_MODEL_CONFIG,
-    EMBEDDING_MODEL_CONFIG,
-    LOGDIR,
-    ROOT_PATH,
-)
-from dbgpt._private.config import Config
-from dbgpt.component import SystemApp
-
-from dbgpt.app.base import (
-    server_init,
-    _migration_db_storage,
-    WebServerParameters,
-    _create_model_start_listener,
-)
-
-# initialize_components import time cost about 0.1s
-from dbgpt.app.component_configs import initialize_components
-
-# fastapi import time cost about 0.05s
-from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 
+# fastapi import time cost about 0.05s
+from fastapi.staticfiles import StaticFiles
+
+from dbgpt._private.config import Config
+from dbgpt.app.base import (
+    WebServerParameters,
+    _create_model_start_listener,
+    _migration_db_storage,
+    server_init,
+)
+
+# initialize_components import time cost about 0.1s
+from dbgpt.app.component_configs import initialize_components
 from dbgpt.app.openapi.base import validation_exception_handler
+from dbgpt.component import SystemApp
+from dbgpt.configs.model_config import (
+    EMBEDDING_MODEL_CONFIG,
+    LLM_MODEL_CONFIG,
+    LOGDIR,
+    ROOT_PATH,
+)
+from dbgpt.util.parameter_utils import _get_dict_from_obj
+from dbgpt.util.system_utils import get_system_info
+from dbgpt.util.tracer import SpanType, SpanTypeRunName, initialize_tracer, root_tracer
 from dbgpt.util.utils import (
-    setup_logging,
     _get_logging_level,
     logging_str_to_uvicorn_level,
     setup_http_service_logging,
+    setup_logging,
 )
-from dbgpt.util.tracer import root_tracer, initialize_tracer, SpanType, SpanTypeRunName
-from dbgpt.util.parameter_utils import _get_dict_from_obj
-from dbgpt.util.system_utils import get_system_info
 
 static_file_path = os.path.join(ROOT_PATH, "dbgpt", "app/static")
 
@@ -89,9 +88,7 @@ app.add_middleware(
 def mount_routers(app: FastAPI):
     """Lazy import to avoid high time cost"""
     from dbgpt.app.knowledge.api import router as knowledge_router
-
     from dbgpt.app.llm_manage.api import router as llm_manage_api
-
     from dbgpt.app.openapi.api_v1.api_v1 import router as api_v1
     from dbgpt.app.openapi.api_v1.editor.api_editor_v1 import (
         router as api_editor_route_v1,
@@ -107,9 +104,7 @@ def mount_routers(app: FastAPI):
 
 
 def mount_static_files(app: FastAPI):
-    from dbgpt.agent.plugin.commands.built_in.disply_type import (
-        static_message_img_path,
-    )
+    from dbgpt.agent.plugin.commands.built_in.disply_type import static_message_img_path
 
     os.makedirs(static_message_img_path, exist_ok=True)
     app.mount(

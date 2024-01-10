@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Tuple, Union, List
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from fastchat.conversation import Conversation
@@ -124,6 +124,7 @@ def get_conv_template(name: str) -> ConversationAdapter:
         Conversation: The conversation template.
     """
     from fastchat.conversation import get_conv_template
+
     from dbgpt.model.adapter.fschat_adapter import FschatConversationAdapter
 
     conv_template = get_conv_template(name)

@@ -1,12 +1,12 @@
-import os
-import json
-import time
 import datetime
-import threading
-import queue
+import json
 import logging
-from typing import Optional, List
+import os
+import queue
+import threading
+import time
 from concurrent.futures import Executor, ThreadPoolExecutor
+from typing import List, Optional
 
 from dbgpt.component import SystemApp
 from dbgpt.util.tracer.base import Span, SpanStorage

@@ -1,18 +1,19 @@
-from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Tuple, Type, Callable
 import logging
+from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+from dbgpt.model.adapter.template import (
+    ConversationAdapter,
+    ConversationAdapterFactory,
+    get_conv_template,
+)
 from dbgpt.model.base import ModelType
 from dbgpt.model.parameter import (
     BaseModelParameters,
-    ModelParameters,
     LlamaCppModelParameters,
+    ModelParameters,
     ProxyModelParameters,
-)
-from dbgpt.model.adapter.template import (
-    get_conv_template,
-    ConversationAdapter,
-    ConversationAdapterFactory,
 )
 
 logger = logging.getLogger(__name__)

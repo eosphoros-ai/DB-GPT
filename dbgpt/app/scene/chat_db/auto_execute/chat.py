@@ -1,8 +1,8 @@
 from typing import Dict
 
+from dbgpt._private.config import Config
 from dbgpt.agent.plugin.commands.command_mange import ApiCall
 from dbgpt.app.scene import BaseChat, ChatScene
-from dbgpt._private.config import Config
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import root_tracer, trace
 

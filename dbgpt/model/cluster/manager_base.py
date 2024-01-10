@@ -1,15 +1,16 @@
 import asyncio
-from dataclasses import dataclass
-from typing import List, Optional, Dict, Iterator, Callable
 from abc import ABC, abstractmethod
-from datetime import datetime
 from concurrent.futures import Future
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Callable, Dict, Iterator, List, Optional
+
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
-from dbgpt.core import ModelOutput, ModelMetadata
-from dbgpt.model.base import WorkerSupportedModel, WorkerApplyOutput
+from dbgpt.core import ModelMetadata, ModelOutput
+from dbgpt.model.base import WorkerApplyOutput, WorkerSupportedModel
+from dbgpt.model.cluster.base import WorkerApplyRequest, WorkerStartupRequest
 from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.cluster.base import WorkerStartupRequest, WorkerApplyRequest
-from dbgpt.model.parameter import ModelWorkerParameters, ModelParameters
+from dbgpt.model.parameter import ModelParameters, ModelWorkerParameters
 from dbgpt.util.parameter_utils import ParameterDescription
 
 

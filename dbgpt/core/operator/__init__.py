@@ -14,6 +14,7 @@ from dbgpt.core.interface.operator.message_operator import (
     BufferedConversationMapperOperator,
     ConversationMapperOperator,
     PreChatHistoryLoadOperator,
+    TokenBufferedConversationMapperOperator,
 )
 from dbgpt.core.interface.operator.prompt_operator import (
     DynamicPromptBuilderOperator,
@@ -30,6 +31,7 @@ __ALL__ = [
     "BaseStreamingLLMOperator",
     "BaseConversationOperator",
     "BufferedConversationMapperOperator",
+    "TokenBufferedConversationMapperOperator",
     "ConversationMapperOperator",
     "PreChatHistoryLoadOperator",
     "PromptBuilderOperator",

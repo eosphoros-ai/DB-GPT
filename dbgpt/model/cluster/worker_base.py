@@ -1,12 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Iterator, List, Type
 
-from dbgpt.core import ModelOutput, ModelMetadata
+from dbgpt.core import ModelMetadata, ModelOutput
 from dbgpt.model.parameter import ModelParameters, WorkerType
-from dbgpt.util.parameter_utils import (
-    ParameterDescription,
-    _get_parameter_descriptions,
-)
+from dbgpt.util.parameter_utils import ParameterDescription, _get_parameter_descriptions
 
 
 class ModelWorker(ABC):

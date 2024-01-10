@@ -1,16 +1,19 @@
-from typing import List, Dict, Type
 import json
+from typing import Dict, List, Type
+
 from sqlalchemy.orm import Session
-from dbgpt.core.interface.storage import StorageItemAdapter
+
 from dbgpt.core.interface.message import (
-    StorageConversation,
+    BaseMessage,
     ConversationIdentifier,
     MessageIdentifier,
     MessageStorageItem,
-    _messages_from_dict,
+    StorageConversation,
     _conversation_to_dict,
-    BaseMessage,
+    _messages_from_dict,
 )
+from dbgpt.core.interface.storage import StorageItemAdapter
+
 from .chat_history_db import ChatHistoryEntity, ChatHistoryMessageEntity
 
 
@@ -21,7 +24,8 @@ class DBStorageConversationItemAdapter(
         message_ids = ",".join(item.message_ids)
         messages = None
         if not item.save_message_independent and item.messages:
-            messages = _conversation_to_dict(item)
+            message_dict_list = [_conversation_to_dict(item)]
+            messages = json.dumps(message_dict_list, ensure_ascii=False)
         return ChatHistoryEntity(
             conv_uid=item.conv_uid,
             chat_mode=item.chat_mode,
@@ -42,15 +46,10 @@ class DBStorageConversationItemAdapter(
         save_message_independent = True
         if old_conversations:
             # Load old messages from old conversations, in old design, we save messages to chat_history table
-            old_messages_dict = []
-            for old_conversation in old_conversations:
-                old_messages_dict.extend(
-                    old_conversation["messages"]
-                    if "messages" in old_conversation
-                    else []
-                )
             save_message_independent = False
-            old_messages: List[BaseMessage] = _messages_from_dict(old_messages_dict)
+            old_messages: List[BaseMessage] = _parse_old_conversations(
+                old_conversations
+            )
         return StorageConversation(
             conv_uid=model.conv_uid,
             chat_mode=model.chat_mode,
@@ -114,3 +113,24 @@ class DBMessageStorageItemAdapter(
             ChatHistoryMessageEntity.conv_uid == resource_id.conv_uid,
             ChatHistoryMessageEntity.index == resource_id.index,
         )
+
+
+def _parse_old_conversations(old_conversations: List[Dict]) -> List[BaseMessage]:
+    old_messages_dict = []
+    for old_conversation in old_conversations:
+        messages = (
+            old_conversation["messages"] if "messages" in old_conversation else []
+        )
+        for message in messages:
+            if "data" in message:
+                message_data = message["data"]
+                additional_kwargs = message_data.get("additional_kwargs", {})
+                additional_kwargs["param_value"] = old_conversation.get("param_value")
+                additional_kwargs["param_type"] = old_conversation.get("param_type")
+                additional_kwargs["model_name"] = old_conversation.get("model_name")
+                message_data["additional_kwargs"] = additional_kwargs
+
+        old_messages_dict.extend(messages)
+
+    old_messages: List[BaseMessage] = _messages_from_dict(old_messages_dict)
+    return old_messages

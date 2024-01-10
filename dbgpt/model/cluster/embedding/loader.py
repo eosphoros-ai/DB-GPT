@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from dbgpt.model.parameter import BaseEmbeddingModelParameters
 from dbgpt.util.parameter_utils import _get_dict_from_obj
-from dbgpt.util.tracer import root_tracer, SpanType, SpanTypeRunName
 from dbgpt.util.system_utils import get_system_info
+from dbgpt.util.tracer import SpanType, SpanTypeRunName, root_tracer
 
 if TYPE_CHECKING:
     from langchain.embeddings.base import Embeddings

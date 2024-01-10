@@ -1,29 +1,28 @@
+import importlib.metadata as metadata
+
 import pytest
 import pytest_asyncio
 from aioresponses import aioresponses
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from httpx import AsyncClient, HTTPError
-import importlib.metadata as metadata
 
 from dbgpt.component import SystemApp
-from dbgpt.util.openai_utils import chat_completion_stream, chat_completion
-
 from dbgpt.model.cluster.apiserver.api import (
-    api_settings,
-    initialize_apiserver,
-    ModelList,
-    UsageInfo,
     ChatCompletionResponse,
+    ChatCompletionResponseChoice,
     ChatCompletionResponseStreamChoice,
     ChatCompletionStreamResponse,
     ChatMessage,
-    ChatCompletionResponseChoice,
     DeltaMessage,
+    ModelList,
+    UsageInfo,
+    api_settings,
+    initialize_apiserver,
 )
 from dbgpt.model.cluster.tests.conftest import _new_cluster
-
 from dbgpt.model.cluster.worker.manager import _DefaultWorkerManagerFactory
+from dbgpt.util.openai_utils import chat_completion, chat_completion_stream
 
 app = FastAPI()
 app.add_middleware(

@@ -1,8 +1,14 @@
 import json
-from dbgpt.core.interface.prompt import PromptTemplate
+
 from dbgpt._private.config import Config
-from dbgpt.app.scene import ChatScene
+from dbgpt.app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt.app.scene.chat_db.auto_execute.out_parser import DbChatOutputParser
+from dbgpt.core import (
+    ChatPromptTemplate,
+    HumanPromptTemplate,
+    MessagesPlaceholder,
+    SystemPromptTemplate,
+)
 
 CFG = Config()
 
@@ -77,16 +83,25 @@ PROMPT_NEED_STREAM_OUT = False
 # For example, if you adjust the temperature to 0.5, the model will usually generate text that is more predictable and less creative than if you set the temperature to 1.0.
 PROMPT_TEMPERATURE = 0.5
 
-prompt = PromptTemplate(
+prompt = ChatPromptTemplate(
+    messages=[
+        SystemPromptTemplate.from_template(
+            _DEFAULT_TEMPLATE,
+            response_format=json.dumps(
+                RESPONSE_FORMAT_SIMPLE, ensure_ascii=False, indent=4
+            ),
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),
+        HumanPromptTemplate.from_template("{user_input}"),
+    ]
+)
+
+prompt_adapter = AppScenePromptTemplateAdapter(
+    prompt=prompt,
     template_scene=ChatScene.ChatWithDbExecute.value(),
-    input_variables=["table_info", "dialect", "top_k", "response"],
-    response_format=json.dumps(RESPONSE_FORMAT_SIMPLE, ensure_ascii=False, indent=4),
-    template_define=PROMPT_SCENE_DEFINE,
-    template=_DEFAULT_TEMPLATE,
     stream_out=PROMPT_NEED_STREAM_OUT,
     output_parser=DbChatOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
-    # example_selector=sql_data_example,
     temperature=PROMPT_TEMPERATURE,
-    need_historical_messages=True,
+    need_historical_messages=False,
 )
-CFG.prompt_template_registry.register(prompt, is_default=True)
+CFG.prompt_template_registry.register(prompt_adapter, is_default=True)

@@ -1,15 +1,15 @@
 import json
 import os
 import uuid
-from typing import List, Dict
+from typing import Dict, List
 
-from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
+from dbgpt.app.scene import BaseChat, ChatScene
+from dbgpt.app.scene.chat_dashboard.data_loader import DashboardDataLoader
 from dbgpt.app.scene.chat_dashboard.data_preparation.report_schma import (
     ChartData,
     ReportData,
 )
-from dbgpt.app.scene.chat_dashboard.data_loader import DashboardDataLoader
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
 

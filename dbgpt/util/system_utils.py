@@ -1,11 +1,11 @@
-from dataclasses import dataclass, asdict
-from enum import Enum
-from typing import Tuple, Dict
 import os
 import platform
-import subprocess
 import re
+import subprocess
+from dataclasses import asdict, dataclass
+from enum import Enum
 from functools import cache
+from typing import Dict, Tuple
 
 
 @dataclass

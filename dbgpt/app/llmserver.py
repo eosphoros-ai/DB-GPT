@@ -8,7 +8,7 @@ ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 sys.path.append(ROOT_PATH)
 
 from dbgpt._private.config import Config
-from dbgpt.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, LLM_MODEL_CONFIG
 from dbgpt.model.cluster import run_worker_manager
 
 CFG = Config()

@@ -25,7 +25,6 @@ def split_by_sentence_tokenizer() -> Callable[[str], List[str]]:
     import os
 
     import nltk
-
     from llama_index.utils import get_cache_dir
 
     cache_dir = get_cache_dir()

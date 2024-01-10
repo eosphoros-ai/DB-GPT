@@ -1,9 +1,11 @@
 import logging
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from dbgpt._private.config import Config
-from dbgpt.storage.schema import DBType
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
+from dbgpt.storage.schema import DBType
 
 logger = logging.getLogger(__name__)
 CFG = Config()

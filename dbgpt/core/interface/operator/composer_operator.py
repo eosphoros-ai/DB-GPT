@@ -45,7 +45,8 @@ class ChatHistoryPromptComposerOperator(MapOperator[ChatComposerInput, ModelRequ
         self,
         prompt_template: ChatPromptTemplate,
         history_key: str = "chat_history",
-        last_k_round: int = 2,
+        keep_start_rounds: Optional[int] = None,
+        keep_end_rounds: Optional[int] = None,
         storage: Optional[StorageInterface[StorageConversation, Any]] = None,
         message_storage: Optional[StorageInterface[MessageStorageItem, Any]] = None,
         **kwargs,
@@ -53,7 +54,8 @@ class ChatHistoryPromptComposerOperator(MapOperator[ChatComposerInput, ModelRequ
         super().__init__(**kwargs)
         self._prompt_template = prompt_template
         self._history_key = history_key
-        self._last_k_round = last_k_round
+        self._keep_start_rounds = keep_start_rounds
+        self._keep_end_rounds = keep_end_rounds
         self._storage = storage
         self._message_storage = message_storage
         self._sub_compose_dag = self._build_composer_dag()
@@ -74,7 +76,8 @@ class ChatHistoryPromptComposerOperator(MapOperator[ChatComposerInput, ModelRequ
             )
             # History transform task, here we keep last 5 round messages
             history_transform_task = BufferedConversationMapperOperator(
-                last_k_round=self._last_k_round
+                keep_start_rounds=self._keep_start_rounds,
+                keep_end_rounds=self._keep_end_rounds,
             )
             history_prompt_build_task = HistoryPromptBuilderOperator(
                 prompt=self._prompt_template, history_key=self._history_key

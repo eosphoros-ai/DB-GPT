@@ -1,6 +1,7 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 import pytest
+
 from dbgpt.util.function_utils import rearrange_args_by_type
 
 

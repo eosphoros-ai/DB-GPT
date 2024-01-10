@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict
 from enum import Enum
+from typing import Dict, List, Optional
+
 from dbgpt.core.interface.message import OnceConversation
 
 

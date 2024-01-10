@@ -1,4 +1,5 @@
 from typing import List
+
 from langchain.embeddings.base import Embeddings
 
 from dbgpt.model.cluster.manager_base import WorkerManager

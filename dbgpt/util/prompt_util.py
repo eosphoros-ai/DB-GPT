@@ -12,12 +12,11 @@ import logging
 from string import Formatter
 from typing import Callable, List, Optional, Sequence, Set
 
-from dbgpt._private.pydantic import Field, PrivateAttr, BaseModel
-
-from dbgpt.util.global_helper import globals_helper
-from dbgpt.core.interface.prompt import get_template_vars
 from dbgpt._private.llm_metadata import LLMMetadata
+from dbgpt._private.pydantic import BaseModel, Field, PrivateAttr
+from dbgpt.core.interface.prompt import get_template_vars
 from dbgpt.rag.text_splitter.token_splitter import TokenTextSplitter
+from dbgpt.util.global_helper import globals_helper
 
 DEFAULT_PADDING = 5
 DEFAULT_CHUNK_OVERLAP_RATIO = 0.1
