@@ -1,29 +1,15 @@
-from dbgpt.core.interface.prompt import PromptTemplate
 from dbgpt._private.config import Config
-from dbgpt.app.scene import ChatScene
+from dbgpt.app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt.app.scene.chat_db.professional_qa.out_parser import NormalChatOutputParser
+from dbgpt.core import (
+    ChatPromptTemplate,
+    HumanPromptTemplate,
+    MessagesPlaceholder,
+    SystemPromptTemplate,
+)
 
 CFG = Config()
 
-PROMPT_SCENE_DEFINE = (
-    """You are an assistant that answers user specialized database questions. """
-)
-
-# PROMPT_SUFFIX = """Only use the following tables generate sql if have any table info:
-# {table_info}
-#
-# Question: {input}
-#
-# """
-
-# _DEFAULT_TEMPLATE = """
-# You are a SQL expert. Given an input question, first create a syntactically correct {dialect} query to run, then look at the results of the query and return the answer.
-# Unless the user specifies in his question a specific number of examples he wishes to obtain, always limit your query to at most {top_k} results.
-# You can order the results by a relevant column to return the most interesting examples in the database.
-# Never query for all the columns from a specific table, only ask for a the few relevant columns given the question.
-# Pay attention to use only the column names that you can see in the schema description. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
-#
-# """
 
 _DEFAULT_TEMPLATE_EN = """
 Provide professional answers to requests and questions. If you can't get an answer from what you've provided, say: "Insufficient information in the knowledge base is available to answer this question." Feel free to fudge information.
@@ -43,7 +29,7 @@ _DEFAULT_TEMPLATE_ZH = """
 
 问题:
 {input}
-一步步思考
+一步步思考。
 """
 
 _DEFAULT_TEMPLATE = (
@@ -53,14 +39,24 @@ _DEFAULT_TEMPLATE = (
 
 PROMPT_NEED_STREAM_OUT = True
 
-prompt = PromptTemplate(
-    template_scene=ChatScene.ChatWithDbQA.value(),
-    input_variables=["input", "table_info"],
-    response_format=None,
-    template_define=PROMPT_SCENE_DEFINE,
-    template=_DEFAULT_TEMPLATE,
-    stream_out=PROMPT_NEED_STREAM_OUT,
-    output_parser=NormalChatOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
+
+prompt = ChatPromptTemplate(
+    messages=[
+        SystemPromptTemplate.from_template(_DEFAULT_TEMPLATE),
+        MessagesPlaceholder(variable_name="chat_history"),
+        HumanPromptTemplate.from_template("{input}"),
+    ]
 )
 
-CFG.prompt_template_registry.register(prompt, language=CFG.LANGUAGE, is_default=True)
+prompt_adapter = AppScenePromptTemplateAdapter(
+    prompt=prompt,
+    template_scene=ChatScene.ChatWithDbQA.value(),
+    stream_out=PROMPT_NEED_STREAM_OUT,
+    output_parser=NormalChatOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
+    need_historical_messages=True,
+)
+
+
+CFG.prompt_template_registry.register(
+    prompt_adapter, language=CFG.LANGUAGE, is_default=True
+)

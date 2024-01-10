@@ -1,5 +1,5 @@
-from typing import Type
 from importlib import import_module
+from typing import Type
 
 
 def import_from_string(module_path: str, ignore_import_error: bool = False):

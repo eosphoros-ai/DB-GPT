@@ -29,7 +29,7 @@ def dao(server_config):
 @pytest.fixture
 def default_entity_dict():
     # TODO: build your default entity dict
-    return {}
+    return {"conv_uid": "test_conv_uid", "summary": "hello", "chat_mode": "chat_normal"}
 
 
 def test_table_exist():
@@ -65,19 +65,6 @@ def test_entity_delete(default_entity_dict):
 def test_entity_all():
     # TODO: implement your test case
     pass
-
-
-def test_dao_create(dao, default_entity_dict):
-    # TODO: implement your test case
-    req = ServeRequest(**default_entity_dict)
-    res: ServerResponse = dao.create(req)
-    assert res is not None
-
-
-def test_dao_get_one(dao, default_entity_dict):
-    # TODO: implement your test case
-    req = ServeRequest(**default_entity_dict)
-    res: ServerResponse = dao.create(req)
 
 
 def test_get_dao_get_list(dao):

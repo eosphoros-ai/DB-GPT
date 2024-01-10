@@ -1,17 +1,17 @@
 import logging
-from typing import Dict, List, Type, Optional
+from typing import Dict, List, Optional, Type
 
 from dbgpt.configs.model_config import get_device
 from dbgpt.core import ModelMetadata
+from dbgpt.model.cluster.embedding.loader import EmbeddingLoader
+from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.loader import _get_model_real_path
 from dbgpt.model.parameter import (
-    EmbeddingModelParameters,
-    BaseEmbeddingModelParameters,
-    WorkerType,
     EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
+    BaseEmbeddingModelParameters,
+    EmbeddingModelParameters,
+    WorkerType,
 )
-from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.cluster.embedding.loader import EmbeddingLoader
 from dbgpt.util.model_utils import _clear_model_cache
 from dbgpt.util.parameter_utils import EnvArgumentParser
 

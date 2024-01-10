@@ -1,10 +1,12 @@
-import os
-import click
-import logging
 import glob
 import json
+import logging
+import os
 from datetime import datetime
-from typing import Iterable, Dict, Callable
+from typing import Callable, Dict, Iterable
+
+import click
+
 from dbgpt.configs.model_config import LOGDIR
 from dbgpt.util.tracer import SpanType, SpanTypeRunName
 

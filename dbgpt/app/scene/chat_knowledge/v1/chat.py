@@ -3,20 +3,22 @@ import os
 from functools import reduce
 from typing import Dict, List
 
-from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
-from dbgpt.component import ComponentType
-
-from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
-)
-
 from dbgpt.app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
 from dbgpt.app.knowledge.document_db import (
     KnowledgeDocumentDao,
     KnowledgeDocumentEntity,
 )
 from dbgpt.app.knowledge.service import KnowledgeService
+from dbgpt.app.scene import BaseChat, ChatScene
+from dbgpt.component import ComponentType
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
+from dbgpt.core import (
+    ChatPromptTemplate,
+    HumanPromptTemplate,
+    MessagesPlaceholder,
+    SystemPromptTemplate,
+)
 from dbgpt.model import DefaultLLMClient
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.retriever.rewrite import QueryRewrite
@@ -130,8 +132,19 @@ class ChatKnowledge(BaseChat):
     @trace()
     async def generate_input_values(self) -> Dict:
         if self.space_context and self.space_context.get("prompt"):
-            self.prompt_template.template_define = self.space_context["prompt"]["scene"]
-            self.prompt_template.template = self.space_context["prompt"]["template"]
+            # Not use template_define
+            # self.prompt_template.template_define = self.space_context["prompt"]["scene"]
+            # self.prompt_template.template = self.space_context["prompt"]["template"]
+            # Replace the template with the prompt template
+            self.prompt_template.prompt = ChatPromptTemplate(
+                messages=[
+                    SystemPromptTemplate.from_template(
+                        self.space_context["prompt"]["template"]
+                    ),
+                    MessagesPlaceholder(variable_name="chat_history"),
+                    HumanPromptTemplate.from_template("{question}"),
+                ]
+            )
         from dbgpt.util.chat_util import run_async_tasks
 
         tasks = [self.execute_similar_search(self.current_user_input)]

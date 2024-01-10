@@ -1,9 +1,9 @@
 import json
 import logging
+from typing import List, NamedTuple
 
-from typing import NamedTuple, List
-from dbgpt.core.interface.output_parser import BaseOutputParser
 from dbgpt.app.scene import ChatScene
+from dbgpt.core.interface.output_parser import BaseOutputParser
 
 
 class ChartItem(NamedTuple):

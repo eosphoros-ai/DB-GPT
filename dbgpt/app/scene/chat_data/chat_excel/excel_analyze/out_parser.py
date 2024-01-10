@@ -1,8 +1,9 @@
 import json
 import logging
 from typing import NamedTuple
-from dbgpt.core.interface.output_parser import BaseOutputParser
+
 from dbgpt._private.config import Config
+from dbgpt.core.interface.output_parser import BaseOutputParser
 
 CFG = Config()
 

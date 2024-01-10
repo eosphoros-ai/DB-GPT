@@ -1,5 +1,5 @@
-import socket
 import errno
+import socket
 
 
 def _get_ip_address(address: str = "10.254.254.254:1") -> str:

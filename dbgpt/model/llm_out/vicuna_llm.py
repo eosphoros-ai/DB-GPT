@@ -8,9 +8,9 @@ from urllib.parse import urljoin
 import requests
 from langchain.embeddings.base import Embeddings
 from langchain.llms.base import LLM
-from dbgpt._private.pydantic import BaseModel
 
 from dbgpt._private.config import Config
+from dbgpt._private.pydantic import BaseModel
 
 CFG = Config()
 

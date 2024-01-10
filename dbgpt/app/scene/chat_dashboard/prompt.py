@@ -1,8 +1,9 @@
 import json
-from dbgpt.core.interface.prompt import PromptTemplate
+
 from dbgpt._private.config import Config
-from dbgpt.app.scene import ChatScene
+from dbgpt.app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt.app.scene.chat_dashboard.out_parser import ChatDashboardOutputParser
+from dbgpt.core import ChatPromptTemplate, HumanPromptTemplate, SystemPromptTemplate
 
 CFG = Config()
 
@@ -39,16 +40,23 @@ RESPONSE_FORMAT = [
     }
 ]
 
-
 PROMPT_NEED_STREAM_OUT = False
 
-prompt = PromptTemplate(
+prompt = ChatPromptTemplate(
+    messages=[
+        SystemPromptTemplate.from_template(
+            PROMPT_SCENE_DEFINE + _DEFAULT_TEMPLATE,
+            response_format=json.dumps(RESPONSE_FORMAT, indent=4),
+        ),
+        HumanPromptTemplate.from_template("{input}"),
+    ]
+)
+
+prompt_adapter = AppScenePromptTemplateAdapter(
+    prompt=prompt,
     template_scene=ChatScene.ChatDashboard.value(),
-    input_variables=["input", "table_info", "dialect", "supported_chat_type"],
-    response_format=json.dumps(RESPONSE_FORMAT, indent=4),
-    template_define=PROMPT_SCENE_DEFINE,
-    template=_DEFAULT_TEMPLATE,
     stream_out=PROMPT_NEED_STREAM_OUT,
     output_parser=ChatDashboardOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
+    need_historical_messages=False,
 )
-CFG.prompt_template_registry.register(prompt, is_default=True)
+CFG.prompt_template_registry.register(prompt_adapter, is_default=True)

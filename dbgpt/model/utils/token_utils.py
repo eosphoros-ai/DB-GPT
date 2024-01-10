@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Union, List, Optional, TYPE_CHECKING
 import logging
+from typing import TYPE_CHECKING, List, Optional, Union
 
 if TYPE_CHECKING:
-    from dbgpt.core.interface.message import ModelMessage, BaseMessage
+    from dbgpt.core.interface.message import BaseMessage, ModelMessage
 
 logger = logging.getLogger(__name__)
 

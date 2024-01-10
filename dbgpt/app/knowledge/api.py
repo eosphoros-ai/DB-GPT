@@ -1,42 +1,39 @@
+import logging
 import os
 import shutil
 import tempfile
-import logging
 from typing import List
 
-from fastapi import APIRouter, File, UploadFile, Form
+from fastapi import APIRouter, File, Form, UploadFile
 
 from dbgpt._private.config import Config
+from dbgpt.app.knowledge.request.request import (
+    ChunkQueryRequest,
+    DocumentQueryRequest,
+    DocumentSummaryRequest,
+    DocumentSyncRequest,
+    EntityExtractRequest,
+    KnowledgeDocumentRequest,
+    KnowledgeQueryRequest,
+    KnowledgeQueryResponse,
+    KnowledgeSpaceRequest,
+    KnowledgeSyncRequest,
+    SpaceArgumentRequest,
+)
+from dbgpt.app.knowledge.service import KnowledgeService
+from dbgpt.app.openapi.api_v1.api_v1 import no_stream_generator, stream_generator
+from dbgpt.app.openapi.api_view_model import Result
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
-from dbgpt.app.openapi.api_v1.api_v1 import no_stream_generator, stream_generator
-
-from dbgpt.app.openapi.api_view_model import Result
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-
-from dbgpt.app.knowledge.service import KnowledgeService
-from dbgpt.rag.knowledge.factory import KnowledgeFactory
-from dbgpt.app.knowledge.request.request import (
-    KnowledgeQueryRequest,
-    KnowledgeQueryResponse,
-    KnowledgeDocumentRequest,
-    DocumentSyncRequest,
-    ChunkQueryRequest,
-    DocumentQueryRequest,
-    SpaceArgumentRequest,
-    EntityExtractRequest,
-    DocumentSummaryRequest,
-    KnowledgeSyncRequest,
-)
-
-from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.rag.knowledge.base import ChunkStrategy
+from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
-from dbgpt.util.tracer import root_tracer, SpanType
+from dbgpt.util.tracer import SpanType, root_tracer
 
 logger = logging.getLogger(__name__)
 
@@ -312,9 +309,10 @@ async def document_summary(request: DocumentSummaryRequest):
 async def entity_extract(request: EntityExtractRequest):
     logger.info(f"Received params: {request}")
     try:
+        import uuid
+
         from dbgpt.app.scene import ChatScene
         from dbgpt.util.chat_util import llm_chat_response_nostream
-        import uuid
 
         chat_param = {
             "chat_session_id": uuid.uuid1(),

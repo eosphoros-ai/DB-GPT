@@ -1,8 +1,8 @@
 from typing import List, Optional
 
-from dbgpt._private.pydantic import BaseModel
 from fastapi import UploadFile
 
+from dbgpt._private.pydantic import BaseModel
 from dbgpt.rag.chunk_manager import ChunkParameters
 
 

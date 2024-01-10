@@ -1,13 +1,38 @@
 import json
 import logging
 from datetime import datetime
+from enum import Enum
 from typing import List
 
+from dbgpt._private.config import Config
+from dbgpt.app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
+from dbgpt.app.knowledge.document_db import (
+    KnowledgeDocumentDao,
+    KnowledgeDocumentEntity,
+)
+from dbgpt.app.knowledge.request.request import (
+    ChunkQueryRequest,
+    DocumentQueryRequest,
+    DocumentSummaryRequest,
+    DocumentSyncRequest,
+    KnowledgeDocumentRequest,
+    KnowledgeSpaceRequest,
+    KnowledgeSyncRequest,
+    SpaceArgumentRequest,
+)
+from dbgpt.app.knowledge.request.response import (
+    ChunkQueryResponse,
+    DocumentQueryResponse,
+    SpaceQueryResponse,
+)
+from dbgpt.app.knowledge.space_db import KnowledgeSpaceDao, KnowledgeSpaceEntity
+from dbgpt.component import ComponentType
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.model import DefaultLLMClient
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-from dbgpt.rag.knowledge.base import KnowledgeType, ChunkStrategy
+from dbgpt.rag.knowledge.base import ChunkStrategy, KnowledgeType
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.text_splitter.text_splitter import (
     RecursiveCharacterTextSplitter,
@@ -17,43 +42,7 @@ from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
 from dbgpt.serve.rag.assembler.summary import SummaryAssembler
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
-
-from dbgpt._private.config import Config
-from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
-)
-from dbgpt.component import ComponentType
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
-
-from dbgpt.app.knowledge.chunk_db import (
-    DocumentChunkEntity,
-    DocumentChunkDao,
-)
-from dbgpt.app.knowledge.document_db import (
-    KnowledgeDocumentDao,
-    KnowledgeDocumentEntity,
-)
-from dbgpt.app.knowledge.space_db import (
-    KnowledgeSpaceDao,
-    KnowledgeSpaceEntity,
-)
-from dbgpt.app.knowledge.request.request import (
-    KnowledgeSpaceRequest,
-    KnowledgeDocumentRequest,
-    DocumentQueryRequest,
-    ChunkQueryRequest,
-    SpaceArgumentRequest,
-    DocumentSyncRequest,
-    DocumentSummaryRequest,
-    KnowledgeSyncRequest,
-)
-from enum import Enum
-
-from dbgpt.app.knowledge.request.response import (
-    ChunkQueryResponse,
-    DocumentQueryResponse,
-    SpaceQueryResponse,
-)
 
 knowledge_space_dao = KnowledgeSpaceDao()
 knowledge_document_dao = KnowledgeDocumentDao()
@@ -572,8 +561,8 @@ class KnowledgeService:
 
     def _build_default_context(self):
         from dbgpt.app.scene.chat_knowledge.v1.prompt import (
-            PROMPT_SCENE_DEFINE,
             _DEFAULT_TEMPLATE,
+            PROMPT_SCENE_DEFINE,
         )
 
         context_template = {

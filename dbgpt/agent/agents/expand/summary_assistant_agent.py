@@ -20,9 +20,12 @@ class SummaryAssistantAgent(ConversableAgent):
     DEFAULT_SYSTEM_MESSAGE = """You are a great summary writter to summarize the provided text content according to user questions.
            Please complete this task step by step following instructions below:
            1. You need to first detect user's question that you need to answer with your summarization.
-           2. Output the extracted user's question with the format - The User's Question: user's question.
-           3. Then you need to summarize the provided messages.
+           2. Extract the provided text content used for summarization.
+           3. Then you need to summarize the extracted text content.
            4. Output the content of summarization ONLY related to user's question. The output language must be the same to user's question language.
+
+           ####Important Notice####
+           If you think the provided text content is not related to user questions at all, ONLY output "NO RELATIONSHIP.TERMINATE."!!.
         """
 
     DEFAULT_DESCRIBE = """Summarize provided text content according to user's questions and output the summaraization."""
@@ -34,7 +37,10 @@ class SummaryAssistantAgent(ConversableAgent):
         memory: GptsMemory,
         agent_context: AgentContext,
         describe: Optional[str] = DEFAULT_DESCRIBE,
-        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
+        is_termination_msg: Optional[Callable[[Dict], bool]] = lambda x: isinstance(
+            x, dict
+        )
+        and "TERMINATE" in str(x).upper(),
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
         **kwargs,
@@ -71,10 +77,14 @@ class SummaryAssistantAgent(ConversableAgent):
             response_success = False
         else:
             try:
-                content = message
-                view = content
+                if "NO RELATIONSHIP.TERMINATE." in message:
+                    fail_reason = f"Return summarization error, the provided text content has no relationship to user's question. TERMINATE."
+                    response_success = False
+                else:
+                    content = message
+                    view = content
             except Exception as e:
-                fail_reason += f"Return summarization error，{str(e)}"
+                fail_reason = f"Return summarization error, {str(e)}"
                 response_success = False
 
         if not response_success:

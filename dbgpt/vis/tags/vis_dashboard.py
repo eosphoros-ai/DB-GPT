@@ -1,5 +1,6 @@
 import json
 from typing import Optional
+
 from ..base import Vis
 
 

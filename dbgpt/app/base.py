@@ -1,15 +1,14 @@
-import signal
-import os
-import threading
-import sys
 import logging
-from typing import Optional
+import os
+import signal
+import sys
+import threading
 from dataclasses import dataclass, field
+from typing import Optional
 
 from dbgpt._private.config import Config
 from dbgpt.component import SystemApp
 from dbgpt.util.parameter_utils import BaseParameters
-
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT_PATH)
@@ -35,7 +34,6 @@ def server_init(param: "WebServerParameters", system_app: SystemApp):
     from dbgpt.agent.plugin.commands.command_mange import CommandRegistry
 
     # logger.info(f"args: {args}")
-
     # init config
     cfg = Config()
     cfg.SYSTEM_APP = system_app
@@ -100,13 +98,12 @@ def _migration_db_storage(param: "WebServerParameters"):
     """Migration the db storage."""
     # Import all models to make sure they are registered with SQLAlchemy.
     from dbgpt.app.initialization.db_model_initialization import _MODELS
-
     from dbgpt.configs.model_config import PILOT_PATH
 
     default_meta_data_path = os.path.join(PILOT_PATH, "meta_data")
     if not param.disable_alembic_upgrade:
-        from dbgpt.util._db_migration_utils import _ddl_init_and_upgrade
         from dbgpt.storage.metadata.db_manager import db
+        from dbgpt.util._db_migration_utils import _ddl_init_and_upgrade
 
         # try to create all tables
         try:
@@ -123,9 +120,11 @@ def _initialize_db(
 
     Now just support sqlite and mysql. If db type is sqlite, the db path is `pilot/meta_data/{db_name}.db`.
     """
+    from urllib.parse import quote
+    from urllib.parse import quote_plus as urlquote
+
     from dbgpt.configs.model_config import PILOT_PATH
     from dbgpt.storage.metadata.db_manager import initialize_db
-    from urllib.parse import quote_plus as urlquote, quote
 
     CFG = Config()
     db_name = CFG.LOCAL_DB_NAME
@@ -170,8 +169,8 @@ def _create_mysql_database(db_name: str, db_url: str, try_to_create_db: bool = F
     Raises:
         Exception: Raise exception if database operation failed
     """
-    from sqlalchemy import create_engine, DDL
-    from sqlalchemy.exc import SQLAlchemyError, OperationalError
+    from sqlalchemy import DDL, create_engine
+    from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
     if not try_to_create_db:
         logger.info(f"Skipping creation of database {db_name}")

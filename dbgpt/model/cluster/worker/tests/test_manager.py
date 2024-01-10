@@ -1,29 +1,30 @@
-from unittest.mock import patch, AsyncMock
-import pytest
-from typing import List, Iterator, Dict, Tuple
 from dataclasses import asdict
-from dbgpt.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
-from dbgpt.model.base import WorkerApplyType, ModelInstance
+from typing import Dict, Iterator, List, Tuple
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
+from dbgpt.model.base import ModelInstance, WorkerApplyType
 from dbgpt.model.cluster.base import WorkerApplyRequest, WorkerStartupRequest
-from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.cluster.manager_base import WorkerRunData
-from dbgpt.model.cluster.worker.manager import (
-    LocalWorkerManager,
-    RegisterFunc,
-    DeregisterFunc,
-    SendHeartbeatFunc,
-    ApplyFunction,
-)
 from dbgpt.model.cluster.tests.conftest import (
     MockModelWorker,
+    _create_workers,
+    _new_worker_params,
+    _start_worker_manager,
+    manager_2_embedding_workers,
     manager_2_workers,
     manager_with_2_workers,
-    manager_2_embedding_workers,
-    _create_workers,
-    _start_worker_manager,
-    _new_worker_params,
 )
-
+from dbgpt.model.cluster.worker.manager import (
+    ApplyFunction,
+    DeregisterFunc,
+    LocalWorkerManager,
+    RegisterFunc,
+    SendHeartbeatFunc,
+)
+from dbgpt.model.cluster.worker_base import ModelWorker
+from dbgpt.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
 
 _TEST_MODEL_NAME = "vicuna-13b-v1.5"
 _TEST_MODEL_PATH = "/app/models/vicuna-13b-v1.5"

@@ -1,22 +1,21 @@
-from typing import Dict, Optional
-from contextvars import ContextVar
-from functools import wraps
 import asyncio
 import inspect
 import logging
+from contextvars import ContextVar
+from functools import wraps
+from typing import Dict, Optional
 
-
-from dbgpt.component import SystemApp, ComponentType
+from dbgpt.component import ComponentType, SystemApp
+from dbgpt.util.module_utils import import_from_checked_string
 from dbgpt.util.tracer.base import (
-    SpanType,
     Span,
-    Tracer,
     SpanStorage,
     SpanStorageType,
+    SpanType,
+    Tracer,
     TracerContext,
 )
 from dbgpt.util.tracer.span_storage import MemorySpanStorage
-from dbgpt.util.module_utils import import_from_checked_string
 
 logger = logging.getLogger(__name__)
 

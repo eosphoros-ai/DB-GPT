@@ -1,12 +1,10 @@
 from fastapi import APIRouter
 
-from dbgpt.component import ComponentType
 from dbgpt._private.config import Config
-
-from dbgpt.model.cluster import WorkerStartupRequest, WorkerManagerFactory
-from dbgpt.app.openapi.api_view_model import Result
-
 from dbgpt.app.llm_manage.request.request import ModelResponse
+from dbgpt.app.openapi.api_view_model import Result
+from dbgpt.component import ComponentType
+from dbgpt.model.cluster import WorkerManagerFactory, WorkerStartupRequest
 
 CFG = Config()
 router = APIRouter()

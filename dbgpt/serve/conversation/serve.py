@@ -8,6 +8,7 @@ from dbgpt.core import StorageInterface
 from dbgpt.serve.core import BaseServe
 from dbgpt.storage.metadata import DatabaseManager
 
+from .api.endpoints import init_endpoints, router
 from .config import (
     APP_NAME,
     SERVE_APP_NAME,
@@ -15,6 +16,7 @@ from .config import (
     SERVE_CONFIG_KEY_PREFIX,
     ServeConfig,
 )
+from .service.service import Service
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,10 @@ class Serve(BaseServe):
         if self._app_has_initiated:
             return
         self._system_app = system_app
+        self._system_app.app.include_router(
+            router, prefix=self._api_prefix, tags=self._api_tags
+        )
+        init_endpoints(self._system_app)
         self._app_has_initiated = True
 
     def on_init(self):

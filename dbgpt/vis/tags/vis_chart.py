@@ -1,6 +1,8 @@
-from typing import Optional
-import yaml
 import json
+from typing import Optional
+
+import yaml
+
 from ..base import Vis
 
 

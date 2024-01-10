@@ -1,5 +1,6 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from dbgpt.app.base import _create_mysql_database

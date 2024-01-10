@@ -1,10 +1,11 @@
-import sys
 import os
-import subprocess
-from typing import List, Dict
-import psutil
 import platform
+import subprocess
+import sys
 from functools import lru_cache
+from typing import Dict, List
+
+import psutil
 
 
 def _get_abspath_of_current_command(command_path: str):
