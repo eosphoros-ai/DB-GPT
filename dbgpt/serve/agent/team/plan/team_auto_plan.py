@@ -3,9 +3,9 @@ import sys
 from typing import Any, List, Optional
 
 from dbgpt.agent.agents.agent import Agent, AgentContext
-from dbgpt.agent.agents.agents_mange import mentioned_agents, participant_roles
+from dbgpt.agent.agents.agents_manage import mentioned_agents, participant_roles
 from dbgpt.agent.agents.base_agent import ConversableAgent
-from dbgpt.agent.agents.base_team import MangerAgent
+from dbgpt.agent.agents.base_team import ManagerAgent
 from dbgpt.agent.common.schema import Status
 from dbgpt.agent.memory.base import GptsPlan
 from dbgpt.agent.memory.gpts_memory import GptsMemory
@@ -16,7 +16,7 @@ from .planner_agent import PlannerAgent
 logger = logging.getLogger(__name__)
 
 
-class AutoPlanChatManager(MangerAgent):
+class AutoPlanChatManager(ManagerAgent):
     """(In preview) A chat manager agent that can manage a team chat of multiple agents."""
 
     NAME = "plan_manager"
@@ -134,7 +134,6 @@ class AutoPlanChatManager(MangerAgent):
             agent_context=self.agent_context,
             memory=self.memory,
             agents=agents,
-            is_terminal_agent=True,
         )
 
         await self.a_initiate_chat(

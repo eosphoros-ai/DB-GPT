@@ -45,9 +45,13 @@ class Agent:
         """Get the name of the agent."""
         return self._describe
 
-    @property
-    def is_terminal_agent(self) -> bool:
-        return False
+    async def a_notification(
+        self,
+        message: Union[Dict, str],
+        recipient: Agent,
+        reviewer: Agent,
+    ):
+        """Notification a message to recipient agent(Receive a record message from the notification and process it according to your own process. You cannot send the message through send and directly return the current final result.)"""
 
     async def a_send(
         self,
@@ -57,7 +61,7 @@ class Agent:
         request_reply: Optional[bool] = True,
         is_recovery: Optional[bool] = False,
     ) -> None:
-        """(Abstract async method) Send a message to another agent."""
+        """(Abstract async method) Send a message to recipient agent."""
 
     async def a_receive(
         self,
@@ -83,9 +87,6 @@ class Agent:
             bool: whether the message is censored
             Any: the censored message
         """
-
-    def reset(self) -> None:
-        """(Abstract method) Reset the agent."""
 
     async def a_generate_reply(
         self,
@@ -149,6 +150,9 @@ class Agent:
         Returns:
 
         """
+
+    def reset(self) -> None:
+        """(Abstract method) Reset the agent."""
 
 
 @dataclasses.dataclass

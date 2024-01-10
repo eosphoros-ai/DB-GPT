@@ -82,7 +82,6 @@ class PlannerAgent(ConversableAgent):
         memory: GptsMemory,
         agent_context: AgentContext,
         agents: Optional[List[Agent]] = None,
-        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
         **kwargs,
@@ -91,7 +90,6 @@ class PlannerAgent(ConversableAgent):
             name=self.NAME,
             memory=memory,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
-            is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
             agent_context=agent_context,
@@ -186,4 +184,5 @@ class PlannerAgent(ConversableAgent):
             "is_exe_success": rensponse_succ,
             "content": content,
             "view": content,
+            "is_termination": True,
         }

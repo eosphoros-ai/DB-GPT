@@ -1,6 +1,14 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    Boolean,
+)
 
 from dbgpt.storage.metadata import BaseDao, Model
 
@@ -12,6 +20,13 @@ class GptsInstanceEntity(Model):
     gpts_name = Column(String(255), nullable=False, comment="Current AI assistant name")
     gpts_describe = Column(
         String(2255), nullable=False, comment="Current AI assistant describe"
+    )
+    team_mode = Column(String(255), nullable=False, comment="Team work mode")
+    is_sustainable = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="Applications for sustainable dialogue",
     )
     resource_db = Column(
         Text,
@@ -69,5 +84,20 @@ class GptsInstanceDao(BaseDao):
         if name:
             gpts_instance = gpts_instance.filter(GptsInstanceEntity.gpts_name == name)
         result = gpts_instance.first()
+        session.close()
+        return result
+
+    def get_by_user(self, user_code: str = None, sys_code: str = None):
+        session = self.get_raw_session()
+        gpts_instance = session.query(GptsInstanceEntity)
+        if user_code:
+            gpts_instance = gpts_instance.filter(
+                GptsInstanceEntity.user_code == user_code
+            )
+        if sys_code:
+            gpts_instance = gpts_instance.filter(
+                GptsInstanceEntity.sys_code == sys_code
+            )
+        result = gpts_instance.all()
         session.close()
         return result

@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Callable, Dict, Literal, Optional, Union
 
 from dbgpt.util.json_utils import find_json_objects
@@ -18,6 +19,9 @@ except ImportError:
     def colored(x, *args, **kwargs):
         return x
 
+
+# TODO
+from dbgpt.configs.model_config import PLUGINS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +72,8 @@ class PluginAssistantAgent(ConversableAgent):
         self,
         memory: GptsMemory,
         agent_context: AgentContext,
-        plugin_path: str,
+        plugin_path: str = None,
         describe: Optional[str] = DEFAULT_DESCRIBE,
-        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
         **kwargs,
@@ -80,7 +83,6 @@ class PluginAssistantAgent(ConversableAgent):
             memory=memory,
             describe=describe,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
-            is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
             agent_context=agent_context,
@@ -90,6 +92,8 @@ class PluginAssistantAgent(ConversableAgent):
         self.register_reply(Agent, PluginAssistantAgent.a_tool_call)
         self.agent_context = agent_context
         self._plugin_loader = PluginLoader()
+        if not plugin_path:
+            plugin_path = PLUGINS_DIR
         self.plugin_generator = self._plugin_loader.load_plugins(
             plugin_path=plugin_path
         )
@@ -142,7 +146,7 @@ class PluginAssistantAgent(ConversableAgent):
                 "err_msg": err_msg,
             }
             vis_tag = vis_client.get(VisPlugin.vis_tag())
-            view = await vis_tag.disply(**plugin_param)
+            view = await vis_tag.disply(content=plugin_param)
 
         return True, {
             "is_exe_success": rensponse_succ,
