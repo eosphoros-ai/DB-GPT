@@ -23,7 +23,8 @@ from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.core.interface.llm import ModelMetadata
 
-if __name__ == "__main__":
+
+def summary_example_with_success():
     from dbgpt.model import OpenAILLMClient
 
     llm_client = OpenAILLMClient()
@@ -72,3 +73,56 @@ if __name__ == "__main__":
 
     ## dbgpt-vis message infos
     print(asyncio.run(default_memory.one_plan_chat_competions("summarize")))
+
+
+def summary_example_with_faliure():
+    from dbgpt.model import OpenAILLMClient
+
+    llm_client = OpenAILLMClient()
+    context: AgentContext = AgentContext(conv_id="summarize", llm_provider=llm_client)
+    context.llm_models = [ModelMetadata(model="gpt-3.5-turbo")]
+
+    default_memory = GptsMemory()
+    summarizer = SummaryAssistantAgent(memory=default_memory, agent_context=context)
+
+    user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
+
+    # Test the failure example
+    asyncio.run(
+        user_proxy.a_initiate_chat(
+            recipient=summarizer,
+            reviewer=user_proxy,
+            message="""I want to summarize advantages of Nuclear Power according to the following content.
+
+            Taylor Swift is an American singer-songwriter and actress who is one of the most prominent and successful figures in the music industry. She was born on December 13, 1989, in Reading, Pennsylvania, USA. Taylor Swift gained widespread recognition for her narrative songwriting style, which often draws from her personal experiences and relationships.
+
+            Swift's career began in country music, and her self-titled debut album was released in 2006. She quickly became a sensation in the country music scene with hits like "Tim McGraw" and "Teardrops on My Guitar." However, it was her transition to pop music with albums like "Fearless," "Speak Now," and "Red" that catapulted her to international superstardom.
+
+            Throughout her career, Taylor Swift has won numerous awards, including multiple Grammy Awards. Her albums consistently top charts, and her songs resonate with a wide audience due to their relatable lyrics and catchy melodies. Some of her most famous songs include "Love Story," "Blank Space," "Shake It Off," "Bad Blood," and "Lover."
+
+            Beyond music, Taylor Swift has ventured into acting with roles in movies like "Valentine's Day" and "The Giver." She is also known for her philanthropic efforts and her willingness to use her platform to advocate for various causes.
+
+            Taylor Swift is not only a successful artist but also an influential cultural icon known for her evolving musical style, storytelling abilities, and her impact on the entertainment industry.
+            """,
+        )
+    )
+
+    print(asyncio.run(default_memory.one_plan_chat_competions("summarize")))
+
+
+if __name__ == "__main__":
+    print(
+        "\033[92m=======================Start The Summary Assistant with Successful Results==================\033[0m"
+    )
+    summary_example_with_success()
+    print(
+        "\033[92m=======================The Summary Assistant with Successful Results Ended==================\n\n\033[91m"
+    )
+
+    print(
+        "\033[91m=======================Start The Summary Assistant with Fail Results==================\033[91m"
+    )
+    summary_example_with_faliure()
+    print(
+        "\033[91m=======================The Summary Assistant with Fail Results Ended==================\033[91m"
+    )
