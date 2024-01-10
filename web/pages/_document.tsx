@@ -12,7 +12,7 @@ class MyDocument extends Document {
         enhanceApp: (App) => (props) =>
           (
             <StyleProvider cache={cache} hashPriority="high">
-              <App {...props} />
+              {/* <App {...props} /> */}
             </StyleProvider>
           ),
       });
