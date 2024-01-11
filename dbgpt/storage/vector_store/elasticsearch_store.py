@@ -1,6 +1,8 @@
 from typing import Any
 import logging
 from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
+from typing import Iterable
 from dbgpt.storage.vector_store.base import VectorStoreBase
 from dbgpt._private.config import Config
 
@@ -20,12 +22,11 @@ class ElasticSearchStore(VectorStoreBase):
 
         self.ctx = ctx
         self.connection_string = ctx.get("connection_string", None)
+        self.metadata = ctx.get("metadata", None)
         self.embeddings = ctx.get("embeddings", None)
         self.collection_name = ctx.get("vector_store_name", None)
 
-        self.vector_store_client = Elasticsearch(
-            host=[self.connection_string]
-        )
+        self.vector_store_client = Elasticsearch(hosts=self.connection_string, basic_auth=('elastic','changeme'), verify_certs=False)
 
     def similar_search(self, text, topk, **kwargs: Any) -> None:
         return self.vector_store_client.similarity_search(text, topk)
@@ -39,7 +40,21 @@ class ElasticSearchStore(VectorStoreBase):
             return False
 
     def load_document(self, documents) -> None:
-        return self.vector_store_client.from_documents(documents)
+        insert_data = [
+            {
+                "_index": self.collection_name,
+                "_source": {
+                    self.id_col_name: self.metadata[i],
+                    self.vector_col_name: self.embeddings[i],
+                },
+            }
+            for i in range(len(embeddings))
+        ]
+        try:
+            bulk_insert_res = bulk(self.client, insert_data)
+            return (bulk_insert_res[0], None)
+        except Exception as e:
+            return (0, e)
 
     def delete_vector_name(self, vector_name):
         return self.vector_store_client.delete_collection()
