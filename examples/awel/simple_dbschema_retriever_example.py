@@ -32,11 +32,9 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
     Examples:
         ..code-block:: shell
-            DBGPT_SERVER="http://127.0.0.1:5555"
-            curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/rag/dbschema \
-            -H "Content-Type: application/json" -d '{
-                "query": "what's user name?"
-            }'
+            curl --location 'http://127.0.0.1:5555/api/v1/awel/trigger/examples/rag/dbschema' \
+            --header 'Content-Type: application/json' \
+            --data '{"query": "what'\''s user name?"}'
 """
 
 
