@@ -1,14 +1,14 @@
-import os
 import logging
+import os
 from typing import Any, List
 
-from chromadb.config import Settings
 from chromadb import PersistentClient
+from chromadb.config import Settings
 from pydantic import Field
 
+from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.rag.chunk import Chunk
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
-from dbgpt.configs.model_config import PILOT_PATH
 
 logger = logging.getLogger(__name__)
 

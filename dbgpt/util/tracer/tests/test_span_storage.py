@@ -1,18 +1,19 @@
-import os
-import pytest
 import asyncio
 import json
+import os
 import tempfile
 import time
-from unittest.mock import patch
 from datetime import datetime, timedelta
+from unittest.mock import patch
+
+import pytest
 
 from dbgpt.util.tracer import (
-    SpanStorage,
     FileSpanStorage,
     Span,
-    SpanType,
+    SpanStorage,
     SpanStorageContainer,
+    SpanType,
 )
 
 

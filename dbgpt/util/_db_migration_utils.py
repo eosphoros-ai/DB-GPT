@@ -1,12 +1,12 @@
-from typing import Optional
-import os
 import logging
-from sqlalchemy import Engine, text
-from sqlalchemy.orm import Session, DeclarativeMeta
-from alembic import command
-from alembic.util.exc import CommandError
-from alembic.config import Config as AlembicConfig
+import os
+from typing import Optional
 
+from alembic import command
+from alembic.config import Config as AlembicConfig
+from alembic.util.exc import CommandError
+from sqlalchemy import Engine, text
+from sqlalchemy.orm import DeclarativeMeta, Session
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +67,8 @@ def create_migration_script(
     Returns:
         The path of the generated migration script.
     """
-    from alembic.script import ScriptDirectory
     from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
 
     # Check if the database is up-to-date
     script_dir = ScriptDirectory.from_config(alembic_cfg)
@@ -244,8 +244,8 @@ def _check_database_migration_status(alembic_cfg: AlembicConfig, engine: Engine)
     Raises:
         Exception: If the database is not at the latest revision.
     """
-    from alembic.script import ScriptDirectory
     from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
 
     script = ScriptDirectory.from_config(alembic_cfg)
 

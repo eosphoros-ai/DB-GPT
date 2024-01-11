@@ -20,3 +20,8 @@ class ServeConfig(BaseServeConfig):
     api_keys: Optional[str] = field(
         default=None, metadata={"help": "API keys for the endpoint, if None, allow all"}
     )
+
+    default_model: Optional[str] = field(
+        default=None,
+        metadata={"help": "Default model name"},
+    )

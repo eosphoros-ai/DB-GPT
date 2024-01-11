@@ -1,9 +1,9 @@
-from typing import Callable, Awaitable, Any
 import asyncio
 import contextvars
 from abc import ABC, abstractmethod
 from concurrent.futures import Executor, ThreadPoolExecutor
 from functools import partial
+from typing import Any, Awaitable, Callable
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 

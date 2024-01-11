@@ -1,5 +1,7 @@
-import requests
 from typing import List
+
+import requests
+
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 

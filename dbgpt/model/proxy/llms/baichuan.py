@@ -1,9 +1,11 @@
-import requests
 import json
 from typing import List
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+
+import requests
+
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
 from dbgpt.model.parameter import ProxyModelParameters
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 BAICHUAN_DEFAULT_MODEL = "Baichuan2-Turbo-192k"
 

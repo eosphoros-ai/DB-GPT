@@ -4,8 +4,8 @@ from contextvars import ContextVar
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.types import ASGIApp
-from dbgpt.util.tracer import TracerContext, Tracer
 
+from dbgpt.util.tracer import Tracer, TracerContext
 
 _DEFAULT_EXCLUDE_PATHS = ["/api/controller/heartbeat"]
 

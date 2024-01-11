@@ -1,25 +1,28 @@
 from contextlib import contextmanager
+from typing import Dict, List, Optional, Type, Union
 
-from typing import Type, List, Optional, Union, Dict
+from sqlalchemy import URL
+from sqlalchemy.orm import DeclarativeMeta, Session
+
 from dbgpt.core import Serializer
 from dbgpt.core.interface.storage import (
-    StorageInterface,
     QuerySpec,
     ResourceIdentifier,
+    StorageInterface,
     StorageItemAdapter,
     T,
 )
-from sqlalchemy import URL
-from sqlalchemy.orm import Session, DeclarativeMeta
 
-from .db_manager import BaseModel, DatabaseManager, BaseQuery
+from .db_manager import BaseModel, BaseQuery, DatabaseManager
 
 
 def _copy_public_properties(src: BaseModel, dest: BaseModel):
     """Simple copy public properties from src to dest"""
     for column in src.__table__.columns:
         if column.name != "id":
-            setattr(dest, column.name, getattr(src, column.name))
+            value = getattr(src, column.name)
+            if value is not None:
+                setattr(dest, column.name, value)
 
 
 class SQLAlchemyStorage(StorageInterface[T, BaseModel]):
@@ -51,8 +54,16 @@ class SQLAlchemyStorage(StorageInterface[T, BaseModel]):
 
     def update(self, data: T) -> None:
         with self.session() as session:
-            model_instance = self.adapter.to_storage_format(data)
-            session.merge(model_instance)
+            query = self.adapter.get_query_for_identifier(
+                self._model_class, data.identifier, session=session
+            )
+            exist_model_instance = query.with_session(session).first()
+            if exist_model_instance:
+                _copy_public_properties(
+                    self.adapter.to_storage_format(data), exist_model_instance
+                )
+                session.merge(exist_model_instance)
+                return
 
     def save_or_update(self, data: T) -> None:
         with self.session() as session:

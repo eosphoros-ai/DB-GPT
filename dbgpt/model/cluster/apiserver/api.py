@@ -3,45 +3,42 @@
 
 Adapted from https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/openai_api_server.py
 """
-from typing import Optional, List, Dict, Any, Generator
-
-import logging
 import asyncio
-import shortuuid
 import json
-from fastapi import APIRouter, FastAPI
-from fastapi import Depends, HTTPException
+import logging
+from typing import Any, Dict, Generator, List, Optional
+
+import shortuuid
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
-
-
+from fastchat.constants import ErrorCode
+from fastchat.protocol.api_protocol import APIChatCompletionRequest, ErrorResponse
 from fastchat.protocol.openai_api_protocol import (
     ChatCompletionResponse,
+    ChatCompletionResponseChoice,
     ChatCompletionResponseStreamChoice,
     ChatCompletionStreamResponse,
     ChatMessage,
-    ChatCompletionResponseChoice,
     DeltaMessage,
     ModelCard,
     ModelList,
     ModelPermission,
     UsageInfo,
 )
-from fastchat.protocol.api_protocol import APIChatCompletionRequest, ErrorResponse
-from fastchat.constants import ErrorCode
 
+from dbgpt._private.pydantic import BaseModel
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
-from dbgpt.util.parameter_utils import EnvArgumentParser
 from dbgpt.core import ModelOutput
 from dbgpt.core.interface.message import ModelMessage
 from dbgpt.model.base import ModelInstance
-from dbgpt.model.parameter import ModelAPIServerParameters, WorkerType
-from dbgpt.model.cluster import ModelRegistry
 from dbgpt.model.cluster.manager_base import WorkerManager, WorkerManagerFactory
+from dbgpt.model.cluster.registry import ModelRegistry
+from dbgpt.model.parameter import ModelAPIServerParameters, WorkerType
+from dbgpt.util.parameter_utils import EnvArgumentParser
 from dbgpt.util.utils import setup_logging
-from dbgpt._private.pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -393,8 +390,9 @@ async def create_chat_completion(
 
 
 def _initialize_all(controller_addr: str, system_app: SystemApp):
-    from dbgpt.model.cluster import RemoteWorkerManager, ModelRegistryClient
+    from dbgpt.model.cluster.controller.controller import ModelRegistryClient
     from dbgpt.model.cluster.worker.manager import _DefaultWorkerManagerFactory
+    from dbgpt.model.cluster.worker.remote_manager import RemoteWorkerManager
 
     if not system_app.get_component(
         ComponentType.MODEL_REGISTRY, ModelRegistry, default_component=None

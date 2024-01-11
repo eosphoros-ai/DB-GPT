@@ -49,13 +49,25 @@ class BasePromptTemplate(BaseModel):
     """The prompt template."""
 
     template_format: Optional[str] = "f-string"
+    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+
+    response_format: Optional[str] = None
+
+    response_key: Optional[str] = "response"
+
+    template_is_strict: Optional[bool] = True
+    """strict template will check template args"""
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs."""
         if self.template:
-            return _DEFAULT_FORMATTER_MAPPING[self.template_format](True)(
-                self.template, **kwargs
-            )
+            if self.response_format:
+                kwargs[self.response_key] = json.dumps(
+                    self.response_format, ensure_ascii=False, indent=4
+                )
+            return _DEFAULT_FORMATTER_MAPPING[self.template_format](
+                self.template_is_strict
+            )(self.template, **kwargs)
 
     @classmethod
     def from_template(
@@ -75,10 +87,6 @@ class PromptTemplate(BasePromptTemplate):
     template_scene: Optional[str]
     template_define: Optional[str]
     """this template define"""
-    """strict template will check template args"""
-    template_is_strict: bool = True
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
-    response_format: Optional[str]
     """default use stream out"""
     stream_out: bool = True
     """"""
@@ -103,17 +111,6 @@ class PromptTemplate(BasePromptTemplate):
         """Return the prompt type key."""
         return "prompt"
 
-    def format(self, **kwargs: Any) -> str:
-        """Format the prompt with the inputs."""
-        if self.template:
-            if self.response_format:
-                kwargs["response"] = json.dumps(
-                    self.response_format, ensure_ascii=False, indent=4
-                )
-            return _DEFAULT_FORMATTER_MAPPING[self.template_format](
-                self.template_is_strict
-            )(self.template, **kwargs)
-
 
 class BaseChatPromptTemplate(BaseModel, ABC):
     prompt: BasePromptTemplate
@@ -129,10 +126,22 @@ class BaseChatPromptTemplate(BaseModel, ABC):
 
     @classmethod
     def from_template(
-        cls, template: str, template_format: Optional[str] = "f-string", **kwargs: Any
+        cls,
+        template: str,
+        template_format: Optional[str] = "f-string",
+        response_format: Optional[str] = None,
+        response_key: Optional[str] = "response",
+        template_is_strict: bool = True,
+        **kwargs: Any,
     ) -> BaseChatPromptTemplate:
         """Create a prompt template from a template string."""
-        prompt = BasePromptTemplate.from_template(template, template_format)
+        prompt = BasePromptTemplate.from_template(
+            template,
+            template_format,
+            response_format=response_format,
+            response_key=response_key,
+            template_is_strict=template_is_strict,
+        )
         return cls(prompt=prompt, **kwargs)
 
 

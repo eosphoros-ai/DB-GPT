@@ -137,7 +137,7 @@ with DAG("dbgpt_awel_simple_chat_history") as multi_round_dag:
 
     composer_operator = ChatHistoryPromptComposerOperator(
         prompt_template=prompt,
-        last_k_round=5,
+        keep_end_rounds=5,
         storage=InMemoryStorage(),
         message_storage=InMemoryStorage(),
     )

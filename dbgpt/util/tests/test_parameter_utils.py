@@ -1,5 +1,7 @@
 import argparse
+
 import pytest
+
 from dbgpt.util.parameter_utils import _extract_parameter_details
 
 

@@ -1,4 +1,5 @@
 from typing import Any
+
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.task.base import IN, OUT
 from dbgpt.datasource.base import BaseConnect

@@ -1,5 +1,5 @@
 import os
-from typing import Optional, List, Callable, Any
+from typing import Any, Callable, List, Optional
 
 from dbgpt.rag.chunk import Chunk
 from dbgpt.storage import vector_store

@@ -1,14 +1,14 @@
-import os
 import logging
-
+import os
 from typing import Dict
-from dbgpt.app.scene import BaseChat, ChatScene
+
 from dbgpt._private.config import Config
 from dbgpt.agent.plugin.commands.command_mange import ApiCall
-from dbgpt.app.scene.chat_data.chat_excel.excel_reader import ExcelReader
+from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.app.scene.chat_data.chat_excel.excel_learning.chat import ExcelLearning
-from dbgpt.util.path_utils import has_path
+from dbgpt.app.scene.chat_data.chat_excel.excel_reader import ExcelReader
 from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
+from dbgpt.util.path_utils import has_path
 from dbgpt.util.tracer import root_tracer, trace
 
 CFG = Config()
@@ -20,7 +20,8 @@ class ChatExcel(BaseChat):
     """a Excel analyzer to analyze Excel Data"""
 
     chat_scene: str = ChatScene.ChatExcel.value()
-    chat_retention_rounds = 2
+    keep_start_rounds = 1
+    keep_end_rounds = 2
 
     def __init__(self, chat_param: Dict):
         """Chat Excel Module Initialization
@@ -58,7 +59,7 @@ class ChatExcel(BaseChat):
 
     async def prepare(self):
         logger.info(f"{self.chat_mode} prepare start!")
-        if len(self.history_message) > 0:
+        if self.has_history_messages():
             return None
         chat_param = {
             "chat_session_id": self.chat_session_id,

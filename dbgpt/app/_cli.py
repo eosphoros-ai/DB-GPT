@@ -1,11 +1,13 @@
-from typing import Optional
-import click
-import os
 import functools
+import os
+from typing import Optional
+
+import click
+
 from dbgpt.app.base import WebServerParameters
 from dbgpt.configs.model_config import LOGDIR
-from dbgpt.util.parameter_utils import EnvArgumentParser
 from dbgpt.util.command_utils import _run_current_with_daemon, _stop_service
+from dbgpt.util.parameter_utils import EnvArgumentParser
 
 
 @click.command(name="webserver")
@@ -117,8 +119,8 @@ def migrate(alembic_ini_path: str, script_location: str, message: str):
 def upgrade(alembic_ini_path: str, script_location: str, sql_output: str):
     """Upgrade database to target version"""
     from dbgpt.util._db_migration_utils import (
-        upgrade_database,
         generate_sql_for_upgrade,
+        upgrade_database,
     )
 
     alembic_cfg, db_manager = _get_migration_config(alembic_ini_path, script_location)
@@ -210,9 +212,8 @@ def clean(
 @add_migration_options
 def list(alembic_ini_path: str, script_location: str):
     """List all versions in the migration history, marking the current one"""
-    from alembic.script import ScriptDirectory
-
     from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
 
     alembic_cfg, db_manager = _get_migration_config(alembic_ini_path, script_location)
 
@@ -269,12 +270,12 @@ def show(alembic_ini_path: str, script_location: str, revision: str):
 def _get_migration_config(
     alembic_ini_path: Optional[str] = None, script_location: Optional[str] = None
 ):
-    from dbgpt.storage.metadata.db_manager import db as db_manager
-    from dbgpt.util._db_migration_utils import create_alembic_config
+    from dbgpt.app.base import _initialize_db
 
     # Import all models to make sure they are registered with SQLAlchemy.
     from dbgpt.app.initialization.db_model_initialization import _MODELS
-    from dbgpt.app.base import _initialize_db
+    from dbgpt.storage.metadata.db_manager import db as db_manager
+    from dbgpt.util._db_migration_utils import create_alembic_config
 
     # initialize db
     default_meta_data_path = _initialize_db()

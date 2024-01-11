@@ -1,10 +1,10 @@
 import json
-from typing import Dict, Iterator, List
 import logging
-from dbgpt.core import ModelOutput, ModelMetadata
-from dbgpt.model.parameter import ModelParameters
-from dbgpt.model.cluster.worker_base import ModelWorker
+from typing import Dict, Iterator, List
 
+from dbgpt.core import ModelMetadata, ModelOutput
+from dbgpt.model.cluster.worker_base import ModelWorker
+from dbgpt.model.parameter import ModelParameters
 
 logger = logging.getLogger(__name__)
 

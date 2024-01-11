@@ -1,9 +1,9 @@
-from typing import List, Dict
+from typing import Dict, List
 
-from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
 from dbgpt.agent.plugin.commands.command import execute_command
 from dbgpt.agent.plugin.generator import PluginPromptGenerator
+from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.util.tracer import trace
 
 CFG = Config()

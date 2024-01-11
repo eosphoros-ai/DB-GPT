@@ -1,30 +1,30 @@
-import click
 import functools
 import logging
 import os
-from typing import Callable, List, Type, Optional
+from typing import Callable, List, Optional, Type
+
+import click
 
 from dbgpt.configs.model_config import LOGDIR
 from dbgpt.model.base import WorkerApplyType
 from dbgpt.model.parameter import (
-    ModelControllerParameters,
-    ModelAPIServerParameters,
-    ModelWorkerParameters,
-    ModelParameters,
     BaseParameters,
+    ModelAPIServerParameters,
+    ModelControllerParameters,
+    ModelParameters,
+    ModelWorkerParameters,
 )
 from dbgpt.util import get_or_create_event_loop
+from dbgpt.util.command_utils import (
+    _detect_controller_address,
+    _run_current_with_daemon,
+    _stop_service,
+)
 from dbgpt.util.parameter_utils import (
     EnvArgumentParser,
     _build_parameter_class,
     build_lazy_click_command,
 )
-from dbgpt.util.command_utils import (
-    _run_current_with_daemon,
-    _stop_service,
-    _detect_controller_address,
-)
-
 
 MODEL_CONTROLLER_ADDRESS = "http://127.0.0.1:8000"
 
@@ -32,7 +32,7 @@ logger = logging.getLogger("dbgpt_cli")
 
 
 def _get_worker_manager(address: str):
-    from dbgpt.model.cluster import RemoteWorkerManager, ModelRegistryClient
+    from dbgpt.model.cluster import ModelRegistryClient, RemoteWorkerManager
 
     registry = ModelRegistryClient(address)
     worker_manager = RemoteWorkerManager(registry)
@@ -70,6 +70,7 @@ def model_cli_group(address: str):
 def list(model_name: str, model_type: str):
     """List model instances"""
     from prettytable import PrettyTable
+
     from dbgpt.model.cluster import ModelRegistryClient
 
     loop = get_or_create_event_loop()
@@ -152,7 +153,7 @@ def add_model_options(func):
 )
 def stop(model_name: str, model_type: str, host: str, port: int):
     """Stop model instances"""
-    from dbgpt.model.cluster import WorkerStartupRequest, RemoteWorkerManager
+    from dbgpt.model.cluster import RemoteWorkerManager, WorkerStartupRequest
 
     worker_manager: RemoteWorkerManager = _get_worker_manager(MODEL_CONTROLLER_ADDRESS)
     req = WorkerStartupRequest(
@@ -168,10 +169,11 @@ def stop(model_name: str, model_type: str, host: str, port: int):
 
 
 def _remote_model_dynamic_factory() -> Callable[[None], List[Type]]:
-    from dbgpt.util.parameter_utils import _SimpleArgParser
+    from dataclasses import dataclass, field
+
     from dbgpt.model.cluster import RemoteWorkerManager
     from dbgpt.model.parameter import WorkerType
-    from dataclasses import dataclass, field
+    from dbgpt.util.parameter_utils import _SimpleArgParser
 
     pre_args = _SimpleArgParser("model_name", "address", "host", "port")
     pre_args.parse()
@@ -270,7 +272,7 @@ def _remote_model_dynamic_factory() -> Callable[[None], List[Type]]:
 )
 def start(**kwargs):
     """Start model instances"""
-    from dbgpt.model.cluster import WorkerStartupRequest, RemoteWorkerManager
+    from dbgpt.model.cluster import RemoteWorkerManager, WorkerStartupRequest
 
     worker_manager: RemoteWorkerManager = _get_worker_manager(MODEL_CONTROLLER_ADDRESS)
     req = WorkerStartupRequest(
@@ -339,8 +341,8 @@ def _cli_chat(address: str, model_name: str, system_prompt: str = None):
 
 
 async def _chat_stream(worker_manager, model_name: str, system_prompt: str = None):
-    from dbgpt.model.cluster import PromptRequest
     from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+    from dbgpt.model.cluster import PromptRequest
 
     print(f"Chatbot started with model {model_name}. Type 'exit' to leave the chat.")
     hist = []

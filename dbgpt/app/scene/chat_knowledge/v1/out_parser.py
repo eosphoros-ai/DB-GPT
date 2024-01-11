@@ -1,6 +1,6 @@
 import logging
-from dbgpt.core.interface.output_parser import BaseOutputParser, T
 
+from dbgpt.core.interface.output_parser import BaseOutputParser, T
 
 logger = logging.getLogger(__name__)
 

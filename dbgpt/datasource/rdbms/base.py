@@ -1,26 +1,21 @@
 from __future__ import annotations
-import sqlparse
-import regex as re
+
+from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
-from typing import Any, Iterable, List, Optional, Dict
+
+import regex as re
 import sqlalchemy
-from sqlalchemy import (
-    MetaData,
-    Table,
-    create_engine,
-    inspect,
-    select,
-    text,
-)
+import sqlparse
+from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
 from sqlalchemy.engine import CursorResult
 from sqlalchemy.exc import ProgrammingError, SQLAlchemyError
+from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.schema import CreateTable
-from sqlalchemy.orm import sessionmaker, scoped_session
 
-from dbgpt.storage.schema import DBType
-from dbgpt.datasource.base import BaseConnect
 from dbgpt._private.config import Config
+from dbgpt.datasource.base import BaseConnect
+from dbgpt.storage.schema import DBType
 
 CFG = Config()
 

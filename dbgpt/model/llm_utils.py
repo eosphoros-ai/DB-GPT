@@ -2,11 +2,11 @@
 # -*- coding:utf-8 -*-
 
 from pathlib import Path
+from typing import Dict, List
 
-from typing import List, Dict
 import cachetools
 
-from dbgpt.configs.model_config import LLM_MODEL_CONFIG, EMBEDDING_MODEL_CONFIG
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, LLM_MODEL_CONFIG
 from dbgpt.model.base import SupportedModel
 from dbgpt.util.parameter_utils import _get_parameter_descriptions
 

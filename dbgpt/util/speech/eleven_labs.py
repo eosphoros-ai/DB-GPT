@@ -1,6 +1,7 @@
 """ElevenLabs speech module"""
-import os
 import logging
+import os
+
 import requests
 
 from dbgpt._private.config import Config

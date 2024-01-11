@@ -1,8 +1,7 @@
 from typing import Dict
+
 from dbgpt.component import SystemApp
-
-from dbgpt.util.tracer import Span, SpanType, SpanStorage, Tracer
-
+from dbgpt.util.tracer import Span, SpanStorage, SpanType, Tracer
 
 # Mock implementations
 

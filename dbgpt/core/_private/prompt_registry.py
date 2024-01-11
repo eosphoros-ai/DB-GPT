@@ -20,8 +20,9 @@ class PromptTemplateRegistry:
         self,
         prompt_template,
         language: str = "en",
-        is_default=False,
+        is_default: bool = False,
         model_names: List[str] = None,
+        scene_name: str = None,
     ) -> None:
         """Register prompt template with scene name, language
         registry dict format:
@@ -37,7 +38,8 @@ class PromptTemplateRegistry:
             }
         }
         """
-        scene_name = prompt_template.template_scene
+        if not scene_name:
+            scene_name = prompt_template.template_scene
         if not scene_name:
             raise ValueError("Prompt template scene name cannot be empty")
         if not model_names:

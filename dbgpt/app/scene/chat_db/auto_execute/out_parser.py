@@ -1,11 +1,13 @@
 import json
-from typing import Dict, NamedTuple
 import logging
-import sqlparse
 import xml.etree.ElementTree as ET
-from dbgpt.util.json_utils import serialize
-from dbgpt.core.interface.output_parser import BaseOutputParser
+from typing import Dict, NamedTuple
+
+import sqlparse
+
 from dbgpt._private.config import Config
+from dbgpt.core.interface.output_parser import BaseOutputParser
+from dbgpt.util.json_utils import serialize
 
 CFG = Config()
 
