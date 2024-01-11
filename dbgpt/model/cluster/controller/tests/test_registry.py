@@ -1,7 +1,8 @@
-import pytest
+import asyncio
 from datetime import datetime, timedelta
 
-import asyncio
+import pytest
+
 from dbgpt.model.base import ModelInstance
 from dbgpt.model.cluster.registry import EmbeddedModelRegistry
 

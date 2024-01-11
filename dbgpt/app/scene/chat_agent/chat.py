@@ -1,10 +1,10 @@
-from typing import List, Dict
 import logging
+from typing import Dict, List
 
-from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
 from dbgpt.agent.plugin.commands.command_mange import ApiCall
 from dbgpt.agent.plugin.generator import PluginPromptGenerator
+from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.component import ComponentType
 from dbgpt.serve.agent.hub.controller import ModuleAgent
 from dbgpt.util.tracer import root_tracer, trace
@@ -18,7 +18,7 @@ class ChatAgent(BaseChat):
     """Chat With Agent through plugin"""
 
     chat_scene: str = ChatScene.ChatAgent.value()
-    chat_retention_rounds = 0
+    keep_end_rounds = 0
 
     def __init__(self, chat_param: Dict):
         """Chat Agent Module Initialization

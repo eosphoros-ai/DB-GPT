@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import importlib.metadata as metadata
+import logging
 import os
 from typing import List
-import logging
-import importlib.metadata as metadata
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
-from dbgpt.model.parameter import ProxyModelParameters
-from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+
 import httpx
+
+from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+from dbgpt.model.parameter import ProxyModelParameters
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +130,10 @@ def _build_request(model: ProxyModel, params):
     messages: List[ModelMessage] = params["messages"]
 
     # history = __convert_2_gpt_messages(messages)
-    history = ModelMessage.to_openai_messages(messages)
+    convert_to_compatible_format = params.get("convert_to_compatible_format", False)
+    history = ModelMessage.to_openai_messages(
+        messages, convert_to_compatible_format=convert_to_compatible_format
+    )
     payloads = {
         "temperature": params.get("temperature"),
         "max_tokens": params.get("max_new_tokens"),

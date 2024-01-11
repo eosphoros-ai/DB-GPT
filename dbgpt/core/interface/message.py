@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.core.awel import MapOperator
 from dbgpt.core.interface.storage import (
     InMemoryStorage,
     ResourceIdentifier,
@@ -45,6 +44,18 @@ class BaseMessage(BaseModel, ABC):
             "index": self.index,
             "round_index": self.round_index,
         }
+
+    @staticmethod
+    def messages_to_string(messages: List["BaseMessage"]) -> str:
+        """Convert messages to str
+
+        Args:
+            messages (List[BaseMessage]): The messages
+
+        Returns:
+            str: The str messages
+        """
+        return _messages_to_str(messages)
 
 
 class HumanMessage(BaseMessage):
@@ -114,6 +125,50 @@ class ModelMessage(BaseModel):
     content: str
     round_index: Optional[int] = 0
 
+    @property
+    def pass_to_model(self) -> bool:
+        """Whether the message will be passed to the model
+
+        The view message will not be passed to the model
+
+        Returns:
+            bool: Whether the message will be passed to the model
+        """
+        return self.role in [
+            ModelMessageRoleType.SYSTEM,
+            ModelMessageRoleType.HUMAN,
+            ModelMessageRoleType.AI,
+        ]
+
+    @staticmethod
+    def from_base_messages(messages: List[BaseMessage]) -> List["ModelMessage"]:
+        result = []
+        for message in messages:
+            content, round_index = message.content, message.round_index
+            if isinstance(message, HumanMessage):
+                result.append(
+                    ModelMessage(
+                        role=ModelMessageRoleType.HUMAN,
+                        content=content,
+                        round_index=round_index,
+                    )
+                )
+            elif isinstance(message, AIMessage):
+                result.append(
+                    ModelMessage(
+                        role=ModelMessageRoleType.AI,
+                        content=content,
+                        round_index=round_index,
+                    )
+                )
+            elif isinstance(message, SystemMessage):
+                result.append(
+                    ModelMessage(
+                        role=ModelMessageRoleType.SYSTEM, content=message.content
+                    )
+                )
+        return result
+
     @staticmethod
     def from_openai_messages(
         messages: Union[str, List[Dict[str, str]]]
@@ -142,9 +197,15 @@ class ModelMessage(BaseModel):
         return result
 
     @staticmethod
-    def to_openai_messages(messages: List["ModelMessage"]) -> List[Dict[str, str]]:
+    def to_openai_messages(
+        messages: List["ModelMessage"], convert_to_compatible_format: bool = False
+    ) -> List[Dict[str, str]]:
         """Convert to OpenAI message format and
         hugggingface [Templates of Chat Models](https://huggingface.co/docs/transformers/v4.34.1/en/chat_templating)
+
+        Args:
+            messages (List["ModelMessage"]): The model messages
+            convert_to_compatible_format (bool): Whether to convert to compatible format
         """
         history = []
         # Add history conversation
@@ -157,15 +218,16 @@ class ModelMessage(BaseModel):
                 history.append({"role": "assistant", "content": message.content})
             else:
                 pass
-        # Move the last user's information to the end
-        last_user_input_index = None
-        for i in range(len(history) - 1, -1, -1):
-            if history[i]["role"] == "user":
-                last_user_input_index = i
-                break
-        if last_user_input_index:
-            last_user_input = history.pop(last_user_input_index)
-            history.append(last_user_input)
+        if convert_to_compatible_format:
+            # Move the last user's information to the end
+            last_user_input_index = None
+            for i in range(len(history) - 1, -1, -1):
+                if history[i]["role"] == "user":
+                    last_user_input_index = i
+                    break
+            if last_user_input_index:
+                last_user_input = history.pop(last_user_input_index)
+                history.append(last_user_input)
         return history
 
     @staticmethod
@@ -189,8 +251,8 @@ class ModelMessage(BaseModel):
         return str_msg
 
 
-_SingleRoundMessage = List[ModelMessage]
-_MultiRoundMessageMapper = Callable[[List[_SingleRoundMessage]], List[ModelMessage]]
+_SingleRoundMessage = List[BaseMessage]
+_MultiRoundMessageMapper = Callable[[List[_SingleRoundMessage]], List[BaseMessage]]
 
 
 def _message_to_dict(message: BaseMessage) -> Dict:
@@ -199,6 +261,41 @@ def _message_to_dict(message: BaseMessage) -> Dict:
 
 def _messages_to_dict(messages: List[BaseMessage]) -> List[Dict]:
     return [_message_to_dict(m) for m in messages]
+
+
+def _messages_to_str(
+    messages: List[BaseMessage],
+    human_prefix: str = "Human",
+    ai_prefix: str = "AI",
+    system_prefix: str = "System",
+) -> str:
+    """Convert messages to str
+
+    Args:
+        messages (List[BaseMessage]): The messages
+        human_prefix (str): The human prefix
+        ai_prefix (str): The ai prefix
+        system_prefix (str): The system prefix
+
+    Returns:
+        str: The str messages
+    """
+    str_messages = []
+    for message in messages:
+        role = None
+        if isinstance(message, HumanMessage):
+            role = human_prefix
+        elif isinstance(message, AIMessage):
+            role = ai_prefix
+        elif isinstance(message, SystemMessage):
+            role = system_prefix
+        elif isinstance(message, ViewMessage):
+            pass
+        else:
+            raise ValueError(f"Got unsupported message type: {message}")
+        if role:
+            str_messages.append(f"{role}: {message.content}")
+    return "\n".join(str_messages)
 
 
 def _message_from_dict(message: Dict) -> BaseMessage:
@@ -332,13 +429,17 @@ class OnceConversation:
         self._message_index += 1
         message.index = index
         message.round_index = self.chat_order
+        message.additional_kwargs["param_type"] = self.param_type
+        message.additional_kwargs["param_value"] = self.param_value
+        message.additional_kwargs["model_name"] = self.model_name
         self.messages.append(message)
 
     def start_new_round(self) -> None:
         """Start a new round of conversation
 
         Example:
-            >>> conversation = OnceConversation()
+
+            >>> conversation = OnceConversation("chat_normal")
             >>> # The chat order will be 0, then we start a new round of conversation
             >>> assert conversation.chat_order == 0
             >>> conversation.start_new_round()
@@ -453,9 +554,12 @@ class OnceConversation:
         self.messages = conversation.messages
         self.start_date = conversation.start_date
         self.chat_order = conversation.chat_order
-        self.model_name = conversation.model_name
-        self.param_type = conversation.param_type
-        self.param_value = conversation.param_value
+        if not self.model_name and conversation.model_name:
+            self.model_name = conversation.model_name
+        if not self.param_type and conversation.param_type:
+            self.param_type = conversation.param_type
+        if not self.param_value and conversation.param_value:
+            self.param_value = conversation.param_value
         self.cost = conversation.cost
         self.tokens = conversation.tokens
         self.user_name = conversation.user_name
@@ -583,6 +687,28 @@ class OnceConversation:
                         round_index=message.round_index,
                     )
                 )
+        return messages
+
+    def get_history_message(
+        self, include_system_message: bool = False
+    ) -> List[BaseMessage]:
+        """Get the history message
+
+        Not include the system messages.
+
+        Args:
+            include_system_message (bool): Whether to include the system message
+
+        Returns:
+            List[BaseMessage]: The history messages
+        """
+        messages = []
+        for message in self.messages:
+            if message.pass_to_model:
+                if include_system_message:
+                    messages.append(message)
+                elif message.type != "system":
+                    messages.append(message)
         return messages
 
 
@@ -728,6 +854,7 @@ class StorageConversation(OnceConversation, StorageItem):
         save_message_independent: Optional[bool] = True,
         conv_storage: StorageInterface = None,
         message_storage: StorageInterface = None,
+        load_message: bool = True,
         **kwargs,
     ):
         super().__init__(chat_mode, user_name, sys_code, summary, **kwargs)
@@ -738,6 +865,8 @@ class StorageConversation(OnceConversation, StorageItem):
         self._has_stored_message_index = (
             len(kwargs["messages"]) - 1 if "messages" in kwargs else -1
         )
+        # Whether to load the message from the storage
+        self._load_message = load_message
         self.save_message_independent = save_message_independent
         self._id = ConversationIdentifier(conv_uid)
         if conv_storage is None:
@@ -780,7 +909,9 @@ class StorageConversation(OnceConversation, StorageItem):
         ]
         messages_to_save = message_list[self._has_stored_message_index + 1 :]
         self._has_stored_message_index = len(message_list) - 1
-        self.message_storage.save_list(messages_to_save)
+        if self.save_message_independent:
+            # Save messages independently
+            self.message_storage.save_list(messages_to_save)
         # Save conversation
         self.conv_storage.save_or_update(self)
 
@@ -803,22 +934,70 @@ class StorageConversation(OnceConversation, StorageItem):
             return
         message_ids = conversation._message_ids or []
 
-        # Load messages
-        message_list = message_storage.load_list(
-            [
-                MessageIdentifier.from_str_identifier(message_id)
-                for message_id in message_ids
-            ],
-            MessageStorageItem,
-        )
-        messages = [message.to_message() for message in message_list]
-        conversation.messages = messages
+        if self._load_message:
+            # Load messages
+            message_list = message_storage.load_list(
+                [
+                    MessageIdentifier.from_str_identifier(message_id)
+                    for message_id in message_ids
+                ],
+                MessageStorageItem,
+            )
+            messages = [message.to_message() for message in message_list]
+        else:
+            messages = []
+        real_messages = messages or conversation.messages
+        conversation.messages = real_messages
         # This index is used to save the message to the storage(Has not been saved)
         # The new message append to the messages, so the index is len(messages)
-        conversation._message_index = len(messages)
+        conversation._message_index = len(real_messages)
+        conversation.chat_order = (
+            max(m.round_index for m in real_messages) if real_messages else 0
+        )
+        self._append_additional_kwargs(conversation, real_messages)
         self._message_ids = message_ids
-        self._has_stored_message_index = len(messages) - 1
+        self._has_stored_message_index = len(real_messages) - 1
+        self.save_message_independent = conversation.save_message_independent
         self.from_conversation(conversation)
+
+    def _append_additional_kwargs(
+        self, conversation: StorageConversation, messages: List[BaseMessage]
+    ) -> None:
+        """Parse the additional kwargs and append to the conversation
+
+        Args:
+            conversation (StorageConversation): The conversation
+            messages (List[BaseMessage]): The messages
+        """
+        param_type = None
+        param_value = None
+        for message in messages[::-1]:
+            if message.additional_kwargs:
+                param_type = message.additional_kwargs.get("param_type")
+                param_value = message.additional_kwargs.get("param_value")
+                break
+        if not conversation.param_type:
+            conversation.param_type = param_type
+        if not conversation.param_value:
+            conversation.param_value = param_value
+
+    def delete(self) -> None:
+        """Delete all the messages and conversation from the storage"""
+        # Delete messages first
+        message_list = self._get_message_items()
+        message_ids = [message.identifier for message in message_list]
+        self.message_storage.delete_list(message_ids)
+        # Delete conversation
+        self.conv_storage.delete(self.identifier)
+        # Overwrite the current conversation with empty conversation
+        self.from_conversation(
+            StorageConversation(
+                self.conv_uid,
+                save_message_independent=self.save_message_independent,
+                conv_storage=self.conv_storage,
+                message_storage=self.message_storage,
+            )
+        )
 
 
 def _conversation_to_dict(once: OnceConversation) -> Dict:
@@ -864,3 +1043,61 @@ def _conversation_from_dict(once: dict) -> OnceConversation:
     print(once.get("messages"))
     conversation.messages = _messages_from_dict(once.get("messages", []))
     return conversation
+
+
+def _split_messages_by_round(messages: List[BaseMessage]) -> List[List[BaseMessage]]:
+    """Split the messages by round index.
+
+    Args:
+        messages (List[BaseMessage]): The messages.
+
+    Returns:
+        List[List[BaseMessage]]: The messages split by round.
+    """
+    messages_by_round: List[List[BaseMessage]] = []
+    last_round_index = 0
+    for message in messages:
+        if not message.round_index:
+            # Round index must bigger than 0
+            raise ValueError("Message round_index is not set")
+        if message.round_index > last_round_index:
+            last_round_index = message.round_index
+            messages_by_round.append([])
+        messages_by_round[-1].append(message)
+    return messages_by_round
+
+
+def _append_view_messages(messages: List[BaseMessage]) -> List[BaseMessage]:
+    """Append the view message to the messages
+    Just for show in DB-GPT-Web.
+    If already have view message, do nothing.
+
+    Args:
+        messages (List[BaseMessage]): The messages
+
+    Returns:
+        List[BaseMessage]: The messages with view message
+    """
+    messages_by_round = _split_messages_by_round(messages)
+    for current_round in messages_by_round:
+        ai_message = None
+        view_message = None
+        for message in current_round:
+            if message.type == "ai":
+                ai_message = message
+            elif message.type == "view":
+                view_message = message
+        if view_message:
+            # Already have view message, do nothing
+            continue
+        if ai_message:
+            view_message = ViewMessage(
+                content=ai_message.content,
+                index=ai_message.index,
+                round_index=ai_message.round_index,
+                additional_kwargs=ai_message.additional_kwargs.copy()
+                if ai_message.additional_kwargs
+                else {},
+            )
+            current_round.append(view_message)
+    return sum(messages_by_round, [])

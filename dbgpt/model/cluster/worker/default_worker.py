@@ -1,21 +1,25 @@
-import os
 import logging
-
-from typing import Dict, Iterator, List, Optional
+import os
 import time
 import traceback
+from typing import Dict, Iterator, List, Optional
 
 from dbgpt.configs.model_config import get_device
+from dbgpt.core import (
+    ModelExtraMedata,
+    ModelInferenceMetrics,
+    ModelMetadata,
+    ModelOutput,
+)
 from dbgpt.model.adapter.base import LLMModelAdapter
 from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
-from dbgpt.core import ModelOutput, ModelInferenceMetrics, ModelMetadata
+from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.loader import ModelLoader, _get_model_real_path
 from dbgpt.model.parameter import ModelParameters
-from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.util.model_utils import _clear_model_cache, _get_current_cuda_memory
 from dbgpt.util.parameter_utils import EnvArgumentParser, _get_dict_from_obj
-from dbgpt.util.tracer import root_tracer, SpanType, SpanTypeRunName
 from dbgpt.util.system_utils import get_system_info
+from dbgpt.util.tracer import SpanType, SpanTypeRunName, root_tracer
 
 logger = logging.getLogger(__name__)
 
@@ -196,9 +200,13 @@ class DefaultModelWorker(ModelWorker):
         raise NotImplementedError
 
     def get_model_metadata(self, params: Dict) -> ModelMetadata:
+        ext_metadata = ModelExtraMedata(
+            prompt_sep=self.llm_adapter.get_default_message_separator()
+        )
         return ModelMetadata(
             model=self.model_name,
             context_length=self.context_len,
+            ext_metadata=ext_metadata,
         )
 
     async def async_get_model_metadata(self, params: Dict) -> ModelMetadata:

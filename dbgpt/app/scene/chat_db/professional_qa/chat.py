@@ -1,7 +1,7 @@
 from typing import Dict
 
-from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
+from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import trace
 
@@ -10,6 +10,8 @@ CFG = Config()
 
 class ChatWithDbQA(BaseChat):
     chat_scene: str = ChatScene.ChatWithDbQA.value()
+
+    keep_end_rounds = 5
 
     """As a DBA, Chat DB Module, chat with combine DB meta schema """
 

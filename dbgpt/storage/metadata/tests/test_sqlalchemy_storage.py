@@ -1,20 +1,18 @@
 from typing import Dict, Type
-from sqlalchemy.orm import declarative_base, Session
-from sqlalchemy import Column, Integer, String
 
 import pytest
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import Session, declarative_base
 
 from dbgpt.core.interface.storage import (
-    StorageItem,
-    ResourceIdentifier,
-    StorageItemAdapter,
     QuerySpec,
+    ResourceIdentifier,
+    StorageItem,
+    StorageItemAdapter,
 )
-from dbgpt.storage.metadata.db_storage import SQLAlchemyStorage
-
 from dbgpt.core.interface.tests.test_storage import MockResourceIdentifier
+from dbgpt.storage.metadata.db_storage import SQLAlchemyStorage
 from dbgpt.util.serialization.json_serialization import JsonSerializer
-
 
 Base = declarative_base()
 

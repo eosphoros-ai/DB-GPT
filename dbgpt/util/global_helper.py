@@ -196,7 +196,7 @@ def truncate_text(text: str, max_length: int) -> str:
 def iter_batch(iterable: Union[Iterable, Generator], size: int) -> Iterable:
     """Iterate over an iterable in batches.
 
-    >>> list(iter_batch([1,2,3,4,5], 3))
+    >>> list(iter_batch([1, 2, 3, 4, 5], 3))
     [[1, 2, 3], [4, 5]]
     """
     source_iter = iter(iterable)

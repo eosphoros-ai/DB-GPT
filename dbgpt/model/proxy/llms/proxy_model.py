@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Union, List, Optional, TYPE_CHECKING
 import logging
+from typing import TYPE_CHECKING, List, Optional, Union
+
 from dbgpt.model.parameter import ProxyModelParameters
 from dbgpt.model.utils.token_utils import ProxyTokenizerWrapper
 
 if TYPE_CHECKING:
-    from dbgpt.core.interface.message import ModelMessage, BaseMessage
+    from dbgpt.core.interface.message import BaseMessage, ModelMessage
 
 logger = logging.getLogger(__name__)
 

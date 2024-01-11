@@ -3,15 +3,14 @@ import logging
 import uuid
 from abc import ABC
 from collections import defaultdict
+from typing import Dict, List
 
 from fastapi import APIRouter, Body
 from fastapi.responses import StreamingResponse
 
 from dbgpt._private.config import Config
-from dbgpt.agent.agents.agent import AgentContext
+from dbgpt.agent.agents.agent import Agent, AgentContext
 from dbgpt.agent.agents.agents_mange import agent_mange
-from dbgpt.agent.agents.plan_group_chat import PlanChat, PlanChatManager
-from dbgpt.agent.agents.planner_agent import PlannerAgent
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.common.schema import Status
 from dbgpt.agent.memory.gpts_memory import GptsMemory
@@ -20,9 +19,12 @@ from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.model.cluster.client import DefaultLLMClient
 from dbgpt.serve.agent.model import PagenationFilter, PluginHubFilter
+from dbgpt.serve.agent.team.plan.team_auto_plan import AutoPlanChatManager
 
 from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEntity
 from ..db.gpts_mange_db import GptsInstanceDao, GptsInstanceEntity
+from ..team.base import TeamMode
+from ..team.layout.team_awel_layout import AwelLayoutChatManger
 from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
 from .dbgpts import DbGptsInstance
 
@@ -51,14 +53,11 @@ class MultiAgents(BaseComponent, ABC):
     def gpts_create(self, entity: GptsInstanceEntity):
         self.gpts_intance.add(entity)
 
-    async def plan_chat(
+    async def _build_agent_context(
         self,
         name: str,
-        user_query: str,
         conv_id: str,
-        user_code: str = None,
-        sys_code: str = None,
-    ):
+    ) -> AgentContext:
         gpts_instance: GptsInstanceEntity = self.gpts_intance.get_by_name(name)
         if gpts_instance is None:
             raise ValueError(f"can't find dbgpts!{name}")
@@ -77,7 +76,6 @@ class MultiAgents(BaseComponent, ABC):
             if gpts_instance.resource_internet
             else None
         )
-
         ### init chat param
         worker_manager = CFG.SYSTEM_APP.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
@@ -92,38 +90,66 @@ class MultiAgents(BaseComponent, ABC):
 
         context.llm_models = await llm_task.models()
         context.model_priority = llm_models_priority
+        return context
 
+    async def _build_chat_manger(
+        self, context: AgentContext, mode: TeamMode, agents: List[Agent]
+    ):
+        if mode == TeamMode.SINGLE_AGENT:
+            manager = agents[0]
+        else:
+            if TeamMode.AUTO_PLAN == mode:
+                manager = AutoPlanChatManager(
+                    agent_context=context,
+                    memory=self.memory,
+                    plan_chat=groupchat,
+                    planner=planner,
+                )
+            elif TeamMode.AWEL_LAYOUT == mode:
+                manager = AwelLayoutChatManger(
+                    agent_context=context,
+                    memory=self.memory,
+                )
+            else:
+                raise ValueError(f"Unknown Agent Team Mode!{mode}")
+            manager.hire(agents)
+
+        return manager
+
+    async def agent_team_chat(
+        self,
+        name: str,
+        mode: TeamMode,
+        user_query: str,
+        conv_id: str,
+        user_code: str = None,
+        sys_code: str = None,
+    ):
+        """Initiate an Agent-based conversation
+        Args:
+            name:
+            mode:
+            user_query:
+            conv_id:
+            user_code:
+            sys_code:
+
+        Returns:
+
+        """
+        context = await self._build_agent_context(name, conv_id)
         agent_map = defaultdict()
-
-        ### default plan excute mode
         agents = []
-        for name in agents_names:
+        for name in context.agents:
             cls = agent_mange.get_by_name(name)
             agent = cls(
                 agent_context=context,
                 memory=self.memory,
             )
             agents.append(agent)
-            agent_map[name] = agent
 
-        groupchat = PlanChat(agents=agents, messages=[], max_round=50)
-        planner = PlannerAgent(
-            agent_context=context,
-            memory=self.memory,
-            plan_chat=groupchat,
-        )
-        agent_map[planner.name] = planner
-
-        manager = PlanChatManager(
-            agent_context=context,
-            memory=self.memory,
-            plan_chat=groupchat,
-            planner=planner,
-        )
-        agent_map[manager.name] = manager
-
+        manager = await self._build_chat_manger(context, mode, agents)
         user_proxy = UserProxyAgent(memory=self.memory, agent_context=context)
-        agent_map[user_proxy.name] = user_proxy
 
         gpts_conversation = self.gpts_conversations.get_by_conv_id(conv_id)
         if gpts_conversation is None:
@@ -131,7 +157,7 @@ class MultiAgents(BaseComponent, ABC):
                 GptsConversationsEntity(
                     conv_id=conv_id,
                     user_goal=user_query,
-                    gpts_name=gpts_instance.gpts_name,
+                    gpts_name=name,
                     state=Status.RUNNING.value,
                     max_auto_reply_round=context.max_chat_round,
                     auto_reply_count=0,
@@ -157,7 +183,76 @@ class MultiAgents(BaseComponent, ABC):
             try:
                 await user_proxy.a_retry_chat(
                     recipient=manager,
-                    agent_map=agent_map,
+                    memory=self.memory,
+                )
+            except Exception as e:
+                logger.error(f"chat abnormal termination！{str(e)}", e)
+                self.gpts_conversations.update(conv_id, Status.FAILED.value)
+
+        self.gpts_conversations.update(conv_id, Status.COMPLETE.value)
+        return conv_id
+
+    async def plan_chat(
+        self,
+        name: str,
+        user_query: str,
+        conv_id: str,
+        user_code: str = None,
+        sys_code: str = None,
+    ):
+        context = await self._build_agent_context(name, conv_id)
+
+        ### default plan excute mode
+        agents = []
+        for name in context.agents:
+            cls = agent_mange.get_by_name(name)
+            agent = cls(
+                agent_context=context,
+                memory=self.memory,
+            )
+            agents.append(agent)
+            agent_map[name] = agent
+
+        manager = AutoPlanChatManager(
+            agent_context=context,
+            memory=self.memory,
+        )
+        manager.hire(agents)
+
+        user_proxy = UserProxyAgent(memory=self.memory, agent_context=context)
+
+        gpts_conversation = self.gpts_conversations.get_by_conv_id(conv_id)
+        if gpts_conversation is None:
+            self.gpts_conversations.add(
+                GptsConversationsEntity(
+                    conv_id=conv_id,
+                    user_goal=user_query,
+                    gpts_name=name,
+                    state=Status.RUNNING.value,
+                    max_auto_reply_round=context.max_chat_round,
+                    auto_reply_count=0,
+                    user_code=user_code,
+                    sys_code=sys_code,
+                )
+            )
+
+            ## dbgpts conversation save
+            try:
+                await user_proxy.a_initiate_chat(
+                    recipient=manager,
+                    message=user_query,
+                    memory=self.memory,
+                )
+            except Exception as e:
+                logger.error(f"chat abnormal termination！{str(e)}", e)
+                self.gpts_conversations.update(conv_id, Status.FAILED.value)
+
+        else:
+            # retry chat
+            self.gpts_conversations.update(conv_id, Status.RUNNING.value)
+            try:
+                await user_proxy.a_retry_chat(
+                    recipient=manager,
                     memory=self.memory,
                 )
             except Exception as e:

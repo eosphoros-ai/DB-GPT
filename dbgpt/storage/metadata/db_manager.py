@@ -1,29 +1,21 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
-from typing import (
-    TypeVar,
-    Generic,
-    Union,
-    Dict,
-    Optional,
-    Type,
-    ClassVar,
-)
 import logging
-from sqlalchemy import create_engine, URL, Engine
-from sqlalchemy import orm, inspect, MetaData
+from contextlib import contextmanager
+from typing import ClassVar, Dict, Generic, Optional, Type, TypeVar, Union
+
+from sqlalchemy import URL, Engine, MetaData, create_engine, inspect, orm
 from sqlalchemy.orm import (
-    scoped_session,
-    sessionmaker,
+    DeclarativeMeta,
     Session,
     declarative_base,
-    DeclarativeMeta,
+    scoped_session,
+    sessionmaker,
 )
-
 from sqlalchemy.pool import QueuePool
-from dbgpt.util.string_utils import _to_str
+
 from dbgpt.util.pagination_utils import PaginationResult
+from dbgpt.util.string_utils import _to_str
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="BaseModel")
@@ -314,7 +306,7 @@ class DatabaseManager:
         Examples:
             >>> db.init_default_db(sqlite_path)
             >>> with db.session() as session:
-            >>>     session.query(...)
+            ...     session.query(...)
 
         Args:
             sqlite_path (str): The sqlite path.

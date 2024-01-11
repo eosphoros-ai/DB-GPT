@@ -1,24 +1,22 @@
-from typing import Dict, List
+import argparse
 import asyncio
+import csv
+import logging
 import os
 import sys
 import time
-import csv
-import argparse
-import logging
 import traceback
-from dbgpt.configs.model_config import ROOT_PATH, LLM_MODEL_CONFIG
 from datetime import datetime
+from typing import Dict, List
 
-from dbgpt.model.cluster.worker.manager import (
-    run_worker_manager,
-    initialize_worker_manager_in_client,
-    WorkerManager,
-)
-
-from dbgpt.core import ModelOutput, ModelInferenceMetrics
+from dbgpt.configs.model_config import LLM_MODEL_CONFIG, ROOT_PATH
+from dbgpt.core import ModelInferenceMetrics, ModelOutput
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
-
+from dbgpt.model.cluster.worker.manager import (
+    WorkerManager,
+    initialize_worker_manager_in_client,
+    run_worker_manager,
+)
 
 model_name = "vicuna-7b-v1.5"
 model_path = LLM_MODEL_CONFIG[model_name]

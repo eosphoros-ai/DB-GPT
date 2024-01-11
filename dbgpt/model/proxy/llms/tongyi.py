@@ -1,7 +1,8 @@
 import logging
 from typing import List
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +54,12 @@ def tongyi_generate_stream(
         proxyllm_backend = Generation.Models.qwen_turbo  # By Default qwen_turbo
 
     messages: List[ModelMessage] = params["messages"]
+    convert_to_compatible_format = params.get("convert_to_compatible_format", False)
 
-    history = __convert_2_tongyi_messages(messages)
+    if convert_to_compatible_format:
+        history = __convert_2_tongyi_messages(messages)
+    else:
+        history = ModelMessage.to_openai_messages(messages)
     gen = Generation()
     res = gen.call(
         proxyllm_backend,

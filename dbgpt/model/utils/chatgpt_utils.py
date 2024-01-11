@@ -1,37 +1,41 @@
 from __future__ import annotations
 
-import os
-import logging
-from dataclasses import dataclass
-from abc import ABC
 import importlib.metadata as metadata
+import logging
+import os
+from abc import ABC
+from dataclasses import dataclass
 from typing import (
-    List,
-    Dict,
-    Any,
-    Optional,
     TYPE_CHECKING,
-    Union,
+    Any,
     AsyncIterator,
-    Callable,
     Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
 )
 
-from dbgpt.component import ComponentType
-from dbgpt.core.operator import BaseLLM
-from dbgpt.core.awel import TransformStreamAbsOperator, BaseOperator
-from dbgpt.core.interface.llm import ModelMetadata, LLMClient
-from dbgpt.core.interface.llm import ModelOutput, ModelRequest
-from dbgpt.model.cluster.client import DefaultLLMClient
-from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt._private.pydantic import model_to_json
+from dbgpt.component import ComponentType
+from dbgpt.core.awel import BaseOperator, TransformStreamAbsOperator
+from dbgpt.core.interface.llm import (
+    LLMClient,
+    MessageConverter,
+    ModelMetadata,
+    ModelOutput,
+    ModelRequest,
+)
+from dbgpt.core.operator import BaseLLM
+from dbgpt.model.cluster import WorkerManagerFactory
+from dbgpt.model.cluster.client import DefaultLLMClient
 from dbgpt.model.utils.token_utils import ProxyTokenizerWrapper
 
 if TYPE_CHECKING:
     import httpx
     from httpx._types import ProxiesTypes
-    from openai import AsyncAzureOpenAI
-    from openai import AsyncOpenAI
+    from openai import AsyncAzureOpenAI, AsyncOpenAI
 
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
@@ -175,7 +179,13 @@ class OpenAILLMClient(LLMClient):
             payload["max_tokens"] = request.max_new_tokens
         return payload
 
-    async def generate(self, request: ModelRequest) -> ModelOutput:
+    async def generate(
+        self,
+        request: ModelRequest,
+        message_converter: Optional[MessageConverter] = None,
+    ) -> ModelOutput:
+        request = await self.covert_message(request, message_converter)
+
         messages = request.to_openai_messages()
         payload = self._build_request(request)
         logger.info(
@@ -195,8 +205,11 @@ class OpenAILLMClient(LLMClient):
             )
 
     async def generate_stream(
-        self, request: ModelRequest
+        self,
+        request: ModelRequest,
+        message_converter: Optional[MessageConverter] = None,
     ) -> AsyncIterator[ModelOutput]:
+        request = await self.covert_message(request, message_converter)
         messages = request.to_openai_messages()
         payload = self._build_request(request, True)
         logger.info(
@@ -247,7 +260,7 @@ class OpenAILLMClient(LLMClient):
         return self._tokenizer.count_token(prompt, model)
 
 
-class OpenAIStreamingOperator(TransformStreamAbsOperator[ModelOutput, str]):
+class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]):
     """Transform ModelOutput to openai stream format."""
 
     async def transform_stream(
@@ -266,40 +279,6 @@ class OpenAIStreamingOperator(TransformStreamAbsOperator[ModelOutput, str]):
             yield output
 
 
-class MixinLLMOperator(BaseLLM, BaseOperator, ABC):
-    """Mixin class for LLM operator.
-
-    This class extends BaseOperator by adding LLM capabilities.
-    """
-
-    def __init__(self, default_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(default_client)
-        self._default_llm_client = default_client
-
-    @property
-    def llm_client(self) -> LLMClient:
-        if not self._llm_client:
-            worker_manager_factory: WorkerManagerFactory = (
-                self.system_app.get_component(
-                    ComponentType.WORKER_MANAGER_FACTORY,
-                    WorkerManagerFactory,
-                    default_component=None,
-                )
-            )
-            if worker_manager_factory:
-                self._llm_client = DefaultLLMClient(worker_manager_factory.create())
-            else:
-                if self._default_llm_client is None:
-                    from dbgpt.model import OpenAILLMClient
-
-                    self._default_llm_client = OpenAILLMClient()
-                logger.info(
-                    f"Can't find worker manager factory, use default llm client {self._default_llm_client}."
-                )
-                self._llm_client = self._default_llm_client
-        return self._llm_client
-
-
 async def _to_openai_stream(
     output_iter: AsyncIterator[ModelOutput],
     model: Optional[str] = None,
@@ -312,9 +291,10 @@ async def _to_openai_stream(
         model (Optional[str], optional): The model name. Defaults to None.
         model_caller (Callable[[None], Union[Awaitable[str], str]], optional): The model caller. Defaults to None.
     """
-    import json
-    import shortuuid
     import asyncio
+    import json
+
+    import shortuuid
     from fastchat.protocol.openai_api_protocol import (
         ChatCompletionResponseStreamChoice,
         ChatCompletionStreamResponse,

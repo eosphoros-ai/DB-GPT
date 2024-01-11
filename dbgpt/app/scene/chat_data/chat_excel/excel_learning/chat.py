@@ -1,10 +1,10 @@
 import json
 from typing import Any, Dict
 
-from dbgpt.core.interface.message import ViewMessage, AIMessage
 from dbgpt.app.scene import BaseChat, ChatScene
-from dbgpt.util.json_utils import EnhancedJSONEncoder
+from dbgpt.core.interface.message import AIMessage, ViewMessage
 from dbgpt.util.executor_utils import blocking_func_to_async
+from dbgpt.util.json_utils import EnhancedJSONEncoder
 from dbgpt.util.tracer import trace
 
 
@@ -52,6 +52,7 @@ class ExcelLearning(BaseChat):
 
     def message_adjust(self):
         ### adjust learning result in messages
+        # TODO: Can't work in multi-rounds chat
         view_message = ""
         for message in self.current_message.messages:
             if message.type == ViewMessage.type:

@@ -1,17 +1,18 @@
-from typing import AsyncIterator, Dict, List, Union
 import logging
+from typing import AsyncIterator, Dict, List, Union
+
+from dbgpt.component import ComponentType
+from dbgpt.core import ModelOutput
 from dbgpt.core.awel import (
     BranchFunc,
-    StreamifyAbsOperator,
     BranchOperator,
     MapOperator,
+    StreamifyAbsOperator,
     TransformStreamAbsOperator,
 )
-from dbgpt.component import ComponentType
 from dbgpt.core.awel.operator.base import BaseOperator
-from dbgpt.core import ModelOutput
 from dbgpt.model.cluster import WorkerManager, WorkerManagerFactory
-from dbgpt.storage.cache import LLMCacheClient, CacheManager, LLMCacheKey, LLMCacheValue
+from dbgpt.storage.cache import CacheManager, LLMCacheClient, LLMCacheKey, LLMCacheValue
 
 logger = logging.getLogger(__name__)
 

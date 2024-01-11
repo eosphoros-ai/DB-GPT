@@ -1,5 +1,4 @@
-from dbgpt.component import SystemApp, BaseComponent
-
+from dbgpt.component import BaseComponent, SystemApp
 
 __ALL__ = ["SystemApp", "BaseComponent"]
 

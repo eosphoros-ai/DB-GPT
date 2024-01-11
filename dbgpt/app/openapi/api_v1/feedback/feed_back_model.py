@@ -1,5 +1,6 @@
-from dbgpt._private.pydantic import BaseModel
 from typing import Optional
+
+from dbgpt._private.pydantic import BaseModel
 
 
 class FeedBackBody(BaseModel):

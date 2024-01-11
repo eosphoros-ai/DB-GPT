@@ -1,17 +1,12 @@
-from abc import ABC, abstractmethod
-from typing import Optional, Type
 import logging
+from abc import ABC, abstractmethod
 from concurrent.futures import Executor
-from dbgpt.storage.cache.storage.base import CacheStorage
-from dbgpt.core.interface.cache import K, V
-from dbgpt.core import (
-    CacheKey,
-    CacheValue,
-    CacheConfig,
-    Serializer,
-    Serializable,
-)
+from typing import Optional, Type
+
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
+from dbgpt.core import CacheConfig, CacheKey, CacheValue, Serializable, Serializer
+from dbgpt.core.interface.cache import K, V
+from dbgpt.storage.cache.storage.base import CacheStorage
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 
 logger = logging.getLogger(__name__)
@@ -102,8 +97,8 @@ class LocalCacheManager(CacheManager):
 def initialize_cache(
     system_app: SystemApp, storage_type: str, max_memory_mb: int, persist_dir: str
 ):
-    from dbgpt.util.serialization.json_serialization import JsonSerializer
     from dbgpt.storage.cache.storage.base import MemoryCacheStorage
+    from dbgpt.util.serialization.json_serialization import JsonSerializer
 
     cache_storage = None
     if storage_type == "disk":

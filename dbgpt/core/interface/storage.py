@@ -284,6 +284,15 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
             resource_id (ResourceIdentifier): The resource identifier of the data
         """
 
+    def delete_list(self, resource_id: List[ResourceIdentifier]) -> None:
+        """Delete the data from the storage.
+
+        Args:
+            resource_id (ResourceIdentifier): The resource identifier of the data
+        """
+        for r in resource_id:
+            self.delete(r)
+
     @abstractmethod
     def query(self, spec: QuerySpec, cls: Type[T]) -> List[T]:
         """Query data from the storage.

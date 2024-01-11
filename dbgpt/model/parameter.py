@@ -4,7 +4,7 @@
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Optional, Union, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 from dbgpt.model.conversation import conv_templates
 from dbgpt.util.parameter_utils import BaseParameters

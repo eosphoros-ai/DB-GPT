@@ -1,7 +1,7 @@
-from typing import List, Tuple, Dict, Any
+from typing import Any, Dict, List, Tuple
 
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 from dbgpt.core.interface.message import ModelMessage, parse_model_messages
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 GEMINI_DEFAULT_MODEL = "gemini-pro"
 
@@ -12,7 +12,6 @@ def gemini_generate_stream(
     """Zhipu ai, see: https://open.bigmodel.cn/dev/api#overview"""
     model_params = model.get_params()
     print(f"Model: {model}, model_params: {model_params}")
-    global history
 
     # TODO proxy model use unified config?
     proxy_api_key = model_params.proxy_api_key

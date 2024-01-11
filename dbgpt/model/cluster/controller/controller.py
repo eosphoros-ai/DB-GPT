@@ -1,19 +1,17 @@
-from abc import ABC, abstractmethod
-
 import logging
+from abc import ABC, abstractmethod
 from typing import List
 
 from fastapi import APIRouter, FastAPI
+
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.model.base import ModelInstance
-from dbgpt.model.parameter import ModelControllerParameters
 from dbgpt.model.cluster.registry import EmbeddedModelRegistry, ModelRegistry
+from dbgpt.model.parameter import ModelControllerParameters
+from dbgpt.util.api_utils import _api_remote as api_remote
+from dbgpt.util.api_utils import _sync_api_remote as sync_api_remote
 from dbgpt.util.parameter_utils import EnvArgumentParser
-from dbgpt.util.api_utils import (
-    _api_remote as api_remote,
-    _sync_api_remote as sync_api_remote,
-)
-from dbgpt.util.utils import setup_logging, setup_http_service_logging
+from dbgpt.util.utils import setup_http_service_logging, setup_logging
 
 logger = logging.getLogger(__name__)
 

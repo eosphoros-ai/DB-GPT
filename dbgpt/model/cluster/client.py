@@ -1,20 +1,35 @@
-from typing import AsyncIterator, List
 import asyncio
-from dbgpt.core.interface.llm import LLMClient, ModelRequest, ModelOutput, ModelMetadata
-from dbgpt.model.parameter import WorkerType
+from typing import AsyncIterator, List, Optional
+
+from dbgpt.core.interface.llm import (
+    LLMClient,
+    MessageConverter,
+    ModelMetadata,
+    ModelOutput,
+    ModelRequest,
+)
 from dbgpt.model.cluster.manager_base import WorkerManager
+from dbgpt.model.parameter import WorkerType
 
 
 class DefaultLLMClient(LLMClient):
     def __init__(self, worker_manager: WorkerManager):
         self._worker_manager = worker_manager
 
-    async def generate(self, request: ModelRequest) -> ModelOutput:
+    async def generate(
+        self,
+        request: ModelRequest,
+        message_converter: Optional[MessageConverter] = None,
+    ) -> ModelOutput:
+        request = await self.covert_message(request, message_converter)
         return await self._worker_manager.generate(request.to_dict())
 
     async def generate_stream(
-        self, request: ModelRequest
+        self,
+        request: ModelRequest,
+        message_converter: Optional[MessageConverter] = None,
     ) -> AsyncIterator[ModelOutput]:
+        request = await self.covert_message(request, message_converter)
         async for output in self._worker_manager.generate_stream(request.to_dict()):
             yield output
 

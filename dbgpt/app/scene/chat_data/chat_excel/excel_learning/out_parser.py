@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import NamedTuple, List
+from typing import List, NamedTuple
+
 from dbgpt.core.interface.output_parser import BaseOutputParser
 
 

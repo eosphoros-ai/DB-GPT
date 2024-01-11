@@ -1,16 +1,13 @@
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from dbgpt._private.config import Config
-from dbgpt.agent.agents.plan_group_chat import PlanChat
+from dbgpt.agent.agents.agent import Agent, AgentContext
+from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.agent.common.schema import Status
+from dbgpt.agent.memory.base import GptsPlan
+from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.util.json_utils import find_json_objects
 
-from ..memory.base import GptsPlan
-from ..memory.gpts_memory import GptsMemory
-from .agent import Agent, AgentContext
-from .base_agent import ConversableAgent
-
-# TODO: remove global config
 CFG = Config()
 
 
@@ -76,15 +73,15 @@ class PlannerAgent(ConversableAgent):
     """
 
     REPAIR_SYSTEM_MESSAGE = """
-     您是规划专家!现在你需要利用你的专业知识，仔细检查已生成的计划,进行重新评估和分析，确保计划的每个步骤都是清晰完整的，可以被智能代理理解的，解决当前计划中遇到的问题！并按要求返回新的计划内容。
+        You are a planning expert! Now you need to use your professional knowledge to carefully check the generated plan, re-evaluate and analyze it, and ensure that each step of the plan is clear and complete and can be understood by the intelligent agent to solve the current plan Problems encountered! and return new program content as requested.
     """
     NAME = "Planner"
 
     def __init__(
         self,
         memory: GptsMemory,
-        plan_chat: PlanChat,
         agent_context: AgentContext,
+        agents: Optional[List[Agent]] = None,
         is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
@@ -100,7 +97,7 @@ class PlannerAgent(ConversableAgent):
             agent_context=agent_context,
             **kwargs,
         )
-        self.plan_chat = plan_chat
+        self._agents = agents
         ### register planning funtion
         self.register_reply(Agent, PlannerAgent._a_planning)
 
@@ -125,7 +122,7 @@ class PlannerAgent(ConversableAgent):
         return {
             "all_resources": "\n".join([f"- {item}" for item in resources]),
             "agents": "\n".join(
-                [f"- {item.name}:{item.describe}" for item in self.plan_chat.agents]
+                [f"- {item.name}:{item.describe}" for item in self._agents]
             ),
         }
 

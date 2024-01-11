@@ -1,6 +1,7 @@
 import logging
-import torch
 from threading import Thread
+
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
 logger = logging.getLogger(__name__)

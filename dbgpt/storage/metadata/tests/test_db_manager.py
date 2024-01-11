@@ -1,14 +1,17 @@
 from __future__ import annotations
-import pytest
+
 import tempfile
 from typing import Type
+
+import pytest
+from sqlalchemy import Column, Integer, String
+
 from dbgpt.storage.metadata.db_manager import (
+    BaseModel,
     DatabaseManager,
     PaginationResult,
     create_model,
-    BaseModel,
 )
-from sqlalchemy import Column, Integer, String
 
 
 @pytest.fixture

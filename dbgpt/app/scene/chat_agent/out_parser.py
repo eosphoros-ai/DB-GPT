@@ -1,4 +1,5 @@
 from typing import Dict, NamedTuple
+
 from dbgpt.core.interface.output_parser import BaseOutputParser
 
 

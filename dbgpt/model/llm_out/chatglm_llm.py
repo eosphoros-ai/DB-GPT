@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-from typing import List
 import re
+from typing import List
 
 import torch
 

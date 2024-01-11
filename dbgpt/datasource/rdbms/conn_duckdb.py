@@ -1,8 +1,6 @@
-from typing import Optional, Any, Iterable
-from sqlalchemy import (
-    create_engine,
-    text,
-)
+from typing import Any, Iterable, Optional
+
+from sqlalchemy import create_engine, text
 
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 

@@ -1,7 +1,7 @@
 from typing import List
 
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 CHATGLM_DEFAULT_MODEL = "chatglm_pro"
 
@@ -57,6 +57,10 @@ def zhipu_generate_stream(
     zhipuai.api_key = proxy_api_key
 
     messages: List[ModelMessage] = params["messages"]
+
+    # TODO: Support convert_to_compatible_format config, zhipu not support system message
+    convert_to_compatible_format = params.get("convert_to_compatible_format", False)
+
     history, systems = __convert_2_zhipu_messages(messages)
     res = zhipuai.model_api.sse_invoke(
         model=proxyllm_backend,

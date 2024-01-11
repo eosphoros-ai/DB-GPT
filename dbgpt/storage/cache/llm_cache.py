@@ -1,16 +1,11 @@
-from typing import Optional, Dict, Any, Union, List
-from dataclasses import dataclass, asdict
 import hashlib
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, List, Optional, Union
 
-from dbgpt.core.interface.cache import (
-    CacheKey,
-    CacheValue,
-    CacheClient,
-    CacheConfig,
-)
-from dbgpt.storage.cache.manager import CacheManager
 from dbgpt.core import ModelOutput, Serializer
+from dbgpt.core.interface.cache import CacheClient, CacheConfig, CacheKey, CacheValue
 from dbgpt.model.base import ModelType
+from dbgpt.storage.cache.manager import CacheManager
 
 
 @dataclass
