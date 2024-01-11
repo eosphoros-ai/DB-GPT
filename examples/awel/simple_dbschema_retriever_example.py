@@ -34,7 +34,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
         ..code-block:: shell
             curl --location 'http://127.0.0.1:5555/api/v1/awel/trigger/examples/rag/dbschema' \
             --header 'Content-Type: application/json' \
-            --data '{"query": "what'\''s user name?"}'
+            --data '{"query": "what is user name?"}'
 """
 
 
