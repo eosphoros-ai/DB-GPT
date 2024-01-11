@@ -13,6 +13,7 @@ import AgentMessages from './agent-messages';
 import VisConvertError from './vis-convert-error';
 import VisChart from './vis-chart';
 import VisDashboard from './vis-dashboard';
+import VisPlugin from './vis-plugin';
 
 type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];
 
@@ -40,6 +41,8 @@ const basicComponents: MarkdownComponent = {
      */
     const { context, matchValues } = matchCustomeTagValues(content);
     const lang = className?.replace('language-', '') || 'javascript';
+
+    console.log(lang);
 
     if (lang === 'agent-plans') {
       try {
@@ -71,7 +74,6 @@ const basicComponents: MarkdownComponent = {
     if (lang === 'vis-dashboard') {
       try {
         const data = JSON.parse(content) as Parameters<typeof VisDashboard>[0]['data'];
-        console.log('dashboard', data);
         return <VisDashboard data={data} />;
       } catch (e) {
         return <CodePreview language={lang} code={content} />;
@@ -82,6 +84,15 @@ const basicComponents: MarkdownComponent = {
       try {
         const data = JSON.parse(content) as Parameters<typeof VisChart>[0]['data'];
         return <VisChart data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'vis-plugin') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisPlugin>[0]['data'];
+        return <VisPlugin data={data} />;
       } catch (e) {
         return <CodePreview language={lang} code={content} />;
       }

@@ -7,14 +7,14 @@ import { useSearchParams } from 'next/navigation';
 interface IChatContext {
   isContract?: boolean;
   isMenuExpand?: boolean;
-  scene: IChatDialogueSchema['chat_mode'] | (string & {});
+  scene: IChatDialogueSchema['chat_mode'];
   chatId: string;
   model: string;
   dbParam?: string;
   modelList: Array<string>;
-  agentList: string[];
+  agent: string;
   dialogueList?: DialogueListResponse;
-  setAgentList?: (val: string[]) => void;
+  setAgent?: (val: string) => void;
   setModel: (val: string) => void;
   setIsContract: (val: boolean) => void;
   setIsMenuExpand: (val: boolean) => void;
@@ -35,8 +35,8 @@ const ChatContext = createContext<IChatContext>({
   model: '',
   dbParam: undefined,
   dialogueList: [],
-  agentList: [],
-  setAgentList: () => {},
+  agent: '',
+  setAgent: () => {},
   setModel: () => {},
   setIsContract: () => {},
   setIsMenuExpand: () => {},
@@ -58,7 +58,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   const [model, setModel] = useState<string>('');
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(scene !== 'chat_dashboard');
   const [dbParam, setDbParam] = useState<string>(db_param);
-  const [agentList, setAgentList] = useState<string[]>([]);
+  const [agent, setAgent] = useState<string>('');
   const [history, setHistory] = useState<ChatHistoryResponse>([]);
   const [docId, setDocId] = useState<number>();
 
@@ -94,8 +94,8 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     model,
     dbParam: dbParam || db_param,
     dialogueList,
-    agentList,
-    setAgentList,
+    agent,
+    setAgent,
     setModel,
     setIsContract,
     setIsMenuExpand,

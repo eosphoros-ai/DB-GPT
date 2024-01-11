@@ -10,6 +10,7 @@ type Props = {
 type ChatParams = {
   chatId: string;
   data?: Record<string, any>;
+  query?: Record<string, string>;
   onMessage: (message: string) => void;
   onClose?: () => void;
   onDone?: () => void;
@@ -20,11 +21,11 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
   const ctrl = useMemo(() => new AbortController(), []);
 
   const chat = useCallback(
-    async ({ data, chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
-      if (!data?.user_input && !data?.doc_id) {
-        message.warning(i18n.t('NoContextTip'));
-        return;
-      }
+    async ({ data, chatId, query, onMessage, onClose, onDone, onError }: ChatParams) => {
+      // if (!data?.user_input && !data?.doc_id) {
+      //   message.warning(i18n.t('NoContextTip'));
+      //   return;
+      // }
 
       const parmas = {
         ...data,
@@ -37,7 +38,13 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
       }
 
       try {
-        await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}`, {
+        let queryStr = '';
+        if (query) {
+          queryStr += `?${Object.entries(query)
+            .map(([key, value]) => `${key}=${value}`)
+            .join('&')}`;
+        }
+        await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}${queryStr}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -58,7 +65,12 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
             throw new Error(err);
           },
           onmessage: (event) => {
-            const message = event.data?.replaceAll('\\n', '\n');
+            let message = event.data;
+            try {
+              message = JSON.parse(message).vis;
+            } catch (e) {
+              message.replaceAll('\\n', '\n');
+            }
             if (message === '[DONE]') {
               onDone?.();
             } else if (message?.startsWith('[ERROR]')) {
@@ -69,6 +81,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
           },
         });
       } catch (err) {
+        console.log(err);
         ctrl.abort();
         onError?.('Sorry, We meet some error, please try agin later.', err as Error);
       }

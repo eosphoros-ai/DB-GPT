@@ -15,8 +15,10 @@ import { getInitMessage } from '@/utils';
 
 const ChatContainer = () => {
   const searchParams = useSearchParams();
-  const { scene, chatId, model, setModel, history, setHistory } = useContext(ChatContext);
-  const chat = useChat({});
+  const { scene, chatId, model, agent, setModel, history, setHistory } = useContext(ChatContext);
+  const chat = useChat({
+    queryAgentURL: scene === 'chat_agent' ? '/api/v1/dbgpts/chat/completions' : undefined,
+  });
   const initMessage = (searchParams && searchParams.get('initMessage')) ?? '';
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -63,7 +65,7 @@ const ChatContainer = () => {
   }, []);
 
   const handleChat = useCallback(
-    (content: string, data?: Record<string, any>) => {
+    async (content: string, data?: Record<string, any>) => {
       return new Promise<void>((resolve) => {
         const tempHistory: ChatHistoryResponse = [
           ...history,
@@ -73,7 +75,8 @@ const ChatContainer = () => {
         const index = tempHistory.length - 1;
         setHistory([...tempHistory]);
         chat({
-          data: { ...data, chat_mode: scene || 'chat_normal', model_name: model, user_input: content },
+          data: scene === 'chat_agent' ? undefined : { ...data, chat_mode: scene || 'chat_normal', model_name: model, user_input: content },
+          query: scene === 'chat_agent' ? { gpts_name: agent, conv_id: chatId, user_query: content } : undefined,
           chatId,
           onMessage: (message) => {
             tempHistory[index].context = message;
@@ -95,7 +98,7 @@ const ChatContainer = () => {
         });
       });
     },
-    [history, chat, model],
+    [history, chat, chatId, model, agent, scene],
   );
 
   return (

@@ -26,7 +26,7 @@ type Props = {
 };
 
 const Completion = ({ messages, onSubmit }: Props) => {
-  const { dbParam, currentDialogue, scene, model, refreshDialogList, chatId, agentList, docId } = useContext(ChatContext);
+  const { dbParam, currentDialogue, scene, model, refreshDialogList, chatId, agent, docId } = useContext(ChatContext);
   const { t } = useTranslation();
   const searchParams = useSearchParams();
 
@@ -47,13 +47,13 @@ const Completion = ({ messages, onSubmit }: Props) => {
   const selectParam = useMemo(() => {
     switch (scene) {
       case 'chat_agent':
-        return agentList.join(',');
+        return agent;
       case 'chat_excel':
         return currentDialogue?.select_param;
       default:
         return spaceNameOriginal || dbParam;
     }
-  }, [scene, agentList, currentDialogue, dbParam, spaceNameOriginal]);
+  }, [scene, agent, currentDialogue, dbParam, spaceNameOriginal]);
 
   const handleChat = async (message: string) => {
     if (isLoading || !message.trim()) return;
