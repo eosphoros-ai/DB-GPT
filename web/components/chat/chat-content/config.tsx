@@ -8,6 +8,12 @@ import { CodePreview } from './code-preview';
 import { Datum } from '@antv/ava';
 import rehypeRaw from 'rehype-raw';
 import { IChunk } from '@/types/knowledge';
+import AgentPlans from './agent-plans';
+import AgentMessages from './agent-messages';
+import VisConvertError from './vis-convert-error';
+import VisChart from './vis-chart';
+import VisDashboard from './vis-dashboard';
+import VisPlugin from './vis-plugin';
 
 type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];
 
@@ -27,18 +33,75 @@ function matchCustomeTagValues(context: string) {
 
 const basicComponents: MarkdownComponent = {
   code({ inline, node, className, children, style, ...props }) {
+    const content = String(children);
     /**
      * @description
      * In some cases, tags are nested within code syntax,
      * so it is necessary to extract the tags present in the code block and render them separately.
      */
-    const { context, matchValues } = matchCustomeTagValues(Array.isArray(children) ? children.join('\n') : children);
-    const match = /language-(\w+)/.exec(className || '');
+    const { context, matchValues } = matchCustomeTagValues(content);
+    const lang = className?.replace('language-', '') || 'javascript';
+
+    console.log(lang);
+
+    if (lang === 'agent-plans') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof AgentPlans>[0]['data'];
+        return <AgentPlans data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'agent-messages') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof AgentMessages>[0]['data'];
+        return <AgentMessages data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'vis-convert-error') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisConvertError>[0]['data'];
+        return <VisConvertError data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'vis-dashboard') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisDashboard>[0]['data'];
+        return <VisDashboard data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'vis-chart') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisChart>[0]['data'];
+        return <VisChart data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'vis-plugin') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisPlugin>[0]['data'];
+        return <VisPlugin data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
 
     return (
       <>
-        {!inline && match ? (
-          <CodePreview code={context} language={match?.[1] ?? 'javascript'} />
+        {!inline && lang ? (
+          <CodePreview code={context} language={lang} />
         ) : (
           <code {...props} style={style} className="px-[6px] py-[2px] rounded bg-gray-700 text-gray-100 dark:bg-gray-100 dark:text-gray-800 text-sm">
             {children}
