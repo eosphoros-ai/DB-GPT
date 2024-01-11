@@ -1,9 +1,10 @@
 import { ChartData } from '@/types/chat';
-import { useColorScheme } from '@mui/joy';
 import { Chart } from '@berryv/g2-react';
+import { useContext } from 'react';
+import { ChatContext } from '@/app/chat-context';
 
 export default function LineChart({ chart }: { chart: ChartData }) {
-  const { mode } = useColorScheme();
+  const { mode } = useContext(ChatContext);
 
   return (
     <div className="flex-1 min-w-0 p-4 bg-white dark:bg-theme-dark-container rounded">

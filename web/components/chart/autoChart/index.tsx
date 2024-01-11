@@ -1,21 +1,20 @@
 import { Empty, Row, Col, Select, Tooltip } from 'antd';
 import { Advice, Advisor } from '@antv/ava';
 import { Chart } from '@berryv/g2-react';
-import { DownOutlined } from '@ant-design/icons';
 import i18n from '@/app/i18n';
 import { customizeAdvisor, getVisAdvices } from './advisor/pipeline';
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { defaultAdvicesFilter } from './advisor/utils';
 import { AutoChartProps, ChartType, CustomAdvisorConfig, CustomChart, Specification } from './types';
 import { customCharts } from './charts';
-import { useColorScheme } from '@mui/joy';
+import { ChatContext } from '@/app/chat-context';
 
 const { Option } = Select;
 
 export const AutoChart = (props: AutoChartProps) => {
   const { data, chartType, scopeOfCharts, ruleConfig } = props;
 
-  const { mode } = useColorScheme();
+  const { mode } = useContext(ChatContext);
 
   const [advisor, setAdvisor] = useState<Advisor>();
   const [advices, setAdvices] = useState<Advice[]>([]);

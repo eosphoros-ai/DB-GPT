@@ -1,9 +1,10 @@
+import { ChatContext } from '@/app/chat-context';
 import { ChartData } from '@/types/chat';
 import { Chart } from '@berryv/g2-react';
-import { useColorScheme } from '@mui/joy';
+import { useContext } from 'react';
 
 export default function BarChart({ chart }: { key: string; chart: ChartData }) {
-  const { mode } = useColorScheme();
+  const { mode } = useContext(ChatContext);
 
   return (
     <div className="flex-1 min-w-0 p-4 bg-white dark:bg-theme-dark-container rounded">

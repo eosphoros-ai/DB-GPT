@@ -2,7 +2,6 @@ import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, delDialogue } from '@/client/api';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils';
 import { DarkSvg, SunnySvg, ModelSvg } from '@/components/icons';
-import { useColorScheme } from '@mui/joy';
 import { IChatDialogueSchema } from '@/types/chat';
 import Icon, {
   ConsoleSqlOutlined,
@@ -55,10 +54,9 @@ function smallMenuItemStyle(active?: boolean) {
 }
 
 function SideBar() {
-  const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand } = useContext(ChatContext);
+  const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand, mode, setMode } = useContext(ChatContext);
   const { pathname, replace } = useRouter();
   const { t, i18n } = useTranslation();
-  const { mode, setMode } = useColorScheme();
 
   const [logo, setLogo] = useState<string>('/LOGO_1.png');
 

@@ -26,21 +26,11 @@ const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
   };
 };
 
-function getDefaultTheme(): ThemeMode {
-  const theme = localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode;
-  if (theme) return theme;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
 function CssWrapper({ children }: { children: React.ReactElement }) {
+  const { mode } = useContext(ChatContext);
   const { i18n } = useTranslation();
-  const { mode, setMode } = useColorScheme();
-  const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const themeMode = getDefaultTheme();
-    setMode(themeMode!);
-  }, []);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (ref?.current && mode) {
@@ -60,14 +50,13 @@ function CssWrapper({ children }: { children: React.ReactElement }) {
   return (
     <div ref={ref}>
       <TopProgressBar />
-      <ChatContextProvider>{children}</ChatContextProvider>
+      {children}
     </div>
   );
 }
 
 function LayoutWrapper({ children }: { children: React.ReactNode }) {
-  const { isMenuExpand } = useContext(ChatContext);
-  const { mode } = useColorScheme();
+  const { isMenuExpand, mode } = useContext(ChatContext);
   const { i18n } = useTranslation();
 
   return (
@@ -93,15 +82,13 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <ThemeProvider theme={joyTheme}>
-      <CssVarsProvider theme={joyTheme} defaultMode="light">
-        <CssWrapper>
-          <LayoutWrapper>
-            <Component {...pageProps} />
-          </LayoutWrapper>
-        </CssWrapper>
-      </CssVarsProvider>
-    </ThemeProvider>
+    <ChatContextProvider>
+      <CssWrapper>
+        <LayoutWrapper>
+          <Component {...pageProps} />
+        </LayoutWrapper>
+      </CssWrapper>
+    </ChatContextProvider>
   );
 }
 
