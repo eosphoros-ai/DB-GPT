@@ -37,7 +37,7 @@ def _create_vector_connector():
 
 
 async def main():
-    file_path = "./docs/docs/awel.md"
+    file_path = "docs/docs/awel.md"
     knowledge = KnowledgeFactory.from_file_path(file_path)
     vector_connector = _create_vector_connector()
     chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
@@ -50,7 +50,7 @@ async def main():
     assembler.persist()
     # get embeddings retriever
     retriever = assembler.as_retriever(3)
-    chunks = await retriever.aretrieve_with_scores("RAG", 0.3)
+    chunks = await retriever.aretrieve_with_scores("what is awel talk about", 0.3)
     print(f"embedding rag example results:{chunks}")
 
 

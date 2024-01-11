@@ -17,7 +17,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
     set your file path in your example code.
     Examples:
         ..code-block:: shell
-            python examples/rag/simple_rag_embedding_example.py
+            python examples/awel/simple_rag_embedding_example.py
 """
 
 
@@ -80,7 +80,7 @@ with DAG("simple_sdk_rag_embedding_example") as dag:
 if __name__ == "__main__":
     input_data = {
         "data": {
-            "file_path": "{your_file_path}",
+            "file_path": "docs/docs/awel.md",
         }
     }
     output = asyncio.run(output_task.call(call_data=input_data))
