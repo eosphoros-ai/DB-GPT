@@ -138,14 +138,14 @@ def test_clear_messages(basic_conversation, human_message):
 def test_get_latest_user_message(basic_conversation, human_message):
     basic_conversation.add_user_message(human_message.content)
     latest_message = basic_conversation.get_latest_user_message()
-    assert latest_message == human_message
+    assert latest_message.content == human_message.content
 
 
 def test_get_system_messages(basic_conversation, system_message):
     basic_conversation.add_system_message(system_message.content)
     system_messages = basic_conversation.get_system_messages()
     assert len(system_messages) == 1
-    assert system_messages[0] == system_message
+    assert system_messages[0].content == system_message.content
 
 
 def test_from_conversation(basic_conversation):
@@ -322,6 +322,35 @@ def test_load_from_storage(storage_conversation, in_memory_storage):
     assert new_conversation.messages[1].content == "AI response"
     assert isinstance(new_conversation.messages[0], HumanMessage)
     assert isinstance(new_conversation.messages[1], AIMessage)
+
+
+def test_delete(storage_conversation, in_memory_storage):
+    # Set storage
+    storage_conversation.conv_storage = in_memory_storage
+    storage_conversation.message_storage = in_memory_storage
+
+    # Add messages and save to storage
+    storage_conversation.start_new_round()
+    storage_conversation.add_user_message("User message")
+    storage_conversation.add_ai_message("AI response")
+    storage_conversation.end_current_round()
+
+    # Create a new StorageConversation instance to load the data
+    new_conversation = StorageConversation(
+        "conv1", conv_storage=in_memory_storage, message_storage=in_memory_storage
+    )
+
+    # Delete the conversation
+    new_conversation.delete()
+
+    # Check if the conversation is deleted
+    assert new_conversation.conv_uid == storage_conversation.conv_uid
+    assert len(new_conversation.messages) == 0
+
+    no_messages_conv = StorageConversation(
+        "conv1", conv_storage=in_memory_storage, message_storage=in_memory_storage
+    )
+    assert len(no_messages_conv.messages) == 0
 
 
 def test_parse_model_messages_no_history_messages():

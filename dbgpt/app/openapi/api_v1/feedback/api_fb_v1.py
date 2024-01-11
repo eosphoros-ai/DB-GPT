@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Body, Request
 
+from dbgpt.app.openapi.api_v1.feedback.feed_back_db import ChatFeedBackDao
 from dbgpt.app.openapi.api_v1.feedback.feed_back_model import FeedBackBody
-from dbgpt.app.openapi.api_v1.feedback.feed_back_db import (
-    ChatFeedBackDao,
-)
 from dbgpt.app.openapi.api_view_model import Result
 
 router = APIRouter()

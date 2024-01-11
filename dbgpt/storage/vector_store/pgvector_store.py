@@ -1,11 +1,11 @@
-from typing import Any, List
 import logging
+from typing import Any, List
 
 from pydantic import Field
 
+from dbgpt._private.config import Config
 from dbgpt.rag.chunk import Chunk
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
-from dbgpt._private.config import Config
 
 logger = logging.getLogger(__name__)
 

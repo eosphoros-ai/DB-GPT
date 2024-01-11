@@ -1,9 +1,12 @@
-from dbgpt.core.interface.prompt import PromptTemplate
 from dbgpt._private.config import Config
-from dbgpt.app.scene import ChatScene
-
+from dbgpt.app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt.app.scene.chat_normal.out_parser import NormalChatOutputParser
-
+from dbgpt.core import (
+    ChatPromptTemplate,
+    HumanPromptTemplate,
+    MessagesPlaceholder,
+    SystemPromptTemplate,
+)
 
 CFG = Config()
 
@@ -32,18 +35,24 @@ _DEFAULT_TEMPLATE = (
 
 PROMPT_NEED_STREAM_OUT = True
 
-prompt = PromptTemplate(
+prompt = ChatPromptTemplate(
+    messages=[
+        SystemPromptTemplate.from_template(_DEFAULT_TEMPLATE),
+        MessagesPlaceholder(variable_name="chat_history"),
+        HumanPromptTemplate.from_template("{question}"),
+    ]
+)
+
+prompt_adapter = AppScenePromptTemplateAdapter(
+    prompt=prompt,
     template_scene=ChatScene.ChatKnowledge.value(),
-    input_variables=["context", "question"],
-    response_format=None,
-    template_define=None,
-    template=_DEFAULT_TEMPLATE,
-    stream_out=PROMPT_NEED_STREAM_OUT,
+    stream_out=True,
     output_parser=NormalChatOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
+    need_historical_messages=False,
 )
 
 CFG.prompt_template_registry.register(
-    prompt,
+    prompt_adapter,
     language=CFG.LANGUAGE,
     is_default=False,
     model_names=["chatglm-6b-int4", "chatglm-6b", "chatglm2-6b", "chatglm2-6b-int4"],

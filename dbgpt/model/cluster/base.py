@@ -1,9 +1,9 @@
 from typing import Dict, List
 
+from dbgpt._private.pydantic import BaseModel
+from dbgpt.core.interface.message import ModelMessage
 from dbgpt.model.base import WorkerApplyType
 from dbgpt.model.parameter import WorkerType
-from dbgpt.core.interface.message import ModelMessage
-from dbgpt._private.pydantic import BaseModel
 
 WORKER_MANAGER_SERVICE_TYPE = "service"
 WORKER_MANAGER_SERVICE_NAME = "WorkerManager"

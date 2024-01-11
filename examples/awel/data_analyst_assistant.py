@@ -322,10 +322,12 @@ with DAG("dbgpt_awel_data_analyst_assistant") as dag:
 
     # Load and store chat history
     chat_history_load_task = ServePreChatHistoryLoadOperator()
-    last_k_round = int(os.getenv("DBGPT_AWEL_DATA_ANALYST_LAST_K_ROUND", 5))
-    # History transform task, here we keep last k round messages
+    keep_start_rounds = int(os.getenv("DBGPT_AWEL_DATA_ANALYST_KEEP_START_ROUNDS", 0))
+    keep_end_rounds = int(os.getenv("DBGPT_AWEL_DATA_ANALYST_KEEP_END_ROUNDS", 5))
+    # History transform task, here we keep `keep_start_rounds` round messages of history,
+    # and keep `keep_end_rounds` round messages of history.
     history_transform_task = BufferedConversationMapperOperator(
-        last_k_round=last_k_round
+        keep_start_rounds=keep_start_rounds, keep_end_rounds=keep_end_rounds
     )
     history_prompt_build_task = HistoryDynamicPromptBuilderOperator(
         history_key="chat_history"

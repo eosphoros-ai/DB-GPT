@@ -1,7 +1,9 @@
-from typing import Iterable, Optional, Any
-from sqlalchemy import text
+from typing import Any, Iterable, Optional
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
+
+from sqlalchemy import text
+
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.datasource.rdbms.dialect.starrocks.sqlalchemy import *
 

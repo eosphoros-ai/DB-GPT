@@ -1,12 +1,15 @@
-from typing import Type, Optional, Union, Dict, Any
+from typing import Any, Dict, Optional, Type, Union
+
 import pytest
 from sqlalchemy import Column, Integer, String
-from dbgpt._private.pydantic import BaseModel as PydanticBaseModel, Field
+
+from dbgpt._private.pydantic import BaseModel as PydanticBaseModel
+from dbgpt._private.pydantic import Field
 from dbgpt.storage.metadata.db_manager import (
+    BaseModel,
     DatabaseManager,
     PaginationResult,
     create_model,
-    BaseModel,
 )
 
 from .._base_dao import BaseDao

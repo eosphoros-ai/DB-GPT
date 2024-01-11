@@ -1,7 +1,7 @@
-from typing import Any, get_type_hints, get_origin, get_args
-from functools import wraps
-import inspect
 import asyncio
+import inspect
+from functools import wraps
+from typing import Any, get_args, get_origin, get_type_hints
 
 
 def _is_instance_of_generic_type(obj, generic_type):
@@ -65,9 +65,11 @@ def rearrange_args_by_type(func):
 
             from dbgpt.util.function_utils import rearrange_args_by_type
 
+
             @rearrange_args_by_type
             def sync_regular_function(a: int, b: str, c: float):
                 return a, b, c
+
 
             assert instance.sync_class_method(1, "b", 3.0) == (1, "b", 3.0)
             assert instance.sync_class_method("b", 3.0, 1) == (1, "b", 3.0)

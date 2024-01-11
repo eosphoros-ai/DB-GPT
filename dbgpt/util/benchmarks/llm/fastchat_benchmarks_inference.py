@@ -4,9 +4,10 @@ For benchmarks.
 
 """
 import gc
-from typing import Iterable, Dict
+from typing import Dict, Iterable
 
 import torch
+from fastchat.utils import get_context_length, is_partial_stop, is_sentence_complete
 from transformers.generation.logits_process import (
     LogitsProcessorList,
     RepetitionPenaltyLogitsProcessor,
@@ -14,9 +15,6 @@ from transformers.generation.logits_process import (
     TopKLogitsWarper,
     TopPLogitsWarper,
 )
-
-
-from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
 
 
 def prepare_logits_processor(

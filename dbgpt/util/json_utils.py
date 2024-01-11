@@ -1,10 +1,10 @@
 """Utilities for the json_fixes package."""
 import json
-from datetime import date, datetime
-from dataclasses import dataclass, asdict, is_dataclass
+import logging
 import os.path
 import re
-import logging
+from dataclasses import asdict, dataclass, is_dataclass
+from datetime import date, datetime
 
 from jsonschema import Draft7Validator
 

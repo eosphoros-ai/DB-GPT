@@ -1,14 +1,15 @@
 import pytest
-from dbgpt.util.tracer import (
-    Span,
-    SpanStorageType,
-    SpanStorage,
-    DefaultTracer,
-    TracerManager,
-    Tracer,
-    MemorySpanStorage,
-)
+
 from dbgpt.component import SystemApp
+from dbgpt.util.tracer import (
+    DefaultTracer,
+    MemorySpanStorage,
+    Span,
+    SpanStorage,
+    SpanStorageType,
+    Tracer,
+    TracerManager,
+)
 
 
 @pytest.fixture

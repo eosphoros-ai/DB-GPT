@@ -9,8 +9,8 @@ We have integrated fastchat. For details, see: dbgpt/model/model_adapter.py
 """
 
 import dataclasses
-from enum import auto, IntEnum
-from typing import List, Dict, Callable
+from enum import IntEnum, auto
+from typing import Callable, Dict, List
 
 
 class SeparatorStyle(IntEnum):

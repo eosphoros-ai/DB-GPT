@@ -3,7 +3,7 @@
 
 """We need to design a base class.  That other connector can Write with this"""
 from abc import ABC
-from typing import Iterable, List, Optional, Any, Dict
+from typing import Any, Dict, Iterable, List, Optional
 
 
 class BaseConnect(ABC):

@@ -2,16 +2,16 @@
 # -*- coding: utf-8 -*-
 import time
 
-from dbgpt.model.proxy.llms.chatgpt import chatgpt_generate_stream
-from dbgpt.model.proxy.llms.bard import bard_generate_stream
-from dbgpt.model.proxy.llms.claude import claude_generate_stream
-from dbgpt.model.proxy.llms.wenxin import wenxin_generate_stream
-from dbgpt.model.proxy.llms.tongyi import tongyi_generate_stream
-from dbgpt.model.proxy.llms.zhipu import zhipu_generate_stream
-from dbgpt.model.proxy.llms.gemini import gemini_generate_stream
 from dbgpt.model.proxy.llms.baichuan import baichuan_generate_stream
-from dbgpt.model.proxy.llms.spark import spark_generate_stream
+from dbgpt.model.proxy.llms.bard import bard_generate_stream
+from dbgpt.model.proxy.llms.chatgpt import chatgpt_generate_stream
+from dbgpt.model.proxy.llms.claude import claude_generate_stream
+from dbgpt.model.proxy.llms.gemini import gemini_generate_stream
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+from dbgpt.model.proxy.llms.spark import spark_generate_stream
+from dbgpt.model.proxy.llms.tongyi import tongyi_generate_stream
+from dbgpt.model.proxy.llms.wenxin import wenxin_generate_stream
+from dbgpt.model.proxy.llms.zhipu import zhipu_generate_stream
 
 
 def proxyllm_generate_stream(

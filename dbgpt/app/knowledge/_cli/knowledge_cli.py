@@ -1,7 +1,8 @@
-import click
+import functools
 import logging
 import os
-import functools
+
+import click
 
 from dbgpt.configs.model_config import DATASETS_DIR
 

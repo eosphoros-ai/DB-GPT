@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import logging
 
-from dbgpt.component import SystemApp
 from dbgpt._private.config import Config
+from dbgpt.app.base import WebServerParameters
+from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import MODEL_DISK_CACHE_DIR
 from dbgpt.util.executor_utils import DefaultExecutorFactory
-from dbgpt.app.base import WebServerParameters
-
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +20,9 @@ def initialize_components(
     embedding_model_path: str,
 ):
     # Lazy import to avoid high time cost
-    from dbgpt.model.cluster.controller.controller import controller
     from dbgpt.app.initialization.embedding_component import _initialize_embedding_model
     from dbgpt.app.initialization.serve_initialization import register_serve_apps
+    from dbgpt.model.cluster.controller.controller import controller
 
     # Register global default executor factory first
     system_app.register(DefaultExecutorFactory)
@@ -47,6 +46,7 @@ def initialize_components(
     )
     _initialize_model_cache(system_app)
     _initialize_awel(system_app, param)
+    _initialize_openapi(system_app)
     # Register serve apps
     register_serve_apps(system_app, CFG)
 
@@ -65,8 +65,8 @@ def _initialize_model_cache(system_app: SystemApp):
 
 
 def _initialize_awel(system_app: SystemApp, param: WebServerParameters):
-    from dbgpt.core.awel import initialize_awel
     from dbgpt.configs.model_config import _DAG_DEFINITION_DIR
+    from dbgpt.core.awel import initialize_awel
 
     # Add default dag definition dir
     dag_dirs = [_DAG_DEFINITION_DIR]
@@ -75,3 +75,9 @@ def _initialize_awel(system_app: SystemApp, param: WebServerParameters):
     dag_dirs = [x.strip() for x in dag_dirs]
 
     initialize_awel(system_app, dag_dirs)
+
+
+def _initialize_openapi(system_app: SystemApp):
+    from dbgpt.app.openapi.api_v1.editor.service import EditorService
+
+    system_app.register(EditorService)

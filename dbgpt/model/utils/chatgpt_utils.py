@@ -1,42 +1,41 @@
 from __future__ import annotations
 
-import os
-import logging
-from dataclasses import dataclass
-from abc import ABC
 import importlib.metadata as metadata
+import logging
+import os
+from abc import ABC
+from dataclasses import dataclass
 from typing import (
-    List,
-    Dict,
-    Any,
-    Optional,
     TYPE_CHECKING,
-    Union,
+    Any,
     AsyncIterator,
-    Callable,
     Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
 )
 
+from dbgpt._private.pydantic import model_to_json
 from dbgpt.component import ComponentType
-from dbgpt.core.operator import BaseLLM
-from dbgpt.core.awel import TransformStreamAbsOperator, BaseOperator
+from dbgpt.core.awel import BaseOperator, TransformStreamAbsOperator
 from dbgpt.core.interface.llm import (
-    ModelOutput,
-    ModelRequest,
-    ModelMetadata,
     LLMClient,
     MessageConverter,
+    ModelMetadata,
+    ModelOutput,
+    ModelRequest,
 )
-from dbgpt.model.cluster.client import DefaultLLMClient
+from dbgpt.core.operator import BaseLLM
 from dbgpt.model.cluster import WorkerManagerFactory
-from dbgpt._private.pydantic import model_to_json
+from dbgpt.model.cluster.client import DefaultLLMClient
 from dbgpt.model.utils.token_utils import ProxyTokenizerWrapper
 
 if TYPE_CHECKING:
     import httpx
     from httpx._types import ProxiesTypes
-    from openai import AsyncAzureOpenAI
-    from openai import AsyncOpenAI
+    from openai import AsyncAzureOpenAI, AsyncOpenAI
 
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
@@ -292,9 +291,10 @@ async def _to_openai_stream(
         model (Optional[str], optional): The model name. Defaults to None.
         model_caller (Callable[[None], Union[Awaitable[str], str]], optional): The model caller. Defaults to None.
     """
-    import json
-    import shortuuid
     import asyncio
+    import json
+
+    import shortuuid
     from fastchat.protocol.openai_api_protocol import (
         ChatCompletionResponseStreamChoice,
         ChatCompletionStreamResponse,

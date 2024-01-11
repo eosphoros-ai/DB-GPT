@@ -1,6 +1,7 @@
-import click
 import copy
 import logging
+
+import click
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -82,14 +83,14 @@ add_command_alias(stop_all, name="all", parent_group=stop)
 
 try:
     from dbgpt.model.cli import (
-        model_cli_group,
-        start_model_controller,
-        stop_model_controller,
-        start_model_worker,
-        stop_model_worker,
-        start_apiserver,
-        stop_apiserver,
         _stop_all_model_server,
+        model_cli_group,
+        start_apiserver,
+        start_model_controller,
+        start_model_worker,
+        stop_apiserver,
+        stop_model_controller,
+        stop_model_worker,
     )
 
     add_command_alias(model_cli_group, name="model", parent_group=cli)
@@ -107,10 +108,10 @@ except ImportError as e:
 
 try:
     from dbgpt.app._cli import (
-        start_webserver,
-        stop_webserver,
         _stop_all_dbgpt_server,
         migration,
+        start_webserver,
+        stop_webserver,
     )
 
     add_command_alias(start_webserver, name="webserver", parent_group=start)

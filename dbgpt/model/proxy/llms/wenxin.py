@@ -1,9 +1,11 @@
-import requests
 import json
 from typing import List
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+
+import requests
+from cachetools import TTLCache, cached
+
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
-from cachetools import cached, TTLCache
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 
 @cached(TTLCache(1, 1800))

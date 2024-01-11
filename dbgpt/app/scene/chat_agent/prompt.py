@@ -1,8 +1,7 @@
-from dbgpt.core.interface.prompt import PromptTemplate
 from dbgpt._private.config import Config
-from dbgpt.app.scene import ChatScene
-
+from dbgpt.app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt.app.scene.chat_execution.out_parser import PluginChatOutputParser
+from dbgpt.core import ChatPromptTemplate, HumanPromptTemplate, SystemPromptTemplate
 
 CFG = Config()
 
@@ -65,16 +64,19 @@ RESPONSE_FORMAT = None
 ### Whether the model service is streaming output
 PROMPT_NEED_STREAM_OUT = True
 
-prompt = PromptTemplate(
-    template_scene=ChatScene.ChatAgent.value(),
-    input_variables=["tool_list", "expand_constraints", "user_goal"],
-    response_format=None,
-    template_define=_PROMPT_SCENE_DEFINE,
-    template=_DEFAULT_TEMPLATE,
-    stream_out=PROMPT_NEED_STREAM_OUT,
-    output_parser=PluginChatOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
-    temperature=1
-    # example_selector=plugin_example,
+prompt = ChatPromptTemplate(
+    messages=[
+        SystemPromptTemplate.from_template(_PROMPT_SCENE_DEFINE + _DEFAULT_TEMPLATE),
+        HumanPromptTemplate.from_template("{user_goal}"),
+    ]
 )
 
-CFG.prompt_template_registry.register(prompt, is_default=True)
+prompt_adapter = AppScenePromptTemplateAdapter(
+    prompt=prompt,
+    template_scene=ChatScene.ChatAgent.value(),
+    stream_out=PROMPT_NEED_STREAM_OUT,
+    output_parser=PluginChatOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
+    need_historical_messages=False,
+    temperature=1,
+)
+CFG.prompt_template_registry.register(prompt_adapter, is_default=True)

@@ -1,7 +1,8 @@
 import logging
 from typing import List
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 logger = logging.getLogger(__name__)
 

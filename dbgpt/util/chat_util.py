@@ -1,5 +1,5 @@
 import asyncio
-from typing import Coroutine, List, Any
+from typing import Any, Coroutine, List
 
 from dbgpt.app.scene import BaseChat, ChatFactory
 

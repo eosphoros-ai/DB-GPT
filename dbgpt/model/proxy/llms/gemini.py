@@ -1,7 +1,7 @@
-from typing import List, Tuple, Dict, Any
+from typing import Any, Dict, List, Tuple
 
-from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 from dbgpt.core.interface.message import ModelMessage, parse_model_messages
+from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 
 GEMINI_DEFAULT_MODEL = "gemini-pro"
 
