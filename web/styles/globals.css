@@ -4,23 +4,31 @@
 
 body {
   margin: 0;
-  color: var(--joy-palette-text-primary, var(--joy-palette-neutral-800, #25252d));
   font-family: var(--joy-fontFamily-body, var(--joy-Josefin Sans, sans-serif));
-  font-size: var(--joy-fontSize-md, 1rem);
   line-height: var(--joy-lineHeight-md, 1.5);
-  background-color: var(--joy-palette-background-body);
+  --antd-primary-color: #0069fe;
 }
 
-body .ant-btn-primary {
-  background-color: #1677ff;
+.light {
+  color: #333;
+  background-color: #f7f7f7;
+}
+
+.dark {
+  color: #f7f7f7;
+  background-color: #151622;
+}
+
+.ant-btn-primary {
+  background-color: var(--antd-primary-color);
 }
 
 .ant-pagination .ant-pagination-prev * {
-  color: rgb(39, 155, 255) !important;
+  color: var(--antd-primary-color) !important;
 }
 
 .ant-pagination .ant-pagination-next * {
-  color: rgb(39, 155, 255) !important;
+  color: var(--antd-primary-color) !important;
 }
 
 .ant-pagination .ant-pagination-item a {
@@ -28,7 +36,7 @@ body .ant-btn-primary {
 }
 
 .ant-pagination .ant-pagination-item.ant-pagination-item-active {
-  background-color: rgb(39, 155, 255) !important;
+  background-color: var(--antd-primary-color) !important;
 }
 
 .ant-pagination .ant-pagination-item.ant-pagination-item-active a {
@@ -61,9 +69,11 @@ table tr td {
 .dark :where(.css-dev-only-do-not-override-18iikkb).ant-tabs .ant-tabs-tab-btn {
   color: white;
 }
-:where(.css-dev-only-do-not-override-18iikkb).ant-form-item .ant-form-item-label > label {
+
+:where(.css-dev-only-do-not-override-18iikkb).ant-form-item .ant-form-item-label>label {
   height: 36px;
 }
+
 @keyframes rotate {
   to {
     transform: rotate(360deg);
