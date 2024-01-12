@@ -3,8 +3,12 @@ import { apiInterceptors, getDialogueList, getUsableModels } from '@/client/api'
 import { useRequest } from 'ahooks';
 import { ChatHistoryResponse, DialogueListResponse, IChatDialogueSchema } from '@/types/chat';
 import { useSearchParams } from 'next/navigation';
+import { STORAGE_THEME_KEY } from '@/utils';
+
+type ThemeMode = 'dark' | 'light';
 
 interface IChatContext {
+  mode: ThemeMode;
   isContract?: boolean;
   isMenuExpand?: boolean;
   scene: IChatDialogueSchema['chat_mode'] | (string & {});
@@ -14,6 +18,7 @@ interface IChatContext {
   modelList: Array<string>;
   agentList: string[];
   dialogueList?: DialogueListResponse;
+  setMode: (mode: ThemeMode) => void;
   setAgentList?: (val: string[]) => void;
   setModel: (val: string) => void;
   setIsContract: (val: boolean) => void;
@@ -28,7 +33,14 @@ interface IChatContext {
   setDocId: (docId: number) => void;
 }
 
+function getDefaultTheme(): ThemeMode {
+  const theme = localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode;
+  if (theme) return theme;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 const ChatContext = createContext<IChatContext>({
+  mode: 'light',
   scene: '',
   chatId: '',
   modelList: [],
@@ -43,6 +55,7 @@ const ChatContext = createContext<IChatContext>({
   setDbParam: () => void 0,
   queryDialogueList: () => {},
   refreshDialogList: () => {},
+  setMode: () => void 0,
   history: [],
   setHistory: () => {},
   docId: undefined,
@@ -54,6 +67,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   const chatId = searchParams?.get('id') ?? '';
   const scene = searchParams?.get('scene') ?? '';
   const db_param = searchParams?.get('db_param') ?? '';
+
   const [isContract, setIsContract] = useState(false);
   const [model, setModel] = useState<string>('');
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(scene !== 'chat_dashboard');
@@ -61,6 +75,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   const [agentList, setAgentList] = useState<string[]>([]);
   const [history, setHistory] = useState<ChatHistoryResponse>([]);
   const [docId, setDocId] = useState<number>();
+  const [mode, setMode] = useState<ThemeMode>();
 
   const {
     run: queryDialogueList,
@@ -80,6 +95,11 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     const [, res] = await apiInterceptors(getUsableModels());
     return res ?? [];
   });
+
+  useEffect(() => {
+    setMode(getDefaultTheme());
+  }, []);
+
   useEffect(() => {
     setModel(modelList[0]);
   }, [modelList, modelList?.length]);
@@ -95,6 +115,8 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     dbParam: dbParam || db_param,
     dialogueList,
     agentList,
+    mode,
+    setMode,
     setAgentList,
     setModel,
     setIsContract,

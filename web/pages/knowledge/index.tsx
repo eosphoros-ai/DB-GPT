@@ -59,7 +59,7 @@ const Knowledge = () => {
   }
 
   return (
-    <div className="bg-[#FAFAFA] dark:bg-[#212121] w-full h-full">
+    <div className="bg-[#FAFAFA] dark:bg-transparent w-full h-full">
       <div className="page-body p-4 md:p-6 h-full overflow-auto">
         <Button
           type="primary"
@@ -71,7 +71,7 @@ const Knowledge = () => {
         >
           Create
         </Button>
-        <div className="flex flex-wrap mt-4">
+        <div className="flex flex-wrap mt-4 gap-4">
           {spaceList?.map((space: ISpace) => (
             <SpaceCard key={space.id} space={space} onAddDoc={onAddDoc} getSpaces={getSpaces} />
           ))}
