@@ -3,10 +3,11 @@ import { CopyOutlined } from '@ant-design/icons';
 import { oneDark, coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import copy from 'copy-to-clipboard';
-import { useColorScheme } from '@mui/joy';
+import { useContext } from 'react';
+import { ChatContext } from '@/app/chat-context';
 
 export function CodePreview({ code, language }: { code: string; language: string }) {
-  const { mode } = useColorScheme();
+  const { mode } = useContext(ChatContext);
 
   return (
     <div className="relative">

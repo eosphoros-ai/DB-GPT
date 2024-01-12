@@ -1,8 +1,6 @@
 import type { AppProps } from 'next/app';
 import React, { useContext, useEffect, useRef } from 'react';
 import SideBar from '@/components/layout/side-bar';
-import { CssVarsProvider, ThemeProvider, useColorScheme } from '@mui/joy/styles';
-import { joyTheme } from '@/defaultTheme';
 import TopProgressBar from '@/components/layout/top-progress-bar';
 import { useTranslation } from 'react-i18next';
 import { ChatContext, ChatContextProvider } from '@/app/chat-context';
