@@ -75,7 +75,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   const [agentList, setAgentList] = useState<string[]>([]);
   const [history, setHistory] = useState<ChatHistoryResponse>([]);
   const [docId, setDocId] = useState<number>();
-  const [mode, setMode] = useState<ThemeMode>();
+  const [mode, setMode] = useState<ThemeMode>('light');
 
   const {
     run: queryDialogueList,
