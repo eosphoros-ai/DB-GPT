@@ -78,7 +78,7 @@ function CompletionInput({ children, loading, onSubmit, handleFinish, ...props }
         }}
       />
       <Button
-        className="ml-2 flex items-center justify-center absolute right-2 bottom-0"
+        className="ml-2 flex items-center justify-center absolute right-0 bottom-0"
         size="large"
         type="text"
         loading={loading}

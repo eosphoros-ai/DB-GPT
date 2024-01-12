@@ -16,8 +16,8 @@ function DBCard({ info, onClick }: Props) {
 
   return (
     <div
-      className={`relative flex flex-col py-4 px-4 w-72 h-32 cursor-pointer rounded-lg justify-between text-black bg-white border-gray-200 border hover:shadow-md dark:border-gray-600 dark:bg-black dark:text-white dark:hover:border-white transition-all ${
-        info.disabled ? 'grayscale cursor-no-drop' : ''
+      className={`relative flex flex-col p-4 w-72 h-32 rounded justify-between text-black bg-white shadow-[0_8px_16px_-10px_rgba(100,100,100,.08)] hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.15)] dark:bg-[#232734] dark:text-white dark:hover:border-white transition-[transfrom_shadow] duration-300 hover:-translate-y-1 ${
+        info.disabled ? 'grayscale cursor-no-drop' : 'cursor-pointer'
       }`}
       onClick={handleClick}
     >

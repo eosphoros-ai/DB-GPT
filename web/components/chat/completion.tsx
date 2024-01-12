@@ -156,7 +156,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
                   }}
                 >
                   {content.role === 'view' && (
-                    <div className="flex w-full pt-2 md:pt-4 border-t border-gray-200 mt-2 md:mt-4 pl-2">
+                    <div className="flex w-full border-t border-gray-200 dark:border-theme-dark">
                       {scene === 'chat_knowledge' && content.retry ? (
                         <Button onClick={handleRetry} slots={{ root: IconButton }} slotProps={{ root: { variant: 'plain', color: 'primary' } }}>
                           <RedoOutlined />
@@ -198,7 +198,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
       </div>
       <div
         className={classNames(
-          'relative after:absolute after:-top-8 after:h-8 after:w-full after:bg-gradient-to-t after:from-white after:to-transparent dark:after:from-[#212121]',
+          'relative after:absolute after:-top-8 after:h-8 after:w-full after:bg-gradient-to-t after:from-theme-light after:to-transparent dark:after:from-theme-dark',
           {
             'cursor-not-allowed': scene === 'chat_excel' && !currentDialogue?.select_param,
           },
