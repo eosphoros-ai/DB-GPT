@@ -1,10 +1,13 @@
 import { Button, message } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneDark, coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import copy from 'copy-to-clipboard';
+import { useColorScheme } from '@mui/joy';
 
 export function CodePreview({ code, language }: { code: string; language: string }) {
+  const { mode } = useColorScheme();
+
   return (
     <div className="relative">
       <Button
@@ -16,7 +19,7 @@ export function CodePreview({ code, language }: { code: string; language: string
           message[success ? 'success' : 'error'](success ? 'Copy success' : 'Copy failed');
         }}
       />
-      <SyntaxHighlighter language={language} style={oneDark}>
+      <SyntaxHighlighter language={language} style={mode === 'dark' ? coldarkDark : oneDark}>
         {code}
       </SyntaxHighlighter>
     </div>
