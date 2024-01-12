@@ -1,15 +1,23 @@
 import os
 import glob
 import requests
+import logging
+import tiktoken
+import pypdf
+import asyncio
+import json
+import pdb
+import tqdm
+
 from urllib.parse import urlparse
 from typing import Callable, Dict, Literal, Optional, Union, List
 
-from dbgpt._private.config import Config
 from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.agent.plugin.commands.command_mange import ApiCall
 
-from ...memory.gpts_memory import GptsMemory
-from ..agent import Agent, AgentContext
+#from ...memory.gpts_memory import GptsMemory
+from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.agent.agents.agent import Agent, AgentContext
 
 try:
     from termcolor import colored
@@ -24,6 +32,8 @@ try:
     HAS_UNSTRUCTURED = True
 except ImportError:
     HAS_UNSTRUCTURED = False
+
+logger = logging.getLogger()
 
 TEXT_FORMATS = [
     "txt",
@@ -60,6 +70,8 @@ if HAS_UNSTRUCTURED:
     TEXT_FORMATS += UNSTRUCTURED_FORMATS
     TEXT_FORMATS = list(set(TEXT_FORMATS))
 
+VALID_CHUNK_MODES = frozenset({"one_line", "multi_lines"})
+
 
 class RetrieveSummaryAssistantAgent(ConversableAgent):
     """(In preview) Assistant agent, designed to solve a task with LLM.
@@ -73,19 +85,47 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
     """
 
     # TODO: Write a new default system message. This message is copied from AutoGen
-    DEFAULT_SYSTEM_MESSAGE = """You're a retrieve augmented chatbot. You answer user's questions based on your own knowledge and the
-        context provided by the user.
-        If you can't answer the question with or without the current context, you should reply exactly `UPDATE CONTEXT`.
-        You must give as short an answer as possible.
+    # DEFAULT_SYSTEM_MESSAGE = """You're a retrieve augmented summarizer. You answer user's questions based on the
+    #     file pathes and URLs provided by the user.
+    #     You must give as short an answer as possible.
+    #     Please complete this task step by step following instructions below:
+    #        1. You need to first detect user's question that you need to answer with your summarization.
+    #        2. Output the user's question with the following format - User's Question: user's question.
+    #        3. Extract the provided file pathes and URLs used for summarization.
+    #        4. Construct the extracted file pathes and URLs as a list of strings and output the file&URLs list with the following format: File&URLs List - file&URL list.
+    #        3. Then you need to summarize the content in the file&URLs list according to user's question.
+    #        4. Output the content of summarization ONLY related to user's question. The output language must be the same to user's question language.
 
-        User's question is: {input_question}
+    #        ####Important Notice####
+    #        If you can't answer the question with the provided file pathes, you should ONLY output "NO RELATIONSHIP.TERMINATE."!!.
+    # """
 
-        Context is: {input_context}
-    """
+    DEFAULT_SYSTEM_MESSAGE = """You're a expert extrater. You need to extract 
+        Please complete this task step by step following instructions below:
+           1. You need to first ONLY extract user's question that you need to answer without ANY file pathes and URLs.
+           3. Extract the provided file pathes and URLs.
+           4. Construct the extracted file pathes and URLs as a list of strings.
+           5. ONLY output the extracted results with the following json format: "{"user_question": user's question, "file_list": file&URL list}".
+        """
 
-    DEFAULT_DESCRIBE = """Summarize provided content according to user's questions and output the summaraization."""
+    PROMPT_QA = """You are a great summary writter to summarize the provided text content according to user questions.
 
-    NAME = "Retrieve_Summarizer"
+                User's Question is: {input_question}
+
+                Provided text content is: {input_context}
+
+                Please complete this task step by step following instructions below:
+                1. You need to first detect user's question that you need to answer with your summarization.
+                2. Then you need to summarize the provided text content that ONLY CAN ANSWER user's question and filter useless information as possible as you can. YOU CAN ONLY USE THE PROVIDED TEXT CONTENT!! DO NOT CREATE ANY SUMMARIZATION WITH YOUR OWN KNOWLEGE!!!
+                3. Output the content of summarization that ONLY CAN ANSWER user's question and filter useless information as possible as you can. The output language must be the same to user's question language!! You must give as short an summarization as possible!!! DO NOT CREATE ANY SUMMARIZATION WITH YOUR OWN KNOWLEGE!!!
+
+                ####Important Notice####
+                If the provided text content CAN NOT ANSWER user's question, ONLY output "NO RELATIONSHIP.UPDATE TEXT CONTENT."!!.
+                """
+
+    DEFAULT_DESCRIBE = """Summarize provided content according to user's questions and the provided file pathes."""
+
+    NAME = "RetrieveSummarizer"
 
     def __init__(
         self,
@@ -102,51 +142,24 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
             name=self.NAME,
             memory=memory,
             describe=describe,
-            system_message=self.DEFAULT_SYSTEM_MESSAGE,
+            system_message="",
             is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
-            human_input_mode=human_input_mode,
+            human_input_mode="NEVER",
             agent_context=agent_context,
-            retrieve_config = retrieve_config
             **kwargs,
         )
 
-        # Add parameters in retrieve_config
-        self._retrieve_config = {} if retrieve_config is None else retrieve_config
-        self._docs_path = self._retrieve_config.get("docs_path", None)
-        if "docs_path" not in self._retrieve_config:
-            logger.warning(
-                "docs_path is not provided in retrieve_config. "
-                "Set docs_path to None to suppress this warning."
-            )
-        self._model = self._retrieve_config.get("model", "gpt-4")
+        self.chunk_token_size = 4000
+        self.chunk_mode = "multi_lines"
+        self._model = "gpt-3.5-turbo-16k"
         self._max_tokens = self.get_max_tokens(self._model)
-        self._chunk_token_size = int(self._retrieve_config.get("chunk_token_size", self._max_tokens * 0.4))
-        self._chunk_mode = self._retrieve_config.get("chunk_mode", "multi_lines")
-        self._must_break_at_empty_line = self._retrieve_config.get("must_break_at_empty_line", True)
-        # self.customized_prompt = self._retrieve_config.get("customized_prompt", None)
-        # self.customized_answer_prefix = self._retrieve_config.get("customized_answer_prefix", "").upper()
-        # self.update_context = self._retrieve_config.get("update_context", True)
-        self._get_or_create = self._retrieve_config.get("get_or_create", False) if self._docs_path is not None else True
-        # self.custom_token_count_function = self._retrieve_config.get("custom_token_count_function", count_token)
-        # self.custom_text_split_function = self._retrieve_config.get("custom_text_split_function", None)
-        self._custom_text_types = self._retrieve_config.get("custom_text_types", TEXT_FORMATS)
-        # self._recursive = self._retrieve_config.get("recursive", True)
-        # self._context_max_tokens = self._max_tokens * 0.8
-        self._collection = True if self._docs_path is None else False  # whether the collection is created
-        self._doc_idx = -1  # the index of the current used doc
-        self._results = {}  # the results of the current query
-        self._intermediate_answers = set()  # the intermediate answers
-        self._doc_contents = []  # the contents of the current used doc
-        self._doc_ids = []  # the ids of the current used doc
-        self._search_string = ""  # the search string used in the current query
-        # update the termination message function
-        self._is_termination_msg = (
-            self._is_termination_msg_retrievechat if is_termination_msg is None else is_termination_msg
-        )
+        self.context_max_tokens = self._max_tokens * 0.8
+        self.search_string = ""  # the search string used in the current query
+        self.chunks = []
 
         # Register_reply
-        self.register_reply(Agent, RetrieveSummaryAssistantAgent.generate_summary_reply)
+        self.register_reply(Agent, RetrieveSummaryAssistantAgent.retrieve_summary_reply)
         self.agent_context = agent_context
 
     @staticmethod
@@ -172,10 +185,93 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         if not doc_contents:
             print(colored("No more context, will terminate.", "green"), flush=True)
             return "TERMINATE"
-        message = self.DEFAULT_SYSTEM_MESSAGE.format(input_question=self.problem, input_context=doc_contents)
+        message = self.DEFAULT_PROMPT.format(input_question=self.problem, input_context=doc_contents)
         return message
 
-    async def generate_retrieve_summary_reply(
+    async def a_generate_reply(
+        self,
+        message: Optional[Dict],
+        sender: Agent,
+        reviewer: Agent,
+        silent: Optional[bool] = False,
+        rely_messages: Optional[List[Dict]] = None,
+    ):
+
+        print("HERE IS THE MESSAGE!!!!!")
+        print(message['content'])
+        ## 1.Using LLM to reason user's question and list of file and URLs context
+        await self.a_system_fill_param()
+        await asyncio.sleep(5)  ##TODO  Rate limit reached for gpt-3.5-turbo
+        current_messages = self.process_now_message(message, sender, rely_messages)
+        print("HERE IS THE CURRENT MESSAGE!!!!!")
+        print(current_messages)
+        ai_reply, model = await self.a_reasoning_reply(messages=current_messages)
+        ai_reply_dic = json.loads(ai_reply)
+        user_question = ai_reply_dic['user_question']
+        file_list = ai_reply_dic['file_list']
+
+        ## 2. Split files and URLs in the file list dictionary into chunks
+        extracted_files = self._get_files_from_dir(file_list)
+        self.chunks = self._split_files_to_chunks(files=extracted_files)
+
+        ## New message build
+        new_message = {}
+        new_message["context"] = current_messages[-1].get("context", None)
+        new_message["current_gogal"] = current_messages[-1].get("current_gogal", None)
+        new_message["role"] = "assistant"
+        new_message["content"] = user_question
+        new_message["model_name"] = model
+        # current_messages.append(new_message)
+        ## 3. Update system message as a summarizer message for each chunk
+        print(len(self.chunks))
+        ## Summary message build
+        summary_message = {}
+        summary_message["context"] = message.get("context", None)
+        summary_message["current_gogal"] = message.get("current_gogal", None)
+
+        summaries = ""
+        count = 0
+        for chunk in self.chunks[:]:
+            count += 1
+            print(count)
+            temp_sys_message = self.PROMPT_QA.format(input_question = user_question, input_context=chunk)
+            self.update_system_message(system_message=temp_sys_message)
+            chunk_message = self.process_now_message(current_message=new_message, sender=sender, rely_messages=None)
+            chunk_message[0]["role"] = "assistant"
+            chunk_ai_reply, model = await self.a_reasoning_reply(messages=chunk_message)
+            if chunk_ai_reply != "NO RELATIONSHIP. UPDATE TEXT CONTENT.":
+                summaries += f"{chunk_ai_reply}\n"
+        
+        temp_sys_message = self.PROMPT_QA.format(input_question = user_question, input_context=summaries)
+        self.update_system_message(system_message=temp_sys_message)
+        final_summary_message = self.process_now_message(current_message=new_message, sender=sender, rely_messages=None)
+        final_summary_message[0]["role"] = "assistant"
+        final_summary_ai_reply, model = await self.a_reasoning_reply(messages=final_summary_message)
+        summary_message["content"] = final_summary_ai_reply
+        summary_message["model_name"] = model
+        print("HERE IS THE FINAL SUMMARY!!!!!")
+        print(final_summary_ai_reply)
+
+        ## 4.Review of reasoning results
+        approve = True
+        comments = None
+        if reviewer and final_summary_ai_reply:
+            approve, comments = await reviewer.a_review(final_summary_ai_reply, self)
+        summary_message["review_info"] = {"approve": approve, "comments": comments}
+
+        ## 3.reasoning result action
+        if approve:
+            excute_reply = await self.a_action_reply(
+                message=final_summary_ai_reply,
+                sender=sender,
+                reviewer=reviewer,
+            )
+            summary_message["action_report"] = self._process_action_reply(excute_reply)
+
+        # 4.verify reply
+        return await self.a_verify_reply(summary_message, sender, reviewer)
+
+    async def retrieve_summary_reply(
         self,
         message: Optional[str] = None,
         sender: Optional[Agent] = None,
@@ -185,25 +281,29 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         """Generate a reply with summary."""
 
         # TODO: 
-        # 1. Extract User Question from massage
+        # 1. Extract User Question from massage - Done with parameteres
         # 2. Extract file / webpage list from message
         # 3. Summarize each chunk
         # 4. Combine summarization of each chunk
-        summary_result = ""
+
+        fail_reason = None
         response_success = True
         view = None
         content = None
-        if message is None:
+        if message is None: 
             # Answer failed, turn on automatic repair
             fail_reason += f"Nothing is summarized, please check your input."
             response_success = False
         else:
             try:
-                vis_client = ApiCall()
-                content = summary_result
-                view = summary_result
+                if "NO RELATIONSHIP." in message:
+                    fail_reason = f"Return summarization error, the provided text content has no relationship to user's question. TERMINATE."
+                    response_success = False
+                else:
+                    content = message
+                    view = content
             except Exception as e:
-                fail_reason += f"Return summarization error, {str(e)}"
+                fail_reason = f"Return summarization error, {str(e)}"
                 response_success = False
 
         if not response_success:
@@ -213,56 +313,6 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
             "content": content,
             "view": view,
         }
-
-    def retrieve_docs(self, problem: str, n_results: int = 20, search_string: str = ""):
-        """Retrieve docs based on the given problem and assign the results to the class property `_results`.
-        In case you want to customize the retrieval process, such as using a different vector db whose APIs are not
-        compatible with chromadb or filter results with metadata, you can override this function. Just keep the current
-        parameters and add your own parameters with default values, and keep the results in below type.
-
-        Type of the results: Dict[str, List[List[Any]]], should have keys "ids" and "documents", "ids" for the ids of
-        the retrieved docs and "documents" for the contents of the retrieved docs. Any other keys are optional. Refer
-        to `chromadb.api.types.QueryResult` as an example.
-            ids: List[string]
-            documents: List[List[string]]
-
-        Args:
-            problem (str): the problem to be solved.
-            n_results (int): the number of results to be retrieved. Default is 20.
-            search_string (str): only docs that contain an exact match of this string will be retrieved. Default is "".
-        """
-        if not self._collection or not self._get_or_create:
-            print("Trying to create collection.")
-            self._client = create_vector_db_from_dir(
-                dir_path=self._docs_path,
-                max_tokens=self._chunk_token_size,
-                client=self._client,
-                collection_name=self._collection_name,
-                chunk_mode=self._chunk_mode,
-                must_break_at_empty_line=self._must_break_at_empty_line,
-                embedding_model=self._embedding_model,
-                get_or_create=self._get_or_create,
-                embedding_function=self._embedding_function,
-                custom_text_split_function=self.custom_text_split_function,
-                custom_text_types=self._custom_text_types,
-                recursive=self._recursive,
-                extra_docs=self._extra_docs,
-            )
-            self._collection = True
-            self._get_or_create = True
-
-        results = query_vector_db(
-            query_texts=[problem],
-            n_results=n_results,
-            search_string=search_string,
-            client=self._client,
-            collection_name=self._collection_name,
-            embedding_model=self._embedding_model,
-            embedding_function=self._embedding_function,
-        )
-        self._search_string = search_string
-        self._results = results
-        print("doc_ids: ", results["ids"])
 
     def _get_files_from_dir(self, dir_path: Union[str, List[str]], types: list = TEXT_FORMATS, recursive: bool = True):
         """Return a list of all the files in a given directory, a url, a file path or a list of them."""
@@ -307,7 +357,7 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
             raise ValueError(f"Directory {dir_path} does not exist.")
         return files
 
-    def _get_file_from_url(url: str, save_path: str = None):
+    def _get_file_from_url(self, url: str, save_path: str = None):
         """Download a file from a URL."""
         if save_path is None:
             os.makedirs("/tmp/DB-GPT/retrieved_urls", exist_ok=True)
@@ -322,10 +372,182 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         return save_path
 
 
-    def _is_url(string: str):
+    def _is_url(self, string: str):
         """Return True if the string is a valid URL."""
         try:
             result = urlparse(string)
             return all([result.scheme, result.netloc])
         except ValueError:
             return False
+
+    def _split_text_to_chunks(
+        self,
+        text: str,
+        max_tokens: int = 4000,
+        chunk_mode: str = "multi_lines",
+        must_break_at_empty_line: bool = True,
+        overlap: int = 10,
+    ):
+        """Split a long text into chunks of max_tokens."""
+        max_tokens = self.chunk_token_size
+        if chunk_mode not in VALID_CHUNK_MODES:
+            raise AssertionError
+        if chunk_mode == "one_line":
+            must_break_at_empty_line = False
+        chunks = []
+        lines = text.split("\n")
+        lines_tokens = [self._count_token(line) for line in lines]
+        sum_tokens = sum(lines_tokens)
+        while sum_tokens > max_tokens:
+            if chunk_mode == "one_line":
+                estimated_line_cut = 2
+            else:
+                estimated_line_cut = int(max_tokens / sum_tokens * len(lines)) + 1
+            cnt = 0
+            prev = ""
+            for cnt in reversed(range(estimated_line_cut)):
+                if must_break_at_empty_line and lines[cnt].strip() != "":
+                    continue
+                if sum(lines_tokens[:cnt]) <= max_tokens:
+                    prev = "\n".join(lines[:cnt])
+                    break
+            if cnt == 0:
+                logger.warning(
+                    f"max_tokens is too small to fit a single line of text. Breaking this line:\n\t{lines[0][:100]} ..."
+                )
+                if not must_break_at_empty_line:
+                    split_len = int(max_tokens / lines_tokens[0] * 0.9 * len(lines[0]))
+                    prev = lines[0][:split_len]
+                    lines[0] = lines[0][split_len:]
+                    lines_tokens[0] = self._count_token(lines[0])
+                else:
+                    logger.warning("Failed to split docs with must_break_at_empty_line being True, set to False.")
+                    must_break_at_empty_line = False
+            chunks.append(prev) if len(prev) > 10 else None  # don't add chunks less than 10 characters
+            lines = lines[cnt:]
+            lines_tokens = lines_tokens[cnt:]
+            sum_tokens = sum(lines_tokens)
+        text_to_chunk = "\n".join(lines)
+        chunks.append(text_to_chunk) if len(text_to_chunk) > 10 else None  # don't add chunks less than 10 characters
+        return chunks
+
+
+    def _extract_text_from_pdf(
+        self,
+        file: str
+    ) -> str:
+        """Extract text from PDF files"""
+        text = ""
+        with open(file, "rb") as f:
+            reader = pypdf.PdfReader(f)
+            if reader.is_encrypted:  # Check if the PDF is encrypted
+                try:
+                    reader.decrypt("")
+                except pypdf.errors.FileNotDecryptedError as e:
+                    logger.warning(f"Could not decrypt PDF {file}, {e}")
+                    return text  # Return empty text if PDF could not be decrypted
+
+            for page_num in range(len(reader.pages)):
+                page = reader.pages[page_num]
+                text += page.extract_text()
+
+        if not text.strip():  # Debugging line to check if text is empty
+            logger.warning(f"Could not decrypt PDF {file}")
+
+        return text
+
+
+    def _split_files_to_chunks(
+        self,
+        files: list,
+        max_tokens: int = 4000,
+        chunk_mode: str = "multi_lines",
+        must_break_at_empty_line: bool = True,
+        custom_text_split_function: Callable = None,
+    ):
+        """Split a list of files into chunks of max_tokens."""
+        max_tokens = self.chunk_token_size
+        chunks = []
+
+        for file in files:
+            _, file_extension = os.path.splitext(file)
+            file_extension = file_extension.lower()
+
+            if HAS_UNSTRUCTURED and file_extension[1:] in UNSTRUCTURED_FORMATS:
+                text = partition(file)
+                text = "\n".join([t.text for t in text]) if len(text) > 0 else ""
+            elif file_extension == ".pdf":
+                text = self._extract_text_from_pdf(file)
+            else:  # For non-PDF text-based files
+                with open(file, "r", encoding="utf-8", errors="ignore") as f:
+                    text = f.read()
+
+            if not text.strip():  # Debugging line to check if text is empty after reading
+                logger.warning(f"No text available in file: {file}")
+                continue  # Skip to the next file if no text is available
+
+            if custom_text_split_function is not None:
+                chunks += custom_text_split_function(text)
+            else:
+                chunks += self._split_text_to_chunks(text, max_tokens, chunk_mode, must_break_at_empty_line)
+
+        return chunks
+
+
+    def _count_token(self, input: Union[str, List, Dict], model: str = "gpt-3.5-turbo-0613") -> int:
+        """Count number of tokens used by an OpenAI model.
+        Args:
+            input: (str, list, dict): Input to the model.
+            model: (str): Model name.
+
+        Returns:
+            int: Number of tokens from the input.
+        """
+        if isinstance(input, str):
+            return self._num_token_from_text(input, model=model)
+        elif isinstance(input, list) or isinstance(input, dict):
+            return self._num_token_from_messages(input, model=model)
+        else:
+            raise ValueError("input must be str, list or dict")
+
+    def _num_token_from_text(self, text: str, model: str = "gpt-3.5-turbo-0613"):
+        """Return the number of tokens used by a string."""
+        try:
+            encoding = tiktoken.encoding_for_model(model)
+        except KeyError:
+            logger.warning(f"Model {model} not found. Using cl100k_base encoding.")
+            encoding = tiktoken.get_encoding("cl100k_base")
+        return len(encoding.encode(text))
+
+
+if __name__ == "__main__":
+    import asyncio
+    import os
+
+    from dbgpt.agent.agents.agent import AgentContext
+    from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
+    
+    from dbgpt.core.interface.llm import ModelMetadata
+    from dbgpt.model import OpenAILLMClient
+
+    llm_client = OpenAILLMClient()
+    context: AgentContext = AgentContext(conv_id="retrieve_summarize", llm_provider=llm_client)
+    context.llm_models = [ModelMetadata(model="gpt-3.5-turbo-16k")]
+
+    default_memory = GptsMemory()
+    summarizer = RetrieveSummaryAssistantAgent(memory=default_memory, agent_context=context)
+
+    user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
+
+    asyncio.run(
+        user_proxy.a_initiate_chat(
+            recipient=summarizer,
+            reviewer=user_proxy,
+            message="""I want to summarize advantages of Nuclear Power. 
+            You can refer the following PDFs: ['/home/ubuntu/chenguang-dbgpt/DB-GPT/dbgpt/agent/agents/expand/Nuclear_power.pdf', '/home/ubuntu/chenguang-dbgpt/DB-GPT/dbgpt/agent/agents/expand/Taylor_Swift.pdf']
+            """,
+        )
+    )
+
+    ## dbgpt-vis message infos
+    # print(asyncio.run(default_memory.one_plan_chat_competions("summarize")))
