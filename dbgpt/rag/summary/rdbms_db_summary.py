@@ -1,7 +1,8 @@
 from typing import List
+
 from dbgpt._private.config import Config
-from dbgpt.rag.summary.db_summary import DBSummary
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
+from dbgpt.rag.summary.db_summary import DBSummary
 
 CFG = Config()
 

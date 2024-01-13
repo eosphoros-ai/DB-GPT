@@ -2,7 +2,7 @@ from typing import Any, List, Optional
 
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.task.base import IN
-from dbgpt.rag.knowledge.base import KnowledgeType, Knowledge
+from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 
 

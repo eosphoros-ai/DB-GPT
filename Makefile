@@ -44,10 +44,12 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/isort dbgpt/core/
 	$(VENV_BIN)/isort dbgpt/datasource/
 	$(VENV_BIN)/isort dbgpt/model/
+	$(VENV_BIN)/isort dbgpt/rag/
 	# TODO: $(VENV_BIN)/isort dbgpt/serve
 	$(VENV_BIN)/isort dbgpt/serve/core/
 	$(VENV_BIN)/isort dbgpt/serve/agent/
 	$(VENV_BIN)/isort dbgpt/serve/conversation/
+	$(VENV_BIN)/isort dbgpt/serve/rag/
 	$(VENV_BIN)/isort dbgpt/serve/utils/_template_files
 	$(VENV_BIN)/isort dbgpt/storage/
 	$(VENV_BIN)/isort dbgpt/train/
@@ -68,6 +70,7 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/blackdoc dbgpt/core/
 	$(VENV_BIN)/blackdoc dbgpt/datasource/
 	$(VENV_BIN)/blackdoc dbgpt/model/
+	$(VENV_BIN)/blackdoc dbgpt/rag/
 	$(VENV_BIN)/blackdoc dbgpt/serve/
 	# TODO: $(VENV_BIN)/blackdoc dbgpt/storage/
 	$(VENV_BIN)/blackdoc dbgpt/train/

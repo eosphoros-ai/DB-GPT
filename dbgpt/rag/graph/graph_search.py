@@ -2,11 +2,11 @@ import logging
 import os
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Optional, Dict, Any, Set, Callable
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from langchain.schema import Document
 
-from dbgpt.rag.graph.node import BaseNode, TextNode, NodeWithScore
+from dbgpt.rag.graph.node import BaseNode, NodeWithScore, TextNode
 from dbgpt.rag.graph.search import BaseSearch, SearchMode
 
 logger = logging.getLogger(__name__)
@@ -77,9 +77,10 @@ class RAGGraphSearch(BaseSearch):
 
     async def _extract_entities_by_llm(self, text: str) -> Set[str]:
         """extract subject entities from text by llm"""
+        import uuid
+
         from dbgpt.app.scene import ChatScene
         from dbgpt.util.chat_util import llm_chat_response_nostream
-        import uuid
 
         chat_param = {
             "chat_session_id": uuid.uuid1(),

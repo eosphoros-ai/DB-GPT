@@ -11,9 +11,8 @@ from typing import Dict, List, Optional, Sequence, Set
 
 from dataclasses_json import DataClassJsonMixin
 
-
 from dbgpt.rag.graph.index_type import IndexStructType
-from dbgpt.rag.graph.node import TextNode, BaseNode
+from dbgpt.rag.graph.node import BaseNode, TextNode
 
 # TODO: legacy backport of old Node class
 Node = TextNode

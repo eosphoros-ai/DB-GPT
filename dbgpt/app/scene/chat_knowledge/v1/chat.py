@@ -80,10 +80,6 @@ class ChatKnowledge(BaseChat):
             vector_store_config=config,
         )
         query_rewrite = None
-        self.worker_manager = CFG.SYSTEM_APP.get_component(
-            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-        ).create()
-        self.llm_client = DefaultLLMClient(worker_manager=self.worker_manager)
         if CFG.KNOWLEDGE_SEARCH_REWRITE:
             query_rewrite = QueryRewrite(
                 llm_client=self.llm_client,

@@ -1,5 +1,6 @@
 from typing import List, Optional
-from dbgpt.core import LLMClient, ModelMessage, ModelRequest, ModelMessageRoleType
+
+from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelRequest
 
 REWRITE_PROMPT_TEMPLATE_EN = """
 Based on the given context {context}, Generate {nums} search queries related to: {original_query}, Provide following comma-separated format: 'queries: <queries>'":

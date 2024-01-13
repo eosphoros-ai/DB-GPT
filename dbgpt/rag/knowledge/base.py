@@ -1,14 +1,14 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Optional, Any, List
+from typing import Any, List, Optional
 
 from dbgpt.rag.chunk import Document
 from dbgpt.rag.text_splitter.text_splitter import (
-    RecursiveCharacterTextSplitter,
-    MarkdownHeaderTextSplitter,
-    ParagraphTextSplitter,
     CharacterTextSplitter,
+    MarkdownHeaderTextSplitter,
     PageTextSplitter,
+    ParagraphTextSplitter,
+    RecursiveCharacterTextSplitter,
     SeparatorTextSplitter,
 )
 

@@ -1,7 +1,7 @@
-from typing import Optional, Any, List
+from typing import Any, List, Optional
 
 from dbgpt.rag.chunk import Document
-from dbgpt.rag.knowledge.base import KnowledgeType, Knowledge, ChunkStrategy
+from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge, KnowledgeType
 
 
 class URLKnowledge(Knowledge):

@@ -1,12 +1,9 @@
 import logging
-
 import traceback
-from dbgpt.component import SystemApp
-from dbgpt._private.config import Config
-from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
-)
 
+from dbgpt._private.config import Config
+from dbgpt.component import SystemApp
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
 
 logger = logging.getLogger(__name__)
@@ -44,8 +41,8 @@ class DBSummaryClient:
     def get_db_summary(self, dbname, query, topk):
         """get user query related tables info"""
 
-        from dbgpt.storage.vector_store.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
+        from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
         vector_store_config = VectorStoreConfig(name=dbname + "_profile")
         vector_connector = VectorStoreConnector.from_default(
@@ -82,8 +79,8 @@ class DBSummaryClient:
         dbname(str): dbname
         """
         vector_store_name = dbname + "_profile"
-        from dbgpt.storage.vector_store.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
+        from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
         vector_store_config = VectorStoreConfig(name=vector_store_name)
         vector_connector = VectorStoreConnector.from_default(

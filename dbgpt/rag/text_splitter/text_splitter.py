@@ -1,7 +1,7 @@
 import copy
 import logging
 import re
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from typing import (
     Any,
     Callable,
@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from dbgpt.rag.chunk import Document, Chunk
+from dbgpt.rag.chunk import Chunk, Document
 
 logger = logging.getLogger(__name__)
 

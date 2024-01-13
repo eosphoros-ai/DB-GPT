@@ -1,4 +1,5 @@
 from typing import List, Optional
+
 from llama_index.data_structs.data_structs import IndexStruct
 from llama_index.storage.index_store.utils import (
     index_struct_to_json,

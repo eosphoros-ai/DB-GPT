@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Any, List
+from typing import Any, List, Optional
 
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkParameters

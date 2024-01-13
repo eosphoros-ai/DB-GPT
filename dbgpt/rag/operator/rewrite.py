@@ -1,4 +1,4 @@
-from typing import Any, Optional, List
+from typing import Any, List, Optional
 
 from dbgpt.core import LLMClient
 from dbgpt.core.awel import MapOperator
