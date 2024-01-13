@@ -176,7 +176,7 @@ class ModelRequest:
     """The stop token ids of the model inference."""
     context_len: Optional[int] = None
     """The context length of the model inference."""
-    echo: Optional[bool] = True
+    echo: Optional[bool] = False
     """Whether to echo the input messages."""
     span_id: Optional[str] = None
     """The span id of the model inference."""
@@ -246,6 +246,7 @@ class ModelRequest:
         messages: List[ModelMessage],
         context: Optional[Union[ModelRequestContext, Dict[str, Any], BaseModel]] = None,
         stream: Optional[bool] = False,
+        echo: Optional[bool] = False,
         **kwargs,
     ):
         if not context:
@@ -262,6 +263,7 @@ class ModelRequest:
             model=model,
             messages=messages,
             context=context,
+            echo=echo,
             **kwargs,
         )
 

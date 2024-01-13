@@ -97,6 +97,7 @@ class AppChatComposerOperator(MapOperator[ChatComposerInput, ModelRequest]):
             temperature=self._temperature,
             max_new_tokens=self._max_new_tokens,
             span_id=span_id,
+            echo=self._echo,
         )
         return model_request
 

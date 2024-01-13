@@ -44,7 +44,7 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
         """ TODO Multi mode output handler,  rewrite this for multi model, use adapter mode.
         """
         model_context = data.get("model_context")
-        has_echo = True
+        has_echo = False
         if model_context and "prompt_echo_len_char" in model_context:
             prompt_echo_len_char = int(model_context.get("prompt_echo_len_char", -1))
             has_echo = bool(model_context.get("echo", False))
