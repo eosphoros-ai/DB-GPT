@@ -41,14 +41,19 @@ class BaseQuery(orm.Query):
             .. code-block:: python
 
                 from dbgpt.storage.metadata import db, Model
+
+
                 class User(Model):
-                     __tablename__ = "user"
-                     id = Column(Integer, primary_key=True)
-                     name = Column(String(50))
-                     fullname = Column(String(50))
+                    __tablename__ = "user"
+                    id = Column(Integer, primary_key=True)
+                    name = Column(String(50))
+                    fullname = Column(String(50))
+
 
                 with db.session() as session:
-                    pagination = session.query(User).paginate_query(page=1, page_size=10)
+                    pagination = session.query(User).paginate_query(
+                        page=1, page_size=10
+                    )
                     print(pagination)
 
 
@@ -100,13 +105,21 @@ class DatabaseManager:
 
             from urllib.parse import quote_plus as urlquote, quote
             from dbgpt.storage.metadata import DatabaseManager, create_model
+
             db = DatabaseManager()
             # Use sqlite with memory storage.
             url = f"sqlite:///:memory:"
-            engine_args = {"pool_size": 10, "max_overflow": 20, "pool_timeout": 30, "pool_recycle": 3600, "pool_pre_ping": True}
+            engine_args = {
+                "pool_size": 10,
+                "max_overflow": 20,
+                "pool_timeout": 30,
+                "pool_recycle": 3600,
+                "pool_pre_ping": True,
+            }
             db.init_db(url, engine_args=engine_args)
 
             Model = create_model(db)
+
 
             class User(Model):
                 __tablename__ = "user"
@@ -114,11 +127,15 @@ class DatabaseManager:
                 name = Column(String(50))
                 fullname = Column(String(50))
 
+
             with db.session() as session:
                 session.add(User(name="test", fullname="test"))
                 # db will commit the session automatically default.
                 # session.commit()
-                assert session.query(User).filter(User.name == "test").first().name == "test"
+                assert (
+                    session.query(User).filter(User.name == "test").first().name
+                    == "test"
+                )
 
 
             # More usage:
@@ -307,6 +324,7 @@ class DatabaseManager:
             >>> db.init_default_db(sqlite_path)
             >>> with db.session() as session:
             ...     session.query(...)
+            ...
 
         Args:
             sqlite_path (str): The sqlite path.
@@ -353,12 +371,17 @@ class DatabaseManager:
 
                 from dbgpt.storage.metadata import DatabaseManager
                 from sqlalchemy import Column, Integer, String
+
                 db = DatabaseManager.build_from("sqlite:///:memory:")
+
+
                 class User(db.Model):
                     __tablename__ = "user"
                     id = Column(Integer, primary_key=True)
                     name = Column(String(50))
                     fullname = Column(String(50))
+
+
                 db.create_all()
                 with db.session() as session:
                     session.add(User(name="test", fullname="test"))
@@ -397,7 +420,8 @@ Examples:
     >>> sqlite_path = "/tmp/dbgpt.db"
     >>> db.init_default_db(sqlite_path)
     >>> with db.session() as session:
-    >>>     session.query(...)
+    ...     session.query(...)
+    ...
     
     >>> from dbgpt.storage.metadata import db, Model
     >>> from urllib.parse import quote_plus as urlquote, quote
@@ -407,16 +431,24 @@ Examples:
     >>> user = "root"
     >>> password = "123456"
     >>> url = f"mysql+pymysql://{quote(user)}:{urlquote(password)}@{db_host}:{str(db_port)}/{db_name}"
-    >>> engine_args = {"pool_size": 10, "max_overflow": 20, "pool_timeout": 30, "pool_recycle": 3600, "pool_pre_ping": True}
+    >>> engine_args = {
+    ...     "pool_size": 10,
+    ...     "max_overflow": 20,
+    ...     "pool_timeout": 30,
+    ...     "pool_recycle": 3600,
+    ...     "pool_pre_ping": True,
+    ... }
     >>> db.init_db(url, engine_args=engine_args)
     >>> class User(Model):
-    >>>     __tablename__ = "user"
-    >>>     id = Column(Integer, primary_key=True)
-    >>>     name = Column(String(50))
-    >>>     fullname = Column(String(50))
+    ...     __tablename__ = "user"
+    ...     id = Column(Integer, primary_key=True)
+    ...     name = Column(String(50))
+    ...     fullname = Column(String(50))
+    ...
     >>> with db.session() as session:
-    >>>     session.add(User(name="test", fullname="test"))
-    >>>     session.commit()
+    ...     session.add(User(name="test", fullname="test"))
+    ...     session.commit()
+    ...
 """
 
 

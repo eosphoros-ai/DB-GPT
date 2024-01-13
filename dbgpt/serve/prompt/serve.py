@@ -5,9 +5,9 @@ from sqlalchemy import URL
 
 from dbgpt.component import SystemApp
 from dbgpt.core import PromptManager
-
-from dbgpt.storage.metadata import DatabaseManager
 from dbgpt.serve.core import BaseServe
+from dbgpt.storage.metadata import DatabaseManager
+
 from .api.endpoints import init_endpoints, router
 from .config import (
     APP_NAME,

@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import os
-from typing import List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from dbgpt.util.singleton import Singleton
 
 if TYPE_CHECKING:
     from auto_gpt_plugin_template import AutoGPTPluginTemplate
+
     from dbgpt.component import SystemApp
 
 

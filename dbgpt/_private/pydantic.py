@@ -10,10 +10,10 @@ if pydantic.VERSION.startswith("1."):
         NonNegativeInt,
         PositiveFloat,
         PositiveInt,
+        PrivateAttr,
         ValidationError,
         root_validator,
         validator,
-        PrivateAttr,
     )
 else:
     PYDANTIC_VERSION = 2
@@ -26,10 +26,10 @@ else:
         NonNegativeInt,
         PositiveFloat,
         PositiveInt,
+        PrivateAttr,
         ValidationError,
         root_validator,
         validator,
-        PrivateAttr,
     )
 
 
