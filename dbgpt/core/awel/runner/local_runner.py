@@ -35,9 +35,8 @@ class DefaultWorkflowRunner(WorkflowRunner):
             node_to_outputs=node_outputs,
             node_name_to_ids=job_manager._node_name_to_ids,
         )
-        logger.info(
-            f"Begin run workflow from end operator, id: {node.node_id}, call_data: {call_data}"
-        )
+        logger.info(f"Begin run workflow from end operator, id: {node.node_id}")
+        logger.debug(f"Node id {node.node_id}, call_data: {call_data}")
         skip_node_ids = set()
         system_app: SystemApp = DAGVar.get_current_system_app()
 

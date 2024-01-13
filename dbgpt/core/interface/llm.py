@@ -208,7 +208,7 @@ class ModelRequest:
             map(lambda m: m if isinstance(m, dict) else m.dict(), new_reqeust.messages)
         )
         # Skip None fields
-        return {k: v for k, v in asdict(new_reqeust).items() if v}
+        return {k: v for k, v in asdict(new_reqeust).items() if v is not None}
 
     def to_trace_metadata(self):
         metadata = self.to_dict()

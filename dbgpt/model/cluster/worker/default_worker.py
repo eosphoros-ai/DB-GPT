@@ -295,6 +295,8 @@ class DefaultModelWorker(ModelWorker):
                 self.model, self.model_path
             )
         str_prompt = params.get("prompt")
+        if not str_prompt:
+            str_prompt = params.get("string_prompt")
         print(
             f"llm_adapter: {str(self.llm_adapter)}\n\nmodel prompt: \n\n{str_prompt}\n\n{stream_type}stream output:\n"
         )

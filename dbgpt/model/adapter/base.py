@@ -440,6 +440,7 @@ class LLMModelAdapter(ABC):
                 for m in messages
             ]
             params["messages"] = messages
+        params["string_prompt"] = ModelMessage.messages_to_string(messages)
 
         if not self.apply_conv_template():
             # No need to apply conversation template, now for proxy LLM
