@@ -57,9 +57,8 @@ class SummaryAssembler(BaseAssembler):
         from dbgpt.rag.extractor.summary import SummaryExtractor
 
         self._extractor = extractor or SummaryExtractor(
-            llm_client=self._llm_client, model_name=self._model_name
+            llm_client=self._llm_client, model_name=self._model_name, language=language
         )
-        self._language = language
         super().__init__(
             knowledge=knowledge,
             chunk_parameters=chunk_parameters,
