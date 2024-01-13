@@ -1,17 +1,15 @@
 import logging
 from typing import AsyncIterator, Dict, List, Union
 
-from dbgpt.component import ComponentType
-from dbgpt.core import ModelOutput
+from dbgpt.core import ModelOutput, ModelRequest
 from dbgpt.core.awel import (
+    BaseOperator,
     BranchFunc,
     BranchOperator,
     MapOperator,
     StreamifyAbsOperator,
     TransformStreamAbsOperator,
 )
-from dbgpt.core.awel.operator.base import BaseOperator
-from dbgpt.model.cluster import WorkerManager, WorkerManagerFactory
 from dbgpt.storage.cache import CacheManager, LLMCacheClient, LLMCacheKey, LLMCacheValue
 
 logger = logging.getLogger(__name__)
@@ -20,70 +18,7 @@ _LLM_MODEL_INPUT_VALUE_KEY = "llm_model_input_value"
 _LLM_MODEL_OUTPUT_CACHE_KEY = "llm_model_output_cache"
 
 
-class ModelStreamOperator(StreamifyAbsOperator[Dict, ModelOutput]):
-    """Operator for streaming processing of model outputs.
-
-    Args:
-        worker_manager (WorkerManager): The manager that handles worker processes for model inference.
-        **kwargs: Additional keyword arguments.
-
-    Methods:
-        streamify: Asynchronously processes a stream of inputs, yielding model outputs.
-    """
-
-    def __init__(self, worker_manager: WorkerManager = None, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.worker_manager = worker_manager
-
-    async def streamify(self, input_value: Dict) -> AsyncIterator[ModelOutput]:
-        """Process inputs as a stream and yield model outputs.
-
-        Args:
-            input_value (Dict): The input value for the model.
-
-        Returns:
-            AsyncIterator[ModelOutput]: An asynchronous iterator of model outputs.
-        """
-        if not self.worker_manager:
-            self.worker_manager = self.system_app.get_component(
-                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-            ).create()
-        async for out in self.worker_manager.generate_stream(input_value):
-            yield out
-
-
-class ModelOperator(MapOperator[Dict, ModelOutput]):
-    """Operator for map-based processing of model outputs.
-
-    Args:
-        worker_manager (WorkerManager): Manager for handling worker processes.
-        **kwargs: Additional keyword arguments.
-
-    Methods:
-        map: Asynchronously processes a single input and returns the model output.
-    """
-
-    def __init__(self, worker_manager: WorkerManager = None, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.worker_manager = worker_manager
-
-    async def map(self, input_value: Dict) -> ModelOutput:
-        """Process a single input and return the model output.
-
-        Args:
-            input_value (Dict): The input value for the model.
-
-        Returns:
-            ModelOutput: The output from the model.
-        """
-        if not self.worker_manager:
-            self.worker_manager = self.system_app.get_component(
-                ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-            ).create()
-        return await self.worker_manager.generate(input_value)
-
-
-class CachedModelStreamOperator(StreamifyAbsOperator[Dict, ModelOutput]):
+class CachedModelStreamOperator(StreamifyAbsOperator[ModelRequest, ModelOutput]):
     """Operator for streaming processing of model outputs with caching.
 
     Args:
@@ -99,11 +34,11 @@ class CachedModelStreamOperator(StreamifyAbsOperator[Dict, ModelOutput]):
         self._cache_manager = cache_manager
         self._client = LLMCacheClient(cache_manager)
 
-    async def streamify(self, input_value: Dict) -> AsyncIterator[ModelOutput]:
+    async def streamify(self, input_value: ModelRequest) -> AsyncIterator[ModelOutput]:
         """Process inputs as a stream with cache support and yield model outputs.
 
         Args:
-            input_value (Dict): The input value for the model.
+            input_value (ModelRequest): The input value for the model.
 
         Returns:
             AsyncIterator[ModelOutput]: An asynchronous iterator of model outputs.
@@ -116,7 +51,7 @@ class CachedModelStreamOperator(StreamifyAbsOperator[Dict, ModelOutput]):
             yield out
 
 
-class CachedModelOperator(MapOperator[Dict, ModelOutput]):
+class CachedModelOperator(MapOperator[ModelRequest, ModelOutput]):
     """Operator for map-based processing of model outputs with caching.
 
     Args:
@@ -132,11 +67,11 @@ class CachedModelOperator(MapOperator[Dict, ModelOutput]):
         self._cache_manager = cache_manager
         self._client = LLMCacheClient(cache_manager)
 
-    async def map(self, input_value: Dict) -> ModelOutput:
+    async def map(self, input_value: ModelRequest) -> ModelOutput:
         """Process a single input with cache support and return the model output.
 
         Args:
-            input_value (Dict): The input value for the model.
+            input_value (ModelRequest): The input value for the model.
 
         Returns:
             ModelOutput: The output from the model.
@@ -148,7 +83,7 @@ class CachedModelOperator(MapOperator[Dict, ModelOutput]):
         return llm_cache_value.get_value().output
 
 
-class ModelCacheBranchOperator(BranchOperator[Dict, Dict]):
+class ModelCacheBranchOperator(BranchOperator[ModelRequest, Dict]):
     """
     A branch operator that decides whether to use cached data or to process data using the model.
 
@@ -172,16 +107,18 @@ class ModelCacheBranchOperator(BranchOperator[Dict, Dict]):
         self._model_task_name = model_task_name
         self._cache_task_name = cache_task_name
 
-    async def branches(self) -> Dict[BranchFunc[Dict], Union[BaseOperator, str]]:
+    async def branches(
+        self,
+    ) -> Dict[BranchFunc[ModelRequest], Union[BaseOperator, str]]:
         """Defines branch logic based on cache availability.
 
         Returns:
             Dict[BranchFunc[Dict], Union[BaseOperator, str]]: A dictionary mapping branch functions to task names.
         """
 
-        async def check_cache_true(input_value: Dict) -> bool:
+        async def check_cache_true(input_value: ModelRequest) -> bool:
             # Check if the cache contains the result for the given input
-            if not input_value["model_cache_enable"]:
+            if input_value.context and not input_value.context.cache_enable:
                 return False
             cache_dict = _parse_cache_key_dict(input_value)
             cache_key: LLMCacheKey = self._client.new_key(**cache_dict)
@@ -190,11 +127,11 @@ class ModelCacheBranchOperator(BranchOperator[Dict, Dict]):
                 f"cache_key: {cache_key}, hash key: {hash(cache_key)}, cache_value: {cache_value}"
             )
             await self.current_dag_context.save_to_share_data(
-                _LLM_MODEL_INPUT_VALUE_KEY, cache_key
+                _LLM_MODEL_INPUT_VALUE_KEY, cache_key, overwrite=True
             )
             return True if cache_value else False
 
-        async def check_cache_false(input_value: Dict):
+        async def check_cache_false(input_value: ModelRequest):
             # Inverse of check_cache_true
             return not await check_cache_true(input_value)
 
@@ -275,7 +212,7 @@ class ModelSaveCacheOperator(MapOperator[ModelOutput, ModelOutput]):
         return input_value
 
 
-def _parse_cache_key_dict(input_value: Dict) -> Dict:
+def _parse_cache_key_dict(input_value: ModelRequest) -> Dict:
     """Parses and extracts relevant fields from input to form a cache key dictionary.
 
     Args:
@@ -284,17 +221,15 @@ def _parse_cache_key_dict(input_value: Dict) -> Dict:
     Returns:
         Dict: A dictionary used for generating cache keys.
     """
-    prompt: str = input_value.get("prompt")
-    if prompt:
-        prompt = prompt.strip()
+    prompt: str = input_value.messages_to_string().strip()
     return {
         "prompt": prompt,
-        "model_name": input_value.get("model"),
-        "temperature": input_value.get("temperature"),
-        "max_new_tokens": input_value.get("max_new_tokens"),
-        "top_p": input_value.get("top_p", "1.0"),
+        "model_name": input_value.model,
+        "temperature": input_value.temperature,
+        "max_new_tokens": input_value.max_new_tokens,
+        # "top_p": input_value.get("top_p", "1.0"),
         # TODO pass model_type
-        "model_type": input_value.get("model_type", "huggingface"),
+        # "model_type": input_value.get("model_type", "huggingface"),
     }
 
 

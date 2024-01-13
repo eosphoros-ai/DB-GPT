@@ -9,6 +9,7 @@ from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 def bard_generate_stream(
     model: ProxyModel, tokenizer, params, device, context_len=2048
 ):
+    # TODO: Support new bard ProxyLLMClient
     model_params = model.get_params()
     print(f"Model: {model}, model_params: {model_params}")
 
