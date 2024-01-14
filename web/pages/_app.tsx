@@ -12,6 +12,8 @@ import { STORAGE_LANG_KEY } from '@/utils';
 import { ConfigProvider, MappingAlgorithm, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import enUS from 'antd/locale/en_US';
+import { CssVarsProvider, ThemeProvider, useColorScheme } from '@mui/joy';
+import { joyTheme } from '@/defaultTheme';
 
 const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
   return {
