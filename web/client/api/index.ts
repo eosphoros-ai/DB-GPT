@@ -15,6 +15,9 @@ export type FailedTuple = [Error | AxiosError, null, null, null];
 
 const ins = axios.create({
   baseURL: process.env.API_BASE_URL ?? '',
+  headers: {
+    'user-id': '2da0e570f4104cf7a35c2305712b4334',
+  },
 });
 
 const LONG_TIME_API: string[] = [

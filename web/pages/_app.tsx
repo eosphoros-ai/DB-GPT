@@ -10,12 +10,10 @@ import classNames from 'classnames';
 import '../styles/globals.css';
 import '../nprogress.css';
 import '../app/i18n';
-import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils';
+import { STORAGE_LANG_KEY } from '@/utils';
 import { ConfigProvider, MappingAlgorithm, theme } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import enUS from 'antd/locale/en_US';
-
-type ThemeMode = ReturnType<typeof useColorScheme>['mode'];
 
 const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
   return {
@@ -29,6 +27,11 @@ const antdDarkTheme: MappingAlgorithm = (seedToken, mapToken) => {
 function CssWrapper({ children }: { children: React.ReactElement }) {
   const { mode } = useContext(ChatContext);
   const { i18n } = useTranslation();
+  const { setMode: setMuiMode } = useColorScheme();
+
+  useEffect(() => {
+    setMuiMode(mode);
+  }, [mode]);
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -83,11 +86,15 @@ function LayoutWrapper({ children }: { children: React.ReactNode }) {
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ChatContextProvider>
-      <CssWrapper>
-        <LayoutWrapper>
-          <Component {...pageProps} />
-        </LayoutWrapper>
-      </CssWrapper>
+      <ThemeProvider theme={joyTheme}>
+        <CssVarsProvider theme={joyTheme} defaultMode="light">
+          <CssWrapper>
+            <LayoutWrapper>
+              <Component {...pageProps} />
+            </LayoutWrapper>
+          </CssWrapper>
+        </CssVarsProvider>
+      </ThemeProvider>
     </ChatContextProvider>
   );
 }
