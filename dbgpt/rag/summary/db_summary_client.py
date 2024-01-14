@@ -53,9 +53,9 @@ class DBSummaryClient:
             embedding_fn=self.embeddings,
             vector_store_config=vector_store_config,
         )
-        from dbgpt.rag.retriever.db_struct import DBStructRetriever
+        from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 
-        retriever = DBStructRetriever(
+        retriever = DBSchemaRetriever(
             top_k=topk, vector_store_connector=vector_connector
         )
         table_docs = retriever.retrieve(query)
@@ -92,9 +92,9 @@ class DBSummaryClient:
             vector_store_config=vector_store_config,
         )
         if not vector_connector.vector_name_exists():
-            from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler
+            from dbgpt.serve.rag.assembler.db_schema import DBSchemaAssembler
 
-            db_assembler = DBStructAssembler.load_from_connection(
+            db_assembler = DBSchemaAssembler.load_from_connection(
                 connection=db_summary_client.db, vector_store_connector=vector_connector
             )
             if len(db_assembler.get_chunks()) > 0:

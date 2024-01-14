@@ -4,7 +4,7 @@ from typing import List
 
 import dbgpt
 from dbgpt.rag.chunk import Chunk
-from dbgpt.rag.retriever.db_struct import DBStructRetriever
+from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 
 
@@ -22,7 +22,7 @@ def mock_vector_store_connector():
 
 @pytest.fixture
 def dbstruct_retriever(mock_db_connection, mock_vector_store_connector):
-    return DBStructRetriever(
+    return DBSchemaRetriever(
         connection=mock_db_connection,
         vector_store_connector=mock_vector_store_connector,
     )

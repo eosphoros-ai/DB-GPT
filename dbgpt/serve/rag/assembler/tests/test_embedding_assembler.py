@@ -7,7 +7,7 @@ from dbgpt.rag.chunk_manager import ChunkParameters, SplitterType
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.rag.text_splitter.text_splitter import CharacterTextSplitter
-from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler
+from dbgpt.serve.rag.assembler.db_schema import DBSchemaAssembler
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 
@@ -66,7 +66,7 @@ def test_load_knowledge(
     mock_chunk_parameters.chunk_strategy = "CHUNK_BY_SIZE"
     mock_chunk_parameters.text_splitter = CharacterTextSplitter()
     mock_chunk_parameters.splitter_type = SplitterType.USER_DEFINE
-    assembler = DBStructAssembler(
+    assembler = DBSchemaAssembler(
         connection=mock_db_connection,
         chunk_parameters=mock_chunk_parameters,
         embedding_factory=mock_embedding_factory,
