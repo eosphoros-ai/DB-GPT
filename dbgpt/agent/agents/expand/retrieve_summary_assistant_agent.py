@@ -393,7 +393,7 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         """Download a file from a URL."""
         current_directory = os.path.dirname(os.path.abspath(__file__))
         if save_path is None:
-            target_directory = os.path.join(current_directory, "../../../pilot/data")
+            target_directory = os.path.join(current_directory, "../../../../pilot/data")
             os.makedirs(
                 target_directory, exist_ok=True
             )
