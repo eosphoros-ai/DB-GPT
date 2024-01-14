@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Any, List
+from typing import Any, List, Optional
 
 from dbgpt.core import LLMClient
 from dbgpt.rag.chunk import Chunk

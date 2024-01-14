@@ -1,13 +1,14 @@
-from typing import Optional, Any, List
+from typing import Any, List, Optional
+
+import docx
 
 from dbgpt.rag.chunk import Document
 from dbgpt.rag.knowledge.base import (
-    KnowledgeType,
-    Knowledge,
     ChunkStrategy,
     DocumentType,
+    Knowledge,
+    KnowledgeType,
 )
-import docx
 
 
 class DocxKnowledge(Knowledge):

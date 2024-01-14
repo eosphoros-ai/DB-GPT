@@ -1,6 +1,6 @@
 from typing import Iterable, List
 
-from dbgpt.rag.chunk import Document, Chunk
+from dbgpt.rag.chunk import Chunk, Document
 from dbgpt.rag.text_splitter.text_splitter import TextSplitter
 
 

@@ -76,12 +76,12 @@ def _save_call_data(
         return id2call_data
     if len(root_nodes) == 1:
         node = root_nodes[0]
-        logger.info(f"Save call data to node {node.node_id}, call_data: {call_data}")
+        logger.debug(f"Save call data to node {node.node_id}, call_data: {call_data}")
         id2call_data[node.node_id] = call_data
     else:
         for node in root_nodes:
             node_id = node.node_id
-            logger.info(
+            logger.debug(
                 f"Save call data to node {node.node_id}, call_data: {call_data.get(node_id)}"
             )
             id2call_data[node_id] = call_data.get(node_id)

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 import requests
-from pydantic import Field, Extra, BaseModel
+from pydantic import BaseModel, Extra, Field
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -54,12 +54,12 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             from .embeddings import HuggingFaceEmbeddings
 
             model_name = "sentence-transformers/all-mpnet-base-v2"
-            model_kwargs = {'device': 'cpu'}
-            encode_kwargs = {'normalize_embeddings': False}
+            model_kwargs = {"device": "cpu"}
+            encode_kwargs = {"normalize_embeddings": False}
             hf = HuggingFaceEmbeddings(
                 model_name=model_name,
                 model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs
+                encode_kwargs=encode_kwargs,
             )
     """
 
@@ -142,12 +142,12 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
             from langchain.embeddings import HuggingFaceInstructEmbeddings
 
             model_name = "hkunlp/instructor-large"
-            model_kwargs = {'device': 'cpu'}
-            encode_kwargs = {'normalize_embeddings': True}
+            model_kwargs = {"device": "cpu"}
+            encode_kwargs = {"normalize_embeddings": True}
             hf = HuggingFaceInstructEmbeddings(
                 model_name=model_name,
                 model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs
+                encode_kwargs=encode_kwargs,
             )
     """
 
@@ -221,12 +221,12 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
             from langchain.embeddings import HuggingFaceBgeEmbeddings
 
             model_name = "BAAI/bge-large-en"
-            model_kwargs = {'device': 'cpu'}
-            encode_kwargs = {'normalize_embeddings': True}
+            model_kwargs = {"device": "cpu"}
+            encode_kwargs = {"normalize_embeddings": True}
             hf = HuggingFaceBgeEmbeddings(
                 model_name=model_name,
                 model_kwargs=model_kwargs,
-                encode_kwargs=encode_kwargs
+                encode_kwargs=encode_kwargs,
             )
     """
 
@@ -336,7 +336,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
 
                 hf_embeddings = HuggingFaceInferenceAPIEmbeddings(
                     api_key="your_api_key",
-                    model_name="sentence-transformers/all-MiniLM-l6-v2"
+                    model_name="sentence-transformers/all-MiniLM-l6-v2",
                 )
                 texts = ["Hello, world!", "How are you?"]
                 hf_embeddings.embed_documents(texts)

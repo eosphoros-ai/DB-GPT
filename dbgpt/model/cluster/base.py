@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from dbgpt._private.pydantic import BaseModel
 from dbgpt.core.interface.message import ModelMessage
@@ -24,6 +24,8 @@ class PromptRequest(BaseModel):
     """Whether to return metrics of inference"""
     version: str = "v2"
     """Message version, default to v2"""
+    context: Dict[str, Any] = None
+    """Context information for the model"""
 
 
 class EmbeddingsRequest(BaseModel):

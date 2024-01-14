@@ -1,12 +1,12 @@
 from functools import reduce
 from typing import List, Optional
 
-from dbgpt.rag.retriever.rewrite import QueryRewrite
-from dbgpt.util.chat_util import run_async_tasks
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever
-from dbgpt.rag.retriever.rerank import Ranker, DefaultRanker
+from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
+from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.util.chat_util import run_async_tasks
 
 
 class EmbeddingRetriever(BaseRetriever):
@@ -25,31 +25,38 @@ class EmbeddingRetriever(BaseRetriever):
             query_rewrite (Optional[QueryRewrite]): query rewrite
             rerank (Ranker): rerank
             vector_store_connector (VectorStoreConnector): vector store connector
-            code example:
+
+        Examples:
+
             .. code-block:: python
-            >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
-            >>> from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-            >>> from dbgpt.rag.retriever.embedding import EmbeddingRetriever
-            >>> from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 
-            embedding_factory = DefaultEmbeddingFactory()
-            from dbgpt.rag.retriever.embedding import EmbeddingRetriever
-            from dbgpt.storage.vector_store.connector import VectorStoreConnector
+                from dbgpt.storage.vector_store.connector import VectorStoreConnector
+                from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
+                from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+                from dbgpt.rag.embedding.embedding_factory import (
+                    DefaultEmbeddingFactory,
+                )
 
-            embedding_fn = embedding_factory.create(
-                model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
-            )
-            vector_name = "test"
-            config = ChromaVectorConfig(name=vector_name, embedding_fn=embedding_fn)
-            vector_store_connector = VectorStoreConnector(
-                vector_store_type=""Chroma"",
-                vector_store_config=config,
-            )
-            embedding_retriever = EmbeddingRetriever(
-                top_k=3, vector_store_connector=vector_store_connector
-            )
-            chunks = embedding_retriever.retrieve("your query text")
-            print(f"embedding retriever results:{[chunk.content for chunk in chunks]}")
+                embedding_factory = DefaultEmbeddingFactory()
+                from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+                from dbgpt.storage.vector_store.connector import VectorStoreConnector
+
+                embedding_fn = embedding_factory.create(
+                    model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+                )
+                vector_name = "test"
+                config = ChromaVectorConfig(name=vector_name, embedding_fn=embedding_fn)
+                vector_store_connector = VectorStoreConnector(
+                    vector_store_type="Chroma",
+                    vector_store_config=config,
+                )
+                embedding_retriever = EmbeddingRetriever(
+                    top_k=3, vector_store_connector=vector_store_connector
+                )
+                chunks = embedding_retriever.retrieve("your query text")
+                print(
+                    f"embedding retriever results:{[chunk.content for chunk in chunks]}"
+                )
         """
         self._top_k = top_k
         self._query_rewrite = query_rewrite

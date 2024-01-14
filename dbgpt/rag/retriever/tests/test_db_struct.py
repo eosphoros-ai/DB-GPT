@@ -1,6 +1,7 @@
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from typing import List
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 import dbgpt
 from dbgpt.rag.chunk import Chunk

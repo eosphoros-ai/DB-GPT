@@ -421,13 +421,13 @@ def test_parse_model_messages_multiple_system_messages():
 def test_to_openai_messages(
     human_model_message, ai_model_message, system_model_message
 ):
-    none_messages = ModelMessage.to_openai_messages([])
+    none_messages = ModelMessage.to_common_messages([])
     assert none_messages == []
 
-    single_messages = ModelMessage.to_openai_messages([human_model_message])
+    single_messages = ModelMessage.to_common_messages([human_model_message])
     assert single_messages == [{"role": "user", "content": human_model_message.content}]
 
-    normal_messages = ModelMessage.to_openai_messages(
+    normal_messages = ModelMessage.to_common_messages(
         [
             system_model_message,
             human_model_message,
@@ -446,7 +446,7 @@ def test_to_openai_messages(
 def test_to_openai_messages_convert_to_compatible_format(
     human_model_message, ai_model_message, system_model_message
 ):
-    shuffle_messages = ModelMessage.to_openai_messages(
+    shuffle_messages = ModelMessage.to_common_messages(
         [
             system_model_message,
             human_model_message,

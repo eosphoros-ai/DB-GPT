@@ -1,7 +1,6 @@
-from typing import Optional
-from typing import List
+from typing import List, Optional
 
-from dbgpt.rag.knowledge.base import KnowledgeType, Knowledge
+from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType
 from dbgpt.rag.knowledge.string import StringKnowledge
 from dbgpt.rag.knowledge.url import URLKnowledge
 
@@ -32,11 +31,21 @@ class KnowledgeFactory:
         Args:
              datasource: path of the file to convert
              knowledge_type: type of knowledge
-        Example:
+
+        Examples:
+
             .. code-block:: python
-            >>> from dbgpt.rag.knowledge.factory import KnowledgeFactory
-            >>> url_knowlege = KnowledgeFactory.create(datasource="https://www.baidu.com", knowledge_type=KnowledgeType.URL)
-            >>> doc_knowlege = KnowledgeFactory.create(datasource="path/to/document.pdf", knowledge_type=KnowledgeType.DOCUMENT)
+
+                from dbgpt.rag.knowledge.factory import KnowledgeFactory
+
+                url_knowlege = KnowledgeFactory.create(
+                    datasource="https://www.baidu.com", knowledge_type=KnowledgeType.URL
+                )
+                doc_knowlege = KnowledgeFactory.create(
+                    datasource="path/to/document.pdf",
+                    knowledge_type=KnowledgeType.DOCUMENT,
+                )
+
         """
         match knowledge_type:
             case KnowledgeType.DOCUMENT:
@@ -57,13 +66,22 @@ class KnowledgeFactory:
         knowledge_type: Optional[KnowledgeType] = KnowledgeType.DOCUMENT,
     ) -> Knowledge:
         """Create knowledge from path
+
         Args:
             param file_path: path of the file to convert
             param knowledge_type: type of knowledge
-        Example:
+
+        Examples:
+
             .. code-block:: python
-            >>> from dbgpt.rag.knowledge.factory import KnowledgeFactory
-            >>> doc_knowlege = KnowledgeFactory.create(datasource="path/to/document.pdf", knowledge_type=KnowledgeType.DOCUMENT)
+
+                from dbgpt.rag.knowledge.factory import KnowledgeFactory
+
+                doc_knowlege = KnowledgeFactory.create(
+                    datasource="path/to/document.pdf",
+                    knowledge_type=KnowledgeType.DOCUMENT,
+                )
+
         """
         factory = cls(file_path=file_path, knowledge_type=knowledge_type)
         return factory._select_document_knowledge(
@@ -76,13 +94,21 @@ class KnowledgeFactory:
         knowledge_type: Optional[KnowledgeType] = KnowledgeType.URL,
     ) -> Knowledge:
         """Create knowledge from url
+
         Args:
             param url: url of the file to convert
             param knowledge_type: type of knowledge
-        Example:
+
+        Examples:
+
             .. code-block:: python
-            >>> from dbgpt.rag.knowledge.factory import KnowledgeFactory
-            >>> url_knowlege = KnowledgeFactory.create(datasource="https://www.baidu.com", knowledge_type=KnowledgeType.URL)
+
+                from dbgpt.rag.knowledge.factory import KnowledgeFactory
+
+                url_knowlege = KnowledgeFactory.create(
+                    datasource="https://www.baidu.com", knowledge_type=KnowledgeType.URL
+                )
+
         """
         return URLKnowledge(
             url=url,
@@ -130,14 +156,14 @@ class KnowledgeFactory:
     def _get_knowledge_subclasses() -> List[Knowledge]:
         """get all knowledge subclasses"""
         from dbgpt.rag.knowledge.base import Knowledge
-        from dbgpt.rag.knowledge.pdf import PDFKnowledge
-        from dbgpt.rag.knowledge.docx import DocxKnowledge
-        from dbgpt.rag.knowledge.markdown import MarkdownKnowledge
         from dbgpt.rag.knowledge.csv import CSVKnowledge
-        from dbgpt.rag.knowledge.txt import TXTKnowledge
-        from dbgpt.rag.knowledge.pptx import PPTXKnowledge
+        from dbgpt.rag.knowledge.docx import DocxKnowledge
         from dbgpt.rag.knowledge.html import HTMLKnowledge
-        from dbgpt.rag.knowledge.url import URLKnowledge
+        from dbgpt.rag.knowledge.markdown import MarkdownKnowledge
+        from dbgpt.rag.knowledge.pdf import PDFKnowledge
+        from dbgpt.rag.knowledge.pptx import PPTXKnowledge
         from dbgpt.rag.knowledge.string import StringKnowledge
+        from dbgpt.rag.knowledge.txt import TXTKnowledge
+        from dbgpt.rag.knowledge.url import URLKnowledge
 
         return Knowledge.__subclasses__()

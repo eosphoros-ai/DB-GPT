@@ -201,7 +201,8 @@ class DefaultModelWorker(ModelWorker):
 
     def get_model_metadata(self, params: Dict) -> ModelMetadata:
         ext_metadata = ModelExtraMedata(
-            prompt_sep=self.llm_adapter.get_default_message_separator()
+            prompt_roles=self.llm_adapter.get_prompt_roles(),
+            prompt_sep=self.llm_adapter.get_default_message_separator(),
         )
         return ModelMetadata(
             model=self.model_name,
@@ -294,6 +295,8 @@ class DefaultModelWorker(ModelWorker):
                 self.model, self.model_path
             )
         str_prompt = params.get("prompt")
+        if not str_prompt:
+            str_prompt = params.get("string_prompt")
         print(
             f"llm_adapter: {str(self.llm_adapter)}\n\nmodel prompt: \n\n{str_prompt}\n\n{stream_type}stream output:\n"
         )
@@ -332,19 +335,25 @@ class DefaultModelWorker(ModelWorker):
     ):
         finish_reason = None
         usage = None
+        error_code = 0
         if isinstance(output, dict):
             finish_reason = output.get("finish_reason")
             usage = output.get("usage")
             output = output["text"]
             if finish_reason is not None:
                 logger.info(f"finish_reason: {finish_reason}")
+        elif isinstance(output, ModelOutput):
+            finish_reason = output.finish_reason
+            usage = output.usage
+            error_code = output.error_code
+            output = output.text
         incremental_output = output[len(previous_response) :]
         print(incremental_output, end="", flush=True)
 
         metrics = _new_metrics_from_model_output(last_metrics, is_first_generate, usage)
         model_output = ModelOutput(
             text=output,
-            error_code=0,
+            error_code=error_code,
             model_context=model_context,
             finish_reason=finish_reason,
             usage=usage,

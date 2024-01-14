@@ -126,7 +126,8 @@ class ModelLoader:
         elif model_type == ModelType.LLAMA_CPP:
             return llamacpp_loader(llm_adapter, model_params)
         elif model_type == ModelType.PROXY:
-            return proxyllm_loader(llm_adapter, model_params)
+            # return proxyllm_loader(llm_adapter, model_params)
+            return llm_adapter.load_from_params(model_params)
         elif model_type == ModelType.VLLM:
             return llm_adapter.load_from_params(model_params)
         else:

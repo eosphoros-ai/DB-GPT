@@ -1,11 +1,11 @@
 import os
-from typing import Optional, Any, List
+from typing import Any, List, Optional
 
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.rag.chunk import Chunk
-from dbgpt.rag.chunk_manager import ChunkParameters, ChunkManager
+from dbgpt.rag.chunk_manager import ChunkManager, ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-from dbgpt.rag.knowledge.base import Knowledge, ChunkStrategy
+from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary

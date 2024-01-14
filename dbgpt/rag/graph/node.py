@@ -8,9 +8,9 @@ from hashlib import sha256
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.schema import Document
-from dbgpt._private.pydantic import BaseModel, Field, root_validator
 from typing_extensions import Self
 
+from dbgpt._private.pydantic import BaseModel, Field, root_validator
 
 DEFAULT_TEXT_NODE_TMPL = "{metadata_str}\n\n{content}"
 DEFAULT_METADATA_TMPL = "{key}: {value}"

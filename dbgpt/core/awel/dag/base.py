@@ -384,7 +384,7 @@ class DAGContext:
         return self._share_data.get(key)
 
     async def save_to_share_data(
-        self, key: str, data: Any, overwrite: Optional[str] = None
+        self, key: str, data: Any, overwrite: bool = False
     ) -> None:
         if key in self._share_data and not overwrite:
             raise ValueError(f"Share data key {key} already exists")
@@ -407,7 +407,7 @@ class DAGContext:
         return self.get_from_share_data(_build_task_key(task_name, key))
 
     async def save_task_share_data(
-        self, task_name: str, key: str, data: Any, overwrite: Optional[str] = None
+        self, task_name: str, key: str, data: Any, overwrite: bool = False
     ) -> None:
         """Save share data by task name and key
 
@@ -415,7 +415,7 @@ class DAGContext:
             task_name (str): The task name
             key (str): The share data key
             data (Any): The share data
-            overwrite (Optional[str], optional): Whether overwrite the share data if the key already exists.
+            overwrite (bool): Whether overwrite the share data if the key already exists.
                 Defaults to None.
 
         Raises:

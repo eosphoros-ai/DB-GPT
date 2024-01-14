@@ -4,7 +4,7 @@ from typing import Callable, List, Optional
 from pydantic import BaseModel, Field, PrivateAttr
 
 from dbgpt.util.global_helper import globals_helper
-from dbgpt.util.splitter_utils import split_by_sep, split_by_char
+from dbgpt.util.splitter_utils import split_by_char, split_by_sep
 
 DEFAULT_METADATA_FORMAT_LEN = 2
 DEFAULT_CHUNK_OVERLAP = 20
