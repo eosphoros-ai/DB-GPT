@@ -391,13 +391,14 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
 
     def _get_file_from_url(self, url: str, save_path: str = None):
         """Download a file from a URL."""
-        current_directory = os.getcwd()
+        current_directory = os.path.dirname(os.path.abspath(__file__))
         if save_path is None:
+            target_directory = os.path.join(current_directory, "../../../pilot/data")
             os.makedirs(
-                os.path.join(current_directory, "retrieved_urls"), exist_ok=True
+                target_directory, exist_ok=True
             )
             save_path = os.path.join(
-                os.path.join(current_directory, "retrieved_urls"), os.path.basename(url)
+                target_directory, os.path.basename(url)
             )
         else:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
