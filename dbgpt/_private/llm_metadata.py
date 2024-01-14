@@ -1,4 +1,4 @@
-from dbgpt._private.pydantic import Field, BaseModel
+from dbgpt._private.pydantic import BaseModel, Field
 
 DEFAULT_CONTEXT_WINDOW = 3900
 DEFAULT_NUM_OUTPUTS = 256

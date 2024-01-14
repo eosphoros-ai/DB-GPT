@@ -19,7 +19,7 @@ _IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
 _OLD_MODELS = [
     "llama-cpp",
-    "proxyllm",
+    # "proxyllm",
     "gptj-6b",
     "codellama-13b-sql-sft",
     "codellama-7b",
@@ -45,6 +45,7 @@ def get_llm_model_adapter(
 
     # Import NewHFChatModelAdapter for it can be registered
     from dbgpt.model.adapter.hf_adapter import NewHFChatModelAdapter
+    from dbgpt.model.adapter.proxy_adapter import ProxyLLMModelAdapter
 
     new_model_adapter = get_model_adapter(
         model_type, model_name, model_path, conv_factory

@@ -9,6 +9,12 @@ from .base import BaseOperator
 class StreamifyAbsOperator(BaseOperator[OUT], ABC, Generic[IN, OUT]):
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
         curr_task_ctx: TaskContext[OUT] = dag_ctx.current_task_context
+        call_data = curr_task_ctx.call_data
+        if call_data:
+            call_data = await curr_task_ctx._call_data_to_output()
+            output = await call_data.streamify(self.streamify)
+            curr_task_ctx.set_task_output(output)
+            return output
         output = await curr_task_ctx.task_input.parent_outputs[0].task_output.streamify(
             self.streamify
         )

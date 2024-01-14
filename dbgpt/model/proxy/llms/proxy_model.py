@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from dbgpt.model.parameter import ProxyModelParameters
+from dbgpt.model.proxy.base import ProxyLLMClient
 from dbgpt.model.utils.token_utils import ProxyTokenizerWrapper
 
 if TYPE_CHECKING:
@@ -13,9 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 class ProxyModel:
-    def __init__(self, model_params: ProxyModelParameters) -> None:
+    def __init__(
+        self,
+        model_params: ProxyModelParameters,
+        proxy_llm_client: Optional[ProxyLLMClient] = None,
+    ) -> None:
         self._model_params = model_params
         self._tokenizer = ProxyTokenizerWrapper()
+        self.proxy_llm_client = proxy_llm_client
 
     def get_params(self) -> ProxyModelParameters:
         return self._model_params

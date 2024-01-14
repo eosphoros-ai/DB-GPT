@@ -19,24 +19,24 @@ class DefaultWorkflowRunner(WorkflowRunner):
         node: BaseOperator,
         call_data: Optional[CALL_DATA] = None,
         streaming_call: bool = False,
-        dag_ctx: Optional[DAGContext] = None,
+        exist_dag_ctx: Optional[DAGContext] = None,
     ) -> DAGContext:
         # Save node output
         # dag = node.dag
         job_manager = JobManager.build_from_end_node(node, call_data)
-        if not dag_ctx:
+        if not exist_dag_ctx:
             # Create DAG context
             node_outputs: Dict[str, TaskContext] = {}
-            dag_ctx = DAGContext(
-                streaming_call=streaming_call,
-                node_to_outputs=node_outputs,
-                node_name_to_ids=job_manager._node_name_to_ids,
-            )
         else:
-            node_outputs = dag_ctx._node_to_outputs
-        logger.info(
-            f"Begin run workflow from end operator, id: {node.node_id}, call_data: {call_data}"
+            # Share node output with exist dag context
+            node_outputs = exist_dag_ctx._node_to_outputs
+        dag_ctx = DAGContext(
+            streaming_call=streaming_call,
+            node_to_outputs=node_outputs,
+            node_name_to_ids=job_manager._node_name_to_ids,
         )
+        logger.info(f"Begin run workflow from end operator, id: {node.node_id}")
+        logger.debug(f"Node id {node.node_id}, call_data: {call_data}")
         skip_node_ids = set()
         system_app: SystemApp = DAGVar.get_current_system_app()
 

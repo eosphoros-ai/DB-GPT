@@ -37,7 +37,7 @@ class MixinLLMOperator(BaseLLM, BaseOperator, ABC):
                 self._llm_client = DefaultLLMClient(worker_manager_factory.create())
             else:
                 if self._default_llm_client is None:
-                    from dbgpt.model.utils.chatgpt_utils import OpenAILLMClient
+                    from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 
                     self._default_llm_client = OpenAILLMClient()
                 logger.info(

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional, Callable, Tuple, List
+from typing import Any, Callable, List, Optional, Tuple
 
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -87,9 +87,10 @@ class RAGGraphEngine:
 
     def _llm_extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract triplets from text by llm"""
+        import uuid
+
         from dbgpt.app.scene import ChatScene
         from dbgpt.util.chat_util import llm_chat_response_nostream
-        import uuid
 
         chat_param = {
             "chat_session_id": uuid.uuid1(),

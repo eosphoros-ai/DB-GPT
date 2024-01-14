@@ -13,6 +13,7 @@ BAICHUAN_DEFAULT_MODEL = "Baichuan2-Turbo-192k"
 def baichuan_generate_stream(
     model: ProxyModel, tokenizer=None, params=None, device=None, context_len=4096
 ):
+    # TODO: Support new Baichuan ProxyLLMClient
     url = "https://api.baichuan-ai.com/v1/chat/completions"
 
     model_params = model.get_params()

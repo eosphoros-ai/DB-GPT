@@ -1,13 +1,13 @@
-from typing import Optional, Any, List
+from typing import Any, List, Optional
 
 import chardet
 
 from dbgpt.rag.chunk import Document
 from dbgpt.rag.knowledge.base import (
-    Knowledge,
-    KnowledgeType,
     ChunkStrategy,
     DocumentType,
+    Knowledge,
+    KnowledgeType,
 )
 
 
