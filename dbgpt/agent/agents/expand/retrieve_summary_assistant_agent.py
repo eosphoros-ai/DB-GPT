@@ -18,6 +18,7 @@ from dbgpt.agent.plugin.commands.command_mange import ApiCall
 
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.agent.agents.agent import Agent, AgentContext
+from dbgpt.core.interface.message import ModelMessageRoleType
 
 try:
     from termcolor import colored
@@ -85,11 +86,11 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
     This agent doesn't execute code by default, and expects the user to execute the code.
     """
 
-    DEFAULT_SYSTEM_MESSAGE = """You're a expert extrater. You need to extract 
+    DEFAULT_SYSTEM_MESSAGE = """You're an expert extrater. You need to extract
         Please complete this task step by step following instructions below:
-           1. You need to first ONLY extract user's question that you need to answer without ANY file pathes and URLs.
-           3. Extract the provided file pathes and URLs.
-           4. Construct the extracted file pathes and URLs as a list of strings.
+           1. You need to first ONLY extract user's question that you need to answer without ANY file paths and URLs.
+           3. Extract the provided file paths and URLs.
+           4. Construct the extracted file paths and URLs as a list of strings.
            5. ONLY output the extracted results with the following json format: "{"user_question": user's question, "file_list": file&URL list}".
         """
 
@@ -108,7 +109,14 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
                 If the provided text content CAN NOT ANSWER user's question, ONLY output "NO RELATIONSHIP.UPDATE TEXT CONTENT."!!.
                 """
 
-    DEFAULT_DESCRIBE = """Summarize provided content according to user's questions and the provided file pathes."""
+    CHECK_RESULT_SYSTEM_MESSAGE = f"""
+    You are an expert in analyzing the results of a summary task.
+    Your responsibility is to check whether the summary results can summarize the input provided by the user, and then make a judgment. You need to answer according to the following rules:
+        Rule 1: If you think the summary results can summarize the input provided by the user, only return True.
+        Rule 2: If you think the summary results can NOT summarize the input provided by the user, return False and the reason, splitted by |. For instance: False|Some important concepts in the input are not summarized.
+    """
+
+    DEFAULT_DESCRIBE = """Summarize provided content according to user's questions and the provided file paths."""
 
     NAME = "RetrieveSummarizer"
 
@@ -250,6 +258,45 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         # 4.verify reply
         return await self.a_verify_reply(summary_message, sender, reviewer)
 
+    async def a_verify(self, message: Optional[Dict]):
+        print("#### Start verifying ####")
+        print("current message:")
+        print(message)
+        self.update_system_message(self.CHECK_RESULT_SYSTEM_MESSAGE)
+        current_goal = message.get("current_gogal", None)
+        action_report = message.get("action_report", None)
+        task_result = ""
+        if action_report:
+            task_result = action_report.get("content", "")
+
+        check_result, model = await self.a_reasoning_reply(
+            [
+                {
+                    "role": ModelMessageRoleType.HUMAN,
+                    "content": f"""Please understand the following user input and summary results and give your judgment:
+                        User Input: {current_goal}
+                        Summary Results: {task_result}
+                    Only True or False is returned.
+                    """,
+                }
+            ]
+        )
+        print("This is check result:")
+        print(check_result)
+        
+        fail_reason = ""
+        if "True" in check_result:
+            success = True
+        else:
+            success = False
+            try:
+                _, fail_reason = check_result.split("|")
+                fail_reason = f"The summary results cannot summarize the user input due to: {fail_reason}. Please re-understand and complete the summary task."
+            except:
+                logger.warning(f"The model thought the results are irrelevant but did not give the correct format of results.")
+                fail_reason = "The summary results cannot summarize the user input. Please re-understand and complete the summary task."
+        return success, fail_reason
+
     async def retrieve_summary_reply(
         self,
         message: Optional[str] = None,
@@ -258,7 +305,6 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         config: Optional[Union[Dict, Literal[False]]] = None,
     ):
         """Generate a reply with summary."""
-
         # TODO:
         # 1. Extract User Question from massage - Done with parameteres
         # 2. Extract file / webpage list from message
@@ -561,7 +607,7 @@ if __name__ == "__main__":
             recipient=summarizer,
             reviewer=user_proxy,
             message="""I want to summarize advantages of Nuclear Power. 
-            You can refer the following file pathes and URLs: ['/home/ubuntu/chenguang-dbgpt/DB-GPT/dbgpt/agent/agents/expand/Nuclear_power.pdf', 'https://en.wikipedia.org/wiki/Modern_Family', '/home/ubuntu/chenguang-dbgpt/DB-GPT/dbgpt/agent/agents/expand/Taylor_Swift.pdf', 'https://en.wikipedia.org/wiki/Chernobyl_disaster']
+            You can refer the following file paths and URLs: ['/home/ubuntu/chenguang-dbgpt/DB-GPT/dbgpt/agent/agents/expand/Nuclear_power.pdf', 'https://en.wikipedia.org/wiki/Modern_Family', '/home/ubuntu/chenguang-dbgpt/DB-GPT/dbgpt/agent/agents/expand/Taylor_Swift.pdf', 'https://en.wikipedia.org/wiki/Chernobyl_disaster']
             """,
         )
     )
