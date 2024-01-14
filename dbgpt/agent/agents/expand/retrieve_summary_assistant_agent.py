@@ -20,6 +20,8 @@ from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.agent.agents.agent import Agent, AgentContext
 from dbgpt.core.interface.message import ModelMessageRoleType
 
+from dbgpt.configs.model_config import PILOT_PATH
+
 try:
     from termcolor import colored
 except ImportError:
@@ -391,9 +393,8 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
 
     def _get_file_from_url(self, url: str, save_path: str = None):
         """Download a file from a URL."""
-        current_directory = os.path.dirname(os.path.abspath(__file__))
         if save_path is None:
-            target_directory = os.path.join(current_directory, "../../../../pilot/data")
+            target_directory = os.path.join(PILOT_PATH, "data")
             os.makedirs(
                 target_directory, exist_ok=True
             )
