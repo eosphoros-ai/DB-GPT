@@ -395,12 +395,8 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         """Download a file from a URL."""
         if save_path is None:
             target_directory = os.path.join(PILOT_PATH, "data")
-            os.makedirs(
-                target_directory, exist_ok=True
-            )
-            save_path = os.path.join(
-                target_directory, os.path.basename(url)
-            )
+            os.makedirs(target_directory, exist_ok=True)
+            save_path = os.path.join(target_directory, os.path.basename(url))
         else:
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
         with requests.get(url, stream=True) as r:
