@@ -9,6 +9,8 @@ from ..agent import Agent, AgentContext
 import logging
 
 logger = logging.getLogger()
+
+
 class SummaryAssistantAgent(ConversableAgent):
     """(In preview) Assistant agent, designed to solve a task with LLM.
 
@@ -35,7 +37,7 @@ class SummaryAssistantAgent(ConversableAgent):
     You are an expert in analyzing the results of a summary task.
     Your responsibility is to check whether the summary results can summarize the input provided by the user, and then make a judgment. You need to answer according to the following rules:
         Rule 1: If you think the summary results can summarize the input provided by the user, only return True.
-        Rule 2: If you think the summary results can NOT summarize the input provided by the user, return False and the reason, splitted by |. For instance: False|Some important concepts in the input are not summarized.
+        Rule 2: If you think the summary results can NOT summarize the input provided by the user, return False and the reason, splitted by | and ended by TERMINATE. For instance: False|Some important concepts in the input are not summarized. TERMINATE
     """
 
     DEFAULT_DESCRIBE = """Summarize provided text content according to user's questions and output the summaraization."""
@@ -107,10 +109,6 @@ class SummaryAssistantAgent(ConversableAgent):
 
     async def a_verify(self, message: Optional[Dict]):
         self.update_system_message(self.CHECK_RESULT_SYSTEM_MESSAGE)
-        print("####### message start ########")
-        for key in message:
-            print(key, message[key])
-        print("####### message end ########")
         current_goal = message.get("current_gogal", None)
         action_report = message.get("action_report", None)
         task_result = ""
@@ -124,12 +122,11 @@ class SummaryAssistantAgent(ConversableAgent):
                     "content": f"""Please understand the following user input and summary results and give your judgment:
                         User Input: {current_goal}
                         Summary Results: {task_result}
-                    Only True or False is returned.
                     """,
                 }
             ]
         )
-        
+
         fail_reason = ""
         if "True" in check_result:
             success = True
@@ -139,6 +136,8 @@ class SummaryAssistantAgent(ConversableAgent):
                 _, fail_reason = check_result.split("|")
                 fail_reason = f"The summary results cannot summarize the user input due to: {fail_reason}. Please re-understand and complete the summary task."
             except:
-                logger.warning(f"The model thought the results are irrelevant but did not give the correct format of results.")
+                logger.warning(
+                    f"The model thought the results are irrelevant but did not give the correct format of results."
+                )
                 fail_reason = "The summary results cannot summarize the user input. Please re-understand and complete the summary task."
         return success, fail_reason

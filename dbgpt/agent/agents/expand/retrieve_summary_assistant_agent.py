@@ -113,7 +113,7 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
     You are an expert in analyzing the results of a summary task.
     Your responsibility is to check whether the summary results can summarize the input provided by the user, and then make a judgment. You need to answer according to the following rules:
         Rule 1: If you think the summary results can summarize the input provided by the user, only return True.
-        Rule 2: If you think the summary results can NOT summarize the input provided by the user, return False and the reason, splitted by |. For instance: False|Some important concepts in the input are not summarized.
+        Rule 2: If you think the summary results can NOT summarize the input provided by the user, return False and the reason, splitted by | and ended by TERMINATE. For instance: False|Some important concepts in the input are not summarized. TERMINATE
     """
 
     DEFAULT_DESCRIBE = """Summarize provided content according to user's questions and the provided file paths."""
@@ -125,7 +125,10 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         memory: GptsMemory,
         agent_context: AgentContext,
         describe: Optional[str] = DEFAULT_DESCRIBE,
-        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
+        is_termination_msg: Optional[Callable[[Dict], bool]] = lambda x: isinstance(
+            x, dict
+        )
+        and "TERMINATE" in str(x).upper(),
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
         retrieve_config: Optional[Dict] = None,
@@ -259,9 +262,6 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         return await self.a_verify_reply(summary_message, sender, reviewer)
 
     async def a_verify(self, message: Optional[Dict]):
-        print("#### Start verifying ####")
-        print("current message:")
-        print(message)
         self.update_system_message(self.CHECK_RESULT_SYSTEM_MESSAGE)
         current_goal = message.get("current_gogal", None)
         action_report = message.get("action_report", None)
@@ -276,14 +276,10 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
                     "content": f"""Please understand the following user input and summary results and give your judgment:
                         User Input: {current_goal}
                         Summary Results: {task_result}
-                    Only True or False is returned.
                     """,
                 }
             ]
         )
-        print("This is check result:")
-        print(check_result)
-        
         fail_reason = ""
         if "True" in check_result:
             success = True
@@ -293,7 +289,9 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
                 _, fail_reason = check_result.split("|")
                 fail_reason = f"The summary results cannot summarize the user input due to: {fail_reason}. Please re-understand and complete the summary task."
             except:
-                logger.warning(f"The model thought the results are irrelevant but did not give the correct format of results.")
+                logger.warning(
+                    f"The model thought the results are irrelevant but did not give the correct format of results."
+                )
                 fail_reason = "The summary results cannot summarize the user input. Please re-understand and complete the summary task."
         return success, fail_reason
 
