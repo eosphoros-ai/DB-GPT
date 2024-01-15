@@ -73,8 +73,7 @@ const ChatContainer = () => {
         const index = tempHistory.length - 1;
         setHistory([...tempHistory]);
         chat({
-          data: scene === 'chat_agent' ? undefined : { ...data, chat_mode: scene || 'chat_normal', model_name: model, user_input: content },
-          query: scene === 'chat_agent' ? { gpts_name: agent, conv_id: chatId, user_query: content } : undefined,
+          data: { ...data, chat_mode: scene || 'chat_normal', model_name: model, user_input: content },
           chatId,
           onMessage: (message) => {
             tempHistory[index].context = message;

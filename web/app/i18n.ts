@@ -180,6 +180,7 @@ const en = {
   Load_more: 'load more',
   new_chat: 'New Chat',
   choice_agent_tip: 'Please choose an agent',
+  no_context_tip: 'Please enter your question',
 } as const;
 
 type I18nKeys = keyof typeof en;
@@ -366,6 +367,7 @@ const zh: Resources['translation'] = {
   Load_more: '加载更多',
   new_chat: '创建会话',
   choice_agent_tip: '请选择代理',
+  no_context_tip: '请输入你的问题',
 } as const;
 
 i18n.use(initReactI18next).init({

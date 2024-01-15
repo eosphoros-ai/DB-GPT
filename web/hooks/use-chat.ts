@@ -21,9 +21,9 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
   const ctrl = useMemo(() => new AbortController(), []);
 
   const chat = useCallback(
-    async ({ data, chatId, query, onMessage, onClose, onDone, onError }: ChatParams) => {
+    async ({ data, chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
       if (!data?.user_input && !data?.doc_id) {
-        message.warning(i18n.t('NoContextTip'));
+        message.warning(i18n.t('no_context_tip'));
         return;
       }
 
@@ -38,13 +38,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
       }
 
       try {
-        let queryStr = '';
-        if (query) {
-          queryStr += `?${Object.entries(query)
-            .map(([key, value]) => `${key}=${value}`)
-            .join('&')}`;
-        }
-        await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}${queryStr}`, {
+        await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
