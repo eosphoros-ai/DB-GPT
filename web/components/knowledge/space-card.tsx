@@ -1,7 +1,7 @@
 import { Popover, ConfigProvider, Button, Modal, Badge } from 'antd';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { DeleteTwoTone, MessageTwoTone, WarningOutlined } from '@ant-design/icons';
+import { DeleteFilled, MessageTwoTone, WarningOutlined } from '@ant-design/icons';
 import { ISpace } from '@/types/knowledge';
 import DocPanel from './doc-panel';
 import moment from 'moment';
@@ -76,25 +76,24 @@ export default function SpaceCard(props: IProps) {
       }}
     >
       <Popover
-        className="dark:hover:border-white transition-all hover:shadow-md bg-[#FFFFFF] dark:bg-[#484848] cursor-pointer rounded-[10px] border border-gray-200 border-solid"
+        className="transition-all bg-white dark:bg-theme-dark-container cursor-pointer rounded"
         placement="bottom"
         trigger="click"
         content={<DocPanel space={space} onAddDoc={props.onAddDoc} onDeleteDoc={onDeleteDoc} />}
       >
-        <Badge className="mr-4 mb-4 min-w-[200px] sm:w-60 lg:w-72" count={space.docs || 0}>
+        <Badge className="mb-4 min-w-[200px] sm:w-60 lg:w-72" count={space.docs || 0}>
           <div className="flex justify-between mx-6 mt-3">
             <div className="text-lg font-bold text-black truncate">
               {renderVectorIcon(space.vector_type)}
               <span className="dark:text-white ml-2">{space?.name}</span>
             </div>
-            <DeleteTwoTone
+            <DeleteFilled
+              className="text-[#ff1b2e] !text-lg"
               onClick={(e) => {
                 e.stopPropagation();
                 e.nativeEvent.stopImmediatePropagation();
                 showDeleteConfirm();
               }}
-              twoToneColor="#CD2029"
-              className="!text-2xl"
             />
           </div>
           <div className="text-sm mt-2  p-6 pt-2 h-40">

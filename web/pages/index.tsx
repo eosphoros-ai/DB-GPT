@@ -12,7 +12,7 @@ import CompletionInput from '@/components/common/completion-input';
 import { useTranslation } from 'react-i18next';
 import { STORAGE_INIT_MESSAGE_KET } from '@/utils';
 import Icon from '@ant-design/icons/lib/components/Icon';
-import { ColorfulDB, ColorfulPlugin, ColorfulDashboard, ColorfulData, ColorfulExcel, ColorfulDoc } from '@/components/icons';
+import { ColorfulDB, ColorfulPlugin, ColorfulDashboard, ColorfulData, ColorfulExcel, ColorfulDoc, ColorfulChat } from '@/components/icons';
 import classNames from 'classnames';
 
 const Home: NextPage = () => {
@@ -51,17 +51,19 @@ const Home: NextPage = () => {
   function renderSceneIcon(scene: string) {
     switch (scene) {
       case 'chat_knowledge':
-        return <Icon className="w-10 h-10 mr-4 p-1 bg-white rounded" component={ColorfulDoc} />;
+        return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulDoc} />;
       case 'chat_with_db_execute':
-        return <Icon className="w-10 h-10 mr-4 p-1 bg-white rounded" component={ColorfulData} />;
+        return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulData} />;
       case 'chat_excel':
-        return <Icon className="w-10 h-10 mr-4 p-1 bg-white rounded" component={ColorfulExcel} />;
+        return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulExcel} />;
       case 'chat_with_db_qa':
-        return <Icon className="w-10 h-10 mr-4 p-1 bg-white rounded" component={ColorfulDB} />;
+        return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulDB} />;
       case 'chat_dashboard':
-        return <Icon className="w-10 h-10 mr-4 p-1 bg-white rounded" component={ColorfulDashboard} />;
+        return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulDashboard} />;
       case 'chat_agent':
-        return <Icon className="w-10 h-10 mr-4 p-1 bg-white rounded" component={ColorfulPlugin} />;
+        return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulPlugin} />;
+      case 'dbgpt_chat':
+        return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulChat} />;
       default:
         return null;
     }
@@ -93,7 +95,7 @@ const Home: NextPage = () => {
               >
                 <div
                   className={classNames(
-                    'flex flex-row justify-center min-h-min border bg-slate-50 border-gray-300 dark:bg-black bg-opacity-50 border-opacity-50 text-gray-950 dark:text-white rounded p-4 cursor-pointer',
+                    'flex flex-row justify-center h-[102px] min-h-min bg-white dark:bg-[#232734] dark:text-white rounded p-4 cursor-pointer hover:-translate-y-1 transition-[transform_shadow] duration-300 hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.1)]',
                     { 'grayscale !cursor-no-drop': scene.show_disable },
                   )}
                 >

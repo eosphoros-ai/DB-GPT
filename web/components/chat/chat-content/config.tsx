@@ -100,10 +100,10 @@ const basicComponents: MarkdownComponent = {
 
     return (
       <>
-        {!inline && lang ? (
+        {!inline ? (
           <CodePreview code={context} language={lang} />
         ) : (
-          <code {...props} style={style} className="px-[6px] py-[2px] rounded bg-gray-700 text-gray-100 dark:bg-gray-100 dark:text-gray-800 text-sm">
+          <code {...props} style={style} className="p-1 mx-1 rounded bg-theme-light dark:bg-theme-dark text-sm">
             {children}
           </code>
         )}

@@ -22,7 +22,9 @@ function AgentMessages({ data }: Props) {
             {item.model ? renderModelIcon(item.model) : <div className="rounded-full w-6 h-6 bg-gray-100" />}
             <div className="ml-2 opacity-70">{`${item.sender} -> ${item.receiver}`}</div>
           </div>
-          <ReactMarkdown components={markdownComponents}>{item.markdown}</ReactMarkdown>
+          <div className="whitespace-normal">
+            <ReactMarkdown components={markdownComponents}>{item.markdown}</ReactMarkdown>
+          </div>
         </div>
       ))}
     </>

@@ -48,7 +48,7 @@ function ChunkList() {
   }, [id, spaceName]);
 
   return (
-    <div className="h-full overflow-y-scroll relative">
+    <div className="h-full overflow-y-scroll relative px-2">
       <Breadcrumb
         className="m-6"
         items={[
@@ -71,6 +71,7 @@ function ChunkList() {
               return (
                 <Card
                   key={chunk.id}
+                  className="mt-2"
                   title={
                     <>
                       <DocIcon type={chunk.doc_type} />

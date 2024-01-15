@@ -136,22 +136,22 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
 
   return (
     <div
-      className={classNames('relative flex flex-wrap w-full px-2 sm:px-4 py-2 sm:py-4 rounded-xl break-words', {
-        'bg-slate-100 dark:bg-[#353539]': isRobot,
+      className={classNames('relative flex flex-wrap w-full p-2 md:p-4 rounded-xl break-words', {
+        'bg-white dark:bg-[#232734]': isRobot,
         'lg:w-full xl:w-full pl-0': ['chat_with_db_execute', 'chat_dashboard'].includes(scene),
       })}
     >
       <div className="mr-2 flex flex-shrink-0 items-center justify-center h-7 w-7 rounded-full text-lg sm:mr-4">
         {isRobot ? renderModelIcon(model_name) || <RobotOutlined /> : <UserOutlined />}
       </div>
-      <div className="flex-1 overflow-hidden items-center text-md leading-8">
+      <div className="flex-1 overflow-hidden items-center text-md leading-8 pb-2">
         {/* User Input */}
         {!isRobot && typeof context === 'string' && context}
         {/* Render Report */}
         {isRobot && isChartChat && typeof context === 'object' && (
           <div>
             {`[${context.template_name}]: `}
-            <span className="text-[#1677ff] cursor-pointer" onClick={onLinkClick}>
+            <span className="text-theme-primary cursor-pointer" onClick={onLinkClick}>
               <CodeOutlined className="mr-1" />
               {context.template_introduce || 'More Details'}
             </span>
