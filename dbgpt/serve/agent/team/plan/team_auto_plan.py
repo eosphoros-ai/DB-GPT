@@ -150,10 +150,16 @@ class AutoPlanChatManager(ManagerAgent):
         """Run a team chat asynchronously."""
 
         speaker = sender
-
+        last_message = None
         for i in range(self.max_round):
             plans = self.memory.plans_memory.get_by_conv_id(self.agent_context.conv_id)
             if not plans or len(plans) <= 0:
+                if i > 3:
+                    error_report = {
+                        "content": f"Retrying 3 times based on current application resources still fails to build a valid plan！",
+                        "is_exe_success": False,
+                    }
+                    return True, error_report
                 ###Have no plan, generate a new plan
                 await self.a_generate_speech_process(message, reviewer, self.agents)
             else:
@@ -165,7 +171,7 @@ class AutoPlanChatManager(ManagerAgent):
                 if not todo_plans or len(todo_plans) <= 0:
                     ### The plan has been fully executed and a success message is sent to the user.
                     # complete
-                    complete_message = {"content": f"TERMINATE", "is_exe_success": True}
+                    complete_message = {"content": last_message, "is_exe_success": True}
                     return True, complete_message
                 else:
                     now_plan: GptsPlan = todo_plans[0]
@@ -220,10 +226,10 @@ class AutoPlanChatManager(ManagerAgent):
                             now_plan=now_plan,
                             speaker=speaker,
                         )
-
-                        current_goal_message["content"] = (
-                            rely_prompt + current_goal_message["content"]
-                        )
+                        if rely_prompt:
+                            current_goal_message["content"] = (
+                                rely_prompt + current_goal_message["content"]
+                            )
 
                         is_recovery = False
                         if message == current_goal_message["content"]:
@@ -256,6 +262,7 @@ class AutoPlanChatManager(ManagerAgent):
                             await speaker.a_send(
                                 reply, self, reviewer, request_reply=False
                             )
+                            last_message = reply
                         else:
                             plan_result = reply["content"]
                             self.memory.plans_memory.update_task(

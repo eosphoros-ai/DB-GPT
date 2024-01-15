@@ -632,7 +632,6 @@ class ConversableAgent(Agent):
         await self.a_send(
             {
                 "content": self.generate_init_message(**context),
-                "current_gogal": self.generate_init_message(**context),
             },
             recipient,
             reviewer,

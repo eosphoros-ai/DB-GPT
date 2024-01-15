@@ -3,7 +3,7 @@ import logging
 import uuid
 from abc import ABC
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Any, Optional
 
 from fastapi import APIRouter, Body
 from fastapi.responses import StreamingResponse
@@ -29,6 +29,9 @@ from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
 from .dbgpts import DbGptsInstance
 from dbgpt.util.json_utils import serialize
 
+from dbgpt.serve.conversation.serve import Serve as ConversationServe
+from dbgpt.core.interface.message import StorageConversation
+from dbgpt.app.scene.base import ChatScene
 
 CFG = Config()
 
@@ -36,6 +39,29 @@ import asyncio
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _build_conversation(
+    conv_id: str,
+    select_param: Dict[str, Any],
+    model_name: str,
+    summary: str,
+    conv_serve: ConversationServe,
+    user_name: Optional[str] = "",
+    sys_code: Optional[str] = "",
+) -> StorageConversation:
+    return StorageConversation(
+        conv_uid=conv_id,
+        chat_mode=ChatScene.ChatAgent.value(),
+        user_name=user_name,
+        sys_code=sys_code,
+        model_name=model_name,
+        summary=summary,
+        param_type="DbGpts",
+        param_value=select_param,
+        conv_storage=conv_serve.conv_storage,
+        message_storage=conv_serve.message_storage,
+    )
 
 
 class MultiAgents(BaseComponent, ABC):
@@ -118,6 +144,69 @@ class MultiAgents(BaseComponent, ABC):
             manager.hire(agents)
 
         return manager
+
+    async def agent_chat(
+        self,
+        conv_uid: str,
+        gpts_name: str,
+        user_query: str,
+        user_code: str = None,
+        sys_code: str = None,
+    ):
+        logger.info(f"agent_chat:{gpts_name},{user_query},{conv_uid}")
+
+        # Temporary compatible scenario messages
+        conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
+        current_message: StorageConversation = _build_conversation(
+            conv_id=conv_uid,
+            select_param=gpts_name,
+            summary=user_query,
+            model_name="",
+            conv_serve=conv_serve,
+        )
+
+        current_message.start_new_round()
+        current_message.add_user_message(user_query)
+
+        agent_conv_id = conv_uid + "_" + str(current_message.chat_order)
+
+        task = asyncio.create_task(
+            multi_agents.agent_team_chat(
+                gpts_name, user_query, agent_conv_id, user_code, sys_code
+            )
+        )
+
+        # def task_done_callback(task):
+        #     if task.cancelled():
+        #         logger.warning("The task was cancelled!")
+        #     elif task.exception():
+        #         logger.exception(f"The task raised an exception: {task.exception()}")
+        #     else:
+        #         logger.info(f"Callback: {task.result()}")
+        #         loop = asyncio.get_event_loop()
+        #         future = asyncio.run_coroutine_threadsafe(
+        #             self.stable_message(agent_conv_id), loop
+        #         )
+        #
+        #         current_message.add_view_message(future.result())
+        #         current_message.end_current_round()
+        #     current_message.save_to_storage()
+        #
+        # task.add_done_callback(task_done_callback)
+        async for chunk in multi_agents.chat_completions(agent_conv_id):
+            if chunk:
+                logger.info(chunk)
+                chunk = json.dumps(
+                    {"vis": chunk}, default=serialize, ensure_ascii=False
+                )
+                yield f"data: {chunk}\n\n"
+        yield f'data:{json.dumps({"vis": "[DONE]"}, default=serialize, ensure_ascii=False)} \n\n'
+
+        await task
+        final_message = await self.stable_message(agent_conv_id)
+        current_message.add_view_message(final_message)
+        current_message.end_current_round()
+        current_message.save_to_storage()
 
     async def agent_team_chat(
         self,
@@ -203,6 +292,7 @@ class MultiAgents(BaseComponent, ABC):
         self, conv_id: str, user_code: str = None, system_app: str = None
     ):
         is_complete = False
+        count = 0
         while True:
             gpts_conv = self.gpts_conversations.get_by_conv_id(conv_id)
             if gpts_conv:
@@ -216,11 +306,20 @@ class MultiAgents(BaseComponent, ABC):
                     ]
                     else False
                 )
-            yield await self.memory.one_chat_competions(conv_id)
+            else:
+                if count > 1:
+                    break
+            message = await self.memory.one_chat_competions(conv_id)
+            yield message
+
             if is_complete:
                 break
             else:
                 await asyncio.sleep(2)
+            if count > 3:
+                if not message or len(message) <= 0:
+                    break
+            count = count + 1
 
     async def stable_message(
         self, conv_id: str, user_code: str = None, system_app: str = None
@@ -234,7 +333,7 @@ class MultiAgents(BaseComponent, ABC):
                 else False
             )
             if is_complete:
-                return await self.self.memory.one_chat_competions(conv_id)
+                return await self.memory.one_chat_competions(conv_id)
             else:
                 raise ValueError(
                     "The conversation has not been completed yet, so we cannot directly obtain information."
@@ -316,21 +415,22 @@ async def dgpts_completions(
     logger.info(f"dgpts_completions:{gpts_name},{user_query},{conv_id}")
     if conv_id is None:
         conv_id = str(uuid.uuid1())
+
     task = asyncio.create_task(
         multi_agents.agent_team_chat(
             gpts_name, user_query, conv_id, user_code, sys_code
         )
     )
 
-    # def task_done_callback(task):
-    #     try:
-    #         # 检查任务结果会抛出任务中的异常
-    #         task.result()
-    #     except ValueError as e:
-    #         logger.error(f"Caught an exception in task: {e}")
-    #         raise ValueError(e)
-    #
-    # task.add_done_callback(task_done_callback)
+    def task_done_callback(task):
+        try:
+            # 检查任务结果会抛出任务中的异常
+            task.result()
+        except ValueError as e:
+            logger.error(f"Caught an exception in task: {e}")
+            raise ValueError(e)
+
+    task.add_done_callback(task_done_callback)
 
     headers = {
         "Content-Type": "text/event-stream",
