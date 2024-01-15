@@ -86,6 +86,11 @@ class OpenAILLMClient(ProxyLLMClient):
         self._openai_kwargs = openai_kwargs or {}
         super().__init__(model_names=[model_alias], context_length=context_length)
 
+        if self._openai_less_then_v1:
+            from dbgpt.model.utils.chatgpt_utils import _initialize_openai
+
+            _initialize_openai(self._init_params)
+
     @classmethod
     def new_client(
         cls,

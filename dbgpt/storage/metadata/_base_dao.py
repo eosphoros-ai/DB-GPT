@@ -5,6 +5,8 @@ from sqlalchemy.orm.session import Session
 
 from dbgpt.util.pagination_utils import PaginationResult
 
+from .db_manager import BaseQuery, DatabaseManager, db
+
 # The entity type
 T = TypeVar("T")
 # The request schema type
@@ -12,7 +14,6 @@ REQ = TypeVar("REQ")
 # The response schema type
 RES = TypeVar("RES")
 
-from .db_manager import BaseQuery, DatabaseManager, db
 
 QUERY_SPEC = Union[REQ, Dict[str, Any]]
 

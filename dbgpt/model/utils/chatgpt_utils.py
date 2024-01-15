@@ -88,6 +88,42 @@ def _initialize_openai_v1(init_params: OpenAIParameters):
     return openai_params, api_type, api_version
 
 
+def _initialize_openai(params: OpenAIParameters):
+    try:
+        import openai
+    except ImportError as exc:
+        raise ValueError(
+            "Could not import python package: openai "
+            "Please install openai by command `pip install openai` "
+        ) from exc
+
+    api_type = params.api_type or os.getenv("OPENAI_API_TYPE", "open_ai")
+
+    api_base = params.api_base or os.getenv(
+        "OPENAI_API_TYPE",
+        os.getenv("AZURE_OPENAI_ENDPOINT") if api_type == "azure" else None,
+    )
+    api_key = params.api_key or os.getenv(
+        "OPENAI_API_KEY",
+        os.getenv("AZURE_OPENAI_KEY") if api_type == "azure" else None,
+    )
+    api_version = params.api_version or os.getenv("OPENAI_API_VERSION")
+
+    if not api_base and params.full_url:
+        # Adapt previous proxy_server_url configuration
+        api_base = params.full_url.split("/chat/completions")[0]
+    if api_type:
+        openai.api_type = api_type
+    if api_base:
+        openai.api_base = api_base
+    if api_key:
+        openai.api_key = api_key
+    if api_version:
+        openai.api_version = api_version
+    if params.proxies:
+        openai.proxy = params.proxies
+
+
 def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType]:
     import httpx
 
@@ -112,9 +148,7 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
 class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]):
     """Transform ModelOutput to openai stream format."""
 
-    async def transform_stream(
-        self, input_value: AsyncIterator[ModelOutput]
-    ) -> AsyncIterator[str]:
+    async def transform_stream(self, input_value: AsyncIterator[ModelOutput]):
         async def model_caller() -> str:
             """Read model name from share data.
             In streaming mode, this transform_stream function will be executed

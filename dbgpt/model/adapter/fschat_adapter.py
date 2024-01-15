@@ -8,6 +8,9 @@ import threading
 from functools import cache
 from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 
+from dbgpt.model.adapter.base import LLMModelAdapter
+from dbgpt.model.adapter.template import ConversationAdapter, PromptType
+
 try:
     from fastchat.conversation import (
         Conversation,
@@ -20,8 +23,6 @@ except ImportError as exc:
         "Please install fastchat by command `pip install fschat` "
     ) from exc
 
-from dbgpt.model.adapter.base import LLMModelAdapter
-from dbgpt.model.adapter.template import ConversationAdapter, PromptType
 
 if TYPE_CHECKING:
     from fastchat.model.model_adapter import BaseModelAdapter

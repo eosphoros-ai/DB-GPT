@@ -66,10 +66,10 @@ async def _create_input_node(**kwargs):
     else:
         outputs = kwargs.get("outputs", ["Hello."])
     nodes = []
-    for output in outputs:
+    for i, output in enumerate(outputs):
         print(f"output: {output}")
         input_source = SimpleInputSource(output)
-        input_node = InputOperator(input_source)
+        input_node = InputOperator(input_source, task_id="input_node_" + str(i))
         nodes.append(input_node)
     yield nodes
 

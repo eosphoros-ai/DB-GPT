@@ -8,9 +8,6 @@ from datetime import datetime
 from time import mktime
 from typing import Iterator, Optional
 from urllib.parse import urlencode, urlparse
-from wsgiref.handlers import format_date_time
-
-from websockets.sync.client import connect
 
 from dbgpt.core import MessageConverter, ModelOutput, ModelRequest, ModelRequestContext
 from dbgpt.model.parameter import ProxyModelParameters
@@ -56,6 +53,8 @@ def spark_generate_stream(
 
 
 def get_response(request_url, data):
+    from websockets.sync.client import connect
+
     with connect(request_url) as ws:
         ws.send(json.dumps(data, ensure_ascii=False))
         result = ""
@@ -87,6 +86,8 @@ class SparkAPI:
         self.spark_url = spark_url
 
     def gen_url(self):
+        from wsgiref.handlers import format_date_time
+
         # 生成RFC1123格式的时间戳
         now = datetime.now()
         date = format_date_time(mktime(now.timetuple()))
@@ -145,7 +146,6 @@ class SparkLLMClient(ProxyLLMClient):
             if not api_domain:
                 api_domain = domain
         self._model = model
-        self.default_model = self._model
         self._model_version = model_version
         self._api_base = api_base
         self._domain = api_domain
@@ -182,6 +182,10 @@ class SparkLLMClient(ProxyLLMClient):
             context_length=model_params.max_context_size,
             executor=default_executor,
         )
+
+    @property
+    def default_model(self) -> str:
+        return self._model
 
     def sync_generate_stream(
         self,

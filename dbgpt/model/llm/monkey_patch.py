@@ -118,9 +118,6 @@ def replace_llama_attn_with_non_inplace_operations():
     transformers.models.llama.modeling_llama.LlamaAttention.forward = forward
 
 
-import transformers
-
-
 def replace_llama_attn_with_non_inplace_operations():
     """Avoid bugs in mps backend by not using in-place operations."""
     transformers.models.llama.modeling_llama.LlamaAttention.forward = forward

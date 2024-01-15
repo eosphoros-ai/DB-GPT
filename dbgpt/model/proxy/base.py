@@ -196,6 +196,15 @@ class ProxyLLMClient(LLMClient):
         """
         return self._models()
 
+    @property
+    def default_model(self) -> str:
+        """Get default model name
+
+        Returns:
+            str: default model name
+        """
+        return self.model_names[0]
+
     @cache
     def _models(self) -> List[ModelMetadata]:
         results = []
@@ -237,6 +246,7 @@ class ProxyLLMClient(LLMClient):
         Returns:
             int: token count, -1 if failed
         """
-        return await blocking_func_to_async(
+        counts = await blocking_func_to_async(
             self.executor, self.proxy_tokenizer.count_token, model, [prompt]
-        )[0]
+        )
+        return counts[0]

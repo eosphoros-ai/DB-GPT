@@ -14,12 +14,13 @@ setup: $(VENV)/bin/activate
 
 $(VENV)/bin/activate: $(VENV)/.venv-timestamp
 
-$(VENV)/.venv-timestamp: setup.py
+$(VENV)/.venv-timestamp: setup.py requirements
 	# Create new virtual environment if setup.py has changed
 	python3 -m venv $(VENV)
 	$(VENV_BIN)/pip install --upgrade pip
 	$(VENV_BIN)/pip install -r requirements/dev-requirements.txt
 	$(VENV_BIN)/pip install -r requirements/lint-requirements.txt
+	pip install -r requirements/dev-requirements.txt
 	touch $(VENV)/.venv-timestamp
 
 testenv: $(VENV)/.testenv
@@ -48,10 +49,12 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/blackdoc examples
 	# TODO: Type checking of Python code.
 	# https://github.com/python/mypy
-	# $(VENV_BIN)/mypy dbgpt
-	# TODO: uUse flake8 to enforce Python style guide.
+	# TODO mypy not working with $(VENV_BIN)/mypy, run it on current python environment
+	mypy dbgpt/core/awel/
+	# TODO: Use flake8 to enforce Python style guide.
 	# https://flake8.pycqa.org/en/latest/
-	# $(VENV_BIN)/flake8 dbgpt
+	$(VENV_BIN)/flake8 dbgpt/core/awel/
+
 
 .PHONY: pre-commit
 pre-commit: fmt test ## Run formatting and unit tests before committing

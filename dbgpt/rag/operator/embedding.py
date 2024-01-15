@@ -2,7 +2,7 @@ from functools import reduce
 from typing import Any, Optional
 
 from dbgpt.core.awel.task.base import IN
-from dbgpt.core.interface.retriever import RetrieverOperator
+from dbgpt.core.interface.operator.retriever import RetrieverOperator
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.rag.retriever.rerank import Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite

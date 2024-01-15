@@ -54,7 +54,6 @@ class ZhipuLLMClient(ProxyLLMClient):
         if api_key:
             zhipuai.api_key = api_key
         self._model = model
-        self.default_model = self._model
 
         super().__init__(
             model_names=[model, model_alias],
@@ -75,6 +74,10 @@ class ZhipuLLMClient(ProxyLLMClient):
             context_length=model_params.max_context_size,
             executor=default_executor,
         )
+
+    @property
+    def default_model(self) -> str:
+        return self._model
 
     def sync_generate_stream(
         self,

@@ -121,7 +121,6 @@ class WenxinLLMClient(ProxyLLMClient):
         self._api_key = api_key
         self._api_secret = api_secret
         self._model_version = model_version
-        self.default_model = self._model
 
         super().__init__(
             model_names=[model, model_alias],
@@ -144,6 +143,10 @@ class WenxinLLMClient(ProxyLLMClient):
             context_length=model_params.max_context_size,
             executor=default_executor,
         )
+
+    @property
+    def default_model(self) -> str:
+        return self._model
 
     def sync_generate_stream(
         self,

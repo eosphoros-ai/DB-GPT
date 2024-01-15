@@ -53,7 +53,7 @@ class RequestHandleOperator(MapOperator[TriggerReqBody, Dict]):
         return params
 
 
-with DAG("dbgpt_awel_simple_rag_rewrite_example") as dag:
+with DAG("dbgpt_awel_simple_rag_summary_example") as dag:
     trigger = HttpTrigger(
         "/examples/rag/summary", methods="POST", request_body=TriggerReqBody
     )

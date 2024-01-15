@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from dbgpt.core.awel.task.base import IN
-from dbgpt.core.interface.retriever import RetrieverOperator
+from dbgpt.core.interface.operator.retriever import RetrieverOperator
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 from dbgpt.storage.vector_store.connector import VectorStoreConnector

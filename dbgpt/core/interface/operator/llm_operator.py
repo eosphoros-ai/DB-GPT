@@ -160,7 +160,8 @@ class BaseStreamingLLMOperator(
 class LLMBranchOperator(BranchOperator[ModelRequest, ModelRequest]):
     """Branch operator for LLM.
 
-    This operator will branch the workflow based on the stream flag of the request.
+    This operator will branch the workflow based on
+        the stream flag of the request.
     """
 
     def __init__(self, stream_task_name: str, no_stream_task_name: str, **kwargs):
