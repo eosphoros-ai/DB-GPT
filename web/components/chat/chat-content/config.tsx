@@ -42,8 +42,6 @@ const basicComponents: MarkdownComponent = {
     const { context, matchValues } = matchCustomeTagValues(content);
     const lang = className?.replace('language-', '') || 'javascript';
 
-    console.log(lang);
-
     if (lang === 'agent-plans') {
       try {
         const data = JSON.parse(content) as Parameters<typeof AgentPlans>[0]['data'];

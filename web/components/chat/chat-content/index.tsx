@@ -50,11 +50,11 @@ const pluginViewStatusMapper: Record<DBGPTView['status'], { bgClass: string; ico
   },
 };
 
-function formatMarkdownVal(scene: IChatDialogueSchema['chat_mode'], val: string) {
-  if (scene !== 'chat_agent') {
-    val = val.replaceAll('\\n', '\n');
-  }
-  return val.replace(/<table(\w*=[^>]+)>/gi, '<table $1>').replace(/<tr(\w*=[^>]+)>/gi, '<tr $1>');
+function formatMarkdownVal(val: string) {
+  return val
+    .replaceAll('\\n', '\n')
+    .replace(/<table(\w*=[^>]+)>/gi, '<table $1>')
+    .replace(/<tr(\w*=[^>]+)>/gi, '<tr $1>');
 }
 
 function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithChildren<Props>) {
@@ -84,7 +84,7 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
 
         cachePluginContext.push({
           ...pluginContext,
-          result: formatMarkdownVal(scene, pluginContext.result ?? ''),
+          result: formatMarkdownVal(pluginContext.result ?? ''),
         });
         cacheIndex++;
 
@@ -160,7 +160,7 @@ function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithC
         {/* Markdown */}
         {isRobot && typeof context === 'string' && (
           <ReactMarkdown components={{ ...markdownComponents, ...extraMarkdownComponents }} rehypePlugins={[rehypeRaw]}>
-            {formatMarkdownVal(scene, value)}
+            {formatMarkdownVal(value)}
           </ReactMarkdown>
         )}
         {!!relations?.length && (

@@ -19,6 +19,7 @@ import { CopyOutlined, RedoOutlined } from '@ant-design/icons';
 import { getInitMessage } from '@/utils';
 import { apiInterceptors, getChatFeedBackSelect } from '@/client/api';
 import useSummary from '@/hooks/use-summary';
+import AgentContent from './agent-content';
 
 type Props = {
   messages: IChatDialogueMessageSchema[];
@@ -55,11 +56,15 @@ const Completion = ({ messages, onSubmit }: Props) => {
     }
   }, [scene, agent, currentDialogue, dbParam, spaceNameOriginal]);
 
-  const handleChat = async (message: string) => {
-    if (isLoading || !message.trim()) return;
+  const handleChat = async (content: string) => {
+    if (isLoading || !content.trim()) return;
+    if (scene === 'chat_agent' && !agent) {
+      message.warning(t('choice_agent_tip'));
+      return;
+    }
     try {
       setIsLoading(true);
-      await onSubmit(message, {
+      await onSubmit(content, {
         select_param: selectParam ?? '',
       });
     } finally {
@@ -145,6 +150,9 @@ const Completion = ({ messages, onSubmit }: Props) => {
         <div className="flex items-center flex-1 flex-col text-sm leading-6 text-slate-900 dark:text-slate-300 sm:text-base sm:leading-7">
           {showMessages.length ? (
             showMessages.map((content, index) => {
+              if (scene === 'chat_agent') {
+                return <AgentContent key={index} content={content} />;
+              }
               return (
                 <ChatContent
                   key={index}

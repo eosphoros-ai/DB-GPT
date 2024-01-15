@@ -16,9 +16,7 @@ import { getInitMessage } from '@/utils';
 const ChatContainer = () => {
   const searchParams = useSearchParams();
   const { scene, chatId, model, agent, setModel, history, setHistory } = useContext(ChatContext);
-  const chat = useChat({
-    queryAgentURL: scene === 'chat_agent' ? '/api/v1/dbgpts/chat/completions' : undefined,
-  });
+  const chat = useChat({});
   const initMessage = (searchParams && searchParams.get('initMessage')) ?? '';
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -125,7 +123,7 @@ const ChatContainer = () => {
         )}
         {/** chat panel */}
         <div
-          className={classNames('flex flex-1 flex-col', {
+          className={classNames('flex flex-1 flex-col overflow-hidden', {
             'px-0 xl:pl-4 h-2/5 w-full xl:w-auto xl:h-full border-t xl:border-t-0 xl:border-l dark:border-gray-800': scene === 'chat_dashboard',
             'h-full lg:px-8': scene !== 'chat_dashboard',
           })}

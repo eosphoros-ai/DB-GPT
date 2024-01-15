@@ -10,7 +10,7 @@ interface IVisPlugin {
   args: {
     query: string;
   };
-  status: 'todo' | 'runing' | 'failed' | 'completed' | (string & {});
+  status: 'todo' | 'runing' | 'failed' | 'complete' | (string & {});
   logo: string | null;
   result: string;
   err_msg: string | null;
@@ -33,7 +33,7 @@ const pluginViewStatusMapper: Record<IVisPlugin['status'], { bgClass: string; ic
     bgClass: 'bg-red-500',
     icon: <CloseOutlined className="ml-2" />,
   },
-  completed: {
+  complete: {
     bgClass: 'bg-green-500',
     icon: <CheckOutlined className="ml-2" />,
   },
@@ -43,13 +43,13 @@ function VisPlugin({ data }: Props) {
   const { bgClass, icon } = pluginViewStatusMapper[data.status] ?? {};
 
   return (
-    <div className="bg-white dark:bg-[#212121] rounded-lg overflow-hidden my-2 flex flex-col lg:max-w-[80%]">
+    <div className="bg-theme-light dark:bg-theme-dark-container rounded overflow-hidden my-2 flex flex-col lg:max-w-[80%]">
       <div className={classNames('flex px-4 md:px-6 py-2 items-center text-white text-sm', bgClass)}>
         {data.name}
         {icon}
       </div>
       {data.result ? (
-        <div className="px-4 md:px-6 py-4 text-sm">
+        <div className="px-4 md:px-6 py-4 text-sm whitespace-normal">
           <ReactMarkdown components={markdownComponents} rehypePlugins={[rehypeRaw]}>
             {data.result ?? ''}
           </ReactMarkdown>

@@ -22,10 +22,10 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
 
   const chat = useCallback(
     async ({ data, chatId, query, onMessage, onClose, onDone, onError }: ChatParams) => {
-      // if (!data?.user_input && !data?.doc_id) {
-      //   message.warning(i18n.t('NoContextTip'));
-      //   return;
-      // }
+      if (!data?.user_input && !data?.doc_id) {
+        message.warning(i18n.t('NoContextTip'));
+        return;
+      }
 
       const parmas = {
         ...data,
