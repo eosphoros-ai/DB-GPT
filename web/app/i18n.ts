@@ -184,7 +184,7 @@ const en = {
 type I18nKeys = keyof typeof en;
 
 export interface Resources {
-  translation: Record<I18nKeys, string>;
+  translation: Record<I18nKeys, string> & { [key: string]: string };
 }
 
 const zh: Resources['translation'] = {
