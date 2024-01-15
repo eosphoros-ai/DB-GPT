@@ -505,7 +505,6 @@ class ConversableAgent(Agent):
 
         ## 1.LLM Reasonging
         await self.a_system_fill_param()
-        await asyncio.sleep(5)  ##TODO  Rate limit reached for gpt-3.5-turbo
         current_messages = self.process_now_message(message, sender, rely_messages)
         ai_reply, model = await self.a_reasoning_reply(messages=current_messages)
         new_message["content"] = ai_reply
@@ -732,7 +731,7 @@ class ConversableAgent(Agent):
                 retry_count += 1
                 last_model = llm_model
                 last_err = str(e)
-                await asyncio.sleep(10)  ## TODO，Rate limit reached for gpt-3.5-turbo
+                await asyncio.sleep(15)  ## TODO，Rate limit reached for gpt-3.5-turbo
 
         if last_err:
             raise ValueError(last_err)

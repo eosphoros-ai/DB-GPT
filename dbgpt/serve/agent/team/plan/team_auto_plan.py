@@ -171,8 +171,11 @@ class AutoPlanChatManager(ManagerAgent):
                 if not todo_plans or len(todo_plans) <= 0:
                     ### The plan has been fully executed and a success message is sent to the user.
                     # complete
-                    complete_message = {"content": last_message, "is_exe_success": True}
-                    return True, complete_message
+                    print(f"fDEBUG:[{last_message}]")
+                    return (
+                        True,
+                        last_message.get("action_report") if last_message else None,
+                    )
                 else:
                     now_plan: GptsPlan = todo_plans[0]
 
@@ -245,6 +248,8 @@ class AutoPlanChatManager(ManagerAgent):
                             current_goal_message, self, reviewer
                         )
 
+                        last_message = reply
+                        print(f"DEBUG2:[{last_message}]")
                         plan_result = ""
 
                         if verify_pass:
@@ -262,7 +267,6 @@ class AutoPlanChatManager(ManagerAgent):
                             await speaker.a_send(
                                 reply, self, reviewer, request_reply=False
                             )
-                            last_message = reply
                         else:
                             plan_result = reply["content"]
                             self.memory.plans_memory.update_task(

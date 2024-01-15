@@ -147,33 +147,32 @@ class MultiAgents(BaseComponent, ABC):
 
     async def agent_chat(
         self,
-        conv_uid: str,
+        agent_conv_id: str,
         gpts_name: str,
         user_query: str,
         user_code: str = None,
         sys_code: str = None,
     ):
-        logger.info(f"agent_chat:{gpts_name},{user_query},{conv_uid}")
-
-        # Temporary compatible scenario messages
-        conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
-        current_message: StorageConversation = _build_conversation(
-            conv_id=conv_uid,
-            select_param=gpts_name,
-            summary=user_query,
-            model_name="",
-            conv_serve=conv_serve,
-        )
-
-        current_message.start_new_round()
-        current_message.add_user_message(user_query)
-
-        agent_conv_id = conv_uid + "_" + str(current_message.chat_order)
-
-        task = asyncio.create_task(
-            multi_agents.agent_team_chat(
-                gpts_name, user_query, agent_conv_id, user_code, sys_code
+        context, team_mode = await self._build_agent_context(gpts_name, agent_conv_id)
+        gpts_conversation = self.gpts_conversations.get_by_conv_id(agent_conv_id)
+        is_retry_chat = True
+        if not gpts_conversation:
+            is_retry_chat = False
+            self.gpts_conversations.add(
+                GptsConversationsEntity(
+                    conv_id=agent_conv_id,
+                    user_goal=user_query,
+                    gpts_name=gpts_name,
+                    state=Status.RUNNING.value,
+                    max_auto_reply_round=context.max_chat_round,
+                    auto_reply_count=0,
+                    user_code=user_code,
+                    sys_code=sys_code,
+                )
             )
+
+        asyncio.create_task(
+            multi_agents.agent_team_chat(user_query, context, team_mode, is_retry_chat)
         )
 
         # def task_done_callback(task):
@@ -193,43 +192,77 @@ class MultiAgents(BaseComponent, ABC):
         #     current_message.save_to_storage()
         #
         # task.add_done_callback(task_done_callback)
-        async for chunk in multi_agents.chat_completions(agent_conv_id):
+        async for chunk in multi_agents.chat_messages(agent_conv_id):
             if chunk:
                 logger.info(chunk)
-                chunk = json.dumps(
-                    {"vis": chunk}, default=serialize, ensure_ascii=False
-                )
-                yield f"data: {chunk}\n\n"
+                try:
+                    chunk = json.dumps(
+                        {"vis": chunk}, default=serialize, ensure_ascii=False
+                    )
+                    yield f"data: {chunk}\n\n"
+                except Exception as e:
+                    logger.exception(f"get messages {gpts_name} Exception!" + str(e))
+                    yield f"data: {str(e)}\n\n"
+
         yield f'data:{json.dumps({"vis": "[DONE]"}, default=serialize, ensure_ascii=False)} \n\n'
 
-        await task
-        final_message = await self.stable_message(agent_conv_id)
-        current_message.add_view_message(final_message)
-        current_message.end_current_round()
-        current_message.save_to_storage()
-
-    async def agent_team_chat(
+    async def app_agent_chat(
         self,
-        name: str,
+        conv_uid: str,
+        gpts_name: str,
         user_query: str,
-        conv_id: str,
         user_code: str = None,
         sys_code: str = None,
     ):
+        logger.info(f"app_agent_chat:{gpts_name},{user_query},{conv_uid}")
+
+        # Temporary compatible scenario messages
+        conv_serve = ConversationServe.get_instance(CFG.SYSTEM_APP)
+        current_message: StorageConversation = _build_conversation(
+            conv_id=conv_uid,
+            select_param=gpts_name,
+            summary=user_query,
+            model_name="",
+            conv_serve=conv_serve,
+        )
+
+        current_message.save_to_storage()
+        current_message.start_new_round()
+        current_message.add_user_message(user_query)
+        try:
+            agent_conv_id = conv_uid + "_" + str(current_message.chat_order)
+            async for chunk in multi_agents.agent_chat(
+                agent_conv_id, gpts_name, user_query, user_code, sys_code
+            ):
+                yield chunk
+
+            final_message = await self.stable_message(agent_conv_id)
+        except Exception as e:
+            logger.exception(f"Chat to App {gpts_name} Failed!" + str(e))
+        finally:
+            logger.info(f"save agent chat info！{conv_uid},{agent_conv_id}")
+            current_message.add_view_message(final_message)
+            current_message.end_current_round()
+            current_message.save_to_storage()
+
+    async def agent_team_chat(
+        self,
+        user_query: str,
+        context: AgentContext,
+        team_mode: TeamMode,
+        is_retry_chat: bool = False,
+    ):
         """Initiate an Agent-based conversation
         Args:
-            name:
-            mode:
             user_query:
-            conv_id:
-            user_code:
-            sys_code:
+            context:
+            team_mode:
+            is_retry_chat:
 
         Returns:
 
         """
         try:
-            context, team_mode = await self._build_agent_context(name, conv_id)
             agents = []
             for name in context.agents:
                 cls = agent_manage.get_by_name(name)
@@ -244,21 +277,7 @@ class MultiAgents(BaseComponent, ABC):
             )
             user_proxy = UserProxyAgent(memory=self.memory, agent_context=context)
 
-            gpts_conversation = self.gpts_conversations.get_by_conv_id(conv_id)
-            if gpts_conversation is None:
-                self.gpts_conversations.add(
-                    GptsConversationsEntity(
-                        conv_id=conv_id,
-                        user_goal=user_query,
-                        gpts_name=name,
-                        state=Status.RUNNING.value,
-                        max_auto_reply_round=context.max_chat_round,
-                        auto_reply_count=0,
-                        user_code=user_code,
-                        sys_code=sys_code,
-                    )
-                )
-
+            if not is_retry_chat:
                 ## dbgpts conversation save
                 try:
                     await user_proxy.a_initiate_chat(
@@ -268,11 +287,11 @@ class MultiAgents(BaseComponent, ABC):
                     )
                 except Exception as e:
                     logger.error(f"chat abnormal termination！{str(e)}", e)
-                    self.gpts_conversations.update(conv_id, Status.FAILED.value)
+                    self.gpts_conversations.update(context.conv_id, Status.FAILED.value)
 
             else:
                 # retry chat
-                self.gpts_conversations.update(conv_id, Status.RUNNING.value)
+                self.gpts_conversations.update(context.conv_id, Status.RUNNING.value)
                 try:
                     await user_proxy.a_retry_chat(
                         recipient=manager,
@@ -280,19 +299,19 @@ class MultiAgents(BaseComponent, ABC):
                     )
                 except Exception as e:
                     logger.error(f"chat abnormal termination！{str(e)}", e)
-                    self.gpts_conversations.update(conv_id, Status.FAILED.value)
+                    self.gpts_conversations.update(context.conv_id, Status.FAILED.value)
 
-            self.gpts_conversations.update(conv_id, Status.COMPLETE.value)
-            return conv_id
+            self.gpts_conversations.update(context.conv_id, Status.COMPLETE.value)
+            return context.conv_id
         except Exception as e:
             logger.exception("new chat compeletion failed!")
+            self.gpts_conversations.update(context.conv_id, Status.FAILED.value)
             raise ValueError(f"Add chat failed!{str(e)}")
 
-    async def chat_completions(
+    async def chat_messages(
         self, conv_id: str, user_code: str = None, system_app: str = None
     ):
         is_complete = False
-        count = 0
         while True:
             gpts_conv = self.gpts_conversations.get_by_conv_id(conv_id)
             if gpts_conv:
@@ -306,9 +325,6 @@ class MultiAgents(BaseComponent, ABC):
                     ]
                     else False
                 )
-            else:
-                if count > 1:
-                    break
             message = await self.memory.one_chat_competions(conv_id)
             yield message
 
@@ -316,10 +332,6 @@ class MultiAgents(BaseComponent, ABC):
                 break
             else:
                 await asyncio.sleep(2)
-            if count > 3:
-                if not message or len(message) <= 0:
-                    break
-            count = count + 1
 
     async def stable_message(
         self, conv_id: str, user_code: str = None, system_app: str = None
@@ -395,15 +407,6 @@ async def get_dbgpts(user_code: str = None, sys_code: str = None):
         return Result.failed(msg=str(e), code="E300003")
 
 
-async def stream_generator(conv_id: str):
-    async for chunk in multi_agents.chat_completions(conv_id):
-        if chunk:
-            logger.info(chunk)
-            chunk = json.dumps({"vis": chunk}, default=serialize, ensure_ascii=False)
-            yield f"data: {chunk}\n\n"
-    yield f'data:{json.dumps({"vis": "[DONE]"}, default=serialize, ensure_ascii=False)} \n\n'
-
-
 @router.post("/v1/dbgpts/chat/completions", response_model=Result[str])
 async def dgpts_completions(
     gpts_name: str,
@@ -416,22 +419,6 @@ async def dgpts_completions(
     if conv_id is None:
         conv_id = str(uuid.uuid1())
 
-    task = asyncio.create_task(
-        multi_agents.agent_team_chat(
-            gpts_name, user_query, conv_id, user_code, sys_code
-        )
-    )
-
-    def task_done_callback(task):
-        try:
-            # 检查任务结果会抛出任务中的异常
-            task.result()
-        except ValueError as e:
-            logger.error(f"Caught an exception in task: {e}")
-            raise ValueError(e)
-
-    task.add_done_callback(task_done_callback)
-
     headers = {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -439,34 +426,23 @@ async def dgpts_completions(
         "Transfer-Encoding": "chunked",
     }
     return StreamingResponse(
-        stream_generator(conv_id),
+        multi_agents.agent_chat(
+            agent_conv_id=conv_id,
+            gpts_name=gpts_name,
+            user_query=user_query,
+            user_code=user_code,
+            sys_code=sys_code,
+        ),
         headers=headers,
         media_type="text/plain",
     )
 
 
-@router.post("/v1/dbgpts/plan/chat/cancel", response_model=Result[str])
-async def dgpts_plan_chat_cancel(
+@router.post("/v1/dbgpts/chat/cancel", response_model=Result[str])
+async def dgpts_chat_cancel(
     conv_id: str = None, user_code: str = None, sys_code: str = None
 ):
     pass
-
-
-@router.get("/v1/dbgpts/chat/plan/messages", response_model=Result[str])
-async def plan_chat_messages(conv_id: str, user_code: str = None, sys_code: str = None):
-    logger.info(f"plan_chat_messages:{conv_id},{user_code},{sys_code}")
-
-    headers = {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "Transfer-Encoding": "chunked",
-    }
-    return StreamingResponse(
-        stream_generator(conv_id),
-        headers=headers,
-        media_type="text/plain",
-    )
 
 
 @router.post("/v1/dbgpts/chat/feedback", response_model=Result[str])

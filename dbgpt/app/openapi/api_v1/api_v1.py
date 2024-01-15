@@ -333,7 +333,7 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     }
     if dialogue.chat_mode == ChatScene.ChatAgent.value():
         return StreamingResponse(
-            multi_agents.agent_chat(
+            multi_agents.app_agent_chat(
                 conv_uid=dialogue.conv_uid,
                 gpts_name=dialogue.select_param,
                 user_query=dialogue.user_input,

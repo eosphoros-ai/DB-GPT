@@ -101,7 +101,7 @@ class DataScientistAgent(ConversableAgent):
             try:
                 content = json.dumps(json_objects[0], ensure_ascii=False)
             except Exception as e:
-                content = (
+                fail_reason = (
                     f"There is a format problem with the json of the answer，{str(e)}"
                 )
                 response_success = False
@@ -115,7 +115,7 @@ class DataScientistAgent(ConversableAgent):
 
         return True, {
             "is_exe_success": response_success,
-            "content": content,
+            "content": content if response_success else fail_reason,
             "view": view,
         }
 
