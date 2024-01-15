@@ -62,6 +62,8 @@ export const AutoChart = (props: AutoChartProps) => {
             options={{
               ...spec,
               theme: mode,
+              autoFit: true,
+              height: 300,
             }}
           />
         );
