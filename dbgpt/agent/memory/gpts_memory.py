@@ -32,27 +32,57 @@ class GptsMemory:
     def message_memory(self):
         return self._message_memory
 
-    async def one_chat_competions(self, conv_id: str):
-        messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
-
-        messages_group = defaultdict(list)
-        for item in messages:
-            messages_group[item.current_gogal].append(item)
-
-        plans_info_map = defaultdict()
-        if messages_group:
-            num: int = 0
-            for key, value in messages_group.items():
-                num = num + 1
-                plans_info_map[key] = {
+    async def _plan_vis_build(self, plan_group: dict[str, list]):
+        num: int = 0
+        plan_items = []
+        for key, value in plan_group.items():
+            num = num + 1
+            plan_items.append(
+                {
                     "name": key,
                     "num": num,
                     "status": "complete",
                     "agent": value[0].receiver if value else "",
                     "markdown": await self._messages_to_agents_vis(value),
                 }
+            )
+        return await self._messages_to_plan_vis(plan_items)
 
-        return f"{await self._messages_to_plan_vis(list(plans_info_map.values()))}"
+    async def one_chat_competions_v2(self, conv_id: str):
+        messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
+
+    async def one_chat_competions(self, conv_id: str):
+        messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
+        temp_group = defaultdict(list)
+        temp_messages = []
+        vis_items = []
+        count: int = 0
+        for message in messages:
+            count = count + 1
+            if count == 1:
+                continue
+            if not message.current_gogal or len(message.current_gogal) <= 0:
+                if len(temp_group) > 0:
+                    vis_items.append(await self._plan_vis_build(temp_group))
+                    temp_group.clear()
+
+                temp_messages.append(message)
+            else:
+                if len(temp_messages) > 0:
+                    vis_items.append(await self._messages_to_agents_vis(temp_messages))
+                    temp_messages.clear()
+
+                last_gogal = message.current_gogal
+                temp_group[last_gogal].append(message)
+
+        if len(temp_group) > 0:
+            vis_items.append(await self._plan_vis_build(temp_group))
+            temp_group.clear()
+        if len(temp_messages) > 0:
+            vis_items.append(await self._messages_to_agents_vis(temp_messages))
+            temp_messages.clear()
+
+        return "\n".join(vis_items)
 
     async def _messages_to_agents_vis(self, messages: List[GptsMessage]):
         if messages is None or len(messages) <= 0:

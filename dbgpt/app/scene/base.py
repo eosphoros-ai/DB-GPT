@@ -63,7 +63,7 @@ class ChatScene(Enum):
     ChatAgent = Scene(
         code="chat_agent",
         name="Agent Chat",
-        describe="Use tools through dialogue to accomplish your goals.",
+        describe="Talk to intelligent applications built by Agent.",
         param_types=["Plugin Select"],
     )
 

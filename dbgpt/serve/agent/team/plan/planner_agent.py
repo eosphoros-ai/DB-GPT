@@ -128,6 +128,20 @@ class PlannerAgent(ConversableAgent):
         params = self.build_param(self.agent_context)
         self.update_system_message(self.DEFAULT_SYSTEM_MESSAGE.format(**params))
 
+    async def a_generate_reply(
+        self,
+        message: Optional[Dict],
+        sender: Agent,
+        reviewer: Agent,
+        silent: Optional[bool] = False,
+        rely_messages: Optional[List[Dict]] = None,
+    ):
+        final, reply_message = await super().a_generate_reply(
+            message, sender, reviewer, silent, rely_messages
+        )
+        reply_message["is_termination"] = True
+        return final, reply_message
+
     async def _a_planning(
         self,
         message: Optional[str] = None,
@@ -184,5 +198,4 @@ class PlannerAgent(ConversableAgent):
             "is_exe_success": rensponse_succ,
             "content": content,
             "view": content,
-            "is_termination": True,
         }
