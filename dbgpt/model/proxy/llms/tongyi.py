@@ -51,7 +51,6 @@ class TongyiLLMClient(ProxyLLMClient):
         if api_region:
             dashscope.api_region = api_region
         self._model = model
-        self.default_model = self._model
 
         super().__init__(
             model_names=[model, model_alias],
@@ -72,6 +71,10 @@ class TongyiLLMClient(ProxyLLMClient):
             context_length=model_params.max_context_size,
             executor=default_executor,
         )
+
+    @property
+    def default_model(self) -> str:
+        return self._model
 
     def sync_generate_stream(
         self,

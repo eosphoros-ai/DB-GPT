@@ -114,7 +114,6 @@ class GeminiLLMClient(ProxyLLMClient):
         self._api_key = api_key if api_key else os.getenv("GEMINI_PROXY_API_KEY")
         self._api_base = api_base if api_base else os.getenv("GEMINI_PROXY_API_BASE")
         self._model = model
-        self.default_model = self._model
         if not self._api_key:
             raise RuntimeError("api_key can't be empty")
 
@@ -147,6 +146,10 @@ class GeminiLLMClient(ProxyLLMClient):
             context_length=model_params.max_context_size,
             executor=default_executor,
         )
+
+    @property
+    def default_model(self) -> str:
+        return self._model
 
     def sync_generate_stream(
         self,

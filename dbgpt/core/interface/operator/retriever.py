@@ -1,3 +1,4 @@
+"""The Abstract Retriever Operator."""
 from abc import abstractmethod
 
 from dbgpt.core.awel import MapOperator
@@ -16,7 +17,8 @@ class RetrieverOperator(MapOperator[IN, OUT]):
         Returns:
             OUT: The output value.
         """
-        # The retrieve function is blocking, so we need to wrap it in a blocking_func_to_async.
+        # The retrieve function is blocking, so we need to wrap it in a
+        # blocking_func_to_async.
         return await self.blocking_func_to_async(self.retrieve, input_value)
 
     @abstractmethod

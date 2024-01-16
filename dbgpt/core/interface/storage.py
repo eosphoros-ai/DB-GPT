@@ -1,5 +1,7 @@
+"""The storage interface for storing and loading data."""
+
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
 
 from dbgpt.core.interface.serialization import Serializable, Serializer
 from dbgpt.util.annotations import PublicAPI
@@ -55,17 +57,22 @@ class StorageItem(Serializable, ABC):
         """
 
 
+ID = TypeVar("ID", bound=ResourceIdentifier)
 T = TypeVar("T", bound=StorageItem)
 TDataRepresentation = TypeVar("TDataRepresentation")
 
 
 class StorageItemAdapter(Generic[T, TDataRepresentation]):
-    """The storage item adapter for converting storage items to and from the storage format.
+    """Storage item adapter.
+
+    The storage item adapter for converting storage items to and from the storage
+    format.
 
     Sometimes, the storage item is not the same as the storage format,
     so we need to convert the storage item to the storage format and vice versa.
 
-    In database storage, the storage format is database model, but the StorageItem is the user-defined object.
+    In database storage, the storage format is database model, but the StorageItem is
+    the user-defined object.
     """
 
     @abstractmethod
@@ -110,20 +117,44 @@ class StorageItemAdapter(Generic[T, TDataRepresentation]):
 
 
 class DefaultStorageItemAdapter(StorageItemAdapter[T, T]):
-    """The default storage item adapter for converting storage items to and from the storage format.
+    """Default storage item adapter.
+
+    The default storage item adapter for converting storage items to and from the
+    storage format.
 
     The storage item is the same as the storage format, so no conversion is required.
     """
 
     def to_storage_format(self, item: T) -> T:
+        """Convert the storage item to the storage format.
+
+        Returns the storage item itself.
+
+        Args:
+            item (T): The storage item
+
+        Returns:
+            T: The data in the storage format
+        """
         return item
 
     def from_storage_format(self, data: T) -> T:
+        """Convert the storage format to the storage item.
+
+        Returns the storage format itself.
+
+        Args:
+            data (T): The data in the storage format
+
+        Returns:
+            T: The storage item
+        """
         return data
 
     def get_query_for_identifier(
-        self, storage_format: Type[T], resource_id: ResourceIdentifier, **kwargs
+        self, storage_format: Type[T], resource_id: ID, **kwargs
     ) -> bool:
+        """Return the query for the resource identifier."""
         return True
 
 
@@ -132,6 +163,7 @@ class StorageError(Exception):
     """The base exception class for storage errors."""
 
     def __init__(self, message: str):
+        """Create a new StorageError."""
         super().__init__(message)
 
 
@@ -146,8 +178,9 @@ class QuerySpec:
     """
 
     def __init__(
-        self, conditions: Dict[str, Any], limit: int = None, offset: int = 0
+        self, conditions: Dict[str, Any], limit: Optional[int] = None, offset: int = 0
     ) -> None:
+        """Create a new QuerySpec."""
         self.conditions = conditions
         self.limit = limit
         self.offset = offset
@@ -162,6 +195,7 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
         serializer: Optional[Serializer] = None,
         adapter: Optional[StorageItemAdapter[T, TDataRepresentation]] = None,
     ):
+        """Create a new StorageInterface."""
         self._serializer = serializer or JsonSerializer()
         self._storage_item_adapter = adapter or DefaultStorageItemAdapter()
 
@@ -238,7 +272,7 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
             self.save_or_update(d)
 
     @abstractmethod
-    def load(self, resource_id: ResourceIdentifier, cls: Type[T]) -> Optional[T]:
+    def load(self, resource_id: ID, cls: Type[T]) -> Optional[T]:
         """Load the data from the storage.
 
         None will be returned if the data does not exist in the storage.
@@ -247,14 +281,14 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
         so we suggest to use load if possible.
 
         Args:
-            resource_id (ResourceIdentifier): The resource identifier of the data
+            resource_id (ID): The resource identifier of the data
             cls (Type[T]): The type of the data
 
         Returns:
             Optional[T]: The loaded data
         """
 
-    def load_list(self, resource_id: List[ResourceIdentifier], cls: Type[T]) -> List[T]:
+    def load_list(self, resource_id: List[ID], cls: Type[T]) -> List[T]:
         """Load the data from the storage.
 
         None will be returned if the data does not exist in the storage.
@@ -263,7 +297,7 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
         so we suggest to use load if possible.
 
         Args:
-            resource_id (ResourceIdentifier): The resource identifier of the data
+            resource_id (ID): The resource identifier of the data
             cls (Type[T]): The type of the data
 
         Returns:
@@ -277,18 +311,18 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
         return result
 
     @abstractmethod
-    def delete(self, resource_id: ResourceIdentifier) -> None:
+    def delete(self, resource_id: ID) -> None:
         """Delete the data from the storage.
 
         Args:
-            resource_id (ResourceIdentifier): The resource identifier of the data
+            resource_id (ID): The resource identifier of the data
         """
 
-    def delete_list(self, resource_id: List[ResourceIdentifier]) -> None:
+    def delete_list(self, resource_id: List[ID]) -> None:
         """Delete the data from the storage.
 
         Args:
-            resource_id (ResourceIdentifier): The resource identifier of the data
+            resource_id (ID): The resource identifier of the data
         """
         for r in resource_id:
             self.delete(r)
@@ -297,7 +331,8 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
     def query(self, spec: QuerySpec, cls: Type[T]) -> List[T]:
         """Query data from the storage.
 
-        Query data with resource_id will be faster than query data with conditions, so please use load if possible.
+        Query data with resource_id will be faster than query data with conditions,
+        so please use load if possible.
 
         Args:
             spec (QuerySpec): The query specification
@@ -328,7 +363,8 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
             page (int): The page number
             page_size (int): The number of items per page
             cls (Type[T]): The type of the data
-            spec (Optional[QuerySpec], optional): The query specification. Defaults to None.
+            spec (Optional[QuerySpec], optional): The query specification.
+                Defaults to None.
 
         Returns:
             PaginationResult[T]: The pagination result
@@ -356,10 +392,17 @@ class InMemoryStorage(StorageInterface[T, T]):
         self,
         serializer: Optional[Serializer] = None,
     ):
+        """Create a new InMemoryStorage."""
         super().__init__(serializer)
-        self._data = {}  # Key: ResourceIdentifier, Value: Serialized data
+        # Key: ResourceIdentifier, Value: Serialized data
+        self._data: Dict[str, bytes] = {}
 
     def save(self, data: T) -> None:
+        """Save the data to the storage.
+
+        Args:
+            data (T): The data to save
+        """
         if not data:
             raise StorageError("Data cannot be None")
         if not data.serializer:
@@ -372,6 +415,7 @@ class InMemoryStorage(StorageInterface[T, T]):
         self._data[data.identifier.str_identifier] = data.serialize()
 
     def update(self, data: T) -> None:
+        """Update the data to the storage."""
         if not data:
             raise StorageError("Data cannot be None")
         if not data.serializer:
@@ -379,22 +423,34 @@ class InMemoryStorage(StorageInterface[T, T]):
         self._data[data.identifier.str_identifier] = data.serialize()
 
     def save_or_update(self, data: T) -> None:
+        """Save or update the data to the storage."""
         self.update(data)
 
-    def load(self, resource_id: ResourceIdentifier, cls: Type[T]) -> Optional[T]:
+    def load(self, resource_id: ID, cls: Type[T]) -> Optional[T]:
+        """Load the data from the storage."""
         serialized_data = self._data.get(resource_id.str_identifier)
         if serialized_data is None:
             return None
-        return self.serializer.deserialize(serialized_data, cls)
+        return cast(T, self.serializer.deserialize(serialized_data, cls))
 
-    def delete(self, resource_id: ResourceIdentifier) -> None:
+    def delete(self, resource_id: ID) -> None:
+        """Delete the data from the storage."""
         if resource_id.str_identifier in self._data:
             del self._data[resource_id.str_identifier]
 
     def query(self, spec: QuerySpec, cls: Type[T]) -> List[T]:
+        """Query data from the storage.
+
+        Args:
+            spec (QuerySpec): The query specification
+            cls (Type[T]): The type of the data
+
+        Returns:
+            List[T]: The queried data
+        """
         result = []
         for serialized_data in self._data.values():
-            data = self._serializer.deserialize(serialized_data, cls)
+            data = cast(T, self._serializer.deserialize(serialized_data, cls))
             if all(
                 getattr(data, key) == value for key, value in spec.conditions.items()
             ):
@@ -408,6 +464,15 @@ class InMemoryStorage(StorageInterface[T, T]):
         return result
 
     def count(self, spec: QuerySpec, cls: Type[T]) -> int:
+        """Count the number of data from the storage.
+
+        Args:
+            spec (QuerySpec): The query specification
+            cls (Type[T]): The type of the data
+
+        Returns:
+            int: The number of data
+        """
         count = 0
         for serialized_data in self._data.values():
             data = self._serializer.deserialize(serialized_data, cls)

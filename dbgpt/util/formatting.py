@@ -1,7 +1,7 @@
 """Utilities for formatting strings."""
 import json
 from string import Formatter
-from typing import Any, List, Mapping, Sequence, Union
+from typing import Any, List, Mapping, Sequence, Set, Union
 
 
 class StrictFormatter(Formatter):
@@ -9,7 +9,7 @@ class StrictFormatter(Formatter):
 
     def check_unused_args(
         self,
-        used_args: Sequence[Union[int, str]],
+        used_args: Set[Union[int, str]],
         args: Sequence,
         kwargs: Mapping[str, Any],
     ) -> None:
@@ -39,7 +39,7 @@ class StrictFormatter(Formatter):
 class NoStrictFormatter(StrictFormatter):
     def check_unused_args(
         self,
-        used_args: Sequence[Union[int, str]],
+        used_args: Set[Union[int, str]],
         args: Sequence,
         kwargs: Mapping[str, Any],
     ) -> None:

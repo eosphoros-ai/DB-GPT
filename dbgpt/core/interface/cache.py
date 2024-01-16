@@ -1,3 +1,10 @@
+"""The cache interface.
+
+The cache interface is used to cache LLM results and embedding results.
+
+Maybe we can cache more server results in the future.
+"""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -10,17 +17,23 @@ V = TypeVar("V")
 
 
 class RetrievalPolicy(str, Enum):
+    """The retrieval policy of the cache."""
+
     EXACT_MATCH = "exact_match"
     SIMILARITY_MATCH = "similarity_match"
 
 
 class CachePolicy(str, Enum):
+    """The cache policy of the cache."""
+
     LRU = "lru"
     FIFO = "fifo"
 
 
 @dataclass
 class CacheConfig:
+    """The cache config."""
+
     retrieval_policy: Optional[RetrievalPolicy] = RetrievalPolicy.EXACT_MATCH
     cache_policy: Optional[CachePolicy] = CachePolicy.LRU
 
@@ -30,7 +43,8 @@ class CacheKey(Serializable, ABC, Generic[K]):
 
     Supported cache keys:
     - The LLM cache key: Include user prompt and the parameters to LLM.
-    - The embedding model cache key: Include the texts to embedding and the parameters to embedding model.
+    - The embedding model cache key: Include the texts to embedding and the parameters
+    to embedding model.
     """
 
     @abstractmethod
@@ -76,7 +90,8 @@ class CacheClient(ABC, Generic[K, V]):
             cache_config (Optional[CacheConfig]): Cache config
 
         Returns:
-            Optional[CacheValue[V]]: The value retrieved according to key. If cache key not exist, return None.
+            Optional[CacheValue[V]]: The value retrieved according to key. If cache key
+                not exist, return None.
         """
 
     @abstractmethod
@@ -110,8 +125,8 @@ class CacheClient(ABC, Generic[K, V]):
 
     @abstractmethod
     def new_key(self, **kwargs) -> CacheKey[K]:
-        """Create a cache key with params"""
+        """Create a cache key with params."""
 
     @abstractmethod
     def new_value(self, **kwargs) -> CacheValue[K]:
-        """Create a cache key with params"""
+        """Create a cache key with params."""

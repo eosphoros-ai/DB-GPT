@@ -3,8 +3,6 @@ import os
 import sys
 from typing import List
 
-ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(ROOT_PATH)
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,6 +38,10 @@ from dbgpt.util.utils import (
     setup_http_service_logging,
     setup_logging,
 )
+
+ROOT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(ROOT_PATH)
+
 
 static_file_path = os.path.join(ROOT_PATH, "dbgpt", "app/static")
 

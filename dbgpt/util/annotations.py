@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 def PublicAPI(*args, **kwargs):
     """Decorator to mark a function or class as a public API.
 
@@ -64,7 +67,7 @@ def DeveloperAPI(*args, **kwargs):
     return decorator
 
 
-def _modify_docstring(obj, message: str = None):
+def _modify_docstring(obj, message: Optional[str] = None):
     if not message:
         return
     if not obj.__doc__:
@@ -81,6 +84,7 @@ def _modify_docstring(obj, message: str = None):
 
     if min_indent == float("inf"):
         min_indent = 0
+    min_indent = int(min_indent)
     indented_message = message.rstrip() + "\n" + (" " * min_indent)
     obj.__doc__ = indented_message + original_doc
 

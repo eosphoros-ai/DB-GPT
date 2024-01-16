@@ -1,3 +1,4 @@
+"""The message operator."""
 import uuid
 from abc import ABC
 from typing import Any, Callable, Dict, List, Optional, Union
@@ -36,6 +37,7 @@ class BaseConversationOperator(BaseOperator, ABC):
         check_storage: bool = True,
         **kwargs,
     ):
+        """Create a new BaseConversationOperator."""
         self._check_storage = check_storage
         self._storage = storage
         self._message_storage = message_storage
@@ -102,7 +104,8 @@ class PreChatHistoryLoadOperator(
 ):
     """The operator to prepare the storage conversation.
 
-    In DB-GPT, conversation record and the messages in the conversation are stored in the storage,
+    In DB-GPT, conversation record and the messages in the conversation are stored in
+    the storage,
     and they can store in different storage(for high performance).
 
     This operator just load the conversation and messages from storage.
@@ -115,6 +118,7 @@ class PreChatHistoryLoadOperator(
         include_system_message: bool = False,
         **kwargs,
     ):
+        """Create a new PreChatHistoryLoadOperator."""
         super().__init__(storage=storage, message_storage=message_storage)
         MapOperator.__init__(self, **kwargs)
         self._include_system_message = include_system_message
@@ -139,7 +143,8 @@ class PreChatHistoryLoadOperator(
 
         chat_mode = input_value.chat_mode
 
-        # Create a new storage conversation, this will load the conversation from storage, so we must do this async
+        # Create a new storage conversation, this will load the conversation from
+        # storage, so we must do this async
         storage_conv: StorageConversation = await self.blocking_func_to_async(
             StorageConversation,
             conv_uid=input_value.conv_uid,
@@ -167,14 +172,21 @@ class PreChatHistoryLoadOperator(
 class ConversationMapperOperator(
     BaseConversationOperator, MapOperator[List[BaseMessage], List[BaseMessage]]
 ):
-    def __init__(self, message_mapper: _MultiRoundMessageMapper = None, **kwargs):
+    """The base conversation mapper operator."""
+
+    def __init__(
+        self, message_mapper: Optional[_MultiRoundMessageMapper] = None, **kwargs
+    ):
+        """Create a new ConversationMapperOperator."""
         MapOperator.__init__(self, **kwargs)
         self._message_mapper = message_mapper
 
     async def map(self, input_value: List[BaseMessage]) -> List[BaseMessage]:
+        """Map the input value to a ModelRequest."""
         return await self.map_messages(input_value)
 
     async def map_messages(self, messages: List[BaseMessage]) -> List[BaseMessage]:
+        """Map multi round messages to a list of BaseMessage."""
         messages_by_round: List[List[BaseMessage]] = _split_messages_by_round(messages)
         message_mapper = self._message_mapper or self.map_multi_round_messages
         return message_mapper(messages_by_round)
@@ -184,11 +196,11 @@ class ConversationMapperOperator(
     ) -> List[BaseMessage]:
         """Map multi round messages to a list of BaseMessage.
 
-        By default, just merge all multi round messages to a list of BaseMessage according origin order.
+        By default, just merge all multi round messages to a list of BaseMessage
+        according origin order.
         And you can overwrite this method to implement your own logic.
 
         Examples:
-
             Merge multi round messages to a list of BaseMessage according origin order.
 
             >>> from dbgpt.core.interface.message import (
@@ -215,7 +227,8 @@ class ConversationMapperOperator(
             ...     AIMessage(content="Just a joke.", round_index=2),
             ... ]
 
-            Map multi round messages to a list of BaseMessage just keep the last one round.
+            Map multi round messages to a list of BaseMessage just keep the last one
+            round.
 
             >>> class MyMapper(ConversationMapperOperator):
             ...     def __init__(self, **kwargs):
@@ -234,13 +247,16 @@ class ConversationMapperOperator(
             ... ]
 
         Args:
+            messages_by_round (List[List[BaseMessage]]):
+                The messages grouped by round.
         """
         # Just merge and return
         return _merge_multi_round_messages(messages_by_round)
 
 
 class BufferedConversationMapperOperator(ConversationMapperOperator):
-    """
+    """Buffered conversation mapper operator.
+
     The buffered conversation mapper operator which can be configured to keep
     a certain number of starting and/or ending rounds of a conversation.
 
@@ -249,39 +265,44 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
         keep_end_rounds (Optional[int]): Number of final rounds to keep.
 
     Examples:
-        # Keeping the first 2 and the last 1 rounds of a conversation
-        import asyncio
-        from dbgpt.core.interface.message import AIMessage, HumanMessage
-        from dbgpt.core.operator import BufferedConversationMapperOperator
+        .. code-block:: python
 
-        operator = BufferedConversationMapperOperator(keep_start_rounds=2, keep_end_rounds=1)
-        messages = [
-            # Assume each HumanMessage and AIMessage belongs to separate rounds
-            HumanMessage(content="Hi", round_index=1),
-            AIMessage(content="Hello!", round_index=1),
-            HumanMessage(content="How are you?", round_index=2),
-            AIMessage(content="I'm good, thanks!", round_index=2),
-            HumanMessage(content="What's new today?", round_index=3),
-            AIMessage(content="Lots of things!", round_index=3),
-        ]
-        # This will keep rounds 1, 2, and 3
-        assert asyncio.run(operator.map_messages(messages)) == [
-            HumanMessage(content="Hi", round_index=1),
-            AIMessage(content="Hello!", round_index=1),
-            HumanMessage(content="How are you?", round_index=2),
-            AIMessage(content="I'm good, thanks!", round_index=2),
-            HumanMessage(content="What's new today?", round_index=3),
-            AIMessage(content="Lots of things!", round_index=3),
-        ]
+            # Keeping the first 2 and the last 1 rounds of a conversation
+            import asyncio
+            from dbgpt.core.interface.message import AIMessage, HumanMessage
+            from dbgpt.core.operator import BufferedConversationMapperOperator
+
+            operator = BufferedConversationMapperOperator(
+                keep_start_rounds=2, keep_end_rounds=1
+            )
+            messages = [
+                # Assume each HumanMessage and AIMessage belongs to separate rounds
+                HumanMessage(content="Hi", round_index=1),
+                AIMessage(content="Hello!", round_index=1),
+                HumanMessage(content="How are you?", round_index=2),
+                AIMessage(content="I'm good, thanks!", round_index=2),
+                HumanMessage(content="What's new today?", round_index=3),
+                AIMessage(content="Lots of things!", round_index=3),
+            ]
+            # This will keep rounds 1, 2, and 3
+            assert asyncio.run(operator.map_messages(messages)) == [
+                HumanMessage(content="Hi", round_index=1),
+                AIMessage(content="Hello!", round_index=1),
+                HumanMessage(content="How are you?", round_index=2),
+                AIMessage(content="I'm good, thanks!", round_index=2),
+                HumanMessage(content="What's new today?", round_index=3),
+                AIMessage(content="Lots of things!", round_index=3),
+            ]
     """
 
     def __init__(
         self,
         keep_start_rounds: Optional[int] = None,
         keep_end_rounds: Optional[int] = None,
-        message_mapper: _MultiRoundMessageMapper = None,
+        message_mapper: Optional[_MultiRoundMessageMapper] = None,
         **kwargs,
     ):
+        """Create a new BufferedConversationMapperOperator."""
         # Validate the input parameters
         if keep_start_rounds is not None and keep_start_rounds < 0:
             raise ValueError("keep_start_rounds must be non-negative")
@@ -311,10 +332,11 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
     def _filter_round_messages(
         self, messages_by_round: List[List[BaseMessage]]
     ) -> List[List[BaseMessage]]:
-        """Filters the messages to keep only the specified starting and/or ending rounds.
+        """Return a filtered list of messages.
+
+        Filters the messages to keep only the specified starting and/or ending rounds.
 
         Examples:
-
             >>> from dbgpt.core import AIMessage, HumanMessage
             >>> from dbgpt.core.operator import BufferedConversationMapperOperator
             >>> messages = [
@@ -395,15 +417,18 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             ... ]
 
         Args:
-                messages_by_round (List[List[BaseMessage]]): The messages grouped by round.
+            messages_by_round (List[List[BaseMessage]]):
+                The messages grouped by round.
 
-            Returns:
-                List[List[BaseMessage]]: Filtered list of messages.
+        Returns:
+            List[List[BaseMessage]]: Filtered list of messages.
+
         """
         total_rounds = len(messages_by_round)
         if self._keep_start_rounds is not None and self._keep_end_rounds is not None:
             if self._keep_start_rounds + self._keep_end_rounds > total_rounds:
-                # Avoid overlapping when the sum of start and end rounds exceeds total rounds
+                # Avoid overlapping when the sum of start and end rounds exceeds total
+                # rounds
                 return messages_by_round
             return (
                 messages_by_round[: self._keep_start_rounds]
@@ -423,14 +448,16 @@ EvictionPolicyType = Callable[[List[List[BaseMessage]]], List[List[BaseMessage]]
 class TokenBufferedConversationMapperOperator(ConversationMapperOperator):
     """The token buffered conversation mapper operator.
 
-    If the token count of the messages is greater than the max token limit, we will evict the messages by round.
+    If the token count of the messages is greater than the max token limit, we will
+    evict the messages by round.
 
     Args:
         model (str): The model name.
         llm_client (LLMClient): The LLM client.
         max_token_limit (int): The max token limit.
         eviction_policy (EvictionPolicyType): The eviction policy.
-        message_mapper (_MultiRoundMessageMapper): The message mapper, it applies after all messages are handled.
+        message_mapper (_MultiRoundMessageMapper): The message mapper, it applies after
+            all messages are handled.
     """
 
     def __init__(
@@ -438,10 +465,11 @@ class TokenBufferedConversationMapperOperator(ConversationMapperOperator):
         model: str,
         llm_client: LLMClient,
         max_token_limit: int = 2000,
-        eviction_policy: EvictionPolicyType = None,
-        message_mapper: _MultiRoundMessageMapper = None,
+        eviction_policy: Optional[EvictionPolicyType] = None,
+        message_mapper: Optional[_MultiRoundMessageMapper] = None,
         **kwargs,
     ):
+        """Create a new TokenBufferedConversationMapperOperator."""
         if max_token_limit < 0:
             raise ValueError("Max token limit can't be negative")
         self._model = model
@@ -452,6 +480,7 @@ class TokenBufferedConversationMapperOperator(ConversationMapperOperator):
         super().__init__(**kwargs)
 
     async def map_messages(self, messages: List[BaseMessage]) -> List[BaseMessage]:
+        """Map multi round messages to a list of BaseMessage."""
         eviction_policy = self._eviction_policy or self.eviction_policy
         messages_by_round: List[List[BaseMessage]] = _split_messages_by_round(messages)
         messages_str = _messages_to_str(_merge_multi_round_messages(messages_by_round))
@@ -459,7 +488,8 @@ class TokenBufferedConversationMapperOperator(ConversationMapperOperator):
         current_tokens = await self._llm_client.count_token(self._model, messages_str)
 
         while current_tokens > self._max_token_limit:
-            # Evict the messages by round after all tokens are not greater than the max token limit
+            # Evict the messages by round after all tokens are not greater than the max
+            # token limit
             # TODO: We should find a high performance way to do this
             messages_by_round = eviction_policy(messages_by_round)
             messages_str = _messages_to_str(

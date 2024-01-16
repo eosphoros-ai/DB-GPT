@@ -1,7 +1,7 @@
+"""Base classes for operators that can be executed within a workflow."""
 import asyncio
 import functools
 from abc import ABC, ABCMeta, abstractmethod
-from inspect import signature
 from types import FunctionType
 from typing import (
     Any,
@@ -9,7 +9,6 @@ from typing import (
     Dict,
     Generic,
     Iterator,
-    List,
     Optional,
     TypeVar,
     Union,
@@ -21,7 +20,6 @@ from dbgpt.util.executor_utils import (
     AsyncToSyncIterator,
     BlockingFunction,
     DefaultExecutorFactory,
-    ExecutorFactory,
     blocking_func_to_async,
 )
 
@@ -54,13 +52,15 @@ class WorkflowRunner(ABC, Generic[T]):
             node (RunnableDAGNode): The starting node of the workflow to be executed.
             call_data (CALL_DATA): The data pass to root operator node.
             streaming_call (bool): Whether the call is a streaming call.
-            exist_dag_ctx (DAGContext): The context of the DAG when this node is run, Defaults to None.
+            exist_dag_ctx (DAGContext): The context of the DAG when this node is run,
+                Defaults to None.
         Returns:
-            DAGContext: The context after executing the workflow, containing the final state and data.
+            DAGContext: The context after executing the workflow, containing the final
+                state and data.
         """
 
 
-default_runner: WorkflowRunner = None
+default_runner: Optional[WorkflowRunner] = None
 
 
 class BaseOperatorMeta(ABCMeta):
@@ -68,8 +68,7 @@ class BaseOperatorMeta(ABCMeta):
 
     @classmethod
     def _apply_defaults(cls, func: F) -> F:
-        sig_cache = signature(func)
-
+        # sig_cache = signature(func)
         @functools.wraps(func)
         def apply_defaults(self: "BaseOperator", *args: Any, **kwargs: Any) -> Any:
             dag: Optional[DAG] = kwargs.get("dag") or DAGVar.get_current_dag()
@@ -81,7 +80,7 @@ class BaseOperatorMeta(ABCMeta):
             if not executor:
                 if system_app:
                     executor = system_app.get_component(
-                        ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
+                        ComponentType.EXECUTOR_DEFAULT, DefaultExecutorFactory
                     ).create()
                 else:
                     executor = DefaultExecutorFactory().create()
@@ -107,9 +106,10 @@ class BaseOperatorMeta(ABCMeta):
             real_obj = func(self, *args, **kwargs)
             return real_obj
 
-        return cast(T, apply_defaults)
+        return cast(F, apply_defaults)
 
     def __new__(cls, name, bases, namespace, **kwargs):
+        """Create a new BaseOperator class with default arguments."""
         new_cls = super().__new__(cls, name, bases, namespace, **kwargs)
         new_cls.__init__ = cls._apply_defaults(new_cls.__init__)
         return new_cls
@@ -126,13 +126,14 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         task_id: Optional[str] = None,
         task_name: Optional[str] = None,
         dag: Optional[DAG] = None,
-        runner: WorkflowRunner = None,
+        runner: Optional[WorkflowRunner] = None,
         **kwargs,
     ) -> None:
-        """Initializes a BaseOperator with an optional workflow runner.
+        """Create a BaseOperator with an optional workflow runner.
 
         Args:
-            runner (WorkflowRunner, optional): The runner used to execute the workflow. Defaults to None.
+            runner (WorkflowRunner, optional): The runner used to execute the workflow.
+                Defaults to None.
         """
         super().__init__(node_id=task_id, node_name=task_name, dag=dag, **kwargs)
         if not runner:
@@ -141,19 +142,24 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             runner = DefaultWorkflowRunner()
 
         self._runner: WorkflowRunner = runner
-        self._dag_ctx: DAGContext = None
+        self._dag_ctx: Optional[DAGContext] = None
 
     @property
     def current_dag_context(self) -> DAGContext:
+        """Return the current DAG context."""
+        if not self._dag_ctx:
+            raise ValueError("DAGContext is not set")
         return self._dag_ctx
 
     @property
     def dev_mode(self) -> bool:
         """Whether the operator is in dev mode.
+
         In production mode, the default runner is not None.
 
         Returns:
-            bool: Whether the operator is in dev mode. True if the default runner is None.
+            bool: Whether the operator is in dev mode. True if the
+                default runner is None.
         """
         return default_runner is None
 
@@ -186,7 +192,8 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         Args:
             call_data (CALL_DATA): The data pass to root operator node.
-            dag_ctx (DAGContext): The context of the DAG when this node is run, Defaults to None.
+            dag_ctx (DAGContext): The context of the DAG when this node is run,
+                Defaults to None.
         Returns:
             OUT: The output of the node after execution.
         """
@@ -196,7 +203,9 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         return out_ctx.current_task_context.task_output.output
 
     def _blocking_call(
-        self, call_data: Optional[CALL_DATA] = None, loop: asyncio.BaseEventLoop = None
+        self,
+        call_data: Optional[CALL_DATA] = None,
+        loop: Optional[asyncio.BaseEventLoop] = None,
     ) -> OUT:
         """Execute the node and return the output.
 
@@ -213,6 +222,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         if not loop:
             loop = get_or_create_event_loop()
+        loop = cast(asyncio.BaseEventLoop, loop)
         return loop.run_until_complete(self.call(call_data))
 
     async def call_stream(
@@ -226,7 +236,8 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         Args:
             call_data (CALL_DATA): The data pass to root operator node.
-            dag_ctx (DAGContext): The context of the DAG when this node is run, Defaults to None.
+            dag_ctx (DAGContext): The context of the DAG when this node is run,
+                Defaults to None.
 
         Returns:
             AsyncIterator[OUT]: An asynchronous iterator over the output stream.
@@ -237,7 +248,9 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         return out_ctx.current_task_context.task_output.output_stream
 
     def _blocking_call_stream(
-        self, call_data: Optional[CALL_DATA] = None, loop: asyncio.BaseEventLoop = None
+        self,
+        call_data: Optional[CALL_DATA] = None,
+        loop: Optional[asyncio.BaseEventLoop] = None,
     ) -> Iterator[OUT]:
         """Execute the node and return the output as a stream.
 
@@ -259,9 +272,22 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     async def blocking_func_to_async(
         self, func: BlockingFunction, *args, **kwargs
     ) -> Any:
+        """Execute a blocking function asynchronously.
+
+        In AWEL, the operators are executed asynchronously. However,
+        some functions are blocking, we run them in a separate thread.
+
+        Args:
+            func (BlockingFunction): The blocking function to be executed.
+            *args: Positional arguments for the function.
+            **kwargs: Keyword arguments for the function.
+        """
+        if not self._executor:
+            raise ValueError("Executor is not set")
         return await blocking_func_to_async(self._executor, func, *args, **kwargs)
 
 
 def initialize_runner(runner: WorkflowRunner):
+    """Initialize the default runner."""
     global default_runner
     default_runner = runner

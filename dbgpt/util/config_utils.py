@@ -1,6 +1,6 @@
 import os
 from functools import cache
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 
 class AppConfig:
@@ -46,7 +46,7 @@ class AppConfig:
         """
         env_lang = (
             "zh"
-            if os.getenv("LANG") and os.getenv("LANG").startswith("zh")
+            if os.getenv("LANG") and cast(str, os.getenv("LANG")).startswith("zh")
             else default
         )
         return self.get("dbgpt.app.global.language", env_lang)

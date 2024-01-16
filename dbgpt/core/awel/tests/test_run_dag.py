@@ -26,7 +26,7 @@ from .conftest import (
 
 @pytest.mark.asyncio
 async def test_input_node(runner: WorkflowRunner):
-    input_node = InputOperator(SimpleInputSource("hello"))
+    input_node = InputOperator(SimpleInputSource("hello"), task_id="112232")
     res: DAGContext[str] = await runner.execute_workflow(input_node)
     assert res.current_task_context.current_state == TaskState.SUCCESS
     assert res.current_task_context.task_output.output == "hello"
@@ -36,7 +36,9 @@ async def test_input_node(runner: WorkflowRunner):
             yield i
 
     num_iter = 10
-    steam_input_node = InputOperator(SimpleInputSource(new_steam_iter(num_iter)))
+    steam_input_node = InputOperator(
+        SimpleInputSource(new_steam_iter(num_iter)), task_id="112232"
+    )
     res: DAGContext[str] = await runner.execute_workflow(steam_input_node)
     assert res.current_task_context.current_state == TaskState.SUCCESS
     output_steam = res.current_task_context.task_output.output_stream

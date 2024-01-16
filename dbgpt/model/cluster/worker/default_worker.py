@@ -196,7 +196,14 @@ class DefaultModelWorker(ModelWorker):
         return _try_to_count_token(prompt, self.tokenizer, self.model)
 
     async def async_count_token(self, prompt: str) -> int:
-        # TODO if we deploy the model by vllm, it can't work, we should run transformer _try_to_count_token to async
+        # TODO if we deploy the model by vllm, it can't work, we should run
+        #  transformer _try_to_count_token to async
+        from dbgpt.model.proxy.llms.proxy_model import ProxyModel
+
+        if isinstance(self.model, ProxyModel) and self.model.proxy_llm_client:
+            return await self.model.proxy_llm_client.count_token(
+                self.model.proxy_llm_client.default_model, prompt
+            )
         raise NotImplementedError
 
     def get_model_metadata(self, params: Dict) -> ModelMetadata:

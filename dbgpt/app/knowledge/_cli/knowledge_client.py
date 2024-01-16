@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urljoin
 
 import requests
+from prettytable import PrettyTable
 
 from dbgpt.app.knowledge.request.request import (
     ChunkQueryRequest,
@@ -191,9 +192,6 @@ def knowledge_init(
         if not doc_ids:
             logger.warn("Warning: no document to sync")
             return
-
-
-from prettytable import PrettyTable
 
 
 class _KnowledgeVisualizer:

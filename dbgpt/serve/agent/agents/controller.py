@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import uuid
@@ -30,7 +31,6 @@ from .dbgpts import DbGptsInstance
 
 CFG = Config()
 
-import asyncio
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

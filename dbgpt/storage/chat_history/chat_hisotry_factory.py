@@ -6,12 +6,12 @@ from dbgpt.storage.chat_history.base import BaseChatHistoryMemory
 
 from .base import MemoryStoreType
 
+# Import first for auto create table
+from .store_type.meta_db_history import DbHistoryMemory
+
 # TODO remove global variable
 CFG = Config()
 logger = logging.getLogger(__name__)
-
-# Import first for auto create table
-from .store_type.meta_db_history import DbHistoryMemory
 
 
 class ChatHistory:

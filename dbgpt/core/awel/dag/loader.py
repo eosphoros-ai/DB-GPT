@@ -1,3 +1,8 @@
+"""DAG loader.
+
+DAGLoader will load DAGs from dag_dirs or other sources.
+Now only support load DAGs from local files.
+"""
 import hashlib
 import logging
 import os
@@ -12,16 +17,26 @@ logger = logging.getLogger(__name__)
 
 
 class DAGLoader(ABC):
+    """Abstract base class representing a loader for loading DAGs."""
+
     @abstractmethod
     def load_dags(self) -> List[DAG]:
-        """Load dags"""
+        """Load dags."""
 
 
 class LocalFileDAGLoader(DAGLoader):
+    """DAG loader for loading DAGs from local files."""
+
     def __init__(self, dag_dirs: List[str]) -> None:
+        """Initialize a LocalFileDAGLoader.
+
+        Args:
+            dag_dirs (List[str]): The directories to load DAGs.
+        """
         self._dag_dirs = dag_dirs
 
     def load_dags(self) -> List[DAG]:
+        """Load dags from local files."""
         dags = []
         for filepath in self._dag_dirs:
             if not os.path.exists(filepath):
@@ -70,7 +85,7 @@ def _load_modules_from_file(filepath: str):
             sys.modules[spec.name] = new_module
             loader.exec_module(new_module)
             return [new_module]
-        except Exception as e:
+        except Exception:
             msg = traceback.format_exc()
             logger.error(f"Failed to import: {filepath}, error message: {msg}")
             # TODO save error message
