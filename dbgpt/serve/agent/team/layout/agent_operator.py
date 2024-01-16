@@ -32,9 +32,9 @@ class AgentOperator(
     async def map(self, input_value: AgentGenerateContext) -> AgentGenerateContext:
         now_rely_messages: List[Dict] = []
 
-        input_value.message["current_gogal"] = (
-            self._agent.name + ":" + input_value.message["current_gogal"]
-        )
+        # input_value.message["current_gogal"] = (
+        #     self._agent.name + ":" + input_value.message["current_gogal"]
+        # )
         ###What was received was the User message
         human_message = input_value.message.copy()
         human_message["role"] = ModelMessageRoleType.HUMAN
@@ -48,17 +48,39 @@ class AgentOperator(
             now_message, self._agent, input_value.reviewer, False
         )
 
-        verify_paas, reply_message = await self._agent.a_generate_reply(
-            message=input_value.message,
-            sender=input_value.sender,
-            reviewer=input_value.reviewer,
-            silent=input_value.silent,
-            rely_messages=input_value.rely_messages,
-        )
         ### Retry on failure
+        current_message = input_value.message
+        final_sucess = False
+        final_message = None
+        while self.agent.current_retry_counter < self.agent.max_retry_count:
+            verify_paas, reply_message = await self._agent.a_generate_reply(
+                message=current_message,
+                sender=input_value.sender,
+                reviewer=input_value.reviewer,
+                silent=input_value.silent,
+                rely_messages=input_value.rely_messages,
+            )
+            final_message = reply_message
+            if verify_paas:
+                final_sucess = True
+                break
+            else:
+                # retry
+                current_message = {
+                    "content": reply_message["content"],
+                    "current_gogal": input_value.message.get("current_gogal", None),
+                }
+                await input_value.sender.a_send(
+                    current_message, self.agent, input_value.reviewer, False
+                )
+                self.agent.current_retry_counter += 1
+        if not final_sucess:
+            raise ValueError(
+                f"After trying {self.agent.current_retry_counter} times, I still can't generate a valid answer. The current problem is:{final_message['content']}!"
+            )
 
         ###What is sent is an AI message
-        ai_message = reply_message
+        ai_message = final_message
         ai_message["role"] = ModelMessageRoleType.AI
         now_rely_messages.append(ai_message)
 

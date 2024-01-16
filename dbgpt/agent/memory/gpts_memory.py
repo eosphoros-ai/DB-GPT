@@ -8,6 +8,7 @@ from dbgpt.util.json_utils import EnhancedJSONEncoder
 
 from .base import GptsMessage, GptsMessageMemory, GptsPlansMemory
 from .default_gpts_memory import DefaultGptsMessageMemory, DefaultGptsPlansMemory
+from dbgpt.vis.client import vis_client, VisAgentMessages, VisAgentPlans
 
 
 class GptsMemory:
@@ -31,35 +32,60 @@ class GptsMemory:
     def message_memory(self):
         return self._message_memory
 
-    async def one_plan_chat_competions(self, conv_id: str):
-        plans = self.plans_memory.get_by_conv_id(conv_id=conv_id)
+    async def _plan_vis_build(self, plan_group: dict[str, list]):
+        num: int = 0
+        plan_items = []
+        for key, value in plan_group.items():
+            num = num + 1
+            plan_items.append(
+                {
+                    "name": key,
+                    "num": num,
+                    "status": "complete",
+                    "agent": value[0].receiver if value else "",
+                    "markdown": await self._messages_to_agents_vis(value),
+                }
+            )
+        return await self._messages_to_plan_vis(plan_items)
+
+    async def one_chat_competions_v2(self, conv_id: str):
         messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
 
-        messages_group = defaultdict(list)
-        for item in messages:
-            messages_group[item.current_gogal].append(item)
+    async def one_chat_competions(self, conv_id: str):
+        messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
+        temp_group = defaultdict(list)
+        temp_messages = []
+        vis_items = []
+        count: int = 0
+        for message in messages:
+            count = count + 1
+            if count == 1:
+                continue
+            if not message.current_gogal or len(message.current_gogal) <= 0:
+                if len(temp_group) > 0:
+                    vis_items.append(await self._plan_vis_build(temp_group))
+                    temp_group.clear()
 
-        plans_info_map = defaultdict()
-        for plan in plans:
-            plans_info_map[plan.sub_task_content] = {
-                "name": plan.sub_task_content,
-                "num": plan.sub_task_num,
-                "status": plan.state,
-                "agent": plan.sub_task_agent,
-                "markdown": self._messages_to_agents_vis(
-                    messages_group.get(plan.sub_task_content)
-                ),
-            }
+                temp_messages.append(message)
+            else:
+                if len(temp_messages) > 0:
+                    vis_items.append(await self._messages_to_agents_vis(temp_messages))
+                    temp_messages.clear()
 
-        normal_messages = []
-        if messages_group:
-            for key, value in messages_group.items():
-                if key not in plans_info_map:
-                    normal_messages.extend(value)
-        return f"{self._messages_to_agents_vis(normal_messages)}\n{self._messages_to_plan_vis(list(plans_info_map.values()))}"
+                last_gogal = message.current_gogal
+                temp_group[last_gogal].append(message)
 
-    @staticmethod
-    def _messages_to_agents_vis(messages: List[GptsMessage]):
+        if len(temp_group) > 0:
+            vis_items.append(await self._plan_vis_build(temp_group))
+            temp_group.clear()
+        if len(temp_messages) > 0:
+            vis_items.append(await self._messages_to_agents_vis(temp_messages))
+            temp_messages.clear()
+        if len(vis_items) <= 0:
+            print(f"[DEBUG, message blank:{len(messages)}]")
+        return "\n".join(vis_items)
+
+    async def _messages_to_agents_vis(self, messages: List[GptsMessage]):
         if messages is None or len(messages) <= 0:
             return ""
         messages_view = []
@@ -80,16 +106,11 @@ class GptsMemory:
                     "markdown": view_info,
                 }
             )
-        messages_content = json.dumps(
-            messages_view, ensure_ascii=False, cls=EnhancedJSONEncoder
+        return await vis_client.get(VisAgentMessages.vis_tag()).disply(
+            content=messages_view
         )
-        return f"```agent-messages\n{messages_content}\n```"
 
-    @staticmethod
-    def _messages_to_plan_vis(messages: List[Dict]):
+    async def _messages_to_plan_vis(self, messages: List[Dict]):
         if messages is None or len(messages) <= 0:
             return ""
-        messages_content = json.dumps(
-            messages, ensure_ascii=False, cls=EnhancedJSONEncoder
-        )
-        return f"```agent-plans\n{messages_content}\n```"
+        return await vis_client.get(VisAgentPlans.vis_tag()).disply(content=messages)

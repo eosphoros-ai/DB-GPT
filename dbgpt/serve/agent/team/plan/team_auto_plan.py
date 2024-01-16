@@ -3,9 +3,9 @@ import sys
 from typing import Any, List, Optional
 
 from dbgpt.agent.agents.agent import Agent, AgentContext
-from dbgpt.agent.agents.agents_mange import mentioned_agents, participant_roles
+from dbgpt.agent.agents.agents_manage import mentioned_agents, participant_roles
 from dbgpt.agent.agents.base_agent import ConversableAgent
-from dbgpt.agent.agents.base_team import MangerAgent
+from dbgpt.agent.agents.base_team import ManagerAgent
 from dbgpt.agent.common.schema import Status
 from dbgpt.agent.memory.base import GptsPlan
 from dbgpt.agent.memory.gpts_memory import GptsMemory
@@ -16,7 +16,7 @@ from .planner_agent import PlannerAgent
 logger = logging.getLogger(__name__)
 
 
-class AutoPlanChatManager(MangerAgent):
+class AutoPlanChatManager(ManagerAgent):
     """(In preview) A chat manager agent that can manage a team chat of multiple agents."""
 
     NAME = "plan_manager"
@@ -134,7 +134,6 @@ class AutoPlanChatManager(MangerAgent):
             agent_context=self.agent_context,
             memory=self.memory,
             agents=agents,
-            is_terminal_agent=True,
         )
 
         await self.a_initiate_chat(
@@ -151,10 +150,16 @@ class AutoPlanChatManager(MangerAgent):
         """Run a team chat asynchronously."""
 
         speaker = sender
-
+        last_message = None
         for i in range(self.max_round):
             plans = self.memory.plans_memory.get_by_conv_id(self.agent_context.conv_id)
             if not plans or len(plans) <= 0:
+                if i > 3:
+                    error_report = {
+                        "content": f"Retrying 3 times based on current application resources still fails to build a valid plan！",
+                        "is_exe_success": False,
+                    }
+                    return True, error_report
                 ###Have no plan, generate a new plan
                 await self.a_generate_speech_process(message, reviewer, self.agents)
             else:
@@ -166,8 +171,11 @@ class AutoPlanChatManager(MangerAgent):
                 if not todo_plans or len(todo_plans) <= 0:
                     ### The plan has been fully executed and a success message is sent to the user.
                     # complete
-                    complete_message = {"content": f"TERMINATE", "is_exe_success": True}
-                    return True, complete_message
+                    print(f"fDEBUG:[{last_message}]")
+                    return (
+                        True,
+                        last_message.get("action_report") if last_message else None,
+                    )
                 else:
                     now_plan: GptsPlan = todo_plans[0]
 
@@ -221,10 +229,10 @@ class AutoPlanChatManager(MangerAgent):
                             now_plan=now_plan,
                             speaker=speaker,
                         )
-
-                        current_goal_message["content"] = (
-                            rely_prompt + current_goal_message["content"]
-                        )
+                        if rely_prompt:
+                            current_goal_message["content"] = (
+                                rely_prompt + current_goal_message["content"]
+                            )
 
                         is_recovery = False
                         if message == current_goal_message["content"]:
@@ -240,6 +248,8 @@ class AutoPlanChatManager(MangerAgent):
                             current_goal_message, self, reviewer
                         )
 
+                        last_message = reply
+                        print(f"DEBUG2:[{last_message}]")
                         plan_result = ""
 
                         if verify_pass:

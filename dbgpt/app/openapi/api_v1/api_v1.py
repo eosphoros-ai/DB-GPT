@@ -35,6 +35,8 @@ from dbgpt.util.executor_utils import (
 )
 from dbgpt.util.tracer import SpanType, root_tracer
 
+from dbgpt.serve.agent.agents.controller import multi_agents
+
 router = APIRouter()
 CFG = Config()
 CHAT_FACTORY = ChatFactory()
@@ -323,29 +325,42 @@ async def chat_completions(dialogue: ConversationVo = Body()):
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
-    with root_tracer.start_span(
-        "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
-    ):
-        chat: BaseChat = await get_chat_instance(dialogue)
     headers = {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
         "Transfer-Encoding": "chunked",
     }
-
-    if not chat.prompt_template.stream_out:
+    if dialogue.chat_mode == ChatScene.ChatAgent.value():
         return StreamingResponse(
-            no_stream_generator(chat),
+            multi_agents.app_agent_chat(
+                conv_uid=dialogue.conv_uid,
+                gpts_name=dialogue.select_param,
+                user_query=dialogue.user_input,
+                user_code=dialogue.user_name,
+                sys_code=dialogue.sys_code,
+            ),
             headers=headers,
             media_type="text/event-stream",
         )
     else:
-        return StreamingResponse(
-            stream_generator(chat, dialogue.incremental, dialogue.model_name),
-            headers=headers,
-            media_type="text/plain",
-        )
+        with root_tracer.start_span(
+            "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
+        ):
+            chat: BaseChat = await get_chat_instance(dialogue)
+
+        if not chat.prompt_template.stream_out:
+            return StreamingResponse(
+                no_stream_generator(chat),
+                headers=headers,
+                media_type="text/event-stream",
+            )
+        else:
+            return StreamingResponse(
+                stream_generator(chat, dialogue.incremental, dialogue.model_name),
+                headers=headers,
+                media_type="text/plain",
+            )
 
 
 @router.get("/v1/model/types")

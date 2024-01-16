@@ -29,11 +29,9 @@ class ConversableAgent(Agent):
         memory: GptsMemory = GptsMemory(),
         agent_context: AgentContext = None,
         system_message: Optional[str] = DEFAULT_SYSTEM_MESSAGE,
-        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "TERMINATE",
         default_auto_reply: Optional[Union[str, Dict, None]] = "",
-        is_terminal_agent: bool = False,
     ):
         super().__init__(name, memory, describe)
 
@@ -43,11 +41,6 @@ class ConversableAgent(Agent):
             {"content": system_message, "role": ModelMessageRoleType.SYSTEM}
         ]
         self._rely_messages = []
-        self._is_termination_msg = (
-            is_termination_msg
-            if is_termination_msg is not None
-            else (lambda x: x.get("content") == "TERMINATE")
-        )
 
         self.client = AIWrapper(llm_client=agent_context.llm_provider)
 
@@ -58,9 +51,8 @@ class ConversableAgent(Agent):
             else self.MAX_CONSECUTIVE_AUTO_REPLY
         )
         self.consecutive_auto_reply_counter: int = 0
-        self._current_retry_counter: int = 0
-        self._max_retry_count: int = 5
-        self._is_terminal_agent = is_terminal_agent
+        self.current_retry_counter: int = 0
+        self.max_retry_count: int = 5
 
         ## By default, the memory of 4 rounds of dialogue is retained.
         self.dialogue_memory_rounds = 5
@@ -93,9 +85,18 @@ class ConversableAgent(Agent):
             },
         )
 
-    @property
-    def is_terminal_agent(self):
-        return self._is_terminal_agent
+    def is_termination_msg(self, message: Union[Dict, str, bool]):
+        if isinstance(message, dict):
+            if "is_termination" in message:
+                return message.get("is_termination", False)
+            else:
+                return message["content"].find("TERMINATE") >= 0
+        elif isinstance(message, bool):
+            return message
+        elif isinstance(message, str):
+            return message.find("TERMINATE") >= 0
+        else:
+            return False
 
     @property
     def system_message(self):
@@ -279,6 +280,70 @@ class ConversableAgent(Agent):
             is_recovery=is_recovery,
         )
 
+    async def a_receive(
+        self,
+        message: Optional[Dict],
+        sender: Agent,
+        reviewer: "Agent",
+        request_reply: Optional[bool] = True,
+        silent: Optional[bool] = False,
+        is_recovery: Optional[bool] = False,
+    ):
+        if not is_recovery:
+            self.consecutive_auto_reply_counter = (
+                sender.consecutive_auto_reply_counter + 1
+            )
+            self.process_received_message(message, sender, silent)
+        else:
+            logger.info("Process received retrying")
+            self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter
+        if request_reply is False or request_reply is None:
+            logger.info("Messages that do not require a reply")
+            return
+        if self.is_termination_msg(message):
+            logger.info(f"TERMINATE!")
+            return
+
+        verify_paas, reply = await self.a_generate_reply(
+            message=message, sender=sender, reviewer=reviewer, silent=silent
+        )
+        if verify_paas:
+            await self.a_send(
+                message=reply, recipient=sender, reviewer=reviewer, silent=silent
+            )
+        else:
+            # Exit after the maximum number of rounds of self-optimization
+            if self.current_retry_counter >= self.max_retry_count:
+                # If the maximum number of retries is exceeded, the abnormal answer will be returned directly.
+                logger.warning(
+                    f"More than {self.current_retry_counter} times and still no valid answer is output."
+                )
+                reply[
+                    "content"
+                ] = f"After trying {self.current_retry_counter} times, I still can't generate a valid answer. The current problem is:{reply['content']}!"
+                reply["is_termination"] = True
+                await self.a_send(
+                    message=reply, recipient=sender, reviewer=reviewer, silent=silent
+                )
+                # raise ValueError(
+                #     f"After {self.current_retry_counter} rounds of re-optimization, we still cannot get an effective answer."
+                # )
+            else:
+                self.current_retry_counter += 1
+                logger.info(
+                    "The generated answer failed to verify, so send it to yourself for optimization."
+                )
+                await sender.a_send(
+                    message=reply, recipient=self, reviewer=reviewer, silent=silent
+                )
+
+    async def a_notification(
+        self,
+        message: Union[Dict, str],
+        recipient: Agent,
+    ):
+        recipient.process_received_message(message, self)
+
     def _print_received_message(self, message: Union[Dict, str], sender: Agent):
         # print the message received
         print(
@@ -329,7 +394,7 @@ class ConversableAgent(Agent):
                 print(colored(action_print, "blue"), flush=True)
         print("\n", "-" * 80, flush=True, sep="")
 
-    def _process_received_message(self, message, sender, silent):
+    def process_received_message(self, message, sender, silent):
         message = self._message_to_dict(message)
         # When the agent receives a message, the role of the message is "user". (If 'role' exists and is 'function', it will remain unchanged.)
         valid = self.append_message(message, None, sender)
@@ -440,7 +505,6 @@ class ConversableAgent(Agent):
 
         ## 1.LLM Reasonging
         await self.a_system_fill_param()
-        await asyncio.sleep(5)  ##TODO  Rate limit reached for gpt-3.5-turbo
         current_messages = self.process_now_message(message, sender, rely_messages)
         ai_reply, model = await self.a_reasoning_reply(messages=current_messages)
         new_message["content"] = ai_reply
@@ -461,61 +525,6 @@ class ConversableAgent(Agent):
             new_message["action_report"] = self._process_action_reply(excute_reply)
         ## 4.verify reply
         return await self.a_verify_reply(new_message, sender, reviewer)
-
-    async def a_receive(
-        self,
-        message: Optional[Dict],
-        sender: Agent,
-        reviewer: "Agent",
-        request_reply: Optional[bool] = True,
-        silent: Optional[bool] = False,
-        is_recovery: Optional[bool] = False,
-    ):
-        if not is_recovery:
-            self.consecutive_auto_reply_counter = (
-                sender.consecutive_auto_reply_counter + 1
-            )
-            self._process_received_message(message, sender, silent)
-
-        else:
-            logger.info("Process received retrying")
-            self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter
-        if request_reply is False or request_reply is None:
-            logger.info("Messages that do not require a reply")
-            return
-        if self._is_termination_msg(message) or sender.is_terminal_agent:
-            logger.info(f"TERMINATE!")
-            return
-
-        verify_paas, reply = await self.a_generate_reply(
-            message=message, sender=sender, reviewer=reviewer, silent=silent
-        )
-
-        if verify_paas:
-            await self.a_send(
-                message=reply, recipient=sender, reviewer=reviewer, silent=silent
-            )
-        else:
-            # Exit after the maximum number of rounds of self-optimization
-            if self._current_retry_counter >= self._max_retry_count:
-                # If the maximum number of retries is exceeded, the abnormal answer will be returned directly.
-                logger.warning(
-                    f"More than {self._current_retry_counter} times and still no valid answer is output."
-                )
-                reply[
-                    "content"
-                ] = f"After n optimizations, the following problems still exist:{reply['content']}"
-                await self.a_send(
-                    message=reply, recipient=sender, reviewer=reviewer, silent=silent
-                )
-            else:
-                self._current_retry_counter += 1
-                logger.info(
-                    "The generated answer failed to verify, so send it to yourself for optimization."
-                )
-                await sender.a_send(
-                    message=reply, recipient=self, reviewer=reviewer, silent=silent
-                )
 
     async def a_verify(self, message: Optional[Dict]):
         return True, message
@@ -573,7 +582,7 @@ class ConversableAgent(Agent):
             return False, retry_message
         else:
             ## The verification passes, the message is released, and the number of retries returns to 0.
-            self._current_retry_counter = 0
+            self.current_retry_counter = 0
             return True, message
 
     async def a_retry_chat(
@@ -622,7 +631,6 @@ class ConversableAgent(Agent):
         await self.a_send(
             {
                 "content": self.generate_init_message(**context),
-                "current_gogal": self.generate_init_message(**context),
             },
             recipient,
             reviewer,
@@ -652,10 +660,6 @@ class ConversableAgent(Agent):
             agent: the agent with whom the chat history to clear. If None, clear the chat history with all agents.
         """
         pass
-        # if agent is None:
-        #     self._oai_messages.clear()
-        # else:
-        #     self._oai_messages[agent].clear()
 
     def _get_model_priority(self):
         llm_models_priority = self.agent_context.model_priority
@@ -727,7 +731,7 @@ class ConversableAgent(Agent):
                 retry_count += 1
                 last_model = llm_model
                 last_err = str(e)
-                await asyncio.sleep(10)  ## TODO，Rate limit reached for gpt-3.5-turbo
+                await asyncio.sleep(15)  ## TODO，Rate limit reached for gpt-3.5-turbo
 
         if last_err:
             raise ValueError(last_err)

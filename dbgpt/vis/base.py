@@ -6,7 +6,6 @@ from dbgpt.util.json_utils import serialize
 
 
 class Vis:
-    @abstractmethod
     async def generate_param(self, **kwargs) -> Optional[str]:
         """
         Display corresponding content using vis protocol
@@ -16,6 +15,7 @@ class Vis:
         Returns:
         vis protocol text
         """
+        return kwargs["content"]
 
     async def disply(self, **kwargs) -> Optional[str]:
         return f"```{self.vis_tag()}\n{json.dumps(await self.generate_param(**kwargs), default=serialize, ensure_ascii=False)}\n```"

@@ -50,7 +50,6 @@ class DataScientistAgent(ConversableAgent):
         memory: GptsMemory,
         agent_context: AgentContext,
         describe: Optional[str] = DEFAULT_DESCRIBE,
-        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
         **kwargs,
@@ -60,7 +59,6 @@ class DataScientistAgent(ConversableAgent):
             memory=memory,
             describe=describe,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
-            is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
             agent_context=agent_context,
@@ -103,7 +101,7 @@ class DataScientistAgent(ConversableAgent):
             try:
                 content = json.dumps(json_objects[0], ensure_ascii=False)
             except Exception as e:
-                content = (
+                fail_reason = (
                     f"There is a format problem with the json of the answer，{str(e)}"
                 )
                 response_success = False
@@ -117,7 +115,7 @@ class DataScientistAgent(ConversableAgent):
 
         return True, {
             "is_exe_success": response_success,
-            "content": content,
+            "content": content if response_success else fail_reason,
             "view": view,
         }
 
