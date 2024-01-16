@@ -20,7 +20,6 @@ $(VENV)/.venv-timestamp: setup.py requirements
 	$(VENV_BIN)/pip install --upgrade pip
 	$(VENV_BIN)/pip install -r requirements/dev-requirements.txt
 	$(VENV_BIN)/pip install -r requirements/lint-requirements.txt
-	pip install -r requirements/dev-requirements.txt
 	touch $(VENV)/.venv-timestamp
 
 testenv: $(VENV)/.testenv
@@ -47,17 +46,14 @@ fmt: setup ## Format Python code
 	# $(VENV_BIN)/blackdoc .
 	$(VENV_BIN)/blackdoc dbgpt
 	$(VENV_BIN)/blackdoc examples
-	# TODO: Type checking of Python code.
-	# https://github.com/python/mypy
-	# TODO mypy not working with $(VENV_BIN)/mypy, run it on current python environment
-	mypy dbgpt/core/awel/
 	# TODO: Use flake8 to enforce Python style guide.
 	# https://flake8.pycqa.org/en/latest/
-	$(VENV_BIN)/flake8 dbgpt/core/awel/
+	#$(VENV_BIN)/flake8 dbgpt/core/
+	# TODO: More package checks with flake8.
 
 
 .PHONY: pre-commit
-pre-commit: fmt test ## Run formatting and unit tests before committing
+pre-commit: fmt test test-doc mypy ## Run formatting and unit tests before committing
 
 test: $(VENV)/.testenv ## Run unit tests
 	$(VENV_BIN)/pytest dbgpt
@@ -66,6 +62,12 @@ test: $(VENV)/.testenv ## Run unit tests
 test-doc: $(VENV)/.testenv ## Run doctests
 	# -k "not test_" skips tests that are not doctests.
 	$(VENV_BIN)/pytest --doctest-modules -k "not test_" dbgpt/core
+
+.PHONY: mypy
+mypy: $(VENV)/.testenv ## Run mypy checks
+	# https://github.com/python/mypy
+	$(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/core/
+	# TODO: More package checks with mypy.
 
 .PHONY: coverage
 coverage: setup ## Run tests and report coverage

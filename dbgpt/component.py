@@ -104,28 +104,37 @@ class BaseComponent(LifeCycle, ABC):
 
     @classmethod
     def get_instance(
-        cls,
+        cls: Type[T],
         system_app: SystemApp,
         default_component=_EMPTY_DEFAULT_COMPONENT,
-        or_register_component: Type[BaseComponent] = None,
+        or_register_component: Optional[Type[T]] = None,
         *args,
         **kwargs,
-    ) -> BaseComponent:
+    ) -> T:
         """Get the current component instance.
 
         Args:
             system_app (SystemApp): The system app
             default_component : The default component instance if not retrieve by name
-            or_register_component (Type[BaseComponent]): The new component to register if not retrieve by name
+            or_register_component (Type[T]): The new component to register if not retrieve by name
 
         Returns:
-            BaseComponent: The component instance
+            T: The component instance
         """
+        # Check for keyword argument conflicts
+        if "default_component" in kwargs:
+            raise ValueError(
+                "default_component argument given in both fixed and **kwargs"
+            )
+        if "or_register_component" in kwargs:
+            raise ValueError(
+                "or_register_component argument given in both fixed and **kwargs"
+            )
+        kwargs["default_component"] = default_component
+        kwargs["or_register_component"] = or_register_component
         return system_app.get_component(
             cls.name,
             cls,
-            default_component=default_component,
-            or_register_component=or_register_component,
             *args,
             **kwargs,
         )
@@ -159,11 +168,11 @@ class SystemApp(LifeCycle):
         """Returns the internal AppConfig."""
         return self._app_config
 
-    def register(self, component: Type[BaseComponent], *args, **kwargs) -> T:
+    def register(self, component: Type[T], *args, **kwargs) -> T:
         """Register a new component by its type.
 
         Args:
-            component (Type[BaseComponent]): The component class to register
+            component (Type[T]): The component class to register
 
         Returns:
             T: The instance of registered component
@@ -198,7 +207,7 @@ class SystemApp(LifeCycle):
         name: Union[str, ComponentType],
         component_type: Type[T],
         default_component=_EMPTY_DEFAULT_COMPONENT,
-        or_register_component: Type[BaseComponent] = None,
+        or_register_component: Optional[Type[T]] = None,
         *args,
         **kwargs,
     ) -> T:
@@ -208,7 +217,7 @@ class SystemApp(LifeCycle):
             name (Union[str, ComponentType]): Component name
             component_type (Type[T]): The type of current retrieve component
             default_component : The default component instance if not retrieve by name
-            or_register_component (Type[BaseComponent]): The new component to register if not retrieve by name
+            or_register_component (Type[T]): The new component to register if not retrieve by name
 
         Returns:
             T: The instance retrieved by component name

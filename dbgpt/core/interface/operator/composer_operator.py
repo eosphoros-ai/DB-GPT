@@ -1,5 +1,9 @@
+"""The chat history prompt composer operator.
+
+We can wrap some atomic operators to a complex operator.
+"""
 import dataclasses
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from dbgpt.core import (
     ChatPromptTemplate,
@@ -51,6 +55,7 @@ class ChatHistoryPromptComposerOperator(MapOperator[ChatComposerInput, ModelRequ
         message_storage: Optional[StorageInterface[MessageStorageItem, Any]] = None,
         **kwargs,
     ):
+        """Create a new chat history prompt composer operator."""
         super().__init__(**kwargs)
         self._prompt_template = prompt_template
         self._history_key = history_key
@@ -61,7 +66,8 @@ class ChatHistoryPromptComposerOperator(MapOperator[ChatComposerInput, ModelRequ
         self._sub_compose_dag = self._build_composer_dag()
 
     async def map(self, input_value: ChatComposerInput) -> ModelRequest:
-        end_node: BaseOperator = self._sub_compose_dag.leaf_nodes[0]
+        """Compose the chat history prompt."""
+        end_node: BaseOperator = cast(BaseOperator, self._sub_compose_dag.leaf_nodes[0])
         # Sub dag, use the same dag context in the parent dag
         return await end_node.call(
             call_data={"data": input_value}, dag_ctx=self.current_dag_context
@@ -82,7 +88,9 @@ class ChatHistoryPromptComposerOperator(MapOperator[ChatComposerInput, ModelRequ
             history_prompt_build_task = HistoryPromptBuilderOperator(
                 prompt=self._prompt_template, history_key=self._history_key
             )
-            model_request_build_task = JoinOperator(self._build_model_request)
+            model_request_build_task: JoinOperator[ModelRequest] = JoinOperator(
+                combine_function=self._build_model_request
+            )
 
             # Build composer dag
             (
@@ -113,5 +121,6 @@ class ChatHistoryPromptComposerOperator(MapOperator[ChatComposerInput, ModelRequ
         return ModelRequest.build_request(messages=messages, **model_dict)
 
     async def after_dag_end(self):
+        """Execute after dag end."""
         # Should call after_dag_end() of sub dag
         await self._sub_compose_dag._after_dag_end()

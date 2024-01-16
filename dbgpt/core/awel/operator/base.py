@@ -222,6 +222,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
         if not loop:
             loop = get_or_create_event_loop()
+        loop = cast(asyncio.BaseEventLoop, loop)
         return loop.run_until_complete(self.call(call_data))
 
     async def call_stream(

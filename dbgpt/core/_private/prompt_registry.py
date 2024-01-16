@@ -1,8 +1,12 @@
+"""Prompt template registry.
+
+This module is deprecated. we will remove it in the future.
+"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 _DEFAULT_MODEL_KEY = "___default_prompt_template_model_key__"
 _DEFUALT_LANGUAGE_KEY = "___default_prompt_template_language_key__"
@@ -14,15 +18,15 @@ class PromptTemplateRegistry:
     """
 
     def __init__(self) -> None:
-        self.registry = defaultdict(dict)
+        self.registry = defaultdict(dict)  # type: ignore
 
     def register(
         self,
         prompt_template,
         language: str = "en",
         is_default: bool = False,
-        model_names: List[str] = None,
-        scene_name: str = None,
+        model_names: Optional[List[str]] = None,
+        scene_name: Optional[str] = None,
     ) -> None:
         """Register prompt template with scene name, language
         registry dict format:
@@ -43,7 +47,7 @@ class PromptTemplateRegistry:
         if not scene_name:
             raise ValueError("Prompt template scene name cannot be empty")
         if not model_names:
-            model_names: List[str] = [_DEFAULT_MODEL_KEY]
+            model_names = [_DEFAULT_MODEL_KEY]
         scene_registry = self.registry[scene_name]
         _register_scene_prompt_template(
             scene_registry, prompt_template, language, model_names
@@ -64,7 +68,7 @@ class PromptTemplateRegistry:
         scene_name: str,
         language: str,
         model_name: str,
-        proxyllm_backend: str = None,
+        proxyllm_backend: Optional[str] = None,
     ):
         """Get prompt template with scene name, language and model name
         proxyllm_backend: see CFG.PROXYLLM_BACKEND

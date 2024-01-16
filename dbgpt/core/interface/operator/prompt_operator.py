@@ -1,8 +1,8 @@
+"""The prompt operator."""
 from abc import ABC
 from typing import Any, Dict, List, Optional, Union
 
 from dbgpt.core import (
-    BasePromptTemplate,
     ChatPromptTemplate,
     ModelMessage,
     ModelMessageRoleType,
@@ -13,7 +13,13 @@ from dbgpt.core.awel import JoinOperator, MapOperator
 from dbgpt.core.interface.message import BaseMessage
 from dbgpt.core.interface.operator.llm_operator import BaseLLM
 from dbgpt.core.interface.operator.message_operator import BaseConversationOperator
-from dbgpt.core.interface.prompt import HumanPromptTemplate, MessageType
+from dbgpt.core.interface.prompt import (
+    BaseChatPromptTemplate,
+    HumanPromptTemplate,
+    MessagesPlaceholder,
+    MessageType,
+    PromptTemplate,
+)
 from dbgpt.util.function_utils import rearrange_args_by_type
 
 
@@ -21,6 +27,7 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
     """The base prompt builder operator."""
 
     def __init__(self, check_storage: bool, **kwargs):
+        """Create a new prompt builder operator."""
         super().__init__(check_storage=check_storage, **kwargs)
 
     async def format_prompt(
@@ -39,10 +46,10 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
         kwargs.update(prompt_dict)
         pass_kwargs = {k: v for k, v in kwargs.items() if k in prompt.input_variables}
         messages = prompt.format_messages(**pass_kwargs)
-        messages = ModelMessage.from_base_messages(messages)
+        model_messages = ModelMessage.from_base_messages(messages)
         # Start new round conversation, and save user message to storage
-        await self.start_new_round_conv(messages)
-        return messages
+        await self.start_new_round_conv(model_messages)
+        return model_messages
 
     async def start_new_round_conv(self, messages: List[ModelMessage]) -> None:
         """Start a new round conversation.
@@ -50,7 +57,6 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
         Args:
             messages (List[ModelMessage]): The messages.
         """
-
         lass_user_message = None
         for message in messages[::-1]:
             if message.role == ModelMessageRoleType.HUMAN:
@@ -58,7 +64,9 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
                 break
         if not lass_user_message:
             raise ValueError("No user message")
-        storage_conv: StorageConversation = await self.get_storage_conversation()
+        storage_conv: Optional[
+            StorageConversation
+        ] = await self.get_storage_conversation()
         if not storage_conv:
             return
         # Start new round
@@ -66,13 +74,17 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
         storage_conv.add_user_message(lass_user_message)
 
     async def after_dag_end(self):
-        """The callback after DAG end"""
-        # TODO remove this to start_new_round()
+        """Execute after the DAG finished."""
         # Save the storage conversation to storage after the whole DAG finished
-        storage_conv: StorageConversation = await self.get_storage_conversation()
+        storage_conv: Optional[
+            StorageConversation
+        ] = await self.get_storage_conversation()
+
         if not storage_conv:
             return
-        model_output: ModelOutput = await self.current_dag_context.get_from_share_data(
+        model_output: Optional[
+            ModelOutput
+        ] = await self.current_dag_context.get_from_share_data(
             BaseLLM.SHARE_DATA_KEY_MODEL_OUTPUT
         )
         if model_output:
@@ -82,7 +94,7 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
             storage_conv.end_current_round()
 
 
-PromptTemplateType = Union[ChatPromptTemplate, BasePromptTemplate, MessageType, str]
+PromptTemplateType = Union[ChatPromptTemplate, PromptTemplate, MessageType, str]
 
 
 class PromptBuilderOperator(
@@ -91,7 +103,6 @@ class PromptBuilderOperator(
     """The operator to build the prompt with static prompt.
 
     Examples:
-
         .. code-block:: python
 
             import asyncio
@@ -119,7 +130,8 @@ class PromptBuilderOperator(
                     ChatPromptTemplate(
                         messages=[
                             HumanPromptTemplate.from_template(
-                                "Please write a {dialect} SQL count the length of a field"
+                                "Please write a {dialect} SQL count the length of a"
+                                " field"
                             )
                         ]
                     )
@@ -131,7 +143,8 @@ class PromptBuilderOperator(
                                 "You are a {dialect} SQL expert"
                             ),
                             HumanPromptTemplate.from_template(
-                                "Please write a {dialect} SQL count the length of a field"
+                                "Please write a {dialect} SQL count the length of a"
+                                " field"
                             ),
                         ],
                     )
@@ -171,17 +184,18 @@ class PromptBuilderOperator(
     """
 
     def __init__(self, prompt: PromptTemplateType, **kwargs):
+        """Create a new prompt builder operator."""
         if isinstance(prompt, str):
             prompt = ChatPromptTemplate(
                 messages=[HumanPromptTemplate.from_template(prompt)]
             )
-        elif isinstance(prompt, BasePromptTemplate) and not isinstance(
-            prompt, ChatPromptTemplate
-        ):
+        elif isinstance(prompt, PromptTemplate):
             prompt = ChatPromptTemplate(
                 messages=[HumanPromptTemplate.from_template(prompt.template)]
             )
-        elif isinstance(prompt, MessageType):
+        elif isinstance(
+            prompt, (BaseChatPromptTemplate, MessagesPlaceholder, BaseMessage)
+        ):
             prompt = ChatPromptTemplate(messages=[prompt])
         self._prompt = prompt
 
@@ -190,6 +204,7 @@ class PromptBuilderOperator(
 
     @rearrange_args_by_type
     async def merge_prompt(self, prompt_dict: Dict[str, Any]) -> List[ModelMessage]:
+        """Format the prompt."""
         return await self.format_prompt(self._prompt, prompt_dict)
 
 
@@ -202,6 +217,7 @@ class DynamicPromptBuilderOperator(
     """
 
     def __init__(self, **kwargs):
+        """Create a new dynamic prompt builder operator."""
         super().__init__(check_storage=False, **kwargs)
         JoinOperator.__init__(self, combine_function=self.merge_prompt, **kwargs)
 
@@ -209,20 +225,37 @@ class DynamicPromptBuilderOperator(
     async def merge_prompt(
         self, prompt: ChatPromptTemplate, prompt_dict: Dict[str, Any]
     ) -> List[ModelMessage]:
+        """Merge the prompt and history."""
         return await self.format_prompt(prompt, prompt_dict)
 
 
 class HistoryPromptBuilderOperator(
     BasePromptBuilderOperator, JoinOperator[List[ModelMessage]]
 ):
+    """The operator to build the prompt with static prompt.
+
+    The prompt will pass to this operator.
+    """
+
     def __init__(
         self,
         prompt: ChatPromptTemplate,
-        history_key: Optional[str] = None,
+        history_key: str = "chat_history",
         check_storage: bool = True,
         str_history: bool = False,
         **kwargs,
     ):
+        """Create a new history prompt builder operator.
+
+        Args:
+            prompt (ChatPromptTemplate): The prompt.
+            history_key (str, optional): The key of history in prompt dict. Defaults
+                to "chat_history".
+            check_storage (bool, optional): Whether to check the storage.
+                Defaults to True.
+            str_history (bool, optional): Whether to convert the history to string.
+                Defaults to False.
+        """
         self._prompt = prompt
         self._history_key = history_key
         self._str_history = str_history
@@ -233,6 +266,7 @@ class HistoryPromptBuilderOperator(
     async def merge_history(
         self, history: List[BaseMessage], prompt_dict: Dict[str, Any]
     ) -> List[ModelMessage]:
+        """Merge the prompt and history."""
         if self._str_history:
             prompt_dict[self._history_key] = BaseMessage.messages_to_string(history)
         else:
@@ -250,11 +284,12 @@ class HistoryDynamicPromptBuilderOperator(
 
     def __init__(
         self,
-        history_key: Optional[str] = None,
+        history_key: str = "chat_history",
         check_storage: bool = True,
         str_history: bool = False,
         **kwargs,
     ):
+        """Create a new history dynamic prompt builder operator."""
         self._history_key = history_key
         self._str_history = str_history
         BasePromptBuilderOperator.__init__(self, check_storage=check_storage)
@@ -267,6 +302,7 @@ class HistoryDynamicPromptBuilderOperator(
         history: List[BaseMessage],
         prompt_dict: Dict[str, Any],
     ) -> List[ModelMessage]:
+        """Merge the prompt and history."""
         if self._str_history:
             prompt_dict[self._history_key] = BaseMessage.messages_to_string(history)
         else:

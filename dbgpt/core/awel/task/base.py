@@ -34,6 +34,7 @@ StreamFunc = Callable[[IN], Awaitable[AsyncIterator[OUT]]]
 UnStreamFunc = Callable[[AsyncIterator[IN]], OUT]
 TransformFunc = Callable[[AsyncIterator[IN]], Awaitable[AsyncIterator[OUT]]]
 PredicateFunc = Union[Callable[[IN], bool], Callable[[IN], Awaitable[bool]]]
+JoinFunc = Union[Callable[..., OUT], Callable[..., Awaitable[OUT]]]
 
 
 class TaskState(str, Enum):

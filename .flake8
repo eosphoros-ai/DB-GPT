@@ -3,6 +3,7 @@ exclude =
   .eggs/
   build/
   */tests/*
+  *_private
 max-line-length = 88
 inline-quotes = "
 ignore =

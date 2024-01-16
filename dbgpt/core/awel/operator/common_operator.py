@@ -18,6 +18,7 @@ from ..task.base import (
     OUT,
     InputContext,
     InputSource,
+    JoinFunc,
     MapFunc,
     ReduceFunc,
     TaskContext,
@@ -34,7 +35,7 @@ class JoinOperator(BaseOperator, Generic[OUT]):
     This node type is useful for combining the outputs of upstream nodes.
     """
 
-    def __init__(self, combine_function, **kwargs):
+    def __init__(self, combine_function: JoinFunc, **kwargs):
         """Create a JoinDAGNode with a combine function.
 
         Args:

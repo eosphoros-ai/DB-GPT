@@ -1,11 +1,15 @@
+"""The interface for serializing."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Dict, Type
+from typing import Dict, Optional, Type
 
 
 class Serializable(ABC):
-    serializer: "Serializer" = None
+    """The serializable abstract class."""
+
+    serializer: Optional["Serializer"] = None
 
     @abstractmethod
     def to_dict(self) -> Dict:
