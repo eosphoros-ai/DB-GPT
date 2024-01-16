@@ -49,10 +49,6 @@ class SummaryAssistantAgent(ConversableAgent):
         memory: GptsMemory,
         agent_context: AgentContext,
         describe: Optional[str] = DEFAULT_DESCRIBE,
-        is_termination_msg: Optional[Callable[[Dict], bool]] = lambda x: isinstance(
-            x, dict
-        )
-        and "TERMINATE" in str(x).upper(),
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
         **kwargs,
@@ -62,7 +58,6 @@ class SummaryAssistantAgent(ConversableAgent):
             memory=memory,
             describe=describe,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
-            is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
             agent_context=agent_context,

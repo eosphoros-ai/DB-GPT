@@ -3,7 +3,7 @@ import sys
 from typing import Any, Optional
 
 from dbgpt.agent.agents.agent import Agent, AgentContext, AgentGenerateContext
-from dbgpt.agent.agents.base_team import MangerAgent
+from dbgpt.agent.agents.base_team import ManagerAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.core.awel import DAG
 from dbgpt.serve.agent.team.layout.agent_operator import AgentOperator
@@ -11,7 +11,7 @@ from dbgpt.serve.agent.team.layout.agent_operator import AgentOperator
 logger = logging.getLogger(__name__)
 
 
-class AwelLayoutChatManger(MangerAgent):
+class AwelLayoutChatManager(ManagerAgent):
     NAME = "layout_manager"
 
     def __init__(
@@ -36,7 +36,7 @@ class AwelLayoutChatManger(MangerAgent):
         # Allow async chat if initiated using a_initiate_chat
         self.register_reply(
             Agent,
-            AwelLayoutChatManger.a_run_chat,
+            AwelLayoutChatManager.a_run_chat,
         )
 
     async def a_run_chat(
@@ -84,6 +84,6 @@ class AwelLayoutChatManger(MangerAgent):
         except Exception as e:
             logger.exception("DAG run failed!")
             return True, {
-                "content": f"AWEL task process [{dag.dag_id}] execution exception! {str(e)}",
+                "content": f"Failed to complete goal! {str(e)}",
                 "is_exe_success": False,
             }

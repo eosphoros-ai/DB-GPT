@@ -82,7 +82,6 @@ class PlannerAgent(ConversableAgent):
         memory: GptsMemory,
         agent_context: AgentContext,
         agents: Optional[List[Agent]] = None,
-        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "NEVER",
         **kwargs,
@@ -91,7 +90,6 @@ class PlannerAgent(ConversableAgent):
             name=self.NAME,
             memory=memory,
             system_message=self.DEFAULT_SYSTEM_MESSAGE,
-            is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
             agent_context=agent_context,
@@ -129,6 +127,20 @@ class PlannerAgent(ConversableAgent):
     async def a_system_fill_param(self):
         params = self.build_param(self.agent_context)
         self.update_system_message(self.DEFAULT_SYSTEM_MESSAGE.format(**params))
+
+    async def a_generate_reply(
+        self,
+        message: Optional[Dict],
+        sender: Agent,
+        reviewer: Agent,
+        silent: Optional[bool] = False,
+        rely_messages: Optional[List[Dict]] = None,
+    ):
+        final, reply_message = await super().a_generate_reply(
+            message, sender, reviewer, silent, rely_messages
+        )
+        reply_message["is_termination"] = True
+        return final, reply_message
 
     async def _a_planning(
         self,

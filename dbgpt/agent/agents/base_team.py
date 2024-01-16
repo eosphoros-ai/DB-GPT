@@ -117,7 +117,7 @@ class Team:
         pass
 
 
-class MangerAgent(ConversableAgent, Team):
+class ManagerAgent(ConversableAgent, Team):
     def __init__(
         self,
         name: str,
