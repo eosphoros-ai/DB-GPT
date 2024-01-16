@@ -192,7 +192,8 @@ def _create_mysql_database(db_name: str, db_url: str, try_to_create_db: bool = F
                 with engine_no_db.connect() as conn:
                     conn.execute(
                         DDL(
-                            f"CREATE DATABASE {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+                            f"CREATE DATABASE {db_name} CHARACTER SET utf8mb4 COLLATE "
+                            f"utf8mb4_unicode_ci"
                         )
                     )
                     logger.info(f"Database {db_name} successfully created")
@@ -218,26 +219,31 @@ class WebServerParameters(BaseParameters):
     controller_addr: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The Model controller address to connect. If None, read model controller address from environment key `MODEL_SERVER`."
+            "help": "The Model controller address to connect. If None, read model "
+            "controller address from environment key `MODEL_SERVER`."
         },
     )
     model_name: str = field(
         default=None,
         metadata={
-            "help": "The default model name to use. If None, read model name from environment key `LLM_MODEL`.",
+            "help": "The default model name to use. If None, read model name from "
+            "environment key `LLM_MODEL`.",
             "tags": "fixed",
         },
     )
     share: Optional[bool] = field(
         default=False,
         metadata={
-            "help": "Whether to create a publicly shareable link for the interface. Creates an SSH tunnel to make your UI accessible from anywhere. "
+            "help": "Whether to create a publicly shareable link for the interface. "
+            "Creates an SSH tunnel to make your UI accessible from anywhere. "
         },
     )
     remote_embedding: Optional[bool] = field(
         default=False,
         metadata={
-            "help": "Whether to enable remote embedding models. If it is True, you need to start a embedding model through `dbgpt start worker --worker_type text2vec --model_name xxx --model_path xxx`"
+            "help": "Whether to enable remote embedding models. If it is True, you need"
+            " to start a embedding model through `dbgpt start worker --worker_type "
+            "text2vec --model_name xxx --model_path xxx`"
         },
     )
     log_level: Optional[str] = field(
@@ -284,5 +290,12 @@ class WebServerParameters(BaseParameters):
         default=None,
         metadata={
             "help": "The directories to search awel files, split by `,`",
+        },
+    )
+    default_thread_pool_size: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "The default thread pool size, If None, "
+            "use default config of python thread pool",
         },
     )

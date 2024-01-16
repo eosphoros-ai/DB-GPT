@@ -25,7 +25,9 @@ def initialize_components(
     from dbgpt.model.cluster.controller.controller import controller
 
     # Register global default executor factory first
-    system_app.register(DefaultExecutorFactory)
+    system_app.register(
+        DefaultExecutorFactory, max_workers=param.default_thread_pool_size
+    )
     system_app.register_instance(controller)
 
     from dbgpt.serve.agent.hub.controller import module_agent

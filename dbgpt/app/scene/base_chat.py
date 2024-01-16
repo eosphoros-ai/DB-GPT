@@ -313,8 +313,9 @@ class BaseChat(ABC):
             )
             ### store current conversation
             span.end(metadata={"error": str(e)})
-        # self.memory.append(self.current_message)
-        self.current_message.end_current_round()
+        await blocking_func_to_async(
+            self._executor, self.current_message.end_current_round
+        )
 
     async def nostream_call(self):
         payload = await self._build_model_request()
@@ -381,8 +382,9 @@ class BaseChat(ABC):
             )
             span.end(metadata={"error": str(e)})
         ### store dialogue
-        # self.memory.append(self.current_message)
-        self.current_message.end_current_round()
+        await blocking_func_to_async(
+            self._executor, self.current_message.end_current_round
+        )
         return self.current_ai_response()
 
     async def get_llm_response(self):
