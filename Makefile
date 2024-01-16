@@ -48,7 +48,7 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/blackdoc examples
 	# TODO: Use flake8 to enforce Python style guide.
 	# https://flake8.pycqa.org/en/latest/
-	#$(VENV_BIN)/flake8 dbgpt/core/
+	$(VENV_BIN)/flake8 dbgpt/core/
 	# TODO: More package checks with flake8.
 
 
