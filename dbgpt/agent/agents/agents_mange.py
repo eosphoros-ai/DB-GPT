@@ -10,6 +10,7 @@ from .expand.data_scientist_agent import DataScientistAgent
 from .expand.plugin_assistant_agent import PluginAssistantAgent
 from .expand.sql_assistant_agent import SQLAssistantAgent
 from .expand.summary_assistant_agent import SummaryAssistantAgent
+from .expand.retrieve_summary_assistant_agent import RetrieveSummaryAssistantAgent
 
 logger = logging.getLogger(__name__)
 
@@ -88,3 +89,4 @@ agent_mange.register_agent(DataScientistAgent)
 agent_mange.register_agent(SQLAssistantAgent)
 agent_mange.register_agent(SummaryAssistantAgent)
 agent_mange.register_agent(PluginAssistantAgent)
+agent_mange.register_agent(RetrieveSummaryAssistantAgent)
