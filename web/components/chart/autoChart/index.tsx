@@ -1,7 +1,7 @@
 import { Empty, Row, Col, Select, Tooltip } from 'antd';
 import { Advice, Advisor } from '@antv/ava';
 import { Chart } from '@berryv/g2-react';
-import i18n from '@/app/i18n';
+import i18n, { I18nKeys } from '@/app/i18n';
 import { customizeAdvisor, getVisAdvices } from './advisor/pipeline';
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { defaultAdvicesFilter } from './advisor/utils';
@@ -62,6 +62,8 @@ export const AutoChart = (props: AutoChartProps) => {
             options={{
               ...spec,
               theme: mode,
+              autoFit: true,
+              height: 300,
             }}
           />
         );
@@ -83,7 +85,7 @@ export const AutoChart = (props: AutoChartProps) => {
               size={'small'}
             >
               {advices?.map((item) => {
-                const name = i18n.t(item.type);
+                const name = i18n.t(item.type as I18nKeys);
 
                 return (
                   <Option key={item.type} value={item.type}>

@@ -36,7 +36,15 @@ export type IChatDialogueSchema = {
   conv_uid: string;
   user_input: string;
   user_name: string;
-  chat_mode: 'chat_with_db_execute' | 'chat_excel' | 'chat_with_db_qa' | 'chat_knowledge' | 'chat_dashboard' | 'chat_execution' | 'chat_agent';
+  chat_mode:
+    | 'chat_with_db_execute'
+    | 'chat_excel'
+    | 'chat_with_db_qa'
+    | 'chat_knowledge'
+    | 'chat_dashboard'
+    | 'chat_execution'
+    | 'chat_agent'
+    | (string & {});
   select_param: string;
 };
 

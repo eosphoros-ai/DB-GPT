@@ -54,7 +54,8 @@ function smallMenuItemStyle(active?: boolean) {
 }
 
 function SideBar() {
-  const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand, mode, setMode } = useContext(ChatContext);
+  const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand, setAgent, mode, setMode } =
+    useContext(ChatContext);
   const { pathname, replace } = useRouter();
   const { t, i18n } = useTranslation();
 
@@ -192,6 +193,12 @@ function SideBar() {
     [refreshDialogList],
   );
 
+  const handleClickChatItem = (item: IChatDialogueSchema) => {
+    if (item.chat_mode === 'chat_agent' && item.select_param) {
+      setAgent?.(item.select_param);
+    }
+  };
+
   const copyLink = useCallback((item: IChatDialogueSchema) => {
     const success = copy(`${location.origin}/chat?scene=${item.chat_mode}&id=${item.conv_uid}`);
     message[success ? 'success' : 'error'](success ? 'Copy success' : 'Copy failed');
@@ -223,7 +230,13 @@ function SideBar() {
 
             return (
               <Tooltip key={item.conv_uid} title={item.user_name || item.user_input} placement="right">
-                <Link href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`} className={smallMenuItemStyle(active)}>
+                <Link
+                  href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`}
+                  className={smallMenuItemStyle(active)}
+                  onClick={() => {
+                    handleClickChatItem(item);
+                  }}
+                >
                   <MessageOutlined />
                 </Link>
               </Tooltip>
@@ -271,7 +284,14 @@ function SideBar() {
           const active = item.conv_uid === chatId && item.chat_mode === scene;
 
           return (
-            <Link key={item.conv_uid} href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`} className={`group/item ${menuItemStyle(active)}`}>
+            <Link
+              key={item.conv_uid}
+              href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`}
+              className={`group/item ${menuItemStyle(active)}`}
+              onClick={() => {
+                handleClickChatItem(item);
+              }}
+            >
               <MessageOutlined className="text-base" />
               <div className="flex-1 line-clamp-1 mx-2 text-sm">{item.user_name || item.user_input}</div>
               <div

@@ -10,6 +10,7 @@ type Props = {
 type ChatParams = {
   chatId: string;
   data?: Record<string, any>;
+  query?: Record<string, string>;
   onMessage: (message: string) => void;
   onClose?: () => void;
   onDone?: () => void;
@@ -22,7 +23,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
   const chat = useCallback(
     async ({ data, chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
       if (!data?.user_input && !data?.doc_id) {
-        message.warning(i18n.t('NoContextTip'));
+        message.warning(i18n.t('no_context_tip'));
         return;
       }
 
@@ -58,7 +59,12 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
             throw new Error(err);
           },
           onmessage: (event) => {
-            const message = event.data?.replaceAll('\\n', '\n');
+            let message = event.data;
+            try {
+              message = JSON.parse(message).vis;
+            } catch (e) {
+              message.replaceAll('\\n', '\n');
+            }
             if (message === '[DONE]') {
               onDone?.();
             } else if (message?.startsWith('[ERROR]')) {

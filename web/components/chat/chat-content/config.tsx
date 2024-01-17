@@ -8,6 +8,13 @@ import { CodePreview } from './code-preview';
 import { Datum } from '@antv/ava';
 import rehypeRaw from 'rehype-raw';
 import { IChunk } from '@/types/knowledge';
+import AgentPlans from './agent-plans';
+import AgentMessages from './agent-messages';
+import VisConvertError from './vis-convert-error';
+import VisChart from './vis-chart';
+import VisDashboard from './vis-dashboard';
+import VisPlugin from './vis-plugin';
+import VisCode from './vis-code';
 
 type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];
 
@@ -27,18 +34,82 @@ function matchCustomeTagValues(context: string) {
 
 const basicComponents: MarkdownComponent = {
   code({ inline, node, className, children, style, ...props }) {
+    const content = String(children);
     /**
      * @description
      * In some cases, tags are nested within code syntax,
      * so it is necessary to extract the tags present in the code block and render them separately.
      */
-    const { context, matchValues } = matchCustomeTagValues(Array.isArray(children) ? children.join('\n') : children);
-    const match = /language-(\w+)/.exec(className || '');
+    const { context, matchValues } = matchCustomeTagValues(content);
+    const lang = className?.replace('language-', '') || 'javascript';
+
+    if (lang === 'agent-plans') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof AgentPlans>[0]['data'];
+        return <AgentPlans data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'agent-messages') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof AgentMessages>[0]['data'];
+        return <AgentMessages data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'vis-convert-error') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisConvertError>[0]['data'];
+        return <VisConvertError data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'vis-dashboard') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisDashboard>[0]['data'];
+        return <VisDashboard data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'vis-chart') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisChart>[0]['data'];
+        return <VisChart data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'vis-plugin') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisPlugin>[0]['data'];
+        return <VisPlugin data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
+
+    if (lang === 'vis-code') {
+      try {
+        const data = JSON.parse(content) as Parameters<typeof VisCode>[0]['data'];
+        return <VisCode data={data} />;
+      } catch (e) {
+        return <CodePreview language={lang} code={content} />;
+      }
+    }
 
     return (
       <>
         {!inline ? (
-          <CodePreview code={context} language={match?.[1] ?? 'javascript'} />
+          <CodePreview code={context} language={lang} />
         ) : (
           <code {...props} style={style} className="p-1 mx-1 rounded bg-theme-light dark:bg-theme-dark text-sm">
             {children}
@@ -61,7 +132,7 @@ const basicComponents: MarkdownComponent = {
   },
   table({ children }) {
     return (
-      <table className="my-2 rounded-tl-md rounded-tr-md max-w-full bg-white dark:bg-gray-900 text-sm rounded-lg overflow-hidden">{children}</table>
+      <table className="my-2 rounded-tl-md rounded-tr-md max-w-full bg-white dark:bg-gray-800 text-sm rounded-lg overflow-hidden">{children}</table>
     );
   },
   thead({ children }) {
