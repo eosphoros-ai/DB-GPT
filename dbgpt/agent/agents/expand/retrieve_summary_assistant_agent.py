@@ -1,26 +1,23 @@
-import os
-import glob
-import requests
-import logging
-import tiktoken
-import pypdf
 import asyncio
+import glob
 import json
+import logging
+import os
 import pdb
-
-
+from typing import Callable, Dict, List, Literal, Optional, Union
 from urllib.parse import urlparse
-from typing import Callable, Dict, Literal, Optional, Union, List
+
+import pypdf
+import requests
+import tiktoken
 from bs4 import BeautifulSoup
 
-from dbgpt.agent.agents.base_agent import ConversableAgent
-from dbgpt.agent.plugin.commands.command_mange import ApiCall
-
-from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.agent.agents.agent import Agent, AgentContext
-from dbgpt.core.interface.message import ModelMessageRoleType
-
+from dbgpt.agent.agents.base_agent import ConversableAgent
+from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.agent.plugin.commands.command_mange import ApiCall
 from dbgpt.configs.model_config import PILOT_PATH
+from dbgpt.core.interface.message import ModelMessageRoleType
 
 try:
     from termcolor import colored
@@ -581,7 +578,6 @@ if __name__ == "__main__":
 
     from dbgpt.agent.agents.agent import AgentContext
     from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
-
     from dbgpt.core.interface.llm import ModelMetadata
     from dbgpt.model import OpenAILLMClient
 

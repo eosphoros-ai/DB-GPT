@@ -5,10 +5,10 @@ from collections import defaultdict
 from typing import Dict, List, Optional
 
 from dbgpt.util.json_utils import EnhancedJSONEncoder
+from dbgpt.vis.client import VisAgentMessages, VisAgentPlans, vis_client
 
 from .base import GptsMessage, GptsMessageMemory, GptsPlansMemory
 from .default_gpts_memory import DefaultGptsMessageMemory, DefaultGptsPlansMemory
-from dbgpt.vis.client import vis_client, VisAgentMessages, VisAgentPlans
 
 
 class GptsMemory:

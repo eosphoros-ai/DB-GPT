@@ -2,6 +2,8 @@ import logging
 from pathlib import Path
 from typing import Callable, Dict, Literal, Optional, Union
 
+# TODO
+from dbgpt.configs.model_config import PLUGINS_DIR
 from dbgpt.util.json_utils import find_json_objects
 from dbgpt.vis import VisPlugin, vis_client
 
@@ -19,9 +21,6 @@ except ImportError:
     def colored(x, *args, **kwargs):
         return x
 
-
-# TODO
-from dbgpt.configs.model_config import PLUGINS_DIR
 
 logger = logging.getLogger(__name__)
 
