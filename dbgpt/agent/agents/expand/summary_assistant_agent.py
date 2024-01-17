@@ -1,3 +1,4 @@
+import logging
 from typing import Callable, Dict, Literal, Optional, Union
 
 from dbgpt.agent.agents.base_agent import ConversableAgent
@@ -5,8 +6,6 @@ from dbgpt.core.interface.message import ModelMessageRoleType
 
 from ...memory.gpts_memory import GptsMemory
 from ..agent import Agent, AgentContext
-
-import logging
 
 logger = logging.getLogger()
 

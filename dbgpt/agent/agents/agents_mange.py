@@ -8,9 +8,9 @@ from .expand.code_assistant_agent import CodeAssistantAgent
 from .expand.dashboard_assistant_agent import DashboardAssistantAgent
 from .expand.data_scientist_agent import DataScientistAgent
 from .expand.plugin_assistant_agent import PluginAssistantAgent
+from .expand.retrieve_summary_assistant_agent import RetrieveSummaryAssistantAgent
 from .expand.sql_assistant_agent import SQLAssistantAgent
 from .expand.summary_assistant_agent import SummaryAssistantAgent
-from .expand.retrieve_summary_assistant_agent import RetrieveSummaryAssistantAgent
 
 logger = logging.getLogger(__name__)
 

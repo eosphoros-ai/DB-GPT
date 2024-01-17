@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from enum import Enum
 import dataclasses
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 
