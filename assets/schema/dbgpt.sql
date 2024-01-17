@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `knowledge_space`
     KEY            `idx_name` (`name`) COMMENT 'index:idx_name'
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='knowledge space table';
 
-CREATE TABLE IF NOT EXISTS `knowledge_documenhow `
+CREATE TABLE IF NOT EXISTS `knowledge_document`
 (
     `id`           int          NOT NULL AUTO_INCREMENT COMMENT 'auto increment id',
     `doc_name`     varchar(100) NOT NULL COMMENT 'document path name',
