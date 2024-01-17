@@ -180,7 +180,7 @@ class AIWrapper:
         payload["model_cache_enable"] = self.model_cache_enable
         try:
             model_request = _build_model_request(payload)
-            model_output = await self._llm_client.generate(model_request)
+            model_output = await self._llm_client.generate(model_request.copy())
             parsed_output = self._output_parser.parse_model_nostream_resp(
                 model_output, "###"
             )

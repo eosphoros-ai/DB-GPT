@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS `alembic_version`
 (
     version_num VARCHAR(32) NOT NULL,
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
-);
+) DEFAULT CHARSET=utf8mb4 ;
 
 CREATE TABLE IF NOT EXISTS `knowledge_space`
 (
@@ -185,7 +185,82 @@ CREATE TABLE IF NOT EXISTS `prompt_manage`
     KEY              `gmt_created_idx` (`gmt_created`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Prompt management table';
 
+ CREATE TABLE IF NOT EXISTS `gpts_conversations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `conv_id` varchar(255) NOT NULL COMMENT 'The unique id of the conversation record',
+  `user_goal` text NOT NULL COMMENT 'User''s goals content',
+  `gpts_name` varchar(255) NOT NULL COMMENT 'The gpts name',
+  `state` varchar(255) DEFAULT NULL COMMENT 'The gpts state',
+  `max_auto_reply_round` int(11) NOT NULL COMMENT 'max auto reply round',
+  `auto_reply_count` int(11) NOT NULL COMMENT 'auto reply count',
+  `user_code` varchar(255) DEFAULT NULL COMMENT 'user code',
+  `sys_code` varchar(255) DEFAULT NULL COMMENT 'system app ',
+  `created_at` datetime DEFAULT NULL COMMENT 'create time',
+  `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_gpts_conversations` (`conv_id`),
+  KEY `idx_gpts_name` (`gpts_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COMMENT="gpt conversations";
 
+CREATE TABLE IF NOT EXISTS `gpts_instance` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `gpts_name` varchar(255) NOT NULL COMMENT 'Current AI assistant name',
+  `gpts_describe` varchar(2255) NOT NULL COMMENT 'Current AI assistant describe',
+  `resource_db` text COMMENT 'List of structured database names contained in the current gpts',
+  `resource_internet` text COMMENT 'Is it possible to retrieve information from the internet',
+  `resource_knowledge` text COMMENT 'List of unstructured database names contained in the current gpts',
+  `gpts_agents` varchar(1000) DEFAULT NULL COMMENT 'List of agents names contained in the current gpts',
+  `gpts_models` varchar(1000) DEFAULT NULL COMMENT 'List of llm model names contained in the current gpts',
+  `language` varchar(100) DEFAULT NULL COMMENT 'gpts language',
+  `user_code` varchar(255) NOT NULL COMMENT 'user code',
+  `sys_code` varchar(255) DEFAULT NULL COMMENT 'system app code',
+  `created_at` datetime DEFAULT NULL COMMENT 'create time',
+  `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
+  `team_mode` varchar(255) NOT NULL COMMENT 'Team work mode',
+  `is_sustainable` tinyint(1) NOT NULL COMMENT 'Applications for sustainable dialogue',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_gpts` (`gpts_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COMMENT="gpts instance";
+
+CREATE TABLE `gpts_messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `conv_id` varchar(255) NOT NULL COMMENT 'The unique id of the conversation record',
+  `sender` varchar(255) NOT NULL COMMENT 'Who speaking in the current conversation turn',
+  `receiver` varchar(255) NOT NULL COMMENT 'Who receive message in the current conversation turn',
+  `model_name` varchar(255) DEFAULT NULL COMMENT 'message generate model',
+  `rounds` int(11) NOT NULL COMMENT 'dialogue turns',
+  `content` text COMMENT 'Content of the speech',
+  `current_gogal` text COMMENT 'The target corresponding to the current message',
+  `context` text COMMENT 'Current conversation context',
+  `review_info` text COMMENT 'Current conversation review info',
+  `action_report` text COMMENT 'Current conversation action report',
+  `role` varchar(255) DEFAULT NULL COMMENT 'The role of the current message content',
+  `created_at` datetime DEFAULT NULL COMMENT 'create time',
+  `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
+  PRIMARY KEY (`id`),
+  KEY `idx_q_messages` (`conv_id`,`rounds`,`sender`)
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COMMENT="gpts message";
+
+
+CREATE TABLE `gpts_plans` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `conv_id` varchar(255) NOT NULL COMMENT 'The unique id of the conversation record',
+  `sub_task_num` int(11) NOT NULL COMMENT 'Subtask number',
+  `sub_task_title` varchar(255) NOT NULL COMMENT 'subtask title',
+  `sub_task_content` text NOT NULL COMMENT 'subtask content',
+  `sub_task_agent` varchar(255) DEFAULT NULL COMMENT 'Available agents corresponding to subtasks',
+  `resource_name` varchar(255) DEFAULT NULL COMMENT 'resource name',
+  `rely` varchar(255) DEFAULT NULL COMMENT 'Subtask dependencies，like: 1,2,3',
+  `agent_model` varchar(255) DEFAULT NULL COMMENT 'LLM model used by subtask processing agents',
+  `retry_times` int(11) DEFAULT NULL COMMENT 'number of retries',
+  `max_retry_times` int(11) DEFAULT NULL COMMENT 'Maximum number of retries',
+  `state` varchar(255) DEFAULT NULL COMMENT 'subtask status',
+  `result` longtext COMMENT 'subtask result',
+  `created_at` datetime DEFAULT NULL COMMENT 'create time',
+  `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sub_task` (`conv_id`,`sub_task_num`)
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COMMENT="gpt plan";
 
 CREATE
 DATABASE IF NOT EXISTS EXAMPLE_1;
