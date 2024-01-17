@@ -110,7 +110,7 @@ class MultiAgents(BaseComponent, ABC):
         worker_manager = CFG.SYSTEM_APP.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
-        llm_task = DefaultLLMClient(worker_manager)
+        llm_task = DefaultLLMClient(worker_manager, auto_convert_message=True)
         context: AgentContext = AgentContext(conv_id=conv_id, llm_provider=llm_task)
         context.gpts_name = gpts_instance.gpts_name
         context.resource_db = resource_db
