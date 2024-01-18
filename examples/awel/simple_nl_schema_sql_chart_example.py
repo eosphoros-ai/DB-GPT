@@ -12,7 +12,6 @@ from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
 from dbgpt.model import OpenAILLMClient
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 from dbgpt.rag.operator.schema_linking import SchemaLinkingOperator
-from dbgpt.serve.rag.operators.db_schema import DBSchemaAssemblerOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.chat_util import run_async_tasks
