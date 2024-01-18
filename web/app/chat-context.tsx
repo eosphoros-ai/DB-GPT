@@ -16,10 +16,10 @@ interface IChatContext {
   model: string;
   dbParam?: string;
   modelList: Array<string>;
-  agentList: string[];
+  agent: string;
   dialogueList?: DialogueListResponse;
+  setAgent?: (val: string) => void;
   setMode: (mode: ThemeMode) => void;
-  setAgentList?: (val: string[]) => void;
   setModel: (val: string) => void;
   setIsContract: (val: boolean) => void;
   setIsMenuExpand: (val: boolean) => void;
@@ -47,8 +47,8 @@ const ChatContext = createContext<IChatContext>({
   model: '',
   dbParam: undefined,
   dialogueList: [],
-  agentList: [],
-  setAgentList: () => {},
+  agent: '',
+  setAgent: () => {},
   setModel: () => {},
   setIsContract: () => {},
   setIsMenuExpand: () => {},
@@ -72,7 +72,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   const [model, setModel] = useState<string>('');
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(scene !== 'chat_dashboard');
   const [dbParam, setDbParam] = useState<string>(db_param);
-  const [agentList, setAgentList] = useState<string[]>([]);
+  const [agent, setAgent] = useState<string>('');
   const [history, setHistory] = useState<ChatHistoryResponse>([]);
   const [docId, setDocId] = useState<number>();
   const [mode, setMode] = useState<ThemeMode>('light');
@@ -90,6 +90,13 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
       manual: true,
     },
   );
+
+  useEffect(() => {
+    if (dialogueList.length && scene === 'chat_agent') {
+      const agent = dialogueList.find((item) => item.conv_uid === chatId)?.select_param;
+      agent && setAgent(agent);
+    }
+  }, [dialogueList, scene, chatId]);
 
   const { data: modelList = [] } = useRequest(async () => {
     const [, res] = await apiInterceptors(getUsableModels());
@@ -114,10 +121,10 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     model,
     dbParam: dbParam || db_param,
     dialogueList,
-    agentList,
+    agent,
+    setAgent,
     mode,
     setMode,
-    setAgentList,
     setModel,
     setIsContract,
     setIsMenuExpand,

@@ -3,10 +3,18 @@ import { CopyOutlined } from '@ant-design/icons';
 import { oneDark, coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import copy from 'copy-to-clipboard';
-import { useContext } from 'react';
+import { CSSProperties, useContext } from 'react';
 import { ChatContext } from '@/app/chat-context';
 
-export function CodePreview({ code, language }: { code: string; language: string }) {
+interface Props {
+  code: string;
+  language: string;
+  customStyle?: CSSProperties;
+  light?: { [key: string]: CSSProperties };
+  dark?: { [key: string]: CSSProperties };
+}
+
+export function CodePreview({ code, light, dark, language, customStyle }: Props) {
   const { mode } = useContext(ChatContext);
 
   return (
@@ -20,7 +28,7 @@ export function CodePreview({ code, language }: { code: string; language: string
           message[success ? 'success' : 'error'](success ? 'Copy success' : 'Copy failed');
         }}
       />
-      <SyntaxHighlighter language={language} style={mode === 'dark' ? coldarkDark : oneDark}>
+      <SyntaxHighlighter customStyle={customStyle} language={language} style={mode === 'dark' ? dark ?? coldarkDark : light ?? oneDark}>
         {code}
       </SyntaxHighlighter>
     </div>

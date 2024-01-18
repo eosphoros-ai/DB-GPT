@@ -11,7 +11,13 @@ import {
   PostEditorSQLRunParams,
   PostSQLEditorSubmitParams,
 } from '@/types/editor';
-import { PostAgentHubUpdateParams, PostAgentQueryParams, PostAgentPluginResponse, PostAgentMyPluginResponse } from '@/types/agent';
+import {
+  PostAgentHubUpdateParams,
+  PostAgentQueryParams,
+  PostAgentPluginResponse,
+  PostAgentMyPluginResponse,
+  GetDBGPTsListResponse,
+} from '@/types/agent';
 import {
   AddKnowledgeParams,
   ArgumentsParams,
@@ -210,6 +216,9 @@ export const postAgentUpload = (user = '', data: FormData, config?: Omit<AxiosRe
     },
     ...config,
   });
+};
+export const getDbgptsList = () => {
+  return GET<undefined, GetDBGPTsListResponse>('/api/v1/dbgpts/list');
 };
 
 /** chat feedback **/
