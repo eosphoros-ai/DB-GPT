@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from enum import Enum
 import dataclasses
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 class ResourceType(Enum):
     DB = "db"
     Knowledge = "knowledge"
-    Internet = "internet"
     Plugin = "plugin"
+    Internet = "internet"
 
 
 @dataclasses.dataclass()
@@ -18,6 +18,9 @@ class AgentResource:
     name: str
     introduce: str
     value: str
+    is_dynamic: bool = (
+        False  # Is the current resource predefined or dynamically passed in?
+    )
 
     def to_resource_prompt(self):
         return f""""""

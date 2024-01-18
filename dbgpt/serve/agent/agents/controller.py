@@ -3,7 +3,7 @@ import logging
 import uuid
 from abc import ABC
 from collections import defaultdict
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Body
 from fastapi.responses import StreamingResponse
@@ -15,11 +15,15 @@ from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.common.schema import Status
 from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.app.openapi.api_view_model import Result
+from dbgpt.app.scene.base import ChatScene
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
+from dbgpt.core.interface.message import StorageConversation
 from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.model.cluster.client import DefaultLLMClient
 from dbgpt.serve.agent.model import PagenationFilter, PluginHubFilter
 from dbgpt.serve.agent.team.plan.team_auto_plan import AutoPlanChatManager
+from dbgpt.serve.conversation.serve import Serve as ConversationServe
+from dbgpt.util.json_utils import serialize
 
 from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEntity
 from ..db.gpts_manage_db import GptsInstanceDao, GptsInstanceEntity
@@ -27,11 +31,6 @@ from ..team.base import TeamMode
 from ..team.layout.team_awel_layout import AwelLayoutChatManager
 from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
 from .dbgpts import DbGptsInstance
-from dbgpt.util.json_utils import serialize
-
-from dbgpt.serve.conversation.serve import Serve as ConversationServe
-from dbgpt.core.interface.message import StorageConversation
-from dbgpt.app.scene.base import ChatScene
 
 CFG = Config()
 
@@ -111,7 +110,7 @@ class MultiAgents(BaseComponent, ABC):
         worker_manager = CFG.SYSTEM_APP.get_component(
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
-        llm_task = DefaultLLMClient(worker_manager)
+        llm_task = DefaultLLMClient(worker_manager, auto_convert_message=True)
         context: AgentContext = AgentContext(conv_id=conv_id, llm_provider=llm_task)
         context.gpts_name = gpts_instance.gpts_name
         context.resource_db = resource_db

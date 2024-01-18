@@ -1,7 +1,8 @@
 from typing import Optional
 
-from ..base import Vis
 from webdriver_manager.chrome import ChromeDriverManager
+
+from ..base import Vis
 
 
 class VisDbgptsFlowResult(Vis):

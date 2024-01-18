@@ -28,14 +28,13 @@ from dbgpt.datasource.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt.model.base import FlatSupportedModel
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from dbgpt.rag.summary.db_summary_client import DBSummaryClient
+from dbgpt.serve.agent.agents.controller import multi_agents
 from dbgpt.util.executor_utils import (
     DefaultExecutorFactory,
     ExecutorFactory,
     blocking_func_to_async,
 )
 from dbgpt.util.tracer import SpanType, root_tracer
-
-from dbgpt.serve.agent.agents.controller import multi_agents
 
 router = APIRouter()
 CFG = Config()

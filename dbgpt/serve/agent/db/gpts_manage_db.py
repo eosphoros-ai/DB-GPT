@@ -1,13 +1,13 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     Integer,
     String,
     Text,
     UniqueConstraint,
-    Boolean,
 )
 
 from dbgpt.storage.metadata import BaseDao, Model
@@ -28,6 +28,7 @@ class GptsInstanceEntity(Model):
         default=False,
         comment="Applications for sustainable dialogue",
     )
+
     resource_db = Column(
         Text,
         nullable=True,
