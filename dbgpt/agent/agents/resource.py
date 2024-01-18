@@ -18,6 +18,9 @@ class AgentResource:
     name: str
     introduce: str
     value: str
+    is_dynamic: bool = (
+        False  # Is the current resource predefined or dynamically passed in?
+    )
 
     def to_resource_prompt(self):
         return f""""""
