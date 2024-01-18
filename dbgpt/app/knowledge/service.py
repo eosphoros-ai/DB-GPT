@@ -400,7 +400,9 @@ class KnowledgeService:
         assembler = SummaryAssembler(
             knowledge=knowledge,
             model_name=request.model_name,
-            llm_client=DefaultLLMClient(worker_manager=worker_manager),
+            llm_client=DefaultLLMClient(
+                worker_manager=worker_manager, auto_convert_message=True
+            ),
             language=CFG.LANGUAGE,
             chunk_parameters=chunk_parameters,
         )

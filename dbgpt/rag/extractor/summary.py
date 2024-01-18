@@ -18,7 +18,7 @@ Write a quick summary of the following context:
 the summary should be as concise as possible and not overly lengthy.Please keep the answer within approximately 200 characters.
 """
 
-REFINE_SUMMARY_TEMPLATE_ZH = """我们已经提供了一个到某一点的现有总结:{context}\n 请根据你之前推理的内容进行最终的总结,总结回答的时候最好按照1.2.3.进行. 注意:请用<中文>来进行总结。"""
+REFINE_SUMMARY_TEMPLATE_ZH = """我们已经提供了一个到某一点的现有总结:{context}\n 请根据你之前推理的内容进行总结,总结回答的时候最好按照1.2.3.进行. 注意:请用<中文>来进行总结。"""
 
 REFINE_SUMMARY_TEMPLATE_EN = """
 We have provided an existing summary up to a certain point: {context}, We have the opportunity to refine the existing summary (only if needed) with some more context below. 
@@ -144,7 +144,7 @@ class SummaryExtractor(Extractor):
             from dbgpt.core import ModelMessage
 
             prompt = prompt_template.format(context=chunk_text)
-            messages = [ModelMessage(role=ModelMessageRoleType.SYSTEM, content=prompt)]
+            messages = [ModelMessage(role=ModelMessageRoleType.HUMAN, content=prompt)]
             request = ModelRequest(model=self._model_name, messages=messages)
             tasks.append(self._llm_client.generate(request))
         summary_results = await run_async_tasks(
