@@ -1,9 +1,7 @@
-import logging
-
 try:
     from dbgpt.model.cluster.client import DefaultLLMClient
 except ImportError as exc:
-    logging.warning("Can't import dbgpt.model.DefaultLLMClient")
+    # logging.warning("Can't import dbgpt.model.DefaultLLMClient")
     DefaultLLMClient = None
 
 
