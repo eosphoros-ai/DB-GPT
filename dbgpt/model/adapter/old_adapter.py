@@ -19,7 +19,7 @@ from dbgpt.configs.model_config import get_device
 from dbgpt.model.adapter.base import LLMModelAdapter
 from dbgpt.model.adapter.template import ConversationAdapter, PromptType
 from dbgpt.model.base import ModelType
-from dbgpt.model.conversation import Conversation
+from dbgpt.model.llm.conversation import Conversation
 from dbgpt.model.parameter import (
     LlamaCppModelParameters,
     ModelParameters,

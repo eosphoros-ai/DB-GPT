@@ -17,7 +17,7 @@ from dbgpt.core.operator import (
 )
 from dbgpt.datasource.operator.datasource_operator import DatasourceOperator
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
-from dbgpt.model import OpenAILLMClient
+from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.operator.datasource import DatasourceRetrieverOperator
 
 

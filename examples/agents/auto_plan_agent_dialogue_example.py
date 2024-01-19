@@ -28,7 +28,7 @@ from dbgpt.core.interface.llm import ModelMetadata
 from dbgpt.serve.agent.team.plan.team_auto_plan import AutoPlanChatManager
 
 if __name__ == "__main__":
-    from dbgpt.model import OpenAILLMClient
+    from dbgpt.model.proxy import OpenAILLMClient
 
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)

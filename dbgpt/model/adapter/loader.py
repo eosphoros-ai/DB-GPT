@@ -137,7 +137,7 @@ class ModelLoader:
 def huggingface_loader(llm_adapter: LLMModelAdapter, model_params: ModelParameters):
     import torch
 
-    from dbgpt.model.compression import compress_module
+    from dbgpt.model.llm.compression import compress_module
 
     device = model_params.device
     max_memory = None

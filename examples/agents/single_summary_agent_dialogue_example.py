@@ -25,7 +25,7 @@ from dbgpt.core.interface.llm import ModelMetadata
 
 
 def summary_example_with_success():
-    from dbgpt.model import OpenAILLMClient
+    from dbgpt.model.proxy import OpenAILLMClient
 
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(conv_id="summarize", llm_provider=llm_client)
@@ -76,7 +76,7 @@ def summary_example_with_success():
 
 
 def summary_example_with_faliure():
-    from dbgpt.model import OpenAILLMClient
+    from dbgpt.model.proxy import OpenAILLMClient
 
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(conv_id="summarize", llm_provider=llm_client)

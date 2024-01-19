@@ -7,7 +7,7 @@ from dbgpt.core.operator import (
     PromptBuilderOperator,
     RequestBuilderOperator,
 )
-from dbgpt.model import OpenAILLMClient
+from dbgpt.model.proxy import OpenAILLMClient
 
 with DAG("simple_sdk_llm_example_dag") as dag:
     prompt_task = PromptBuilderOperator(

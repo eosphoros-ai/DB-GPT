@@ -18,7 +18,7 @@ from transformers.generation.logits_process import (
     TopPLogitsWarper,
 )
 
-from dbgpt.model.llm_utils import is_partial_stop, is_sentence_complete
+from dbgpt.model.utils.llm_utils import is_partial_stop, is_sentence_complete
 
 
 def prepare_logits_processor(

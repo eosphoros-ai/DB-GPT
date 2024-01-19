@@ -1,11 +1,7 @@
 """Http trigger for AWEL."""
-from __future__ import annotations
-
 import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union, cast
-
-from starlette.requests import Request
 
 from dbgpt._private.pydantic import BaseModel
 
@@ -15,9 +11,10 @@ from .base import Trigger
 
 if TYPE_CHECKING:
     from fastapi import APIRouter
+    from starlette.requests import Request
 
-RequestBody = Union[Type[Request], Type[BaseModel], Type[str]]
-StreamingPredictFunc = Callable[[Union[Request, BaseModel]], bool]
+    RequestBody = Union[Type[Request], Type[BaseModel], Type[str]]
+    StreamingPredictFunc = Callable[[Union[Request, BaseModel]], bool]
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +29,9 @@ class HttpTrigger(Trigger):
         self,
         endpoint: str,
         methods: Optional[Union[str, List[str]]] = "GET",
-        request_body: Optional[RequestBody] = None,
+        request_body: Optional["RequestBody"] = None,
         streaming_response: bool = False,
-        streaming_predict_func: Optional[StreamingPredictFunc] = None,
+        streaming_predict_func: Optional["StreamingPredictFunc"] = None,
         response_model: Optional[Type] = None,
         response_headers: Optional[Dict[str, str]] = None,
         response_media_type: Optional[str] = None,
@@ -69,6 +66,7 @@ class HttpTrigger(Trigger):
             router (APIRouter): The router to mount the trigger.
         """
         from fastapi import Depends
+        from starlette.requests import Request
 
         methods = [self._methods] if isinstance(self._methods, str) else self._methods
 
@@ -114,8 +112,10 @@ class HttpTrigger(Trigger):
 
 
 async def _parse_request_body(
-    request: Request, request_body_cls: Optional[RequestBody]
+    request: "Request", request_body_cls: Optional["RequestBody"]
 ):
+    from starlette.requests import Request
+
     if not request_body_cls:
         return None
     if request_body_cls == Request:

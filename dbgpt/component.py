@@ -1,3 +1,7 @@
+"""Component module for dbgpt.
+
+Manages the lifecycle and registration of components.
+"""
 from __future__ import annotations
 
 import asyncio
