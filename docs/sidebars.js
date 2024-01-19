@@ -29,9 +29,90 @@ const sidebars = {
       label: "Quickstart",
       
     },
+
     {
-      type: "doc", 
-      id: "awel",
+      type: "category", 
+      label: "AWEL(Agentic Workflow Expression Language)",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        {
+          type: 'doc',
+          id: "awel/awel"
+        },
+        {
+          type: 'doc',
+          id: "awel/get_started"
+        },
+        {
+          type: "doc",
+          id: "awel/why_use_awel" 
+        },
+        {
+          type: "category",
+          label: "How to",
+          items: [
+            {
+              type: "category",
+              label: "Operator",
+              collapsed: false,
+              collapsible: false,
+              items: [
+                {
+                  type: "doc",
+                  id: "awel/how_to/operator/map"
+                },
+                {
+                  type: "doc",
+                  id: "awel/how_to/operator/join"
+                },
+                {
+                  type: "doc",
+                  id: "awel/how_to/operator/reduce"
+                },
+                {
+                  type: "doc",
+                  id: "awel/how_to/operator/trigger"
+                },
+                {
+                  type: "doc",
+                  id: "awel/how_to/operator/streamify_abs_operator"
+                }
+              ]
+            },
+            {
+              type: "category",
+              label: "Operator",
+              collapsed: false,
+              collapsible: false,
+              items: [
+                {
+                  type: "doc",
+                  id: "awel/how_to/dag/dag_pipeline"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          type: "category",
+          label: "Cookbook",
+          items: [
+            {
+              type: "doc",
+              id: "awel/cookbook/sql_awel_use_rag_and_schema_linking"
+            },
+            {
+              type: "doc",
+              id: "awel/cookbook/data_analysis_use_awel"
+            },
+            {
+              type: "doc",
+              id: "awel/cookbook/multi_round_chat_withllm"
+            }
+          ]
+        }
+      ],
     },
 
     {
@@ -210,7 +291,19 @@ const sidebars = {
         
       ],
     },
-
+    
+    {
+      type: "category",
+      label: "SDK",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        {
+          type: "doc",
+          id: "sdk/quickstart"
+        }
+      ]
+    },
     {
       type: "category",
       label: "FAQ",
