@@ -40,6 +40,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 def _create_vector_connector():
     """Create vector connector."""
+    model_name = os.getenv("EMBEDDING_MODEL", "text2vec")
     return VectorStoreConnector.from_default(
         "Chroma",
         vector_store_config=ChromaVectorConfig(
@@ -47,7 +48,7 @@ def _create_vector_connector():
             persist_path=os.path.join(PILOT_PATH, "data"),
         ),
         embedding_fn=DefaultEmbeddingFactory(
-            default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
+            default_model_name=os.path.join(MODEL_PATH, model_name),
         ).create(),
     )
 
