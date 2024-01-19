@@ -91,6 +91,7 @@ package: clean-dist ## Package the project for distribution
 
 .PHONY: upload
 upload: package ## Upload the package to PyPI
+	# upload to testpypi: twine upload --repository testpypi dist/*
 	twine upload dist/*
 
 .PHONY: help
