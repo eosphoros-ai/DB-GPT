@@ -1,21 +1,15 @@
 from __future__ import annotations
 
-from typing import (
-    List,
-    Type,
-    Optional,
-)
 import logging
-import threading
 import os
+import threading
 from functools import cache
+from typing import List, Optional, Type
+
+from dbgpt.model.adapter.base import LLMModelAdapter, get_model_adapter
+from dbgpt.model.adapter.template import ConversationAdapter, ConversationAdapterFactory
 from dbgpt.model.base import ModelType
 from dbgpt.model.parameter import BaseModelParameters
-from dbgpt.model.adapter.base import LLMModelAdapter, get_model_adapter
-from dbgpt.model.adapter.template import (
-    ConversationAdapter,
-    ConversationAdapterFactory,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +19,7 @@ _IS_BENCHMARK = os.getenv("DB_GPT_MODEL_BENCHMARK", "False").lower() == "true"
 
 _OLD_MODELS = [
     "llama-cpp",
-    "proxyllm",
+    # "proxyllm",
     "gptj-6b",
     "codellama-13b-sql-sft",
     "codellama-7b",
@@ -51,6 +45,7 @@ def get_llm_model_adapter(
 
     # Import NewHFChatModelAdapter for it can be registered
     from dbgpt.model.adapter.hf_adapter import NewHFChatModelAdapter
+    from dbgpt.model.adapter.proxy_adapter import ProxyLLMModelAdapter
 
     new_model_adapter = get_model_adapter(
         model_type, model_name, model_path, conv_factory
@@ -64,9 +59,9 @@ def get_llm_model_adapter(
     if use_fastchat and not must_use_old:
         logger.info("Use fastcat adapter")
         from dbgpt.model.adapter.fschat_adapter import (
-            _get_fastchat_model_adapter,
-            _fastchat_get_adapter_monkey_patch,
             FastChatLLMModelAdapterWrapper,
+            _fastchat_get_adapter_monkey_patch,
+            _get_fastchat_model_adapter,
         )
 
         adapter = _get_fastchat_model_adapter(
@@ -79,11 +74,11 @@ def get_llm_model_adapter(
             result_adapter = FastChatLLMModelAdapterWrapper(adapter)
 
     else:
+        from dbgpt.app.chat_adapter import get_llm_chat_adapter
+        from dbgpt.model.adapter.old_adapter import OldLLMModelAdapterWrapper
         from dbgpt.model.adapter.old_adapter import (
             get_llm_model_adapter as _old_get_llm_model_adapter,
-            OldLLMModelAdapterWrapper,
         )
-        from dbgpt.app.chat_adapter import get_llm_chat_adapter
 
         logger.info("Use DB-GPT old adapter")
         result_adapter = OldLLMModelAdapterWrapper(
@@ -139,12 +134,12 @@ def _dynamic_model_parser() -> Optional[List[Type[BaseModelParameters]]]:
     Returns:
         Optional[List[Type[BaseModelParameters]]]: The model parameters class list.
     """
-    from dbgpt.util.parameter_utils import _SimpleArgParser
     from dbgpt.model.parameter import (
+        EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
         EmbeddingModelParameters,
         WorkerType,
-        EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
     )
+    from dbgpt.util.parameter_utils import _SimpleArgParser
 
     pre_args = _SimpleArgParser("model_name", "model_path", "worker_type", "model_type")
     pre_args.parse()

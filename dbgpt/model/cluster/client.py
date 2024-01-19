@@ -1,20 +1,52 @@
-from typing import AsyncIterator, List
 import asyncio
-from dbgpt.core.interface.llm import LLMClient, ModelRequest, ModelOutput, ModelMetadata
-from dbgpt.model.parameter import WorkerType
+from typing import AsyncIterator, List, Optional
+
+from dbgpt.core.interface.llm import (
+    DefaultMessageConverter,
+    LLMClient,
+    MessageConverter,
+    ModelMetadata,
+    ModelOutput,
+    ModelRequest,
+)
 from dbgpt.model.cluster.manager_base import WorkerManager
+from dbgpt.model.parameter import WorkerType
 
 
 class DefaultLLMClient(LLMClient):
-    def __init__(self, worker_manager: WorkerManager):
-        self._worker_manager = worker_manager
+    """Default LLM client implementation.
 
-    async def generate(self, request: ModelRequest) -> ModelOutput:
+    Connect to the worker manager and send the request to the worker manager.
+
+    Args:
+        worker_manager (WorkerManager): worker manager instance.
+        auto_convert_message (bool, optional): auto convert the message to ModelRequest. Defaults to False.
+    """
+
+    def __init__(
+        self, worker_manager: WorkerManager, auto_convert_message: bool = False
+    ):
+        self._worker_manager = worker_manager
+        self._auto_covert_message = auto_convert_message
+
+    async def generate(
+        self,
+        request: ModelRequest,
+        message_converter: Optional[MessageConverter] = None,
+    ) -> ModelOutput:
+        if not message_converter and self._auto_covert_message:
+            message_converter = DefaultMessageConverter()
+        request = await self.covert_message(request, message_converter)
         return await self._worker_manager.generate(request.to_dict())
 
     async def generate_stream(
-        self, request: ModelRequest
+        self,
+        request: ModelRequest,
+        message_converter: Optional[MessageConverter] = None,
     ) -> AsyncIterator[ModelOutput]:
+        if not message_converter and self._auto_covert_message:
+            message_converter = DefaultMessageConverter()
+        request = await self.covert_message(request, message_converter)
         async for output in self._worker_manager.generate_stream(request.to_dict()):
             yield output
 

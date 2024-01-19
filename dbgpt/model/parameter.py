@@ -4,7 +4,7 @@
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, Optional, Union, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 from dbgpt.model.conversation import conv_templates
 from dbgpt.util.parameter_utils import BaseParameters
@@ -475,6 +475,16 @@ class ProxyModelParameters(BaseModelParameters):
     max_context_size: Optional[int] = field(
         default=4096, metadata={"help": "Maximum context size"}
     )
+    llm_client_class: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "The class name of llm client, such as dbgpt.model.proxy.llms.proxy_model.ProxyModel"
+        },
+    )
+
+    def __post_init__(self):
+        if not self.proxy_server_url and self.proxy_api_base:
+            self.proxy_server_url = f"{self.proxy_api_base}/chat/completions"
 
 
 @dataclass

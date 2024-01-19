@@ -18,7 +18,7 @@ function Header({ refreshHistory, modelChange }: Props) {
   const { scene, refreshDialogList } = useContext(ChatContext);
 
   return (
-    <div className="w-full py-2 px-4 md:px-4 flex flex-wrap items-center justify-center border-b border-gray-100 gap-1 md:gap-4">
+    <div className="w-full py-2 px-4 md:px-4 flex flex-wrap items-center justify-center gap-1 md:gap-4">
       {/* Models Selector */}
       <ModelSelector onChange={modelChange} />
       {/* DB Selector */}

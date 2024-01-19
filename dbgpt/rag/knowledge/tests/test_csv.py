@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
 
 from dbgpt.rag.knowledge.csv import CSVKnowledge
 

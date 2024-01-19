@@ -4,6 +4,7 @@ import ColorfulDB from './colorful-db';
 import ColorfulDoc from './colorful-doc';
 import ColorfulExcel from './colorful-excel';
 import ColorfulPlugin from './colorful-plugin';
+import ColorfulChat from './colorful-chat';
 import DarkSvg from './dark-svg';
 import DBSvg from './db-svg';
 import ModelSvg from './model-svg';
@@ -24,6 +25,7 @@ export {
   ColorfulDoc,
   ColorfulExcel,
   ColorfulPlugin,
+  ColorfulChat,
   DarkSvg,
   DBSvg,
   ModelSvg,

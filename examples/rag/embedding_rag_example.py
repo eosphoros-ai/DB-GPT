@@ -1,5 +1,7 @@
 import asyncio
+import os
 
+from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
@@ -20,21 +22,24 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 """
 
 
-async def main():
-    file_path = "./docs/docs/awel.md"
-    vector_persist_path = "{your_persist_path}"
-    embedding_model_path = "{your_embedding_model_path}"
-    knowledge = KnowledgeFactory.from_file_path(file_path)
-    vector_connector = VectorStoreConnector.from_default(
+def _create_vector_connector():
+    """Create vector connector."""
+    return VectorStoreConnector.from_default(
         "Chroma",
         vector_store_config=ChromaVectorConfig(
-            name="vector_name",
-            persist_path=vector_persist_path,
+            name="db_schema_vector_store_name",
+            persist_path=os.path.join(PILOT_PATH, "data"),
         ),
         embedding_fn=DefaultEmbeddingFactory(
-            default_model_name=embedding_model_path
+            default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
         ).create(),
     )
+
+
+async def main():
+    file_path = "docs/docs/awel.md"
+    knowledge = KnowledgeFactory.from_file_path(file_path)
+    vector_connector = _create_vector_connector()
     chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
     # get embedding assembler
     assembler = EmbeddingAssembler.load_from_knowledge(
@@ -45,7 +50,7 @@ async def main():
     assembler.persist()
     # get embeddings retriever
     retriever = assembler.as_retriever(3)
-    chunks = await retriever.aretrieve_with_scores("RAG", 0.3)
+    chunks = await retriever.aretrieve_with_scores("what is awel talk about", 0.3)
     print(f"embedding rag example results:{chunks}")
 
 

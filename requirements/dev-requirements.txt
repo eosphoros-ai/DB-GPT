@@ -13,4 +13,4 @@ aioresponses
 # for git hooks
 pre-commit
 # Type checking
-mypy==0.991
+mypy==1.7.0

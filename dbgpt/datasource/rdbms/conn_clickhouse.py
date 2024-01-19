@@ -1,12 +1,11 @@
 import re
+from typing import Any, Dict, Iterable, List, Optional
+
 import sqlparse
-from typing import List, Optional, Any, Iterable, Dict
-from sqlalchemy import text
+from sqlalchemy import MetaData, text
+
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.storage.schema import DBType
-from sqlalchemy import (
-    MetaData,
-)
 
 
 class ClickhouseConnect(RDBMSDatabase):

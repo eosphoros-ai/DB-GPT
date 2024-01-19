@@ -1,6 +1,6 @@
-from typing import List
-from decimal import Decimal
 import logging
+from decimal import Decimal
+from typing import List
 
 from dbgpt._private.config import Config
 from dbgpt.app.scene.chat_dashboard.data_preparation.report_schma import ValueItem

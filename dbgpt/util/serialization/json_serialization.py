@@ -1,6 +1,6 @@
+import json
 from abc import ABC, abstractmethod
 from typing import Dict, Type
-import json
 
 from dbgpt.core.interface.serialization import Serializable, Serializer
 

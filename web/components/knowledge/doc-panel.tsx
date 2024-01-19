@@ -104,13 +104,13 @@ export default function DocPanel(props: IProps) {
         color = '#2db7f5';
         break;
       case 'FINISHED':
-        color = '#87d068';
+        color = 'cyan';
         break;
       case 'FAILED':
-        color = 'f50';
+        color = 'red';
         break;
       default:
-        color = 'f50';
+        color = 'red';
         break;
     }
     return (
@@ -185,7 +185,7 @@ export default function DocPanel(props: IProps) {
           {hasMore && (
             <Divider>
               <span className="cursor-pointer" onClick={loadMoreDocuments}>
-                {t('Load_More')}
+                {t('Load_more')}
               </span>
             </Divider>
           )}

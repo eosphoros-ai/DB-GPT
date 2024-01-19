@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from typing import Optional, Dict, Any
-
 import logging
+from typing import Any, Dict, Optional
+
 from dbgpt.configs.model_config import get_device
-from dbgpt.model.base import ModelType
 from dbgpt.model.adapter.base import LLMModelAdapter
 from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
+from dbgpt.model.base import ModelType
 from dbgpt.model.parameter import (
-    ModelParameters,
     LlamaCppModelParameters,
+    ModelParameters,
     ProxyModelParameters,
 )
 from dbgpt.util import get_gpu_memory
@@ -126,7 +126,8 @@ class ModelLoader:
         elif model_type == ModelType.LLAMA_CPP:
             return llamacpp_loader(llm_adapter, model_params)
         elif model_type == ModelType.PROXY:
-            return proxyllm_loader(llm_adapter, model_params)
+            # return proxyllm_loader(llm_adapter, model_params)
+            return llm_adapter.load_from_params(model_params)
         elif model_type == ModelType.VLLM:
             return llm_adapter.load_from_params(model_params)
         else:
@@ -135,6 +136,7 @@ class ModelLoader:
 
 def huggingface_loader(llm_adapter: LLMModelAdapter, model_params: ModelParameters):
     import torch
+
     from dbgpt.model.compression import compress_module
 
     device = model_params.device
@@ -166,11 +168,21 @@ def huggingface_loader(llm_adapter: LLMModelAdapter, model_params: ModelParamete
 
     elif device == "mps":
         kwargs = {"torch_dtype": torch.float16}
-        from dbgpt.model.llm.monkey_patch import (
-            replace_llama_attn_with_non_inplace_operations,
-        )
 
-        replace_llama_attn_with_non_inplace_operations()
+        import transformers
+
+        version = tuple(int(v) for v in transformers.__version__.split("."))
+        if version < (4, 35, 0):
+            from dbgpt.model.llm.monkey_patch import (
+                replace_llama_attn_with_non_inplace_operations,
+            )
+
+            # NOTE: Recent transformers library seems to fix the mps issue, also
+            # it has made some changes causing compatibility issues with our
+            # original patch. So we only apply the patch for older versions.
+            # Avoid bugs in mps backend by not using in-place operations.
+            replace_llama_attn_with_non_inplace_operations()
+
     else:
         raise ValueError(f"Invalid device: {device}")
 
@@ -263,18 +275,18 @@ def load_huggingface_quantization_model(
     import torch
 
     try:
+        import transformers
         from accelerate import init_empty_weights
         from accelerate.utils import infer_auto_device_map
-        import transformers
         from transformers import (
-            BitsAndBytesConfig,
             AutoConfig,
             AutoModel,
             AutoModelForCausalLM,
-            LlamaForCausalLM,
             AutoModelForSeq2SeqLM,
-            LlamaTokenizer,
             AutoTokenizer,
+            BitsAndBytesConfig,
+            LlamaForCausalLM,
+            LlamaTokenizer,
         )
     except ImportError as exc:
         raise ValueError(

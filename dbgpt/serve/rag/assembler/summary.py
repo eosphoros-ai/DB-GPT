@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Any, List
+from typing import Any, List, Optional
 
 from dbgpt.core import LLMClient
 from dbgpt.rag.chunk import Chunk
@@ -57,9 +57,8 @@ class SummaryAssembler(BaseAssembler):
         from dbgpt.rag.extractor.summary import SummaryExtractor
 
         self._extractor = extractor or SummaryExtractor(
-            llm_client=self._llm_client, model_name=self._model_name
+            llm_client=self._llm_client, model_name=self._model_name, language=language
         )
-        self._language = language
         super().__init__(
             knowledge=knowledge,
             chunk_parameters=chunk_parameters,

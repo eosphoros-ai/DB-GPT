@@ -37,8 +37,8 @@ function ModelCard({ info }: Props) {
     }
   }
   return (
-    <div className="relative flex flex-col p-1 md:p-2 sm:w-1/2 lg:w-1/3">
-      <div className="relative flex items-center p-4 min-w-min rounded-lg justify-between bg-white border-gray-200 border hover:shadow-md dark:border-gray-600 dark:bg-black dark:hover:border-white transition-all text-black dark:text-white">
+    <div className="relative flex flex-col p-1 md:p-2 sm:w-1/2 lg:w-1/4">
+      <div className="relative flex items-center p-4 min-w-min rounded-lg justify-between bg-white dark:bg-theme-dark-container">
         <div className="flex flex-col">
           {info.healthy && (
             <Tooltip title="Healthy">

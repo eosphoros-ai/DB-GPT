@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from dbgpt.agent.agents.agent import AgentResource
+from dbgpt.serve.agent.team.base import TeamMode
 
 
 class AgentMode(Enum):
@@ -17,6 +18,7 @@ class DbGptsInstance:
     gpts_name: str
     gpts_describe: str
     gpts_agents: list[str]
+    team_mode: TeamMode
     resource_db: Optional[AgentResource] = None
     resource_internet: Optional[AgentResource] = None
     resource_knowledge: Optional[AgentResource] = None

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Tuple
+
 from dbgpt.rag.chunk import Chunk
 
 

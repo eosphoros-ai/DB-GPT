@@ -1,12 +1,9 @@
 import logging
-
 import traceback
-from dbgpt.component import SystemApp
-from dbgpt._private.config import Config
-from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
-)
 
+from dbgpt._private.config import Config
+from dbgpt.component import SystemApp
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
 
 logger = logging.getLogger(__name__)
@@ -44,8 +41,8 @@ class DBSummaryClient:
     def get_db_summary(self, dbname, query, topk):
         """get user query related tables info"""
 
-        from dbgpt.storage.vector_store.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
+        from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
         vector_store_config = VectorStoreConfig(name=dbname + "_profile")
         vector_connector = VectorStoreConnector.from_default(
@@ -53,9 +50,9 @@ class DBSummaryClient:
             embedding_fn=self.embeddings,
             vector_store_config=vector_store_config,
         )
-        from dbgpt.rag.retriever.db_struct import DBStructRetriever
+        from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 
-        retriever = DBStructRetriever(
+        retriever = DBSchemaRetriever(
             top_k=topk, vector_store_connector=vector_connector
         )
         table_docs = retriever.retrieve(query)
@@ -82,8 +79,8 @@ class DBSummaryClient:
         dbname(str): dbname
         """
         vector_store_name = dbname + "_profile"
-        from dbgpt.storage.vector_store.connector import VectorStoreConnector
         from dbgpt.storage.vector_store.base import VectorStoreConfig
+        from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
         vector_store_config = VectorStoreConfig(name=vector_store_name)
         vector_connector = VectorStoreConnector.from_default(
@@ -92,9 +89,9 @@ class DBSummaryClient:
             vector_store_config=vector_store_config,
         )
         if not vector_connector.vector_name_exists():
-            from dbgpt.serve.rag.assembler.db_struct import DBStructAssembler
+            from dbgpt.serve.rag.assembler.db_schema import DBSchemaAssembler
 
-            db_assembler = DBStructAssembler.load_from_connection(
+            db_assembler = DBSchemaAssembler.load_from_connection(
                 connection=db_summary_client.db, vector_store_connector=vector_connector
             )
             if len(db_assembler.get_chunks()) > 0:

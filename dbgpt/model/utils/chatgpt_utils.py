@@ -1,37 +1,28 @@
 from __future__ import annotations
 
-import os
-import logging
-from dataclasses import dataclass
-from abc import ABC
 import importlib.metadata as metadata
+import logging
+import os
+from dataclasses import dataclass
 from typing import (
-    List,
-    Dict,
-    Any,
-    Optional,
     TYPE_CHECKING,
-    Union,
     AsyncIterator,
-    Callable,
     Awaitable,
+    Callable,
+    Optional,
+    Tuple,
+    Union,
 )
 
-from dbgpt.component import ComponentType
-from dbgpt.core.operator import BaseLLM
-from dbgpt.core.awel import TransformStreamAbsOperator, BaseOperator
-from dbgpt.core.interface.llm import ModelMetadata, LLMClient
-from dbgpt.core.interface.llm import ModelOutput, ModelRequest
-from dbgpt.model.cluster.client import DefaultLLMClient
-from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt._private.pydantic import model_to_json
-from dbgpt.model.utils.token_utils import ProxyTokenizerWrapper
+from dbgpt.core.awel import TransformStreamAbsOperator
+from dbgpt.core.interface.llm import ModelOutput
+from dbgpt.core.operator import BaseLLM
 
 if TYPE_CHECKING:
     import httpx
     from httpx._types import ProxiesTypes
-    from openai import AsyncAzureOpenAI
-    from openai import AsyncOpenAI
+    from openai import AsyncAzureOpenAI, AsyncOpenAI
 
     ClientType = Union[AsyncAzureOpenAI, AsyncOpenAI]
 
@@ -97,14 +88,50 @@ def _initialize_openai_v1(init_params: OpenAIParameters):
     return openai_params, api_type, api_version
 
 
-def _build_openai_client(init_params: OpenAIParameters):
+def _initialize_openai(params: OpenAIParameters):
+    try:
+        import openai
+    except ImportError as exc:
+        raise ValueError(
+            "Could not import python package: openai "
+            "Please install openai by command `pip install openai` "
+        ) from exc
+
+    api_type = params.api_type or os.getenv("OPENAI_API_TYPE", "open_ai")
+
+    api_base = params.api_base or os.getenv(
+        "OPENAI_API_TYPE",
+        os.getenv("AZURE_OPENAI_ENDPOINT") if api_type == "azure" else None,
+    )
+    api_key = params.api_key or os.getenv(
+        "OPENAI_API_KEY",
+        os.getenv("AZURE_OPENAI_KEY") if api_type == "azure" else None,
+    )
+    api_version = params.api_version or os.getenv("OPENAI_API_VERSION")
+
+    if not api_base and params.full_url:
+        # Adapt previous proxy_server_url configuration
+        api_base = params.full_url.split("/chat/completions")[0]
+    if api_type:
+        openai.api_type = api_type
+    if api_base:
+        openai.api_base = api_base
+    if api_key:
+        openai.api_key = api_key
+    if api_version:
+        openai.api_version = api_version
+    if params.proxies:
+        openai.proxy = params.proxies
+
+
+def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType]:
     import httpx
 
     openai_params, api_type, api_version = _initialize_openai_v1(init_params)
     if api_type == "azure":
         from openai import AsyncAzureOpenAI
 
-        return AsyncAzureOpenAI(
+        return api_type, AsyncAzureOpenAI(
             api_key=openai_params["api_key"],
             api_version=api_version,
             azure_endpoint=openai_params["base_url"],
@@ -113,146 +140,15 @@ def _build_openai_client(init_params: OpenAIParameters):
     else:
         from openai import AsyncOpenAI
 
-        return AsyncOpenAI(
+        return api_type, AsyncOpenAI(
             **openai_params, http_client=httpx.AsyncClient(proxies=init_params.proxies)
         )
 
 
-class OpenAILLMClient(LLMClient):
-    """An implementation of LLMClient using OpenAI API.
-
-    In order to have as few dependencies as possible, we directly use the http API.
-    """
-
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        api_base: Optional[str] = None,
-        api_type: Optional[str] = None,
-        api_version: Optional[str] = None,
-        model: Optional[str] = "gpt-3.5-turbo",
-        proxies: Optional["ProxiesTypes"] = None,
-        timeout: Optional[int] = 240,
-        model_alias: Optional[str] = "chatgpt_proxyllm",
-        context_length: Optional[int] = 8192,
-        openai_client: Optional["ClientType"] = None,
-        openai_kwargs: Optional[Dict[str, Any]] = None,
-    ):
-        self._init_params = OpenAIParameters(
-            api_type=api_type,
-            api_base=api_base,
-            api_key=api_key,
-            api_version=api_version,
-            proxies=proxies,
-        )
-
-        self._model = model
-        self._proxies = proxies
-        self._timeout = timeout
-        self._model_alias = model_alias
-        self._context_length = context_length
-        self._client = openai_client
-        self._openai_kwargs = openai_kwargs or {}
-        self._tokenizer = ProxyTokenizerWrapper()
-
-    @property
-    def client(self) -> ClientType:
-        if self._client is None:
-            self._client = _build_openai_client(init_params=self._init_params)
-        return self._client
-
-    def _build_request(
-        self, request: ModelRequest, stream: Optional[bool] = False
-    ) -> Dict[str, Any]:
-        payload = {"model": request.model or self._model, "stream": stream}
-
-        # Apply openai kwargs
-        for k, v in self._openai_kwargs.items():
-            payload[k] = v
-        if request.temperature:
-            payload["temperature"] = request.temperature
-        if request.max_new_tokens:
-            payload["max_tokens"] = request.max_new_tokens
-        return payload
-
-    async def generate(self, request: ModelRequest) -> ModelOutput:
-        messages = request.to_openai_messages()
-        payload = self._build_request(request)
-        logger.info(
-            f"Send request to openai, payload: {payload}\n\n messages:\n{messages}"
-        )
-        try:
-            chat_completion = await self.client.chat.completions.create(
-                messages=messages, **payload
-            )
-            text = chat_completion.choices[0].message.content
-            usage = chat_completion.usage.dict()
-            return ModelOutput(text=text, error_code=0, usage=usage)
-        except Exception as e:
-            return ModelOutput(
-                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                error_code=1,
-            )
-
-    async def generate_stream(
-        self, request: ModelRequest
-    ) -> AsyncIterator[ModelOutput]:
-        messages = request.to_openai_messages()
-        payload = self._build_request(request, True)
-        logger.info(
-            f"Send request to openai, payload: {payload}\n\n messages:\n{messages}"
-        )
-        try:
-            chat_completion = await self.client.chat.completions.create(
-                messages=messages, **payload
-            )
-            text = ""
-            async for r in chat_completion:
-                if len(r.choices) == 0:
-                    continue
-                if r.choices[0].delta.content is not None:
-                    content = r.choices[0].delta.content
-                    text += content
-                    yield ModelOutput(text=text, error_code=0)
-        except Exception as e:
-            yield ModelOutput(
-                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
-                error_code=1,
-            )
-
-    async def models(self) -> List[ModelMetadata]:
-        model_metadata = ModelMetadata(
-            model=self._model_alias,
-            context_length=await self.get_context_length(),
-        )
-        return [model_metadata]
-
-    async def get_context_length(self) -> int:
-        """Get the context length of the model.
-
-        Returns:
-            int: The context length.
-        # TODO: This is a temporary solution. We should have a better way to get the context length.
-            eg. get real context length from the openai api.
-        """
-        return self._context_length
-
-    async def count_token(self, model: str, prompt: str) -> int:
-        """Count the number of tokens in a given prompt.
-
-        Args:
-            model (str): The model name.
-            prompt (str): The prompt.
-        """
-        return self._tokenizer.count_token(prompt, model)
-
-
-class OpenAIStreamingOperator(TransformStreamAbsOperator[ModelOutput, str]):
+class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]):
     """Transform ModelOutput to openai stream format."""
 
-    async def transform_stream(
-        self, input_value: AsyncIterator[ModelOutput]
-    ) -> AsyncIterator[str]:
+    async def transform_stream(self, input_value: AsyncIterator[ModelOutput]):
         async def model_caller() -> str:
             """Read model name from share data.
             In streaming mode, this transform_stream function will be executed
@@ -264,40 +160,6 @@ class OpenAIStreamingOperator(TransformStreamAbsOperator[ModelOutput, str]):
 
         async for output in _to_openai_stream(input_value, None, model_caller):
             yield output
-
-
-class MixinLLMOperator(BaseLLM, BaseOperator, ABC):
-    """Mixin class for LLM operator.
-
-    This class extends BaseOperator by adding LLM capabilities.
-    """
-
-    def __init__(self, default_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(default_client)
-        self._default_llm_client = default_client
-
-    @property
-    def llm_client(self) -> LLMClient:
-        if not self._llm_client:
-            worker_manager_factory: WorkerManagerFactory = (
-                self.system_app.get_component(
-                    ComponentType.WORKER_MANAGER_FACTORY,
-                    WorkerManagerFactory,
-                    default_component=None,
-                )
-            )
-            if worker_manager_factory:
-                self._llm_client = DefaultLLMClient(worker_manager_factory.create())
-            else:
-                if self._default_llm_client is None:
-                    from dbgpt.model import OpenAILLMClient
-
-                    self._default_llm_client = OpenAILLMClient()
-                logger.info(
-                    f"Can't find worker manager factory, use default llm client {self._default_llm_client}."
-                )
-                self._llm_client = self._default_llm_client
-        return self._llm_client
 
 
 async def _to_openai_stream(
@@ -312,9 +174,10 @@ async def _to_openai_stream(
         model (Optional[str], optional): The model name. Defaults to None.
         model_caller (Callable[[None], Union[Awaitable[str], str]], optional): The model caller. Defaults to None.
     """
-    import json
-    import shortuuid
     import asyncio
+    import json
+
+    import shortuuid
     from fastchat.protocol.openai_api_protocol import (
         ChatCompletionResponseStreamChoice,
         ChatCompletionStreamResponse,

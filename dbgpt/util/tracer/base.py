@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Dict, Callable, Optional, List
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
-from enum import Enum
 import uuid
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
+from typing import Callable, Dict, List, Optional
 
-from dbgpt.component import BaseComponent, SystemApp, ComponentType
+from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
 
 class SpanType(str, Enum):

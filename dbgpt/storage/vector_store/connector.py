@@ -1,5 +1,5 @@
 import os
-from typing import Optional, List, Callable, Any
+from typing import Any, Callable, List, Optional
 
 from dbgpt.rag.chunk import Chunk
 from dbgpt.storage import vector_store
@@ -91,6 +91,11 @@ class VectorStoreConnector:
             - chunks: chunks.
         """
         return self.client.similar_search_with_scores(doc, topk, score_threshold)
+
+    @property
+    def vector_store_config(self) -> VectorStoreConfig:
+        """vector store config."""
+        return self._vector_store_config
 
     def vector_name_exists(self):
         """is vector store name exist."""

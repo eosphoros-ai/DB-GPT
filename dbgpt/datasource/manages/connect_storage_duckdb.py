@@ -1,5 +1,7 @@
 import os
+
 import duckdb
+
 from dbgpt.configs.model_config import PILOT_PATH
 
 default_db_path = os.path.join(PILOT_PATH, "message")

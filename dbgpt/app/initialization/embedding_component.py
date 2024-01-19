@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Type
+
 from dbgpt.component import ComponentType, SystemApp
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
 if TYPE_CHECKING:
     from langchain.embeddings.base import Embeddings
+
     from dbgpt.app.base import WebServerParameters
 
 logger = logging.getLogger(__name__)

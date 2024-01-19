@@ -1,11 +1,15 @@
+"""The LLM operator."""
+
 import dataclasses
 from abc import ABC
-from typing import Any, AsyncIterator, Dict, Optional, Union
+from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel
 from dbgpt.core.awel import (
+    BaseOperator,
     BranchFunc,
     BranchOperator,
+    DAGContext,
     MapOperator,
     StreamifyAbsOperator,
 )
@@ -22,21 +26,35 @@ RequestInput = Union[
     str,
     Dict[str, Any],
     BaseModel,
+    ModelMessage,
+    List[ModelMessage],
 ]
 
 
-class RequestBuildOperator(MapOperator[RequestInput, ModelRequest], ABC):
+class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest], ABC):
+    """Build the model request from the input value."""
+
     def __init__(self, model: Optional[str] = None, **kwargs):
+        """Create a new request builder operator."""
         self._model = model
         super().__init__(**kwargs)
 
     async def map(self, input_value: RequestInput) -> ModelRequest:
-        req_dict = {}
+        """Transform the input value to a model request."""
+        req_dict: Dict[str, Any] = {}
+        if not input_value:
+            raise ValueError("input_value is not set")
         if isinstance(input_value, str):
             req_dict = {"messages": [ModelMessage.build_human_message(input_value)]}
         elif isinstance(input_value, dict):
             req_dict = input_value
-        elif dataclasses.is_dataclass(input_value):
+        elif isinstance(input_value, ModelMessage):
+            req_dict = {"messages": [input_value]}
+        elif isinstance(input_value, list) and isinstance(input_value[0], ModelMessage):
+            req_dict = {"messages": input_value}
+        elif dataclasses.is_dataclass(input_value) and not isinstance(
+            input_value, type
+        ):
             req_dict = dataclasses.asdict(input_value)
         elif isinstance(input_value, BaseModel):
             req_dict = input_value.dict()
@@ -76,8 +94,10 @@ class BaseLLM:
     """The abstract operator for a LLM."""
 
     SHARE_DATA_KEY_MODEL_NAME = "share_data_key_model_name"
+    SHARE_DATA_KEY_MODEL_OUTPUT = "share_data_key_model_output"
 
     def __init__(self, llm_client: Optional[LLMClient] = None):
+        """Create a new LLM operator."""
         self._llm_client = llm_client
 
     @property
@@ -87,8 +107,16 @@ class BaseLLM:
             raise ValueError("llm_client is not set")
         return self._llm_client
 
+    async def save_model_output(
+        self, current_dag_context: DAGContext, model_output: ModelOutput
+    ) -> None:
+        """Save the model output to the share data."""
+        await current_dag_context.save_to_share_data(
+            self.SHARE_DATA_KEY_MODEL_OUTPUT, model_output
+        )
 
-class LLMOperator(BaseLLM, MapOperator[ModelRequest, ModelOutput], ABC):
+
+class BaseLLMOperator(BaseLLM, MapOperator[ModelRequest, ModelOutput], ABC):
     """The operator for a LLM.
 
     Args:
@@ -98,17 +126,28 @@ class LLMOperator(BaseLLM, MapOperator[ModelRequest, ModelOutput], ABC):
     """
 
     def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
+        """Create a new LLM operator."""
         super().__init__(llm_client=llm_client)
         MapOperator.__init__(self, **kwargs)
 
     async def map(self, request: ModelRequest) -> ModelOutput:
+        """Generate the model output.
+
+        Args:
+            request (ModelRequest): The model request.
+
+        Returns:
+            ModelOutput: The model output.
+        """
         await self.current_dag_context.save_to_share_data(
             self.SHARE_DATA_KEY_MODEL_NAME, request.model
         )
-        return await self.llm_client.generate(request)
+        model_output = await self.llm_client.generate(request)
+        await self.save_model_output(self.current_dag_context, model_output)
+        return model_output
 
 
-class StreamingLLMOperator(
+class BaseStreamingLLMOperator(
     BaseLLM, StreamifyAbsOperator[ModelRequest, ModelOutput], ABC
 ):
     """The streaming operator for a LLM.
@@ -120,24 +159,43 @@ class StreamingLLMOperator(
     """
 
     def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
-        super().__init__(llm_client=llm_client)
-        StreamifyAbsOperator.__init__(self, **kwargs)
+        """Create a streaming operator for a LLM.
 
-    async def streamify(self, request: ModelRequest) -> AsyncIterator[ModelOutput]:
+        Args:
+            llm_client (LLMClient, optional): The LLM client. Defaults to None.
+        """
+        super().__init__(llm_client=llm_client)
+        BaseOperator.__init__(self, **kwargs)
+
+    async def streamify(  # type: ignore
+        self, request: ModelRequest  # type: ignore
+    ) -> AsyncIterator[ModelOutput]:  # type: ignore
+        """Streamify the request."""
         await self.current_dag_context.save_to_share_data(
             self.SHARE_DATA_KEY_MODEL_NAME, request.model
         )
-        async for output in self.llm_client.generate_stream(request):
+        model_output = None
+        async for output in self.llm_client.generate_stream(request):  # type: ignore
+            model_output = output
             yield output
+        if model_output:
+            await self.save_model_output(self.current_dag_context, model_output)
 
 
 class LLMBranchOperator(BranchOperator[ModelRequest, ModelRequest]):
     """Branch operator for LLM.
 
-    This operator will branch the workflow based on the stream flag of the request.
+    This operator will branch the workflow based on
+    the stream flag of the request.
     """
 
     def __init__(self, stream_task_name: str, no_stream_task_name: str, **kwargs):
+        """Create a new LLM branch operator.
+
+        Args:
+            stream_task_name (str): The name of the streaming task.
+            no_stream_task_name (str): The name of the non-streaming task.
+        """
         super().__init__(**kwargs)
         if not stream_task_name:
             raise ValueError("stream_task_name is not set")
@@ -146,18 +204,22 @@ class LLMBranchOperator(BranchOperator[ModelRequest, ModelRequest]):
         self._stream_task_name = stream_task_name
         self._no_stream_task_name = no_stream_task_name
 
-    async def branches(self) -> Dict[BranchFunc[ModelRequest], str]:
+    async def branches(
+        self,
+    ) -> Dict[BranchFunc[ModelRequest], Union[BaseOperator, str]]:
         """
         Return a dict of branch function and task name.
 
         Returns:
-            Dict[BranchFunc[ModelRequest], str]: A dict of branch function and task name.
-                the key is a predicate function, the value is the task name. If the predicate function returns True,
-                we will run the corresponding task.
+            Dict[BranchFunc[ModelRequest], str]: A dict of branch function and task
+                name. the key is a predicate function, the value is the task name.
+                If the predicate function returns True, we will run the corresponding
+                task.
         """
 
         async def check_stream_true(r: ModelRequest) -> bool:
-            # If stream is true, we will run the streaming task. otherwise, we will run the non-streaming task.
+            # If stream is true, we will run the streaming task. otherwise, we will run
+            # the non-streaming task.
             return r.stream
 
         return {

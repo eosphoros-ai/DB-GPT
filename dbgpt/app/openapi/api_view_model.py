@@ -1,7 +1,8 @@
-from dbgpt._private.pydantic import BaseModel, Field
-from typing import TypeVar, Generic, Any, Optional, Literal, List
-import uuid
 import time
+import uuid
+from typing import Any, Generic, List, Literal, Optional, TypeVar
+
+from dbgpt._private.pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
@@ -17,11 +18,7 @@ class Result(Generic[T], BaseModel):
         return Result(success=True, err_code=None, err_msg=None, data=data)
 
     @classmethod
-    def failed(cls, msg):
-        return Result(success=False, err_code="E000X", err_msg=msg, data=None)
-
-    @classmethod
-    def failed(cls, code, msg):
+    def failed(cls, code: str = "E000X", msg=None):
         return Result(success=False, err_code=code, err_msg=msg, data=None)
 
 

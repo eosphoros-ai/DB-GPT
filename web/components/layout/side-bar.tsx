@@ -2,7 +2,6 @@ import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, delDialogue } from '@/client/api';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils';
 import { DarkSvg, SunnySvg, ModelSvg } from '@/components/icons';
-import { useColorScheme } from '@mui/joy';
 import { IChatDialogueSchema } from '@/types/chat';
 import Icon, {
   ConsoleSqlOutlined,
@@ -43,22 +42,22 @@ type RouteItem = {
 };
 
 function menuItemStyle(active?: boolean) {
-  return `flex items-center px-2 h-8 hover:bg-slate-100 dark:hover:bg-[#353539] text-base w-full my-2 rounded transition-colors whitespace-nowrap ${
-    active ? 'bg-slate-100 dark:bg-[#353539]' : ''
+  return `flex items-center h-12 hover:bg-[#F1F5F9] dark:hover:bg-theme-dark text-base w-full transition-colors whitespace-nowrap px-4 ${
+    active ? 'bg-[#F1F5F9] dark:bg-theme-dark' : ''
   }`;
 }
 
 function smallMenuItemStyle(active?: boolean) {
-  return `flex items-center justify-center mx-auto w-12 h-12 text-xl rounded hover:bg-slate-100 dark:hover:bg-[#353539] cursor-pointer ${
-    active ? 'bg-slate-100 dark:bg-[#353539]' : ''
+  return `flex items-center justify-center mx-auto rounded w-14 h-14 text-xl hover:bg-[#F1F5F9] dark:hover:bg-theme-dark transition-colors cursor-pointer ${
+    active ? 'bg-[#F1F5F9] dark:bg-theme-dark' : ''
   }`;
 }
 
 function SideBar() {
-  const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand } = useContext(ChatContext);
+  const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand, setAgent, mode, setMode } =
+    useContext(ChatContext);
   const { pathname, replace } = useRouter();
   const { t, i18n } = useTranslation();
-  const { mode, setMode } = useColorScheme();
 
   const [logo, setLogo] = useState<string>('/LOGO_1.png');
 
@@ -194,8 +193,14 @@ function SideBar() {
     [refreshDialogList],
   );
 
+  const handleClickChatItem = (item: IChatDialogueSchema) => {
+    if (item.chat_mode === 'chat_agent' && item.select_param) {
+      setAgent?.(item.select_param);
+    }
+  };
+
   const copyLink = useCallback((item: IChatDialogueSchema) => {
-    const success = copy(`${location.origin}/chat/${item.chat_mode}/${item.conv_uid}`);
+    const success = copy(`${location.origin}/chat?scene=${item.chat_mode}&id=${item.conv_uid}`);
     message[success ? 'success' : 'error'](success ? 'Copy success' : 'Copy failed');
   }, []);
 
@@ -209,33 +214,36 @@ function SideBar() {
 
   if (!isMenuExpand) {
     return (
-      <div className="flex flex-col justify-between h-screen border-r dark:bg-[#1A1E26] animate-fade animate-duration-300">
+      <div className="flex flex-col justify-between h-screen bg-white dark:bg-[#232734] animate-fade animate-duration-300">
         <Link href="/" className="px-2 py-3">
           <Image src="/LOGO_SMALL.png" alt="DB-GPT" width={63} height={46} className="w-[63px] h-[46px]" />
         </Link>
-        <div className="border-t border-dashed">
-          <Link
-            href="/"
-            className="flex items-center justify-center my-4 mx-auto w-12 h-12 bg-gradient-to-r from-[#31afff] to-[#1677ff] dark:bg-gradient-to-r dark:from-[#6a6a6a] dark:to-[#80868f] border-none rounded-full text-white"
-          >
+        <div>
+          <Link href="/" className="flex items-center justify-center my-4 mx-auto w-12 h-12 bg-theme-primary rounded-full text-white">
             <PlusOutlined className="text-lg" />
           </Link>
         </div>
         {/* Chat List */}
-        <div className="flex-1 overflow-y-scroll py-4 border-t border-dashed space-y-2">
+        <div className="flex-1 overflow-y-scroll py-4 space-y-2">
           {dialogueList?.map((item) => {
             const active = item.conv_uid === chatId && item.chat_mode === scene;
 
             return (
               <Tooltip key={item.conv_uid} title={item.user_name || item.user_input} placement="right">
-                <Link href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`} className={smallMenuItemStyle(active)}>
+                <Link
+                  href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`}
+                  className={smallMenuItemStyle(active)}
+                  onClick={() => {
+                    handleClickChatItem(item);
+                  }}
+                >
                   <MessageOutlined />
                 </Link>
               </Tooltip>
             );
           })}
         </div>
-        <div className="py-4 space-y-2 border-t">
+        <div className="py-4">
           <Dropdown menu={{ items: dropDownRoutes }} placement="topRight">
             <div className={smallMenuItemStyle()}>
               <MenuOutlined />
@@ -261,25 +269,29 @@ function SideBar() {
   }
 
   return (
-    <div className="flex flex-col h-screen border-r dark:border-gray-700">
+    <div className="flex flex-col h-screen bg-white dark:bg-[#232734]">
       {/* LOGO */}
       <Link href="/" className="p-2">
         <Image src={logo} alt="DB-GPT" width={239} height={60} className="w-full h-full" />
       </Link>
-      <Link
-        href="/"
-        className="flex items-center justify-center mb-4 mx-4 h-11 bg-gradient-to-r from-[#31afff] to-[#1677ff] dark:bg-gradient-to-r dark:from-[#6a6a6a] dark:to-[#80868f] border-none rounded text-white"
-      >
+      <Link href="/" className="flex items-center justify-center mb-4 mx-4 h-11 bg-theme-primary rounded text-white">
         <PlusOutlined className="mr-2" />
-        <span>New Chat</span>
+        <span>{t('new_chat')}</span>
       </Link>
       {/* Chat List */}
-      <div className="flex-1 overflow-y-scroll py-4 px-2 border-t dark:border-gray-700">
+      <div className="flex-1 overflow-y-scroll">
         {dialogueList?.map((item) => {
           const active = item.conv_uid === chatId && item.chat_mode === scene;
 
           return (
-            <Link key={item.conv_uid} href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`} className={`group/item ${menuItemStyle(active)}`}>
+            <Link
+              key={item.conv_uid}
+              href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`}
+              className={`group/item ${menuItemStyle(active)}`}
+              onClick={() => {
+                handleClickChatItem(item);
+              }}
+            >
               <MessageOutlined className="text-base" />
               <div className="flex-1 line-clamp-1 mx-2 text-sm">{item.user_name || item.user_input}</div>
               <div
@@ -305,18 +317,18 @@ function SideBar() {
         })}
       </div>
       {/* Settings */}
-      <div className="py-2 border-t dark:border-gray-700">
-        <div className="px-2">
+      <div className="pt-4">
+        <div className="max-h-52 overflow-y-auto">
           {routes.map((item) => (
-            <Link key={item.key} href={item.path} className={`${menuItemStyle(pathname === item.path)}`}>
+            <Link key={item.key} href={item.path} className={`${menuItemStyle(pathname === item.path)} overflow-hidden`}>
               <>
                 {item.icon}
-                <span className="ml-2 text-sm">{item.name}</span>
+                <span className="ml-3 text-sm">{item.name}</span>
               </>
             </Link>
           ))}
         </div>
-        <div className="flex items-center justify-around py-4 border-t border-dashed dark:border-gray-700">
+        <div className="flex items-center justify-around py-4 mt-2">
           {settings.map((item) => (
             <Tooltip key={item.key} title={item.name}>
               <div className="flex-1 flex items-center justify-center cursor-pointer text-xl" onClick={item.onClick}>

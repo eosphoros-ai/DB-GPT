@@ -34,6 +34,7 @@ def forward(
     past_key_value: Optional[Tuple[torch.Tensor]] = None,
     output_attentions: bool = False,
     use_cache: bool = False,
+    padding_mask: Optional[torch.LongTensor] = None,
 ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
     bsz, q_len, _ = hidden_states.size()
 
@@ -115,9 +116,6 @@ def forward(
 def replace_llama_attn_with_non_inplace_operations():
     """Avoid bugs in mps backend by not using in-place operations."""
     transformers.models.llama.modeling_llama.LlamaAttention.forward = forward
-
-
-import transformers
 
 
 def replace_llama_attn_with_non_inplace_operations():

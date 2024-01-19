@@ -1,5 +1,4 @@
-from sqlalchemy import Column, Integer, String, Index, Text, text
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import Column, Index, Integer, String, Text, UniqueConstraint, text
 
 from dbgpt.storage.metadata import BaseDao, Model
 

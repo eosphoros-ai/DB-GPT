@@ -1,8 +1,7 @@
 from typing import Dict
 
-from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt._private.config import Config
-
+from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.util.tracer import trace
 
 CFG = Config()
@@ -10,6 +9,8 @@ CFG = Config()
 
 class ChatNormal(BaseChat):
     chat_scene: str = ChatScene.ChatNormal.value()
+
+    keep_end_rounds: int = 10
 
     """Number of results to return from the query"""
 

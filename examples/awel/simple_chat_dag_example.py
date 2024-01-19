@@ -6,19 +6,18 @@
 
     .. code-block:: shell
 
-        DBGPT_SERVER="http://127.0.0.1:5000"
+        DBGPT_SERVER="http://127.0.0.1:5555"
+        MODEL="gpt-3.5-turbo"
         curl -X POST $DBGPT_SERVER/api/v1/awel/trigger/examples/simple_chat \
         -H "Content-Type: application/json" -d '{
-            "model": "proxyllm",
+            "model": "'"$MODEL"'",
             "user_input": "hello"
         }'
 """
-from typing import Dict
-
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.core import ModelMessage
+from dbgpt.core import ModelMessage, ModelRequest
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
-from dbgpt.model.operator.model_operator import ModelOperator
+from dbgpt.model.operator import LLMOperator
 
 
 class TriggerReqBody(BaseModel):
@@ -26,22 +25,14 @@ class TriggerReqBody(BaseModel):
     user_input: str = Field(..., description="User input")
 
 
-class RequestHandleOperator(MapOperator[TriggerReqBody, Dict]):
+class RequestHandleOperator(MapOperator[TriggerReqBody, ModelRequest]):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    async def map(self, input_value: TriggerReqBody) -> Dict:
-        hist = []
-        hist.append(ModelMessage.build_human_message(input_value.user_input))
-        hist = list(h.dict() for h in hist)
-        params = {
-            "prompt": input_value.user_input,
-            "messages": hist,
-            "model": input_value.model,
-            "echo": False,
-        }
+    async def map(self, input_value: TriggerReqBody) -> ModelRequest:
+        messages = [ModelMessage.build_human_message(input_value.user_input)]
         print(f"Receive input value: {input_value}")
-        return params
+        return ModelRequest.build_request(input_value.model, messages)
 
 
 with DAG("dbgpt_awel_simple_dag_example") as dag:
@@ -50,10 +41,9 @@ with DAG("dbgpt_awel_simple_dag_example") as dag:
         "/examples/simple_chat", methods="POST", request_body=TriggerReqBody
     )
     request_handle_task = RequestHandleOperator()
-    model_task = ModelOperator()
-    # type(out) == ModelOutput
+    llm_task = LLMOperator(task_name="llm_task")
     model_parse_task = MapOperator(lambda out: out.to_dict())
-    trigger >> request_handle_task >> model_task >> model_parse_task
+    trigger >> request_handle_task >> llm_task >> model_parse_task
 
 
 if __name__ == "__main__":

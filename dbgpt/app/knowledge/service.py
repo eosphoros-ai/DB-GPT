@@ -1,13 +1,38 @@
 import json
 import logging
 from datetime import datetime
+from enum import Enum
 from typing import List
 
+from dbgpt._private.config import Config
+from dbgpt.app.knowledge.chunk_db import DocumentChunkDao, DocumentChunkEntity
+from dbgpt.app.knowledge.document_db import (
+    KnowledgeDocumentDao,
+    KnowledgeDocumentEntity,
+)
+from dbgpt.app.knowledge.request.request import (
+    ChunkQueryRequest,
+    DocumentQueryRequest,
+    DocumentSummaryRequest,
+    DocumentSyncRequest,
+    KnowledgeDocumentRequest,
+    KnowledgeSpaceRequest,
+    KnowledgeSyncRequest,
+    SpaceArgumentRequest,
+)
+from dbgpt.app.knowledge.request.response import (
+    ChunkQueryResponse,
+    DocumentQueryResponse,
+    SpaceQueryResponse,
+)
+from dbgpt.app.knowledge.space_db import KnowledgeSpaceDao, KnowledgeSpaceEntity
+from dbgpt.component import ComponentType
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.model import DefaultLLMClient
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
-from dbgpt.rag.knowledge.base import KnowledgeType, ChunkStrategy
+from dbgpt.rag.knowledge.base import ChunkStrategy, KnowledgeType
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.text_splitter.text_splitter import (
     RecursiveCharacterTextSplitter,
@@ -17,43 +42,7 @@ from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
 from dbgpt.serve.rag.assembler.summary import SummaryAssembler
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
-
-from dbgpt._private.config import Config
-from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
-)
-from dbgpt.component import ComponentType
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
-
-from dbgpt.app.knowledge.chunk_db import (
-    DocumentChunkEntity,
-    DocumentChunkDao,
-)
-from dbgpt.app.knowledge.document_db import (
-    KnowledgeDocumentDao,
-    KnowledgeDocumentEntity,
-)
-from dbgpt.app.knowledge.space_db import (
-    KnowledgeSpaceDao,
-    KnowledgeSpaceEntity,
-)
-from dbgpt.app.knowledge.request.request import (
-    KnowledgeSpaceRequest,
-    KnowledgeDocumentRequest,
-    DocumentQueryRequest,
-    ChunkQueryRequest,
-    SpaceArgumentRequest,
-    DocumentSyncRequest,
-    DocumentSummaryRequest,
-    KnowledgeSyncRequest,
-)
-from enum import Enum
-
-from dbgpt.app.knowledge.request.response import (
-    ChunkQueryResponse,
-    DocumentQueryResponse,
-    SpaceQueryResponse,
-)
 
 knowledge_space_dao = KnowledgeSpaceDao()
 knowledge_document_dao = KnowledgeDocumentDao()
@@ -411,7 +400,9 @@ class KnowledgeService:
         assembler = SummaryAssembler(
             knowledge=knowledge,
             model_name=request.model_name,
-            llm_client=DefaultLLMClient(worker_manager=worker_manager),
+            llm_client=DefaultLLMClient(
+                worker_manager=worker_manager, auto_convert_message=True
+            ),
             language=CFG.LANGUAGE,
             chunk_parameters=chunk_parameters,
         )
@@ -508,30 +499,6 @@ class KnowledgeService:
         res.page = request.page
         return res
 
-    def async_knowledge_graph(self, chunk_docs, doc):
-        """async document extract triplets and save into graph db
-        Args:
-            - chunk_docs: List[Document]
-            - doc: KnowledgeDocumentEntity
-        """
-        logger.info(
-            f"async_knowledge_graph, doc:{doc.doc_name}, chunk_size:{len(chunk_docs)}, begin embedding to graph store"
-        )
-        try:
-            from dbgpt.rag.graph.graph_factory import RAGGraphFactory
-
-            rag_engine = CFG.SYSTEM_APP.get_component(
-                ComponentType.RAG_GRAPH_DEFAULT.value, RAGGraphFactory
-            ).create()
-            rag_engine.knowledge_graph(chunk_docs)
-            doc.status = SyncStatus.FINISHED.name
-            doc.result = "document build graph success"
-        except Exception as e:
-            doc.status = SyncStatus.FAILED.name
-            doc.result = "document build graph failed" + str(e)
-            logger.error(f"document build graph failed:{doc.doc_name}, {str(e)}")
-        return knowledge_document_dao.update_knowledge_document(doc)
-
     def async_doc_embedding(self, assembler, chunk_docs, doc):
         """async document embedding into vector db
         Args:
@@ -572,8 +539,8 @@ class KnowledgeService:
 
     def _build_default_context(self):
         from dbgpt.app.scene.chat_knowledge.v1.prompt import (
-            PROMPT_SCENE_DEFINE,
             _DEFAULT_TEMPLATE,
+            PROMPT_SCENE_DEFINE,
         )
 
         context_template = {

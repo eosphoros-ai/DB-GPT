@@ -14,7 +14,7 @@ setup: $(VENV)/bin/activate
 
 $(VENV)/bin/activate: $(VENV)/.venv-timestamp
 
-$(VENV)/.venv-timestamp: setup.py
+$(VENV)/.venv-timestamp: setup.py requirements
 	# Create new virtual environment if setup.py has changed
 	python3 -m venv $(VENV)
 	$(VENV_BIN)/pip install --upgrade pip
@@ -37,35 +37,37 @@ fmt: setup ## Format Python code
 	# TODO: Use isort to sort Python imports.
 	# https://github.com/PyCQA/isort
 	# $(VENV_BIN)/isort .
-	$(VENV_BIN)/isort dbgpt/agent/
-	$(VENV_BIN)/isort dbgpt/core/
-	$(VENV_BIN)/isort dbgpt/serve/core/
-	$(VENV_BIN)/isort dbgpt/serve/agent/
-	$(VENV_BIN)/isort dbgpt/serve/conversation/
-	$(VENV_BIN)/isort dbgpt/serve/utils/_template_files
+	$(VENV_BIN)/isort dbgpt/
 	$(VENV_BIN)/isort --extend-skip="examples/notebook" examples
 	# https://github.com/psf/black
 	$(VENV_BIN)/black --extend-exclude="examples/notebook" .
 	# TODO: Use blackdoc to format Python doctests.
 	# https://blackdoc.readthedocs.io/en/latest/
 	# $(VENV_BIN)/blackdoc .
-	$(VENV_BIN)/blackdoc dbgpt/core/
-	$(VENV_BIN)/blackdoc dbgpt/agent/
-	$(VENV_BIN)/blackdoc dbgpt/model/
-	$(VENV_BIN)/blackdoc dbgpt/serve/
+	$(VENV_BIN)/blackdoc dbgpt
 	$(VENV_BIN)/blackdoc examples
-	# TODO: Type checking of Python code.
-	# https://github.com/python/mypy
-	# $(VENV_BIN)/mypy dbgpt
-	# TODO: uUse flake8 to enforce Python style guide.
+	# TODO: Use flake8 to enforce Python style guide.
 	# https://flake8.pycqa.org/en/latest/
-	# $(VENV_BIN)/flake8 dbgpt
+	$(VENV_BIN)/flake8 dbgpt/core/
+	# TODO: More package checks with flake8.
+
 
 .PHONY: pre-commit
-pre-commit: fmt test ## Run formatting and unit tests before committing
+pre-commit: fmt test test-doc mypy ## Run formatting and unit tests before committing
 
 test: $(VENV)/.testenv ## Run unit tests
 	$(VENV_BIN)/pytest dbgpt
+
+.PHONY: test-doc
+test-doc: $(VENV)/.testenv ## Run doctests
+	# -k "not test_" skips tests that are not doctests.
+	$(VENV_BIN)/pytest --doctest-modules -k "not test_" dbgpt/core
+
+.PHONY: mypy
+mypy: $(VENV)/.testenv ## Run mypy checks
+	# https://github.com/python/mypy
+	$(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/core/
+	# TODO: More package checks with mypy.
 
 .PHONY: coverage
 coverage: setup ## Run tests and report coverage

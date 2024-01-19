@@ -15,7 +15,7 @@
 import logging
 from typing import Any, Dict, List
 
-from sqlalchemy import log, exc, text
+from sqlalchemy import exc, log, text
 from sqlalchemy.dialects.mysql.pymysql import MySQLDialect_pymysql
 from sqlalchemy.engine import Connection
 

@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+
 import pytest
 
 from dbgpt.rag.chunk import Chunk

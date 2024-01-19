@@ -1,5 +1,6 @@
+from typing import Any, List
+
 from dbgpt._private.pydantic import BaseModel
-from typing import List, Any
 
 
 class ValueItem(BaseModel):

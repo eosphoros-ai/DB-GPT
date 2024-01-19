@@ -1,7 +1,11 @@
 from contextlib import contextmanager
-from typing import TypeVar, Generic, Any, Optional, Dict, Union, List
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+
 from sqlalchemy.orm.session import Session
+
 from dbgpt.util.pagination_utils import PaginationResult
+
+from .db_manager import BaseQuery, DatabaseManager, db
 
 # The entity type
 T = TypeVar("T")
@@ -9,8 +13,6 @@ T = TypeVar("T")
 REQ = TypeVar("REQ")
 # The response schema type
 RES = TypeVar("RES")
-
-from .db_manager import db, DatabaseManager, BaseQuery
 
 
 QUERY_SPEC = Union[REQ, Dict[str, Any]]
@@ -21,6 +23,7 @@ class BaseDao(Generic[T, REQ, RES]):
 
     Examples:
         .. code-block:: python
+
             class UserDao(BaseDao):
                 def get_user_by_name(self, name: str) -> User:
                     with self.session() as session:
@@ -70,8 +73,9 @@ class BaseDao(Generic[T, REQ, RES]):
 
         Example:
             .. code-block:: python
+
                 with self.session() as session:
-                    session.query(User).filter(User.name == 'Edward Snowden').first()
+                    session.query(User).filter(User.name == "Edward Snowden").first()
 
         Args:
             commit (Optional[bool], optional): Whether to commit the session. Defaults to True.

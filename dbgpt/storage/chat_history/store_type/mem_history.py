@@ -1,10 +1,9 @@
 from typing import List
-from dbgpt.storage.chat_history.base import BaseChatHistoryMemory
 
 from dbgpt._private.config import Config
 from dbgpt.core.interface.message import OnceConversation
+from dbgpt.storage.chat_history.base import BaseChatHistoryMemory, MemoryStoreType
 from dbgpt.util.custom_data_structure import FixedSizeDict
-from dbgpt.storage.chat_history.base import MemoryStoreType
 
 CFG = Config()
 

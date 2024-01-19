@@ -1,7 +1,7 @@
+"""Common operators of AWEL."""
 import asyncio
 import logging
 from typing import (
-    Any,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -13,7 +13,17 @@ from typing import (
 )
 
 from ..dag.base import DAGContext
-from ..task.base import IN, OUT, InputContext, InputSource, TaskContext, TaskOutput
+from ..task.base import (
+    IN,
+    OUT,
+    InputContext,
+    InputSource,
+    JoinFunc,
+    MapFunc,
+    ReduceFunc,
+    TaskContext,
+    TaskOutput,
+)
 from .base import BaseOperator
 
 logger = logging.getLogger(__name__)
@@ -25,7 +35,12 @@ class JoinOperator(BaseOperator, Generic[OUT]):
     This node type is useful for combining the outputs of upstream nodes.
     """
 
-    def __init__(self, combine_function, **kwargs):
+    def __init__(self, combine_function: JoinFunc, **kwargs):
+        """Create a JoinDAGNode with a combine function.
+
+        Args:
+            combine_function: A function that defines how to combine inputs.
+        """
         super().__init__(**kwargs)
         if not callable(combine_function):
             raise ValueError("combine_function must be callable")
@@ -33,6 +48,7 @@ class JoinOperator(BaseOperator, Generic[OUT]):
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
         """Run the join operation on the DAG context's inputs.
+
         Args:
             dag_ctx (DAGContext): The current context of the DAG.
 
@@ -50,8 +66,10 @@ class JoinOperator(BaseOperator, Generic[OUT]):
 
 
 class ReduceStreamOperator(BaseOperator, Generic[IN, OUT]):
-    def __init__(self, reduce_function=None, **kwargs):
-        """Initializes a ReduceStreamOperator with a combine function.
+    """Operator that reduces inputs using a custom reduce function."""
+
+    def __init__(self, reduce_function: Optional[ReduceFunc] = None, **kwargs):
+        """Create a ReduceStreamOperator with a combine function.
 
         Args:
             combine_function: A function that defines how to combine inputs.
@@ -89,6 +107,7 @@ class ReduceStreamOperator(BaseOperator, Generic[IN, OUT]):
         return reduce_output
 
     async def reduce(self, input_value: AsyncIterator[IN]) -> OUT:
+        """Reduce the input stream to a single value."""
         raise NotImplementedError
 
 
@@ -99,8 +118,8 @@ class MapOperator(BaseOperator, Generic[IN, OUT]):
     passes the transformed data downstream.
     """
 
-    def __init__(self, map_function=None, **kwargs):
-        """Initializes a MapDAGNode with a mapping function.
+    def __init__(self, map_function: Optional[MapFunc] = None, **kwargs):
+        """Create a MapDAGNode with a mapping function.
 
         Args:
             map_function: A function that defines how to map the input data.
@@ -133,13 +152,18 @@ class MapOperator(BaseOperator, Generic[IN, OUT]):
         if not call_data and not curr_task_ctx.task_input.check_single_parent():
             num_parents = len(curr_task_ctx.task_input.parent_outputs)
             raise ValueError(
-                f"task {curr_task_ctx.task_id} MapDAGNode expects single parent, now number of parents: {num_parents}"
+                f"task {curr_task_ctx.task_id} MapDAGNode expects single parent,"
+                f"now number of parents: {num_parents}"
             )
         map_function = self.map_function or self.map
 
         if call_data:
-            call_data = await curr_task_ctx._call_data_to_output()
-            output = await call_data.map(map_function)
+            wrapped_call_data = await curr_task_ctx._call_data_to_output()
+            if not wrapped_call_data:
+                raise ValueError(
+                    f"task {curr_task_ctx.task_id} MapDAGNode expects wrapped_call_data"
+                )
+            output: TaskOutput[OUT] = await wrapped_call_data.map(map_function)
             curr_task_ctx.set_task_output(output)
             return output
 
@@ -150,6 +174,7 @@ class MapOperator(BaseOperator, Generic[IN, OUT]):
         return output
 
     async def map(self, input_value: IN) -> OUT:
+        """Map the input data to a new value."""
         raise NotImplementedError
 
 
@@ -161,6 +186,11 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
 
     This node filters its input data using a branching function and
     allows for conditional paths in the workflow.
+
+    If a branch function returns True, the corresponding task will be executed.
+    otherwise, the corresponding task will be skipped, and the output of
+    this skip node will be set to `SKIP_DATA`
+
     """
 
     def __init__(
@@ -168,11 +198,11 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
         branches: Optional[Dict[BranchFunc[IN], Union[BaseOperator, str]]] = None,
         **kwargs,
     ):
-        """
-        Initializes a BranchDAGNode with a branching function.
+        """Create a BranchDAGNode with a branching function.
 
         Args:
-            branches (Dict[BranchFunc[IN], Union[BaseOperator, str]]): Dict of function that defines the branching condition.
+            branches (Dict[BranchFunc[IN], Union[BaseOperator, str]]):
+                Dict of function that defines the branching condition.
 
         Raises:
             ValueError: If the branch_function is not callable.
@@ -183,7 +213,9 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
                 if not callable(branch_function):
                     raise ValueError("branch_function must be callable")
                 if isinstance(value, BaseOperator):
-                    branches[branch_function] = value.node_name or value.node_name
+                    if not value.node_name:
+                        raise ValueError("branch node name must be set")
+                    branches[branch_function] = value.node_name
         self._branches = branches
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
@@ -210,7 +242,7 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
             branches = await self.branches()
 
         branch_func_tasks = []
-        branch_nodes: List[str] = []
+        branch_nodes: List[Union[BaseOperator, str]] = []
         for func, node_name in branches.items():
             branch_nodes.append(node_name)
             branch_func_tasks.append(
@@ -225,20 +257,25 @@ class BranchOperator(BaseOperator, Generic[IN, OUT]):
             node_name = branch_nodes[i]
             branch_out = ctx.parent_outputs[0].task_output
             logger.info(
-                f"branch_input_ctxs {i} result {branch_out.output}, is_empty: {branch_out.is_empty}"
+                f"branch_input_ctxs {i} result {branch_out.output}, "
+                f"is_empty: {branch_out.is_empty}"
             )
-            if ctx.parent_outputs[0].task_output.is_empty:
+            if ctx.parent_outputs[0].task_output.is_none:
                 logger.info(f"Skip node name {node_name}")
                 skip_node_names.append(node_name)
         curr_task_ctx.update_metadata("skip_node_names", skip_node_names)
         return parent_output
 
     async def branches(self) -> Dict[BranchFunc[IN], Union[BaseOperator, str]]:
+        """Return branch logic based on input data."""
         raise NotImplementedError
 
 
 class InputOperator(BaseOperator, Generic[OUT]):
+    """Operator node that reads data from an input source."""
+
     def __init__(self, input_source: InputSource[OUT], **kwargs) -> None:
+        """Create an InputDAGNode with an input source."""
         super().__init__(**kwargs)
         self._input_source = input_source
 
@@ -250,7 +287,10 @@ class InputOperator(BaseOperator, Generic[OUT]):
 
 
 class TriggerOperator(InputOperator, Generic[OUT]):
+    """Operator node that triggers the DAG to run."""
+
     def __init__(self, **kwargs) -> None:
+        """Create a TriggerDAGNode."""
         from ..task.task_impl import SimpleCallDataInputSource
 
         super().__init__(input_source=SimpleCallDataInputSource(), **kwargs)

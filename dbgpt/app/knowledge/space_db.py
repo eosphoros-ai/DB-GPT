@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Text, String, DateTime
+from sqlalchemy import Column, DateTime, Integer, String, Text
 
-from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
+from dbgpt.storage.metadata import BaseDao, Model
 
 CFG = Config()
 

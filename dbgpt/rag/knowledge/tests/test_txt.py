@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import mock_open, patch
+
+import pytest
 
 from dbgpt.rag.knowledge.txt import TXTKnowledge
 

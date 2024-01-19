@@ -1,8 +1,13 @@
-from dbgpt.core.interface.prompt import PromptTemplate
 from dbgpt._private.config import Config
-from dbgpt.app.scene import ChatScene
+from dbgpt.app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt.app.scene.chat_data.chat_excel.excel_analyze.out_parser import (
     ChatExcelOutputParser,
+)
+from dbgpt.core import (
+    ChatPromptTemplate,
+    HumanPromptTemplate,
+    MessagesPlaceholder,
+    SystemPromptTemplate,
 )
 
 CFG = Config()
@@ -59,15 +64,20 @@ PROMPT_NEED_STREAM_OUT = True
 # For example, if you adjust the temperature to 0.5, the model will usually generate text that is more predictable and less creative than if you set the temperature to 1.0.
 PROMPT_TEMPERATURE = 0.3
 
-prompt = PromptTemplate(
+prompt = ChatPromptTemplate(
+    messages=[
+        SystemPromptTemplate.from_template(_PROMPT_SCENE_DEFINE + _DEFAULT_TEMPLATE),
+        MessagesPlaceholder(variable_name="chat_history"),
+        HumanPromptTemplate.from_template("{user_input}"),
+    ]
+)
+
+prompt_adapter = AppScenePromptTemplateAdapter(
+    prompt=prompt,
     template_scene=ChatScene.ChatExcel.value(),
-    input_variables=["user_input", "table_name", "disply_type"],
-    template_define=_PROMPT_SCENE_DEFINE,
-    template=_DEFAULT_TEMPLATE,
     stream_out=PROMPT_NEED_STREAM_OUT,
     output_parser=ChatExcelOutputParser(is_stream_out=PROMPT_NEED_STREAM_OUT),
     need_historical_messages=True,
-    # example_selector=sql_data_example,
     temperature=PROMPT_TEMPERATURE,
 )
-CFG.prompt_template_registry.register(prompt, is_default=True)
+CFG.prompt_template_registry.register(prompt_adapter, is_default=True)

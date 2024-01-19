@@ -7,10 +7,9 @@ We have integrated fastchat. For details, see: dbgpt/model/model_adapter.py
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import gc
-from typing import Iterable, Dict
+from typing import Dict, Iterable
 
 import torch
-
 from transformers.generation.logits_process import (
     LogitsProcessorList,
     RepetitionPenaltyLogitsProcessor,
@@ -19,7 +18,7 @@ from transformers.generation.logits_process import (
     TopPLogitsWarper,
 )
 
-from dbgpt.model.llm_utils import is_sentence_complete, is_partial_stop
+from dbgpt.model.llm_utils import is_partial_stop, is_sentence_complete
 
 
 def prepare_logits_processor(

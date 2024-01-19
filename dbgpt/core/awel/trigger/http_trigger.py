@@ -1,10 +1,11 @@
+"""Http trigger for AWEL."""
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union, cast
 
 from starlette.requests import Request
-from starlette.responses import Response
 
 from dbgpt._private.pydantic import BaseModel
 
@@ -13,29 +14,35 @@ from ..operator.base import BaseOperator
 from .base import Trigger
 
 if TYPE_CHECKING:
-    from fastapi import APIRouter, FastAPI
+    from fastapi import APIRouter
 
-RequestBody = Union[Type[Request], Type[BaseModel], str]
+RequestBody = Union[Type[Request], Type[BaseModel], Type[str]]
 StreamingPredictFunc = Callable[[Union[Request, BaseModel]], bool]
 
 logger = logging.getLogger(__name__)
 
 
 class HttpTrigger(Trigger):
+    """Http trigger for AWEL.
+
+    Http trigger is used to trigger a DAG by http request.
+    """
+
     def __init__(
         self,
         endpoint: str,
         methods: Optional[Union[str, List[str]]] = "GET",
         request_body: Optional[RequestBody] = None,
-        streaming_response: Optional[bool] = False,
+        streaming_response: bool = False,
         streaming_predict_func: Optional[StreamingPredictFunc] = None,
         response_model: Optional[Type] = None,
         response_headers: Optional[Dict[str, str]] = None,
         response_media_type: Optional[str] = None,
         status_code: Optional[int] = 200,
-        router_tags: Optional[List[str]] = None,
+        router_tags: Optional[List[str | Enum]] = None,
         **kwargs,
     ) -> None:
+        """Initialize a HttpTrigger."""
         super().__init__(**kwargs)
         if not endpoint.startswith("/"):
             endpoint = "/" + endpoint
@@ -49,15 +56,21 @@ class HttpTrigger(Trigger):
         self._router_tags = router_tags
         self._response_headers = response_headers
         self._response_media_type = response_media_type
-        self._end_node: BaseOperator = None
+        self._end_node: Optional[BaseOperator] = None
 
     async def trigger(self) -> None:
+        """Trigger the DAG. Not used in HttpTrigger."""
         pass
 
     def mount_to_router(self, router: "APIRouter") -> None:
+        """Mount the trigger to a router.
+
+        Args:
+            router (APIRouter): The router to mount the trigger.
+        """
         from fastapi import Depends
 
-        methods = self._methods if isinstance(self._methods, list) else [self._methods]
+        methods = [self._methods] if isinstance(self._methods, str) else self._methods
 
         def create_route_function(name, req_body_cls: Optional[Type[BaseModel]]):
             async def _request_body_dependency(request: Request):
@@ -87,7 +100,8 @@ class HttpTrigger(Trigger):
         )
         dynamic_route_function = create_route_function(function_name, request_model)
         logger.info(
-            f"mount router function {dynamic_route_function}({function_name}), endpoint: {self._endpoint}, methods: {methods}"
+            f"mount router function {dynamic_route_function}({function_name}), "
+            f"endpoint: {self._endpoint}, methods: {methods}"
         )
 
         router.api_route(
@@ -100,17 +114,27 @@ class HttpTrigger(Trigger):
 
 
 async def _parse_request_body(
-    request: Request, request_body_cls: Optional[Type[BaseModel]]
+    request: Request, request_body_cls: Optional[RequestBody]
 ):
     if not request_body_cls:
         return None
-    if request.method == "POST":
-        json_data = await request.json()
-        return request_body_cls(**json_data)
-    elif request.method == "GET":
-        return request_body_cls(**request.query_params)
-    else:
+    if request_body_cls == Request:
         return request
+    if request.method == "POST":
+        if request_body_cls == str:
+            bytes_body = await request.body()
+            str_body = bytes_body.decode("utf-8")
+            return str_body
+        elif issubclass(request_body_cls, BaseModel):
+            json_data = await request.json()
+            return request_body_cls(**json_data)
+        else:
+            raise ValueError(f"Invalid request body cls: {request_body_cls}")
+    elif request.method == "GET":
+        if issubclass(request_body_cls, BaseModel):
+            return request_body_cls(**request.query_params)
+        else:
+            raise ValueError(f"Invalid request body cls: {request_body_cls}")
 
 
 async def _trigger_dag(
@@ -123,10 +147,10 @@ async def _trigger_dag(
     from fastapi import BackgroundTasks
     from fastapi.responses import StreamingResponse
 
-    end_node = dag.leaf_nodes
-    if len(end_node) != 1:
+    leaf_nodes = dag.leaf_nodes
+    if len(leaf_nodes) != 1:
         raise ValueError("HttpTrigger just support one leaf node in dag")
-    end_node = end_node[0]
+    end_node = cast(BaseOperator, leaf_nodes[0])
     if not streaming_response:
         return await end_node.call(call_data={"data": body})
     else:
@@ -141,7 +165,7 @@ async def _trigger_dag(
             }
         generator = await end_node.call_stream(call_data={"data": body})
         background_tasks = BackgroundTasks()
-        background_tasks.add_task(end_node.dag._after_dag_end)
+        background_tasks.add_task(dag._after_dag_end)
         return StreamingResponse(
             generator,
             headers=headers,

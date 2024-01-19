@@ -3,8 +3,12 @@ import { apiInterceptors, getDialogueList, getUsableModels } from '@/client/api'
 import { useRequest } from 'ahooks';
 import { ChatHistoryResponse, DialogueListResponse, IChatDialogueSchema } from '@/types/chat';
 import { useSearchParams } from 'next/navigation';
+import { STORAGE_THEME_KEY } from '@/utils';
+
+type ThemeMode = 'dark' | 'light';
 
 interface IChatContext {
+  mode: ThemeMode;
   isContract?: boolean;
   isMenuExpand?: boolean;
   scene: IChatDialogueSchema['chat_mode'] | (string & {});
@@ -12,9 +16,10 @@ interface IChatContext {
   model: string;
   dbParam?: string;
   modelList: Array<string>;
-  agentList: string[];
+  agent: string;
   dialogueList?: DialogueListResponse;
-  setAgentList?: (val: string[]) => void;
+  setAgent?: (val: string) => void;
+  setMode: (mode: ThemeMode) => void;
   setModel: (val: string) => void;
   setIsContract: (val: boolean) => void;
   setIsMenuExpand: (val: boolean) => void;
@@ -28,21 +33,29 @@ interface IChatContext {
   setDocId: (docId: number) => void;
 }
 
+function getDefaultTheme(): ThemeMode {
+  const theme = localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode;
+  if (theme) return theme;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 const ChatContext = createContext<IChatContext>({
+  mode: 'light',
   scene: '',
   chatId: '',
   modelList: [],
   model: '',
   dbParam: undefined,
   dialogueList: [],
-  agentList: [],
-  setAgentList: () => {},
+  agent: '',
+  setAgent: () => {},
   setModel: () => {},
   setIsContract: () => {},
   setIsMenuExpand: () => {},
   setDbParam: () => void 0,
   queryDialogueList: () => {},
   refreshDialogList: () => {},
+  setMode: () => void 0,
   history: [],
   setHistory: () => {},
   docId: undefined,
@@ -54,13 +67,15 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   const chatId = searchParams?.get('id') ?? '';
   const scene = searchParams?.get('scene') ?? '';
   const db_param = searchParams?.get('db_param') ?? '';
+
   const [isContract, setIsContract] = useState(false);
   const [model, setModel] = useState<string>('');
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(scene !== 'chat_dashboard');
   const [dbParam, setDbParam] = useState<string>(db_param);
-  const [agentList, setAgentList] = useState<string[]>([]);
+  const [agent, setAgent] = useState<string>('');
   const [history, setHistory] = useState<ChatHistoryResponse>([]);
   const [docId, setDocId] = useState<number>();
+  const [mode, setMode] = useState<ThemeMode>('light');
 
   const {
     run: queryDialogueList,
@@ -76,10 +91,22 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     },
   );
 
+  useEffect(() => {
+    if (dialogueList.length && scene === 'chat_agent') {
+      const agent = dialogueList.find((item) => item.conv_uid === chatId)?.select_param;
+      agent && setAgent(agent);
+    }
+  }, [dialogueList, scene, chatId]);
+
   const { data: modelList = [] } = useRequest(async () => {
     const [, res] = await apiInterceptors(getUsableModels());
     return res ?? [];
   });
+
+  useEffect(() => {
+    setMode(getDefaultTheme());
+  }, []);
+
   useEffect(() => {
     setModel(modelList[0]);
   }, [modelList, modelList?.length]);
@@ -94,8 +121,10 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     model,
     dbParam: dbParam || db_param,
     dialogueList,
-    agentList,
-    setAgentList,
+    agent,
+    setAgent,
+    mode,
+    setMode,
     setModel,
     setIsContract,
     setIsMenuExpand,

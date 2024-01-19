@@ -6,7 +6,8 @@
 
     .. code-block:: shell
 
-        curl -X GET http://127.0.0.1:5000/api/v1/awel/trigger/examples/hello\?name\=zhangsan
+        DBGPT_SERVER="http://127.0.0.1:5555"
+        curl -X GET $DBGPT_SERVER/api/v1/awel/trigger/examples/hello\?name\=zhangsan
 
 """
 from dbgpt._private.pydantic import BaseModel, Field
@@ -31,3 +32,11 @@ with DAG("simple_dag_example") as dag:
     trigger = HttpTrigger("/examples/hello", request_body=TriggerReqBody)
     map_node = RequestHandleOperator()
     trigger >> map_node
+
+if __name__ == "__main__":
+    if dag.leaf_nodes[0].dev_mode:
+        from dbgpt.core.awel import setup_dev_environment
+
+        setup_dev_environment([dag])
+    else:
+        pass

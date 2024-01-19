@@ -1,12 +1,16 @@
+"""Local runner for workflow.
+
+This runner will run the workflow in the current process.
+"""
 import logging
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, cast
 
 from dbgpt.component import SystemApp
 
 from ..dag.base import DAGContext, DAGVar
 from ..operator.base import CALL_DATA, BaseOperator, WorkflowRunner
-from ..operator.common_operator import BranchOperator, JoinOperator, TriggerOperator
-from ..task.base import TaskContext, TaskState
+from ..operator.common_operator import BranchOperator, JoinOperator
+from ..task.base import SKIP_DATA, TaskContext, TaskState
 from ..task.task_impl import DefaultInputContext, DefaultTaskContext, SimpleTaskOutput
 from .job_manager import JobManager
 
@@ -14,27 +18,44 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultWorkflowRunner(WorkflowRunner):
+    """The default workflow runner."""
+
     async def execute_workflow(
         self,
         node: BaseOperator,
         call_data: Optional[CALL_DATA] = None,
         streaming_call: bool = False,
+        exist_dag_ctx: Optional[DAGContext] = None,
     ) -> DAGContext:
+        """Execute the workflow.
+
+        Args:
+            node (BaseOperator): The end node of the workflow.
+            call_data (Optional[CALL_DATA], optional): The call data of the end node.
+                Defaults to None.
+            streaming_call (bool, optional): Whether the call is streaming call.
+                Defaults to False.
+            exist_dag_ctx (Optional[DAGContext], optional): The exist DAG context.
+                Defaults to None.
+        """
         # Save node output
         # dag = node.dag
-        node_outputs: Dict[str, TaskContext] = {}
         job_manager = JobManager.build_from_end_node(node, call_data)
-        # Create DAG context
+        if not exist_dag_ctx:
+            # Create DAG context
+            node_outputs: Dict[str, TaskContext] = {}
+        else:
+            # Share node output with exist dag context
+            node_outputs = exist_dag_ctx._node_to_outputs
         dag_ctx = DAGContext(
             streaming_call=streaming_call,
             node_to_outputs=node_outputs,
             node_name_to_ids=job_manager._node_name_to_ids,
         )
-        logger.info(
-            f"Begin run workflow from end operator, id: {node.node_id}, call_data: {call_data}"
-        )
-        skip_node_ids = set()
-        system_app: SystemApp = DAGVar.get_current_system_app()
+        logger.info(f"Begin run workflow from end operator, id: {node.node_id}")
+        logger.debug(f"Node id {node.node_id}, call_data: {call_data}")
+        skip_node_ids: Set[str] = set()
+        system_app: Optional[SystemApp] = DAGVar.get_current_system_app()
 
         await job_manager.before_dag_run()
         await self._execute_node(
@@ -53,7 +74,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
         dag_ctx: DAGContext,
         node_outputs: Dict[str, TaskContext],
         skip_node_ids: Set[str],
-        system_app: SystemApp,
+        system_app: Optional[SystemApp],
     ):
         # Skip run node
         if node.node_id in node_outputs:
@@ -75,8 +96,12 @@ class DefaultWorkflowRunner(WorkflowRunner):
             node_outputs[upstream_node.node_id] for upstream_node in node.upstream
         ]
         input_ctx = DefaultInputContext(inputs)
-        task_ctx = DefaultTaskContext(node.node_id, TaskState.INIT, task_output=None)
-        task_ctx.set_call_data(job_manager.get_call_data_by_id(node.node_id))
+        task_ctx: DefaultTaskContext = DefaultTaskContext(
+            node.node_id, TaskState.INIT, task_output=None
+        )
+        current_call_data = job_manager.get_call_data_by_id(node.node_id)
+        if current_call_data:
+            task_ctx.set_call_data(current_call_data)
 
         task_ctx.set_task_input(input_ctx)
         dag_ctx.set_current_task_context(task_ctx)
@@ -84,12 +109,13 @@ class DefaultWorkflowRunner(WorkflowRunner):
 
         if node.node_id in skip_node_ids:
             task_ctx.set_current_state(TaskState.SKIP)
-            task_ctx.set_task_output(SimpleTaskOutput(None))
+            task_ctx.set_task_output(SimpleTaskOutput(SKIP_DATA))
             node_outputs[node.node_id] = task_ctx
             return
         try:
             logger.debug(
-                f"Begin run operator, node id: {node.node_id}, node name: {node.node_name}, cls: {node}"
+                f"Begin run operator, node id: {node.node_id}, node name: "
+                f"{node.node_name}, cls: {node}"
             )
             if system_app is not None and node.system_app is None:
                 node.set_system_app(system_app)
@@ -116,6 +142,7 @@ def _skip_current_downstream_by_node_name(
     if not skip_nodes:
         return
     for child in branch_node.downstream:
+        child = cast(BaseOperator, child)
         if child.node_name in skip_nodes:
             logger.info(f"Skip node name {child.node_name}, node id {child.node_id}")
             _skip_downstream_by_id(child, skip_node_ids)
@@ -127,4 +154,5 @@ def _skip_downstream_by_id(node: BaseOperator, skip_node_ids: Set[str]):
         return
     skip_node_ids.add(node.node_id)
     for child in node.downstream:
+        child = cast(BaseOperator, child)
         _skip_downstream_by_id(child, skip_node_ids)

@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import json
-from dbgpt.core.interface.prompt import PromptTemplate
+
 from dbgpt._private.config import Config
 from dbgpt.app.scene import ChatScene
 from dbgpt.app.scene.chat_db.auto_execute.out_parser import DbChatOutputParser
+from dbgpt.core.interface.prompt import PromptTemplate
 
 CFG = Config()
 

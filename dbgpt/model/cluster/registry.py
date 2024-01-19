@@ -1,16 +1,15 @@
+import itertools
+import logging
 import random
 import threading
 import time
-import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
-import itertools
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.model.base import ModelInstance
-
 
 logger = logging.getLogger(__name__)
 

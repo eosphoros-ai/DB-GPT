@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
-from typing import Optional, Any, Iterable
-from sqlalchemy import create_engine, text
-import tempfile
 import logging
+import os
+import tempfile
+from typing import Any, Iterable, Optional
+
+from sqlalchemy import create_engine, text
+
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 
 logger = logging.getLogger(__name__)
@@ -160,6 +162,7 @@ class SQLiteTempConnect(SQLiteConnect):
 
         Examples:
             .. code-block:: python
+
                 with SQLiteTempConnect.create_temporary_db() as db:
                     db.run(db.session, "CREATE TABLE test (id INTEGER PRIMARY KEY);")
                     db.run(db.session, "insert into test(id) values (1)")
@@ -201,6 +204,7 @@ class SQLiteTempConnect(SQLiteConnect):
 
         Examples:
             .. code-block:: python
+
                 tables_info = {
                     "test": {
                         "columns": {

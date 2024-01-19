@@ -1,12 +1,9 @@
-from dbgpt.core.interface.prompt import PromptTemplate
 from dbgpt._private.config import Config
-from dbgpt.app.scene import ChatScene
-
-
+from dbgpt.app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt.app.scene.chat_knowledge.extract_triplet.out_parser import (
     ExtractTripleParser,
 )
-
+from dbgpt.core import ChatPromptTemplate, HumanPromptTemplate
 
 CFG = Config()
 
@@ -33,19 +30,22 @@ _DEFAULT_TEMPLATE = """
 PROMPT_RESPONSE = """"""
 
 
-RESPONSE_FORMAT = """"""
-
-
 PROMPT_NEED_NEED_STREAM_OUT = False
 
-prompt = PromptTemplate(
-    template_scene=ChatScene.ExtractTriplet.value(),
-    input_variables=["text"],
-    response_format="",
-    template_define=PROMPT_SCENE_DEFINE,
-    template=_DEFAULT_TEMPLATE + PROMPT_RESPONSE,
-    stream_out=PROMPT_NEED_NEED_STREAM_OUT,
-    output_parser=ExtractTripleParser(is_stream_out=PROMPT_NEED_NEED_STREAM_OUT),
+
+prompt = ChatPromptTemplate(
+    messages=[
+        # SystemPromptTemplate.from_template(PROMPT_SCENE_DEFINE),
+        HumanPromptTemplate.from_template(_DEFAULT_TEMPLATE + PROMPT_RESPONSE),
+    ]
 )
 
-CFG.prompt_template_registry.register(prompt, is_default=True)
+prompt_adapter = AppScenePromptTemplateAdapter(
+    prompt=prompt,
+    template_scene=ChatScene.ExtractTriplet.value(),
+    stream_out=PROMPT_NEED_NEED_STREAM_OUT,
+    output_parser=ExtractTripleParser(is_stream_out=PROMPT_NEED_NEED_STREAM_OUT),
+    need_historical_messages=False,
+)
+
+CFG.prompt_template_registry.register(prompt_adapter, is_default=True)

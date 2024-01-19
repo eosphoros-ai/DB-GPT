@@ -17,7 +17,6 @@ class UserProxyAgent(ConversableAgent):
         self,
         memory: GptsMemory,
         agent_context: AgentContext,
-        is_termination_msg: Optional[Callable[[Dict], bool]] = None,
         max_consecutive_auto_reply: Optional[int] = None,
         human_input_mode: Optional[str] = "ALWAYS",
         default_auto_reply: Optional[Union[str, Dict, None]] = "",
@@ -27,7 +26,6 @@ class UserProxyAgent(ConversableAgent):
             memory=memory,
             describe=self.DEFAULT_DESCRIBE,
             system_message=self.DEFAULT_DESCRIBE,
-            is_termination_msg=is_termination_msg,
             max_consecutive_auto_reply=max_consecutive_auto_reply,
             human_input_mode=human_input_mode,
             agent_context=agent_context,
@@ -69,7 +67,7 @@ class UserProxyAgent(ConversableAgent):
         is_recovery: Optional[bool] = False,
     ):
         self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter + 1
-        self._process_received_message(message, sender, silent)
+        self.process_received_message(message, sender, silent)
 
     async def check_termination_and_human_reply(
         self,

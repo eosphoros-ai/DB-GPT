@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import LOGDIR
-from dbgpt.core import ModelOutput, ModelMetadata
+from dbgpt.core import ModelMetadata, ModelOutput
 from dbgpt.model.base import (
     ModelInstance,
     WorkerApplyOutput,
@@ -38,9 +38,9 @@ from dbgpt.util.parameter_utils import (
     _dict_to_command_args,
     _get_dict_from_obj,
 )
-from dbgpt.util.utils import setup_logging, setup_http_service_logging
-from dbgpt.util.tracer import initialize_tracer, root_tracer, SpanType, SpanTypeRunName
 from dbgpt.util.system_utils import get_system_info
+from dbgpt.util.tracer import SpanType, SpanTypeRunName, initialize_tracer, root_tracer
+from dbgpt.util.utils import setup_http_service_logging, setup_logging
 
 logger = logging.getLogger(__name__)
 

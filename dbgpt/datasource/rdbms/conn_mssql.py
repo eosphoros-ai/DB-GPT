@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from typing import Optional, Any, Iterable
+from typing import Any, Iterable, Optional
 
-from sqlalchemy import (
-    MetaData,
-    Table,
-    create_engine,
-    inspect,
-    select,
-    text,
-)
+from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
+
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 
 

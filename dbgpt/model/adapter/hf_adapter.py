@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Dict, Optional, List, Any
 import logging
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional
 
 from dbgpt.core import ModelMessage
-from dbgpt.model.base import ModelType
 from dbgpt.model.adapter.base import LLMModelAdapter, register_model_adapter
+from dbgpt.model.base import ModelType
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
     def load(self, model_path: str, from_pretrained_kwargs: dict):
         try:
             import transformers
-            from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel
+            from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
         except ImportError as exc:
             raise ValueError(
                 "Could not import depend python package "
@@ -87,6 +87,7 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
         messages: List[ModelMessage],
         tokenizer: Any,
         prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
     ) -> Optional[str]:
         from transformers import AutoTokenizer
 
@@ -94,7 +95,7 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
             raise ValueError("tokenizer is is None")
         tokenizer: AutoTokenizer = tokenizer
 
-        messages = self.transform_model_messages(messages)
+        messages = self.transform_model_messages(messages, convert_to_compatible_format)
         logger.debug(f"The messages after transform: \n{messages}")
         str_prompt = tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True

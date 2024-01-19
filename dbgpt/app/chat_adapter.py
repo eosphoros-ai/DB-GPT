@@ -6,9 +6,10 @@ We have integrated fastchat. For details, see: dbgpt/model/model_adapter.py
 # -*- coding: utf-8 -*-
 
 from functools import cache
-from typing import List, Dict, Tuple
-from dbgpt.model.conversation import Conversation, get_conv_template
+from typing import Dict, List, Tuple
+
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
+from dbgpt.model.conversation import Conversation, get_conv_template
 
 
 class BaseChatAdpter:
@@ -177,14 +178,15 @@ class FalconChatAdapter(BaseChatAdpter):
         return falcon_generate_output
 
 
-class ProxyllmChatAdapter(BaseChatAdpter):
-    def match(self, model_path: str):
-        return "proxyllm" in model_path
-
-    def get_generate_stream_func(self, model_path: str):
-        from dbgpt.model.llm_out.proxy_llm import proxyllm_generate_stream
-
-        return proxyllm_generate_stream
+#
+# class ProxyllmChatAdapter(BaseChatAdpter):
+#     def match(self, model_path: str):
+#         return "proxyllm" in model_path
+#
+#     def get_generate_stream_func(self, model_path: str):
+#         from dbgpt.model.llm_out.proxy_llm import proxyllm_generate_stream
+#
+#         return proxyllm_generate_stream
 
 
 class GorillaChatAdapter(BaseChatAdpter):
@@ -285,6 +287,6 @@ register_llm_model_chat_adapter(LlamaCppChatAdapter)
 register_llm_model_chat_adapter(InternLMChatAdapter)
 
 # Proxy model for test and develop, it's cheap for us now.
-register_llm_model_chat_adapter(ProxyllmChatAdapter)
+# register_llm_model_chat_adapter(ProxyllmChatAdapter)
 
 register_llm_model_chat_adapter(BaseChatAdpter)
