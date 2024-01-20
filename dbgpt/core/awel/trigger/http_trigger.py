@@ -152,7 +152,7 @@ async def _trigger_dag(
         raise ValueError("HttpTrigger just support one leaf node in dag")
     end_node = cast(BaseOperator, leaf_nodes[0])
     if not streaming_response:
-        return await end_node.call(call_data={"data": body})
+        return await end_node.call(call_data=body)
     else:
         headers = response_headers
         media_type = response_media_type if response_media_type else "text/event-stream"
@@ -163,7 +163,7 @@ async def _trigger_dag(
                 "Connection": "keep-alive",
                 "Transfer-Encoding": "chunked",
             }
-        generator = await end_node.call_stream(call_data={"data": body})
+        generator = await end_node.call_stream(call_data=body)
         background_tasks = BackgroundTasks()
         background_tasks.add_task(dag._after_dag_end)
         return StreamingResponse(

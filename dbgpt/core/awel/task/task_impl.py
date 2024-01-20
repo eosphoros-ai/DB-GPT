@@ -24,7 +24,6 @@ from .base import (
     EMPTY_DATA,
     OUT,
     PLACEHOLDER_DATA,
-    SKIP_DATA,
     InputContext,
     InputSource,
     MapFunc,
@@ -37,6 +36,7 @@ from .base import (
     TaskState,
     TransformFunc,
     UnStreamFunc,
+    is_empty_data,
 )
 
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ class SimpleTaskOutput(TaskOutput[T], Generic[T]):
     @property
     def is_empty(self) -> bool:
         """Return True if the output data is empty."""
-        return self._data == EMPTY_DATA or self._data == SKIP_DATA
+        return is_empty_data(self._data)
 
     @property
     def is_none(self) -> bool:
@@ -171,7 +171,7 @@ class SimpleStreamTaskOutput(TaskOutput[T], Generic[T]):
     @property
     def is_empty(self) -> bool:
         """Return True if the output data is empty."""
-        return self._data == EMPTY_DATA or self._data == SKIP_DATA
+        return is_empty_data(self._data)
 
     @property
     def is_none(self) -> bool:
@@ -330,7 +330,7 @@ class SimpleCallDataInputSource(BaseInputSource):
         """
         call_data = task_ctx.call_data
         data = call_data.get("data", EMPTY_DATA) if call_data else EMPTY_DATA
-        if data == EMPTY_DATA:
+        if is_empty_data(data):
             raise ValueError("No call data for current SimpleCallDataInputSource")
         return data
 

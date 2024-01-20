@@ -28,7 +28,7 @@ from ..task.base import OUT, T, TaskOutput
 
 F = TypeVar("F", bound=FunctionType)
 
-CALL_DATA = Union[Dict, Dict[str, Dict]]
+CALL_DATA = Union[Dict[str, Any], Any]
 
 
 class WorkflowRunner(ABC, Generic[T]):
@@ -197,6 +197,8 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         Returns:
             OUT: The output of the node after execution.
         """
+        if call_data:
+            call_data = {"data": call_data}
         out_ctx = await self._runner.execute_workflow(
             self, call_data, exist_dag_ctx=dag_ctx
         )
@@ -242,6 +244,8 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         Returns:
             AsyncIterator[OUT]: An asynchronous iterator over the output stream.
         """
+        if call_data:
+            call_data = {"data": call_data}
         out_ctx = await self._runner.execute_workflow(
             self, call_data, streaming_call=True, exist_dag_ctx=dag_ctx
         )

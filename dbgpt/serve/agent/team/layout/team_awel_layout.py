@@ -67,7 +67,7 @@ class AwelLayoutChatManager(ManagerAgent):
                 message=start_message, sender=self, reviewer=reviewer
             )
             final_generate_context: AgentGenerateContext = await last_node.call(
-                call_data={"data": start_message_context}
+                call_data=start_message_context
             )
             last_message = final_generate_context.rely_messages[-1]
 

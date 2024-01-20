@@ -70,7 +70,7 @@ class ChatHistoryPromptComposerOperator(MapOperator[ChatComposerInput, ModelRequ
         end_node: BaseOperator = cast(BaseOperator, self._sub_compose_dag.leaf_nodes[0])
         # Sub dag, use the same dag context in the parent dag
         return await end_node.call(
-            call_data={"data": input_value}, dag_ctx=self.current_dag_context
+            call_data=input_value, dag_ctx=self.current_dag_context
         )
 
     def _build_composer_dag(self) -> DAG:

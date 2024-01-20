@@ -357,7 +357,7 @@ def llama_cpp_python_cuda_requires():
 
 def core_requires():
     """
-    pip install db-gpt or pip install "db-gpt[core]"
+    pip install dbgpt or pip install "dbgpt[core]"
     """
     setup_spec.extras["core"] = [
         "aiohttp==3.8.4",
@@ -433,7 +433,7 @@ def core_requires():
 
 def knowledge_requires():
     """
-    pip install "db-gpt[knowledge]"
+    pip install "dbgpt[knowledge]"
     """
     setup_spec.extras["knowledge"] = [
         "spacy==3.5.3",
@@ -450,7 +450,7 @@ def knowledge_requires():
 
 def llama_cpp_requires():
     """
-    pip install "db-gpt[llama_cpp]"
+    pip install "dbgpt[llama_cpp]"
     """
     setup_spec.extras["llama_cpp"] = ["llama-cpp-python"]
     llama_cpp_python_cuda_requires()
@@ -538,7 +538,7 @@ def quantization_requires():
 
 def all_vector_store_requires():
     """
-    pip install "db-gpt[vstore]"
+    pip install "dbgpt[vstore]"
     """
     setup_spec.extras["vstore"] = [
         "grpcio==1.47.5",  # maybe delete it
@@ -549,7 +549,7 @@ def all_vector_store_requires():
 
 def all_datasource_requires():
     """
-    pip install "db-gpt[datasource]"
+    pip install "dbgpt[datasource]"
     """
 
     setup_spec.extras["datasource"] = [
@@ -567,7 +567,7 @@ def all_datasource_requires():
 
 def openai_requires():
     """
-    pip install "db-gpt[openai]"
+    pip install "dbgpt[openai]"
     """
     setup_spec.extras["openai"] = ["tiktoken"]
     if BUILD_VERSION_OPENAI:
@@ -582,28 +582,28 @@ def openai_requires():
 
 def gpt4all_requires():
     """
-    pip install "db-gpt[gpt4all]"
+    pip install "dbgpt[gpt4all]"
     """
     setup_spec.extras["gpt4all"] = ["gpt4all"]
 
 
 def vllm_requires():
     """
-    pip install "db-gpt[vllm]"
+    pip install "dbgpt[vllm]"
     """
     setup_spec.extras["vllm"] = ["vllm"]
 
 
 def cache_requires():
     """
-    pip install "db-gpt[cache]"
+    pip install "dbgpt[cache]"
     """
     setup_spec.extras["cache"] = ["rocksdict"]
 
 
 def default_requires():
     """
-    pip install "db-gpt[default]"
+    pip install "dbgpt[default]"
     """
     setup_spec.extras["default"] = [
         # "tokenizers==0.13.3",
@@ -683,7 +683,7 @@ else:
     )
 
 setuptools.setup(
-    name="db-gpt",
+    name="dbgpt",
     packages=packages,
     version=DB_GPT_VERSION,
     author="csunny",
