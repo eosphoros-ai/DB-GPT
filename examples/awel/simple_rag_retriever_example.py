@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
-from dbgpt.model import OpenAILLMClient
+from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 from dbgpt.rag.operator.embedding import EmbeddingRetrieverOperator

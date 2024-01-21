@@ -81,6 +81,19 @@ clean: ## Clean up the environment
 	find . -type d -name '.pytest_cache' -delete
 	find . -type d -name '.coverage' -delete
 
+.PHONY: clean-dist
+clean-dist: ## Clean up the distribution
+	rm -rf dist/ *.egg-info build/
+
+.PHONY: package
+package: clean-dist ## Package the project for distribution
+	IS_DEV_MODE=false python setup.py sdist bdist_wheel
+
+.PHONY: upload
+upload: package ## Upload the package to PyPI
+	# upload to testpypi: twine upload --repository testpypi dist/*
+	twine upload dist/*
+
 .PHONY: help
 help:  ## Display this help screen
 	@echo "Available commands:"

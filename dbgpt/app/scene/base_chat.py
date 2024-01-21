@@ -171,13 +171,13 @@ class BaseChat(ABC):
 
     async def call_llm_operator(self, request: ModelRequest) -> ModelOutput:
         llm_task = build_cached_chat_operator(self.llm_client, False, CFG.SYSTEM_APP)
-        return await llm_task.call(call_data={"data": request})
+        return await llm_task.call(call_data=request)
 
     async def call_streaming_operator(
         self, request: ModelRequest
     ) -> AsyncIterator[ModelOutput]:
         llm_task = build_cached_chat_operator(self.llm_client, True, CFG.SYSTEM_APP)
-        async for out in await llm_task.call_stream(call_data={"data": request}):
+        async for out in await llm_task.call_stream(call_data=request):
             yield out
 
     def do_action(self, prompt_response):
@@ -251,11 +251,9 @@ class BaseChat(ABC):
             str_history=self.prompt_template.str_history,
             request_context=req_ctx,
         )
-        node_input = {
-            "data": ChatComposerInput(
-                messages=self.history_messages, prompt_dict=input_values
-            )
-        }
+        node_input = ChatComposerInput(
+            messages=self.history_messages, prompt_dict=input_values
+        )
         # llm_messages = self.generate_llm_messages()
         model_request: ModelRequest = await node.call(call_data=node_input)
         model_request.context.cache_enable = self.model_cache_enable

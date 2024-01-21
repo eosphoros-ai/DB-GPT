@@ -6,7 +6,6 @@ from dbgpt.component import ComponentType
 from dbgpt.core import LLMClient
 from dbgpt.core.awel import BaseOperator
 from dbgpt.core.operator import BaseLLM, BaseLLMOperator, BaseStreamingLLMOperator
-from dbgpt.model.cluster import WorkerManagerFactory
 
 logger = logging.getLogger(__name__)
 
@@ -19,31 +18,30 @@ class MixinLLMOperator(BaseLLM, BaseOperator, ABC):
 
     def __init__(self, default_client: Optional[LLMClient] = None, **kwargs):
         super().__init__(default_client)
-        self._default_llm_client = default_client
 
     @property
     def llm_client(self) -> LLMClient:
         if not self._llm_client:
-            worker_manager_factory: WorkerManagerFactory = (
-                self.system_app.get_component(
-                    ComponentType.WORKER_MANAGER_FACTORY,
-                    WorkerManagerFactory,
-                    default_component=None,
-                )
-            )
-            if worker_manager_factory:
+            try:
+                from dbgpt.model.cluster import WorkerManagerFactory
                 from dbgpt.model.cluster.client import DefaultLLMClient
 
-                self._llm_client = DefaultLLMClient(worker_manager_factory.create())
-            else:
-                if self._default_llm_client is None:
-                    from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
-
-                    self._default_llm_client = OpenAILLMClient()
-                logger.info(
-                    f"Can't find worker manager factory, use default llm client {self._default_llm_client}."
+                worker_manager_factory: WorkerManagerFactory = (
+                    self.system_app.get_component(
+                        ComponentType.WORKER_MANAGER_FACTORY,
+                        WorkerManagerFactory,
+                        default_component=None,
+                    )
                 )
-                self._llm_client = self._default_llm_client
+                if worker_manager_factory:
+                    self._llm_client = DefaultLLMClient(worker_manager_factory.create())
+            except Exception as e:
+                logger.warning(f"Load worker manager failed: {e}.")
+            if not self._llm_client:
+                from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
+
+                logger.info("Can't find worker manager factory, use OpenAILLMClient.")
+                self._llm_client = OpenAILLMClient()
         return self._llm_client
 
 

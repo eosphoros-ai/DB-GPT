@@ -3,9 +3,9 @@ from typing import Dict, List, Optional, Type
 
 from dbgpt.configs.model_config import get_device
 from dbgpt.core import ModelMetadata
+from dbgpt.model.adapter.loader import _get_model_real_path
 from dbgpt.model.cluster.embedding.loader import EmbeddingLoader
 from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.loader import _get_model_real_path
 from dbgpt.model.parameter import (
     EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
     BaseEmbeddingModelParameters,

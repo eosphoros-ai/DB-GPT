@@ -30,7 +30,7 @@ parent_dir = os.path.dirname(current_dir)
 test_plugin_dir = os.path.join(parent_dir, "test_files")
 
 if __name__ == "__main__":
-    from dbgpt.model import OpenAILLMClient
+    from dbgpt.model.proxy import OpenAILLMClient
 
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)

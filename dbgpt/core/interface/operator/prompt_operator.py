@@ -150,7 +150,7 @@ class PromptBuilderOperator(
                     )
                 )
 
-            single_input = {"data": {"dialect": "mysql"}}
+            single_input = {"dialect": "mysql"}
             single_expected_messages = [
                 ModelMessage(
                     content="Please write a mysql SQL count the length of a field",

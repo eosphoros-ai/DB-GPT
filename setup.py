@@ -14,6 +14,11 @@ import functools
 with open("README.md", mode="r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
+# If you modify the version, please modify the version in the following files:
+# dbgpt/_version.py
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.4.7")
+
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
     os.getenv("LLAMA_CPP_GPU_ACCELERATION", "true").lower() == "true"
@@ -352,31 +357,41 @@ def llama_cpp_python_cuda_requires():
 
 def core_requires():
     """
-    pip install db-gpt or pip install "db-gpt[core]"
+    pip install dbgpt or pip install "dbgpt[core]"
     """
     setup_spec.extras["core"] = [
         "aiohttp==3.8.4",
         "chardet==5.1.0",
         "importlib-resources==5.12.0",
-        "psutil==5.9.4",
         "python-dotenv==1.0.0",
-        "colorama==0.4.6",
-        "prettytable",
         "cachetools",
+        "pydantic<2,>=1",
     ]
-    # Just use by DB-GPT internal, we should find the smallest dependency set for run we core unit test.
+    # Simple command line dependencies
+    setup_spec.extras["cli"] = setup_spec.extras["core"] + [
+        "prettytable",
+        "click",
+        "psutil==5.9.4",
+        "colorama==0.4.6",
+    ]
+    # Just use by DB-GPT internal, we should find the smallest dependency set for run
+    # we core unit test.
     # The dependency "framework" is too large for now.
-    setup_spec.extras["simple_framework"] = setup_spec.extras["core"] + [
+    setup_spec.extras["simple_framework"] = setup_spec.extras["cli"] + [
         "pydantic<2,>=1",
         "httpx",
         "jinja2",
         "fastapi==0.98.0",
+        "uvicorn",
         "shortuuid",
-        # change from fixed version 2.0.22 to variable version, because other dependencies are >=1.4, such as pydoris is <2
+        # change from fixed version 2.0.22 to variable version, because other
+        # dependencies are >=1.4, such as pydoris is <2
         "SQLAlchemy>=1.4,<3",
         # for cache
         "msgpack",
-        # for cache, TODO pympler has not been updated for a long time and needs to find a new toolkit.
+        # for cache
+        # TODO: pympler has not been updated for a long time and needs to
+        #  find a new toolkit.
         "pympler",
         "sqlparse==0.4.4",
         "duckdb==0.8.1",
@@ -418,7 +433,7 @@ def core_requires():
 
 def knowledge_requires():
     """
-    pip install "db-gpt[knowledge]"
+    pip install "dbgpt[knowledge]"
     """
     setup_spec.extras["knowledge"] = [
         "spacy==3.5.3",
@@ -435,7 +450,7 @@ def knowledge_requires():
 
 def llama_cpp_requires():
     """
-    pip install "db-gpt[llama_cpp]"
+    pip install "dbgpt[llama_cpp]"
     """
     setup_spec.extras["llama_cpp"] = ["llama-cpp-python"]
     llama_cpp_python_cuda_requires()
@@ -523,7 +538,7 @@ def quantization_requires():
 
 def all_vector_store_requires():
     """
-    pip install "db-gpt[vstore]"
+    pip install "dbgpt[vstore]"
     """
     setup_spec.extras["vstore"] = [
         "grpcio==1.47.5",  # maybe delete it
@@ -534,7 +549,7 @@ def all_vector_store_requires():
 
 def all_datasource_requires():
     """
-    pip install "db-gpt[datasource]"
+    pip install "dbgpt[datasource]"
     """
 
     setup_spec.extras["datasource"] = [
@@ -552,7 +567,7 @@ def all_datasource_requires():
 
 def openai_requires():
     """
-    pip install "db-gpt[openai]"
+    pip install "dbgpt[openai]"
     """
     setup_spec.extras["openai"] = ["tiktoken"]
     if BUILD_VERSION_OPENAI:
@@ -567,28 +582,28 @@ def openai_requires():
 
 def gpt4all_requires():
     """
-    pip install "db-gpt[gpt4all]"
+    pip install "dbgpt[gpt4all]"
     """
     setup_spec.extras["gpt4all"] = ["gpt4all"]
 
 
 def vllm_requires():
     """
-    pip install "db-gpt[vllm]"
+    pip install "dbgpt[vllm]"
     """
     setup_spec.extras["vllm"] = ["vllm"]
 
 
 def cache_requires():
     """
-    pip install "db-gpt[cache]"
+    pip install "dbgpt[cache]"
     """
     setup_spec.extras["cache"] = ["rocksdict"]
 
 
 def default_requires():
     """
-    pip install "db-gpt[default]"
+    pip install "dbgpt[default]"
     """
     setup_spec.extras["default"] = [
         # "tokenizers==0.13.3",
@@ -637,14 +652,46 @@ default_requires()
 all_requires()
 init_install_requires()
 
+# Packages to exclude when IS_DEV_MODE is False
+excluded_packages = ["tests", "*.tests", "*.tests.*", "examples"]
+
+if IS_DEV_MODE:
+    packages = find_packages(exclude=excluded_packages)
+else:
+    packages = find_packages(
+        exclude=excluded_packages,
+        include=[
+            "dbgpt",
+            "dbgpt._private",
+            "dbgpt._private.*",
+            "dbgpt.cli",
+            "dbgpt.cli.*",
+            "dbgpt.configs",
+            "dbgpt.configs.*",
+            "dbgpt.core",
+            "dbgpt.core.*",
+            "dbgpt.util",
+            "dbgpt.util.*",
+            "dbgpt.model",
+            "dbgpt.model.proxy",
+            "dbgpt.model.proxy.*",
+            "dbgpt.model.operator",
+            "dbgpt.model.operator.*",
+            "dbgpt.model.utils",
+            "dbgpt.model.utils.*",
+        ],
+    )
+
 setuptools.setup(
-    name="db-gpt",
-    packages=find_packages(exclude=("tests", "*.tests", "*.tests.*", "examples")),
-    version="0.4.5",
+    name="dbgpt",
+    packages=packages,
+    version=DB_GPT_VERSION,
     author="csunny",
     author_email="cfqcsunny@gmail.com",
-    description="DB-GPT is an experimental open-source project that uses localized GPT large models to interact with your data and environment."
-    " With this solution, you can be assured that there is no risk of data leakage, and your data is 100% private and secure.",
+    description="DB-GPT is an experimental open-source project that uses localized GPT "
+    "large models to interact with your data and environment."
+    " With this solution, you can be assured that there is no risk of data leakage, "
+    "and your data is 100% private and secure.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=setup_spec.install_requires,

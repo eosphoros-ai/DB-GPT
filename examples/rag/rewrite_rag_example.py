@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from dbgpt.model import OpenAILLMClient
+from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.retriever.rewrite import QueryRewrite
 
 """Query rewrite example.

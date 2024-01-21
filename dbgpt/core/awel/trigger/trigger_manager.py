@@ -24,6 +24,14 @@ class TriggerManager(ABC):
     def register_trigger(self, trigger: Any) -> None:
         """Register a trigger to current manager."""
 
+    def keep_running(self) -> bool:
+        """Whether keep running.
+
+        Returns:
+            bool: Whether keep running, True means keep running, False means stop.
+        """
+        return False
+
 
 class HttpTriggerManager(TriggerManager):
     """Http trigger manager.
@@ -64,6 +72,8 @@ class HttpTriggerManager(TriggerManager):
             self._trigger_map[trigger_id] = trigger
 
     def _init_app(self, system_app: SystemApp):
+        if not self.keep_running():
+            return
         logger.info(
             f"Include router {self._router} to prefix path {self._router_prefix}"
         )
@@ -71,6 +81,14 @@ class HttpTriggerManager(TriggerManager):
         if not app:
             raise RuntimeError("System app not initialized")
         app.include_router(self._router, prefix=self._router_prefix, tags=["AWEL"])
+
+    def keep_running(self) -> bool:
+        """Whether keep running.
+
+        Returns:
+            bool: Whether keep running, True means keep running, False means stop.
+        """
+        return len(self._trigger_map) > 0
 
 
 class DefaultTriggerManager(TriggerManager, BaseComponent):
@@ -105,3 +123,11 @@ class DefaultTriggerManager(TriggerManager, BaseComponent):
         """After register, init the trigger manager."""
         if self.system_app:
             self.http_trigger._init_app(self.system_app)
+
+    def keep_running(self) -> bool:
+        """Whether keep running.
+
+        Returns:
+            bool: Whether keep running, True means keep running, False means stop.
+        """
+        return self.http_trigger.keep_running()

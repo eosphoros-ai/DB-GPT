@@ -9,7 +9,7 @@ from functools import cache
 from typing import Dict, List, Tuple
 
 from dbgpt.core.interface.message import ModelMessage, ModelMessageRoleType
-from dbgpt.model.conversation import Conversation, get_conv_template
+from dbgpt.model.llm.conversation import Conversation, get_conv_template
 
 
 class BaseChatAdpter:
@@ -21,7 +21,7 @@ class BaseChatAdpter:
 
     def get_generate_stream_func(self, model_path: str):
         """Return the generate stream handler func"""
-        from dbgpt.model.inference import generate_stream
+        from dbgpt.model.llm.inference import generate_stream
 
         return generate_stream
 

@@ -8,7 +8,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
-from typing import Awaitable, Callable, Dict, Iterator, List
+from typing import Awaitable, Callable, Iterator
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import StreamingResponse
@@ -16,12 +16,7 @@ from fastapi.responses import StreamingResponse
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import LOGDIR
 from dbgpt.core import ModelMetadata, ModelOutput
-from dbgpt.model.base import (
-    ModelInstance,
-    WorkerApplyOutput,
-    WorkerApplyType,
-    WorkerSupportedModel,
-)
+from dbgpt.model.base import ModelInstance, WorkerApplyOutput, WorkerSupportedModel
 from dbgpt.model.cluster.base import *
 from dbgpt.model.cluster.manager_base import (
     WorkerManager,
@@ -30,8 +25,8 @@ from dbgpt.model.cluster.manager_base import (
 )
 from dbgpt.model.cluster.registry import ModelRegistry
 from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.llm_utils import list_supported_models
-from dbgpt.model.parameter import ModelParameters, ModelWorkerParameters, WorkerType
+from dbgpt.model.parameter import ModelWorkerParameters, WorkerType
+from dbgpt.model.utils.llm_utils import list_supported_models
 from dbgpt.util.parameter_utils import (
     EnvArgumentParser,
     ParameterDescription,

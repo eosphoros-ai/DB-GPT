@@ -28,6 +28,14 @@ EMPTY_DATA = _EMPTY_DATA_TYPE()
 SKIP_DATA = _EMPTY_DATA_TYPE()
 PLACEHOLDER_DATA = _EMPTY_DATA_TYPE()
 
+
+def is_empty_data(data: Any):
+    """Check if the data is empty."""
+    if isinstance(data, _EMPTY_DATA_TYPE):
+        return data in (EMPTY_DATA, SKIP_DATA)
+    return False
+
+
 MapFunc = Union[Callable[[IN], OUT], Callable[[IN], Awaitable[OUT]]]
 ReduceFunc = Union[Callable[[IN], OUT], Callable[[IN], Awaitable[OUT]]]
 StreamFunc = Callable[[IN], Awaitable[AsyncIterator[OUT]]]

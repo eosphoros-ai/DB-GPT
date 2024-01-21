@@ -1,9 +1,12 @@
-from dbgpt.model.cluster.client import DefaultLLMClient
+try:
+    from dbgpt.model.cluster.client import DefaultLLMClient
+except ImportError as exc:
+    # logging.warning("Can't import dbgpt.model.DefaultLLMClient")
+    DefaultLLMClient = None
 
-# from dbgpt.model.utils.chatgpt_utils import OpenAILLMClient
-from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 
-__ALL__ = [
-    "DefaultLLMClient",
-    "OpenAILLMClient",
-]
+_exports = []
+if DefaultLLMClient:
+    _exports.append("DefaultLLMClient")
+
+__ALL__ = _exports

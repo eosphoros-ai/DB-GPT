@@ -22,6 +22,7 @@ from .operator.common_operator import (
     JoinOperator,
     MapOperator,
     ReduceStreamOperator,
+    TriggerOperator,
 )
 from .operator.stream_operator import (
     StreamifyAbsOperator,
@@ -50,6 +51,7 @@ __all__ = [
     "BaseOperator",
     "JoinOperator",
     "ReduceStreamOperator",
+    "TriggerOperator",
     "MapOperator",
     "BranchOperator",
     "InputOperator",
@@ -150,4 +152,6 @@ def setup_dev_environment(
         for trigger in dag.trigger_nodes:
             trigger_manager.register_trigger(trigger)
     trigger_manager.after_register()
-    uvicorn.run(app, host=host, port=port)
+    if trigger_manager.keep_running():
+        # Should keep running
+        uvicorn.run(app, host=host, port=port)
