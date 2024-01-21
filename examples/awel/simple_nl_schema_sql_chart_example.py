@@ -228,7 +228,7 @@ class ChartDrawOperator(MapOperator[Any, Any]):
         return str(df)
 
 
-with (DAG("simple_nl_schema_sql_chart_example") as dag):
+with DAG("simple_nl_schema_sql_chart_example") as dag:
     trigger = HttpTrigger(
         "/examples/rag/schema_linking", methods="POST", request_body=TriggerReqBody
     )
