@@ -1,3 +1,0 @@
-# QuickStart 
-
-comming soon

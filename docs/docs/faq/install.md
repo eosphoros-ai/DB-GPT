@@ -1,16 +1,14 @@
-Installation FAQ
-==================================
+# Installation FAQ
 
-
-##### Q1: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file 
+### Q1: sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file 
 
 make sure you pull latest code or create directory with mkdir pilot/data
 
-##### Q2: The model keeps getting killed.
+### Q2: The model keeps getting killed.
 
 your GPU VRAM size is not enough, try replace your hardware or replace other llms.
 
-##### Q3: How to access website on the public network
+### Q3: How to access website on the public network
 
 You can try to use gradio's [network](https://github.com/gradio-app/gradio/blob/main/gradio/networking.py) to achieve.
 ```python
@@ -25,7 +23,7 @@ time.sleep(60 * 60 * 24)
 
 Open `url` with your browser to see the website.
 
-##### Q4: (Windows) execute `pip install -e .` error
+### Q4: (Windows) execute `pip install -e .` error
 
 The error log like the following:
 ``` 
@@ -50,7 +48,7 @@ Download and install `Microsoft C++ Build Tools` from [visual-cpp-build-tools](h
 
 
 
-##### Q5: `Torch not compiled with CUDA enabled`
+### Q5: `Torch not compiled with CUDA enabled`
 
 ```
 2023-08-19 16:24:30 | ERROR | stderr |     raise AssertionError("Torch not compiled with CUDA enabled")
@@ -61,18 +59,18 @@ Download and install `Microsoft C++ Build Tools` from [visual-cpp-build-tools](h
 2. Reinstall PyTorch [start-locally](https://pytorch.org/get-started/locally/#start-locally) with CUDA support.
 
 
-##### Q6: `How to migrate meta table chat_history and connect_config from duckdb to sqlite`
+### Q6: `How to migrate meta table chat_history and connect_config from duckdb to sqlite`
 ```commandline
  python docker/examples/metadata/duckdb2sqlite.py
 ```
 
-##### Q7: `How to migrate meta table chat_history and connect_config from duckdb to mysql`
+### Q7: `How to migrate meta table chat_history and connect_config from duckdb to mysql`
 ```commandline
 1. update your mysql username and password in docker/examples/metadata/duckdb2mysql.py
 2.  python docker/examples/metadata/duckdb2mysql.py
 ```
 
-##### Q8: `How to manage and migrate my database`
+### Q8: `How to manage and migrate my database`
 
 You can use the command of `dbgpt db migration` to manage and migrate your database.
 
@@ -104,7 +102,7 @@ dbgpt db migration upgrade
 ```
 
 
-##### Q9: `alembic.util.exc.CommandError: Target database is not up to date.`
+### Q9: `alembic.util.exc.CommandError: Target database is not up to date.`
 
 **Solution 1:**
 
