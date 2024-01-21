@@ -82,13 +82,13 @@ const sidebars = {
             },
             {
               type: "category",
-              label: "Operator",
+              label: "Workflow",
               collapsed: false,
               collapsible: false,
               items: [
                 {
                   type: "doc",
-                  id: "awel/how_to/dag/dag_pipeline"
+                  id: "awel/how_to/workflow/dag_pipeline"
                 }
               ]
             }
@@ -100,6 +100,10 @@ const sidebars = {
           items: [
             {
               type: "doc",
+              id: "awel/cookbook/quickstart_basic_awel_workflow"
+            },
+            {
+              type: "doc",
               id: "awel/cookbook/sql_awel_use_rag_and_schema_linking"
             },
             {
@@ -109,10 +113,20 @@ const sidebars = {
             {
               type: "doc",
               id: "awel/cookbook/multi_round_chat_withllm"
-            }
-          ]
+            },
+          ],
+          link: {
+            type: 'generated-index',
+            description: 'Example code for accomplishing common workflow with the Agentic Workflow Expression Language (AWEL). These examples show how to build  different app use LLMs (the core AWEL interface) and dbgpt modules.',
+            slug: "cookbook"
+          },
         }
       ],
+      link: {
+        type: 'generated-index',
+        description: "AWEL (Agentic Workflow Expression Language) is an intelligent agent workflow expression language specifically designed for the development of large-model applications",
+        slug: "awel",
+      },
     },
 
     {
@@ -203,9 +217,27 @@ const sidebars = {
               id: 'application/started_tutorial/chat_dashboard',
             },
             {
-              type: 'doc',
-              id: 'application/started_tutorial/agent',
-            },
+              type: "category",
+              label: "Agents",
+              items: [
+                {
+                  type: 'doc',
+                  id: 'application/started_tutorial/agents/plugin',
+                },
+                {
+                  type: "doc",
+                  id: "application/started_tutorial/agents/db_data_analysis_agents",
+                },
+                {
+                  type: "doc",
+                  id: "application/started_tutorial/agents/crawl_data_analysis_agents",
+                }
+              ],
+              link: {
+                type: 'generated-index',
+                slug: "agents",
+              },
+            }
           ],
         },
         {
@@ -290,20 +322,12 @@ const sidebars = {
         },
         
       ],
+      link: {
+        type: 'generated-index',
+        slug: "modules",
+      },
     },
-    
-    {
-      type: "category",
-      label: "SDK",
-      collapsed: false,
-      collapsible: false,
-      items: [
-        {
-          type: "doc",
-          id: "sdk/quickstart"
-        }
-      ]
-    },
+
     {
       type: "category",
       label: "FAQ",
