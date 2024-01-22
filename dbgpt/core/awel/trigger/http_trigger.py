@@ -14,9 +14,19 @@ if TYPE_CHECKING:
     from starlette.requests import Request
 
     RequestBody = Union[Type[Request], Type[BaseModel], Type[str]]
-    StreamingPredictFunc = Callable[[Union[Request, BaseModel]], bool]
+    StreamingPredictFunc = Callable[[Union[Request, BaseModel, str, None]], bool]
 
 logger = logging.getLogger(__name__)
+
+
+class AWELHttpError(RuntimeError):
+    """AWEL Http Error."""
+
+    def __init__(self, msg: str, code: Optional[str] = None):
+        """Init the AWELHttpError."""
+        super().__init__(msg)
+        self.msg = msg
+        self.code = code
 
 
 class HttpTrigger(Trigger):
@@ -65,29 +75,74 @@ class HttpTrigger(Trigger):
         Args:
             router (APIRouter): The router to mount the trigger.
         """
-        from fastapi import Depends
+        from inspect import Parameter, Signature
+        from typing import get_type_hints
+
         from starlette.requests import Request
 
         methods = [self._methods] if isinstance(self._methods, str) else self._methods
+        is_query_method = (
+            all(method in ["GET", "DELETE"] for method in methods) if methods else True
+        )
+
+        async def _trigger_dag_func(body: Union[Request, BaseModel, str, None]):
+            streaming_response = self._streaming_response
+            if self._streaming_predict_func:
+                streaming_response = self._streaming_predict_func(body)
+            dag = self.dag
+            if not dag:
+                raise AWELHttpError("DAG is not set")
+            return await _trigger_dag(
+                body,
+                dag,
+                streaming_response,
+                self._response_headers,
+                self._response_media_type,
+            )
 
         def create_route_function(name, req_body_cls: Optional[Type[BaseModel]]):
-            async def _request_body_dependency(request: Request):
-                return await _parse_request_body(request, self._req_body)
+            async def route_function_request(request: Request):
+                return await _trigger_dag_func(request)
 
-            async def route_function(body=Depends(_request_body_dependency)):
-                streaming_response = self._streaming_response
-                if self._streaming_predict_func:
-                    streaming_response = self._streaming_predict_func(body)
-                return await _trigger_dag(
-                    body,
-                    self.dag,
-                    streaming_response,
-                    self._response_headers,
-                    self._response_media_type,
-                )
+            async def route_function_none():
+                return await _trigger_dag_func(None)
 
-            route_function.__name__ = name
-            return route_function
+            route_function_request.__name__ = name
+            route_function_none.__name__ = name
+
+            if not req_body_cls:
+                return route_function_none
+            if req_body_cls == Request:
+                return route_function_request
+
+            if is_query_method:
+                if req_body_cls == str:
+                    raise AWELHttpError(f"Query methods {methods} not support str type")
+
+                async def route_function_get(**kwargs):
+                    body = req_body_cls(**kwargs)
+                    return await _trigger_dag_func(body)
+
+                parameters = [
+                    Parameter(
+                        name=field_name,
+                        kind=Parameter.KEYWORD_ONLY,
+                        default=Parameter.empty,
+                        annotation=field.outer_type_,
+                    )
+                    for field_name, field in req_body_cls.__fields__.items()
+                ]
+                route_function_get.__signature__ = Signature(parameters)  # type: ignore
+                route_function_get.__annotations__ = get_type_hints(req_body_cls)
+                route_function_get.__name__ = name
+                return route_function_get
+            else:
+
+                async def route_function(body: req_body_cls):  # type: ignore
+                    return await _trigger_dag_func(body)
+
+                route_function.__name__ = name
+                return route_function
 
         function_name = f"AWEL_trigger_route_{self._endpoint.replace('/', '_')}"
         request_model = (
@@ -109,32 +164,6 @@ class HttpTrigger(Trigger):
             status_code=self._status_code,
             tags=self._router_tags,
         )(dynamic_route_function)
-
-
-async def _parse_request_body(
-    request: "Request", request_body_cls: Optional["RequestBody"]
-):
-    from starlette.requests import Request
-
-    if not request_body_cls:
-        return None
-    if request_body_cls == Request:
-        return request
-    if request.method == "POST":
-        if request_body_cls == str:
-            bytes_body = await request.body()
-            str_body = bytes_body.decode("utf-8")
-            return str_body
-        elif issubclass(request_body_cls, BaseModel):
-            json_data = await request.json()
-            return request_body_cls(**json_data)
-        else:
-            raise ValueError(f"Invalid request body cls: {request_body_cls}")
-    elif request.method == "GET":
-        if issubclass(request_body_cls, BaseModel):
-            return request_body_cls(**request.query_params)
-        else:
-            raise ValueError(f"Invalid request body cls: {request_body_cls}")
 
 
 async def _trigger_dag(
