@@ -8,7 +8,7 @@ from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
-from dbgpt.rag.operator.db_schema import DBSchemaRetrieverOperator
+from dbgpt.rag.operators.db_schema import DBSchemaRetrieverOperator
 from dbgpt.serve.rag.operators.db_schema import DBSchemaAssemblerOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector

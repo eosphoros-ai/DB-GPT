@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from ..operator.common_operator import TriggerOperator
+from ..operators.common_operator import TriggerOperator
 
 
 class Trigger(TriggerOperator, ABC):

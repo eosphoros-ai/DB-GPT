@@ -7,7 +7,7 @@ from dbgpt.core import (
     StorageConversation,
     StorageInterface,
 )
-from dbgpt.core.operator import PreChatHistoryLoadOperator
+from dbgpt.core.operators import PreChatHistoryLoadOperator
 
 from .serve import Serve
 

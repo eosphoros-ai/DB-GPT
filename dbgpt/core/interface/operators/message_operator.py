@@ -270,7 +270,7 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             # Keeping the first 2 and the last 1 rounds of a conversation
             import asyncio
             from dbgpt.core.interface.message import AIMessage, HumanMessage
-            from dbgpt.core.operator import BufferedConversationMapperOperator
+            from dbgpt.core.operators import BufferedConversationMapperOperator
 
             operator = BufferedConversationMapperOperator(
                 keep_start_rounds=2, keep_end_rounds=1
@@ -338,7 +338,7 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
 
         Examples:
             >>> from dbgpt.core import AIMessage, HumanMessage
-            >>> from dbgpt.core.operator import BufferedConversationMapperOperator
+            >>> from dbgpt.core.operators import BufferedConversationMapperOperator
             >>> messages = [
             ...     [
             ...         HumanMessage(content="Hi", round_index=1),

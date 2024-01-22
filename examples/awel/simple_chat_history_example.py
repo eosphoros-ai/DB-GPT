@@ -70,12 +70,12 @@ from dbgpt.core import (
     SystemPromptTemplate,
 )
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
-from dbgpt.core.operator import (
+from dbgpt.core.operators import (
     ChatComposerInput,
     ChatHistoryPromptComposerOperator,
     LLMBranchOperator,
 )
-from dbgpt.model.operator import (
+from dbgpt.model.operators import (
     LLMOperator,
     OpenAIStreamingOutputOperator,
     StreamingLLMOperator,

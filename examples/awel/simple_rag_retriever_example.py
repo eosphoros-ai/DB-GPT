@@ -9,9 +9,9 @@ from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
-from dbgpt.rag.operator.embedding import EmbeddingRetrieverOperator
-from dbgpt.rag.operator.rerank import RerankOperator
-from dbgpt.rag.operator.rewrite import QueryRewriteOperator
+from dbgpt.rag.operators.embedding import EmbeddingRetrieverOperator
+from dbgpt.rag.operators.rerank import RerankOperator
+from dbgpt.rag.operators.rewrite import QueryRewriteOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 

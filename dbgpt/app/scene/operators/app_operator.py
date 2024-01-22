@@ -18,12 +18,12 @@ from dbgpt.core.awel import (
     MapOperator,
     SimpleCallDataInputSource,
 )
-from dbgpt.core.operator import (
+from dbgpt.core.operators import (
     BufferedConversationMapperOperator,
     HistoryPromptBuilderOperator,
     LLMBranchOperator,
 )
-from dbgpt.model.operator import LLMOperator, StreamingLLMOperator
+from dbgpt.model.operators import LLMOperator, StreamingLLMOperator
 from dbgpt.storage.cache.operator import (
     CachedModelOperator,
     CachedModelStreamOperator,
