@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Uni
 from dbgpt._private.pydantic import BaseModel
 
 from ..dag.base import DAG
-from ..operator.base import BaseOperator
+from ..operators.base import BaseOperator
 from .base import Trigger
 
 if TYPE_CHECKING:

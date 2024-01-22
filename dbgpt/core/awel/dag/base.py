@@ -629,7 +629,7 @@ class DAG:
         return self._dag_id
 
     def _build(self) -> None:
-        from ..operator.common_operator import TriggerOperator
+        from ..operators.common_operator import TriggerOperator
 
         nodes: Set[DAGNode] = set()
         for _, node in self.node_map.items():

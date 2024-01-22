@@ -21,7 +21,7 @@ from dbgpt.core.awel import (
     MapOperator,
     SimpleCallDataInputSource,
 )
-from dbgpt.core.interface.operator.prompt_operator import HistoryPromptBuilderOperator
+from dbgpt.core.interface.operators.prompt_operator import HistoryPromptBuilderOperator
 
 from .message_operator import (
     BufferedConversationMapperOperator,

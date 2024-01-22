@@ -10,15 +10,15 @@ from dbgpt.core.awel import (
     MapOperator,
     SimpleCallDataInputSource,
 )
-from dbgpt.core.operator import (
+from dbgpt.core.operators import (
     BaseLLMOperator,
     PromptBuilderOperator,
     RequestBuilderOperator,
 )
-from dbgpt.datasource.operator.datasource_operator import DatasourceOperator
+from dbgpt.datasource.operators.datasource_operator import DatasourceOperator
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
 from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt.rag.operator.datasource import DatasourceRetrieverOperator
+from dbgpt.rag.operators.datasource import DatasourceRetrieverOperator
 
 
 def _create_temporary_connection():

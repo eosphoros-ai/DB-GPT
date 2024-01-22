@@ -11,8 +11,8 @@ from dbgpt.core import (
 )
 from dbgpt.core.awel import JoinOperator, MapOperator
 from dbgpt.core.interface.message import BaseMessage
-from dbgpt.core.interface.operator.llm_operator import BaseLLM
-from dbgpt.core.interface.operator.message_operator import BaseConversationOperator
+from dbgpt.core.interface.operators.llm_operator import BaseLLM
+from dbgpt.core.interface.operators.message_operator import BaseConversationOperator
 from dbgpt.core.interface.prompt import (
     BaseChatPromptTemplate,
     HumanPromptTemplate,
@@ -115,7 +115,7 @@ class PromptBuilderOperator(
                 SystemPromptTemplate,
                 ChatPromptTemplate,
             )
-            from dbgpt.core.operator import PromptBuilderOperator
+            from dbgpt.core.operators import PromptBuilderOperator
 
             with DAG("prompt_test") as dag:
                 str_prompt = PromptBuilderOperator(

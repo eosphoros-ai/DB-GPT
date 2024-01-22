@@ -9,9 +9,9 @@ from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelReque
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
-from dbgpt.model import OpenAILLMClient
+from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
-from dbgpt.rag.operator.schema_linking import SchemaLinkingOperator
+from dbgpt.rag.operators.schema_linking import SchemaLinkingOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.chat_util import run_async_tasks

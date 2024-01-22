@@ -14,8 +14,8 @@ from typing import List, Optional
 from dbgpt.component import SystemApp
 
 from .dag.base import DAG, DAGContext
-from .operator.base import BaseOperator, WorkflowRunner
-from .operator.common_operator import (
+from .operators.base import BaseOperator, WorkflowRunner
+from .operators.common_operator import (
     BranchFunc,
     BranchOperator,
     InputOperator,
@@ -24,7 +24,7 @@ from .operator.common_operator import (
     ReduceStreamOperator,
     TriggerOperator,
 )
-from .operator.stream_operator import (
+from .operators.stream_operator import (
     StreamifyAbsOperator,
     TransformStreamAbsOperator,
     UnstreamifyAbsOperator,
@@ -82,7 +82,7 @@ def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
     """Initialize AWEL."""
     from .dag.base import DAGVar
     from .dag.dag_manager import DAGManager
-    from .operator.base import initialize_runner
+    from .operators.base import initialize_runner
     from .trigger.trigger_manager import DefaultTriggerManager
 
     DAGVar.set_current_system_app(system_app)

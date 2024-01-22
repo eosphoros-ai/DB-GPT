@@ -8,7 +8,7 @@ from typing import Any, AsyncIterator, Dict
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import Extra
 from dbgpt.app.scene.base import AppScenePromptTemplateAdapter, ChatScene
-from dbgpt.app.scene.operator.app_operator import (
+from dbgpt.app.scene.operators.app_operator import (
     AppChatComposerOperator,
     ChatComposerInput,
     build_cached_chat_operator,

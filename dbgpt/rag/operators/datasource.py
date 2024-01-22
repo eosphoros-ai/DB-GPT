@@ -1,6 +1,6 @@
 from typing import Any
 
-from dbgpt.core.interface.operator.retriever import RetrieverOperator
+from dbgpt.core.interface.operators.retriever import RetrieverOperator
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 
