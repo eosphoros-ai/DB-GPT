@@ -5,7 +5,7 @@ from typing import Optional
 from dbgpt.component import ComponentType
 from dbgpt.core import LLMClient
 from dbgpt.core.awel import BaseOperator
-from dbgpt.core.operator import BaseLLM, BaseLLMOperator, BaseStreamingLLMOperator
+from dbgpt.core.operators import BaseLLM, BaseLLMOperator, BaseStreamingLLMOperator
 
 logger = logging.getLogger(__name__)
 

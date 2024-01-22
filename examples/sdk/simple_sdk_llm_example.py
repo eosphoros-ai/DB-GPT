@@ -2,7 +2,7 @@ import asyncio
 
 from dbgpt.core import BaseOutputParser
 from dbgpt.core.awel import DAG
-from dbgpt.core.operator import (
+from dbgpt.core.operators import (
     BaseLLMOperator,
     PromptBuilderOperator,
     RequestBuilderOperator,

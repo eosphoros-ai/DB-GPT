@@ -7,7 +7,7 @@ from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 from dbgpt.rag.knowledge.base import KnowledgeType
-from dbgpt.rag.operator.knowledge import KnowledgeOperator
+from dbgpt.rag.operators.knowledge import KnowledgeOperator
 from dbgpt.serve.rag.operators.embedding import EmbeddingAssemblerOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector

@@ -17,7 +17,7 @@ from typing import (
 from dbgpt._private.pydantic import model_to_json
 from dbgpt.core.awel import TransformStreamAbsOperator
 from dbgpt.core.interface.llm import ModelOutput
-from dbgpt.core.operator import BaseLLM
+from dbgpt.core.operators import BaseLLM
 
 if TYPE_CHECKING:
     import httpx

@@ -8,8 +8,8 @@ from typing import Dict, List, Optional, Set, cast
 from dbgpt.component import SystemApp
 
 from ..dag.base import DAGContext, DAGVar
-from ..operator.base import CALL_DATA, BaseOperator, WorkflowRunner
-from ..operator.common_operator import BranchOperator, JoinOperator
+from ..operators.base import CALL_DATA, BaseOperator, WorkflowRunner
+from ..operators.common_operator import BranchOperator, JoinOperator
 from ..task.base import SKIP_DATA, TaskContext, TaskState
 from ..task.task_impl import DefaultInputContext, DefaultTaskContext, SimpleTaskOutput
 from .job_manager import JobManager
@@ -80,7 +80,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
         if node.node_id in node_outputs:
             return
 
-        # Run all upstream node
+        # Run all upstream nodes
         for upstream_node in node.upstream:
             if isinstance(upstream_node, BaseOperator):
                 await self._execute_node(

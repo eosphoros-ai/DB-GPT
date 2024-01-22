@@ -1,4 +1,4 @@
-from dbgpt.model.operator.llm_operator import (  # noqa: F401
+from dbgpt.model.operators.llm_operator import (  # noqa: F401
     LLMOperator,
     MixinLLMOperator,
     StreamingLLMOperator,
