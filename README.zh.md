@@ -8,19 +8,19 @@
 <div align="center">
   <p>
     <a href="https://github.com/eosphoros-ai/DB-GPT">
-        <img alt="stars" src="https://img.shields.io/github/stars/csunny/db-gpt?style=social" />
+        <img alt="stars" src="https://img.shields.io/github/stars/eosphoros-ai/db-gpt?style=social" />
     </a>
     <a href="https://github.com/eosphoros-ai/DB-GPT">
-        <img alt="forks" src="https://img.shields.io/github/forks/csunny/db-gpt?style=social" />
+        <img alt="forks" src="https://img.shields.io/github/forks/eosphoros-ai/db-gpt?style=social" />
     </a>
     <a href="https://opensource.org/licenses/MIT">
       <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
     </a>
      <a href="https://github.com/eosphoros-ai/DB-GPT/releases">
-      <img alt="Release Notes" src="https://img.shields.io/github/release/csunny/DB-GPT" />
+      <img alt="Release Notes" src="https://img.shields.io/github/release/eosphoros-ai/DB-GPT" />
     </a>
     <a href="https://github.com/eosphoros-ai/DB-GPT/issues">
-      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/csunny/DB-GPT" />
+      <img alt="Open Issues" src="https://img.shields.io/github/issues-raw/eosphoros-ai/DB-GPT" />
     </a>
     <a href="https://discord.gg/7uQnPuveTY">
       <img alt="Discord" src="https://dcbadge.vercel.app/api/server/7uQnPuveTY?compact=true&style=flat" />
@@ -33,38 +33,55 @@
     </a>
   </p>
 
-[**English**](README.md) | [**Discord**](https://discord.gg/7uQnPuveTY) | [**文档**](https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx) | [**微信**](https://github.com/csunny/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**社区**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
+[**English**](README.md) | [**Discord**](https://discord.gg/7uQnPuveTY) | [**文档**](https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx) | [**微信**](https://github.com/eosphoros-ai/DB-GPT/blob/main/README.zh.md#%E8%81%94%E7%B3%BB%E6%88%91%E4%BB%AC) | [**社区**](https://github.com/eosphoros-ai/community) | [**Paper**](https://arxiv.org/pdf/2312.17449.pdf)
 </div>
 
 ## DB-GPT 是什么？
-DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模型领域的基础设施，通过开发多模型管理、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
-
+DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领域的基础设施，通过开发多模型管理、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
 数据3.0 时代，基于模型、数据库，企业/开发者可以用更少的代码搭建自己的专属应用。
 
-## 目录
+## 效果演示
 
-- [安装](#安装)
-- [效果演示](#效果演示)
+### Data Agents 
+![data agents](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/ced393b4-9180-437a-90c5-b43633cda8cb)
+
+
+## 目录
 - [架构方案](#架构方案)
+- [安装](#安装)
 - [特性简介](#特性一览)
 - [贡献](#贡献)
 - [路线图](#路线图)
 - [联系我们](#联系我们)
 
-[DB-GPT视频介绍](https://www.bilibili.com/video/BV1au41157bj/?spm_id_from=333.337.search-card.all.click&vd_source=7792e22c03b7da3c556a450eb42c8a0f)
+## 架构方案
 
-## 效果演示
-
-##### Chat Data
-![chatdata](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/1f77079e-d018-4eee-982b-9b6a66bf1063)
-
-##### Chat Excel
-![excel](https://github.com/eosphoros-ai/DB-GPT/assets/13723926/3044e83b-a71e-41fe-a1e2-98e479e0ab59)
-
-#### 根据自然语言对话生成分析图表
-<p align="left">
-  <img src="./assets/dashboard.png" width="800px" />
+<p align="center">
+  <img src="./assets/dbgpt.png" width="800px" />
 </p>
+
+核心能力主要有以下几个部分:
+- **RAG(Retrieval Augmented Generation)**，RAG是当下落地实践最多，也是最迫切的领域，DB-GPT目前已经实现了一套基于RAG的框架，用户可以基于DB-GPT的RAG能力构建知识类应用。 
+
+- **GBI**：生成式BI是DB-GPT项目的核心能力之一，为构建企业报表分析、业务洞察提供基础的数智化技术保障。 
+
+- **微调框架**:  模型微调是任何一个企业在垂直、细分领域落地不可或缺的能力，DB-GPT提供了完整的微调框架，实现与DB-GPT项目的无缝打通，在最近的微调中，基于spider的准确率已经做到了82.5%
+
+- **数据驱动的Multi-Agents框架**:  DB-GPT提供了数据驱动的自进化微调框架，目标是可以持续基于数据做决策与执行。 
+
+- **数据工厂**: 数据工厂主要是在大模型时代，做可信知识、数据的清洗加工。 
+
+- **数据源**: 对接各类数据源，实现生产业务数据无缝对接到DB-GPT核心能力。 
+
+### RAG生产落地实践架构
+<p align="center">
+  <img src="./assets/RAG-IN-ACTION.jpg" width="800px" />
+</p>
+
+### 子模块
+- [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) 通过微调来持续提升Text2SQL效果 
+- [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
+- [GPT-Vis](https://github.com/eosphoros-ai/DB-GPT-Web) 可视化协议 
 
 ## 安装
 
@@ -84,7 +101,7 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
   - [**Excel对话**](https://www.yuque.com/eosphoros/dbgpt-docs/prugoype0xd2g4bb)
   - [**数据库对话**](https://www.yuque.com/eosphoros/dbgpt-docs/wswpv3zcm2c9snmg)
   - [**报表分析**](https://www.yuque.com/eosphoros/dbgpt-docs/vsv49p33eg4p5xc1)
-  - [**插件**](https://www.yuque.com/eosphoros/dbgpt-docs/pom41m7oqtdd57hm)
+  - [**Agents**](https://www.yuque.com/eosphoros/dbgpt-docs/pom41m7oqtdd57hm)
 - [**模型服务部署**](https://www.yuque.com/eosphoros/dbgpt-docs/vubxiv9cqed5mc6o)
   - [**单机部署**](https://www.yuque.com/eosphoros/dbgpt-docs/kwg1ed88lu5fgawb)
   - [**集群部署**](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
@@ -137,34 +154,6 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 - [支持数据源](https://www.yuque.com/eosphoros/dbgpt-docs/rc4r27ybmdwg9472)
 
 
-## 架构方案
-整个DB-GPT的架构，如下图所示
-<p align="center">
-  <img src="./assets/DB-GPT_zh.png" width="800px" />
-</p>
-
-核心能力主要有以下几个部分:
-- **RAG(Retrieval Augmented Generation)**，RAG是当下落地实践最多，也是最迫切的领域，DB-GPT目前已经实现了一套基于RAG的框架，用户可以基于DB-GPT的RAG能力构建知识类应用。 
-
-- **GBI**：生成式BI是DB-GPT项目的核心能力之一，为构建企业报表分析、业务洞察提供基础的数智化技术保障。 
-
-- **微调框架**:  模型微调是任何一个企业在垂直、细分领域落地不可或缺的能力，DB-GPT提供了完整的微调框架，实现与DB-GPT项目的无缝打通，在最近的微调中，基于spider的准确率已经做到了82.5%
-
-- **数据驱动的Multi-Agents框架**:  DB-GPT提供了数据驱动的自进化微调框架，目标是可以持续基于数据做决策与执行。 
-
-- **数据工厂**: 数据工厂主要是在大模型时代，做可信知识、数据的清洗加工。 
-
-- **数据源**: 对接各类数据源，实现生产业务数据无缝对接到DB-GPT核心能力。 
-
-### RAG生产落地实践架构
-<p align="center">
-  <img src="./assets/RAG-IN-ACTION.jpg" width="800px" />
-</p>
-
-### 子模块
-- [DB-GPT-Hub](https://github.com/csunny/DB-GPT-Hub) 通过微调来持续提升Text2SQL效果 
-- [DB-GPT-Plugins](https://github.com/csunny/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
-- [DB-GPT-Web](https://github.com/csunny/DB-GPT-Web)  多端交互前端界面
 
 ## Image
 
@@ -180,7 +169,11 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 
 ### 多模型使用
 
-[使用指南](https://www.yuque.com/eosphoros/dbgpt-docs/huzgcf2abzvqy8uv)
+- [使用指南](https://www.yuque.com/eosphoros/dbgpt-docs/huzgcf2abzvqy8uv)
+
+### 数据Agents使用
+
+- [数据Agents](https://www.yuque.com/eosphoros/dbgpt-docs/gwz4rayfuwz78fbq)
 
 # 贡献
 > 提交代码前请先执行 `black .`
@@ -192,10 +185,6 @@ DB-GPT是一个开源的数据库领域大模型框架。目的是构建大模�
 The MIT License (MIT)
 
 # 路线图
-
-<p align="left">
-  <img src="./assets/roadmap.jpg" width="800px" />
-</p>
 
 ### 知识库RAG检索优化
 
