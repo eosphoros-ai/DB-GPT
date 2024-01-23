@@ -368,6 +368,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
     This class is used to get embeddings for a list of texts using the Jina AI API.
     It requires an API key and a model name. The default model name is "jina-embeddings-v2-base-en".
     """
+
     api_url: Any  #: :meta private:
     session: Any  #: :meta private:
     api_key: str
@@ -386,7 +387,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 "The requests python package is not installed. Please install it with `pip install requests`"
             )
-        self.api_url = 'https://api.jina.ai/v1/embeddings'
+        self.api_url = "https://api.jina.ai/v1/embeddings"
         self.session = requests.Session()
         self.session.headers.update(
             {"Authorization": f"Bearer {self.api_key}", "Accept-Encoding": "identity"}
