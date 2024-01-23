@@ -163,6 +163,12 @@ At present, we have introduced several key features to showcase our current capa
 - Please run `black .` before submitting the code.
 - To check detailed guidelines for new contributions, please refer [how to contribute](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md)
 
+### Contributors Wall
+<a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" />
+</a>
+
+
 
 ## Licence
 The MIT License (MIT)
