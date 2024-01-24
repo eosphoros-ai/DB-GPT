@@ -5,7 +5,13 @@ from typing import Optional
 from dbgpt.component import ComponentType
 from dbgpt.core import LLMClient, ModelOutput, ModelRequest
 from dbgpt.core.awel import BaseOperator
-from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
+from dbgpt.core.awel.flow import (
+    IOField,
+    OperatorCategory,
+    Parameter,
+    ResourceCategory,
+    ViewMetadata,
+)
 from dbgpt.core.operators import BaseLLM, BaseLLMOperator, BaseStreamingLLMOperator
 
 logger = logging.getLogger(__name__)
@@ -67,6 +73,7 @@ class LLMOperator(MixinLLMOperator, BaseLLMOperator):
                 LLMClient,
                 optional=True,
                 default=None,
+                resource_category=ResourceCategory.LLM_CLIENT,
                 description="The LLM Client.",
             ),
         ],
