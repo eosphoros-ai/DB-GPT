@@ -328,9 +328,16 @@ class OperatorCategory(str, Enum):
     """The category of the operator."""
 
     TRIGGER = "trigger"
-    LLM_CLIENT = "llm_client"
+    LLM = "llm"
     CONVERSION = "conversion"
     OUTPUT_PARSER = "output_parser"
+    COMMON = "common"
+
+
+class ResourceCategory(str, Enum):
+    """The category of the resource."""
+
+    LLM_CLIENT = "llm_client"
     COMMON = "common"
 
 
@@ -427,6 +434,7 @@ def register_resource(
     category: str = "common",
     parameters: Optional[List[Parameter]] = None,
     description: Optional[str] = None,
+    **kwargs,
 ):
     """Register the resource.
 
@@ -462,6 +470,7 @@ def register_resource(
             type_cls=type_cls,
             parameters=parameters or [],
             parent_cls=parent_cls,
+            **kwargs,
         )
         _register_resource(cls, resource_metadata)
 
@@ -589,6 +598,10 @@ class FlowRegistry:
     def get_registry_item(self, key: str) -> Optional[_RegistryItem]:
         """Get the registry item by the key."""
         return self._registry.get(key)
+
+    def metadata_list(self) -> List[Union[ViewMetadata, ResourceMetadata]]:
+        """Get the metadata list."""
+        return [item.metadata for item in self._registry.values()]
 
 
 _OPERATOR_REGISTRY: FlowRegistry = FlowRegistry()

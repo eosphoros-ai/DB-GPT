@@ -38,13 +38,16 @@ class DAGManager(BaseComponent):
     def load_dags(self):
         """Load DAGs from dag_dirs."""
         dags = self.dag_loader.load_dags()
-        triggers = []
         for dag in dags:
-            dag_id = dag.dag_id
-            if dag_id in self.dag_map:
-                raise ValueError(f"Load DAG error, DAG ID {dag_id} has already exist")
-            self.dag_map[dag_id] = dag
-            triggers += dag.trigger_nodes
+            self.register_dag(dag)
+
+    def register_dag(self, dag: DAG):
+        """Register a DAG."""
+        dag_id = dag.dag_id
+        if dag_id in self.dag_map:
+            raise ValueError(f"Register DAG error, DAG ID {dag_id} has already exist")
+        self.dag_map[dag_id] = dag
+        triggers = dag.trigger_nodes
         from ..trigger.trigger_manager import DefaultTriggerManager
 
         trigger_manager: DefaultTriggerManager = self.system_app.get_component(
