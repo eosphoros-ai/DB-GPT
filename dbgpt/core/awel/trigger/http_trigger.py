@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Uni
 from dbgpt._private.pydantic import BaseModel
 
 from ..dag.base import DAG
+from ..flow import OperatorCategory, OptionValue, Parameter, ViewMetadata
 from ..operators.base import BaseOperator
 from .base import Trigger
 
@@ -34,6 +35,38 @@ class HttpTrigger(Trigger):
 
     Http trigger is used to trigger a DAG by http request.
     """
+
+    metadata = ViewMetadata(
+        label="Http Trigger",
+        name="http_trigger",
+        category=OperatorCategory.TRIGGER,
+        description="Trigger your workflow by http request",
+        inputs=[],
+        outputs=[],
+        parameters=[
+            Parameter.build_from(
+                "API Endpoint", "endpoint", str, description="The API endpoint"
+            ),
+            Parameter.build_from(
+                "Http Methods",
+                "methods",
+                str,
+                optional=True,
+                default="GET",
+                description="The methods of the API endpoint",
+                options=[
+                    OptionValue(label="HTTP Method GET", name="http_get", value="GET"),
+                    OptionValue(label="HTTP Method PUT", name="http_put", value="PUT"),
+                    OptionValue(
+                        label="HTTP Method POST", name="http_post", value="POST"
+                    ),
+                    OptionValue(
+                        label="HTTP Method DELETE", name="http_delete", value="DELETE"
+                    ),
+                ],
+            ),
+        ],
+    )
 
     def __init__(
         self,
