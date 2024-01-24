@@ -1,4 +1,5 @@
 """The mixin of DAGs."""
+import abc
 import dataclasses
 import inspect
 from abc import ABC
@@ -92,6 +93,23 @@ def _serialize_recursive(data: Any) -> Any:
         return _serialize_complex_obj(data)
 
 
+class OperatorCategory(str, Enum):
+    """The category of the operator."""
+
+    TRIGGER = "trigger"
+    LLM = "llm"
+    CONVERSION = "conversion"
+    OUTPUT_PARSER = "output_parser"
+    COMMON = "common"
+
+
+class ResourceCategory(str, Enum):
+    """The category of the resource."""
+
+    LLM_CLIENT = "llm_client"
+    COMMON = "common"
+
+
 class OptionValue(Serializable, BaseModel):
     """The option value of the parameter."""
 
@@ -148,22 +166,39 @@ DefaultParameterType = Union[str, int, float, bool, None]
 class TypeMetadata(BaseModel):
     """The metadata of the type."""
 
-    type_name: str = Field(..., description="The type short name of the parameter")
+    type_name: str = Field(
+        ..., description="The type short name of the parameter", examples=["str", "int"]
+    )
 
-    type_cls: str = Field(..., description="The type class of the parameter")
+    type_cls: str = Field(
+        ...,
+        description="The type class of the parameter",
+        examples=["builtins.str", "builtins.int"],
+    )
 
 
 class Parameter(TypeMetadata, Serializable):
     """Parameter for build operator."""
 
-    label: str = Field(..., description="The label to display in UI")
-    name: str = Field(..., description="The name of the parameter")
+    label: str = Field(
+        ..., description="The label to display in UI", examples=["OpenAI API Key"]
+    )
+    name: str = Field(
+        ..., description="The name of the parameter", examples=["apk_key"]
+    )
     category: str = Field(
         ...,
         description="The category of the parameter",
         examples=["common", "resource"],
     )
-    optional: bool = Field(..., description="Whether the parameter is optional")
+    resource_category: Optional[str] = Field(
+        default=None,
+        description="The category of the resource, just for resource type",
+        examples=["llm_client", "common"],
+    )
+    optional: bool = Field(
+        ..., description="Whether the parameter is optional", examples=[True, False]
+    )
     default: Optional[DefaultParameterType] = Field(
         None, description="The default value of the parameter"
     )
@@ -191,6 +226,7 @@ class Parameter(TypeMetadata, Serializable):
         placeholder: Optional[DefaultParameterType] = None,
         description: Optional[str] = None,
         options: Optional[List[OptionValue]] = None,
+        resource_category: Optional[str] = None,
     ):
         """Build the parameter from the type."""
         type_name = type.__qualname__
@@ -206,6 +242,7 @@ class Parameter(TypeMetadata, Serializable):
             type_name=type_name,
             type_cls=type_cls,
             category=category.value,
+            resource_category=resource_category,
             optional=optional,
             default=default,
             placeholder=placeholder,
@@ -279,9 +316,21 @@ class Parameter(TypeMetadata, Serializable):
 class BaseResource(Serializable, BaseModel):
     """The base resource."""
 
-    label: str = Field(..., description="The label to display in UI")
-    name: str = Field(..., description="The name of the operator")
-    description: str = Field(..., description="The description of the field")
+    label: str = Field(
+        ...,
+        description="The label to display in UI",
+        examples=["LLM Operator", "OpenAI LLM Client"],
+    )
+    name: str = Field(
+        ...,
+        description="The name of the operator",
+        examples=["llm_operator", "openai_llm_client"],
+    )
+    description: str = Field(
+        ...,
+        description="The description of the field",
+        examples=["The LLM operator.", "OpenAI LLM Client"],
+    )
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
@@ -324,27 +373,14 @@ class IOField(Resource):
     pass
 
 
-class OperatorCategory(str, Enum):
-    """The category of the operator."""
-
-    TRIGGER = "trigger"
-    LLM = "llm"
-    CONVERSION = "conversion"
-    OUTPUT_PARSER = "output_parser"
-    COMMON = "common"
-
-
-class ResourceCategory(str, Enum):
-    """The category of the resource."""
-
-    LLM_CLIENT = "llm_client"
-    COMMON = "common"
-
-
 class BaseMetadata(BaseResource):
     """The base metadata."""
 
-    category: str = Field(..., description="The category of the operator")
+    category: str = Field(
+        ...,
+        description="The category of the operator",
+        examples=[OperatorCategory.LLM.value, ResourceCategory.LLM_CLIENT.value],
+    )
 
     flow_type: Optional[str] = Field(
         ..., description="The flow type", examples=["operator", "resource"]
@@ -362,6 +398,10 @@ class BaseMetadata(BaseResource):
 
     key: str = Field(
         description="The key of the operator or resource",
+        examples=[
+            "operator_llm_operator___$$___llm___$$___v1",
+            "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+        ],
     )
 
     tags: Optional[List[str]] = Field(
@@ -415,7 +455,12 @@ class ResourceMetadata(BaseMetadata, TypeMetadata):
     """The metadata of the resource."""
 
     parent_cls: List[str] = Field(
-        default_factory=list, description="The parent class of the resource"
+        default_factory=list,
+        description="The parent class of the resource",
+        examples=[
+            "dbgpt.core.interface.llm.LLMClient",
+            "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
+        ],
     )
 
     @root_validator(pre=True)
@@ -458,7 +503,7 @@ def register_resource(
         parent_cls = [
             _get_type_name(parent_cls)
             for parent_cls in mro
-            if parent_cls != object and parent_cls != cls
+            if parent_cls != object and parent_cls != abc.ABC
         ]
 
         resource_metadata = ResourceMetadata(
@@ -489,7 +534,9 @@ class ViewMetadata(BaseMetadata):
 
     inputs: List[IOField] = Field(..., description="The inputs of the operator")
     outputs: List[IOField] = Field(..., description="The outputs of the operator")
-    version: str = Field(default="v1", description="The version of the operator")
+    version: str = Field(
+        default="v1", description="The version of the operator", examples=["v1", "v2"]
+    )
 
     @root_validator(pre=True)
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:

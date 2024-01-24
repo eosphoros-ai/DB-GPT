@@ -95,7 +95,9 @@ async def test_auth():
     return {"status": "ok"}
 
 
-@router.post("/", response_model=Result[None], dependencies=[Depends(check_api_key)])
+@router.post(
+    "/flows", response_model=Result[None], dependencies=[Depends(check_api_key)]
+)
 async def create(
     request: ServeRequest, service: Service = Depends(get_service)
 ) -> Result[ServerResponse]:
@@ -111,14 +113,17 @@ async def create(
 
 
 @router.put(
-    "/", response_model=Result[ServerResponse], dependencies=[Depends(check_api_key)]
+    "/flows/{uid}",
+    response_model=Result[ServerResponse],
+    dependencies=[Depends(check_api_key)],
 )
 async def update(
-    request: ServeRequest, service: Service = Depends(get_service)
+    uid: str, request: ServeRequest, service: Service = Depends(get_service)
 ) -> Result[ServerResponse]:
     """Update a Flow entity
 
     Args:
+        uid (str): The uid
         request (ServeRequest): The request
         service (Service): The service
     Returns:
@@ -127,75 +132,76 @@ async def update(
     return Result.succ(service.update(request))
 
 
-@router.get("/xxx/{uid}")
-async def get_by_uid(
-    uid: str, service: Service = Depends(get_service)
-) -> ServerResponse:
-    """Get a Flow entity by uid
+@router.delete("/flows/{uid}")
+async def delete(uid: str, service: Service = Depends(get_service)) -> Result[None]:
+    """Delete a Flow entity
 
     Args:
         uid (str): The uid
         service (Service): The service
     Returns:
-        ServerResponse: The response
+        Result[None]: The response
     """
-    return service.get_by_uid(uid)
+    service.delete(uid)
+    return Result.succ(None)
 
 
-@router.post(
-    "/query",
-    response_model=Result[ServerResponse],
-    dependencies=[Depends(check_api_key)],
-)
-async def query(
-    request: ServeRequest, service: Service = Depends(get_service)
+@router.get("/flows/{uid}")
+async def get_flows(
+    uid: str, service: Service = Depends(get_service)
 ) -> Result[ServerResponse]:
-    """Query Flow entities
+    """Get a Flow entity by uid
 
     Args:
-        request (ServeRequest): The request
+        uid (str): The uid
         service (Service): The service
+
     Returns:
-        ServerResponse: The response
+        Result[ServerResponse]: The response
     """
-    return Result.succ(service.get(request))
+    flow = service.get({"uid": uid})
+    if not flow:
+        raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
+    return Result.succ(flow)
 
 
-@router.post(
-    "/query_page",
+@router.get(
+    "/flows",
     response_model=Result[PaginationResult[ServerResponse]],
     dependencies=[Depends(check_api_key)],
 )
 async def query_page(
-    request: ServeRequest,
-    page: Optional[int] = Query(default=1, description="current page"),
-    page_size: Optional[int] = Query(default=20, description="page size"),
+    user_name: Optional[str] = Query(default=None, description="user name"),
+    sys_code: Optional[str] = Query(default=None, description="system code"),
+    page: int = Query(default=1, description="current page"),
+    page_size: int = Query(default=20, description="page size"),
     service: Service = Depends(get_service),
 ) -> Result[PaginationResult[ServerResponse]]:
     """Query Flow entities
 
     Args:
-        request (ServeRequest): The request
+        user_name (Optional[str]): The username
+        sys_code (Optional[str]): The system code
         page (int): The page number
         page_size (int): The page size
         service (Service): The service
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.get_list_by_page(request, page, page_size))
+    return Result.succ(
+        service.get_list_by_page(
+            {"user_name": user_name, "sys_code": sys_code}, page, page_size
+        )
+    )
 
 
 @router.get("/nodes", dependencies=[Depends(check_api_key)])
-async def get_nodes(
-    service: Service = Depends(get_service),
-) -> Result[List[Union[ViewMetadata, ResourceMetadata]]]:
+async def get_nodes() -> Result[List[Union[ViewMetadata, ResourceMetadata]]]:
     """Get the operator or resource nodes
 
-    Args:
-        service (Service): The service
-
     Returns:
-        List[Union[ViewMetadata, ResourceMetadata]]: The operator or resource nodes
+        Result[List[Union[ViewMetadata, ResourceMetadata]]]:
+            The operator or resource nodes
     """
     from dbgpt.core.awel.flow.base import _OPERATOR_REGISTRY
 
