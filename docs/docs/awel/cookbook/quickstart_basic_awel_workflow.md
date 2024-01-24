@@ -14,7 +14,7 @@ Create a python file `simple_sdk_llm_example_dag.py` and write the following con
 ```python
 from dbgpt.core import BaseOutputParser
 from dbgpt.core.awel import DAG
-from dbgpt.core.operators import (
+from dbgpt.core.operator import (
     PromptBuilderOperator,
     RequestBuilderOperator,
 )

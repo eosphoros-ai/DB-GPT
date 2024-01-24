@@ -125,7 +125,6 @@ const sidebars = {
       link: {
         type: 'generated-index',
         description: "AWEL (Agentic Workflow Expression Language) is an intelligent agent workflow expression language specifically designed for the development of large-model applications",
-        slug: "awel",
       },
     },
 
