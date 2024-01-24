@@ -133,8 +133,9 @@ class MilvusStore(VectorStoreBase):
         connections.connect(
             host=self.uri or "127.0.0.1",
             port=self.port or "19530",
-            alias="default"
-            # secure=self.secure,
+            username=self.username,
+            password=self.password,
+            alias="default",
         )
 
     def init_schema_and_load(self, vector_name, documents) -> List[str]:
