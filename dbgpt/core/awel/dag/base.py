@@ -14,6 +14,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union, ca
 
 from dbgpt.component import SystemApp
 
+from ..flow.base import ViewMixin
 from ..resource.base import ResourceGroup
 from ..task.base import TaskContext, TaskOutput
 
@@ -235,7 +236,7 @@ class DAGLifecycle:
         pass
 
 
-class DAGNode(DAGLifecycle, DependencyMixin, ABC):
+class DAGNode(DAGLifecycle, DependencyMixin, ViewMixin, ABC):
     """The base class of DAGNode."""
 
     resource_group: Optional[ResourceGroup] = None
