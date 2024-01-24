@@ -28,6 +28,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 CFG = Config()
 
+
 def _create_vector_connector() -> VectorStoreConnector:
     """Create vector connector."""
     return VectorStoreConnector.from_default(

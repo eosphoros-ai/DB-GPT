@@ -46,6 +46,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 CFG = Config()
 
+
 class TriggerReqBody(BaseModel):
     query: str = Field(..., description="User query")
 
