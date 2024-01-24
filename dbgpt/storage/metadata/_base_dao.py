@@ -145,8 +145,9 @@ class BaseDao(Generic[T, REQ, RES]):
         entry = self.from_request(request)
         with self.session(commit=False) as session:
             session.add(entry)
+            req = self.to_request(entry)
             session.commit()
-            return self.get_one(self.to_request(entry))
+            return self.get_one(req)
 
     def update(self, query_request: QUERY_SPEC, update_request: REQ) -> RES:
         """Update an entity object.
@@ -269,5 +270,7 @@ class BaseDao(Generic[T, REQ, RES]):
         )
         for key, value in query_dict.items():
             if value is not None:
+                if isinstance(value, (list, tuple, dict, set)):
+                    continue
                 query = query.filter(getattr(model_cls, key) == value)
         return query

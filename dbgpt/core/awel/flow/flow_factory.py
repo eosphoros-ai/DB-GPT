@@ -14,17 +14,32 @@ logger = logging.getLogger(__name__)
 class FlowPositionData(BaseModel):
     """Position of a node in a flow."""
 
-    x: float = Field(..., description="X coordinate of the node")
-    y: float = Field(..., description="Y coordinate of the node")
+    x: float = Field(
+        ..., description="X coordinate of the node", examples=[1081.1, 1000.9]
+    )
+    y: float = Field(
+        ..., description="Y coordinate of the node", examples=[-113.7, -122]
+    )
     zoom: float = Field(0, description="Zoom level of the node")
 
 
 class FlowNodeData(BaseModel):
     """Node data in a flow."""
 
-    width: int = Field(..., description="Width of the node")
-    height: int = Field(..., description="Height of the node")
-    key: str = Field(..., description="Id of the node")
+    width: int = Field(
+        ...,
+        description="Width of the node",
+        examples=[300, 250],
+    )
+    height: int = Field(..., description="Height of the node", examples=[378, 400])
+    key: str = Field(
+        ...,
+        description="Id of the node",
+        examples=[
+            "operator_llm_operator___$$___llm___$$___v1_0",
+            "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient_0",
+        ],
+    )
     position: FlowPositionData = Field(..., description="Position of the node")
     data: Union[ViewMetadata, ResourceMetadata] = Field(
         ..., description="Data of the node"
@@ -48,14 +63,24 @@ class FlowNodeData(BaseModel):
 class FlowEdgeData(BaseModel):
     """Edge data in a flow."""
 
-    source: str = Field(..., description="Source node data key")
-    target: str = Field(..., description="Target node data key")
+    source: str = Field(
+        ...,
+        description="Source node data key",
+        examples=["resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient_0"],
+    )
+    target: str = Field(
+        ...,
+        description="Target node data key",
+        examples=[
+            "operator_llm_operator___$$___llm___$$___v1_0",
+        ],
+    )
     target_order: int = Field(
         ...,
         description="The order of the target node in the source node's output",
         examples=[0, 1],
     )
-    key: str = Field(..., description="Id of the edge")
+    key: str = Field(..., description="Id of the edge", examples=["edge_0"])
 
 
 class FlowData(BaseModel):
@@ -69,8 +94,17 @@ class FlowData(BaseModel):
 class FlowPanel(BaseModel):
     """Flow panel."""
 
-    uid: str = Field(..., description="Flow panel uid")
-    name: str = Field(..., description="Flow panel name")
+    uid: str = Field(
+        ...,
+        description="Flow panel uid",
+        examples=[
+            "5b25ac8a-ba8e-11ee-b96d-3b9bfdeebd1c",
+            "6a4752ae-ba8e-11ee-afff-af8fd9bfe727",
+        ],
+    )
+    name: str = Field(
+        ..., description="Flow panel name", examples=["First AWEL Flow", "My LLM Flow"]
+    )
     flow_data: FlowData = Field(..., description="Flow data")
     user_name: Optional[str] = Field(None, description="User name")
     sys_code: Optional[str] = Field(None, description="System code")
@@ -101,8 +135,9 @@ class FlowFactory:
         key_to_resource_nodes: Dict[str, FlowNodeData] = {}
         key_to_resource: Dict[str, ResourceMetadata] = {}
         key_to_downstream: Dict[str, List[str]] = {}
+        key_to_upstream: Dict[str, List[str]] = {}
         for node in flow_data.nodes:
-            key = node.data.key
+            key = node.key
             if key in key_to_operator_nodes or key in key_to_resource_nodes:
                 raise ValueError("Duplicate node key.")
             if node.data.is_operator:
@@ -116,8 +151,12 @@ class FlowFactory:
         for edge in flow_data.edges:
             source_key = edge.source
             target_key = edge.target
-            source_node: FlowNodeData | None = key_to_operator_nodes.get(source_key)
-            target_node: FlowNodeData | None = key_to_operator_nodes.get(target_key)
+            source_node: FlowNodeData | None = key_to_operator_nodes.get(
+                source_key
+            ) or key_to_resource_nodes.get(source_key)
+            target_node: FlowNodeData | None = key_to_operator_nodes.get(
+                target_key
+            ) or key_to_resource_nodes.get(target_key)
             if source_node is None or target_node is None:
                 raise ValueError("Unable to find source or target node.")
             if source_node.data.is_operator and not target_node.data.is_operator:
@@ -129,6 +168,10 @@ class FlowFactory:
                 downstream = key_to_downstream.get(source_key, [])
                 downstream.append(target_key)
                 key_to_downstream[source_key] = downstream
+
+                upstream = key_to_upstream.get(target_key, [])
+                upstream.append(source_key)
+                key_to_upstream[target_key] = upstream
             elif not source_node.data.is_operator and target_node.data.is_operator:
                 # Resource to operator.
                 target_order = edge.target_order
@@ -173,21 +216,33 @@ class FlowFactory:
             operator_task: DAGNode = cast(DAGNode, operator_cls(**runnable_params))
             key_to_tasks[operator_key] = operator_task
 
-        return self.build_dag(flow_panel, key_to_tasks, key_to_downstream)
+        return self.build_dag(
+            flow_panel, key_to_tasks, key_to_downstream, key_to_upstream
+        )
 
     def build_dag(
         self,
         flow_panel: FlowPanel,
         key_to_tasks: Dict[str, DAGNode],
         key_to_downstream: Dict[str, List[str]],
+        key_to_upstream: Dict[str, List[str]],
     ) -> DAG:
         """Build the DAG."""
         formatted_name = flow_panel.name.replace(" ", "_")
         dag_name = f"{self._dag_prefix}_{formatted_name}_{flow_panel.uid}"
         with DAG(dag_name) as dag:
             for key, task in key_to_tasks.items():
+                if not task._node_id:
+                    task.set_node_id(dag._new_node_id())
                 downstream = key_to_downstream.get(key, [])
+                upstream = key_to_upstream.get(key, [])
+                if not downstream and not upstream:
+                    # A single task.
+                    task._dag = dag
+                    dag._append_node(task)
+                    continue
                 for downstream_key in downstream:
+                    # Just one direction.
                     downstream_task = key_to_tasks.get(downstream_key)
                     if downstream_task is None:
                         raise ValueError("Unable to find downstream task.")

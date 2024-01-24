@@ -1,8 +1,11 @@
 from typing import List, Optional
 
 from dbgpt.component import BaseComponent, SystemApp
+from dbgpt.core.awel.dag.dag_manager import DAGManager
+from dbgpt.core.awel.flow.flow_factory import FlowFactory
 from dbgpt.serve.core import BaseService
 from dbgpt.storage.metadata import BaseDao
+from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 from dbgpt.util.pagination_utils import PaginationResult
 
 from ..api.schemas import ServeRequest, ServerResponse
@@ -19,6 +22,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self._system_app = None
         self._serve_config: ServeConfig = None
         self._dao: ServeDao = dao
+        self._dag_manager: Optional[DAGManager] = None
+        self._flow_factory: FlowFactory = FlowFactory()
         super().__init__(system_app)
 
     def init_app(self, system_app: SystemApp) -> None:
@@ -33,15 +38,43 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self._dao = self._dao or ServeDao(self._serve_config)
         self._system_app = system_app
 
+    def before_start(self):
+        """Execute before the application starts"""
+        self._dag_manager = DAGManager.get_instance(self._system_app)
+
     @property
     def dao(self) -> BaseDao[ServeEntity, ServeRequest, ServerResponse]:
         """Returns the internal DAO."""
         return self._dao
 
     @property
+    def dag_manager(self) -> DAGManager:
+        """Returns the internal DAGManager."""
+        if self._dag_manager is None:
+            raise ValueError("DAGManager is not initialized")
+        return self._dag_manager
+
+    @property
     def config(self) -> ServeConfig:
         """Returns the internal ServeConfig."""
         return self._serve_config
+
+    def create(self, request: ServeRequest) -> ServerResponse:
+        """Create a new Flow entity
+
+        Args:
+            request (ServeRequest): The request
+
+        Returns:
+            ServerResponse: The response
+        """
+        # Build DAG from request
+        dag = self._flow_factory.build(request)
+        # Save DAG to storage
+        res = self.dao.create(request)
+        # Register the DAG
+        self.dag_manager.register_dag(dag)
+        return res
 
     def update(self, request: ServeRequest) -> ServerResponse:
         """Update a Flow entity
@@ -54,12 +87,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         # TODO: implement your own logic here
         # Build the query request from the request
-        query_request = {
-            # "id": request.id
-        }
+        query_request = {"uid": request.uid}
         return self.dao.update(query_request, update_request=request)
 
-    def get(self, request: ServeRequest) -> Optional[ServerResponse]:
+    def get(self, request: QUERY_SPEC) -> Optional[ServerResponse]:
         """Get a Flow entity
 
         Args:
@@ -73,18 +104,16 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         query_request = request
         return self.dao.get_one(query_request)
 
-    def delete(self, request: ServeRequest) -> None:
+    def delete(self, uid: str) -> None:
         """Delete a Flow entity
 
         Args:
-            request (ServeRequest): The request
+            uid (str): The uid
         """
 
         # TODO: implement your own logic here
         # Build the query request from the request
-        query_request = {
-            # "id": request.id
-        }
+        query_request = {"uid": uid}
         self.dao.delete(query_request)
 
     def get_list(self, request: ServeRequest) -> List[ServerResponse]:
@@ -102,7 +131,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         return self.dao.get_list(query_request)
 
     def get_list_by_page(
-        self, request: ServeRequest, page: int, page_size: int
+        self, request: QUERY_SPEC, page: int, page_size: int
     ) -> PaginationResult[ServerResponse]:
         """Get a list of Flow entities by page
 
@@ -114,5 +143,4 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             List[ServerResponse]: The response
         """
-        query_request = request
-        return self.dao.get_list_page(query_request, page, page_size)
+        return self.dao.get_list_page(request, page, page_size)
