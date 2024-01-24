@@ -3,8 +3,9 @@ from abc import ABC
 from typing import Optional
 
 from dbgpt.component import ComponentType
-from dbgpt.core import LLMClient
+from dbgpt.core import LLMClient, ModelOutput, ModelRequest
 from dbgpt.core.awel import BaseOperator
+from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
 from dbgpt.core.operators import BaseLLM, BaseLLMOperator, BaseStreamingLLMOperator
 
 logger = logging.getLogger(__name__)
@@ -53,6 +54,36 @@ class LLMOperator(MixinLLMOperator, BaseLLMOperator):
             If llm_client is None, we will try to connect to the model serving cluster deploy by DB-GPT,
             and if we can't connect to the model serving cluster, we will use the :class:`OpenAILLMClient` as the llm_client.
     """
+
+    metadata = ViewMetadata(
+        label="LLM Operator",
+        name="llm_operator",
+        category=OperatorCategory.LLM,
+        description="The LLM operator.",
+        parameters=[
+            Parameter.build_from(
+                "LLM Client",
+                "llm_client",
+                LLMClient,
+                optional=True,
+                default=None,
+                description="The LLM Client.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "Model Request", "model_request", ModelRequest, "The model request."
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model Output",
+                "model_output",
+                ModelOutput,
+                description="The model output.",
+            )
+        ],
+    )
 
     def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
         super().__init__(llm_client)
