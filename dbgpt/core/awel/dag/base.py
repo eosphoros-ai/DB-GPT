@@ -704,6 +704,22 @@ class DAG:
         """Exit a DAG context."""
         DAGVar.exit_dag()
 
+    def __hash__(self) -> int:
+        """Return the hash value of current DAG.
+
+        If the dag_id is not None, return the hash value of dag_id.
+        """
+        if self.dag_id:
+            return hash(self.dag_id)
+        else:
+            return super().__hash__()
+
+    def __eq__(self, other):
+        """Return whether the current DAG is equal to other DAG."""
+        if not isinstance(other, DAG):
+            return False
+        return self.dag_id == other.dag_id
+
     def __repr__(self):
         """Return the representation of current DAG."""
         return f"DAG(dag_id={self.dag_id})"

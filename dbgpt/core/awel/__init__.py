@@ -91,8 +91,6 @@ def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
     dag_manager = DAGManager(system_app, dag_dirs)
     system_app.register_instance(dag_manager)
     initialize_runner(DefaultWorkflowRunner())
-    # Load all dags
-    dag_manager.load_dags()
 
 
 def setup_dev_environment(
@@ -150,7 +148,7 @@ def setup_dev_environment(
                     f"`sudo apt install graphviz`"
                 )
         for trigger in dag.trigger_nodes:
-            trigger_manager.register_trigger(trigger)
+            trigger_manager.register_trigger(trigger, system_app)
     trigger_manager.after_register()
     if trigger_manager.keep_running():
         # Should keep running

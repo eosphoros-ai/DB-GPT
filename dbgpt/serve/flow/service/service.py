@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+from fastapi import HTTPException
+
 from dbgpt.component import BaseComponent, SystemApp
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.core.awel.flow.flow_factory import FlowFactory
@@ -42,6 +44,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """Execute before the application starts"""
         self._dag_manager = DAGManager.get_instance(self._system_app)
 
+    def after_start(self):
+        """Execute after the application starts"""
+        self.load_dag_from_db()
+
     @property
     def dao(self) -> BaseDao[ServeEntity, ServeRequest, ServerResponse]:
         """Returns the internal DAO."""
@@ -70,11 +76,19 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         # Build DAG from request
         dag = self._flow_factory.build(request)
+        request.dag_id = dag.dag_id
         # Save DAG to storage
         res = self.dao.create(request)
         # Register the DAG
         self.dag_manager.register_dag(dag)
         return res
+
+    def load_dag_from_db(self):
+        """Load DAG from db"""
+        entities = self.dao.get_list({})
+        for entity in entities:
+            dag = self._flow_factory.build(entity)
+            self.dag_manager.register_dag(dag)
 
     def update(self, request: ServeRequest) -> ServerResponse:
         """Update a Flow entity
@@ -114,6 +128,14 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         # TODO: implement your own logic here
         # Build the query request from the request
         query_request = {"uid": uid}
+        inst = self.get(query_request)
+        if inst is None:
+            raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
+        if not inst.dag_id:
+            raise HTTPException(
+                status_code=404, detail=f"Flow {uid}'s dag id not found"
+            )
+        self.dag_manager.unregister_dag(inst.dag_id)
         self.dao.delete(query_request)
 
     def get_list(self, request: ServeRequest) -> List[ServerResponse]:

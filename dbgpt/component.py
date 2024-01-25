@@ -161,6 +161,7 @@ class SystemApp(LifeCycle):
         ] = {}  # Dictionary to store registered components.
         self._asgi_app = asgi_app
         self._app_config = app_config or AppConfig()
+        self._build()
 
     @property
     def app(self) -> Optional["FastAPI"]:

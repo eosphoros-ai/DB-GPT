@@ -5,9 +5,8 @@ import json
 from datetime import datetime
 from typing import Any, Dict, Union
 
-from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
-from dbgpt.core.awel.flow.flow_factory import FlowData
 from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 
@@ -17,8 +16,11 @@ from ..config import SERVER_APP_TABLE_NAME, ServeConfig
 
 class ServeEntity(Model):
     __tablename__ = SERVER_APP_TABLE_NAME
+    __table_args__ = (UniqueConstraint("uid", name="uk_uid"),)
+
     id = Column(Integer, primary_key=True, comment="Auto increment id")
-    uid = Column(String(128), index=True, nullable=True, comment="Unique id")
+    uid = Column(String(128), index=True, nullable=False, comment="Unique id")
+    dag_id = Column(String(128), index=True, nullable=True, comment="DAG id")
     name = Column(String(128), index=True, nullable=True, comment="Flow name")
     flow_data = Column(Text, nullable=True, comment="Flow data, JSON format")
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
@@ -28,7 +30,7 @@ class ServeEntity(Model):
 
     def __repr__(self):
         return (
-            f"ServeEntity(id={self.id}, uid={self.uid}, name={self.name}, "
+            f"ServeEntity(id={self.id}, uid={self.uid}, dag_id={self.dag_id}, name={self.name}, "
             f"flow_data={self.flow_data}, user_name={self.user_name}, "
             f"sys_code={self.sys_code}, gmt_created={self.gmt_created}, "
             f"gmt_modified={self.gmt_modified})"
@@ -55,6 +57,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         flow_data = json.dumps(request_dict.get("flow_data"), ensure_ascii=False)
         new_dict = {
             "uid": request_dict.get("uid"),
+            "dag_id": request_dict.get("dag_id"),
             "name": request_dict.get("name"),
             "flow_data": flow_data,
             "user_name": request_dict.get("user_name"),
@@ -75,6 +78,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         flow_data = json.loads(entity.flow_data)
         return ServeRequest(
             uid=entity.uid,
+            dag_id=entity.dag_id,
             name=entity.name,
             flow_data=flow_data,
             user_name=entity.user_name,
@@ -95,6 +99,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         gmt_modified_str = entity.gmt_modified.strftime("%Y-%m-%d %H:%M:%S")
         return ServerResponse(
             uid=entity.uid,
+            dag_id=entity.dag_id,
             name=entity.name,
             flow_data=flow_data,
             user_name=entity.user_name,
