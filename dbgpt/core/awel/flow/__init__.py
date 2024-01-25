@@ -10,6 +10,7 @@ from .base import (  # noqa: F401
     Parameter,
     ResourceCategory,
     ResourceMetadata,
+    ResourceType,
     ViewMetadata,
     ViewMixin,
     register_resource,
@@ -24,5 +25,6 @@ __ALL__ = [
     "register_resource",
     "OperatorCategory",
     "ResourceCategory",
+    "ResourceType",
     "IOField",
 ]

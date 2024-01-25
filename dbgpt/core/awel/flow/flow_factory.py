@@ -108,6 +108,7 @@ class FlowPanel(BaseModel):
     flow_data: FlowData = Field(..., description="Flow data")
     user_name: Optional[str] = Field(None, description="User name")
     sys_code: Optional[str] = Field(None, description="System code")
+    dag_id: Optional[str] = Field(None, description="DAG id, Created by AWEL")
 
     gmt_created: Optional[str] = Field(
         None,
@@ -236,14 +237,20 @@ class FlowFactory:
                     task.set_node_id(dag._new_node_id())
                 downstream = key_to_downstream.get(key, [])
                 upstream = key_to_upstream.get(key, [])
+                task._dag = dag
                 if not downstream and not upstream:
                     # A single task.
-                    task._dag = dag
                     dag._append_node(task)
                     continue
                 for downstream_key in downstream:
                     # Just one direction.
                     downstream_task = key_to_tasks.get(downstream_key)
+                    if not downstream_task:
+                        raise ValueError(
+                            f"Unable to find downstream task by key {downstream_key}."
+                        )
+                    if not downstream_task._node_id:
+                        downstream_task.set_node_id(dag._new_node_id())
                     if downstream_task is None:
                         raise ValueError("Unable to find downstream task.")
                     task >> downstream_task
