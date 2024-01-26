@@ -16,6 +16,7 @@ import Icon, {
   MenuOutlined,
   SettingOutlined,
   BuildOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { Modal, message, Tooltip, Dropdown } from 'antd';
 import { ItemType } from 'antd/es/menu/hooks/useItems';
@@ -92,6 +93,12 @@ function SideBar() {
         name: t('Plugins'),
         path: '/agent',
         icon: <BuildOutlined />,
+      },
+      {
+        key: 'app',
+        name: t('App'),
+        path: '/app',
+        icon: <AppstoreOutlined />,
       },
     ];
     return items;

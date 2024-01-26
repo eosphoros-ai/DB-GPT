@@ -182,6 +182,7 @@ const en = {
   choice_agent_tip: 'Please choose an agent',
   no_context_tip: 'Please enter your question',
   Terminal: 'Terminal',
+  App: 'App',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -370,6 +371,7 @@ const zh: Resources['translation'] = {
   choice_agent_tip: '请选择代理',
   no_context_tip: '请输入你的问题',
   Terminal: '终端',
+  App: '应用',
 } as const;
 
 i18n.use(initReactI18next).init({
