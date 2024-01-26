@@ -15,13 +15,12 @@ from typing import (
     get_origin,
 )
 
-from starlette.requests import Request
-
 from dbgpt._private.pydantic import BaseModel, Field
 
 from ..dag.base import DAG
 from ..flow import (
     OperatorCategory,
+    OperatorType,
     OptionValue,
     Parameter,
     ResourceCategory,
@@ -31,11 +30,13 @@ from ..flow import (
 )
 from ..operators.base import BaseOperator
 from ..operators.common_operator import MapOperator
+from ..util._typing_util import _parse_bool
 from ..util.http_util import join_paths
 from .base import Trigger
 
 if TYPE_CHECKING:
     from fastapi import APIRouter, FastAPI
+    from starlette.requests import Request
 
     RequestBody = Union[Type[Request], Type[BaseModel], Type[Dict[str, Any]], Type[str]]
     CommonRequestType = Union[Request, BaseModel, Dict[str, Any], str, None]
@@ -65,7 +66,7 @@ def _default_streaming_predict_func(body: "CommonRequestType") -> bool:
     elif not isinstance(body, dict):
         return False
     streaming = body.get("streaming") or body.get("stream")
-    return streaming is not None and bool(streaming)
+    return _parse_bool(streaming)
 
 
 class BaseHttpBody(BaseModel):
@@ -194,14 +195,14 @@ class RequestHttpBody(BaseHttpBody):
 
 
 @register_resource(
-    label="Common LLM Http Body",
-    name="common_llm_http_body",
+    label="Common LLM Http Request Body",
+    name="common_llm_http_request_body",
     category=ResourceCategory.HTTP_BODY,
     resource_type=ResourceType.CLASS,
     description="Parse the request body as a common LLM http body",
 )
-class CommonLLMHttpBody(BaseHttpBody):
-    """Common LLM http body."""
+class CommonLLMHttpRequestBody(BaseHttpBody):
+    """Common LLM http request body."""
 
     model: str = Field(
         ..., description="The model name", examples=["gpt-3.5-turbo", "proxyllm"]
@@ -209,13 +210,35 @@ class CommonLLMHttpBody(BaseHttpBody):
     messages: Union[str, List[str]] = Field(
         ..., description="User input messages", examples=["Hello", "How are you?"]
     )
-    stream: Optional[bool] = Field(default=False, description="Whether return stream")
+    stream: bool = Field(default=False, description="Whether return stream")
 
     temperature: Optional[float] = Field(
         default=None,
         description="What sampling temperature to use, between 0 and 2. Higher values "
         "like 0.8 will make the output more random, while lower values like 0.2 will "
         "make it more focused and deterministic.",
+    )
+
+
+@register_resource(
+    label="Common LLM Http Response Body",
+    name="common_llm_http_response_body",
+    category=ResourceCategory.HTTP_BODY,
+    resource_type=ResourceType.CLASS,
+    description="Parse the response body as a common LLM http body",
+)
+class CommonLLMHttpResponseBody(BaseHttpBody):
+    """Common LLM http response body."""
+
+    text: str = Field(
+        ..., description="The generated text", examples=["Hello", "How are you?"]
+    )
+    error_code: int = Field(
+        default=0, description="The error code, 0 means no error", examples=[0, 1]
+    )
+    metrics: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="The metrics of the model, like the number of tokens generated",
     )
 
 
@@ -229,6 +252,7 @@ class HttpTrigger(Trigger):
         label="Http Trigger",
         name="http_trigger",
         category=OperatorCategory.TRIGGER,
+        operator_type=OperatorType.INPUT,
         description="Trigger your workflow by http request",
         inputs=[],
         outputs=[],
@@ -330,7 +354,7 @@ class HttpTrigger(Trigger):
         self._endpoint = endpoint
         self._methods = [methods] if isinstance(methods, str) else methods
         self._req_body = request_body
-        self._streaming_response = streaming_response
+        self._streaming_response = _parse_bool(streaming_response)
         self._streaming_predict_func = streaming_predict_func
         self._response_model = response_model
         self._status_code = status_code
@@ -642,6 +666,7 @@ class DictHttpTrigger(HttpTrigger):
         label="Dict Http Trigger",
         name="dict_http_trigger",
         category=OperatorCategory.TRIGGER,
+        operator_type=OperatorType.INPUT,
         description="Trigger your workflow by http request, and parse the request body"
         " as a dict",
         inputs=[],
@@ -698,6 +723,7 @@ class StringHttpTrigger(HttpTrigger):
         label="String Http Trigger",
         name="string_http_trigger",
         category=OperatorCategory.TRIGGER,
+        operator_type=OperatorType.INPUT,
         description="Trigger your workflow by http request, and parse the request body"
         " as a string",
         inputs=[],
@@ -748,28 +774,29 @@ class StringHttpTrigger(HttpTrigger):
         )
 
 
-class RequestHttpTrigger(HttpTrigger):
-    """Request http trigger for AWEL."""
+class CommonLLMHttpTrigger(HttpTrigger):
+    """Common LLM http trigger for AWEL."""
 
     metadata = ViewMetadata(
-        label="Request Http Trigger",
-        name="request_http_trigger",
+        label="Common LLM Http Trigger",
+        name="common_llm_http_trigger",
         category=OperatorCategory.TRIGGER,
-        description="Trigger your workflow by http request, and parse the request body"
-        " as a starlette Request",
+        operator_type=OperatorType.INPUT,
+        description="Trigger your workflow by http request, and parse the request body "
+        "as a common LLM http body",
         inputs=[],
         outputs=[
             Parameter.build_from(
                 "Request Body",
                 "request_body",
-                Request,
-                description="The request body of the API endpoint, parse as a starlette"
-                " Request",
+                CommonLLMHttpRequestBody,
+                description="The request body of the API endpoint, parse as a common "
+                "LLM http body",
             ),
         ],
         parameters=[
             _PARAMETER_ENDPOINT.new(),
-            _PARAMETER_METHODS_ALL.new(),
+            _PARAMETER_METHODS_POST_PUT.new(),
             _PARAMETER_STREAMING_RESPONSE.new(),
             _PARAMETER_RESPONSE_BODY.new(),
             _PARAMETER_MEDIA_TYPE.new(),
@@ -788,14 +815,14 @@ class RequestHttpTrigger(HttpTrigger):
         router_tags: Optional[List[str | Enum]] = None,
         **kwargs,
     ):
-        """Initialize a RequestHttpTrigger."""
+        """Initialize a CommonLLMHttpTrigger."""
         if not router_tags:
-            router_tags = ["AWEL RequestHttpTrigger"]
+            router_tags = ["AWEL CommonLLMHttpTrigger"]
         super().__init__(
             endpoint,
             methods,
             streaming_response=streaming_response,
-            request_body=Request,
+            request_body=CommonLLMHttpRequestBody,
             http_response_body=http_response_body,
             response_media_type=response_media_type,
             status_code=status_code,
@@ -806,8 +833,8 @@ class RequestHttpTrigger(HttpTrigger):
 
 
 @register_resource(
-    label="Example Http Request",
-    name="example_http_request",
+    label="Example Http Response",
+    name="example_http_response",
     category=ResourceCategory.HTTP_BODY,
     resource_type=ResourceType.CLASS,
     description="Example Http Request",

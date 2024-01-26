@@ -9,10 +9,13 @@ from dbgpt.core.awel import (
     BaseOperator,
     BranchFunc,
     BranchOperator,
+    CommonLLMHttpRequestBody,
+    CommonLLMHttpResponseBody,
     DAGContext,
     MapOperator,
     StreamifyAbsOperator,
 )
+from dbgpt.core.awel.flow import OperatorCategory, Parameter, ViewMetadata
 from dbgpt.core.interface.llm import (
     LLMClient,
     ModelOutput,
@@ -33,6 +36,39 @@ RequestInput = Union[
 
 class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest], ABC):
     """Build the model request from the input value."""
+
+    metadata = ViewMetadata(
+        label="Build Model Request",
+        name="request_builder_operator",
+        category=OperatorCategory.COMMON,
+        description="Build the model request from the http request body.",
+        parameters=[
+            Parameter.build_from(
+                "Default Model Name",
+                "model",
+                str,
+                optional=False,
+                default=None,
+                description="The model name of the model request.",
+            ),
+        ],
+        inputs=[
+            Parameter.build_from(
+                "Request Body",
+                "input_value",
+                CommonLLMHttpRequestBody,
+                description="The input value of the operator.",
+            ),
+        ],
+        outputs=[
+            Parameter.build_from(
+                "Model Request",
+                "output_value",
+                ModelRequest,
+                description="The output value of the operator.",
+            ),
+        ],
+    )
 
     def __init__(self, model: Optional[str] = None, **kwargs):
         """Create a new request builder operator."""
@@ -226,3 +262,46 @@ class LLMBranchOperator(BranchOperator[ModelRequest, ModelRequest]):
             check_stream_true: self._stream_task_name,
             lambda x: not x.stream: self._no_stream_task_name,
         }
+
+
+class ModelOutput2CommonResponseOperator(
+    MapOperator[ModelOutput, CommonLLMHttpResponseBody]
+):
+    """Map the model output to the common response body."""
+
+    metadata = ViewMetadata(
+        label="Map Model Output to Common Response Body",
+        name="model_output_2_common_response_body_operator",
+        category=OperatorCategory.COMMON,
+        description="Map the model output to the common response body.",
+        parameters=[],
+        inputs=[
+            Parameter.build_from(
+                "Model Output",
+                "input_value",
+                ModelOutput,
+                description="The input value of the operator.",
+            ),
+        ],
+        outputs=[
+            Parameter.build_from(
+                "Common Response Body",
+                "output_value",
+                CommonLLMHttpResponseBody,
+                description="The output value of the operator.",
+            ),
+        ],
+    )
+
+    def __int__(self, **kwargs):
+        """Create a new operator."""
+        super().__init__(**kwargs)
+
+    async def map(self, input_value: ModelOutput) -> CommonLLMHttpResponseBody:
+        """Map the model output to the common response body."""
+        metrics = input_value.metrics.to_dict() if input_value.metrics else None
+        return CommonLLMHttpResponseBody(
+            text=input_value.text,
+            error_code=input_value.error_code,
+            metrics=metrics,
+        )

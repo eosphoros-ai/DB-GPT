@@ -6,6 +6,7 @@ This module contains the classes and functions to build AWEL DAGs from serialize
 from .base import (  # noqa: F401
     IOField,
     OperatorCategory,
+    OperatorType,
     OptionValue,
     Parameter,
     ResourceCategory,
@@ -26,5 +27,6 @@ __ALL__ = [
     "OperatorCategory",
     "ResourceCategory",
     "ResourceType",
+    "OperatorType",
     "IOField",
 ]

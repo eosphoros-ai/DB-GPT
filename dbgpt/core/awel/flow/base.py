@@ -104,6 +104,19 @@ class OperatorCategory(str, Enum):
     COMMON = "common"
 
 
+class OperatorType(str, Enum):
+    """The type of the operator."""
+
+    MAP = "map"
+    REDUCE = "reduce"
+    JOIN = "join"
+    BRANCH = "branch"
+    INPUT = "input"
+    STREAMIFY = "streamify"
+    UN_STREAMIFY = "un_streamify"
+    TRANSFORM_STREAM = "transform_stream"
+
+
 class ResourceCategory(str, Enum):
     """The category of the resource."""
 
@@ -270,6 +283,14 @@ class Parameter(TypeMetadata, Serializable):
                 raise ValidationError(f"Value '{v}' is not valid for type {type_cls}")
         return v
 
+    def get_typed_value(self) -> Any:
+        """Get the typed value."""
+        return self._covert_to_real_type(self.type_cls, self.value)
+
+    def get_typed_default(self) -> Any:
+        """Get the typed default."""
+        return self._covert_to_real_type(self.type_cls, self.default)
+
     @classmethod
     def build_from(
         cls,
@@ -374,7 +395,7 @@ class Parameter(TypeMetadata, Serializable):
                     resource_kwargs[parameter.name] = parameter.value
                 value = resource_type(**resource_kwargs)
         else:
-            value = self.default
+            value = self.get_typed_default()
             if self.value is not None:
                 value = self.value
             if view_value is not None:
@@ -515,7 +536,7 @@ class BaseMetadata(BaseResource):
         for i, parameter in enumerate(self.parameters):
             view_param = view_parameters[i]
             runnable_parameters.update(
-                parameter.to_runnable_parameter(view_param.value, resources)
+                parameter.to_runnable_parameter(view_param.get_typed_value(), resources)
             )
         return runnable_parameters
 
@@ -612,6 +633,11 @@ class ViewMetadata(BaseMetadata):
     We use this metadata to build the operator in UI and view the operator in UI.
     """
 
+    operator_type: OperatorType = Field(
+        default=OperatorType.MAP,
+        description="The type of the operator",
+        examples=["map", "reduce"],
+    )
     inputs: List[IOField] = Field(..., description="The inputs of the operator")
     outputs: List[IOField] = Field(..., description="The outputs of the operator")
     version: str = Field(
