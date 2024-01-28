@@ -486,8 +486,8 @@ class BaseMetadata(BaseResource):
         examples=["https://docs.dbgpt.site/docs/awel"],
     )
 
-    key: str = Field(
-        description="The key of the operator or resource",
+    id: str = Field(
+        description="The id of the operator or resource",
         examples=[
             "operator_llm_operator___$$___llm___$$___v1",
             "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
@@ -564,8 +564,8 @@ class ResourceMetadata(BaseMetadata, TypeMetadata):
         """Pre fill the metadata."""
         if "flow_type" not in values:
             values["flow_type"] = "resource"
-        if "key" not in values:
-            values["key"] = values["flow_type"] + "_" + values["type_cls"]
+        if "id" not in values:
+            values["id"] = values["flow_type"] + "_" + values["type_cls"]
         return values
 
 
@@ -649,11 +649,11 @@ class ViewMetadata(BaseMetadata):
         """Pre fill the metadata."""
         if "flow_type" not in values:
             values["flow_type"] = "operator"
-        if "key" not in values:
+        if "id" not in values:
             key = cls.get_key(
                 values["name"], values["category"], values.get("version", "v1")
             )
-            values["key"] = values["flow_type"] + "_" + key
+            values["id"] = values["flow_type"] + "_" + key
         return values
 
     def get_operator_key(self) -> str:
@@ -666,7 +666,7 @@ class ViewMetadata(BaseMetadata):
 
     @staticmethod
     def get_key(name: str, category: str, version: str) -> str:
-        """Get the operator key."""
+        """Get the operator id."""
         split_str = "___$$___"
         return f"{name}{split_str}{category}{split_str}{version}"
 
@@ -745,7 +745,7 @@ class FlowRegistry:
         self, view_cls: Type, metadata: Union[ViewMetadata, ResourceMetadata]
     ):
         """Register the operator."""
-        key = metadata.key
+        key = metadata.id
         self._registry[key] = _RegistryItem(key=key, cls=view_cls, metadata=metadata)
 
     def get_registry_item(self, key: str) -> Optional[_RegistryItem]:
