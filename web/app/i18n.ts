@@ -98,6 +98,7 @@ const en = {
   stop_model_success: 'Stop model success',
   create_model: 'Create Model',
   model_select_tips: 'Please select a model',
+  language_select_tips: 'Please select a language',
   submit: 'Submit',
   close: 'Close',
   start_model_success: 'Start model success',
@@ -183,6 +184,8 @@ const en = {
   no_context_tip: 'Please enter your question',
   Terminal: 'Terminal',
   App: 'App',
+  team_modal: 'Team Modal',
+  team_modal_select_tips: 'Please select a team modal',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -372,6 +375,9 @@ const zh: Resources['translation'] = {
   no_context_tip: '请输入你的问题',
   Terminal: '终端',
   App: '应用',
+  language_select_tips: '请选择语言',
+  team_modal: '组织模式',
+  team_modal_select_tips: '请选择组织模式',
 } as const;
 
 i18n.use(initReactI18next).init({
