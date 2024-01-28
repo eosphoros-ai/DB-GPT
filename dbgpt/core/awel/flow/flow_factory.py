@@ -32,7 +32,7 @@ class FlowNodeData(BaseModel):
         examples=[300, 250],
     )
     height: int = Field(..., description="Height of the node", examples=[378, 400])
-    key: str = Field(
+    id: str = Field(
         ...,
         description="Id of the node",
         examples=[
@@ -65,12 +65,12 @@ class FlowEdgeData(BaseModel):
 
     source: str = Field(
         ...,
-        description="Source node data key",
+        description="Source node data id",
         examples=["resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient_0"],
     )
     target: str = Field(
         ...,
-        description="Target node data key",
+        description="Target node data id",
         examples=[
             "operator_llm_operator___$$___llm___$$___v1_0",
         ],
@@ -80,7 +80,7 @@ class FlowEdgeData(BaseModel):
         description="The order of the target node in the source node's output",
         examples=[0, 1],
     )
-    key: str = Field(..., description="Id of the edge", examples=["edge_0"])
+    id: str = Field(..., description="Id of the edge", examples=["edge_0"])
 
 
 class FlowData(BaseModel):
@@ -138,7 +138,7 @@ class FlowFactory:
         key_to_downstream: Dict[str, List[str]] = {}
         key_to_upstream: Dict[str, List[str]] = {}
         for node in flow_data.nodes:
-            key = node.key
+            key = node.id
             if key in key_to_operator_nodes or key in key_to_resource_nodes:
                 raise ValueError("Duplicate node key.")
             if node.data.is_operator:
