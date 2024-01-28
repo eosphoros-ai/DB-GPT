@@ -110,7 +110,16 @@ def _migration_db_storage(param: "WebServerParameters"):
             db.create_all()
         except Exception as e:
             logger.warning(f"Create all tables stored in this metadata error: {str(e)}")
-        _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
+        CFG = Config()
+        if CFG.LOCAL_DB_TYPE == "sqlite":
+            _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
+        else:
+            warn_msg = (
+                "For safety considerations, Mysql Database not support DDL init and upgrade"
+                "If there are any changes to the table fields in the DBGPT database, it is necessary to compare with the DB-GPT/assets/schema/dbgpt.sql file and manually make the field changes in the MySQL database instance."
+            )
+            logger.warning(warn_msg)
+            _ddl_init_and_upgrade(default_meta_data_path, True)
 
 
 def _initialize_db(
