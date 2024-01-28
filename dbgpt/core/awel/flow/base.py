@@ -7,7 +7,7 @@ from datetime import date, datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
-from dbgpt._private.pydantic import BaseModel, Field, root_validator
+from dbgpt._private.pydantic import BaseModel, Field, ValidationError, root_validator
 from dbgpt.core.interface.serialization import Serializable
 
 _TYPE_REGISTRY: Dict[str, Type] = {}
@@ -21,6 +21,7 @@ _ALLOWED_TYPES: Dict[str, Type] = {
 _BASIC_TYPES = [str, int, float, bool, dict, list, set]
 
 T = TypeVar("T", bound="ViewMixin")
+TM = TypeVar("TM", bound="TypeMetadata")
 
 
 def _get_type_name(type_: Type[Any]) -> str:
@@ -103,11 +104,32 @@ class OperatorCategory(str, Enum):
     COMMON = "common"
 
 
+class OperatorType(str, Enum):
+    """The type of the operator."""
+
+    MAP = "map"
+    REDUCE = "reduce"
+    JOIN = "join"
+    BRANCH = "branch"
+    INPUT = "input"
+    STREAMIFY = "streamify"
+    UN_STREAMIFY = "un_streamify"
+    TRANSFORM_STREAM = "transform_stream"
+
+
 class ResourceCategory(str, Enum):
     """The category of the resource."""
 
+    HTTP_BODY = "http_body"
     LLM_CLIENT = "llm_client"
     COMMON = "common"
+
+
+class ResourceType(str, Enum):
+    """The type of the resource."""
+
+    INSTANCE = "instance"
+    CLASS = "class"
 
 
 class OptionValue(Serializable, BaseModel):
@@ -176,6 +198,10 @@ class TypeMetadata(BaseModel):
         examples=["builtins.str", "builtins.int"],
     )
 
+    def new(self: TM) -> TM:
+        """Copy the metadata."""
+        return self.__class__(**self.dict())
+
 
 class Parameter(TypeMetadata, Serializable):
     """Parameter for build operator."""
@@ -196,6 +222,11 @@ class Parameter(TypeMetadata, Serializable):
         description="The category of the resource, just for resource type",
         examples=["llm_client", "common"],
     )
+    resource_type: ResourceType = Field(
+        default=ResourceType.INSTANCE,
+        description="The type of the resource, just for resource type",
+        examples=["instance", "class"],
+    )
     optional: bool = Field(
         ..., description="Whether the parameter is optional", examples=[True, False]
     )
@@ -215,6 +246,51 @@ class Parameter(TypeMetadata, Serializable):
         None, description="The value of the parameter(Saved in the dag file)"
     )
 
+    @root_validator(pre=True)
+    def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Pre fill the metadata.
+
+        Transform the value to the real type.
+        """
+        type_cls = values.get("type_cls")
+        to_handle_values = {
+            "value": values.get("value"),
+            "default": values.get("default"),
+        }
+        if type_cls:
+            for k, v in to_handle_values.items():
+                if v:
+                    handled_v = cls._covert_to_real_type(type_cls, v)
+                    values[k] = handled_v
+        return values
+
+    @classmethod
+    def _covert_to_real_type(cls, type_cls: str, v: Any):
+        if type_cls and v is not None:
+            try:
+                # Try to convert the value to the type.
+                if type_cls == "builtins.str":
+                    return str(v)
+                elif type_cls == "builtins.int":
+                    return int(v)
+                elif type_cls == "builtins.float":
+                    return float(v)
+                elif type_cls == "builtins.bool":
+                    if str(v).lower() in ["false", "0", "", "no", "off"]:
+                        return False
+                    return bool(v)
+            except ValueError:
+                raise ValidationError(f"Value '{v}' is not valid for type {type_cls}")
+        return v
+
+    def get_typed_value(self) -> Any:
+        """Get the typed value."""
+        return self._covert_to_real_type(self.type_cls, self.value)
+
+    def get_typed_default(self) -> Any:
+        """Get the typed default."""
+        return self._covert_to_real_type(self.type_cls, self.default)
+
     @classmethod
     def build_from(
         cls,
@@ -227,6 +303,7 @@ class Parameter(TypeMetadata, Serializable):
         description: Optional[str] = None,
         options: Optional[List[OptionValue]] = None,
         resource_category: Optional[str] = None,
+        resource_type: ResourceType = ResourceType.INSTANCE,
     ):
         """Build the parameter from the type."""
         type_name = type.__qualname__
@@ -243,6 +320,7 @@ class Parameter(TypeMetadata, Serializable):
             type_cls=type_cls,
             category=category.value,
             resource_category=resource_category,
+            resource_type=resource_type,
             optional=optional,
             default=default,
             placeholder=placeholder,
@@ -298,18 +376,30 @@ class Parameter(TypeMetadata, Serializable):
         Returns:
             Dict: The runnable parameter.
         """
-        if view_value and self.category == ParameterCategory.RESOURCER and resources:
+        if (
+            view_value is not None
+            and self.category == ParameterCategory.RESOURCER
+            and resources
+        ):
             # Resource type can have multiple parameters.
             resource_id = view_value
             resource_metadata = resources[resource_id]
             # Check the type.
             resource_type = _get_type_cls(resource_metadata.type_cls)
-            resource_kwargs = {}
-            for parameter in resource_metadata.parameters:
-                resource_kwargs[parameter.name] = parameter.value
-            value = resource_type(**resource_kwargs)
+            if self.resource_type == ResourceType.CLASS:
+                # Just require the type, not an instance.
+                value: Any = resource_type
+            else:
+                resource_kwargs = {}
+                for parameter in resource_metadata.parameters:
+                    resource_kwargs[parameter.name] = parameter.value
+                value = resource_type(**resource_kwargs)
         else:
-            value = view_value or self.value or self.default
+            value = self.get_typed_default()
+            if self.value is not None:
+                value = self.value
+            if view_value is not None:
+                value = view_value
         return {self.name: value}
 
 
@@ -396,8 +486,8 @@ class BaseMetadata(BaseResource):
         examples=["https://docs.dbgpt.site/docs/awel"],
     )
 
-    key: str = Field(
-        description="The key of the operator or resource",
+    id: str = Field(
+        description="The id of the operator or resource",
         examples=[
             "operator_llm_operator___$$___llm___$$___v1",
             "resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient",
@@ -446,13 +536,19 @@ class BaseMetadata(BaseResource):
         for i, parameter in enumerate(self.parameters):
             view_param = view_parameters[i]
             runnable_parameters.update(
-                parameter.to_runnable_parameter(view_param.value, resources)
+                parameter.to_runnable_parameter(view_param.get_typed_value(), resources)
             )
         return runnable_parameters
 
 
 class ResourceMetadata(BaseMetadata, TypeMetadata):
     """The metadata of the resource."""
+
+    resource_type: ResourceType = Field(
+        default=ResourceType.INSTANCE,
+        description="The type of the resource",
+        examples=["instance", "class"],
+    )
 
     parent_cls: List[str] = Field(
         default_factory=list,
@@ -468,8 +564,8 @@ class ResourceMetadata(BaseMetadata, TypeMetadata):
         """Pre fill the metadata."""
         if "flow_type" not in values:
             values["flow_type"] = "resource"
-        if "key" not in values:
-            values["key"] = values["flow_type"] + "_" + values["type_cls"]
+        if "id" not in values:
+            values["id"] = values["flow_type"] + "_" + values["type_cls"]
         return values
 
 
@@ -479,6 +575,7 @@ def register_resource(
     category: str = "common",
     parameters: Optional[List[Parameter]] = None,
     description: Optional[str] = None,
+    resource_type: ResourceType = ResourceType.INSTANCE,
     **kwargs,
 ):
     """Register the resource.
@@ -491,7 +588,10 @@ def register_resource(
             resource. Defaults to None.
         description (Optional[str], optional): The description of the resource.
             Defaults to None.
+        resource_type (ResourceType, optional): The type of the resource.
     """
+    if resource_type == ResourceType.CLASS and parameters:
+        raise ValueError("Class resource can't have parameters.")
 
     def decorator(cls):
         """Wrap the class."""
@@ -515,6 +615,7 @@ def register_resource(
             type_cls=type_cls,
             parameters=parameters or [],
             parent_cls=parent_cls,
+            resource_type=resource_type,
             **kwargs,
         )
         _register_resource(cls, resource_metadata)
@@ -532,6 +633,11 @@ class ViewMetadata(BaseMetadata):
     We use this metadata to build the operator in UI and view the operator in UI.
     """
 
+    operator_type: OperatorType = Field(
+        default=OperatorType.MAP,
+        description="The type of the operator",
+        examples=["map", "reduce"],
+    )
     inputs: List[IOField] = Field(..., description="The inputs of the operator")
     outputs: List[IOField] = Field(..., description="The outputs of the operator")
     version: str = Field(
@@ -543,11 +649,11 @@ class ViewMetadata(BaseMetadata):
         """Pre fill the metadata."""
         if "flow_type" not in values:
             values["flow_type"] = "operator"
-        if "key" not in values:
+        if "id" not in values:
             key = cls.get_key(
                 values["name"], values["category"], values.get("version", "v1")
             )
-            values["key"] = values["flow_type"] + "_" + key
+            values["id"] = values["flow_type"] + "_" + key
         return values
 
     def get_operator_key(self) -> str:
@@ -560,7 +666,7 @@ class ViewMetadata(BaseMetadata):
 
     @staticmethod
     def get_key(name: str, category: str, version: str) -> str:
-        """Get the operator key."""
+        """Get the operator id."""
         split_str = "___$$___"
         return f"{name}{split_str}{category}{split_str}{version}"
 
@@ -639,7 +745,7 @@ class FlowRegistry:
         self, view_cls: Type, metadata: Union[ViewMetadata, ResourceMetadata]
     ):
         """Register the operator."""
-        key = metadata.key
+        key = metadata.id
         self._registry[key] = _RegistryItem(key=key, cls=view_cls, metadata=metadata)
 
     def get_registry_item(self, key: str) -> Optional[_RegistryItem]:

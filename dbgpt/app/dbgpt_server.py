@@ -28,6 +28,7 @@ from dbgpt.configs.model_config import (
     ROOT_PATH,
 )
 from dbgpt.serve.core import add_exception_handler
+from dbgpt.util.fastapi import PriorityAPIRouter
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
 from dbgpt.util.tracer import SpanType, SpanTypeRunName, initialize_tracer, root_tracer
@@ -52,6 +53,9 @@ app = FastAPI(
     version="0.5.0",
     openapi_tags=[],
 )
+# Use custom router to support priority
+app.router = PriorityAPIRouter()
+app.setup()
 
 app.mount(
     "/swagger_static",

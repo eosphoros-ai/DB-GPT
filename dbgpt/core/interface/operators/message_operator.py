@@ -416,6 +416,18 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             ...     ],
             ... ]
 
+            # Test end rounds is zero
+            >>> operator = BufferedConversationMapperOperator(
+            ...     keep_start_rounds=1, keep_end_rounds=0
+            ... )
+            >>> assert operator._filter_round_messages(messages) == [
+            ...     [
+            ...         HumanMessage(content="Hi", round_index=1),
+            ...         AIMessage(content="Hello!", round_index=1),
+            ...     ]
+            ... ]
+
+
         Args:
             messages_by_round (List[List[BaseMessage]]):
                 The messages grouped by round.
@@ -425,7 +437,12 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
 
         """
         total_rounds = len(messages_by_round)
-        if self._keep_start_rounds is not None and self._keep_end_rounds is not None:
+        if (
+            self._keep_start_rounds is not None
+            and self._keep_end_rounds is not None
+            and self._keep_start_rounds > 0
+            and self._keep_end_rounds > 0
+        ):
             if self._keep_start_rounds + self._keep_end_rounds > total_rounds:
                 # Avoid overlapping when the sum of start and end rounds exceeds total
                 # rounds

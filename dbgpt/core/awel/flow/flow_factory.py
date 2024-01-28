@@ -32,7 +32,7 @@ class FlowNodeData(BaseModel):
         examples=[300, 250],
     )
     height: int = Field(..., description="Height of the node", examples=[378, 400])
-    key: str = Field(
+    id: str = Field(
         ...,
         description="Id of the node",
         examples=[
@@ -65,12 +65,12 @@ class FlowEdgeData(BaseModel):
 
     source: str = Field(
         ...,
-        description="Source node data key",
+        description="Source node data id",
         examples=["resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient_0"],
     )
     target: str = Field(
         ...,
-        description="Target node data key",
+        description="Target node data id",
         examples=[
             "operator_llm_operator___$$___llm___$$___v1_0",
         ],
@@ -80,7 +80,7 @@ class FlowEdgeData(BaseModel):
         description="The order of the target node in the source node's output",
         examples=[0, 1],
     )
-    key: str = Field(..., description="Id of the edge", examples=["edge_0"])
+    id: str = Field(..., description="Id of the edge", examples=["edge_0"])
 
 
 class FlowData(BaseModel):
@@ -108,6 +108,7 @@ class FlowPanel(BaseModel):
     flow_data: FlowData = Field(..., description="Flow data")
     user_name: Optional[str] = Field(None, description="User name")
     sys_code: Optional[str] = Field(None, description="System code")
+    dag_id: Optional[str] = Field(None, description="DAG id, Created by AWEL")
 
     gmt_created: Optional[str] = Field(
         None,
@@ -137,7 +138,7 @@ class FlowFactory:
         key_to_downstream: Dict[str, List[str]] = {}
         key_to_upstream: Dict[str, List[str]] = {}
         for node in flow_data.nodes:
-            key = node.key
+            key = node.id
             if key in key_to_operator_nodes or key in key_to_resource_nodes:
                 raise ValueError("Duplicate node key.")
             if node.data.is_operator:
@@ -213,6 +214,7 @@ class FlowFactory:
             runnable_params = metadata.get_runnable_parameters(
                 view_metadata.parameters, key_to_resource
             )
+            runnable_params["task_name"] = metadata.name
             operator_task: DAGNode = cast(DAGNode, operator_cls(**runnable_params))
             key_to_tasks[operator_key] = operator_task
 
@@ -236,14 +238,20 @@ class FlowFactory:
                     task.set_node_id(dag._new_node_id())
                 downstream = key_to_downstream.get(key, [])
                 upstream = key_to_upstream.get(key, [])
+                task._dag = dag
                 if not downstream and not upstream:
                     # A single task.
-                    task._dag = dag
                     dag._append_node(task)
                     continue
                 for downstream_key in downstream:
                     # Just one direction.
                     downstream_task = key_to_tasks.get(downstream_key)
+                    if not downstream_task:
+                        raise ValueError(
+                            f"Unable to find downstream task by key {downstream_key}."
+                        )
+                    if not downstream_task._node_id:
+                        downstream_task.set_node_id(dag._new_node_id())
                     if downstream_task is None:
                         raise ValueError("Unable to find downstream task.")
                     task >> downstream_task

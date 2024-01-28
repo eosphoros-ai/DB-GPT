@@ -40,7 +40,20 @@ from .task.task_impl import (
     SimpleTaskOutput,
     _is_async_iterator,
 )
-from .trigger.http_trigger import HttpTrigger
+from .trigger.http_trigger import (
+    CommonLLMHttpRequestBody,
+    CommonLLMHttpResponseBody,
+    HttpTrigger,
+)
+
+_request_http_trigger_available = False
+try:
+    # Optional import
+    from .trigger.ext_http_trigger import RequestHttpTrigger  # noqa: F401
+
+    _request_http_trigger_available = True
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +86,14 @@ __all__ = [
     "UnstreamifyAbsOperator",
     "TransformStreamAbsOperator",
     "HttpTrigger",
+    "CommonLLMHttpResponseBody",
+    "CommonLLMHttpRequestBody",
     "setup_dev_environment",
     "_is_async_iterator",
 ]
+
+if _request_http_trigger_available:
+    __all__.append("RequestHttpTrigger")
 
 
 def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
@@ -91,8 +109,6 @@ def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
     dag_manager = DAGManager(system_app, dag_dirs)
     system_app.register_instance(dag_manager)
     initialize_runner(DefaultWorkflowRunner())
-    # Load all dags
-    dag_manager.load_dags()
 
 
 def setup_dev_environment(
@@ -150,7 +166,7 @@ def setup_dev_environment(
                     f"`sudo apt install graphviz`"
                 )
         for trigger in dag.trigger_nodes:
-            trigger_manager.register_trigger(trigger)
+            trigger_manager.register_trigger(trigger, system_app)
     trigger_manager.after_register()
     if trigger_manager.keep_running():
         # Should keep running
