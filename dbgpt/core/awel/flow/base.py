@@ -212,6 +212,11 @@ class Parameter(TypeMetadata, Serializable):
     name: str = Field(
         ..., description="The name of the parameter", examples=["apk_key"]
     )
+    is_list: bool = Field(
+        default=False,
+        description="Whether current parameter is list",
+        examples=[True, False],
+    )
     category: str = Field(
         ...,
         description="The category of the parameter",
@@ -460,7 +465,11 @@ class IOFiledType(str, Enum):
 class IOField(Resource):
     """The input or output field of the operator."""
 
-    pass
+    is_list: bool = Field(
+        default=False,
+        description="Whether current field is list",
+        examples=[True, False],
+    )
 
 
 class BaseMetadata(BaseResource):
