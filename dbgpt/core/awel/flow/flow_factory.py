@@ -46,7 +46,7 @@ class FlowNodeData(BaseModel):
     data: Union[ViewMetadata, ResourceMetadata] = Field(
         ..., description="Data of the node"
     )
-    positionAbsolute: FlowPositionData = Field(
+    position_absolute: FlowPositionData = Field(
         ..., description="Absolute position of the node"
     )
 
