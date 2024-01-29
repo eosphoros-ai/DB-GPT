@@ -354,7 +354,41 @@ Modify the `.env` file to use llama.cpp, and then you can start the service by r
 |          `llama_cpp_cache_capacity` |     None     |    Maximum model cache size. For example: 2000MiB, 2GiB                   | 
 |            `llama_cpp_prefer_cpu`   |     False     |    If a GPU is available, the GPU will be used first by default unless prefer_cpu=False is configured.              | 
 
+## Install DB-GPT Application Database
+<Tabs
+  defaultValue="sqlite"
+  values={[
+    {label: 'SQLite', value: 'sqlite'},
+    {label: 'MySQL', value: 'mysql'},
+  ]}>
+<TabItem value="sqlite" label="sqlite">
 
+```python
+You do not need to separately create the database tables related to the DB-GPT application in SQLite; 
+they will be created automatically for you by default.
+
+```
+
+ </TabItem>
+<TabItem value="mysql" label="MySQL">
+ 
+1.execute MySQL script to create database and tables.
+
+```python
+$ mysql -h127.0.0.1 -uroot -p{your_password} < ./assets/schema/dbgpt.sql
+```
+2.set DB-GPT MySQL database settings in `.env` file.
+
+```python
+LOCAL_DB_TYPE=mysql
+LOCAL_DB_USER= {your username}
+LOCAL_DB_PASSWORD={your_password}
+LOCAL_DB_HOST=127.0.0.1
+LOCAL_DB_PORT=3306
+```
+
+ </TabItem>
+</Tabs>
 
 
 ## Test data (optional)
