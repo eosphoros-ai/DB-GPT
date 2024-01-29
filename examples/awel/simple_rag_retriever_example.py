@@ -4,7 +4,8 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Field
 
-from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
+from dbgpt._private.config import Config
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, MODEL_PATH, PILOT_PATH
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.chunk import Chunk
@@ -42,6 +43,8 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
                 "query": "what is awel talk about?"
             }'
 """
+
+CFG = Config()
 
 
 class TriggerReqBody(BaseModel):
@@ -83,7 +86,7 @@ def _create_vector_connector():
             persist_path=os.path.join(PILOT_PATH, "data"),
         ),
         embedding_fn=DefaultEmbeddingFactory(
-            default_model_name=os.path.join(MODEL_PATH, model_name),
+            default_model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
         ).create(),
     )
 
