@@ -1,9 +1,11 @@
 """Build AWEL DAGs from serialized data."""
 
 import logging
+import uuid
+from contextlib import suppress
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
-from dbgpt._private.pydantic import BaseModel, Field, validator
+from dbgpt._private.pydantic import BaseModel, Field, root_validator, validator
 from dbgpt.core.awel.dag.base import DAG, DAGNode
 
 from .base import ResourceMetadata, ViewMetadata, _get_operator_class
@@ -44,7 +46,7 @@ class FlowNodeData(BaseModel):
     data: Union[ViewMetadata, ResourceMetadata] = Field(
         ..., description="Data of the node"
     )
-    positionAbsolute: FlowPositionData = Field(
+    position_absolute: FlowPositionData = Field(
         ..., description="Absolute position of the node"
     )
 
@@ -76,11 +78,30 @@ class FlowEdgeData(BaseModel):
         ],
     )
     target_order: int = Field(
-        ...,
         description="The order of the target node in the source node's output",
         examples=[0, 1],
     )
     id: str = Field(..., description="Id of the edge", examples=["edge_0"])
+    source_handle: Optional[str] = Field(
+        default=None,
+        description="Source handle, used in UI",
+    )
+    target_handle: Optional[str] = Field(
+        default=None,
+        description="Target handle, used in UI",
+    )
+
+    @root_validator(pre=True)
+    def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Pre fill the metadata."""
+        if (
+            "target_order" not in values
+            and "target_handle" in values
+            and values["target_handle"] is not None
+        ):
+            with suppress(Exception):
+                values["target_order"] = int(values["target_handle"].split("|")[-1])
+        return values
 
 
 class FlowData(BaseModel):
@@ -95,7 +116,7 @@ class FlowPanel(BaseModel):
     """Flow panel."""
 
     uid: str = Field(
-        ...,
+        default_factory=lambda: str(uuid.uuid4()),
         description="Flow panel uid",
         examples=[
             "5b25ac8a-ba8e-11ee-b96d-3b9bfdeebd1c",
