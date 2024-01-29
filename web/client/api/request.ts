@@ -32,6 +32,7 @@ import {
   ISyncBatchResponse,
 } from '@/types/knowledge';
 import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
+import { IApp } from '@/types/app';
 
 /** App */
 export const postScenes = () => {
@@ -248,4 +249,21 @@ export const updatePrompt = (data: UpdatePromptParams) => {
 
 export const addPrompt = (data: UpdatePromptParams) => {
   return POST<UpdatePromptParams, []>('/prompt/add', data);
+};
+
+/** app */
+export const addApp = (data: IApp) => {
+  return POST<IApp, []>('/api/app/create', data);
+};
+
+export const getAppList = () => {
+  return POST<null, IApp[]>('/api/app/list');
+};
+
+export const collectApp = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('/api/app/collect', data);
+};
+
+export const delApp = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('/api/app/remove', data);
 };

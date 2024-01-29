@@ -3,8 +3,6 @@ import { Dropdown, Form, Input, Modal, Select, Space, Spin, Tabs } from 'antd';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AddIcon from '../icons/add-icon';
-import { MenuProps } from 'antd/lib';
-import { DownOutlined } from '@ant-design/icons';
 import AgentPanel from './agent-panel';
 
 type TargetKey = React.MouseEvent | React.KeyboardEvent | string;
@@ -22,10 +20,10 @@ interface IProps {
 }
 
 const initialItems = [
-  { label: 'Tab 1', children: <AgentPanel />, key: '1' },
-  { label: 'Tab 2', children: <AgentPanel />, key: '2' },
+  { label: 'agent 1', children: <AgentPanel />, key: '1' },
+  { label: 'agent 2', children: <AgentPanel />, key: '2' },
   {
-    label: 'Tab 3',
+    label: 'agent 3',
     children: <AgentPanel />,
     key: '3',
   },
@@ -33,17 +31,17 @@ const initialItems = [
 
 const dropItems: any = [
   {
-    label: '1st menu item',
+    label: 'agent1 ',
     key: '0',
     onClick: () => {},
   },
   {
-    label: '1st menu item',
+    label: 'agent2',
     key: '1',
     onClick: () => {},
   },
   {
-    label: '3rd menu item',
+    label: 'agent3',
     key: '3',
     onClick: () => {},
   },
@@ -121,9 +119,16 @@ export default function AppModal(props: IProps) {
 
   return (
     <div>
-      <Modal title="Basic Modal" open={open} onCancel={handleCancel}>
+      <Modal title="add application" open={open} onCancel={handleCancel}>
         <Spin spinning={spinning}>
-          <Form size="large" className="mt-4" layout="vertical" initialValues={{ remember: true }} autoComplete="off" onFinish={handleFinish}>
+          <Form
+            size="large"
+            className="mt-4 h-[650px] overflow-auto"
+            layout="vertical"
+            initialValues={{ remember: true }}
+            autoComplete="off"
+            onFinish={handleFinish}
+          >
             <Form.Item<FieldType> label={'App Name'} name="name" rules={[{ required: true, message: t('Please_input_the_name') }]}>
               <Input className="h-12" placeholder={t('Please_input_the_name')} />
             </Form.Item>
