@@ -184,6 +184,8 @@ DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领�
 <a href="https://github.com/eosphoros-ai/DB-GPT/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=eosphoros-ai/DB-GPT&max=200" />
 </a>
+
+
 ## Licence
 
 The MIT License (MIT)
