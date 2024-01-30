@@ -1,24 +1,30 @@
 """The message operator."""
+import logging
 import uuid
 from abc import ABC
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from dbgpt.core import (
+    InMemoryStorage,
     LLMClient,
     MessageStorageItem,
     ModelMessage,
     ModelMessageRoleType,
+    ModelRequest,
     ModelRequestContext,
     StorageConversation,
     StorageInterface,
 )
 from dbgpt.core.awel import BaseOperator, MapOperator
+from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
 from dbgpt.core.interface.message import (
     BaseMessage,
     _messages_to_str,
     _MultiRoundMessageMapper,
     _split_messages_by_round,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class BaseConversationOperator(BaseOperator, ABC):
@@ -96,7 +102,7 @@ class BaseConversationOperator(BaseOperator, ABC):
                 raise ValueError(f"Message role {message.role} is not supported")
 
 
-ChatHistoryLoadType = Union[ModelRequestContext, Dict[str, Any]]
+ChatHistoryLoadType = Union[ModelRequest, ModelRequestContext, Dict[str, Any]]
 
 
 class PreChatHistoryLoadOperator(
@@ -111,6 +117,50 @@ class PreChatHistoryLoadOperator(
     This operator just load the conversation and messages from storage.
     """
 
+    metadata = ViewMetadata(
+        label="Chat History Load Operator",
+        name="chat_history_load_operator",
+        category=OperatorCategory.CONVERSION,
+        description="The operator to load chat history from storage.",
+        parameters=[
+            Parameter.build_from(
+                label="Conversation Storage",
+                name="storage",
+                type=StorageInterface,
+                optional=True,
+                default=None,
+                description="The conversation storage, store the conversation items("
+                "Not include message items). If None, we will use InMemoryStorage.",
+            ),
+            Parameter.build_from(
+                label="Message Storage",
+                name="message_storage",
+                type=StorageInterface,
+                optional=True,
+                default=None,
+                description="The message storage, store the messages of one "
+                "conversation. If None, we will use InMemoryStorage.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                label="Model Request",
+                name="input_value",
+                type=ModelRequest,
+                description="The model request.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                label="Stored Messages",
+                name="output_value",
+                type=BaseMessage,
+                description="The messages stored in the storage.",
+                is_list=True,
+            )
+        ],
+    )
+
     def __init__(
         self,
         storage: Optional[StorageInterface[StorageConversation, Any]] = None,
@@ -119,6 +169,17 @@ class PreChatHistoryLoadOperator(
         **kwargs,
     ):
         """Create a new PreChatHistoryLoadOperator."""
+        if not storage:
+            logger.info(
+                "Storage is not set, use the InMemoryStorage as the conversation "
+                "storage."
+            )
+            storage = InMemoryStorage()
+        if not message_storage:
+            logger.info(
+                "Message storage is not set, use the InMemoryStorage as the message "
+            )
+            message_storage = InMemoryStorage()
         super().__init__(storage=storage, message_storage=message_storage)
         MapOperator.__init__(self, **kwargs)
         self._include_system_message = include_system_message
@@ -136,6 +197,11 @@ class PreChatHistoryLoadOperator(
             raise ValueError("Model request context can't be None")
         if isinstance(input_value, dict):
             input_value = ModelRequestContext(**input_value)
+        elif isinstance(input_value, ModelRequest):
+            if not input_value.context:
+                raise ValueError("Model request context can't be None")
+            input_value = input_value.context
+        input_value = cast(ModelRequestContext, input_value)
         if not input_value.conv_uid:
             input_value.conv_uid = str(uuid.uuid4())
         if not input_value.extra:

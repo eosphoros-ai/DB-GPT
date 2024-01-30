@@ -43,6 +43,11 @@ class FlowNodeData(BaseModel):
         ],
     )
     position: FlowPositionData = Field(..., description="Position of the node")
+    type: Optional[str] = Field(
+        default=None,
+        description="Type of current UI node(Just for UI)",
+        examples=["customNode"],
+    )
     data: Union[ViewMetadata, ResourceMetadata] = Field(
         ..., description="Data of the node"
     )
@@ -89,6 +94,11 @@ class FlowEdgeData(BaseModel):
     target_handle: Optional[str] = Field(
         default=None,
         description="Target handle, used in UI",
+    )
+    type: Optional[str] = Field(
+        default=None,
+        description="Type of current UI node(Just for UI)",
+        examples=["buttonedge"],
     )
 
     @root_validator(pre=True)

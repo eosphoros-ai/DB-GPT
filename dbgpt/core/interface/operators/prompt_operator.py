@@ -3,24 +3,62 @@ from abc import ABC
 from typing import Any, Dict, List, Optional, Union
 
 from dbgpt.core import (
-    ChatPromptTemplate,
     ModelMessage,
     ModelMessageRoleType,
     ModelOutput,
     StorageConversation,
 )
 from dbgpt.core.awel import JoinOperator, MapOperator
+from dbgpt.core.awel.flow import Parameter, register_resource
 from dbgpt.core.interface.message import BaseMessage
 from dbgpt.core.interface.operators.llm_operator import BaseLLM
 from dbgpt.core.interface.operators.message_operator import BaseConversationOperator
 from dbgpt.core.interface.prompt import (
     BaseChatPromptTemplate,
+    ChatPromptTemplate,
     HumanPromptTemplate,
     MessagesPlaceholder,
     MessageType,
     PromptTemplate,
+    SystemPromptTemplate,
 )
 from dbgpt.util.function_utils import rearrange_args_by_type
+
+
+@register_resource(
+    label="Common Chat Prompt Template",
+    name="common_chat_prompt_template",
+    description="The operator to build the prompt with static prompt.",
+    parameters=[
+        Parameter.build_from(
+            label="System Message",
+            name="system_message",
+            type=str,
+            optional=True,
+            default=None,
+            description="The system message.",
+        ),
+        Parameter.build_from(
+            label="Human Message",
+            name="human_message",
+            type=str,
+            placeholder="{user_input}",
+            description="The human message.",
+        ),
+    ],
+)
+class CommonChatPromptTemplate:
+    """The common chat prompt template."""
+
+    def __init__(self, system_message: str, human_message: str):
+        """Create a new common chat prompt template."""
+        messages = []
+        if system_message:
+            messages.append(SystemPromptTemplate.from_template(system_message))
+        if not human_message:
+            raise ValueError("No human message")
+        messages.append(HumanPromptTemplate.from_template(human_message))
+        self._chat_prompt = ChatPromptTemplate(messages=messages)
 
 
 class BasePromptBuilderOperator(BaseConversationOperator, ABC):

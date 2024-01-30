@@ -194,6 +194,28 @@ class RequestHttpBody(BaseHttpBody):
         return self._default_body
 
 
+class CommonLLMHTTPRequestContext(BaseModel):
+    """Common LLM http request context."""
+
+    conv_uid: Optional[str] = Field(
+        default=None, description="The conversation id of the model inference"
+    )
+    span_id: Optional[str] = Field(
+        default=None, description="The span id of the model inference"
+    )
+    chat_mode: Optional[str] = Field(
+        default="chat_awel_flow",
+        description="The chat mode",
+        examples=["chat_awel_flow", "chat_normal"],
+    )
+    user_name: Optional[str] = Field(
+        default=None, description="The user name of the model inference"
+    )
+    sys_code: Optional[str] = Field(
+        default=None, description="The system code of the model inference"
+    )
+
+
 @register_resource(
     label="Common LLM Http Request Body",
     name="common_llm_http_request_body",
@@ -217,6 +239,15 @@ class CommonLLMHttpRequestBody(BaseHttpBody):
         description="What sampling temperature to use, between 0 and 2. Higher values "
         "like 0.8 will make the output more random, while lower values like 0.2 will "
         "make it more focused and deterministic.",
+    )
+    max_new_tokens: Optional[int] = Field(
+        default=None,
+        description="The maximum number of tokens that can be generated in the chat "
+        "completion.",
+    )
+    context: CommonLLMHTTPRequestContext = Field(
+        default_factory=CommonLLMHTTPRequestContext,
+        description="The context of the model inference",
     )
 
 

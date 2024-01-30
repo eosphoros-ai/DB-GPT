@@ -435,20 +435,7 @@ class BaseResource(Serializable, BaseModel):
 class Resource(BaseResource, TypeMetadata):
     """The resource of the operator."""
 
-    @classmethod
-    def build_from(
-        cls, label: str, name: str, type: Type, description: Optional[str] = None
-    ):
-        """Build the resource from the type."""
-        type_name = type.__qualname__
-        type_cls = _get_type_name(type)
-        return cls(
-            label=label,
-            name=name,
-            type_name=type_name,
-            type_cls=type_cls,
-            description=description or label,
-        )
+    pass
 
 
 class IOFiledType(str, Enum):
@@ -470,6 +457,27 @@ class IOField(Resource):
         description="Whether current field is list",
         examples=[True, False],
     )
+
+    @classmethod
+    def build_from(
+        cls,
+        label: str,
+        name: str,
+        type: Type,
+        description: Optional[str] = None,
+        is_list: bool = False,
+    ):
+        """Build the resource from the type."""
+        type_name = type.__qualname__
+        type_cls = _get_type_name(type)
+        return cls(
+            label=label,
+            name=name,
+            type_name=type_name,
+            type_cls=type_cls,
+            is_list=is_list,
+            description=description or label,
+        )
 
 
 class BaseMetadata(BaseResource):
