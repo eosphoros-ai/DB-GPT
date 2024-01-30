@@ -29,28 +29,28 @@ class Scene:
 class ChatScene(Enum):
     ChatWithDbExecute = Scene(
         code="chat_with_db_execute",
-        name="Chat Data",
-        describe="Dialogue with your private data through natural language.",
+        name="AI数据问答",
+        describe="通过自然语言与您的私人数据进行对话。",
         param_types=["DB Select"],
     )
     ExcelLearning = Scene(
         code="excel_learning",
         name="Excel Learning",
-        describe="Analyze and summarize your excel files.",
+        describe="分析和总结您的Excel文件。",
         is_inner=True,
     )
     ChatExcel = Scene(
         code="chat_excel",
-        name="Chat Excel",
-        describe="Dialogue with your excel, use natural language.",
+        name="Excel智能问答",
+        describe="与您的 Excel 进行对话，使用自然语言。",
         param_types=["File Select"],
         prepare_scene_code="excel_learning",
     )
 
     ChatWithDbQA = Scene(
         code="chat_with_db_qa",
-        name="Chat DB",
-        describe="Have a Professional Conversation with Metadata.",
+        name="数据库问答",
+        describe="与元数据进行专业对话",
         param_types=["DB Select"],
     )
     ChatExecution = Scene(
@@ -82,7 +82,7 @@ class ChatScene(Enum):
     )
     ChatKnowledge = Scene(
         "chat_knowledge",
-        "Chat Knowledge",
+        "智能知识库",
         "Dialogue through natural language and private documents and knowledge bases.",
         ["Knowledge Space Select"],
     )
