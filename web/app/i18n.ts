@@ -182,6 +182,16 @@ const en = {
   choice_agent_tip: 'Please choose an agent',
   no_context_tip: 'Please enter your question',
   Terminal: 'Terminal',
+  awel_flow: 'AWEL Flow',
+  save: 'Save',
+  add_node: 'Add Node',
+  no_node: 'No Node',
+  connect_warning: 'Nodes cannot be connected',
+  flow_modal_title: 'Save Flow',
+  flow_name: 'Flow Name',
+  flow_name_required: 'Please enter the flow name',
+  save_flow_success: 'Save flow success',
+  delete_flow_confirm: 'Are you sure you want to delete this flow?',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -370,6 +380,16 @@ const zh: Resources['translation'] = {
   choice_agent_tip: '请选择代理',
   no_context_tip: '请输入你的问题',
   Terminal: '终端',
+  awel_flow: 'AWEL 工作流',
+  save: '保存',
+  add_node: '添加节点',
+  no_node: '没有可编排节点',
+  connect_warning: '节点无法连接',
+  flow_modal_title: '保存工作流',
+  flow_name: '工作流名称',
+  flow_name_required: '请输入工作流名称',
+  save_flow_success: '保存工作流成功',
+  delete_flow_confirm: '确定删除该工作流吗？',
 } as const;
 
 i18n.use(initReactI18next).init({
