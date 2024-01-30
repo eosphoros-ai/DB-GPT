@@ -5,6 +5,7 @@ import RequiredIcon from './required-icon';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { IFlowNode, IFlowNodeInput, IFlowNodeOutput, IFlowNodeParameter } from '@/types/flow';
 import { useTranslation } from 'react-i18next';
+import classNames from 'classnames';
 
 interface NodeHandlerProps {
   node: IFlowNode;
@@ -44,7 +45,12 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
   }
 
   return (
-    <div className="relative flex items-center">
+    <div
+      className={classNames('relative flex items-center', {
+        'justify-start': label === 'parameters' || label === 'inputs',
+        'justify-end': label === 'outputs',
+      })}
+    >
       <Handle
         className="w-2 h-2"
         type={type}
@@ -52,7 +58,11 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
         id={`${node.id}|${label}|${index}`}
         isValidConnection={(connection) => isValidConnection(connection)}
       />
-      <Typography className="p-2">
+      <Typography
+        className={classNames('p-2', {
+          'pr-4': label === 'outputs',
+        })}
+      >
         {data.label}:<RequiredIcon optional={data.optional} />
         {data.description && (
           <Tooltip title={data.description}>
