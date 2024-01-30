@@ -119,11 +119,12 @@ def _migration_db_storage(param: "WebServerParameters"):
                     default_meta_data_path, param.disable_alembic_upgrade
                 )
         else:
-            warn_msg = (
-                "For safety considerations, Mysql Database not support DDL init and upgrade. "
-                "1.If you are use DB-GPT firstly, please manually execute the following command to initialize, `mysql -h127.0.0.1 -uroot -p{your_password} < ./assets/schema/dbgpt.sql` "
-                "2.If there are any changes to the table columns in the DBGPT database, it is necessary to compare with the DB-GPT/assets/schema/dbgpt.sql file and manually make the columns changes in the MySQL database instance."
-            )
+            warn_msg = """For safety considerations, Mysql Database not support DDL init and upgrade. "
+                "1.If you are use DB-GPT firstly, please manually execute the following command to initialize, 
+                `mysql -h127.0.0.1 -uroot -p{your_password} < ./assets/schema/dbgpt.sql` "
+                "2.If there are any changes to the table columns in the DB-GPT database, 
+                it is necessary to compare with the DB-GPT/assets/schema/dbgpt.sql file 
+                and manually make the columns changes in the MySQL database instance."""
             logger.warning(warn_msg)
 
 
