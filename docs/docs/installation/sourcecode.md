@@ -363,21 +363,30 @@ Modify the `.env` file to use llama.cpp, and then you can start the service by r
   ]}>
 <TabItem value="sqlite" label="sqlite">
 
-```python
+:::tip NOTE
+
 You do not need to separately create the database tables related to the DB-GPT application in SQLite; 
 they will be created automatically for you by default.
 
-```
+:::
+
 
  </TabItem>
 <TabItem value="mysql" label="MySQL">
- 
-1.execute MySQL script to create database and tables.
+
+:::warning NOTE
+
+After version 0.4.7, we removed the automatic generation of MySQL database Schema for safety.
+
+:::
+
+1. Frist, execute MySQL script to create database and tables.
 
 ```python
 $ mysql -h127.0.0.1 -uroot -p{your_password} < ./assets/schema/dbgpt.sql
 ```
-2.set DB-GPT MySQL database settings in `.env` file.
+
+2. Second, set DB-GPT MySQL database settings in `.env` file.
 
 ```python
 LOCAL_DB_TYPE=mysql
