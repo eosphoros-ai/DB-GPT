@@ -1,15 +1,16 @@
-import { IAgent } from '@/types/app';
+import { IAgent, ITeamModal } from '@/types/app';
 import { Dropdown, Form, Input, Modal, Select, Space, Spin, Tabs } from 'antd';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AddIcon from '../icons/add-icon';
 import AgentPanel from './agent-panel';
+import { addApp, apiInterceptors, getAgents, getTeamMode } from '@/client/api';
 
 type TargetKey = React.MouseEvent | React.KeyboardEvent | string;
 
 type FieldType = {
-  name: string;
-  description: string;
+  app_name: string;
+  app_describe: string;
   language: string;
   team_mode: string;
 };
@@ -17,6 +18,7 @@ type FieldType = {
 interface IProps {
   handleCancel: () => void;
   open: boolean;
+  updateApps: () => void;
 }
 
 const initialItems = [
@@ -47,14 +49,21 @@ const dropItems: any = [
   },
 ];
 
+const languageOptions = [
+  { value: 'zh', label: '中文' },
+  { value: 'en', label: '英文' },
+];
+
 export default function AppModal(props: IProps) {
-  const { handleCancel, open } = props;
+  const { handleCancel, open, updateApps } = props;
   const { t } = useTranslation();
   const [spinning, setSpinning] = useState<boolean>(false);
-  const [agents, setAgents] = useState<IAgent[]>([]);
   const [activeKey, setActiveKey] = useState(initialItems[0].key);
+  const [teamModal, setTeamModal] = useState<{ label: string; value: string }[]>();
   const [items, setItems] = useState(initialItems);
   const newTabIndex = useRef(0);
+
+  const [form] = Form.useForm();
 
   const onChange = (newActiveKey: string) => {
     setActiveKey(newActiveKey);
@@ -68,6 +77,31 @@ export default function AppModal(props: IProps) {
     });
     setActiveKey(newActiveKey);
   };
+
+  const createApp = async (app: any) => {
+    await apiInterceptors(addApp(app));
+    updateApps();
+  };
+
+  const fetchTeamModal = async () => {
+    const [_, data] = await apiInterceptors(getTeamMode());
+    if (!data) return null;
+
+    const teamModalOptions = data.map((item) => {
+      return { value: item, label: item };
+    });
+    setTeamModal(teamModalOptions);
+  };
+
+  const fetchAgent = async () => {
+    const [_, data] = await apiInterceptors(getAgents());
+    console.log('1111agent', data);
+  };
+
+  useEffect(() => {
+    fetchTeamModal();
+    fetchAgent();
+  }, []);
 
   dropItems?.forEach((item: any) => {
     item.onClick = () => {
@@ -103,7 +137,13 @@ export default function AppModal(props: IProps) {
     }
   };
 
-  const handleFinish = async (fieldsValue: FieldType) => {};
+  const handleSubmit = () => {
+    const data = {
+      ...form.getFieldsValue(),
+      details: [],
+    };
+    createApp(data);
+  };
 
   const renderAddIcon = () => {
     return (
@@ -119,31 +159,32 @@ export default function AppModal(props: IProps) {
 
   return (
     <div>
-      <Modal title="add application" open={open} onCancel={handleCancel}>
+      <Modal title="add application" open={open} onCancel={handleCancel} onOk={handleSubmit}>
         <Spin spinning={spinning}>
           <Form
+            form={form}
             size="large"
             className="mt-4 h-[650px] overflow-auto"
             layout="vertical"
             initialValues={{ remember: true }}
             autoComplete="off"
-            onFinish={handleFinish}
+            onFinish={handleSubmit}
           >
-            <Form.Item<FieldType> label={'App Name'} name="name" rules={[{ required: true, message: t('Please_input_the_name') }]}>
+            <Form.Item<FieldType> label={'App Name'} name="app_name" rules={[{ required: true, message: t('Please_input_the_name') }]}>
               <Input className="h-12" placeholder={t('Please_input_the_name')} />
             </Form.Item>
             <Form.Item<FieldType>
               label={t('Description')}
-              name="description"
+              name="app_describe"
               rules={[{ required: true, message: t('Please_input_the_description') }]}
             >
               <Input className="h-12" placeholder={t('Please_input_the_description')} />
             </Form.Item>
             <Form.Item<FieldType> label={t('language')} name="language" rules={[{ required: true }]}>
-              <Select className="h-12" placeholder={t('language_select_tips')} />
+              <Select className="h-12" placeholder={t('language_select_tips')} options={languageOptions} />
             </Form.Item>
             <Form.Item<FieldType> label={t('team_modal')} name="team_mode" rules={[{ required: true }]}>
-              <Select className="h-12" placeholder={t('Please_input_the_description')} />
+              <Select className="h-12" placeholder={t('Please_input_the_description')} options={teamModal} />
             </Form.Item>
             <div>
               <div className="mb-5">Agent</div>

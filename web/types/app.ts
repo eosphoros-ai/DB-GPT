@@ -1,5 +1,6 @@
 // app
 export type IApp = {
+  app_code: string;
   /**
    * 应用名
    */
@@ -46,4 +47,10 @@ export type IAgent = {
    * 策略包含的参数
    */
   llm_strategy_value: string;
+};
+
+export type ITeamModal = {
+  auto_plan: string;
+  awel_layout: string;
+  singe_agent: string;
 };

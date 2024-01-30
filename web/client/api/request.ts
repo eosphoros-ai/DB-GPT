@@ -32,7 +32,7 @@ import {
   ISyncBatchResponse,
 } from '@/types/knowledge';
 import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
-import { IApp } from '@/types/app';
+import { IApp, ITeamModal } from '@/types/app';
 
 /** App */
 export const postScenes = () => {
@@ -253,17 +253,25 @@ export const addPrompt = (data: UpdatePromptParams) => {
 
 /** app */
 export const addApp = (data: IApp) => {
-  return POST<IApp, []>('/api/app/create', data);
+  return POST<IApp, []>('/api/v1/app/create', data);
 };
 
 export const getAppList = () => {
-  return POST<null, IApp[]>('/api/app/list');
+  return POST<{}, IApp[]>('/api/v1/app/list', {});
 };
 
 export const collectApp = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>('/api/app/collect', data);
+  return POST<Record<string, string>, []>('/api/v1/app/collect', data);
 };
 
 export const delApp = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>('/api/app/remove', data);
+  return POST<Record<string, string>, []>('/api/v1/app/remove', data);
+};
+
+export const getAgents = () => {
+  return GET<object, []>('/api/v1/agents/list', {});
+};
+
+export const getTeamMode = () => {
+  return GET<null, string[]>('/api/v1/team-mode/list');
 };
