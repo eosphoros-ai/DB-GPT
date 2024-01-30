@@ -4,9 +4,12 @@ import NodeParamHandler from './node-param-handler';
 import classNames from 'classnames';
 import { useState } from 'react';
 import NodeHandler from './node-handler';
-import { Popover } from 'antd';
-import { CopyOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Popover, Tooltip } from 'antd';
+import { CopyOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useReactFlow } from 'reactflow';
+import IconWrapper from '../common/icon-wrapper';
+import { getUniqueNodeId } from '@/utils/flow';
+import { cloneDeep } from 'lodash';
 
 type CanvasNodeProps = {
   data: IFlowNode;
@@ -40,15 +43,39 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
     setIsHovered(false);
   }
 
-  function copyNode() {}
-
-  function deleteNode() {
+  function copyNode(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    e.preventDefault();
+    e.stopPropagation();
     const nodes = reactFlow.getNodes();
-    console.log('delete node', nodes);
-    reactFlow.setNodes((nodes) => {
-      const list = nodes.filter((item) => item.id !== node.id);
-      return list;
-    });
+    const originalNode = nodes.find((item) => item.id === node.id);
+    if (originalNode) {
+      const newNodeId = getUniqueNodeId(originalNode as IFlowNode, nodes);
+      const cloneNode = cloneDeep(originalNode);
+      const duplicatedNode = {
+        ...cloneNode,
+        id: newNodeId,
+        position: {
+          x: cloneNode.position.x + 400,
+          y: cloneNode.position.y,
+        },
+        positionAbsolute: {
+          x: cloneNode.positionAbsolute!.x + 400,
+          y: cloneNode.positionAbsolute!.y,
+        },
+        data: {
+          ...cloneNode.data,
+          id: newNodeId,
+        },
+        selected: false,
+      };
+      reactFlow.setNodes((nodes) => [...nodes, duplicatedNode]);
+    }
+  }
+
+  function deleteNode(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    e.preventDefault();
+    e.stopPropagation();
+    reactFlow.setNodes((nodes) => nodes.filter((item) => item.id !== node.id));
     reactFlow.setEdges((edges) => edges.filter((edge) => edge.source !== node.id && edge.target !== node.id));
   }
 
@@ -76,11 +103,21 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   return (
     <Popover
       placement="rightTop"
+      trigger={['hover']}
       content={
-        <div>
-          <CopyOutlined className="block text-lg cursor-pointer" onClick={copyNode} />
-          <DeleteOutlined className="block text-lg cursor-pointer" onClick={deleteNode} />
-        </div>
+        <>
+          <IconWrapper className="hover:text-blue-500">
+            <CopyOutlined className="h-full text-lg cursor-pointer" onClick={copyNode} />
+          </IconWrapper>
+          <IconWrapper className="mt-2 hover:text-red-500">
+            <DeleteOutlined className="h-full text-lg cursor-pointer" onClick={deleteNode} />
+          </IconWrapper>
+          <IconWrapper className="mt-2">
+            <Tooltip title={node.description} placement="right">
+              <InfoCircleOutlined className="h-full text-lg cursor-pointer" />
+            </Tooltip>
+          </IconWrapper>
+        </>
       }
     >
       <div
