@@ -105,12 +105,28 @@ def _migration_db_storage(param: "WebServerParameters"):
         from dbgpt.storage.metadata.db_manager import db
         from dbgpt.util._db_migration_utils import _ddl_init_and_upgrade
 
-        # try to create all tables
-        try:
-            db.create_all()
-        except Exception as e:
-            logger.warning(f"Create all tables stored in this metadata error: {str(e)}")
-        _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
+        # Try to create all tables, when the dbtype is sqlite, it will auto create and upgrade system schema,
+        # Otherwise, you need to execute initialization scripts to create schemas.
+        CFG = Config()
+        if CFG.LOCAL_DB_TYPE == "sqlite":
+            try:
+                db.create_all()
+            except Exception as e:
+                logger.warning(
+                    f"Create all tables stored in this metadata error: {str(e)}"
+                )
+
+                _ddl_init_and_upgrade(
+                    default_meta_data_path, param.disable_alembic_upgrade
+                )
+        else:
+            warn_msg = """For safety considerations, MySQL Database not support DDL init and upgrade. "
+                "1.If you are use DB-GPT firstly, please manually execute the following command to initialize, 
+                `mysql -h127.0.0.1 -uroot -p{your_password} < ./assets/schema/dbgpt.sql` "
+                "2.If there are any changes to the table columns in the DB-GPT database, 
+                it is necessary to compare with the DB-GPT/assets/schema/dbgpt.sql file 
+                and manually make the columns changes in the MySQL database instance."""
+            logger.warning(warn_msg)
 
 
 def _initialize_db(
@@ -118,7 +134,7 @@ def _initialize_db(
 ) -> str:
     """Initialize the database
 
-    Now just support sqlite and mysql. If db type is sqlite, the db path is `pilot/meta_data/{db_name}.db`.
+    Now just support sqlite and MySQL. If db type is sqlite, the db path is `pilot/meta_data/{db_name}.db`.
     """
     from urllib.parse import quote
     from urllib.parse import quote_plus as urlquote
