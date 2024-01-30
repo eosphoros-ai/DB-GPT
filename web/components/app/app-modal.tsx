@@ -80,7 +80,7 @@ export default function AppModal(props: IProps) {
 
   const createApp = async (app: any) => {
     await apiInterceptors(addApp(app));
-    updateApps();
+    await updateApps();
   };
 
   const fetchTeamModal = async () => {
@@ -137,12 +137,15 @@ export default function AppModal(props: IProps) {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async() => {
+    setSpinning(true);
     const data = {
       ...form.getFieldsValue(),
       details: [],
     };
-    createApp(data);
+    await createApp(data);
+    setSpinning(false);
+    handleCancel();
   };
 
   const renderAddIcon = () => {
