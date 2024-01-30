@@ -79,7 +79,7 @@ class MilvusStore(VectorStoreBase):
         self.port = milvus_vector_config.get("post") or os.getenv(
             "MILVUS_PORT", "19530"
         )
-        self.username = milvus_vector_config.get("user") or os.getenv("MILVUS_USER")
+        self.username = milvus_vector_config.get("user") or os.getenv("MILVUS_USERNAME")
         self.password = milvus_vector_config.get("password") or os.getenv(
             "MILVUS_PASSWORD"
         )
@@ -133,7 +133,7 @@ class MilvusStore(VectorStoreBase):
         connections.connect(
             host=self.uri or "127.0.0.1",
             port=self.port or "19530",
-            username=self.username,
+            user=self.username,
             password=self.password,
             alias="default",
         )
