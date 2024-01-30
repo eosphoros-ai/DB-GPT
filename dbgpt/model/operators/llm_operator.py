@@ -8,6 +8,7 @@ from dbgpt.core.awel import BaseOperator
 from dbgpt.core.awel.flow import (
     IOField,
     OperatorCategory,
+    OperatorType,
     Parameter,
     ResourceCategory,
     ViewMetadata,
@@ -105,6 +106,39 @@ class StreamingLLMOperator(MixinLLMOperator, BaseStreamingLLMOperator):
             If llm_client is None, we will try to connect to the model serving cluster deploy by DB-GPT,
             and if we can't connect to the model serving cluster, we will use the :class:`OpenAILLMClient` as the llm_client.
     """
+
+    metadata = ViewMetadata(
+        label="Streaming LLM Operator",
+        name="streaming_llm_operator",
+        operator_type=OperatorType.STREAMIFY,
+        category=OperatorCategory.LLM,
+        description="The streaming LLM operator.",
+        parameters=[
+            Parameter.build_from(
+                "LLM Client",
+                "llm_client",
+                LLMClient,
+                optional=True,
+                default=None,
+                resource_category=ResourceCategory.LLM_CLIENT,
+                description="The LLM Client.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "Model Request", "model_request", ModelRequest, "The model request."
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model Output",
+                "model_output",
+                ModelOutput,
+                description="The model output.",
+                is_list=True,
+            )
+        ],
+    )
 
     def __init__(self, llm_client: Optional[LLMClient] = None, **kwargs):
         super().__init__(llm_client)
