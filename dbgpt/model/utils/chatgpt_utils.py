@@ -140,9 +140,7 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
         return api_type, AsyncAzureOpenAI(
             api_key=openai_params["api_key"],
             api_version=api_version,
-            #azure_deployment="siasmodel",
             azure_deployment=openai_params["api_azure_deployment"],
-            #   model_name="gpt-35-turbo",
             azure_endpoint=openai_params["base_url"],
             http_client=httpx.AsyncClient(proxies=init_params.proxies),
         )
