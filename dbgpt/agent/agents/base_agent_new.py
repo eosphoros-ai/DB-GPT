@@ -171,7 +171,7 @@ class ConversableAgent(Agent, Role):
         logger.info(
             f"generate agent reply!sender={sender}, rely_messages_len={rely_messages}"
         )
-        self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter + 1
+
         reply_message = self._init_reply_message(recive_message=recive_message)
         await self._system_message_assembly(
             recive_message["content"], reply_message.get("context", None)
@@ -188,9 +188,6 @@ class ConversableAgent(Agent, Role):
                 # It is temporarily set to be initiated by the originating end to facilitate the organization of historical memory context.
                 await sender.a_send(retry_message, self, reviewer, request_reply=False)
 
-            self.consecutive_auto_reply_counter = (
-                self.consecutive_auto_reply_counter + 1
-            )
             # 1.Think about how to do things
             llm_reply, model_name = await self.a_thinking(
                 self._load_thinking_messages(recive_message, sender, rely_messages)
@@ -337,6 +334,7 @@ class ConversableAgent(Agent, Role):
     async def _a_append_message(
         self, message: Optional[Dict], role, sender: Agent
     ) -> bool:
+        self.consecutive_auto_reply_counter = sender.consecutive_auto_reply_counter + 1
         oai_message = {
             k: message[k]
             for k in (

@@ -81,7 +81,11 @@ class DashboardAction(Action[List[ChartItem]]):
                     chart_item["err_msg"] = str(e)
                 chart_params.append(chart_item)
             view = await self.render_protocal.disply(charts=chart_params)
-            return ActionOutput(is_exe_success=True, content=ai_message, view=view)
+            return ActionOutput(
+                is_exe_success=True,
+                content=json.dumps([chart_item.dict() for chart_item in chart_items]),
+                view=view,
+            )
         except Exception as e:
             logger.exception("Dashboard generate Failed！")
             return ActionOutput(

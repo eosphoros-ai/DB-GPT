@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Callable, Dict, List, Literal, Optional, Union
 
+from dbgpt.agent.actions.action import ActionOutput
 from dbgpt.agent.actions.chart_action import ChartAction
 from dbgpt.agent.resource.resource_api import ResourceType
 from dbgpt.agent.resource.resource_db_api import ResourceDbClient
@@ -43,12 +44,13 @@ class DataScientistAgent(ConversableAgent):
                 False,
                 f"No executable analysis SQL is generated,{message['content']}.",
             )
-        if action_reply.get("is_exe_success", False) == False:
+        action_out = ActionOutput.from_dict(action_reply)
+        if action_out.is_exe_success == False:
             return (
                 False,
-                f"Please check your answer, {action_reply.get('content', '')}.",
+                f"Please check your answer, {action_out.content}.",
             )
-        action_reply_obj = json.loads(action_reply.get("content", ""))
+        action_reply_obj = json.loads(action_out.content)
         sql = action_reply_obj.get("sql", None)
         if not sql:
             return (
@@ -58,12 +60,12 @@ class DataScientistAgent(ConversableAgent):
         try:
             resource_db_client: ResourceDbClient = (
                 self.resource_loader.get_resesource_api(
-                    ResourceType(action_reply.get("resource_type", None))
+                    ResourceType(action_out.resource_type)
                 )
             )
 
             columns, values = await resource_db_client.a_query(
-                db=action_reply.get("resource_value", None), sql=sql
+                db=action_out.resource_value, sql=sql
             )
             if not values or len(values) <= 0:
                 return (
@@ -76,6 +78,7 @@ class DataScientistAgent(ConversableAgent):
                 )
                 return True, None
         except Exception as e:
+            logger.exception(f"DataScientist check exception！{str(e)}")
             return (
                 False,
                 f"SQL execution error, please re-read the historical information to fix this SQL. The error message is as follows:{str(e)}",
