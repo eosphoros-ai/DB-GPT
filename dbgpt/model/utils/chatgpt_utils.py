@@ -127,7 +127,7 @@ def _initialize_openai(params: OpenAIParameters):
     if params.proxies:
         openai.proxy = params.proxies
     if params.api_azure_deployment:
-        openai.api_azure_deployment =api_azure_deployment
+        openai.api_azure_deployment = api_azure_deployment
 
 
 def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType]:
@@ -140,9 +140,7 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
         return api_type, AsyncAzureOpenAI(
             api_key=openai_params["api_key"],
             api_version=api_version,
-            #azure_deployment="siasmodel",
             azure_deployment=openai_params["api_azure_deployment"],
-            #   model_name="gpt-35-turbo",
             azure_endpoint=openai_params["base_url"],
             http_client=httpx.AsyncClient(proxies=init_params.proxies),
         )
@@ -172,9 +170,9 @@ class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
 
 
 async def _to_openai_stream(
-    output_iter: AsyncIterator[ModelOutput],
-    model: Optional[str] = None,
-    model_caller: Callable[[], Union[Awaitable[str], str]] = None,
+        output_iter: AsyncIterator[ModelOutput],
+        model: Optional[str] = None,
+        model_caller: Callable[[], Union[Awaitable[str], str]] = None,
 ) -> AsyncIterator[str]:
     """Convert the output_iter to openai stream format.
 
@@ -219,7 +217,7 @@ async def _to_openai_stream(
             yield "data: [DONE]\n\n"
             return
         decoded_unicode = model_output.text.replace("\ufffd", "")
-        delta_text = decoded_unicode[len(previous_text) :]
+        delta_text = decoded_unicode[len(previous_text):]
         previous_text = (
             decoded_unicode
             if len(decoded_unicode) > len(previous_text)
