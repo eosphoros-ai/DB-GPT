@@ -78,6 +78,18 @@ class AgentsManage:
             result[name] = cls.DEFAULT_DESCRIBE
         return result
 
+    def list_agents(self):
+        result = []
+        for name, cls in self._agents.items():
+            instance = cls()
+            result.append(
+                {
+                    "name": instance.profile,
+                    "desc": instance.goal,
+                }
+            )
+        return result
+
 
 agent_manage = AgentsManage()
 

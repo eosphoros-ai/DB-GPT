@@ -99,11 +99,13 @@ def mount_routers(app: FastAPI):
         router as api_editor_route_v1,
     )
     from dbgpt.app.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
+    from dbgpt.serve.agent.app.controller import router as gpts_v1
 
     app.include_router(api_v1, prefix="/api", tags=["Chat"])
     app.include_router(api_editor_route_v1, prefix="/api", tags=["Editor"])
     app.include_router(llm_manage_api, prefix="/api", tags=["LLM Manage"])
     app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
+    app.include_router(gpts_v1, prefix="/api", tags=["GptsApp"])
 
     app.include_router(knowledge_router, tags=["Knowledge"])
 

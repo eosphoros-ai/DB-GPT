@@ -50,6 +50,19 @@ class AgentResource:
             raise ValueError(f"Illegal AgentResource json string！{d}")
         return [AgentResource.from_dict(item) for item in json_array]
 
+    @staticmethod
+    def dataclass_to_dict(obj: Any) -> dict:
+        if dataclasses.is_dataclass(obj):
+            d = dataclasses.asdict(obj)
+            for field, value in d.items():
+                if isinstance(value, Enum):
+                    d[field] = value.value
+            return d
+        raise TypeError("Provided object is not a dataclass instance")
+
+    def to_dict(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)
+
 
 class ResourceClient(ABC):
     @property
