@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import dataclasses
+import json
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 
 class ResourceType(Enum):
@@ -19,7 +20,7 @@ class AgentResource:
     introduce: str
     value: str
     is_dynamic: bool = (
-        False  # Is the current resource predefined or dynamically passed in?
+        False
     )
 
     def to_resource_prompt(self):
@@ -35,3 +36,21 @@ class AgentResource:
             introduce=d.get("introduce"),
             value=d.get("value", None),
         )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)
+
+
+def json_to_agent_resource_list(json_array: str) -> List[AgentResource]:
+    data_list = json.loads(json_array)
+    return [AgentResource.from_dict(item) for item in data_list]
+
+
+def dataclass_to_dict(obj: Any) -> dict:
+    if dataclasses.is_dataclass(obj):
+        d = dataclasses.asdict(obj)
+        for field, value in d.items():
+            if isinstance(value, Enum):
+                d[field] = value.value
+        return d
+    raise TypeError("Provided object is not a dataclass instance")

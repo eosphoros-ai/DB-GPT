@@ -262,6 +262,18 @@ CREATE TABLE `gpts_plans` (
   UNIQUE KEY `uk_sub_task` (`conv_id`,`sub_task_num`)
 ) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COMMENT="gpt plan";
 
+CREATE TABLE `gpts_app_collection` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
+  `user_code` int(11) NOT NULL COMMENT 'user code',
+  `sys_code` varchar(255) NOT NULL COMMENT 'system app code',
+  `created_at` datetime DEFAULT NULL COMMENT 'create time',
+  `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
+  PRIMARY KEY (`id`),
+  KEY `idx_app_code` (`app_code`),
+  KEY `idx_user_code` (`user_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpt collections";
+
 CREATE
 DATABASE IF NOT EXISTS EXAMPLE_1;
 use EXAMPLE_1;
