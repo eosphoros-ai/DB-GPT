@@ -23,10 +23,11 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, deleteCallback }) => {
   return (
     <>
       <Link href={`/flow/canvas?id=${flow.uid}`}>
-        <div className="relative flex flex-col p-4 w-72 h-32 rounded justify-between cursor-pointer text-black bg-white shadow-[0_8px_16px_-10px_rgba(100,100,100,.08)] hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.15)] dark:bg-[#232734] dark:text-white dark:hover:border-white transition-[transfrom_shadow] duration-300 hover:-translate-y-1">
+        <div className="relative flex flex-col p-4 w-96 h-44 rounded justify-between cursor-pointer text-black bg-white shadow-[0_8px_16px_-10px_rgba(100,100,100,.08)] hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.15)] dark:bg-[#232734] dark:text-white dark:hover:border-white transition-[transfrom_shadow] duration-300 hover:-translate-y-1">
           <div className="flex items-center">
             <div className="flex flex-col">
               <h2 className="text-lg font-semibold">{flow.name}</h2>
+              <h3 className="text-stone-500 text-sm line-clamp-2">{flow.description}</h3>
             </div>
           </div>
           <DeleteFilled

@@ -2,6 +2,7 @@ import { Node } from 'reactflow';
 
 export type IFlowUpdateParam = {
   name: string;
+  description: string;
   uid?: string;
   flow_data: IFlowData;
 };
@@ -9,6 +10,7 @@ export type IFlowUpdateParam = {
 export type IFlow = {
   uid: string;
   name: string;
+  description: string;
   flow_data: IFlowData;
 };
 
@@ -65,6 +67,7 @@ export type IFlowNode = Node & {
   name: string;
   description: string;
   category: string;
+  category_label: string;
   flow_type: 'resource' | 'operator';
   icon?: string;
   documentation_url?: null;
