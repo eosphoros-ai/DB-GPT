@@ -29,7 +29,7 @@ from dbgpt.serve.agent.team.plan.team_auto_plan import AutoPlanChatManager
 from dbgpt.serve.conversation.serve import Serve as ConversationServe
 from dbgpt.util.json_utils import serialize
 
-from ..db.gpts_app import GptsApp, GptsAppDao
+from ..db.gpts_app import GptsApp, GptsAppDao, GptsAppQuery
 from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEntity
 from ..db.gpts_manage_db import GptsInstanceDao, GptsInstanceEntity
 from ..resource_loader.datasource_load_client import DatasourceLoadClient
@@ -88,7 +88,9 @@ class MultiAgents(BaseComponent, ABC):
         self.gpts_intance.add(entity)
 
     def get_dbgpts(self, user_code: str = None, sys_code: str = None):
-        apps = self.gpts_app.app_list(user_code=user_code, sys_code=sys_code)
+        apps = self.gpts_app.app_list(
+            GptsAppQuery(user_code=user_code, sys_code=sys_code)
+        )
         return apps
 
     async def _build_chat_manager(

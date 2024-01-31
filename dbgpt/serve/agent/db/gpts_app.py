@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
+
 from dbgpt.agent.resource.resource_api import AgentResource
 from dbgpt.storage.metadata import BaseDao, Model
 
@@ -334,6 +335,7 @@ class GptsAppDao(BaseDao):
                         {
                             "app_code": app_info.app_code,
                             "app_name": app_info.app_name,
+                            "language": app_info.language,
                             "app_describe": app_info.app_describe,
                             "team_mode": app_info.team_mode,
                             "team_context": app_info.team_context,
@@ -404,7 +406,8 @@ class GptsAppDao(BaseDao):
             app_details = []
             for item in gpts_app.details:
                 resource_dicts = [
-                    AgentResource.dataclass_to_dict(resource) for resource in item.resources
+                    AgentResource.dataclass_to_dict(resource)
+                    for resource in item.resources
                 ]
 
                 app_details.append(
@@ -447,7 +450,8 @@ class GptsAppDao(BaseDao):
             app_details = []
             for item in gpts_app.details:
                 resource_dicts = [
-                    AgentResource.dataclass_to_dict(resource) for resource in item.resources
+                    AgentResource.dataclass_to_dict(resource)
+                    for resource in item.resources
                 ]
                 app_details.append(
                     GptsAppDetailEntity(

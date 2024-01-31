@@ -69,7 +69,7 @@ class ChartAction(Action[SqlInput]):
             )
             return ActionOutput(
                 is_exe_success=True,
-                content=ai_message,
+                content=param.json(),
                 view=view,
                 resource_type=self.resource_need.value,
                 resource_value=resource.value,
