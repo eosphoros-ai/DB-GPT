@@ -4,7 +4,7 @@ import AddNodes from '@/components/flow/add-nodes';
 import ButtonEdge from '@/components/flow/button-edge';
 import CanvasNode from '@/components/flow/canvas-node';
 import { IFlowData } from '@/types/flow';
-import { getUniqueNodeId, mapHumpToUnderline } from '@/utils/flow';
+import { getUniqueNodeId, mapHumpToUnderline, mapUnderlineToHump } from '@/utils/flow';
 import { SaveOutlined } from '@ant-design/icons';
 import { Divider, Input, Modal, message } from 'antd';
 import { useSearchParams } from 'next/navigation';
@@ -37,7 +37,7 @@ const Canvas: React.FC<Props> = () => {
     setLoading(true);
     const [_, data] = await apiInterceptors(getFlowById(id));
     if (data) {
-      const flowData = mapHumpToUnderline(data.flow_data);
+      const flowData = mapUnderlineToHump(data.flow_data);
       setName(data.name);
       setNodes(flowData.nodes.map((node) => ({ ...node, type: 'customNode' })));
       setEdges(flowData.edges.map((edge) => ({ ...edge, type: 'buttonedge' })));
@@ -91,6 +91,7 @@ const Canvas: React.FC<Props> = () => {
         y: event.clientY - reactFlowBounds.top,
       });
       const nodeId = getUniqueNodeId(nodeData, reactFlow.getNodes());
+      nodeData.id = nodeId;
       const newNode = {
         id: nodeId,
         position,
@@ -154,15 +155,15 @@ const Canvas: React.FC<Props> = () => {
   }
 
   return (
-    <div className="p-2">
+    <>
       <MuiLoading visible={loading} />
-      <div className="my-2 flex flex-row justify-end items-center">
-        <div className="w-8 h-8 rounded-md bg-stone-300 flext justify-center items-center text-center">
-          <SaveOutlined className="text-xl" onClick={clickSave} />
+      <div className="my-2 mx-4 flex flex-row justify-end items-center">
+        <div className="w-8 h-8 rounded-md bg-stone-300 dark:bg-zinc-700 dark:text-zinc-200 flext justify-center items-center hover:text-blue-500 dark:hover:text-zinc-100">
+          <SaveOutlined className="block text-xl" onClick={clickSave} />
         </div>
       </div>
-      <Divider className="mt-2 mb-0" />
-      <div className="min-h-screen w-full h-full" ref={reactFlowWrapper}>
+      <Divider className="mt-0 mb-0" />
+      <div className="h-[calc(100vh-60px)] w-full" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -176,6 +177,7 @@ const Canvas: React.FC<Props> = () => {
           onDragOver={onDragOver}
           minZoom={0.1}
           fitView
+          deleteKeyCode={['Backspace', 'Delete']}
         >
           <Controls className="flex flex-row items-center" position="bottom-center" />
           <Background color="#aaa" gap={16} />
@@ -200,7 +202,7 @@ const Canvas: React.FC<Props> = () => {
         </>
       </Modal>
       {contextHolder}
-    </div>
+    </>
   );
 };
 
