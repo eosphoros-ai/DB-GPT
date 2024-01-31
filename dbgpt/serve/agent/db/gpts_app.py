@@ -28,7 +28,7 @@ class GptsAppDetail(BaseModel):
     llm_strategy: Optional[str] = None
     llm_strategy_value: Optional[str] = None
     created_at: datetime = datetime.now()
-    updated_at: DateTime = datetime.now()
+    updated_at: datetime = datetime.now()
 
     class Config:
         """Configuration for this pydantic object."""
@@ -74,7 +74,7 @@ class GptsApp(BaseModel):
     user_code: Optional[str] = None
     sys_code: Optional[str] = None
     created_at: datetime = datetime.now()
-    updated_at: DateTime = datetime.now()
+    updated_at: datetime = datetime.now()
     details: List[GptsAppDetail] = []
 
     class Config:
@@ -100,6 +100,7 @@ class GptsApp(BaseModel):
         return cls(
             app_code=d.get("app_code", None),
             app_name=d["app_name"],
+            language=d["language"],
             app_describe=d["app_describe"],
             team_mode=d["team_mode"],
             team_context=d.get("team_context", None),
@@ -213,13 +214,12 @@ class GptsAppDao(BaseDao):
                 GptsAppDetailEntity.app_code == app_code
             )
             app_details = app_detail_qry.all()
-            details: List[GptsAppDetail] = []
-            for item in app_details:
-                details.append(GptsAppDetail())
+
             app = GptsApp.from_dict(
                 {
                     "app_code": app_info.app_code,
                     "app_name": app_info.app_name,
+                    "language": app_info.language,
                     "app_describe": app_info.app_describe,
                     "team_mode": app_info.team_mode,
                     "team_context": app_info.team_context,
