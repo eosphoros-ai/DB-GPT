@@ -4,6 +4,8 @@ import { PlusOutlined } from '@ant-design/icons';
 import { Avatar, Badge, Button, Collapse, CollapseProps, Divider, Empty, Input, List, Popover } from 'antd';
 import React, { DragEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import StaticNodes from './static-nodes';
+import { FLOW_NODES_KEY } from '@/utils';
 
 const { Search } = Input;
 
@@ -22,6 +24,7 @@ const AddNodes: React.FC = () => {
     if (data && data.length > 0) {
       setNodes(data);
       groupNodes(data);
+      localStorage.setItem(FLOW_NODES_KEY, JSON.stringify(data));
     }
   }
 
@@ -36,13 +39,13 @@ const AddNodes: React.FC = () => {
       {
         key: 'operator',
         label: 'Operator',
-        children: renderNodes(operators),
+        children: <StaticNodes nodes={operators} />,
         extra: <Badge showZero count={operators.length || 0} style={{ backgroundColor: operators.length > 0 ? '#52c41a' : '#7f9474' }} />,
       },
       {
         key: 'resource',
         label: 'Resource',
-        children: renderNodes(resources),
+        children: <StaticNodes nodes={resources} />,
         extra: <Badge showZero count={resources.length || 0} style={{ backgroundColor: resources.length > 0 ? '#52c41a' : '#7f9474' }} />,
       },
     ],
@@ -58,39 +61,6 @@ const AddNodes: React.FC = () => {
       const searchResources = resources.filter((node) => node.label.toLowerCase().includes(lowerSearchTerm));
       setOperators(searchOperators);
       setResources(searchResources);
-    }
-  }
-
-  function onDragStart(event: DragEvent, node: IFlowNode) {
-    event.dataTransfer.setData('application/reactflow', JSON.stringify(node));
-    event.dataTransfer.effectAllowed = 'move';
-  }
-
-  function renderNodes(nodes: Array<IFlowNode>) {
-    if (nodes?.length > 0) {
-      return (
-        <List
-          className="overflow-hidden overflow-y-auto"
-          itemLayout="horizontal"
-          dataSource={nodes}
-          renderItem={(node) => (
-            <List.Item
-              className="cursor-move hover:bg-[#F1F5F9] dark:hover:bg-theme-dark p-0 py-2"
-              draggable
-              onDragStart={(event) => onDragStart(event, node)}
-            >
-              <List.Item.Meta
-                className="flex items-center justify-center"
-                avatar={<Avatar src={node.icon || '/icons/node/default_node_icon.svg'} size={'large'} />}
-                title={<p className="line-clamp-1 font-medium">{node.label}</p>}
-                description={<p className="line-clamp-2">{node.description}</p>}
-              />
-            </List.Item>
-          )}
-        />
-      );
-    } else {
-      return <Empty className="px-2" description={t('no_node')} />;
     }
   }
 
