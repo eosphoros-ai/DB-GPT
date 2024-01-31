@@ -448,8 +448,9 @@ class ConversableAgent(Agent, Role):
         can_uses = []
         if order_llms and len(order_llms) > 0:
             for llm_name in order_llms:
-                if llm_name in all_models and llm_name not in excluded_models:
-                    can_uses.append(llm_name)
+                if llm_name in all_models:
+                    if not excluded_models or llm_name not in excluded_models:
+                        can_uses.append(llm_name)
         else:
             for llm_name in all_models:
                 if not excluded_models or llm_name not in excluded_models:
