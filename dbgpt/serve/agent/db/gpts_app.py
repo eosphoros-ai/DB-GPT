@@ -4,16 +4,13 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
-from sqlalchemy import (
-    Column,
-    DateTime,
-    Integer,
-    String,
-    Text,
-    UniqueConstraint,
-)
+from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
-from dbgpt.agent.agents.resource import AgentResource, dataclass_to_dict, json_to_agent_resource_list
+from dbgpt.agent.agents.resource import (
+    AgentResource,
+    dataclass_to_dict,
+    json_to_agent_resource_list,
+)
 from dbgpt.storage.metadata import BaseDao, Model
 
 
@@ -242,7 +239,12 @@ class GptsAppDetailEntity(Model):
 
 
 class GptsAppCollectionDao(BaseDao):
-    def collect(self, app_code: str, user_code: Optional[str] = None, sys_code: Optional[str] = None):
+    def collect(
+        self,
+        app_code: str,
+        user_code: Optional[str] = None,
+        sys_code: Optional[str] = None,
+    ):
         with self.session() as session:
             app_entity = GptsAppCollectionEntity(
                 app_code=app_code,
@@ -251,7 +253,12 @@ class GptsAppCollectionDao(BaseDao):
             )
             session.add(app_entity)
 
-    def uncollect(self, app_code: str, user_code: Optional[str] = None, sys_code: Optional[str] = None):
+    def uncollect(
+        self,
+        app_code: str,
+        user_code: Optional[str] = None,
+        sys_code: Optional[str] = None,
+    ):
         with self.session() as session:
             app_qry = session.query(GptsAppCollectionEntity)
             if user_code:
@@ -269,62 +276,70 @@ class GptsAppCollectionDao(BaseDao):
         with self.session() as session:
             app_qry = session.query(GptsAppCollectionEntity)
             if query.user_code:
-                app_qry = app_qry.filter(GptsAppCollectionEntity.user_code == query.user_code)
+                app_qry = app_qry.filter(
+                    GptsAppCollectionEntity.user_code == query.user_code
+                )
             if query.sys_code:
-                app_qry = app_qry.filter(GptsAppCollectionEntity.sys_code == query.sys_code)
+                app_qry = app_qry.filter(
+                    GptsAppCollectionEntity.sys_code == query.sys_code
+                )
             if query.app_code:
-                app_qry = app_qry.filter(GptsAppCollectionEntity.app_code == query.app_code)
+                app_qry = app_qry.filter(
+                    GptsAppCollectionEntity.app_code == query.app_code
+                )
             res = app_qry.all()
             session.close()
             return res
 
 
 class GptsAppDao(BaseDao):
-    def app_list(
-        self,
-        query: GptsAppQuery
-    ):
+    def app_list(self, query: GptsAppQuery):
         app_codes = []
         if query.is_collected and query.is_collected.lower() in ("true", "false"):
             collection_dao = GptsAppCollectionDao()
             gpts_collections = collection_dao.list(
-                GptsAppCollection.from_dict({"sys_code": query.sys_code, "user_code": query.user_code}))
+                GptsAppCollection.from_dict(
+                    {"sys_code": query.sys_code, "user_code": query.user_code}
+                )
+            )
             app_codes = [gc.app_code for gc in gpts_collections]
 
         with self.session() as session:
             app_qry = session.query(GptsAppEntity)
             if query.app_name:
-                app_qry = app_qry.filter(GptsAppEntity.app_name.like(f"%{query.app_name}%"))
+                app_qry = app_qry.filter(
+                    GptsAppEntity.app_name.like(f"%{query.app_name}%")
+                )
             if query.user_code:
                 app_qry = app_qry.filter(GptsAppEntity.user_code == query.user_code)
             if query.sys_code:
                 app_qry = app_qry.filter(GptsAppEntity.sys_code == query.sys_code)
             if query.is_collected and query.is_collected.lower() in ("true", "false"):
                 app_qry = app_qry.filter(GptsAppEntity.app_code.in_(app_codes))
-            app_qry = app_qry.order_by(
-                GptsAppEntity.id.desc()
-            )
+            app_qry = app_qry.order_by(GptsAppEntity.id.desc())
             app_qry = app_qry.offset((query.page_no - 1) * query.page_size).limit(
                 query.page_size
             )
             results = app_qry.all()
             apps = []
             for app_info in results:
-                apps.append(GptsApp.from_dict(
-                    {
-                        "app_code": app_info.app_code,
-                        "app_name": app_info.app_name,
-                        "app_describe": app_info.app_describe,
-                        "team_mode": app_info.team_mode,
-                        "team_context": app_info.team_context,
-                        "user_code": app_info.user_code,
-                        "sys_code": app_info.sys_code,
-                        "is_collected": query.is_collected,
-                        "created_at": app_info.created_at,
-                        "updated_at": app_info.updated_at,
-                        "details": [],
-                    }
-                ))
+                apps.append(
+                    GptsApp.from_dict(
+                        {
+                            "app_code": app_info.app_code,
+                            "app_name": app_info.app_name,
+                            "app_describe": app_info.app_describe,
+                            "team_mode": app_info.team_mode,
+                            "team_context": app_info.team_context,
+                            "user_code": app_info.user_code,
+                            "sys_code": app_info.sys_code,
+                            "is_collected": query.is_collected,
+                            "created_at": app_info.created_at,
+                            "updated_at": app_info.updated_at,
+                            "details": [],
+                        }
+                    )
+                )
             return apps
 
     def app_detail(self, app_code: str):
@@ -379,7 +394,9 @@ class GptsAppDao(BaseDao):
 
             app_details = []
             for item in gpts_app.details:
-                resource_dicts = [dataclass_to_dict(resource) for resource in item.resources]
+                resource_dicts = [
+                    dataclass_to_dict(resource) for resource in item.resources
+                ]
 
                 app_details.append(
                     GptsAppDetailEntity(
@@ -416,7 +433,9 @@ class GptsAppDao(BaseDao):
 
             app_details = []
             for item in gpts_app.details:
-                resource_dicts = [dataclass_to_dict(resource) for resource in item.resources]
+                resource_dicts = [
+                    dataclass_to_dict(resource) for resource in item.resources
+                ]
                 app_details.append(
                     GptsAppDetailEntity(
                         app_code=gpts_app.app_code,

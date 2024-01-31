@@ -82,11 +82,13 @@ class AgentsManage:
     def list_agents(self):
         result = []
         for name, cls in self._agents.items():
-            result.append({
-                "name": name,
-                "describe": cls.DEFAULT_DESCRIBE,
-                "system_message": cls.DEFAULT_SYSTEM_MESSAGE
-            })
+            result.append(
+                {
+                    "name": name,
+                    "describe": cls.DEFAULT_DESCRIBE,
+                    "system_message": cls.DEFAULT_SYSTEM_MESSAGE,
+                }
+            )
         return result
 
 

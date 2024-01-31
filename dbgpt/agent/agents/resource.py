@@ -19,9 +19,7 @@ class AgentResource:
     name: str
     introduce: str
     value: str
-    is_dynamic: bool = (
-        False
-    )
+    is_dynamic: bool = False
 
     def to_resource_prompt(self):
         return f""""""

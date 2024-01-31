@@ -1,16 +1,21 @@
 import logging
 
+from fastapi import APIRouter
+
+from dbgpt._private.config import Config
 from dbgpt.agent.agents.agents_manage import agent_manage
 from dbgpt.agent.agents.resource import ResourceType
 from dbgpt.app.knowledge.api import knowledge_space_service
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
-from dbgpt.serve.agent.agents.controller import multi_agents
-from dbgpt.serve.agent.db.gpts_app import GptsApp, GptsAppDao, GptsAppCollectionDao, GptsAppQuery
-from dbgpt.serve.agent.team.base import TeamMode
-from fastapi import APIRouter
 from dbgpt.app.openapi.api_view_model import Result
-
-from dbgpt._private.config import Config
+from dbgpt.serve.agent.agents.controller import multi_agents
+from dbgpt.serve.agent.db.gpts_app import (
+    GptsApp,
+    GptsAppCollectionDao,
+    GptsAppDao,
+    GptsAppQuery,
+)
+from dbgpt.serve.agent.team.base import TeamMode
 
 CFG = Config()
 
@@ -82,7 +87,9 @@ async def collect(gpts_app: GptsApp):
 @router.post("/v1/app/uncollect", response_model=Result[str])
 async def uncollect(gpts_app: GptsApp):
     try:
-        collection_dao.uncollect(gpts_app.app_code, gpts_app.user_code, gpts_app.sys_code)
+        collection_dao.uncollect(
+            gpts_app.app_code, gpts_app.user_code, gpts_app.sys_code
+        )
         return Result.succ([])
     except Exception as ex:
         return Result.failed(code="E000X", msg=f"uncollect app error: {ex}")
@@ -105,20 +112,24 @@ async def team_mode_list():
 
 
 @router.get("/v1/app/resources/list", response_model=Result[str])
-async def app_resources(type: str, name: str = None, user_code: str = None, sys_code: str = None):
+async def app_resources(
+    type: str, name: str = None, user_code: str = None, sys_code: str = None
+):
     """
-      Get agent resources, such as db, knowledge, internet, plugin.
+    Get agent resources, such as db, knowledge, internet, plugin.
     """
     try:
         results = []
         match type:
             case ResourceType.DB.value:
                 dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
-                results = [db['db_name'] for db in dbs]
+                results = [db["db_name"] for db in dbs]
                 if name:
                     results = [r for r in results if name in r]
             case ResourceType.Knowledge.value:
-                knowledge_spaces = knowledge_space_service.get_knowledge_space(KnowledgeSpaceRequest())
+                knowledge_spaces = knowledge_space_service.get_knowledge_space(
+                    KnowledgeSpaceRequest()
+                )
                 results = [ks.name for ks in knowledge_spaces]
                 if name:
                     results = [r for r in results if name in r]
