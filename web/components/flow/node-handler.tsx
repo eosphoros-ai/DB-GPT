@@ -63,7 +63,7 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
           'pr-4': label === 'outputs',
         })}
       >
-        {data.label}:<RequiredIcon optional={data.optional} />
+        {data.type_name}:<RequiredIcon optional={data.optional} />
         {data.description && (
           <Tooltip title={data.description}>
             <InfoCircleOutlined className="ml-2" />
