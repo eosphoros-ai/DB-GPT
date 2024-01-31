@@ -579,7 +579,7 @@ if __name__ == "__main__":
     from dbgpt.agent.agents.agent import AgentContext
     from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
     from dbgpt.core.interface.llm import ModelMetadata
-    from dbgpt.model import OpenAILLMClient
+    from dbgpt.model.proxy import OpenAILLMClient
 
     llm_client = OpenAILLMClient()
     context: AgentContext = AgentContext(
