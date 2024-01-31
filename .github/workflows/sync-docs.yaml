@@ -1,0 +1,20 @@
+name: Trigger Auto Publish
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  trigger-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Trigger Publish API
+        run: |
+          curl -X POST ${{secrets.PUBLISH_SECRET_API}} \
+          -H "Content-Type: application/json" \
+          -d '{"tag": "${{ github.ref }}"}'

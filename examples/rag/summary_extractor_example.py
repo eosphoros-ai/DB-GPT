@@ -1,6 +1,6 @@
 import asyncio
 
-from dbgpt.model import OpenAILLMClient
+from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.serve.rag.assembler.summary import SummaryAssembler

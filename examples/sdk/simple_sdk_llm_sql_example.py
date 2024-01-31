@@ -10,15 +10,15 @@ from dbgpt.core.awel import (
     MapOperator,
     SimpleCallDataInputSource,
 )
-from dbgpt.core.operator import (
+from dbgpt.core.operators import (
     BaseLLMOperator,
     PromptBuilderOperator,
     RequestBuilderOperator,
 )
-from dbgpt.datasource.operator.datasource_operator import DatasourceOperator
+from dbgpt.datasource.operators.datasource_operator import DatasourceOperator
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
-from dbgpt.model import OpenAILLMClient
-from dbgpt.rag.operator.datasource import DatasourceRetrieverOperator
+from dbgpt.model.proxy import OpenAILLMClient
+from dbgpt.rag.operators.datasource import DatasourceRetrieverOperator
 
 
 def _create_temporary_connection():
@@ -144,12 +144,10 @@ with DAG("simple_sdk_llm_sql_example") as dag:
 
 if __name__ == "__main__":
     input_data = {
-        "data": {
-            "db_name": "test_db",
-            "dialect": "sqlite",
-            "top_k": 5,
-            "user_input": "What is the name and age of the user with age less than 18",
-        }
+        "db_name": "test_db",
+        "dialect": "sqlite",
+        "top_k": 5,
+        "user_input": "What is the name and age of the user with age less than 18",
     }
     output = asyncio.run(sql_result_task.call(call_data=input_data))
     print(f"\nthoughts: {output.get('thoughts')}\n")

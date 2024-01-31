@@ -32,8 +32,8 @@ from typing import Dict
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
-from dbgpt.model import OpenAILLMClient
-from dbgpt.rag.operator.rewrite import QueryRewriteOperator
+from dbgpt.model.proxy import OpenAILLMClient
+from dbgpt.rag.operators.rewrite import QueryRewriteOperator
 
 
 class TriggerReqBody(BaseModel):

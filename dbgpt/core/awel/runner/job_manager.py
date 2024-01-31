@@ -5,7 +5,7 @@ import uuid
 from typing import Dict, List, Optional, cast
 
 from ..dag.base import DAGLifecycle
-from ..operator.base import CALL_DATA, BaseOperator
+from ..operators.base import CALL_DATA, BaseOperator
 
 logger = logging.getLogger(__name__)
 

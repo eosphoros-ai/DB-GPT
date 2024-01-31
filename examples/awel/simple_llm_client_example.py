@@ -41,8 +41,8 @@ from typing import Any, Dict, List, Optional, Union
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core import LLMClient
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
-from dbgpt.core.operator import LLMBranchOperator, RequestBuilderOperator
-from dbgpt.model.operator import (
+from dbgpt.core.operators import LLMBranchOperator, RequestBuilderOperator
+from dbgpt.model.operators import (
     LLMOperator,
     MixinLLMOperator,
     OpenAIStreamingOutputOperator,

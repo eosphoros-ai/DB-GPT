@@ -3,11 +3,12 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Field
 
-from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
+from dbgpt._private.config import Config
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, MODEL_PATH, PILOT_PATH
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 from dbgpt.rag.knowledge.base import KnowledgeType
-from dbgpt.rag.operator.knowledge import KnowledgeOperator
+from dbgpt.rag.operators.knowledge import KnowledgeOperator
 from dbgpt.serve.rag.operators.embedding import EmbeddingAssemblerOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
@@ -25,6 +26,8 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
             }'
 """
 
+CFG = Config()
+
 
 def _create_vector_connector() -> VectorStoreConnector:
     """Create vector connector."""
@@ -35,7 +38,7 @@ def _create_vector_connector() -> VectorStoreConnector:
             persist_path=os.path.join(PILOT_PATH, "data"),
         ),
         embedding_fn=DefaultEmbeddingFactory(
-            default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
+            default_model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
         ).create(),
     )
 

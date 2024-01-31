@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Dict, List, Optional
 
-from dbgpt.util.model_utils import GPUInfo
 from dbgpt.util.parameter_utils import ParameterDescription
 
 

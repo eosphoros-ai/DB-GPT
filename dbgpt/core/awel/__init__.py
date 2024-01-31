@@ -14,16 +14,17 @@ from typing import List, Optional
 from dbgpt.component import SystemApp
 
 from .dag.base import DAG, DAGContext
-from .operator.base import BaseOperator, WorkflowRunner
-from .operator.common_operator import (
+from .operators.base import BaseOperator, WorkflowRunner
+from .operators.common_operator import (
     BranchFunc,
     BranchOperator,
     InputOperator,
     JoinOperator,
     MapOperator,
     ReduceStreamOperator,
+    TriggerOperator,
 )
-from .operator.stream_operator import (
+from .operators.stream_operator import (
     StreamifyAbsOperator,
     TransformStreamAbsOperator,
     UnstreamifyAbsOperator,
@@ -39,7 +40,20 @@ from .task.task_impl import (
     SimpleTaskOutput,
     _is_async_iterator,
 )
-from .trigger.http_trigger import HttpTrigger
+from .trigger.http_trigger import (
+    CommonLLMHttpRequestBody,
+    CommonLLMHttpResponseBody,
+    HttpTrigger,
+)
+
+_request_http_trigger_available = False
+try:
+    # Optional import
+    from .trigger.ext_http_trigger import RequestHttpTrigger  # noqa: F401
+
+    _request_http_trigger_available = True
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +64,7 @@ __all__ = [
     "BaseOperator",
     "JoinOperator",
     "ReduceStreamOperator",
+    "TriggerOperator",
     "MapOperator",
     "BranchOperator",
     "InputOperator",
@@ -71,16 +86,21 @@ __all__ = [
     "UnstreamifyAbsOperator",
     "TransformStreamAbsOperator",
     "HttpTrigger",
+    "CommonLLMHttpResponseBody",
+    "CommonLLMHttpRequestBody",
     "setup_dev_environment",
     "_is_async_iterator",
 ]
+
+if _request_http_trigger_available:
+    __all__.append("RequestHttpTrigger")
 
 
 def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
     """Initialize AWEL."""
     from .dag.base import DAGVar
     from .dag.dag_manager import DAGManager
-    from .operator.base import initialize_runner
+    from .operators.base import initialize_runner
     from .trigger.trigger_manager import DefaultTriggerManager
 
     DAGVar.set_current_system_app(system_app)
@@ -89,8 +109,6 @@ def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
     dag_manager = DAGManager(system_app, dag_dirs)
     system_app.register_instance(dag_manager)
     initialize_runner(DefaultWorkflowRunner())
-    # Load all dags
-    dag_manager.load_dags()
 
 
 def setup_dev_environment(
@@ -148,6 +166,8 @@ def setup_dev_environment(
                     f"`sudo apt install graphviz`"
                 )
         for trigger in dag.trigger_nodes:
-            trigger_manager.register_trigger(trigger)
+            trigger_manager.register_trigger(trigger, system_app)
     trigger_manager.after_register()
-    uvicorn.run(app, host=host, port=port)
+    if trigger_manager.keep_running():
+        # Should keep running
+        uvicorn.run(app, host=host, port=port)

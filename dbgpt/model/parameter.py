@@ -6,10 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, Optional, Tuple, Union
 
-from dbgpt.model.conversation import conv_templates
 from dbgpt.util.parameter_utils import BaseParameters
-
-suported_prompt_templates = ",".join(conv_templates.keys())
 
 
 class WorkerType(str, Enum):
@@ -299,7 +296,8 @@ class ModelParameters(BaseModelParameters):
     prompt_template: Optional[str] = field(
         default=None,
         metadata={
-            "help": f"Prompt template. If None, the prompt template is automatically determined from model path, supported template: {suported_prompt_templates}"
+            "help": f"Prompt template. If None, the prompt template is automatically "
+            f"determined from model path"
         },
     )
     max_context_size: Optional[int] = field(
@@ -450,7 +448,8 @@ class ProxyModelParameters(BaseModelParameters):
     proxyllm_backend: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The model name actually pass to current proxy server url, such as gpt-3.5-turbo, gpt-4, chatglm_pro, chatglm_std and so on"
+            "help": "The model name actually pass to current proxy server url, such "
+            "as gpt-3.5-turbo, gpt-4, chatglm_pro, chatglm_std and so on"
         },
     )
     model_type: Optional[str] = field(
@@ -463,13 +462,15 @@ class ProxyModelParameters(BaseModelParameters):
     device: Optional[str] = field(
         default=None,
         metadata={
-            "help": "Device to run model. If None, the device is automatically determined"
+            "help": "Device to run model. If None, the device is automatically "
+            "determined"
         },
     )
     prompt_template: Optional[str] = field(
         default=None,
         metadata={
-            "help": f"Prompt template. If None, the prompt template is automatically determined from model path, supported template: {suported_prompt_templates}"
+            "help": f"Prompt template. If None, the prompt template is automatically "
+            f"determined from model path"
         },
     )
     max_context_size: Optional[int] = field(
@@ -478,7 +479,8 @@ class ProxyModelParameters(BaseModelParameters):
     llm_client_class: Optional[str] = field(
         default=None,
         metadata={
-            "help": "The class name of llm client, such as dbgpt.model.proxy.llms.proxy_model.ProxyModel"
+            "help": "The class name of llm client, such as "
+            "dbgpt.model.proxy.llms.proxy_model.ProxyModel"
         },
     )
 

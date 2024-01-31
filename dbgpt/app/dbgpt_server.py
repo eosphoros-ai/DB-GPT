@@ -4,7 +4,6 @@ import sys
 from typing import List
 
 from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 
@@ -21,7 +20,6 @@ from dbgpt.app.base import (
 
 # initialize_components import time cost about 0.1s
 from dbgpt.app.component_configs import initialize_components
-from dbgpt.app.openapi.base import validation_exception_handler
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
@@ -29,6 +27,8 @@ from dbgpt.configs.model_config import (
     LOGDIR,
     ROOT_PATH,
 )
+from dbgpt.serve.core import add_exception_handler
+from dbgpt.util.fastapi import PriorityAPIRouter
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
 from dbgpt.util.tracer import SpanType, SpanTypeRunName, initialize_tracer, root_tracer
@@ -53,6 +53,9 @@ app = FastAPI(
     version="0.5.0",
     openapi_tags=[],
 )
+# Use custom router to support priority
+app.router = PriorityAPIRouter()
+app.setup()
 
 app.mount(
     "/swagger_static",
@@ -120,7 +123,7 @@ def mount_static_files(app: FastAPI):
     app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
 
 
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
+add_exception_handler(app)
 
 
 def _get_webserver_params(args: List[str] = None):

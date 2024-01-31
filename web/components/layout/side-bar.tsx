@@ -16,6 +16,7 @@ import Icon, {
   MenuOutlined,
   SettingOutlined,
   BuildOutlined,
+  ForkOutlined,
 } from '@ant-design/icons';
 import { Modal, message, Tooltip, Dropdown } from 'antd';
 import { ItemType } from 'antd/es/menu/hooks/useItems';
@@ -42,7 +43,7 @@ type RouteItem = {
 };
 
 function menuItemStyle(active?: boolean) {
-  return `flex items-center h-12 hover:bg-[#F1F5F9] dark:hover:bg-theme-dark text-base w-full transition-colors whitespace-nowrap px-4 ${
+  return `flex items-center h-10 hover:bg-[#F1F5F9] dark:hover:bg-theme-dark text-base w-full transition-colors whitespace-nowrap px-4 ${
     active ? 'bg-[#F1F5F9] dark:bg-theme-dark' : ''
   }`;
 }
@@ -64,10 +65,10 @@ function SideBar() {
   const routes = useMemo(() => {
     const items: RouteItem[] = [
       {
-        key: 'prompt',
-        name: t('Prompt'),
-        icon: <MessageOutlined />,
-        path: '/prompt',
+        key: 'flow',
+        name: t('awel_flow'),
+        icon: <ForkOutlined />,
+        path: '/flow',
       },
       {
         key: 'database',
@@ -92,6 +93,12 @@ function SideBar() {
         name: t('Plugins'),
         path: '/agent',
         icon: <BuildOutlined />,
+      },
+      {
+        key: 'prompt',
+        name: t('Prompt'),
+        icon: <MessageOutlined />,
+        path: '/prompt',
       },
     ];
     return items;
@@ -318,7 +325,7 @@ function SideBar() {
       </div>
       {/* Settings */}
       <div className="pt-4">
-        <div className="max-h-52 overflow-y-auto">
+        <div className="max-h-52 overflow-y-auto scrollbar-default">
           {routes.map((item) => (
             <Link key={item.key} href={item.path} className={`${menuItemStyle(pathname === item.path)} overflow-hidden`}>
               <>

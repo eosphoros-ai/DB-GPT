@@ -2,12 +2,12 @@ import asyncio
 
 from dbgpt.core import BaseOutputParser
 from dbgpt.core.awel import DAG
-from dbgpt.core.operator import (
+from dbgpt.core.operators import (
     BaseLLMOperator,
     PromptBuilderOperator,
     RequestBuilderOperator,
 )
-from dbgpt.model import OpenAILLMClient
+from dbgpt.model.proxy import OpenAILLMClient
 
 with DAG("simple_sdk_llm_example_dag") as dag:
     prompt_task = PromptBuilderOperator(
@@ -20,8 +20,6 @@ with DAG("simple_sdk_llm_example_dag") as dag:
 
 if __name__ == "__main__":
     output = asyncio.run(
-        out_parse_task.call(
-            call_data={"data": {"dialect": "mysql", "table_name": "user"}}
-        )
+        out_parse_task.call(call_data={"dialect": "mysql", "table_name": "user"})
     )
     print(f"output: \n\n{output}")
