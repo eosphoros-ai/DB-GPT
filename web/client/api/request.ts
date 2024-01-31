@@ -32,7 +32,7 @@ import {
   ISyncBatchResponse,
 } from '@/types/knowledge';
 import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
-import { IApp, ITeamModal } from '@/types/app';
+import { IAgent, IApp, ITeamModal } from '@/types/app';
 
 /** App */
 export const postScenes = () => {
@@ -264,14 +264,26 @@ export const collectApp = (data: Record<string, string>) => {
   return POST<Record<string, string>, []>('/api/v1/app/collect', data);
 };
 
+export const unCollectApp = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('api/v1/app/uncollect', data);
+};
+
 export const delApp = (data: Record<string, string>) => {
   return POST<Record<string, string>, []>('/api/v1/app/remove', data);
 };
 
 export const getAgents = () => {
-  return GET<object, []>('/api/v1/agents/list', {});
+  return GET<object, IAgent[]>('/api/v1/agents/list', {});
 };
 
 export const getTeamMode = () => {
   return GET<null, string[]>('/api/v1/team-mode/list');
+};
+
+export const getResourceType = () => {
+  return GET<null, string[]>('api/v1/resource-type/list');
+};
+
+export const getResource = (data: Record<string, string>) => {
+  return GET<Record<string, string>, []>(`api/v1/app/resources/list?type=${data.type}`);
 };

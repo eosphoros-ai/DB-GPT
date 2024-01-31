@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 interface IProps {
   handleCancel: () => void;
   open: boolean;
+  index: number
 }
 
 export default function AgentModal(props: IProps) {

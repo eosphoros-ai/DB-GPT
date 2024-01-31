@@ -1,12 +1,13 @@
-import { IAgent, ITeamModal } from '@/types/app';
+import { IAgent as IAgentParams } from '@/types/app';
 import { Dropdown, Form, Input, Modal, Select, Space, Spin, Tabs } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AddIcon from '../icons/add-icon';
 import AgentPanel from './agent-panel';
-import { addApp, apiInterceptors, getAgents, getTeamMode } from '@/client/api';
+import { addApp, apiInterceptors, getAgents, getResource, getResourceType, getTeamMode } from '@/client/api';
+import type { TabsProps } from 'antd';
 
-type TargetKey = React.MouseEvent | React.KeyboardEvent | string;
+type TargetKey = string;
 
 type FieldType = {
   app_name: string;
@@ -15,39 +16,18 @@ type FieldType = {
   team_mode: string;
 };
 
+type IAgent = {
+  label: string;
+  children?: React.ReactNode;
+  onClick?: () => void;
+  key: number | string;
+};
+
 interface IProps {
   handleCancel: () => void;
   open: boolean;
   updateApps: () => void;
 }
-
-const initialItems = [
-  { label: 'agent 1', children: <AgentPanel />, key: '1' },
-  { label: 'agent 2', children: <AgentPanel />, key: '2' },
-  {
-    label: 'agent 3',
-    children: <AgentPanel />,
-    key: '3',
-  },
-];
-
-const dropItems: any = [
-  {
-    label: 'agent1 ',
-    key: '0',
-    onClick: () => {},
-  },
-  {
-    label: 'agent2',
-    key: '1',
-    onClick: () => {},
-  },
-  {
-    label: 'agent3',
-    key: '3',
-    onClick: () => {},
-  },
-];
 
 const languageOptions = [
   { value: 'zh', label: '中文' },
@@ -58,23 +38,17 @@ export default function AppModal(props: IProps) {
   const { handleCancel, open, updateApps } = props;
   const { t } = useTranslation();
   const [spinning, setSpinning] = useState<boolean>(false);
-  const [activeKey, setActiveKey] = useState(initialItems[0].key);
+  const [activeKey, setActiveKey] = useState<string>();
   const [teamModal, setTeamModal] = useState<{ label: string; value: string }[]>();
-  const [items, setItems] = useState(initialItems);
-  const newTabIndex = useRef(0);
+  const [agents, setAgents] = useState<TabsProps['items']>([]);
+  const [dropItems, setDropItems] = useState<IAgent[]>([]);
+  const [details, setDetails] = useState<any>([]);
+  const [resourceTypes, setResourceTypes] = useState<any>([]);
+  const [resource, setResource] = useState<any>([]);
 
   const [form] = Form.useForm();
 
   const onChange = (newActiveKey: string) => {
-    setActiveKey(newActiveKey);
-  };
-
-  const add = (tabBar: any) => {
-    const newActiveKey = `newTab${newTabIndex.current++}`;
-
-    setItems((items: any) => {
-      return [...items, { label: 'New Tab', children: 'Content of new Tab', key: newActiveKey }];
-    });
     setActiveKey(newActiveKey);
   };
 
@@ -95,7 +69,31 @@ export default function AppModal(props: IProps) {
 
   const fetchAgent = async () => {
     const [_, data] = await apiInterceptors(getAgents());
-    console.log('1111agent', data);
+    if (!data) {
+      return null;
+    }
+
+    setDropItems(
+      data.map((agent) => {
+        return {
+          label: agent.name,
+          key: agent.name,
+          onClick: () => {
+            add(agent);
+          },
+          agent,
+        };
+      }),
+    );
+  };
+
+  const fetchResourceType = async () => {
+    const [_, data] = await apiInterceptors(getResourceType());
+    if (data) {
+      return data;
+    } else {
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -103,21 +101,61 @@ export default function AppModal(props: IProps) {
     fetchAgent();
   }, []);
 
-  dropItems?.forEach((item: any) => {
-    item.onClick = () => {
-      add(item);
-    };
-  });
+  const updateDetailsByAgentName = (name: string, data: any) => {
+    setDetails((details: any) => {
+      return details.map((detail: any) => {
+        return name === detail.agent_name ? data : detail;
+      });
+    });
+  };
+
+  const add = async (tabBar: IAgentParams) => {
+    const newActiveKey = tabBar.name;
+    const resourceTypes = await fetchResourceType();
+
+    setActiveKey(newActiveKey);
+
+    setDetails((details: any) => {
+      return [...details, { agent_name: newActiveKey, llm_strategy: 'priority' }];
+    });
+
+    setAgents((items: any) => {
+      return [
+        ...items,
+        {
+          label: newActiveKey,
+          children: (
+            <AgentPanel
+              detail={{ name: newActiveKey, llm_strategy: 'priority' }}
+              updateDetailsByName={updateDetailsByAgentName}
+              resourceTypes={resourceTypes}
+            />
+          ),
+          key: newActiveKey,
+        },
+      ];
+    });
+
+    setDropItems((items) => {
+      return items.filter((item) => item.key !== tabBar.name);
+    });
+  };
 
   const remove = (targetKey: TargetKey) => {
     let newActiveKey = activeKey;
     let lastIndex = -1;
-    items.forEach((item, i) => {
+
+    if (!agents) {
+      return null;
+    }
+
+    agents.forEach((item, i) => {
       if (item.key === targetKey) {
         lastIndex = i - 1;
       }
     });
-    const newPanes = items.filter((item) => item.key !== targetKey);
+
+    const newPanes = agents.filter((item) => item.key !== targetKey);
     if (newPanes.length && newActiveKey === targetKey) {
       if (lastIndex >= 0) {
         newActiveKey = newPanes[lastIndex].key;
@@ -125,11 +163,23 @@ export default function AppModal(props: IProps) {
         newActiveKey = newPanes[0].key;
       }
     }
-    setItems(newPanes);
+    setAgents(newPanes);
     setActiveKey(newActiveKey);
+    setDropItems((items: any) => {
+      return [
+        ...items,
+        {
+          label: targetKey,
+          key: targetKey,
+          onClick: () => {
+            add({ name: targetKey, describe: '', system_message: '' });
+          },
+        },
+      ];
+    });
   };
 
-  const onEdit = (targetKey: React.MouseEvent | React.KeyboardEvent | string, action: 'add' | 'remove') => {
+  const onEdit = (targetKey: any, action: 'add' | 'remove') => {
     if (action === 'add') {
       // add();
     } else {
@@ -137,8 +187,14 @@ export default function AppModal(props: IProps) {
     }
   };
 
-  const handleSubmit = async() => {
+  const handleSubmit = async () => {
+    const isValidate = await form.validateFields();
+
+    if (!isValidate) {
+      return;
+    }
     setSpinning(true);
+
     const data = {
       ...form.getFieldsValue(),
       details: [],
@@ -151,7 +207,7 @@ export default function AppModal(props: IProps) {
   const renderAddIcon = () => {
     return (
       <Dropdown menu={{ items: dropItems }} trigger={['click']}>
-        <a onClick={(e) => e.preventDefault()}>
+        <a className="h-8 flex items-center" onClick={(e) => e.preventDefault()}>
           <Space>
             <AddIcon />
           </Space>
@@ -162,10 +218,11 @@ export default function AppModal(props: IProps) {
 
   return (
     <div>
-      <Modal title="add application" open={open} onCancel={handleCancel} onOk={handleSubmit}>
+      <Modal title="add application" open={open} onCancel={handleCancel} onOk={handleSubmit} destroyOnClose={true}>
         <Spin spinning={spinning}>
           <Form
             form={form}
+            preserve={false}
             size="large"
             className="mt-4 h-[650px] overflow-auto"
             layout="vertical"
@@ -183,16 +240,18 @@ export default function AppModal(props: IProps) {
             >
               <Input className="h-12" placeholder={t('Please_input_the_description')} />
             </Form.Item>
-            <Form.Item<FieldType> label={t('language')} name="language" rules={[{ required: true }]}>
+            <Form.Item<FieldType> label={t('language')} initialValue={languageOptions[0].value} name="language" rules={[{ required: true }]}>
               <Select className="h-12" placeholder={t('language_select_tips')} options={languageOptions} />
             </Form.Item>
-            <Form.Item<FieldType> label={t('team_modal')} name="team_mode" rules={[{ required: true }]}>
+            <Form.Item<FieldType>
+              label={t('team_modal')}
+              name="team_mode"
+              rules={[{ required: true }]}
+              initialValue={teamModal && teamModal[0].value}
+            >
               <Select className="h-12" placeholder={t('Please_input_the_description')} options={teamModal} />
             </Form.Item>
-            <div>
-              <div className="mb-5">Agent</div>
-            </div>
-            <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={items} />
+            <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
           </Form>
         </Spin>
       </Modal>

@@ -2,31 +2,56 @@ import React, { useEffect, useState } from 'react';
 import DBIcon from '../common/db-icon';
 import CollectIcon from '../icons/collect';
 import CollectedIcon from '../icons/collected';
-import { Button } from 'antd';
-import { apiInterceptors, collectApp, getAppList } from '@/client/api';
+import { Button, Modal } from 'antd';
+import { apiInterceptors, collectApp, delApp, getAppList, unCollectApp } from '@/client/api';
 import { IApp } from '@/types/app';
+import { DeleteFilled, WarningOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 interface IProps {
   updateApps: () => void;
   app: IApp;
 }
 
+const { confirm } = Modal;
+
 export default function AppCard(props: IProps) {
   const { updateApps, app } = props;
   const [isCollect, setIsCollect] = useState(false);
 
+  const { t } = useTranslation();
+
+  const showDeleteConfirm = () => {
+    confirm({
+      title: t('Tips'),
+      icon: <WarningOutlined />,
+      content: `do you want delete the application?`,
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      async onOk() {
+        await apiInterceptors(delApp({ app_code: app.app_code }));
+        updateApps();
+      },
+    });
+  };
+
+  useEffect(() => {
+    setIsCollect(app.is_collected);
+  }, [app]);
+
   const collect = async () => {
-    const [error, data] = await apiInterceptors(collectApp({ app_code: app.app_code }));
+    const [error] = await apiInterceptors(isCollect ? unCollectApp({ app_code: app.app_code }) : collectApp({ app_code: app.app_code }));
     if (error) return;
     updateApps();
     setIsCollect(true);
   };
 
   return (
-    <div className="relative cursor-pointer mr-8 mb-5 h-72 flex flex-shrink-0 flex-col p-4 w-72 lg:w-72 rounded  text-black bg-white shadow-[0_8px_16px_-10px_rgba(100,100,100,.08)] hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.15)] dark:bg-[#232734] dark:text-white dark:hover:border-white transition-[transfrom_shadow] duration-300 hover:-translate-y-1 ">
+    <div className="relative cursor-pointer mr-8 mb-5 max-h-72 flex flex-shrink-0 flex-col p-4 w-72 lg:w-72 rounded  text-black bg-white shadow-[0_8px_16px_-10px_rgba(100,100,100,.08)] hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.15)] dark:bg-[#232734] dark:text-white dark:hover:border-white transition-[transfrom_shadow] duration-300 hover:-translate-y-1 ">
       <div className="flex justify-between">
         <div className="flex items-center">
-          <DBIcon src={'/icons/db2.png'} label="1112" className=" mr-1 inline-block mt-[-4px]"></DBIcon>
+          <DBIcon src={'/LOGO_SMALL.png'} label="1112" className=" mr-1 inline-block mt-[-4px]"></DBIcon>
           <h2 className="text-sm font-semibold">{app?.app_name}</h2>
         </div>
         <div onClick={collect}>{!isCollect ? <CollectIcon /> : <CollectedIcon />}</div>
@@ -44,7 +69,15 @@ export default function AppCard(props: IProps) {
         <p className=" truncate">{app?.team_mode}</p>
       </div>
       <div className="w-full flex justify-center">
-        <Button danger>delete</Button>
+        <Button
+          onClick={() => {
+            showDeleteConfirm();
+          }}
+          icon={<DeleteFilled />}
+          danger
+        >
+          delete
+        </Button>
       </div>
     </div>
   );

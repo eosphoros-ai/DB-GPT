@@ -25,10 +25,14 @@ export type IApp = {
    * 应用节点信息
    */
   details?: string;
+  /**
+   * 是否已收藏
+   */
+  is_collected: boolean;
 };
 
 // agent
-export type IAgent = {
+export type AgentParams = {
   agent_name: string;
   node_id: string;
   /**
@@ -47,6 +51,12 @@ export type IAgent = {
    * 策略包含的参数
    */
   llm_strategy_value: string;
+};
+
+export type IAgent = {
+  describe: string;
+  name: string;
+  system_message: string;
 };
 
 export type ITeamModal = {
