@@ -137,6 +137,11 @@ class FlowPanel(BaseModel):
         ..., description="Flow panel name", examples=["First AWEL Flow", "My LLM Flow"]
     )
     flow_data: FlowData = Field(..., description="Flow data")
+    description: Optional[str] = Field(
+        None,
+        description="Flow panel description",
+        examples=["My first AWEL flow"],
+    )
     user_name: Optional[str] = Field(None, description="User name")
     sys_code: Optional[str] = Field(None, description="System code")
     dag_id: Optional[str] = Field(None, description="DAG id, Created by AWEL")

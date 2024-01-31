@@ -10,7 +10,7 @@ def test_show_metadata():
         metadata = ViewMetadata(
             label="MyMapOperator",
             name="MyMapOperator",
-            category="llm_client",
+            category="llm",
             description="MyMapOperator",
             parameters=[],
             inputs=[
@@ -101,7 +101,7 @@ async def test_create_with_resource():
         metadata = ViewMetadata(
             label="MyLLMOperator",
             name="my_llm_operator",
-            category="llm_client",
+            category="llm",
             description="MyLLMOperator",
             parameters=[
                 Parameter.build_from(

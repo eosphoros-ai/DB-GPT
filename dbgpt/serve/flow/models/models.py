@@ -23,6 +23,7 @@ class ServeEntity(Model):
     dag_id = Column(String(128), index=True, nullable=True, comment="DAG id")
     name = Column(String(128), index=True, nullable=True, comment="Flow name")
     flow_data = Column(Text, nullable=True, comment="Flow data, JSON format")
+    description = Column(String(128), nullable=True, comment="Flow description")
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
@@ -60,6 +61,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             "dag_id": request_dict.get("dag_id"),
             "name": request_dict.get("name"),
             "flow_data": flow_data,
+            "description": request_dict.get("description"),
             "user_name": request_dict.get("user_name"),
             "sys_code": request_dict.get("sys_code"),
         }
@@ -81,6 +83,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             dag_id=entity.dag_id,
             name=entity.name,
             flow_data=flow_data,
+            description=entity.description,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
         )
@@ -102,6 +105,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             dag_id=entity.dag_id,
             name=entity.name,
             flow_data=flow_data,
+            description=entity.description,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
             gmt_created=gmt_created_str,
@@ -122,6 +126,9 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
                 entry.flow_data = json.dumps(
                     update_request.flow_data.dict(), ensure_ascii=False
                 )
+            if update_request.description:
+                entry.description = update_request.description
+
             if update_request.user_name:
                 entry.user_name = update_request.user_name
             if update_request.sys_code:

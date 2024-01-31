@@ -214,6 +214,9 @@ class CommonLLMHTTPRequestContext(BaseModel):
     sys_code: Optional[str] = Field(
         default=None, description="The system code of the model inference"
     )
+    extra: Optional[Dict[str, Any]] = Field(
+        default=None, description="The extra info of the model inference"
+    )
 
 
 @register_resource(
@@ -924,3 +927,60 @@ class ExampleHttpHelloOperator(MapOperator[dict, ExampleHttpResponse]):
         age = request_body.get("age")
         server_res = f"Hello, {name}, your age is {age}"
         return ExampleHttpResponse(server_res=server_res, request_body=request_body)
+
+
+class RequestBodyToDictOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, Any]]):
+    """Request body to dict operator."""
+
+    metadata = ViewMetadata(
+        label="Request Body To Dict Operator",
+        name="request_body_to_dict_operator",
+        category=OperatorCategory.COMMON,
+        parameters=[
+            Parameter.build_from(
+                "Prefix Key",
+                "prefix_key",
+                str,
+                optional=True,
+                default=None,
+                description="The prefix key of the dict, link 'context.extra'",
+            )
+        ],
+        inputs=[
+            Parameter.build_from(
+                "Request Body",
+                "request_body",
+                CommonLLMHttpRequestBody,
+                description="The request body of the API endpoint",
+            )
+        ],
+        outputs=[
+            Parameter.build_from(
+                "Response Body",
+                "response_body",
+                dict,
+                description="The response body of the API endpoint",
+            )
+        ],
+        description="Request body to dict operator",
+    )
+
+    def __init__(self, prefix_key: Optional[str] = None, **kwargs):
+        """Initialize a RequestBodyToDictOperator."""
+        super().__init__(**kwargs)
+        self._key = prefix_key
+
+    async def map(self, request_body: CommonLLMHttpRequestBody) -> Dict[str, Any]:
+        """Map the request body to response body."""
+        dict_value = request_body.dict()
+        if not self._key:
+            return dict_value
+        else:
+            keys = self._key.split(".")
+            for k in keys:
+                dict_value = dict_value[k]
+            if isinstance(dict_value, dict):
+                raise ValueError(
+                    f"Prefix key {self._key} is not a valid key of the request body"
+                )
+            return dict_value
