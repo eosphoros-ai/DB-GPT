@@ -59,6 +59,7 @@ export type IFlowNodeOutput = {
 export type IFlowNode = Node & {
   type_name: string;
   type_cls: string;
+  parent_cls?: string; // resource have this key
   type: string;
   label: string;
   name: string;

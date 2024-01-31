@@ -192,6 +192,7 @@ const en = {
   flow_name_required: 'Please enter the flow name',
   save_flow_success: 'Save flow success',
   delete_flow_confirm: 'Are you sure you want to delete this flow?',
+  related_nodes: 'Related Nodes',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -390,6 +391,7 @@ const zh: Resources['translation'] = {
   flow_name_required: '请输入工作流名称',
   save_flow_success: '保存工作流成功',
   delete_flow_confirm: '确定删除该工作流吗？',
+  related_nodes: '关联节点',
 } as const;
 
 i18n.use(initReactI18next).init({
