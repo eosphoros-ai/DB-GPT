@@ -139,7 +139,9 @@ async def app_resources(
                 if name:
                     results = [r for r in results if name in r]
             case ResourceType.Internet.value:
-                results = []
+                return Result.succ(None)
+            case ResourceType.File.value:
+                return Result.succ(None)
         return Result.succ(results)
     except Exception as ex:
         return Result.failed(code="E000X", msg=f"query app resources error: {ex}")
