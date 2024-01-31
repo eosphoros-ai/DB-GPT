@@ -1,7 +1,7 @@
 """Agents: single agents about CodeAssistantAgent?
 
     Examples:
-     
+
         Execute the following command in the terminal:
         Set env params.
         .. code-block:: shell
@@ -18,37 +18,57 @@ import asyncio
 import os
 
 from dbgpt.agent.agents.agent import AgentContext
-from dbgpt.agent.agents.expand.code_assistant_agent import CodeAssistantAgent
+from dbgpt.agent.agents.expand.data_scientist_agent import DataScientistAgent
 from dbgpt.agent.agents.llm.llm import LLMConfig
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.agent.resource.resource_api import AgentResource, ResourceType
+from dbgpt.agent.resource.resource_db_api import SqliteLoadClient
+from dbgpt.agent.resource.resource_loader import ResourceLoader
+
+current_dir = os.getcwd()
+parent_dir = os.path.dirname(current_dir)
+test_plugin_dir = os.path.join(parent_dir, "test_files")
 
 
 async def main():
     from dbgpt.model import OpenAILLMClient
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
-    context: AgentContext = AgentContext(conv_id="test123")
+    context: AgentContext = AgentContext(conv_id="test456")
+
     default_memory: GptsMemory = GptsMemory()
 
-    coder = (
-        await CodeAssistantAgent()
+    db_resource = AgentResource(
+        type=ResourceType.DB,
+        name="TestData",
+        value=f"{test_plugin_dir}/dbgpt.db",
+    )
+
+    resource_loader = ResourceLoader()
+    sqlite_file_loader = SqliteLoadClient()
+    resource_loader.register_resesource_api(sqlite_file_loader)
+
+    user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
+
+    sql_boy = (
+        await DataScientistAgent()
         .bind(context)
         .bind(LLMConfig(llm_client=llm_client))
         .bind(default_memory)
+        .bind([db_resource])
+        .bind(resource_loader)
         .build()
     )
 
-    user_proxy = await UserProxyAgent().bind(context).bind(default_memory).build()
-
     await user_proxy.a_initiate_chat(
-        recipient=coder,
+        recipient=sql_boy,
         reviewer=user_proxy,
-        message="式计算下321 * 123等于多少",  # 用python代码的方式计算下321 * 123等于多少
-        # message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
+        message="当前库有那些表",
     )
+
     ## dbgpt-vis message infos
-    print(await default_memory.one_chat_competions("test123"))
+    print(await default_memory.one_chat_competions("test456"))
 
 
 if __name__ == "__main__":

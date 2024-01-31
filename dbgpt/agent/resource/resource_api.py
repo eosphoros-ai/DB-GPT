@@ -1,0 +1,71 @@
+from __future__ import annotations
+
+import dataclasses
+import json
+from abc import ABC
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+from pydantic import BaseModel
+
+
+class ResourceType(Enum):
+    DB = "database"
+    Knowledge = "knowledge"
+    Internet = "internet"
+    Plugin = "plugin"
+    File = "file"
+
+
+@dataclasses.dataclass()
+class AgentResource:
+    type: ResourceType
+    name: str
+    value: str
+    is_dynamic: bool = (
+        False  # Is the current resource predefined or dynamically passed in?
+    )
+
+    def resource_prompt_template(self, **kwargs) -> str:
+        return f"""{{data_type}}  --{{data_introduce}}"""
+
+    @staticmethod
+    def from_dict(d: Dict[str, Any]) -> Optional[AgentResource]:
+        if d is None:
+            return None
+        return AgentResource(
+            type=ResourceType(d.get("type")),
+            name=d.get("name"),
+            introduce=d.get("introduce"),
+            value=d.get("value", None),
+        )
+
+
+class ResourceClient(ABC):
+    @property
+    def type(self) -> ResourceType:
+        pass
+
+    async def get_data_introduce(
+        self, resource: AgentResource, question: Optional[str] = None
+    ) -> str:
+        """
+        Get the content introduction prompt of the specified resource
+        Args:
+            value:
+
+        Returns:
+
+        """
+        return ""
+
+    def get_data_type(self, resource: AgentResource) -> str:
+        return ""
+
+    async def get_resource_prompt(
+        self, resource: AgentResource, question: Optional[str] = None
+    ) -> str:
+        return resource.resource_prompt_template().format(
+            data_type=self.get_data_type(resource),
+            data_introduce=await self.get_data_introduce(resource, question),
+        )

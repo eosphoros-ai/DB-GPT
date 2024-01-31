@@ -14,7 +14,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 
-from dbgpt.agent.agents.resource import AgentResource
+from dbgpt.agent.resource.resource_api import AgentResource
 from dbgpt.storage.metadata import BaseDao, Model
 
 
@@ -214,7 +214,9 @@ class GptsAppDao(BaseDao):
                     "sys_code": app_info.sys_code,
                     "created_at": app_info.created_at,
                     "updated_at": app_info.updated_at,
-                    "details": [item.to_dict() for item in app_details],
+                    "details": [
+                        GptsAppDetail.from_dict(item.to_dict()) for item in app_details
+                    ],
                 }
             )
 

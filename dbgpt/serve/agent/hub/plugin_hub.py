@@ -20,7 +20,7 @@ DEFAULT_PLUGIN_REPO = "https://github.com/eosphoros-ai/DB-GPT-Plugins.git"
 TEMP_PLUGIN_PATH = ""
 
 
-class AgentHub:
+class PluginHub:
     def __init__(self, plugin_dir) -> None:
         self.hub_dao = PluginHubDao()
         self.my_plugin_dao = MyPluginDao()

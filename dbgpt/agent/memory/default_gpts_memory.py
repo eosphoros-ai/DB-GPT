@@ -27,7 +27,8 @@ class DefaultGptsPlansMemory(GptsPlansMemory):
     def get_by_conv_id_and_num(
         self, conv_id: str, task_nums: List[int]
     ) -> List[GptsPlan]:
-        result = self.df.query(f"conv_id==@conv_id and sub_task_num in @task_nums")
+        task_nums_int = [int(num) for num in task_nums]
+        result = self.df.query(f"conv_id==@conv_id and sub_task_num in @task_nums_int")
         plans = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))
@@ -101,9 +102,14 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
         agent2: str,
         current_gogal: Optional[str] = None,
     ) -> Optional[List[GptsMessage]]:
-        result = self.df.query(
-            f"conv_id==@conv_id and ((sender==@agent1 and receiver==@agent2) or (sender==@agent2 and receiver==@agent1)) and current_gogal==@current_gogal"
-        )
+        if current_gogal:
+            result = self.df.query(
+                f"conv_id==@conv_id and ((sender==@agent1 and receiver==@agent2) or (sender==@agent2 and receiver==@agent1)) and current_gogal==@current_gogal"
+            )
+        else:
+            result = self.df.query(
+                f"conv_id==@conv_id and ((sender==@agent1 and receiver==@agent2) or (sender==@agent2 and receiver==@agent1))"
+            )
         messages = []
         for row in result.itertuples(index=False, name=None):
             row_dict = dict(zip(self.df.columns, row))

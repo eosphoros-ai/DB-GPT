@@ -178,15 +178,7 @@ class AgentResource:
 @dataclasses.dataclass
 class AgentContext:
     conv_id: str
-    llm_provider: LLMClient
-
-    gpts_name: Optional[str] = None
-    resource_db: Optional[AgentResource] = None
-    resource_knowledge: Optional[AgentResource] = None
-    resource_internet: Optional[AgentResource] = None
-    llm_models: Optional[List[Union[ModelMetadata, str]]] = None
-    model_priority: Optional[dict] = None
-    agents: Optional[List[str]] = None
+    gpts_app_name: str = None
 
     max_chat_round: Optional[int] = 100
     max_retry_round: Optional[int] = 10
