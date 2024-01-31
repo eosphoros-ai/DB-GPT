@@ -135,7 +135,7 @@ async def app_resources(
                     results = [r for r in results if name in r]
             case ResourceType.Plugin.value:
                 agents = multi_agents.get_dbgpts()
-                results = [agent.gpts_name for agent in agents]
+                results = [agent.app_name for agent in agents]
                 if name:
                     results = [r for r in results if name in r]
             case ResourceType.Internet.value:

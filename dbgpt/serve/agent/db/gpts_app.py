@@ -253,6 +253,16 @@ class GptsAppCollectionDao(BaseDao):
         sys_code: Optional[str] = None,
     ):
         with self.session() as session:
+            app_qry = session.query(GptsAppCollectionEntity)
+            if user_code:
+                app_qry = app_qry.filter(GptsAppCollectionEntity.user_code == user_code)
+            if sys_code:
+                app_qry = app_qry.filter(GptsAppCollectionEntity.sys_code == sys_code)
+            if app_code:
+                app_qry = app_qry.filter(GptsAppCollectionEntity.app_code == app_code)
+            app_entity = app_qry.one_or_none()
+            if app_entity is not None:
+                raise f"current app has been collected!"
             app_entity = GptsAppCollectionEntity(
                 app_code=app_code,
                 user_code=user_code,
@@ -301,15 +311,13 @@ class GptsAppCollectionDao(BaseDao):
 
 class GptsAppDao(BaseDao):
     def app_list(self, query: GptsAppQuery):
-        app_codes = []
-        if query.is_collected and query.is_collected.lower() in ("true", "false"):
-            collection_dao = GptsAppCollectionDao()
-            gpts_collections = collection_dao.list(
-                GptsAppCollection.from_dict(
-                    {"sys_code": query.sys_code, "user_code": query.user_code}
-                )
+        collection_dao = GptsAppCollectionDao()
+        gpts_collections = collection_dao.list(
+            GptsAppCollection.from_dict(
+                {"sys_code": query.sys_code, "user_code": query.user_code}
             )
-            app_codes = [gc.app_code for gc in gpts_collections]
+        )
+        app_codes = [gc.app_code for gc in gpts_collections]
 
         with self.session() as session:
             app_qry = session.query(GptsAppEntity)
@@ -341,7 +349,7 @@ class GptsAppDao(BaseDao):
                             "team_context": app_info.team_context,
                             "user_code": app_info.user_code,
                             "sys_code": app_info.sys_code,
-                            "is_collected": query.is_collected,
+                            "is_collected": "true" if app_info.app_code in app_codes else "false",
                             "created_at": app_info.created_at,
                             "updated_at": app_info.updated_at,
                             "details": [],
