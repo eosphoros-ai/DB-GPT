@@ -12,9 +12,9 @@ from dbgpt.core import (
     ModelOutput,
 )
 from dbgpt.model.adapter.base import LLMModelAdapter
+from dbgpt.model.adapter.loader import ModelLoader, _get_model_real_path
 from dbgpt.model.adapter.model_adapter import get_llm_model_adapter
 from dbgpt.model.cluster.worker_base import ModelWorker
-from dbgpt.model.loader import ModelLoader, _get_model_real_path
 from dbgpt.model.parameter import ModelParameters
 from dbgpt.util.model_utils import _clear_model_cache, _get_current_cuda_memory
 from dbgpt.util.parameter_utils import EnvArgumentParser, _get_dict_from_obj

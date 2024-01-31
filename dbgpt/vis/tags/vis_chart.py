@@ -44,18 +44,20 @@ def default_chart_type_promot() -> str:
 
 
 class VisChart(Vis):
-    async def generate_content(self, **kwargs) -> Optional[str]:
-        chart = kwargs.get("chart", None)
-        sql_2_df_func = kwargs.get("sql_2_df_func", None)
+    def render_prompt(self):
+        return default_chart_type_promot()
 
-        if not chart or not sql_2_df_func:
+    async def generate_param(self, **kwargs) -> Optional[str]:
+        chart = kwargs.get("chart", None)
+        data_df = kwargs.get("data_df", None)
+
+        if not chart:
             raise ValueError(
                 f"Parameter information is missing and {self.vis_tag} protocol conversion cannot be performed."
             )
 
         sql = chart.get("sql", None)
         param = {}
-        df = sql_2_df_func(sql)
         if not sql or len(sql) <= 0:
             return None
 
@@ -65,7 +67,7 @@ class VisChart(Vis):
         param["describe"] = chart.get("thought", "")
 
         param["data"] = json.loads(
-            df.to_json(orient="records", date_format="iso", date_unit="s")
+            data_df.to_json(orient="records", date_format="iso", date_unit="s")
         )
         return param
 

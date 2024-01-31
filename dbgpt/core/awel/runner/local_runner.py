@@ -3,13 +3,13 @@
 This runner will run the workflow in the current process.
 """
 import logging
-from typing import Dict, List, Optional, Set, cast
+from typing import Any, Dict, List, Optional, Set, cast
 
 from dbgpt.component import SystemApp
 
 from ..dag.base import DAGContext, DAGVar
-from ..operator.base import CALL_DATA, BaseOperator, WorkflowRunner
-from ..operator.common_operator import BranchOperator, JoinOperator
+from ..operators.base import CALL_DATA, BaseOperator, WorkflowRunner
+from ..operators.common_operator import BranchOperator, JoinOperator
 from ..task.base import SKIP_DATA, TaskContext, TaskState
 from ..task.task_impl import DefaultInputContext, DefaultTaskContext, SimpleTaskOutput
 from .job_manager import JobManager
@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 
 class DefaultWorkflowRunner(WorkflowRunner):
     """The default workflow runner."""
+
+    def __init__(self):
+        """Init the default workflow runner."""
+        self._running_dag_ctx: Dict[str, DAGContext] = {}
 
     async def execute_workflow(
         self,
@@ -44,15 +48,22 @@ class DefaultWorkflowRunner(WorkflowRunner):
         if not exist_dag_ctx:
             # Create DAG context
             node_outputs: Dict[str, TaskContext] = {}
+            share_data: Dict[str, Any] = {}
         else:
             # Share node output with exist dag context
             node_outputs = exist_dag_ctx._node_to_outputs
+            share_data = exist_dag_ctx._share_data
         dag_ctx = DAGContext(
-            streaming_call=streaming_call,
             node_to_outputs=node_outputs,
+            share_data=share_data,
+            streaming_call=streaming_call,
             node_name_to_ids=job_manager._node_name_to_ids,
         )
-        logger.info(f"Begin run workflow from end operator, id: {node.node_id}")
+        if node.dag:
+            self._running_dag_ctx[node.dag.dag_id] = dag_ctx
+        logger.info(
+            f"Begin run workflow from end operator, id: {node.node_id}, runner: {self}"
+        )
         logger.debug(f"Node id {node.node_id}, call_data: {call_data}")
         skip_node_ids: Set[str] = set()
         system_app: Optional[SystemApp] = DAGVar.get_current_system_app()
@@ -64,7 +75,8 @@ class DefaultWorkflowRunner(WorkflowRunner):
         if not streaming_call and node.dag:
             # streaming call not work for dag end
             await node.dag._after_dag_end()
-
+        if node.dag:
+            del self._running_dag_ctx[node.dag.dag_id]
         return dag_ctx
 
     async def _execute_node(
@@ -80,7 +92,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
         if node.node_id in node_outputs:
             return
 
-        # Run all upstream node
+        # Run all upstream nodes
         for upstream_node in node.upstream:
             if isinstance(upstream_node, BaseOperator):
                 await self._execute_node(

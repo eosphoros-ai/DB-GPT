@@ -2,6 +2,7 @@ from abc import ABC
 from typing import Dict, List, Optional
 
 from dbgpt.agent.agents.agent import Agent, AgentGenerateContext
+from dbgpt.agent.agents.base_agent_new import ConversableAgent
 from dbgpt.core.awel import BranchFunc, BranchOperator, MapOperator
 from dbgpt.core.interface.message import ModelMessageRoleType
 
@@ -12,7 +13,7 @@ class BaseAgentOperator:
     SHARE_DATA_KEY_MODEL_NAME = "share_data_key_agent_name"
 
     def __init__(self, agent: Optional[Agent] = None):
-        self._agent = agent
+        self._agent: ConversableAgent = agent
 
     @property
     def agent(self) -> Agent:
@@ -32,9 +33,11 @@ class AgentOperator(
     async def map(self, input_value: AgentGenerateContext) -> AgentGenerateContext:
         now_rely_messages: List[Dict] = []
 
-        # input_value.message["current_gogal"] = (
-        #     self._agent.name + ":" + input_value.message["current_gogal"]
-        # )
+        # Isolate the message delivery mechanism and pass it to the operator
+        input_value.message["current_gogal"] = (
+            f"[{self._agent.name if self._agent.name else self._agent.profile}]:"
+            + input_value.message["content"]
+        )
         ###What was received was the User message
         human_message = input_value.message.copy()
         human_message["role"] = ModelMessageRoleType.HUMAN
@@ -48,39 +51,20 @@ class AgentOperator(
             now_message, self._agent, input_value.reviewer, False
         )
 
-        ### Retry on failure
-        current_message = input_value.message
-        final_sucess = False
-        final_message = None
-        while self.agent.current_retry_counter < self.agent.max_retry_count:
-            verify_paas, reply_message = await self._agent.a_generate_reply(
-                message=current_message,
-                sender=input_value.sender,
-                reviewer=input_value.reviewer,
-                silent=input_value.silent,
-                rely_messages=input_value.rely_messages,
-            )
-            final_message = reply_message
-            if verify_paas:
-                final_sucess = True
-                break
-            else:
-                # retry
-                current_message = {
-                    "content": reply_message["content"],
-                    "current_gogal": input_value.message.get("current_gogal", None),
-                }
-                await input_value.sender.a_send(
-                    current_message, self.agent, input_value.reviewer, False
-                )
-                self.agent.current_retry_counter += 1
-        if not final_sucess:
+        is_success, reply_message = await self._agent.a_generate_reply(
+            recive_message=input_value.message,
+            sender=input_value.sender,
+            reviewer=input_value.reviewer,
+            rely_messages=input_value.rely_messages,
+        )
+
+        if not is_success:
             raise ValueError(
-                f"After trying {self.agent.current_retry_counter} times, I still can't generate a valid answer. The current problem is:{final_message['content']}!"
+                f"The task failed at step {self._agent.profile} and the attempt to repair it failed. The final reason for failure:{reply_message['content']}!"
             )
 
         ###What is sent is an AI message
-        ai_message = final_message
+        ai_message = reply_message
         ai_message["role"] = ModelMessageRoleType.AI
         now_rely_messages.append(ai_message)
 

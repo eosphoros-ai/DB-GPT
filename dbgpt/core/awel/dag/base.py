@@ -14,6 +14,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union, ca
 
 from dbgpt.component import SystemApp
 
+from ..flow.base import ViewMixin
 from ..resource.base import ResourceGroup
 from ..task.base import TaskContext, TaskOutput
 
@@ -235,7 +236,7 @@ class DAGLifecycle:
         pass
 
 
-class DAGNode(DAGLifecycle, DependencyMixin, ABC):
+class DAGNode(DAGLifecycle, DependencyMixin, ViewMixin, ABC):
     """The base class of DAGNode."""
 
     resource_group: Optional[ResourceGroup] = None
@@ -446,27 +447,25 @@ class DAGContext:
 
     def __init__(
         self,
+        node_to_outputs: Dict[str, TaskContext],
+        share_data: Dict[str, Any],
         streaming_call: bool = False,
-        node_to_outputs: Optional[Dict[str, TaskContext]] = None,
         node_name_to_ids: Optional[Dict[str, str]] = None,
     ) -> None:
         """Initialize a DAGContext.
 
         Args:
+            node_to_outputs (Dict[str, TaskContext]): The task outputs of current DAG.
+            share_data (Dict[str, Any]): The share data of current DAG.
             streaming_call (bool, optional): Whether the current DAG is streaming call.
                 Defaults to False.
-            node_to_outputs (Optional[Dict[str, TaskContext]], optional):
-                The task outputs of current DAG. Defaults to None.
-            node_name_to_ids (Optional[Dict[str, str]], optional):
-                The task name to task id mapping. Defaults to None.
+            node_name_to_ids (Optional[Dict[str, str]], optional): The node name to node
         """
-        if not node_to_outputs:
-            node_to_outputs = {}
         if not node_name_to_ids:
             node_name_to_ids = {}
         self._streaming_call = streaming_call
         self._curr_task_ctx: Optional[TaskContext] = None
-        self._share_data: Dict[str, Any] = {}
+        self._share_data: Dict[str, Any] = share_data
         self._node_to_outputs: Dict[str, TaskContext] = node_to_outputs
         self._node_name_to_ids: Dict[str, str] = node_name_to_ids
 
@@ -530,6 +529,7 @@ class DAGContext:
         Returns:
             Any: The share data, you can cast it to the real type
         """
+        logger.debug(f"Get share data by key {key} from {id(self._share_data)}")
         return self._share_data.get(key)
 
     async def save_to_share_data(
@@ -545,6 +545,7 @@ class DAGContext:
         """
         if key in self._share_data and not overwrite:
             raise ValueError(f"Share data key {key} already exists")
+        logger.debug(f"Save share data by key {key} to {id(self._share_data)}")
         self._share_data[key] = data
 
     async def get_task_share_data(self, task_name: str, key: str) -> Any:
@@ -629,7 +630,7 @@ class DAG:
         return self._dag_id
 
     def _build(self) -> None:
-        from ..operator.common_operator import TriggerOperator
+        from ..operators.common_operator import TriggerOperator
 
         nodes: Set[DAGNode] = set()
         for _, node in self.node_map.items():
@@ -702,6 +703,22 @@ class DAG:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit a DAG context."""
         DAGVar.exit_dag()
+
+    def __hash__(self) -> int:
+        """Return the hash value of current DAG.
+
+        If the dag_id is not None, return the hash value of dag_id.
+        """
+        if self.dag_id:
+            return hash(self.dag_id)
+        else:
+            return super().__hash__()
+
+    def __eq__(self, other):
+        """Return whether the current DAG is equal to other DAG."""
+        if not isinstance(other, DAG):
+            return False
+        return self.dag_id == other.dag_id
 
     def __repr__(self):
         """Return the representation of current DAG."""

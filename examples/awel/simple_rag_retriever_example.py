@@ -4,14 +4,15 @@ from typing import Dict, List
 
 from pydantic import BaseModel, Field
 
-from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
+from dbgpt._private.config import Config
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, MODEL_PATH, PILOT_PATH
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
-from dbgpt.model import OpenAILLMClient
+from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
-from dbgpt.rag.operator.embedding import EmbeddingRetrieverOperator
-from dbgpt.rag.operator.rerank import RerankOperator
-from dbgpt.rag.operator.rewrite import QueryRewriteOperator
+from dbgpt.rag.operators.embedding import EmbeddingRetrieverOperator
+from dbgpt.rag.operators.rerank import RerankOperator
+from dbgpt.rag.operators.rewrite import QueryRewriteOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
@@ -42,6 +43,8 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
                 "query": "what is awel talk about?"
             }'
 """
+
+CFG = Config()
 
 
 class TriggerReqBody(BaseModel):
@@ -75,6 +78,7 @@ def _context_join_fn(context_dict: Dict, chunks: List[Chunk]) -> Dict:
 
 def _create_vector_connector():
     """Create vector connector."""
+    model_name = os.getenv("EMBEDDING_MODEL", "text2vec")
     return VectorStoreConnector.from_default(
         "Chroma",
         vector_store_config=ChromaVectorConfig(
@@ -82,7 +86,7 @@ def _create_vector_connector():
             persist_path=os.path.join(PILOT_PATH, "data"),
         ),
         embedding_fn=DefaultEmbeddingFactory(
-            default_model_name=os.path.join(MODEL_PATH, "text2vec-large-chinese"),
+            default_model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL],
         ).create(),
     )
 

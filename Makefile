@@ -51,9 +51,18 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/flake8 dbgpt/core/
 	# TODO: More package checks with flake8.
 
+.PHONY: fmt-check
+fmt-check: setup ## Check Python code formatting and style without making changes
+	$(VENV_BIN)/isort --check-only dbgpt/
+	$(VENV_BIN)/isort --check-only --extend-skip="examples/notebook" examples
+	$(VENV_BIN)/black --check --extend-exclude="examples/notebook" .
+	$(VENV_BIN)/blackdoc --check dbgpt examples
+	$(VENV_BIN)/flake8 dbgpt/core/
+    # $(VENV_BIN)/blackdoc --check dbgpt examples
+    # $(VENV_BIN)/flake8 dbgpt/core/
 
 .PHONY: pre-commit
-pre-commit: fmt test test-doc mypy ## Run formatting and unit tests before committing
+pre-commit: fmt-check test test-doc mypy ## Run formatting and unit tests before committing
 
 test: $(VENV)/.testenv ## Run unit tests
 	$(VENV_BIN)/pytest dbgpt
@@ -80,6 +89,19 @@ clean: ## Clean up the environment
 	find . -type d -name '__pycache__' -delete
 	find . -type d -name '.pytest_cache' -delete
 	find . -type d -name '.coverage' -delete
+
+.PHONY: clean-dist
+clean-dist: ## Clean up the distribution
+	rm -rf dist/ *.egg-info build/
+
+.PHONY: package
+package: clean-dist ## Package the project for distribution
+	IS_DEV_MODE=false python setup.py sdist bdist_wheel
+
+.PHONY: upload
+upload: package ## Upload the package to PyPI
+	# upload to testpypi: twine upload --repository testpypi dist/*
+	twine upload dist/*
 
 .PHONY: help
 help:  ## Display this help screen

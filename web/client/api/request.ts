@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
-import { GET, POST } from '.';
+import { DELETE, GET, POST, PUT } from '.';
 import { DbListResponse, DbSupportTypeResponse, PostDbParams, ChatFeedBackSchema } from '@/types/db';
 import { DialogueListResponse, IChatDialogueSchema, NewDialogueParam, SceneResponse, ChatHistoryResponse, FeedBack, IDB } from '@/types/chat';
 import { IModelData, StartModelParams, BaseModelParams, SupportModel } from '@/types/model';
@@ -32,6 +32,7 @@ import {
   ISyncBatchResponse,
 } from '@/types/knowledge';
 import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
+import { IFlow, IFlowNode, IFlowResponse, IFlowUpdateParam } from '@/types/flow';
 
 /** App */
 export const postScenes = () => {
@@ -248,4 +249,29 @@ export const updatePrompt = (data: UpdatePromptParams) => {
 
 export const addPrompt = (data: UpdatePromptParams) => {
   return POST<UpdatePromptParams, []>('/prompt/add', data);
+};
+
+/** AWEL Flow */
+export const addFlow = (data: IFlowUpdateParam) => {
+  return POST<IFlowUpdateParam, IFlow>('/api/v1/serve/awel/flows', data);
+};
+
+export const getFlows = () => {
+  return GET<null, IFlowResponse>('/api/v1/serve/awel/flows');
+};
+
+export const getFlowById = (id: string) => {
+  return GET<null, IFlow>(`/api/v1/serve/awel/flows/${id}`);
+};
+
+export const updateFlowById = (id: string, data: IFlowUpdateParam) => {
+  return PUT<IFlowUpdateParam, IFlow>(`/api/v1/serve/awel/flows/${id}`, data);
+};
+
+export const deleteFlowById = (id: string) => {
+  return DELETE<null, null>(`/api/v1/serve/awel/flows/${id}`);
+};
+
+export const getFlowNodes = () => {
+  return GET<null, Array<IFlowNode>>(`/api/v1/serve/awel/nodes`);
 };

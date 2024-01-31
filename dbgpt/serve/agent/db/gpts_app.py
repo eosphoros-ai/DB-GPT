@@ -5,12 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
-
-from dbgpt.agent.agents.resource import (
-    AgentResource,
-    dataclass_to_dict,
-    json_to_agent_resource_list,
-)
+from dbgpt.agent.resource.resource_api import AgentResource
 from dbgpt.storage.metadata import BaseDao, Model
 
 
@@ -25,6 +20,11 @@ class GptsAppDetail(BaseModel):
     llm_strategy_value: Optional[str] = None
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     def to_dict(self):
         return {k: self._serialize(v) for k, v in self.__dict__.items()}
@@ -46,7 +46,7 @@ class GptsAppDetail(BaseModel):
             app_name=d["app_name"],
             agent_name=d["agent_name"],
             node_id=d["node_id"],
-            resources=d.get("resources", None),
+            resources=AgentResource.from_josn_list_str(d.get("resources", None)),
             prompt_template=d.get("prompt_template", None),
             llm_strategy=d.get("llm_strategy", None),
             llm_strategy_value=d.get("llm_strategy_value", None),
@@ -56,7 +56,7 @@ class GptsAppDetail(BaseModel):
 
     @classmethod
     def from_entity(cls, entity):
-        resources = json_to_agent_resource_list(entity.resources)
+        resources = AgentResource.from_josn_list_str(entity.resources)
         return cls(
             app_code=entity.app_code,
             app_name=entity.app_name,
@@ -84,6 +84,11 @@ class GptsApp(BaseModel):
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
     details: List[GptsAppDetail] = []
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     def to_dict(self):
         return {k: self._serialize(v) for k, v in self.__dict__.items()}
@@ -352,10 +357,10 @@ class GptsAppDao(BaseDao):
                 GptsAppDetailEntity.app_code == app_code
             )
             app_details = app_detail_qry.all()
-
-            details = [GptsAppDetail.from_entity(entity) for entity in app_details]
-
-            return GptsApp.from_dict(
+            details: List[GptsAppDetail] = []
+            for item in app_details:
+                details.append(GptsAppDetail())
+            app = GptsApp.from_dict(
                 {
                     "app_code": app_info.app_code,
                     "app_name": app_info.app_name,
@@ -366,9 +371,13 @@ class GptsAppDao(BaseDao):
                     "sys_code": app_info.sys_code,
                     "created_at": app_info.created_at,
                     "updated_at": app_info.updated_at,
-                    "details": details,
+                    "details": [
+                        GptsAppDetail.from_dict(item.to_dict()) for item in app_details
+                    ],
                 }
             )
+
+            return app
 
     def delete(self, app_code: str):
         with self.session() as session:
@@ -395,7 +404,7 @@ class GptsAppDao(BaseDao):
             app_details = []
             for item in gpts_app.details:
                 resource_dicts = [
-                    dataclass_to_dict(resource) for resource in item.resources
+                    AgentResource.dataclass_to_dict(resource) for resource in item.resources
                 ]
 
                 app_details.append(
@@ -421,8 +430,12 @@ class GptsAppDao(BaseDao):
             app_qry = session.query(GptsAppEntity)
             if gpts_app.app_code is None:
                 raise f"app_code is None, don't allow to edit!"
-            app_qry.filter(GptsAppEntity.app_code == gpts_app.app_code)
+            app_qry = app_qry.filter(GptsAppEntity.app_code == gpts_app.app_code)
             app_entity = app_qry.one()
+            app_entity.app_name = gpts_app.app_name
+            app_entity.app_describe = gpts_app.app_describe
+            app_entity.language = gpts_app.language
+            app_entity.team_mode = gpts_app.team_mode
             session.merge(app_entity)
 
             old_details = session.query(GptsAppDetailEntity).filter(
@@ -434,7 +447,7 @@ class GptsAppDao(BaseDao):
             app_details = []
             for item in gpts_app.details:
                 resource_dicts = [
-                    dataclass_to_dict(resource) for resource in item.resources
+                    AgentResource.dataclass_to_dict(resource) for resource in item.resources
                 ]
                 app_details.append(
                     GptsAppDetailEntity(

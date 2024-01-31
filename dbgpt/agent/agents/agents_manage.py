@@ -8,7 +8,6 @@ from .expand.code_assistant_agent import CodeAssistantAgent
 from .expand.dashboard_assistant_agent import DashboardAssistantAgent
 from .expand.data_scientist_agent import DataScientistAgent
 from .expand.plugin_assistant_agent import PluginAssistantAgent
-from .expand.sql_assistant_agent import SQLAssistantAgent
 from .expand.summary_assistant_agent import SummaryAssistantAgent
 
 logger = logging.getLogger(__name__)
@@ -63,7 +62,7 @@ class AgentsManage:
         self._agents = defaultdict()
 
     def register_agent(self, cls):
-        self._agents[cls.NAME] = cls
+        self._agents[cls().profile] = cls
 
     def get_by_name(self, name: str) -> Optional[Type[Agent]]:
         if name not in self._agents:
@@ -82,11 +81,11 @@ class AgentsManage:
     def list_agents(self):
         result = []
         for name, cls in self._agents.items():
+            instance = cls()
             result.append(
                 {
-                    "name": name,
-                    "describe": cls.DEFAULT_DESCRIBE,
-                    "system_message": cls.DEFAULT_SYSTEM_MESSAGE,
+                    "name": instance.profile,
+                    "desc": instance.goal,
                 }
             )
         return result
@@ -97,6 +96,5 @@ agent_manage = AgentsManage()
 agent_manage.register_agent(CodeAssistantAgent)
 agent_manage.register_agent(DashboardAssistantAgent)
 agent_manage.register_agent(DataScientistAgent)
-agent_manage.register_agent(SQLAssistantAgent)
 agent_manage.register_agent(SummaryAssistantAgent)
 agent_manage.register_agent(PluginAssistantAgent)

@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from dbgpt._private.config import Config
 from dbgpt.agent.agents.agents_manage import agent_manage
-from dbgpt.agent.agents.resource import ResourceType
+from dbgpt.agent.resource.resource_api import ResourceType
 from dbgpt.app.knowledge.api import knowledge_space_service
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.openapi.api_view_model import Result

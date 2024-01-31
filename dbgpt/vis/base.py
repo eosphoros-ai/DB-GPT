@@ -6,6 +6,9 @@ from dbgpt.util.json_utils import serialize
 
 
 class Vis:
+    def render_prompt(self):
+        return None
+
     async def generate_param(self, **kwargs) -> Optional[str]:
         """
         Display corresponding content using vis protocol

@@ -81,8 +81,7 @@ class GptsMemory:
         if len(temp_messages) > 0:
             vis_items.append(await self._messages_to_agents_vis(temp_messages))
             temp_messages.clear()
-        if len(vis_items) <= 0:
-            print(f"[DEBUG, message blank:{len(messages)}]")
+
         return "\n".join(vis_items)
 
     async def _messages_to_agents_vis(self, messages: List[GptsMessage]):

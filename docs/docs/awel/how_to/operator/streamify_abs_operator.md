@@ -1,0 +1,1 @@
+# Streamify Abstract Operator

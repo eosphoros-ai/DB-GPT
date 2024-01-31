@@ -17,7 +17,7 @@
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core import ModelMessage, ModelRequest
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
-from dbgpt.model.operator import LLMOperator
+from dbgpt.model.operators import LLMOperator
 
 
 class TriggerReqBody(BaseModel):

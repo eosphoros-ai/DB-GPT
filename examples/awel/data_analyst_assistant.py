@@ -54,13 +54,13 @@ from dbgpt.core import (
     SystemPromptTemplate,
 )
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
-from dbgpt.core.operator import (
+from dbgpt.core.operators import (
     BufferedConversationMapperOperator,
     HistoryDynamicPromptBuilderOperator,
     LLMBranchOperator,
     RequestBuilderOperator,
 )
-from dbgpt.model.operator import (
+from dbgpt.model.operators import (
     LLMOperator,
     OpenAIStreamingOutputOperator,
     StreamingLLMOperator,
