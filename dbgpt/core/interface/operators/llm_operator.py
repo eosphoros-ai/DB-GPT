@@ -47,7 +47,7 @@ class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest], ABC):
                 "Default Model Name",
                 "model",
                 str,
-                optional=False,
+                optional=True,
                 default=None,
                 description="The model name of the model request.",
             ),

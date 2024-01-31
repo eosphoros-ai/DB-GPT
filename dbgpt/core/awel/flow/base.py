@@ -94,6 +94,24 @@ def _serialize_recursive(data: Any) -> Any:
         return _serialize_complex_obj(data)
 
 
+class _CategoryDetail:
+    """The detail of the category."""
+
+    def __init__(self, label: str, description: str):
+        """Init the category detail."""
+        self.label = label
+        self.description = description
+
+
+_OPERATOR_CATEGORY_DETAIL = {
+    "trigger": _CategoryDetail("Trigger", "Trigger your AWEL flow"),
+    "llm": _CategoryDetail("LLM", "Invoke LLM model"),
+    "conversion": _CategoryDetail("Conversion", "Handle the conversion"),
+    "output_parser": _CategoryDetail("Output Parser", "Parse the output of LLM model"),
+    "common": _CategoryDetail("Common", "The common operator"),
+}
+
+
 class OperatorCategory(str, Enum):
     """The category of the operator."""
 
@@ -102,6 +120,22 @@ class OperatorCategory(str, Enum):
     CONVERSION = "conversion"
     OUTPUT_PARSER = "output_parser"
     COMMON = "common"
+
+    def label(self) -> str:
+        """Get the label of the category."""
+        return _OPERATOR_CATEGORY_DETAIL[self.value].label
+
+    def description(self) -> str:
+        """Get the description of the category."""
+        return _OPERATOR_CATEGORY_DETAIL[self.value].description
+
+    @classmethod
+    def value_of(cls, value: str) -> "OperatorCategory":
+        """Get the category by the value."""
+        for category in cls:
+            if category.value == value:
+                return category
+        raise ValueError(f"Can't find the category for value {value}")
 
 
 class OperatorType(str, Enum):
@@ -117,12 +151,35 @@ class OperatorType(str, Enum):
     TRANSFORM_STREAM = "transform_stream"
 
 
+_RESOURCE_CATEGORY_DETAIL = {
+    "http_body": _CategoryDetail("HTTP Body", "The HTTP body"),
+    "llm_client": _CategoryDetail("LLM Client", "The LLM client"),
+    "common": _CategoryDetail("Common", "The common resource"),
+}
+
+
 class ResourceCategory(str, Enum):
     """The category of the resource."""
 
     HTTP_BODY = "http_body"
     LLM_CLIENT = "llm_client"
     COMMON = "common"
+
+    def label(self) -> str:
+        """Get the label of the category."""
+        return _RESOURCE_CATEGORY_DETAIL[self.value].label
+
+    def description(self) -> str:
+        """Get the description of the category."""
+        return _RESOURCE_CATEGORY_DETAIL[self.value].description
+
+    @classmethod
+    def value_of(cls, value: str) -> "ResourceCategory":
+        """Get the category by the value."""
+        for category in cls:
+            if category.value == value:
+                return category
+        raise ValueError(f"Can't find the category for value {value}")
 
 
 class ResourceType(str, Enum):
@@ -483,10 +540,15 @@ class IOField(Resource):
 class BaseMetadata(BaseResource):
     """The base metadata."""
 
-    category: str = Field(
+    category: Union[OperatorCategory, ResourceCategory] = Field(
         ...,
         description="The category of the operator",
         examples=[OperatorCategory.LLM.value, ResourceCategory.LLM_CLIENT.value],
+    )
+    category_label: str = Field(
+        ...,
+        description="The category label of the metadata(Just for UI)",
+        examples=["LLM", "Resource"],
     )
 
     flow_type: Optional[str] = Field(
@@ -557,6 +619,19 @@ class BaseMetadata(BaseResource):
             )
         return runnable_parameters
 
+    @root_validator(pre=True)
+    def base_pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Pre fill the metadata."""
+        if "category_label" not in values:
+            category = values["category"]
+            if isinstance(category, str):
+                if issubclass(cls, ResourceMetadata):
+                    category = ResourceCategory.value_of(category)
+                else:
+                    category = OperatorCategory.value_of(category)
+            values["category_label"] = category.label()
+        return values
+
 
 class ResourceMetadata(BaseMetadata, TypeMetadata):
     """The metadata of the resource."""
@@ -589,7 +664,7 @@ class ResourceMetadata(BaseMetadata, TypeMetadata):
 def register_resource(
     label: str,
     name: Optional[str] = None,
-    category: str = "common",
+    category: ResourceCategory = ResourceCategory.COMMON,
     parameters: Optional[List[Parameter]] = None,
     description: Optional[str] = None,
     resource_type: ResourceType = ResourceType.INSTANCE,
@@ -677,14 +752,21 @@ class ViewMetadata(BaseMetadata):
         """Get the operator key."""
         if not self.flow_type:
             raise ValueError("Flow type can't be empty")
+
         return (
             self.flow_type + "_" + self.get_key(self.name, self.category, self.version)
         )
 
     @staticmethod
-    def get_key(name: str, category: str, version: str) -> str:
+    def get_key(
+        name: str,
+        category: Union[str, ResourceCategory, OperatorCategory],
+        version: str,
+    ) -> str:
         """Get the operator id."""
         split_str = "___$$___"
+        if isinstance(category, (ResourceCategory, OperatorCategory)):
+            category = category.value
         return f"{name}{split_str}{category}{split_str}{version}"
 
 
