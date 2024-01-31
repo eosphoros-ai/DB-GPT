@@ -30,6 +30,11 @@ class GptsAppDetail(BaseModel):
     created_at: datetime = datetime.now()
     updated_at: DateTime = datetime.now()
 
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
+
     def to_dict(self):
         return {k: self._serialize(v) for k, v in self.__dict__.items()}
 
@@ -50,7 +55,7 @@ class GptsAppDetail(BaseModel):
             app_name=d["app_name"],
             agent_name=d["agent_name"],
             node_id=d["node_id"],
-            resources=d.get("resources", None),
+            resources=AgentResource.from_josn_list_str(d.get("resources", None)),
             prompt_template=d.get("prompt_template", None),
             llm_strategy=d.get("llm_strategy", None),
             llm_strategy_value=d.get("llm_strategy_value", None),
@@ -71,6 +76,11 @@ class GptsApp(BaseModel):
     created_at: datetime = datetime.now()
     updated_at: DateTime = datetime.now()
     details: List[GptsAppDetail] = []
+
+    class Config:
+        """Configuration for this pydantic object."""
+
+        arbitrary_types_allowed = True
 
     def to_dict(self):
         return {k: self._serialize(v) for k, v in self.__dict__.items()}
@@ -181,16 +191,17 @@ class GptsAppDao(BaseDao):
         user_code: Optional[str] = None,
         sys_code: Optional[str] = None,
     ):
-        with self.session() as session:
-            app_qry = session.query(GptsAppEntity)
-            if name_prefix:
-                app_qry.filter(GptsAppEntity.app_name.like(f"%{name_prefix}%"))
-            if user_code:
-                app_qry.filter(GptsAppEntity.user_code == user_code)
-            if sys_code:
-                app_qry.filter(GptsAppEntity.sys_code == sys_code)
-
-            return app_qry.all()
+        session = self.get_raw_session()
+        app_qry = session.query(GptsAppEntity)
+        if name_prefix:
+            app_qry.filter(GptsAppEntity.app_name.like(f"%{name_prefix}%"))
+        if user_code:
+            app_qry.filter(GptsAppEntity.user_code == user_code)
+        if sys_code:
+            app_qry.filter(GptsAppEntity.sys_code == sys_code)
+        result = app_qry.all()
+        session.close()
+        return result
 
     def app_detail(self, app_code: str):
         with self.session() as session:
@@ -202,8 +213,10 @@ class GptsAppDao(BaseDao):
                 GptsAppDetailEntity.app_code == app_code
             )
             app_details = app_detail_qry.all()
-
-            return GptsApp.from_dict(
+            details: List[GptsAppDetail] = []
+            for item in app_details:
+                details.append(GptsAppDetail())
+            app = GptsApp.from_dict(
                 {
                     "app_code": app_info.app_code,
                     "app_name": app_info.app_name,
@@ -219,6 +232,8 @@ class GptsAppDao(BaseDao):
                     ],
                 }
             )
+
+            return app
 
     def delete(self, app_code: str):
         with self.session() as session:

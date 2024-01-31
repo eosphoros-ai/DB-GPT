@@ -76,7 +76,6 @@ class MultiAgents(BaseComponent, ABC):
         system_app.app.include_router(router, prefix="/api", tags=["Multi-Agents"])
 
     def __init__(self):
-        self.gpts_intance = GptsInstanceDao()
         self.gpts_conversations = GptsConversationsDao()
 
         self.gpts_app = GptsAppDao()
@@ -85,18 +84,12 @@ class MultiAgents(BaseComponent, ABC):
             message_memory=MetaDbGptsMessageMemory(),
         )
 
-        # init llm provider
-        ### init chat param
-        worker_manager = CFG.SYSTEM_APP.get_component(
-            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-        ).create()
-        self.llm_provider = DefaultLLMClient(worker_manager, auto_convert_message=True)
-
     def gpts_create(self, entity: GptsInstanceEntity):
         self.gpts_intance.add(entity)
 
     def get_dbgpts(self, user_code: str = None, sys_code: str = None):
-        return self.gpts_intance.get_by_user(user_code, sys_code)
+        apps = self.gpts_app.app_list(user_code=user_code, sys_code=sys_code)
+        return apps
 
     async def _build_chat_manager(
         self,
@@ -238,6 +231,14 @@ class MultiAgents(BaseComponent, ABC):
         context: AgentContext = AgentContext(
             conv_id=conv_uid, gpts_app_name=gpts_app.app_name
         )
+
+        # init llm provider
+        ### init chat param
+        worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        self.llm_provider = DefaultLLMClient(worker_manager, auto_convert_message=True)
+
         for record in gpts_app.details:
             cls: Type[ConversableAgent] = agent_manage.get_by_name(record.agent_name)
             llm_config = LLMConfig(

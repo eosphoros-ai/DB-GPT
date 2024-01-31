@@ -40,6 +40,16 @@ class AgentResource:
             value=d.get("value", None),
         )
 
+    @staticmethod
+    def from_josn_list_str(d: Optional[str]) -> Optional[List[AgentResource]]:
+        if d is None:
+            return None
+        try:
+            json_array = json.loads(d)
+        except Exception as e:
+            raise ValueError(f"Illegal AgentResource json string！{d}")
+        return [AgentResource.from_dict(item) for item in json_array]
+
 
 class ResourceClient(ABC):
     @property
