@@ -362,8 +362,10 @@ class GptsAppDao(BaseDao):
 
     def app_detail(self, app_code: str):
         with self.session() as session:
-            app_qry = session.query(GptsAppEntity)
-            app_qry.filter(GptsAppEntity.app_code == app_code)
+            app_qry = session.query(GptsAppEntity).filter(
+                GptsAppEntity.app_code == app_code
+            )
+
             app_info = app_qry.first()
 
             app_detail_qry = session.query(GptsAppDetailEntity).filter(

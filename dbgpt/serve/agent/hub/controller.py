@@ -8,9 +8,8 @@ from dbgpt.agent.plugin.generator import PluginPromptGenerator
 from dbgpt.agent.plugin.plugins_util import scan_plugins
 from dbgpt.app.openapi.api_view_model import Result
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
-from dbgpt.configs.model_config import PLUGINS_DIR
 from dbgpt.serve.agent.db.plugin_hub_db import PluginHubEntity
-from dbgpt.serve.agent.hub.plugin_hub import PluginHub
+from dbgpt.serve.agent.hub.plugin_hub import agent_hub
 from dbgpt.serve.agent.model import (
     PagenationFilter,
     PagenationResult,
@@ -55,7 +54,6 @@ module_agent = ModulePlugin()
 async def agent_hub_update(update_param: PluginHubParam = Body()):
     logger.info(f"agent_hub_update:{update_param.__dict__}")
     try:
-        agent_hub = PluginHub(PLUGINS_DIR)
         branch = (
             update_param.branch
             if update_param.branch is not None and len(update_param.branch) > 0
@@ -77,7 +75,6 @@ async def agent_hub_update(update_param: PluginHubParam = Body()):
 @router.post("/v1/agent/query", response_model=Result[str])
 async def get_agent_list(filter: PagenationFilter[PluginHubFilter] = Body()):
     logger.info(f"get_agent_list:{filter.__dict__}")
-    agent_hub = PluginHub(PLUGINS_DIR)
     filter_enetity: PluginHubEntity = PluginHubEntity()
     if filter.filter:
         attrs = vars(filter.filter)  # 获取原始对象的属性字典
@@ -100,7 +97,6 @@ async def get_agent_list(filter: PagenationFilter[PluginHubFilter] = Body()):
 @router.post("/v1/agent/my", response_model=Result[str])
 async def my_agents(user: str = None):
     logger.info(f"my_agents:{user}")
-    agent_hub = PluginHub(PLUGINS_DIR)
     agents = agent_hub.get_my_plugin(user)
     agent_dicts = []
     for agent in agents:
@@ -113,7 +109,6 @@ async def my_agents(user: str = None):
 async def agent_install(plugin_name: str, user: str = None):
     logger.info(f"agent_install:{plugin_name},{user}")
     try:
-        agent_hub = PluginHub(PLUGINS_DIR)
         agent_hub.install_plugin(plugin_name, user)
 
         module_agent.refresh_plugins()
@@ -128,7 +123,6 @@ async def agent_install(plugin_name: str, user: str = None):
 async def agent_uninstall(plugin_name: str, user: str = None):
     logger.info(f"agent_uninstall:{plugin_name},{user}")
     try:
-        agent_hub = PluginHub(PLUGINS_DIR)
         agent_hub.uninstall_plugin(plugin_name, user)
 
         module_agent.refresh_plugins()
@@ -142,7 +136,6 @@ async def agent_uninstall(plugin_name: str, user: str = None):
 async def personal_agent_upload(doc_file: UploadFile = File(...), user: str = None):
     logger.info(f"personal_agent_upload:{doc_file.filename},{user}")
     try:
-        agent_hub = PluginHub(PLUGINS_DIR)
         await agent_hub.upload_my_plugin(doc_file, user)
         module_agent.refresh_plugins()
         return Result.succ(None)

@@ -15,8 +15,8 @@ class DashboardAssistantAgent(ConversableAgent):
     profile: str = "Reporter"
     goal: str = "Read the provided historical messages, collect various analysis SQLs from them, and assemble them into professional reports."
     constraints: List[str] = [
-        "You are only responsible for collecting and sorting out the analysis SQL that already exists in historical messages, and do not generate any analysis content yourself.",
-        "If the analysis SQL in historical messages does not provide a corresponding chart type, you can select an appropriate display type from the following available display types:{display_type}",
+        "You are only responsible for collecting and sorting out the analysis SQL that already exists in historical messages, and do not generate any analysis sql yourself.",
+        "In order to build a report with rich display types, you can appropriately adjust the display type of the charts you collect so that you can build a better report. Of course, you can choose from the following available display types: {display_type}",
     ]
     desc: str = "Observe and organize various analysis results and construct professional reports"
 

@@ -17,9 +17,10 @@ class DataScientistAgent(ConversableAgent):
     profile: str = "DataScientist"
     goal: str = "Use correct {dialect} SQL to analyze and solve tasks based on the data structure information of the database given in the resource."
     constraints: List[str] = [
-        "Please choose the best one from the display methods given below for data display, and put the type name into the name parameter value that returns the required format. If you can't find the most suitable display method, use Table as the display method. , the available data display methods are as follows: {display_type}",
-        "Please check the sql you generated. It is forbidden to use column names that do not exist in the table, and it is forbidden to make up fields and tables that do not exist.",
-        "Pay attention to the data association between tables and tables, and you can use multiple tables at the same time to generate a SQL",
+        "Please check the generated SQL carefully. Please strictly abide by the data structure definition given. It is prohibited to use non-existent fields and data values. Do not use fields from table A to table B. You can perform multi-table related queries.",
+        "If the data and fields that need to be analyzed in the target are in different tables, it is recommended to use multi-table correlation queries first, and pay attention to the correlation between multiple table structures.",
+        "It is forbidden to construct data by yourself as a query condition. If you want to query a specific field, if the value of the field is provided, then you can perform a group statistical query on the field.",
+        "Please select an appropriate one from the supported display methods for data display. If no suitable display type is found, table display is used by default. Supported display types: \n {display_type}",
     ]
     desc: str = "Use database resources to conduct data analysis, analyze SQL, and provide recommended rendering methods."
     max_retry_count: int = 5

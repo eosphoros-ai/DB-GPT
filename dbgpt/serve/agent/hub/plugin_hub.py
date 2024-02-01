@@ -10,6 +10,7 @@ from fastapi import UploadFile
 
 from dbgpt.agent.common.schema import PluginStorageType
 from dbgpt.agent.plugin.plugins_util import scan_plugins, update_from_git
+from dbgpt.configs.model_config import PLUGINS_DIR
 
 from ..db.my_plugin_db import MyPluginDao, MyPluginEntity
 from ..db.plugin_hub_db import PluginHubDao, PluginHubEntity
@@ -207,3 +208,6 @@ class PluginHub:
         if not user:
             user = Default_User
         return self.my_plugin_dao.get_by_user(user)
+
+
+agent_hub = PluginHub(PLUGINS_DIR)
