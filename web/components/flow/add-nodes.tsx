@@ -1,17 +1,21 @@
 import { apiInterceptors, getFlowNodes } from '@/client/api';
 import { IFlowNode } from '@/types/flow';
 import { PlusOutlined } from '@ant-design/icons';
-import { Avatar, Badge, Button, Collapse, CollapseProps, Divider, Empty, Input, List, Popover } from 'antd';
-import React, { DragEvent, useEffect, useMemo, useState } from 'react';
+import { Badge, Button, Collapse, CollapseProps, Divider, Input, Popover } from 'antd';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FLOW_NODES_KEY } from '@/utils';
+import StaticNodes from './static-nodes';
 
 const { Search } = Input;
+
+type GroupType = { category: string; categoryLabel: string; nodes: IFlowNode[] };
 
 const AddNodes: React.FC = () => {
   const { t } = useTranslation();
   const [nodes, setNodes] = useState<Array<IFlowNode>>([]);
-  const [operators, setOperators] = useState<Array<IFlowNode>>([]);
-  const [resources, setResources] = useState<Array<IFlowNode>>([]);
+  const [groups, setGroups] = useState<Array<GroupType>>([]);
+  const [searchValue, setSearchValue] = useState<string>('');
 
   useEffect(() => {
     getNodes();
@@ -21,77 +25,51 @@ const AddNodes: React.FC = () => {
     const [_, data] = await apiInterceptors(getFlowNodes());
     if (data && data.length > 0) {
       setNodes(data);
-      groupNodes(data);
+      setGroups(groupNodes(data));
+      localStorage.setItem(FLOW_NODES_KEY, JSON.stringify(data));
     }
   }
 
   function groupNodes(data: IFlowNode[]) {
     // show operator nodes first, then show resource nodes
-    setOperators((data || []).filter((node) => node.flow_type === 'operator'));
-    setResources((data || []).filter((node) => node.flow_type === 'resource'));
+    const groups: GroupType[] = [];
+    const categoryMap: Record<string, { category: string; categoryLabel: string; nodes: IFlowNode[] }> = {};
+    data.forEach((item) => {
+      const { category, category_label } = item;
+      if (!categoryMap[category]) {
+        categoryMap[category] = { category, categoryLabel: category_label, nodes: [] };
+        if (category === 'operator') {
+          groups.unshift(categoryMap[category]);
+        } else {
+          groups.push(categoryMap[category]);
+        }
+      }
+      categoryMap[category].nodes.push(item);
+    });
+    return groups;
   }
 
-  const items: CollapseProps['items'] = useMemo(
-    () => [
-      {
-        key: 'operator',
-        label: 'Operator',
-        children: renderNodes(operators),
-        extra: <Badge showZero count={operators.length || 0} style={{ backgroundColor: operators.length > 0 ? '#52c41a' : '#7f9474' }} />,
-      },
-      {
-        key: 'resource',
-        label: 'Resource',
-        children: renderNodes(resources),
-        extra: <Badge showZero count={resources.length || 0} style={{ backgroundColor: resources.length > 0 ? '#52c41a' : '#7f9474' }} />,
-      },
-    ],
-    [operators, resources],
-  );
+  const items: CollapseProps['items'] = useMemo(() => {
+    if (!searchValue) {
+      return groups.map(({ category, categoryLabel, nodes }) => ({
+        key: category,
+        label: categoryLabel,
+        children: <StaticNodes nodes={nodes} />,
+        extra: <Badge showZero count={nodes.length || 0} style={{ backgroundColor: nodes.length > 0 ? '#52c41a' : '#7f9474' }} />,
+      }));
+    } else {
+      const searchedNodes = nodes.filter((node) => node.label.toLowerCase().includes(searchValue.toLowerCase()));
+      return groupNodes(searchedNodes).map(({ category, categoryLabel, nodes }) => ({
+        key: category,
+        label: categoryLabel,
+        children: <StaticNodes nodes={nodes} />,
+        extra: <Badge showZero count={nodes.length || 0} style={{ backgroundColor: nodes.length > 0 ? '#52c41a' : '#7f9474' }} />,
+      }));
+    }
+  }, [groups, searchValue]);
 
   function searchNode(val: string) {
-    if (!val) {
-      groupNodes(nodes);
-    } else {
-      const lowerSearchTerm = val.toLowerCase();
-      const searchOperators = operators.filter((node) => node.label.toLowerCase().includes(lowerSearchTerm));
-      const searchResources = resources.filter((node) => node.label.toLowerCase().includes(lowerSearchTerm));
-      setOperators(searchOperators);
-      setResources(searchResources);
-    }
-  }
-
-  function onDragStart(event: DragEvent, node: IFlowNode) {
-    event.dataTransfer.setData('application/reactflow', JSON.stringify(node));
-    event.dataTransfer.effectAllowed = 'move';
-  }
-
-  function renderNodes(nodes: Array<IFlowNode>) {
-    if (nodes?.length > 0) {
-      return (
-        <List
-          className="overflow-hidden overflow-y-auto"
-          itemLayout="horizontal"
-          dataSource={nodes}
-          renderItem={(node) => (
-            <List.Item
-              className="cursor-move hover:bg-[#F1F5F9] dark:hover:bg-theme-dark p-0 py-2"
-              draggable
-              onDragStart={(event) => onDragStart(event, node)}
-            >
-              <List.Item.Meta
-                className="flex items-center justify-center"
-                avatar={<Avatar src={node.icon || '/icons/node/default_node_icon.svg'} size={'large'} />}
-                title={<p className="line-clamp-1 font-medium">{node.label}</p>}
-                description={<p className="line-clamp-2">{node.description}</p>}
-              />
-            </List.Item>
-          )}
-        />
-      );
-    } else {
-      return <Empty className="px-2" description={t('no_node')} />;
-    }
+    setSearchValue(val);
   }
 
   return (

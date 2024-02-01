@@ -98,7 +98,6 @@ const en = {
   stop_model_success: 'Stop model success',
   create_model: 'Create Model',
   model_select_tips: 'Please select a model',
-  language_select_tips: 'Please select a language',
   submit: 'Submit',
   close: 'Close',
   start_model_success: 'Start model success',
@@ -190,13 +189,12 @@ const en = {
   connect_warning: 'Nodes cannot be connected',
   flow_modal_title: 'Save Flow',
   flow_name: 'Flow Name',
+  flow_description: 'Flow Description',
   flow_name_required: 'Please enter the flow name',
+  flow_description_required: 'Please enter the flow description',
   save_flow_success: 'Save flow success',
   delete_flow_confirm: 'Are you sure you want to delete this flow?',
-  App: 'App',
-  team_modal: 'Team Modal',
-  team_modal_select_tips: 'Please select a team modal',
-  add_resource: 'Add Resource'
+  related_nodes: 'Related Nodes',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -392,14 +390,12 @@ const zh: Resources['translation'] = {
   connect_warning: '节点无法连接',
   flow_modal_title: '保存工作流',
   flow_name: '工作流名称',
+  flow_description: '工作流描述',
   flow_name_required: '请输入工作流名称',
+  flow_description_required: '请输入工作流描述',
   save_flow_success: '保存工作流成功',
   delete_flow_confirm: '确定删除该工作流吗？',
-  App: '应用',
-  language_select_tips: '请选择语言',
-  team_modal: '组织模式',
-  team_modal_select_tips: '请选择组织模式',
-  add_resource: '添加资源'
+  related_nodes: '关联节点',
 } as const;
 
 i18n.use(initReactI18next).init({

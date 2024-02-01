@@ -99,10 +99,27 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             ServerResponse: The response
         """
-        # TODO: implement your own logic here
+        # Try to build the dag from the request
+        self._flow_factory.build(request)
+
         # Build the query request from the request
         query_request = {"uid": request.uid}
-        return self.dao.update(query_request, update_request=request)
+        inst = self.get(query_request)
+        if not inst:
+            raise HTTPException(status_code=404, detail=f"Flow {request.uid} not found")
+        old_data: Optional[ServerResponse] = None
+        try:
+            update_obj = self.dao.update(query_request, update_request=request)
+            old_data = self.delete(request.uid)
+            if not old_data:
+                raise HTTPException(
+                    status_code=404, detail=f"Flow detail {request.uid} not found"
+                )
+            return self.create(update_obj)
+        except Exception as e:
+            if old_data:
+                self.create(old_data)
+            raise e
 
     def get(self, request: QUERY_SPEC) -> Optional[ServerResponse]:
         """Get a Flow entity
@@ -118,11 +135,14 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         query_request = request
         return self.dao.get_one(query_request)
 
-    def delete(self, uid: str) -> None:
+    def delete(self, uid: str) -> Optional[ServerResponse]:
         """Delete a Flow entity
 
         Args:
             uid (str): The uid
+
+        Returns:
+            ServerResponse: The data after deletion
         """
 
         # TODO: implement your own logic here
@@ -137,6 +157,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             )
         self.dag_manager.unregister_dag(inst.dag_id)
         self.dao.delete(query_request)
+        return inst
 
     def get_list(self, request: ServeRequest) -> List[ServerResponse]:
         """Get a list of Flow entities

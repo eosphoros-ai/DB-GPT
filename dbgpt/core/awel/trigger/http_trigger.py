@@ -19,6 +19,7 @@ from dbgpt._private.pydantic import BaseModel, Field
 
 from ..dag.base import DAG
 from ..flow import (
+    IOField,
     OperatorCategory,
     OperatorType,
     OptionValue,
@@ -213,6 +214,9 @@ class CommonLLMHTTPRequestContext(BaseModel):
     )
     sys_code: Optional[str] = Field(
         default=None, description="The system code of the model inference"
+    )
+    extra: Optional[Dict[str, Any]] = Field(
+        default=None, description="The extra info of the model inference"
     )
 
 
@@ -493,6 +497,9 @@ class HttpTrigger(Trigger):
             streaming_response = self._streaming_response
             if self._streaming_predict_func:
                 streaming_response = self._streaming_predict_func(body)
+            elif isinstance(body, BaseHttpBody):
+                # BaseHttpBody, read streaming flag from body
+                streaming_response = _default_streaming_predict_func(body)
             dag = self.dag
             if not dag:
                 raise AWELHttpError("DAG is not set")
@@ -702,7 +709,7 @@ class DictHttpTrigger(HttpTrigger):
         " as a dict",
         inputs=[],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Request Body",
                 "request_body",
                 dict,
@@ -759,7 +766,7 @@ class StringHttpTrigger(HttpTrigger):
         " as a string",
         inputs=[],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Request Body",
                 "request_body",
                 str,
@@ -817,7 +824,7 @@ class CommonLLMHttpTrigger(HttpTrigger):
         "as a common LLM http body",
         inputs=[],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Request Body",
                 "request_body",
                 CommonLLMHttpRequestBody,
@@ -895,7 +902,7 @@ class ExampleHttpHelloOperator(MapOperator[dict, ExampleHttpResponse]):
         category=OperatorCategory.COMMON,
         parameters=[],
         inputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Http Request Body",
                 "request_body",
                 dict,
@@ -903,7 +910,7 @@ class ExampleHttpHelloOperator(MapOperator[dict, ExampleHttpResponse]):
             )
         ],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Response Body",
                 "response_body",
                 ExampleHttpResponse,
@@ -924,3 +931,106 @@ class ExampleHttpHelloOperator(MapOperator[dict, ExampleHttpResponse]):
         age = request_body.get("age")
         server_res = f"Hello, {name}, your age is {age}"
         return ExampleHttpResponse(server_res=server_res, request_body=request_body)
+
+
+class RequestBodyToDictOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, Any]]):
+    """Request body to dict operator."""
+
+    metadata = ViewMetadata(
+        label="Request Body To Dict Operator",
+        name="request_body_to_dict_operator",
+        category=OperatorCategory.COMMON,
+        parameters=[
+            Parameter.build_from(
+                "Prefix Key",
+                "prefix_key",
+                str,
+                optional=True,
+                default=None,
+                description="The prefix key of the dict, link 'context.extra'",
+            )
+        ],
+        inputs=[
+            IOField.build_from(
+                "Request Body",
+                "request_body",
+                CommonLLMHttpRequestBody,
+                description="The request body of the API endpoint",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Response Body",
+                "response_body",
+                dict,
+                description="The response body of the API endpoint",
+            )
+        ],
+        description="Request body to dict operator",
+    )
+
+    def __init__(self, prefix_key: Optional[str] = None, **kwargs):
+        """Initialize a RequestBodyToDictOperator."""
+        super().__init__(**kwargs)
+        self._key = prefix_key
+
+    async def map(self, request_body: CommonLLMHttpRequestBody) -> Dict[str, Any]:
+        """Map the request body to response body."""
+        dict_value = request_body.dict()
+        if not self._key:
+            return dict_value
+        else:
+            keys = self._key.split(".")
+            for k in keys:
+                dict_value = dict_value[k]
+            if isinstance(dict_value, dict):
+                raise ValueError(
+                    f"Prefix key {self._key} is not a valid key of the request body"
+                )
+            return dict_value
+
+
+class UserInputParsedOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, Any]]):
+    """User input parsed operator."""
+
+    metadata = ViewMetadata(
+        label="User Input Parsed Operator",
+        name="user_input_parsed_operator",
+        category=OperatorCategory.COMMON,
+        parameters=[
+            Parameter.build_from(
+                "Key",
+                "key",
+                str,
+                optional=True,
+                default="user_input",
+                description="The key of the dict, link 'user_input'",
+            )
+        ],
+        inputs=[
+            IOField.build_from(
+                "Request Body",
+                "request_body",
+                CommonLLMHttpRequestBody,
+                description="The request body of the API endpoint",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "User Input Dict",
+                "user_input_dict",
+                dict,
+                description="The user input dict of the API endpoint",
+            )
+        ],
+        description="User input parsed operator",
+    )
+
+    def __init__(self, key: str = "user_input", **kwargs):
+        """Initialize a UserInputParsedOperator."""
+        self._key = key
+        super().__init__(**kwargs)
+
+    async def map(self, request_body: CommonLLMHttpRequestBody) -> Dict[str, Any]:
+        """Map the request body to response body."""
+        return {self._key: request_body.messages}

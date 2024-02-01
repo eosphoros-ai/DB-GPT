@@ -1,11 +1,13 @@
-import { Tooltip, Typography, message } from 'antd';
+import { Popconfirm, Tooltip, Typography, message } from 'antd';
 import React from 'react';
 import { Connection, Handle, Position, useReactFlow } from 'reactflow';
 import RequiredIcon from './required-icon';
-import { InfoCircleOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { IFlowNode, IFlowNodeInput, IFlowNodeOutput, IFlowNodeParameter } from '@/types/flow';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
+import { FLOW_NODES_KEY } from '@/utils';
+import StaticNodes from './static-nodes';
 
 interface NodeHandlerProps {
   node: IFlowNode;
@@ -19,6 +21,7 @@ interface NodeHandlerProps {
 const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, index }) => {
   const { t } = useTranslation();
   const reactflow = useReactFlow();
+  const [relatedNodes, setRelatedNodes] = React.useState<IFlowNode[]>([]);
 
   function isValidConnection(connection: Connection) {
     const { sourceHandle, targetHandle, source, target } = connection;
@@ -44,6 +47,27 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
     return false;
   }
 
+  function showRelatedNodes() {
+    // find all nodes that can be connected to this node
+    const cache = localStorage.getItem(FLOW_NODES_KEY);
+    if (!cache) {
+      return;
+    }
+    const staticNodes = JSON.parse(cache);
+    const typeCls = data.type_cls;
+    let nodes: IFlowNode[] = [];
+    if (label === 'inputs') {
+      // find other operators and outputs matching this input type_cls
+      nodes = staticNodes
+        .filter((node: IFlowNode) => node.flow_type === 'operator')
+        .filter((node: IFlowNode) => node.outputs?.some((output: IFlowNodeOutput) => output.type_cls === typeCls));
+    } else if (label === 'parameters') {
+      // fint other resources and parent_cls including this parameter type_cls
+      nodes = staticNodes.filter((node: IFlowNode) => node.flow_type === 'resource').filter((node: IFlowNode) => node.parent_cls?.includes(typeCls));
+    }
+    setRelatedNodes(nodes);
+  }
+
   return (
     <div
       className={classNames('relative flex items-center', {
@@ -63,10 +87,26 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
           'pr-4': label === 'outputs',
         })}
       >
-        {data.label}:<RequiredIcon optional={data.optional} />
+        <Popconfirm
+          placement="left"
+          icon={null}
+          showCancel={false}
+          okButtonProps={{ className: 'hidden' }}
+          title={t('related_nodes')}
+          description={
+            <div className="w-60">
+              <StaticNodes nodes={relatedNodes} />
+            </div>
+          }
+        >
+          {node.flow_type === 'operator' && ['inputs', 'parameters'].includes(label) && (
+            <PlusOutlined className="mr-2 cursor-pointer" onClick={showRelatedNodes} />
+          )}
+        </Popconfirm>
+        {data.type_name}:{label !== 'outputs' && <RequiredIcon optional={data.optional} />}
         {data.description && (
           <Tooltip title={data.description}>
-            <InfoCircleOutlined className="ml-2" />
+            <InfoCircleOutlined className="ml-2 cursor-pointer" />
           </Tooltip>
         )}
       </Typography>

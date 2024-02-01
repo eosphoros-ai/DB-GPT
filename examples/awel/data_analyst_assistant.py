@@ -354,6 +354,8 @@ with DAG("dbgpt_awel_data_analyst_assistant") as dag:
             lambda req: ModelRequestContext(
                 conv_uid=req.context.conv_uid,
                 stream=req.stream,
+                user_name=req.context.user_name,
+                sys_code=req.context.sys_code,
                 chat_mode=req.context.chat_mode,
             )
         )

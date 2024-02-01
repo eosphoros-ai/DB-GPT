@@ -3,6 +3,7 @@ import MuiLoading from '@/components/common/loading';
 import AddNodes from '@/components/flow/add-nodes';
 import ButtonEdge from '@/components/flow/button-edge';
 import CanvasNode from '@/components/flow/canvas-node';
+import RequiredIcon from '@/components/flow/required-icon';
 import { IFlowData } from '@/types/flow';
 import { getUniqueNodeId, mapHumpToUnderline, mapUnderlineToHump } from '@/utils/flow';
 import { SaveOutlined } from '@ant-design/icons';
@@ -12,6 +13,8 @@ import React, { DragEvent, useCallback, useEffect, useRef, useState } from 'reac
 import { useTranslation } from 'react-i18next';
 import ReactFlow, { Background, Connection, Controls, ReactFlowProvider, addEdge, useEdgesState, useNodesState, useReactFlow, Node } from 'reactflow';
 import 'reactflow/dist/style.css';
+
+const { TextArea } = Input;
 
 interface Props {
   // Define your component props here
@@ -32,6 +35,7 @@ const Canvas: React.FC<Props> = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
 
   async function getFlowData() {
     setLoading(true);
@@ -39,6 +43,7 @@ const Canvas: React.FC<Props> = () => {
     if (data) {
       const flowData = mapUnderlineToHump(data.flow_data);
       setName(data.name);
+      setDescription(data.description);
       setNodes(flowData.nodes.map((node) => ({ ...node, type: 'customNode' })));
       setEdges(flowData.edges.map((edge) => ({ ...edge, type: 'buttonedge' })));
     }
@@ -134,7 +139,7 @@ const Canvas: React.FC<Props> = () => {
   async function handleSaveFlow() {
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
     if (id) {
-      const [, , res] = await apiInterceptors(updateFlowById(id, { name, uid: id, flow_data: reactFlowObject }));
+      const [, , res] = await apiInterceptors(updateFlowById(id, { name, description, uid: id, flow_data: reactFlowObject }));
       if (res?.success) {
         messageApi.success(t('save_flow_success'));
       } else if (res?.err_msg) {
@@ -143,8 +148,10 @@ const Canvas: React.FC<Props> = () => {
     } else {
       if (!name) {
         return messageApi.warning(t('flow_name_required'));
+      } else if (!description) {
+        return messageApi.warning(t('flow_description_required'));
       }
-      const [_, res] = await apiInterceptors(addFlow({ name, flow_data: reactFlowObject }));
+      const [_, res] = await apiInterceptors(addFlow({ name, description, flow_data: reactFlowObject }));
       if (res?.uid) {
         messageApi.success(t('save_flow_success'));
         const history = window.history;
@@ -193,10 +200,23 @@ const Canvas: React.FC<Props> = () => {
         }}
       >
         <>
-          <p>{t('flow_name')}</p>
+          <p>
+            {t('flow_name')}
+            <RequiredIcon />
+          </p>
           <Input
             onChange={(e) => {
               setName(e.target.value);
+            }}
+          />
+          <p className="mt-4">
+            {t('flow_description')}
+            <RequiredIcon />
+          </p>
+          <TextArea
+            rows={3}
+            onChange={(e) => {
+              setDescription(e.target.value);
             }}
           />
         </>

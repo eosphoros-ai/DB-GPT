@@ -12,10 +12,17 @@ from dbgpt.core.awel import (
     CommonLLMHttpRequestBody,
     CommonLLMHttpResponseBody,
     DAGContext,
+    JoinOperator,
     MapOperator,
     StreamifyAbsOperator,
 )
-from dbgpt.core.awel.flow import OperatorCategory, Parameter, ViewMetadata
+from dbgpt.core.awel.flow import (
+    IOField,
+    OperatorCategory,
+    OperatorType,
+    Parameter,
+    ViewMetadata,
+)
 from dbgpt.core.interface.llm import (
     LLMClient,
     ModelOutput,
@@ -23,6 +30,7 @@ from dbgpt.core.interface.llm import (
     ModelRequestContext,
 )
 from dbgpt.core.interface.message import ModelMessage
+from dbgpt.util.function_utils import rearrange_args_by_type
 
 RequestInput = Union[
     ModelRequest,
@@ -34,7 +42,7 @@ RequestInput = Union[
 ]
 
 
-class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest], ABC):
+class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest]):
     """Build the model request from the input value."""
 
     metadata = ViewMetadata(
@@ -47,13 +55,13 @@ class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest], ABC):
                 "Default Model Name",
                 "model",
                 str,
-                optional=False,
+                optional=True,
                 default=None,
                 description="The model name of the model request.",
             ),
         ],
         inputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Request Body",
                 "input_value",
                 CommonLLMHttpRequestBody,
@@ -61,7 +69,7 @@ class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest], ABC):
             ),
         ],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Model Request",
                 "output_value",
                 ModelRequest,
@@ -124,6 +132,53 @@ class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest], ABC):
                 context_dict["stream"] = stream
             req_dict["context"] = ModelRequestContext(**context_dict)
         return ModelRequest(**req_dict)
+
+
+class MergedRequestBuilderOperator(JoinOperator[ModelRequest]):
+    """Build the model request from the input value."""
+
+    metadata = ViewMetadata(
+        label="Merge Model Request Messages",
+        name="merged_request_builder_operator",
+        category=OperatorCategory.COMMON,
+        description="Merge the model request from the input value.",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "Model Request",
+                "model_request",
+                ModelRequest,
+                description="The model request of upstream.",
+            ),
+            IOField.build_from(
+                "Model messages",
+                "messages",
+                ModelMessage,
+                description="The model messages of upstream.",
+                is_list=True,
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model Request",
+                "output_value",
+                ModelRequest,
+                description="The output value of the operator.",
+            ),
+        ],
+    )
+
+    def __init__(self, **kwargs):
+        """Create a new request builder operator."""
+        super().__init__(combine_function=self.merge_func, **kwargs)
+
+    @rearrange_args_by_type
+    def merge_func(
+        self, model_request: ModelRequest, messages: List[ModelMessage]
+    ) -> ModelRequest:
+        """Merge the model request with the messages."""
+        model_request.messages = messages
+        return model_request
 
 
 class BaseLLM:
@@ -225,6 +280,54 @@ class LLMBranchOperator(BranchOperator[ModelRequest, ModelRequest]):
     the stream flag of the request.
     """
 
+    metadata = ViewMetadata(
+        label="LLM Branch Operator",
+        name="llm_branch_operator",
+        category=OperatorCategory.LLM,
+        operator_type=OperatorType.BRANCH,
+        description="Branch the workflow based on the stream flag of the request.",
+        parameters=[
+            Parameter.build_from(
+                "Streaming Task Name",
+                "stream_task_name",
+                str,
+                optional=True,
+                default="streaming_llm_task",
+                description="The name of the streaming task.",
+            ),
+            Parameter.build_from(
+                "Non-Streaming Task Name",
+                "no_stream_task_name",
+                str,
+                optional=True,
+                default="llm_task",
+                description="The name of the non-streaming task.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "Model Request",
+                "input_value",
+                ModelRequest,
+                description="The input value of the operator.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Streaming Model Request",
+                "streaming_request",
+                ModelRequest,
+                description="The streaming request, to streaming Operator.",
+            ),
+            IOField.build_from(
+                "Non-Streaming Model Request",
+                "no_streaming_request",
+                ModelRequest,
+                description="The non-streaming request, to non-streaming Operator.",
+            ),
+        ],
+    )
+
     def __init__(self, stream_task_name: str, no_stream_task_name: str, **kwargs):
         """Create a new LLM branch operator.
 
@@ -276,7 +379,7 @@ class ModelOutput2CommonResponseOperator(
         description="Map the model output to the common response body.",
         parameters=[],
         inputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Model Output",
                 "input_value",
                 ModelOutput,
@@ -284,7 +387,7 @@ class ModelOutput2CommonResponseOperator(
             ),
         ],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Common Response Body",
                 "output_value",
                 CommonLLMHttpResponseBody,
