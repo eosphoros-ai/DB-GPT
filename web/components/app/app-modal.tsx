@@ -46,10 +46,9 @@ export default function AppModal(props: IProps) {
   const [agents, setAgents] = useState<TabsProps['items']>([]);
   const [dropItems, setDropItems] = useState<IAgent[]>([]);
   const [details, setDetails] = useState<any>([]);
+  const [initialValue, setInitialValue] = useState<any>({ app_name: '', app_describe: '', language: '', team_mode: '' });
 
   const [form] = Form.useForm();
-
-  console.log(11111, app);
 
   const onChange = (newActiveKey: string) => {
     setActiveKey(newActiveKey);
@@ -58,6 +57,17 @@ export default function AppModal(props: IProps) {
   const createApp = async (app: any) => {
     await apiInterceptors(addApp(app));
     await updateApps();
+  };
+
+  const initApp = () => {
+    const appDetails = app.details;
+
+    setInitialValue({ app_name: app.app_name, app_describe: app.app_describe, language: app.language, team_mode: app.team_mode });
+    // setAgents(appDetails?.map((item: any) => {
+    //   return {
+    //     label: item.,
+    //   }
+    // }));
   };
 
   const fetchTeamModal = async () => {
@@ -102,6 +112,7 @@ export default function AppModal(props: IProps) {
   useEffect(() => {
     fetchTeamModal();
     fetchAgent();
+    type === 'edit' && initApp();
   }, []);
 
   const updateDetailsByAgentKey = (key: string, data: any) => {
@@ -129,7 +140,7 @@ export default function AppModal(props: IProps) {
           label: newActiveKey,
           children: (
             <AgentPanel
-              detail={{ key: newActiveKey, llm_strategy: 'priority' }}
+              detail={{ key: newActiveKey, llm_strategy: 'priority', agent_name: newActiveKey }}
               updateDetailsByAgentKey={updateDetailsByAgentKey}
               resourceTypes={resourceTypes}
             />
