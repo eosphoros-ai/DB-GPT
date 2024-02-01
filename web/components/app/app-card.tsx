@@ -29,6 +29,7 @@ export default function AppCard(props: IProps) {
   const router = useRouter();
 
   const [isCollect, setIsCollect] = useState<string>(app.is_collected);
+  const { setAgent: setAgentToChat } = useContext(ChatContext);
 
   const { t } = useTranslation();
 
@@ -61,6 +62,7 @@ export default function AppCard(props: IProps) {
 
   const handleChat = async (e: any) => {
     e.stopPropagation();
+    // setAgentToChat();
     const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
     if (res) {
       router.push(`/chat/?scene=chat_agent&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
@@ -72,18 +74,17 @@ export default function AppCard(props: IProps) {
       onClick={() => {
         handleEdit(app);
       }}
-      className="relative cursor-pointer mb-5 max-h-64 flex flex-shrink-0 flex-col p-4 w-72 lg:w-72 rounded  text-black bg-white shadow-[0_8px_16px_-10px_rgba(100,100,100,.08)] hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.15)] dark:bg-[#232734] dark:text-white dark:hover:border-white transition-[transfrom_shadow] duration-300 hover:-translate-y-1 "
+      className="relative cursor-pointer mb-5 max-h-56 flex flex-shrink-0 flex-col p-4 w-72 lg:w-72 rounded  text-black bg-white shadow-[0_8px_16px_-10px_rgba(100,100,100,.08)] hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.15)] dark:bg-[#232734] dark:text-white dark:hover:border-white transition-[transfrom_shadow] duration-300 hover:-translate-y-1 "
     >
       <div className="flex justify-between">
         <div className="flex items-center">
           <DBIcon src={'/LOGO_SMALL.png'} label="1112" className=" mr-1 inline-block mt-[-4px]"></DBIcon>
-          <h2 className="text-sm font-semibold">{app?.app_name}</h2>
+          <div className=" truncate text-sm font-semibold text-center w-32">{app?.app_name}</div>
         </div>
         <div onClick={collect}>{app?.is_collected === 'false' ? <CollectIcon /> : <CollectedIcon />}</div>
       </div>
-      <div className="text-sm mt-2 p-6 pt-2 ">
-        <p className="font-semibold">简介:</p>
-        <p className=" truncate mb-2">{app?.app_describe}</p>
+      <div className="text-sm mt-2 p-3 pt-2">
+        <div className="mb-2 line-clamp-2 w-52 h-10">{app?.app_describe}</div>
         <div className="flex mb-3">
           <Tag color="#2db7f5" className="text-large">
             {languageMap[app?.language]}
@@ -102,11 +103,10 @@ export default function AppCard(props: IProps) {
           }}
           icon={<DeleteFilled />}
           danger
-          shape="round"
         >
           delete
         </Button>
-        <Button size="middle" onClick={handleChat} className="mr-4 dark:text-white mb-2" shape="round" icon={<MessageTwoTone />}>
+        <Button size="middle" onClick={handleChat} className="mr-4 dark:text-white mb-2" icon={<MessageTwoTone />}>
           {t('Chat')}
         </Button>
       </div>
