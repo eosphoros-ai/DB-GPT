@@ -99,6 +99,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             ServerResponse: The response
         """
+        # Try to build the dag from the request
+        self._flow_factory.build(request)
+
         # Build the query request from the request
         query_request = {"uid": request.uid}
         inst = self.get(query_request)

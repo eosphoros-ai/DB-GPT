@@ -16,7 +16,13 @@ from dbgpt.core.awel import (
     MapOperator,
     StreamifyAbsOperator,
 )
-from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
+from dbgpt.core.awel.flow import (
+    IOField,
+    OperatorCategory,
+    OperatorType,
+    Parameter,
+    ViewMetadata,
+)
 from dbgpt.core.interface.llm import (
     LLMClient,
     ModelOutput,
@@ -273,6 +279,54 @@ class LLMBranchOperator(BranchOperator[ModelRequest, ModelRequest]):
     This operator will branch the workflow based on
     the stream flag of the request.
     """
+
+    metadata = ViewMetadata(
+        label="LLM Branch Operator",
+        name="llm_branch_operator",
+        category=OperatorCategory.LLM,
+        operator_type=OperatorType.BRANCH,
+        description="Branch the workflow based on the stream flag of the request.",
+        parameters=[
+            Parameter.build_from(
+                "Streaming Task Name",
+                "stream_task_name",
+                str,
+                optional=True,
+                default="streaming_llm_task",
+                description="The name of the streaming task.",
+            ),
+            Parameter.build_from(
+                "Non-Streaming Task Name",
+                "no_stream_task_name",
+                str,
+                optional=True,
+                default="llm_task",
+                description="The name of the non-streaming task.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "Model Request",
+                "input_value",
+                ModelRequest,
+                description="The input value of the operator.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Streaming Model Request",
+                "streaming_request",
+                ModelRequest,
+                description="The streaming request, to streaming Operator.",
+            ),
+            IOField.build_from(
+                "Non-Streaming Model Request",
+                "no_streaming_request",
+                ModelRequest,
+                description="The non-streaming request, to non-streaming Operator.",
+            ),
+        ],
+    )
 
     def __init__(self, stream_task_name: str, no_stream_task_name: str, **kwargs):
         """Create a new LLM branch operator.

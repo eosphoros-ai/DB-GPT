@@ -497,6 +497,9 @@ class HttpTrigger(Trigger):
             streaming_response = self._streaming_response
             if self._streaming_predict_func:
                 streaming_response = self._streaming_predict_func(body)
+            elif isinstance(body, BaseHttpBody):
+                # BaseHttpBody, read streaming flag from body
+                streaming_response = _default_streaming_predict_func(body)
             dag = self.dag
             if not dag:
                 raise AWELHttpError("DAG is not set")

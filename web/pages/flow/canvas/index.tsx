@@ -44,6 +44,8 @@ const Canvas: React.FC<Props> = () => {
       const flowData = mapUnderlineToHump(data.flow_data);
       setName(data.name);
       setDescription(data.description);
+      setNodes(flowData.nodes.map((node) => ({ ...node, type: 'customNode' })));
+      setEdges(flowData.edges.map((edge) => ({ ...edge, type: 'buttonedge' })));
     }
     setLoading(false);
   }

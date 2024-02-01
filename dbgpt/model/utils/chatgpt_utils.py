@@ -176,7 +176,7 @@ class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
             IOField.build_from(
                 "Model Output",
                 "model_output",
-                ModelOutput,
+                str,
                 is_list=True,
                 description="The model output after transform to openai stream format",
             )

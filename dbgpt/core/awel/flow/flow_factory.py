@@ -4,12 +4,12 @@ import logging
 import uuid
 from contextlib import suppress
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 from dbgpt._private.pydantic import BaseModel, Field, root_validator, validator
 from dbgpt.core.awel.dag.base import DAG, DAGNode
 
-from .base import ResourceMetadata, ViewMetadata, _get_operator_class
+from .base import OperatorType, ResourceMetadata, ViewMetadata, _get_operator_class
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +76,10 @@ class FlowEdgeData(BaseModel):
         description="Source node data id",
         examples=["resource_dbgpt.model.proxy.llms.chatgpt.OpenAILLMClient_0"],
     )
+    source_order: int = Field(
+        description="The order of the source node in the source node's output",
+        examples=[0, 1],
+    )
     target: str = Field(
         ...,
         description="Target node data id",
@@ -105,6 +109,13 @@ class FlowEdgeData(BaseModel):
     @root_validator(pre=True)
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the metadata."""
+        if (
+            "source_order" not in values
+            and "source_handle" in values
+            and values["source_handle"] is not None
+        ):
+            with suppress(Exception):
+                values["source_order"] = int(values["source_handle"].split("|")[-1])
         if (
             "target_order" not in values
             and "target_handle" in values
@@ -231,8 +242,8 @@ class FlowFactory:
         key_to_operator_nodes: Dict[str, FlowNodeData] = {}
         key_to_resource_nodes: Dict[str, FlowNodeData] = {}
         key_to_resource: Dict[str, ResourceMetadata] = {}
-        key_to_downstream: Dict[str, List[str]] = {}
-        key_to_upstream: Dict[str, List[str]] = {}
+        key_to_downstream: Dict[str, List[Tuple[str, int, int]]] = {}
+        key_to_upstream: Dict[str, List[Tuple[str, int, int]]] = {}
         for node in flow_data.nodes:
             key = node.id
             if key in key_to_operator_nodes or key in key_to_resource_nodes:
@@ -263,11 +274,11 @@ class FlowFactory:
             if source_node.data.is_operator and target_node.data.is_operator:
                 # Operator to operator.
                 downstream = key_to_downstream.get(source_key, [])
-                downstream.append(target_key)
+                downstream.append((target_key, edge.source_order, edge.target_order))
                 key_to_downstream[source_key] = downstream
 
                 upstream = key_to_upstream.get(target_key, [])
-                upstream.append(source_key)
+                upstream.append((source_key, edge.source_order, edge.target_order))
                 key_to_upstream[target_key] = upstream
             elif not source_node.data.is_operator and target_node.data.is_operator:
                 # Resource to operator.
@@ -296,6 +307,14 @@ class FlowFactory:
             else:
                 raise ValueError("Unable to connect resource to resource.")
 
+        # Sort the keys by the order of the nodes.
+        for key, value in key_to_downstream.items():
+            # Sort by source_order.
+            key_to_downstream[key] = sorted(value, key=lambda x: x[1])
+        for key, value in key_to_upstream.items():
+            # Sort by target_order.
+            key_to_upstream[key] = sorted(value, key=lambda x: x[2])
+
         key_to_tasks: Dict[str, DAGNode] = {}
         for operator_key, node in key_to_operator_nodes.items():
             if not isinstance(node.data, ViewMetadata):
@@ -307,6 +326,21 @@ class FlowFactory:
             metadata = operator_cls.metadata
             if not metadata:
                 raise ValueError("Metadata is not set.")
+            if metadata.operator_type == OperatorType.BRANCH:
+                # Branch operator, we suppose than the task_name of downstream is the
+                # parameter value of the branch operator.
+                downstream = key_to_downstream.get(operator_key, [])
+                if not downstream:
+                    raise ValueError("Branch operator should have downstream.")
+                if len(downstream) != len(view_metadata.parameters):
+                    raise ValueError(
+                        "Branch operator should have the same number of downstream as "
+                        "parameters."
+                    )
+                for i, param in enumerate(view_metadata.parameters):
+                    downstream_key, _, _ = downstream[i]
+                    param.value = key_to_operator_nodes[downstream_key].data.name
+
             runnable_params = metadata.get_runnable_parameters(
                 view_metadata.parameters, key_to_resource
             )
@@ -326,8 +360,8 @@ class FlowFactory:
         self,
         flow_panel: FlowPanel,
         key_to_tasks: Dict[str, DAGNode],
-        key_to_downstream: Dict[str, List[str]],
-        key_to_upstream: Dict[str, List[str]],
+        key_to_downstream: Dict[str, List[Tuple[str, int, int]]],
+        key_to_upstream: Dict[str, List[Tuple[str, int, int]]],
         dag_id: Optional[str] = None,
     ) -> DAG:
         """Build the DAG."""
@@ -345,7 +379,7 @@ class FlowFactory:
                     # A single task.
                     dag._append_node(task)
                     continue
-                for downstream_key in downstream:
+                for downstream_key, _, _ in downstream:
                     # Just one direction.
                     downstream_task = key_to_tasks.get(downstream_key)
                     if not downstream_task:
