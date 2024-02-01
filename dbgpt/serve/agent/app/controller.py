@@ -15,6 +15,7 @@ from dbgpt.serve.agent.db.gpts_app import (
     GptsAppDao,
     GptsAppQuery,
 )
+from dbgpt.serve.agent.hub.plugin_hub import plugin_hub
 from dbgpt.serve.agent.team.base import TeamMode
 
 CFG = Config()
@@ -134,8 +135,8 @@ async def app_resources(
                 if name:
                     results = [r for r in results if name in r]
             case ResourceType.Plugin.value:
-                agents = multi_agents.get_dbgpts()
-                results = [agent.app_name for agent in agents]
+                plugins = plugin_hub.get_my_plugin(user_code)
+                results = [plugin.name for plugin in plugins]
                 if name:
                     results = [r for r in results if name in r]
             case ResourceType.Internet.value:

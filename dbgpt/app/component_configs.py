@@ -30,9 +30,9 @@ def initialize_components(
     )
     system_app.register_instance(controller)
 
-    from dbgpt.serve.agent.hub.controller import module_agent
+    from dbgpt.serve.agent.hub.controller import module_plugin
 
-    system_app.register_instance(module_agent)
+    system_app.register_instance(module_plugin)
 
     from dbgpt.serve.agent.agents.controller import multi_agents
 

@@ -210,4 +210,4 @@ class PluginHub:
         return self.my_plugin_dao.get_by_user(user)
 
 
-agent_hub = PluginHub(PLUGINS_DIR)
+plugin_hub = PluginHub(PLUGINS_DIR)
