@@ -241,6 +241,7 @@ class ConversableAgent(Agent):
 
         gpts_message: GptsMessage = GptsMessage(
             conv_id=self.agent_context.conv_id,
+            team_mode=self.agent_context.team_mode,
             sender=sender.name,
             receiver=self.name,
             role=role,

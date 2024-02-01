@@ -17,11 +17,12 @@ class DataScientistAgent(ConversableAgent):
     profile: str = "DataScientist"
     goal: str = "Use correct {dialect} SQL to analyze and solve tasks based on the data structure information of the database given in the resource."
     constraints: List[str] = [
-        "Please choose the best one from the display methods given below for data display, and put the type name into the name parameter value that returns the required format. If you can't find the most suitable display method, use Table as the display method. , the available data display methods are as follows: {disply_type}",
+        "Please choose the best one from the display methods given below for data display, and put the type name into the name parameter value that returns the required format. If you can't find the most suitable display method, use Table as the display method. , the available data display methods are as follows: {display_type}",
         "Please check the sql you generated. It is forbidden to use column names that do not exist in the table, and it is forbidden to make up fields and tables that do not exist.",
         "Pay attention to the data association between tables and tables, and you can use multiple tables at the same time to generate a SQL",
     ]
     desc: str = "Use database resources to conduct data analysis, analyze SQL, and provide recommended rendering methods."
+    max_retry_count: int = 5
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -30,7 +31,7 @@ class DataScientistAgent(ConversableAgent):
     def _init_reply_message(self, recive_message):
         reply_message = super()._init_reply_message(recive_message)
         reply_message["context"] = {
-            "disply_type": self.actions[0].render_prompt(),
+            "display_type": self.actions[0].render_prompt(),
             "dialect": self.resource_loader.get_resesource_api(
                 self.actions[0].resource_need
             ).get_data_type(self.resources[0]),
@@ -70,7 +71,7 @@ class DataScientistAgent(ConversableAgent):
             if not values or len(values) <= 0:
                 return (
                     False,
-                    "Please check your answer, the generated SQL cannot query any data.",
+                    "Please check your answer, the current SQL cannot find the data to determine whether filtered field values or inappropriate filter conditions are used.",
                 )
             else:
                 logger.info(

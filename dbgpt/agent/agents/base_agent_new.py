@@ -41,9 +41,9 @@ class ConversableAgent(Agent, Role):
 
     def init_system_message(self):
         content = self.prompt_template()
-        self.oai_system_message.append(
+        self.oai_system_message = [
             {"content": content, "role": ModelMessageRoleType.SYSTEM}
-        )
+        ]
 
     def check_available(self):
         self.identity_check()
@@ -412,6 +412,7 @@ class ConversableAgent(Agent, Role):
         self, qustion: Optional[str], context: Optional[Dict] = None
     ):
         ## system message
+        self.init_system_message()
         if len(self.oai_system_message) > 0:
             resource_prompt_list = []
             for item in self.resources:

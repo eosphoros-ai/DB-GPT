@@ -34,7 +34,9 @@ async def main():
     from dbgpt.model import OpenAILLMClient
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
-    context: AgentContext = AgentContext(conv_id="test456", gpts_app_name="代码分析助手")
+    context: AgentContext = AgentContext(
+        conv_id="test456", team_mode=Team, gpts_app_name="代码分析助手"
+    )
 
     default_memory = GptsMemory()
 

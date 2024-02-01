@@ -89,6 +89,7 @@ class PlanAction(Action[List[PlanInput]]):
 
             if rensponse_succ:
                 plan_content = []
+                mk_plans = []
                 for item in param:
                     plan_content.append(
                         {
@@ -100,9 +101,12 @@ class PlanAction(Action[List[PlanInput]]):
                             "markdown": "",
                         }
                     )
+                    mk_plans.append(
+                        f"- {item.serial_number}.{item.content}[{item.agent}]"
+                    )
 
-                view = await self.render_protocal.disply(content=plan_content)
-
+                # view = await self.render_protocal.disply(content=plan_content)
+                view = "\n".join(mk_plans)
                 return ActionOutput(
                     is_exe_success=True,
                     content=ai_message,
