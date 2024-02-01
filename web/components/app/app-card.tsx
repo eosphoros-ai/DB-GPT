@@ -16,6 +16,11 @@ interface IProps {
 
 const { confirm } = Modal;
 
+const languageMap = {
+  en: '英文',
+  zh: '中文',
+};
+
 export default function AppCard(props: IProps) {
   const { updateApps, app, handleEdit } = props;
   const [isCollect, setIsCollect] = useState<string>(app.is_collected);
@@ -68,7 +73,7 @@ export default function AppCard(props: IProps) {
       <div className="text-sm mt-2 p-6 pt-2 ">
         <p className="font-semibold">简介:</p>
         <p className=" truncate mb-2">{app?.app_describe}</p>
-        {app?.language && <Tag color={app.language === 'zh' ? '#2db7f5' : '#87d068'}>{app?.language}</Tag>}
+        {app?.language && <Tag className='mb-3' color={app.language === 'zh' ? '#2db7f5' : '#87d068'}>{languageMap[app?.language]}</Tag>}
         <p className="font-semibold">组织模式:</p>
         <p className=" truncate">{app?.team_mode}</p>
       </div>

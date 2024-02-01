@@ -12,7 +12,7 @@ export type IApp = {
   /**
    * 语言/prompt关联
    */
-  language: string;
+  language: 'en' | 'zh';
   /**
    * 组织模式（AutoPlan/LayOut）
    */
