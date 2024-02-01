@@ -753,15 +753,20 @@ class ViewMetadata(BaseMetadata):
             for field in inputs:
                 if isinstance(field, dict):
                     new_inputs.append(IOField(**field))
-                elif not isinstance(field, IOField):
+                elif isinstance(field, IOField):
+                    new_inputs.append(field)
+                else:
                     raise ValueError("Inputs should be IOField.")
+
             values["inputs"] = new_inputs
         if outputs:
             new_outputs = []
             for field in outputs:
                 if isinstance(field, dict):
                     new_outputs.append(IOField(**field))
-                elif not isinstance(field, IOField):
+                elif isinstance(field, IOField):
+                    new_outputs.append(field)
+                else:
                     raise ValueError("Outputs should be IOField.")
             values["outputs"] = new_outputs
         return values
