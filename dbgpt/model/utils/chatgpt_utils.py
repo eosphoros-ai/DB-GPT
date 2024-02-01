@@ -86,10 +86,9 @@ def _initialize_openai_v1(init_params: OpenAIParameters):
 
     openai_params = {
         "api_key": api_key,
-        "base_url": base_url,
-        "api_azure_deployment": api_azure_deployment,
+        "base_url": base_url
     }
-    return openai_params, api_type, api_version
+    return openai_params, api_type, api_version, api_azure_deployment
 
 
 def _initialize_openai(params: OpenAIParameters):
@@ -113,9 +112,6 @@ def _initialize_openai(params: OpenAIParameters):
     )
     api_version = params.api_version or os.getenv("OPENAI_API_VERSION")
 
-    api_azure_deployment = params.api_azure_deployment or os.getenv(
-        "API_AZURE_DEPLOYMENT"
-    )
 
     if not api_base and params.full_url:
         # Adapt previous proxy_server_url configuration
@@ -130,21 +126,20 @@ def _initialize_openai(params: OpenAIParameters):
         openai.api_version = api_version
     if params.proxies:
         openai.proxy = params.proxies
-    if params.api_azure_deployment:
-        openai.api_azure_deployment = api_azure_deployment
+
 
 
 def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType]:
     import httpx
 
-    openai_params, api_type, api_version = _initialize_openai_v1(init_params)
+    openai_params, api_type, api_version, api_azure_deployment= _initialize_openai_v1(init_params)
     if api_type == "azure":
         from openai import AsyncAzureOpenAI
 
         return api_type, AsyncAzureOpenAI(
             api_key=openai_params["api_key"],
             api_version=api_version,
-            azure_deployment=openai_params["api_azure_deployment"],
+            azure_deployment=api_azure_deployment,
             azure_endpoint=openai_params["base_url"],
             http_client=httpx.AsyncClient(proxies=init_params.proxies),
         )
