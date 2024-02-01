@@ -452,8 +452,6 @@ class GptsAppDao(BaseDao):
                     AgentResource.dataclass_to_dict(resource)
                     for resource in item.resources
                 ]
-                if item.app_name is None:
-                    raise f"app name cannot be None"
                 if item.agent_name is None:
                     raise f"agent name cannot be None"
 
