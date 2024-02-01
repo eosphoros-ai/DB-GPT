@@ -71,6 +71,7 @@ def _initialize_openai_v1(init_params: OpenAIParameters):
         os.getenv("AZURE_OPENAI_KEY") if api_type == "azure" else None,
     )
     api_version = api_version or os.getenv("OPENAI_API_VERSION")
+    
     api_azure_deployment = init_params.api_azure_deployment or os.getenv(
         "API_AZURE_DEPLOYMENT"
     )
