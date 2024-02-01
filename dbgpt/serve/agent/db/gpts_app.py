@@ -338,6 +338,11 @@ class GptsAppDao(BaseDao):
             results = app_qry.all()
             apps = []
             for app_info in results:
+                app_detail_qry = session.query(GptsAppDetailEntity).filter(
+                    GptsAppDetailEntity.app_code == app_info.app_code
+                )
+                app_details = app_detail_qry.all()
+
                 apps.append(
                     GptsApp.from_dict(
                         {
@@ -354,7 +359,10 @@ class GptsAppDao(BaseDao):
                             else "false",
                             "created_at": app_info.created_at,
                             "updated_at": app_info.updated_at,
-                            "details": [],
+                            "details": [
+                                GptsAppDetail.from_dict(item.to_dict())
+                                for item in app_details
+                            ],
                         }
                     )
                 )
