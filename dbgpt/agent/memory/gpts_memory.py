@@ -48,9 +48,6 @@ class GptsMemory:
             )
         return await self._messages_to_plan_vis(plan_items)
 
-    async def one_chat_competions_v2(self, conv_id: str):
-        messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
-
     async def one_chat_competions(self, conv_id: str):
         messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
         temp_group = defaultdict(list)

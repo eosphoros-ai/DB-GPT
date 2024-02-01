@@ -148,6 +148,7 @@ class MultiAgents(BaseComponent, ABC):
                     conv_id=agent_conv_id,
                     user_goal=user_query,
                     gpts_name=gpts_name,
+                    team_mode=gpt_app.team_mode,
                     state=Status.RUNNING.value,
                     max_auto_reply_round=0,
                     auto_reply_count=0,
@@ -302,69 +303,6 @@ class MultiAgents(BaseComponent, ABC):
 
         self.gpts_conversations.update(conv_uid, Status.COMPLETE.value)
         return conv_uid
-
-    async def agent_team_chat(
-        self,
-        user_query: str,
-        context: AgentContext,
-        team_mode: TeamMode,
-        is_retry_chat: bool = False,
-    ):
-        """Initiate an Agent-based conversation
-        Args:
-            user_query:
-            context:
-            team_mode:
-            is_retry_chat:
-
-        Returns:
-
-        """
-        try:
-            agents = []
-            for name in context.agents:
-                cls = agent_manage.get_by_name(name)
-                agent = cls(
-                    agent_context=context,
-                    memory=self.memory,
-                )
-                agents.append(agent)
-
-            manager = await self._build_chat_manager(
-                context, TeamMode(team_mode), agents
-            )
-            user_proxy = UserProxyAgent(memory=self.memory, agent_context=context)
-
-            if not is_retry_chat:
-                ## dbgpts conversation save
-                try:
-                    await user_proxy.a_initiate_chat(
-                        recipient=manager,
-                        message=user_query,
-                        memory=self.memory,
-                    )
-                except Exception as e:
-                    logger.error(f"chat abnormal termination！{str(e)}", e)
-                    self.gpts_conversations.update(context.conv_id, Status.FAILED.value)
-
-            else:
-                # retry chat
-                self.gpts_conversations.update(context.conv_id, Status.RUNNING.value)
-                try:
-                    await user_proxy.a_retry_chat(
-                        recipient=manager,
-                        memory=self.memory,
-                    )
-                except Exception as e:
-                    logger.error(f"chat abnormal termination！{str(e)}", e)
-                    self.gpts_conversations.update(context.conv_id, Status.FAILED.value)
-
-            self.gpts_conversations.update(context.conv_id, Status.COMPLETE.value)
-            return context.conv_id
-        except Exception as e:
-            logger.exception("new chat compeletion failed!")
-            self.gpts_conversations.update(context.conv_id, Status.FAILED.value)
-            raise ValueError(f"Add chat failed!{str(e)}")
 
     async def chat_messages(
         self, conv_id: str, user_code: str = None, system_app: str = None

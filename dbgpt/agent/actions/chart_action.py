@@ -75,7 +75,8 @@ class ChartAction(Action[SqlInput]):
                 resource_value=resource.value,
             )
         except Exception as e:
-            logger.exception("Sql Action Run Failed！")
+            logger.exception("Check your answers, the sql run failed！")
             return ActionOutput(
-                is_exe_success=False, content=f"Sql action run failed!{str(e)}"
+                is_exe_success=False,
+                content=f"Check your answers, the sql run failed!Reason:{str(e)}",
             )

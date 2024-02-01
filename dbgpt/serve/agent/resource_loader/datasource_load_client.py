@@ -57,7 +57,7 @@ class DatasourceLoadClient(ResourceDbClient):
 
     async def a_query(self, db: str, sql: str):
         conn = CFG.LOCAL_DB_MANAGE.get_connect(db)
-        return conn.run(sql)
+        return conn.query_ex(sql)
 
     async def a_run_sql(self, db: str, sql: str):
         conn = CFG.LOCAL_DB_MANAGE.get_connect(db)
