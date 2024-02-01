@@ -31,7 +31,7 @@ class PluginHubLoadClient(ResourcePluginClient):
         plugins_prompt_generator.command_registry = CFG.command_registry
 
         agent_module = CFG.SYSTEM_APP.get_component(
-            ComponentType.AGENT_HUB, ModulePlugin
+            ComponentType.PLUGIN_HUB, ModulePlugin
         )
         plugins_prompt_generator = agent_module.load_select_plugin(
             plugins_prompt_generator, json.dumps(value)

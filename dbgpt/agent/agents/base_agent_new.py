@@ -465,7 +465,9 @@ class ConversableAgent(Agent, Role):
             all_model_names = [item.model for item in all_models]
             # TODO Currently only two strategies, priority and default, are implemented.
             if self.llm_config.llm_strategy == LLMStrategyType.Priority:
-                priority: List[str] = json.loads(self.llm_config.strategy_context)
+                priority: List[str] = []
+                if self.llm_config.strategy_context is not None:
+                    priority: List[str] = json.loads(self.llm_config.strategy_context)
                 can_uses = self._excluded_models(
                     all_model_names, priority, excluded_models
                 )

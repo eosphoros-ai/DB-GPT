@@ -4,6 +4,14 @@ from typing import Dict, List, Optional
 from dbgpt.agent.agents.agent import Agent, AgentGenerateContext
 from dbgpt.agent.agents.base_agent_new import ConversableAgent
 from dbgpt.core.awel import BranchFunc, BranchOperator, MapOperator
+from dbgpt.core.awel.flow import (
+    IOField,
+    OperatorCategory,
+    OperatorType,
+    Parameter,
+    ResourceCategory,
+    ViewMetadata,
+)
 from dbgpt.core.interface.message import ModelMessageRoleType
 
 
@@ -26,6 +34,40 @@ class BaseAgentOperator:
 class AgentOperator(
     BaseAgentOperator, MapOperator[AgentGenerateContext, AgentGenerateContext], ABC
 ):
+    metadata = ViewMetadata(
+        label="Agent Operator",
+        name="agent_operator",
+        category=OperatorCategory.COMMON,
+        description="The Agent operator.",
+        parameters=[
+            Parameter.build_from(
+                "Agent",
+                "agent",
+                ConversableAgent,
+                optional=True,
+                default=None,
+                resource_category=ResourceCategory.COMMON,
+                description="The dbgpt agent.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "Agent Operator Request",
+                "agent_operator_request",
+                AgentGenerateContext,
+                "The Agent Operator request.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Agent Operator Output",
+                "agent_operator_output",
+                AgentGenerateContext,
+                description="The Agent Operator output.",
+            )
+        ],
+    )
+
     def __init__(self, agent: Agent, **kwargs):
         super().__init__(agent=agent)
         MapOperator.__init__(self, **kwargs)
