@@ -4,11 +4,11 @@ from fastapi import APIRouter
 
 from dbgpt._private.config import Config
 from dbgpt.agent.agents.agents_manage import agent_manage
+from dbgpt.agent.agents.llm.llm import LLMStrategyType
 from dbgpt.agent.resource.resource_api import ResourceType
 from dbgpt.app.knowledge.api import knowledge_space_service
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.openapi.api_view_model import Result
-from dbgpt.serve.agent.agents.controller import multi_agents
 from dbgpt.serve.agent.db.gpts_app import (
     GptsApp,
     GptsAppCollectionDao,
@@ -110,6 +110,16 @@ async def team_mode_list():
         return Result.succ([type.value for type in ResourceType])
     except Exception as ex:
         return Result.failed(code="E000X", msg=f"query resource type list error: {ex}")
+
+
+@router.get("/v1/llm-strategy/list")
+async def llm_strategies():
+    try:
+        return Result.succ([type.value for type in LLMStrategyType])
+    except Exception as ex:
+        return Result.failed(
+            code="E000X", msg=f"query llm strategy type list error: {ex}"
+        )
 
 
 @router.get("/v1/app/resources/list", response_model=Result[str])
