@@ -25,7 +25,7 @@ export default function AgentPanel(props: IProps) {
   const { resourceTypes, updateDetailsByAgentKey, detail, editResources } = props;
   const { t } = useTranslation();
 
-  const [resources, setResources] = useState<any>([...editResources]);
+  const [resources, setResources] = useState<any>([...(editResources ?? [])]);
   const [agent, setAgent] = useState<any>({ ...detail, resources: [] });
 
   const updateResourcesByIndex = (data: any, index: number) => {

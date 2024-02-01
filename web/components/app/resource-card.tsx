@@ -19,7 +19,7 @@ export default function ResourceCard(props: IProps) {
     type: editResource.type,
     introduce: editResource.introduce,
     value: editResource.value,
-    is_dynamic: editResource.is_dynamic,
+    is_dynamic: editResource.is_dynamic ?? false,
   });
 
   const fetchResource = async () => {
