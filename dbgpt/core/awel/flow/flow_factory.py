@@ -158,6 +158,24 @@ class State(str, Enum):
         raise ValueError(f"Invalid state value: {value}")
 
 
+class FlowCategory(str, Enum):
+    """Flow category."""
+
+    COMMON = "common"
+    CHAT_FLOW = "chat_flow"
+    CHAT_AGENT = "chat_agent"
+
+    @classmethod
+    def value_of(cls, value: Optional[str]) -> "FlowCategory":
+        """Get the flow category by value."""
+        if not value:
+            return cls.COMMON
+        for category in FlowCategory:
+            if category.value == value:
+                return category
+        raise ValueError(f"Invalid flow category value: {value}")
+
+
 class FlowPanel(BaseModel):
     """Flow panel."""
 
@@ -171,6 +189,11 @@ class FlowPanel(BaseModel):
     )
     name: str = Field(
         ..., description="Flow panel name", examples=["First AWEL Flow", "My LLM Flow"]
+    )
+    flow_category: Optional[FlowCategory] = Field(
+        default=FlowCategory.COMMON,
+        description="Flow category",
+        examples=[FlowCategory.COMMON, FlowCategory.CHAT_AGENT],
     )
     flow_data: FlowData = Field(..., description="Flow data")
     description: Optional[str] = Field(

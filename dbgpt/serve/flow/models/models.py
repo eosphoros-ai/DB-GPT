@@ -23,6 +23,7 @@ class ServeEntity(Model):
     uid = Column(String(128), index=True, nullable=False, comment="Unique id")
     dag_id = Column(String(128), index=True, nullable=True, comment="DAG id")
     name = Column(String(128), index=True, nullable=True, comment="Flow name")
+    flow_category = Column(String(64), nullable=True, comment="Flow category")
     flow_data = Column(Text, nullable=True, comment="Flow data, JSON format")
     description = Column(String(512), nullable=True, comment="Flow description")
     state = Column(String(32), nullable=True, comment="Flow state")
@@ -66,6 +67,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             "uid": request_dict.get("uid"),
             "dag_id": request_dict.get("dag_id"),
             "name": request_dict.get("name"),
+            "flow_category": request_dict.get("flow_category"),
             "flow_data": flow_data,
             "state": state,
             "source": request_dict.get("source"),
@@ -92,6 +94,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             uid=entity.uid,
             dag_id=entity.dag_id,
             name=entity.name,
+            flow_category=entity.flow_category,
             flow_data=flow_data,
             state=State.value_of(entity.state),
             source=entity.source,
@@ -118,6 +121,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             uid=entity.uid,
             dag_id=entity.dag_id,
             name=entity.name,
+            flow_category=entity.flow_category,
             flow_data=flow_data,
             description=entity.description,
             state=State.value_of(entity.state),
@@ -140,6 +144,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
                 raise Exception("Invalid request")
             if update_request.name:
                 entry.name = update_request.name
+            if update_request.flow_category:
+                entry.flow_category = update_request.flow_category
             if update_request.flow_data:
                 entry.flow_data = json.dumps(
                     update_request.flow_data.dict(), ensure_ascii=False

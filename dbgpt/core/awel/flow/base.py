@@ -109,6 +109,7 @@ _OPERATOR_CATEGORY_DETAIL = {
     "conversion": _CategoryDetail("Conversion", "Handle the conversion"),
     "output_parser": _CategoryDetail("Output Parser", "Parse the output of LLM model"),
     "common": _CategoryDetail("Common", "The common operator"),
+    "agent": _CategoryDetail("Agent", "The agent operator"),
 }
 
 
@@ -120,6 +121,7 @@ class OperatorCategory(str, Enum):
     CONVERSION = "conversion"
     OUTPUT_PARSER = "output_parser"
     COMMON = "common"
+    AGENT = "agent"
 
     def label(self) -> str:
         """Get the label of the category."""
@@ -155,6 +157,7 @@ _RESOURCE_CATEGORY_DETAIL = {
     "http_body": _CategoryDetail("HTTP Body", "The HTTP body"),
     "llm_client": _CategoryDetail("LLM Client", "The LLM client"),
     "common": _CategoryDetail("Common", "The common resource"),
+    "agent": _CategoryDetail("Agent", "The agent resource"),
 }
 
 
@@ -164,6 +167,7 @@ class ResourceCategory(str, Enum):
     HTTP_BODY = "http_body"
     LLM_CLIENT = "llm_client"
     COMMON = "common"
+    AGENT = "agent"
 
     def label(self) -> str:
         """Get the label of the category."""
