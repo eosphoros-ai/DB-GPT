@@ -282,8 +282,8 @@ export const addApp = (data: IApp) => {
   return POST<IApp, []>('/api/v1/app/create', data);
 };
 
-export const getAppList = () => {
-  return POST<{}, IApp[]>('/api/v1/app/list', {});
+export const getAppList = (data: Record<string, string>) => {
+  return POST<Record<string, string>, IApp[]>('/api/v1/app/list', data);
 };
 
 export const collectApp = (data: Record<string, string>) => {

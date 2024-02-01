@@ -62,7 +62,7 @@ export default function AppCard(props: IProps) {
 
   const handleChat = async (e: any) => {
     e.stopPropagation();
-    // setAgentToChat();
+    setAgentToChat?.(app.app_code);
     const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_agent' }));
     if (res) {
       router.push(`/chat/?scene=chat_agent&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);

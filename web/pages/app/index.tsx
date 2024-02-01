@@ -34,11 +34,16 @@ export default function App() {
 
   const handleTabChange = (activeKey: string) => {
     setActiveKey(activeKey as TabKey);
+    if (activeKey === 'collected') {
+      initData({ is_collected: true });
+    } else {
+      initData();
+    }
   };
 
-  const initData = async () => {
+  const initData = async (params = {}) => {
     setSpinning(true);
-    const [error, data] = await apiInterceptors(getAppList());
+    const [error, data] = await apiInterceptors(getAppList(params));
     if (error) {
       setSpinning(false);
       return;
@@ -55,7 +60,6 @@ export default function App() {
 
   const renderAppList = (data: { isCollected: boolean }) => {
     const isNull = data.isCollected ? apps.every((item) => !item.is_collected) : apps.length === 0;
-
     return (
       <div>
         {!data.isCollected && (
