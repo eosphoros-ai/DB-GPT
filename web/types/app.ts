@@ -28,7 +28,7 @@ export type IApp = {
   /**
    * 是否已收藏
    */
-  is_collected: boolean;
+  is_collected: string;
 };
 
 // agent
@@ -54,9 +54,9 @@ export type AgentParams = {
 };
 
 export type IAgent = {
-  describe: string;
+  describe?: string;
   name: string;
-  system_message: string;
+  system_message?: string;
 };
 
 export type ITeamModal = {
