@@ -17,7 +17,6 @@ export default function ResourceCard(props: IProps) {
   const [resource, setResource] = useState<any>({
     name: editResource.name,
     type: editResource.type,
-    introduce: editResource.introduce,
     value: editResource.value,
     is_dynamic: editResource.is_dynamic || false,
   });
@@ -65,16 +64,6 @@ export default function ResourceCard(props: IProps) {
           value={resource.name}
           onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
             updateResource(e.target.value, 'name');
-          }}
-        />
-      </div>
-      <div>
-        <div className="mb-2 font-bold">描述</div>
-        <Input
-          className="mb-5 w-11/12"
-          value={resource.introduce}
-          onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateResource(e.target.value, 'introduce');
           }}
         />
       </div>

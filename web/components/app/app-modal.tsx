@@ -133,9 +133,15 @@ export default function AppModal(props: IProps) {
   }, [resourceTypes]);
 
   const updateDetailsByAgentKey = (key: string, data: any) => {
+    console.log(111, 'updateDetailsByAgentKey', data, key);
+    console.log(222, 'detail', details);
+
     setDetails((details: any) => {
+      console.log(44444, details);
+
       return details.map((detail: any) => {
-        return key === detail.agent_name ? data : detail;
+        console.log(key, '===', detail.agent_name || detail.key, data);
+        return key === (detail.agent_name || detail.key) ? data : detail;
       });
     });
   };
@@ -147,6 +153,8 @@ export default function AppModal(props: IProps) {
     setActiveKey(newActiveKey);
 
     setDetails((details: any) => {
+      console.log(3333, 'details', [...details, { key: newActiveKey, name: '', llm_strategy: 'priority' }]);
+
       return [...details, { key: newActiveKey, name: '', llm_strategy: 'priority' }];
     });
 
@@ -231,11 +239,12 @@ export default function AppModal(props: IProps) {
       details: details,
     };
     data.app_code = app.app_code;
+    console.log('===data', data);
 
-    await createApp(data);
+    // await createApp(data);
 
     setSpinning(false);
-    handleCancel();
+    // handleCancel();
   };
 
   const renderAddIcon = () => {
