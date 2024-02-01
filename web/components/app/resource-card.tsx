@@ -13,7 +13,7 @@ export default function ResourceCard(props: IProps) {
 
   const [resourceType, setResourceType] = useState<string>(resourceTypeOptions[0].label);
   const [resourceValueOptions, setResourceValueOptions] = useState<any[]>([]);
-  const [resource, setResource] = useState<any>({ name: '', type: resourceTypeOptions[0].key, introduce: '', value: '', is_dynamic: true });
+  const [resource, setResource] = useState<any>({ name: '', type: resourceTypeOptions[0].key, introduce: '', value: '', is_dynamic: false });
 
   const fetchResource = async () => {
     const [_, data] = await apiInterceptors(getResource({ type: resourceType }));
@@ -43,8 +43,6 @@ export default function ResourceCard(props: IProps) {
   useEffect(() => {
     fetchResource();
   }, [resourceType]);
-
-  console.log(3333, resourceValueOptions);
 
   return (
     <Card>
@@ -84,7 +82,6 @@ export default function ResourceCard(props: IProps) {
           <div className="mb-2 font-bold">参数</div>
           {resourceValueOptions?.length > 0 ? (
             <Select
-              defaultValue={resourceValueOptions[0]}
               className="h-12 w-5/6"
               options={resourceValueOptions}
               onChange={(value) => {

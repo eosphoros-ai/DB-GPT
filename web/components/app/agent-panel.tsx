@@ -70,7 +70,7 @@ export default function AgentPanel(props: IProps) {
         className="mb-5"
         required
         onChange={(e) => {
-          updateAgent(e.target.value, 'agent_name');
+          updateAgent(e.target.value, 'prompt_template');
         }}
       />
       <div className="mb-3">LLM 使用策略</div>
@@ -84,7 +84,7 @@ export default function AgentPanel(props: IProps) {
           </div>
         );
       })}
-      <Button type="primary" className='mt-2' size='middle' onClick={handelAdd}>
+      <Button type="primary" className="mt-2" size="middle" onClick={handelAdd}>
         {t('add_resource')}
       </Button>
     </div>

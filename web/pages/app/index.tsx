@@ -67,7 +67,7 @@ export default function App() {
           <div className="overflow-auto w-full h-[800px] flex flex-wrap pb-0 gap-4">
             {apps.map((app, index) => {
               if (data.isCollected) {
-                return app.is_collected && <AppCard handleEdit={handleEdit} key={index} app={app} updateApps={initData} />;
+                return app.is_collected === 'true' && <AppCard handleEdit={handleEdit} key={index} app={app} updateApps={initData} />;
               } else {
                 return <AppCard key={index} handleEdit={handleEdit} app={app} updateApps={initData} />;
               }
