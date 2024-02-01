@@ -70,7 +70,7 @@ async def all_agents():
 @router.post("/v1/app/remove", response_model=Result[str])
 async def delete(gpts_app: GptsApp):
     try:
-        gpts_dao.delete(gpts_app.app_code)
+        gpts_dao.delete(gpts_app.app_code, gpts_app.user_code, gpts_app.sys_code)
         return Result.succ([])
     except Exception as ex:
         return Result.failed(code="E000X", msg=f"delete app error: {ex}")
