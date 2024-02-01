@@ -7,7 +7,7 @@ from typing import List, Optional, Type, Union
 
 from starlette.requests import Request
 
-from ..flow import OperatorCategory, OperatorType, Parameter, ViewMetadata
+from ..flow import IOField, OperatorCategory, OperatorType, ViewMetadata
 from .http_trigger import (
     _PARAMETER_ENDPOINT,
     _PARAMETER_MEDIA_TYPE,
@@ -32,7 +32,7 @@ class RequestHttpTrigger(HttpTrigger):
         " as a starlette Request",
         inputs=[],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Request Body",
                 "request_body",
                 Request,

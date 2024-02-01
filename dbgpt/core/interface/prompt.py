@@ -240,7 +240,7 @@ class ChatPromptTemplate(BasePromptTemplate):
         return result_messages
 
     @root_validator(pre=True)
-    def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def base_pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre-fill the messages."""
         input_variables = values.get("input_variables", {})
         messages = values.get("messages", [])

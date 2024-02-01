@@ -19,6 +19,7 @@ from dbgpt._private.pydantic import BaseModel, Field
 
 from ..dag.base import DAG
 from ..flow import (
+    IOField,
     OperatorCategory,
     OperatorType,
     OptionValue,
@@ -705,7 +706,7 @@ class DictHttpTrigger(HttpTrigger):
         " as a dict",
         inputs=[],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Request Body",
                 "request_body",
                 dict,
@@ -762,7 +763,7 @@ class StringHttpTrigger(HttpTrigger):
         " as a string",
         inputs=[],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Request Body",
                 "request_body",
                 str,
@@ -820,7 +821,7 @@ class CommonLLMHttpTrigger(HttpTrigger):
         "as a common LLM http body",
         inputs=[],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Request Body",
                 "request_body",
                 CommonLLMHttpRequestBody,
@@ -898,7 +899,7 @@ class ExampleHttpHelloOperator(MapOperator[dict, ExampleHttpResponse]):
         category=OperatorCategory.COMMON,
         parameters=[],
         inputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Http Request Body",
                 "request_body",
                 dict,
@@ -906,7 +907,7 @@ class ExampleHttpHelloOperator(MapOperator[dict, ExampleHttpResponse]):
             )
         ],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Response Body",
                 "response_body",
                 ExampleHttpResponse,
@@ -947,7 +948,7 @@ class RequestBodyToDictOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, 
             )
         ],
         inputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Request Body",
                 "request_body",
                 CommonLLMHttpRequestBody,
@@ -955,7 +956,7 @@ class RequestBodyToDictOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, 
             )
         ],
         outputs=[
-            Parameter.build_from(
+            IOField.build_from(
                 "Response Body",
                 "response_body",
                 dict,
@@ -984,3 +985,49 @@ class RequestBodyToDictOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, 
                     f"Prefix key {self._key} is not a valid key of the request body"
                 )
             return dict_value
+
+
+class UserInputParsedOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, Any]]):
+    """User input parsed operator."""
+
+    metadata = ViewMetadata(
+        label="User Input Parsed Operator",
+        name="user_input_parsed_operator",
+        category=OperatorCategory.COMMON,
+        parameters=[
+            Parameter.build_from(
+                "Key",
+                "key",
+                str,
+                optional=True,
+                default="user_input",
+                description="The key of the dict, link 'user_input'",
+            )
+        ],
+        inputs=[
+            IOField.build_from(
+                "Request Body",
+                "request_body",
+                CommonLLMHttpRequestBody,
+                description="The request body of the API endpoint",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "User Input Dict",
+                "user_input_dict",
+                dict,
+                description="The user input dict of the API endpoint",
+            )
+        ],
+        description="User input parsed operator",
+    )
+
+    def __init__(self, key: str = "user_input", **kwargs):
+        """Initialize a UserInputParsedOperator."""
+        self._key = key
+        super().__init__(**kwargs)
+
+    async def map(self, request_body: CommonLLMHttpRequestBody) -> Dict[str, Any]:
+        """Map the request body to response body."""
+        return {self._key: request_body.messages}

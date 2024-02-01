@@ -7,6 +7,7 @@ from typing import Any, Dict, Union
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
+from dbgpt.core.awel.flow.flow_factory import State
 from dbgpt.storage.metadata import BaseDao, Model
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
 
@@ -23,7 +24,11 @@ class ServeEntity(Model):
     dag_id = Column(String(128), index=True, nullable=True, comment="DAG id")
     name = Column(String(128), index=True, nullable=True, comment="Flow name")
     flow_data = Column(Text, nullable=True, comment="Flow data, JSON format")
-    description = Column(String(128), nullable=True, comment="Flow description")
+    description = Column(String(512), nullable=True, comment="Flow description")
+    state = Column(String(32), nullable=True, comment="Flow state")
+    source = Column(String(64), nullable=True, comment="Flow source")
+    source_url = Column(String(512), nullable=True, comment="Flow source url")
+    version = Column(String(32), nullable=True, comment="Flow version")
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
@@ -56,11 +61,16 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         """
         request_dict = request.dict() if isinstance(request, ServeRequest) else request
         flow_data = json.dumps(request_dict.get("flow_data"), ensure_ascii=False)
+        state = request_dict.get("state", State.INITIALIZING.value)
         new_dict = {
             "uid": request_dict.get("uid"),
             "dag_id": request_dict.get("dag_id"),
             "name": request_dict.get("name"),
             "flow_data": flow_data,
+            "state": state,
+            "source": request_dict.get("source"),
+            "source_url": request_dict.get("source_url"),
+            "version": request_dict.get("version"),
             "description": request_dict.get("description"),
             "user_name": request_dict.get("user_name"),
             "sys_code": request_dict.get("sys_code"),
@@ -83,6 +93,10 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             dag_id=entity.dag_id,
             name=entity.name,
             flow_data=flow_data,
+            state=State.value_of(entity.state),
+            source=entity.source,
+            source_url=entity.source_url,
+            version=entity.version,
             description=entity.description,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
@@ -106,6 +120,10 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             name=entity.name,
             flow_data=flow_data,
             description=entity.description,
+            state=State.value_of(entity.state),
+            source=entity.source,
+            source_url=entity.source_url,
+            version=entity.version,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
             gmt_created=gmt_created_str,
@@ -115,7 +133,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
     def update(
         self, query_request: QUERY_SPEC, update_request: ServeRequest
     ) -> ServerResponse:
-        with self.session() as session:
+        with self.session(commit=False) as session:
             query = self._create_query_object(session, query_request)
             entry: ServeEntity = query.first()
             if entry is None:
@@ -128,10 +146,18 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
                 )
             if update_request.description:
                 entry.description = update_request.description
-
+            if update_request.state:
+                entry.state = update_request.state.value
+            if update_request.source:
+                entry.source = update_request.source
+            if update_request.source_url:
+                entry.source_url = update_request.source_url
+            if update_request.version:
+                entry.version = update_request.version
             if update_request.user_name:
                 entry.user_name = update_request.user_name
             if update_request.sys_code:
                 entry.sys_code = update_request.sys_code
             session.merge(entry)
-            return self.get_one(self.to_request(entry))
+            session.commit()
+            return self.get_one(query_request)

@@ -3,6 +3,7 @@
 import logging
 import uuid
 from contextlib import suppress
+from enum import Enum
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from dbgpt._private.pydantic import BaseModel, Field, root_validator, validator
@@ -122,6 +123,30 @@ class FlowData(BaseModel):
     viewport: FlowPositionData = Field(..., description="Viewport of the flow")
 
 
+class State(str, Enum):
+    """State of a flow panel."""
+
+    INITIALIZING = "initializing"
+    DEVELOPING = "developing"
+    TESTING = "testing"
+    READY_TO_DEPLOY = "ready_to_deploy"
+    DEPLOYED = "deployed"
+    RUNNING = "running"
+    PAUSED = "paused"
+    DISABLED = "disabled"
+    ENABLED = "enabled"
+
+    @classmethod
+    def value_of(cls, value: Optional[str]) -> "State":
+        """Get the state by value."""
+        if not value:
+            return cls.INITIALIZING
+        for state in State:
+            if state.value == value:
+                return state
+        raise ValueError(f"Invalid state value: {value}")
+
+
 class FlowPanel(BaseModel):
     """Flow panel."""
 
@@ -142,6 +167,21 @@ class FlowPanel(BaseModel):
         description="Flow panel description",
         examples=["My first AWEL flow"],
     )
+    state: State = Field(
+        default=State.INITIALIZING, description="Current state of the flow panel"
+    )
+    source: Optional[str] = Field(
+        "DBGPT-WEB",
+        description="Source of the flow panel",
+        examples=["DB-GPT-WEB", "DBGPT-GITHUB"],
+    )
+    source_url: Optional[str] = Field(
+        None,
+        description="Source url of the flow panel",
+    )
+    version: Optional[str] = Field(
+        "0.1.0", description="Version of the flow panel", examples=["0.1.0", "0.2.0"]
+    )
     user_name: Optional[str] = Field(None, description="User name")
     sys_code: Optional[str] = Field(None, description="System code")
     dag_id: Optional[str] = Field(None, description="DAG id, Created by AWEL")
@@ -156,6 +196,26 @@ class FlowPanel(BaseModel):
         description="The flow panel modified time.",
         examples=["2021-08-01 12:00:00", "2021-08-01 12:00:01", "2021-08-01 12:00:02"],
     )
+
+    def change_state(self, new_state: State) -> bool:
+        """Change the state of the flow panel."""
+        allowed_transitions: Dict[State, List[State]] = {
+            State.INITIALIZING: [State.DEVELOPING],
+            State.DEVELOPING: [State.TESTING, State.DISABLED],
+            State.TESTING: [State.READY_TO_DEPLOY, State.DEVELOPING, State.DISABLED],
+            State.READY_TO_DEPLOY: [State.DEPLOYED, State.DEVELOPING],
+            State.DEPLOYED: [State.RUNNING, State.DISABLED],
+            State.RUNNING: [State.PAUSED, State.DISABLED, State.DEPLOYED],
+            State.PAUSED: [State.RUNNING, State.DISABLED],
+            State.DISABLED: [State.ENABLED],
+            State.ENABLED: [s for s in State if s != State.INITIALIZING],
+        }
+        if new_state in allowed_transitions[self.state]:
+            self.state = new_state
+            return True
+        else:
+            logger.error(f"Invalid state transition from {self.state} to {new_state}")
+            return False
 
 
 class FlowFactory:
@@ -255,7 +315,11 @@ class FlowFactory:
             key_to_tasks[operator_key] = operator_task
 
         return self.build_dag(
-            flow_panel, key_to_tasks, key_to_downstream, key_to_upstream
+            flow_panel,
+            key_to_tasks,
+            key_to_downstream,
+            key_to_upstream,
+            dag_id=flow_panel.dag_id,
         )
 
     def build_dag(
@@ -264,11 +328,13 @@ class FlowFactory:
         key_to_tasks: Dict[str, DAGNode],
         key_to_downstream: Dict[str, List[str]],
         key_to_upstream: Dict[str, List[str]],
+        dag_id: Optional[str] = None,
     ) -> DAG:
         """Build the DAG."""
         formatted_name = flow_panel.name.replace(" ", "_")
-        dag_name = f"{self._dag_prefix}_{formatted_name}_{flow_panel.uid}"
-        with DAG(dag_name) as dag:
+        if not dag_id:
+            dag_id = f"{self._dag_prefix}_{formatted_name}_{flow_panel.uid}"
+        with DAG(dag_id) as dag:
             for key, task in key_to_tasks.items():
                 if not task._node_id:
                     task.set_node_id(dag._new_node_id())

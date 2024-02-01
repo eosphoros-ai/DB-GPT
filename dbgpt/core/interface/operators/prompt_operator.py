@@ -71,7 +71,7 @@ class CommonChatPromptTemplate(ChatPromptTemplate):
             SystemPromptTemplate.from_template(system_message),
             HumanPromptTemplate.from_template(human_message),
         ]
-        return values
+        return cls.base_pre_fill(values)
 
 
 class BasePromptBuilderOperator(BaseConversationOperator, ABC):

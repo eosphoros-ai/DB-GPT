@@ -746,6 +746,24 @@ class ViewMetadata(BaseMetadata):
                 values["name"], values["category"], values.get("version", "v1")
             )
             values["id"] = values["flow_type"] + "_" + key
+        inputs = values.get("inputs")
+        outputs = values.get("outputs")
+        if inputs:
+            new_inputs = []
+            for field in inputs:
+                if isinstance(field, dict):
+                    new_inputs.append(IOField(**field))
+                elif not isinstance(field, IOField):
+                    raise ValueError("Inputs should be IOField.")
+            values["inputs"] = new_inputs
+        if outputs:
+            new_outputs = []
+            for field in outputs:
+                if isinstance(field, dict):
+                    new_outputs.append(IOField(**field))
+                elif not isinstance(field, IOField):
+                    raise ValueError("Outputs should be IOField.")
+            values["outputs"] = new_outputs
         return values
 
     def get_operator_key(self) -> str:
