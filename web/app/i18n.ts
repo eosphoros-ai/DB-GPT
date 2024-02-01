@@ -186,6 +186,7 @@ const en = {
   App: 'App',
   team_modal: 'Team Modal',
   team_modal_select_tips: 'Please select a team modal',
+  add_resource: 'Add Resource'
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -378,6 +379,7 @@ const zh: Resources['translation'] = {
   language_select_tips: '请选择语言',
   team_modal: '组织模式',
   team_modal_select_tips: '请选择组织模式',
+  add_resource: '添加资源'
 } as const;
 
 i18n.use(initReactI18next).init({

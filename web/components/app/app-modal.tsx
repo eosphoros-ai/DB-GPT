@@ -27,6 +27,8 @@ interface IProps {
   handleCancel: () => void;
   open: boolean;
   updateApps: () => void;
+  type: string;
+  app?: any;
 }
 
 const languageOptions = [
@@ -35,7 +37,8 @@ const languageOptions = [
 ];
 
 export default function AppModal(props: IProps) {
-  const { handleCancel, open, updateApps } = props;
+  const { handleCancel, open, updateApps, type, app } = props;
+
   const { t } = useTranslation();
   const [spinning, setSpinning] = useState<boolean>(false);
   const [activeKey, setActiveKey] = useState<string>();
@@ -43,10 +46,10 @@ export default function AppModal(props: IProps) {
   const [agents, setAgents] = useState<TabsProps['items']>([]);
   const [dropItems, setDropItems] = useState<IAgent[]>([]);
   const [details, setDetails] = useState<any>([]);
-  const [resourceTypes, setResourceTypes] = useState<any>([]);
-  const [resource, setResource] = useState<any>([]);
 
   const [form] = Form.useForm();
+
+  console.log(11111, app);
 
   const onChange = (newActiveKey: string) => {
     setActiveKey(newActiveKey);
@@ -101,10 +104,10 @@ export default function AppModal(props: IProps) {
     fetchAgent();
   }, []);
 
-  const updateDetailsByAgentName = (name: string, data: any) => {
+  const updateDetailsByAgentKey = (key: string, data: any) => {
     setDetails((details: any) => {
       return details.map((detail: any) => {
-        return name === detail.agent_name ? data : detail;
+        return key === detail.key ? data : detail;
       });
     });
   };
@@ -116,7 +119,7 @@ export default function AppModal(props: IProps) {
     setActiveKey(newActiveKey);
 
     setDetails((details: any) => {
-      return [...details, { agent_name: newActiveKey, llm_strategy: 'priority' }];
+      return [...details, { key: newActiveKey, name: '', llm_strategy: 'priority' }];
     });
 
     setAgents((items: any) => {
@@ -126,8 +129,8 @@ export default function AppModal(props: IProps) {
           label: newActiveKey,
           children: (
             <AgentPanel
-              detail={{ name: newActiveKey, llm_strategy: 'priority' }}
-              updateDetailsByName={updateDetailsByAgentName}
+              detail={{ key: newActiveKey, llm_strategy: 'priority' }}
+              updateDetailsByAgentKey={updateDetailsByAgentKey}
               resourceTypes={resourceTypes}
             />
           ),
@@ -197,7 +200,7 @@ export default function AppModal(props: IProps) {
 
     const data = {
       ...form.getFieldsValue(),
-      details: [],
+      details: details,
     };
     await createApp(data);
     setSpinning(false);
@@ -218,7 +221,7 @@ export default function AppModal(props: IProps) {
 
   return (
     <div>
-      <Modal title="add application" open={open} onCancel={handleCancel} onOk={handleSubmit} destroyOnClose={true}>
+      <Modal okText={t('Submit')} title="add app" open={open} onCancel={handleCancel} onOk={handleSubmit} destroyOnClose={true}>
         <Spin spinning={spinning}>
           <Form
             form={form}
@@ -226,7 +229,7 @@ export default function AppModal(props: IProps) {
             size="large"
             className="mt-4 h-[650px] overflow-auto"
             layout="vertical"
-            initialValues={{ remember: true }}
+            initialValues={{ app_name: app.app_name, app_describe: app.app_describe, language: app.language, team_mode: app.team_mode }}
             autoComplete="off"
             onFinish={handleSubmit}
           >
@@ -251,6 +254,7 @@ export default function AppModal(props: IProps) {
             >
               <Select className="h-12" placeholder={t('Please_input_the_description')} options={teamModal} />
             </Form.Item>
+            <div className='mb-5 text-lg font-bold"'>Agent</div>
             <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
           </Form>
         </Spin>

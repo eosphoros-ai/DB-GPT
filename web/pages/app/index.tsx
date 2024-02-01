@@ -1,5 +1,3 @@
-import AgentModal from '@/components/app/agent-modal';
-import AgentCard from '@/components/app/agent-card';
 import AppModal from '@/components/app/app-modal';
 import AppCard from '@/components/app/app-card';
 import { Button, Empty, Spin, Tabs, TabsProps } from 'antd';
@@ -9,18 +7,29 @@ import { IApp } from '@/types/app';
 
 type TabKey = 'agent' | 'app' | 'collected';
 
+type ModalType = 'edit' | 'add';
+
 export default function App() {
   const [open, setOpen] = useState<boolean>(false);
   const [spinning, setSpinning] = useState<boolean>(false);
   const [activeKey, setActiveKey] = useState<TabKey>('app');
   const [apps, setApps] = useState<IApp[]>([]);
+  const [curApp, setCurApp] = useState<any>();
+  const [modalType, setModalType] = useState<ModalType>('add');
 
   const handleCreate = () => {
+    setModalType('add');
     setOpen(true);
   };
 
   const handleCancel = () => {
     setOpen(false);
+  };
+
+  const handleEdit = (app: any) => {
+    setModalType('edit');
+    setCurApp(app);
+    setOpen(true);
   };
 
   const handleTabChange = (activeKey: string) => {
@@ -29,7 +38,11 @@ export default function App() {
 
   const initData = async () => {
     setSpinning(true);
-    const [_, data] = await apiInterceptors(getAppList());
+    const [error, data] = await apiInterceptors(getAppList());
+    if (error) {
+      setSpinning(false);
+      return;
+    }
     if (!data) return;
 
     setApps(data || []);
@@ -39,21 +52,6 @@ export default function App() {
   useEffect(() => {
     initData();
   }, []);
-
-  const renderAgentList = () => {
-    return (
-      <div className="overflow-auto">
-        <Button onClick={handleCreate} type="primary" className="mb-6">
-          + create
-        </Button>
-        <div className="w-full h-full flex flex-wrap">
-          {new Array(10).fill('item').map((item, index) => {
-            return <AgentCard key={index}></AgentCard>;
-          })}
-        </div>
-      </div>
-    );
-  };
 
   const renderAppList = (data: { isCollected: boolean }) => {
     const isNull = data.isCollected ? apps.every((item) => !item.is_collected) : apps.length === 0;
@@ -66,12 +64,12 @@ export default function App() {
           </Button>
         )}
         {!isNull ? (
-          <div className="overflow-auto w-full h-[800px] flex flex-wrap pb-24">
+          <div className="overflow-auto w-full h-[800px] flex flex-wrap pb-0 gap-4">
             {apps.map((app, index) => {
               if (data.isCollected) {
-                return app.is_collected && <AppCard key={index} app={app} updateApps={initData} />;
+                return app.is_collected && <AppCard handleEdit={handleEdit} key={index} app={app} updateApps={initData} />;
               } else {
-                return <AppCard key={index} app={app} updateApps={initData} />;
+                return <AppCard key={index} handleEdit={handleEdit} app={app} updateApps={initData} />;
               }
             })}
           </div>
@@ -88,11 +86,7 @@ export default function App() {
       label: 'App',
       children: renderAppList({ isCollected: false }),
     },
-    {
-      key: 'agent',
-      label: 'Agent',
-      children: renderAgentList(),
-    },
+
     {
       key: 'collected',
       label: 'Collected',
@@ -104,8 +98,9 @@ export default function App() {
     <Spin spinning={spinning}>
       <div className="h-screen w-full p-4 md:p-6 overflow-y-aut">
         <Tabs defaultActiveKey="app" items={items} onChange={handleTabChange} />
-        {activeKey === 'app' && <AppModal updateApps={initData} open={open} handleCancel={handleCancel} />}
-        {activeKey === 'agent' && <AgentModal open={open} handleCancel={handleCancel} />}
+        {activeKey === 'app' && open && (
+          <AppModal app={modalType === 'edit' ? curApp : {}} type={modalType} updateApps={initData} open={open} handleCancel={handleCancel} />
+        )}
       </div>
     </Spin>
   );
