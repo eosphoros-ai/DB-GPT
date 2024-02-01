@@ -1,5 +1,5 @@
 import { apiInterceptors, getResource } from '@/client/api';
-import { Button, Card, Input, Select } from 'antd';
+import { Button, Card, Divider, Input, Select } from 'antd';
 import { log } from 'console';
 import React, { useEffect, useState } from 'react';
 import ResourceCard from './resource-card';
@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 interface IProps {
   resourceTypes: any;
-  updateDetailsByName: (name: string, data: any) => void;
+  updateDetailsByAgentKey: (key: string, data: any) => void;
   detail: any;
 }
 
@@ -21,11 +21,11 @@ interface IProps {
  */
 
 export default function AgentPanel(props: IProps) {
-  const { resourceTypes, updateDetailsByName, detail } = props;
+  const { resourceTypes, updateDetailsByAgentKey, detail } = props;
   const { t } = useTranslation();
 
   const [resources, setResources] = useState<any>([]);
-  const [agent, setAgent] = useState<any>({ ...detail });
+  const [agent, setAgent] = useState<any>({ ...detail, resources: [] });
 
   const updateResourcesByIndex = (data: any, index: number) => {
     setResources((resources: any) => {
@@ -40,8 +40,20 @@ export default function AgentPanel(props: IProps) {
     });
   };
 
+  useEffect(() => {
+    updateAgent(resources, 'resources');
+  }, [resources]);
+
+  const updateAgent = (data: any, type: string) => {
+    const tempAgent = { ...agent };
+    tempAgent[type] = data;
+
+    setAgent(tempAgent);
+    updateDetailsByAgentKey(detail.key, tempAgent);
+  };
+
   const handelAdd = () => {
-    setResources([...resources, {}]);
+    setResources([...resources, { name: '', type: '', introduce: '', value: '', is_dynamic: '' }]);
   };
 
   const resourceTypeOptions = resourceTypes?.map((item: string) => {
@@ -54,14 +66,27 @@ export default function AgentPanel(props: IProps) {
   return (
     <div>
       <div className="mb-3">prompt</div>
-      <Input className="mb-3" required />
+      <Input
+        className="mb-5"
+        required
+        onChange={(e) => {
+          updateAgent(e.target.value, 'agent_name');
+        }}
+      />
       <div className="mb-3">LLM 使用策略</div>
-      <Input disabled className="mb-3" value={'priority'} />
-      <div className="mb-3">可用资源</div>
+      <Input disabled className="mb-5" value={'priority'} />
+      <div className="mb-3 text-lg font-bold">可用资源</div>
       {resources.map((_: any, index: number) => {
-        return <ResourceCard updateResourcesByIndex={updateResourcesByIndex} resourceTypeOptions={resourceTypeOptions} />;
+        return (
+          <div key={index}>
+            <ResourceCard key={index} index={index} updateResourcesByIndex={updateResourcesByIndex} resourceTypeOptions={resourceTypeOptions} />
+            {index !== resources.length - 1 && <Divider />}
+          </div>
+        );
       })}
-      <Button onClick={handelAdd}>{t('Add')}</Button>
+      <Button type="primary" className='mt-2' size='middle' onClick={handelAdd}>
+        {t('add_resource')}
+      </Button>
     </div>
   );
 }

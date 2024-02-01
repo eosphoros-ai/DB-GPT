@@ -2,22 +2,28 @@ import React, { useEffect, useState } from 'react';
 import DBIcon from '../common/db-icon';
 import CollectIcon from '../icons/collect';
 import CollectedIcon from '../icons/collected';
-import { Button, Modal } from 'antd';
+import { Button, Modal, Tag } from 'antd';
 import { apiInterceptors, collectApp, delApp, getAppList, unCollectApp } from '@/client/api';
 import { IApp } from '@/types/app';
-import { DeleteFilled, WarningOutlined } from '@ant-design/icons';
+import { DeleteFilled, MessageTwoTone, WarningOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
 interface IProps {
   updateApps: () => void;
   app: IApp;
+  handleEdit: (app: any) => void;
 }
 
 const { confirm } = Modal;
 
+const languageMap = {
+  en: '英文',
+  zh: '中文',
+};
+
 export default function AppCard(props: IProps) {
-  const { updateApps, app } = props;
-  const [isCollect, setIsCollect] = useState(false);
+  const { updateApps, app, handleEdit } = props;
+  const [isCollect, setIsCollect] = useState<string>(app.is_collected);
 
   const { t } = useTranslation();
 
@@ -40,43 +46,52 @@ export default function AppCard(props: IProps) {
     setIsCollect(app.is_collected);
   }, [app]);
 
-  const collect = async () => {
-    const [error] = await apiInterceptors(isCollect ? unCollectApp({ app_code: app.app_code }) : collectApp({ app_code: app.app_code }));
+  const collect = async (e: any) => {
+    e.stopPropagation();
+    const [error] = await apiInterceptors(isCollect === 'true' ? unCollectApp({ app_code: app.app_code }) : collectApp({ app_code: app.app_code }));
     if (error) return;
     updateApps();
-    setIsCollect(true);
+    setIsCollect(isCollect === 'true' ? 'false' : 'true');
   };
 
+  const handleChat = () => {};
+
   return (
-    <div className="relative cursor-pointer mr-8 mb-5 max-h-72 flex flex-shrink-0 flex-col p-4 w-72 lg:w-72 rounded  text-black bg-white shadow-[0_8px_16px_-10px_rgba(100,100,100,.08)] hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.15)] dark:bg-[#232734] dark:text-white dark:hover:border-white transition-[transfrom_shadow] duration-300 hover:-translate-y-1 ">
+    <div
+      onClick={() => {
+        handleEdit(app);
+      }}
+      className="relative cursor-pointer mb-5 max-h-72 flex flex-shrink-0 flex-col p-4 w-72 lg:w-72 rounded  text-black bg-white shadow-[0_8px_16px_-10px_rgba(100,100,100,.08)] hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.15)] dark:bg-[#232734] dark:text-white dark:hover:border-white transition-[transfrom_shadow] duration-300 hover:-translate-y-1 "
+    >
       <div className="flex justify-between">
         <div className="flex items-center">
           <DBIcon src={'/LOGO_SMALL.png'} label="1112" className=" mr-1 inline-block mt-[-4px]"></DBIcon>
           <h2 className="text-sm font-semibold">{app?.app_name}</h2>
         </div>
-        <div onClick={collect}>{!isCollect ? <CollectIcon /> : <CollectedIcon />}</div>
+        <div onClick={collect}>{app?.is_collected === 'false' ? <CollectIcon /> : <CollectedIcon />}</div>
       </div>
       <div className="text-sm mt-2 p-6 pt-2 ">
         <p className="font-semibold">简介:</p>
         <p className=" truncate mb-2">{app?.app_describe}</p>
-        {app?.language && (
-          <>
-            <p className="font-semibold">语言:</p>
-            <p className=" truncate mb-2">{app?.language}</p>
-          </>
-        )}
+        {app?.language && <Tag className='mb-3' color={app.language === 'zh' ? '#2db7f5' : '#87d068'}>{languageMap[app?.language]}</Tag>}
         <p className="font-semibold">组织模式:</p>
         <p className=" truncate">{app?.team_mode}</p>
       </div>
       <div className="w-full flex justify-center">
         <Button
-          onClick={() => {
+          className="mr-4"
+          onClick={(e) => {
+            e.stopPropagation();
             showDeleteConfirm();
           }}
           icon={<DeleteFilled />}
           danger
+          shape="round"
         >
           delete
+        </Button>
+        <Button size="middle" onClick={handleChat} className="mr-4 dark:text-white mb-2" shape="round" icon={<MessageTwoTone />}>
+          {t('Chat')}
         </Button>
       </div>
     </div>
