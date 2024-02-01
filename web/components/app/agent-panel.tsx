@@ -1,7 +1,7 @@
 import { apiInterceptors, getResource } from '@/client/api';
 import { Button, Card, Divider, Input, Select } from 'antd';
 import { log } from 'console';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import ResourceCard from './resource-card';
 import { useTranslation } from 'react-i18next';
 
@@ -9,6 +9,7 @@ interface IProps {
   resourceTypes: any;
   updateDetailsByAgentKey: (key: string, data: any) => void;
   detail: any;
+  editResources?: any;
 }
 
 /**
@@ -21,10 +22,10 @@ interface IProps {
  */
 
 export default function AgentPanel(props: IProps) {
-  const { resourceTypes, updateDetailsByAgentKey, detail } = props;
+  const { resourceTypes, updateDetailsByAgentKey, detail, editResources } = props;
   const { t } = useTranslation();
 
-  const [resources, setResources] = useState<any>([]);
+  const [resources, setResources] = useState<any>([...editResources]);
   const [agent, setAgent] = useState<any>({ ...detail, resources: [] });
 
   const updateResourcesByIndex = (data: any, index: number) => {
@@ -49,6 +50,7 @@ export default function AgentPanel(props: IProps) {
     tempAgent[type] = data;
 
     setAgent(tempAgent);
+
     updateDetailsByAgentKey(detail.key, tempAgent);
   };
 
@@ -56,12 +58,14 @@ export default function AgentPanel(props: IProps) {
     setResources([...resources, { name: '', type: '', introduce: '', value: '', is_dynamic: '' }]);
   };
 
-  const resourceTypeOptions = resourceTypes?.map((item: string) => {
-    return {
-      label: item,
-      value: item,
-    };
-  });
+  const resourceTypeOptions = useMemo(() => {
+    return resourceTypes?.map((item: string) => {
+      return {
+        label: item,
+        value: item,
+      };
+    });
+  }, [resourceTypes]);
 
   return (
     <div>
@@ -76,10 +80,16 @@ export default function AgentPanel(props: IProps) {
       <div className="mb-3">LLM 使用策略</div>
       <Input disabled className="mb-5" value={'priority'} />
       <div className="mb-3 text-lg font-bold">可用资源</div>
-      {resources.map((_: any, index: number) => {
+      {resources.map((resource: any, index: number) => {
         return (
           <div key={index}>
-            <ResourceCard key={index} index={index} updateResourcesByIndex={updateResourcesByIndex} resourceTypeOptions={resourceTypeOptions} />
+            <ResourceCard
+              resource={resource}
+              key={index}
+              index={index}
+              updateResourcesByIndex={updateResourcesByIndex}
+              resourceTypeOptions={resourceTypeOptions}
+            />
             {index !== resources.length - 1 && <Divider />}
           </div>
         );

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AddIcon from '../icons/add-icon';
 import AgentPanel from './agent-panel';
-import { addApp, apiInterceptors, getAgents, getResource, getResourceType, getTeamMode } from '@/client/api';
+import { addApp, apiInterceptors, getAgents, getResourceType, getTeamMode, updateApp } from '@/client/api';
 import type { TabsProps } from 'antd';
 
 type TargetKey = string;
@@ -45,8 +45,9 @@ export default function AppModal(props: IProps) {
   const [teamModal, setTeamModal] = useState<{ label: string; value: string }[]>();
   const [agents, setAgents] = useState<TabsProps['items']>([]);
   const [dropItems, setDropItems] = useState<IAgent[]>([]);
-  const [details, setDetails] = useState<any>([]);
+  const [details, setDetails] = useState<any>([...app.details]);
   const [initialValue, setInitialValue] = useState<any>({ app_name: '', app_describe: '', language: '', team_mode: '' });
+  const [resourceTypes, setResourceTypes] = useState<any>();
 
   const [form] = Form.useForm();
 
@@ -55,19 +56,33 @@ export default function AppModal(props: IProps) {
   };
 
   const createApp = async (app: any) => {
-    await apiInterceptors(addApp(app));
+    await apiInterceptors(type === 'add' ? addApp(app) : updateApp(app));
     await updateApps();
   };
 
-  const initApp = () => {
+  const initApp = async () => {
     const appDetails = app.details;
+    const [_, resourceType] = await apiInterceptors(getResourceType());
 
     setInitialValue({ app_name: app.app_name, app_describe: app.app_describe, language: app.language, team_mode: app.team_mode });
-    // setAgents(appDetails?.map((item: any) => {
-    //   return {
-    //     label: item.,
-    //   }
-    // }));
+    if (appDetails?.length > 0) {
+      setAgents(
+        appDetails?.map((item: any) => {
+          return {
+            label: item?.agent_name,
+            children: (
+              <AgentPanel
+                editResources={type === 'edit' && item.resources}
+                detail={{ key: item?.agent_name, llm_strategy: 'priority', agent_name: item?.agent_name }}
+                updateDetailsByAgentKey={updateDetailsByAgentKey}
+                resourceTypes={resourceType}
+              />
+            ),
+            key: item?.agent_name,
+          };
+        }),
+      );
+    }
   };
 
   const fetchTeamModal = async () => {
@@ -103,17 +118,19 @@ export default function AppModal(props: IProps) {
   const fetchResourceType = async () => {
     const [_, data] = await apiInterceptors(getResourceType());
     if (data) {
-      return data;
-    } else {
-      return null;
+      setResourceTypes(data);
     }
   };
 
   useEffect(() => {
     fetchTeamModal();
     fetchAgent();
-    type === 'edit' && initApp();
+    fetchResourceType();
   }, []);
+
+  useEffect(() => {
+    type === 'edit' && initApp();
+  }, [resourceTypes]);
 
   const updateDetailsByAgentKey = (key: string, data: any) => {
     setDetails((details: any) => {
@@ -125,7 +142,7 @@ export default function AppModal(props: IProps) {
 
   const add = async (tabBar: IAgentParams) => {
     const newActiveKey = tabBar.name;
-    const resourceTypes = await fetchResourceType();
+    const [_, data] = await apiInterceptors(getResourceType());
 
     setActiveKey(newActiveKey);
 
@@ -142,7 +159,7 @@ export default function AppModal(props: IProps) {
             <AgentPanel
               detail={{ key: newActiveKey, llm_strategy: 'priority', agent_name: newActiveKey }}
               updateDetailsByAgentKey={updateDetailsByAgentKey}
-              resourceTypes={resourceTypes}
+              resourceTypes={data}
             />
           ),
           key: newActiveKey,
@@ -213,7 +230,9 @@ export default function AppModal(props: IProps) {
       ...form.getFieldsValue(),
       details: details,
     };
+    data.app_code = app.app_code;
     await createApp(data);
+
     setSpinning(false);
     handleCancel();
   };
@@ -232,7 +251,14 @@ export default function AppModal(props: IProps) {
 
   return (
     <div>
-      <Modal okText={t('Submit')} title="add app" open={open} onCancel={handleCancel} onOk={handleSubmit} destroyOnClose={true}>
+      <Modal
+        okText={t('Submit')}
+        title={type === 'edit' ? 'edit app' : 'add app'}
+        open={open}
+        onCancel={handleCancel}
+        onOk={handleSubmit}
+        destroyOnClose={true}
+      >
         <Spin spinning={spinning}>
           <Form
             form={form}

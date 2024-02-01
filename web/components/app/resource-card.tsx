@@ -6,14 +6,21 @@ interface IProps {
   resourceTypeOptions: any[];
   updateResourcesByIndex: (data: any, index: number) => void;
   index: number;
+  resource: any;
 }
 
 export default function ResourceCard(props: IProps) {
-  const { resourceTypeOptions, updateResourcesByIndex, index } = props;
+  const { resourceTypeOptions, updateResourcesByIndex, index, resource: editResource } = props;
 
   const [resourceType, setResourceType] = useState<string>(resourceTypeOptions[0].label);
   const [resourceValueOptions, setResourceValueOptions] = useState<any[]>([]);
-  const [resource, setResource] = useState<any>({ name: '', type: resourceTypeOptions[0].label, introduce: '', value: '', is_dynamic: false });
+  const [resource, setResource] = useState<any>({
+    name: editResource.name,
+    type: editResource.type,
+    introduce: editResource.introduce,
+    value: editResource.value,
+    is_dynamic: editResource.is_dynamic,
+  });
 
   const fetchResource = async () => {
     const [_, data] = await apiInterceptors(getResource({ type: resourceType }));
@@ -55,6 +62,7 @@ export default function ResourceCard(props: IProps) {
         <Input
           className="mb-5 w-1/2"
           required
+          value={resource.name}
           onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
             updateResource(e.target.value, 'name');
           }}
@@ -64,6 +72,7 @@ export default function ResourceCard(props: IProps) {
         <div className="mb-2 font-bold">描述</div>
         <Input
           className="mb-5 w-11/12"
+          value={resource.introduce}
           onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
             updateResource(e.target.value, 'introduce');
           }}
@@ -76,6 +85,7 @@ export default function ResourceCard(props: IProps) {
             defaultValue={resourceTypeOptions[0]}
             className="h-12 w-5/6"
             options={resourceTypeOptions}
+            value={resource.type}
             onChange={(value) => {
               updateResource(value, 'type');
               handleChange(value);
@@ -96,6 +106,7 @@ export default function ResourceCard(props: IProps) {
           ) : (
             <Input
               className="mb-5 w-11/12"
+              value={resource.value}
               onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
                 updateResource(e.target.value, 'value');
               }}
