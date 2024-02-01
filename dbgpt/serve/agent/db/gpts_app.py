@@ -82,6 +82,7 @@ class GptsApp(BaseModel):
     user_code: Optional[str] = None
     sys_code: Optional[str] = None
     is_collected: Optional[str] = None
+    icon: Optional[str] = None
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
     details: List[GptsAppDetail] = []
@@ -177,6 +178,7 @@ class GptsAppEntity(Model):
     id = Column(Integer, primary_key=True, comment="autoincrement id")
     app_code = Column(String(255), nullable=False, comment="Current AI assistant code")
     app_name = Column(String(255), nullable=False, comment="Current AI assistant name")
+    icon = Column(String(1024), nullable=True, comment="app icon, url")
     app_describe = Column(
         String(2255), nullable=False, comment="Current AI assistant describe"
     )
@@ -401,13 +403,31 @@ class GptsAppDao(BaseDao):
 
             return app
 
-    def delete(self, app_code: str):
+    def delete(
+        self,
+        app_code: str,
+        user_code: Optional[str] = None,
+        sys_code: Optional[str] = None,
+    ):
+        """
+        To delete the application, you also need to delete the corresponding plug-ins and collections.
+        """
         if app_code is None:
             raise f"cannot delete app when app_code is None"
         with self.session() as session:
             app_qry = session.query(GptsAppEntity)
             app_qry = app_qry.filter(GptsAppEntity.app_code == app_code)
             app_qry.delete()
+
+            app_detail_qry = session.query(GptsAppDetailEntity).filter(
+                GptsAppDetailEntity.app_code == app_code
+            )
+            app_detail_qry.delete()
+
+            app_collect_qry = session.query(GptsAppCollectionEntity).filter(
+                GptsAppCollectionEntity.app_code == app_code
+            )
+            app_collect_qry.delete()
 
     def create(self, gpts_app: GptsApp):
         with self.session() as session:
@@ -422,6 +442,7 @@ class GptsAppDao(BaseDao):
                 sys_code=gpts_app.sys_code,
                 created_at=gpts_app.created_at,
                 updated_at=gpts_app.updated_at,
+                icon=gpts_app.icon,
             )
             session.add(app_entity)
 
@@ -431,6 +452,10 @@ class GptsAppDao(BaseDao):
                     AgentResource.dataclass_to_dict(resource)
                     for resource in item.resources
                 ]
+                if item.app_name is None:
+                    raise f"app name cannot be None"
+                if item.agent_name is None:
+                    raise f"agent name cannot be None"
 
                 app_details.append(
                     GptsAppDetailEntity(
@@ -461,6 +486,7 @@ class GptsAppDao(BaseDao):
             app_entity.app_describe = gpts_app.app_describe
             app_entity.language = gpts_app.language
             app_entity.team_mode = gpts_app.team_mode
+            app_entity.icon = gpts_app.icon
             session.merge(app_entity)
 
             old_details = session.query(GptsAppDetailEntity).filter(
