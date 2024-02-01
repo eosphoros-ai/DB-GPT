@@ -45,7 +45,7 @@ export default function AppModal(props: IProps) {
   const [teamModal, setTeamModal] = useState<{ label: string; value: string }[]>();
   const [agents, setAgents] = useState<TabsProps['items']>([]);
   const [dropItems, setDropItems] = useState<IAgent[]>([]);
-  const [details, setDetails] = useState<any>([...app.details]);
+  const [details, setDetails] = useState<any>([...(app?.details || [])]);
   const [initialValue, setInitialValue] = useState<any>({ app_name: '', app_describe: '', language: '', team_mode: '' });
   const [resourceTypes, setResourceTypes] = useState<any>();
 
@@ -255,6 +255,7 @@ export default function AppModal(props: IProps) {
         okText={t('Submit')}
         title={type === 'edit' ? 'edit app' : 'add app'}
         open={open}
+        className="w-1/2"
         onCancel={handleCancel}
         onOk={handleSubmit}
         destroyOnClose={true}
