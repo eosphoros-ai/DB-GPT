@@ -33,6 +33,7 @@ import {
 } from '@/types/knowledge';
 import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
 import { IFlow, IFlowNode, IFlowResponse, IFlowUpdateParam } from '@/types/flow';
+import { IAgent, IApp, ITeamModal } from '@/types/app';
 
 /** App */
 export const postScenes = () => {
@@ -274,4 +275,41 @@ export const deleteFlowById = (id: string) => {
 
 export const getFlowNodes = () => {
   return GET<null, Array<IFlowNode>>(`/api/v1/serve/awel/nodes`);
+};
+
+/** app */
+export const addApp = (data: IApp) => {
+  return POST<IApp, []>('/api/v1/app/create', data);
+};
+
+export const getAppList = () => {
+  return POST<{}, IApp[]>('/api/v1/app/list', {});
+};
+
+export const collectApp = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('/api/v1/app/collect', data);
+};
+
+export const unCollectApp = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('api/v1/app/uncollect', data);
+};
+
+export const delApp = (data: Record<string, string>) => {
+  return POST<Record<string, string>, []>('/api/v1/app/remove', data);
+};
+
+export const getAgents = () => {
+  return GET<object, IAgent[]>('/api/v1/agents/list', {});
+};
+
+export const getTeamMode = () => {
+  return GET<null, string[]>('/api/v1/team-mode/list');
+};
+
+export const getResourceType = () => {
+  return GET<null, string[]>('api/v1/resource-type/list');
+};
+
+export const getResource = (data: Record<string, string>) => {
+  return GET<Record<string, string>, []>(`api/v1/app/resources/list?type=${data.type}`);
 };

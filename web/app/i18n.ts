@@ -98,6 +98,7 @@ const en = {
   stop_model_success: 'Stop model success',
   create_model: 'Create Model',
   model_select_tips: 'Please select a model',
+  language_select_tips: 'Please select a language',
   submit: 'Submit',
   close: 'Close',
   start_model_success: 'Start model success',
@@ -192,6 +193,9 @@ const en = {
   flow_name_required: 'Please enter the flow name',
   save_flow_success: 'Save flow success',
   delete_flow_confirm: 'Are you sure you want to delete this flow?',
+  App: 'App',
+  team_modal: 'Team Modal',
+  team_modal_select_tips: 'Please select a team modal',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -390,6 +394,10 @@ const zh: Resources['translation'] = {
   flow_name_required: '请输入工作流名称',
   save_flow_success: '保存工作流成功',
   delete_flow_confirm: '确定删除该工作流吗？',
+  App: '应用',
+  language_select_tips: '请选择语言',
+  team_modal: '组织模式',
+  team_modal_select_tips: '请选择组织模式',
 } as const;
 
 i18n.use(initReactI18next).init({

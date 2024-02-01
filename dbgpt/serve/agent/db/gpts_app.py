@@ -349,7 +349,9 @@ class GptsAppDao(BaseDao):
                             "team_context": app_info.team_context,
                             "user_code": app_info.user_code,
                             "sys_code": app_info.sys_code,
-                            "is_collected": "true" if app_info.app_code in app_codes else "false",
+                            "is_collected": "true"
+                            if app_info.app_code in app_codes
+                            else "false",
                             "created_at": app_info.created_at,
                             "updated_at": app_info.updated_at,
                             "details": [],
@@ -390,9 +392,11 @@ class GptsAppDao(BaseDao):
             return app
 
     def delete(self, app_code: str):
+        if app_code is None:
+            raise f"cannot delete app when app_code is None"
         with self.session() as session:
             app_qry = session.query(GptsAppEntity)
-            app_qry.filter(GptsAppEntity.app_code == app_code)
+            app_qry = app_qry.filter(GptsAppEntity.app_code == app_code)
             app_qry.delete()
 
     def create(self, gpts_app: GptsApp):

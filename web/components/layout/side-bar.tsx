@@ -17,6 +17,7 @@ import Icon, {
   SettingOutlined,
   BuildOutlined,
   ForkOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { Modal, message, Tooltip, Dropdown } from 'antd';
 import { ItemType } from 'antd/es/menu/hooks/useItems';
@@ -99,6 +100,12 @@ function SideBar() {
         name: t('Prompt'),
         icon: <MessageOutlined />,
         path: '/prompt',
+      },
+      {
+        key: 'app',
+        name: t('App'),
+        path: '/app',
+        icon: <AppstoreOutlined />,
       },
     ];
     return items;

@@ -66,7 +66,7 @@ async def all_agents():
         return Result.failed(code="E000X", msg=f"query agents error: {ex}")
 
 
-@router.post("/v1/app/delete", response_model=Result[str])
+@router.post("/v1/app/remove", response_model=Result[str])
 async def delete(gpts_app: GptsApp):
     try:
         gpts_dao.delete(gpts_app.app_code)
