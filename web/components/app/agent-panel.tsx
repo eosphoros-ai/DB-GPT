@@ -73,6 +73,7 @@ export default function AgentPanel(props: IProps) {
       <Input
         className="mb-5"
         required
+        value={agent.prompt_template}
         onChange={(e) => {
           updateAgent(e.target.value, 'prompt_template');
         }}

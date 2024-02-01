@@ -19,7 +19,7 @@ export default function ResourceCard(props: IProps) {
     type: editResource.type,
     introduce: editResource.introduce,
     value: editResource.value,
-    is_dynamic: editResource.is_dynamic ?? false,
+    is_dynamic: editResource.is_dynamic || false,
   });
 
   const fetchResource = async () => {
@@ -117,6 +117,7 @@ export default function ResourceCard(props: IProps) {
       <div className="mb-2 font-bold">动态</div>
       <Switch
         autoFocus
+        defaultChecked={editResource.is_dynamic || false}
         className="mb-5"
         onChange={(value) => {
           updateResource(value, 'is_dynamic');

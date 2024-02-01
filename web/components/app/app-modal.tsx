@@ -73,7 +73,7 @@ export default function AppModal(props: IProps) {
             children: (
               <AgentPanel
                 editResources={type === 'edit' && item.resources}
-                detail={{ key: item?.agent_name, llm_strategy: 'priority', agent_name: item?.agent_name }}
+                detail={{ key: item?.agent_name, llm_strategy: 'priority', agent_name: item?.agent_name, prompt_template: item?.prompt_template }}
                 updateDetailsByAgentKey={updateDetailsByAgentKey}
                 resourceTypes={resourceType}
               />
@@ -135,7 +135,7 @@ export default function AppModal(props: IProps) {
   const updateDetailsByAgentKey = (key: string, data: any) => {
     setDetails((details: any) => {
       return details.map((detail: any) => {
-        return key === detail.key ? data : detail;
+        return key === detail.agent_name ? data : detail;
       });
     });
   };
@@ -157,7 +157,7 @@ export default function AppModal(props: IProps) {
           label: newActiveKey,
           children: (
             <AgentPanel
-              detail={{ key: newActiveKey, llm_strategy: 'priority', agent_name: newActiveKey }}
+              detail={{ key: newActiveKey, llm_strategy: 'priority', agent_name: newActiveKey, prompt_template: '' }}
               updateDetailsByAgentKey={updateDetailsByAgentKey}
               resourceTypes={data}
             />
@@ -231,6 +231,7 @@ export default function AppModal(props: IProps) {
       details: details,
     };
     data.app_code = app.app_code;
+
     await createApp(data);
 
     setSpinning(false);
