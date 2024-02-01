@@ -241,10 +241,10 @@ export default function AppModal(props: IProps) {
     data.app_code = app.app_code;
     console.log('===data', data);
 
-    // await createApp(data);
+    await createApp(data);
 
     setSpinning(false);
-    // handleCancel();
+    handleCancel();
   };
 
   const renderAddIcon = () => {
