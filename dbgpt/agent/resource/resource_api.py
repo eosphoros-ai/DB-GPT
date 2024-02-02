@@ -38,6 +38,7 @@ class AgentResource:
             name=d.get("name"),
             introduce=d.get("introduce"),
             value=d.get("value", None),
+            is_dynamic=d.get("is_dynamic", False),
         )
 
     @staticmethod
