@@ -114,7 +114,7 @@ export default function ResourceCard(props: IProps) {
               handleChange(value);
             }}
           />
-          <div className="font-bold mr-4  w-32 text-center">{t('resource_value')}:</div>
+          <div className="font-bold w-32 text-center">{t('resource_value')}:</div>
           {resourceValueOptions?.length > 0 ? (
             <Select
               value={resource.value}
