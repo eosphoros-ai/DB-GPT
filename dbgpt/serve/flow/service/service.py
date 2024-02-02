@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 from fastapi import HTTPException
@@ -8,11 +9,14 @@ from dbgpt.core.awel.flow.flow_factory import FlowFactory
 from dbgpt.serve.core import BaseService
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
+from dbgpt.util.dbgpts.loader import DBGPTsLoader
 from dbgpt.util.pagination_utils import PaginationResult
 
 from ..api.schemas import ServeRequest, ServerResponse
 from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import ServeDao, ServeEntity
+
+logger = logging.getLogger(__name__)
 
 
 class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
@@ -26,6 +30,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self._dao: ServeDao = dao
         self._dag_manager: Optional[DAGManager] = None
         self._flow_factory: FlowFactory = FlowFactory()
+        self._dbgpts_loader: Optional[DBGPTsLoader] = None
+
         super().__init__(system_app)
 
     def init_app(self, system_app: SystemApp) -> None:
@@ -39,6 +45,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         )
         self._dao = self._dao or ServeDao(self._serve_config)
         self._system_app = system_app
+        self._dbgpts_loader = system_app.get_component(
+            DBGPTsLoader.name, DBGPTsLoader, or_register_component=DBGPTsLoader
+        )
 
     def before_start(self):
         """Execute before the application starts"""
@@ -47,6 +56,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def after_start(self):
         """Execute after the application starts"""
         self.load_dag_from_db()
+        self.load_dag_from_dbgpts()
 
     @property
     def dao(self) -> BaseDao[ServeEntity, ServeRequest, ServerResponse]:
@@ -59,6 +69,13 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         if self._dag_manager is None:
             raise ValueError("DAGManager is not initialized")
         return self._dag_manager
+
+    @property
+    def dbgpts_loader(self) -> DBGPTsLoader:
+        """Returns the internal DBGPTsLoader."""
+        if self._dbgpts_loader is None:
+            raise ValueError("DBGPTsLoader is not initialized")
+        return self._dbgpts_loader
 
     @property
     def config(self) -> ServeConfig:
@@ -90,11 +107,30 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             dag = self._flow_factory.build(entity)
             self.dag_manager.register_dag(dag)
 
-    def update(self, request: ServeRequest) -> ServerResponse:
+    def load_dag_from_dbgpts(self):
+        """Load DAG from dbgpts"""
+        flows = self.dbgpts_loader.get_flows()
+        for flow in flows:
+            try:
+                # Try to build the dag from the request
+                self._flow_factory.build(flow)
+                exist_inst = self.get({"name": flow.name})
+                if not exist_inst:
+                    self.create(flow)
+                else:
+                    # TODO check version, must be greater than the exist one
+                    self.update(flow, check_editable=False)
+            except Exception as e:
+                logger.warning(f"Load DAG from dbgpts error: {str(e)}")
+
+    def update(
+        self, request: ServeRequest, check_editable: bool = True
+    ) -> ServerResponse:
         """Update a Flow entity
 
         Args:
             request (ServeRequest): The request
+            check_editable (bool): Whether to check the editable
 
         Returns:
             ServerResponse: The response
@@ -107,6 +143,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         inst = self.get(query_request)
         if not inst:
             raise HTTPException(status_code=404, detail=f"Flow {request.uid} not found")
+        if check_editable and not inst.editable:
+            raise HTTPException(
+                status_code=403, detail=f"Flow {request.uid} is not editable"
+            )
         old_data: Optional[ServerResponse] = None
         try:
             update_obj = self.dao.update(query_request, update_request=request)

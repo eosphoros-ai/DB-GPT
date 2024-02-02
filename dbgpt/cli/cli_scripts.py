@@ -64,6 +64,17 @@ def new():
     pass
 
 
+@click.group()
+def app():
+    """Manage your apps(dbgpts)"""
+    pass
+
+
+@click.group()
+def repo():
+    """The repository to install the dbgpts from"""
+
+
 stop_all_func_list = []
 
 
@@ -79,6 +90,8 @@ cli.add_command(stop)
 cli.add_command(install)
 cli.add_command(db)
 cli.add_command(new)
+cli.add_command(app)
+cli.add_command(repo)
 add_command_alias(stop_all, name="all", parent_group=stop)
 
 try:
@@ -144,6 +157,26 @@ try:
     add_command_alias(serve, name="serve", parent_group=new)
 except ImportError as e:
     logging.warning(f"Integrating dbgpt serve command line tool failed: {e}")
+
+
+try:
+    from dbgpt.util.dbgpts.cli import add_repo
+    from dbgpt.util.dbgpts.cli import install as app_install
+    from dbgpt.util.dbgpts.cli import list_all_apps as app_list
+    from dbgpt.util.dbgpts.cli import list_repos, remove_repo
+    from dbgpt.util.dbgpts.cli import uninstall as app_uninstall
+    from dbgpt.util.dbgpts.cli import update_repo
+
+    add_command_alias(list_repos, name="list", parent_group=repo)
+    add_command_alias(add_repo, name="add", parent_group=repo)
+    add_command_alias(remove_repo, name="remove", parent_group=repo)
+    add_command_alias(update_repo, name="update", parent_group=repo)
+    add_command_alias(app_install, name="install", parent_group=app)
+    add_command_alias(app_uninstall, name="uninstall", parent_group=app)
+    add_command_alias(app_list, name="list-remote", parent_group=app)
+
+except ImportError as e:
+    logging.warning(f"Integrating dbgpt dbgpts command line tool failed: {e}")
 
 
 def main():
