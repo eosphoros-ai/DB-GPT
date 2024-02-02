@@ -48,7 +48,6 @@ def _build_model_request(
 class LLMStrategyType(Enum):
     Priority = "priority"
     Auto = "auto"
-    Assign = "assign"
     Default = "default"
 
 

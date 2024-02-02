@@ -9,6 +9,7 @@ from dbgpt.agent.resource.resource_api import ResourceType
 from dbgpt.app.knowledge.api import knowledge_space_service
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.openapi.api_view_model import Result
+from dbgpt.serve.agent.app.gpts_server import available_llms
 from dbgpt.serve.agent.db.gpts_app import (
     GptsApp,
     GptsAppCollectionDao,
@@ -116,6 +117,20 @@ async def team_mode_list():
 async def llm_strategies():
     try:
         return Result.succ([type.value for type in LLMStrategyType])
+    except Exception as ex:
+        return Result.failed(
+            code="E000X", msg=f"query llm strategy type list error: {ex}"
+        )
+
+
+@router.get("/v1/llm-strategy/value/list")
+async def llm_strategy_values(type: str):
+    try:
+        results = []
+        match type:
+            case LLMStrategyType.Priority.value:
+                results = await available_llms()
+        return Result.succ(results)
     except Exception as ex:
         return Result.failed(
             code="E000X", msg=f"query llm strategy type list error: {ex}"
