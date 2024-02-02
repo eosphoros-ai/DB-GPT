@@ -51,6 +51,7 @@ class ChartAction(Action[SqlInput]):
         try:
             param: SqlInput = self._input_convert(ai_message, SqlInput)
         except Exception as e:
+            logger.exception(f"str(e)! \n {ai_message}")
             return ActionOutput(
                 is_exe_success=False,
                 content="The requested correctly structured answer could not be found.",

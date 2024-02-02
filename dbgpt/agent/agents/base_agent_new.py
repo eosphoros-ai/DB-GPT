@@ -116,10 +116,11 @@ class ConversableAgent(Agent, Role):
         elif isinstance(target, ResourceLoader):
             self.resource_loader = target
         elif isinstance(target, list):
-            if self._is_list_of_type(target, Action):
-                self.actions = target
-            elif self._is_list_of_type(target, AgentResource):
-                self.resources = target
+            if target and len(target) > 0:
+                if self._is_list_of_type(target, Action):
+                    self.actions.extend(target)
+                elif self._is_list_of_type(target, AgentResource):
+                    self.resources = target
         return self
 
     async def a_send(
@@ -316,6 +317,7 @@ class ConversableAgent(Agent, Role):
         await self.a_send(
             {
                 "content": context["message"],
+                "current_gogal": context["message"],
             },
             recipient,
             reviewer,

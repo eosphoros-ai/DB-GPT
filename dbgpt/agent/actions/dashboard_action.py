@@ -62,7 +62,7 @@ class DashboardAction(Action[List[ChartItem]]):
             )
         try:
             resource_db_client: ResourceDbClient = (
-                self.resource_loader.get_resesource_api(self.resource_need())
+                self.resource_loader.get_resesource_api(self.resource_need)
             )
             if not resource_db_client:
                 raise ValueError(

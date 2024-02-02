@@ -1,5 +1,6 @@
-import duckdb
 import sqlite3
+
+import duckdb
 
 """ migrate duckdb to sqlite"""
 
