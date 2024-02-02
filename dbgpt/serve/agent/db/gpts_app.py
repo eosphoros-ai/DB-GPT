@@ -461,7 +461,11 @@ class GptsAppDao(BaseDao):
 
             app_details = []
             for item in gpts_app.details:
-                resource_dicts = [resource.to_dict() for resource in item.resources]
+                # resource_dicts = [resource.to_dict() for resource in item.resources]
+                resource_dicts = [
+                    AgentResource.dataclass_to_dict(resource)
+                    for resource in item.resources
+                ]
                 if item.agent_name is None:
                     raise f"agent name cannot be None"
 

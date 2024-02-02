@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import json
 from abc import ABC
 from enum import Enum
@@ -16,7 +17,8 @@ class ResourceType(Enum):
     File = "file"
 
 
-class AgentResource(BaseModel):
+@dataclasses.dataclass()
+class AgentResource:
     type: ResourceType
     name: str
     value: str
@@ -49,8 +51,18 @@ class AgentResource(BaseModel):
             raise ValueError(f"Illegal AgentResource json string！{d}")
         return [AgentResource.from_dict(item) for item in json_array]
 
+    @staticmethod
+    def dataclass_to_dict(obj: Any) -> dict:
+        if dataclasses.is_dataclass(obj):
+            d = dataclasses.asdict(obj)
+            for field, value in d.items():
+                if isinstance(value, Enum):
+                    d[field] = value.value
+            return d
+        raise TypeError("Provided object is not a dataclass instance")
+
     def to_dict(self) -> Dict[str, Any]:
-        return self.dict()
+        return dataclasses.asdict(self)
 
 
 class ResourceClient(ABC):
