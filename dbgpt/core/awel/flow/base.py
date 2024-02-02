@@ -156,6 +156,8 @@ class OperatorType(str, Enum):
 _RESOURCE_CATEGORY_DETAIL = {
     "http_body": _CategoryDetail("HTTP Body", "The HTTP body"),
     "llm_client": _CategoryDetail("LLM Client", "The LLM client"),
+    "storage": _CategoryDetail("Storage", "The storage resource"),
+    "serializer": _CategoryDetail("Serializer", "The serializer resource"),
     "common": _CategoryDetail("Common", "The common resource"),
     "agent": _CategoryDetail("Agent", "The agent resource"),
 }
@@ -166,6 +168,8 @@ class ResourceCategory(str, Enum):
 
     HTTP_BODY = "http_body"
     LLM_CLIENT = "llm_client"
+    STORAGE = "storage"
+    SERIALIZER = "serializer"
     COMMON = "common"
     AGENT = "agent"
 
@@ -431,6 +435,7 @@ class Parameter(TypeMetadata, Serializable):
         self,
         view_value: Any,
         resources: Optional[Dict[str, "ResourceMetadata"]] = None,
+        key_to_resource_instance: Optional[Dict[str, Any]] = None,
     ) -> Dict:
         """Convert the parameter to runnable parameter.
 
@@ -438,6 +443,7 @@ class Parameter(TypeMetadata, Serializable):
             view_value (Any): The value from UI.
             resources (Optional[Dict[str, "ResourceMetadata"]], optional):
                 The resources. Defaults to None.
+            key_to_resource_instance (Optional[Dict[str, Any]], optional):
 
         Returns:
             Dict: The runnable parameter.
@@ -446,6 +452,7 @@ class Parameter(TypeMetadata, Serializable):
             view_value is not None
             and self.category == ParameterCategory.RESOURCER
             and resources
+            and key_to_resource_instance
         ):
             # Resource type can have multiple parameters.
             resource_id = view_value
@@ -456,10 +463,16 @@ class Parameter(TypeMetadata, Serializable):
                 # Just require the type, not an instance.
                 value: Any = resource_type
             else:
-                resource_kwargs = {}
-                for parameter in resource_metadata.parameters:
-                    resource_kwargs[parameter.name] = parameter.value
-                value = resource_type(**resource_kwargs)
+                if resource_id not in key_to_resource_instance:
+                    raise ValueError(
+                        f"The dependency resource {resource_id} not found."
+                    )
+                resource_inst = key_to_resource_instance[resource_id]
+                value = resource_inst
+                # resource_kwargs = {}
+                # for parameter in resource_metadata.parameters:
+                #     resource_kwargs[parameter.name] = parameter.value
+                # value = resource_type(**resource_kwargs)
         else:
             value = self.get_typed_default()
             if self.value is not None:
@@ -596,6 +609,7 @@ class BaseMetadata(BaseResource):
         self,
         view_parameters: Optional[List[Parameter]],
         resources: Optional[Dict[str, "ResourceMetadata"]] = None,
+        key_to_resource_instance: Optional[Dict[str, Any]] = None,
     ) -> Dict:
         """Get the runnable parameters.
 
@@ -604,6 +618,7 @@ class BaseMetadata(BaseResource):
                 The parameters from UI.
             resources (Optional[Dict[str, "ResourceMetadata"]], optional):
                 The resources. Defaults to None.
+            key_to_resource_instance (Optional[Dict[str, Any]], optional):
 
         Returns:
             Dict: The runnable parameters.
@@ -619,7 +634,9 @@ class BaseMetadata(BaseResource):
         for i, parameter in enumerate(self.parameters):
             view_param = view_parameters[i]
             runnable_parameters.update(
-                parameter.to_runnable_parameter(view_param.get_typed_value(), resources)
+                parameter.to_runnable_parameter(
+                    view_param.get_typed_value(), resources, key_to_resource_instance
+                )
             )
         return runnable_parameters
 
@@ -635,6 +652,11 @@ class BaseMetadata(BaseResource):
                     category = OperatorCategory.value_of(category)
             values["category_label"] = category.label()
         return values
+
+    def get_origin_id(self) -> str:
+        """Get the origin id."""
+        split_ids = self.id.split("_")
+        return "_".join(split_ids[:-1])
 
 
 class ResourceMetadata(BaseMetadata, TypeMetadata):
@@ -905,14 +927,14 @@ def _register_operator(view_cls: Optional[Type[T]]):
     _OPERATOR_REGISTRY.register_flow(view_cls, metadata)
 
 
-def _get_resource_class(type_key: str) -> ResourceMetadata:
+def _get_resource_class(type_key: str) -> _RegistryItem:
     """Get the operator class by the type name."""
     item = _OPERATOR_REGISTRY.get_registry_item(type_key)
     if not item:
         raise ValueError(f"Resource {type_key} not registered.")
     if not isinstance(item.metadata, ResourceMetadata):
         raise ValueError(f"Resource {type_key} is not a ResourceMetadata.")
-    return item.metadata
+    return item
 
 
 def _register_resource(cls: Type, resource_metadata: ResourceMetadata):
