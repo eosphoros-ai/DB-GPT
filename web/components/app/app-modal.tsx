@@ -46,7 +46,6 @@ export default function AppModal(props: IProps) {
   const [agents, setAgents] = useState<TabsProps['items']>([]);
   const [dropItems, setDropItems] = useState<IAgent[]>([]);
   const [details, setDetails] = useState<any>([...(app?.details || [])]);
-  const [initialValue, setInitialValue] = useState<any>({ app_name: '', app_describe: '', language: '', team_mode: '' });
   const [resourceTypes, setResourceTypes] = useState<any>();
 
   const [form] = Form.useForm();
@@ -64,7 +63,6 @@ export default function AppModal(props: IProps) {
     const appDetails = app.details;
     const [_, resourceType] = await apiInterceptors(getResourceType());
 
-    setInitialValue({ app_name: app.app_name, app_describe: app.app_describe, language: app.language, team_mode: app.team_mode });
     if (appDetails?.length > 0) {
       setAgents(
         appDetails?.map((item: any) => {
@@ -298,17 +296,26 @@ export default function AppModal(props: IProps) {
             >
               <Input.TextArea rows={3} placeholder={t('Please_input_the_description')} />
             </Form.Item>
-            <Form.Item<FieldType> label={t('language')} initialValue={languageOptions[0].value} name="language" rules={[{ required: true }]}>
-              <Select placeholder={t('language_select_tips')} options={languageOptions} />
-            </Form.Item>
-            <Form.Item<FieldType>
-              label={t('team_modal')}
-              name="team_mode"
-              rules={[{ required: true }]}
-              initialValue={teamModal && teamModal[0].value}
-            >
-              <Select placeholder={t('Please_input_the_work_modal')} options={teamModal} />
-            </Form.Item>
+            <div className="flex w-full mt-12 justify-center">
+              <Form.Item<FieldType>
+                label={t('language')}
+                initialValue={languageOptions[0].value}
+                name="language"
+                className="w-1/2"
+                rules={[{ required: true }]}
+              >
+                <Select className="w-2/3 ml-4" placeholder={t('language_select_tips')} options={languageOptions} />
+              </Form.Item>
+              <Form.Item<FieldType>
+                label={t('team_modal')}
+                name="team_mode"
+                className="w-1/2"
+                rules={[{ required: true }]}
+                initialValue={teamModal && teamModal[0].value}
+              >
+                <Select className="w-1/2 ml-4" placeholder={t('Please_input_the_work_modal')} options={teamModal} />
+              </Form.Item>
+            </div>
             <div className='mb-5 text-lg font-bold"'>Agents</div>
             <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
           </Form>

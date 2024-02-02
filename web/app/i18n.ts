@@ -201,7 +201,7 @@ const en = {
   App: 'App',
   resource_name: 'Resource Name',
   resource_type: 'Resource Type',
-  resource_value: 'value',
+  resource_value: 'Value',
   resource_dynamic: 'Dynamic',
   Please_input_the_work_modal: 'Please input the work modal'
 } as const;

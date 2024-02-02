@@ -77,7 +77,7 @@ export default function AgentPanel(props: IProps) {
   return (
     <div>
       <div className="flex items-center mb-6 mt-6">
-        <div className="mr-2 w-16 text-center">prompt:</div>
+        <div className="mr-2 w-16 text-center">Prompt:</div>
         <Input
           required
           className="mr-6 w-1/4"
@@ -107,16 +107,13 @@ export default function AgentPanel(props: IProps) {
       <div className="mb-3 text-lg font-bold">可用资源</div>
       {resources.map((resource: any, index: number) => {
         return (
-          <div key={index}>
-            <ResourceCard
-              resource={resource}
-              key={index}
-              index={index}
-              updateResourcesByIndex={updateResourcesByIndex}
-              resourceTypeOptions={resourceTypeOptions}
-            />
-            {index !== resources.length - 1 && <Divider />}
-          </div>
+          <ResourceCard
+            resource={resource}
+            key={index}
+            index={index}
+            updateResourcesByIndex={updateResourcesByIndex}
+            resourceTypeOptions={resourceTypeOptions}
+          />
         );
       })}
       <Button type="primary" className="mt-2" size="middle" onClick={handelAdd}>
