@@ -32,17 +32,17 @@ class DatasourceLoadClient(ResourceDbClient):
             raise ValueError("Could not import DBSummaryClient. ")
         client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
         table_infos = None
-        try:
-            with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
-                table_infos = await blocking_func_to_async(
-                    self._executor,
-                    client.get_db_summary,
-                    db,
-                    question,
-                    CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
-                )
-        except Exception as e:
-            print("db summary find error!" + str(e))
+        # try:
+        #     with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
+        #         table_infos = await blocking_func_to_async(
+        #             self._executor,
+        #             client.get_db_summary,
+        #             db,
+        #             question,
+        #             CFG.KNOWLEDGE_SEARCH_TOP_SIZE,
+        #         )
+        # except Exception as e:
+        #     print("db summary find error!" + str(e))
         if not table_infos:
             conn = CFG.LOCAL_DB_MANAGE.get_connect(db)
             table_infos = await blocking_func_to_async(

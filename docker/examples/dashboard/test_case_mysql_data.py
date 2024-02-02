@@ -1,11 +1,11 @@
+import os
 import random
 import string
-import os
-import pymysql
+from datetime import datetime, timedelta
 from typing import List
 
+import pymysql
 import pymysql.cursors
-from datetime import datetime, timedelta
 
 # At first you need to create an test database which called dbgpt_test;
 # you can use next command to create.

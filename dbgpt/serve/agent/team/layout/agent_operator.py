@@ -14,6 +14,8 @@ from dbgpt.core.awel.flow import (
 )
 from dbgpt.core.interface.message import ModelMessageRoleType
 
+from .agent_operator_resource import AwelAgent
+
 
 class BaseAgentOperator:
     """The abstract operator for a Agent."""
@@ -37,16 +39,16 @@ class AgentOperator(
     metadata = ViewMetadata(
         label="Agent Operator",
         name="agent_operator",
-        category=OperatorCategory.COMMON,
+        category=OperatorCategory.AGENT,
         description="The Agent operator.",
         parameters=[
             Parameter.build_from(
                 "Agent",
                 "agent",
-                ConversableAgent,
+                AwelAgent,
                 optional=True,
                 default=None,
-                resource_category=ResourceCategory.COMMON,
+                resource_category=ResourceCategory.AGENT,
                 description="The dbgpt agent.",
             ),
         ],

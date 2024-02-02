@@ -3,6 +3,7 @@
 """
 
 import pytest
+
 from dbgpt.datasource.rdbms.conn_doris import DorisConnect
 
 
