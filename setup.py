@@ -373,6 +373,7 @@ def core_requires():
         "click",
         "psutil==5.9.4",
         "colorama==0.4.6",
+        "tomlkit",
     ]
     # Just use by DB-GPT internal, we should find the smallest dependency set for run
     # we core unit test.

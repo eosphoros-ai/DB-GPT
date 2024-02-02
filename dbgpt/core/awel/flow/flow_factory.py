@@ -187,8 +187,11 @@ class FlowPanel(BaseModel):
             "6a4752ae-ba8e-11ee-afff-af8fd9bfe727",
         ],
     )
+    label: str = Field(
+        ..., description="Flow panel label", examples=["First AWEL Flow", "My LLM Flow"]
+    )
     name: str = Field(
-        ..., description="Flow panel name", examples=["First AWEL Flow", "My LLM Flow"]
+        ..., description="Flow panel name", examples=["first_awel_flow", "my_llm_flow"]
     )
     flow_category: Optional[FlowCategory] = Field(
         default=FlowCategory.COMMON,
@@ -215,6 +218,11 @@ class FlowPanel(BaseModel):
     )
     version: Optional[str] = Field(
         "0.1.0", description="Version of the flow panel", examples=["0.1.0", "0.2.0"]
+    )
+    editable: bool = Field(
+        True,
+        description="Whether the flow panel is editable",
+        examples=[True, False],
     )
     user_name: Optional[str] = Field(None, description="User name")
     sys_code: Optional[str] = Field(None, description="System code")
@@ -250,6 +258,20 @@ class FlowPanel(BaseModel):
         else:
             logger.error(f"Invalid state transition from {self.state} to {new_state}")
             return False
+
+    @root_validator(pre=True)
+    def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Pre fill the metadata."""
+        label = values.get("label")
+        name = values.get("name")
+        flow_category = str(values.get("flow_category", ""))
+        if not label and name:
+            values["label"] = name
+            name = name.replace(" ", "_")
+            if flow_category:
+                name = str(flow_category) + "_" + name
+            values["name"] = name
+        return values
 
 
 class FlowFactory:

@@ -22,6 +22,7 @@ class ServeEntity(Model):
     id = Column(Integer, primary_key=True, comment="Auto increment id")
     uid = Column(String(128), index=True, nullable=False, comment="Unique id")
     dag_id = Column(String(128), index=True, nullable=True, comment="DAG id")
+    label = Column(String(128), nullable=True, comment="Flow label")
     name = Column(String(128), index=True, nullable=True, comment="Flow name")
     flow_category = Column(String(64), nullable=True, comment="Flow category")
     flow_data = Column(Text, nullable=True, comment="Flow data, JSON format")
@@ -30,6 +31,9 @@ class ServeEntity(Model):
     source = Column(String(64), nullable=True, comment="Flow source")
     source_url = Column(String(512), nullable=True, comment="Flow source url")
     version = Column(String(32), nullable=True, comment="Flow version")
+    editable = Column(
+        Integer, nullable=True, comment="Editable, 1: editable, -1: not editable"
+    )
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
@@ -66,6 +70,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         new_dict = {
             "uid": request_dict.get("uid"),
             "dag_id": request_dict.get("dag_id"),
+            "label": request_dict.get("label"),
             "name": request_dict.get("name"),
             "flow_category": request_dict.get("flow_category"),
             "flow_data": flow_data,
@@ -73,6 +78,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             "source": request_dict.get("source"),
             "source_url": request_dict.get("source_url"),
             "version": request_dict.get("version"),
+            "editable": int(request_dict.get("editable", 1)) == 1,
             "description": request_dict.get("description"),
             "user_name": request_dict.get("user_name"),
             "sys_code": request_dict.get("sys_code"),
@@ -93,6 +99,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         return ServeRequest(
             uid=entity.uid,
             dag_id=entity.dag_id,
+            label=entity.label,
             name=entity.name,
             flow_category=entity.flow_category,
             flow_data=flow_data,
@@ -100,6 +107,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             source=entity.source,
             source_url=entity.source_url,
             version=entity.version,
+            editable=entity.editable == 1,
             description=entity.description,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
@@ -120,6 +128,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         return ServerResponse(
             uid=entity.uid,
             dag_id=entity.dag_id,
+            label=entity.label,
             name=entity.name,
             flow_category=entity.flow_category,
             flow_data=flow_data,
@@ -128,6 +137,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             source=entity.source,
             source_url=entity.source_url,
             version=entity.version,
+            editable=entity.editable == 1,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
             gmt_created=gmt_created_str,
@@ -142,6 +152,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             entry: ServeEntity = query.first()
             if entry is None:
                 raise Exception("Invalid request")
+            if update_request.label:
+                entry.label = update_request.label
             if update_request.name:
                 entry.name = update_request.name
             if update_request.flow_category:
@@ -160,6 +172,8 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
                 entry.source_url = update_request.source_url
             if update_request.version:
                 entry.version = update_request.version
+            if update_request.editable:
+                entry.editable = 1 if update_request.editable else -1
             if update_request.user_name:
                 entry.user_name = update_request.user_name
             if update_request.sys_code:
