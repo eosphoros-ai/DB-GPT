@@ -11,9 +11,10 @@ import { useRouter } from 'next/router';
 import { ChatContext } from '@/app/chat-context';
 
 interface IProps {
-  updateApps: () => void;
+  updateApps: (data?: { is_collected: boolean }) => void;
   app: IApp;
   handleEdit: (app: any) => void;
+  isCollected: boolean;
 }
 
 const { confirm } = Modal;
@@ -24,7 +25,7 @@ const languageMap = {
 };
 
 export default function AppCard(props: IProps) {
-  const { updateApps, app, handleEdit } = props;
+  const { updateApps, app, handleEdit, isCollected } = props;
   const { model } = useContext(ChatContext);
   const router = useRouter();
 
@@ -43,7 +44,7 @@ export default function AppCard(props: IProps) {
       cancelText: 'No',
       async onOk() {
         await apiInterceptors(delApp({ app_code: app.app_code }));
-        updateApps();
+        updateApps({ is_collected: isCollected });
       },
     });
   };
@@ -69,7 +70,6 @@ export default function AppCard(props: IProps) {
     }
   };
 
-
   return (
     <div
       onClick={() => {
@@ -85,7 +85,7 @@ export default function AppCard(props: IProps) {
         <div onClick={collect}>{app?.is_collected === 'false' ? <CollectIcon /> : <CollectedIcon />}</div>
       </div>
       <div className="text-sm mt-2 p-3 pt-2">
-        <div className="text-sm text-gray-500 font-normal  w-52 line-clamp-2 mb-3">{app?.app_describe}</div>
+        <div className="text-sm text-gray-500 font-normal  w-52 line-clamp-2 mb-3 h-10">{app?.app_describe}</div>
         <div className="flex mb-3">
           <Tag color="#2db7f5" className="text-large">
             {languageMap[app?.language]}

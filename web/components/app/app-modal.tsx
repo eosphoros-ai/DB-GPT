@@ -133,14 +133,8 @@ export default function AppModal(props: IProps) {
   }, [resourceTypes]);
 
   const updateDetailsByAgentKey = (key: string, data: any) => {
-    console.log(111, 'updateDetailsByAgentKey', data, key);
-    console.log(222, 'detail', details);
-
     setDetails((details: any) => {
-      console.log(44444, details);
-
       return details.map((detail: any) => {
-        console.log(key, '===', detail.agent_name || detail.key, data);
         return key === (detail.agent_name || detail.key) ? data : detail;
       });
     });
@@ -153,8 +147,6 @@ export default function AppModal(props: IProps) {
     setActiveKey(newActiveKey);
 
     setDetails((details: any) => {
-      console.log(3333, 'details', [...details, { key: newActiveKey, name: '', llm_strategy: 'priority' }]);
-
       return [...details, { key: newActiveKey, name: '', llm_strategy: 'priority' }];
     });
 
@@ -245,7 +237,6 @@ export default function AppModal(props: IProps) {
       details: details,
     };
     data.app_code = app.app_code;
-    console.log('===handle Submit data', data);
 
     await createApp(data);
 
@@ -271,7 +262,7 @@ export default function AppModal(props: IProps) {
         okText={t('Submit')}
         title={type === 'edit' ? 'edit app' : 'add app'}
         open={open}
-        className="w-1/2"
+        width={800}
         onCancel={handleCancel}
         onOk={handleSubmit}
         destroyOnClose={true}
@@ -281,24 +272,26 @@ export default function AppModal(props: IProps) {
             form={form}
             preserve={false}
             size="large"
-            className="mt-4 h-[650px] overflow-auto"
-            layout="vertical"
+            className="mt-4 max-h-[70vh] overflow-auto"
+            layout="horizontal"
+            labelAlign="left"
+            labelCol={{ span: 4 }}
             initialValues={{ app_name: app.app_name, app_describe: app.app_describe, language: app.language, team_mode: app.team_mode }}
             autoComplete="off"
             onFinish={handleSubmit}
           >
             <Form.Item<FieldType> label={'App Name'} name="app_name" rules={[{ required: true, message: t('Please_input_the_name') }]}>
-              <Input className="h-12" placeholder={t('Please_input_the_name')} />
+              <Input placeholder={t('Please_input_the_name')} />
             </Form.Item>
             <Form.Item<FieldType>
               label={t('Description')}
               name="app_describe"
               rules={[{ required: true, message: t('Please_input_the_description') }]}
             >
-              <Input className="h-12" placeholder={t('Please_input_the_description')} />
+              <Input.TextArea rows={3} placeholder={t('Please_input_the_description')} />
             </Form.Item>
             <Form.Item<FieldType> label={t('language')} initialValue={languageOptions[0].value} name="language" rules={[{ required: true }]}>
-              <Select className="h-12" placeholder={t('language_select_tips')} options={languageOptions} />
+              <Select placeholder={t('language_select_tips')} options={languageOptions} />
             </Form.Item>
             <Form.Item<FieldType>
               label={t('team_modal')}
@@ -306,7 +299,7 @@ export default function AppModal(props: IProps) {
               rules={[{ required: true }]}
               initialValue={teamModal && teamModal[0].value}
             >
-              <Select className="h-12" placeholder={t('Please_input_the_description')} options={teamModal} />
+              <Select placeholder={t('Please_input_the_description')} options={teamModal} />
             </Form.Item>
             <div className='mb-5 text-lg font-bold"'>Agent</div>
             <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
