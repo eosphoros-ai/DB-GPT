@@ -78,6 +78,7 @@ export default function AppModal(props: IProps) {
                   llm_strategy: item?.llm_strategy,
                   agent_name: item?.agent_name,
                   prompt_template: item?.prompt_template,
+                  llm_strategy_value: item?.llm_strategy_value,
                 }}
                 updateDetailsByAgentKey={updateDetailsByAgentKey}
                 resourceTypes={resourceType}
@@ -162,7 +163,7 @@ export default function AppModal(props: IProps) {
           label: newActiveKey,
           children: (
             <AgentPanel
-              detail={{ key: newActiveKey, llm_strategy: 'priority', agent_name: newActiveKey, prompt_template: '' }}
+              detail={{ key: newActiveKey, llm_strategy: 'default', agent_name: newActiveKey, prompt_template: '', llm_strategy_value: '' }}
               updateDetailsByAgentKey={updateDetailsByAgentKey}
               resourceTypes={data}
             />
@@ -241,7 +242,9 @@ export default function AppModal(props: IProps) {
       ...form.getFieldsValue(),
       details: details,
     };
-    data.app_code = app.app_code;
+    if (type === 'edit') {
+      data.app_code = app.app_code;
+    }
 
     await createApp(data);
 
@@ -265,9 +268,9 @@ export default function AppModal(props: IProps) {
     <div>
       <Modal
         okText={t('Submit')}
-        title={type === 'edit' ? 'edit app' : 'add app'}
+        title={type === 'edit' ? 'edit application' : 'add application'}
         open={open}
-        width={800}
+        width={'65%'}
         onCancel={handleCancel}
         onOk={handleSubmit}
         destroyOnClose={true}
@@ -304,7 +307,7 @@ export default function AppModal(props: IProps) {
               rules={[{ required: true }]}
               initialValue={teamModal && teamModal[0].value}
             >
-              <Select placeholder={t('Please_input_the_description')} options={teamModal} />
+              <Select placeholder={t('Please_input_the_work_modal')} options={teamModal} />
             </Form.Item>
             <div className='mb-5 text-lg font-bold"'>Agents</div>
             <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />

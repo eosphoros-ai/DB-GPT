@@ -12,15 +12,6 @@ interface IProps {
   editResources?: any;
 }
 
-/**
- * 
- *  "type": "internet",
-    "name": "panda",
-    "introduce": "大熊猫简介",
-    "value": "https://baike.baidu.com/item/%E5%A4%A7%E7%86%8A%E7%8C%AB/34935",
-    "is_dynamic": false
- */
-
 export default function AgentPanel(props: IProps) {
   const { resourceTypes, updateDetailsByAgentKey, detail, editResources } = props;
   const { t } = useTranslation();
@@ -85,23 +76,31 @@ export default function AgentPanel(props: IProps) {
 
   return (
     <div>
-      <div className="flex items-center mb-6">
+      <div className="flex items-center mb-6 mt-6">
         <div className="mr-2 w-16 text-center">prompt:</div>
         <Input
           required
-          className='mr-6 w-1/3'
+          className="mr-6 w-1/4"
           value={agent.prompt_template}
           onChange={(e) => {
             updateAgent(e.target.value, 'prompt_template');
           }}
         />
-        <div className="fmr-2">LLM 使用策略:</div>
+        <div className="mr-2">LLM Strategy:</div>
         <Select
           value={agent.llm_strategy}
           options={strategyOptions}
-          className='w-1/3'
+          className="w-1/6 mr-6"
           onChange={(value) => {
             updateAgent(value, 'llm_strategy');
+          }}
+        />
+        <div className="mr-2">LLM Strategy Value:</div>
+        <Input
+          value={agent.llm_strategy_value}
+          className="w-1/4"
+          onChange={(e) => {
+            updateAgent(e.target.value, 'llm_strategy_value');
           }}
         />
       </div>

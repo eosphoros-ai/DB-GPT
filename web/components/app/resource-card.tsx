@@ -1,7 +1,8 @@
 import { apiInterceptors, getResource } from '@/client/api';
 import { DeleteFilled } from '@ant-design/icons';
-import { Button, Card, Input, Select, Switch } from 'antd';
+import { Button, Card, ConfigProvider, Input, Select, Switch } from 'antd';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface IProps {
   resourceTypeOptions: any[];
@@ -12,6 +13,8 @@ interface IProps {
 
 export default function ResourceCard(props: IProps) {
   const { resourceTypeOptions, updateResourcesByIndex, index, resource: editResource } = props;
+
+  const { t } = useTranslation();
 
   const [resourceType, setResourceType] = useState<string>(editResource.type || resourceTypeOptions[0].label);
   const [resourceValueOptions, setResourceValueOptions] = useState<any[]>([]);
@@ -67,9 +70,11 @@ export default function ResourceCard(props: IProps) {
       <div className="flex">
         <div className="flex-1">
           <div className="flex items-center  mb-6">
-            <div className="font-bold mr-4 w-16 text-center">资源名:</div>
+            <div className="font-bold mr-4 w-32 text-center">
+              <span className="text-[#ff4d4f] font-normal">*</span>&nbsp;{t('resource_name')}:
+            </div>
             <Input
-              className="w-1/3 mr-9"
+              className="w-1/3"
               required
               value={resource.name}
               onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,10 +82,11 @@ export default function ResourceCard(props: IProps) {
               }}
             />
             <div className="flex items-center">
-              <div className="font-bold w-16 text-center">动态</div>
+              <div className="font-bold w-32 text-center">{t('resource_dynamic')}</div>
+
               <Switch
-                autoFocus
                 defaultChecked={editResource.is_dynamic || false}
+                style={{ background: resource.is_dynamic ? '#1677ff' : '#ccc' }}
                 onChange={(value) => {
                   updateResource(value, 'is_dynamic');
                 }}
@@ -88,9 +94,9 @@ export default function ResourceCard(props: IProps) {
             </div>
           </div>
           <div className="flex mb-5  items-center">
-            <div className="font-bold mr-4 w-16">资源类型: </div>
+            <div className="font-bold mr-4 w-32  text-center">{t('resource_type')}: </div>
             <Select
-              className="flex-1"
+              className="w-1/3"
               options={resourceTypeOptions}
               value={resource.type || resourceTypeOptions[0]}
               onChange={(value) => {
@@ -98,7 +104,7 @@ export default function ResourceCard(props: IProps) {
                 handleChange(value);
               }}
             />
-            <div className="font-bold mr-4  w-16 text-center">参数</div>
+            <div className="font-bold mr-4  w-32 text-center">{t('resource_value')}:</div>
             {resourceValueOptions?.length > 0 ? (
               <Select
                 value={resource.value}

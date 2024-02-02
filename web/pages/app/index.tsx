@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { apiInterceptors, getAppList } from '@/client/api';
 import { IApp } from '@/types/app';
 
-type TabKey = 'agent' | 'app' | 'collected';
+type TabKey = 'app' | 'collected';
 
 type ModalType = 'edit' | 'add';
 
@@ -98,9 +98,7 @@ export default function App() {
     <Spin spinning={spinning}>
       <div className="h-screen w-full p-4 md:p-6 overflow-y-aut">
         <Tabs defaultActiveKey="app" items={items} onChange={handleTabChange} />
-        {activeKey === 'app' && open && (
-          <AppModal app={modalType === 'edit' ? curApp : {}} type={modalType} updateApps={initData} open={open} handleCancel={handleCancel} />
-        )}
+        {open && <AppModal app={modalType === 'edit' ? curApp : {}} type={modalType} updateApps={initData} open={open} handleCancel={handleCancel} />}
       </div>
     </Spin>
   );
