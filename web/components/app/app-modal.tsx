@@ -73,7 +73,12 @@ export default function AppModal(props: IProps) {
             children: (
               <AgentPanel
                 editResources={type === 'edit' && item.resources}
-                detail={{ key: item?.agent_name, llm_strategy: 'priority', agent_name: item?.agent_name, prompt_template: item?.prompt_template }}
+                detail={{
+                  key: item?.agent_name,
+                  llm_strategy: item?.llm_strategy,
+                  agent_name: item?.agent_name,
+                  prompt_template: item?.prompt_template,
+                }}
                 updateDetailsByAgentKey={updateDetailsByAgentKey}
                 resourceTypes={resourceType}
               />
@@ -301,7 +306,7 @@ export default function AppModal(props: IProps) {
             >
               <Select placeholder={t('Please_input_the_description')} options={teamModal} />
             </Form.Item>
-            <div className='mb-5 text-lg font-bold"'>Agent</div>
+            <div className='mb-5 text-lg font-bold"'>Agents</div>
             <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
           </Form>
         </Spin>

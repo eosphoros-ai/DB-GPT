@@ -54,11 +54,11 @@ export default function ResourceCard(props: IProps) {
 
   useEffect(() => {
     fetchResource();
-    updateResource(resource.type, 'type');
+    updateResource(resource.type || resourceType, 'type');
   }, [resourceType]);
 
   useEffect(() => {
-    updateResource(resourceValueOptions[0]?.label, 'value');
+    updateResource(resourceValueOptions[0]?.label || editResource.value, 'value');
     setResource({ ...resource, value: resourceValueOptions[0]?.label || editResource.value });
   }, [resourceValueOptions]);
 

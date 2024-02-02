@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import DBIcon from '../common/db-icon';
 import CollectIcon from '../icons/collect';
 import CollectedIcon from '../icons/collected';
-import { Button, Modal, Tag } from 'antd';
+import { Button, Modal, Tag, Tooltip } from 'antd';
 import { apiInterceptors, collectApp, delApp, getAppList, newDialogue, unCollectApp } from '@/client/api';
 import { IApp } from '@/types/app';
 import { DeleteFilled, MessageTwoTone, WarningOutlined } from '@ant-design/icons';
@@ -44,7 +44,7 @@ export default function AppCard(props: IProps) {
       cancelText: 'No',
       async onOk() {
         await apiInterceptors(delApp({ app_code: app.app_code }));
-        updateApps({ is_collected: isCollected });
+        updateApps(isCollected ? { is_collected: isCollected } : undefined);
       },
     });
   };
@@ -57,7 +57,7 @@ export default function AppCard(props: IProps) {
     e.stopPropagation();
     const [error] = await apiInterceptors(isCollect === 'true' ? unCollectApp({ app_code: app.app_code }) : collectApp({ app_code: app.app_code }));
     if (error) return;
-    updateApps();
+    updateApps(isCollected ? { is_collected: isCollected } : undefined);
     setIsCollect(isCollect === 'true' ? 'false' : 'true');
   };
 
@@ -85,7 +85,9 @@ export default function AppCard(props: IProps) {
         <div onClick={collect}>{app?.is_collected === 'false' ? <CollectIcon /> : <CollectedIcon />}</div>
       </div>
       <div className="text-sm mt-2 p-3 pt-2">
-        <div className="text-sm text-gray-500 font-normal  w-52 line-clamp-2 mb-3 h-10">{app?.app_describe}</div>
+        <Tooltip title={app?.app_describe}>
+          <div className="text-sm text-gray-500 font-normal  w-52 line-clamp-2 mb-3 h-10">{app?.app_describe}</div>
+        </Tooltip>
         <div className="flex mb-3">
           <Tag color="#2db7f5" className="text-large">
             {languageMap[app?.language]}

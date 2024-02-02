@@ -317,3 +317,7 @@ export const getResource = (data: Record<string, string>) => {
 export const updateApp = (data: any) => {
   return POST<any, []>('/api/v1/app/edit', data);
 };
+
+export const getAppStrategy = () => {
+  return GET<null, []>(`api/v1/llm-strategy/list`);
+};
