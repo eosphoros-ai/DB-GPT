@@ -1,4 +1,4 @@
-import { apiInterceptors, getAppStrategy, getResource } from '@/client/api';
+import { apiInterceptors, getAppStrategy, getAppStrategyValues, getResource } from '@/client/api';
 import { Button, Card, Divider, Input, Select } from 'antd';
 import { log } from 'console';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -19,6 +19,7 @@ export default function AgentPanel(props: IProps) {
   const [resources, setResources] = useState<any>([...(editResources ?? [])]);
   const [agent, setAgent] = useState<any>({ ...detail, resources: [] });
   const [strategyOptions, setStrategyOptions] = useState<any>([]);
+  const [strategyValueOptions, setStrategyValueOptions] = useState<any>([]);
 
   const updateResourcesByIndex = (data: any, index: number) => {
     setResources((resources: any) => {
@@ -44,8 +45,16 @@ export default function AgentPanel(props: IProps) {
     }
   };
 
+  const getStrategyValues = async (type: string) => {
+    const [_, data] = await apiInterceptors(getAppStrategyValues(type));
+    if (data && data?.length > 0) {
+      setStrategyValueOptions(data.map((item) => ({ label: item, value: item })) ?? []);
+    }
+  };
+
   useEffect(() => {
     getStrategy();
+    getStrategyValues(detail.llm_strategy);
   }, []);
 
   useEffect(() => {
@@ -93,16 +102,22 @@ export default function AgentPanel(props: IProps) {
           className="w-1/6 mr-6"
           onChange={(value) => {
             updateAgent(value, 'llm_strategy');
+            getStrategyValues(value);
           }}
         />
-        <div className="mr-2">LLM Strategy Value:</div>
-        <Input
-          value={agent.llm_strategy_value}
-          className="w-1/4"
-          onChange={(e) => {
-            updateAgent(e.target.value, 'llm_strategy_value');
-          }}
-        />
+        {strategyValueOptions && strategyValueOptions.length > 0 && (
+          <>
+            <div className="mr-2">LLM Strategy Value:</div>
+            <Select
+              value={agent.llm_strategy_value}
+              className="w-1/4"
+              options={strategyValueOptions}
+              onChange={(value) => {
+                updateAgent(value, 'llm_strategy_value');
+              }}
+            />
+          </>
+        )}
       </div>
       <div className="mb-3 text-lg font-bold">可用资源</div>
       {resources.map((resource: any, index: number) => {
