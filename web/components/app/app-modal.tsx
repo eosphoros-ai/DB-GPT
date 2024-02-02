@@ -161,7 +161,7 @@ export default function AppModal(props: IProps) {
           label: newActiveKey,
           children: (
             <AgentPanel
-              detail={{ key: newActiveKey, llm_strategy: 'default', agent_name: newActiveKey, prompt_template: '', llm_strategy_value: '' }}
+              detail={{ key: newActiveKey, llm_strategy: 'default', agent_name: newActiveKey, prompt_template: '', llm_strategy_value: null }}
               updateDetailsByAgentKey={updateDetailsByAgentKey}
               resourceTypes={data}
             />
