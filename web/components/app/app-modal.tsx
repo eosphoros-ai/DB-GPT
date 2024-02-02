@@ -202,6 +202,12 @@ export default function AppModal(props: IProps) {
         newActiveKey = newPanes[0].key;
       }
     }
+    setDetails((details: any) => {
+      return details?.filter((detail: any) => {
+        return (detail.agent_name || detail.key) !== targetKey;
+      });
+    });
+
     setAgents(newPanes);
     setActiveKey(newActiveKey);
     setDropItems((items: any) => {
@@ -239,7 +245,7 @@ export default function AppModal(props: IProps) {
       details: details,
     };
     data.app_code = app.app_code;
-    console.log('===data', data);
+    console.log('===handle Submit data', data);
 
     await createApp(data);
 

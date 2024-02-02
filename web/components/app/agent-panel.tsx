@@ -31,6 +31,10 @@ export default function AgentPanel(props: IProps) {
   const updateResourcesByIndex = (data: any, index: number) => {
     setResources((resources: any) => {
       const tempResources = [...resources];
+      if (!data) {
+        return tempResources.filter((_: any, indey) => index !== indey);
+      }
+
       return tempResources.map((item: any, indey) => {
         if (index === indey) {
           return data;

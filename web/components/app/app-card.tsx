@@ -69,6 +69,7 @@ export default function AppCard(props: IProps) {
     }
   };
 
+
   return (
     <div
       onClick={() => {
@@ -84,7 +85,7 @@ export default function AppCard(props: IProps) {
         <div onClick={collect}>{app?.is_collected === 'false' ? <CollectIcon /> : <CollectedIcon />}</div>
       </div>
       <div className="text-sm mt-2 p-3 pt-2">
-        <div className="mb-2 line-clamp-2 w-52 h-10">{app?.app_describe}</div>
+        <div className="text-sm text-gray-500 font-normal  w-52 line-clamp-2 mb-3">{app?.app_describe}</div>
         <div className="flex mb-3">
           <Tag color="#2db7f5" className="text-large">
             {languageMap[app?.language]}

@@ -1,5 +1,6 @@
 import { apiInterceptors, getResource } from '@/client/api';
-import { Card, Input, Select, Switch } from 'antd';
+import { DeleteFilled } from '@ant-design/icons';
+import { Button, Card, Input, Select, Switch } from 'antd';
 import React, { useEffect, useState } from 'react';
 
 interface IProps {
@@ -44,6 +45,10 @@ export default function ResourceCard(props: IProps) {
     tempResource[type] = value;
     setResource(tempResource);
     updateResourcesByIndex(tempResource, index);
+  };
+
+  const handleDeleteResource = () => {
+    updateResourcesByIndex(null, index);
   };
 
   useEffect(() => {
@@ -103,15 +108,25 @@ export default function ResourceCard(props: IProps) {
           )}
         </div>
       </div>
-      <div className="mb-2 font-bold">动态</div>
-      <Switch
-        autoFocus
-        defaultChecked={editResource.is_dynamic || false}
-        className="mb-5"
-        onChange={(value) => {
-          updateResource(value, 'is_dynamic');
-        }}
-      />
+      <div className="flex justify-between">
+        <div>
+          <div className="mb-2 font-bold">动态</div>
+          <Switch
+            autoFocus
+            defaultChecked={editResource.is_dynamic || false}
+            className="mb-5"
+            onChange={(value) => {
+              updateResource(value, 'is_dynamic');
+            }}
+          />
+        </div>
+        <DeleteFilled
+          className="text-[#ff1b2e] !text-lg"
+          onClick={() => {
+            handleDeleteResource();
+          }}
+        />
+      </div>
     </Card>
   );
 }
