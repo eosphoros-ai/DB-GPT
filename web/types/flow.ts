@@ -66,7 +66,6 @@ export type IFlowNode = Node & {
   type_name: string;
   type_cls: string;
   parent_cls?: string; // resource have this key
-  type: string;
   label: string;
   name: string;
   description: string;
@@ -99,6 +98,7 @@ export type IFlowDataNode = {
   position_absolute?: Position;
   positionAbsolute?: Position;
   data: IFlowNode;
+  type: string;
 };
 
 export type IFlowDataEdge = {

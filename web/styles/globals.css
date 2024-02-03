@@ -85,3 +85,6 @@ table tr td {
     transform: rotate(360deg);
   }
 }
+.react-flow__panel {
+  display: none !important;
+}
