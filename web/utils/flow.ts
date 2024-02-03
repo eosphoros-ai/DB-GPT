@@ -1,4 +1,4 @@
-import { IFlowData, IFlowNode } from '@/types/flow';
+import { IFlowData, IFlowDataNode, IFlowNode } from '@/types/flow';
 import { Node } from 'reactflow';
 
 export const getUniqueNodeId = (nodeData: IFlowNode, nodes: Node[]) => {
@@ -68,4 +68,33 @@ export const mapUnderlineToHump = (flowData: IFlowData) => {
     edges: newEdges,
     ...rest,
   };
+};
+
+export const checkFlowDataRequied = (flowData: IFlowData) => {
+  const { nodes, edges } = flowData;
+  // check the input, parameters that are required
+  let result: [boolean, IFlowDataNode, string] = [true, nodes[0], ''];
+  outerLoop: for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i].data;
+    const { inputs = [], parameters = [] } = node;
+    // check inputs
+    for (let j = 0; j < inputs.length; j++) {
+      if (!edges.some((edge) => edge.targetHandle === `${nodes[i].id}|inputs|${j}`)) {
+        result = [false, nodes[i], `The input ${inputs[j].type_name} of node ${node.label} is required`];
+        break outerLoop;
+      }
+    }
+    // check parameters
+    for (let k = 0; k < parameters.length; k++) {
+      const parameter = parameters[k];
+      if (!parameter.optional && parameter.category === 'resource' && !edges.some((edge) => edge.targetHandle === `${nodes[i].id}|parameters|${k}`)) {
+        result = [false, nodes[i], `The parameter ${parameter.type_name} of node ${node.label} is required`];
+        break outerLoop;
+      } else if (!parameter.optional && parameter.category === 'common' && (parameter.value === undefined || parameter.value === null)) {
+        result = [false, nodes[i], `The parameter ${parameter.type_name} of node ${node.label} is required`];
+        break outerLoop;
+      }
+    }
+  }
+  return result;
 };

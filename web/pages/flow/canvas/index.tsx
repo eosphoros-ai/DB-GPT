@@ -4,9 +4,9 @@ import AddNodes from '@/components/flow/add-nodes';
 import ButtonEdge from '@/components/flow/button-edge';
 import CanvasNode from '@/components/flow/canvas-node';
 import { IFlowData, IFlowUpdateParam } from '@/types/flow';
-import { getUniqueNodeId, mapHumpToUnderline, mapUnderlineToHump } from '@/utils/flow';
-import { SaveOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Divider, Form, Input, Modal, Space, message } from 'antd';
+import { checkFlowDataRequied, getUniqueNodeId, mapHumpToUnderline, mapUnderlineToHump } from '@/utils/flow';
+import { FrownOutlined, SaveOutlined } from '@ant-design/icons';
+import { Button, Checkbox, Divider, Form, Input, Modal, Space, message, notification } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import React, { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -140,16 +140,37 @@ const Canvas: React.FC<Props> = () => {
 
   function labelChange(e: React.ChangeEvent<HTMLInputElement>) {
     const label = e.target.value;
-    // 将空格转成_
-    let result = label.replace(/\s+/g, '_');
-    // 将大写字母转成小写
-    result = result.toLowerCase();
-    // 去掉非数字、字母、_和-的其他字符
-    result = result.replace(/[^a-z0-9_-]/g, '');
+    // replace spaces with underscores, convert uppercase letters to lowercase, remove characters other than digits, letters, _, and -.
+    let result = label
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_-]/g, '')
+      .toLowerCase();
+    result = result;
     form.setFieldsValue({ name: result });
   }
 
   function clickSave() {
+    const flowData = reactFlow.toObject() as IFlowData;
+    const [check, node, message] = checkFlowDataRequied(flowData);
+    if (!check && message) {
+      setNodes((nds) =>
+        nds.map((item) => {
+          if (item.id === node?.id) {
+            item.data = {
+              ...item.data,
+              invalid: true,
+            };
+          } else {
+            item.data = {
+              ...item.data,
+              invalid: false,
+            };
+          }
+          return item;
+        }),
+      );
+      return notification.error({ message: 'Error', description: message, icon: <FrownOutlined className="text-red-600" /> });
+    }
     setIsModalVisible(true);
   }
 
@@ -205,7 +226,15 @@ const Canvas: React.FC<Props> = () => {
           <AddNodes />
         </ReactFlow>
       </div>
-      <Modal title={t('flow_modal_title')} open={isModalVisible} cancelButtonProps={{ className: 'hidden' }} okButtonProps={{ className: 'hidden' }}>
+      <Modal
+        title={t('flow_modal_title')}
+        open={isModalVisible}
+        onCancel={() => {
+          setIsModalVisible(false);
+        }}
+        cancelButtonProps={{ className: 'hidden' }}
+        okButtonProps={{ className: 'hidden' }}
+      >
         <Form
           name="flow_form"
           form={form}

@@ -81,6 +81,7 @@ export type IFlowNode = Node & {
   inputs: Array<IFlowNodeInput>;
   outputs: Array<IFlowNodeOutput>;
   version: string;
+  invalid?: boolean;
 };
 
 interface Position {

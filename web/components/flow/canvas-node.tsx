@@ -125,6 +125,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
           'border-blue-500': node.selected || isHovered,
           'border-stone-400 dark:border-white': !node.selected && !isHovered,
           'border-dashed': flowType !== 'operator',
+          'border-red-600': node.invalid,
         })}
         onMouseEnter={onHover}
         onMouseLeave={onLeave}
