@@ -158,6 +158,7 @@ const Canvas: React.FC<Props> = () => {
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
     if (id) {
       const [, , res] = await apiInterceptors(updateFlowById(id, { name, label, description, editable, uid: id, flow_data: reactFlowObject }));
+      setIsModalVisible(false);
       if (res?.success) {
         messageApi.success(t('save_flow_success'));
       } else if (res?.err_msg) {
