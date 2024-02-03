@@ -159,6 +159,7 @@ _RESOURCE_CATEGORY_DETAIL = {
     "storage": _CategoryDetail("Storage", "The storage resource"),
     "serializer": _CategoryDetail("Serializer", "The serializer resource"),
     "common": _CategoryDetail("Common", "The common resource"),
+    "prompt": _CategoryDetail("Prompt", "The prompt resource"),
     "agent": _CategoryDetail("Agent", "The agent resource"),
 }
 
@@ -171,6 +172,7 @@ class ResourceCategory(str, Enum):
     STORAGE = "storage"
     SERIALIZER = "serializer"
     COMMON = "common"
+    PROMPT = "prompt"
     AGENT = "agent"
 
     def label(self) -> str:
@@ -469,6 +471,10 @@ class Parameter(TypeMetadata, Serializable):
                     )
                 resource_inst = key_to_resource_instance[resource_id]
                 value = resource_inst
+                if value is not None and not isinstance(value, resource_type):
+                    raise ValueError(
+                        f"Resource {resource_id} is not an instance of {resource_type}"
+                    )
                 # resource_kwargs = {}
                 # for parameter in resource_metadata.parameters:
                 #     resource_kwargs[parameter.name] = parameter.value
@@ -627,6 +633,7 @@ class BaseMetadata(BaseResource):
         if not self.parameters or not view_parameters:
             return runnable_parameters
         if len(self.parameters) != len(view_parameters):
+            # TODO, skip the optional parameters.
             raise ValueError(
                 f"Parameters count not match. "
                 f"Expected {len(self.parameters)}, but got {len(view_parameters)}."

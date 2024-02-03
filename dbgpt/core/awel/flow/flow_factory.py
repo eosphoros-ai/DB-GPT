@@ -453,7 +453,7 @@ class FlowFactory:
                     param.value = key_to_operator_nodes[downstream_key].data.name
 
             runnable_params = metadata.get_runnable_parameters(
-                view_metadata.parameters, key_to_resource
+                view_metadata.parameters, key_to_resource, key_to_resource_instance
             )
             runnable_params["task_name"] = operator_key
             operator_task: DAGNode = cast(DAGNode, operator_cls(**runnable_params))
