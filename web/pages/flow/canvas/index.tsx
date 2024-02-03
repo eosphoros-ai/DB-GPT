@@ -54,6 +54,18 @@ const Canvas: React.FC<Props> = () => {
     id && getFlowData();
   }, [id]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.returnValue = message;
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   function onNodesClick(event: any, clickedNode: Node) {
     reactFlow.setNodes((nds) =>
       nds.map((node) => {
