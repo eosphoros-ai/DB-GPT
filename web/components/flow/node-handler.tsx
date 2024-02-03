@@ -64,6 +64,20 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
     } else if (label === 'parameters') {
       // fint other resources and parent_cls including this parameter type_cls
       nodes = staticNodes.filter((node: IFlowNode) => node.flow_type === 'resource').filter((node: IFlowNode) => node.parent_cls?.includes(typeCls));
+    } else if (label === 'outputs') {
+      if (node.flow_type === 'operator') {
+        // find other operators and inputs matching this output type_cls
+        nodes = staticNodes
+          .filter((node: IFlowNode) => node.flow_type === 'operator')
+          .filter((node: IFlowNode) => node.inputs?.some((input: IFlowNodeInput) => input.type_cls === typeCls));
+      } else if (node.flow_type === 'resource') {
+        // find other resources or operators that this output parent_cls includes their type_cls
+        nodes = staticNodes.filter(
+          (item: IFlowNode) =>
+            item.inputs?.some((input: IFlowNodeInput) => node.parent_cls?.includes(input.type_cls)) ||
+            item.parameters?.some((parameter: IFlowNodeParameter) => node.parent_cls?.includes(parameter.type_cls)),
+        );
+      }
     }
     setRelatedNodes(nodes);
   }
@@ -99,9 +113,7 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
             </div>
           }
         >
-          {node.flow_type === 'operator' && ['inputs', 'parameters'].includes(label) && (
-            <PlusOutlined className="mr-2 cursor-pointer" onClick={showRelatedNodes} />
-          )}
+          {['inputs', 'parameters'].includes(label) && <PlusOutlined className="mr-2 cursor-pointer" onClick={showRelatedNodes} />}
         </Popconfirm>
         {data.type_name}:{label !== 'outputs' && <RequiredIcon optional={data.optional} />}
         {data.description && (
@@ -109,6 +121,20 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
             <InfoCircleOutlined className="ml-2 cursor-pointer" />
           </Tooltip>
         )}
+        <Popconfirm
+          placement="right"
+          icon={null}
+          showCancel={false}
+          okButtonProps={{ className: 'hidden' }}
+          title={t('related_nodes')}
+          description={
+            <div className="w-60">
+              <StaticNodes nodes={relatedNodes} />
+            </div>
+          }
+        >
+          {['outputs'].includes(label) && <PlusOutlined className="ml-2 cursor-pointer" onClick={showRelatedNodes} />}
+        </Popconfirm>
       </Typography>
     </div>
   );
