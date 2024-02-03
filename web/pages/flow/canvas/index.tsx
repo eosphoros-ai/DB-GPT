@@ -3,11 +3,10 @@ import MuiLoading from '@/components/common/loading';
 import AddNodes from '@/components/flow/add-nodes';
 import ButtonEdge from '@/components/flow/button-edge';
 import CanvasNode from '@/components/flow/canvas-node';
-import RequiredIcon from '@/components/flow/required-icon';
-import { IFlowData } from '@/types/flow';
+import { IFlowData, IFlowUpdateParam } from '@/types/flow';
 import { getUniqueNodeId, mapHumpToUnderline, mapUnderlineToHump } from '@/utils/flow';
 import { SaveOutlined } from '@ant-design/icons';
-import { Divider, Input, Modal, message } from 'antd';
+import { Button, Checkbox, Divider, Form, Input, Modal, Space, message } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import React, { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +24,7 @@ const edgeTypes = { buttonedge: ButtonEdge };
 const Canvas: React.FC<Props> = () => {
   const { t } = useTranslation();
   const [messageApi, contextHolder] = message.useMessage();
+  const [form] = Form.useForm();
   const searchParams = useSearchParams();
   const id = searchParams?.get('id') || '';
   const reactFlow = useReactFlow();
@@ -34,16 +34,14 @@ const Canvas: React.FC<Props> = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [flowInfo, setFlowInfo] = useState<IFlowUpdateParam>();
 
   async function getFlowData() {
     setLoading(true);
     const [_, data] = await apiInterceptors(getFlowById(id));
     if (data) {
       const flowData = mapUnderlineToHump(data.flow_data);
-      setName(data.name);
-      setDescription(data.description);
+      setFlowInfo(data);
       setNodes(flowData.nodes);
       setEdges(flowData.edges);
     }
@@ -140,30 +138,33 @@ const Canvas: React.FC<Props> = () => {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  function labelChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const label = e.target.value;
+    // 将空格转成_
+    let result = label.replace(/\s+/g, '_');
+    // 将大写字母转成小写
+    result = result.toLowerCase();
+    // 去掉非数字、字母、_和-的其他字符
+    result = result.replace(/[^a-z0-9_-]/g, '');
+    form.setFieldsValue({ name: result });
+  }
+
   function clickSave() {
-    if (id) {
-      handleSaveFlow();
-    } else {
-      setIsModalVisible(true);
-    }
+    setIsModalVisible(true);
   }
 
   async function handleSaveFlow() {
+    const { name, label, description = '', editable = false } = form.getFieldsValue();
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
     if (id) {
-      const [, , res] = await apiInterceptors(updateFlowById(id, { name, description, uid: id, flow_data: reactFlowObject }));
+      const [, , res] = await apiInterceptors(updateFlowById(id, { name, label, description, editable, uid: id, flow_data: reactFlowObject }));
       if (res?.success) {
         messageApi.success(t('save_flow_success'));
       } else if (res?.err_msg) {
         messageApi.error(res?.err_msg);
       }
     } else {
-      if (!name) {
-        return messageApi.warning(t('flow_name_required'));
-      } else if (!description) {
-        return messageApi.warning(t('flow_description_required'));
-      }
-      const [_, res] = await apiInterceptors(addFlow({ name, description, flow_data: reactFlowObject }));
+      const [_, res] = await apiInterceptors(addFlow({ name, label, description, editable, flow_data: reactFlowObject }));
       if (res?.uid) {
         messageApi.success(t('save_flow_success'));
         const history = window.history;
@@ -203,35 +204,61 @@ const Canvas: React.FC<Props> = () => {
           <AddNodes />
         </ReactFlow>
       </div>
-      <Modal
-        title={t('flow_modal_title')}
-        open={isModalVisible}
-        onOk={handleSaveFlow}
-        onCancel={() => {
-          setIsModalVisible(false);
-        }}
-      >
-        <>
-          <p>
-            {t('flow_name')}
-            <RequiredIcon />
-          </p>
-          <Input
-            onChange={(e) => {
-              setName(e.target.value);
-            }}
-          />
-          <p className="mt-4">
-            {t('flow_description')}
-            <RequiredIcon />
-          </p>
-          <TextArea
-            rows={3}
-            onChange={(e) => {
-              setDescription(e.target.value);
-            }}
-          />
-        </>
+      <Modal title={t('flow_modal_title')} open={isModalVisible} cancelButtonProps={{ className: 'hidden' }} okButtonProps={{ className: 'hidden' }}>
+        <Form
+          name="flow_form"
+          form={form}
+          labelCol={{ span: 8 }}
+          wrapperCol={{ span: 16 }}
+          style={{ maxWidth: 600 }}
+          initialValues={{ remember: true }}
+          onFinish={handleSaveFlow}
+          autoComplete="off"
+        >
+          <Form.Item label="Title" name="label" initialValue={flowInfo?.label} rules={[{ required: true, message: 'Please input flow title!' }]}>
+            <Input onChange={labelChange} />
+          </Form.Item>
+          <Form.Item
+            label="Name"
+            name="name"
+            initialValue={flowInfo?.name}
+            rules={[
+              { required: true, message: 'Please input flow name!' },
+              () => ({
+                validator(_, value) {
+                  const regex = /^[a-zA-Z0-9_\-]+$/;
+                  if (!regex.test(value)) {
+                    return Promise.reject('Can only contain numbers, letters, underscores, and dashes');
+                  }
+                  return Promise.resolve();
+                },
+              }),
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item label="Description" initialValue={flowInfo?.description} name="description">
+            <TextArea rows={3} />
+          </Form.Item>
+          <Form.Item label="Editable" name="editable" initialValue={flowInfo?.editable} valuePropName="checked">
+            <Checkbox></Checkbox>
+          </Form.Item>
+          <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+            <Space>
+              <Button
+                htmlType="button"
+                onClick={() => {
+                  setIsModalVisible(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit">
+                Submit
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
       </Modal>
       {contextHolder}
     </>

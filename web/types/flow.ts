@@ -2,14 +2,18 @@ import { Node } from 'reactflow';
 
 export type IFlowUpdateParam = {
   name: string;
+  label: string;
+  editable: boolean;
   description: string;
   uid?: string;
-  flow_data: IFlowData;
+  flow_data?: IFlowData;
 };
 
 export type IFlow = {
   uid: string;
   name: string;
+  label: string;
+  editable: boolean;
   description: string;
   flow_data: IFlowData;
 };
