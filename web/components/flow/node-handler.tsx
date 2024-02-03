@@ -38,7 +38,7 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
       // operator to operator, only type_cls matched can be connected
       const sourceTypeCls = sourceNode?.data[sourceLabel!][sourceIndex!].type_cls;
       return sourceTypeCls === targetTypeCls;
-    } else if (sourceFlowType === 'resource' && targetFlowType === 'operator') {
+    } else if (sourceFlowType === 'resource' && (targetFlowType === 'operator' || targetFlowType === 'resource')) {
       // resource to operator, check operator type_cls and resource parent_cls
       const sourceParentCls = sourceNode?.data.parent_cls;
       return sourceParentCls.includes(targetTypeCls);

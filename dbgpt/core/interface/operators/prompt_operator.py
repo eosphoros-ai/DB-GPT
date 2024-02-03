@@ -15,6 +15,7 @@ from dbgpt.core.awel.flow import (
     OperatorCategory,
     OperatorType,
     Parameter,
+    ResourceCategory,
     ViewMetadata,
     register_resource,
 )
@@ -36,6 +37,7 @@ from dbgpt.util.function_utils import rearrange_args_by_type
 @register_resource(
     label="Common Chat Prompt Template",
     name="common_chat_prompt_template",
+    category=ResourceCategory.PROMPT,
     description="The operator to build the prompt with static prompt.",
     parameters=[
         Parameter.build_from(
@@ -47,9 +49,19 @@ from dbgpt.util.function_utils import rearrange_args_by_type
             description="The system message.",
         ),
         Parameter.build_from(
+            label="Message placeholder",
+            name="message_placeholder",
+            type=str,
+            optional=True,
+            default="chat_history",
+            description="The chat history message placeholder.",
+        ),
+        Parameter.build_from(
             label="Human Message",
             name="human_message",
             type=str,
+            optional=True,
+            default="{user_input}",
             placeholder="{user_input}",
             description="The human message.",
         ),
@@ -65,10 +77,14 @@ class CommonChatPromptTemplate(ChatPromptTemplate):
             raise ValueError("No system message")
         if "human_message" not in values:
             raise ValueError("No human message")
+        if "message_placeholder" not in values:
+            raise ValueError("No message placeholder")
         system_message = values.pop("system_message")
         human_message = values.pop("human_message")
+        message_placeholder = values.pop("message_placeholder")
         values["messages"] = [
             SystemPromptTemplate.from_template(system_message),
+            MessagesPlaceholder(variable_name=message_placeholder),
             HumanPromptTemplate.from_template(human_message),
         ]
         return cls.base_pre_fill(values)
