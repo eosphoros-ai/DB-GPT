@@ -32,7 +32,7 @@ class ServeEntity(Model):
     source_url = Column(String(512), nullable=True, comment="Flow source url")
     version = Column(String(32), nullable=True, comment="Flow version")
     editable = Column(
-        Integer, nullable=True, comment="Editable, 1: editable, -1: not editable"
+        Integer, nullable=True, comment="Editable, 0: editable, 1: not editable"
     )
     user_name = Column(String(128), index=True, nullable=True, comment="User name")
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
@@ -46,6 +46,23 @@ class ServeEntity(Model):
             f"sys_code={self.sys_code}, gmt_created={self.gmt_created}, "
             f"gmt_modified={self.gmt_modified})"
         )
+
+    @classmethod
+    def parse_editable(cls, editable: Any) -> int:
+        """Parse editable"""
+        if editable is None:
+            return 0
+        if isinstance(editable, bool):
+            return 0 if editable else 1
+        elif isinstance(editable, int):
+            return 0 if editable == 0 else 1
+        else:
+            raise ValueError(f"Invalid editable: {editable}")
+
+    @classmethod
+    def to_bool_editable(cls, editable: int) -> bool:
+        """Convert editable to bool"""
+        return editable is None or editable == 0
 
 
 class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
@@ -78,7 +95,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             "source": request_dict.get("source"),
             "source_url": request_dict.get("source_url"),
             "version": request_dict.get("version"),
-            "editable": int(request_dict.get("editable", 1)) == 1,
+            "editable": ServeEntity.parse_editable(request_dict.get("editable")),
             "description": request_dict.get("description"),
             "user_name": request_dict.get("user_name"),
             "sys_code": request_dict.get("sys_code"),
@@ -107,7 +124,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             source=entity.source,
             source_url=entity.source_url,
             version=entity.version,
-            editable=entity.editable == 1,
+            editable=ServeEntity.to_bool_editable(entity.editable),
             description=entity.description,
             user_name=entity.user_name,
             sys_code=entity.sys_code,
@@ -137,7 +154,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             source=entity.source,
             source_url=entity.source_url,
             version=entity.version,
-            editable=entity.editable == 1,
+            editable=ServeEntity.to_bool_editable(entity.editable),
             user_name=entity.user_name,
             sys_code=entity.sys_code,
             gmt_created=gmt_created_str,
@@ -173,7 +190,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             if update_request.version:
                 entry.version = update_request.version
             if update_request.editable:
-                entry.editable = 1 if update_request.editable else -1
+                entry.editable = ServeEntity.parse_editable(update_request.editable)
             if update_request.user_name:
                 entry.user_name = update_request.user_name
             if update_request.sys_code:

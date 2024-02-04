@@ -289,11 +289,11 @@ class Parameter(TypeMetadata, Serializable):
         description="The category of the parameter",
         examples=["common", "resource"],
     )
-    resource_category: Optional[str] = Field(
-        default=None,
-        description="The category of the resource, just for resource type",
-        examples=["llm_client", "common"],
-    )
+    # resource_category: Optional[str] = Field(
+    #     default=None,
+    #     description="The category of the resource, just for resource type",
+    #     examples=["llm_client", "common"],
+    # )
     resource_type: ResourceType = Field(
         default=ResourceType.INSTANCE,
         description="The type of the resource, just for resource type",
@@ -374,7 +374,6 @@ class Parameter(TypeMetadata, Serializable):
         placeholder: Optional[DefaultParameterType] = None,
         description: Optional[str] = None,
         options: Optional[List[OptionValue]] = None,
-        resource_category: Optional[str] = None,
         resource_type: ResourceType = ResourceType.INSTANCE,
     ):
         """Build the parameter from the type."""
@@ -391,7 +390,6 @@ class Parameter(TypeMetadata, Serializable):
             type_name=type_name,
             type_cls=type_cls,
             category=category.value,
-            resource_category=resource_category,
             resource_type=resource_type,
             optional=optional,
             default=default,
