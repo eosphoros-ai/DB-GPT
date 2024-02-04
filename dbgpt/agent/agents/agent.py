@@ -157,26 +157,6 @@ class Agent:
 
 
 @dataclasses.dataclass
-class AgentResource:
-    type: str
-    name: str
-    introduce: str
-
-    @staticmethod
-    def from_dict(d: Dict[str, Any]) -> Optional[AgentResource]:
-        if d is None:
-            return None
-        return AgentResource(
-            type=d.get("type"),
-            name=d.get("name"),
-            introduce=d.get("introduce"),
-        )
-
-    def to_dict(self) -> Dict[str, Any]:
-        return dataclasses.asdict(self)
-
-
-@dataclasses.dataclass
 class AgentContext:
     conv_id: str
     gpts_app_name: str = None

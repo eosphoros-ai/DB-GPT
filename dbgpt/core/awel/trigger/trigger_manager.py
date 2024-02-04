@@ -146,8 +146,8 @@ class DefaultTriggerManager(TriggerManager, BaseComponent):
         if isinstance(trigger, HttpTrigger):
             logger.info(f"Register trigger {trigger}")
             self.http_trigger.register_trigger(trigger, system_app)
-        else:
-            raise ValueError(f"Unsupported trigger: {trigger}")
+        # else:
+        #     raise ValueError(f"Unsupported trigger: {trigger}")
 
     def unregister_trigger(self, trigger: Any, system_app: SystemApp) -> None:
         """Unregister a trigger to current manager."""
@@ -156,8 +156,8 @@ class DefaultTriggerManager(TriggerManager, BaseComponent):
         if isinstance(trigger, HttpTrigger):
             logger.info(f"Unregister trigger {trigger}")
             self.http_trigger.unregister_trigger(trigger, system_app)
-        else:
-            raise ValueError(f"Unsupported trigger: {trigger}")
+        # else:
+        #     raise ValueError(f"Unsupported trigger: {trigger}")
 
     def after_register(self) -> None:
         """After register, init the trigger manager."""

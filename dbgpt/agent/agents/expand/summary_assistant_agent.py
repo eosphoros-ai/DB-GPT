@@ -25,7 +25,7 @@ class SummaryAssistantAgent(ConversableAgent):
         "Extract the provided text content used for summarization.",
         "Then you need to summarize the extracted text content.",
         "Output the content of summarization ONLY related to user's question. The output language must be the same to user's question language.",
-        """If you think the provided text content is not related to user questions at all, ONLY output "NO RELATIONSHIP.TERMINATE."!!.""",
+        """If you think the provided text content is not related to user questions at all, ONLY output "Did not find the information you want."!!.""",
     ]
     desc: str = "You can summarize provided text content according to user's questions and output the summaraization."
 
@@ -33,37 +33,37 @@ class SummaryAssistantAgent(ConversableAgent):
         super().__init__(**kwargs)
         self._init_actions([BlankAction])
 
-    async def a_correctness_check(self, message: Optional[Dict]):
-        current_goal = message.get("current_gogal", None)
-        action_report = message.get("action_report", None)
-        task_result = ""
-        if action_report:
-            task_result = action_report.get("content", "")
-
-        check_result, model = await self.a_thinking(
-            messages=[
-                {
-                    "role": ModelMessageRoleType.HUMAN,
-                    "content": f"""Please understand the following user input and summary results and give your judgment:
-                        User Input: {current_goal}
-                        Summary Results: {task_result}
-                    """,
-                }
-            ],
-            prompt=CHECK_RESULT_SYSTEM_MESSAGE,
-        )
-
-        fail_reason = ""
-        if "True" in check_result:
-            success = True
-        else:
-            success = False
-            try:
-                _, fail_reason = check_result.split("|")
-                fail_reason = f"The summary results cannot summarize the user input due to: {fail_reason}. Please re-understand and complete the summary task."
-            except:
-                logger.warning(
-                    f"The model thought the results are irrelevant but did not give the correct format of results."
-                )
-                fail_reason = "The summary results cannot summarize the user input. Please re-understand and complete the summary task."
-        return success, fail_reason
+    # async def a_correctness_check(self, message: Optional[Dict]):
+    #     current_goal = message.get("current_gogal", None)
+    #     action_report = message.get("action_report", None)
+    #     task_result = ""
+    #     if action_report:
+    #         task_result = action_report.get("content", "")
+    #
+    #     check_result, model = await self.a_thinking(
+    #         messages=[
+    #             {
+    #                 "role": ModelMessageRoleType.HUMAN,
+    #                 "content": f"""Please understand the following user input and summary results and give your judgment:
+    #                     User Input: {current_goal}
+    #                     Summary Results: {task_result}
+    #                 """,
+    #             }
+    #         ],
+    #         prompt=CHECK_RESULT_SYSTEM_MESSAGE,
+    #     )
+    #
+    #     fail_reason = ""
+    #     if "True" in check_result:
+    #         success = True
+    #     else:
+    #         success = False
+    #         try:
+    #             _, fail_reason = check_result.split("|")
+    #             fail_reason = f"The summary results cannot summarize the user input due to: {fail_reason}. Please re-understand and complete the summary task."
+    #         except:
+    #             logger.warning(
+    #                 f"The model thought the results are irrelevant but did not give the correct format of results."
+    #             )
+    #             fail_reason = "The summary results cannot summarize the user input. Please re-understand and complete the summary task."
+    #     return success, fail_reason

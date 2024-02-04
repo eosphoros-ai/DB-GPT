@@ -15,6 +15,7 @@ from dbgpt.core.awel.flow import (
     ResourceCategory,
     ViewMetadata,
 )
+from dbgpt.core.awel.trigger.base import Trigger
 from dbgpt.core.interface.message import ModelMessageRoleType
 from dbgpt.model.operators.llm_operator import MixinLLMOperator
 
@@ -107,7 +108,6 @@ class AwelAgentOperator(
                 AwelAgent,
                 optional=True,
                 default=None,
-                resource_category=ResourceCategory.AGENT,
                 description="The dbgpt agent.",
             ),
         ],
@@ -208,3 +208,39 @@ class AwelAgentOperator(
             .build()
         )
         return agent
+
+
+class AgentDummytTrigger(Trigger):
+    """Http trigger for AWEL.
+
+    Http trigger is used to trigger a DAG by http request.
+    """
+
+    metadata = ViewMetadata(
+        label="Agent Trigger",
+        name="agent_trigger",
+        category=OperatorCategory.TRIGGER,
+        operator_type=OperatorType.INPUT,
+        description="Trigger your workflow by agent",
+        inputs=[],
+        parameters=[],
+        outputs=[
+            IOField.build_from(
+                "Agent Operator Context",
+                "agent_operator_context",
+                AgentGenerateContext,
+                description="The Agent Operator output.",
+            )
+        ],
+    )
+
+    def __init__(
+        self,
+        **kwargs,
+    ) -> None:
+        """Initialize a HttpTrigger."""
+        super().__init__(**kwargs)
+
+    async def trigger(self) -> None:
+        """Trigger the DAG. Not used in HttpTrigger."""
+        pass

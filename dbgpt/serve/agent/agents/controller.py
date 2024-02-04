@@ -37,7 +37,6 @@ from ..resource_loader.plugin_hub_load_client import PluginHubLoadClient
 from ..team.base import TeamMode
 from ..team.layout.team_awel_layout_new import AwelLayoutChatNewManager
 from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
-from .dbgpts import DbGptsInstance
 
 CFG = Config()
 
@@ -328,33 +327,6 @@ async def agents_list():
         return Result.succ(agents)
     except Exception as e:
         return Result.failed(code="E30001", msg=str(e))
-
-
-@router.post("/v1/dbgpts/create", response_model=Result[str])
-async def create_dbgpts(gpts_instance: DbGptsInstance = Body()):
-    logger.info(f"create_dbgpts:{gpts_instance}")
-    try:
-        multi_agents.gpts_create(
-            GptsInstanceEntity(
-                gpts_name=gpts_instance.gpts_name,
-                gpts_describe=gpts_instance.gpts_describe,
-                team_mode=gpts_instance.team_mode,
-                resource_db=json.dumps(gpts_instance.resource_db.to_dict()),
-                resource_internet=json.dumps(gpts_instance.resource_internet.to_dict()),
-                resource_knowledge=json.dumps(
-                    gpts_instance.resource_knowledge.to_dict()
-                ),
-                gpts_agents=json.dumps(gpts_instance.gpts_agents),
-                gpts_models=json.dumps(gpts_instance.gpts_models),
-                language=gpts_instance.language,
-                user_code=gpts_instance.user_code,
-                sys_code=gpts_instance.sys_code,
-            )
-        )
-        return Result.succ(None)
-    except Exception as e:
-        logger.error(f"create_dbgpts failed:{str(e)}")
-        return Result.failed(msg=str(e), code="E300002")
 
 
 @router.get("/v1/dbgpts/list", response_model=Result[str])

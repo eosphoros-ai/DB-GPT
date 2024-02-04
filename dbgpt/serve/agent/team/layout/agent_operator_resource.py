@@ -28,14 +28,6 @@ from dbgpt.core.interface.operators.prompt_operator import CommonChatPromptTempl
     category=ResourceCategory.AGENT,
     parameters=[
         Parameter.build_from(
-            label="Agent Resource Name",
-            name="agent_resource_name",
-            type=str,
-            optional=True,
-            default=None,
-            description="The agent resource name.",
-        ),
-        Parameter.build_from(
             label="Agent Resource Type",
             name="agent_resource_type",
             type=str,
@@ -45,6 +37,14 @@ from dbgpt.core.interface.operators.prompt_operator import CommonChatPromptTempl
                 OptionValue(label=item.name, name=item.value, value=item.value)
                 for item in ResourceType
             ],
+        ),
+        Parameter.build_from(
+            label="Agent Resource Name",
+            name="agent_resource_name",
+            type=str,
+            optional=True,
+            default=None,
+            description="The agent resource name.",
         ),
         Parameter.build_from(
             label="Agent Resource Value",
@@ -67,9 +67,9 @@ class AwelAgentResource(AgentResource):
 
         values["name"] = name
         values["type"] = ResourceType(type)
-        values["name"] = value
+        values["value"] = value
 
-        return cls.base_pre_fill(values)
+        return values
 
 
 @register_resource(
@@ -84,7 +84,6 @@ class AwelAgentResource(AgentResource):
             LLMClient,
             optional=True,
             default=None,
-            resource_category=ResourceCategory.LLM_CLIENT,
             description="The LLM Client.",
         ),
         Parameter.build_from(
@@ -113,7 +112,7 @@ class AwelAgentConfig(LLMConfig):
     @root_validator(pre=True)
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the agent ResourceType"""
-        return cls.base_pre_fill(values)
+        return values
 
 
 @register_resource(
@@ -126,7 +125,6 @@ class AwelAgentConfig(LLMConfig):
             label="Agent Profile",
             name="agent_profile",
             type=str,
-            resource_category=ResourceCategory.AGENT,
             description="Which agent want use.",
             optional=True,
             default=None,
