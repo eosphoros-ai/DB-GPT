@@ -20,7 +20,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   if (data.category === 'resource') {
     return <NodeHandler node={node} data={data} type="target" label={label} index={index} />;
   } else if (data.category === 'common') {
-    const defaultValue = data.default || data.value;
+    const defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
     switch (data.type_name) {
       case 'int':
         return (
