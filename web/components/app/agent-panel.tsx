@@ -52,6 +52,10 @@ export default function AgentPanel(props: IProps) {
     }
   };
 
+  const formatStrategyValue = (value: string) => {
+    return !value ? [] : value.split(',');
+  };
+
   useEffect(() => {
     getStrategy();
     getStrategyValues(detail.llm_strategy);
@@ -109,17 +113,31 @@ export default function AgentPanel(props: IProps) {
           <>
             <div className="mr-2">LLM Strategy Value:</div>
             <Select
-              value={agent.llm_strategy_value}
+              value={formatStrategyValue(agent.llm_strategy_value)}
               className="w-1/4"
+              mode="multiple"
               options={strategyValueOptions}
               onChange={(value) => {
-                updateAgent(value, 'llm_strategy_value');
+                if (!value || value?.length === 0) {
+                  updateAgent(null, 'llm_strategy_value');
+                  return null;
+                }
+
+                const curValue = value.reduce((pre: string, cur: string, index: number) => {
+                  if (index === 0) {
+                    return cur;
+                  } else {
+                    return `${pre},${cur}`;
+                  }
+                }, '');
+
+                updateAgent(curValue, 'llm_strategy_value');
               }}
             />
           </>
         )}
       </div>
-      <div className="mb-3 text-lg font-bold">可用资源</div>
+      <div className="mb-3 text-lg font-bold">{t('available_resources')}</div>
       {resources.map((resource: any, index: number) => {
         return (
           <ResourceCard

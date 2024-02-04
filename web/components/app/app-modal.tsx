@@ -316,18 +316,19 @@ export default function AppModal(props: IProps) {
             >
               <Input.TextArea rows={3} placeholder={t('Please_input_the_description')} />
             </Form.Item>
-            <div className="flex w-full mt-12 justify-center">
-              <Form.Item<FieldType> label={t('language')} name="language" className="w-1/2" rules={[{ required: true }]}>
+            <div className="flex w-full">
+              <Form.Item<FieldType>  labelCol={{span: 7}} label={t('language')} name="language" className="w-1/2" rules={[{ required: true }]}>
                 <Select className="w-2/3 ml-4" placeholder={t('language_select_tips')} options={languageOptions} />
               </Form.Item>
               <Form.Item<FieldType>
                 label={t('team_modal')}
                 name="team_mode"
-                className="w-1/2"
+                className='w-1/2'
+                labelCol={{span: 6}}
                 rules={[{ required: true }]}
                 initialValue={teamModal && teamModal[0].value}
               >
-                <Select className="w-1/2 ml-4" onChange={handleTeamModalChange} placeholder={t('Please_input_the_work_modal')} options={teamModal} />
+                <Select className="ml-4 w-72" onChange={handleTeamModalChange} placeholder={t('Please_input_the_work_modal')} options={teamModal} />
               </Form.Item>
             </div>
             {curTeamModal !== 'awel_layout' ? (

@@ -204,6 +204,7 @@ const en = {
   resource_value: 'Value',
   resource_dynamic: 'Dynamic',
   Please_input_the_work_modal: 'Please select the work modal',
+  available_resources: ' Available Resources',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -414,6 +415,7 @@ const zh: Resources['translation'] = {
   resource_value: '参数',
   resource_dynamic: '动态',
   Please_input_the_work_modal: '请选择工作模式',
+  available_resources: '可用资源',
 } as const;
 
 i18n.use(initReactI18next).init({
