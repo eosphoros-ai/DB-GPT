@@ -321,8 +321,6 @@ class FlowFactory:
                 raise ValueError("Unable to find source or target node.")
             if source_node.data.is_operator and not target_node.data.is_operator:
                 raise ValueError("Unable to connect operator to resource.")
-            if not source_node.data.is_operator and not target_node.data.is_operator:
-                raise ValueError("Unable to connect resource to resource.")
 
             current_upstream = key_to_upstream_node.get(target_key, [])
             current_upstream.append(source_node)

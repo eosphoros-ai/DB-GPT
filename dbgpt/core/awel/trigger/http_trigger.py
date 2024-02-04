@@ -320,7 +320,6 @@ class HttpTrigger(Trigger):
                 optional=True,
                 default=None,
                 description="The request body of the API endpoint",
-                resource_category=ResourceCategory.HTTP_BODY,
                 resource_type=ResourceType.CLASS,
             ),
             Parameter.build_from(
@@ -338,7 +337,6 @@ class HttpTrigger(Trigger):
                 optional=True,
                 default=None,
                 description="The response body of the API endpoint",
-                resource_category=ResourceCategory.HTTP_BODY,
                 resource_type=ResourceType.CLASS,
             ),
             Parameter.build_from(
@@ -673,7 +671,6 @@ _PARAMETER_RESPONSE_BODY = Parameter.build_from(
     optional=True,
     default=None,
     description="The response body of the API endpoint",
-    resource_category=ResourceCategory.HTTP_BODY,
     resource_type=ResourceType.CLASS,
 )
 _PARAMETER_MEDIA_TYPE = Parameter.build_from(

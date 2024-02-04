@@ -25,6 +25,9 @@ from dbgpt.core.interface.operators.prompt_operator import (  # noqa: F401
     PromptBuilderOperator,
 )
 
+# Flow
+from dbgpt.core.operators.flow import *  # noqa: F401, F403
+
 __ALL__ = [
     "BaseLLM",
     "LLMBranchOperator",
@@ -42,4 +45,6 @@ __ALL__ = [
     "HistoryDynamicPromptBuilderOperator",
     "ChatComposerInput",
     "ChatHistoryPromptComposerOperator",
+    "ConversationComposerOperator",
+    "PromptFormatDictBuilderOperator",
 ]
