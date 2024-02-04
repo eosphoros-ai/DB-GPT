@@ -1,15 +1,16 @@
-from typing import List, Tuple, Optional, Callable
-import setuptools
-import platform
-import subprocess
+import functools
 import os
-from enum import Enum
-import urllib.request
-from urllib.parse import urlparse, quote
+import platform
 import re
 import shutil
+import subprocess
+import urllib.request
+from enum import Enum
+from typing import Callable, List, Optional, Tuple
+from urllib.parse import quote, urlparse
+
+import setuptools
 from setuptools import find_packages
-import functools
 
 with open("README.md", mode="r", encoding="utf-8") as fh:
     long_description = fh.read()
