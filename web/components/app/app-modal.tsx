@@ -6,6 +6,7 @@ import AddIcon from '../icons/add-icon';
 import AgentPanel from './agent-panel';
 import { addApp, apiInterceptors, getAgents, getResourceType, getTeamMode, updateApp } from '@/client/api';
 import type { TabsProps } from 'antd';
+import DagLayout from './dag-layout';
 
 type TargetKey = string;
 
@@ -333,7 +334,7 @@ export default function AppModal(props: IProps) {
                 <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
               </>
             ) : (
-              <div>preview awel</div>
+              <DagLayout />
             )}
           </Form>
         </Spin>
