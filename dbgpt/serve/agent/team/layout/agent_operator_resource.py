@@ -144,31 +144,20 @@ class AwelAgentConfig(LLMConfig):
             description="The agent role name.",
         ),
         Parameter.build_from(
-            label="Agent Resource Name",
-            name="agent_resource_name",
-            type=str,
+            label="Agent Resource",
+            name="agent_resource",
+            type=AwelAgentResource,
             optional=True,
             default=None,
-            description="The agent resource name.",
+            description="The agent resource.",
         ),
         Parameter.build_from(
-            label="Agent Resource Type",
-            name="agent_resource_type",
-            type=str,
+            label="Agent LLM  Config",
+            name="agent_llm_Config",
+            type=AwelAgentConfig,
             optional=True,
             default=None,
-            options=[
-                OptionValue(label=item.name, name=item.value, value=item.value)
-                for item in ResourceType
-            ],
-        ),
-        Parameter.build_from(
-            label="Agent Resource Value",
-            name="agent_resource_value",
-            type=str,
-            optional=True,
-            default=None,
-            description="The agent resource value.",
+            description="The agent llm config.",
         ),
     ],
 )
@@ -185,12 +174,13 @@ class AwelAgent(BaseModel):
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the agent ResourceType"""
 
-        name = values.pop("agent_resource_name")
-        type = values.pop("agent_resource_type")
-        value = values.pop("agent_resource_value")
-        if type is not None:
-            values["resources"] = [
-                AgentResource(type=ResourceType(type), name=name, value=value)
-            ]
+        resource = values.pop("agent_resource")
+        llm_config = values.pop("agent_llm_Config")
+
+        if resource is not None:
+            values["resources"] = [resource]
+
+        if llm_config is not None:
+            values["llm_config"] = llm_config
 
         return values
