@@ -36,6 +36,8 @@ const languageOptions = [
   { value: 'en', label: '英文' },
 ];
 
+type TeamModals = 'awel_layout' | 'singe_agent' | 'auto_plan';
+
 export default function AppModal(props: IProps) {
   const { handleCancel, open, updateApps, type, app } = props;
 
@@ -47,6 +49,7 @@ export default function AppModal(props: IProps) {
   const [dropItems, setDropItems] = useState<IAgent[]>([]);
   const [details, setDetails] = useState<any>([...(app?.details || [])]);
   const [resourceTypes, setResourceTypes] = useState<any>();
+  const [curTeamModal, setCurTeamModal] = useState<TeamModals>('auto_plan');
 
   const [form] = Form.useForm();
 
@@ -254,6 +257,10 @@ export default function AppModal(props: IProps) {
     handleCancel();
   };
 
+  const handleTeamModalChange = (value: TeamModals) => {
+    setCurTeamModal(value);
+  };
+
   const renderAddIcon = () => {
     return (
       <Dropdown menu={{ items: dropItems }} trigger={['click']}>
@@ -317,11 +324,17 @@ export default function AppModal(props: IProps) {
                 rules={[{ required: true }]}
                 initialValue={teamModal && teamModal[0].value}
               >
-                <Select className="w-1/2 ml-4" placeholder={t('Please_input_the_work_modal')} options={teamModal} />
+                <Select className="w-1/2 ml-4" onChange={handleTeamModalChange} placeholder={t('Please_input_the_work_modal')} options={teamModal} />
               </Form.Item>
             </div>
-            <div className='mb-5 text-lg font-bold"'>Agents</div>
-            <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
+            {curTeamModal !== 'awel_layout' ? (
+              <>
+                <div className='mb-5 text-lg font-bold"'>Agents</div>
+                <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
+              </>
+            ) : (
+              <div>preview awel</div>
+            )}
           </Form>
         </Spin>
       </Modal>
