@@ -122,6 +122,9 @@ export default function AppModal(props: IProps) {
           };
         })
         .filter((item) => {
+          if (!app.details || app.details?.length === 0) {
+            return item;
+          }
           return app?.details?.every((detail: any) => detail.agent_name !== item.label);
         }),
     );
@@ -294,7 +297,12 @@ export default function AppModal(props: IProps) {
             layout="horizontal"
             labelAlign="left"
             labelCol={{ span: 4 }}
-            initialValues={{ app_name: app.app_name, app_describe: app.app_describe, language: app.language, team_mode: app.team_mode }}
+            initialValues={{
+              app_name: app.app_name,
+              app_describe: app.app_describe,
+              language: app.language || languageOptions[0].value,
+              team_mode: app.team_mode,
+            }}
             autoComplete="off"
             onFinish={handleSubmit}
           >
@@ -309,13 +317,7 @@ export default function AppModal(props: IProps) {
               <Input.TextArea rows={3} placeholder={t('Please_input_the_description')} />
             </Form.Item>
             <div className="flex w-full mt-12 justify-center">
-              <Form.Item<FieldType>
-                label={t('language')}
-                initialValue={languageOptions[0].value}
-                name="language"
-                className="w-1/2"
-                rules={[{ required: true }]}
-              >
+              <Form.Item<FieldType> label={t('language')} name="language" className="w-1/2" rules={[{ required: true }]}>
                 <Select className="w-2/3 ml-4" placeholder={t('language_select_tips')} options={languageOptions} />
               </Form.Item>
               <Form.Item<FieldType>
