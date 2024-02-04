@@ -3,11 +3,10 @@ import MuiLoading from '@/components/common/loading';
 import AddNodes from '@/components/flow/add-nodes';
 import ButtonEdge from '@/components/flow/button-edge';
 import CanvasNode from '@/components/flow/canvas-node';
-import RequiredIcon from '@/components/flow/required-icon';
-import { IFlowData } from '@/types/flow';
-import { getUniqueNodeId, mapHumpToUnderline, mapUnderlineToHump } from '@/utils/flow';
-import { SaveOutlined } from '@ant-design/icons';
-import { Divider, Input, Modal, message } from 'antd';
+import { IFlowData, IFlowUpdateParam } from '@/types/flow';
+import { checkFlowDataRequied, getUniqueNodeId, mapHumpToUnderline, mapUnderlineToHump } from '@/utils/flow';
+import { FrownOutlined, SaveOutlined } from '@ant-design/icons';
+import { Button, Checkbox, Divider, Form, Input, Modal, Space, message, notification } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import React, { DragEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +24,7 @@ const edgeTypes = { buttonedge: ButtonEdge };
 const Canvas: React.FC<Props> = () => {
   const { t } = useTranslation();
   const [messageApi, contextHolder] = message.useMessage();
+  const [form] = Form.useForm();
   const searchParams = useSearchParams();
   const id = searchParams?.get('id') || '';
   const reactFlow = useReactFlow();
@@ -34,18 +34,16 @@ const Canvas: React.FC<Props> = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [flowInfo, setFlowInfo] = useState<IFlowUpdateParam>();
 
   async function getFlowData() {
     setLoading(true);
     const [_, data] = await apiInterceptors(getFlowById(id));
     if (data) {
       const flowData = mapUnderlineToHump(data.flow_data);
-      setName(data.name);
-      setDescription(data.description);
-      setNodes(flowData.nodes.map((node) => ({ ...node, type: 'customNode' })));
-      setEdges(flowData.edges.map((edge) => ({ ...edge, type: 'buttonedge' })));
+      setFlowInfo(data);
+      setNodes(flowData.nodes);
+      setEdges(flowData.edges);
     }
     setLoading(false);
   }
@@ -53,6 +51,18 @@ const Canvas: React.FC<Props> = () => {
   useEffect(() => {
     id && getFlowData();
   }, [id]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.returnValue = message;
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   function onNodesClick(event: any, clickedNode: Node) {
     reactFlow.setNodes((nds) =>
@@ -128,30 +138,55 @@ const Canvas: React.FC<Props> = () => {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  function labelChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const label = e.target.value;
+    // replace spaces with underscores, convert uppercase letters to lowercase, remove characters other than digits, letters, _, and -.
+    let result = label
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_-]/g, '')
+      .toLowerCase();
+    result = result;
+    form.setFieldsValue({ name: result });
+  }
+
   function clickSave() {
-    if (id) {
-      handleSaveFlow();
-    } else {
-      setIsModalVisible(true);
+    const flowData = reactFlow.toObject() as IFlowData;
+    const [check, node, message] = checkFlowDataRequied(flowData);
+    if (!check && message) {
+      setNodes((nds) =>
+        nds.map((item) => {
+          if (item.id === node?.id) {
+            item.data = {
+              ...item.data,
+              invalid: true,
+            };
+          } else {
+            item.data = {
+              ...item.data,
+              invalid: false,
+            };
+          }
+          return item;
+        }),
+      );
+      return notification.error({ message: 'Error', description: message, icon: <FrownOutlined className="text-red-600" /> });
     }
+    setIsModalVisible(true);
   }
 
   async function handleSaveFlow() {
+    const { name, label, description = '', editable = false } = form.getFieldsValue();
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
     if (id) {
-      const [, , res] = await apiInterceptors(updateFlowById(id, { name, description, uid: id, flow_data: reactFlowObject }));
+      const [, , res] = await apiInterceptors(updateFlowById(id, { name, label, description, editable, uid: id, flow_data: reactFlowObject }));
+      setIsModalVisible(false);
       if (res?.success) {
         messageApi.success(t('save_flow_success'));
       } else if (res?.err_msg) {
         messageApi.error(res?.err_msg);
       }
     } else {
-      if (!name) {
-        return messageApi.warning(t('flow_name_required'));
-      } else if (!description) {
-        return messageApi.warning(t('flow_description_required'));
-      }
-      const [_, res] = await apiInterceptors(addFlow({ name, description, flow_data: reactFlowObject }));
+      const [_, res] = await apiInterceptors(addFlow({ name, label, description, editable, flow_data: reactFlowObject }));
       if (res?.uid) {
         messageApi.success(t('save_flow_success'));
         const history = window.history;
@@ -194,32 +229,66 @@ const Canvas: React.FC<Props> = () => {
       <Modal
         title={t('flow_modal_title')}
         open={isModalVisible}
-        onOk={handleSaveFlow}
         onCancel={() => {
           setIsModalVisible(false);
         }}
+        cancelButtonProps={{ className: 'hidden' }}
+        okButtonProps={{ className: 'hidden' }}
       >
-        <>
-          <p>
-            {t('flow_name')}
-            <RequiredIcon />
-          </p>
-          <Input
-            onChange={(e) => {
-              setName(e.target.value);
-            }}
-          />
-          <p className="mt-4">
-            {t('flow_description')}
-            <RequiredIcon />
-          </p>
-          <TextArea
-            rows={3}
-            onChange={(e) => {
-              setDescription(e.target.value);
-            }}
-          />
-        </>
+        <Form
+          name="flow_form"
+          form={form}
+          labelCol={{ span: 8 }}
+          wrapperCol={{ span: 16 }}
+          style={{ maxWidth: 600 }}
+          initialValues={{ remember: true }}
+          onFinish={handleSaveFlow}
+          autoComplete="off"
+        >
+          <Form.Item label="Title" name="label" initialValue={flowInfo?.label} rules={[{ required: true, message: 'Please input flow title!' }]}>
+            <Input onChange={labelChange} />
+          </Form.Item>
+          <Form.Item
+            label="Name"
+            name="name"
+            initialValue={flowInfo?.name}
+            rules={[
+              { required: true, message: 'Please input flow name!' },
+              () => ({
+                validator(_, value) {
+                  const regex = /^[a-zA-Z0-9_\-]+$/;
+                  if (!regex.test(value)) {
+                    return Promise.reject('Can only contain numbers, letters, underscores, and dashes');
+                  }
+                  return Promise.resolve();
+                },
+              }),
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item label="Description" initialValue={flowInfo?.description} name="description">
+            <TextArea rows={3} />
+          </Form.Item>
+          <Form.Item label="Editable" name="editable" initialValue={flowInfo?.editable} valuePropName="checked">
+            <Checkbox></Checkbox>
+          </Form.Item>
+          <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+            <Space>
+              <Button
+                htmlType="button"
+                onClick={() => {
+                  setIsModalVisible(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit">
+                Submit
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
       </Modal>
       {contextHolder}
     </>

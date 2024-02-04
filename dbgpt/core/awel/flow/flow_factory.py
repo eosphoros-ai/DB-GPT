@@ -9,7 +9,13 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 from dbgpt._private.pydantic import BaseModel, Field, root_validator, validator
 from dbgpt.core.awel.dag.base import DAG, DAGNode
 
-from .base import OperatorType, ResourceMetadata, ViewMetadata, _get_operator_class
+from .base import (
+    OperatorType,
+    ResourceMetadata,
+    ViewMetadata,
+    _get_operator_class,
+    _get_resource_class,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -289,6 +295,7 @@ class FlowFactory:
         key_to_resource: Dict[str, ResourceMetadata] = {}
         key_to_downstream: Dict[str, List[Tuple[str, int, int]]] = {}
         key_to_upstream: Dict[str, List[Tuple[str, int, int]]] = {}
+        key_to_upstream_node: Dict[str, List[FlowNodeData]] = {}
         for node in flow_data.nodes:
             key = node.id
             if key in key_to_operator_nodes or key in key_to_resource_nodes:
@@ -316,6 +323,11 @@ class FlowFactory:
                 raise ValueError("Unable to connect operator to resource.")
             if not source_node.data.is_operator and not target_node.data.is_operator:
                 raise ValueError("Unable to connect resource to resource.")
+
+            current_upstream = key_to_upstream_node.get(target_key, [])
+            current_upstream.append(source_node)
+            key_to_upstream_node[target_key] = current_upstream
+
             if source_node.data.is_operator and target_node.data.is_operator:
                 # Operator to operator.
                 downstream = key_to_downstream.get(source_key, [])
@@ -348,9 +360,35 @@ class FlowFactory:
                         f"target key: {target_key}, "
                         f"target_order: {target_order}"
                     )
-
+            elif not source_node.data.is_operator and not target_node.data.is_operator:
+                # Resource to resource.
+                target_order = edge.target_order
+                has_matched = False
+                for i, param in enumerate(target_node.data.parameters):
+                    if i == target_order:
+                        if param.category != "resource":
+                            err_msg = (
+                                f"Unable to connect resource to resource, "
+                                f"target_order: {target_order}, parameter name: "
+                                f"{param.name}, param category: {param.category}"
+                            )
+                            logger.warning(err_msg)
+                            raise ValueError(err_msg)
+                        param.value = source_key
+                        has_matched = True
+                if not has_matched:
+                    raise ValueError(
+                        "Unable to connect resource to resource, "
+                        f"source key: {source_key}, "
+                        f"target key: {target_key}, "
+                        f"target_order: {target_order}"
+                    )
             else:
-                raise ValueError("Unable to connect resource to resource.")
+                # Operator to resource.
+                raise ValueError("Unable to connect operator to resource.")
+
+        # Topological sort
+        key_to_order: Dict[str, int] = _topological_sort(key_to_upstream_node)
 
         # Sort the keys by the order of the nodes.
         for key, value in key_to_downstream.items():
@@ -360,6 +398,34 @@ class FlowFactory:
             # Sort by target_order.
             key_to_upstream[key] = sorted(value, key=lambda x: x[2])
 
+        sorted_key_to_resource_nodes = list(key_to_resource_nodes.values())
+        sorted_key_to_resource_nodes = sorted(
+            sorted_key_to_resource_nodes, key=lambda r: key_to_order[r.id]
+        )
+
+        key_to_resource_instance: Dict[str, Any] = {}
+        # Build Resources instances as topological order, make sure the dependency
+        # resources is built before the children resources.
+        for resource_node in sorted_key_to_resource_nodes:
+            resource_key = resource_node.id
+            if not isinstance(resource_node.data, ResourceMetadata):
+                raise ValueError("Node data is not a ResourceMetadata.")
+            resource_metadata: ResourceMetadata = resource_node.data
+            origin_resource_key = resource_node.data.get_origin_id()
+            registered_item = _get_resource_class(origin_resource_key)
+            # Use metadata from resource class instead of node data(for safety).
+            registered_resource_metadata: ResourceMetadata = registered_item.metadata
+            resource_cls = registered_item.cls
+            if not registered_resource_metadata:
+                raise ValueError("Metadata is not set.")
+            if not resource_cls:
+                raise ValueError("Resource class is not set.")
+            runnable_params = registered_resource_metadata.get_runnable_parameters(
+                resource_metadata.parameters, key_to_resource, key_to_resource_instance
+            )
+            key_to_resource_instance[resource_key] = resource_cls(**runnable_params)
+
+        # Build Operators
         key_to_tasks: Dict[str, DAGNode] = {}
         for operator_key, node in key_to_operator_nodes.items():
             if not isinstance(node.data, ViewMetadata):
@@ -387,9 +453,9 @@ class FlowFactory:
                     param.value = key_to_operator_nodes[downstream_key].data.name
 
             runnable_params = metadata.get_runnable_parameters(
-                view_metadata.parameters, key_to_resource
+                view_metadata.parameters, key_to_resource, key_to_resource_instance
             )
-            # runnable_params["task_name"] = metadata.name
+            runnable_params["task_name"] = operator_key
             operator_task: DAGNode = cast(DAGNode, operator_cls(**runnable_params))
             key_to_tasks[operator_key] = operator_task
 
@@ -437,3 +503,59 @@ class FlowFactory:
                         raise ValueError("Unable to find downstream task.")
                     task >> downstream_task
             return dag
+
+
+def _topological_sort(
+    key_to_upstream_node: Dict[str, List[FlowNodeData]]
+) -> Dict[str, int]:
+    """Topological sort.
+
+    Returns the topological order of the nodes and checks if the graph has at least
+    one cycle.
+
+    Args:
+        key_to_upstream_node (Dict[str, List[FlowNodeData]]): The upstream nodes
+
+    Returns:
+        Dict[str, int]: The topological order of the nodes
+
+    Raises:
+        ValueError: Graph has at least one cycle
+    """
+    from collections import deque
+
+    key_to_order: Dict[str, int] = {}
+    current_order = 0
+
+    keys = set()
+    for key, upstreams in key_to_upstream_node.items():
+        keys.add(key)
+        for upstream in upstreams:
+            keys.add(upstream.id)
+
+    in_degree = {key: 0 for key in keys}
+    # Build key to downstream graph.
+    graph: Dict[str, List[str]] = {key: [] for key in keys}
+    for key in key_to_upstream_node:
+        for node in key_to_upstream_node[key]:
+            graph[node.id].append(key)
+            in_degree[key] += 1
+
+    # Find all nodes with in-degree 0.
+    queue = deque([key for key, degree in in_degree.items() if degree == 0])
+    while queue:
+        current_key: str = queue.popleft()
+        key_to_order[current_key] = current_order
+        current_order += 1
+
+        for adjacent in graph[current_key]:
+            # for each adjacent node, remove the edge from the graph and update the
+            # in-degree
+            in_degree[adjacent] -= 1
+            if in_degree[adjacent] == 0:
+                queue.append(adjacent)
+
+    if len(key_to_order) != len(keys):
+        raise ValueError("Graph has at least one cycle")
+
+    return key_to_order

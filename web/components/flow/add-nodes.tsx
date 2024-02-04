@@ -1,7 +1,7 @@
 import { apiInterceptors, getFlowNodes } from '@/client/api';
 import { IFlowNode } from '@/types/flow';
 import { PlusOutlined } from '@ant-design/icons';
-import { Badge, Button, Collapse, CollapseProps, Divider, Input, Popover } from 'antd';
+import { Badge, Button, Collapse, CollapseProps, Input, Popover } from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FLOW_NODES_KEY } from '@/utils';
@@ -13,8 +13,10 @@ type GroupType = { category: string; categoryLabel: string; nodes: IFlowNode[] }
 
 const AddNodes: React.FC = () => {
   const { t } = useTranslation();
-  const [nodes, setNodes] = useState<Array<IFlowNode>>([]);
-  const [groups, setGroups] = useState<Array<GroupType>>([]);
+  const [operators, setOperators] = useState<Array<IFlowNode>>([]);
+  const [resources, setResources] = useState<Array<IFlowNode>>([]);
+  const [operatorsGroup, setOperatorsGroup] = useState<GroupType[]>([]);
+  const [resourcesGroup, setResourcesGroup] = useState<GroupType[]>([]);
   const [searchValue, setSearchValue] = useState<string>('');
 
   useEffect(() => {
@@ -24,41 +26,40 @@ const AddNodes: React.FC = () => {
   async function getNodes() {
     const [_, data] = await apiInterceptors(getFlowNodes());
     if (data && data.length > 0) {
-      setNodes(data);
-      setGroups(groupNodes(data));
       localStorage.setItem(FLOW_NODES_KEY, JSON.stringify(data));
+      const operatorNodes = data.filter((node) => node.flow_type === 'operator');
+      const resourceNodes = data.filter((node) => node.flow_type === 'resource');
+      setOperators(operatorNodes);
+      setResources(resourceNodes);
+      setOperatorsGroup(groupNodes(operatorNodes));
+      setResourcesGroup(groupNodes(resourceNodes));
     }
   }
 
   function groupNodes(data: IFlowNode[]) {
-    // show operator nodes first, then show resource nodes
     const groups: GroupType[] = [];
     const categoryMap: Record<string, { category: string; categoryLabel: string; nodes: IFlowNode[] }> = {};
     data.forEach((item) => {
       const { category, category_label } = item;
       if (!categoryMap[category]) {
         categoryMap[category] = { category, categoryLabel: category_label, nodes: [] };
-        if (category === 'operator') {
-          groups.unshift(categoryMap[category]);
-        } else {
-          groups.push(categoryMap[category]);
-        }
+        groups.push(categoryMap[category]);
       }
       categoryMap[category].nodes.push(item);
     });
     return groups;
   }
 
-  const items: CollapseProps['items'] = useMemo(() => {
+  const operatorItems: CollapseProps['items'] = useMemo(() => {
     if (!searchValue) {
-      return groups.map(({ category, categoryLabel, nodes }) => ({
+      return operatorsGroup.map(({ category, categoryLabel, nodes }) => ({
         key: category,
         label: categoryLabel,
         children: <StaticNodes nodes={nodes} />,
         extra: <Badge showZero count={nodes.length || 0} style={{ backgroundColor: nodes.length > 0 ? '#52c41a' : '#7f9474' }} />,
       }));
     } else {
-      const searchedNodes = nodes.filter((node) => node.label.toLowerCase().includes(searchValue.toLowerCase()));
+      const searchedNodes = operators.filter((node) => node.label.toLowerCase().includes(searchValue.toLowerCase()));
       return groupNodes(searchedNodes).map(({ category, categoryLabel, nodes }) => ({
         key: category,
         label: categoryLabel,
@@ -66,7 +67,26 @@ const AddNodes: React.FC = () => {
         extra: <Badge showZero count={nodes.length || 0} style={{ backgroundColor: nodes.length > 0 ? '#52c41a' : '#7f9474' }} />,
       }));
     }
-  }, [groups, searchValue]);
+  }, [operatorsGroup, searchValue]);
+
+  const resourceItems: CollapseProps['items'] = useMemo(() => {
+    if (!searchValue) {
+      return resourcesGroup.map(({ category, categoryLabel, nodes }) => ({
+        key: category,
+        label: categoryLabel,
+        children: <StaticNodes nodes={nodes} />,
+        extra: <Badge showZero count={nodes.length || 0} style={{ backgroundColor: nodes.length > 0 ? '#52c41a' : '#7f9474' }} />,
+      }));
+    } else {
+      const searchedNodes = resources.filter((node) => node.label.toLowerCase().includes(searchValue.toLowerCase()));
+      return groupNodes(searchedNodes).map(({ category, categoryLabel, nodes }) => ({
+        key: category,
+        label: categoryLabel,
+        children: <StaticNodes nodes={nodes} />,
+        extra: <Badge showZero count={nodes.length || 0} style={{ backgroundColor: nodes.length > 0 ? '#52c41a' : '#7f9474' }} />,
+      }));
+    }
+  }, [resourcesGroup, searchValue]);
 
   function searchNode(val: string) {
     setSearchValue(val);
@@ -78,10 +98,22 @@ const AddNodes: React.FC = () => {
       trigger={['click']}
       content={
         <div className="w-[320px] overflow-hidden overflow-y-auto scrollbar-default">
-          <p className="my-4 font-bold">{t('add_node')}</p>
+          <p className="my-2 font-bold">{t('add_node')}</p>
           <Search placeholder="Search node" onSearch={searchNode} />
-          <Divider className="my-2" />
-          <Collapse className="max-h-[538px]" size="small" defaultActiveKey={['operator']} ghost items={items} />
+          <h2 className="my-2 ml-2 font-semibold">Operatos</h2>
+          <Collapse
+            className="max-h-[300px] overflow-hidden overflow-y-auto scrollbar-default"
+            size="small"
+            defaultActiveKey={['']}
+            items={operatorItems}
+          />
+          <h2 className="my-2 ml-2 font-semibold">Resources</h2>
+          <Collapse
+            className="max-h-[300px] overflow-hidden overflow-y-auto scrollbar-default"
+            size="small"
+            defaultActiveKey={['']}
+            items={resourceItems}
+          />
         </div>
       }
     >

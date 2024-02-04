@@ -2,14 +2,18 @@ import { Node } from 'reactflow';
 
 export type IFlowUpdateParam = {
   name: string;
+  label: string;
+  editable: boolean;
   description: string;
   uid?: string;
-  flow_data: IFlowData;
+  flow_data?: IFlowData;
 };
 
 export type IFlow = {
   uid: string;
   name: string;
+  label: string;
+  editable: boolean;
   description: string;
   flow_data: IFlowData;
 };
@@ -62,7 +66,6 @@ export type IFlowNode = Node & {
   type_name: string;
   type_cls: string;
   parent_cls?: string; // resource have this key
-  type: string;
   label: string;
   name: string;
   description: string;
@@ -77,6 +80,7 @@ export type IFlowNode = Node & {
   inputs: Array<IFlowNodeInput>;
   outputs: Array<IFlowNodeOutput>;
   version: string;
+  invalid?: boolean;
 };
 
 interface Position {
@@ -94,6 +98,7 @@ export type IFlowDataNode = {
   position_absolute?: Position;
   positionAbsolute?: Position;
   data: IFlowNode;
+  type: string;
 };
 
 export type IFlowDataEdge = {

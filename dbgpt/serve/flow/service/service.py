@@ -104,8 +104,13 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """Load DAG from db"""
         entities = self.dao.get_list({})
         for entity in entities:
-            dag = self._flow_factory.build(entity)
-            self.dag_manager.register_dag(dag)
+            try:
+                dag = self._flow_factory.build(entity)
+                self.dag_manager.register_dag(dag)
+            except Exception as e:
+                logger.warning(
+                    f"Load DAG({entity.name}, {entity.dag_id}) from db error: {str(e)}"
+                )
 
     def load_dag_from_dbgpts(self):
         """Load DAG from dbgpts"""
@@ -195,7 +200,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             raise HTTPException(
                 status_code=404, detail=f"Flow {uid}'s dag id not found"
             )
-        self.dag_manager.unregister_dag(inst.dag_id)
+        try:
+            self.dag_manager.unregister_dag(inst.dag_id)
+        except Exception as e:
+            logger.warning(f"Unregister DAG({inst.dag_id}) error: {str(e)}")
         self.dao.delete(query_request)
         return inst
 

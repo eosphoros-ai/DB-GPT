@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
 
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.core.interface.serialization import Serializable, Serializer
 from dbgpt.util.annotations import PublicAPI
 from dbgpt.util.pagination_utils import PaginationResult
@@ -384,6 +385,23 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
         )
 
 
+@register_resource(
+    label="Memory Storage",
+    name="in_memory_storage",
+    category=ResourceCategory.STORAGE,
+    description="Save your data in memory.",
+    parameters=[
+        Parameter.build_from(
+            "Serializer",
+            "serializer",
+            Serializer,
+            optional=True,
+            default=None,
+            description="The serializer for serializing the data. If not set, the "
+            "default JSON serializer will be used.",
+        )
+    ],
+)
 @PublicAPI(stability="alpha")
 class InMemoryStorage(StorageInterface[T, T]):
     """The in-memory storage for storing and loading data."""
