@@ -32,7 +32,7 @@ test_plugin_dir = os.path.join(parent_dir, "test_files")
 
 
 async def main():
-    from dbgpt.model import OpenAILLMClient
+    from dbgpt.model.proxy.llms.chatgpt import OpenAILLMClient
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="test456")

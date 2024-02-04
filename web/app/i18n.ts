@@ -197,8 +197,13 @@ const en = {
   delete_flow_confirm: 'Are you sure you want to delete this flow?',
   related_nodes: 'Related Nodes',
   add_resource: 'Add Resource',
-  team_modal: 'team modal',
+  team_modal: 'Work Modal',
   App: 'App',
+  resource_name: 'Resource Name',
+  resource_type: 'Resource Type',
+  resource_value: 'Value',
+  resource_dynamic: 'Dynamic',
+  Please_input_the_work_modal: 'Please select the work modal',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -402,8 +407,13 @@ const zh: Resources['translation'] = {
   related_nodes: '关联节点',
   language_select_tips: '请选择语言',
   add_resource: '添加资源',
-  team_modal: '组织模式',
+  team_modal: '工作模式',
   App: '应用程序',
+  resource_name: '资源名',
+  resource_type: '资源类型',
+  resource_value: '参数',
+  resource_dynamic: '动态',
+  Please_input_the_work_modal: '请选择工作模式',
 } as const;
 
 i18n.use(initReactI18next).init({

@@ -321,3 +321,7 @@ export const updateApp = (data: any) => {
 export const getAppStrategy = () => {
   return GET<null, []>(`api/v1/llm-strategy/list`);
 };
+
+export const getAppStrategyValues = (type: string) => {
+  return GET<string, []>(`api/v1/llm-strategy/value/list?type=${type}`);
+};

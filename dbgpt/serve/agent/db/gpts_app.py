@@ -1,6 +1,7 @@
 import json
 import uuid
 from datetime import datetime
+from itertools import groupby
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
@@ -124,7 +125,7 @@ class GptsApp(BaseModel):
 
 
 class GptsAppQuery(GptsApp):
-    page_size: int = 10
+    page_size: int = 100
     page_no: int = 1
     is_collected: Optional[str] = None
 
@@ -338,12 +339,12 @@ class GptsAppDao(BaseDao):
                 query.page_size
             )
             results = app_qry.all()
+
+            result_app_codes = [res.app_code for res in results]
+            app_details_group = self._group_app_details(result_app_codes, session)
             apps = []
             for app_info in results:
-                app_detail_qry = session.query(GptsAppDetailEntity).filter(
-                    GptsAppDetailEntity.app_code == app_info.app_code
-                )
-                app_details = app_detail_qry.all()
+                app_details = app_details_group.get(app_info.app_code, [])
 
                 apps.append(
                     GptsApp.from_dict(
@@ -369,6 +370,18 @@ class GptsAppDao(BaseDao):
                     )
                 )
             return apps
+
+    def _group_app_details(self, app_codes, session):
+        app_detail_qry = session.query(GptsAppDetailEntity).filter(
+            GptsAppDetailEntity.app_code.in_(app_codes)
+        )
+        app_details = app_detail_qry.all()
+        app_details.sort(key=lambda x: x.app_code)
+        app_details_group = {
+            key: list(group)
+            for key, group in groupby(app_details, key=lambda x: x.app_code)
+        }
+        return app_details_group
 
     def app_detail(self, app_code: str):
         with self.session() as session:
@@ -448,7 +461,11 @@ class GptsAppDao(BaseDao):
 
             app_details = []
             for item in gpts_app.details:
-                resource_dicts = [resource.to_dict() for resource in item.resources]
+                # resource_dicts = [resource.to_dict() for resource in item.resources]
+                resource_dicts = [
+                    AgentResource.dataclass_to_dict(resource)
+                    for resource in item.resources
+                ]
                 if item.agent_name is None:
                     raise f"agent name cannot be None"
 
@@ -492,7 +509,10 @@ class GptsAppDao(BaseDao):
 
             app_details = []
             for item in gpts_app.details:
-                resource_dicts = [resource.to_dict() for resource in item.resources]
+                resource_dicts = [
+                    AgentResource.dataclass_to_dict(resource)
+                    for resource in item.resources
+                ]
                 app_details.append(
                     GptsAppDetailEntity(
                         app_code=gpts_app.app_code,
