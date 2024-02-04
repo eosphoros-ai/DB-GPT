@@ -1,8 +1,9 @@
 import { IFlowNode, IFlowNodeParameter } from '@/types/flow';
-import { Checkbox, Input, InputNumber } from 'antd';
+import { Checkbox, Input, InputNumber, Tooltip } from 'antd';
 import React from 'react';
 import RequiredIcon from './required-icon';
 import NodeHandler from './node-handler';
+import { InfoCircleOutlined } from '@ant-design/icons';
 
 interface NodeParamHandlerProps {
   node: IFlowNode;
@@ -27,6 +28,11 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
           <div className="p-2 text-sm">
             <p>
               {data.label}:<RequiredIcon optional={data.optional} />
+              {data.description && (
+                <Tooltip title={data.description}>
+                  <InfoCircleOutlined className="ml-2 cursor-pointer" />
+                </Tooltip>
+              )}
             </p>
             <InputNumber
               className="w-full"
@@ -42,6 +48,11 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
           <div className="p-2 text-sm">
             <p>
               {data.label}:<RequiredIcon optional={data.optional} />
+              {data.description && (
+                <Tooltip title={data.description}>
+                  <InfoCircleOutlined className="ml-2 cursor-pointer" />
+                </Tooltip>
+              )}
             </p>
             <Input
               className="w-full"
@@ -57,6 +68,11 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
           <div className="p-2 text-sm">
             <p>
               {data.label}:<RequiredIcon optional={data.optional} />
+              {data.description && (
+                <Tooltip title={data.description}>
+                  <InfoCircleOutlined className="ml-2 cursor-pointer" />
+                </Tooltip>
+              )}
               <Checkbox
                 className="ml-2"
                 defaultChecked={defaultValue}
