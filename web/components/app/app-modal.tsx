@@ -106,16 +106,20 @@ export default function AppModal(props: IProps) {
     }
 
     setDropItems(
-      data.map((agent) => {
-        return {
-          label: agent.name,
-          key: agent.name,
-          onClick: () => {
-            add(agent);
-          },
-          agent,
-        };
-      }),
+      data
+        .map((agent) => {
+          return {
+            label: agent.name,
+            key: agent.name,
+            onClick: () => {
+              add(agent);
+            },
+            agent,
+          };
+        })
+        .filter((item) => {
+          return app?.details?.every((detail: any) => detail.agent_name !== item.label);
+        }),
     );
   };
 

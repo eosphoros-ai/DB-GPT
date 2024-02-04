@@ -47,7 +47,7 @@ export default function AgentPanel(props: IProps) {
 
   const getStrategyValues = async (type: string) => {
     const [_, data] = await apiInterceptors(getAppStrategyValues(type));
-    if (data && data?.length > 0) {
+    if (data) {
       setStrategyValueOptions(data.map((item) => ({ label: item, value: item })) ?? []);
     }
   };
