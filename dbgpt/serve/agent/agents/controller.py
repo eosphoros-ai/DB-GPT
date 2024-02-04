@@ -35,7 +35,7 @@ from ..db.gpts_manage_db import GptsInstanceDao, GptsInstanceEntity
 from ..resource_loader.datasource_load_client import DatasourceLoadClient
 from ..resource_loader.plugin_hub_load_client import PluginHubLoadClient
 from ..team.base import TeamMode
-from ..team.layout.team_awel_layout import AwelLayoutChatManager
+from ..team.layout.team_awel_layout_new import AwelLayoutChatNewManager
 from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
 from .dbgpts import DbGptsInstance
 
@@ -92,42 +92,6 @@ class MultiAgents(BaseComponent, ABC):
             GptsAppQuery(user_code=user_code, sys_code=sys_code)
         )
         return apps
-
-    async def _build_chat_manager(
-        self,
-        context: AgentContext,
-        mode: TeamMode,
-        agents: List[Agent],
-        llm_config: LLMConfig,
-        resource_loader: ResourceLoader,
-        team_context: Optional[str] = None,
-    ):
-        if mode == TeamMode.SINGLE_AGENT:
-            return agents[0]
-        else:
-            if TeamMode.AUTO_PLAN == mode:
-                manager = (
-                    AutoPlanChatManager()
-                    .bind(context)
-                    .bind(self.memory)
-                    .bind(llm_config)
-                    .bind(resource_loader)
-                    .build()
-                )
-            elif TeamMode.AWEL_LAYOUT == mode:
-                manager = (
-                    AwelLayoutChatManager()
-                    .bind(context)
-                    .bind(self.memory)
-                    .bind(llm_config)
-                    .bind(resource_loader)
-                    .build()
-                )
-            else:
-                raise ValueError(f"Unknown Agent Team Mode!{mode}")
-            manager.hire(agents)
-
-            return manager
 
     async def agent_chat(
         self,
@@ -268,7 +232,7 @@ class MultiAgents(BaseComponent, ABC):
             if TeamMode.AUTO_PLAN == team_mode:
                 manager = AutoPlanChatManager()
             elif TeamMode.AWEL_LAYOUT == team_mode:
-                manager = AwelLayoutChatManager()
+                manager = AwelLayoutChatNewManager(dag=gpts_app.team_context)
             else:
                 raise ValueError(f"Unknown Agent Team Mode!{team_mode}")
             manager = (

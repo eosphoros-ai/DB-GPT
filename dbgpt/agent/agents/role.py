@@ -18,6 +18,9 @@ class Role(ABC, BaseModel):
     is_human: bool = False
     is_team: bool = False
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def prompt_template(
         self,
         specified_prompt: Optional[str] = None,

@@ -24,7 +24,7 @@ from dbgpt.util.utils import colored
 logger = logging.getLogger(__name__)
 
 
-class ConversableAgent(Agent, Role):
+class ConversableAgent(Role, Agent):
     agent_context: Optional[AgentContext] = None
     actions: List[Action] = Field(default_factory=list)
     resources: List[AgentResource] = Field(default_factory=list)
@@ -38,6 +38,10 @@ class ConversableAgent(Agent, Role):
 
     class Config:
         arbitrary_types_allowed = True
+
+    def __init__(self, **kwargs):
+        Role.__init__(self, **kwargs)
+        Agent.__init__(self)
 
     def init_system_message(self):
         content = self.prompt_template()

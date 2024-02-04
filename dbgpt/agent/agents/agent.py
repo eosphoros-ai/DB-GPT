@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from dbgpt.agent.resource.resource_loader import ResourceLoader
 from dbgpt.core import LLMClient
 from dbgpt.core.interface.llm import ModelMetadata
 from dbgpt.util.annotations import PublicAPI
@@ -202,6 +203,10 @@ class AgentGenerateContext:
 
     rely_messages: List[Dict] = dataclasses.field(default_factory=list)
     final: Optional[bool] = True
+
+    memory: Optional[GptsMemory] = None
+    agent_context: Optional[AgentContext] = None
+    resource_loader: Optional[ResourceLoader] = None
 
     def to_dict(self) -> Dict:
         return dataclasses.asdict(self)

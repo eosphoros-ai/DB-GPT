@@ -68,6 +68,9 @@ class Team(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     def hire(self, agents: List[Agent]):
         """Hire roles to cooperate"""
         self.agents.extend(agents)
@@ -109,7 +112,7 @@ class ManagerAgent(ConversableAgent, Team):
 
     def __init__(self, **kwargs):
         ConversableAgent.__init__(self, **kwargs)
-        Team.__init__(self)
+        Team.__init__(self, **kwargs)
 
     async def a_thinking(
         self, messages: Optional[List[Dict]], prompt: Optional[str] = None

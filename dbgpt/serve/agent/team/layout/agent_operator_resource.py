@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Optional, Union
 
+from pydantic import BaseModel, Field
+
 from dbgpt._private.pydantic import root_validator
+from dbgpt.agent.agents.agents_manage import agent_manage
 from dbgpt.agent.agents.base_agent_new import ConversableAgent
 from dbgpt.agent.agents.llm.llm import LLMConfig, LLMStrategyType
 from dbgpt.agent.resource.resource_api import AgentResource, ResourceType
@@ -120,52 +123,74 @@ class AwelAgentConfig(LLMConfig):
     category=ResourceCategory.AGENT,
     parameters=[
         Parameter.build_from(
+            label="Agent Profile",
+            name="agent_profile",
+            type=str,
+            resource_category=ResourceCategory.AGENT,
+            description="Which agent want use.",
+            optional=True,
+            default=None,
+            options=[
+                OptionValue(label=item["name"], name=item["name"], value=item["name"])
+                for item in agent_manage.list_agents()
+            ],
+        ),
+        Parameter.build_from(
             label="Role Name",
-            name="name",
+            name="role_name",
             type=str,
             optional=True,
             default=None,
             description="The agent role name.",
         ),
         Parameter.build_from(
-            label="Max Retry Time",
-            name="max_retry_count",
-            type=int,
+            label="Agent Resource Name",
+            name="agent_resource_name",
+            type=str,
             optional=True,
             default=None,
-            description="The agent max retry time.",
+            description="The agent resource name.",
         ),
         Parameter.build_from(
-            label="Agent Resource",
-            name="agent_resources",
-            type=AwelAgentResource,
-            resource_category=ResourceCategory.AGENT,
-            description="The agent resources.",
+            label="Agent Resource Type",
+            name="agent_resource_type",
+            type=str,
+            optional=True,
+            default=None,
+            options=[
+                OptionValue(label=item.name, name=item.value, value=item.value)
+                for item in ResourceType
+            ],
         ),
         Parameter.build_from(
-            label="Agent Prompt",
-            name="agent_prompt",
-            type=CommonChatPromptTemplate,
-            resource_category=ResourceCategory.AGENT,
-            description="The agent prompt.",
-        ),
-        Parameter.build_from(
-            label="Agent LLM Config",
-            name="llm_config",
-            type=AwelAgentConfig,
-            resource_category=ResourceCategory.AGENT,
-            description="The agent llm config.",
+            label="Agent Resource Value",
+            name="agent_resource_value",
+            type=str,
+            optional=True,
+            default=None,
+            description="The agent resource value.",
         ),
     ],
 )
-class AwelAgent(ConversableAgent):
+class AwelAgent(BaseModel):
+    agent_profile: str
+    role_name: Optional[str] = None
+    llm_config: Optional[LLMConfig] = None
+    resources: List[AgentResource] = Field(default_factory=list)
+
+    class Config:
+        arbitrary_types_allowed = True
+
     @root_validator(pre=True)
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """Pre fill the agent"""
+        """Pre fill the agent ResourceType"""
 
-        resources = values.pop("agent_resources")
-        agent_prompt = values.pop("agent_prompt")
+        name = values.pop("agent_resource_name")
+        type = values.pop("agent_resource_type")
+        value = values.pop("agent_resource_value")
+        if type is not None:
+            values["resources"] = [
+                AgentResource(type=ResourceType(type), name=name, value=value)
+            ]
 
-        values["resources"] = [resources]
-
-        return cls.base_pre_fill(values)
+        return values
