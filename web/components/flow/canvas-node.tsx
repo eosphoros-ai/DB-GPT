@@ -23,17 +23,9 @@ function TypeLabel({ label }: { label: string }) {
 
 const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
   const node = data;
-  const { inputs, outputs, flow_type: flowType } = node;
-  const parameters = orderParams(node.parameters || []);
+  const { inputs, outputs, parameters, flow_type: flowType } = node;
   const [isHovered, setIsHovered] = useState(false);
   const reactFlow = useReactFlow();
-
-  function orderParams(params: Array<IFlowNodeParameter>) {
-    // we show resource params first, and build-int params last
-    const resourceParams = params.filter((param) => param.category === 'resource');
-    const commonParams = params.filter((param) => param.category === 'common');
-    return [...resourceParams, ...commonParams];
-  }
 
   function onHover() {
     setIsHovered(true);
