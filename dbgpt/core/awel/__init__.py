@@ -13,7 +13,7 @@ from typing import List, Optional
 
 from dbgpt.component import SystemApp
 
-from .dag.base import DAG, DAGContext
+from .dag.base import DAG, DAGContext, DAGVar
 from .operators.base import BaseOperator, WorkflowRunner
 from .operators.common_operator import (
     BranchFunc,
@@ -61,6 +61,7 @@ __all__ = [
     "initialize_awel",
     "DAGContext",
     "DAG",
+    "DAGVar",
     "BaseOperator",
     "JoinOperator",
     "ReduceStreamOperator",
@@ -98,7 +99,6 @@ if _request_http_trigger_available:
 
 def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
     """Initialize AWEL."""
-    from .dag.base import DAGVar
     from .dag.dag_manager import DAGManager
     from .operators.base import initialize_runner
     from .trigger.trigger_manager import DefaultTriggerManager
@@ -140,7 +140,6 @@ def setup_dev_environment(
     from dbgpt.component import SystemApp
     from dbgpt.util.utils import setup_logging
 
-    from .dag.base import DAGVar
     from .trigger.trigger_manager import DefaultTriggerManager
 
     if not logger_filename:

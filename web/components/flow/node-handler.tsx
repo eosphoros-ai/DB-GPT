@@ -35,9 +35,11 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
     const targetIndex = targetHandle?.split('|')[2];
     const targetTypeCls = targetNode?.data[targetLabel!][targetIndex!].type_cls;
     if (sourceFlowType === targetFlowType && sourceFlowType === 'operator') {
-      // operator to operator, only type_cls matched can be connected
+      // operator to operator, only type_cls and is_list matched can be connected
       const sourceTypeCls = sourceNode?.data[sourceLabel!][sourceIndex!].type_cls;
-      return sourceTypeCls === targetTypeCls;
+      const sourceIsList = sourceNode?.data[sourceLabel!][sourceIndex!].is_list;
+      const targetIsList = targetNode?.data[targetLabel!][targetIndex!].is_list;
+      return sourceTypeCls === targetTypeCls && sourceIsList === targetIsList;
     } else if (sourceFlowType === 'resource' && (targetFlowType === 'operator' || targetFlowType === 'resource')) {
       // resource to operator, check operator type_cls and resource parent_cls
       const sourceParentCls = sourceNode?.data.parent_cls;
@@ -60,7 +62,9 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
       // find other operators and outputs matching this input type_cls
       nodes = staticNodes
         .filter((node: IFlowNode) => node.flow_type === 'operator')
-        .filter((node: IFlowNode) => node.outputs?.some((output: IFlowNodeOutput) => output.type_cls === typeCls));
+        .filter((node: IFlowNode) =>
+          node.outputs?.some((output: IFlowNodeOutput) => output.type_cls === typeCls && output.is_list === data?.is_list),
+        );
     } else if (label === 'parameters') {
       // fint other resources and parent_cls including this parameter type_cls
       nodes = staticNodes.filter((node: IFlowNode) => node.flow_type === 'resource').filter((node: IFlowNode) => node.parent_cls?.includes(typeCls));
@@ -69,7 +73,7 @@ const NodeHandler: React.FC<NodeHandlerProps> = ({ node, data, type, label, inde
         // find other operators and inputs matching this output type_cls
         nodes = staticNodes
           .filter((node: IFlowNode) => node.flow_type === 'operator')
-          .filter((node: IFlowNode) => node.inputs?.some((input: IFlowNodeInput) => input.type_cls === typeCls));
+          .filter((node: IFlowNode) => node.inputs?.some((input: IFlowNodeInput) => input.type_cls === typeCls && input.is_list === data?.is_list));
       } else if (node.flow_type === 'resource') {
         // find other resources or operators that this output parent_cls includes their type_cls
         nodes = staticNodes.filter(

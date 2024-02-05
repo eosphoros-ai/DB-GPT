@@ -12,6 +12,7 @@ from dbgpt.core.awel.dag.base import DAG, DAGNode
 from .base import (
     OperatorType,
     ResourceMetadata,
+    ResourceType,
     ViewMetadata,
     _get_operator_class,
     _get_resource_class,
@@ -421,7 +422,11 @@ class FlowFactory:
             runnable_params = registered_resource_metadata.get_runnable_parameters(
                 resource_metadata.parameters, key_to_resource, key_to_resource_instance
             )
-            key_to_resource_instance[resource_key] = resource_cls(**runnable_params)
+            if registered_resource_metadata.resource_type == ResourceType.INSTANCE:
+                key_to_resource_instance[resource_key] = resource_cls(**runnable_params)
+            else:
+                # Just use the resource class.
+                key_to_resource_instance[resource_key] = resource_cls
 
         # Build Operators
         key_to_tasks: Dict[str, DAGNode] = {}
@@ -553,7 +558,7 @@ def _topological_sort(
             if in_degree[adjacent] == 0:
                 queue.append(adjacent)
 
-    if len(key_to_order) != len(keys):
+    if current_order != len(keys):
         raise ValueError("Graph has at least one cycle")
 
     return key_to_order
