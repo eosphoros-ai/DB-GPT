@@ -558,7 +558,7 @@ def _topological_sort(
             if in_degree[adjacent] == 0:
                 queue.append(adjacent)
 
-    if len(key_to_order) != len(keys):
+    if current_order != len(keys):
         raise ValueError("Graph has at least one cycle")
 
     return key_to_order
