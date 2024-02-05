@@ -1,14 +1,19 @@
 import json
+import logging
 import uuid
 from datetime import datetime
 from itertools import groupby
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
 from dbgpt.agent.resource.resource_api import AgentResource
+from dbgpt.serve.agent.model import AwelTeamContext
+from dbgpt.serve.agent.team.base import TeamMode
 from dbgpt.storage.metadata import BaseDao, Model
+
+logger = logging.getLogger(__name__)
 
 
 class GptsAppDetail(BaseModel):
@@ -79,7 +84,7 @@ class GptsApp(BaseModel):
     app_describe: Optional[str] = None
     team_mode: Optional[str] = None
     language: Optional[str] = None
-    team_context: Optional[str] = None
+    team_context: Optional[Union[str, AwelTeamContext]] = None
     user_code: Optional[str] = None
     sys_code: Optional[str] = None
     is_collected: Optional[str] = None
@@ -354,7 +359,9 @@ class GptsAppDao(BaseDao):
                             "language": app_info.language,
                             "app_describe": app_info.app_describe,
                             "team_mode": app_info.team_mode,
-                            "team_context": app_info.team_context,
+                            "team_context": _load_team_context(
+                                app_info.team_mode, app_info.team_context
+                            ),
                             "user_code": app_info.user_code,
                             "sys_code": app_info.sys_code,
                             "is_collected": "true"
@@ -403,7 +410,9 @@ class GptsAppDao(BaseDao):
                     "language": app_info.language,
                     "app_describe": app_info.app_describe,
                     "team_mode": app_info.team_mode,
-                    "team_context": app_info.team_context,
+                    "team_context": _load_team_context(
+                        app_info.team_mode, app_info.team_context
+                    ),
                     "user_code": app_info.user_code,
                     "sys_code": app_info.sys_code,
                     "created_at": app_info.created_at,
@@ -449,7 +458,7 @@ class GptsAppDao(BaseDao):
                 app_name=gpts_app.app_name,
                 app_describe=gpts_app.app_describe,
                 team_mode=gpts_app.team_mode,
-                team_context=gpts_app.team_context,
+                team_context=_parse_team_context(gpts_app.team_context),
                 language=gpts_app.language,
                 user_code=gpts_app.user_code,
                 sys_code=gpts_app.sys_code,
@@ -522,3 +531,31 @@ class GptsAppDao(BaseDao):
                 )
             session.add_all(app_details)
             return True
+
+
+def _parse_team_context(team_context: Optional[Union[str, AwelTeamContext]] = None):
+    """
+    parse team_context to str
+    """
+    if isinstance(team_context, AwelTeamContext):
+        return team_context.json()
+    return team_context
+
+
+def _load_team_context(
+    team_mode: str = None, team_context: str = None
+) -> Union[str, AwelTeamContext]:
+    """
+    load team_context to str or AwelTeamContext
+    """
+    if team_mode is not None:
+        match team_mode:
+            case TeamMode.AWEL_LAYOUT.value:
+                try:
+                    awel_team_ctx = AwelTeamContext(**json.loads(team_context))
+                    return awel_team_ctx
+                except Exception as ex:
+                    logger.info(
+                        f"_load_team_context error, team_mode={team_mode}, team_context={team_context}, {ex}"
+                    )
+    return team_context
