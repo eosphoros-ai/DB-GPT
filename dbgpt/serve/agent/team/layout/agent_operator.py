@@ -5,7 +5,6 @@ from dbgpt.agent.agents.agent import Agent, AgentGenerateContext
 from dbgpt.agent.agents.agents_manage import agent_manage
 from dbgpt.agent.agents.base_agent_new import ConversableAgent
 from dbgpt.agent.agents.llm.llm import LLMConfig
-from dbgpt.agent.memory.gpts_memory import GptsMemory
 from dbgpt.core.awel import BranchFunc, BranchOperator, MapOperator
 from dbgpt.core.awel.flow import (
     IOField,
@@ -219,7 +218,7 @@ class AgentDummytTrigger(Trigger):
     metadata = ViewMetadata(
         label="Agent Trigger",
         name="agent_trigger",
-        category=OperatorCategory.TRIGGER,
+        category=OperatorCategory.AGENT,
         operator_type=OperatorType.INPUT,
         description="Trigger your workflow by agent",
         inputs=[],
