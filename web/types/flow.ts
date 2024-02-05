@@ -39,6 +39,7 @@ export type IFlowNodeParameter = {
   description: string;
   options?: any;
   value: any;
+  is_list?: boolean;
 };
 
 export type IFlowNodeInput = {
@@ -50,6 +51,7 @@ export type IFlowNodeInput = {
   id: string;
   optional?: boolean | undefined;
   value: any;
+  is_list?: boolean;
 };
 
 export type IFlowNodeOutput = {
@@ -60,6 +62,7 @@ export type IFlowNodeOutput = {
   description: string;
   id: string;
   optional?: boolean | undefined;
+  is_list?: boolean;
 };
 
 export type IFlowNode = Node & {
