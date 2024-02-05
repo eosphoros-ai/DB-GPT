@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dbgpt._private.config import Config
 from dbgpt.agent.plugin.generator import PluginPromptGenerator
+from dbgpt.agent.resource.resource_api import AgentResource, ResourceType
 from dbgpt.agent.resource.resource_knowledge_api import ResourceKnowledgeClient
 from dbgpt.component import ComponentType
 from dbgpt.serve.agent.hub.controller import ModulePlugin
