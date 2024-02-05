@@ -45,7 +45,7 @@ from dbgpt.util.function_utils import rearrange_args_by_type
             name="system_message",
             type=str,
             optional=True,
-            default=None,
+            default="You are a helpful AI Assistant.",
             description="The system message.",
         ),
         Parameter.build_from(
