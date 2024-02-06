@@ -36,7 +36,10 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, deleteCallback }) => {
         className="w-96"
         title={flow.name}
         desc={flow.description}
-        tags={['GPT-3', { text: 'Python', color: 'green' }]}
+        tags={[
+          { text: flow.source, color: flow.source === 'DBGPT-WEB' ? 'green' : 'blue' },
+          { text: flow.editable ? 'Editable' : 'Can not Edit', color: flow.editable ? 'green' : 'gray' },
+        ]}
         onClick={cardClick}
         operations={[
           {

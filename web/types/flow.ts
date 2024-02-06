@@ -16,6 +16,7 @@ export type IFlow = {
   editable: boolean;
   description: string;
   flow_data: IFlowData;
+  source: string;
 };
 
 export type IFlowResponse = {
