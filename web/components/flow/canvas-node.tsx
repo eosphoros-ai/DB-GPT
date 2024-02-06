@@ -124,7 +124,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
       >
         {/* icon and label */}
         <div className="flex flex-row items-center p-2">
-          <Image src={node.icon || `${ICON_PATH_PREFIX}${node.name || 'default_node_icon'}.svg`} width={24} height={24} alt="" />
+          <Image src={'/icons/node/vis.png'} width={24} height={24} alt="" />
           <p className="ml-2 text-lg font-bold text-ellipsis overflow-hidden whitespace-nowrap">{node.label}</p>
         </div>
         {inputs && inputs.length > 0 && (

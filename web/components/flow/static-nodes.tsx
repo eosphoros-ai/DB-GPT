@@ -25,7 +25,7 @@ const StaticNodes: React.FC<{ nodes: IFlowNode[] }> = ({ nodes }) => {
           >
             <List.Item.Meta
               className="flex items-center justify-center"
-              avatar={<Avatar src={node.icon || '/icons/node/default_node_icon.svg'} size={'large'} />}
+              avatar={<Avatar src={'/icons/node/vis.png'} size={'large'} />}
               title={<p className="line-clamp-1 font-medium">{node.label}</p>}
               description={<p className="line-clamp-2">{node.description}</p>}
             />
