@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, List, Optional
 
@@ -40,7 +41,15 @@ class AwelLayoutChatNewManager(ManagerAgent):
         try:
             _dag_manager = DAGManager.get_instance(CFG.SYSTEM_APP)
 
-            agent_dag = _dag_manager.dag_map[self.dag]
+            dag_id = None
+            try:
+                dag_param = json.loads(dag)
+                dag_id = dag_param["dag_id"]
+            except Exception as e:
+                logger.warning(f"Is not a json dag context!{dag}")
+                dag_id = dag
+
+            agent_dag = _dag_manager.dag_map[dag_id]
             last_node: AwelAgentOperator = agent_dag.leaf_nodes[0]
 
             start_message_context: AgentGenerateContext = AgentGenerateContext(

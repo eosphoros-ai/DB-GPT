@@ -33,6 +33,7 @@ from ..db.gpts_app import GptsApp, GptsAppDao, GptsAppQuery
 from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEntity
 from ..db.gpts_manage_db import GptsInstanceDao, GptsInstanceEntity
 from ..resource_loader.datasource_load_client import DatasourceLoadClient
+from ..resource_loader.knowledge_space_load_client import KnowledgeSpaceLoadClient
 from ..resource_loader.plugin_hub_load_client import PluginHubLoadClient
 from ..team.base import TeamMode
 from ..team.layout.team_awel_layout_new import AwelLayoutChatNewManager
@@ -193,7 +194,8 @@ class MultiAgents(BaseComponent, ABC):
         resource_loader.register_resesource_api(plugin_hub_loader)
         datasource_loader = DatasourceLoadClient()
         resource_loader.register_resesource_api(datasource_loader)
-
+        knowledge_space_loader = KnowledgeSpaceLoadClient()
+        resource_loader.register_resesource_api(knowledge_space_loader)
         context: AgentContext = AgentContext(
             conv_id=conv_uid, gpts_app_name=gpts_app.app_name
         )

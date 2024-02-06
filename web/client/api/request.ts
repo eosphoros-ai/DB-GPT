@@ -314,8 +314,8 @@ export const getResource = (data: Record<string, string>) => {
   return GET<Record<string, string>, []>(`api/v1/app/resources/list?type=${data.type}`);
 };
 
-export const updateApp = (data: any) => {
-  return POST<any, []>('/api/v1/app/edit', data);
+export const updateApp = (data: IApp) => {
+  return POST<IApp, []>('/api/v1/app/edit', data);
 };
 
 export const getAppStrategy = () => {

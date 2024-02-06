@@ -1,4 +1,4 @@
-import { IAgent as IAgentParams } from '@/types/app';
+import { AgentParams, IAgent as IAgentParams, IApp, IDetail } from '@/types/app';
 import { Dropdown, Form, Input, Modal, Select, Space, Spin, Tabs } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import AgentPanel from './agent-panel';
 import { addApp, apiInterceptors, getAgents, getResourceType, getTeamMode, updateApp } from '@/client/api';
 import type { TabsProps } from 'antd';
 import DagLayout from './dag-layout';
+import { IFlow } from '@/types/flow';
 
 type TargetKey = string;
 
@@ -48,9 +49,10 @@ export default function AppModal(props: IProps) {
   const [teamModal, setTeamModal] = useState<{ label: string; value: string }[]>();
   const [agents, setAgents] = useState<TabsProps['items']>([]);
   const [dropItems, setDropItems] = useState<IAgent[]>([]);
-  const [details, setDetails] = useState<any>([...(app?.details || [])]);
-  const [resourceTypes, setResourceTypes] = useState<any>();
-  const [curTeamModal, setCurTeamModal] = useState<TeamModals>('auto_plan');
+  const [details, setDetails] = useState<IDetail[]>([...(app?.details || [])]);
+  const [flow, setFlow] = useState<IFlow>();
+  const [resourceTypes, setResourceTypes] = useState<string[]>();
+  const [curTeamModal, setCurTeamModal] = useState<TeamModals>(app.team_modal || 'auto_plan');
 
   const [form] = Form.useForm();
 
@@ -58,7 +60,7 @@ export default function AppModal(props: IProps) {
     setActiveKey(newActiveKey);
   };
 
-  const createApp = async (app: any) => {
+  const createApp = async (app: IApp) => {
     await apiInterceptors(type === 'add' ? addApp(app) : updateApp(app));
     await updateApps();
   };
@@ -69,7 +71,7 @@ export default function AppModal(props: IProps) {
 
     if (appDetails?.length > 0) {
       setAgents(
-        appDetails?.map((item: any) => {
+        appDetails?.map((item: AgentParams) => {
           return {
             label: item?.agent_name,
             children: (
@@ -125,9 +127,13 @@ export default function AppModal(props: IProps) {
           if (!app.details || app.details?.length === 0) {
             return item;
           }
-          return app?.details?.every((detail: any) => detail.agent_name !== item.label);
+          return app?.details?.every((detail: AgentParams) => detail.agent_name !== item.label);
         }),
     );
+  };
+
+  const handleFlowsChange = (data: IFlow) => {
+    setFlow(data);
   };
 
   const fetchResourceType = async () => {
@@ -147,9 +153,13 @@ export default function AppModal(props: IProps) {
     type === 'edit' && initApp();
   }, [resourceTypes]);
 
-  const updateDetailsByAgentKey = (key: string, data: any) => {
-    setDetails((details: any) => {
-      return details.map((detail: any) => {
+  useEffect(() => {
+    setCurTeamModal(app.team_mode || 'auto_plan');
+  }, [app]);
+
+  const updateDetailsByAgentKey = (key: string, data: IDetail) => {
+    setDetails((details: IDetail[]) => {
+      return details.map((detail: IDetail) => {
         return key === (detail.agent_name || detail.key) ? data : detail;
       });
     });
@@ -161,7 +171,7 @@ export default function AppModal(props: IProps) {
 
     setActiveKey(newActiveKey);
 
-    setDetails((details: any) => {
+    setDetails((details: IDetail[]) => {
       return [...details, { key: newActiveKey, name: '', llm_strategy: 'priority' }];
     });
 
@@ -209,7 +219,7 @@ export default function AppModal(props: IProps) {
         newActiveKey = newPanes[0].key;
       }
     }
-    setDetails((details: any) => {
+    setDetails((details: IDetail[]) => {
       return details?.filter((detail: any) => {
         return (detail.agent_name || detail.key) !== targetKey;
       });
@@ -249,10 +259,17 @@ export default function AppModal(props: IProps) {
 
     const data = {
       ...form.getFieldsValue(),
-      details: details,
     };
     if (type === 'edit') {
       data.app_code = app.app_code;
+    }
+
+    if (data.team_mode !== 'awel_layout') {
+      data.details = details;
+    } else {
+      const tempFlow = { ...flow };
+      delete tempFlow.flow_data;
+      data.team_context = tempFlow;
     }
 
     await createApp(data);
@@ -293,7 +310,7 @@ export default function AppModal(props: IProps) {
             form={form}
             preserve={false}
             size="large"
-            className="mt-4 max-h-[70vh] overflow-auto"
+            className="mt-4 max-h-[70vh] overflow-auto h-[90vh]"
             layout="horizontal"
             labelAlign="left"
             labelCol={{ span: 4 }}
@@ -301,7 +318,7 @@ export default function AppModal(props: IProps) {
               app_name: app.app_name,
               app_describe: app.app_describe,
               language: app.language || languageOptions[0].value,
-              team_mode: app.team_mode,
+              team_mode: app.team_mode || 'auto_plan',
             }}
             autoComplete="off"
             onFinish={handleSubmit}
@@ -317,27 +334,26 @@ export default function AppModal(props: IProps) {
               <Input.TextArea rows={3} placeholder={t('Please_input_the_description')} />
             </Form.Item>
             <div className="flex w-full">
-              <Form.Item<FieldType>  labelCol={{span: 7}} label={t('language')} name="language" className="w-1/2" rules={[{ required: true }]}>
+              <Form.Item<FieldType> labelCol={{ span: 7 }} label={t('language')} name="language" className="w-1/2" rules={[{ required: true }]}>
                 <Select className="w-2/3 ml-4" placeholder={t('language_select_tips')} options={languageOptions} />
               </Form.Item>
-              <Form.Item<FieldType>
-                label={t('team_modal')}
-                name="team_mode"
-                className='w-1/2'
-                labelCol={{span: 6}}
-                rules={[{ required: true }]}
-                initialValue={teamModal && teamModal[0].value}
-              >
-                <Select className="ml-4 w-72" onChange={handleTeamModalChange} placeholder={t('Please_input_the_work_modal')} options={teamModal} />
+              <Form.Item<FieldType> label={t('team_modal')} name="team_mode" className="w-1/2" labelCol={{ span: 6 }} rules={[{ required: true }]}>
+                <Select
+                  defaultValue={app.team_mode || 'auto_plan'}
+                  className="ml-4 w-72"
+                  onChange={handleTeamModalChange}
+                  placeholder={t('Please_input_the_work_modal')}
+                  options={teamModal}
+                />
               </Form.Item>
             </div>
             {curTeamModal !== 'awel_layout' ? (
               <>
-                <div className='mb-5 text-lg font-bold"'>Agents</div>
+                <div className='mb-5'>Agents</div>
                 <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
               </>
             ) : (
-              <DagLayout />
+              <DagLayout onFlowsChange={handleFlowsChange} teamContext={app.team_context} />
             )}
           </Form>
         </Spin>
