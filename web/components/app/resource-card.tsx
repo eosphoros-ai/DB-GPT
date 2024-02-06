@@ -16,7 +16,7 @@ export default function ResourceCard(props: IProps) {
 
   const { t } = useTranslation();
 
-  const [resourceType, setResourceType] = useState<string>(editResource.type || resourceTypeOptions[0].label);
+  const [resourceType, setResourceType] = useState<string>(editResource.type || resourceTypeOptions?.[0].label);
   const [resourceValueOptions, setResourceValueOptions] = useState<any[]>([]);
   const [resource, setResource] = useState<any>({
     name: editResource.name,
@@ -108,7 +108,7 @@ export default function ResourceCard(props: IProps) {
           <Select
             className="w-1/3"
             options={resourceTypeOptions}
-            value={resource.type || resourceTypeOptions[0]}
+            value={resource.type || resourceTypeOptions?.[0]}
             onChange={(value) => {
               updateResource(value, 'type');
               handleChange(value);
