@@ -42,6 +42,7 @@ from .task.task_impl import (
 )
 from .trigger.http_trigger import (
     CommonLLMHttpRequestBody,
+    CommonLLMHTTPRequestContext,
     CommonLLMHttpResponseBody,
     HttpTrigger,
 )
@@ -87,6 +88,7 @@ __all__ = [
     "UnstreamifyAbsOperator",
     "TransformStreamAbsOperator",
     "HttpTrigger",
+    "CommonLLMHTTPRequestContext",
     "CommonLLMHttpResponseBody",
     "CommonLLMHttpRequestBody",
     "setup_dev_environment",

@@ -1,12 +1,19 @@
 import logging
 import traceback
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from fastapi import HTTPException
 
 from dbgpt.component import SystemApp
+from dbgpt.core.awel import (
+    DAG,
+    BaseOperator,
+    CommonLLMHttpRequestBody,
+    CommonLLMHttpResponseBody,
+)
 from dbgpt.core.awel.dag.dag_manager import DAGManager
-from dbgpt.core.awel.flow.flow_factory import FlowFactory
+from dbgpt.core.awel.flow.flow_factory import FlowCategory, FlowFactory
+from dbgpt.core.awel.trigger.http_trigger import CommonLLMHttpTrigger
 from dbgpt.serve.core import BaseService
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
@@ -98,6 +105,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         dag = self._flow_factory.build(request)
         request.dag_id = dag.dag_id
         # Save DAG to storage
+        request.flow_category = self._parse_flow_category(dag)
         res = self.dao.create(request)
         # Register the DAG
         self.dag_manager.register_dag(dag)
@@ -172,7 +180,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             ServerResponse: The response
         """
         # Try to build the dag from the request
-        self._flow_factory.build(request)
+        dag = self._flow_factory.build(request)
 
         # Build the query request from the request
         query_request = {"uid": request.uid}
@@ -185,6 +193,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             )
         old_data: Optional[ServerResponse] = None
         try:
+            request.flow_category = self._parse_flow_category(dag)
             update_obj = self.dao.update(query_request, update_request=request)
             old_data = self.delete(request.uid)
             if not old_data:
@@ -266,3 +275,69 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             List[ServerResponse]: The response
         """
         return self.dao.get_list_page(request, page, page_size)
+
+    async def chat_flow(self, flow_uid: str, request: CommonLLMHttpRequestBody):
+        """Chat with the AWEL flow.
+
+        Args:
+            flow_uid (str): The flow uid
+            request (CommonLLMHttpRequestBody): The request
+        """
+        flow = self.get({"uid": flow_uid})
+        if not flow:
+            raise HTTPException(status_code=404, detail=f"Flow {flow_uid} not found")
+        dag_id = flow.dag_id
+        if not dag_id or dag_id not in self.dag_manager.dag_map:
+            raise HTTPException(
+                status_code=404, detail=f"Flow {flow_uid}'s dag id not found"
+            )
+        if flow.flow_category != FlowCategory.CHAT_FLOW:
+            raise ValueError(f"Flow {flow_uid} is not a chat flow")
+        dag = self.dag_manager.dag_map[dag_id]
+        leaf_nodes = dag.leaf_nodes
+        if len(leaf_nodes) != 1:
+            raise ValueError("Chat Flow just support one leaf node in dag")
+        end_node = cast(BaseOperator, leaf_nodes[0])
+        if request.stream:
+            async for output in await end_node.call_stream(request):
+                yield output
+        else:
+            yield await end_node.call(request)
+
+    def _parse_flow_category(self, dag: DAG) -> FlowCategory:
+        """Parse the flow category
+
+        Args:
+            flow_category (str): The flow category
+
+        Returns:
+            FlowCategory: The flow category
+        """
+        from dbgpt.core.awel.flow.base import _get_type_cls
+
+        triggers = dag.trigger_nodes
+        leaf_nodes = dag.leaf_nodes
+        if (
+            not triggers
+            or not leaf_nodes
+            or len(leaf_nodes) > 1
+            or not isinstance(leaf_nodes[0], BaseOperator)
+        ):
+            return FlowCategory.COMMON
+        common_http_trigger = False
+        for trigger in triggers:
+            if isinstance(trigger, CommonLLMHttpTrigger):
+                common_http_trigger = True
+                break
+        leaf_node = cast(BaseOperator, leaf_nodes)
+        if not leaf_node.metadata or not leaf_node.metadata.outputs:
+            return FlowCategory.COMMON
+        output = leaf_node.metadata.outputs[0]
+        try:
+            real_class = _get_type_cls(output.type_cls)
+            if common_http_trigger and (
+                real_class == str or real_class == CommonLLMHttpResponseBody
+            ):
+                return FlowCategory.CHAT_FLOW
+        except Exception:
+            return FlowCategory.COMMON
