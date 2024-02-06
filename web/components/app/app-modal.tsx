@@ -272,7 +272,11 @@ export default function AppModal(props: IProps) {
       data.team_context = tempFlow;
     }
 
-    await createApp(data);
+    try {
+      await createApp(data);
+    } catch (error) {
+      return;
+    }
 
     setSpinning(false);
     handleCancel();
@@ -349,7 +353,7 @@ export default function AppModal(props: IProps) {
             </div>
             {curTeamModal !== 'awel_layout' ? (
               <>
-                <div className='mb-5'>Agents</div>
+                <div className="mb-5">Agents</div>
                 <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
               </>
             ) : (
