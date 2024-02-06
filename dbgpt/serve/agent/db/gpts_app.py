@@ -504,6 +504,7 @@ class GptsAppDao(BaseDao):
             app_entity.language = gpts_app.language
             app_entity.team_mode = gpts_app.team_mode
             app_entity.icon = gpts_app.icon
+            app_entity.team_context = _parse_team_context(gpts_app.team_context)
             session.merge(app_entity)
 
             old_details = session.query(GptsAppDetailEntity).filter(
