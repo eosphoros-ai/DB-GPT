@@ -105,8 +105,6 @@ class AwelAgentOperator(
                 "Agent",
                 "awel_agent",
                 AwelAgent,
-                optional=True,
-                default=None,
                 description="The dbgpt agent.",
             ),
         ],

@@ -126,8 +126,6 @@ class AwelAgentConfig(LLMConfig):
             name="agent_profile",
             type=str,
             description="Which agent want use.",
-            optional=True,
-            default=None,
             options=[
                 OptionValue(label=item["name"], name=item["name"], value=item["name"])
                 for item in agent_manage.list_agents()
