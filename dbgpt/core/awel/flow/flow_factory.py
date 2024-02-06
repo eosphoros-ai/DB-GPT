@@ -17,6 +17,11 @@ from .base import (
     _get_operator_class,
     _get_resource_class,
 )
+from .exceptions import (
+    FlowClassMetadataException,
+    FlowDAGMetadataException,
+    FlowMetadataException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -419,14 +424,26 @@ class FlowFactory:
                 raise ValueError("Metadata is not set.")
             if not resource_cls:
                 raise ValueError("Resource class is not set.")
-            runnable_params = registered_resource_metadata.get_runnable_parameters(
-                resource_metadata.parameters, key_to_resource, key_to_resource_instance
-            )
-            if registered_resource_metadata.resource_type == ResourceType.INSTANCE:
-                key_to_resource_instance[resource_key] = resource_cls(**runnable_params)
-            else:
-                # Just use the resource class.
-                key_to_resource_instance[resource_key] = resource_cls
+            try:
+                runnable_params = registered_resource_metadata.get_runnable_parameters(
+                    resource_metadata.parameters,
+                    key_to_resource,
+                    key_to_resource_instance,
+                )
+                if registered_resource_metadata.resource_type == ResourceType.INSTANCE:
+                    key_to_resource_instance[resource_key] = resource_cls(
+                        **runnable_params
+                    )
+                else:
+                    # Just use the resource class.
+                    key_to_resource_instance[resource_key] = resource_cls
+            except FlowMetadataException as e:
+                raise e
+            except Exception as e:
+                raise FlowMetadataException(
+                    f"Unable to build resource instance: {resource_key}, resource_cls: "
+                    f"{resource_cls}, error: {e}"
+                )
 
         # Build Operators
         key_to_tasks: Dict[str, DAGNode] = {}
@@ -455,20 +472,33 @@ class FlowFactory:
                     downstream_key, _, _ = downstream[i]
                     param.value = key_to_operator_nodes[downstream_key].data.name
 
-            runnable_params = metadata.get_runnable_parameters(
-                view_metadata.parameters, key_to_resource, key_to_resource_instance
-            )
-            runnable_params["task_name"] = operator_key
-            operator_task: DAGNode = cast(DAGNode, operator_cls(**runnable_params))
-            key_to_tasks[operator_key] = operator_task
+            try:
+                runnable_params = metadata.get_runnable_parameters(
+                    view_metadata.parameters, key_to_resource, key_to_resource_instance
+                )
+                runnable_params["task_name"] = operator_key
+                operator_task: DAGNode = cast(DAGNode, operator_cls(**runnable_params))
+                key_to_tasks[operator_key] = operator_task
+            except FlowMetadataException as e:
+                raise e
+            except Exception as e:
+                raise FlowMetadataException(
+                    f"Unable to build operator task: {operator_key}, "
+                    f"operator_cls: {operator_cls}, error: {e}"
+                )
 
-        return self.build_dag(
-            flow_panel,
-            key_to_tasks,
-            key_to_downstream,
-            key_to_upstream,
-            dag_id=flow_panel.dag_id,
-        )
+        try:
+            return self.build_dag(
+                flow_panel,
+                key_to_tasks,
+                key_to_downstream,
+                key_to_upstream,
+                dag_id=flow_panel.dag_id,
+            )
+        except Exception as e:
+            raise FlowDAGMetadataException(
+                f"Unable to build DAG for flow panel: {flow_panel.name}, error: {e}"
+            )
 
     def build_dag(
         self,
@@ -506,6 +536,33 @@ class FlowFactory:
                         raise ValueError("Unable to find downstream task.")
                     task >> downstream_task
             return dag
+
+    def pre_load_requirements(self, flow_panel: FlowPanel):
+        """Pre load requirements for the flow panel.
+
+        Args:
+            flow_panel (FlowPanel): The flow panel
+        """
+        from dbgpt.util.module_utils import import_from_string
+
+        flow_data = flow_panel.flow_data
+        for node in flow_data.nodes:
+            if node.data.is_operator:
+                node_data = cast(ViewMetadata, node.data)
+            else:
+                node_data = cast(ResourceMetadata, node.data)
+            if not node_data.type_cls:
+                continue
+            try:
+                metadata_cls = import_from_string(node_data.type_cls)
+                logger.debug(
+                    f"Import {node_data.type_cls} successfully, metadata_cls is : "
+                    f"{metadata_cls}"
+                )
+            except ImportError as e:
+                raise FlowClassMetadataException(
+                    f"Import {node_data.type_cls} failed: {e}"
+                )
 
 
 def _topological_sort(

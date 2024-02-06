@@ -10,6 +10,8 @@ from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 from dbgpt._private.pydantic import BaseModel, Field, ValidationError, root_validator
 from dbgpt.core.interface.serialization import Serializable
 
+from .exceptions import FlowMetadataException, FlowParameterMetadataException
+
 _TYPE_REGISTRY: Dict[str, Type] = {}
 
 
@@ -464,19 +466,15 @@ class Parameter(TypeMetadata, Serializable):
                 value: Any = resource_type
             else:
                 if resource_id not in key_to_resource_instance:
-                    raise ValueError(
+                    raise FlowParameterMetadataException(
                         f"The dependency resource {resource_id} not found."
                     )
                 resource_inst = key_to_resource_instance[resource_id]
                 value = resource_inst
                 if value is not None and not isinstance(value, resource_type):
-                    raise ValueError(
+                    raise FlowParameterMetadataException(
                         f"Resource {resource_id} is not an instance of {resource_type}"
                     )
-                # resource_kwargs = {}
-                # for parameter in resource_metadata.parameters:
-                #     resource_kwargs[parameter.name] = parameter.value
-                # value = resource_type(**resource_kwargs)
         else:
             value = self.get_typed_default()
             if self.value is not None:
@@ -632,9 +630,9 @@ class BaseMetadata(BaseResource):
             return runnable_parameters
         if len(self.parameters) != len(view_parameters):
             # TODO, skip the optional parameters.
-            raise ValueError(
-                f"Parameters count not match. "
-                f"Expected {len(self.parameters)}, but got {len(view_parameters)}."
+            raise FlowParameterMetadataException(
+                f"Parameters count not match. Expected {len(self.parameters)}, "
+                f"but got {len(view_parameters)} from JSON metadata."
             )
         for i, parameter in enumerate(self.parameters):
             view_param = view_parameters[i]
@@ -765,6 +763,18 @@ class ViewMetadata(BaseMetadata):
     outputs: List[IOField] = Field(..., description="The outputs of the operator")
     version: str = Field(
         default="v1", description="The version of the operator", examples=["v1", "v2"]
+    )
+
+    type_name: Optional[str] = Field(
+        default=None,
+        description="The type short name of the operator",
+        examples=["LLMOperator"],
+    )
+
+    type_cls: Optional[str] = Field(
+        default=None,
+        description="The type class of the operator",
+        examples=["dbgpt.model.operators.LLMOperator"],
     )
 
     @root_validator(pre=True)
@@ -917,7 +927,7 @@ def _get_operator_class(type_key: str) -> Type[T]:
     """Get the operator class by the type name."""
     item = _OPERATOR_REGISTRY.get_registry_item(type_key)
     if not item:
-        raise ValueError(f"Operator {type_key} not registered.")
+        raise FlowMetadataException(f"Operator {type_key} not registered.")
     cls = item.cls
     if not issubclass(cls, ViewMixin):
         raise ValueError(f"Operator {type_key} is not a ViewMixin.")
@@ -929,6 +939,8 @@ def _register_operator(view_cls: Optional[Type[T]]):
     if not view_cls or not view_cls.metadata:
         return
     metadata = view_cls.metadata
+    metadata.type_name = view_cls.__qualname__
+    metadata.type_cls = _get_type_name(view_cls)
     _OPERATOR_REGISTRY.register_flow(view_cls, metadata)
 
 
@@ -936,7 +948,7 @@ def _get_resource_class(type_key: str) -> _RegistryItem:
     """Get the operator class by the type name."""
     item = _OPERATOR_REGISTRY.get_registry_item(type_key)
     if not item:
-        raise ValueError(f"Resource {type_key} not registered.")
+        raise FlowMetadataException(f"Resource {type_key} not registered.")
     if not isinstance(item.metadata, ResourceMetadata):
         raise ValueError(f"Resource {type_key} is not a ResourceMetadata.")
     return item

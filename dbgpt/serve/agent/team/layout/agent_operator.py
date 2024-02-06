@@ -93,7 +93,7 @@ class AgentOperator(
 
 
 class AwelAgentOperator(
-    MixinLLMOperator, MapOperator[AgentGenerateContext, AgentGenerateContext], ABC
+    MixinLLMOperator, MapOperator[AgentGenerateContext, AgentGenerateContext]
 ):
     metadata = ViewMetadata(
         label="Agent Operator",
@@ -209,7 +209,7 @@ class AwelAgentOperator(
         return agent
 
 
-class AgentDummytTrigger(Trigger):
+class AgentDummyTrigger(Trigger):
     """Http trigger for AWEL.
 
     Http trigger is used to trigger a DAG by http request.

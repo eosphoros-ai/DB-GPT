@@ -177,7 +177,7 @@ def uninstall(name: str):
         )
         return
     os.chdir(install_path)
-    subprocess.run(["pip", "uninstall", name], check=True)
+    subprocess.run(["pip", "uninstall", name, "-y"], check=True)
     shutil.rmtree(install_path)
     logger.info(f"dbgpt '{name}' uninstalled successfully.")
 

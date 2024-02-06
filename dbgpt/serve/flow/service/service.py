@@ -1,9 +1,10 @@
 import logging
+import traceback
 from typing import List, Optional
 
 from fastapi import HTTPException
 
-from dbgpt.component import BaseComponent, SystemApp
+from dbgpt.component import SystemApp
 from dbgpt.core.awel.dag.dag_manager import DAGManager
 from dbgpt.core.awel.flow.flow_factory import FlowFactory
 from dbgpt.serve.core import BaseService
@@ -52,6 +53,8 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def before_start(self):
         """Execute before the application starts"""
         self._dag_manager = DAGManager.get_instance(self._system_app)
+        self._pre_load_dag_from_db()
+        self._pre_load_dag_from_dbgpts()
 
     def after_start(self):
         """Execute after the application starts"""
@@ -100,6 +103,18 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self.dag_manager.register_dag(dag)
         return res
 
+    def _pre_load_dag_from_db(self):
+        """Pre load DAG from db"""
+        entities = self.dao.get_list({})
+        for entity in entities:
+            try:
+                self._flow_factory.pre_load_requirements(entity)
+            except Exception as e:
+                logger.warning(
+                    f"Pre load requirements for DAG({entity.name}, {entity.dag_id}) "
+                    f"from db error: {str(e)}"
+                )
+
     def load_dag_from_db(self):
         """Load DAG from db"""
         entities = self.dao.get_list({})
@@ -110,6 +125,18 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             except Exception as e:
                 logger.warning(
                     f"Load DAG({entity.name}, {entity.dag_id}) from db error: {str(e)}"
+                )
+
+    def _pre_load_dag_from_dbgpts(self):
+        """Pre load DAG from dbgpts"""
+        flows = self.dbgpts_loader.get_flows()
+        for flow in flows:
+            try:
+                self._flow_factory.pre_load_requirements(flow)
+            except Exception as e:
+                logger.warning(
+                    f"Pre load requirements for DAG({flow.name}) from "
+                    f"dbgpts error: {str(e)}"
                 )
 
     def load_dag_from_dbgpts(self):
@@ -124,9 +151,13 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     self.create(flow)
                 else:
                     # TODO check version, must be greater than the exist one
+                    flow.uid = exist_inst.uid
                     self.update(flow, check_editable=False)
             except Exception as e:
-                logger.warning(f"Load DAG from dbgpts error: {str(e)}")
+                message = traceback.format_exc()
+                logger.warning(
+                    f"Load DAG {flow.name} from dbgpts error: {str(e)}, detail: {message}"
+                )
 
     def update(
         self, request: ServeRequest, check_editable: bool = True
