@@ -466,6 +466,7 @@ class ConversableAgent(Role, Agent):
     async def _a_select_llm_model(
         self, excluded_models: Optional[List[str]] = None
     ) -> str:
+        logger.info(f"_a_select_llm_model:{excluded_models}")
         try:
             all_models = await self.llm_config.llm_client.models()
             all_model_names = [item.model for item in all_models]

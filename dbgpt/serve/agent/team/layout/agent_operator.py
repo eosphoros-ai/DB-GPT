@@ -182,6 +182,7 @@ class AwelAgentOperator(
             memory=input_value.memory,
             agent_context=input_value.agent_context,
             resource_loader=input_value.resource_loader,
+            llm_client=input_value.llm_client,
         )
 
     async def get_agent(
