@@ -11,6 +11,7 @@ from dbgpt.agent.agents.base_agent_new import ConversableAgent
 from dbgpt.agent.agents.base_team import ManagerAgent
 from dbgpt.core.awel import DAG
 from dbgpt.core.awel.dag.dag_manager import DAGManager
+from dbgpt.serve.agent.model import AwelTeamContext
 from dbgpt.serve.agent.team.layout.agent_operator import AwelAgentOperator
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ CFG = Config()
 
 
 class AwelLayoutChatNewManager(ManagerAgent):
-    dag: str = Field(...)
+    dag: AwelTeamContext = Field(...)
     profile: str = "AwelNewManager"
     goal: str = (
         "Promote and solve user problems according to the process arranged by Awel."
@@ -41,13 +42,7 @@ class AwelLayoutChatNewManager(ManagerAgent):
         try:
             _dag_manager = DAGManager.get_instance(CFG.SYSTEM_APP)
 
-            dag_id = None
-            try:
-                dag_param = json.loads(dag)
-                dag_id = dag_param["dag_id"]
-            except Exception as e:
-                logger.warning(f"Is not a json dag context!{dag}")
-                dag_id = dag
+            dag_id = self.dag.dag_id
 
             agent_dag = _dag_manager.dag_map[dag_id]
             last_node: AwelAgentOperator = agent_dag.leaf_nodes[0]
