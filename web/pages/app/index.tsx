@@ -14,7 +14,7 @@ export default function App() {
   const [spinning, setSpinning] = useState<boolean>(false);
   const [activeKey, setActiveKey] = useState<TabKey>('app');
   const [apps, setApps] = useState<IApp[]>([]);
-  const [curApp, setCurApp] = useState<any>();
+  const [curApp, setCurApp] = useState<IApp>();
   const [modalType, setModalType] = useState<ModalType>('add');
 
   const handleCreate = () => {

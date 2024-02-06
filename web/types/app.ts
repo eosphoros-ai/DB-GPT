@@ -24,7 +24,7 @@ export type IApp = {
   /**
    * 应用节点信息
    */
-  details?: string;
+  details?: IDetail[];
   /**
    * 是否已收藏
    */
@@ -63,4 +63,20 @@ export type ITeamModal = {
   auto_plan: string;
   awel_layout: string;
   singe_agent: string;
+};
+
+export type IResource = {
+  is_dynamic: boolean;
+  name: string;
+  type: string;
+  value: string;
+};
+
+export type IDetail = {
+  agent_name?: string;
+  app_code?: string;
+  llm_strategy?: string;
+  llm_strategy_value?: string;
+  resources?: IResource[];
+  key?: string;
 };
