@@ -21,7 +21,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   if (data.category === 'resource') {
     return <NodeHandler node={node} data={data} type="target" label={label} index={index} />;
   } else if (data.category === 'common') {
-    const defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
+    let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
     switch (data.type_name) {
       case 'int':
         return (
@@ -73,6 +73,8 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
           </div>
         );
       case 'bool':
+        defaultValue = defaultValue === 'False' ? false : defaultValue;
+        defaultValue = defaultValue === 'True' ? true : defaultValue;
         return (
           <div className="p-2 text-sm">
             <p>
@@ -86,7 +88,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
                 className="ml-2"
                 defaultChecked={defaultValue}
                 onChange={(e) => {
-                  handleChange(e.target.value);
+                  handleChange(e.target.checked);
                 }}
               />
             </p>
