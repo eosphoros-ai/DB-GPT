@@ -206,6 +206,8 @@ const en = {
   Please_input_the_work_modal: 'Please select the work modal',
   available_resources: ' Available Resources',
   edit_new_applications: 'Edit new applications',
+  collect: 'Collect',
+  create: '创建',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -418,6 +420,8 @@ const zh: Resources['translation'] = {
   Please_input_the_work_modal: '请选择工作模式',
   available_resources: '可用资源',
   edit_new_applications: '编辑新的应用',
+  collect: '收藏',
+  create: '创建',
 } as const;
 
 i18n.use(initReactI18next).init({

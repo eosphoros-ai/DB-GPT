@@ -4,12 +4,17 @@ import { Button, Empty, Spin, Tabs, TabsProps } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { apiInterceptors, getAppList } from '@/client/api';
 import { IApp } from '@/types/app';
+import { PlusOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
+import ChatDialog from '@/components/common/chat-dialog';
 
 type TabKey = 'app' | 'collected';
 
 type ModalType = 'edit' | 'add';
 
 export default function App() {
+  const { t } = useTranslation();
+
   const [open, setOpen] = useState<boolean>(false);
   const [spinning, setSpinning] = useState<boolean>(false);
   const [activeKey, setActiveKey] = useState<TabKey>('app');
@@ -55,16 +60,17 @@ export default function App() {
   };
 
   useEffect(() => {
-    initData();
+    // initData();
   }, []);
 
   const renderAppList = (data: { isCollected: boolean }) => {
     const isNull = data.isCollected ? apps.every((item) => !item.is_collected) : apps.length === 0;
+
     return (
-      <div className="overflow-auto h-[800px]">
+      <div className="overflow-y-auto">
         {!data.isCollected && (
-          <Button onClick={handleCreate} type="primary" className="mb-6">
-            + create
+          <Button onClick={handleCreate} type="primary" className="mb-4" icon={<PlusOutlined />}>
+            {t('create')}
           </Button>
         )}
         {!isNull ? (
@@ -95,11 +101,16 @@ export default function App() {
   ];
 
   return (
-    <Spin spinning={spinning}>
-      <div className="h-screen w-full p-4 md:p-6 overflow-y-aut">
-        <Tabs defaultActiveKey="app" items={items} onChange={handleTabChange} />
-        {open && <AppModal app={modalType === 'edit' ? curApp : {}} type={modalType} updateApps={initData} open={open} handleCancel={handleCancel} />}
-      </div>
-    </Spin>
+    <>
+      <Spin spinning={spinning}>
+        <div className="h-screen w-full p-4 md:p-6 overflow-y-auto">
+          <Tabs defaultActiveKey="app" items={items} onChange={handleTabChange} />
+          {open && (
+            <AppModal app={modalType === 'edit' ? curApp : {}} type={modalType} updateApps={initData} open={open} handleCancel={handleCancel} />
+          )}
+        </div>
+      </Spin>
+      <ChatDialog title="测试会话" chatMode="chat_agent" />
+    </>
   );
 }
