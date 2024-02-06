@@ -1,5 +1,5 @@
 import { IFlowNode, IFlowNodeParameter } from '@/types/flow';
-import { Checkbox, Input, InputNumber, Tooltip } from 'antd';
+import { Checkbox, Input, InputNumber, Select, Tooltip } from 'antd';
 import React from 'react';
 import RequiredIcon from './required-icon';
 import NodeHandler from './node-handler';
@@ -54,13 +54,22 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
                 </Tooltip>
               )}
             </p>
-            <Input
-              className="w-full"
-              defaultValue={defaultValue}
-              onChange={(e) => {
-                handleChange(e.target.value);
-              }}
-            />
+            {data.options?.length > 0 ? (
+              <Select
+                className="w-full nodrag"
+                defaultValue={defaultValue}
+                options={data.options.map((item: any) => ({ label: item.label, value: item.value }))}
+                onChange={handleChange}
+              />
+            ) : (
+              <Input
+                className="w-full"
+                defaultValue={defaultValue}
+                onChange={(e) => {
+                  handleChange(e.target.value);
+                }}
+              />
+            )}
           </div>
         );
       case 'bool':
