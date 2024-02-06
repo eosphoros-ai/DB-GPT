@@ -342,6 +342,23 @@ async def chat_completions(dialogue: ConversationVo = Body()):
             headers=headers,
             media_type="text/event-stream",
         )
+    elif dialogue.chat_mode == ChatScene.ChatFlow.value():
+
+        async def flow_chat_generator():
+            with root_tracer.start_span("stream_flow_chat"):
+                yield f"data: It’s not supported yet, it will be soon\n\n"
+
+        return StreamingResponse(
+            flow_chat_generator(
+                conv_uid=dialogue.conv_uid,
+                gpts_name=dialogue.select_param,
+                user_query=dialogue.user_input,
+                user_code=dialogue.user_name,
+                sys_code=dialogue.sys_code,
+            ),
+            headers=headers,
+            media_type="text/event-stream",
+        )
     else:
         with root_tracer.start_span(
             "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()

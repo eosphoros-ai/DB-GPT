@@ -187,6 +187,7 @@ class AgentGenerateContext:
     memory: Optional[GptsMemory] = None
     agent_context: Optional[AgentContext] = None
     resource_loader: Optional[ResourceLoader] = None
+    llm_client: Optional[LLMClient] = None
 
     def to_dict(self) -> Dict:
         return dataclasses.asdict(self)

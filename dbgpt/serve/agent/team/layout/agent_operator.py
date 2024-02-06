@@ -193,8 +193,13 @@ class AwelAgentOperator(
             self.awel_agent.agent_profile
         )
         llm_config = self.awel_agent.llm_config
+
         if not llm_config:
-            llm_config = LLMConfig(llm_client=self.llm_client)
+            if input_value.llm_client:
+                llm_config = LLMConfig(llm_client=input_value.llm_client)
+            else:
+                llm_config = LLMConfig(llm_client=self.llm_client)
+
         agent = (
             await agent_cls(name=self.awel_agent.role_name)
             .bind(input_value.memory)
