@@ -38,6 +38,11 @@ class AwelTeamContext(BaseModel):
         description="The unique id of dag",
         examples=["flow_dag_testflow_66d8e9d6-f32e-4540-a5bd-ea0648145d0e"],
     )
+    flow_uid: str = Field(
+        ...,
+        description="The unique id of flow",
+        examples=["66d8e9d6-f32e-4540-a5bd-ea0648145d0e"],
+    )
     name: Optional[str] = Field(
         default=None,
         description="The name of dag",
