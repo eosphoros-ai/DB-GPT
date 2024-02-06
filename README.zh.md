@@ -43,6 +43,8 @@ DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领�
 ## 效果演示
 
 ### Data Agents 
+![chat_excel](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/03d67da4-b9b9-4df3-8890-176a0941dab8)
+
 ![data agents](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/ced393b4-9180-437a-90c5-b43633cda8cb)
 
 
