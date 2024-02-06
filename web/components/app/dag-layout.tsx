@@ -42,14 +42,14 @@ export default function DagLayout(props: IProps) {
     <div className="w-full h-[300px]">
       <div className="mr-24 mb-4 mt-2">Flows:</div>
       <div className="flex items-center mb-6">
-        <Select onChange={handleFlowsChange} value={curFlow?.name || flowsOptions?.[0].value} className="w-1/4" options={flowsOptions}></Select>
+        <Select onChange={handleFlowsChange} value={curFlow?.name || flowsOptions?.[0]?.value} className="w-1/4" options={flowsOptions}></Select>
         <Link href="/flow/canvas/" className="ml-6">
           {t('edit_new_applications')}
         </Link>
         <div className="text-gray-500 ml-16">{curFlow?.description}</div>
       </div>
       {curFlow && (
-        <div className="w-full h-full border-[0.5px] border-dardkgray">
+        <div className="w-full h-full border-[0.5px] border-dark-gray">
           <PreviewFlow flowData={curFlow?.flow_data} />
         </div>
       )}
