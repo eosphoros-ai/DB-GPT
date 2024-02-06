@@ -1,5 +1,5 @@
 import { IFlowNode, IFlowNodeParameter } from '@/types/flow';
-import { Checkbox, Input, InputNumber, Tooltip } from 'antd';
+import { Checkbox, Input, InputNumber, Select, Tooltip } from 'antd';
 import React from 'react';
 import RequiredIcon from './required-icon';
 import NodeHandler from './node-handler';
@@ -21,7 +21,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
   if (data.category === 'resource') {
     return <NodeHandler node={node} data={data} type="target" label={label} index={index} />;
   } else if (data.category === 'common') {
-    const defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
+    let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
     switch (data.type_name) {
       case 'int':
         return (
@@ -54,16 +54,27 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
                 </Tooltip>
               )}
             </p>
-            <Input
-              className="w-full"
-              defaultValue={defaultValue}
-              onChange={(e) => {
-                handleChange(e.target.value);
-              }}
-            />
+            {data.options?.length > 0 ? (
+              <Select
+                className="w-full nodrag"
+                defaultValue={defaultValue}
+                options={data.options.map((item: any) => ({ label: item.label, value: item.value }))}
+                onChange={handleChange}
+              />
+            ) : (
+              <Input
+                className="w-full"
+                defaultValue={defaultValue}
+                onChange={(e) => {
+                  handleChange(e.target.value);
+                }}
+              />
+            )}
           </div>
         );
       case 'bool':
+        defaultValue = defaultValue === 'False' ? false : defaultValue;
+        defaultValue = defaultValue === 'True' ? true : defaultValue;
         return (
           <div className="p-2 text-sm">
             <p>
@@ -77,7 +88,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
                 className="ml-2"
                 defaultChecked={defaultValue}
                 onChange={(e) => {
-                  handleChange(e.target.value);
+                  handleChange(e.target.checked);
                 }}
               />
             </p>
