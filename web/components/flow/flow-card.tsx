@@ -1,7 +1,7 @@
 import { apiInterceptors, deleteFlowById, newDialogue } from '@/client/api';
 import { IFlow } from '@/types/flow';
 import { DeleteFilled, EditFilled, MessageFilled, WarningOutlined } from '@ant-design/icons';
-import { Divider, Modal } from 'antd';
+import { Modal } from 'antd';
 import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import FlowPreview from './preview-flow';

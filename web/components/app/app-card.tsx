@@ -69,9 +69,13 @@ export default function AppCard(props: IProps) {
   return (
     <GPTCard
       title={app.app_name}
-      icon={'/LOGO_SMALL.png'}
+      icon={'/icons/node/vis.png'}
+      iconBorder={false}
       desc={app.app_describe}
-      tags={[languageMap[app.language], app.team_mode]}
+      tags={[
+        { text: languageMap[app.language], color: 'default' },
+        { text: app.team_mode, color: 'default' },
+      ]}
       onClick={() => {
         handleEdit(app);
       }}

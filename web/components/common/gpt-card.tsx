@@ -10,11 +10,11 @@ interface Props {
   tags?: (
     | string
     | {
-        text: string;
+        text: ReactNode;
         /** @default false */
         border?: boolean;
-        /** @default blue */
-        color: TagProps['color'];
+        /** @default default */
+        color?: TagProps['color'];
       }
   )[];
   operations?: {
@@ -23,11 +23,13 @@ interface Props {
     onClick?: () => void;
   }[];
   icon?: ReactNode;
+  iconBorder?: boolean;
   onClick?: () => void;
 }
 
 function GPTCard({
   icon,
+  iconBorder = true,
   title,
   desc,
   tags,
@@ -42,7 +44,15 @@ function GPTCard({
 
     if (typeof icon === 'string') {
       return (
-        <Image className="w-11 h-11 rounded-full mr-4 border border-gray-200 object-contain bg-white" width={44} height={44} src={icon} alt={title} />
+        <Image
+          className={classNames('w-11 h-11 rounded-full mr-4 object-contain bg-white', {
+            'border border-gray-200': iconBorder,
+          })}
+          width={44}
+          height={44}
+          src={icon}
+          alt={title}
+        />
       );
     }
 
@@ -56,13 +66,13 @@ function GPTCard({
         {tags.map((tag, index) => {
           if (typeof tag === 'string') {
             return (
-              <Tag key={index} className="text-xs" bordered={false} color="blue">
+              <Tag key={index} className="text-xs" bordered={false} color="default">
                 {tag}
               </Tag>
             );
           }
           return (
-            <Tag key={index} className="text-xs" bordered={tag.border} color={tag.color}>
+            <Tag key={index} className="text-xs" bordered={tag.border ?? false} color={tag.color}>
               {tag.text}
             </Tag>
           );
@@ -84,7 +94,7 @@ function GPTCard({
       {...props}
     >
       <div className="p-4">
-        <div className="flex items-center mb-2">
+        <div className="flex items-center">
           {iconNode}
           <div className="flex flex-col">
             <h2 className="text-sm font-semibold">{title}</h2>
@@ -93,7 +103,7 @@ function GPTCard({
         </div>
         {desc && (
           <Tooltip title={desc}>
-            <p className="text-sm text-gray-500 font-normal line-clamp-2">{desc}</p>
+            <p className="mt-2 text-sm text-gray-500 font-normal line-clamp-2">{desc}</p>
           </Tooltip>
         )}
       </div>

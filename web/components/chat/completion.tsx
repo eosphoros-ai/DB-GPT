@@ -42,7 +42,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
 
   const scrollableRef = useRef<HTMLDivElement>(null);
 
-  const incremental = useMemo(() => scene === 'chat_flow', [scene]);
+  // const incremental = useMemo(() => scene === 'chat_flow', [scene]);
   const isChartChat = useMemo(() => scene === 'chat_dashboard', [scene]);
 
   const summary = useSummary();
@@ -70,7 +70,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
       setIsLoading(true);
       await onSubmit(content, {
         select_param: selectParam ?? '',
-        incremental,
+        // incremental,
       });
     } finally {
       setIsLoading(false);
