@@ -15,6 +15,7 @@ class Role(ABC, BaseModel):
     constraints: List[str] = []
     examples: str = ""
     desc: str = ""
+    language: str = "en"
     is_human: bool = False
     is_team: bool = False
 
@@ -37,6 +38,7 @@ class Role(ABC, BaseModel):
         {self.expand_prompt if len(self.expand_prompt)>0 else ""}
           
         *** IMPORTANT REMINDER ***
+        {self.language_require_prompt}
         {self.constraints_prompt}
         
         {'You can refer to the following examples:'  if len(self.examples) > 0 else ""}
@@ -61,6 +63,13 @@ class Role(ABC, BaseModel):
             return "\n".join(
                 f"{i+1}. {item}" for i, item in enumerate(self.constraints)
             )
+
+    @property
+    def language_require_prompt(self):
+        if self.language == "zh":
+            return "Please answer in simplified Chinese."
+        else:
+            return "Please answer in English."
 
     @property
     def introduce(self):
