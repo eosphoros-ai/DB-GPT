@@ -15,6 +15,7 @@ from dbgpt.core.awel import (
     JoinOperator,
     MapOperator,
     StreamifyAbsOperator,
+    TransformStreamAbsOperator,
 )
 from dbgpt.core.awel.flow import (
     IOField,
@@ -408,3 +409,51 @@ class ModelOutput2CommonResponseOperator(
             error_code=input_value.error_code,
             metrics=metrics,
         )
+
+
+class CommonStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]):
+    """The Common Streaming Output Operator.
+
+    Transform model output to the string output to show in DB-GPT chat flow page.
+    """
+
+    metadata = ViewMetadata(
+        label="Common Streaming Output Operator",
+        name="common_streaming_output_operator",
+        operator_type=OperatorType.TRANSFORM_STREAM,
+        category=OperatorCategory.OUTPUT_PARSER,
+        description="The common streaming LLM operator, for chat flow.",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "Upstream Model Output",
+                "output_iter",
+                ModelOutput,
+                is_list=True,
+                description="The model output of upstream.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model Output",
+                "model_output",
+                str,
+                is_list=True,
+                description="The model output after transform to common stream format",
+            )
+        ],
+    )
+
+    async def transform_stream(self, output_iter: AsyncIterator[ModelOutput]):
+        """Transform upstream output iter to string foramt."""
+        async for model_output in output_iter:
+            if model_output.error_code != 0:
+                error_msg = (
+                    f"[ERROR](error_code: {model_output.error_code}): "
+                    f"{model_output.text}"
+                )
+                yield f"data:{error_msg}"
+                return
+            decoded_unicode = model_output.text.replace("\ufffd", "")
+            msg = decoded_unicode.replace("\n", "\\n")
+            yield f"data:{msg}\n\n"

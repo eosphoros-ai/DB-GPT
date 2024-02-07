@@ -165,7 +165,7 @@ class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
         name="openai_streaming_output_operator",
         operator_type=OperatorType.TRANSFORM_STREAM,
         category=OperatorCategory.OUTPUT_PARSER,
-        description="The streaming LLM operator.",
+        description="The OpenAI streaming LLM operator.",
         parameters=[],
         inputs=[
             IOField.build_from(
