@@ -31,7 +31,7 @@ function Models() {
       >
         {t('create_model')}
       </Button>
-      <div className="flex flex-wrap">
+      <div className="flex flex-wrap gap-2 md:gap-4">
         {models.map((item) => (
           <ModelCard info={item} key={item.model_name} />
         ))}
