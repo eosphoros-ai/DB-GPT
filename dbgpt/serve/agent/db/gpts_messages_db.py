@@ -36,7 +36,9 @@ class GptsMessagesEntity(Model):
     )
     model_name = Column(String(255), nullable=True, comment="message generate model")
     rounds = Column(Integer, nullable=False, comment="dialogue turns")
-    content = Column(Text, nullable=True, comment="Content of the speech")
+    content = Column(
+        Text(length=2**31 - 1), nullable=True, comment="Content of the speech"
+    )
     current_gogal = Column(
         Text, nullable=True, comment="The target corresponding to the current message"
     )
@@ -45,7 +47,9 @@ class GptsMessagesEntity(Model):
         Text, nullable=True, comment="Current conversation review info"
     )
     action_report = Column(
-        Text, nullable=True, comment="Current conversation action report"
+        Text(length=2**31 - 1),
+        nullable=True,
+        comment="Current conversation action report",
     )
 
     role = Column(

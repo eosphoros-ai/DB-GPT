@@ -19,28 +19,33 @@ import os
 
 from dbgpt.agent.agents.agent import AgentContext
 from dbgpt.agent.agents.expand.summary_assistant_agent import SummaryAssistantAgent
+from dbgpt.agent.agents.llm.llm import LLMConfig
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
-from dbgpt.core.interface.llm import ModelMetadata
 
 
-def summary_example_with_success():
-    from dbgpt.model.proxy import OpenAILLMClient
+async def summary_example_with_success():
+    from dbgpt.model import OpenAILLMClient
 
-    llm_client = OpenAILLMClient()
-    context: AgentContext = AgentContext(conv_id="summarize", llm_provider=llm_client)
-    context.llm_models = [ModelMetadata(model="gpt-3.5-turbo")]
+    llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
+    context: AgentContext = AgentContext(conv_id="summarize")
 
-    default_memory = GptsMemory()
-    summarizer = SummaryAssistantAgent(memory=default_memory, agent_context=context)
+    default_memory: GptsMemory = GptsMemory()
 
-    user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
+    summarizer = (
+        await SummaryAssistantAgent()
+        .bind(context)
+        .bind(LLMConfig(llm_client=llm_client))
+        .bind(default_memory)
+        .build()
+    )
 
-    asyncio.run(
-        user_proxy.a_initiate_chat(
-            recipient=summarizer,
-            reviewer=user_proxy,
-            message="""I want to summarize advantages of Nuclear Power according to the following content.
+    user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
+
+    await user_proxy.a_initiate_chat(
+        recipient=summarizer,
+        reviewer=user_proxy,
+        message="""I want to summarize advantages of Nuclear Power according to the following content.
 
             Nuclear power in space is the use of nuclear power in outer space, typically either small fission systems or radioactive decay for electricity or heat. Another use is for scientific observation, as in a Mössbauer spectrometer. The most common type is a radioisotope thermoelectric generator, which has been used on many space probes and on crewed lunar missions. Small fission reactors for Earth observation satellites, such as the TOPAZ nuclear reactor, have also been flown.[1] A radioisotope heater unit is powered by radioactive decay and can keep components from becoming too cold to function, potentially over a span of decades.[2]
 
@@ -68,31 +73,36 @@ def summary_example_with_success():
             Nuclear pulse propulsion
             Nuclear electric rocket
             """,
-        )
     )
 
     ## dbgpt-vis message infos
-    print(asyncio.run(default_memory.one_plan_chat_competions("summarize")))
+    print(await default_memory.one_chat_competions("summarize"))
 
 
-def summary_example_with_faliure():
-    from dbgpt.model.proxy import OpenAILLMClient
+async def summary_example_with_faliure():
+    from dbgpt.model import OpenAILLMClient
 
-    llm_client = OpenAILLMClient()
-    context: AgentContext = AgentContext(conv_id="summarize", llm_provider=llm_client)
-    context.llm_models = [ModelMetadata(model="gpt-3.5-turbo")]
+    llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
+    context: AgentContext = AgentContext(conv_id="summarize")
 
-    default_memory = GptsMemory()
-    summarizer = SummaryAssistantAgent(memory=default_memory, agent_context=context)
+    default_memory: GptsMemory = GptsMemory()
 
-    user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
+    summarizer = (
+        await SummaryAssistantAgent()
+        .bind(context)
+        .bind(LLMConfig(llm_client=llm_client))
+        .bind(default_memory)
+        .build()
+    )
+
+    user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
 
     # Test the failure example
-    asyncio.run(
-        user_proxy.a_initiate_chat(
-            recipient=summarizer,
-            reviewer=user_proxy,
-            message="""I want to summarize advantages of Nuclear Power according to the following content.
+
+    await user_proxy.a_initiate_chat(
+        recipient=summarizer,
+        reviewer=user_proxy,
+        message="""I want to summarize advantages of Nuclear Power according to the following content.
 
             Taylor Swift is an American singer-songwriter and actress who is one of the most prominent and successful figures in the music industry. She was born on December 13, 1989, in Reading, Pennsylvania, USA. Taylor Swift gained widespread recognition for her narrative songwriting style, which often draws from her personal experiences and relationships.
 
@@ -104,17 +114,16 @@ def summary_example_with_faliure():
 
             Taylor Swift is not only a successful artist but also an influential cultural icon known for her evolving musical style, storytelling abilities, and her impact on the entertainment industry.
             """,
-        )
     )
 
-    print(asyncio.run(default_memory.one_plan_chat_competions("summarize")))
+    print(await default_memory.one_chat_competions("summarize"))
 
 
 if __name__ == "__main__":
     print(
         "\033[92m=======================Start The Summary Assistant with Successful Results==================\033[0m"
     )
-    summary_example_with_success()
+    asyncio.run(summary_example_with_success())
     print(
         "\033[92m=======================The Summary Assistant with Successful Results Ended==================\n\n\033[91m"
     )
@@ -122,7 +131,7 @@ if __name__ == "__main__":
     print(
         "\033[91m=======================Start The Summary Assistant with Fail Results==================\033[91m"
     )
-    summary_example_with_faliure()
+    asyncio.run(summary_example_with_faliure())
     print(
         "\033[91m=======================The Summary Assistant with Fail Results Ended==================\033[91m"
     )

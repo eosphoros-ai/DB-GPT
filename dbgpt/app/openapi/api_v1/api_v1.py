@@ -24,11 +24,13 @@ from dbgpt.app.openapi.api_view_model import (
 from dbgpt.app.scene import BaseChat, ChatFactory, ChatScene
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
+from dbgpt.core.awel import CommonLLMHttpRequestBody, CommonLLMHTTPRequestContext
 from dbgpt.datasource.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt.model.base import FlatSupportedModel
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
 from dbgpt.rag.summary.db_summary_client import DBSummaryClient
 from dbgpt.serve.agent.agents.controller import multi_agents
+from dbgpt.serve.flow.service.service import Service as FlowService
 from dbgpt.util.executor_utils import (
     DefaultExecutorFactory,
     ExecutorFactory,
@@ -127,6 +129,11 @@ def get_worker_manager() -> WorkerManager:
         ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
     ).create()
     return worker_manager
+
+
+def get_chat_flow() -> FlowService:
+    """Get Chat Flow Service."""
+    return FlowService.get_instance(CFG.SYSTEM_APP)
 
 
 def get_executor() -> Executor:
@@ -320,7 +327,10 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
 
 
 @router.post("/v1/chat/completions")
-async def chat_completions(dialogue: ConversationVo = Body()):
+async def chat_completions(
+    dialogue: ConversationVo = Body(),
+    flow_service: FlowService = Depends(get_chat_flow),
+):
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
     )
@@ -338,6 +348,28 @@ async def chat_completions(dialogue: ConversationVo = Body()):
                 user_query=dialogue.user_input,
                 user_code=dialogue.user_name,
                 sys_code=dialogue.sys_code,
+            ),
+            headers=headers,
+            media_type="text/event-stream",
+        )
+    elif dialogue.chat_mode == ChatScene.ChatFlow.value():
+        flow_ctx = CommonLLMHTTPRequestContext(
+            conv_uid=dialogue.conv_uid,
+            chat_mode=dialogue.chat_mode,
+            user_name=dialogue.user_name,
+            sys_code=dialogue.sys_code,
+        )
+        flow_req = CommonLLMHttpRequestBody(
+            model=dialogue.model_name,
+            messages=dialogue.user_input,
+            stream=True,
+            context=flow_ctx,
+        )
+        return StreamingResponse(
+            flow_stream_generator(
+                flow_service.chat_flow(dialogue.select_param, flow_req),
+                dialogue.incremental,
+                dialogue.model_name,
             ),
             headers=headers,
             media_type="text/event-stream",
@@ -392,6 +424,32 @@ async def no_stream_generator(chat):
     with root_tracer.start_span("no_stream_generator"):
         msg = await chat.nostream_call()
         yield f"data: {msg}\n\n"
+
+
+async def flow_stream_generator(func, incremental: bool, model_name: str):
+    stream_id = f"chatcmpl-{str(uuid.uuid1())}"
+    previous_response = ""
+    async for chunk in func:
+        if chunk:
+            msg = chunk.replace("\ufffd", "")
+            if incremental:
+                incremental_output = msg[len(previous_response) :]
+                choice_data = ChatCompletionResponseStreamChoice(
+                    index=0,
+                    delta=DeltaMessage(role="assistant", content=incremental_output),
+                )
+                chunk = ChatCompletionStreamResponse(
+                    id=stream_id, choices=[choice_data], model=model_name
+                )
+                yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
+            else:
+                # TODO generate an openai-compatible streaming responses
+                msg = msg.replace("\n", "\\n")
+                yield f"data:{msg}\n\n"
+            previous_response = msg
+            await asyncio.sleep(0.02)
+    if incremental:
+        yield "data: [DONE]\n\n"
 
 
 async def stream_generator(chat, incremental: bool, model_name: str):

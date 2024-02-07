@@ -1,10 +1,13 @@
 import logging
-import sys
 from typing import Dict, List, Optional, Union
 
-from dbgpt.agent.agents.agent import Agent, AgentContext
-from dbgpt.agent.agents.base_agent import ConversableAgent
-from dbgpt.agent.memory.gpts_memory import GptsMemory
+from pydantic import BaseModel, Field
+
+from dbgpt.agent.actions.action import Action, ActionOutput, T
+from dbgpt.agent.agents.agent_new import Agent
+from dbgpt.agent.agents.base_agent_new import ConversableAgent
+from dbgpt.agent.resource.resource_api import AgentResource, ResourceType
+from dbgpt.vis.tags.vis_agent_plans import Vis, VisAgentPlans
 
 logger = logging.getLogger(__name__)
 
@@ -56,11 +59,17 @@ def content_str(content: Union[str, List, None]) -> str:
     return rst
 
 
-class Team:
-    def __init__(self):
-        self.agents: List[Agent] = []
-        self.messages: List[Dict] = []
-        self.max_round: Optional[int] = 10
+class Team(BaseModel):
+    agents: List[Agent] = Field(default_factory=list)
+    messages: List[Dict] = Field(default_factory=list)
+    max_round: Optional[int] = 100
+    is_team: bool = True
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def hire(self, agents: List[Agent]):
         """Hire roles to cooperate"""
@@ -69,7 +78,7 @@ class Team:
     @property
     def agent_names(self) -> List[str]:
         """Return the names of the agents in the group chat."""
-        return [agent.name for agent in self.agents]
+        return [agent.profile for agent in self.agents]
 
     def agent_by_name(self, name: str) -> Agent:
         """Returns the agent with a given name."""
@@ -90,69 +99,36 @@ class Team:
         message["content"] = content_str(message["content"])
         self.messages.append(message)
 
-    async def a_generate_speech_process(self, message: Optional[str]) -> None:
-        """Build respective speech processes based on different team organizational models
-        Args:
-            message:Speech goal
-        Returns:
-
-        """
-
-    async def a_run_chat(
-        self,
-        message: Optional[str] = None,
-        sender: Optional[Agent] = None,
-        reviewer: Agent = None,
-    ):
-        """
-        Install the current organization method to open the conversation
-        Args:
-            message:
-            sender:
-            reviewer:
-
-        Returns:
-
-        """
-        pass
-
 
 class ManagerAgent(ConversableAgent, Team):
-    def __init__(
-        self,
-        name: str,
-        memory: GptsMemory,
-        agent_context: AgentContext,
-        # unlimited consecutive auto reply by default
-        max_consecutive_auto_reply: Optional[int] = sys.maxsize,
-        human_input_mode: Optional[str] = "NEVER",
-        describe: Optional[str] = "layout chat manager.",
-        **kwargs,
-    ):
-        ConversableAgent.__init__(
-            self,
-            name=name,
-            describe=describe,
-            memory=memory,
-            max_consecutive_auto_reply=max_consecutive_auto_reply,
-            human_input_mode=human_input_mode,
-            agent_context=agent_context,
-            **kwargs,
-        )
-        Team.__init__(self)
+    profile: str = "TeamManager"
+    goal: str = "manage all hired intelligent agents to complete mission objectives"
+    constraints: List[str] = []
+    desc: str = goal
+    is_team: bool = True
 
-    async def a_reasoning_reply(
-        self, messages: Optional[List[Dict]] = None
+    # The management agent does not need to retry the exception. The actual execution of the agent has already been retried.
+    max_retry_count: int = 1
+
+    def __init__(self, **kwargs):
+        ConversableAgent.__init__(self, **kwargs)
+        Team.__init__(self, **kwargs)
+
+    async def a_thinking(
+        self, messages: Optional[List[Dict]], prompt: Optional[str] = None
     ) -> Union[str, Dict, None]:
+        # TeamManager, which is based on processes and plans by default, only needs to ensure execution and does not require additional thinking.
         if messages is None or len(messages) <= 0:
-            message = None
             return None, None
         else:
             message = messages[-1]
             self.messages.append(message)
             return message["content"], None
 
-    async def a_verify_reply(
-        self, message: Optional[Dict], sender: Agent, reviewer: Agent, **kwargs
-    ) -> Union[str, Dict, None]:
-        return True, message
+    async def a_act(
+        self,
+        message: Optional[str],
+        sender: Optional[ConversableAgent] = None,
+        reviewer: Optional[ConversableAgent] = None,
+    ) -> Optional[ActionOutput]:
+        pass

@@ -4,7 +4,7 @@ import logging
 import uuid
 from abc import ABC
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 from fastapi import APIRouter, Body
 from fastapi.responses import StreamingResponse
@@ -12,9 +12,12 @@ from fastapi.responses import StreamingResponse
 from dbgpt._private.config import Config
 from dbgpt.agent.agents.agent import Agent, AgentContext
 from dbgpt.agent.agents.agents_manage import agent_manage
+from dbgpt.agent.agents.base_agent_new import ConversableAgent
+from dbgpt.agent.agents.llm.llm import LLMConfig, LLMStrategyType
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.common.schema import Status
 from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.agent.resource.resource_loader import ResourceLoader
 from dbgpt.app.openapi.api_view_model import Result
 from dbgpt.app.scene.base import ChatScene
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
@@ -26,12 +29,15 @@ from dbgpt.serve.agent.team.plan.team_auto_plan import AutoPlanChatManager
 from dbgpt.serve.conversation.serve import Serve as ConversationServe
 from dbgpt.util.json_utils import serialize
 
+from ..db.gpts_app import GptsApp, GptsAppDao, GptsAppQuery
 from ..db.gpts_conversations_db import GptsConversationsDao, GptsConversationsEntity
 from ..db.gpts_manage_db import GptsInstanceDao, GptsInstanceEntity
+from ..resource_loader.datasource_load_client import DatasourceLoadClient
+from ..resource_loader.knowledge_space_load_client import KnowledgeSpaceLoadClient
+from ..resource_loader.plugin_hub_load_client import PluginHubLoadClient
 from ..team.base import TeamMode
-from ..team.layout.team_awel_layout import AwelLayoutChatManager
+from ..team.layout.team_awel_layout_new import AwelLayoutChatNewManager
 from .db_gpts_memory import MetaDbGptsMessageMemory, MetaDbGptsPlansMemory
-from .dbgpts import DbGptsInstance
 
 CFG = Config()
 
@@ -70,8 +76,9 @@ class MultiAgents(BaseComponent, ABC):
         system_app.app.include_router(router, prefix="/api", tags=["Multi-Agents"])
 
     def __init__(self):
-        self.gpts_intance = GptsInstanceDao()
         self.gpts_conversations = GptsConversationsDao()
+
+        self.gpts_app = GptsAppDao()
         self.memory = GptsMemory(
             plans_memory=MetaDbGptsPlansMemory(),
             message_memory=MetaDbGptsMessageMemory(),
@@ -81,68 +88,10 @@ class MultiAgents(BaseComponent, ABC):
         self.gpts_intance.add(entity)
 
     def get_dbgpts(self, user_code: str = None, sys_code: str = None):
-        return self.gpts_intance.get_by_user(user_code, sys_code)
-
-    async def _build_agent_context(
-        self,
-        name: str,
-        conv_id: str,
-    ) -> AgentContext:
-        gpts_instance: GptsInstanceEntity = self.gpts_intance.get_by_name(name)
-        if gpts_instance is None:
-            raise ValueError(f"can't find dbgpts!{name}")
-        agents_names = json.loads(gpts_instance.gpts_agents)
-        llm_models_priority = json.loads(gpts_instance.gpts_models)
-        resource_db = (
-            json.loads(gpts_instance.resource_db) if gpts_instance.resource_db else None
+        apps = self.gpts_app.app_list(
+            GptsAppQuery(user_code=user_code, sys_code=sys_code)
         )
-        resource_knowledge = (
-            json.loads(gpts_instance.resource_knowledge)
-            if gpts_instance.resource_knowledge
-            else None
-        )
-        resource_internet = (
-            json.loads(gpts_instance.resource_internet)
-            if gpts_instance.resource_internet
-            else None
-        )
-        ### init chat param
-        worker_manager = CFG.SYSTEM_APP.get_component(
-            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
-        ).create()
-        llm_task = DefaultLLMClient(worker_manager, auto_convert_message=True)
-        context: AgentContext = AgentContext(conv_id=conv_id, llm_provider=llm_task)
-        context.gpts_name = gpts_instance.gpts_name
-        context.resource_db = resource_db
-        context.resource_internet = resource_internet
-        context.resource_knowledge = resource_knowledge
-        context.agents = agents_names
-
-        context.llm_models = await llm_task.models()
-        context.model_priority = llm_models_priority
-        return context, gpts_instance.team_mode
-
-    async def _build_chat_manager(
-        self, context: AgentContext, mode: TeamMode, agents: List[Agent]
-    ):
-        if mode == TeamMode.SINGLE_AGENT:
-            manager = agents[0]
-        else:
-            if TeamMode.AUTO_PLAN == mode:
-                manager = AutoPlanChatManager(
-                    agent_context=context,
-                    memory=self.memory,
-                )
-            elif TeamMode.AWEL_LAYOUT == mode:
-                manager = AwelLayoutChatManager(
-                    agent_context=context,
-                    memory=self.memory,
-                )
-            else:
-                raise ValueError(f"Unknown Agent Team Mode!{mode}")
-            manager.hire(agents)
-
-        return manager
+        return apps
 
     async def agent_chat(
         self,
@@ -152,7 +101,8 @@ class MultiAgents(BaseComponent, ABC):
         user_code: str = None,
         sys_code: str = None,
     ):
-        context, team_mode = await self._build_agent_context(gpts_name, agent_conv_id)
+        gpt_app: GptsApp = self.gpts_app.app_detail(gpts_name)
+
         gpts_conversation = self.gpts_conversations.get_by_conv_id(agent_conv_id)
         is_retry_chat = True
         if not gpts_conversation:
@@ -162,8 +112,9 @@ class MultiAgents(BaseComponent, ABC):
                     conv_id=agent_conv_id,
                     user_goal=user_query,
                     gpts_name=gpts_name,
+                    team_mode=gpt_app.team_mode,
                     state=Status.RUNNING.value,
-                    max_auto_reply_round=context.max_chat_round,
+                    max_auto_reply_round=0,
                     auto_reply_count=0,
                     user_code=user_code,
                     sys_code=sys_code,
@@ -171,26 +122,11 @@ class MultiAgents(BaseComponent, ABC):
             )
 
         asyncio.create_task(
-            multi_agents.agent_team_chat(user_query, context, team_mode, is_retry_chat)
+            multi_agents.agent_team_chat_new(
+                user_query, agent_conv_id, gpt_app, is_retry_chat
+            )
         )
 
-        # def task_done_callback(task):
-        #     if task.cancelled():
-        #         logger.warning("The task was cancelled!")
-        #     elif task.exception():
-        #         logger.exception(f"The task raised an exception: {task.exception()}")
-        #     else:
-        #         logger.info(f"Callback: {task.result()}")
-        #         loop = asyncio.get_event_loop()
-        #         future = asyncio.run_coroutine_threadsafe(
-        #             self.stable_message(agent_conv_id), loop
-        #         )
-        #
-        #         current_message.add_view_message(future.result())
-        #         current_message.end_current_round()
-        #     current_message.save_to_storage()
-        #
-        # task.add_done_callback(task_done_callback)
         async for chunk in multi_agents.chat_messages(agent_conv_id):
             if chunk:
                 logger.info(chunk)
@@ -244,68 +180,96 @@ class MultiAgents(BaseComponent, ABC):
             current_message.end_current_round()
             current_message.save_to_storage()
 
-    async def agent_team_chat(
+    async def agent_team_chat_new(
         self,
         user_query: str,
-        context: AgentContext,
-        team_mode: TeamMode,
+        conv_uid: str,
+        gpts_app: GptsApp,
         is_retry_chat: bool = False,
     ):
-        """Initiate an Agent-based conversation
-        Args:
-            user_query:
-            context:
-            team_mode:
-            is_retry_chat:
+        employees: List[Agent] = []
+        # Prepare resource loader
+        resource_loader = ResourceLoader()
+        plugin_hub_loader = PluginHubLoadClient()
+        resource_loader.register_resesource_api(plugin_hub_loader)
+        datasource_loader = DatasourceLoadClient()
+        resource_loader.register_resesource_api(datasource_loader)
+        knowledge_space_loader = KnowledgeSpaceLoadClient()
+        resource_loader.register_resesource_api(knowledge_space_loader)
+        context: AgentContext = AgentContext(
+            conv_id=conv_uid,
+            gpts_app_name=gpts_app.app_name,
+            language=gpts_app.language,
+        )
 
-        Returns:
+        # init llm provider
+        ### init chat param
+        worker_manager = CFG.SYSTEM_APP.get_component(
+            ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
+        ).create()
+        self.llm_provider = DefaultLLMClient(worker_manager, auto_convert_message=True)
 
-        """
-        try:
-            agents = []
-            for name in context.agents:
-                cls = agent_manage.get_by_name(name)
-                agent = cls(
-                    agent_context=context,
-                    memory=self.memory,
-                )
-                agents.append(agent)
-
-            manager = await self._build_chat_manager(
-                context, TeamMode(team_mode), agents
+        for record in gpts_app.details:
+            cls: Type[ConversableAgent] = agent_manage.get_by_name(record.agent_name)
+            llm_config = LLMConfig(
+                llm_client=self.llm_provider,
+                llm_strategy=LLMStrategyType(record.llm_strategy),
+                strategy_context=record.llm_strategy_value,
             )
-            user_proxy = UserProxyAgent(memory=self.memory, agent_context=context)
+            agent = (
+                await cls()
+                .bind(context)
+                .bind(self.memory)
+                .bind(llm_config)
+                .bind(record.resources)
+                .bind(resource_loader)
+                .build()
+            )
+            employees.append(agent)
 
-            if not is_retry_chat:
-                ## dbgpts conversation save
-                try:
-                    await user_proxy.a_initiate_chat(
-                        recipient=manager,
-                        message=user_query,
-                        memory=self.memory,
-                    )
-                except Exception as e:
-                    logger.error(f"chat abnormal termination！{str(e)}", e)
-                    self.gpts_conversations.update(context.conv_id, Status.FAILED.value)
-
+        team_mode = TeamMode(gpts_app.team_mode)
+        if team_mode == TeamMode.SINGLE_AGENT:
+            recipient = employees[0]
+        else:
+            llm_config = LLMConfig(llm_client=self.llm_provider)
+            if TeamMode.AUTO_PLAN == team_mode:
+                manager = AutoPlanChatManager()
+            elif TeamMode.AWEL_LAYOUT == team_mode:
+                manager = AwelLayoutChatNewManager(dag=gpts_app.team_context)
             else:
-                # retry chat
-                self.gpts_conversations.update(context.conv_id, Status.RUNNING.value)
-                try:
-                    await user_proxy.a_retry_chat(
-                        recipient=manager,
-                        memory=self.memory,
-                    )
-                except Exception as e:
-                    logger.error(f"chat abnormal termination！{str(e)}", e)
-                    self.gpts_conversations.update(context.conv_id, Status.FAILED.value)
+                raise ValueError(f"Unknown Agent Team Mode!{team_mode}")
+            manager = (
+                await manager.bind(context)
+                .bind(self.memory)
+                .bind(llm_config)
+                .bind(resource_loader)
+                .build()
+            )
+            manager.hire(employees)
+            recipient = manager
 
-            self.gpts_conversations.update(context.conv_id, Status.COMPLETE.value)
-            return context.conv_id
+        user_proxy: UserProxyAgent = (
+            await UserProxyAgent()
+            .bind(context)
+            .bind(self.memory)
+            .bind(resource_loader)
+            .build()
+        )
+        if is_retry_chat:
+            # retry chat
+            self.gpts_conversations.update(conv_uid, Status.RUNNING.value)
+
+        try:
+            await user_proxy.a_initiate_chat(
+                recipient=recipient,
+                message=user_query,
+            )
         except Exception as e:
-            logger.exception("new chat compeletion failed!")
-            self.gpts_conversations.update(context.conv_id, Status.FAILED.value)
-            raise ValueError(f"Add chat failed!{str(e)}")
+            logger.error(f"chat abnormal termination！{str(e)}", e)
+            self.gpts_conversations.update(conv_uid, Status.FAILED.value)
+
+        self.gpts_conversations.update(conv_uid, Status.COMPLETE.value)
+        return conv_uid
 
     async def chat_messages(
         self, conv_id: str, user_code: str = None, system_app: str = None
@@ -367,33 +331,6 @@ async def agents_list():
         return Result.succ(agents)
     except Exception as e:
         return Result.failed(code="E30001", msg=str(e))
-
-
-@router.post("/v1/dbgpts/create", response_model=Result[str])
-async def create_dbgpts(gpts_instance: DbGptsInstance = Body()):
-    logger.info(f"create_dbgpts:{gpts_instance}")
-    try:
-        multi_agents.gpts_create(
-            GptsInstanceEntity(
-                gpts_name=gpts_instance.gpts_name,
-                gpts_describe=gpts_instance.gpts_describe,
-                team_mode=gpts_instance.team_mode,
-                resource_db=json.dumps(gpts_instance.resource_db.to_dict()),
-                resource_internet=json.dumps(gpts_instance.resource_internet.to_dict()),
-                resource_knowledge=json.dumps(
-                    gpts_instance.resource_knowledge.to_dict()
-                ),
-                gpts_agents=json.dumps(gpts_instance.gpts_agents),
-                gpts_models=json.dumps(gpts_instance.gpts_models),
-                language=gpts_instance.language,
-                user_code=gpts_instance.user_code,
-                sys_code=gpts_instance.sys_code,
-            )
-        )
-        return Result.succ(None)
-    except Exception as e:
-        logger.error(f"create_dbgpts failed:{str(e)}")
-        return Result.failed(msg=str(e), code="E300002")
 
 
 @router.get("/v1/dbgpts/list", response_model=Result[str])

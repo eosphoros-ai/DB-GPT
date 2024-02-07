@@ -48,9 +48,6 @@ class GptsMemory:
             )
         return await self._messages_to_plan_vis(plan_items)
 
-    async def one_chat_competions_v2(self, conv_id: str):
-        messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
-
     async def one_chat_competions(self, conv_id: str):
         messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
         temp_group = defaultdict(list)
@@ -81,8 +78,7 @@ class GptsMemory:
         if len(temp_messages) > 0:
             vis_items.append(await self._messages_to_agents_vis(temp_messages))
             temp_messages.clear()
-        if len(vis_items) <= 0:
-            print(f"[DEBUG, message blank:{len(messages)}]")
+
         return "\n".join(vis_items)
 
     async def _messages_to_agents_vis(self, messages: List[GptsMessage]):

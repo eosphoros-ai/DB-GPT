@@ -44,6 +44,7 @@ export type IChatDialogueSchema = {
     | 'chat_dashboard'
     | 'chat_execution'
     | 'chat_agent'
+    | 'chat_flow'
     | (string & {});
   select_param: string;
 };

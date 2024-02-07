@@ -18,6 +18,9 @@ body {
   color: #f7f7f7;
   background-color: #151622;
 }
+.dark-sub-bg {
+  background-color: rgb(35, 38, 44);
+}
 
 .ant-btn-primary {
   background-color: var(--antd-primary-color);
@@ -48,7 +51,10 @@ table tr td {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-
+.scrollbar-default::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
 /* 自定义滚动条样式 */
 ::-webkit-scrollbar {
   display: none;
@@ -70,7 +76,7 @@ table tr td {
   color: white;
 }
 
-:where(.css-dev-only-do-not-override-18iikkb).ant-form-item .ant-form-item-label>label {
+:where(.css-dev-only-do-not-override-18iikkb).ant-form-item .ant-form-item-label > label {
   height: 36px;
 }
 
@@ -78,4 +84,7 @@ table tr td {
   to {
     transform: rotate(360deg);
   }
+}
+.react-flow__panel {
+  display: none !important;
 }

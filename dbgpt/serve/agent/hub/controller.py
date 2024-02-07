@@ -10,7 +10,7 @@ from dbgpt.app.openapi.api_view_model import Result
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.configs.model_config import PLUGINS_DIR
 from dbgpt.serve.agent.db.plugin_hub_db import PluginHubEntity
-from dbgpt.serve.agent.hub.agent_hub import AgentHub
+from dbgpt.serve.agent.hub.plugin_hub import plugin_hub
 from dbgpt.serve.agent.model import (
     PagenationFilter,
     PagenationResult,
@@ -22,8 +22,8 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-class ModuleAgent(BaseComponent, ABC):
-    name = ComponentType.AGENT_HUB
+class ModulePlugin(BaseComponent, ABC):
+    name = ComponentType.PLUGIN_HUB
 
     def __init__(self):
         # load plugins
@@ -48,14 +48,13 @@ class ModuleAgent(BaseComponent, ABC):
         return generator
 
 
-module_agent = ModuleAgent()
+module_plugin = ModulePlugin()
 
 
 @router.post("/v1/agent/hub/update", response_model=Result[str])
-async def agent_hub_update(update_param: PluginHubParam = Body()):
-    logger.info(f"agent_hub_update:{update_param.__dict__}")
+async def plugin_hub_update(update_param: PluginHubParam = Body()):
+    logger.info(f"plugin_hub_update:{update_param.__dict__}")
     try:
-        agent_hub = AgentHub(PLUGINS_DIR)
         branch = (
             update_param.branch
             if update_param.branch is not None and len(update_param.branch) > 0
@@ -67,7 +66,7 @@ async def agent_hub_update(update_param: PluginHubParam = Body()):
             else None
         )
         # TODO change it to async
-        agent_hub.refresh_hub_from_git(update_param.url, branch, authorization)
+        plugin_hub.refresh_hub_from_git(update_param.url, branch, authorization)
         return Result.succ(None)
     except Exception as e:
         logger.error("Agent Hub Update Error!", e)
@@ -77,14 +76,13 @@ async def agent_hub_update(update_param: PluginHubParam = Body()):
 @router.post("/v1/agent/query", response_model=Result[str])
 async def get_agent_list(filter: PagenationFilter[PluginHubFilter] = Body()):
     logger.info(f"get_agent_list:{filter.__dict__}")
-    agent_hub = AgentHub(PLUGINS_DIR)
     filter_enetity: PluginHubEntity = PluginHubEntity()
     if filter.filter:
         attrs = vars(filter.filter)  # 获取原始对象的属性字典
         for attr, value in attrs.items():
             setattr(filter_enetity, attr, value)  # 设置拷贝对象的属性值
 
-    datas, total_pages, total_count = agent_hub.hub_dao.list(
+    datas, total_pages, total_count = plugin_hub.hub_dao.list(
         filter_enetity, filter.page_index, filter.page_size
     )
     result: PagenationResult[PluginHubEntity] = PagenationResult[PluginHubEntity]()
@@ -100,8 +98,7 @@ async def get_agent_list(filter: PagenationFilter[PluginHubFilter] = Body()):
 @router.post("/v1/agent/my", response_model=Result[str])
 async def my_agents(user: str = None):
     logger.info(f"my_agents:{user}")
-    agent_hub = AgentHub(PLUGINS_DIR)
-    agents = agent_hub.get_my_plugin(user)
+    agents = plugin_hub.get_my_plugin(user)
     agent_dicts = []
     for agent in agents:
         agent_dicts.append(agent.__dict__)
@@ -113,10 +110,9 @@ async def my_agents(user: str = None):
 async def agent_install(plugin_name: str, user: str = None):
     logger.info(f"agent_install:{plugin_name},{user}")
     try:
-        agent_hub = AgentHub(PLUGINS_DIR)
-        agent_hub.install_plugin(plugin_name, user)
+        plugin_hub.install_plugin(plugin_name, user)
 
-        module_agent.refresh_plugins()
+        module_plugin.refresh_plugins()
 
         return Result.succ(None)
     except Exception as e:
@@ -128,10 +124,9 @@ async def agent_install(plugin_name: str, user: str = None):
 async def agent_uninstall(plugin_name: str, user: str = None):
     logger.info(f"agent_uninstall:{plugin_name},{user}")
     try:
-        agent_hub = AgentHub(PLUGINS_DIR)
-        agent_hub.uninstall_plugin(plugin_name, user)
+        plugin_hub.uninstall_plugin(plugin_name, user)
 
-        module_agent.refresh_plugins()
+        module_plugin.refresh_plugins()
         return Result.succ(None)
     except Exception as e:
         logger.error("Plugin Uninstall Error!", e)
@@ -142,9 +137,8 @@ async def agent_uninstall(plugin_name: str, user: str = None):
 async def personal_agent_upload(doc_file: UploadFile = File(...), user: str = None):
     logger.info(f"personal_agent_upload:{doc_file.filename},{user}")
     try:
-        agent_hub = AgentHub(PLUGINS_DIR)
-        await agent_hub.upload_my_plugin(doc_file, user)
-        module_agent.refresh_plugins()
+        await plugin_hub.upload_my_plugin(doc_file, user)
+        module_plugin.refresh_plugins()
         return Result.succ(None)
     except Exception as e:
         logger.error("Upload Personal Plugin Error!", e)

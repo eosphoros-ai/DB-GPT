@@ -25,6 +25,9 @@ class GptsConversationsEntity(Model):
     user_goal = Column(Text, nullable=False, comment="User's goals content")
 
     gpts_name = Column(String(255), nullable=False, comment="The gpts name")
+    team_mode = Column(
+        String(255), nullable=False, comment="The conversation team mode"
+    )
     state = Column(String(255), nullable=True, comment="The gpts state")
 
     max_auto_reply_round = Column(

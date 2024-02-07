@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from dbgpt.agent.resource.resource_loader import ResourceLoader
 from dbgpt.core import LLMClient
 from dbgpt.core.interface.llm import ModelMetadata
 from dbgpt.util.annotations import PublicAPI
@@ -156,38 +157,10 @@ class Agent:
 
 
 @dataclasses.dataclass
-class AgentResource:
-    type: str
-    name: str
-    introduce: str
-
-    @staticmethod
-    def from_dict(d: Dict[str, Any]) -> Optional[AgentResource]:
-        if d is None:
-            return None
-        return AgentResource(
-            type=d.get("type"),
-            name=d.get("name"),
-            introduce=d.get("introduce"),
-        )
-
-    def to_dict(self) -> Dict[str, Any]:
-        return dataclasses.asdict(self)
-
-
-@dataclasses.dataclass
 class AgentContext:
     conv_id: str
-    llm_provider: LLMClient
-
-    gpts_name: Optional[str] = None
-    resource_db: Optional[AgentResource] = None
-    resource_knowledge: Optional[AgentResource] = None
-    resource_internet: Optional[AgentResource] = None
-    llm_models: Optional[List[Union[ModelMetadata, str]]] = None
-    model_priority: Optional[dict] = None
-    agents: Optional[List[str]] = None
-
+    gpts_app_name: str = None
+    language: str = None
     max_chat_round: Optional[int] = 100
     max_retry_round: Optional[int] = 10
     max_new_tokens: Optional[int] = 1024
@@ -210,6 +183,11 @@ class AgentGenerateContext:
 
     rely_messages: List[Dict] = dataclasses.field(default_factory=list)
     final: Optional[bool] = True
+
+    memory: Optional[GptsMemory] = None
+    agent_context: Optional[AgentContext] = None
+    resource_loader: Optional[ResourceLoader] = None
+    llm_client: Optional[LLMClient] = None
 
     def to_dict(self) -> Dict:
         return dataclasses.asdict(self)

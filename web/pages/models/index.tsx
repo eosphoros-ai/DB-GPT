@@ -21,7 +21,7 @@ function Models() {
   }, []);
 
   return (
-    <div className="p-4 md:p-6 h-full">
+    <div className="p-4 md:p-6 overflow-y-auto">
       <Button
         className="mb-4"
         type="primary"
@@ -31,7 +31,7 @@ function Models() {
       >
         {t('create_model')}
       </Button>
-      <div className="flex flex-wrap -m-1 md:-m-2">
+      <div className="flex flex-wrap gap-2 md:gap-4">
         {models.map((item) => (
           <ModelCard info={item} key={item.model_name} />
         ))}

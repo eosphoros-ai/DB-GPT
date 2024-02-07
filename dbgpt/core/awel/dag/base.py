@@ -14,6 +14,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Union, ca
 
 from dbgpt.component import SystemApp
 
+from ..flow.base import ViewMixin
 from ..resource.base import ResourceGroup
 from ..task.base import TaskContext, TaskOutput
 
@@ -235,7 +236,7 @@ class DAGLifecycle:
         pass
 
 
-class DAGNode(DAGLifecycle, DependencyMixin, ABC):
+class DAGNode(DAGLifecycle, DependencyMixin, ViewMixin, ABC):
     """The base class of DAGNode."""
 
     resource_group: Optional[ResourceGroup] = None
@@ -702,6 +703,22 @@ class DAG:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit a DAG context."""
         DAGVar.exit_dag()
+
+    def __hash__(self) -> int:
+        """Return the hash value of current DAG.
+
+        If the dag_id is not None, return the hash value of dag_id.
+        """
+        if self.dag_id:
+            return hash(self.dag_id)
+        else:
+            return super().__hash__()
+
+    def __eq__(self, other):
+        """Return whether the current DAG is equal to other DAG."""
+        if not isinstance(other, DAG):
+            return False
+        return self.dag_id == other.dag_id
 
     def __repr__(self):
         """Return the representation of current DAG."""

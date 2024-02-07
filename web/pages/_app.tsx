@@ -33,25 +33,23 @@ function CssWrapper({ children }: { children: React.ReactElement }) {
     setMuiMode(mode);
   }, [mode]);
 
-  const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    if (ref?.current && mode) {
-      ref?.current?.classList?.add(mode);
+    if (mode) {
+      document.body?.classList?.add(mode);
       if (mode === 'light') {
-        ref?.current?.classList?.remove('dark');
+        document.body?.classList?.remove('dark');
       } else {
-        ref?.current?.classList?.remove('light');
+        document.body?.classList?.remove('light');
       }
     }
-  }, [ref, mode]);
+  }, [mode]);
 
   useEffect(() => {
     i18n.changeLanguage && i18n.changeLanguage(window.localStorage.getItem(STORAGE_LANG_KEY) || 'en');
   }, [i18n]);
 
   return (
-    <div ref={ref}>
+    <div>
       <TopProgressBar />
       {children}
     </div>

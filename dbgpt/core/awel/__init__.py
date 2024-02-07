@@ -13,7 +13,7 @@ from typing import List, Optional
 
 from dbgpt.component import SystemApp
 
-from .dag.base import DAG, DAGContext
+from .dag.base import DAG, DAGContext, DAGVar
 from .operators.base import BaseOperator, WorkflowRunner
 from .operators.common_operator import (
     BranchFunc,
@@ -40,7 +40,21 @@ from .task.task_impl import (
     SimpleTaskOutput,
     _is_async_iterator,
 )
-from .trigger.http_trigger import HttpTrigger
+from .trigger.http_trigger import (
+    CommonLLMHttpRequestBody,
+    CommonLLMHTTPRequestContext,
+    CommonLLMHttpResponseBody,
+    HttpTrigger,
+)
+
+_request_http_trigger_available = False
+try:
+    # Optional import
+    from .trigger.ext_http_trigger import RequestHttpTrigger  # noqa: F401
+
+    _request_http_trigger_available = True
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +62,7 @@ __all__ = [
     "initialize_awel",
     "DAGContext",
     "DAG",
+    "DAGVar",
     "BaseOperator",
     "JoinOperator",
     "ReduceStreamOperator",
@@ -73,14 +88,19 @@ __all__ = [
     "UnstreamifyAbsOperator",
     "TransformStreamAbsOperator",
     "HttpTrigger",
+    "CommonLLMHTTPRequestContext",
+    "CommonLLMHttpResponseBody",
+    "CommonLLMHttpRequestBody",
     "setup_dev_environment",
     "_is_async_iterator",
 ]
 
+if _request_http_trigger_available:
+    __all__.append("RequestHttpTrigger")
+
 
 def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
     """Initialize AWEL."""
-    from .dag.base import DAGVar
     from .dag.dag_manager import DAGManager
     from .operators.base import initialize_runner
     from .trigger.trigger_manager import DefaultTriggerManager
@@ -91,8 +111,6 @@ def initialize_awel(system_app: SystemApp, dag_dirs: List[str]):
     dag_manager = DAGManager(system_app, dag_dirs)
     system_app.register_instance(dag_manager)
     initialize_runner(DefaultWorkflowRunner())
-    # Load all dags
-    dag_manager.load_dags()
 
 
 def setup_dev_environment(
@@ -124,7 +142,6 @@ def setup_dev_environment(
     from dbgpt.component import SystemApp
     from dbgpt.util.utils import setup_logging
 
-    from .dag.base import DAGVar
     from .trigger.trigger_manager import DefaultTriggerManager
 
     if not logger_filename:
@@ -150,7 +167,7 @@ def setup_dev_environment(
                     f"`sudo apt install graphviz`"
                 )
         for trigger in dag.trigger_nodes:
-            trigger_manager.register_trigger(trigger)
+            trigger_manager.register_trigger(trigger, system_app)
     trigger_manager.after_register()
     if trigger_manager.keep_running():
         # Should keep running

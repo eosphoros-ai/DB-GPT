@@ -6,7 +6,7 @@ from dbgpt.agent.plugin.commands.command_mange import ApiCall
 from dbgpt.agent.plugin.generator import PluginPromptGenerator
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.component import ComponentType
-from dbgpt.serve.agent.hub.controller import ModuleAgent
+from dbgpt.serve.agent.hub.controller import ModulePlugin
 from dbgpt.util.tracer import root_tracer, trace
 
 CFG = Config()
@@ -40,7 +40,7 @@ class ChatAgent(BaseChat):
 
         # load  select plugin
         agent_module = CFG.SYSTEM_APP.get_component(
-            ComponentType.AGENT_HUB, ModuleAgent
+            ComponentType.AGENT_HUB, ModulePlugin
         )
         self.plugins_prompt_generator = agent_module.load_select_plugin(
             self.plugins_prompt_generator, self.select_plugins
