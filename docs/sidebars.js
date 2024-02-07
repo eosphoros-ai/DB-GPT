@@ -162,8 +162,12 @@ const sidebars = {
         },
         {
           type: 'category',
-          label: 'Adanced Usage',
+          label: 'Advanced Usage',
           items: [
+            {
+              type: 'doc',
+              id: 'installation/advanced_usage/More_proxyllms',
+            },
             {
               type: 'doc',
               id: 'installation/advanced_usage/vLLM_inference',
