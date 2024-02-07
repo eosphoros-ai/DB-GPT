@@ -2,13 +2,14 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Union
 
+import requests
 from pydantic import BaseModel, Field
+from requests.exceptions import HTTPError
 
 from dbgpt.agent.actions.action import Action, ActionOutput, T
 from dbgpt.agent.common.schema import Status
 from dbgpt.agent.plugin.generator import PluginPromptGenerator
 from dbgpt.agent.resource.resource_api import AgentResource, ResourceType
-from dbgpt.agent.resource.resource_plugin_api import ResourcePluginClient
 from dbgpt.vis.tags.vis_plugin import Vis, VisPlugin
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class IndicatorAction(Action[IndicatorInput]):
 
     @property
     def resource_need(self) -> Optional[ResourceType]:
-        return ResourceType.Plugin
+        return ResourceType.Knowledge
 
     @property
     def render_protocal(self) -> Optional[Vis]:
@@ -49,15 +50,17 @@ class IndicatorAction(Action[IndicatorInput]):
 
     @property
     def out_model_type(self):
-        return PluginInput
+        return IndicatorInput
 
     @property
     def ai_out_schema(self) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         out_put_schema = {
-            "tool_name": "The name of a tool that can be used to answer the current question or solve the current task.",
+            "indicator_name": "The name of a tool that can be used to answer the current question or solve the current task.",
+            "api": "",
+            "method": "",
             "args": {
-                "arg name1": "arg value1",
-                "arg name2": "arg value2",
+                "arg name1": "Parameters in api definition",
+                "arg name2": "Parameters in api definition",
             },
             "thought": "Summary of thoughts to the user",
         }
@@ -76,7 +79,7 @@ class IndicatorAction(Action[IndicatorInput]):
         need_vis_render: bool = True,
     ) -> ActionOutput:
         try:
-            param: PluginInput = self._input_convert(ai_message, PluginInput)
+            param: IndicatorInput = self._input_convert(ai_message, IndicatorInput)
         except Exception as e:
             logger.exception((str(e)))
             return ActionOutput(
@@ -85,42 +88,43 @@ class IndicatorAction(Action[IndicatorInput]):
             )
 
         try:
-            resource_plugin_client: ResourcePluginClient = (
-                self.resource_loader.get_resesource_api(self.resource_need)
-            )
-            if not resource_plugin_client:
-                raise ValueError("No implementation of the use of plug-in resources！")
-            response_success = True
-            status = Status.TODO.value
+            status = Status.COMPLETE.value
             err_msg = None
             try:
                 status = Status.RUNNING.value
-                tool_result = await resource_plugin_client.a_execute_command(
-                    param.tool_name, param.args, plugin_generator
-                )
-                status = Status.COMPLETE.value
+                if param.method.lower() == "get":
+                    response = requests.get(param.api, params=param.args)
+                elif param.method.lower() == "post":
+                    response = requests.post(param.api, data=param.args)
+                else:
+                    response = requests.request(
+                        param.method.lower(), param.api, data=param.args
+                    )
+                response.raise_for_status()  # 如果请求返回一个错误状态码，则抛出HTTPError异常
+            except HTTPError as http_err:
+                print(f"HTTP error occurred: {http_err}")
             except Exception as e:
                 response_success = False
-                logger.exception(f"Tool [{param.tool_name}] excute Failed!")
+                logger.exception(f"API [{param.indicator_name}] excute Failed!")
                 status = Status.FAILED.value
-                err_msg = f"Tool [{param.tool_name}] excute Failed!{str(e)}"
+                err_msg = f"API [{param.api}] request Failed!{str(e)}"
 
             plugin_param = {
                 "name": param.tool_name,
                 "args": param.args,
                 "status": status,
                 "logo": None,
-                "result": tool_result,
+                "result": response.text,
                 "err_msg": err_msg,
             }
 
             view = await self.render_protocal.disply(content=plugin_param)
 
             return ActionOutput(
-                is_exe_success=response_success, content=tool_result, view=view
+                is_exe_success=response_success, content=response.text, view=view
             )
         except Exception as e:
-            logger.exception("Tool Action Run Failed！")
+            logger.exception("Indicator Action Run Failed！")
             return ActionOutput(
-                is_exe_success=False, content=f"Tool action run failed!{str(e)}"
+                is_exe_success=False, content=f"Indicator action run failed!{str(e)}"
             )
