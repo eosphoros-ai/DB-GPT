@@ -96,6 +96,8 @@ class ConversableAgent(Role, Agent):
     async def build(self) -> ConversableAgent:
         # Check if agent is available
         self.check_available()
+
+        self.language = self.agent_context.language
         # Preload resources
         await self.a_preload_resource()
         # Initialize resource loader

@@ -160,7 +160,7 @@ class Agent:
 class AgentContext:
     conv_id: str
     gpts_app_name: str = None
-
+    language: str = None
     max_chat_round: Optional[int] = 100
     max_retry_round: Optional[int] = 10
     max_new_tokens: Optional[int] = 1024

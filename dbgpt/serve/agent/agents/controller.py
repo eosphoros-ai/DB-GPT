@@ -197,7 +197,9 @@ class MultiAgents(BaseComponent, ABC):
         knowledge_space_loader = KnowledgeSpaceLoadClient()
         resource_loader.register_resesource_api(knowledge_space_loader)
         context: AgentContext = AgentContext(
-            conv_id=conv_uid, gpts_app_name=gpts_app.app_name
+            conv_id=conv_uid,
+            gpts_app_name=gpts_app.app_name,
+            language=gpts_app.language,
         )
 
         # init llm provider
