@@ -329,7 +329,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             if isinstance(trigger, CommonLLMHttpTrigger):
                 common_http_trigger = True
                 break
-        leaf_node = cast(BaseOperator, leaf_nodes)
+        leaf_node = cast(BaseOperator, leaf_nodes[0])
         if not leaf_node.metadata or not leaf_node.metadata.outputs:
             return FlowCategory.COMMON
         output = leaf_node.metadata.outputs[0]
