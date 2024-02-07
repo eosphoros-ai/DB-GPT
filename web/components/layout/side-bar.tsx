@@ -66,10 +66,22 @@ function SideBar() {
   const routes = useMemo(() => {
     const items: RouteItem[] = [
       {
+        key: 'app',
+        name: t('App'),
+        path: '/app',
+        icon: <AppstoreOutlined />,
+      },
+      {
         key: 'flow',
         name: t('awel_flow'),
         icon: <ForkOutlined />,
         path: '/flow',
+      },
+      {
+        key: 'models',
+        name: t('model_manage'),
+        path: '/models',
+        icon: <Icon component={ModelSvg} />,
       },
       {
         key: 'database',
@@ -84,12 +96,6 @@ function SideBar() {
         path: '/knowledge',
       },
       {
-        key: 'models',
-        name: t('model_manage'),
-        path: '/models',
-        icon: <Icon component={ModelSvg} />,
-      },
-      {
         key: 'agent',
         name: t('Plugins'),
         path: '/agent',
@@ -100,12 +106,6 @@ function SideBar() {
         name: t('Prompt'),
         icon: <MessageOutlined />,
         path: '/prompt',
-      },
-      {
-        key: 'app',
-        name: t('App'),
-        path: '/app',
-        icon: <AppstoreOutlined />,
       },
     ];
     return items;

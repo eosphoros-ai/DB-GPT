@@ -76,7 +76,11 @@ const ChatContainer = () => {
           data: { ...data, chat_mode: scene || 'chat_normal', model_name: model, user_input: content },
           chatId,
           onMessage: (message) => {
-            tempHistory[index].context = message;
+            if (data?.incremental) {
+              tempHistory[index].context += message;
+            } else {
+              tempHistory[index].context = message;
+            }
             setHistory([...tempHistory]);
           },
           onDone: () => {

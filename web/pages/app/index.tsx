@@ -1,12 +1,12 @@
 import AppModal from '@/components/app/app-modal';
 import AppCard from '@/components/app/app-card';
-import { Button, Empty, Spin, Tabs, TabsProps } from 'antd';
+import { Button, Spin, Tabs, TabsProps } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { apiInterceptors, getAppList } from '@/client/api';
 import { IApp } from '@/types/app';
 import { PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import ChatDialog from '@/components/common/chat-dialog';
+import MyEmpty from '@/components/common/MyEmpty';
 
 type TabKey = 'app' | 'collected';
 
@@ -60,14 +60,14 @@ export default function App() {
   };
 
   useEffect(() => {
-    // initData();
+    initData();
   }, []);
 
   const renderAppList = (data: { isCollected: boolean }) => {
     const isNull = data.isCollected ? apps.every((item) => !item.is_collected) : apps.length === 0;
 
     return (
-      <div className="overflow-y-auto">
+      <div>
         {!data.isCollected && (
           <Button onClick={handleCreate} type="primary" className="mb-4" icon={<PlusOutlined />}>
             {t('create')}
@@ -80,7 +80,7 @@ export default function App() {
             })}
           </div>
         ) : (
-          <Empty />
+          <MyEmpty />
         )}
       </div>
     );
@@ -92,7 +92,6 @@ export default function App() {
       label: 'App',
       children: renderAppList({ isCollected: false }),
     },
-
     {
       key: 'collected',
       label: 'Collected',
@@ -110,7 +109,6 @@ export default function App() {
           )}
         </div>
       </Spin>
-      <ChatDialog title="测试会话" chatMode="chat_agent" />
     </>
   );
 }

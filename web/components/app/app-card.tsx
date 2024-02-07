@@ -78,17 +78,17 @@ export default function AppCard(props: IProps) {
       operations={[
         {
           label: t('Chat'),
-          children: <MessageFilled className="text-blue-500" />,
+          children: <MessageFilled />,
           onClick: handleChat,
         },
         {
           label: t('collect'),
-          children: <StarFilled className={app.is_collected === 'false' ? 'text-gray-500' : 'text-yellow-500'} />,
+          children: <StarFilled className={app.is_collected === 'false' ? 'text-gray-400' : 'text-yellow-400'} />,
           onClick: collect,
         },
         {
           label: t('Delete'),
-          children: <DeleteFilled className="text-red-500" />,
+          children: <DeleteFilled />,
           onClick: () => {
             showDeleteConfirm();
           },

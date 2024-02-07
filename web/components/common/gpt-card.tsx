@@ -7,7 +7,16 @@ interface Props {
   title: string;
   desc?: string;
   disabled?: boolean;
-  tags?: (string | { text: string; color: TagProps['color'] })[];
+  tags?: (
+    | string
+    | {
+        text: string;
+        /** @default false */
+        border?: boolean;
+        /** @default blue */
+        color: TagProps['color'];
+      }
+  )[];
   operations?: {
     children: ReactNode;
     label?: string;
@@ -53,7 +62,7 @@ function GPTCard({
             );
           }
           return (
-            <Tag key={index} className="text-xs" bordered={false} color={tag.color}>
+            <Tag key={index} className="text-xs" bordered={tag.border} color={tag.color}>
               {tag.text}
             </Tag>
           );
@@ -68,7 +77,7 @@ function GPTCard({
         'group/card relative flex flex-col w-72 rounded justify-between text-black bg-white shadow-[0_8px_16px_-10px_rgba(100,100,100,.08)] hover:shadow-[0_14px_20px_-10px_rgba(100,100,100,.15)] dark:bg-[#232734] dark:text-white dark:hover:border-white transition-[transfrom_shadow] duration-300 hover:-translate-y-1 min-h-fit',
         {
           'grayscale cursor-no-drop': disabled,
-          'cursor-pointer': !disabled,
+          'cursor-pointer': !disabled && !!props.onClick,
         },
         className,
       )}
@@ -88,25 +97,27 @@ function GPTCard({
           </Tooltip>
         )}
       </div>
-      {children}
-      {operations && !!operations.length && (
-        <div className="flex flex-wrap items-center justify-center border-t border-solid border-gray-100 dark:border-theme-dark">
-          {operations.map((item, index) => (
-            <Tooltip key={`operation-${index}`} title={item.label}>
-              <div
-                className="relative flex flex-1 items-center justify-center h-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  item.onClick?.();
-                }}
-              >
-                {item.children}
-                {index < operations.length - 1 && <div className="w-[1px] h-6 absolute top-2 right-0 bg-gray-100 rounded dark:bg-theme-dark" />}
-              </div>
-            </Tooltip>
-          ))}
-        </div>
-      )}
+      <div>
+        {children}
+        {operations && !!operations.length && (
+          <div className="flex flex-wrap items-center justify-center border-t border-solid border-gray-100 dark:border-theme-dark">
+            {operations.map((item, index) => (
+              <Tooltip key={`operation-${index}`} title={item.label}>
+                <div
+                  className="relative flex flex-1 items-center justify-center h-11 text-gray-400 hover:text-blue-500 transition-colors duration-300 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    item.onClick?.();
+                  }}
+                >
+                  {item.children}
+                  {index < operations.length - 1 && <div className="w-[1px] h-6 absolute top-2 right-0 bg-gray-100 rounded dark:bg-theme-dark" />}
+                </div>
+              </Tooltip>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

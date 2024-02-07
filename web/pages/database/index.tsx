@@ -96,7 +96,7 @@ function Database() {
   };
 
   return (
-    <div className="relative p-4 md:p-6 bg-[#FAFAFA] dark:bg-transparent min-h-full overflow-y-auto">
+    <div className="relative p-4 md:p-6 min-h-full overflow-y-auto">
       <MuiLoading visible={loading} />
       <div className="mb-4">
         <Button
