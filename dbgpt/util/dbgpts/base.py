@@ -26,7 +26,8 @@ DBGPTS_METADATA_FILE = "dbgpts.toml"
 
 def _get_env_sig() -> str:
     """Get a unique signature for the current Python environment."""
-    env_path = f"{_ABS_ROOT_PATH}_{sys.executable}"
+    py_path = os.path.join(os.path.dirname(sys.executable), "python")
+    env_path = f"{_ABS_ROOT_PATH}_{py_path}"
     md5_hash = hashlib.md5()
     md5_hash.update(env_path.encode("utf-8"))
     return md5_hash.hexdigest()
