@@ -45,7 +45,7 @@ class ChatExcel(BaseChat):
                     KNOWLEDGE_UPLOAD_ROOT_PATH, chat_mode.value(), self.select_param
                 )
             )
-        self.api_call = ApiCall(display_registry=CFG.command_disply)
+        self.api_call = ApiCall(display_registry=CFG.command_display)
         super().__init__(chat_param=chat_param)
 
     @trace()
@@ -53,7 +53,7 @@ class ChatExcel(BaseChat):
         input_values = {
             "user_input": self.current_user_input,
             "table_name": self.excel_reader.table_name,
-            "disply_type": self._generate_numbered_list(),
+            "display_type": self._generate_numbered_list(),
         }
         return input_values
 

@@ -80,7 +80,7 @@ class DashboardAction(Action[List[ChartItem]]):
                     logger.warn(f"Sql excute Failed！{str(e)}")
                     chart_item["err_msg"] = str(e)
                 chart_params.append(chart_item)
-            view = await self.render_protocal.disply(charts=chart_params)
+            view = await self.render_protocal.display(charts=chart_params)
             return ActionOutput(
                 is_exe_success=True,
                 content=json.dumps([chart_item.dict() for chart_item in chart_items]),

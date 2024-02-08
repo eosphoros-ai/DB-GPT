@@ -118,7 +118,7 @@ class IndicatorAction(Action[IndicatorInput]):
                 "err_msg": err_msg,
             }
 
-            view = await self.render_protocal.disply(content=plugin_param)
+            view = await self.render_protocal.display(content=plugin_param)
 
             return ActionOutput(
                 is_exe_success=response_success, content=response.text, view=view

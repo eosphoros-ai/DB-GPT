@@ -111,7 +111,7 @@ def mount_routers(app: FastAPI):
 
 
 def mount_static_files(app: FastAPI):
-    from dbgpt.agent.plugin.commands.built_in.disply_type import static_message_img_path
+    from dbgpt.agent.plugin.commands.built_in.display_type import static_message_img_path
 
     os.makedirs(static_message_img_path, exist_ok=True)
     app.mount(
