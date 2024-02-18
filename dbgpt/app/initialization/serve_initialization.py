@@ -33,3 +33,13 @@ def register_serve_apps(system_app: SystemApp, cfg: Config):
     # Register serve app
     system_app.register(ConversationServe, api_prefix="/api/v1/chat/dialogue")
     # ################################ Conversation Serve Register End ########################################
+
+    # ################################ AWEL Flow Serve Register Begin ######################################
+    from dbgpt.serve.flow.serve import (
+        SERVE_CONFIG_KEY_PREFIX as FLOW_SERVE_CONFIG_KEY_PREFIX,
+    )
+    from dbgpt.serve.flow.serve import Serve as FlowServe
+
+    # Register serve app
+    system_app.register(FlowServe)
+    # ################################ AWEL Flow Serve Register End ########################################

@@ -112,6 +112,7 @@ class BaseOperatorMeta(ABCMeta):
         """Create a new BaseOperator class with default arguments."""
         new_cls = super().__new__(cls, name, bases, namespace, **kwargs)
         new_cls.__init__ = cls._apply_defaults(new_cls.__init__)
+        new_cls.after_define()
         return new_cls
 
 

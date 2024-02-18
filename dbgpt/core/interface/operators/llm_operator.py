@@ -9,9 +9,20 @@ from dbgpt.core.awel import (
     BaseOperator,
     BranchFunc,
     BranchOperator,
+    CommonLLMHttpRequestBody,
+    CommonLLMHttpResponseBody,
     DAGContext,
+    JoinOperator,
     MapOperator,
     StreamifyAbsOperator,
+    TransformStreamAbsOperator,
+)
+from dbgpt.core.awel.flow import (
+    IOField,
+    OperatorCategory,
+    OperatorType,
+    Parameter,
+    ViewMetadata,
 )
 from dbgpt.core.interface.llm import (
     LLMClient,
@@ -20,6 +31,7 @@ from dbgpt.core.interface.llm import (
     ModelRequestContext,
 )
 from dbgpt.core.interface.message import ModelMessage
+from dbgpt.util.function_utils import rearrange_args_by_type
 
 RequestInput = Union[
     ModelRequest,
@@ -31,8 +43,41 @@ RequestInput = Union[
 ]
 
 
-class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest], ABC):
+class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest]):
     """Build the model request from the input value."""
+
+    metadata = ViewMetadata(
+        label="Build Model Request",
+        name="request_builder_operator",
+        category=OperatorCategory.COMMON,
+        description="Build the model request from the http request body.",
+        parameters=[
+            Parameter.build_from(
+                "Default Model Name",
+                "model",
+                str,
+                optional=True,
+                default=None,
+                description="The model name of the model request.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "Request Body",
+                "input_value",
+                CommonLLMHttpRequestBody,
+                description="The input value of the operator.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model Request",
+                "output_value",
+                ModelRequest,
+                description="The output value of the operator.",
+            ),
+        ],
+    )
 
     def __init__(self, model: Optional[str] = None, **kwargs):
         """Create a new request builder operator."""
@@ -88,6 +133,53 @@ class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest], ABC):
                 context_dict["stream"] = stream
             req_dict["context"] = ModelRequestContext(**context_dict)
         return ModelRequest(**req_dict)
+
+
+class MergedRequestBuilderOperator(JoinOperator[ModelRequest]):
+    """Build the model request from the input value."""
+
+    metadata = ViewMetadata(
+        label="Merge Model Request Messages",
+        name="merged_request_builder_operator",
+        category=OperatorCategory.COMMON,
+        description="Merge the model request from the input value.",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "Model Request",
+                "model_request",
+                ModelRequest,
+                description="The model request of upstream.",
+            ),
+            IOField.build_from(
+                "Model messages",
+                "messages",
+                ModelMessage,
+                description="The model messages of upstream.",
+                is_list=True,
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model Request",
+                "output_value",
+                ModelRequest,
+                description="The output value of the operator.",
+            ),
+        ],
+    )
+
+    def __init__(self, **kwargs):
+        """Create a new request builder operator."""
+        super().__init__(combine_function=self.merge_func, **kwargs)
+
+    @rearrange_args_by_type
+    def merge_func(
+        self, model_request: ModelRequest, messages: List[ModelMessage]
+    ) -> ModelRequest:
+        """Merge the model request with the messages."""
+        model_request.messages = messages
+        return model_request
 
 
 class BaseLLM:
@@ -189,6 +281,54 @@ class LLMBranchOperator(BranchOperator[ModelRequest, ModelRequest]):
     the stream flag of the request.
     """
 
+    metadata = ViewMetadata(
+        label="LLM Branch Operator",
+        name="llm_branch_operator",
+        category=OperatorCategory.LLM,
+        operator_type=OperatorType.BRANCH,
+        description="Branch the workflow based on the stream flag of the request.",
+        parameters=[
+            Parameter.build_from(
+                "Streaming Task Name",
+                "stream_task_name",
+                str,
+                optional=True,
+                default="streaming_llm_task",
+                description="The name of the streaming task.",
+            ),
+            Parameter.build_from(
+                "Non-Streaming Task Name",
+                "no_stream_task_name",
+                str,
+                optional=True,
+                default="llm_task",
+                description="The name of the non-streaming task.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "Model Request",
+                "input_value",
+                ModelRequest,
+                description="The input value of the operator.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Streaming Model Request",
+                "streaming_request",
+                ModelRequest,
+                description="The streaming request, to streaming Operator.",
+            ),
+            IOField.build_from(
+                "Non-Streaming Model Request",
+                "no_streaming_request",
+                ModelRequest,
+                description="The non-streaming request, to non-streaming Operator.",
+            ),
+        ],
+    )
+
     def __init__(self, stream_task_name: str, no_stream_task_name: str, **kwargs):
         """Create a new LLM branch operator.
 
@@ -226,3 +366,94 @@ class LLMBranchOperator(BranchOperator[ModelRequest, ModelRequest]):
             check_stream_true: self._stream_task_name,
             lambda x: not x.stream: self._no_stream_task_name,
         }
+
+
+class ModelOutput2CommonResponseOperator(
+    MapOperator[ModelOutput, CommonLLMHttpResponseBody]
+):
+    """Map the model output to the common response body."""
+
+    metadata = ViewMetadata(
+        label="Map Model Output to Common Response Body",
+        name="model_output_2_common_response_body_operator",
+        category=OperatorCategory.COMMON,
+        description="Map the model output to the common response body.",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "Model Output",
+                "input_value",
+                ModelOutput,
+                description="The input value of the operator.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Common Response Body",
+                "output_value",
+                CommonLLMHttpResponseBody,
+                description="The output value of the operator.",
+            ),
+        ],
+    )
+
+    def __int__(self, **kwargs):
+        """Create a new operator."""
+        super().__init__(**kwargs)
+
+    async def map(self, input_value: ModelOutput) -> CommonLLMHttpResponseBody:
+        """Map the model output to the common response body."""
+        metrics = input_value.metrics.to_dict() if input_value.metrics else None
+        return CommonLLMHttpResponseBody(
+            text=input_value.text,
+            error_code=input_value.error_code,
+            metrics=metrics,
+        )
+
+
+class CommonStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]):
+    """The Common Streaming Output Operator.
+
+    Transform model output to the string output to show in DB-GPT chat flow page.
+    """
+
+    metadata = ViewMetadata(
+        label="Common Streaming Output Operator",
+        name="common_streaming_output_operator",
+        operator_type=OperatorType.TRANSFORM_STREAM,
+        category=OperatorCategory.OUTPUT_PARSER,
+        description="The common streaming LLM operator, for chat flow.",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "Upstream Model Output",
+                "output_iter",
+                ModelOutput,
+                is_list=True,
+                description="The model output of upstream.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model Output",
+                "model_output",
+                str,
+                is_list=True,
+                description="The model output after transform to common stream format",
+            )
+        ],
+    )
+
+    async def transform_stream(self, output_iter: AsyncIterator[ModelOutput]):
+        """Transform upstream output iter to string foramt."""
+        async for model_output in output_iter:
+            if model_output.error_code != 0:
+                error_msg = (
+                    f"[ERROR](error_code: {model_output.error_code}): "
+                    f"{model_output.text}"
+                )
+                yield f"data:{error_msg}"
+                return
+            decoded_unicode = model_output.text.replace("\ufffd", "")
+            msg = decoded_unicode.replace("\n", "\\n")
+            yield f"data:{msg}\n\n"

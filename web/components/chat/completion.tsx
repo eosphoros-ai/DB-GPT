@@ -31,6 +31,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
 
+  const flowSelectParam = (searchParams && searchParams.get('select_param')) ?? '';
   const spaceNameOriginal = (searchParams && searchParams.get('spaceNameOriginal')) ?? '';
 
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +42,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
 
   const scrollableRef = useRef<HTMLDivElement>(null);
 
+  // const incremental = useMemo(() => scene === 'chat_flow', [scene]);
   const isChartChat = useMemo(() => scene === 'chat_dashboard', [scene]);
 
   const summary = useSummary();
@@ -51,10 +53,12 @@ const Completion = ({ messages, onSubmit }: Props) => {
         return agent;
       case 'chat_excel':
         return currentDialogue?.select_param;
+      case 'chat_flow':
+        return flowSelectParam;
       default:
         return spaceNameOriginal || dbParam;
     }
-  }, [scene, agent, currentDialogue, dbParam, spaceNameOriginal]);
+  }, [scene, agent, currentDialogue, dbParam, spaceNameOriginal, flowSelectParam]);
 
   const handleChat = async (content: string) => {
     if (isLoading || !content.trim()) return;
@@ -66,6 +70,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
       setIsLoading(true);
       await onSubmit(content, {
         select_param: selectParam ?? '',
+        // incremental,
       });
     } finally {
       setIsLoading(false);

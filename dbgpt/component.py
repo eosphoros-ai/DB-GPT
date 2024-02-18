@@ -74,7 +74,7 @@ class ComponentType(str, Enum):
     MODEL_REGISTRY = "dbgpt_model_registry"
     MODEL_API_SERVER = "dbgpt_model_api_server"
     MODEL_CACHE_MANAGER = "dbgpt_model_cache_manager"
-    AGENT_HUB = "dbgpt_agent_hub"
+    PLUGIN_HUB = "dbgpt_plugin_hub"
     MULTI_AGENTS = "dbgpt_multi_agents"
     EXECUTOR_DEFAULT = "dbgpt_thread_pool_default"
     TRACER = "dbgpt_tracer"
@@ -161,6 +161,7 @@ class SystemApp(LifeCycle):
         ] = {}  # Dictionary to store registered components.
         self._asgi_app = asgi_app
         self._app_config = app_config or AppConfig()
+        self._build()
 
     @property
     def app(self) -> Optional["FastAPI"]:

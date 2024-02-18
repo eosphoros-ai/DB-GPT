@@ -67,6 +67,13 @@ class ChatScene(Enum):
         param_types=["Plugin Select"],
     )
 
+    ChatFlow = Scene(
+        code="chat_flow",
+        name="Flow Chat",
+        describe="Have conversations with conversational Awel flow.",
+        param_types=["Flow Select"],
+    )
+
     InnerChatDBSummary = Scene(
         "inner_chat_db_summary", "DB Summary", "Db Summary.", True
     )

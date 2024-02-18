@@ -116,7 +116,7 @@ def load_native_plugins(cfg: Config):
     t.start()
 
 
-def __scan_plugin_file(file_path, debug: bool = False) -> List[AutoGPTPluginTemplate]:
+def scan_plugin_file(file_path, debug: bool = False) -> List[AutoGPTPluginTemplate]:
     logger.info(f"__scan_plugin_file:{file_path},{debug}")
     loaded_plugins = []
     if moduleList := inspect_zip_for_modules(str(file_path), debug):
@@ -158,10 +158,10 @@ def scan_plugins(
     plugins_path = Path(plugins_file_path)
     if file_name:
         plugin_path = Path(plugins_path, file_name)
-        loaded_plugins = __scan_plugin_file(plugin_path)
+        loaded_plugins = scan_plugin_file(plugin_path)
     else:
         for plugin_path in plugins_path.glob("*.zip"):
-            loaded_plugins.extend(__scan_plugin_file(plugin_path))
+            loaded_plugins.extend(scan_plugin_file(plugin_path))
 
     if loaded_plugins:
         logger.info(f"\nPlugins found: {len(loaded_plugins)}\n" "--------------------")

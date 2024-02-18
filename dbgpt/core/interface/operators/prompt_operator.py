@@ -2,25 +2,92 @@
 from abc import ABC
 from typing import Any, Dict, List, Optional, Union
 
+from dbgpt._private.pydantic import root_validator
 from dbgpt.core import (
-    ChatPromptTemplate,
     ModelMessage,
     ModelMessageRoleType,
     ModelOutput,
     StorageConversation,
 )
 from dbgpt.core.awel import JoinOperator, MapOperator
+from dbgpt.core.awel.flow import (
+    IOField,
+    OperatorCategory,
+    OperatorType,
+    Parameter,
+    ResourceCategory,
+    ViewMetadata,
+    register_resource,
+)
 from dbgpt.core.interface.message import BaseMessage
 from dbgpt.core.interface.operators.llm_operator import BaseLLM
 from dbgpt.core.interface.operators.message_operator import BaseConversationOperator
 from dbgpt.core.interface.prompt import (
     BaseChatPromptTemplate,
+    ChatPromptTemplate,
     HumanPromptTemplate,
     MessagesPlaceholder,
     MessageType,
     PromptTemplate,
+    SystemPromptTemplate,
 )
 from dbgpt.util.function_utils import rearrange_args_by_type
+
+
+@register_resource(
+    label="Common Chat Prompt Template",
+    name="common_chat_prompt_template",
+    category=ResourceCategory.PROMPT,
+    description="The operator to build the prompt with static prompt.",
+    parameters=[
+        Parameter.build_from(
+            label="System Message",
+            name="system_message",
+            type=str,
+            optional=True,
+            default="You are a helpful AI Assistant.",
+            description="The system message.",
+        ),
+        Parameter.build_from(
+            label="Message placeholder",
+            name="message_placeholder",
+            type=str,
+            optional=True,
+            default="chat_history",
+            description="The chat history message placeholder.",
+        ),
+        Parameter.build_from(
+            label="Human Message",
+            name="human_message",
+            type=str,
+            optional=True,
+            default="{user_input}",
+            placeholder="{user_input}",
+            description="The human message.",
+        ),
+    ],
+)
+class CommonChatPromptTemplate(ChatPromptTemplate):
+    """The common chat prompt template."""
+
+    @root_validator(pre=True)
+    def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """Pre fill the messages."""
+        if "system_message" not in values:
+            raise ValueError("No system message")
+        if "human_message" not in values:
+            raise ValueError("No human message")
+        if "message_placeholder" not in values:
+            raise ValueError("No message placeholder")
+        system_message = values.pop("system_message")
+        human_message = values.pop("human_message")
+        message_placeholder = values.pop("message_placeholder")
+        values["messages"] = [
+            SystemPromptTemplate.from_template(system_message),
+            MessagesPlaceholder(variable_name=message_placeholder),
+            HumanPromptTemplate.from_template(human_message),
+        ]
+        return cls.base_pre_fill(values)
 
 
 class BasePromptBuilderOperator(BaseConversationOperator, ABC):
@@ -183,6 +250,38 @@ class PromptBuilderOperator(
 
     """
 
+    metadata = ViewMetadata(
+        label="Prompt Builder Operator",
+        name="prompt_builder_operator",
+        description="Build messages from prompt template.",
+        category=OperatorCategory.COMMON,
+        parameters=[
+            Parameter.build_from(
+                "Chat Prompt Template",
+                "prompt",
+                ChatPromptTemplate,
+                description="The chat prompt template.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "Prompt Input Dict",
+                "prompt_input_dict",
+                dict,
+                description="The prompt dict.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Formatted Messages",
+                "formatted_messages",
+                ModelMessage,
+                is_list=True,
+                description="The formatted messages.",
+            )
+        ],
+    )
+
     def __init__(self, prompt: PromptTemplateType, **kwargs):
         """Create a new prompt builder operator."""
         if isinstance(prompt, str):
@@ -236,6 +335,62 @@ class HistoryPromptBuilderOperator(
 
     The prompt will pass to this operator.
     """
+
+    metadata = ViewMetadata(
+        label="History Prompt Builder Operator",
+        name="history_prompt_builder_operator",
+        description="Build messages from prompt template and chat history.",
+        operator_type=OperatorType.JOIN,
+        category=OperatorCategory.CONVERSION,
+        parameters=[
+            Parameter.build_from(
+                "Chat Prompt Template",
+                "prompt",
+                ChatPromptTemplate,
+                description="The chat prompt template.",
+            ),
+            Parameter.build_from(
+                "History Key",
+                "history_key",
+                str,
+                optional=True,
+                default="chat_history",
+                description="The key of history in prompt dict.",
+            ),
+            Parameter.build_from(
+                "String History",
+                "str_history",
+                bool,
+                optional=True,
+                default=False,
+                description="Whether to convert the history to string.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                "History",
+                "history",
+                BaseMessage,
+                is_list=True,
+                description="The history.",
+            ),
+            IOField.build_from(
+                "Prompt Input Dict",
+                "prompt_input_dict",
+                dict,
+                description="The prompt dict.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Formatted Messages",
+                "formatted_messages",
+                ModelMessage,
+                is_list=True,
+                description="The formatted messages.",
+            )
+        ],
+    )
 
     def __init__(
         self,

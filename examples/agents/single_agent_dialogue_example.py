@@ -19,30 +19,37 @@ import os
 
 from dbgpt.agent.agents.agent import AgentContext
 from dbgpt.agent.agents.expand.code_assistant_agent import CodeAssistantAgent
+from dbgpt.agent.agents.llm.llm import LLMConfig
 from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
-from dbgpt.core.interface.llm import ModelMetadata
 
-if __name__ == "__main__":
-    from dbgpt.model.proxy import OpenAILLMClient
 
-    llm_client = OpenAILLMClient()
-    context: AgentContext = AgentContext(conv_id="test456", llm_provider=llm_client)
-    context.llm_models = [ModelMetadata(model="gpt-3.5-turbo")]
+async def main():
+    from dbgpt.model import OpenAILLMClient
 
-    default_memory = GptsMemory()
-    coder = CodeAssistantAgent(memory=default_memory, agent_context=context)
+    llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
+    context: AgentContext = AgentContext(conv_id="test123")
+    default_memory: GptsMemory = GptsMemory()
 
-    user_proxy = UserProxyAgent(memory=default_memory, agent_context=context)
-
-    asyncio.run(
-        user_proxy.a_initiate_chat(
-            recipient=coder,
-            reviewer=user_proxy,
-            message="式计算下321 * 123等于多少",  # 用python代码的方式计算下321 * 123等于多少
-            # message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
-        )
+    coder = (
+        await CodeAssistantAgent()
+        .bind(context)
+        .bind(LLMConfig(llm_client=llm_client))
+        .bind(default_memory)
+        .build()
     )
 
+    user_proxy = await UserProxyAgent().bind(context).bind(default_memory).build()
+
+    await user_proxy.a_initiate_chat(
+        recipient=coder,
+        reviewer=user_proxy,
+        message="式计算下321 * 123等于多少",  # 用python代码的方式计算下321 * 123等于多少
+        # message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
+    )
     ## dbgpt-vis message infos
-    print(asyncio.run(default_memory.one_plan_chat_competions("test456")))
+    print(await default_memory.one_chat_competions("test123"))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
