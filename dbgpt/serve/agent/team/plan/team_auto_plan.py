@@ -117,6 +117,7 @@ class AutoPlanChatManager(ManagerAgent):
         reviewer: Optional[ConversableAgent] = None,
     ) -> Optional[ActionOutput]:
         speaker = sender
+        final_message = message
         for i in range(self.max_round):
             plans = self.memory.plans_memory.get_by_conv_id(self.agent_context.conv_id)
 
@@ -153,7 +154,7 @@ class AutoPlanChatManager(ManagerAgent):
                     # complete
                     return ActionOutput(
                         is_exe_success=True,
-                        content=f"{plans[-1].result}",  # work results message
+                        content=final_message,  # work results message
                     )
                 else:
                     try:
@@ -201,11 +202,14 @@ class AutoPlanChatManager(ManagerAgent):
                         )
 
                         plan_result = ""
+                        final_message = reply_message["content"]
                         if is_success:
                             if reply_message:
                                 action_report = reply_message.get("action_report", None)
                                 if action_report:
                                     plan_result = action_report.get("content", "")
+                                    final_message = action_report["view"]
+
                             ### The current planned Agent generation verification is successful
                             ##Plan executed successfully
                             self.memory.plans_memory.complete_task(
@@ -213,7 +217,6 @@ class AutoPlanChatManager(ManagerAgent):
                                 now_plan.sub_task_num,
                                 plan_result,
                             )
-
                         else:
                             plan_result = reply_message["content"]
                             self.memory.plans_memory.update_task(
@@ -228,6 +231,7 @@ class AutoPlanChatManager(ManagerAgent):
                             return ActionOutput(
                                 is_exe_success=False, content=plan_result
                             )
+
                     except Exception as e:
                         logger.exception(
                             f"An exception was encountered during the execution of the current plan step.{str(e)}"
