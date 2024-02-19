@@ -30,7 +30,7 @@ class IndicatorInput(BaseModel):
     )
     args: dict = Field(
         default={"arg name1": "", "arg name2": ""},
-        description="The tool selected for the current target, the parameter information required for execution",
+        description="The api selected for the current target, the parameter information required for execution",
     )
     thought: str = Field(..., description="Summary of thoughts to the user")
 
@@ -55,7 +55,7 @@ class IndicatorAction(Action[IndicatorInput]):
     @property
     def ai_out_schema(self) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         out_put_schema = {
-            "indicator_name": "The name of a tool that can be used to answer the current question or solve the current task.",
+            "indicator_name": "The name of a indicator that can be used to answer the current question or solve the current task.",
             "api": "",
             "method": "",
             "args": {
@@ -73,7 +73,6 @@ class IndicatorAction(Action[IndicatorInput]):
     async def a_run(
         self,
         ai_message: str,
-        plugin_generator: PluginPromptGenerator,
         resource: Optional[AgentResource] = None,
         rely_action_out: Optional[ActionOutput] = None,
         need_vis_render: bool = True,
@@ -89,18 +88,21 @@ class IndicatorAction(Action[IndicatorInput]):
 
         try:
             status = Status.COMPLETE.value
+            response_success = True
             err_msg = None
+            resp_text = ""
             try:
                 status = Status.RUNNING.value
                 if param.method.lower() == "get":
                     response = requests.get(param.api, params=param.args)
                 elif param.method.lower() == "post":
-                    response = requests.post(param.api, data=param.args)
+                    response = requests.post(param.api, json=param.args)
                 else:
                     response = requests.request(
-                        param.method.lower(), param.api, data=param.args
+                        param.method.lower(), param.api, json=param.args
                     )
-                response.raise_for_status()  # 如果请求返回一个错误状态码，则抛出HTTPError异常
+                response.raise_for_status()
+                resp_text = response.text
             except HTTPError as http_err:
                 print(f"HTTP error occurred: {http_err}")
             except Exception as e:
@@ -109,19 +111,19 @@ class IndicatorAction(Action[IndicatorInput]):
                 status = Status.FAILED.value
                 err_msg = f"API [{param.api}] request Failed!{str(e)}"
 
-            plugin_param = {
-                "name": param.tool_name,
+            api_param = {
+                "name": param.api,
                 "args": param.args,
                 "status": status,
                 "logo": None,
-                "result": response.text,
+                "result": resp_text,
                 "err_msg": err_msg,
             }
 
-            view = await self.render_protocal.disply(content=plugin_param)
+            view = await self.render_protocal.disply(content=api_param)
 
             return ActionOutput(
-                is_exe_success=response_success, content=response.text, view=view
+                is_exe_success=response_success, content=resp_text, view=view
             )
         except Exception as e:
             logger.exception("Indicator Action Run Failed！")

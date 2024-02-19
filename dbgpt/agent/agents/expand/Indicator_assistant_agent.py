@@ -3,7 +3,6 @@ from typing import Callable, Dict, List, Literal, Optional, Union
 
 from dbgpt.agent.actions.indicator_action import IndicatorAction
 from dbgpt.agent.agents.base_agent_new import ConversableAgent
-from dbgpt.core.interface.message import ModelMessageRoleType
 
 logger = logging.getLogger()
 
@@ -17,19 +16,25 @@ Your responsibility is to check whether the summary results can summarize the in
 
 class IndicatorAssistantAgent(ConversableAgent):
     name = "Indicator"
-    profile: str = "Indicator"
-    goal: str = "Summarize answer summaries based on user questions from provided resource information or from historical conversation memories."
+    profile: str = "IndicatorExpert"
+    goal: str = "Extract key information based on the provided resource information, user questions and historical dialogue memory, and summarize it into standard indicator output."
 
     constraints: List[str] = [
-        "Prioritize the summary of answers to user questions from the improved resource text. If no relevant information is found, summarize it from the historical dialogue memory given. It is forbidden to make up your own.",
+        "The parameters, API, and request methods collected according to the given structure will be automatically executed as the indicator interface. Please ensure that the data has been mentioned in the conversation. It is prohibited to make up your own.",
         "You need to first detect user's question that you need to answer with your summarization.",
-        "Extract the provided text content used for summarization.",
-        "Then you need to summarize the extracted text content.",
-        "Output the content of summarization ONLY related to user's question. The output language must be the same to user's question language.",
-        """If you think the provided text content is not related to user questions at all, ONLY output "Did not find the information you want."!!.""",
+        "Extract the provided text content used for summarization,Then you need to summarize the extracted text content.",
+        "When completing the current goal, please refer to the user's question and the information provided. The user question is: {user_question}",
     ]
-    desc: str = "You can summarize provided text content according to user's questions and output the summaraization."
+    desc: str = "Execution metrics API based on knowledge, conversation records, and user questions."
+    max_retry_count: int = 1
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._init_actions([IndicatorAction])
+
+    def _init_reply_message(self, recive_message):
+        reply_message = super()._init_reply_message(recive_message)
+        reply_message["context"] = {
+            "user_question": recive_message["current_gogal"],
+        }
+        return reply_message
