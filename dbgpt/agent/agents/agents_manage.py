@@ -7,6 +7,7 @@ from .agent import Agent
 from .expand.code_assistant_agent import CodeAssistantAgent
 from .expand.dashboard_assistant_agent import DashboardAssistantAgent
 from .expand.data_scientist_agent import DataScientistAgent
+from .expand.Indicator_assistant_agent import IndicatorAssistantAgent
 from .expand.plugin_assistant_agent import PluginAssistantAgent
 from .expand.summary_assistant_agent import SummaryAssistantAgent
 
@@ -98,3 +99,4 @@ agent_manage.register_agent(DashboardAssistantAgent)
 agent_manage.register_agent(DataScientistAgent)
 agent_manage.register_agent(SummaryAssistantAgent)
 agent_manage.register_agent(PluginAssistantAgent)
+agent_manage.register_agent(IndicatorAssistantAgent)
