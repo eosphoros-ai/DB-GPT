@@ -39,11 +39,13 @@
 
 ## What is DB-GPT?
 
-DB-GPT is an open-source, data-domain large model framework. Its purpose is to build the infrastructure for the large model domain by developing a variety of technical capabilities, including multi-model management, Text2SQL performance optimization, RAG framework and optimization, and Multi-Agents framework collaboration. These capabilities aim to simplify and facilitate the construction of large model applications around databases.
+DB-GPT is an open source AI native data app development framework with AWEL(Agentic Workflow Expression Language) and agents. The purpose is to build infrastructure in the field of large models, through the development of multiple technical capabilities such as multi-model management (SMMF), Text2SQL effect optimization, RAG framework and optimization, Multi-Agents framework collaboration, AWEL (agent workflow orchestration), etc. Which makes large model applications with data simpler and more convenient.
 
 In the Data 3.0 era, based on models and databases, enterprises and developers can build their own bespoke applications with less code.
 
 ### Data Agents
+![awel_web_search_flow](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/fe1eaf9e-5a0f-4d09-b1a7-f8dc75682695)
+
 ![chat_excel](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/03d67da4-b9b9-4df3-8890-176a0941dab8)
 
 ![data agents](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/ced393b4-9180-437a-90c5-b43633cda8cb)
@@ -78,6 +80,8 @@ The core capabilities include the following parts:
 
 ### SubModule
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL workflow with high performance by applying Supervised Fine-Tuning (SFT) on Large Language Models (LLMs).
+
+- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts is the official repository which contains some data apps、AWEL operators、AWEL workflow templates and agents which build upon DB-GPT.
 
 #### Text2SQL Finetune
 - support llms
