@@ -12,6 +12,8 @@ class Role(ABC, BaseModel):
 
     expand_prompt: str = ""
 
+    fixed_subgoal: Optional[str] = None
+
     constraints: List[str] = []
     examples: str = ""
     desc: str = ""
@@ -19,8 +21,8 @@ class Role(ABC, BaseModel):
     is_human: bool = False
     is_team: bool = False
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    class Config:
+        arbitrary_types_allowed = True
 
     def prompt_template(
         self,
