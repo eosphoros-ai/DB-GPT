@@ -37,12 +37,16 @@
 </div>
 
 ## DB-GPT 是什么？
-DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领域的基础设施，通过开发多模型管理、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
+DB-GPT是一个开源的AI原生数据应用开发框架(AI Native Data App Development framework with AWEL(Agentic Workflow Expression Language) and Agents)。目的是构建大模型领域的基础设施，通过开发多模型管理(SMMF)、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作、AWEL(智能体工作流编排)等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
+
 数据3.0 时代，基于模型、数据库，企业/开发者可以用更少的代码搭建自己的专属应用。
 
 ## 效果演示
 
 ### Data Agents 
+
+![awel_web_search_flow](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/fe1eaf9e-5a0f-4d09-b1a7-f8dc75682695)
+
 ![chat_excel](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/03d67da4-b9b9-4df3-8890-176a0941dab8)
 
 ![data agents](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/ced393b4-9180-437a-90c5-b43633cda8cb)
@@ -84,6 +88,8 @@ DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领�
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) 通过微调来持续提升Text2SQL效果 
 - [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
 - [GPT-Vis](https://github.com/eosphoros-ai/DB-GPT-Web) 可视化协议 
+
+- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts 是官方提供的数据应用仓库, 包含数据智能应用, 智能体编排流程模版, 通用算子等构建在DB-GPT之上的资源。 
 
 ## 安装
 
@@ -191,104 +197,6 @@ DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领�
 ## Licence
 
 The MIT License (MIT)
-
-# 路线图
-
-### 知识库RAG检索优化
-
-- [x] Multi Documents
-  - [x] PDF
-  - [x] Excel, csv
-  - [x] Word
-  - [x] Text
-  - [x] MarkDown
-  - [ ] Code
-  - [ ] Images 
-- [x] RAG
-- [ ] Graph Database
-  - [ ] Neo4j Graph
-  - [ ] Nebula Graph
-- [x] Multi Vector Database
-  - [x] Chroma
-  - [x] Milvus
-  - [x] Weaviate
-  - [x] PGVector
-  - [ ] Elasticsearch
-  - [ ] ClickHouse
-  - [ ] Faiss 
-
-### 多数据源支持
-
-- 支持数据源
-
-  - [x] MySQL
-  - [x] PostgresSQL
-  - [x] Spark
-  - [x] DuckDB
-  - [x] Sqlite
-  - [x] MSSQL
-  - [x] ClickHouse
-  - [x] StarRocks
-  - [ ] Oracle
-  - [ ] Redis
-  - [ ] MongoDB
-  - [ ] HBase
-  - [x] Doris
-  - [ ] DB2
-  - [ ] Couchbase
-  - [ ] Elasticsearch
-  - [ ] OceanBase
-  - [ ] TiDB
-
-
-### 多模型管理与推理优化
-- [x] [集群部署](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
-- [x] [fastchat支持](https://github.com/lm-sys/FastChat)
-- [x] [vLLM 支持](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
-- [x] 上层接口兼容Openai
-- [ ] 云原生环境与Ray环境支持
-- [ ] 注册中心引入nacos
-- [ ] Embedding模型扩充，优化
-
-### Agents与插件市场
-- [x] 多Agents框架
-- [x] 自定义Agents
-- [x] 插件市场
-- [ ] CoT集成
-- [ ] 丰富插件样本库
-- [ ] 支持AutoGPT协议
-- [ ] Multi-agents & 可视化能力打通，定义LLM+Vis新标准
-
-
-### 测试评估能力建设
-- [ ] 知识库的数据文本集
-- [ ] 问题集合 [easy、medium、hard]
-- [ ] 评分机制
-- [ ] Excel + DB库表的测试评估
-
-### 成本与可观测性 
-- [x] [debugging](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
-- [ ] 可观测性
-- [ ] 推理预算
-
-### Text2SQL微调
-- support llms
-  - [x] LLaMA
-  - [x] LLaMA-2
-  - [x] BLOOM
-  - [x] BLOOMZ
-  - [x] Falcon
-  - [x] Baichuan
-  - [x] Baichuan2
-  - [x] InternLM
-  - [x] Qwen
-  - [x] XVERSE
-  - [x] ChatGLM2
-
--  SFT模型准确率 
-截止20231010，我们利用本项目基于开源的13B大小的模型微调后，在Spider的评估集上的执行准确率，已经超越GPT-4!
-
-[More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
 ## 引用
 如果您发现`DB-GPT`对您的研究或开发有用，请引用以下<a href="https://arxiv.org/abs/2312.17449" target="_blank">论文</a>：
