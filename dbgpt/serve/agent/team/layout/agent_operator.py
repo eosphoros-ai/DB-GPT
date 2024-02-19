@@ -135,22 +135,30 @@ class AwelAgentOperator(
         self,
         input_value: AgentGenerateContext,
     ) -> AgentGenerateContext:
-        now_rely_messages: List[Dict] = []
-
+        now_message = input_value.message
         agent = await self.get_agent(input_value)
+        if agent.fixed_subgoal and len(agent.fixed_subgoal) > 0:
+            # Isolate the message delivery mechanism and pass it to the operator
+            input_value.message["current_gogal"] = (
+                f"[{agent.name if agent.name else agent.profile}]:"
+                + agent.fixed_subgoal
+            )
+            now_message["content"] = agent.fixed_subgoal
+        else:
+            # Isolate the message delivery mechanism and pass it to the operator
+            input_value.message["current_gogal"] = (
+                f"[{agent.name if agent.name else agent.profile}]:"
+                + input_value.message["content"]
+            )
 
-        # Isolate the message delivery mechanism and pass it to the operator
-        input_value.message["current_gogal"] = (
-            f"[{agent.name if agent.name else agent.profile}]:"
-            + input_value.message["content"]
-        )
+        now_rely_messages: List[Dict] = []
         ###What was received was the User message
         human_message = input_value.message.copy()
         human_message["role"] = ModelMessageRoleType.HUMAN
         now_rely_messages.append(human_message)
 
         ###Send a message (no reply required) and pass the message content
-        now_message = input_value.message
+
         if input_value.rely_messages and len(input_value.rely_messages) > 0:
             now_message = input_value.rely_messages[-1]
         await input_value.sender.a_send(now_message, agent, input_value.reviewer, False)
@@ -200,9 +208,13 @@ class AwelAgentOperator(
                 llm_config = LLMConfig(llm_client=input_value.llm_client)
             else:
                 llm_config = LLMConfig(llm_client=self.llm_client)
-
+        kwargs = {}
+        if self.awel_agent.role_name:
+            kwargs["name"] = self.awel_agent.role_name
+        if self.awel_agent.fixed_subgoal:
+            kwargs["fixed_subgoal"] = self.awel_agent.fixed_subgoal
         agent = (
-            await agent_cls(name=self.awel_agent.role_name)
+            await agent_cls(**kwargs)
             .bind(input_value.memory)
             .bind(llm_config)
             .bind(input_value.agent_context)
