@@ -75,11 +75,13 @@ class DashboardAction(Action[List[ChartItem]]):
                     sql_df = await resource_db_client.a_query_to_df(
                         resource.value, chart_item.sql
                     )
-                    chart_item["data"] = sql_df
+                    chart_dict = chart_item.dict()
+
+                    chart_dict["data"] = sql_df
                 except Exception as e:
                     logger.warn(f"Sql excute Failed！{str(e)}")
-                    chart_item["err_msg"] = str(e)
-                chart_params.append(chart_item)
+                    chart_dict["err_msg"] = str(e)
+                chart_params.append(chart_dict)
             view = await self.render_protocal.disply(charts=chart_params)
             return ActionOutput(
                 is_exe_success=True,
