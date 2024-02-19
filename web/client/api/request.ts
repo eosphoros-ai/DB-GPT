@@ -291,7 +291,7 @@ export const collectApp = (data: Record<string, string>) => {
 };
 
 export const unCollectApp = (data: Record<string, string>) => {
-  return POST<Record<string, string>, []>('api/v1/app/uncollect', data);
+  return POST<Record<string, string>, []>('/api/v1/app/uncollect', data);
 };
 
 export const delApp = (data: Record<string, string>) => {
@@ -307,11 +307,11 @@ export const getTeamMode = () => {
 };
 
 export const getResourceType = () => {
-  return GET<null, string[]>('api/v1/resource-type/list');
+  return GET<null, string[]>('/api/v1/resource-type/list');
 };
 
 export const getResource = (data: Record<string, string>) => {
-  return GET<Record<string, string>, []>(`api/v1/app/resources/list?type=${data.type}`);
+  return GET<Record<string, string>, []>(`/api/v1/app/resources/list?type=${data.type}`);
 };
 
 export const updateApp = (data: IApp) => {
@@ -319,9 +319,9 @@ export const updateApp = (data: IApp) => {
 };
 
 export const getAppStrategy = () => {
-  return GET<null, []>(`api/v1/llm-strategy/list`);
+  return GET<null, []>(`/api/v1/llm-strategy/list`);
 };
 
 export const getAppStrategyValues = (type: string) => {
-  return GET<string, []>(`api/v1/llm-strategy/value/list?type=${type}`);
+  return GET<string, []>(`/api/v1/llm-strategy/value/list?type=${type}`);
 };
