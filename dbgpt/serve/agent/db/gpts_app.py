@@ -137,6 +137,13 @@ class GptsAppQuery(GptsApp):
     is_collected: Optional[str] = None
 
 
+class GptsAppResponse(BaseModel):
+    total_count: Optional[int] = 0
+    total_page: Optional[int] = 0
+    current_page: Optional[int] = 0
+    app_list: Optional[List[GptsApp]] = []
+
+
 class GptsAppCollection(BaseModel):
     app_code: Optional[str] = None
     user_code: Optional[str] = None
@@ -341,6 +348,7 @@ class GptsAppDao(BaseDao):
                 app_qry = app_qry.filter(GptsAppEntity.sys_code == query.sys_code)
             if query.is_collected and query.is_collected.lower() in ("true", "false"):
                 app_qry = app_qry.filter(GptsAppEntity.app_code.in_(app_codes))
+            total_count = app_qry.count()
             app_qry = app_qry.order_by(GptsAppEntity.id.desc())
             app_qry = app_qry.offset((query.page_no - 1) * query.page_size).limit(
                 query.page_size
@@ -350,6 +358,7 @@ class GptsAppDao(BaseDao):
             result_app_codes = [res.app_code for res in results]
             app_details_group = self._group_app_details(result_app_codes, session)
             apps = []
+            app_resp = GptsAppResponse()
             for app_info in results:
                 app_details = app_details_group.get(app_info.app_code, [])
 
@@ -378,7 +387,11 @@ class GptsAppDao(BaseDao):
                         }
                     )
                 )
-            return apps
+            app_resp.total_count = total_count
+            app_resp.app_list = apps
+            app_resp.current_page = query.page_no
+            app_resp.total_page = (total_count + query.page_size - 1) // query.page_size
+            return app_resp
 
     def _group_app_details(self, app_codes, session):
         app_detail_qry = session.query(GptsAppDetailEntity).filter(
