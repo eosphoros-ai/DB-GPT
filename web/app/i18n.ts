@@ -207,6 +207,7 @@ const en = {
   available_resources: ' Available Resources',
   edit_new_applications: 'Edit new applications',
   collect: 'Collect',
+  collected: 'Collected',
   create: 'Create',
   Agents: 'Agents',
   edit_application: 'edit application',
@@ -429,6 +430,7 @@ const zh: Resources['translation'] = {
   available_resources: '可用资源',
   edit_new_applications: '编辑新的应用',
   collect: '收藏',
+  collected: '已收藏',
   create: '创建',
   Agents: '智能体',
   edit_application: '编辑应用',
@@ -436,7 +438,6 @@ const zh: Resources['translation'] = {
   app_name: '应用名称',
   LLM_strategy: '模型策略',
   LLM_strategy_value: '模型策略参数',
-
 } as const;
 
 i18n.use(initReactI18next).init({

@@ -94,7 +94,7 @@ export default function App() {
     },
     {
       key: 'collected',
-      label: t('collect'),
+      label: t('collected'),
       children: renderAppList({ isCollected: true }),
     },
   ];
