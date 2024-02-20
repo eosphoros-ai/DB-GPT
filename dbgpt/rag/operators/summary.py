@@ -1,12 +1,77 @@
 from typing import Any, Optional
 
 from dbgpt.core import LLMClient
+from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
 from dbgpt.core.awel.task.base import IN
+from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.serve.rag.assembler.summary import SummaryAssembler
 from dbgpt.serve.rag.operators.base import AssemblerOperator
 
 
 class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):
+    metadata = ViewMetadata(
+        label="Summary Operator",
+        name="summary_assembler_operator",
+        category=OperatorCategory.RAG,
+        description="The summary assembler operator.",
+        inputs=[
+            IOField.build_from(
+                "Knowledge", "knowledge", Knowledge, "knowledge datasource"
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "document summary",
+                "summary",
+                str,
+                description="document summary",
+            )
+        ],
+        parameters=[
+            Parameter.build_from(
+                "LLM Client",
+                "llm_client",
+                LLMClient,
+                optional=True,
+                default=None,
+                description="The LLM Client.",
+            ),
+            Parameter.build_from(
+                label="model name",
+                name="model_name",
+                type=str,
+                optional=True,
+                default="gpt-3.5-turbo",
+                description="llm model name",
+            ),
+            Parameter.build_from(
+                label="prompt language",
+                name="language",
+                type=str,
+                optional=True,
+                default="en",
+                description="prompt language",
+            ),
+            Parameter.build_from(
+                label="max_iteration_with_llm",
+                name="max_iteration_with_llm",
+                type=int,
+                optional=True,
+                default=5,
+                description="prompt language",
+            ),
+            Parameter.build_from(
+                label="concurrency_limit_with_llm",
+                name="concurrency_limit_with_llm",
+                type=int,
+                optional=True,
+                default=3,
+                description="The concurrency limit with llm",
+            ),
+        ],
+        documentation_url="https://github.com/openai/openai-python",
+    )
+
     def __init__(
         self,
         llm_client: Optional[LLMClient],

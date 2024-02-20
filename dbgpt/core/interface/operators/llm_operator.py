@@ -457,3 +457,42 @@ class CommonStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
             decoded_unicode = model_output.text.replace("\ufffd", "")
             msg = decoded_unicode.replace("\n", "\\n")
             yield f"data:{msg}\n\n"
+
+
+class StringOutput2ModelOutputOperator(MapOperator[str, ModelOutput]):
+    """Map String to ModelOutput."""
+
+    metadata = ViewMetadata(
+        label="Map String to ModelOutput",
+        name="string_2_model_output_operator",
+        category=OperatorCategory.COMMON,
+        description="Map String to ModelOutput.",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "String",
+                "input_value",
+                str,
+                description="The input value of the operator.",
+            ),
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model Output",
+                "input_value",
+                ModelOutput,
+                description="The input value of the operator.",
+            ),
+        ],
+    )
+
+    def __int__(self, **kwargs):
+        """Create a new operator."""
+        super().__init__(**kwargs)
+
+    async def map(self, input_value: str) -> ModelOutput:
+        """Map the model output to the common response body."""
+        return ModelOutput(
+            text=input_value,
+            error_code=500,
+        )
