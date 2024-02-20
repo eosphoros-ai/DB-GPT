@@ -39,7 +39,7 @@ class GptsMessagesEntity(Model):
     content = Column(
         Text(length=2**31 - 1), nullable=True, comment="Content of the speech"
     )
-    current_gogal = Column(
+    current_goal = Column(
         Text, nullable=True, comment="The target corresponding to the current message"
     )
     context = Column(Text, nullable=True, comment="Current conversation context")
@@ -78,7 +78,7 @@ class GptsMessagesDao(BaseDao):
             model_name=entity.get("model_name", None),
             context=entity.get("context", None),
             rounds=entity.get("rounds", None),
-            current_gogal=entity.get("current_gogal", None),
+            current_goal=entity.get("current_goal", None),
             review_info=entity.get("review_info", None),
             action_report=entity.get("action_report", None),
         )
@@ -120,7 +120,7 @@ class GptsMessagesDao(BaseDao):
         conv_id: str,
         agent1: str,
         agent2: str,
-        current_gogal: Optional[str] = None,
+        current_goal: Optional[str] = None,
     ) -> Optional[List[GptsMessagesEntity]]:
         session = self.get_raw_session()
         gpts_messages = session.query(GptsMessagesEntity)
@@ -139,9 +139,9 @@ class GptsMessagesDao(BaseDao):
                     ),
                 )
             )
-        if current_gogal:
+        if current_goal:
             gpts_messages = gpts_messages.filter(
-                GptsMessagesEntity.current_gogal == current_gogal
+                GptsMessagesEntity.current_goal == current_goal
             )
         result = gpts_messages.order_by(GptsMessagesEntity.rounds).all()
         session.close()

@@ -197,6 +197,8 @@ CREATE TABLE IF NOT EXISTS `prompt_manage`
   `sys_code` varchar(255) DEFAULT NULL COMMENT 'system app ',
   `created_at` datetime DEFAULT NULL COMMENT 'create time',
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
+  `team_mode` varchar(255) NULL COMMENT 'agent team work mode',
+
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_gpts_conversations` (`conv_id`),
   KEY `idx_gpts_name` (`gpts_name`)
@@ -230,7 +232,7 @@ CREATE TABLE `gpts_messages` (
   `model_name` varchar(255) DEFAULT NULL COMMENT 'message generate model',
   `rounds` int(11) NOT NULL COMMENT 'dialogue turns',
   `content` text COMMENT 'Content of the speech',
-  `current_gogal` text COMMENT 'The target corresponding to the current message',
+  `current_goal` text COMMENT 'The target corresponding to the current message',
   `context` text COMMENT 'Current conversation context',
   `review_info` text COMMENT 'Current conversation review info',
   `action_report` text COMMENT 'Current conversation action report',
