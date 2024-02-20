@@ -56,7 +56,9 @@ class GptsAppDetail(BaseModel):
             resources=AgentResource.from_josn_list_str(d.get("resources", None)),
             prompt_template=d.get("prompt_template", None),
             llm_strategy=d.get("llm_strategy", None),
-            llm_strategy_value=d.get("llm_strategy_value", None),
+            llm_strategy_value=",".join(json.loads(d.get("llm_strategy_value")))
+            if d.get("llm_strategy_value")
+            else None,
             created_at=d.get("created_at", None),
             updated_at=d.get("updated_at", None),
         )
@@ -483,7 +485,9 @@ class GptsAppDao(BaseDao):
                         resources=json.dumps(resource_dicts, ensure_ascii=False),
                         prompt_template=item.prompt_template,
                         llm_strategy=item.llm_strategy,
-                        llm_strategy_value=item.llm_strategy_value,
+                        llm_strategy_value=json.dumps(
+                            tuple(item.llm_strategy_value.split(","))
+                        ),
                         created_at=item.created_at,
                         updated_at=item.updated_at,
                     )
@@ -525,7 +529,9 @@ class GptsAppDao(BaseDao):
                         resources=json.dumps(resource_dicts, ensure_ascii=False),
                         prompt_template=item.prompt_template,
                         llm_strategy=item.llm_strategy,
-                        llm_strategy_value=item.llm_strategy_value,
+                        llm_strategy_value=json.dumps(
+                            tuple(item.llm_strategy_value.split(","))
+                        ),
                         created_at=item.created_at,
                         updated_at=item.updated_at,
                     )
