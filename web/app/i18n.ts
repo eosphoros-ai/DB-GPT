@@ -217,6 +217,8 @@ const en = {
   LLM_strategy_value: 'LLM Strategy Value',
   resource: 'Resource',
   operators: 'Operators',
+  Chinese: 'Chinese',
+  English: 'English',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -440,6 +442,8 @@ const zh: Resources['translation'] = {
   LLM_strategy: '模型策略',
   LLM_strategy_value: '模型策略参数',
   operators: '操作',
+  Chinese: '中文',
+  English: '英文',
 } as const;
 
 i18n.use(initReactI18next).init({

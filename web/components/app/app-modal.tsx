@@ -33,11 +33,6 @@ interface IProps {
   app?: any;
 }
 
-const languageOptions = [
-  { value: 'zh', label: '中文' },
-  { value: 'en', label: '英文' },
-];
-
 type TeamModals = 'awel_layout' | 'singe_agent' | 'auto_plan';
 
 export default function AppModal(props: IProps) {
@@ -55,6 +50,11 @@ export default function AppModal(props: IProps) {
   const [curTeamModal, setCurTeamModal] = useState<TeamModals>(app.team_modal || 'auto_plan');
 
   const [form] = Form.useForm();
+
+  const languageOptions = [
+    { value: 'zh', label: t('Chinese') },
+    { value: 'en', label: t('English') },
+  ];
 
   const onChange = (newActiveKey: string) => {
     setActiveKey(newActiveKey);
