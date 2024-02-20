@@ -48,7 +48,7 @@ class AgentOperator(
         now_rely_messages: List[Dict] = []
 
         # Isolate the message delivery mechanism and pass it to the operator
-        input_value.message["current_gogal"] = (
+        input_value.message["current_goal"] = (
             f"[{self._agent.name if self._agent.name else self._agent.profile}]:"
             + input_value.message["content"]
         )
@@ -139,14 +139,14 @@ class AwelAgentOperator(
         agent = await self.get_agent(input_value)
         if agent.fixed_subgoal and len(agent.fixed_subgoal) > 0:
             # Isolate the message delivery mechanism and pass it to the operator
-            input_value.message["current_gogal"] = (
+            input_value.message["current_goal"] = (
                 f"[{agent.name if agent.name else agent.profile}]:"
                 + agent.fixed_subgoal
             )
             now_message["content"] = agent.fixed_subgoal
         else:
             # Isolate the message delivery mechanism and pass it to the operator
-            input_value.message["current_gogal"] = (
+            input_value.message["current_goal"] = (
                 f"[{agent.name if agent.name else agent.profile}]:"
                 + input_value.message["content"]
             )

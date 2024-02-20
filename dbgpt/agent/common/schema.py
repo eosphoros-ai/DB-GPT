@@ -43,7 +43,7 @@ class GptsMessage:
     role: str
     content: str
     rounds: Optional[int]
-    current_gogal: str = None
+    current_goal: str = None
     context: Optional[str] = None
     review_info: Optional[str] = None
     action_report: Optional[str] = None
@@ -61,7 +61,7 @@ class GptsMessage:
             content=d["content"],
             rounds=d["rounds"],
             model_name=d["model_name"],
-            current_gogal=d["current_gogal"],
+            current_goal=d["current_goal"],
             context=d["context"],
             review_info=d["review_info"],
             action_report=d["action_report"],
