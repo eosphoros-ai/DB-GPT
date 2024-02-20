@@ -55,7 +55,7 @@ export default function App() {
     }
     if (!data) return;
 
-    setApps(data || []);
+    setApps(data.app_list || []);
     setSpinning(false);
   };
 
