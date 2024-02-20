@@ -161,7 +161,7 @@ class AutoPlanChatManager(ManagerAgent):
                         now_plan: GptsPlan = todo_plans[0]
                         current_goal_message = {
                             "content": now_plan.sub_task_content,
-                            "current_gogal": now_plan.sub_task_content,
+                            "current_goal": now_plan.sub_task_content,
                             "context": {
                                 "plan_task": now_plan.sub_task_content,
                                 "plan_task_num": now_plan.sub_task_num,

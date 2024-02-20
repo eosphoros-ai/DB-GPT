@@ -220,7 +220,7 @@ class ConversableAgent(Agent):
                 "context",
                 "action_report",
                 "review_info",
-                "current_gogal",
+                "current_goal",
                 "model_name",
             )
             if k in message
@@ -246,7 +246,7 @@ class ConversableAgent(Agent):
             receiver=self.name,
             role=role,
             rounds=self.consecutive_auto_reply_counter,
-            current_gogal=oai_message.get("current_gogal", None),
+            current_goal=oai_message.get("current_goal", None),
             content=oai_message.get("content", None),
             context=json.dumps(oai_message["context"], ensure_ascii=False)
             if "context" in oai_message
@@ -458,16 +458,16 @@ class ConversableAgent(Agent):
         sender,
         rely_messages: Optional[List[Dict]] = None,
     ):
-        current_gogal = current_message.get("current_gogal", None)
+        current_goal = current_message.get("current_goal", None)
         ### Convert and tailor the information in collective memory into contextual memory available to the current Agent
-        current_gogal_messages = self._gpts_message_to_ai_message(
+        current_goal_messages = self._gpts_message_to_ai_message(
             self.memory.message_memory.get_between_agents(
-                self.agent_context.conv_id, self.name, sender.name, current_gogal
+                self.agent_context.conv_id, self.name, sender.name, current_goal
             )
         )
-        if current_gogal_messages is None or len(current_gogal_messages) <= 0:
+        if current_goal_messages is None or len(current_goal_messages) <= 0:
             current_message["role"] = ModelMessageRoleType.HUMAN
-            current_gogal_messages = [current_message]
+            current_goal_messages = [current_message]
         ### relay messages
         cut_messages = []
         if rely_messages:
@@ -479,13 +479,13 @@ class ConversableAgent(Agent):
         else:
             cut_messages.extend(self._rely_messages)
 
-        if len(current_gogal_messages) < self.dialogue_memory_rounds:
-            cut_messages.extend(current_gogal_messages)
+        if len(current_goal_messages) < self.dialogue_memory_rounds:
+            cut_messages.extend(current_goal_messages)
         else:
             # TODO: allocate historical information based on token budget
-            cut_messages.extend(current_gogal_messages[:2])
+            cut_messages.extend(current_goal_messages[:2])
             # end_round = self.dialogue_memory_rounds - 2
-            cut_messages.extend(current_gogal_messages[-3:])
+            cut_messages.extend(current_goal_messages[-3:])
         return cut_messages
 
     async def a_system_fill_param(self):
@@ -502,7 +502,7 @@ class ConversableAgent(Agent):
         ## 0.New message build
         new_message = {}
         new_message["context"] = message.get("context", None)
-        new_message["current_gogal"] = message.get("current_gogal", None)
+        new_message["current_goal"] = message.get("current_goal", None)
 
         ## 1.LLM Reasonging
         await self.a_system_fill_param()
@@ -576,7 +576,7 @@ class ConversableAgent(Agent):
             ## Send error messages to yourself for retrieval optimization and increase the number of retrievals
             retry_message = {}
             retry_message["context"] = message.get("context", None)
-            retry_message["current_gogal"] = message.get("current_gogal", None)
+            retry_message["current_goal"] = message.get("current_goal", None)
             retry_message["model_name"] = message.get("model_name", None)
             retry_message["content"] = fail_reason
             ## Use the original sender to send the retry message to yourself
@@ -603,7 +603,7 @@ class ConversableAgent(Agent):
             "context": json.loads(last_message.context)
             if last_message.context
             else None,
-            "current_gogal": last_message.current_gogal,
+            "current_goal": last_message.current_goal,
             "review_info": json.loads(last_message.review_info)
             if last_message.review_info
             else None,

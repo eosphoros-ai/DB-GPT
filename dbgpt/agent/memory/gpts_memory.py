@@ -58,7 +58,7 @@ class GptsMemory:
             count = count + 1
             if count == 1:
                 continue
-            if not message.current_gogal or len(message.current_gogal) <= 0:
+            if not message.current_goal or len(message.current_goal) <= 0:
                 if len(temp_group) > 0:
                     vis_items.append(await self._plan_vis_build(temp_group))
                     temp_group.clear()
@@ -69,7 +69,7 @@ class GptsMemory:
                     vis_items.append(await self._messages_to_agents_vis(temp_messages))
                     temp_messages.clear()
 
-                last_gogal = message.current_gogal
+                last_gogal = message.current_goal
                 temp_group[last_gogal].append(message)
 
         if len(temp_group) > 0:
