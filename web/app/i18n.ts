@@ -441,7 +441,7 @@ const zh: Resources['translation'] = {
   app_name: '应用名称',
   LLM_strategy: '模型策略',
   LLM_strategy_value: '模型策略参数',
-  operators: '操作',
+  operators: '算子',
   Chinese: '中文',
   English: '英文',
 } as const;
