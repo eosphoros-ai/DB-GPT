@@ -207,7 +207,14 @@ const en = {
   available_resources: ' Available Resources',
   edit_new_applications: 'Edit new applications',
   collect: 'Collect',
-  create: '创建',
+  create: 'Create',
+  Agents: 'Agents',
+  edit_application: 'edit application',
+  add_application: 'add application',
+  app_name: 'App Name',
+  LLM_strategy: 'LLM Strategy',
+  LLM_strategy_value: 'LLM Strategy Value',
+  resource: 'Resource',
 } as const;
 
 export type I18nKeys = keyof typeof en;
@@ -413,6 +420,7 @@ const zh: Resources['translation'] = {
   add_resource: '添加资源',
   team_modal: '工作模式',
   App: '应用程序',
+  resource: '资源',
   resource_name: '资源名',
   resource_type: '资源类型',
   resource_value: '参数',
@@ -422,6 +430,13 @@ const zh: Resources['translation'] = {
   edit_new_applications: '编辑新的应用',
   collect: '收藏',
   create: '创建',
+  Agents: '智能体',
+  edit_application: '编辑应用',
+  add_application: '添加应用',
+  app_name: '应用名称',
+  LLM_strategy: '模型策略',
+  LLM_strategy_value: '模型策略参数',
+
 } as const;
 
 i18n.use(initReactI18next).init({
