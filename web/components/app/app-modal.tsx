@@ -33,11 +33,6 @@ interface IProps {
   app?: any;
 }
 
-const languageOptions = [
-  { value: 'zh', label: '中文' },
-  { value: 'en', label: '英文' },
-];
-
 type TeamModals = 'awel_layout' | 'singe_agent' | 'auto_plan';
 
 export default function AppModal(props: IProps) {
@@ -55,6 +50,11 @@ export default function AppModal(props: IProps) {
   const [curTeamModal, setCurTeamModal] = useState<TeamModals>(app.team_modal || 'auto_plan');
 
   const [form] = Form.useForm();
+
+  const languageOptions = [
+    { value: 'zh', label: t('Chinese') },
+    { value: 'en', label: t('English') },
+  ];
 
   const onChange = (newActiveKey: string) => {
     setActiveKey(newActiveKey);
@@ -302,7 +302,7 @@ export default function AppModal(props: IProps) {
     <div>
       <Modal
         okText={t('Submit')}
-        title={type === 'edit' ? 'edit application' : 'add application'}
+        title={type === 'edit' ? t('edit_application') : t('add_application')}
         open={open}
         width={'65%'}
         onCancel={handleCancel}
@@ -327,7 +327,7 @@ export default function AppModal(props: IProps) {
             autoComplete="off"
             onFinish={handleSubmit}
           >
-            <Form.Item<FieldType> label={'App Name'} name="app_name" rules={[{ required: true, message: t('Please_input_the_name') }]}>
+            <Form.Item<FieldType> label={t('app_name')} name="app_name" rules={[{ required: true, message: t('Please_input_the_name') }]}>
               <Input placeholder={t('Please_input_the_name')} />
             </Form.Item>
             <Form.Item<FieldType>
@@ -353,7 +353,7 @@ export default function AppModal(props: IProps) {
             </div>
             {curTeamModal !== 'awel_layout' ? (
               <>
-                <div className="mb-5">Agents</div>
+                <div className="mb-5">{t('Agents')}</div>
                 <Tabs addIcon={renderAddIcon()} type="editable-card" onChange={onChange} activeKey={activeKey} onEdit={onEdit} items={agents} />
               </>
             ) : (
