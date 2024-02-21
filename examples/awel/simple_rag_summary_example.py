@@ -59,7 +59,7 @@ with DAG("dbgpt_awel_simple_rag_summary_example") as dag:
     request_handle_task = RequestHandleOperator()
     path_operator = MapOperator(lambda request: request["url"])
     # build knowledge operator
-    knowledge_operator = KnowledgeOperator(knowledge_type=KnowledgeType.URL)
+    knowledge_operator = KnowledgeOperator(knowledge_type=KnowledgeType.URL.name)
     # build summary assembler operator
     summary_operator = SummaryAssemblerOperator(
         llm_client=OpenAILLMClient(), language="en"

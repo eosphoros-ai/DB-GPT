@@ -112,6 +112,7 @@ _OPERATOR_CATEGORY_DETAIL = {
     "output_parser": _CategoryDetail("Output Parser", "Parse the output of LLM model"),
     "common": _CategoryDetail("Common", "The common operator"),
     "agent": _CategoryDetail("Agent", "The agent operator"),
+    "rag": _CategoryDetail("RAG", "The RAG operator"),
 }
 
 
@@ -124,6 +125,7 @@ class OperatorCategory(str, Enum):
     OUTPUT_PARSER = "output_parser"
     COMMON = "common"
     AGENT = "agent"
+    RAG = "rag"
 
     def label(self) -> str:
         """Get the label of the category."""
@@ -163,6 +165,7 @@ _RESOURCE_CATEGORY_DETAIL = {
     "common": _CategoryDetail("Common", "The common resource"),
     "prompt": _CategoryDetail("Prompt", "The prompt resource"),
     "agent": _CategoryDetail("Agent", "The agent resource"),
+    "rag": _CategoryDetail("RAG", "The  resource"),
 }
 
 
@@ -176,6 +179,7 @@ class ResourceCategory(str, Enum):
     COMMON = "common"
     PROMPT = "prompt"
     AGENT = "agent"
+    RAG = "rag"
 
     def label(self) -> str:
         """Get the label of the category."""
