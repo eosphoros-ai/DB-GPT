@@ -361,7 +361,18 @@ const sidebars = {
           id: 'changelog/doc',
         },
       ],
-  
+    },
+
+    {
+      type: "category",
+      label: "Upgrade",
+      collapsed: true,
+      items: [
+        {
+          type: 'doc',
+          id: 'upgrade/v0.5.0',
+        },
+      ],
     },
 
     {
