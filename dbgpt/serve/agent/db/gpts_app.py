@@ -47,7 +47,14 @@ class GptsAppDetail(BaseModel):
             return value
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    def from_dict(cls, d: Dict[str, Any], parse_llm_strategy: bool = False):
+        lsv = d.get("llm_strategy_value")
+        if parse_llm_strategy and lsv:
+            strategies = json.loads(lsv)
+            llm_strategy_value = ",".join(strategies)
+        else:
+            llm_strategy_value = d.get("llm_strategy_value", None)
+
         return cls(
             app_code=d["app_code"],
             app_name=d["app_name"],
@@ -56,9 +63,7 @@ class GptsAppDetail(BaseModel):
             resources=AgentResource.from_josn_list_str(d.get("resources", None)),
             prompt_template=d.get("prompt_template", None),
             llm_strategy=d.get("llm_strategy", None),
-            llm_strategy_value=",".join(json.loads(d.get("llm_strategy_value")))
-            if d.get("llm_strategy_value")
-            else None,
+            llm_strategy_value=llm_strategy_value,
             created_at=d.get("created_at", None),
             updated_at=d.get("updated_at", None),
         )
@@ -327,7 +332,7 @@ class GptsAppCollectionDao(BaseDao):
 
 
 class GptsAppDao(BaseDao):
-    def app_list(self, query: GptsAppQuery):
+    def app_list(self, query: GptsAppQuery, parse_llm_strategy: bool = False):
         collection_dao = GptsAppCollectionDao()
         gpts_collections = collection_dao.list(
             GptsAppCollection.from_dict(
@@ -381,7 +386,9 @@ class GptsAppDao(BaseDao):
                             "created_at": app_info.created_at,
                             "updated_at": app_info.updated_at,
                             "details": [
-                                GptsAppDetail.from_dict(item.to_dict())
+                                GptsAppDetail.from_dict(
+                                    item.to_dict(), parse_llm_strategy
+                                )
                                 for item in app_details
                             ],
                         }
@@ -498,9 +505,9 @@ class GptsAppDao(BaseDao):
                         resources=json.dumps(resource_dicts, ensure_ascii=False),
                         prompt_template=item.prompt_template,
                         llm_strategy=item.llm_strategy,
-                        llm_strategy_value=json.dumps(
-                            tuple(item.llm_strategy_value.split(","))
-                        ),
+                        llm_strategy_value=None
+                        if item.llm_strategy_value is None
+                        else json.dumps(tuple(item.llm_strategy_value.split(","))),
                         created_at=item.created_at,
                         updated_at=item.updated_at,
                     )
@@ -542,9 +549,9 @@ class GptsAppDao(BaseDao):
                         resources=json.dumps(resource_dicts, ensure_ascii=False),
                         prompt_template=item.prompt_template,
                         llm_strategy=item.llm_strategy,
-                        llm_strategy_value=json.dumps(
-                            tuple(item.llm_strategy_value.split(","))
-                        ),
+                        llm_strategy_value=None
+                        if item.llm_strategy_value is None
+                        else json.dumps(tuple(item.llm_strategy_value.split(","))),
                         created_at=item.created_at,
                         updated_at=item.updated_at,
                     )
