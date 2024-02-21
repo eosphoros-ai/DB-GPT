@@ -1,6 +1,5 @@
 import { apiInterceptors, getAppStrategy, getAppStrategyValues, getResource } from '@/client/api';
-import { Button, Card, Divider, Input, Select } from 'antd';
-import { log } from 'console';
+import { Button, Input, Select } from 'antd';
 import React, { useEffect, useMemo, useState } from 'react';
 import ResourceCard from './resource-card';
 import { useTranslation } from 'react-i18next';
@@ -90,7 +89,7 @@ export default function AgentPanel(props: IProps) {
   return (
     <div>
       <div className="flex items-center mb-6 mt-6">
-        <div className="mr-2 w-16 text-center">Prompt:</div>
+        <div className="mr-2 w-16 text-center">{t('Prompt')}:</div>
         <Input
           required
           className="mr-6 w-1/4"
@@ -99,7 +98,7 @@ export default function AgentPanel(props: IProps) {
             updateAgent(e.target.value, 'prompt_template');
           }}
         />
-        <div className="mr-2">LLM Strategy:</div>
+        <div className="mr-2">{t('LLM_strategy')}:</div>
         <Select
           value={agent.llm_strategy}
           options={strategyOptions}
@@ -111,7 +110,7 @@ export default function AgentPanel(props: IProps) {
         />
         {strategyValueOptions && strategyValueOptions.length > 0 && (
           <>
-            <div className="mr-2">LLM Strategy Value:</div>
+            <div className="mr-2">{t('LLM_strategy_value')}:</div>
             <Select
               value={formatStrategyValue(agent.llm_strategy_value)}
               className="w-1/4"

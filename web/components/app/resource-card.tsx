@@ -68,7 +68,7 @@ export default function ResourceCard(props: IProps) {
   return (
     <Card
       className="mb-3 dark:bg-[#232734] border-gray-200"
-      title={`Resource ${index + 1}`}
+      title={`${t('resource')} ${index + 1}`}
       extra={
         <DeleteFilled
           className="text-[#ff1b2e] !text-lg"
