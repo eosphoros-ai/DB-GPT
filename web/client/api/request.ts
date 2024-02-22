@@ -33,7 +33,7 @@ import {
 } from '@/types/knowledge';
 import { UpdatePromptParams, IPrompt, PromptParams } from '@/types/prompt';
 import { IFlow, IFlowNode, IFlowResponse, IFlowUpdateParam } from '@/types/flow';
-import { IAgent, IApp, ITeamModal } from '@/types/app';
+import { IAgent, IApp, IAppData, ITeamModal } from '@/types/app';
 
 /** App */
 export const postScenes = () => {
@@ -283,7 +283,7 @@ export const addApp = (data: IApp) => {
 };
 
 export const getAppList = (data: Record<string, string>) => {
-  return POST<Record<string, string>, IApp[]>('/api/v1/app/list', data);
+  return POST<Record<string, string>, IAppData>('/api/v1/app/list', data);
 };
 
 export const collectApp = (data: Record<string, string>) => {
