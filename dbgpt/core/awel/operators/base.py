@@ -122,6 +122,8 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     This class extends DAGNode by adding execution capabilities.
     """
 
+    streaming_operator: bool = False
+
     def __init__(
         self,
         task_id: Optional[str] = None,
