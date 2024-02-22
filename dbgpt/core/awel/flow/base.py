@@ -642,6 +642,9 @@ class BaseMetadata(BaseResource):
             for parameter in self.parameters
             if not parameter.optional
         }
+        current_parameters = {
+            parameter.name: parameter for parameter in self.parameters
+        }
         if len(view_required_parameters) < len(current_required_parameters):
             # TODO, skip the optional parameters.
             raise FlowParameterMetadataException(
@@ -651,10 +654,13 @@ class BaseMetadata(BaseResource):
                 f"Required parameters: {current_required_parameters.keys()}, "
                 f"but got {view_required_parameters.keys()}."
             )
-        for i, parameter in enumerate(self.parameters):
-            view_param = view_parameters[i]
+        for view_param_key, view_param in view_required_parameters.items():
+            if view_param_key not in current_parameters:
+                raise FlowParameterMetadataException(
+                    f"Parameter {view_param_key} not found in the metadata."
+                )
             runnable_parameters.update(
-                parameter.to_runnable_parameter(
+                current_parameters[view_param_key].to_runnable_parameter(
                     view_param.get_typed_value(), resources, key_to_resource_instance
                 )
             )

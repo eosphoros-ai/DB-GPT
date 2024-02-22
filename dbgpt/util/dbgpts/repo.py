@@ -140,7 +140,7 @@ def update_repo(repo: str):
         logger.info(f"Repo '{repo}' is not a git repository.")
         return
     logger.info(f"Updating repo '{repo}'...")
-    subprocess.run(["git", "pull"], check=True)
+    subprocess.run(["git", "pull"], check=False)
 
 
 def install(
