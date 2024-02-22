@@ -89,12 +89,12 @@ export default function App() {
   const items: TabsProps['items'] = [
     {
       key: 'app',
-      label: 'App',
+      label: t('App'),
       children: renderAppList({ isCollected: false }),
     },
     {
       key: 'collected',
-      label: 'Collected',
+      label: t('collected'),
       children: renderAppList({ isCollected: true }),
     },
   ];

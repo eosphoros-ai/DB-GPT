@@ -323,7 +323,7 @@ class ConversableAgent(Role, Agent):
         await self.a_send(
             {
                 "content": context["message"],
-                "current_gogal": context["message"],
+                "current_goal": context["message"],
             },
             recipient,
             reviewer,
@@ -352,7 +352,7 @@ class ConversableAgent(Role, Agent):
                 "context",
                 "action_report",
                 "review_info",
-                "current_gogal",
+                "current_goal",
                 "model_name",
             )
             if k in message
@@ -364,7 +364,7 @@ class ConversableAgent(Role, Agent):
             receiver=self.profile,
             role=role,
             rounds=self.consecutive_auto_reply_counter,
-            current_gogal=oai_message.get("current_gogal", None),
+            current_goal=oai_message.get("current_goal", None),
             content=oai_message.get("content", None),
             context=json.dumps(oai_message["context"], ensure_ascii=False)
             if "context" in oai_message
@@ -501,7 +501,7 @@ class ConversableAgent(Role, Agent):
         """
         new_message = {}
         new_message["context"] = recive_message.get("context", None)
-        new_message["current_gogal"] = recive_message.get("current_gogal", None)
+        new_message["current_goal"] = recive_message.get("current_goal", None)
         return new_message
 
     def _convert_to_ai_message(
@@ -544,19 +544,19 @@ class ConversableAgent(Role, Agent):
         sender,
         rely_messages: Optional[List[Dict]] = None,
     ) -> Optional[List[Dict]]:
-        current_gogal = receive_message.get("current_gogal", None)
+        current_goal = receive_message.get("current_goal", None)
 
         ### Convert and tailor the information in collective memory into contextual memory available to the current Agent
-        current_gogal_messages = self._convert_to_ai_message(
+        current_goal_messages = self._convert_to_ai_message(
             self.memory.message_memory.get_between_agents(
-                self.agent_context.conv_id, self.profile, sender.profile, current_gogal
+                self.agent_context.conv_id, self.profile, sender.profile, current_goal
             )
         )
 
         # When there is no target and context, the current received message is used as the target problem
-        if current_gogal_messages is None or len(current_gogal_messages) <= 0:
+        if current_goal_messages is None or len(current_goal_messages) <= 0:
             receive_message["role"] = ModelMessageRoleType.HUMAN
-            current_gogal_messages = [receive_message]
+            current_goal_messages = [receive_message]
 
         ### relay messages
         cut_messages = []
@@ -572,14 +572,14 @@ class ConversableAgent(Role, Agent):
             cut_messages.extend(rely_messages)
 
         # TODO: allocate historical information based on token budget
-        if len(current_gogal_messages) < 5:
-            cut_messages.extend(current_gogal_messages)
+        if len(current_goal_messages) < 5:
+            cut_messages.extend(current_goal_messages)
         else:
             # For the time being, the smallest size of historical message records will be used by default.
             # Use the first two rounds of messages to understand the initial goals
-            cut_messages.extend(current_gogal_messages[:2])
+            cut_messages.extend(current_goal_messages[:2])
             # Use information from the last three rounds of communication to ensure that current thinking knows what happened and what to do in the last communication
-            cut_messages.extend(current_gogal_messages[-3:])
+            cut_messages.extend(current_goal_messages[-3:])
         return cut_messages
 
     def _new_system_message(self, content):

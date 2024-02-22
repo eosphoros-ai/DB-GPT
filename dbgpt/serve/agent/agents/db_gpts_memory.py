@@ -94,10 +94,10 @@ class MetaDbGptsMessageMemory(GptsMessageMemory):
         conv_id: str,
         agent1: str,
         agent2: str,
-        current_gogal: Optional[str] = None,
+        current_goal: Optional[str] = None,
     ) -> Optional[List[GptsMessage]]:
         db_results = self.gpts_message.get_between_agents(
-            conv_id, agent1, agent2, current_gogal
+            conv_id, agent1, agent2, current_goal
         )
         results = []
         db_results = sorted(db_results, key=lambda x: x.rounds)
