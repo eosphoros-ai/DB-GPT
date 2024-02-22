@@ -10,6 +10,8 @@ from .base import BaseOperator
 class StreamifyAbsOperator(BaseOperator[OUT], ABC, Generic[IN, OUT]):
     """An abstract operator that converts a value of IN to an AsyncIterator[OUT]."""
 
+    streaming_operator = True
+
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
         curr_task_ctx: TaskContext[OUT] = dag_ctx.current_task_context
         call_data = curr_task_ctx.call_data
@@ -82,6 +84,8 @@ class TransformStreamAbsOperator(BaseOperator[OUT], Generic[IN, OUT]):
     An abstract operator that transforms a value of
     AsyncIterator[IN] to another AsyncIterator[OUT].
     """
+
+    streaming_operator = True
 
     async def _do_run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
         curr_task_ctx: TaskContext[OUT] = dag_ctx.current_task_context
