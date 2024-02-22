@@ -632,16 +632,36 @@ class BaseMetadata(BaseResource):
         runnable_parameters: Dict[str, Any] = {}
         if not self.parameters or not view_parameters:
             return runnable_parameters
-        if len(self.parameters) != len(view_parameters):
+        view_required_parameters = {
+            parameter.name: parameter
+            for parameter in view_parameters
+            if not parameter.optional
+        }
+        current_required_parameters = {
+            parameter.name: parameter
+            for parameter in self.parameters
+            if not parameter.optional
+        }
+        current_parameters = {
+            parameter.name: parameter for parameter in self.parameters
+        }
+        if len(view_required_parameters) < len(current_required_parameters):
             # TODO, skip the optional parameters.
             raise FlowParameterMetadataException(
-                f"Parameters count not match. Expected {len(self.parameters)}, "
+                f"Parameters count not match(current key: {self.id}). "
+                f"Expected {len(self.parameters)}, "
                 f"but got {len(view_parameters)} from JSON metadata."
+                f"Required parameters: {current_required_parameters.keys()}, "
+                f"but got {view_required_parameters.keys()}."
             )
-        for i, parameter in enumerate(self.parameters):
-            view_param = view_parameters[i]
+        for view_param in view_parameters:
+            view_param_key = view_param.name
+            if view_param_key not in current_parameters:
+                raise FlowParameterMetadataException(
+                    f"Parameter {view_param_key} not found in the metadata."
+                )
             runnable_parameters.update(
-                parameter.to_runnable_parameter(
+                current_parameters[view_param_key].to_runnable_parameter(
                     view_param.get_typed_value(), resources, key_to_resource_instance
                 )
             )
