@@ -339,9 +339,7 @@ class MilvusStore(VectorStoreBase):
                 self.vector_field = x.name
         _, docs_and_scores = self._search(text, topk)
         if any(score < 0.0 or score > 1.0 for _, score, id in docs_and_scores):
-            import warnings
-
-            warnings.warn(
+            logger.warning(
                 "similarity score need between" f" 0 and 1, got {docs_and_scores}"
             )
 
@@ -357,7 +355,7 @@ class MilvusStore(VectorStoreBase):
                 if score >= score_threshold
             ]
             if len(docs_and_scores) == 0:
-                warnings.warn(
+                logger.warning(
                     "No relevant docs were retrieved using the relevance score"
                     f" threshold {score_threshold}"
                 )
