@@ -148,6 +148,10 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/01-ai/Yi-34B-Chat-4bits
     "yi-34b-chat-4bits": os.path.join(MODEL_PATH, "Yi-34B-Chat-4bits"),
     "yi-6b-chat": os.path.join(MODEL_PATH, "Yi-6B-Chat"),
+    # https://huggingface.co/google/gemma-7b-it
+    "gemma-7b-it": os.path.join(MODEL_PATH, "gemma-7b-it"),
+    # https://huggingface.co/google/gemma-2b-it
+    "gemma-2b-it": os.path.join(MODEL_PATH, "gemma-2b-it"),
 }
 
 EMBEDDING_MODEL_CONFIG = {
