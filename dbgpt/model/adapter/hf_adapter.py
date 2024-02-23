@@ -39,6 +39,27 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
     def do_match(self, lower_model_name_or_path: Optional[str] = None):
         raise NotImplementedError()
 
+    def check_dependencies(self) -> None:
+        """Check if the dependencies are installed
+
+        Raises:
+            ValueError: If the dependencies are not installed
+        """
+        try:
+            import transformers
+        except ImportError as exc:
+            raise ValueError(
+                "Could not import depend python package "
+                "Please install it with `pip install transformers`."
+            ) from exc
+        self.check_transformer_version(transformers.__version__)
+
+    def check_transformer_version(self, current_version: str) -> None:
+        if not current_version >= "4.34.0":
+            raise ValueError(
+                "Current model (Load by NewHFChatModelAdapter) require transformers.__version__>=4.34.0"
+            )
+
     def load(self, model_path: str, from_pretrained_kwargs: dict):
         try:
             import transformers
@@ -48,10 +69,8 @@ class NewHFChatModelAdapter(LLMModelAdapter, ABC):
                 "Could not import depend python package "
                 "Please install it with `pip install transformers`."
             ) from exc
-        if not transformers.__version__ >= "4.34.0":
-            raise ValueError(
-                "Current model (Load by NewHFChatModelAdapter) require transformers.__version__>=4.34.0"
-            )
+        self.check_dependencies()
+
         revision = from_pretrained_kwargs.get("revision", "main")
         try:
             tokenizer = AutoTokenizer.from_pretrained(
@@ -149,6 +168,32 @@ class SOLARAdapter(NewHFChatModelAdapter):
         )
 
 
+class GemmaAdapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/google/gemma-7b-it
+
+    TODO: There are problems with quantization.
+    """
+
+    support_4bit: bool = False
+    support_8bit: bool = False
+    support_system_message: bool = False
+
+    def check_transformer_version(self, current_version: str) -> None:
+        if not current_version >= "4.38.0":
+            raise ValueError(
+                "Gemma require transformers.__version__>=4.38.0, please upgrade your transformers package."
+            )
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "gemma-" in lower_model_name_or_path
+            and "it" in lower_model_name_or_path
+        )
+
+
 register_model_adapter(YiAdapter)
 register_model_adapter(Mixtral8x7BAdapter)
 register_model_adapter(SOLARAdapter)
+register_model_adapter(GemmaAdapter)
