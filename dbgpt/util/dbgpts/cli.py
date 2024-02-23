@@ -57,16 +57,24 @@ def list_repos():
 @click.command(name="add")
 @add_tap_options
 @click.option(
+    "-b",
+    "--branch",
+    type=str,
+    default=None,
+    required=False,
+    help="The branch of the repository(Just for git repo)",
+)
+@click.option(
     "--url",
     type=str,
     required=True,
     help="The URL of the repo",
 )
-def add_repo(repo: str, url: str):
+def add_repo(repo: str, branch: str | None, url: str):
     """Add a new repo"""
     from .repo import add_repo
 
-    add_repo(repo, url)
+    add_repo(repo, url, branch)
 
 
 @click.command(name="remove")

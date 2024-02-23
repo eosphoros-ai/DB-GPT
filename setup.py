@@ -367,6 +367,8 @@ def core_requires():
         "python-dotenv==1.0.0",
         "cachetools",
         "pydantic<2,>=1",
+        # For AWEL type checking
+        "typeguard",
     ]
     # Simple command line dependencies
     setup_spec.extras["cli"] = setup_spec.extras["core"] + [
