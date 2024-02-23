@@ -63,12 +63,13 @@ def _list_repos_details() -> List[Tuple[str, str]]:
     return results
 
 
-def add_repo(repo: str, repo_url: str):
+def add_repo(repo: str, repo_url: str, branch: str | None = None):
     """Add a new repo
 
     Args:
         repo (str): The name of the repo
         repo_url (str): The URL of the repo
+        branch (str): The branch of the repo
     """
     exist_repos = list_repos()
     if repo in exist_repos and repo_url not in DEFAULT_REPO_MAP.values():
@@ -84,7 +85,7 @@ def add_repo(repo: str, repo_url: str):
     repo_group_dir = os.path.join(DBGPTS_REPO_HOME, repo_arr[0])
     os.makedirs(repo_group_dir, exist_ok=True)
     if repo_url.startswith("http") or repo_url.startswith("git"):
-        clone_repo(repo, repo_group_dir, repo_name, repo_url)
+        clone_repo(repo, repo_group_dir, repo_name, repo_url, branch)
     elif os.path.isdir(repo_url):
         # Create soft link
         os.symlink(repo_url, os.path.join(repo_group_dir, repo_name))
@@ -106,7 +107,13 @@ def remove_repo(repo: str):
     logger.info(f"Repo '{repo}' removed successfully.")
 
 
-def clone_repo(repo: str, repo_group_dir: str, repo_name: str, repo_url: str):
+def clone_repo(
+    repo: str,
+    repo_group_dir: str,
+    repo_name: str,
+    repo_url: str,
+    branch: str | None = None,
+):
     """Clone the specified repo
 
     Args:
@@ -114,10 +121,22 @@ def clone_repo(repo: str, repo_group_dir: str, repo_name: str, repo_url: str):
         repo_group_dir (str): The directory of the repo group
         repo_name (str): The name of the repo
         repo_url (str): The URL of the repo
+        branch (str): The branch of the repo
     """
     os.chdir(repo_group_dir)
-    subprocess.run(["git", "clone", repo_url, repo_name], check=True)
-    logger.info(f"Repo '{repo}' cloned from {repo_url} successfully.")
+    clone_command = ["git", "clone", repo_url, repo_name]
+
+    # If the branch is specified, add it to the clone command
+    if branch:
+        clone_command += ["-b", branch]
+
+    subprocess.run(clone_command, check=True)
+    if branch:
+        click.echo(
+            f"Repo '{repo}' cloned from {repo_url} with branch '{branch}' successfully."
+        )
+    else:
+        click.echo(f"Repo '{repo}' cloned from {repo_url} successfully.")
 
 
 def update_repo(repo: str):
@@ -217,7 +236,7 @@ def _write_install_metadata(name: str, repo: str, install_path: Path):
 
 def check_with_retry(
     name: str,
-    repo: str | None = None,
+    spec_repo: str | None = None,
     with_update: bool = False,
     is_first: bool = False,
 ) -> Tuple[str, Path] | None:
@@ -225,18 +244,17 @@ def check_with_retry(
 
     Args:
         name (str): The name of the dbgpt
-        repo (str): The name of the repo
+        spec_repo (str): The name of the repo
         with_update (bool): Whether to update the repo before installing
         is_first (bool): Whether it's the first time to check the dbgpt
-
     Returns:
         Tuple[str, Path] | None: The repo and the path of the dbgpt
     """
     repos = _list_repos_details()
-    if repo:
+    if spec_repo:
         repos = list(filter(lambda x: x[0] == repo, repos))
         if not repos:
-            logger.error(f"The specified repo '{repo}' does not exist.")
+            logger.error(f"The specified repo '{spec_repo}' does not exist.")
             return
     if is_first and with_update:
         for repo in repos:
@@ -253,7 +271,9 @@ def check_with_retry(
             ):
                 return repo[0], dbgpt_path
     if is_first:
-        return check_with_retry(name, repo, with_update=with_update, is_first=False)
+        return check_with_retry(
+            name, spec_repo, with_update=with_update, is_first=False
+        )
     return None
 
 

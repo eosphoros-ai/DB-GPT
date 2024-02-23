@@ -3,6 +3,7 @@
 This runner will run the workflow in the current process.
 """
 import logging
+import traceback
 from typing import Any, Dict, List, Optional, Set, cast
 
 from dbgpt.component import SystemApp
@@ -143,7 +144,11 @@ class DefaultWorkflowRunner(WorkflowRunner):
                 )
                 _skip_current_downstream_by_node_name(node, skip_nodes, skip_node_ids)
         except Exception as e:
-            logger.info(f"Run operator {node.node_id} error, error message: {str(e)}")
+            msg = traceback.format_exc()
+            logger.info(
+                f"Run operator {type(node)}({node.node_id}) error, error message: "
+                f"{msg}"
+            )
             task_ctx.set_current_state(TaskState.FAILED)
             raise e
 
