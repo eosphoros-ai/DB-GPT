@@ -10,6 +10,9 @@ export type IFlowUpdateParam = {
 };
 
 export type IFlow = {
+  dag_id: string;
+  gmt_created: string;
+  gmt_modified: string;
   uid: string;
   name: string;
   label: string;

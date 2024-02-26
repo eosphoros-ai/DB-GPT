@@ -1,6 +1,6 @@
 import { apiInterceptors, deleteFlowById, newDialogue } from '@/client/api';
 import { IFlow } from '@/types/flow';
-import { DeleteFilled, EditFilled, MessageFilled, WarningOutlined } from '@ant-design/icons';
+import { CopyFilled, DeleteFilled, EditFilled, MessageFilled, WarningOutlined } from '@ant-design/icons';
 import { Modal } from 'antd';
 import React, { useContext } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,9 +13,10 @@ import qs from 'querystring';
 interface FlowCardProps {
   flow: IFlow;
   deleteCallback: (uid: string) => void;
+  onCopy: (flow: IFlow) => void;
 }
 
-const FlowCard: React.FC<FlowCardProps> = ({ flow, deleteCallback }) => {
+const FlowCard: React.FC<FlowCardProps> = ({ flow, onCopy, deleteCallback }) => {
   const { model } = useContext(ChatContext);
   const { t } = useTranslation();
   const [modal, contextHolder] = Modal.useModal();
@@ -68,7 +69,7 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, deleteCallback }) => {
         desc={flow.description}
         tags={[
           { text: flow.source, border: true, color: flow.source === 'DBGPT-WEB' ? 'green' : 'blue' },
-          { text: flow.editable ? 'Editable' : 'Can not Edit', color: flow.editable ? 'green' : 'gray' },
+          { text: flow.editable ? 'Editable' : 'Can not Edit', color: flow.editable ? 'green' : 'gray', border: true },
         ]}
         operations={[
           {
@@ -80,6 +81,13 @@ const FlowCard: React.FC<FlowCardProps> = ({ flow, deleteCallback }) => {
             label: t('Edit'),
             children: <EditFilled />,
             onClick: cardClick,
+          },
+          {
+            label: t('Copy'),
+            children: <CopyFilled />,
+            onClick: () => {
+              onCopy(flow);
+            },
           },
           {
             label: t('Delete'),
