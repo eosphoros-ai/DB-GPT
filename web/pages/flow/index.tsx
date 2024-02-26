@@ -46,7 +46,7 @@ function Flow() {
   const onFinish = async (val: { name: string; label: string }) => {
     if (!copyFlowTemp.current) return;
     const { source, uid, dag_id, gmt_created, gmt_modified, ...params } = copyFlowTemp.current;
-    const data = { ...params, ...val };
+    const data = { ...params, editable: true, ...val };
     const [err] = await apiInterceptors(addFlow(data));
     if (!err) {
       messageApi.success(t('save_flow_success'));
