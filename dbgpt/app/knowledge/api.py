@@ -15,11 +15,11 @@ from dbgpt.app.knowledge.request.request import (
     EntityExtractRequest,
     KnowledgeDocumentRequest,
     KnowledgeQueryRequest,
-    KnowledgeQueryResponse,
     KnowledgeSpaceRequest,
     KnowledgeSyncRequest,
     SpaceArgumentRequest,
 )
+from dbgpt.app.knowledge.request.response import KnowledgeQueryResponse
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.openapi.api_v1.api_v1 import no_stream_generator, stream_generator
 from dbgpt.app.openapi.api_view_model import Result
