@@ -90,13 +90,13 @@ function Flow() {
         footer={false}
       >
         <Form form={form} onFinish={onFinish} className="mt-6">
-          <Form.Item name="name" label="name" rules={[{ required: true }]}>
+          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="label" label="label" rules={[{ required: true }]}>
+          <Form.Item name="label" label="Label" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item>
+          <Form.Item label="Deploy">
             <Checkbox
               value={deploy}
               onChange={(e) => {
