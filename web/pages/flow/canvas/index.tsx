@@ -35,6 +35,7 @@ const Canvas: React.FC<Props> = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [flowInfo, setFlowInfo] = useState<IFlowUpdateParam>();
+  const [deploy, setDeploy] = useState(true);
 
   async function getFlowData() {
     setLoading(true);
@@ -271,7 +272,21 @@ const Canvas: React.FC<Props> = () => {
             <TextArea rows={3} />
           </Form.Item>
           <Form.Item label="Editable" name="editable" initialValue={flowInfo?.editable} valuePropName="checked">
-            <Checkbox></Checkbox>
+            <Checkbox />
+          </Form.Item>
+          <Form.Item hidden name="state">
+            <Input />
+          </Form.Item>
+          <Form.Item>
+            <Checkbox
+              defaultChecked={flowInfo?.state === 'deployed'}
+              value={deploy}
+              onChange={(e) => {
+                const val = e.target.checked;
+                form.setFieldValue('state', val ? 'deployed' : 'developing');
+                setDeploy(val);
+              }}
+            />
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
             <Space>
