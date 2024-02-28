@@ -11,6 +11,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 
 from dbgpt._private.config import Config
+from dbgpt._version import version
 from dbgpt.app.base import (
     WebServerParameters,
     _create_model_start_listener,
@@ -50,7 +51,7 @@ CFG = Config()
 app = FastAPI(
     title="DBGPT OPEN API",
     description="This is dbgpt, with auto docs for the API and everything",
-    version="0.5.0",
+    version=version,
     openapi_tags=[],
 )
 # Use custom router to support priority
@@ -77,17 +78,6 @@ async def custom_swagger_ui_html():
 # applications.get_swagger_ui_html = swagger_monkey_patch
 
 system_app = SystemApp(app)
-
-origins = ["*"]
-
-# 添加跨域中间件
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
 
 
 def mount_routers(app: FastAPI):
@@ -216,8 +206,17 @@ def run_uvicorn(param: WebServerParameters):
     import uvicorn
 
     setup_http_service_logging()
+
+    # https://github.com/encode/starlette/issues/617
+    cors_app = CORSMiddleware(
+        app=app,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
     uvicorn.run(
-        app,
+        cors_app,
         host=param.host,
         port=param.port,
         log_level=logging_str_to_uvicorn_level(param.log_level),

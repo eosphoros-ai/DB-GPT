@@ -190,7 +190,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
                 entry.description = update_request.description
             if update_request.state:
                 entry.state = update_request.state.value
-            if update_request.error_message:
+            if update_request.error_message is not None:
                 # Keep first 500 characters
                 entry.error_message = update_request.error_message[:500]
             if update_request.source:
@@ -199,8 +199,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
                 entry.source_url = update_request.source_url
             if update_request.version:
                 entry.version = update_request.version
-            if update_request.editable:
-                entry.editable = ServeEntity.parse_editable(update_request.editable)
+            entry.editable = ServeEntity.parse_editable(update_request.editable)
             if update_request.user_name:
                 entry.user_name = update_request.user_name
             if update_request.sys_code:

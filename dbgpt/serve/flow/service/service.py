@@ -138,6 +138,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 self.dag_manager.register_dag(dag)
                 # Update state to RUNNING
                 request.state = State.RUNNING
+                request.error_message = ""
                 self.dao.update({"uid": request.uid}, request)
             else:
                 logger.info(f"Flow state is {state}, skip register DAG")
@@ -178,6 +179,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     self.dag_manager.register_dag(dag)
                     # Update state to RUNNING
                     entity.state = State.RUNNING
+                    entity.error_message = ""
                     self.dao.update({"uid": entity.uid}, entity)
             except Exception as e:
                 logger.warning(
@@ -263,6 +265,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         try:
             update_obj = self.dao.update(query_request, update_request=request)
             old_data = self.delete(request.uid)
+            old_data.state = old_state
             if not old_data:
                 raise HTTPException(
                     status_code=404, detail=f"Flow detail {request.uid} not found"
