@@ -116,9 +116,7 @@ def _migration_db_storage(param: "WebServerParameters"):
                     f"Create all tables stored in this metadata error: {str(e)}"
                 )
 
-                _ddl_init_and_upgrade(
-                    default_meta_data_path, param.disable_alembic_upgrade
-                )
+            _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
         else:
             warn_msg = """For safety considerations, MySQL Database not support DDL init and upgrade. "
                 "1.If you are use DB-GPT firstly, please manually execute the following command to initialize, 

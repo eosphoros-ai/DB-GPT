@@ -109,7 +109,7 @@ async def create(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.create(request))
+    return Result.succ(service.create_and_save_dag(request))
 
 
 @router.put(
@@ -129,7 +129,7 @@ async def update(
     Returns:
         ServerResponse: The response
     """
-    return Result.succ(service.update(request))
+    return Result.succ(service.update_flow(request))
 
 
 @router.delete("/flows/{uid}")

@@ -28,6 +28,7 @@ class ServeEntity(Model):
     flow_data = Column(Text, nullable=True, comment="Flow data, JSON format")
     description = Column(String(512), nullable=True, comment="Flow description")
     state = Column(String(32), nullable=True, comment="Flow state")
+    error_message = Column(String(512), nullable=True, comment="Error message")
     source = Column(String(64), nullable=True, comment="Flow source")
     source_url = Column(String(512), nullable=True, comment="Flow source url")
     version = Column(String(32), nullable=True, comment="Flow version")
@@ -84,6 +85,9 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         request_dict = request.dict() if isinstance(request, ServeRequest) else request
         flow_data = json.dumps(request_dict.get("flow_data"), ensure_ascii=False)
         state = request_dict.get("state", State.INITIALIZING.value)
+        error_message = request_dict.get("error_message")
+        if error_message:
+            error_message = error_message[:500]
         new_dict = {
             "uid": request_dict.get("uid"),
             "dag_id": request_dict.get("dag_id"),
@@ -92,6 +96,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             "flow_category": request_dict.get("flow_category"),
             "flow_data": flow_data,
             "state": state,
+            "error_message": error_message,
             "source": request_dict.get("source"),
             "source_url": request_dict.get("source_url"),
             "version": request_dict.get("version"),
@@ -121,6 +126,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             flow_category=entity.flow_category,
             flow_data=flow_data,
             state=State.value_of(entity.state),
+            error_message=entity.error_message,
             source=entity.source,
             source_url=entity.source_url,
             version=entity.version,
@@ -151,6 +157,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
             flow_data=flow_data,
             description=entity.description,
             state=State.value_of(entity.state),
+            error_message=entity.error_message,
             source=entity.source,
             source_url=entity.source_url,
             version=entity.version,
@@ -183,14 +190,16 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
                 entry.description = update_request.description
             if update_request.state:
                 entry.state = update_request.state.value
+            if update_request.error_message is not None:
+                # Keep first 500 characters
+                entry.error_message = update_request.error_message[:500]
             if update_request.source:
                 entry.source = update_request.source
             if update_request.source_url:
                 entry.source_url = update_request.source_url
             if update_request.version:
                 entry.version = update_request.version
-            if update_request.editable:
-                entry.editable = ServeEntity.parse_editable(update_request.editable)
+            entry.editable = ServeEntity.parse_editable(update_request.editable)
             if update_request.user_name:
                 entry.user_name = update_request.user_name
             if update_request.sys_code:
