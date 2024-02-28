@@ -176,7 +176,7 @@ const Canvas: React.FC<Props> = () => {
   }
 
   async function handleSaveFlow() {
-    const { name, label, description = '', editable = false, state } = form.getFieldsValue();
+    const { name, label, description = '', editable = false, state = 'deployed' } = form.getFieldsValue();
     console.log(form.getFieldsValue());
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
     if (id) {
@@ -280,7 +280,7 @@ const Canvas: React.FC<Props> = () => {
           </Form.Item>
           <Form.Item label="Deploy">
             <Checkbox
-              defaultChecked={flowInfo?.state === 'deployed'}
+              defaultChecked={flowInfo?.state === 'deployed' || flowInfo?.state === 'running'}
               value={deploy}
               onChange={(e) => {
                 const val = e.target.checked;

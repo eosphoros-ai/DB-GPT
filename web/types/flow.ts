@@ -1,6 +1,6 @@
 import { Node } from 'reactflow';
 
-export type FlowState = 'deployed' | 'developing' | 'initializing' | 'testing' | 'disabled';
+export type FlowState = 'deployed' | 'developing' | 'initializing' | 'testing' | 'disabled' | 'running' | 'load_failed';
 
 export type IFlowUpdateParam = {
   name: string;
@@ -24,6 +24,7 @@ export type IFlow = {
   flow_data: IFlowData;
   source: string;
   state?: FlowState;
+  error_message?: string;
 };
 
 export type IFlowResponse = {
