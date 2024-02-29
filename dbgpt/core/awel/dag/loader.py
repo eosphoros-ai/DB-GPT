@@ -63,19 +63,23 @@ def _process_file(filepath) -> List[DAG]:
     return results
 
 
-def _load_modules_from_file(filepath: str):
+def _load_modules_from_file(
+    filepath: str, mod_name: str | None = None, show_log: bool = True
+):
     import importlib
     import importlib.machinery
     import importlib.util
 
-    logger.info(f"Importing {filepath}")
+    if show_log:
+        logger.info(f"Importing {filepath}")
 
     org_mod_name, _ = os.path.splitext(os.path.split(filepath)[-1])
     path_hash = hashlib.sha1(filepath.encode("utf-8")).hexdigest()
-    mod_name = f"unusual_prefix_{path_hash}_{org_mod_name}"
+    if mod_name is None:
+        mod_name = f"unusual_prefix_{path_hash}_{org_mod_name}"
 
-    if mod_name in sys.modules:
-        del sys.modules[mod_name]
+        if mod_name in sys.modules:
+            del sys.modules[mod_name]
 
     def parse(mod_name, filepath):
         try:
