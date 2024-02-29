@@ -1,6 +1,6 @@
 # Data App Usage
 
-Starting with version 0.5.0, the DB-GPT project has natively integrated the management and distribution of data-centric applications. The application management repository is also part of the open-source dbgpts project. The dbgpts project manages and shares resources categorized into the following:
+Starting with version 0.5.0, the DB-GPT project has natively integrated the management and distribution of data-centric applications. The application management repository is also part of the open-source [dbgpts](https://github.com/eosphoros-ai/dbgpts) project. The [dbgpts](https://github.com/eosphoros-ai/dbgpts) project manages and shares resources categorized into the following:
 
 - [apps](https://github.com/eosphoros-ai/dbgpts/tree/main/apps): These are native intelligent data applications developed using the DB-GPT framework.
 - [workflow](https://github.com/eosphoros-ai/dbgpts/tree/main/workflow): Workflows constructed using the AWEL (Agentic Workflow Expression Language).
@@ -25,12 +25,12 @@ The effect is as follows:
 In the application panel, click on `Create Application` and fill in the parameters as shown in the image. It is important to note that the work mode selected here is `auto_plan`. This involves the collaboration of two dependent Agents: 1. DataScientist and 2. Reporter. Both of these agents depend on the resource `database`, and for testing, you can use the default database and data provided in the official tutorial.
 
 Special Note: Currently, in auto-plan mode, the building of applications is conducted through multiple Agents. This project has a number of built-in Agents, which currently include:
-- CodeEngineer
-- Reporter
-- DataScientist
-- ToolExpert
-- RetrieveSummarizer
-- Summarizer
+- [CodeEngineer](https://github.com/eosphoros-ai/DB-GPT/blob/main/dbgpt/agent/agents/expand/code_assistant_agent.py)
+- [Reporter](https://github.com/eosphoros-ai/DB-GPT/blob/main/dbgpt/agent/agents/expand/dashboard_assistant_agent.py)
+- [DataScientist](https://github.com/eosphoros-ai/DB-GPT/blob/main/dbgpt/agent/agents/expand/data_scientist_agent.py)
+- [ToolExpert](https://github.com/eosphoros-ai/DB-GPT/blob/main/dbgpt/agent/agents/expand/plugin_assistant_agent.py)
+- [RetrieveSummarizer](https://github.com/eosphoros-ai/DB-GPT/blob/main/dbgpt/agent/agents/expand/retrieve_summary_assistant_agent.py)
+- [Summarizer](https://github.com/eosphoros-ai/DB-GPT/blob/main/dbgpt/agent/agents/expand/summary_assistant_agent.py)
 
 If you wish to expand and implement customized Agents, you can refer to the `Agents Development Guide`.
 

@@ -14,12 +14,12 @@ In essence, this framework facilitates the creation of data-centric applications
 ## Introduction to Version Update
 
 In its early releases, the DB-GPT project offered six default use cases, namely:
-- ChatData
-- ChatExcel
-- ChatDB
-- ChatKnowledge
-- ChatAgents
-- ChatDashboard
+- [ChatData](https://docs.dbgpt.site/docs/application/started_tutorial/chat_data)
+- [ChatExcel](https://docs.dbgpt.site/docs/application/started_tutorial/chat_excel)
+- [ChatDB](https://docs.dbgpt.site/docs/application/started_tutorial/chat_db)
+- [ChatKnowledge](https://docs.dbgpt.site/docs/application/started_tutorial/chat_knowledge)
+- [ChatAgents](https://docs.dbgpt.site/docs/agents)
+- [ChatDashboard](https://docs.dbgpt.site/docs/application/started_tutorial/chat_dashboard)
 
 These scenarios were designed to satisfy basic and simple use requirements. However, for large-scale production deployment, particularly when dealing with complex business scenarios, it becomes necessary to develop custom scenarios tailored to specific business conditions. This presents significant challenges in terms of flexibility and development complexity.
 
@@ -32,11 +32,11 @@ Now, let's provide a systematic explanation of the main updates in this local re
 
 ### Glossary of Terms:
 
-1. Data App: an intelligent Data application built on DB-GPT. 
-2. AWEL: Agentic Workflow Expression Language, intelligent Workflow Expression Language 
-3. AWEL Flow: workflow orchestration using the intelligent workflow Expression Language 
-4. SMMF: a service-oriented multi-model management framework. 
-5. Datasource: data sources, such as MySQL, PG, StarRocks, and Clickhouse.
+1. **Data App**: an intelligent Data application built on DB-GPT. 
+2. **AWEL**: Agentic Workflow Expression Language, intelligent Workflow Expression Language 
+3. **AWEL Flow**: workflow orchestration using the intelligent workflow Expression Language 
+4. **SMMF**: a service-oriented multi-model management framework. 
+5. **Datasource**: data sources, such as MySQL, PG, StarRocks, and Clickhouse.
 
 ## AWEL workflow and application
 As shown in the following figure, in the left-side navigation pane, there is an AWEL workflow menu. After you open it, you can orchestrate the workflow.
@@ -83,7 +83,7 @@ Pass `dbgpt app` list-remote command, we can see that there are three AWEL workf
 After the installation is successful, restart the DB-GPT service (dynamic hot loading is on the way), refresh the page, and then `AWEL workflow page` see the corresponding workflow.
 
 <p align="left">
-  <img src={'/img/app/awel_flow_black.png'} width="720px" />
+  <img src={'/img/app/dbgpts_flow_black.png'} width="720px" />
 </p>
 
 ### Building Your Own
@@ -159,7 +159,7 @@ If your current version is V0.4.6 or V0.4.7, you need to upgrade to V0.5.0.
 1. Suspend Service 
 2. upgrade the database table structure
 
-```SQL
+```sql
 -- dbgpt.dbgpt_serve_flow definition
 CREATE TABLE `dbgpt_serve_flow` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
