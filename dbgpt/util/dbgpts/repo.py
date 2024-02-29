@@ -214,13 +214,18 @@ def _copy_and_install(repo: str, name: str, package_path: Path):
             err=True,
         )
         return
-    shutil.copytree(package_path, install_path)
-    logger.info(f"Installing dbgpts '{name}' from {repo}...")
-    os.chdir(install_path)
-    subprocess.run(["poetry", "install"], check=True)
-    _write_install_metadata(name, repo, install_path)
-    click.echo(f"Installed dbgpts at {_print_path(install_path)}.")
-    click.echo(f"dbgpts '{name}' installed successfully.")
+    try:
+        shutil.copytree(package_path, install_path)
+        logger.info(f"Installing dbgpts '{name}' from {repo}...")
+        os.chdir(install_path)
+        subprocess.run(["poetry", "install"], check=True)
+        _write_install_metadata(name, repo, install_path)
+        click.echo(f"Installed dbgpts at {_print_path(install_path)}.")
+        click.echo(f"dbgpts '{name}' installed successfully.")
+    except Exception as e:
+        if install_path.exists():
+            shutil.rmtree(install_path)
+        raise e
 
 
 def _write_install_metadata(name: str, repo: str, install_path: Path):

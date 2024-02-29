@@ -1046,7 +1046,7 @@ class RequestedParsedOperator(MapOperator[CommonLLMHttpRequestBody, str]):
                 "key",
                 str,
                 optional=True,
-                default="",
+                default="messages",
                 description="The key of the dict, link 'user_input'",
             )
         ],

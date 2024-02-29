@@ -400,6 +400,8 @@ def core_requires():
         "sqlparse==0.4.4",
         "duckdb==0.8.1",
         "duckdb-engine",
+        # lightweight python library for scheduling jobs
+        "schedule",
     ]
     # TODO: remove fschat from simple_framework
     if BUILD_FROM_SOURCE:

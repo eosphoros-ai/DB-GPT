@@ -3,6 +3,7 @@ import logging
 import traceback
 from typing import Any, List, Optional, cast
 
+import schedule
 from fastapi import HTTPException
 
 from dbgpt.component import SystemApp
@@ -56,7 +57,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self._dao = self._dao or ServeDao(self._serve_config)
         self._system_app = system_app
         self._dbgpts_loader = system_app.get_component(
-            DBGPTsLoader.name, DBGPTsLoader, or_register_component=DBGPTsLoader
+            DBGPTsLoader.name,
+            DBGPTsLoader,
+            or_register_component=DBGPTsLoader,
+            load_dbgpts_interval=self._serve_config.load_dbgpts_interval,
         )
 
     def before_start(self):
@@ -68,7 +72,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def after_start(self):
         """Execute after the application starts"""
         self.load_dag_from_db()
-        self.load_dag_from_dbgpts()
+        self.load_dag_from_dbgpts(is_first_load=True)
+        schedule.every(self._serve_config.load_dbgpts_interval).seconds.do(
+            self.load_dag_from_dbgpts
+        )
 
     @property
     def dao(self) -> BaseDao[ServeEntity, ServeRequest, ServerResponse]:
@@ -126,6 +133,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             if save_failed_flow:
                 request.state = State.LOAD_FAILED
                 request.error_message = str(e)
+                request.dag_id = ""
                 return self.dao.create(request)
             else:
                 raise e
@@ -147,6 +155,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             if save_failed_flow:
                 request.state = State.LOAD_FAILED
                 request.error_message = f"Register DAG error: {str(e)}"
+                request.dag_id = ""
                 self.dao.update({"uid": request.uid}, request)
             else:
                 # Rollback
@@ -198,7 +207,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     f"dbgpts error: {str(e)}"
                 )
 
-    def load_dag_from_dbgpts(self):
+    def load_dag_from_dbgpts(self, is_first_load: bool = False):
         """Load DAG from dbgpts"""
         flows = self.dbgpts_loader.get_flows()
         for flow in flows:
@@ -208,7 +217,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                 exist_inst = self.get({"name": flow.name})
                 if not exist_inst:
                     self.create_and_save_dag(flow, save_failed_flow=True)
-                else:
+                elif is_first_load or exist_inst.state != State.RUNNING:
                     # TODO check version, must be greater than the exist one
                     flow.uid = exist_inst.uid
                     self.update_flow(flow, check_editable=False, save_failed_flow=True)
@@ -242,6 +251,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             if save_failed_flow:
                 request.state = State.LOAD_FAILED
                 request.error_message = str(e)
+                request.dag_id = ""
                 return self.dao.update({"uid": request.uid}, request)
             else:
                 raise e
@@ -306,12 +316,13 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         inst = self.get(query_request)
         if inst is None:
             raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
-        if not inst.dag_id:
+        if inst.state == State.RUNNING and not inst.dag_id:
             raise HTTPException(
-                status_code=404, detail=f"Flow {uid}'s dag id not found"
+                status_code=404, detail=f"Running flow {uid}'s dag id not found"
             )
         try:
-            self.dag_manager.unregister_dag(inst.dag_id)
+            if inst.dag_id:
+                self.dag_manager.unregister_dag(inst.dag_id)
         except Exception as e:
             logger.warning(f"Unregister DAG({inst.dag_id}) error: {str(e)}")
         self.dao.delete(query_request)

@@ -20,3 +20,6 @@ class ServeConfig(BaseServeConfig):
     api_keys: Optional[str] = field(
         default=None, metadata={"help": "API keys for the endpoint, if None, allow all"}
     )
+    load_dbgpts_interval: int = field(
+        default=5, metadata={"help": "Interval to load dbgpts from installed packages"}
+    )

@@ -23,6 +23,13 @@ DEFAULT_PACKAGE_TYPES = ["agent", "app", "operator", "flow"]
 INSTALL_METADATA_FILE = "install_metadata.toml"
 DBGPTS_METADATA_FILE = "dbgpts.toml"
 
+TYPE_TO_PACKAGE = {
+    "agent": "agents",
+    "app": "apps",
+    "operator": "operators",
+    "flow": "workflow",
+}
+
 
 def _get_env_sig() -> str:
     """Get a unique signature for the current Python environment."""
