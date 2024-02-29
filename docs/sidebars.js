@@ -194,7 +194,14 @@ const sidebars = {
       collapsed: false,
       collapsible: false,
       items: [
-
+        {
+          type: 'doc',
+          id: 'application/app_usage'
+        },
+        {
+          type: 'doc',
+          id: 'application/awel_flow_usage'
+        },
         {
           type: 'category',
           label: 'Getting Started Tutorial',
@@ -333,6 +340,35 @@ const sidebars = {
 
     {
       type: "category",
+      label: "Development Guide",
+      collapsed: false,
+      items: [
+        {
+          type: 'category',
+          label: 'Agents',
+          items: [
+            {
+              type: 'doc',
+              id: 'cookbook/agents/codeagent_develop',
+            }
+          ],
+        },
+        {
+          type: 'category',
+          label: 'App',
+          items: [
+            {
+              type: 'doc',
+              id: 'cookbook/app/data_analysis_app_develop',
+            }
+          ],
+        }, 
+      ],
+
+    },
+
+    {
+      type: "category",
       label: "FAQ",
       collapsed: true,
       items: [
@@ -360,6 +396,10 @@ const sidebars = {
           type: 'doc',
           id: 'changelog/doc',
         },
+        {
+          type: 'doc',
+          id: 'changelog/Released_V0.5.0',
+        }
       ],
     },
 
