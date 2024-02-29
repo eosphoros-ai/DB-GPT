@@ -165,7 +165,7 @@ class MilvusStore(VectorStoreBase):
             connections.connect(
                 host=self.uri or "127.0.0.1",
                 port=self.port or "19530",
-                alias="default"
+                alias="default",
                 # secure=self.secure,
             )
         texts = [d.content for d in documents]
@@ -419,7 +419,7 @@ class MilvusStore(VectorStoreBase):
 
         """milvus delete collection name"""
         logger.info(f"milvus vector_name:{vector_name} begin delete...")
-        utility.drop_collection(vector_name)
+        utility.drop_collection(self.collection_name)
         return True
 
     def delete_by_ids(self, ids):
