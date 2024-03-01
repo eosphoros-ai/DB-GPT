@@ -7,6 +7,7 @@ from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.chat_util import run_async_tasks
+from dbgpt.util.tracer import root_tracer
 
 
 class EmbeddingRetriever(BaseRetriever):
@@ -129,23 +130,45 @@ class EmbeddingRetriever(BaseRetriever):
         """
         queries = [query]
         if self._query_rewrite:
-            candidates_tasks = [self._similarity_search(query) for query in queries]
-            chunks = await self._run_async_tasks(candidates_tasks)
-            context = "\n".join([chunk.content for chunk in chunks])
-            new_queries = await self._query_rewrite.rewrite(
-                origin_query=query, context=context, nums=1
+            with root_tracer.start_span(
+                "EmbeddingRetriever.query_rewrite.similarity_search",
+                metadata={"query": query, "score_threshold": score_threshold},
+            ):
+                candidates_tasks = [self._similarity_search(query) for query in queries]
+                chunks = await self._run_async_tasks(candidates_tasks)
+                context = "\n".join([chunk.content for chunk in chunks])
+            with root_tracer.start_span(
+                "EmbeddingRetriever.query_rewrite.rewrite",
+                metadata={"query": query, "context": context, "nums": 1},
+            ):
+                new_queries = await self._query_rewrite.rewrite(
+                    origin_query=query, context=context, nums=1
+                )
+                queries.extend(new_queries)
+
+        with root_tracer.start_span(
+            "EmbeddingRetriever.similarity_search_with_score",
+            metadata={"query": query, "score_threshold": score_threshold},
+        ):
+            candidates_with_score = [
+                self._similarity_search_with_score(query, score_threshold)
+                for query in queries
+            ]
+            candidates_with_score = await run_async_tasks(
+                tasks=candidates_with_score, concurrency_limit=1
             )
-            queries.extend(new_queries)
-        candidates_with_score = [
-            self._similarity_search_with_score(query, score_threshold)
-            for query in queries
-        ]
-        candidates_with_score = await run_async_tasks(
-            tasks=candidates_with_score, concurrency_limit=1
-        )
-        candidates_with_score = reduce(lambda x, y: x + y, candidates_with_score)
-        candidates_with_score = self._rerank.rank(candidates_with_score)
-        return candidates_with_score
+            candidates_with_score = reduce(lambda x, y: x + y, candidates_with_score)
+
+        with root_tracer.start_span(
+            "EmbeddingRetriever.rerank",
+            metadata={
+                "query": query,
+                "score_threshold": score_threshold,
+                "rerank_cls": self._rerank.__class__.__name__,
+            },
+        ):
+            candidates_with_score = self._rerank.rank(candidates_with_score)
+            return candidates_with_score
 
     async def _similarity_search(self, query) -> List[Chunk]:
         """Similar search."""

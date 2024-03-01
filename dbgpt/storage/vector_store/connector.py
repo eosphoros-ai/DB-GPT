@@ -64,7 +64,9 @@ class VectorStoreConnector:
             - chunks: document chunks.
         Return chunk ids.
         """
-        return self.client.load_document(chunks)
+        return self.client.load_document_with_limit(
+            chunks, self._vector_store_config.max_chunks_once_load
+        )
 
     def similar_search(self, doc: str, topk: int) -> List[Chunk]:
         """similar search in vector database.

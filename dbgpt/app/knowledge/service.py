@@ -43,6 +43,7 @@ from dbgpt.serve.rag.assembler.summary import SummaryAssembler
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
+from dbgpt.util.tracer import root_tracer, trace
 
 knowledge_space_dao = KnowledgeSpaceDao()
 knowledge_document_dao = KnowledgeDocumentDao()
@@ -335,7 +336,11 @@ class KnowledgeService:
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        config = VectorStoreConfig(name=space_name, embedding_fn=embedding_fn)
+        config = VectorStoreConfig(
+            name=space_name,
+            embedding_fn=embedding_fn,
+            max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
+        )
         vector_store_connector = VectorStoreConnector(
             vector_store_type=CFG.VECTOR_STORE_TYPE,
             vector_store_config=config,
@@ -499,6 +504,7 @@ class KnowledgeService:
         res.page = request.page
         return res
 
+    @trace("async_doc_embedding")
     def async_doc_embedding(self, assembler, chunk_docs, doc):
         """async document embedding into vector db
         Args:
@@ -511,7 +517,11 @@ class KnowledgeService:
             f"async doc embedding sync, doc:{doc.doc_name}, chunks length is {len(chunk_docs)}, begin embedding to vector store-{CFG.VECTOR_STORE_TYPE}"
         )
         try:
-            vector_ids = assembler.persist()
+            with root_tracer.start_span(
+                "app.knowledge.assembler.persist",
+                metadata={"doc": doc.doc_name, "chunks": len(chunk_docs)},
+            ):
+                vector_ids = assembler.persist()
             doc.status = SyncStatus.FINISHED.name
             doc.result = "document embedding success"
             if vector_ids is not None:
