@@ -104,3 +104,60 @@ class DefaultLLMClient(LLMClient):
 
     async def count_token(self, model: str, prompt: str) -> int:
         return await self.worker_manager.count_token({"model": model, "prompt": prompt})
+
+
+@register_resource(
+    label="Remote LLM Client",
+    name="remote_llm_client",
+    category=ResourceCategory.LLM_CLIENT,
+    description="Remote LLM client(Connect to the remote DB-GPT model serving)",
+    parameters=[
+        Parameter.build_from(
+            "Controller Address",
+            name="controller_address",
+            type=str,
+            optional=True,
+            default="http://127.0.0.1:8000",
+            description="Model controller address",
+        ),
+        Parameter.build_from(
+            "Auto Convert Message",
+            name="auto_convert_message",
+            type=bool,
+            optional=True,
+            default=False,
+            description="Whether to auto convert the messages that are not supported "
+            "by the LLM to a compatible format",
+        ),
+    ],
+)
+class RemoteLLMClient(DefaultLLMClient):
+    """Remote LLM client implementation.
+
+    Connect to the remote worker manager and send the request to the remote worker manager.
+
+    Args:
+        controller_address (str): model controller address
+        auto_convert_message (bool, optional): auto convert the message to
+            ModelRequest. Defaults to False.
+
+    If you start DB-GPT model cluster, the controller address is the address of the
+    Model Controller(`dbgpt start controller`, the default port of model controller
+    is 8000).
+    Otherwise, if you already have a running DB-GPT server(start it by
+    `dbgpt start webserver --port ${remote_port}`), you can use the address of the
+    `http://${remote_ip}:${remote_port}`.
+
+    """
+
+    def __init__(
+        self,
+        controller_address: str = "http://127.0.0.1:8000",
+        auto_convert_message: bool = False,
+    ):
+        """Initialize the RemoteLLMClient."""
+        from dbgpt.model.cluster import ModelRegistryClient, RemoteWorkerManager
+
+        model_registry_client = ModelRegistryClient(controller_address)
+        worker_manager = RemoteWorkerManager(model_registry_client)
+        super().__init__(worker_manager, auto_convert_message)
