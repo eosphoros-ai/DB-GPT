@@ -44,11 +44,13 @@ DB-GPT is an open source AI native data app development framework with AWEL(Agen
 In the Data 3.0 era, based on models and databases, enterprises and developers can build their own bespoke applications with less code.
 
 ### Data Agents
-![awel_web_search_flow](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/fe1eaf9e-5a0f-4d09-b1a7-f8dc75682695)
+![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
 
-![chat_excel](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/03d67da4-b9b9-4df3-8890-176a0941dab8)
+![Data-Apps](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/a7bf6d65-92d1-4f0e-aaf0-259ccdde22fd)
 
-![data agents](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/ced393b4-9180-437a-90c5-b43633cda8cb)
+![dashboard-images](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/1849a79a-f7fd-40cf-bc9c-b117a041dd6a)
+
+
 
 ## Contents
 - [Introduction](#introduction)
@@ -142,6 +144,8 @@ At present, we have introduced several key features to showcase our current capa
   We offer extensive model support, including dozens of large language models (LLMs) from both open-source and API agents, such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, and many more. 
 
   - News
+    - 🔥🔥🔥  [gemma-7b-it](https://huggingface.co/google/gemma-7b-it)
+    - 🔥🔥🔥  [gemma-2b-it](https://huggingface.co/google/gemma-2b-it)
     - 🔥🔥🔥  [SOLAR-10.7B](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0)
     - 🔥🔥🔥  [Mixtral-8x7B](https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1)
     - 🔥🔥🔥  [Qwen-72B-Chat](https://huggingface.co/Qwen/Qwen-72B-Chat)

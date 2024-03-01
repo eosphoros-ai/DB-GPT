@@ -139,6 +139,8 @@ DB-GPT是一个开源的AI原生数据应用开发框架(AI Native Data App Deve
   海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。当前已支持如下模型: 
 
   - 新增支持模型
+    - 🔥🔥🔥  [gemma-7b-it](https://huggingface.co/google/gemma-7b-it)
+    - 🔥🔥🔥  [gemma-2b-it](https://huggingface.co/google/gemma-2b-it)
     - 🔥🔥🔥  [SOLAR-10.7B](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0)
     - 🔥🔥🔥  [Mixtral-8x7B](https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1)
     - 🔥🔥🔥  [Qwen-72B-Chat](https://huggingface.co/Qwen/Qwen-72B-Chat)

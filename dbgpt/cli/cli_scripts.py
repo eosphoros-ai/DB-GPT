@@ -163,7 +163,7 @@ try:
     from dbgpt.util.dbgpts.cli import add_repo
     from dbgpt.util.dbgpts.cli import install as app_install
     from dbgpt.util.dbgpts.cli import list_all_apps as app_list
-    from dbgpt.util.dbgpts.cli import list_repos, remove_repo
+    from dbgpt.util.dbgpts.cli import list_repos, new_dbgpts, remove_repo
     from dbgpt.util.dbgpts.cli import uninstall as app_uninstall
     from dbgpt.util.dbgpts.cli import update_repo
 
@@ -174,6 +174,7 @@ try:
     add_command_alias(app_install, name="install", parent_group=app)
     add_command_alias(app_uninstall, name="uninstall", parent_group=app)
     add_command_alias(app_list, name="list-remote", parent_group=app)
+    add_command_alias(new_dbgpts, name="app", parent_group=new)
 
 except ImportError as e:
     logging.warning(f"Integrating dbgpt dbgpts command line tool failed: {e}")

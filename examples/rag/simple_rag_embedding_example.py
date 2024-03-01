@@ -76,7 +76,7 @@ with DAG("simple_sdk_rag_embedding_example") as dag:
         "/examples/rag/embedding", methods="POST", request_body=TriggerReqBody
     )
     request_handle_task = RequestHandleOperator()
-    knowledge_operator = KnowledgeOperator(knowledge_type=KnowledgeType.URL)
+    knowledge_operator = KnowledgeOperator(knowledge_type=KnowledgeType.URL.name)
     vector_connector = _create_vector_connector()
     url_parser_operator = MapOperator(map_function=lambda x: x["url"])
     embedding_operator = EmbeddingAssemblerOperator(

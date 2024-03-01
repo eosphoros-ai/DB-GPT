@@ -196,7 +196,7 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         ## New message build
         new_message = {}
         new_message["context"] = current_messages[-1].get("context", None)
-        new_message["current_gogal"] = current_messages[-1].get("current_gogal", None)
+        new_message["current_goal"] = current_messages[-1].get("current_goal", None)
         new_message["role"] = "assistant"
         new_message["content"] = user_question
         new_message["model_name"] = model
@@ -206,7 +206,7 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
         ## Summary message build
         summary_message = {}
         summary_message["context"] = message.get("context", None)
-        summary_message["current_gogal"] = message.get("current_gogal", None)
+        summary_message["current_goal"] = message.get("current_goal", None)
 
         summaries = ""
         count = 0
@@ -262,7 +262,7 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
 
     async def a_verify(self, message: Optional[Dict]):
         self.update_system_message(self.CHECK_RESULT_SYSTEM_MESSAGE)
-        current_goal = message.get("current_gogal", None)
+        current_goal = message.get("current_goal", None)
         action_report = message.get("action_report", None)
         task_result = ""
         if action_report:

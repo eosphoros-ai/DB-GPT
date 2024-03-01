@@ -100,14 +100,14 @@ const AddNodes: React.FC = () => {
         <div className="w-[320px] overflow-hidden overflow-y-auto scrollbar-default">
           <p className="my-2 font-bold">{t('add_node')}</p>
           <Search placeholder="Search node" onSearch={searchNode} />
-          <h2 className="my-2 ml-2 font-semibold">Operatos</h2>
+          <h2 className="my-2 ml-2 font-semibold">{t('operators')}</h2>
           <Collapse
             className="max-h-[300px] overflow-hidden overflow-y-auto scrollbar-default"
             size="small"
             defaultActiveKey={['']}
             items={operatorItems}
           />
-          <h2 className="my-2 ml-2 font-semibold">Resources</h2>
+          <h2 className="my-2 ml-2 font-semibold">{t('resource')}</h2>
           <Collapse
             className="max-h-[300px] overflow-hidden overflow-y-auto scrollbar-default"
             size="small"

@@ -35,7 +35,7 @@ class SummaryAssistantAgent(ConversableAgent):
         self._init_actions([BlankAction])
 
     # async def a_correctness_check(self, message: Optional[Dict]):
-    #     current_goal = message.get("current_gogal", None)
+    #     current_goal = message.get("current_goal", None)
     #     action_report = message.get("action_report", None)
     #     task_result = ""
     #     if action_report:

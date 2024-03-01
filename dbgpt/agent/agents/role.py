@@ -12,6 +12,8 @@ class Role(ABC, BaseModel):
 
     expand_prompt: str = ""
 
+    fixed_subgoal: Optional[str] = None
+
     constraints: List[str] = []
     examples: str = ""
     desc: str = ""
@@ -19,8 +21,8 @@ class Role(ABC, BaseModel):
     is_human: bool = False
     is_team: bool = False
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    class Config:
+        arbitrary_types_allowed = True
 
     def prompt_template(
         self,
@@ -32,16 +34,16 @@ class Role(ABC, BaseModel):
         template = f"""
         {self.role_prompt}
         Please think step by step to achieve the goal. You can use the resources given below. At the same time, please strictly abide by the constraints and specifications in IMPORTANT REMINDER.
-        
+
         {{resource_prompt}}
-        
-        {self.expand_prompt if len(self.expand_prompt)>0 else ""}
-          
+
+        {self.expand_prompt if len(self.expand_prompt) > 0 else ""}
+
         *** IMPORTANT REMINDER ***
         {self.language_require_prompt}
         {self.constraints_prompt}
-        
-        {'You can refer to the following examples:'  if len(self.examples) > 0 else ""}
+
+        {'You can refer to the following examples:' if len(self.examples) > 0 else ""}
         {self.examples if len(self.examples) > 0 else ""}
 
         {{out_schema}}
@@ -61,7 +63,7 @@ class Role(ABC, BaseModel):
     def constraints_prompt(self):
         if len(self.constraints) > 0:
             return "\n".join(
-                f"{i+1}. {item}" for i, item in enumerate(self.constraints)
+                f"{i + 1}. {item}" for i, item in enumerate(self.constraints)
             )
 
     @property

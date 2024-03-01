@@ -31,6 +31,13 @@ export type IApp = {
   is_collected: string;
 };
 
+export type IAppData = {
+  app_list: IApp[];
+  current_page: number;
+  total_count: number;
+  total_page: number;
+};
+
 // agent
 export type AgentParams = {
   agent_name: string;

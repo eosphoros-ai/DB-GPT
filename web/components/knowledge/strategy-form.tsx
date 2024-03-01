@@ -15,6 +15,7 @@ type IProps = {
  * render strategies by doc type and file suffix
  */
 export default function StrategyForm({ strategies, docType, fileName, field }: IProps) {
+  const [selectedStrategy, setSelectedStrategy] = useState<string>();
   let filleSuffix = '';
   if (docType === 'DOCUMENT') {
     // filter strategy by file suffix
@@ -22,7 +23,6 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
     filleSuffix = arr[arr.length - 1];
   }
   const ableStrategies = filleSuffix ? strategies.filter((i) => i.suffix.indexOf(filleSuffix) > -1) : strategies;
-  const [selectedStrategy, setSelectedStrategy] = useState<string>();
   const { t } = useTranslation();
   const DEFAULT_STRATEGY = {
     strategy: 'Automatic',
@@ -38,7 +38,7 @@ export default function StrategyForm({ strategies, docType, fileName, field }: I
     if (!selectedStrategy) {
       return null;
     }
-    if (selectedStrategy === DEFAULT_STRATEGY.name) {
+    if (selectedStrategy === DEFAULT_STRATEGY.strategy) {
       return <p className="my-4">{DEFAULT_STRATEGY.desc}</p>;
     }
     const parameters = ableStrategies?.filter((i) => i.strategy === selectedStrategy)[0].parameters;

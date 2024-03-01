@@ -184,7 +184,7 @@ class GptsMessageStorage(StorageItem):
     role: str
     content: str
     rounds: Optional[int]
-    current_gogal: str = None
+    current_goal: str = None
     context: Optional[str] = None
     review_info: Optional[str] = None
     action_report: Optional[str] = None
@@ -204,7 +204,7 @@ class GptsMessageStorage(StorageItem):
             content=d["content"],
             rounds=d["rounds"],
             model_name=d["model_name"],
-            current_gogal=d["current_gogal"],
+            current_goal=d["current_goal"],
             context=d["context"],
             review_info=d["review_info"],
             action_report=d["action_report"],
@@ -239,7 +239,7 @@ class GptsMessageStorage(StorageItem):
             role=self.role,
             content=self.content,
             rounds=self.rounds,
-            current_gogal=self.current_gogal,
+            current_goal=self.current_goal,
             context=self.context,
             review_info=self.review_info,
             action_report=self.action_report,
@@ -258,7 +258,7 @@ class GptsMessageStorage(StorageItem):
             role=gpts_message.role,
             content=gpts_message.content,
             rounds=gpts_message.rounds,
-            current_gogal=gpts_message.current_gogal,
+            current_goal=gpts_message.current_goal,
             context=gpts_message.context,
             review_info=gpts_message.review_info,
             action_report=gpts_message.action_report,
@@ -344,9 +344,9 @@ class GptsMessageManager(GptsMessageMemory):
         conv_id: str,
         agent1: str,
         agent2: str,
-        current_gogal: Optional[str] = None,
+        current_goal: Optional[str] = None,
     ) -> Optional[List[GptsMessage]]:
-        return super().get_between_agents(conv_id, agent1, agent2, current_gogal)
+        return super().get_between_agents(conv_id, agent1, agent2, current_goal)
 
     def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessage]]:
         return super().get_by_conv_id(conv_id)

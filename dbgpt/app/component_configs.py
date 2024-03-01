@@ -21,6 +21,7 @@ def initialize_components(
 ):
     # Lazy import to avoid high time cost
     from dbgpt.app.initialization.embedding_component import _initialize_embedding_model
+    from dbgpt.app.initialization.scheduler import DefaultScheduler
     from dbgpt.app.initialization.serve_initialization import register_serve_apps
     from dbgpt.model.cluster.controller.controller import controller
 
@@ -28,6 +29,7 @@ def initialize_components(
     system_app.register(
         DefaultExecutorFactory, max_workers=param.default_thread_pool_size
     )
+    system_app.register(DefaultScheduler)
     system_app.register_instance(controller)
 
     from dbgpt.serve.agent.hub.controller import module_plugin

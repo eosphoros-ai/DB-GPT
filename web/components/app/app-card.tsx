@@ -17,11 +17,6 @@ interface IProps {
 
 const { confirm } = Modal;
 
-const languageMap = {
-  en: '英文',
-  zh: '中文',
-};
-
 export default function AppCard(props: IProps) {
   const { updateApps, app, handleEdit, isCollected } = props;
   const { model } = useContext(ChatContext);
@@ -31,6 +26,11 @@ export default function AppCard(props: IProps) {
   const { setAgent: setAgentToChat } = useContext(ChatContext);
 
   const { t } = useTranslation();
+
+  const languageMap = {
+    en: t('English'),
+    zh: t('Chinese'),
+  };
 
   const showDeleteConfirm = () => {
     confirm({
