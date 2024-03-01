@@ -541,15 +541,19 @@ class HttpTrigger(Trigger):
                     req_body_cls, BaseModel
                 ):
                     fields = req_body_cls.__fields__  # type: ignore
-                    parameters = [
-                        Parameter(
-                            name=field_name,
-                            kind=Parameter.KEYWORD_ONLY,
-                            default=Parameter.empty,
-                            annotation=field.outer_type_,
+                    parameters = []
+                    for field_name, field in fields.items():
+                        default_value = (
+                            Parameter.empty if field.required else field.default
                         )
-                        for field_name, field in fields.items()
-                    ]
+                        parameters.append(
+                            Parameter(
+                                name=field_name,
+                                kind=Parameter.KEYWORD_ONLY,
+                                default=default_value,
+                                annotation=field.outer_type_,
+                            )
+                        )
                 elif req_body_cls == Dict[str, Any] or req_body_cls == dict:
                     raise AWELHttpError(
                         f"Query methods {self._methods} not support dict type"
