@@ -1,10 +1,14 @@
+import logging
 import math
+import time
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Optional
 
 from pydantic import BaseModel, Field
 
 from dbgpt.rag.chunk import Chunk
+
+logger = logging.getLogger(__name__)
 
 
 class VectorStoreConfig(BaseModel):
@@ -26,6 +30,12 @@ class VectorStoreConfig(BaseModel):
         default=None,
         description="The embedding function of vector store, if not set, will use the default embedding function.",
     )
+    max_chunks_once_load: int = Field(
+        default=10,
+        description="The max number of chunks to load at once. If your document is "
+        "large, you can set this value to a larger number to speed up the loading "
+        "process. Default is 10.",
+    )
 
 
 class VectorStoreBase(ABC):
@@ -40,6 +50,33 @@ class VectorStoreBase(ABC):
             - ids: chunks ids.
         """
         pass
+
+    def load_document_with_limit(
+        self, chunks: List[Chunk], max_chunks_once_load: int = 10
+    ) -> List[str]:
+        """load document in vector database with limit.
+        Args:
+            chunks: document chunks.
+            max_chunks_once_load: Max number of chunks to load at once.
+        Return:
+        """
+        # Group the chunks into chunks of size max_chunks
+        chunk_groups = [
+            chunks[i : i + max_chunks_once_load]
+            for i in range(0, len(chunks), max_chunks_once_load)
+        ]
+        logger.info(f"Loading {len(chunks)} chunks in {len(chunk_groups)} groups")
+        ids = []
+        loaded_cnt = 0
+        start_time = time.time()
+        for chunk_group in chunk_groups:
+            ids.extend(self.load_document(chunk_group))
+            loaded_cnt += len(chunk_group)
+            logger.info(f"Loaded {loaded_cnt} chunks, total {len(chunks)} chunks.")
+        logger.info(
+            f"Loaded {len(chunks)} chunks in {time.time() - start_time} seconds"
+        )
+        return ids
 
     @abstractmethod
     def similar_search(self, text, topk) -> List[Chunk]:

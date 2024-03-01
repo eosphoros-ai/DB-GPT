@@ -1,6 +1,5 @@
 import copy
 import logging
-import re
 from abc import ABC, abstractmethod
 from typing import (
     Any,
@@ -66,10 +65,14 @@ class TextSplitter(ABC):
                 chunks.append(new_doc)
         return chunks
 
-    def split_documents(self, documents: List[Document], **kwargs) -> List[Chunk]:
+    def split_documents(self, documents: Iterable[Document], **kwargs) -> List[Chunk]:
         """Split documents."""
-        texts = [doc.content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
+        texts = []
+        metadatas = []
+        for doc in documents:
+            # Iterable just supports one iteration
+            texts.append(doc.content)
+            metadatas.append(doc.metadata)
         return self.create_documents(texts, metadatas, **kwargs)
 
     def _join_docs(self, docs: List[str], separator: str, **kwargs) -> Optional[str]:
