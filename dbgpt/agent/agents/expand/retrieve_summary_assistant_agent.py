@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from dbgpt.agent.agents.agent import Agent, AgentContext
 from dbgpt.agent.agents.base_agent import ConversableAgent
 from dbgpt.agent.memory.gpts_memory import GptsMemory
-from dbgpt.agent.plugin.commands.command_mange import ApiCall
+from dbgpt.agent.plugin.commands.command_manage import ApiCall
 from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.core.interface.message import ModelMessageRoleType
 

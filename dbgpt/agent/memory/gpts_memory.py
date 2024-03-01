@@ -102,11 +102,11 @@ class GptsMemory:
                     "markdown": view_info,
                 }
             )
-        return await vis_client.get(VisAgentMessages.vis_tag()).disply(
+        return await vis_client.get(VisAgentMessages.vis_tag()).display(
             content=messages_view
         )
 
     async def _messages_to_plan_vis(self, messages: List[Dict]):
         if messages is None or len(messages) <= 0:
             return ""
-        return await vis_client.get(VisAgentPlans.vis_tag()).disply(content=messages)
+        return await vis_client.get(VisAgentPlans.vis_tag()).display(content=messages)

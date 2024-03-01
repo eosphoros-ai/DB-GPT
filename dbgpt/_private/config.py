@@ -133,8 +133,8 @@ class Config(metaclass=Singleton):
         ### Related configuration of built-in commands
         self.command_registry = []
 
-        ### Relate configuration of disply commands
-        self.command_disply = []
+        ### Relate configuration of display commands
+        self.command_dispaly = []
 
         disabled_command_categories = os.getenv("DISABLED_COMMAND_CATEGORIES")
         if disabled_command_categories:
