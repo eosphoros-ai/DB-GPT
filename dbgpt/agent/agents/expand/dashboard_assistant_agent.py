@@ -2,7 +2,7 @@ import json
 from typing import Callable, Dict, List, Literal, Optional, Union
 
 from dbgpt.agent.actions.dashboard_action import DashboardAction
-from dbgpt.agent.plugin.commands.command_mange import ApiCall
+from dbgpt.agent.plugin.commands.command_manage import ApiCall
 from dbgpt.util.json_utils import find_json_objects
 
 from ...memory.gpts_memory import GptsMemory

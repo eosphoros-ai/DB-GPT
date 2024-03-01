@@ -3,7 +3,7 @@ import os
 from typing import Dict
 
 from dbgpt._private.config import Config
-from dbgpt.agent.plugin.commands.command_mange import ApiCall
+from dbgpt.agent.plugin.commands.command_manage import ApiCall
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.app.scene.chat_data.chat_excel.excel_learning.chat import ExcelLearning
 from dbgpt.app.scene.chat_data.chat_excel.excel_reader import ExcelReader

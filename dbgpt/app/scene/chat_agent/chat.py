@@ -2,7 +2,7 @@ import logging
 from typing import Dict, List
 
 from dbgpt._private.config import Config
-from dbgpt.agent.plugin.commands.command_mange import ApiCall
+from dbgpt.agent.plugin.commands.command_manage import ApiCall
 from dbgpt.agent.plugin.generator import PluginPromptGenerator
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.component import ComponentType

@@ -31,7 +31,7 @@ def async_db_summary(system_app: SystemApp):
 
 
 def server_init(param: "WebServerParameters", system_app: SystemApp):
-    from dbgpt.agent.plugin.commands.command_mange import CommandRegistry
+    from dbgpt.agent.plugin.commands.command_manage import CommandRegistry
 
     # logger.info(f"args: {args}")
     # init config
