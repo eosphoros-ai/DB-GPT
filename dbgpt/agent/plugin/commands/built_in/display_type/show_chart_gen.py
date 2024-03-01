@@ -13,7 +13,7 @@ from pandas import DataFrame
 from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.util.string_utils import is_scientific_notation
 
-from ...command_mange import command
+from ...command_manage import command
 
 matplotlib.use("Agg")
 

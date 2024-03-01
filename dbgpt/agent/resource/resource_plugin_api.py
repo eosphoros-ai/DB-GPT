@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Optional
 
-from dbgpt.agent.plugin.commands.command_mange import execute_command
+from dbgpt.agent.plugin.commands.command_manage import execute_command
 from dbgpt.agent.plugin.generator import PluginPromptGenerator
 from dbgpt.agent.plugin.plugins_util import scan_plugin_file, scan_plugins
 from dbgpt.agent.resource.resource_api import AgentResource

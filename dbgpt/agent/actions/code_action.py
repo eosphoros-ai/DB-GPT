@@ -65,7 +65,7 @@ class CodeAction(Action[None]):
             param["language"] = code_blocks[0][0]
             param["code"] = code_blocks
             param["log"] = logs
-            view = await self.render_protocal.disply(content=param)
+            view = await self.render_protocal.display(content=param)
             return ActionOutput(is_exe_success=exit_success, content=content, view=view)
         except Exception as e:
             logger.exception("Code Action Run Failed！")

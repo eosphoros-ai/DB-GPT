@@ -105,7 +105,7 @@ class PlanAction(Action[List[PlanInput]]):
                         f"- {item.serial_number}.{item.content}[{item.agent}]"
                     )
 
-                # view = await self.render_protocal.disply(content=plan_content)
+                # view = await self.render_protocal.display(content=plan_content)
                 view = "\n".join(mk_plans)
                 return ActionOutput(
                     is_exe_success=True,
