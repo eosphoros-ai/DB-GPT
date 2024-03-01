@@ -216,7 +216,6 @@ class LocalWorkerManager(WorkerManager):
         )
         if not worker_params.model_name:
             worker_params.model_name = model_name
-        assert model_name == worker_params.model_name
         worker = _build_worker(worker_params)
         command_args = _dict_to_command_args(params)
         success = await self.run_blocking_func(
@@ -234,7 +233,7 @@ class LocalWorkerManager(WorkerManager):
                 f"Unsupported worker type: {worker_type}, now supported worker type: {supported_types}"
             )
         start_apply_req = WorkerApplyRequest(
-            model=model_name, apply_type=WorkerApplyType.START, worker_type=worker_type
+            model=worker_params.model_name, apply_type=WorkerApplyType.START, worker_type=worker_type
         )
         out: WorkerApplyOutput = None
         try:
