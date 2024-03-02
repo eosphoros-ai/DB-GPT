@@ -17,7 +17,7 @@ from pyparsing import (
     delimitedList,
 )
 
-from dbgpt.util.pd_utils import csv_column_format
+from dbgpt.util.pd_utils import csv_colunm_foramt
 from dbgpt.util.string_utils import is_chinese_include_number
 
 logger = logging.getLogger(__name__)
@@ -240,7 +240,7 @@ class ExcelReader:
             self.df = pd.read_excel(
                 file_path,
                 index_col=False,
-                converters={i: csv_column_format for i in range(df_tmp.shape[1])},
+                converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
         elif file_path.endswith(".csv"):
             df_tmp = pd.read_csv(file_path, index_col=False, encoding=encoding)
@@ -248,8 +248,8 @@ class ExcelReader:
                 file_path,
                 index_col=False,
                 encoding=encoding,
-                # csv_column_format 可以修改更多，只是针对美元人民币符号，假如是“你好¥¥¥”则会报错！
-                converters={i: csv_column_format for i in range(df_tmp.shape[1])},
+                # csv_colunm_foramt 可以修改更多，只是针对美元人民币符号，假如是“你好¥¥¥”则会报错！
+                converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
         else:
             raise ValueError("Unsupported file format.")
@@ -278,8 +278,6 @@ class ExcelReader:
                 )
             except ValueError:
                 try:
-                    if column_name == "Valeur fonciere":
-                        print("#########" + self.df[column_name])
                     self.df[column_name] = pd.to_numeric(self.df[column_name])
                 except ValueError:
                     try:

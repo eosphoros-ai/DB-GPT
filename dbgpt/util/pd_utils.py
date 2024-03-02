@@ -9,7 +9,7 @@ import math
 import pandas as pd
 
 
-def csv_column_format(val):
+def csv_colunm_foramt(val):
     try:
         if pd.isna(val):
             return math.nan
