@@ -32,6 +32,7 @@ class DefaultScheduler(BaseComponent):
     def after_start(self):
         thread = threading.Thread(target=self._scheduler)
         thread.start()
+        self._stop_event.clear()
 
     def before_stop(self):
         self._stop_event.set()
