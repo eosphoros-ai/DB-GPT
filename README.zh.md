@@ -37,20 +37,27 @@
 </div>
 
 ## DB-GPT 是什么？
-DB-GPT是一个开源的AI原生数据应用开发框架(AI Native Data App Development framework with AWEL(Agentic Workflow Expression Language) and Agents)。目的是构建大模型领域的基础设施，通过开发多模型管理(SMMF)、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作、AWEL(智能体工作流编排)等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
 
-数据3.0 时代，基于模型、数据库，企业/开发者可以用更少的代码搭建自己的专属应用。
+🤖️ **DB-GPT是一个开源的AI原生数据应用开发框架(AI Native Data App Development framework with AWEL(Agentic Workflow Expression Language) and Agents)。**
+
+目的是构建大模型领域的基础设施，通过开发多模型管理(SMMF)、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作、AWEL(智能体工作流编排)等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
+
+🚀 **数据3.0 时代，基于模型、数据库，企业/开发者可以用更少的代码搭建自己的专属应用。**
 
 ## 效果演示
 
+### AI原生数据智能应用
+---
+- 🔥🔥🔥 [V0.5.0发布——通过工作流与智能体开发原生数据应用](https://www.yuque.com/eosphoros/dbgpt-docs/owcrh9423f9rqkg2)
+---
+
 ### Data Agents 
 
-![awel_web_search_flow](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/fe1eaf9e-5a0f-4d09-b1a7-f8dc75682695)
+![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
 
-![chat_excel](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/03d67da4-b9b9-4df3-8890-176a0941dab8)
+![Data-Apps](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/a7bf6d65-92d1-4f0e-aaf0-259ccdde22fd)
 
-![data agents](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/ced393b4-9180-437a-90c5-b43633cda8cb)
-
+![dashboard-images](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/1849a79a-f7fd-40cf-bc9c-b117a041dd6a)
 
 ## 目录
 - [架构方案](#架构方案)
@@ -100,21 +107,27 @@ DB-GPT是一个开源的AI原生数据应用开发框架(AI Native Data App Deve
 
 [**教程**](https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx)
 - [**快速开始**](https://www.yuque.com/eosphoros/dbgpt-docs/ew0kf1plm0bru2ga)
-  - [**源码安装**](https://www.yuque.com/eosphoros/dbgpt-docs/urh3fcx8tu0s9xmb)
-  - [**Docker安装**](https://www.yuque.com/eosphoros/dbgpt-docs/glf87qg4xxcyrp89)
-  - [**Docker Compose安装**](https://www.yuque.com/eosphoros/dbgpt-docs/wwdu11e0v5nkfzin)
+  - [源码安装](https://www.yuque.com/eosphoros/dbgpt-docs/urh3fcx8tu0s9xmb)
+  - [Docker安装](https://www.yuque.com/eosphoros/dbgpt-docs/glf87qg4xxcyrp89)
+  - [Docker Compose安装](https://www.yuque.com/eosphoros/dbgpt-docs/wwdu11e0v5nkfzin)
 - [**使用手册**](https://www.yuque.com/eosphoros/dbgpt-docs/tkspdd0tcy2vlnu4)
-  - [**知识库**](https://www.yuque.com/eosphoros/dbgpt-docs/ycyz3d9b62fccqxh)
-  - [**数据对话**](https://www.yuque.com/eosphoros/dbgpt-docs/gd9hbhi1dextqgbz)
-  - [**Excel对话**](https://www.yuque.com/eosphoros/dbgpt-docs/prugoype0xd2g4bb)
-  - [**数据库对话**](https://www.yuque.com/eosphoros/dbgpt-docs/wswpv3zcm2c9snmg)
-  - [**报表分析**](https://www.yuque.com/eosphoros/dbgpt-docs/vsv49p33eg4p5xc1)
-  - [**Agents**](https://www.yuque.com/eosphoros/dbgpt-docs/pom41m7oqtdd57hm)
+  - [知识库](https://www.yuque.com/eosphoros/dbgpt-docs/ycyz3d9b62fccqxh)
+  - [数据对话](https://www.yuque.com/eosphoros/dbgpt-docs/gd9hbhi1dextqgbz)
+  - [Excel对话](https://www.yuque.com/eosphoros/dbgpt-docs/prugoype0xd2g4bb)
+  - [数据库对话](https://www.yuque.com/eosphoros/dbgpt-docs/wswpv3zcm2c9snmg)
+  - [报表分析](https://www.yuque.com/eosphoros/dbgpt-docs/vsv49p33eg4p5xc1)
+  - [Agents](https://www.yuque.com/eosphoros/dbgpt-docs/pom41m7oqtdd57hm)
+- [**进阶教程**](https://www.yuque.com/eosphoros/dbgpt-docs/dxalqb8wsv2xkm5f)
+  - [智能体工作流使用](https://www.yuque.com/eosphoros/dbgpt-docs/hcomfb3yrleg7gmq)
+  - [智能应用使用](https://www.yuque.com/eosphoros/dbgpt-docs/aiagvxeb86iarq6r)
+  - [多模型管理](https://www.yuque.com/eosphoros/dbgpt-docs/huzgcf2abzvqy8uv)
+  - [命令行使用](https://www.yuque.com/eosphoros/dbgpt-docs/gd4kgumgd004aly8)
 - [**模型服务部署**](https://www.yuque.com/eosphoros/dbgpt-docs/vubxiv9cqed5mc6o)
-  - [**单机部署**](https://www.yuque.com/eosphoros/dbgpt-docs/kwg1ed88lu5fgawb)
-  - [**集群部署**](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
-  - [**vLLM**](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
+  - [单机部署](https://www.yuque.com/eosphoros/dbgpt-docs/kwg1ed88lu5fgawb)
+  - [集群部署](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
+  - [vLLM](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
 - [**如何Debug**](https://www.yuque.com/eosphoros/dbgpt-docs/eyg0ocbc2ce3q95r)
+- [**AWEL**](https://www.yuque.com/eosphoros/dbgpt-docs/zozbzslbfk0m0op5)
 - [**FAQ**](https://www.yuque.com/eosphoros/dbgpt-docs/gomtc46qonmyt44l)
 
 ## 特性一览
