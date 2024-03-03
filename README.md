@@ -39,17 +39,23 @@
 
 ## What is DB-GPT?
 
-DB-GPT is an open source AI native data app development framework with AWEL(Agentic Workflow Expression Language) and agents. The purpose is to build infrastructure in the field of large models, through the development of multiple technical capabilities such as multi-model management (SMMF), Text2SQL effect optimization, RAG framework and optimization, Multi-Agents framework collaboration, AWEL (agent workflow orchestration), etc. Which makes large model applications with data simpler and more convenient.
+🤖 **DB-GPT is an open source AI native data app development framework with AWEL(Agentic Workflow Expression Language) and agents**. 
 
-In the Data 3.0 era, based on models and databases, enterprises and developers can build their own bespoke applications with less code.
+The purpose is to build infrastructure in the field of large models, through the development of multiple technical capabilities such as multi-model management (SMMF), Text2SQL effect optimization, RAG framework and optimization, Multi-Agents framework collaboration, AWEL (agent workflow orchestration), etc. Which makes large model applications with data simpler and more convenient.
 
-### Data Agents
+
+🚀 **In the Data 3.0 era, based on models and databases, enterprises and developers can build their own bespoke applications with less code.**
+
+### AI-Native Data App 
+---
+- 🔥🔥🔥 [Released V0.5.0 | Develop native data applications through workflows and agents](https://docs.dbgpt.site/docs/changelog/Released_V0.5.0)
+---
+
 ![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
 
 ![Data-Apps](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/a7bf6d65-92d1-4f0e-aaf0-259ccdde22fd)
 
 ![dashboard-images](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/1849a79a-f7fd-40cf-bc9c-b117a041dd6a)
-
 
 
 ## Contents
@@ -115,9 +121,17 @@ As of October 10, 2023, through the fine-tuning of an open-source model with 13 
 
 [**Usage Tutorial**](http://docs.dbgpt.site/docs/overview)
 - [**Install**](http://docs.dbgpt.site/docs/installation)
+  - [Docker](https://docs.dbgpt.site/docs/installation/docker)
+  - [Source Code](https://docs.dbgpt.site/docs/installation/sourcecode)
 - [**Quickstart**](http://docs.dbgpt.site/docs/quickstart)
 - [**Application**](http://docs.dbgpt.site/docs/operation_manual)
+  - [App Usage](https://docs.dbgpt.site/docs/application/app_usage)
+  - [AWEL Flow Usage](https://docs.dbgpt.site/docs/application/awel_flow_usage)
 - [**Debugging**](http://docs.dbgpt.site/docs/operation_manual/advanced_tutorial/debugging)
+- [**Advanced Usage**](https://docs.dbgpt.site/docs/application/advanced_tutorial/cli)
+  - [SMMF](https://docs.dbgpt.site/docs/application/advanced_tutorial/smmf)
+  - [Finetune](https://docs.dbgpt.site/docs/application/fine_tuning_manual/dbgpt_hub)
+  - [AWEL](https://docs.dbgpt.site/docs/awel/get_started)
 
 
 ## Features
