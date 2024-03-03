@@ -3,6 +3,14 @@ import inspect
 from functools import wraps
 from typing import Any, get_args, get_origin, get_type_hints
 
+from typeguard import check_type
+
+
+def _is_typing(obj):
+    from typing import _Final  # type: ignore
+
+    return isinstance(obj, _Final)
+
 
 def _is_instance_of_generic_type(obj, generic_type):
     """Check if an object is an instance of a generic type."""
@@ -18,16 +26,42 @@ def _is_instance_of_generic_type(obj, generic_type):
         return isinstance(obj, origin)
 
     # Check if object matches the generic origin (like list, dict)
-    if not isinstance(obj, origin):
-        return False
+    if not _is_typing(origin):
+        return isinstance(obj, origin)
+
+    objs = [obj for _ in range(len(args))]
 
     # For each item in the object, check if it matches the corresponding type argument
-    for sub_obj, arg in zip(obj, args):
+    for sub_obj, arg in zip(objs, args):
         # Skip check if the type argument is Any
-        if arg is not Any and not isinstance(sub_obj, arg):
-            return False
-
+        if arg is not Any:
+            if _is_typing(arg):
+                sub_args = get_args(arg)
+                if (
+                    sub_args
+                    and not _is_typing(sub_args[0])
+                    and not isinstance(sub_obj, sub_args[0])
+                ):
+                    return False
+            elif not isinstance(sub_obj, arg):
+                return False
     return True
+
+
+def _check_type(obj, t) -> bool:
+    try:
+        check_type(obj, t)
+        return True
+    except Exception:
+        return False
+
+
+def _get_orders(obj, arg_types):
+    try:
+        orders = [i for i, t in enumerate(arg_types) if _check_type(obj, t)]
+        return orders[0] if orders else int(1e8)
+    except Exception:
+        return int(1e8)
 
 
 def _sort_args(func, args, kwargs):
@@ -49,9 +83,7 @@ def _sort_args(func, args, kwargs):
 
     sorted_args = sorted(
         other_args,
-        key=lambda x: next(
-            i for i, t in enumerate(arg_types) if _is_instance_of_generic_type(x, t)
-        ),
+        key=lambda x: _get_orders(x, arg_types),
     )
     return (*self_arg, *sorted_args), kwargs
 

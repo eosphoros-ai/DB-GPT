@@ -541,15 +541,19 @@ class HttpTrigger(Trigger):
                     req_body_cls, BaseModel
                 ):
                     fields = req_body_cls.__fields__  # type: ignore
-                    parameters = [
-                        Parameter(
-                            name=field_name,
-                            kind=Parameter.KEYWORD_ONLY,
-                            default=Parameter.empty,
-                            annotation=field.outer_type_,
+                    parameters = []
+                    for field_name, field in fields.items():
+                        default_value = (
+                            Parameter.empty if field.required else field.default
                         )
-                        for field_name, field in fields.items()
-                    ]
+                        parameters.append(
+                            Parameter(
+                                name=field_name,
+                                kind=Parameter.KEYWORD_ONLY,
+                                default=default_value,
+                                annotation=field.outer_type_,
+                            )
+                        )
                 elif req_body_cls == Dict[str, Any] or req_body_cls == dict:
                     raise AWELHttpError(
                         f"Query methods {self._methods} not support dict type"
@@ -1031,3 +1035,54 @@ class UserInputParsedOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, An
     async def map(self, request_body: CommonLLMHttpRequestBody) -> Dict[str, Any]:
         """Map the request body to response body."""
         return {self._key: request_body.messages}
+
+
+class RequestedParsedOperator(MapOperator[CommonLLMHttpRequestBody, str]):
+    """User input parsed operator."""
+
+    metadata = ViewMetadata(
+        label="Request Body Parsed To String Operator",
+        name="request_body_to_str__parsed_operator",
+        category=OperatorCategory.COMMON,
+        parameters=[
+            Parameter.build_from(
+                "Key",
+                "key",
+                str,
+                optional=True,
+                default="messages",
+                description="The key of the dict, link 'user_input'",
+            )
+        ],
+        inputs=[
+            IOField.build_from(
+                "Request Body",
+                "request_body",
+                CommonLLMHttpRequestBody,
+                description="The request body of the API endpoint",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "User Input String",
+                "user_input_str",
+                str,
+                description="The user input dict of the API endpoint",
+            )
+        ],
+        description="User input parsed operator",
+    )
+
+    def __init__(self, key: str = "user_input", **kwargs):
+        """Initialize a UserInputParsedOperator."""
+        self._key = key
+        super().__init__(**kwargs)
+
+    async def map(self, request_body: CommonLLMHttpRequestBody) -> str:
+        """Map the request body to response body."""
+        dict_value = request_body.dict()
+        if not self._key or self._key not in dict_value:
+            raise ValueError(
+                f"Prefix key {self._key} is not a valid key of the request body"
+            )
+        return dict_value[self._key]

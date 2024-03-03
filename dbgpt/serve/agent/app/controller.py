@@ -39,7 +39,7 @@ async def create(gpts_app: GptsApp):
 @router.post("/v1/app/list")
 async def app_list(query: GptsAppQuery):
     try:
-        return Result.succ(gpts_dao.app_list(query))
+        return Result.succ(gpts_dao.app_list(query, True))
     except Exception as ex:
         return Result.failed(code="E000X", msg=f"query app error: {ex}")
 

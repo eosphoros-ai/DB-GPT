@@ -1,11 +1,14 @@
 import json
+import logging
 from typing import Optional
 
 from ..base import Vis
 
+logger = logging.getLogger(__name__)
+
 
 class VisDashboard(Vis):
-    async def generate_content(self, **kwargs) -> Optional[str]:
+    async def generate_param(self, **kwargs) -> Optional[str]:
         charts = kwargs.get("charts", None)
         title = kwargs.get("title", None)
         if not charts:
@@ -24,14 +27,14 @@ class VisDashboard(Vis):
             try:
                 df = chart.get("data", None)
                 err_msg = chart.get("err_msg", None)
-                if not df:
+                if df is None:
                     param["err_msg"] = err_msg
                 else:
                     param["data"] = json.loads(
                         df.to_json(orient="records", date_format="iso", date_unit="s")
                     )
-
             except Exception as e:
+                logger.exception("dashboard chart build faild！")
                 param["data"] = []
                 param["err_msg"] = str(e)
             chart_items.append(param)

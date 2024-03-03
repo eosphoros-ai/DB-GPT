@@ -45,7 +45,7 @@ class AwelLayoutChatManager(ManagerAgent):
             start_message_context: AgentGenerateContext = AgentGenerateContext(
                 message={
                     "content": message,
-                    "current_gogal": message,
+                    "current_goal": message,
                 },
                 sender=self,
                 reviewer=reviewer,

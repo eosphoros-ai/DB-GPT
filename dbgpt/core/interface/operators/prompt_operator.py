@@ -74,11 +74,11 @@ class CommonChatPromptTemplate(ChatPromptTemplate):
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Pre fill the messages."""
         if "system_message" not in values:
-            raise ValueError("No system message")
+            values["system_message"] = "You are a helpful AI Assistant."
         if "human_message" not in values:
-            raise ValueError("No human message")
+            values["human_message"] = "{user_input}"
         if "message_placeholder" not in values:
-            raise ValueError("No message placeholder")
+            values["message_placeholder"] = "chat_history"
         system_message = values.pop("system_message")
         human_message = values.pop("human_message")
         message_placeholder = values.pop("message_placeholder")

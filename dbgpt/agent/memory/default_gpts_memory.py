@@ -100,11 +100,11 @@ class DefaultGptsMessageMemory(GptsMessageMemory):
         conv_id: str,
         agent1: str,
         agent2: str,
-        current_gogal: Optional[str] = None,
+        current_goal: Optional[str] = None,
     ) -> Optional[List[GptsMessage]]:
-        if current_gogal:
+        if current_goal:
             result = self.df.query(
-                f"conv_id==@conv_id and ((sender==@agent1 and receiver==@agent2) or (sender==@agent2 and receiver==@agent1)) and current_gogal==@current_gogal"
+                f"conv_id==@conv_id and ((sender==@agent1 and receiver==@agent2) or (sender==@agent2 and receiver==@agent1)) and current_goal==@current_goal"
             )
         else:
             result = self.df.query(

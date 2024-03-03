@@ -26,6 +26,9 @@ from .exceptions import (
 logger = logging.getLogger(__name__)
 
 
+AWEL_FLOW_VERSION = "0.1.1"
+
+
 class FlowPositionData(BaseModel):
     """Position of a node in a flow."""
 
@@ -152,12 +155,10 @@ class State(str, Enum):
     INITIALIZING = "initializing"
     DEVELOPING = "developing"
     TESTING = "testing"
-    READY_TO_DEPLOY = "ready_to_deploy"
     DEPLOYED = "deployed"
     RUNNING = "running"
-    PAUSED = "paused"
     DISABLED = "disabled"
-    ENABLED = "enabled"
+    LOAD_FAILED = "load_failed"
 
     @classmethod
     def value_of(cls, value: Optional[str]) -> "State":
@@ -168,6 +169,60 @@ class State(str, Enum):
             if state.value == value:
                 return state
         raise ValueError(f"Invalid state value: {value}")
+
+    @classmethod
+    def can_change_state(cls, current_state: "State", new_state: "State") -> bool:
+        """Change the state of the flow panel."""
+        allowed_transitions: Dict[State, List[State]] = {
+            State.INITIALIZING: [
+                State.DEVELOPING,
+                State.INITIALIZING,
+                State.LOAD_FAILED,
+            ],
+            State.DEVELOPING: [
+                State.TESTING,
+                State.DEPLOYED,
+                State.DISABLED,
+                State.DEVELOPING,
+                State.LOAD_FAILED,
+            ],
+            State.TESTING: [
+                State.TESTING,
+                State.DEPLOYED,
+                State.DEVELOPING,
+                State.DISABLED,
+                State.RUNNING,
+                State.LOAD_FAILED,
+            ],
+            State.DEPLOYED: [
+                State.DEPLOYED,
+                State.DEVELOPING,
+                State.TESTING,
+                State.DISABLED,
+                State.RUNNING,
+                State.LOAD_FAILED,
+            ],
+            State.RUNNING: [
+                State.RUNNING,
+                State.DEPLOYED,
+                State.TESTING,
+                State.DISABLED,
+            ],
+            State.DISABLED: [State.DISABLED, State.DEPLOYED],
+            State.LOAD_FAILED: [
+                State.LOAD_FAILED,
+                State.DEVELOPING,
+                State.DEPLOYED,
+                State.DISABLED,
+            ],
+        }
+        if new_state in allowed_transitions[current_state]:
+            return True
+        else:
+            logger.error(
+                f"Invalid state transition from {current_state} to {new_state}"
+            )
+            return False
 
 
 class FlowCategory(str, Enum):
@@ -219,6 +274,11 @@ class FlowPanel(BaseModel):
     state: State = Field(
         default=State.INITIALIZING, description="Current state of the flow panel"
     )
+    error_message: Optional[str] = Field(
+        None,
+        description="Error message of load the flow panel",
+        examples=["Unable to load the flow panel."],
+    )
     source: Optional[str] = Field(
         "DBGPT-WEB",
         description="Source of the flow panel",
@@ -229,7 +289,9 @@ class FlowPanel(BaseModel):
         description="Source url of the flow panel",
     )
     version: Optional[str] = Field(
-        "0.1.0", description="Version of the flow panel", examples=["0.1.0", "0.2.0"]
+        AWEL_FLOW_VERSION,
+        description="Version of the flow panel",
+        examples=["0.1.0", "0.2.0"],
     )
     editable: bool = Field(
         True,
@@ -250,26 +312,6 @@ class FlowPanel(BaseModel):
         description="The flow panel modified time.",
         examples=["2021-08-01 12:00:00", "2021-08-01 12:00:01", "2021-08-01 12:00:02"],
     )
-
-    def change_state(self, new_state: State) -> bool:
-        """Change the state of the flow panel."""
-        allowed_transitions: Dict[State, List[State]] = {
-            State.INITIALIZING: [State.DEVELOPING],
-            State.DEVELOPING: [State.TESTING, State.DISABLED],
-            State.TESTING: [State.READY_TO_DEPLOY, State.DEVELOPING, State.DISABLED],
-            State.READY_TO_DEPLOY: [State.DEPLOYED, State.DEVELOPING],
-            State.DEPLOYED: [State.RUNNING, State.DISABLED],
-            State.RUNNING: [State.PAUSED, State.DISABLED, State.DEPLOYED],
-            State.PAUSED: [State.RUNNING, State.DISABLED],
-            State.DISABLED: [State.ENABLED],
-            State.ENABLED: [s for s in State if s != State.INITIALIZING],
-        }
-        if new_state in allowed_transitions[self.state]:
-            self.state = new_state
-            return True
-        else:
-            logger.error(f"Invalid state transition from {self.state} to {new_state}")
-            return False
 
     @root_validator(pre=True)
     def pre_fill(cls, values: Dict[str, Any]) -> Dict[str, Any]:

@@ -90,7 +90,7 @@ class MultiAgents(BaseComponent, ABC):
     def get_dbgpts(self, user_code: str = None, sys_code: str = None):
         apps = self.gpts_app.app_list(
             GptsAppQuery(user_code=user_code, sys_code=sys_code)
-        )
+        ).app_list
         return apps
 
     async def agent_chat(
