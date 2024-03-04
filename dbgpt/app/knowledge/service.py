@@ -428,7 +428,15 @@ class KnowledgeService:
             - space_id: space id
             - space_request: KnowledgeSpaceRequest
         """
-        knowledge_space_dao.update_knowledge_space(space_id, space_request)
+        entity = KnowledgeSpaceEntity(
+            id=space_id,
+            name=space_request.name,
+            vector_type=space_request.vector_type,
+            desc=space_request.desc,
+            owner=space_request.owner,
+        )
+
+        knowledge_space_dao.update_knowledge_space(entity)
 
     def delete_space(self, space_name: str):
         """delete knowledge space
