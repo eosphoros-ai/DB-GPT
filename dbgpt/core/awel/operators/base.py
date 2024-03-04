@@ -24,7 +24,7 @@ from dbgpt.util.executor_utils import (
 )
 
 from ..dag.base import DAG, DAGContext, DAGNode, DAGVar
-from ..task.base import OUT, T, TaskOutput
+from ..task.base import EMPTY_DATA, OUT, T, TaskOutput
 
 F = TypeVar("F", bound=FunctionType)
 
@@ -186,7 +186,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
     async def call(
         self,
-        call_data: Optional[CALL_DATA] = None,
+        call_data: Optional[CALL_DATA] = EMPTY_DATA,
         dag_ctx: Optional[DAGContext] = None,
     ) -> OUT:
         """Execute the node and return the output.
@@ -200,7 +200,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         Returns:
             OUT: The output of the node after execution.
         """
-        if call_data:
+        if call_data != EMPTY_DATA:
             call_data = {"data": call_data}
         out_ctx = await self._runner.execute_workflow(
             self, call_data, exist_dag_ctx=dag_ctx
@@ -209,7 +209,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
     def _blocking_call(
         self,
-        call_data: Optional[CALL_DATA] = None,
+        call_data: Optional[CALL_DATA] = EMPTY_DATA,
         loop: Optional[asyncio.BaseEventLoop] = None,
     ) -> OUT:
         """Execute the node and return the output.
@@ -232,7 +232,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
     async def call_stream(
         self,
-        call_data: Optional[CALL_DATA] = None,
+        call_data: Optional[CALL_DATA] = EMPTY_DATA,
         dag_ctx: Optional[DAGContext] = None,
     ) -> AsyncIterator[OUT]:
         """Execute the node and return the output as a stream.
@@ -247,7 +247,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         Returns:
             AsyncIterator[OUT]: An asynchronous iterator over the output stream.
         """
-        if call_data:
+        if call_data != EMPTY_DATA:
             call_data = {"data": call_data}
         out_ctx = await self._runner.execute_workflow(
             self, call_data, streaming_call=True, exist_dag_ctx=dag_ctx
@@ -256,7 +256,7 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
 
     def _blocking_call_stream(
         self,
-        call_data: Optional[CALL_DATA] = None,
+        call_data: Optional[CALL_DATA] = EMPTY_DATA,
         loop: Optional[asyncio.BaseEventLoop] = None,
     ) -> Iterator[OUT]:
         """Execute the node and return the output as a stream.
