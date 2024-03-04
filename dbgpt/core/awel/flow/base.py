@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
 from dbgpt._private.pydantic import BaseModel, Field, ValidationError, root_validator
+from dbgpt.core.awel.util.parameter_util import BaseDynamicOptions, OptionValue
 from dbgpt.core.interface.serialization import Serializable
 
 from .exceptions import FlowMetadataException, FlowParameterMetadataException
@@ -205,18 +206,6 @@ class ResourceType(str, Enum):
     CLASS = "class"
 
 
-class OptionValue(Serializable, BaseModel):
-    """The option value of the parameter."""
-
-    label: str = Field(..., description="The label of the option")
-    name: str = Field(..., description="The name of the option")
-    value: Any = Field(..., description="The value of the option")
-
-    def to_dict(self) -> Dict:
-        """Convert current metadata to json dict."""
-        return self.dict()
-
-
 class ParameterType(str, Enum):
     """The type of the parameter."""
 
@@ -317,7 +306,7 @@ class Parameter(TypeMetadata, Serializable):
     description: Optional[str] = Field(
         None, description="The description of the parameter"
     )
-    options: Optional[List[OptionValue]] = Field(
+    options: Optional[Union[BaseDynamicOptions, List[OptionValue]]] = Field(
         None, description="The options of the parameter"
     )
     value: Optional[Any] = Field(
@@ -379,7 +368,7 @@ class Parameter(TypeMetadata, Serializable):
         default: Optional[Union[DefaultParameterType, _MISSING_TYPE]] = _MISSING_VALUE,
         placeholder: Optional[DefaultParameterType] = None,
         description: Optional[str] = None,
-        options: Optional[List[OptionValue]] = None,
+        options: Optional[Union[BaseDynamicOptions, List[OptionValue]]] = None,
         resource_type: ResourceType = ResourceType.INSTANCE,
     ):
         """Build the parameter from the type."""
@@ -435,7 +424,15 @@ class Parameter(TypeMetadata, Serializable):
 
     def to_dict(self) -> Dict:
         """Convert current metadata to json dict."""
-        return self.dict()
+        dict_value = self.dict(exclude={"options"})
+        if not self.options:
+            dict_value["options"] = None
+        elif isinstance(self.options, BaseDynamicOptions):
+            values = self.options.option_values()
+            dict_value["options"] = [value.to_dict() for value in values]
+        else:
+            dict_value["options"] = [value.to_dict() for value in self.options]
+        return dict_value
 
     def to_runnable_parameter(
         self,
@@ -684,6 +681,14 @@ class BaseMetadata(BaseResource):
         """Get the origin id."""
         split_ids = self.id.split("_")
         return "_".join(split_ids[:-1])
+
+    def to_dict(self) -> Dict:
+        """Convert current metadata to json dict."""
+        dict_value = self.dict(exclude={"parameters"})
+        dict_value["parameters"] = [
+            parameter.to_dict() for parameter in self.parameters
+        ]
+        return dict_value
 
 
 class ResourceMetadata(BaseMetadata, TypeMetadata):
@@ -939,9 +944,9 @@ class FlowRegistry:
         """Get the registry item by the key."""
         return self._registry.get(key)
 
-    def metadata_list(self) -> List[Union[ViewMetadata, ResourceMetadata]]:
+    def metadata_list(self):
         """Get the metadata list."""
-        return [item.metadata for item in self._registry.values()]
+        return [item.metadata.to_dict() for item in self._registry.values()]
 
 
 _OPERATOR_REGISTRY: FlowRegistry = FlowRegistry()

@@ -208,7 +208,9 @@ class ChatKnowledge(BaseChat):
                     }
                 )
         references_list = list(references_dict.values())
-        references_ele.set("references", json.dumps(references_list))
+        references_ele.set(
+            "references", json.dumps(references_list, ensure_ascii=False)
+        )
         html = ET.tostring(references_ele, encoding="utf-8")
         reference = html.decode("utf-8")
         return reference.replace("\\n", "")
