@@ -11,7 +11,6 @@ from dbgpt.app.knowledge.document_db import (
 )
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.scene import BaseChat, ChatScene
-from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import (
     ChatPromptTemplate,
@@ -19,10 +18,8 @@ from dbgpt.core import (
     MessagesPlaceholder,
     SystemPromptTemplate,
 )
-from dbgpt.model import DefaultLLMClient
-from dbgpt.model.cluster import WorkerManagerFactory
 from dbgpt.rag.retriever.rewrite import QueryRewrite
-from dbgpt.util.tracer import trace
+from dbgpt.util.tracer import root_tracer, trace
 
 CFG = Config()
 
@@ -226,6 +223,9 @@ class ChatKnowledge(BaseChat):
 
     async def execute_similar_search(self, query):
         """execute similarity search"""
-        return await self.embedding_retriever.aretrieve_with_scores(
-            query, self.recall_score
-        )
+        with root_tracer.start_span(
+            "execute_similar_search", metadata={"query": query}
+        ):
+            return await self.embedding_retriever.aretrieve_with_scores(
+                query, self.recall_score
+            )

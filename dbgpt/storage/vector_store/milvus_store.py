@@ -165,7 +165,7 @@ class MilvusStore(VectorStoreBase):
             connections.connect(
                 host=self.uri or "127.0.0.1",
                 port=self.port or "19530",
-                alias="default"
+                alias="default",
                 # secure=self.secure,
             )
         texts = [d.content for d in documents]
@@ -339,9 +339,7 @@ class MilvusStore(VectorStoreBase):
                 self.vector_field = x.name
         _, docs_and_scores = self._search(text, topk)
         if any(score < 0.0 or score > 1.0 for _, score, id in docs_and_scores):
-            import warnings
-
-            warnings.warn(
+            logger.warning(
                 "similarity score need between" f" 0 and 1, got {docs_and_scores}"
             )
 
@@ -357,7 +355,7 @@ class MilvusStore(VectorStoreBase):
                 if score >= score_threshold
             ]
             if len(docs_and_scores) == 0:
-                warnings.warn(
+                logger.warning(
                     "No relevant docs were retrieved using the relevance score"
                     f" threshold {score_threshold}"
                 )
@@ -421,7 +419,7 @@ class MilvusStore(VectorStoreBase):
 
         """milvus delete collection name"""
         logger.info(f"milvus vector_name:{vector_name} begin delete...")
-        utility.drop_collection(vector_name)
+        utility.drop_collection(self.collection_name)
         return True
 
     def delete_by_ids(self, ids):

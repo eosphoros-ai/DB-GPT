@@ -140,6 +140,14 @@ class AwelAgentConfig(LLMConfig):
             description="The agent role name.",
         ),
         Parameter.build_from(
+            label="Fixed Gogal",
+            name="fixed_subgoal",
+            type=str,
+            optional=True,
+            default=None,
+            description="The agent fixed gogal.",
+        ),
+        Parameter.build_from(
             label="Agent Resource",
             name="agent_resource",
             type=AwelAgentResource,
@@ -162,6 +170,7 @@ class AwelAgent(BaseModel):
     role_name: Optional[str] = None
     llm_config: Optional[LLMConfig] = None
     resources: List[AgentResource] = Field(default_factory=list)
+    fixed_subgoal: Optional[str] = None
 
     class Config:
         arbitrary_types_allowed = True

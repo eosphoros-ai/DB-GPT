@@ -133,8 +133,8 @@ class Config(metaclass=Singleton):
         ### Related configuration of built-in commands
         self.command_registry = []
 
-        ### Relate configuration of disply commands
-        self.command_disply = []
+        ### Relate configuration of display commands
+        self.command_dispaly = []
 
         disabled_command_categories = os.getenv("DISABLED_COMMAND_CATEGORIES")
         if disabled_command_categories:
@@ -233,6 +233,9 @@ class Config(metaclass=Singleton):
         self.KNOWLEDGE_CHUNK_SIZE = int(os.getenv("KNOWLEDGE_CHUNK_SIZE", 100))
         self.KNOWLEDGE_CHUNK_OVERLAP = int(os.getenv("KNOWLEDGE_CHUNK_OVERLAP", 50))
         self.KNOWLEDGE_SEARCH_TOP_SIZE = int(os.getenv("KNOWLEDGE_SEARCH_TOP_SIZE", 5))
+        self.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD = int(
+            os.getenv("KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD", 10)
+        )
         # default recall similarity score, between 0 and 1
         self.KNOWLEDGE_SEARCH_RECALL_SCORE = float(
             os.getenv("KNOWLEDGE_SEARCH_RECALL_SCORE", 0.3)

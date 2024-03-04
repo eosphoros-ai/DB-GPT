@@ -4,10 +4,12 @@ After DB-GPT started, the trigger manager will be initialized and register all t
 """
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Union
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
+from ..util.http_util import join_paths
 from .base import Trigger
 
 if TYPE_CHECKING:
@@ -64,6 +66,7 @@ class HttpTriggerManager(TriggerManager):
         self._router_prefix = router_prefix
         self._router = router
         self._trigger_map: Dict[str, Trigger] = {}
+        self._router_tables: Dict[str, Set[str]] = defaultdict(set)
 
     def register_trigger(self, trigger: Any, system_app: SystemApp) -> None:
         """Register a trigger to current manager."""
@@ -73,15 +76,23 @@ class HttpTriggerManager(TriggerManager):
             raise ValueError(f"Current trigger {trigger} not an object of HttpTrigger")
         trigger_id = trigger.node_id
         if trigger_id not in self._trigger_map:
-            if trigger.register_to_app():
-                app = system_app.app
-                if not app:
-                    raise ValueError("System app not initialized")
-                # Mount to app, support dynamic route.
-                trigger.mount_to_app(app, self._router_prefix)
-            else:
-                trigger.mount_to_router(self._router)
-            self._trigger_map[trigger_id] = trigger
+            path = join_paths(self._router_prefix, trigger._endpoint)
+            methods = trigger._methods
+            # Check whether the route is already registered
+            self._register_route_tables(path, methods)
+            try:
+                if trigger.register_to_app():
+                    app = system_app.app
+                    if not app:
+                        raise ValueError("System app not initialized")
+                    # Mount to app, support dynamic route.
+                    trigger.mount_to_app(app, self._router_prefix)
+                else:
+                    trigger.mount_to_router(self._router)
+                self._trigger_map[trigger_id] = trigger
+            except Exception as e:
+                self._unregister_route_tables(path, methods)
+                raise e
 
     def unregister_trigger(self, trigger: Any, system_app: SystemApp) -> None:
         """Unregister a trigger to current manager."""
@@ -96,6 +107,9 @@ class HttpTriggerManager(TriggerManager):
                 if not app:
                     raise ValueError("System app not initialized")
                 trigger.remove_from_app(app, self._router_prefix)
+                self._unregister_route_tables(
+                    join_paths(self._router_prefix, trigger._endpoint), trigger._methods
+                )
             del self._trigger_map[trigger_id]
 
     def _init_app(self, system_app: SystemApp):
@@ -119,6 +133,34 @@ class HttpTriggerManager(TriggerManager):
             bool: Whether keep running, True means keep running, False means stop.
         """
         return len(self._trigger_map) > 0
+
+    def _register_route_tables(
+        self, path: str, methods: Optional[Union[str, List[str]]]
+    ):
+        methods = self._parse_methods(methods)
+        tables = self._router_tables[path]
+        for m in methods:
+            if m in tables:
+                raise ValueError(f"Route {path} method {m} already registered")
+            tables.add(m)
+        self._router_tables[path] = tables
+
+    def _unregister_route_tables(
+        self, path: str, methods: Optional[Union[str, List[str]]]
+    ):
+        methods = self._parse_methods(methods)
+        tables = self._router_tables[path]
+        for m in methods:
+            if m in tables:
+                tables.remove(m)
+        self._router_tables[path] = tables
+
+    def _parse_methods(self, methods: Optional[Union[str, List[str]]]) -> List[str]:
+        if not methods:
+            return ["GET"]
+        elif isinstance(methods, str):
+            return [methods]
+        return [m.upper() for m in methods]
 
 
 class DefaultTriggerManager(TriggerManager, BaseComponent):

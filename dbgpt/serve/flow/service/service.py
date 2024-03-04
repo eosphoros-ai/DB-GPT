@@ -1,7 +1,9 @@
+import json
 import logging
 import traceback
-from typing import List, Optional, cast
+from typing import Any, List, Optional, cast
 
+import schedule
 from fastapi import HTTPException
 
 from dbgpt.component import SystemApp
@@ -12,8 +14,9 @@ from dbgpt.core.awel import (
     CommonLLMHttpResponseBody,
 )
 from dbgpt.core.awel.dag.dag_manager import DAGManager
-from dbgpt.core.awel.flow.flow_factory import FlowCategory, FlowFactory
+from dbgpt.core.awel.flow.flow_factory import FlowCategory, FlowFactory, State
 from dbgpt.core.awel.trigger.http_trigger import CommonLLMHttpTrigger
+from dbgpt.core.interface.llm import ModelOutput
 from dbgpt.serve.core import BaseService
 from dbgpt.storage.metadata import BaseDao
 from dbgpt.storage.metadata._base_dao import QUERY_SPEC
@@ -54,7 +57,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         self._dao = self._dao or ServeDao(self._serve_config)
         self._system_app = system_app
         self._dbgpts_loader = system_app.get_component(
-            DBGPTsLoader.name, DBGPTsLoader, or_register_component=DBGPTsLoader
+            DBGPTsLoader.name,
+            DBGPTsLoader,
+            or_register_component=DBGPTsLoader,
+            load_dbgpts_interval=self._serve_config.load_dbgpts_interval,
         )
 
     def before_start(self):
@@ -66,7 +72,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
     def after_start(self):
         """Execute after the application starts"""
         self.load_dag_from_db()
-        self.load_dag_from_dbgpts()
+        self.load_dag_from_dbgpts(is_first_load=True)
+        schedule.every(self._serve_config.load_dbgpts_interval).seconds.do(
+            self.load_dag_from_dbgpts
+        )
 
     @property
     def dao(self) -> BaseDao[ServeEntity, ServeRequest, ServerResponse]:
@@ -101,14 +110,57 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Returns:
             ServerResponse: The response
         """
-        # Build DAG from request
-        dag = self._flow_factory.build(request)
-        request.dag_id = dag.dag_id
-        # Save DAG to storage
-        request.flow_category = self._parse_flow_category(dag)
+
+    def create_and_save_dag(
+        self, request: ServeRequest, save_failed_flow: bool = False
+    ) -> ServerResponse:
+        """Create a new Flow entity and save the DAG
+
+        Args:
+            request (ServeRequest): The request
+            save_failed_flow (bool): Whether to save the failed flow
+
+        Returns:
+            ServerResponse: The response
+        """
+        try:
+            # Build DAG from request
+            dag = self._flow_factory.build(request)
+            request.dag_id = dag.dag_id
+            # Save DAG to storage
+            request.flow_category = self._parse_flow_category(dag)
+        except Exception as e:
+            if save_failed_flow:
+                request.state = State.LOAD_FAILED
+                request.error_message = str(e)
+                request.dag_id = ""
+                return self.dao.create(request)
+            else:
+                raise e
         res = self.dao.create(request)
-        # Register the DAG
-        self.dag_manager.register_dag(dag)
+
+        state = request.state
+        try:
+            if state == State.DEPLOYED:
+                # Register the DAG
+                self.dag_manager.register_dag(dag)
+                # Update state to RUNNING
+                request.state = State.RUNNING
+                request.error_message = ""
+                self.dao.update({"uid": request.uid}, request)
+            else:
+                logger.info(f"Flow state is {state}, skip register DAG")
+        except Exception as e:
+            logger.warning(f"Register DAG({dag.dag_id}) error: {str(e)}")
+            if save_failed_flow:
+                request.state = State.LOAD_FAILED
+                request.error_message = f"Register DAG error: {str(e)}"
+                request.dag_id = ""
+                self.dao.update({"uid": request.uid}, request)
+            else:
+                # Rollback
+                self.delete(request.uid)
+            raise e
         return res
 
     def _pre_load_dag_from_db(self):
@@ -129,7 +181,15 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         for entity in entities:
             try:
                 dag = self._flow_factory.build(entity)
-                self.dag_manager.register_dag(dag)
+                if entity.state in [State.DEPLOYED, State.RUNNING] or (
+                    entity.version == "0.1.0" and entity.state == State.INITIALIZING
+                ):
+                    # Register the DAG
+                    self.dag_manager.register_dag(dag)
+                    # Update state to RUNNING
+                    entity.state = State.RUNNING
+                    entity.error_message = ""
+                    self.dao.update({"uid": entity.uid}, entity)
             except Exception as e:
                 logger.warning(
                     f"Load DAG({entity.name}, {entity.dag_id}) from db error: {str(e)}"
@@ -147,41 +207,54 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     f"dbgpts error: {str(e)}"
                 )
 
-    def load_dag_from_dbgpts(self):
+    def load_dag_from_dbgpts(self, is_first_load: bool = False):
         """Load DAG from dbgpts"""
         flows = self.dbgpts_loader.get_flows()
         for flow in flows:
             try:
-                # Try to build the dag from the request
-                self._flow_factory.build(flow)
+                # Set state to DEPLOYED
+                flow.state = State.DEPLOYED
                 exist_inst = self.get({"name": flow.name})
                 if not exist_inst:
-                    self.create(flow)
-                else:
+                    self.create_and_save_dag(flow, save_failed_flow=True)
+                elif is_first_load or exist_inst.state != State.RUNNING:
                     # TODO check version, must be greater than the exist one
                     flow.uid = exist_inst.uid
-                    self.update(flow, check_editable=False)
+                    self.update_flow(flow, check_editable=False, save_failed_flow=True)
             except Exception as e:
                 message = traceback.format_exc()
                 logger.warning(
                     f"Load DAG {flow.name} from dbgpts error: {str(e)}, detail: {message}"
                 )
 
-    def update(
-        self, request: ServeRequest, check_editable: bool = True
+    def update_flow(
+        self,
+        request: ServeRequest,
+        check_editable: bool = True,
+        save_failed_flow: bool = False,
     ) -> ServerResponse:
         """Update a Flow entity
 
         Args:
             request (ServeRequest): The request
             check_editable (bool): Whether to check the editable
-
+            save_failed_flow (bool): Whether to save the failed flow
         Returns:
             ServerResponse: The response
         """
-        # Try to build the dag from the request
-        dag = self._flow_factory.build(request)
-
+        new_state = request.state
+        try:
+            # Try to build the dag from the request
+            dag = self._flow_factory.build(request)
+            request.flow_category = self._parse_flow_category(dag)
+        except Exception as e:
+            if save_failed_flow:
+                request.state = State.LOAD_FAILED
+                request.error_message = str(e)
+                request.dag_id = ""
+                return self.dao.update({"uid": request.uid}, request)
+            else:
+                raise e
         # Build the query request from the request
         query_request = {"uid": request.uid}
         inst = self.get(query_request)
@@ -191,19 +264,26 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             raise HTTPException(
                 status_code=403, detail=f"Flow {request.uid} is not editable"
             )
+        old_state = inst.state
+        if not State.can_change_state(old_state, new_state):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Flow {request.uid} state can't change from {old_state} to "
+                f"{new_state}",
+            )
         old_data: Optional[ServerResponse] = None
         try:
-            request.flow_category = self._parse_flow_category(dag)
             update_obj = self.dao.update(query_request, update_request=request)
             old_data = self.delete(request.uid)
+            old_data.state = old_state
             if not old_data:
                 raise HTTPException(
                     status_code=404, detail=f"Flow detail {request.uid} not found"
                 )
-            return self.create(update_obj)
+            return self.create_and_save_dag(update_obj)
         except Exception as e:
             if old_data:
-                self.create(old_data)
+                self.create_and_save_dag(old_data)
             raise e
 
     def get(self, request: QUERY_SPEC) -> Optional[ServerResponse]:
@@ -236,12 +316,13 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         inst = self.get(query_request)
         if inst is None:
             raise HTTPException(status_code=404, detail=f"Flow {uid} not found")
-        if not inst.dag_id:
+        if inst.state == State.RUNNING and not inst.dag_id:
             raise HTTPException(
-                status_code=404, detail=f"Flow {uid}'s dag id not found"
+                status_code=404, detail=f"Running flow {uid}'s dag id not found"
             )
         try:
-            self.dag_manager.unregister_dag(inst.dag_id)
+            if inst.dag_id:
+                self.dag_manager.unregister_dag(inst.dag_id)
         except Exception as e:
             logger.warning(f"Unregister DAG({inst.dag_id}) error: {str(e)}")
         self.dao.delete(query_request)
@@ -276,12 +357,39 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         """
         return self.dao.get_list_page(request, page, page_size)
 
-    async def chat_flow(self, flow_uid: str, request: CommonLLMHttpRequestBody):
+    async def chat_flow(
+        self,
+        flow_uid: str,
+        request: CommonLLMHttpRequestBody,
+        incremental: bool = False,
+    ):
         """Chat with the AWEL flow.
 
         Args:
             flow_uid (str): The flow uid
             request (CommonLLMHttpRequestBody): The request
+            incremental (bool): Whether to return the result incrementally
+        """
+        try:
+            async for output in self._call_chat_flow(flow_uid, request, incremental):
+                yield output
+        except HTTPException as e:
+            yield f"data:[SERVER_ERROR]{e.detail}\n\n"
+        except Exception as e:
+            yield f"data:[SERVER_ERROR]{str(e)}\n\n"
+
+    async def _call_chat_flow(
+        self,
+        flow_uid: str,
+        request: CommonLLMHttpRequestBody,
+        incremental: bool = False,
+    ):
+        """Chat with the AWEL flow.
+
+        Args:
+            flow_uid (str): The flow uid
+            request (CommonLLMHttpRequestBody): The request
+            incremental (bool): Whether to return the result incrementally
         """
         flow = self.get({"uid": flow_uid})
         if not flow:
@@ -291,18 +399,18 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             raise HTTPException(
                 status_code=404, detail=f"Flow {flow_uid}'s dag id not found"
             )
-        if flow.flow_category != FlowCategory.CHAT_FLOW:
-            raise ValueError(f"Flow {flow_uid} is not a chat flow")
         dag = self.dag_manager.dag_map[dag_id]
+        if (
+            flow.flow_category != FlowCategory.CHAT_FLOW
+            and self._parse_flow_category(dag) != FlowCategory.CHAT_FLOW
+        ):
+            raise ValueError(f"Flow {flow_uid} is not a chat flow")
         leaf_nodes = dag.leaf_nodes
         if len(leaf_nodes) != 1:
             raise ValueError("Chat Flow just support one leaf node in dag")
         end_node = cast(BaseOperator, leaf_nodes[0])
-        if request.stream:
-            async for output in await end_node.call_stream(request):
-                yield output
-        else:
-            yield await end_node.call(request)
+        async for output in _chat_with_dag_task(end_node, request, incremental):
+            yield output
 
     def _parse_flow_category(self, dag: DAG) -> FlowCategory:
         """Parse the flow category
@@ -335,9 +443,119 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         output = leaf_node.metadata.outputs[0]
         try:
             real_class = _get_type_cls(output.type_cls)
-            if common_http_trigger and (
-                real_class == str or real_class == CommonLLMHttpResponseBody
-            ):
+            if common_http_trigger and _is_chat_flow_type(real_class, is_class=True):
                 return FlowCategory.CHAT_FLOW
         except Exception:
             return FlowCategory.COMMON
+
+
+def _is_chat_flow_type(output_obj: Any, is_class: bool = False) -> bool:
+    if is_class:
+        return (
+            output_obj == str
+            or output_obj == CommonLLMHttpResponseBody
+            or output_obj == ModelOutput
+        )
+    else:
+        chat_types = (str, CommonLLMHttpResponseBody)
+        return isinstance(output_obj, chat_types)
+
+
+async def _chat_with_dag_task(
+    task: BaseOperator,
+    request: CommonLLMHttpRequestBody,
+    incremental: bool = False,
+):
+    """Chat with the DAG task.
+
+    Args:
+        task (BaseOperator): The task
+        request (CommonLLMHttpRequestBody): The request
+    """
+    if request.stream and task.streaming_operator:
+        try:
+            from dbgpt.model.utils.chatgpt_utils import OpenAIStreamingOutputOperator
+        except ImportError:
+            OpenAIStreamingOutputOperator = None
+        if incremental:
+            async for output in await task.call_stream(request):
+                yield output
+        else:
+            if OpenAIStreamingOutputOperator and isinstance(
+                task, OpenAIStreamingOutputOperator
+            ):
+                from fastchat.protocol.openai_api_protocol import (
+                    ChatCompletionResponseStreamChoice,
+                )
+
+                previous_text = ""
+                async for output in await task.call_stream(request):
+                    if not isinstance(output, str):
+                        yield "data:[SERVER_ERROR]The output is not a stream format\n\n"
+                        return
+                    if output == "data: [DONE]\n\n":
+                        return
+                    json_data = "".join(output.split("data: ")[1:])
+                    dict_data = json.loads(json_data)
+                    if "choices" not in dict_data:
+                        error_msg = dict_data.get("text", "Unknown error")
+                        yield f"data:[SERVER_ERROR]{error_msg}\n\n"
+                        return
+                    choices = dict_data["choices"]
+                    if choices:
+                        choice = choices[0]
+                        delta_data = ChatCompletionResponseStreamChoice(**choice)
+                        if delta_data.delta.content:
+                            previous_text += delta_data.delta.content
+                        if previous_text:
+                            full_text = previous_text.replace("\n", "\\n")
+                            yield f"data:{full_text}\n\n"
+            else:
+                async for output in await task.call_stream(request):
+                    str_msg = ""
+                    should_return = False
+                    if isinstance(output, str):
+                        if output.strip():
+                            str_msg = output
+                    elif isinstance(output, ModelOutput):
+                        if output.error_code != 0:
+                            str_msg = f"[SERVER_ERROR]{output.text}"
+                            should_return = True
+                        else:
+                            str_msg = output.text
+                    else:
+                        str_msg = (
+                            f"[SERVER_ERROR]The output is not a valid format"
+                            f"({type(output)})"
+                        )
+                        should_return = True
+                    if str_msg:
+                        str_msg = str_msg.replace("\n", "\\n")
+                        yield f"data:{str_msg}\n\n"
+                        if should_return:
+                            return
+    else:
+        result = await task.call(request)
+        str_msg = ""
+        if result is None:
+            str_msg = "[SERVER_ERROR]The result is None!"
+        elif isinstance(result, str):
+            str_msg = result
+        elif isinstance(result, ModelOutput):
+            if result.error_code != 0:
+                str_msg = f"[SERVER_ERROR]{result.text}"
+            else:
+                str_msg = result.text
+        elif isinstance(result, CommonLLMHttpResponseBody):
+            if result.error_code != 0:
+                str_msg = f"[SERVER_ERROR]{result.text}"
+            else:
+                str_msg = result.text
+        elif isinstance(result, dict):
+            str_msg = json.dumps(result, ensure_ascii=False)
+        else:
+            str_msg = f"[SERVER_ERROR]The result is not a valid format({type(result)})"
+
+        if str_msg:
+            str_msg = str_msg.replace("\n", "\\n")
+            yield f"data:{str_msg}\n\n"

@@ -2,7 +2,7 @@ import json
 from typing import Callable, Dict, List, Literal, Optional, Union
 
 from dbgpt.agent.actions.dashboard_action import DashboardAction
-from dbgpt.agent.plugin.commands.command_mange import ApiCall
+from dbgpt.agent.plugin.commands.command_manage import ApiCall
 from dbgpt.util.json_utils import find_json_objects
 
 from ...memory.gpts_memory import GptsMemory
@@ -17,6 +17,7 @@ class DashboardAssistantAgent(ConversableAgent):
     constraints: List[str] = [
         "You are only responsible for collecting and sorting out the analysis SQL that already exists in historical messages, and do not generate any analysis sql yourself.",
         "In order to build a report with rich display types, you can appropriately adjust the display type of the charts you collect so that you can build a better report. Of course, you can choose from the following available display types: {display_type}",
+        "Please read and completely collect all analysis sql in the historical conversation, and do not omit or modify the content of the analysis sql.",
     ]
     desc: str = "Observe and organize various analysis results and construct professional reports"
 

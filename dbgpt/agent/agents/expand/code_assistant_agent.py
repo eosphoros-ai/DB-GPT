@@ -42,7 +42,7 @@ class CodeAssistantAgent(ConversableAgent):
         self._init_actions([CodeAction])
 
     async def a_correctness_check(self, message: Optional[Dict]):
-        task_gogal = message.get("current_gogal", None)
+        task_gogal = message.get("current_goal", None)
         action_report = message.get("action_report", None)
         task_result = ""
         if action_report:

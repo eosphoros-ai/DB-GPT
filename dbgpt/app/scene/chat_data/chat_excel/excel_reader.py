@@ -248,21 +248,42 @@ class ExcelReader:
                 file_path,
                 index_col=False,
                 encoding=encoding,
+                # csv_colunm_foramt 可以修改更多，只是针对美元人民币符号，假如是“你好¥¥¥”则会报错！
                 converters={i: csv_colunm_foramt for i in range(df_tmp.shape[1])},
             )
         else:
             raise ValueError("Unsupported file format.")
 
         self.df.replace("", np.nan, inplace=True)
+
+        # 修改的部分
+
+        unnamed_columns_tmp = [
+            col
+            for col in df_tmp.columns
+            if col.startswith("Unnamed") and df_tmp[col].isnull().all()
+        ]
+        df_tmp.drop(columns=unnamed_columns_tmp, inplace=True)
+
+        self.df = self.df[df_tmp.columns.values]
+        #
+
         self.columns_map = {}
         for column_name in df_tmp.columns:
+            self.df[column_name] = self.df[column_name].astype(str)
             self.columns_map.update({column_name: excel_colunm_format(column_name)})
             try:
-                if not pd.api.types.is_datetime64_ns_dtype(self.df[column_name]):
+                self.df[column_name] = pd.to_datetime(self.df[column_name]).dt.strftime(
+                    "%Y-%m-%d"
+                )
+            except ValueError:
+                try:
                     self.df[column_name] = pd.to_numeric(self.df[column_name])
-                self.df[column_name] = self.df[column_name].fillna(0)
-            except Exception as e:
-                print("can't transfor numeric column" + column_name)
+                except ValueError:
+                    try:
+                        self.df[column_name] = self.df[column_name].astype(str)
+                    except Exception:
+                        print("Can't transform column: " + column_name)
 
         self.df = self.df.rename(columns=lambda x: x.strip().replace(" ", "_"))
 

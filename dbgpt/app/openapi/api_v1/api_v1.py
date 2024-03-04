@@ -366,11 +366,7 @@ async def chat_completions(
             context=flow_ctx,
         )
         return StreamingResponse(
-            flow_stream_generator(
-                flow_service.chat_flow(dialogue.select_param, flow_req),
-                dialogue.incremental,
-                dialogue.model_name,
-            ),
+            flow_service.chat_flow(dialogue.select_param, flow_req),
             headers=headers,
             media_type="text/event-stream",
         )
@@ -424,32 +420,6 @@ async def no_stream_generator(chat):
     with root_tracer.start_span("no_stream_generator"):
         msg = await chat.nostream_call()
         yield f"data: {msg}\n\n"
-
-
-async def flow_stream_generator(func, incremental: bool, model_name: str):
-    stream_id = f"chatcmpl-{str(uuid.uuid1())}"
-    previous_response = ""
-    async for chunk in func:
-        if chunk:
-            msg = chunk.replace("\ufffd", "")
-            if incremental:
-                incremental_output = msg[len(previous_response) :]
-                choice_data = ChatCompletionResponseStreamChoice(
-                    index=0,
-                    delta=DeltaMessage(role="assistant", content=incremental_output),
-                )
-                chunk = ChatCompletionStreamResponse(
-                    id=stream_id, choices=[choice_data], model=model_name
-                )
-                yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
-            else:
-                # TODO generate an openai-compatible streaming responses
-                msg = msg.replace("\n", "\\n")
-                yield f"data:{msg}\n\n"
-            previous_response = msg
-            await asyncio.sleep(0.02)
-    if incremental:
-        yield "data: [DONE]\n\n"
 
 
 async def stream_generator(chat, incremental: bool, model_name: str):

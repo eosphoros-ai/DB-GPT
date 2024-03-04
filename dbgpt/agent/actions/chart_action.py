@@ -65,7 +65,7 @@ class ChartAction(Action[SqlInput]):
                     "There is no implementation class bound to database resource execution！"
                 )
             data_df = await resource_db_client.a_query_to_df(resource.value, param.sql)
-            view = await self.render_protocal.disply(
+            view = await self.render_protocal.display(
                 chart=json.loads(param.json()), data_df=data_df
             )
             return ActionOutput(

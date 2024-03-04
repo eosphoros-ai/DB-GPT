@@ -2,7 +2,7 @@ import logging
 from typing import Dict, List
 
 from dbgpt._private.config import Config
-from dbgpt.agent.plugin.commands.command_mange import ApiCall
+from dbgpt.agent.plugin.commands.command_manage import ApiCall
 from dbgpt.agent.plugin.generator import PluginPromptGenerator
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.component import ComponentType
@@ -40,7 +40,7 @@ class ChatAgent(BaseChat):
 
         # load  select plugin
         agent_module = CFG.SYSTEM_APP.get_component(
-            ComponentType.AGENT_HUB, ModulePlugin
+            ComponentType.PLUGIN_HUB, ModulePlugin
         )
         self.plugins_prompt_generator = agent_module.load_select_plugin(
             self.plugins_prompt_generator, self.select_plugins

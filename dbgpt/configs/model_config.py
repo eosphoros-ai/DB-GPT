@@ -148,6 +148,10 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/01-ai/Yi-34B-Chat-4bits
     "yi-34b-chat-4bits": os.path.join(MODEL_PATH, "Yi-34B-Chat-4bits"),
     "yi-6b-chat": os.path.join(MODEL_PATH, "Yi-6B-Chat"),
+    # https://huggingface.co/google/gemma-7b-it
+    "gemma-7b-it": os.path.join(MODEL_PATH, "gemma-7b-it"),
+    # https://huggingface.co/google/gemma-2b-it
+    "gemma-2b-it": os.path.join(MODEL_PATH, "gemma-2b-it"),
 }
 
 EMBEDDING_MODEL_CONFIG = {
@@ -163,6 +167,8 @@ EMBEDDING_MODEL_CONFIG = {
     # https://huggingface.co/BAAI/bge-large-zh
     "bge-large-zh": os.path.join(MODEL_PATH, "bge-large-zh"),
     "bge-base-zh": os.path.join(MODEL_PATH, "bge-base-zh"),
+    "gte-large-zh": os.path.join(MODEL_PATH, "gte-large-zh"),
+    "gte-base-zh": os.path.join(MODEL_PATH, "gte-base-zh"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
     "proxy_openai": "proxy_openai",
     "proxy_azure": "proxy_azure",

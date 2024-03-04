@@ -35,14 +35,14 @@ clone_repositories() {
     cd /root && git clone https://github.com/eosphoros-ai/DB-GPT.git
     mkdir -p /root/DB-GPT/models && cd /root/DB-GPT/models
     git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
-    git clone https://huggingface.co/THUDM/chatglm2-6b
+    git clone https://huggingface.co/Qwen/Qwen-1_8B-Chat
     rm -rf /root/DB-GPT/models/text2vec-large-chinese/.git
-    rm -rf /root/DB-GPT/models/chatglm2-6b/.git
+    rm -rf /root/DB-GPT/models/Qwen-1_8B-Chat/.git
 }
 
 install_dbgpt_packages() {
     conda activate dbgpt && cd /root/DB-GPT && pip install -e ".[default]"
-    cp .env.template .env && sed -i 's/LLM_MODEL=vicuna-13b-v1.5/LLM_MODEL=chatglm2-6b/' .env
+    cp .env.template .env && sed -i 's/LLM_MODEL=vicuna-13b-v1.5/LLM_MODEL=qwen-1.8b-chat/' .env
 }
 
 clean_up() {

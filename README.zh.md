@@ -37,16 +37,27 @@
 </div>
 
 ## DB-GPT 是什么？
-DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领域的基础设施，通过开发多模型管理、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
-数据3.0 时代，基于模型、数据库，企业/开发者可以用更少的代码搭建自己的专属应用。
+
+🤖️ **DB-GPT是一个开源的AI原生数据应用开发框架(AI Native Data App Development framework with AWEL(Agentic Workflow Expression Language) and Agents)。**
+
+目的是构建大模型领域的基础设施，通过开发多模型管理(SMMF)、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作、AWEL(智能体工作流编排)等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。 
+
+🚀 **数据3.0 时代，基于模型、数据库，企业/开发者可以用更少的代码搭建自己的专属应用。**
 
 ## 效果演示
 
+### AI原生数据智能应用
+---
+- 🔥🔥🔥 [V0.5.0发布——通过工作流与智能体开发原生数据应用](https://www.yuque.com/eosphoros/dbgpt-docs/owcrh9423f9rqkg2)
+---
+
 ### Data Agents 
-![chat_excel](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/03d67da4-b9b9-4df3-8890-176a0941dab8)
 
-![data agents](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/ced393b4-9180-437a-90c5-b43633cda8cb)
+![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
 
+![Data-Apps](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/a7bf6d65-92d1-4f0e-aaf0-259ccdde22fd)
+
+![dashboard-images](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/1849a79a-f7fd-40cf-bc9c-b117a041dd6a)
 
 ## 目录
 - [架构方案](#架构方案)
@@ -85,6 +96,8 @@ DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领�
 - [DB-GPT-Plugins](https://github.com/eosphoros-ai/DB-GPT-Plugins) DB-GPT 插件仓库, 兼容Auto-GPT
 - [GPT-Vis](https://github.com/eosphoros-ai/DB-GPT-Web) 可视化协议 
 
+- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts 是官方提供的数据应用仓库, 包含数据智能应用, 智能体编排流程模版, 通用算子等构建在DB-GPT之上的资源。 
+
 ## 安装
 
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
@@ -94,21 +107,27 @@ DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领�
 
 [**教程**](https://www.yuque.com/eosphoros/dbgpt-docs/bex30nsv60ru0fmx)
 - [**快速开始**](https://www.yuque.com/eosphoros/dbgpt-docs/ew0kf1plm0bru2ga)
-  - [**源码安装**](https://www.yuque.com/eosphoros/dbgpt-docs/urh3fcx8tu0s9xmb)
-  - [**Docker安装**](https://www.yuque.com/eosphoros/dbgpt-docs/glf87qg4xxcyrp89)
-  - [**Docker Compose安装**](https://www.yuque.com/eosphoros/dbgpt-docs/wwdu11e0v5nkfzin)
+  - [源码安装](https://www.yuque.com/eosphoros/dbgpt-docs/urh3fcx8tu0s9xmb)
+  - [Docker安装](https://www.yuque.com/eosphoros/dbgpt-docs/glf87qg4xxcyrp89)
+  - [Docker Compose安装](https://www.yuque.com/eosphoros/dbgpt-docs/wwdu11e0v5nkfzin)
 - [**使用手册**](https://www.yuque.com/eosphoros/dbgpt-docs/tkspdd0tcy2vlnu4)
-  - [**知识库**](https://www.yuque.com/eosphoros/dbgpt-docs/ycyz3d9b62fccqxh)
-  - [**数据对话**](https://www.yuque.com/eosphoros/dbgpt-docs/gd9hbhi1dextqgbz)
-  - [**Excel对话**](https://www.yuque.com/eosphoros/dbgpt-docs/prugoype0xd2g4bb)
-  - [**数据库对话**](https://www.yuque.com/eosphoros/dbgpt-docs/wswpv3zcm2c9snmg)
-  - [**报表分析**](https://www.yuque.com/eosphoros/dbgpt-docs/vsv49p33eg4p5xc1)
-  - [**Agents**](https://www.yuque.com/eosphoros/dbgpt-docs/pom41m7oqtdd57hm)
+  - [知识库](https://www.yuque.com/eosphoros/dbgpt-docs/ycyz3d9b62fccqxh)
+  - [数据对话](https://www.yuque.com/eosphoros/dbgpt-docs/gd9hbhi1dextqgbz)
+  - [Excel对话](https://www.yuque.com/eosphoros/dbgpt-docs/prugoype0xd2g4bb)
+  - [数据库对话](https://www.yuque.com/eosphoros/dbgpt-docs/wswpv3zcm2c9snmg)
+  - [报表分析](https://www.yuque.com/eosphoros/dbgpt-docs/vsv49p33eg4p5xc1)
+  - [Agents](https://www.yuque.com/eosphoros/dbgpt-docs/pom41m7oqtdd57hm)
+- [**进阶教程**](https://www.yuque.com/eosphoros/dbgpt-docs/dxalqb8wsv2xkm5f)
+  - [智能体工作流使用](https://www.yuque.com/eosphoros/dbgpt-docs/hcomfb3yrleg7gmq)
+  - [智能应用使用](https://www.yuque.com/eosphoros/dbgpt-docs/aiagvxeb86iarq6r)
+  - [多模型管理](https://www.yuque.com/eosphoros/dbgpt-docs/huzgcf2abzvqy8uv)
+  - [命令行使用](https://www.yuque.com/eosphoros/dbgpt-docs/gd4kgumgd004aly8)
 - [**模型服务部署**](https://www.yuque.com/eosphoros/dbgpt-docs/vubxiv9cqed5mc6o)
-  - [**单机部署**](https://www.yuque.com/eosphoros/dbgpt-docs/kwg1ed88lu5fgawb)
-  - [**集群部署**](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
-  - [**vLLM**](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
+  - [单机部署](https://www.yuque.com/eosphoros/dbgpt-docs/kwg1ed88lu5fgawb)
+  - [集群部署](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
+  - [vLLM](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
 - [**如何Debug**](https://www.yuque.com/eosphoros/dbgpt-docs/eyg0ocbc2ce3q95r)
+- [**AWEL**](https://www.yuque.com/eosphoros/dbgpt-docs/zozbzslbfk0m0op5)
 - [**FAQ**](https://www.yuque.com/eosphoros/dbgpt-docs/gomtc46qonmyt44l)
 
 ## 特性一览
@@ -133,6 +152,8 @@ DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领�
   海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。当前已支持如下模型: 
 
   - 新增支持模型
+    - 🔥🔥🔥  [gemma-7b-it](https://huggingface.co/google/gemma-7b-it)
+    - 🔥🔥🔥  [gemma-2b-it](https://huggingface.co/google/gemma-2b-it)
     - 🔥🔥🔥  [SOLAR-10.7B](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0)
     - 🔥🔥🔥  [Mixtral-8x7B](https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1)
     - 🔥🔥🔥  [Qwen-72B-Chat](https://huggingface.co/Qwen/Qwen-72B-Chat)
@@ -191,104 +212,6 @@ DB-GPT是一个开源的数据域大模型框架。目的是构建大模型领�
 ## Licence
 
 The MIT License (MIT)
-
-# 路线图
-
-### 知识库RAG检索优化
-
-- [x] Multi Documents
-  - [x] PDF
-  - [x] Excel, csv
-  - [x] Word
-  - [x] Text
-  - [x] MarkDown
-  - [ ] Code
-  - [ ] Images 
-- [x] RAG
-- [ ] Graph Database
-  - [ ] Neo4j Graph
-  - [ ] Nebula Graph
-- [x] Multi Vector Database
-  - [x] Chroma
-  - [x] Milvus
-  - [x] Weaviate
-  - [x] PGVector
-  - [ ] Elasticsearch
-  - [ ] ClickHouse
-  - [ ] Faiss 
-
-### 多数据源支持
-
-- 支持数据源
-
-  - [x] MySQL
-  - [x] PostgresSQL
-  - [x] Spark
-  - [x] DuckDB
-  - [x] Sqlite
-  - [x] MSSQL
-  - [x] ClickHouse
-  - [x] StarRocks
-  - [ ] Oracle
-  - [ ] Redis
-  - [ ] MongoDB
-  - [ ] HBase
-  - [x] Doris
-  - [ ] DB2
-  - [ ] Couchbase
-  - [ ] Elasticsearch
-  - [ ] OceanBase
-  - [ ] TiDB
-
-
-### 多模型管理与推理优化
-- [x] [集群部署](https://www.yuque.com/eosphoros/dbgpt-docs/gmbp9619ytyn2v1s)
-- [x] [fastchat支持](https://github.com/lm-sys/FastChat)
-- [x] [vLLM 支持](https://www.yuque.com/eosphoros/dbgpt-docs/bhy9igdvanx1uluf)
-- [x] 上层接口兼容Openai
-- [ ] 云原生环境与Ray环境支持
-- [ ] 注册中心引入nacos
-- [ ] Embedding模型扩充，优化
-
-### Agents与插件市场
-- [x] 多Agents框架
-- [x] 自定义Agents
-- [x] 插件市场
-- [ ] CoT集成
-- [ ] 丰富插件样本库
-- [ ] 支持AutoGPT协议
-- [ ] Multi-agents & 可视化能力打通，定义LLM+Vis新标准
-
-
-### 测试评估能力建设
-- [ ] 知识库的数据文本集
-- [ ] 问题集合 [easy、medium、hard]
-- [ ] 评分机制
-- [ ] Excel + DB库表的测试评估
-
-### 成本与可观测性 
-- [x] [debugging](https://db-gpt.readthedocs.io/en/latest/getting_started/observability.html)
-- [ ] 可观测性
-- [ ] 推理预算
-
-### Text2SQL微调
-- support llms
-  - [x] LLaMA
-  - [x] LLaMA-2
-  - [x] BLOOM
-  - [x] BLOOMZ
-  - [x] Falcon
-  - [x] Baichuan
-  - [x] Baichuan2
-  - [x] InternLM
-  - [x] Qwen
-  - [x] XVERSE
-  - [x] ChatGLM2
-
--  SFT模型准确率 
-截止20231010，我们利用本项目基于开源的13B大小的模型微调后，在Spider的评估集上的执行准确率，已经超越GPT-4!
-
-[More Information about Text2SQL finetune](https://github.com/eosphoros-ai/DB-GPT-Hub)
 
 ## 引用
 如果您发现`DB-GPT`对您的研究或开发有用，请引用以下<a href="https://arxiv.org/abs/2312.17449" target="_blank">论文</a>：

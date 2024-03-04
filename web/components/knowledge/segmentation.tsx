@@ -77,8 +77,8 @@ export default function Segmentation(props: IProps) {
     fileStrategies.map((item) => {
       const name = item?.chunk_parameters?.chunk_strategy;
       if (!name) {
-        message.error(`Please select chunk strategy for ${item.name}.`);
-        checked = false;
+        // set default strategy
+        item.chunk_parameters = { chunk_strategy: 'Automatic' };
       }
       const strategy = strategies.filter((item) => item.strategy === name)[0];
       const newParam: any = {

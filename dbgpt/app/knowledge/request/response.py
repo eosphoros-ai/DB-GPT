@@ -42,3 +42,13 @@ class SpaceQueryResponse(BaseModel):
     gmt_modified: str = None
     """doc_count: doc_count"""
     docs: int = None
+
+
+class KnowledgeQueryResponse(BaseModel):
+    """source: knowledge reference source"""
+
+    source: str
+    """score: knowledge vector query similarity score"""
+    score: float = 0.0
+    """text: raw text info"""
+    text: str
