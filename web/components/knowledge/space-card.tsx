@@ -7,7 +7,6 @@ import DocPanel from './doc-panel';
 import moment from 'moment';
 import { apiInterceptors, delSpace, newDialogue } from '@/client/api';
 import { useTranslation } from 'react-i18next';
-import { VECTOR_ICON_MAP } from '@/utils/constants';
 import GptCard from '../common/gpt-card';
 
 interface IProps {
@@ -53,17 +52,6 @@ export default function SpaceCard(props: IProps) {
     }
   };
 
-  const renderVectorIcon = (type: string) => {
-    return (
-      <Image
-        className="rounded-full w-8 h-8 border border-gray-200 object-contain bg-white inline-block"
-        width={36}
-        height={136}
-        src={VECTOR_ICON_MAP[type] || '/models/knowledge-default.jpg'}
-        alt="llm"
-      />
-    );
-  };
   return (
     <ConfigProvider
       theme={{
@@ -84,7 +72,7 @@ export default function SpaceCard(props: IProps) {
           <GptCard
             title={space.name}
             desc={space.desc}
-            icon={VECTOR_ICON_MAP[space.vector_type] || '/LOGO_SMALL.png'}
+            icon="/models/knowledge-default.jpg"
             iconBorder={false}
             tags={[
               {
