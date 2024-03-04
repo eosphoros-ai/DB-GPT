@@ -84,7 +84,7 @@ export default function SpaceCard(props: IProps) {
           <GptCard
             title={space.name}
             desc={space.desc}
-            icon={VECTOR_ICON_MAP[space.vector_type] || '/LOGO_SMALL.png'}
+            icon={VECTOR_ICON_MAP[space.vector_type] || '/images/knowledge-icon.jpg'}
             iconBorder={false}
             tags={[
               {
