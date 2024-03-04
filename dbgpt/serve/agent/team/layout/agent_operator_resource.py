@@ -4,21 +4,16 @@ from pydantic import BaseModel, Field
 
 from dbgpt._private.pydantic import root_validator
 from dbgpt.agent.agents.agents_manage import agent_manage
-from dbgpt.agent.agents.base_agent_new import ConversableAgent
 from dbgpt.agent.agents.llm.llm import LLMConfig, LLMStrategyType
 from dbgpt.agent.resource.resource_api import AgentResource, ResourceType
 from dbgpt.core import LLMClient
 from dbgpt.core.awel.flow import (
-    IOField,
-    OperatorCategory,
-    OperatorType,
+    FunctionDynamicOptions,
     OptionValue,
     Parameter,
     ResourceCategory,
-    ViewMetadata,
     register_resource,
 )
-from dbgpt.core.interface.operators.prompt_operator import CommonChatPromptTemplate
 
 
 @register_resource(
@@ -115,6 +110,13 @@ class AwelAgentConfig(LLMConfig):
         return values
 
 
+def _agent_resource_option_values() -> List[OptionValue]:
+    return [
+        OptionValue(label=item["name"], name=item["name"], value=item["name"])
+        for item in agent_manage.list_agents()
+    ]
+
+
 @register_resource(
     label="Awel Layout Agent",
     name="agent_operator_agent",
@@ -126,10 +128,7 @@ class AwelAgentConfig(LLMConfig):
             name="agent_profile",
             type=str,
             description="Which agent want use.",
-            options=[
-                OptionValue(label=item["name"], name=item["name"], value=item["name"])
-                for item in agent_manage.list_agents()
-            ],
+            options=FunctionDynamicOptions(func=_agent_resource_option_values),
         ),
         Parameter.build_from(
             label="Role Name",
