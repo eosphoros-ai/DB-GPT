@@ -1,16 +1,7 @@
 """Common operators of AWEL."""
 import asyncio
 import logging
-from typing import (
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Union,
-)
+from typing import Awaitable, Callable, Dict, Generic, List, Optional, Union
 
 from ..dag.base import DAGContext
 from ..task.base import (
@@ -106,7 +97,7 @@ class ReduceStreamOperator(BaseOperator, Generic[IN, OUT]):
         curr_task_ctx.set_task_output(reduce_output)
         return reduce_output
 
-    async def reduce(self, input_value: AsyncIterator[IN]) -> OUT:
+    async def reduce(self, a: IN, b: IN) -> OUT:
         """Reduce the input stream to a single value."""
         raise NotImplementedError
 

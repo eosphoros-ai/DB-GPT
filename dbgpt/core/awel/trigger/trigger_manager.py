@@ -88,7 +88,7 @@ class HttpTriggerManager(TriggerManager):
                     # Mount to app, support dynamic route.
                     trigger.mount_to_app(app, self._router_prefix)
                 else:
-                    trigger.mount_to_router(self._router)
+                    trigger.mount_to_router(self._router, self._router_prefix)
                 self._trigger_map[trigger_id] = trigger
             except Exception as e:
                 self._unregister_route_tables(path, methods)
@@ -174,12 +174,14 @@ class DefaultTriggerManager(TriggerManager, BaseComponent):
     def __init__(self, system_app: SystemApp | None = None):
         """Initialize a DefaultTriggerManager."""
         self.system_app = system_app
-        self.http_trigger = HttpTriggerManager()
-        super().__init__(None)
+        self._http_trigger: Optional[HttpTriggerManager] = None
+        super().__init__()
 
     def init_app(self, system_app: SystemApp):
         """Initialize the trigger manager."""
         self.system_app = system_app
+        if system_app and self.system_app.app:
+            self._http_trigger = HttpTriggerManager()
 
     def register_trigger(self, trigger: Any, system_app: SystemApp) -> None:
         """Register a trigger to current manager."""
@@ -187,9 +189,9 @@ class DefaultTriggerManager(TriggerManager, BaseComponent):
 
         if isinstance(trigger, HttpTrigger):
             logger.info(f"Register trigger {trigger}")
-            self.http_trigger.register_trigger(trigger, system_app)
-        # else:
-        #     raise ValueError(f"Unsupported trigger: {trigger}")
+            if not self._http_trigger:
+                raise ValueError("Http trigger manager not initialized")
+            self._http_trigger.register_trigger(trigger, system_app)
 
     def unregister_trigger(self, trigger: Any, system_app: SystemApp) -> None:
         """Unregister a trigger to current manager."""
@@ -197,14 +199,14 @@ class DefaultTriggerManager(TriggerManager, BaseComponent):
 
         if isinstance(trigger, HttpTrigger):
             logger.info(f"Unregister trigger {trigger}")
-            self.http_trigger.unregister_trigger(trigger, system_app)
-        # else:
-        #     raise ValueError(f"Unsupported trigger: {trigger}")
+            if not self._http_trigger:
+                raise ValueError("Http trigger manager not initialized")
+            self._http_trigger.unregister_trigger(trigger, system_app)
 
     def after_register(self) -> None:
         """After register, init the trigger manager."""
-        if self.system_app:
-            self.http_trigger._init_app(self.system_app)
+        if self.system_app and self._http_trigger:
+            self._http_trigger._init_app(self.system_app)
 
     def keep_running(self) -> bool:
         """Whether keep running.
@@ -212,4 +214,6 @@ class DefaultTriggerManager(TriggerManager, BaseComponent):
         Returns:
             bool: Whether keep running, True means keep running, False means stop.
         """
-        return self.http_trigger.keep_running()
+        if not self._http_trigger:
+            return False
+        return self._http_trigger.keep_running()
