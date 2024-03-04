@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 
@@ -95,7 +96,7 @@ class Span:
             "end_time": None
             if not self.end_time
             else self.end_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
-            "metadata": self.metadata,
+            "metadata": _clean_for_json(self.metadata),
         }
 
 
@@ -187,3 +188,39 @@ class Tracer(BaseComponent, ABC):
 @dataclass
 class TracerContext:
     span_id: Optional[str] = None
+
+
+def _clean_for_json(data: Optional[str, Any] = None):
+    if not data:
+        return None
+    if isinstance(data, dict):
+        cleaned_dict = {}
+        for key, value in data.items():
+            # Try to clean the sub-items
+            cleaned_value = _clean_for_json(value)
+            if cleaned_value is not None:
+                # Only add to the cleaned dict if it's not None
+                try:
+                    json.dumps({key: cleaned_value})
+                    cleaned_dict[key] = cleaned_value
+                except TypeError:
+                    # Skip this key-value pair if it can't be serialized
+                    pass
+        return cleaned_dict
+    elif isinstance(data, list):
+        cleaned_list = []
+        for item in data:
+            cleaned_item = _clean_for_json(item)
+            if cleaned_item is not None:
+                try:
+                    json.dumps(cleaned_item)
+                    cleaned_list.append(cleaned_item)
+                except TypeError:
+                    pass
+        return cleaned_list
+    else:
+        try:
+            json.dumps(data)
+            return data
+        except TypeError:
+            return None

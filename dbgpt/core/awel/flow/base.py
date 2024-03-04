@@ -649,8 +649,8 @@ class BaseMetadata(BaseResource):
             # TODO, skip the optional parameters.
             raise FlowParameterMetadataException(
                 f"Parameters count not match(current key: {self.id}). "
-                f"Expected {len(self.parameters)}, "
-                f"but got {len(view_parameters)} from JSON metadata."
+                f"Expected {len(current_required_parameters)}, "
+                f"but got {len(view_required_parameters)} from JSON metadata."
                 f"Required parameters: {current_required_parameters.keys()}, "
                 f"but got {view_required_parameters.keys()}."
             )

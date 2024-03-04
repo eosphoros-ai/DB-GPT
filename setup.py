@@ -400,6 +400,8 @@ def core_requires():
         "sqlparse==0.4.4",
         "duckdb==0.8.1",
         "duckdb-engine",
+        # lightweight python library for scheduling jobs
+        "schedule",
     ]
     # TODO: remove fschat from simple_framework
     if BUILD_FROM_SOURCE:
@@ -566,6 +568,9 @@ def all_datasource_requires():
         "mysqlclient==2.1.0",
         "pydoris>=1.0.2,<2.0.0",
         "clickhouse-connect",
+        "pyhive",
+        "thrift",
+        "thrift_sasl",
     ]
 
 

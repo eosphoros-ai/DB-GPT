@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS `prompt_manage`
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_gpts_conversations` (`conv_id`),
   KEY `idx_gpts_name` (`gpts_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COMMENT="gpt conversations";
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpt conversations";
 
 CREATE TABLE IF NOT EXISTS `gpts_instance` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
@@ -222,7 +222,7 @@ CREATE TABLE IF NOT EXISTS `gpts_instance` (
   `is_sustainable` tinyint(1) NOT NULL COMMENT 'Applications for sustainable dialogue',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_gpts` (`gpts_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COMMENT="gpts instance";
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpts instance";
 
 CREATE TABLE `gpts_messages` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
@@ -241,7 +241,7 @@ CREATE TABLE `gpts_messages` (
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
   PRIMARY KEY (`id`),
   KEY `idx_q_messages` (`conv_id`,`rounds`,`sender`)
-) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COMMENT="gpts message";
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpts message";
 
 
 CREATE TABLE `gpts_plans` (
@@ -262,7 +262,7 @@ CREATE TABLE `gpts_plans` (
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_sub_task` (`conv_id`,`sub_task_num`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COMMENT="gpt plan";
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpt plan";
 
 -- dbgpt.dbgpt_serve_flow definition
 CREATE TABLE `dbgpt_serve_flow` (
@@ -290,7 +290,7 @@ CREATE TABLE `dbgpt_serve_flow` (
   KEY `ix_dbgpt_serve_flow_dag_id` (`dag_id`),
   KEY `ix_dbgpt_serve_flow_user_name` (`user_name`),
   KEY `ix_dbgpt_serve_flow_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- dbgpt.gpts_app definition
 CREATE TABLE `gpts_app` (
@@ -308,7 +308,7 @@ CREATE TABLE `gpts_app` (
   `icon` varchar(1024) DEFAULT NULL COMMENT 'app icon, url',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_gpts_app` (`app_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `gpts_app_collection` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
@@ -337,7 +337,7 @@ CREATE TABLE `gpts_app_detail` (
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_gpts_app_agent_node` (`app_name`,`agent_name`,`node_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE
 DATABASE IF NOT EXISTS EXAMPLE_1;

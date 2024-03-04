@@ -2,11 +2,11 @@ import { addFlow, apiInterceptors, getFlows } from '@/client/api';
 import MyEmpty from '@/components/common/MyEmpty';
 import MuiLoading from '@/components/common/loading';
 import FlowCard from '@/components/flow/flow-card';
-import { IFlow } from '@/types/flow';
+import { IFlow, IFlowUpdateParam } from '@/types/flow';
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, Form, Input, Modal, message } from 'antd';
+import { Button, Checkbox, Form, Input, Modal, message } from 'antd';
 import Link from 'next/link';
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 function Flow() {
@@ -15,6 +15,7 @@ function Flow() {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [flowList, setFlowList] = useState<Array<IFlow>>([]);
+  const [deploy, setDeploy] = useState(false);
 
   const [messageApi, contextHolder] = message.useMessage();
   const [form] = Form.useForm<Pick<IFlow, 'label' | 'name'>>();
@@ -40,13 +41,19 @@ function Flow() {
     copyFlowTemp.current = flow;
     form.setFieldValue('label', `${flow.label} Copy`);
     form.setFieldValue('name', `${flow.name}_copy`);
+    setDeploy(false);
     setShowModal(true);
   };
 
   const onFinish = async (val: { name: string; label: string }) => {
     if (!copyFlowTemp.current) return;
-    const { source, uid, dag_id, gmt_created, gmt_modified, ...params } = copyFlowTemp.current;
-    const data = { ...params, ...val };
+    const { source, uid, dag_id, gmt_created, gmt_modified, state, ...params } = copyFlowTemp.current;
+    const data: IFlowUpdateParam = {
+      ...params,
+      editable: true,
+      state: deploy ? 'deployed' : 'developing',
+      ...val,
+    };
     const [err] = await apiInterceptors(addFlow(data));
     if (!err) {
       messageApi.success(t('save_flow_success'));
@@ -81,11 +88,20 @@ function Flow() {
         footer={false}
       >
         <Form form={form} onFinish={onFinish} className="mt-6">
-          <Form.Item name="name" label="name" rules={[{ required: true }]}>
+          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="label" label="label" rules={[{ required: true }]}>
+          <Form.Item name="label" label="Label" rules={[{ required: true }]}>
             <Input />
+          </Form.Item>
+          <Form.Item label="Deploy">
+            <Checkbox
+              value={deploy}
+              onChange={(e) => {
+                const val = e.target.checked;
+                setDeploy(val);
+              }}
+            />
           </Form.Item>
           <div className="flex justify-end">
             <Button type="primary" htmlType="submit">

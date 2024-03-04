@@ -24,7 +24,7 @@ const edgeTypes = { buttonedge: ButtonEdge };
 const Canvas: React.FC<Props> = () => {
   const { t } = useTranslation();
   const [messageApi, contextHolder] = message.useMessage();
-  const [form] = Form.useForm();
+  const [form] = Form.useForm<IFlowUpdateParam>();
   const searchParams = useSearchParams();
   const id = searchParams?.get('id') || '';
   const reactFlow = useReactFlow();
@@ -35,6 +35,7 @@ const Canvas: React.FC<Props> = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [flowInfo, setFlowInfo] = useState<IFlowUpdateParam>();
+  const [deploy, setDeploy] = useState(true);
 
   async function getFlowData() {
     setLoading(true);
@@ -175,10 +176,11 @@ const Canvas: React.FC<Props> = () => {
   }
 
   async function handleSaveFlow() {
-    const { name, label, description = '', editable = false } = form.getFieldsValue();
+    const { name, label, description = '', editable = false, state = 'deployed' } = form.getFieldsValue();
+    console.log(form.getFieldsValue());
     const reactFlowObject = mapHumpToUnderline(reactFlow.toObject() as IFlowData);
     if (id) {
-      const [, , res] = await apiInterceptors(updateFlowById(id, { name, label, description, editable, uid: id, flow_data: reactFlowObject }));
+      const [, , res] = await apiInterceptors(updateFlowById(id, { name, label, description, editable, uid: id, flow_data: reactFlowObject, state }));
       setIsModalVisible(false);
       if (res?.success) {
         messageApi.success(t('save_flow_success'));
@@ -186,7 +188,7 @@ const Canvas: React.FC<Props> = () => {
         messageApi.error(res?.err_msg);
       }
     } else {
-      const [_, res] = await apiInterceptors(addFlow({ name, label, description, editable, flow_data: reactFlowObject }));
+      const [_, res] = await apiInterceptors(addFlow({ name, label, description, editable, flow_data: reactFlowObject, state }));
       if (res?.uid) {
         messageApi.success(t('save_flow_success'));
         const history = window.history;
@@ -271,7 +273,21 @@ const Canvas: React.FC<Props> = () => {
             <TextArea rows={3} />
           </Form.Item>
           <Form.Item label="Editable" name="editable" initialValue={flowInfo?.editable} valuePropName="checked">
-            <Checkbox></Checkbox>
+            <Checkbox />
+          </Form.Item>
+          <Form.Item hidden name="state">
+            <Input />
+          </Form.Item>
+          <Form.Item label="Deploy">
+            <Checkbox
+              defaultChecked={flowInfo?.state === 'deployed' || flowInfo?.state === 'running'}
+              value={deploy}
+              onChange={(e) => {
+                const val = e.target.checked;
+                form.setFieldValue('state', val ? 'deployed' : 'developing');
+                setDeploy(val);
+              }}
+            />
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
             <Space>

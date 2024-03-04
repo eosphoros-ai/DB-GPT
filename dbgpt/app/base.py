@@ -31,7 +31,7 @@ def async_db_summary(system_app: SystemApp):
 
 
 def server_init(param: "WebServerParameters", system_app: SystemApp):
-    from dbgpt.agent.plugin.commands.command_mange import CommandRegistry
+    from dbgpt.agent.plugin.commands.command_manage import CommandRegistry
 
     # logger.info(f"args: {args}")
     # init config
@@ -58,15 +58,15 @@ def server_init(param: "WebServerParameters", system_app: SystemApp):
 
     cfg.command_registry = command_registry
 
-    command_disply_commands = [
-        "dbgpt.agent.plugin.commands.built_in.disply_type.show_chart_gen",
-        "dbgpt.agent.plugin.commands.built_in.disply_type.show_table_gen",
-        "dbgpt.agent.plugin.commands.built_in.disply_type.show_text_gen",
+    command_dispaly_commands = [
+        "dbgpt.agent.plugin.commands.built_in.display_type.show_chart_gen",
+        "dbgpt.agent.plugin.commands.built_in.display_type.show_table_gen",
+        "dbgpt.agent.plugin.commands.built_in.display_type.show_text_gen",
     ]
-    command_disply_registry = CommandRegistry()
-    for command in command_disply_commands:
-        command_disply_registry.import_commands(command)
-    cfg.command_disply = command_disply_registry
+    command_dispaly_registry = CommandRegistry()
+    for command in command_dispaly_commands:
+        command_dispaly_registry.import_commands(command)
+    cfg.command_display = command_dispaly_commands
 
 
 def _create_model_start_listener(system_app: SystemApp):
@@ -116,9 +116,7 @@ def _migration_db_storage(param: "WebServerParameters"):
                     f"Create all tables stored in this metadata error: {str(e)}"
                 )
 
-                _ddl_init_and_upgrade(
-                    default_meta_data_path, param.disable_alembic_upgrade
-                )
+            _ddl_init_and_upgrade(default_meta_data_path, param.disable_alembic_upgrade)
         else:
             warn_msg = """For safety considerations, MySQL Database not support DDL init and upgrade. "
                 "1.If you are use DB-GPT firstly, please manually execute the following command to initialize, 

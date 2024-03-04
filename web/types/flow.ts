@@ -1,5 +1,7 @@
 import { Node } from 'reactflow';
 
+export type FlowState = 'deployed' | 'developing' | 'initializing' | 'testing' | 'disabled' | 'running' | 'load_failed';
+
 export type IFlowUpdateParam = {
   name: string;
   label: string;
@@ -7,6 +9,7 @@ export type IFlowUpdateParam = {
   description: string;
   uid?: string;
   flow_data?: IFlowData;
+  state?: FlowState;
 };
 
 export type IFlow = {
@@ -20,6 +23,8 @@ export type IFlow = {
   description: string;
   flow_data: IFlowData;
   source: string;
+  state?: FlowState;
+  error_message?: string;
 };
 
 export type IFlowResponse = {

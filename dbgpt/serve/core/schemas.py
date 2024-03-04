@@ -1,4 +1,5 @@
 import logging
+import sys
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
 
 from fastapi import HTTPException, Request
@@ -6,6 +7,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from dbgpt._private.pydantic import BaseModel, Field
+
+if sys.version_info < (3, 11):
+    try:
+        from exceptiongroup import ExceptionGroup
+    except ImportError:
+        ExceptionGroup = None
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -71,8 +78,16 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 async def common_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Common exception handler"""
+
+    if ExceptionGroup and isinstance(exc, ExceptionGroup):
+        err_strs = []
+        for e in exc.exceptions:
+            err_strs.append(str(e))
+        err_msg = ";".join(err_strs)
+    else:
+        err_msg = str(exc)
     res = Result.failed(
-        msg=str(exc),
+        msg=err_msg,
         err_code="E0003",
     )
     logger.error(f"common_exception_handler catch Exception: {res}")

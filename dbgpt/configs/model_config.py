@@ -167,6 +167,8 @@ EMBEDDING_MODEL_CONFIG = {
     # https://huggingface.co/BAAI/bge-large-zh
     "bge-large-zh": os.path.join(MODEL_PATH, "bge-large-zh"),
     "bge-base-zh": os.path.join(MODEL_PATH, "bge-base-zh"),
+    "gte-large-zh": os.path.join(MODEL_PATH, "gte-large-zh"),
+    "gte-base-zh": os.path.join(MODEL_PATH, "gte-base-zh"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
     "proxy_openai": "proxy_openai",
     "proxy_azure": "proxy_azure",

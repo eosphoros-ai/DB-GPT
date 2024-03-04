@@ -59,7 +59,7 @@ class WorkerApplyOutput:
             return WorkerApplyOutput("Not outputs")
         combined_success = all(out.success for out in outs)
         max_timecost = max(out.timecost for out in outs)
-        combined_message = ", ".join(out.message for out in outs)
+        combined_message = "\n;".join(out.message for out in outs)
         return WorkerApplyOutput(combined_message, combined_success, max_timecost)
 
 
