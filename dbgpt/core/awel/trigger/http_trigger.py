@@ -410,12 +410,20 @@ class HttpTrigger(Trigger):
         """
         return self._register_to_app
 
-    def mount_to_router(self, router: "APIRouter") -> None:
+    def mount_to_router(
+        self, router: "APIRouter", global_prefix: Optional[str] = None
+    ) -> None:
         """Mount the trigger to a router.
 
         Args:
             router (APIRouter): The router to mount the trigger.
+            global_prefix (Optional[str], optional): The global prefix of the router.
         """
+        path = (
+            join_paths(global_prefix, self._endpoint)
+            if global_prefix
+            else self._endpoint
+        )
         dynamic_route_function = self._create_route_func()
         router.api_route(
             self._endpoint,
@@ -424,6 +432,8 @@ class HttpTrigger(Trigger):
             status_code=self._status_code,
             tags=self._router_tags,
         )(dynamic_route_function)
+
+        logger.info(f"Mount http trigger success, path: {path}")
 
     def mount_to_app(self, app: "FastAPI", global_prefix: Optional[str] = None) -> None:
         """Mount the trigger to a FastAPI app.
@@ -455,6 +465,7 @@ class HttpTrigger(Trigger):
         )
         app.openapi_schema = None
         app.middleware_stack = None
+        logger.info(f"Mount http trigger success, path: {path}")
 
     def remove_from_app(
         self, app: "FastAPI", global_prefix: Optional[str] = None
@@ -583,9 +594,12 @@ class HttpTrigger(Trigger):
             request_model = self._req_body
         elif get_origin(self._req_body) == dict and not is_query_method:
             request_model = self._req_body
+        elif is_query_method:
+            request_model = None
         else:
             err_msg = f"Unsupported request body type {self._req_body}"
             raise AWELHttpError(err_msg)
+
         dynamic_route_function = create_route_function(function_name, request_model)
         logger.info(
             f"mount router function {dynamic_route_function}({function_name}), "

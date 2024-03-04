@@ -479,7 +479,8 @@ class DefaultInputContext(InputContext):
             if apply_type == "map":
                 result: Coroutine[Any, Any, TaskOutput[Any]] = out.task_output.map(func)
             elif apply_type == "reduce":
-                result = out.task_output.reduce(func)
+                reduce_func = cast(ReduceFunc, func)
+                result = out.task_output.reduce(reduce_func)
             elif apply_type == "check_condition":
                 result = out.task_output.check_condition(func)
             else:
@@ -541,14 +542,16 @@ class DefaultInputContext(InputContext):
         )
         return DefaultInputContext([single_output])
 
-    async def reduce(self, reduce_func: Callable[[Any], Any]) -> InputContext:
+    async def reduce(self, reduce_func: ReduceFunc) -> InputContext:
         """Apply a reduce function to all parent outputs."""
         if not self.check_stream():
             raise ValueError(
                 "The output in all tasks must has same output format of stream to apply"
                 " reduce function"
             )
-        new_outputs, results = await self._apply_func(reduce_func, apply_type="reduce")
+        new_outputs, results = await self._apply_func(
+            reduce_func, apply_type="reduce"  # type: ignore
+        )
         for i, task_ctx in enumerate(new_outputs):
             task_ctx = cast(TaskContext, task_ctx)
             task_ctx.set_task_output(results[i])
