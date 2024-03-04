@@ -38,10 +38,6 @@ export const MODEL_ICON_MAP: Record<ModelType, { label: string; icon: string }> 
   'solar-10.7b-instruct-v1.0': { label: 'solar-10.7b-instruct-v1.0', icon: '/models/solar_logo.png' },
 };
 
-export const VECTOR_ICON_MAP: Record<string, string> = {
-  Chroma: '/models/chroma-logo.png',
-};
-
 export const dbMapper: Record<DBType, { label: string; icon: string; desc: string }> = {
   mysql: { label: 'MySQL', icon: '/icons/mysql.png', desc: 'Fast, reliable, scalable open-source relational database management system.' },
   mssql: { label: 'MSSQL', icon: '/icons/mssql.png', desc: 'Powerful, scalable, secure relational database system by Microsoft.' },
