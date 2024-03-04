@@ -16,9 +16,7 @@ class PlannerAgent(ConversableAgent):
     agents: List[ConversableAgent] = Field(default_factory=list)
 
     profile: str = "Planner"
-    goal: str = (
-        "理解下面每个智能代理和他们的能力，使用给出的资源，通过协调智能代理来解决用户问题。 请发挥你LLM的知识和理解能力，理解用户问题的意图和目标，生成一个可以在没有用户帮助下，由智能代理协作完成目标的任务计划。"
-    )
+    goal: str = "理解下面每个智能代理和他们的能力，使用给出的资源，通过协调智能代理来解决用户问题。 请发挥你LLM的知识和理解能力，理解用户问题的意图和目标，生成一个可以在没有用户帮助下，由智能代理协作完成目标的任务计划。"
     expand_prompt: str = """可用智能代理:
         {agents}
     """

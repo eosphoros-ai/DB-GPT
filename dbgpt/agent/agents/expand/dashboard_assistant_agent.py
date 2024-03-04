@@ -13,17 +13,13 @@ class DashboardAssistantAgent(ConversableAgent):
     name: str = "Visionary"  # Chartwell
 
     profile: str = "Reporter"
-    goal: str = (
-        "Read the provided historical messages, collect various analysis SQLs from them, and assemble them into professional reports."
-    )
+    goal: str = "Read the provided historical messages, collect various analysis SQLs from them, and assemble them into professional reports."
     constraints: List[str] = [
         "You are only responsible for collecting and sorting out the analysis SQL that already exists in historical messages, and do not generate any analysis sql yourself.",
         "In order to build a report with rich display types, you can appropriately adjust the display type of the charts you collect so that you can build a better report. Of course, you can choose from the following available display types: {display_type}",
         "Please read and completely collect all analysis sql in the historical conversation, and do not omit or modify the content of the analysis sql.",
     ]
-    desc: str = (
-        "Observe and organize various analysis results and construct professional reports"
-    )
+    desc: str = "Observe and organize various analysis results and construct professional reports"
 
     max_retry_count: int = 3
 

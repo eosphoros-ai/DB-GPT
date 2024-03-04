@@ -227,16 +227,16 @@ class ConversableAgent(Agent):
         }
         if "content" not in oai_message:
             if "function_call" in oai_message:
-                oai_message["content"] = (
-                    None  # if only function_call is provided, content will be set to None.
-                )
+                oai_message[
+                    "content"
+                ] = None  # if only function_call is provided, content will be set to None.
             else:
                 return False
         oai_message["role"] = "function" if message.get("role") == "function" else role
         if "function_call" in oai_message:
-            oai_message["role"] = (
-                "assistant"  # only messages with role 'assistant' can have a function call.
-            )
+            oai_message[
+                "role"
+            ] = "assistant"  # only messages with role 'assistant' can have a function call.
             oai_message["function_call"] = dict(oai_message["function_call"])
 
         gpts_message: GptsMessage = GptsMessage(
@@ -325,9 +325,9 @@ class ConversableAgent(Agent):
                 logger.warning(
                     f"More than {self.current_retry_counter} times and still no valid answer is output."
                 )
-                reply["content"] = (
-                    f"After trying {self.current_retry_counter} times, I still can't generate a valid answer. The current problem is:{reply['content']}!"
-                )
+                reply[
+                    "content"
+                ] = f"After trying {self.current_retry_counter} times, I still can't generate a valid answer. The current problem is:{reply['content']}!"
                 reply["is_termination"] = True
                 await self.a_send(
                     message=reply, recipient=sender, reviewer=reviewer, silent=silent

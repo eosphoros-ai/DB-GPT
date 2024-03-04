@@ -35,9 +35,7 @@ class CodeAssistantAgent(ConversableAgent):
         """The code is executed without user participation. It is forbidden to use methods that will block the process or need to be shut down, such as the plt.show() method of matplotlib.pyplot as plt.""",
         """It is prohibited to fabricate non-existent data to achieve goals.""",
     ]
-    desc: str = (
-        """Can independently write and execute python/shell code to solve various problems"""
-    )
+    desc: str = """Can independently write and execute python/shell code to solve various problems"""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
