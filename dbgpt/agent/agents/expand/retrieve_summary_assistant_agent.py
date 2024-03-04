@@ -471,16 +471,16 @@ class RetrieveSummaryAssistantAgent(ConversableAgent):
                         "Failed to split docs with must_break_at_empty_line being True, set to False."
                     )
                     must_break_at_empty_line = False
-            chunks.append(prev) if len(
-                prev
-            ) > 10 else None  # don't add chunks less than 10 characters
+            (
+                chunks.append(prev) if len(prev) > 10 else None
+            )  # don't add chunks less than 10 characters
             lines = lines[cnt:]
             lines_tokens = lines_tokens[cnt:]
             sum_tokens = sum(lines_tokens)
         text_to_chunk = "\n".join(lines)
-        chunks.append(text_to_chunk) if len(
-            text_to_chunk
-        ) > 10 else None  # don't add chunks less than 10 characters
+        (
+            chunks.append(text_to_chunk) if len(text_to_chunk) > 10 else None
+        )  # don't add chunks less than 10 characters
         return chunks
 
     def _extract_text_from_pdf(self, file: str) -> str:

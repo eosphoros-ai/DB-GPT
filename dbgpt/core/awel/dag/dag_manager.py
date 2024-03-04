@@ -3,6 +3,7 @@
 DAGManager will load DAGs from dag_dirs, and register the trigger nodes
 to TriggerManager.
 """
+
 import logging
 from typing import Dict, List, Optional
 

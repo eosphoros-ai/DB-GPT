@@ -380,9 +380,9 @@ class GptsAppDao(BaseDao):
                             ),
                             "user_code": app_info.user_code,
                             "sys_code": app_info.sys_code,
-                            "is_collected": "true"
-                            if app_info.app_code in app_codes
-                            else "false",
+                            "is_collected": (
+                                "true" if app_info.app_code in app_codes else "false"
+                            ),
                             "created_at": app_info.created_at,
                             "updated_at": app_info.updated_at,
                             "details": [
@@ -505,9 +505,11 @@ class GptsAppDao(BaseDao):
                         resources=json.dumps(resource_dicts, ensure_ascii=False),
                         prompt_template=item.prompt_template,
                         llm_strategy=item.llm_strategy,
-                        llm_strategy_value=None
-                        if item.llm_strategy_value is None
-                        else json.dumps(tuple(item.llm_strategy_value.split(","))),
+                        llm_strategy_value=(
+                            None
+                            if item.llm_strategy_value is None
+                            else json.dumps(tuple(item.llm_strategy_value.split(",")))
+                        ),
                         created_at=item.created_at,
                         updated_at=item.updated_at,
                     )
@@ -549,9 +551,11 @@ class GptsAppDao(BaseDao):
                         resources=json.dumps(resource_dicts, ensure_ascii=False),
                         prompt_template=item.prompt_template,
                         llm_strategy=item.llm_strategy,
-                        llm_strategy_value=None
-                        if item.llm_strategy_value is None
-                        else json.dumps(tuple(item.llm_strategy_value.split(","))),
+                        llm_strategy_value=(
+                            None
+                            if item.llm_strategy_value is None
+                            else json.dumps(tuple(item.llm_strategy_value.split(",")))
+                        ),
                         created_at=item.created_at,
                         updated_at=item.updated_at,
                     )

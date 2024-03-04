@@ -2,6 +2,7 @@
 
 This module is deprecated. we will remove it in the future.
 """
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 

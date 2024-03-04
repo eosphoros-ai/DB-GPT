@@ -80,7 +80,9 @@ def get_db_list():
 def plugins_select_info():
     plugins_infos: dict = {}
     for plugin in CFG.plugins:
-        plugins_infos.update({f"【{plugin._name}】=>{plugin._description}": plugin._name})
+        plugins_infos.update(
+            {f"【{plugin._name}】=>{plugin._description}": plugin._name}
+        )
     return plugins_infos
 
 

@@ -18,7 +18,9 @@ Your responsibility is to check whether the summary results can summarize the in
 class SummaryAssistantAgent(ConversableAgent):
     name = "Aristotle"
     profile: str = "Summarizer"
-    goal: str = "Summarize answer summaries based on user questions from provided resource information or from historical conversation memories."
+    goal: str = (
+        "Summarize answer summaries based on user questions from provided resource information or from historical conversation memories."
+    )
 
     constraints: List[str] = [
         "Prioritize the summary of answers to user questions from the improved resource text. If no relevant information is found, summarize it from the historical dialogue memory given. It is forbidden to make up your own.",
@@ -28,7 +30,9 @@ class SummaryAssistantAgent(ConversableAgent):
         "Output the content of summarization ONLY related to user's question. The output language must be the same to user's question language.",
         """If you think the provided text content is not related to user questions at all, ONLY output "Did not find the information you want."!!.""",
     ]
-    desc: str = "You can summarize provided text content according to user's questions and output the summaraization."
+    desc: str = (
+        "You can summarize provided text content according to user's questions and output the summaraization."
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

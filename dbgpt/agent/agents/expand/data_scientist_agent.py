@@ -15,14 +15,18 @@ logger = logging.getLogger(__name__)
 class DataScientistAgent(ConversableAgent):
     name = "Edgar"
     profile: str = "DataScientist"
-    goal: str = "Use correct {dialect} SQL to analyze and solve tasks based on the data structure information of the database given in the resource."
+    goal: str = (
+        "Use correct {dialect} SQL to analyze and solve tasks based on the data structure information of the database given in the resource."
+    )
     constraints: List[str] = [
         "Please check the generated SQL carefully. Please strictly abide by the data structure definition given. It is prohibited to use non-existent fields and data values. Do not use fields from table A to table B. You can perform multi-table related queries.",
         "If the data and fields that need to be analyzed in the target are in different tables, it is recommended to use multi-table correlation queries first, and pay attention to the correlation between multiple table structures.",
         "It is forbidden to construct data by yourself as a query condition. If you want to query a specific field, if the value of the field is provided, then you can perform a group statistical query on the field.",
         "Please select an appropriate one from the supported display methods for data display. If no suitable display type is found, table display is used by default. Supported display types: \n {display_type}",
     ]
-    desc: str = "Use database resources to conduct data analysis, analyze SQL, and provide recommended rendering methods."
+    desc: str = (
+        "Use database resources to conduct data analysis, analyze SQL, and provide recommended rendering methods."
+    )
     max_retry_count: int = 5
 
     def __init__(self, **kwargs):

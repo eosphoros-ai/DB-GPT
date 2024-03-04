@@ -22,7 +22,10 @@ class PlanInput(BaseModel):
     )
     agent: str = Field(..., description="用来完成当前步骤的智能代理")
     content: str = Field(..., description="当前步骤的任务内容，确保可以被智能代理执行")
-    rely: str = Field(..., description="当前任务执行依赖的其他任务serial_number, 如:1,2,3,  无依赖为空")
+    rely: str = Field(
+        ...,
+        description="当前任务执行依赖的其他任务serial_number, 如:1,2,3,  无依赖为空",
+    )
 
 
 class PlanAction(Action[List[PlanInput]]):

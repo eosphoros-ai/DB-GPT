@@ -89,12 +89,16 @@ class Span:
             "span_id": self.span_id,
             "parent_span_id": self.parent_span_id,
             "operation_name": self.operation_name,
-            "start_time": None
-            if not self.start_time
-            else self.start_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
-            "end_time": None
-            if not self.end_time
-            else self.end_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+            "start_time": (
+                None
+                if not self.start_time
+                else self.start_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            ),
+            "end_time": (
+                None
+                if not self.end_time
+                else self.end_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            ),
             "metadata": self.metadata,
         }
 

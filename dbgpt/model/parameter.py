@@ -535,13 +535,13 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
             "openai_api_base": self.proxy_server_url,
             "openai_api_key": self.proxy_api_key,
             "openai_api_type": self.proxy_api_type if self.proxy_api_type else None,
-            "openai_api_version": self.proxy_api_version
-            if self.proxy_api_version
-            else None,
+            "openai_api_version": (
+                self.proxy_api_version if self.proxy_api_version else None
+            ),
             "model": self.proxy_backend,
-            "deployment": self.proxy_deployment
-            if self.proxy_deployment
-            else self.proxy_backend,
+            "deployment": (
+                self.proxy_deployment if self.proxy_deployment else self.proxy_backend
+            ),
         }
         for k, v in kwargs:
             params[k] = v

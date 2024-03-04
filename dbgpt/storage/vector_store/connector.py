@@ -9,7 +9,6 @@ connector = {}
 
 
 class VectorStoreConnector:
-
     """VectorStoreConnector, can connect different vector db provided load document api_v1 and similar search api_v1.
     1.load_document:knowledge document source into vector store.(Chroma, Milvus, Weaviate)
     2.similar_search: similarity search from vector_store

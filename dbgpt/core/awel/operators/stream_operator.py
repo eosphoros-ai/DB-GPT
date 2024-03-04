@@ -1,4 +1,5 @@
 """The module of stream operator."""
+
 from abc import ABC, abstractmethod
 from typing import AsyncIterator, Generic
 

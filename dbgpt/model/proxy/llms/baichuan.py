@@ -82,7 +82,9 @@ def main():
         model=ProxyModel(model_params=model_params),
         params={
             "messages": [
-                ModelMessage(role=ModelMessageRoleType.HUMAN, content="背诵《论语》第一章")
+                ModelMessage(
+                    role=ModelMessageRoleType.HUMAN, content="背诵《论语》第一章"
+                )
             ]
         },
     ):

@@ -1,5 +1,6 @@
 """DB-GPT: Next Generation Data Interaction Solution with LLMs.
 """
+
 from dbgpt import _version  # noqa: E402
 from dbgpt.component import BaseComponent, SystemApp  # noqa: F401
 

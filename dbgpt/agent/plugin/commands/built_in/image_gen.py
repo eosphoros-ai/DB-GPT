@@ -1,4 +1,5 @@
 """ Image Generation Module for AutoGPT."""
+
 import io
 import logging
 import uuid

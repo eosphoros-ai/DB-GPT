@@ -2,6 +2,7 @@
 
 Supports more trigger types, such as RequestHttpTrigger.
 """
+
 from enum import Enum
 from typing import List, Optional, Type, Union
 

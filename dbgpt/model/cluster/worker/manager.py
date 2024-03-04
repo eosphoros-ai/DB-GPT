@@ -234,7 +234,9 @@ class LocalWorkerManager(WorkerManager):
                 f"Unsupported worker type: {worker_type}, now supported worker type: {supported_types}"
             )
         start_apply_req = WorkerApplyRequest(
-            model=worker_params.model_name, apply_type=WorkerApplyType.START, worker_type=worker_type
+            model=worker_params.model_name,
+            apply_type=WorkerApplyType.START,
+            worker_type=worker_type,
         )
         out: WorkerApplyOutput = None
         try:

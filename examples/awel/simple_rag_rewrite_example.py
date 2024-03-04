@@ -28,6 +28,7 @@
             "context":"steve curry and lebron james are nba all-stars"
         }'
 """
+
 from typing import Dict
 
 from dbgpt._private.pydantic import BaseModel, Field

@@ -1,4 +1,5 @@
 """ A module for generating custom prompt strings."""
+
 from typing import Any, Callable, Dict, List, Optional
 
 

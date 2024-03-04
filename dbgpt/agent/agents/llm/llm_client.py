@@ -70,14 +70,16 @@ class AIWrapper:
         elif context:
             # Instantiate the messages
             params["messages"] = [
-                {
-                    **m,
-                    "content": self.instantiate(
-                        m["content"], context, allow_format_str_template
-                    ),
-                }
-                if m.get("content")
-                else m
+                (
+                    {
+                        **m,
+                        "content": self.instantiate(
+                            m["content"], context, allow_format_str_template
+                        ),
+                    }
+                    if m.get("content")
+                    else m
+                )
                 for m in messages
             ]
         return params

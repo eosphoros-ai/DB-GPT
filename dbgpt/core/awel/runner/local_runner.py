@@ -2,6 +2,7 @@
 
 This runner will run the workflow in the current process.
 """
+
 import logging
 import traceback
 from typing import Any, Dict, List, Optional, Set, cast

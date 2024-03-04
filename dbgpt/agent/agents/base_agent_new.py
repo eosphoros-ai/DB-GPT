@@ -366,15 +366,21 @@ class ConversableAgent(Role, Agent):
             rounds=self.consecutive_auto_reply_counter,
             current_goal=oai_message.get("current_goal", None),
             content=oai_message.get("content", None),
-            context=json.dumps(oai_message["context"], ensure_ascii=False)
-            if "context" in oai_message
-            else None,
-            review_info=json.dumps(oai_message["review_info"], ensure_ascii=False)
-            if "review_info" in oai_message
-            else None,
-            action_report=json.dumps(oai_message["action_report"], ensure_ascii=False)
-            if "action_report" in oai_message
-            else None,
+            context=(
+                json.dumps(oai_message["context"], ensure_ascii=False)
+                if "context" in oai_message
+                else None
+            ),
+            review_info=(
+                json.dumps(oai_message["review_info"], ensure_ascii=False)
+                if "review_info" in oai_message
+                else None
+            ),
+            action_report=(
+                json.dumps(oai_message["action_report"], ensure_ascii=False)
+                if "action_report" in oai_message
+                else None
+            ),
             model_name=oai_message.get("model_name", None),
         )
 
@@ -531,9 +537,9 @@ class ConversableAgent(Role, Agent):
                 {
                     "content": content,
                     "role": role,
-                    "context": json.loads(item.context)
-                    if item.context is not None
-                    else None,
+                    "context": (
+                        json.loads(item.context) if item.context is not None else None
+                    ),
                 }
             )
         return oai_messages

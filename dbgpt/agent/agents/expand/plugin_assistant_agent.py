@@ -33,7 +33,9 @@ class PluginAssistantAgent(ConversableAgent):
         "Please read the parameter definition of the tool carefully and extract the specific parameters required to execute the tool from the user gogal.",
         "Please output the selected tool name and specific parameter information in json format according to the following required format. If there is an example, please refer to the sample format output.",
     ]
-    desc: str = "You can use the following tools to complete the task objectives, tool information: {tool_infos}"
+    desc: str = (
+        "You can use the following tools to complete the task objectives, tool information: {tool_infos}"
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

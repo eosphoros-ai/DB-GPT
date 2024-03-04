@@ -1,4 +1,5 @@
 """Commands for converting audio to text."""
+
 import json
 
 import requests

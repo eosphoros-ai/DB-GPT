@@ -227,16 +227,16 @@ class ConversableAgent(Agent):
         }
         if "content" not in oai_message:
             if "function_call" in oai_message:
-                oai_message[
-                    "content"
-                ] = None  # if only function_call is provided, content will be set to None.
+                oai_message["content"] = (
+                    None  # if only function_call is provided, content will be set to None.
+                )
             else:
                 return False
         oai_message["role"] = "function" if message.get("role") == "function" else role
         if "function_call" in oai_message:
-            oai_message[
-                "role"
-            ] = "assistant"  # only messages with role 'assistant' can have a function call.
+            oai_message["role"] = (
+                "assistant"  # only messages with role 'assistant' can have a function call.
+            )
             oai_message["function_call"] = dict(oai_message["function_call"])
 
         gpts_message: GptsMessage = GptsMessage(
@@ -248,15 +248,21 @@ class ConversableAgent(Agent):
             rounds=self.consecutive_auto_reply_counter,
             current_goal=oai_message.get("current_goal", None),
             content=oai_message.get("content", None),
-            context=json.dumps(oai_message["context"], ensure_ascii=False)
-            if "context" in oai_message
-            else None,
-            review_info=json.dumps(oai_message["review_info"], ensure_ascii=False)
-            if "review_info" in oai_message
-            else None,
-            action_report=json.dumps(oai_message["action_report"], ensure_ascii=False)
-            if "action_report" in oai_message
-            else None,
+            context=(
+                json.dumps(oai_message["context"], ensure_ascii=False)
+                if "context" in oai_message
+                else None
+            ),
+            review_info=(
+                json.dumps(oai_message["review_info"], ensure_ascii=False)
+                if "review_info" in oai_message
+                else None
+            ),
+            action_report=(
+                json.dumps(oai_message["action_report"], ensure_ascii=False)
+                if "action_report" in oai_message
+                else None
+            ),
             model_name=oai_message.get("model_name", None),
         )
 
@@ -319,9 +325,9 @@ class ConversableAgent(Agent):
                 logger.warning(
                     f"More than {self.current_retry_counter} times and still no valid answer is output."
                 )
-                reply[
-                    "content"
-                ] = f"After trying {self.current_retry_counter} times, I still can't generate a valid answer. The current problem is:{reply['content']}!"
+                reply["content"] = (
+                    f"After trying {self.current_retry_counter} times, I still can't generate a valid answer. The current problem is:{reply['content']}!"
+                )
                 reply["is_termination"] = True
                 await self.a_send(
                     message=reply, recipient=sender, reviewer=reviewer, silent=silent
@@ -439,15 +445,19 @@ class ConversableAgent(Agent):
                 {
                     "content": item.content,
                     "role": role,
-                    "context": json.loads(item.context)
-                    if item.context is not None
-                    else None,
-                    "review_info": json.loads(item.review_info)
-                    if item.review_info is not None
-                    else None,
-                    "action_report": json.loads(item.action_report)
-                    if item.action_report is not None
-                    else None,
+                    "context": (
+                        json.loads(item.context) if item.context is not None else None
+                    ),
+                    "review_info": (
+                        json.loads(item.review_info)
+                        if item.review_info is not None
+                        else None
+                    ),
+                    "action_report": (
+                        json.loads(item.action_report)
+                        if item.action_report is not None
+                        else None
+                    ),
                 }
             )
         return oai_messages
@@ -600,16 +610,20 @@ class ConversableAgent(Agent):
         self.consecutive_auto_reply_counter = last_message.rounds
         message = {
             "content": last_message.content,
-            "context": json.loads(last_message.context)
-            if last_message.context
-            else None,
+            "context": (
+                json.loads(last_message.context) if last_message.context else None
+            ),
             "current_goal": last_message.current_goal,
-            "review_info": json.loads(last_message.review_info)
-            if last_message.review_info
-            else None,
-            "action_report": json.loads(last_message.action_report)
-            if last_message.action_report
-            else None,
+            "review_info": (
+                json.loads(last_message.review_info)
+                if last_message.review_info
+                else None
+            ),
+            "action_report": (
+                json.loads(last_message.action_report)
+                if last_message.action_report
+                else None
+            ),
             "model_name": last_message.model_name,
         }
         await self.a_send(

@@ -1,4 +1,5 @@
 """Base classes for AWEL."""
+
 from abc import ABC, abstractmethod
 
 

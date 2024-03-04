@@ -1,6 +1,5 @@
 """HTTP utilities."""
 
-
 import re
 
 
