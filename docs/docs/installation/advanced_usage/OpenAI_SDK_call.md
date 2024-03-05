@@ -10,7 +10,7 @@ The call of multi-model services is compatible with the OpenAI interface, and th
 ## Start apiserver
 
 After deploying the model service, you need to start the API Server. By default, the model API Server uses port `8100` to start.
-```python
+```bash
 dbgpt start apiserver --controller_addr http://127.0.0.1:8000 --api_keys EMPTY
 
 ```
@@ -25,7 +25,7 @@ After the apiserver is started, the service call can be verified. First, let's l
 :::tip
 List models
 :::
-```python
+```bash
 curl http://127.0.0.1:8100/api/v1/models \
 -H "Authorization: Bearer EMPTY" \
 -H "Content-Type: application/json"
@@ -34,7 +34,7 @@ curl http://127.0.0.1:8100/api/v1/models \
 :::tip
 Chat
 :::
-```python
+```bash
 curl http://127.0.0.1:8100/api/v1/chat/completions \
 -H "Authorization: Bearer EMPTY" \
 -H "Content-Type: application/json" \
@@ -44,7 +44,7 @@ curl http://127.0.0.1:8100/api/v1/chat/completions \
 :::tip
 Embedding 
 :::
-```python
+```bash
 curl http://127.0.0.1:8100/api/v1/embeddings \
 -H "Authorization: Bearer EMPTY" \
 -H "Content-Type: application/json" \
@@ -58,7 +58,7 @@ curl http://127.0.0.1:8100/api/v1/embeddings \
 
 ## Verify via OpenAI SDK
 
-```python
+```bash
 import openai
 openai.api_key = "EMPTY"
 openai.api_base = "http://127.0.0.1:8100/api/v1"
