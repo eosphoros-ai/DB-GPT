@@ -1,7 +1,7 @@
 import asyncio
 import os
 
-from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
+from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH, ROOT_PATH
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
@@ -37,7 +37,7 @@ def _create_vector_connector():
 
 
 async def main():
-    file_path = "docs/docs/awel.md"
+    file_path = os.path.join(ROOT_PATH, "docs/docs/awel/awel.md")
     knowledge = KnowledgeFactory.from_file_path(file_path)
     vector_connector = _create_vector_connector()
     chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
