@@ -41,6 +41,20 @@ curl http://127.0.0.1:8100/api/v1/chat/completions \
 -d '{"model": "vicuna-13b-v1.5", "messages": [{"role": "user", "content": "hello"}]}'
 ```
 
+:::tip
+Embedding 
+:::
+```python
+curl http://127.0.0.1:8100/api/v1/embeddings \
+-H "Authorization: Bearer EMPTY" \
+-H "Content-Type: application/json" \
+-d '{
+    "model": "text2vec",
+    "input": "Hello world!"
+}'
+```
+
+
 
 ## Verify via OpenAI SDK
 
