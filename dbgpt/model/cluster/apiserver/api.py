@@ -493,13 +493,6 @@ def initialize_apiserver(
     if not app:
         embedded_mod = False
         app = FastAPI()
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=True,
-            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-            allow_headers=["*"],
-        )
 
     if not system_app:
         system_app = SystemApp(app)
@@ -526,7 +519,15 @@ def initialize_apiserver(
     if not embedded_mod:
         import uvicorn
 
-        uvicorn.run(app, host=host, port=port, log_level="info")
+        # https://github.com/encode/starlette/issues/617
+        cors_app = CORSMiddleware(
+            app=app,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allow_headers=["*"],
+        )
+        uvicorn.run(cors_app, host=host, port=port, log_level="info")
 
 
 def run_apiserver():

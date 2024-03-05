@@ -365,6 +365,29 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
         return self.embed_documents([text])[0]
 
 
+def _handle_request_result(res: requests.Response) -> List[List[float]]:
+    """Parse the result from a request.
+
+    Args:
+        res: The response from the request.
+
+    Returns:
+        List[List[float]]: The embeddings.
+
+    Raises:
+        RuntimeError: If the response is not successful.
+    """
+    res.raise_for_status()
+    resp = res.json()
+    if "data" not in resp:
+        raise RuntimeError(resp["detail"])
+    embeddings = resp["data"]
+    # Sort resulting embeddings by index
+    sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])  # type: ignore
+    # Return just the embeddings
+    return [result["embedding"] for result in sorted_embeddings]
+
+
 class JinaEmbeddings(BaseModel, Embeddings):
     """
     This class is used to get embeddings for a list of texts using the Jina AI API.
@@ -408,17 +431,8 @@ class JinaEmbeddings(BaseModel, Embeddings):
         # Call Jina AI Embedding API
         resp = self.session.post(  # type: ignore
             self.api_url, json={"input": texts, "model": self.model_name}
-        ).json()
-        if "data" not in resp:
-            raise RuntimeError(resp["detail"])
-
-        embeddings = resp["data"]
-
-        # Sort resulting embeddings by index
-        sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])  # type: ignore
-
-        # Return just the embeddings
-        return [result["embedding"] for result in sorted_embeddings]
+        )
+        return _handle_request_result(res)
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
@@ -538,18 +552,12 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
                 corresponds to a single input text.
         """
         # Call OpenAI Embedding API
-        resp = self.session.post(  # type: ignore
+        res = self.session.post(  # type: ignore
             self.api_url,
             json={"input": texts, "model": self.model_name},
             timeout=self.timeout,
-        ).json()
-        if "data" not in resp:
-            raise RuntimeError(resp["detail"])
-        embeddings = resp["data"]
-        # Sort resulting embeddings by index
-        sorted_embeddings = sorted(embeddings, key=lambda e: e["index"])  # type: ignore
-        # Return just the embeddings
-        return [result["embedding"] for result in sorted_embeddings]
+        )
+        return _handle_request_result(res)
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a OpenAPI embedding model.
@@ -579,6 +587,7 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
             async with session.post(
                 self.api_url, json={"input": texts, "model": self.model_name}
             ) as resp:
+                resp.raise_for_status()
                 data = await resp.json()
                 if "data" not in data:
                     raise RuntimeError(data["detail"])
