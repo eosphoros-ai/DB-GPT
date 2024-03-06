@@ -1,3 +1,5 @@
+"""The summary operator."""
+
 from typing import Any, Optional
 
 from dbgpt.core import LLMClient
@@ -9,6 +11,8 @@ from dbgpt.serve.rag.operators.base import AssemblerOperator
 
 
 class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):
+    """The summary assembler operator."""
+
     metadata = ViewMetadata(
         label="Summary Operator",
         name="summary_assembler_operator",
@@ -81,14 +85,15 @@ class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):
         concurrency_limit_with_llm: Optional[int] = 3,
         **kwargs
     ):
-        """
-        Init the summary assemble operator.
+        """Create the summary assemble operator.
+
         Args:
               llm_client: (Optional[LLMClient]) The LLM client.
               model_name: (Optional[str]) The model name.
               language: (Optional[str]) The prompt language.
               max_iteration_with_llm: (Optional[int]) The max iteration with llm.
-              concurrency_limit_with_llm: (Optional[int]) The concurrency limit with llm.
+              concurrency_limit_with_llm: (Optional[int]) The concurrency limit with
+                llm.
         """
         super().__init__(**kwargs)
         self._llm_client = llm_client
@@ -110,5 +115,5 @@ class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):
         return await assembler.generate_summary()
 
     def assemble(self, knowledge: IN) -> Any:
-        """assemble knowledge for input value."""
+        """Assemble the summary."""
         pass

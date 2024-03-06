@@ -1,3 +1,4 @@
+"""Embedding retriever."""
 from functools import reduce
 from typing import List, Optional
 
@@ -20,7 +21,8 @@ class EmbeddingRetriever(BaseRetriever):
         rerank: Ranker = None,
         vector_store_connector: VectorStoreConnector = None,
     ):
-        """
+        """Create EmbeddingRetriever.
+
         Args:
             top_k (int): top k
             query_rewrite (Optional[QueryRewrite]): query rewrite
@@ -28,7 +30,6 @@ class EmbeddingRetriever(BaseRetriever):
             vector_store_connector (VectorStoreConnector): vector store connector
 
         Examples:
-
             .. code-block:: python
 
                 from dbgpt.storage.vector_store.connector import VectorStoreConnector
@@ -66,8 +67,10 @@ class EmbeddingRetriever(BaseRetriever):
 
     def _retrieve(self, query: str) -> List[Chunk]:
         """Retrieve knowledge chunks.
+
         Args:
             query (str): query text
+
         Return:
             List[Chunk]: list of chunks
         """
@@ -81,9 +84,11 @@ class EmbeddingRetriever(BaseRetriever):
 
     def _retrieve_with_score(self, query: str, score_threshold: float) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
+
         Args:
             query (str): query text
             score_threshold (float): score threshold
+
         Return:
             List[Chunk]: list of chunks with score
         """
@@ -100,8 +105,10 @@ class EmbeddingRetriever(BaseRetriever):
 
     async def _aretrieve(self, query: str) -> List[Chunk]:
         """Retrieve knowledge chunks.
+
         Args:
             query (str): query text
+
         Return:
             List[Chunk]: list of chunks
         """
@@ -122,9 +129,11 @@ class EmbeddingRetriever(BaseRetriever):
         self, query: str, score_threshold: float
     ) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
+
         Args:
             query (str): query text
             score_threshold (float): score threshold
+
         Return:
             List[Chunk]: list of chunks with score
         """

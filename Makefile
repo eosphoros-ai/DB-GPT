@@ -49,6 +49,7 @@ fmt: setup ## Format Python code
 	# TODO: Use flake8 to enforce Python style guide.
 	# https://flake8.pycqa.org/en/latest/
 	$(VENV_BIN)/flake8 dbgpt/core/
+	$(VENV_BIN)/flake8 dbgpt/rag/
 	# TODO: More package checks with flake8.
 
 .PHONY: fmt-check
@@ -58,6 +59,7 @@ fmt-check: setup ## Check Python code formatting and style without making change
 	$(VENV_BIN)/black --check --extend-exclude="examples/notebook" .
 	$(VENV_BIN)/blackdoc --check dbgpt examples
 	$(VENV_BIN)/flake8 dbgpt/core/
+	$(VENV_BIN)/flake8 dbgpt/rag/
     # $(VENV_BIN)/blackdoc --check dbgpt examples
     # $(VENV_BIN)/flake8 dbgpt/core/
 

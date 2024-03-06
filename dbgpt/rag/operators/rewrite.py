@@ -1,3 +1,5 @@
+"""The rewrite operator."""
+
 from typing import Any, List, Optional
 
 from dbgpt.core import LLMClient
@@ -72,6 +74,7 @@ class QueryRewriteOperator(MapOperator[Any, Any]):
         **kwargs
     ):
         """Init the query rewrite operator.
+
         Args:
             llm_client (Optional[LLMClient]): The LLM client.
             model_name (Optional[str]): The model name.

@@ -45,9 +45,11 @@ class TokenTextSplitter(BaseModel):
         tokenizer: Optional[Callable] = None,
         # callback_manager: Optional[CallbackManager] = None,
         separator: str = " ",
-        backup_separators: Optional[List[str]] = ["\n"],
+        backup_separators=None,
     ):
         """Initialize with parameters."""
+        if backup_separators is None:
+            backup_separators = ["\n"]
         if chunk_overlap > chunk_size:
             raise ValueError(
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
@@ -70,6 +72,7 @@ class TokenTextSplitter(BaseModel):
 
     @classmethod
     def class_name(cls) -> str:
+        """Return the class name."""
         return "TokenTextSplitter"
 
     def split_text_metadata_aware(self, text: str, metadata_str: str) -> List[str]:

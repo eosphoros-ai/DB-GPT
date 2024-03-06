@@ -1,3 +1,4 @@
+"""DBSchema retriever."""
 from functools import reduce
 from typing import List, Optional
 
@@ -22,7 +23,8 @@ class DBSchemaRetriever(BaseRetriever):
         vector_store_connector: Optional[VectorStoreConnector] = None,
         **kwargs
     ):
-        """
+        """Create DBSchemaRetriever.
+
         Args:
             top_k (int): top k
             connection (Optional[RDBMSDatabase]): RDBMSDatabase connection.
@@ -31,7 +33,6 @@ class DBSchemaRetriever(BaseRetriever):
             vector_store_connector (VectorStoreConnector): vector store connector
 
         Examples:
-
             .. code-block:: python
 
                 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
@@ -78,12 +79,9 @@ class DBSchemaRetriever(BaseRetriever):
                     top_k=3, vector_store_connector=vector_connector
                 )
                 chunks = retriever.retrieve("show columns from table")
-                print(
-                    f"db struct rag example results:{[chunk.content for chunk in chunks]}"
-                )
-
+                result = [chunk.content for chunk in chunks]
+                print(f"db struct rag example results:{result}")
         """
-
         self._top_k = top_k
         self._connection = connection
         self._query_rewrite = query_rewrite
@@ -95,8 +93,12 @@ class DBSchemaRetriever(BaseRetriever):
 
     def _retrieve(self, query: str) -> List[Chunk]:
         """Retrieve knowledge chunks.
+
         Args:
             query (str): query text
+
+        Returns:
+            List[Chunk]: list of chunks
         """
         if self._need_embeddings:
             queries = [query]
@@ -112,16 +114,24 @@ class DBSchemaRetriever(BaseRetriever):
 
     def _retrieve_with_score(self, query: str, score_threshold: float) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
+
         Args:
             query (str): query text
             score_threshold (float): score threshold
+
+        Returns:
+            List[Chunk]: list of chunks
         """
         return self._retrieve(query)
 
     async def _aretrieve(self, query: str) -> List[Chunk]:
         """Retrieve knowledge chunks.
+
         Args:
             query (str): query text
+
+        Returns:
+            List[Chunk]: list of chunks
         """
         if self._need_embeddings:
             queries = [query]
@@ -129,7 +139,9 @@ class DBSchemaRetriever(BaseRetriever):
             candidates = await run_async_tasks(tasks=candidates, concurrency_limit=1)
             return candidates
         else:
-            from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
+            from dbgpt.rag.summary.rdbms_db_summary import (  # noqa: F401
+                _parse_db_summary,
+            )
 
             table_summaries = await run_async_tasks(
                 tasks=[self._aparse_db_summary()], concurrency_limit=1
@@ -140,6 +152,7 @@ class DBSchemaRetriever(BaseRetriever):
         self, query: str, score_threshold: float
     ) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
+
         Args:
             query (str): query text
             score_threshold (float): score threshold

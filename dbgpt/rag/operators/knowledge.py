@@ -1,4 +1,6 @@
-from typing import Any, List, Optional
+"""Knowledge Operator."""
+
+from typing import Any, Optional
 
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import (
@@ -8,7 +10,6 @@ from dbgpt.core.awel.flow import (
     Parameter,
     ViewMetadata,
 )
-from dbgpt.core.awel.task.base import IN
 from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 
@@ -76,6 +77,7 @@ class KnowledgeOperator(MapOperator[Any, Any]):
         **kwargs
     ):
         """Init the query rewrite operator.
+
         Args:
             knowledge_type: (Optional[KnowledgeType]) The knowledge type.
         """
@@ -83,8 +85,8 @@ class KnowledgeOperator(MapOperator[Any, Any]):
         self._datasource = datasource
         self._knowledge_type = KnowledgeType.get_by_value(knowledge_type)
 
-    async def map(self, datasource: IN) -> Knowledge:
-        """knowledge operator."""
+    async def map(self, datasource: Any) -> Knowledge:
+        """Create knowledge from datasource."""
         if self._datasource:
             datasource = self._datasource
         return await self.blocking_func_to_async(

@@ -1,16 +1,26 @@
+"""Summary classes for database, table, field and index."""
+
+
 class DBSummary:
-    def __init__(self, name):
+    """Database summary class."""
+
+    def __init__(self, name: str):
+        """Create a new DBSummary."""
         self.name = name
         self.summary = None
         self.tables = []
         self.metadata = str
 
     def get_summary(self):
+        """Get the summary."""
         return self.summary
 
 
 class TableSummary:
-    def __init__(self, name):
+    """Table summary class."""
+
+    def __init__(self, name: str):
+        """Create a new TableSummary."""
         self.name = name
         self.summary = None
         self.fields = []
@@ -18,14 +28,20 @@ class TableSummary:
 
 
 class FieldSummary:
-    def __init__(self, name):
+    """Field summary class."""
+
+    def __init__(self, name: str):
+        """Create a new FieldSummary."""
         self.name = name
         self.summary = None
         self.data_type = None
 
 
 class IndexSummary:
-    def __init__(self, name):
+    """Index summary class."""
+
+    def __init__(self, name: str):
+        """Create a new IndexSummary."""
         self.name = name
         self.summary = None
         self.bind_fields = []
