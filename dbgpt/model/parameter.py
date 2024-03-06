@@ -552,7 +552,7 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
 
 
 _EMBEDDING_PARAMETER_CLASS_TO_NAME_CONFIG = {
-    ProxyEmbeddingParameters: "proxy_openai,proxy_azure"
+    ProxyEmbeddingParameters: "proxy_openai,proxy_azure,proxy_http_openapi",
 }
 
 EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG = {}
