@@ -370,9 +370,13 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
     ):
         """Create a new BufferedConversationMapperOperator."""
         # Validate the input parameters
-        if keep_start_rounds is not None and keep_start_rounds < 0:
+        if keep_start_rounds is None:
+            keep_start_rounds = 0
+        if keep_end_rounds is None:
+            keep_end_rounds = 0
+        if keep_start_rounds < 0:
             raise ValueError("keep_start_rounds must be non-negative")
-        if keep_end_rounds is not None and keep_end_rounds < 0:
+        if keep_end_rounds < 0:
             raise ValueError("keep_end_rounds must be non-negative")
 
         self._keep_start_rounds = keep_start_rounds
@@ -420,7 +424,7 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             ...     ],
             ... ]
 
-            # Test keeping only the first 2 rounds
+            >>> # Test keeping only the first 2 rounds
             >>> operator = BufferedConversationMapperOperator(keep_start_rounds=2)
             >>> assert operator._filter_round_messages(messages) == [
             ...     [
@@ -433,7 +437,7 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             ...     ],
             ... ]
 
-            # Test keeping only the last 2 rounds
+            >>> # Test keeping only the last 2 rounds
             >>> operator = BufferedConversationMapperOperator(keep_end_rounds=2)
             >>> assert operator._filter_round_messages(messages) == [
             ...     [
@@ -446,7 +450,7 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             ...     ],
             ... ]
 
-            # Test keeping the first 2 and last 1 rounds
+            >>> # Test keeping the first 2 and last 1 rounds
             >>> operator = BufferedConversationMapperOperator(
             ...     keep_start_rounds=2, keep_end_rounds=1
             ... )
@@ -465,24 +469,11 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             ...     ],
             ... ]
 
-            # Test without specifying start or end rounds (keep all rounds)
+            >>> # Test without specifying start or end rounds (keep 0 rounds)
             >>> operator = BufferedConversationMapperOperator()
-            >>> assert operator._filter_round_messages(messages) == [
-            ...     [
-            ...         HumanMessage(content="Hi", round_index=1),
-            ...         AIMessage(content="Hello!", round_index=1),
-            ...     ],
-            ...     [
-            ...         HumanMessage(content="How are you?", round_index=2),
-            ...         AIMessage(content="I'm good, thanks!", round_index=2),
-            ...     ],
-            ...     [
-            ...         HumanMessage(content="What's new today?", round_index=3),
-            ...         AIMessage(content="Lots of things!", round_index=3),
-            ...     ],
-            ... ]
+            >>> assert operator._filter_round_messages(messages) == []
 
-            # Test end rounds is zero
+            >>> # Test end rounds is zero
             >>> operator = BufferedConversationMapperOperator(
             ...     keep_start_rounds=1, keep_end_rounds=0
             ... )
@@ -503,12 +494,7 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
 
         """
         total_rounds = len(messages_by_round)
-        if (
-            self._keep_start_rounds is not None
-            and self._keep_end_rounds is not None
-            and self._keep_start_rounds > 0
-            and self._keep_end_rounds > 0
-        ):
+        if self._keep_start_rounds > 0 and self._keep_end_rounds > 0:
             if self._keep_start_rounds + self._keep_end_rounds > total_rounds:
                 # Avoid overlapping when the sum of start and end rounds exceeds total
                 # rounds
@@ -517,12 +503,12 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
                 messages_by_round[: self._keep_start_rounds]
                 + messages_by_round[-self._keep_end_rounds :]
             )
-        elif self._keep_start_rounds is not None:
+        elif self._keep_start_rounds:
             return messages_by_round[: self._keep_start_rounds]
-        elif self._keep_end_rounds is not None:
+        elif self._keep_end_rounds:
             return messages_by_round[-self._keep_end_rounds :]
         else:
-            return messages_by_round
+            return []
 
 
 EvictionPolicyType = Callable[[List[List[BaseMessage]]], List[List[BaseMessage]]]

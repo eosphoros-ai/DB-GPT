@@ -172,6 +172,8 @@ EMBEDDING_MODEL_CONFIG = {
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
     "proxy_openai": "proxy_openai",
     "proxy_azure": "proxy_azure",
+    # Common HTTP embedding model
+    "proxy_http_openapi": "proxy_http_openapi",
 }
 
 
