@@ -113,6 +113,9 @@ class ModelAPIServerParameters(BaseParameters):
         default=None,
         metadata={"help": "Optional list of comma separated API keys"},
     )
+    embedding_batch_size: Optional[int] = field(
+        default=None, metadata={"help": "Embedding batch size"}
+    )
 
     log_level: Optional[str] = field(
         default=None,
