@@ -4,7 +4,7 @@
 import logging
 import os
 import tempfile
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, List, Optional, Tuple
 
 from sqlalchemy import create_engine, text
 
@@ -58,7 +58,7 @@ class SQLiteConnect(RDBMSDatabase):
         ans = cursor.fetchall()
         return ans[0][0]
 
-    def get_fields(self, table_name):
+    def get_fields(self, table_name) -> List[Tuple]:
         """Get column fields about specified table."""
         cursor = self.session.execute(text(f"PRAGMA table_info('{table_name}')"))
         fields = cursor.fetchall()

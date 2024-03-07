@@ -1,5 +1,6 @@
+"""Embedding retriever."""
 from functools import reduce
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever
@@ -15,12 +16,13 @@ class EmbeddingRetriever(BaseRetriever):
 
     def __init__(
         self,
+        vector_store_connector: VectorStoreConnector,
         top_k: int = 4,
         query_rewrite: Optional[QueryRewrite] = None,
-        rerank: Ranker = None,
-        vector_store_connector: VectorStoreConnector = None,
+        rerank: Optional[Ranker] = None,
     ):
-        """
+        """Create EmbeddingRetriever.
+
         Args:
             top_k (int): top k
             query_rewrite (Optional[QueryRewrite]): query rewrite
@@ -28,7 +30,6 @@ class EmbeddingRetriever(BaseRetriever):
             vector_store_connector (VectorStoreConnector): vector store connector
 
         Examples:
-
             .. code-block:: python
 
                 from dbgpt.storage.vector_store.connector import VectorStoreConnector
@@ -66,8 +67,10 @@ class EmbeddingRetriever(BaseRetriever):
 
     def _retrieve(self, query: str) -> List[Chunk]:
         """Retrieve knowledge chunks.
+
         Args:
             query (str): query text
+
         Return:
             List[Chunk]: list of chunks
         """
@@ -76,14 +79,16 @@ class EmbeddingRetriever(BaseRetriever):
             self._vector_store_connector.similar_search(query, self._top_k)
             for query in queries
         ]
-        candidates = reduce(lambda x, y: x + y, candidates)
-        return candidates
+        res_candidates = cast(List[Chunk], reduce(lambda x, y: x + y, candidates))
+        return res_candidates
 
     def _retrieve_with_score(self, query: str, score_threshold: float) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
+
         Args:
             query (str): query text
             score_threshold (float): score threshold
+
         Return:
             List[Chunk]: list of chunks with score
         """
@@ -94,14 +99,18 @@ class EmbeddingRetriever(BaseRetriever):
             )
             for query in queries
         ]
-        candidates_with_score = reduce(lambda x, y: x + y, candidates_with_score)
-        candidates_with_score = self._rerank.rank(candidates_with_score)
-        return candidates_with_score
+        new_candidates_with_score = cast(
+            List[Chunk], reduce(lambda x, y: x + y, candidates_with_score)
+        )
+        new_candidates_with_score = self._rerank.rank(new_candidates_with_score)
+        return new_candidates_with_score
 
     async def _aretrieve(self, query: str) -> List[Chunk]:
         """Retrieve knowledge chunks.
+
         Args:
             query (str): query text
+
         Return:
             List[Chunk]: list of chunks
         """
@@ -115,16 +124,18 @@ class EmbeddingRetriever(BaseRetriever):
             )
             queries.extend(new_queries)
         candidates = [self._similarity_search(query) for query in queries]
-        candidates = await run_async_tasks(tasks=candidates, concurrency_limit=1)
-        return candidates
+        new_candidates = await run_async_tasks(tasks=candidates, concurrency_limit=1)
+        return new_candidates
 
     async def _aretrieve_with_score(
         self, query: str, score_threshold: float
     ) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
+
         Args:
             query (str): query text
             score_threshold (float): score threshold
+
         Return:
             List[Chunk]: list of chunks with score
         """
@@ -154,10 +165,12 @@ class EmbeddingRetriever(BaseRetriever):
                 self._similarity_search_with_score(query, score_threshold)
                 for query in queries
             ]
-            candidates_with_score = await run_async_tasks(
+            res_candidates_with_score = await run_async_tasks(
                 tasks=candidates_with_score, concurrency_limit=1
             )
-            candidates_with_score = reduce(lambda x, y: x + y, candidates_with_score)
+            new_candidates_with_score = cast(
+                List[Chunk], reduce(lambda x, y: x + y, res_candidates_with_score)
+            )
 
         with root_tracer.start_span(
             "EmbeddingRetriever.rerank",
@@ -167,8 +180,8 @@ class EmbeddingRetriever(BaseRetriever):
                 "rerank_cls": self._rerank.__class__.__name__,
             },
         ):
-            candidates_with_score = self._rerank.rank(candidates_with_score)
-            return candidates_with_score
+            new_candidates_with_score = self._rerank.rank(new_candidates_with_score)
+            return new_candidates_with_score
 
     async def _similarity_search(self, query) -> List[Chunk]:
         """Similar search."""
@@ -181,7 +194,7 @@ class EmbeddingRetriever(BaseRetriever):
         """Run async tasks."""
         candidates = await run_async_tasks(tasks=tasks, concurrency_limit=1)
         candidates = reduce(lambda x, y: x + y, candidates)
-        return candidates
+        return cast(List[Chunk], candidates)
 
     async def _similarity_search_with_score(
         self, query, score_threshold

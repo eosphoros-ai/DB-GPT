@@ -1,36 +1,41 @@
+"""Query rewrite."""
 from typing import List, Optional
 
 from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelRequest
 
 REWRITE_PROMPT_TEMPLATE_EN = """
-Based on the given context {context}, Generate {nums} search queries related to: {original_query}, Provide following comma-separated format: 'queries: <queries>'":
+Based on the given context {context}, Generate {nums} search queries related to:
+{original_query}, Provide following comma-separated format: 'queries: <queries>'":
     "original query:{original_query}\n"
     "queries:"
 """
 
-REWRITE_PROMPT_TEMPLATE_ZH = """请根据上下文{context}, 将原问题优化生成{nums}个相关的搜索查询，这些查询应与原始查询相似并且是人们可能会提出的可回答的搜索问题。请勿使用任何示例中提到的内容，确保所有生成的查询均独立于示例，仅基于提供的原始查询。请按照以下逗号分隔的格式提供: 'queries:<queries>'
+REWRITE_PROMPT_TEMPLATE_ZH = """请根据上下文{context}, 将原问题优化生成{nums}个相关的搜索查询，
+这些查询应与原始查询相似并且是人们可能会提出的可回答的搜索问题。请勿使用任何示例中提到的内容，确保所有
+生成的查询均独立于示例，仅基于提供的原始查询。请按照以下逗号分隔的格式提供: 'queries:<queries>'
 "original_query:{original_query}\n"
 "queries:"
 """
 
 
 class QueryRewrite:
-    """
+    """Query rewrite.
+
     query reinforce, include query rewrite, query correct
     """
 
     def __init__(
         self,
-        model_name: str = None,
-        llm_client: Optional[LLMClient] = None,
+        model_name: str,
+        llm_client: LLMClient,
         language: Optional[str] = "en",
     ) -> None:
-        """query rewrite
+        """Create QueryRewrite with model_name, llm_client, language.
+
         Args:
-            - query: (str), user query
-            - model_name: (str), llm model name
-            - llm_client: (Optional[LLMClient])
-            - language: (Optional[str]), language
+            model_name(str): model name
+            llm_client(LLMClient, optional): llm client
+            language(str, optional): language
         """
         self._model_name = model_name
         self._llm_client = llm_client
@@ -44,11 +49,13 @@ class QueryRewrite:
     async def rewrite(
         self, origin_query: str, context: Optional[str], nums: Optional[int] = 1
     ) -> List[str]:
-        """query rewrite
+        """Query rewrite.
+
         Args:
             origin_query: str original query
             context: Optional[str] context
             nums: Optional[int] rewrite nums
+
         Returns:
             queries: List[str]
         """
@@ -75,13 +82,16 @@ class QueryRewrite:
         print(f"rewrite queries: {new_queries}")
         return new_queries
 
-    def correct(self) -> List[str]:
+    def correct(self) -> List[str] | None:
+        """Query correct."""
         pass
 
     def _parse_llm_output(self, output: str) -> List[str]:
-        """parse llm output
+        """Parse llm output.
+
         Args:
             output: str
+
         Returns:
             output: List[str]
         """

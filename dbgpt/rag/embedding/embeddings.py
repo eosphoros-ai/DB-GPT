@@ -1,3 +1,5 @@
+"""Embedding implementations."""
+
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
@@ -21,9 +23,11 @@ DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索�
 
 
 class Embeddings(ABC):
-    """Interface for embedding models."""
+    """Interface for embedding models.
 
-    """refer to https://github.com/langchain-ai/langchain/tree/master/libs/langchain/langchain/embeddings"""
+    Refer to `Langchain Embeddings <https://github.com/langchain-ai/langchain/tree/
+    master/libs/langchain/langchain/embeddings>`_.
+    """
 
     @abstractmethod
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -48,12 +52,16 @@ class Embeddings(ABC):
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
+
     To use, you should have the ``sentence_transformers`` python package installed.
-    Refer to https://github.com/langchain-ai/langchain/tree/master/libs/langchain/langchain/embeddings
+
+    Refer to `Langchain Embeddings <https://github.com/langchain-ai/langchain/tree/
+    master/libs/langchain/langchain/embeddings>`_.
+
     Example:
         .. code-block:: python
 
-            from .embeddings import HuggingFaceEmbeddings
+            from dbgpt.rag.embedding import HuggingFaceEmbeddings
 
             model_name = "sentence-transformers/all-mpnet-base-v2"
             model_kwargs = {"device": "cpu"}
@@ -69,8 +77,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
     model_name: str = DEFAULT_MODEL_NAME
     """Model name to use."""
     cache_folder: Optional[str] = None
-    """Path to store models. 
-    Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
+    """Path to store models. Can be also set by SENTENCE_TRANSFORMERS_HOME
+    environment variable."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
     encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -141,7 +149,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     Example:
         .. code-block:: python
 
-            from langchain.embeddings import HuggingFaceInstructEmbeddings
+            from dbgpt.rag.embeddings import HuggingFaceInstructEmbeddings
 
             model_name = "hkunlp/instructor-large"
             model_kwargs = {"device": "cpu"}
@@ -157,8 +165,8 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     model_name: str = DEFAULT_INSTRUCT_MODEL
     """Model name to use."""
     cache_folder: Optional[str] = None
-    """Path to store models. 
-    Can be also set by SENTENCE_TRANSFORMERS_HOME environment variable."""
+    """Path to store models. Can be also set by SENTENCE_TRANSFORMERS_HOME
+    environment variable."""
     model_kwargs: Dict[str, Any] = Field(default_factory=dict)
     """Keyword arguments to pass to the model."""
     encode_kwargs: Dict[str, Any] = Field(default_factory=dict)
@@ -216,11 +224,14 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """HuggingFace BGE sentence_transformers embedding models.
 
     To use, you should have the ``sentence_transformers`` python package installed.
-    refer to https://github.com/langchain-ai/langchain/tree/master/libs/langchain/langchain/embeddings
+
+    refer to `Langchain Embeddings <https://github.com/langchain-ai/langchain/tree/
+    master/libs/langchain/langchain/embeddings>`_.
+
     Example:
         .. code-block:: python
 
-            from langchain.embeddings import HuggingFaceBgeEmbeddings
+            from dbgpt.rag.embeddings import HuggingFaceBgeEmbeddings
 
             model_name = "BAAI/bge-large-en"
             model_kwargs = {"device": "cpu"}
@@ -389,28 +400,30 @@ def _handle_request_result(res: requests.Response) -> List[List[float]]:
 
 
 class JinaEmbeddings(BaseModel, Embeddings):
-    """
+    """Jina AI embeddings.
+
     This class is used to get embeddings for a list of texts using the Jina AI API.
-    It requires an API key and a model name. The default model name is "jina-embeddings-v2-base-en".
+    It requires an API key and a model name. The default model name is
+    "jina-embeddings-v2-base-en".
     """
 
     api_url: Any  #: :meta private:
     session: Any  #: :meta private:
     api_key: str
-    """our API key for the Jina AI API.."""
+    """API key for the Jina AI API.."""
     model_name: str = "jina-embeddings-v2-base-en"
-    """he name of the model to use for text embeddings. Defaults to "jina-embeddings-v2-base-en"."""
+    """The name of the model to use for text embeddings. Defaults to
+    "jina-embeddings-v2-base-en"."""
 
     def __init__(self, **kwargs):
-        """
-        Initialize the JinaEmbeddings.
-        """
+        """Create a new JinaEmbeddings instance."""
         super().__init__(**kwargs)
         try:
             import requests
         except ImportError:
             raise ValueError(
-                "The requests python package is not installed. Please install it with `pip install requests`"
+                "The requests python package is not installed. Please install it with "
+                "`pip install requests`"
             )
         self.api_url = "https://api.jina.ai/v1/embeddings"
         self.session = requests.Session()
@@ -432,10 +445,10 @@ class JinaEmbeddings(BaseModel, Embeddings):
         resp = self.session.post(  # type: ignore
             self.api_url, json={"input": texts, "model": self.model_name}
         )
-        return _handle_request_result(res)
+        return _handle_request_result(resp)
 
     def embed_query(self, text: str) -> List[float]:
-        """Compute query embeddings using a HuggingFace transformer model.
+        """Compute query embeddings using a Jina AI embedding model.
 
         Args:
             text: The text to embed.
@@ -447,12 +460,12 @@ class JinaEmbeddings(BaseModel, Embeddings):
 
 
 class OpenAPIEmbeddings(BaseModel, Embeddings):
-    """This class is used to get embeddings for a list of texts using the API.
+    """The OpenAPI embeddings.
 
+    This class is used to get embeddings for a list of texts using the API.
     This API is compatible with the OpenAI Embedding API.
 
     Examples:
-
         Using OpenAI's API:
         .. code-block:: python
 
@@ -504,7 +517,6 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
             )
             texts = ["Hello, world!", "How are you?"]
             openai_embeddings.embed_documents(texts)
-
     """
 
     api_url: str = Field(
@@ -521,7 +533,7 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
         default=60, description="The timeout for the request in seconds."
     )
 
-    session: requests.Session = None
+    session: Optional[requests.Session] = None
 
     class Config:
         """Configuration for this pydantic object."""

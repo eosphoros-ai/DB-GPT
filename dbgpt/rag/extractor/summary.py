@@ -1,3 +1,5 @@
+"""Summary Extractor, it can extract document summary."""
+
 from typing import List, Optional
 
 from dbgpt._private.llm_metadata import LLMMetadata
@@ -13,16 +15,21 @@ SUMMARY_PROMPT_TEMPLATE_ZH = """请根据提供的上下文信息的进行精简
 """
 
 SUMMARY_PROMPT_TEMPLATE_EN = """
-Write a quick summary of the following context: 
+Write a quick summary of the following context:
 {context}
-the summary should be as concise as possible and not overly lengthy.Please keep the answer within approximately 200 characters.
+the summary should be as concise as possible and not overly lengthy.Please keep the
+answer within approximately 200 characters.
 """
 
-REFINE_SUMMARY_TEMPLATE_ZH = """我们已经提供了一个到某一点的现有总结:{context}\n 请根据你之前推理的内容进行总结,总结回答的时候最好按照1.2.3.进行. 注意:请用<中文>来进行总结。"""
+REFINE_SUMMARY_TEMPLATE_ZH = """我们已经提供了一个到某一点的现有总结:{context}
+请根据你之前推理的内容进行总结,总结回答的时候最好按照1.2.3.进行. 注意:请用<中文>来进行总结。
+"""
 
 REFINE_SUMMARY_TEMPLATE_EN = """
-We have provided an existing summary up to a certain point: {context}, We have the opportunity to refine the existing summary (only if needed) with some more context below. 
-\nBased on the previous reasoning, please summarize the final conclusion in accordance with points 1.2.and 3.
+We have provided an existing summary up to a certain point: {context}, We have the
+opportunity to refine the existing summary (only if needed) with some more context
+below. \nBased on the previous reasoning, please summarize the final conclusion in
+accordance with points 1.2.and 3.
 """
 
 
@@ -31,18 +38,29 @@ class SummaryExtractor(Extractor):
 
     def __init__(
         self,
-        llm_client: Optional[LLMClient],
-        model_name: Optional[str] = None,
+        llm_client: LLMClient,
+        model_name: str,
         llm_metadata: Optional[LLMMetadata] = None,
         language: Optional[str] = "en",
-        max_iteration_with_llm: Optional[int] = 5,
-        concurrency_limit_with_llm: Optional[int] = 3,
+        max_iteration_with_llm: int = 5,
+        concurrency_limit_with_llm: int = 3,
     ):
+        """Create SummaryExtractor.
+
+        Args:
+            llm_client: (Optional[LLMClient]): The LLM client. Defaults to None.
+            model_name: str
+            llm_metadata: LLMMetadata
+            language: (Optional[str]): The language of the prompt. Defaults to "en".
+            max_iteration_with_llm: (Optional[int]): The max iteration with llm.
+                Defaults to 5.
+            concurrency_limit_with_llm: (Optional[int]): The concurrency limit with llm.
+                Defaults to 3.
+        """
         self._llm_client = llm_client
         self._model_name = model_name
-        self.llm_metadata = llm_metadata or LLMMetadata
+        self.llm_metadata = llm_metadata
         self._language = language
-        self._concurrency_limit_with_llm = concurrency_limit_with_llm
         self._prompt_template = (
             SUMMARY_PROMPT_TEMPLATE_EN
             if language == "en"
@@ -55,23 +73,15 @@ class SummaryExtractor(Extractor):
         )
         self._concurrency_limit_with_llm = concurrency_limit_with_llm
         self._max_iteration_with_llm = max_iteration_with_llm
-        self._concurrency_limit_with_llm = concurrency_limit_with_llm
-
-        """Initialize the Extractor.
-        Args:
-            llm_client: (Optional[LLMClient]): The LLM client. Defaults to None.
-            model_name: str
-            llm_metadata: LLMMetadata
-            language: (Optional[str]): The language of the prompt. Defaults to "en".
-            max_iteration_with_llm: (Optional[int]): The max iteration with llm. Defaults to 5.
-            concurrency_limit_with_llm: (Optional[int]): The concurrency limit with llm. Defaults to 3.
-        """
 
     async def _aextract(self, chunks: List[Chunk]) -> str:
-        """async document extract summary
+        """Return extracted metadata from chunks of async.
+
         Args:
-            - model_name: str
-            - chunk_docs: List[Document]
+            chunks (List[Chunk]): extract metadata from chunks
+
+        Returns:
+            str: The summary of the documents.
         """
         texts = [doc.content for doc in chunks]
         from dbgpt.util.prompt_util import PromptHelper
@@ -95,9 +105,13 @@ class SummaryExtractor(Extractor):
             return summary_outs[0]
 
     def _extract(self, chunks: List[Chunk]) -> str:
-        """document extract summary
+        """Return summary of the documents.
+
         Args:
-            - chunk_docs: List[Document]
+            chunks(List[Chunk]): list of chunks
+
+        Returns:
+            summary: str
         """
         loop = utils.get_or_create_event_loop()
         return loop.run_until_complete(self._aextract(chunks=chunks))
@@ -106,7 +120,10 @@ class SummaryExtractor(Extractor):
         self,
         docs: List[str],
     ) -> str:
-        """Extract summary by mapreduce mode
+        """Return the summary of the documents.
+
+        Extract summary by mapreduce mode.
+
         map -> multi async call llm to generate summary
         reduce -> merge the summaries by map process
         Args:
@@ -132,10 +149,12 @@ class SummaryExtractor(Extractor):
     async def _llm_run_tasks(
         self, chunk_texts: List[str], prompt_template: str
     ) -> List[str]:
-        """llm run tasks
+        """Run llm tasks.
+
         Args:
             chunk_texts: List[str]
             prompt_template: str
+
         Returns:
             summary_outs: List[str]
         """

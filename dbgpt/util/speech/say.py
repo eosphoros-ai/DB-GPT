@@ -36,7 +36,7 @@ def _get_voice_engine(config: Config) -> tuple[VoiceBase, VoiceBase]:
     default_voice_engine = GTTSVoice()
     if config.elevenlabs_api_key:
         voice_engine = ElevenLabsSpeech()
-    elif config.use_mac_os_tts == "True":
+    elif config.use_mac_os_tts:
         voice_engine = MacOSTTS()
     elif config.use_brian_tts == "True":
         voice_engine = BrianSpeech()
