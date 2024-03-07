@@ -470,6 +470,9 @@ const sidebars = {
         {
           type: 'doc',
           id: 'upgrade/v0.5.0',
+        }, {
+          type: 'doc',
+          id: 'upgrade/v0.5.1',
         },
       ],
     },
