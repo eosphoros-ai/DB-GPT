@@ -1,3 +1,16 @@
+"""AWEL: Simple rag embedding operator example.
+
+    Examples:
+    pre-requirements:
+        python examples/awel/simple_rag_embedding_example.py
+        ..code-block:: shell
+            curl --location --request POST 'http://127.0.0.1:5555/api/v1/awel/trigger/examples/rag/embedding' \
+            --header 'Content-Type: application/json' \
+            --data-raw '{
+              "url": "https://docs.dbgpt.site/docs/awel"
+            }'
+"""
+
 import os
 from typing import Dict, List
 
@@ -6,25 +19,12 @@ from pydantic import BaseModel, Field
 from dbgpt._private.config import Config
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, MODEL_PATH, PILOT_PATH
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
-from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
-from dbgpt.rag.knowledge.base import KnowledgeType
-from dbgpt.rag.operators.knowledge import KnowledgeOperator
+from dbgpt.rag.embedding import DefaultEmbeddingFactory
+from dbgpt.rag.knowledge import KnowledgeType
+from dbgpt.rag.operators import KnowledgeOperator
 from dbgpt.serve.rag.operators.embedding import EmbeddingAssemblerOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
-
-"""AWEL: Simple rag embedding operator example
-    
-    Examples:
-    pre-requirements:
-        python examples/awel/simple_rag_embedding_example.py 
-        ..code-block:: shell
-            curl --location --request POST 'http://127.0.0.1:5555/api/v1/awel/trigger/examples/rag/embedding' \
-            --header 'Content-Type: application/json' \
-            --data-raw '{
-              "url": "https://docs.dbgpt.site/docs/awel"
-            }'
-"""
 
 CFG = Config()
 
