@@ -23,9 +23,12 @@ class RdbmsSummary(DBSummary):
         self.type = type
         self.summary_template = "{table_name}({columns})"
         self.tables = {}
-        self.tables_info = []
-        self.vector_tables_info = []
+        # self.tables_info = []
+        # self.vector_tables_info = []
 
+        if not CFG.LOCAL_DB_MANAGE:
+            raise ValueError("Local db manage is not initialized.")
+        # TODO: Don't use the global variable.
         self.db = CFG.LOCAL_DB_MANAGE.get_connect(name)
 
         self.metadata = """user info :{users}, grant info:{grant}, charset:{charset},

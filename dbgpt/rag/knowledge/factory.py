@@ -1,5 +1,5 @@
 """Knowledge Factory to create knowledge from file path and url."""
-from typing import List, Optional
+from typing import List, Optional, Type
 
 from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType
 from dbgpt.rag.knowledge.string import StringKnowledge
@@ -26,8 +26,8 @@ class KnowledgeFactory:
     @classmethod
     def create(
         cls,
-        datasource: Optional[str] = None,
-        knowledge_type: Optional[KnowledgeType] = KnowledgeType.DOCUMENT,
+        datasource: str = "",
+        knowledge_type: KnowledgeType = KnowledgeType.DOCUMENT,
     ):
         """Create knowledge from file path, url or text.
 
@@ -64,7 +64,7 @@ class KnowledgeFactory:
     @classmethod
     def from_file_path(
         cls,
-        file_path: Optional[str] = None,
+        file_path: str = "",
         knowledge_type: Optional[KnowledgeType] = KnowledgeType.DOCUMENT,
     ) -> Knowledge:
         """Create knowledge from path.
@@ -90,8 +90,8 @@ class KnowledgeFactory:
 
     @staticmethod
     def from_url(
-        url: Optional[str] = None,
-        knowledge_type: Optional[KnowledgeType] = KnowledgeType.URL,
+        url: str = "",
+        knowledge_type: KnowledgeType = KnowledgeType.URL,
     ) -> Knowledge:
         """Create knowledge from url.
 
@@ -115,8 +115,8 @@ class KnowledgeFactory:
 
     @staticmethod
     def from_text(
-        text: str = None,
-        knowledge_type: Optional[KnowledgeType] = KnowledgeType.TEXT,
+        text: str = "",
+        knowledge_type: KnowledgeType = KnowledgeType.TEXT,
     ) -> Knowledge:
         """Create knowledge from text.
 
@@ -147,12 +147,12 @@ class KnowledgeFactory:
         return [knowledge.type().value for knowledge in cls._get_knowledge_subclasses()]
 
     @classmethod
-    def subclasses(cls) -> List["Knowledge"]:
+    def subclasses(cls) -> List["Type[Knowledge]"]:
         """Get all knowledge subclasses."""
         return cls._get_knowledge_subclasses()
 
     @staticmethod
-    def _get_knowledge_subclasses() -> List["Knowledge"]:
+    def _get_knowledge_subclasses() -> List["Type[Knowledge]"]:
         """Get all knowledge subclasses."""
         from dbgpt.rag.knowledge.base import Knowledge  # noqa: F401
         from dbgpt.rag.knowledge.csv import CSVKnowledge  # noqa: F401

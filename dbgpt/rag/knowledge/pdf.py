@@ -17,7 +17,7 @@ class PDFKnowledge(Knowledge):
         self,
         file_path: Optional[str] = None,
         knowledge_type: KnowledgeType = KnowledgeType.DOCUMENT,
-        loader: Optional = None,
+        loader: Optional[Any] = None,
         language: Optional[str] = "zh",
         **kwargs: Any,
     ) -> None:
@@ -43,11 +43,13 @@ class PDFKnowledge(Knowledge):
 
             pages = []
             documents = []
+            if not self._path:
+                raise ValueError("file path is required")
             with open(self._path, "rb") as file:
                 reader = pypdf.PdfReader(file)
                 for page_num in range(len(reader.pages)):
-                    page = reader.pages[page_num]
-                    pages.append((page.extract_text(), page_num))
+                    _page = reader.pages[page_num]
+                    pages.append((_page.extract_text(), page_num))
 
             # cleaned_pages = []
             for page, page_num in pages:

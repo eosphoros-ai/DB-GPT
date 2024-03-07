@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, List, Optional, Tuple
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
@@ -68,7 +68,7 @@ class StarRocksConnect(RDBMSDatabase):
         """Get user info."""
         return []
 
-    def get_fields(self, table_name, db_name="database()"):
+    def get_fields(self, table_name, db_name="database()") -> List[Tuple]:
         """Get column fields about specified table."""
         session = self._db_sessions()
         if db_name != "database()":

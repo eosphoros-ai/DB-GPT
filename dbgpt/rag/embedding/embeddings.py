@@ -533,7 +533,7 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
         default=60, description="The timeout for the request in seconds."
     )
 
-    session: requests.Session = None
+    session: Optional[requests.Session] = None
 
     class Config:
         """Configuration for this pydantic object."""

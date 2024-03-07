@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Optional, Type
 
-from dbgpt.component import BaseComponent
+from dbgpt.component import BaseComponent, SystemApp
 from dbgpt.rag.embedding.embeddings import HuggingFaceEmbeddings
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ class EmbeddingFactory(BaseComponent, ABC):
 
     @abstractmethod
     def create(
-        self, model_name: str = None, embedding_cls: Type = None
+        self, model_name: Optional[str] = None, embedding_cls: Optional[Type] = None
     ) -> "Embeddings":
         """Create an embedding instance.
 
@@ -36,7 +36,10 @@ class DefaultEmbeddingFactory(EmbeddingFactory):
     """The default embedding factory."""
 
     def __init__(
-        self, system_app=None, default_model_name: str = None, **kwargs: Any
+        self,
+        system_app: Optional[SystemApp] = None,
+        default_model_name: Optional[str] = None,
+        **kwargs: Any,
     ) -> None:
         """Create a new DefaultEmbeddingFactory."""
         super().__init__(system_app=system_app)
@@ -48,7 +51,7 @@ class DefaultEmbeddingFactory(EmbeddingFactory):
         pass
 
     def create(
-        self, model_name: str = None, embedding_cls: Type = None
+        self, model_name: Optional[str] = None, embedding_cls: Optional[Type] = None
     ) -> "Embeddings":
         """Create an embedding instance.
 

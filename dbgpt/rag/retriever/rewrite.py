@@ -26,8 +26,8 @@ class QueryRewrite:
 
     def __init__(
         self,
-        model_name: str = None,
-        llm_client: Optional[LLMClient] = None,
+        model_name: str,
+        llm_client: LLMClient,
         language: Optional[str] = "en",
     ) -> None:
         """Create QueryRewrite with model_name, llm_client, language.
@@ -82,7 +82,7 @@ class QueryRewrite:
         print(f"rewrite queries: {new_queries}")
         return new_queries
 
-    def correct(self) -> List[str]:
+    def correct(self) -> List[str] | None:
         """Query correct."""
         pass
 

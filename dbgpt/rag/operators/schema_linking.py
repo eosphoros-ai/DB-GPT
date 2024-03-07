@@ -17,10 +17,10 @@ class SchemaLinkingOperator(MapOperator[Any, Any]):
 
     def __init__(
         self,
+        connection: RDBMSDatabase,
+        model_name: str,
+        llm: LLMClient,
         top_k: int = 5,
-        connection: Optional[RDBMSDatabase] = None,
-        llm: Optional[LLMClient] = None,
-        model_name: Optional[str] = None,
         vector_store_connector: Optional[VectorStoreConnector] = None,
         **kwargs
     ):

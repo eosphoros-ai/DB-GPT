@@ -10,7 +10,7 @@ class URLKnowledge(Knowledge):
 
     def __init__(
         self,
-        url: Optional[str] = None,
+        url: str = "",
         knowledge_type: KnowledgeType = KnowledgeType.URL,
         source_column: Optional[str] = None,
         encoding: Optional[str] = "utf-8",

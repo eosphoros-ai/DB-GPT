@@ -4,19 +4,17 @@ import json
 import uuid
 from typing import Any, Dict
 
-from pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field
 
 
 class Document(BaseModel):
     """Document including document content, document metadata."""
 
-    content: str = (Field(default="", description="document text content"),)
+    content: str = Field(default="", description="document text content")
 
-    metadata: Dict[str, Any] = (
-        Field(
-            default_factory=dict,
-            description="metadata fields",
-        ),
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="metadata fields",
     )
 
     def set_content(self, content: str) -> None:
@@ -53,11 +51,9 @@ class Chunk(Document):
     )
     content: str = Field(default="", description="chunk text content")
 
-    metadata: Dict[str, Any] = (
-        Field(
-            default_factory=dict,
-            description="metadata fields",
-        ),
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="metadata fields",
     )
     score: float = Field(default=0.0, description="chunk text similarity score")
     summary: str = Field(default="", description="chunk text summary")

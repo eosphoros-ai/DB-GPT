@@ -210,7 +210,7 @@ class SystemApp(LifeCycle):
     def get_component(
         self,
         name: Union[str, ComponentType],
-        component_type: Type[T],
+        component_type: Type,
         default_component=_EMPTY_DEFAULT_COMPONENT,
         or_register_component: Optional[Type[T]] = None,
         *args,

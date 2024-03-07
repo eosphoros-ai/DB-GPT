@@ -38,12 +38,12 @@ class SummaryExtractor(Extractor):
 
     def __init__(
         self,
-        llm_client: Optional[LLMClient],
-        model_name: Optional[str] = None,
+        llm_client: LLMClient,
+        model_name: str,
         llm_metadata: Optional[LLMMetadata] = None,
         language: Optional[str] = "en",
-        max_iteration_with_llm: Optional[int] = 5,
-        concurrency_limit_with_llm: Optional[int] = 3,
+        max_iteration_with_llm: int = 5,
+        concurrency_limit_with_llm: int = 3,
     ):
         """Create SummaryExtractor.
 
@@ -59,9 +59,8 @@ class SummaryExtractor(Extractor):
         """
         self._llm_client = llm_client
         self._model_name = model_name
-        self.llm_metadata = llm_metadata or LLMMetadata
+        self.llm_metadata = llm_metadata
         self._language = language
-        self._concurrency_limit_with_llm = concurrency_limit_with_llm
         self._prompt_template = (
             SUMMARY_PROMPT_TEMPLATE_EN
             if language == "en"
@@ -74,7 +73,6 @@ class SummaryExtractor(Extractor):
         )
         self._concurrency_limit_with_llm = concurrency_limit_with_llm
         self._max_iteration_with_llm = max_iteration_with_llm
-        self._concurrency_limit_with_llm = concurrency_limit_with_llm
 
     async def _aextract(self, chunks: List[Chunk]) -> str:
         """Return extracted metadata from chunks of async.

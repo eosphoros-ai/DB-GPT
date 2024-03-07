@@ -10,7 +10,7 @@ class StringKnowledge(Knowledge):
 
     def __init__(
         self,
-        text: str = None,
+        text: str = "",
         knowledge_type: KnowledgeType = KnowledgeType.TEXT,
         encoding: Optional[str] = "utf-8",
         loader: Optional[Any] = None,

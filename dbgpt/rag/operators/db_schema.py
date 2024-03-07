@@ -20,9 +20,9 @@ class DBSchemaRetrieverOperator(RetrieverOperator[Any, Any]):
 
     def __init__(
         self,
+        vector_store_connector: VectorStoreConnector,
         top_k: int = 4,
         connection: Optional[RDBMSDatabase] = None,
-        vector_store_connector: Optional[VectorStoreConnector] = None,
         **kwargs
     ):
         """Create a new DBSchemaRetrieverOperator."""

@@ -58,7 +58,7 @@ class ChunkManager:
 
     def __init__(
         self,
-        knowledge: Knowledge = None,
+        knowledge: Knowledge,
         chunk_parameter: Optional[ChunkParameters] = None,
         extractor: Optional[Extractor] = None,
     ):
@@ -75,10 +75,11 @@ class ChunkManager:
         self._chunk_parameters = chunk_parameter or ChunkParameters()
         self._chunk_strategy = (
             chunk_parameter.chunk_strategy
-            or self._knowledge.default_chunk_strategy().name
+            if chunk_parameter and chunk_parameter.chunk_strategy
+            else self._knowledge.default_chunk_strategy().name
         )
-        self._text_splitter = chunk_parameter.text_splitter
-        self._splitter_type = chunk_parameter.splitter_type
+        self._text_splitter = self._chunk_parameters.text_splitter
+        self._splitter_type = self._chunk_parameters.splitter_type
 
     def split(self, documents) -> List[Chunk]:
         """Split a document into chunks."""
@@ -106,7 +107,7 @@ class ChunkManager:
     def set_text_splitter(
         self,
         text_splitter,
-        splitter_type: Optional[SplitterType] = SplitterType.LANGCHAIN,
+        splitter_type: SplitterType = SplitterType.LANGCHAIN,
     ) -> None:
         """Add text splitter."""
         self._text_splitter = text_splitter

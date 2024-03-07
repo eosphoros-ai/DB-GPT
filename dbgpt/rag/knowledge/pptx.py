@@ -17,7 +17,7 @@ class PPTXKnowledge(Knowledge):
         self,
         file_path: Optional[str] = None,
         knowledge_type: KnowledgeType = KnowledgeType.DOCUMENT,
-        loader: Optional = None,
+        loader: Optional[Any] = None,
         language: Optional[str] = "zh",
         **kwargs: Any,
     ) -> None:

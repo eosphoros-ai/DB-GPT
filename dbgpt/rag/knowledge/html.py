@@ -38,6 +38,8 @@ class HTMLKnowledge(Knowledge):
         if self._loader:
             documents = self._loader.load()
         else:
+            if not self._path:
+                raise ValueError("file path is required")
             with open(self._path, "rb") as f:
                 raw_text = f.read()
                 result = chardet.detect(raw_text)

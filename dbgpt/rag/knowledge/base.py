@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple, Type
 
 from dbgpt.rag.chunk import Document
 from dbgpt.rag.text_splitter.text_splitter import (
@@ -55,10 +55,13 @@ class KnowledgeType(Enum):
         raise ValueError(f"{value} is not a valid value for {cls.__name__}")
 
 
+_STRATEGY_ENUM_TYPE = Tuple[Type[TextSplitter], List, str, str]
+
+
 class ChunkStrategy(Enum):
     """Chunk Strategy Enum."""
 
-    CHUNK_BY_SIZE = (
+    CHUNK_BY_SIZE: _STRATEGY_ENUM_TYPE = (
         RecursiveCharacterTextSplitter,
         [
             {
@@ -77,8 +80,13 @@ class ChunkStrategy(Enum):
         "chunk size",
         "split document by chunk size",
     )
-    CHUNK_BY_PAGE = (PageTextSplitter, [], "page", "split document by page")
-    CHUNK_BY_PARAGRAPH = (
+    CHUNK_BY_PAGE: _STRATEGY_ENUM_TYPE = (
+        PageTextSplitter,
+        [],
+        "page",
+        "split document by page",
+    )
+    CHUNK_BY_PARAGRAPH: _STRATEGY_ENUM_TYPE = (
         ParagraphTextSplitter,
         [
             {
@@ -91,7 +99,7 @@ class ChunkStrategy(Enum):
         "paragraph",
         "split document by paragraph",
     )
-    CHUNK_BY_SEPARATOR = (
+    CHUNK_BY_SEPARATOR: _STRATEGY_ENUM_TYPE = (
         SeparatorTextSplitter,
         [
             {
@@ -111,7 +119,7 @@ class ChunkStrategy(Enum):
         "separator",
         "split document by separator",
     )
-    CHUNK_BY_MARKDOWN_HEADER = (
+    CHUNK_BY_MARKDOWN_HEADER: _STRATEGY_ENUM_TYPE = (
         MarkdownHeaderTextSplitter,
         [],
         "markdown header",
@@ -134,13 +142,11 @@ class ChunkStrategy(Enum):
 class Knowledge(ABC):
     """Knowledge Base Class."""
 
-    type: KnowledgeType = None
-
     def __init__(
         self,
         path: Optional[str] = None,
         knowledge_type: Optional[KnowledgeType] = None,
-        data_loader: Optional = None,
+        data_loader: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with Knowledge arguments."""

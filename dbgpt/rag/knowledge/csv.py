@@ -44,6 +44,8 @@ class CSVKnowledge(Knowledge):
             documents = self._loader.load()
         else:
             docs = []
+            if not self._path:
+                raise ValueError("file path is required")
             with open(self._path, newline="", encoding=self._encoding) as csvfile:
                 csv_reader = csv.DictReader(csvfile)
                 for i, row in enumerate(csv_reader):

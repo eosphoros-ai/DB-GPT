@@ -1,4 +1,5 @@
 """Summary classes for database, table, field and index."""
+from typing import Dict, Iterable, List, Optional, Tuple
 
 
 class DBSummary:
@@ -7,11 +8,11 @@ class DBSummary:
     def __init__(self, name: str):
         """Create a new DBSummary."""
         self.name = name
-        self.summary = None
-        self.tables = []
-        self.metadata = str
+        self.summary: Optional[str] = None
+        self.tables: Iterable[str] = []
+        self.metadata: Optional[str] = None
 
-    def get_summary(self):
+    def get_summary(self) -> Optional[str]:
         """Get the summary."""
         return self.summary
 
@@ -22,9 +23,9 @@ class TableSummary:
     def __init__(self, name: str):
         """Create a new TableSummary."""
         self.name = name
-        self.summary = None
-        self.fields = []
-        self.indexes = []
+        self.summary: Optional[str] = None
+        self.fields: List[Tuple] = []
+        self.indexes: List[Dict] = []
 
 
 class FieldSummary:
@@ -43,5 +44,5 @@ class IndexSummary:
     def __init__(self, name: str):
         """Create a new IndexSummary."""
         self.name = name
-        self.summary = None
-        self.bind_fields = []
+        self.summary: Optional[str] = None
+        self.bind_fields: List[str] = []

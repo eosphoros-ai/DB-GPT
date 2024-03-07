@@ -39,6 +39,8 @@ class MarkdownKnowledge(Knowledge):
         if self._loader:
             documents = self._loader.load()
         else:
+            if not self._path:
+                raise ValueError("file path is required")
             with open(self._path, encoding=self._encoding, errors="ignore") as f:
                 markdown_text = f.read()
                 metadata = {"source": self._path}

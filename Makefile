@@ -78,6 +78,7 @@ test-doc: $(VENV)/.testenv ## Run doctests
 mypy: $(VENV)/.testenv ## Run mypy checks
 	# https://github.com/python/mypy
 	$(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/core/
+	$(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/rag/
 	# TODO: More package checks with mypy.
 
 .PHONY: coverage

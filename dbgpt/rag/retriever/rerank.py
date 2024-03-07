@@ -1,15 +1,17 @@
 """Rerank module for RAG retriever."""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from dbgpt.rag.chunk import Chunk
+
+RANK_FUNC = Callable[[List[Chunk]], List[Chunk]]
 
 
 class Ranker(ABC):
     """Base Ranker."""
 
-    def __init__(self, topk: int, rank_fn: Optional[callable] = None) -> None:
+    def __init__(self, topk: int, rank_fn: Optional[RANK_FUNC] = None) -> None:
         """Create abstract base ranker.
 
         Args:
@@ -51,7 +53,7 @@ class Ranker(ABC):
 class DefaultRanker(Ranker):
     """Default Ranker."""
 
-    def __init__(self, topk: int, rank_fn: Optional[callable] = None):
+    def __init__(self, topk: int, rank_fn: Optional[RANK_FUNC] = None):
         """Create Default Ranker with topk and rank_fn."""
         super().__init__(topk, rank_fn)
 
@@ -79,7 +81,7 @@ class DefaultRanker(Ranker):
 class RRFRanker(Ranker):
     """RRF(Reciprocal Rank Fusion) Ranker."""
 
-    def __init__(self, topk: int, rank_fn: Optional[callable] = None):
+    def __init__(self, topk: int, rank_fn: Optional[RANK_FUNC] = None):
         """RRF rank algorithm implementation."""
         super().__init__(topk, rank_fn)
 

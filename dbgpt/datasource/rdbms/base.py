@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
@@ -499,7 +499,7 @@ class RDBMSDatabase(BaseConnect):
         ans = cursor.fetchall()
         return ans[0][1]
 
-    def get_fields(self, table_name):
+    def get_fields(self, table_name) -> List[Tuple]:
         """Get column fields about specified table."""
         session = self._db_sessions()
         cursor = session.execute(

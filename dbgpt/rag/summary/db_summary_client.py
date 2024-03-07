@@ -30,8 +30,8 @@ class DBSummaryClient:
         self.system_app = system_app
         from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
-        embedding_factory = self.system_app.get_component(
-            "embedding_factory", EmbeddingFactory
+        embedding_factory: EmbeddingFactory = self.system_app.get_component(
+            "embedding_factory", component_type=EmbeddingFactory
         )
         self.embeddings = embedding_factory.create(
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]

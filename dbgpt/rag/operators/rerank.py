@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 from dbgpt.core.awel import MapOperator
 from dbgpt.rag.chunk import Chunk
-from dbgpt.rag.retriever.rerank import DefaultRanker
+from dbgpt.rag.retriever.rerank import RANK_FUNC, DefaultRanker
 
 
 class RerankOperator(MapOperator[Any, Any]):
@@ -11,9 +11,9 @@ class RerankOperator(MapOperator[Any, Any]):
 
     def __init__(
         self,
-        topk: Optional[int] = 3,
-        algorithm: Optional[str] = "default",
-        rank_fn: Optional[callable] = None,
+        topk: int = 3,
+        algorithm: str = "default",
+        rank_fn: Optional[RANK_FUNC] = None,
         **kwargs
     ):
         """Create a new RerankOperator.

@@ -1,7 +1,7 @@
 """SchemaLinking by LLM."""
 
 from functools import reduce
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelRequest
 from dbgpt.datasource.rdbms.base import RDBMSDatabase
@@ -37,10 +37,10 @@ class SchemaLinking(BaseSchemaLinker):
 
     def __init__(
         self,
+        connection: RDBMSDatabase,
+        model_name: str,
+        llm: LLMClient,
         top_k: int = 5,
-        connection: Optional[RDBMSDatabase] = None,
-        llm: Optional[LLMClient] = None,
-        model_name: Optional[str] = None,
         vector_store_connector: Optional[VectorStoreConnector] = None,
         **kwargs
     ):
@@ -64,14 +64,15 @@ class SchemaLinking(BaseSchemaLinker):
         chunks_content = [chunk.content for chunk in chunks]
         return chunks_content
 
-    def _schema_linking_with_vector_db(self, query: str) -> List:
+    def _schema_linking_with_vector_db(self, query: str) -> List[Chunk]:
         queries = [query]
+        if not self._vector_store_connector:
+            raise ValueError("Vector store connector is not provided.")
         candidates = [
             self._vector_store_connector.similar_search(query, self._top_k)
             for query in queries
         ]
-        candidates = reduce(lambda x, y: x + y, candidates)
-        return candidates
+        return cast(List[Chunk], reduce(lambda x, y: x + y, candidates))
 
     async def _schema_linking_with_llm(self, query: str) -> List:
         chunks_content = self.schema_linking(query)
