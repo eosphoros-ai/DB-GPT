@@ -62,7 +62,7 @@ class Config(metaclass=Singleton):
         if self.zhipu_proxy_api_key:
             os.environ["zhipu_proxyllm_proxy_api_key"] = self.zhipu_proxy_api_key
             os.environ["zhipu_proxyllm_proxyllm_backend"] = os.getenv(
-                "ZHIPU_MODEL_VERSION"
+                "ZHIPU_MODEL_VERSION", ""
             )
 
         # wenxin
@@ -74,7 +74,9 @@ class Config(metaclass=Singleton):
             os.environ[
                 "wenxin_proxyllm_proxy_api_secret"
             ] = self.wenxin_proxy_api_secret
-            os.environ["wenxin_proxyllm_proxyllm_backend"] = self.wenxin_model_version
+            os.environ["wenxin_proxyllm_proxyllm_backend"] = (
+                self.wenxin_model_version or ""
+            )
 
         # xunfei spark
         self.spark_api_version = os.getenv("XUNFEI_SPARK_API_VERSION")
@@ -84,8 +86,10 @@ class Config(metaclass=Singleton):
         if self.spark_proxy_api_key and self.spark_proxy_api_secret:
             os.environ["spark_proxyllm_proxy_api_key"] = self.spark_proxy_api_key
             os.environ["spark_proxyllm_proxy_api_secret"] = self.spark_proxy_api_secret
-            os.environ["spark_proxyllm_proxyllm_backend"] = self.spark_api_version
-            os.environ["spark_proxyllm_proxy_api_app_id"] = self.spark_proxy_api_appid
+            os.environ["spark_proxyllm_proxyllm_backend"] = self.spark_api_version or ""
+            os.environ["spark_proxyllm_proxy_api_app_id"] = (
+                self.spark_proxy_api_appid or ""
+            )
 
         # baichuan proxy
         self.bc_proxy_api_key = os.getenv("BAICHUAN_PROXY_API_KEY")
@@ -108,12 +112,10 @@ class Config(metaclass=Singleton):
         self.elevenlabs_voice_1_id = os.getenv("ELEVENLABS_VOICE_1_ID")
         self.elevenlabs_voice_2_id = os.getenv("ELEVENLABS_VOICE_2_ID")
 
-        self.use_mac_os_tts = False
-        self.use_mac_os_tts = os.getenv("USE_MAC_OS_TTS")
+        self.use_mac_os_tts = os.getenv("USE_MAC_OS_TTS", "False") == "True"
 
         self.authorise_key = os.getenv("AUTHORISE_COMMAND_KEY", "y")
         self.exit_key = os.getenv("EXIT_KEY", "n")
-        self.image_provider = os.getenv("IMAGE_PROVIDER", True)
         self.image_size = int(os.getenv("IMAGE_SIZE", 256))
 
         self.huggingface_api_token = os.getenv("HUGGINGFACE_API_TOKEN")
@@ -131,10 +133,7 @@ class Config(metaclass=Singleton):
 
         self.prompt_template_registry = PromptTemplateRegistry()
         ### Related configuration of built-in commands
-        self.command_registry = []
-
-        ### Relate configuration of display commands
-        self.command_dispaly = []
+        self.command_registry = []  # type: ignore
 
         disabled_command_categories = os.getenv("DISABLED_COMMAND_CATEGORIES")
         if disabled_command_categories:
@@ -151,7 +150,7 @@ class Config(metaclass=Singleton):
         ### The associated configuration parameters of the plug-in control the loading and use of the plug-in
 
         self.plugins: List["AutoGPTPluginTemplate"] = []
-        self.plugins_openai = []
+        self.plugins_openai = []  # type: ignore
         self.plugins_auto_load = os.getenv("AUTO_LOAD_PLUGIN", "True").lower() == "true"
 
         self.plugins_git_branch = os.getenv("PLUGINS_GIT_BRANCH", "plugin_dashboard")
@@ -274,6 +273,6 @@ class Config(metaclass=Singleton):
         self.MODEL_CACHE_MAX_MEMORY_MB: int = int(
             os.getenv("MODEL_CACHE_MAX_MEMORY_MB", 256)
         )
-        self.MODEL_CACHE_STORAGE_DISK_DIR: str = os.getenv(
+        self.MODEL_CACHE_STORAGE_DISK_DIR: Optional[str] = os.getenv(
             "MODEL_CACHE_STORAGE_DISK_DIR"
         )

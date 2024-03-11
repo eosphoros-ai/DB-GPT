@@ -1,14 +1,17 @@
+"""The summary operator."""
+
 from typing import Any, Optional
 
 from dbgpt.core import LLMClient
 from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
-from dbgpt.core.awel.task.base import IN
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.serve.rag.assembler.summary import SummaryAssembler
 from dbgpt.serve.rag.operators.base import AssemblerOperator
 
 
 class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):
+    """The summary assembler operator."""
+
     metadata = ViewMetadata(
         label="Summary Operator",
         name="summary_assembler_operator",
@@ -81,14 +84,15 @@ class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):
         concurrency_limit_with_llm: Optional[int] = 3,
         **kwargs
     ):
-        """
-        Init the summary assemble operator.
+        """Create the summary assemble operator.
+
         Args:
               llm_client: (Optional[LLMClient]) The LLM client.
               model_name: (Optional[str]) The model name.
               language: (Optional[str]) The prompt language.
               max_iteration_with_llm: (Optional[int]) The max iteration with llm.
-              concurrency_limit_with_llm: (Optional[int]) The concurrency limit with llm.
+              concurrency_limit_with_llm: (Optional[int]) The concurrency limit with
+                llm.
         """
         super().__init__(**kwargs)
         self._llm_client = llm_client
@@ -97,7 +101,7 @@ class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):
         self._max_iteration_with_llm = max_iteration_with_llm
         self._concurrency_limit_with_llm = concurrency_limit_with_llm
 
-    async def map(self, knowledge: IN) -> Any:
+    async def map(self, knowledge: Knowledge) -> str:
         """Assemble the summary."""
         assembler = SummaryAssembler.load_from_knowledge(
             knowledge=knowledge,
@@ -109,6 +113,6 @@ class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):
         )
         return await assembler.generate_summary()
 
-    def assemble(self, knowledge: IN) -> Any:
-        """assemble knowledge for input value."""
+    def assemble(self, knowledge: Knowledge) -> Any:
+        """Assemble the summary."""
         pass

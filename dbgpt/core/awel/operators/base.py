@@ -81,7 +81,7 @@ class BaseOperatorMeta(ABCMeta):
                 if system_app:
                     executor = system_app.get_component(
                         ComponentType.EXECUTOR_DEFAULT, DefaultExecutorFactory
-                    ).create()
+                    ).create()  # type: ignore
                 else:
                     executor = DefaultExecutorFactory().create()
                 DAGVar.set_executor(executor)

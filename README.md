@@ -131,7 +131,7 @@ As of October 10, 2023, through the fine-tuning of an open-source model with 13 
 - [**Advanced Usage**](https://docs.dbgpt.site/docs/application/advanced_tutorial/cli)
   - [SMMF](https://docs.dbgpt.site/docs/application/advanced_tutorial/smmf)
   - [Finetune](https://docs.dbgpt.site/docs/application/fine_tuning_manual/dbgpt_hub)
-  - [AWEL](https://docs.dbgpt.site/docs/awel/get_started)
+  - [AWEL](https://docs.dbgpt.site/docs/latest/awel/tutorial)
 
 
 ## Features

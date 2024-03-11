@@ -123,7 +123,7 @@ END;
     - BranchOperator
     - InputOperator
     - TriggerOperator
-- ** Stream Operators**
+- **Stream Operators**
     - StreamifyAbsOperator
     - UnstreamifyAbsOperator
     - TransformStreamAbsOperator

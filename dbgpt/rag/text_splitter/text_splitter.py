@@ -1,17 +1,9 @@
+"""Text splitter module for splitting text into chunks."""
+
 import copy
 import logging
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    TypedDict,
-    Union,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, TypedDict, Union, cast
 
 from dbgpt.rag.chunk import Chunk, Document
 
@@ -20,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 class TextSplitter(ABC):
     """Interface for splitting text into chunks.
-    Refer to https://github.com/langchain-ai/langchain/blob/master/libs/langchain/langchain/text_splitter.py
+
+    Refer to `Langchain Text Splitter <https://github.com/langchain-ai/langchain/blob/
+    master/libs/langchain/langchain/text_splitter.py>`_
     """
 
     outgoing_edges = 1
@@ -30,10 +24,12 @@ class TextSplitter(ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        filters: list = [],
+        filters=None,
         separator: str = "",
     ):
         """Create a new TextSplitter."""
+        if filters is None:
+            filters = []
         if chunk_overlap > chunk_size:
             raise ValueError(
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
@@ -60,7 +56,7 @@ class TextSplitter(ABC):
         _metadatas = metadatas or [{}] * len(texts)
         chunks = []
         for i, text in enumerate(texts):
-            for chunk in self.split_text(text, separator, **kwargs):
+            for chunk in self.split_text(text, separator=separator, **kwargs):
                 new_doc = Chunk(content=chunk, metadata=copy.deepcopy(_metadatas[i]))
                 chunks.append(new_doc)
         return chunks
@@ -85,8 +81,8 @@ class TextSplitter(ABC):
 
     def _merge_splits(
         self,
-        splits: Iterable[str],
-        separator: str,
+        splits: Iterable[str | dict],
+        separator: Optional[str] = None,
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
     ) -> List[str]:
@@ -103,7 +99,8 @@ class TextSplitter(ABC):
         docs = []
         current_doc: List[str] = []
         total = 0
-        for d in splits:
+        for s in splits:
+            d = cast(str, s)
             _len = self._length_function(d)
             if (
                 total + _len + (separator_len if len(current_doc) > 0 else 0)
@@ -138,6 +135,7 @@ class TextSplitter(ABC):
         return docs
 
     def clean(self, documents: List[dict], filters: List[str]):
+        """Clean the documents."""
         for special_character in filters:
             for doc in documents:
                 doc["content"] = doc["content"].replace(special_character, "")
@@ -146,12 +144,13 @@ class TextSplitter(ABC):
     def run(  # type: ignore
         self,
         documents: Union[dict, List[dict]],
-        meta: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None,  # type: ignore
+        meta: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None,
         separator: Optional[str] = None,
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
         filters: Optional[List[str]] = None,
     ):
+        """Run the text splitter."""
         if separator is None:
             separator = self._separator
         if chunk_size is None:
@@ -203,12 +202,16 @@ class TextSplitter(ABC):
 
 class CharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters.
-    Refer to https://github.com/langchain-ai/langchain/blob/master/libs/langchain/langchain/text_splitter.py
+
+    Refer to `Langchain Test Splitter <https://github.com/langchain-ai/langchain/blob/
+    master/libs/langchain/langchain/text_splitter.py>`_
     """
 
-    def __init__(self, separator: str = "\n\n", filters: list = [], **kwargs: Any):
+    def __init__(self, separator: str = "\n\n", filters=None, **kwargs: Any):
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
+        if filters is None:
+            filters = []
         self._separator = separator
         self._filter = filters
 
@@ -228,9 +231,12 @@ class CharacterTextSplitter(TextSplitter):
 
 class RecursiveCharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters.
+
     Recursively tries to split by different characters to find one
     that works.
-    Refer to https://github.com/langchain-ai/langchain/blob/master/libs/langchain/langchain/text_splitter.py
+
+    Refer to `Langchain Test Splitter <https://github.com/langchain-ai/langchain/blob/
+    master/libs/langchain/langchain/text_splitter.py>`_
     """
 
     def __init__(self, separators: Optional[List[str]] = None, **kwargs: Any):
@@ -287,7 +293,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
 class SpacyTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at sentences using Spacy.
-    Refer to https://github.com/langchain-ai/langchain/blob/master/libs/langchain/langchain/text_splitter.py
+
+    Refer to `Langchain Test Splitter <https://github.com/langchain-ai/langchain/blob/
+    master/libs/langchain/langchain/text_splitter.py>`_
     """
 
     def __init__(self, pipeline: str = "zh_core_web_sm", **kwargs: Any) -> None:
@@ -301,7 +309,7 @@ class SpacyTextSplitter(TextSplitter):
             )
         try:
             self._tokenizer = spacy.load(pipeline)
-        except:
+        except Exception:
             spacy.cli.download(pipeline)
             self._tokenizer = spacy.load(pipeline)
 
@@ -332,23 +340,18 @@ class LineType(TypedDict):
 
 class MarkdownHeaderTextSplitter(TextSplitter):
     """Implementation of splitting markdown files based on specified headers.
-    Refer to https://github.com/langchain-ai/langchain/blob/master/libs/langchain/langchain/text_splitter.py
+
+    Refer to `Langchain Text Splitter <https://github.com/langchain-ai/langchain/blob/
+    master/libs/langchain/langchain/text_splitter.py>`_
     """
 
     outgoing_edges = 1
 
     def __init__(
         self,
-        headers_to_split_on: List[Tuple[str, str]] = [
-            ("#", "Header 1"),
-            ("##", "Header 2"),
-            ("###", "Header 3"),
-            ("####", "Header 4"),
-            ("#####", "Header 5"),
-            ("######", "Header 6"),
-        ],
+        headers_to_split_on=None,
         return_each_line: bool = False,
-        filters: list = [],
+        filters=None,
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
@@ -361,6 +364,17 @@ class MarkdownHeaderTextSplitter(TextSplitter):
             return_each_line: Return each line w/ associated headers
         """
         # Output line-by-line or aggregated into chunks w/ common headers
+        if headers_to_split_on is None:
+            headers_to_split_on = [
+                ("#", "Header 1"),
+                ("##", "Header 2"),
+                ("###", "Header 3"),
+                ("####", "Header 4"),
+                ("#####", "Header 5"),
+                ("######", "Header 6"),
+            ]
+        if filters is None:
+            filters = []
         self.return_each_line = return_each_line
         self._chunk_size = chunk_size
         # Given the headers we want to split on,
@@ -392,7 +406,8 @@ class MarkdownHeaderTextSplitter(TextSplitter):
         return chunks
 
     def aggregate_lines_to_chunks(self, lines: List[LineType]) -> List[Chunk]:
-        """Combine lines with common metadata into chunks
+        """Aggregate lines into chunks based on common metadata.
+
         Args:
             lines: Line of text / associated header metadata
         """
@@ -417,16 +432,22 @@ class MarkdownHeaderTextSplitter(TextSplitter):
             for chunk in aggregated_chunks
         ]
 
-    def split_text(
+    def split_text(  # type: ignore
         self,
         text: str,
         separator: Optional[str] = None,
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
+        **kwargs,
     ) -> List[Chunk]:
-        """Split markdown file
+        """Split incoming text and return chunks.
+
         Args:
-            text: Markdown file"""
+            text(str): The input text
+            separator(str): The separator to use for splitting the text
+            chunk_size(int): The size of each chunk
+            chunk_overlap(int): The overlap between chunks
+        """
         if separator is None:
             separator = self._separator
         if chunk_size is None:
@@ -527,6 +548,7 @@ class MarkdownHeaderTextSplitter(TextSplitter):
             ]
 
     def clean(self, documents: List[dict], filters: Optional[List[str]] = None):
+        """Clean the documents."""
         if filters is None:
             filters = self._filter
         for special_character in filters:
@@ -534,7 +556,7 @@ class MarkdownHeaderTextSplitter(TextSplitter):
                 doc["content"] = doc["content"].replace(special_character, "")
         return documents
 
-    def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
+    def _join_docs(self, docs: List[str], separator: str, **kwargs) -> Optional[str]:
         text = separator.join(docs)
         text = text.strip()
         if text == "":
@@ -544,10 +566,10 @@ class MarkdownHeaderTextSplitter(TextSplitter):
 
     def _merge_splits(
         self,
-        documents: List[dict],
+        documents: Iterable[str | dict],
         separator: Optional[str] = None,
         chunk_size: Optional[int] = None,
-        chunk_overlap: [int] = None,
+        chunk_overlap: Optional[int] = None,
     ) -> List[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
@@ -562,14 +584,15 @@ class MarkdownHeaderTextSplitter(TextSplitter):
         docs = []
         current_doc: List[str] = []
         total = 0
-        for doc in documents:
-            if doc["metadata"] != {}:
+        for _doc in documents:
+            dict_doc = cast(dict, _doc)
+            if dict_doc["metadata"] != {}:
                 head = sorted(
-                    doc["metadata"].items(), key=lambda x: x[0], reverse=True
+                    dict_doc["metadata"].items(), key=lambda x: x[0], reverse=True
                 )[0][1]
-                d = head + separator + doc["page_content"]
+                d = head + separator + dict_doc["page_content"]
             else:
-                d = doc["page_content"]
+                d = dict_doc["page_content"]
             _len = self._length_function(d)
             if (
                 total + _len + (separator_len if len(current_doc) > 0 else 0)
@@ -607,11 +630,12 @@ class MarkdownHeaderTextSplitter(TextSplitter):
         self,
         documents: Union[dict, List[dict]],
         meta: Optional[Union[Dict[str, str], List[Dict[str, str]]]] = None,
-        filters: Optional[List[str]] = None,
+        separator: Optional[str] = None,
         chunk_size: Optional[int] = None,
         chunk_overlap: Optional[int] = None,
-        separator: Optional[str] = None,
+        filters: Optional[List[str]] = None,
     ):
+        """Run the text splitter."""
         if filters is None:
             filters = self._filter
         if chunk_size is None:
@@ -627,11 +651,10 @@ class MarkdownHeaderTextSplitter(TextSplitter):
                     document["content"], separator, chunk_size, chunk_overlap
                 )
                 for i, txt in enumerate(text_splits):
-                    doc = {}
-                    doc["content"] = txt
+                    doc = {"content": txt}
 
                     if "meta" not in doc.keys() or doc["meta"] is None:
-                        doc["meta"] = {}
+                        doc["meta"] = {}  # type: ignore
 
                     doc["meta"]["_split_id"] = i
                     ret.append(doc)
@@ -640,11 +663,10 @@ class MarkdownHeaderTextSplitter(TextSplitter):
                 documents["content"], separator, chunk_size, chunk_overlap
             )
             for i, txt in enumerate(text_splits):
-                doc = {}
-                doc["content"] = txt
+                doc = {"content": txt}
 
                 if "meta" not in doc.keys() or doc["meta"] is None:
-                    doc["meta"] = {}
+                    doc["meta"] = {}  # type: ignore
 
                 doc["meta"]["_split_id"] = i
                 ret.append(doc)
@@ -662,9 +684,10 @@ class ParagraphTextSplitter(CharacterTextSplitter):
     def __init__(
         self,
         separator="\n",
-        chunk_size: Optional[int] = 0,
-        chunk_overlap: Optional[int] = 0,
+        chunk_size: int = 0,
+        chunk_overlap: int = 0,
     ):
+        """Create a new ParagraphTextSplitter."""
         self._separator = separator
         if self._separator is None:
             self._separator = "\n"
@@ -675,16 +698,19 @@ class ParagraphTextSplitter(CharacterTextSplitter):
     def split_text(
         self, text: str, separator: Optional[str] = "\n", **kwargs
     ) -> List[str]:
+        """Split incoming text and return chunks."""
         paragraphs = text.strip().split(self._separator)
         paragraphs = [p.strip() for p in paragraphs if p.strip() != ""]
         return paragraphs
 
 
 class SeparatorTextSplitter(CharacterTextSplitter):
-    """SeparatorTextSplitter"""
+    """The SeparatorTextSplitter class."""
 
-    def __init__(self, separator: str = "\n", filters: list = [], **kwargs: Any):
+    def __init__(self, separator: str = "\n", filters=None, **kwargs: Any):
         """Create a new TextSplitter."""
+        if filters is None:
+            filters = []
         self._merge = kwargs.pop("enable_merge") or False
         super().__init__(**kwargs)
         self._separator = separator
@@ -706,11 +732,13 @@ class SeparatorTextSplitter(CharacterTextSplitter):
 
 
 class PageTextSplitter(TextSplitter):
-    """PageTextSplitter"""
+    """The PageTextSplitter class."""
 
-    def __init__(self, separator: str = "\n\n", filters: list = [], **kwargs: Any):
+    def __init__(self, separator: str = "\n\n", filters=None, **kwargs: Any):
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
+        if filters is None:
+            filters = []
         self._separator = separator
         self._filter = filters
 
@@ -718,7 +746,7 @@ class PageTextSplitter(TextSplitter):
         self, text: str, separator: Optional[str] = None, **kwargs
     ) -> List[str]:
         """Split incoming text and return chunks."""
-        return text
+        return [text]
 
     def create_documents(
         self,

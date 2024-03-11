@@ -1,3 +1,4 @@
+"""HTML Knowledge."""
 from typing import Any, List, Optional
 
 import chardet
@@ -12,7 +13,7 @@ from dbgpt.rag.knowledge.base import (
 
 
 class HTMLKnowledge(Knowledge):
-    """HTML Knowledge"""
+    """HTML Knowledge."""
 
     def __init__(
         self,
@@ -21,21 +22,24 @@ class HTMLKnowledge(Knowledge):
         loader: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize with Knowledge arguments.
+        """Create HTML Knowledge with Knowledge arguments.
+
         Args:
-            file_path:(Optional[str]) file path
-            knowledge_type:(KnowledgeType) knowledge type
-            loader:(Optional[Any]) loader
+            file_path(str,  optional): file path
+            knowledge_type(KnowledgeType, optional): knowledge type
+            loader(Any, optional): loader
         """
         self._path = file_path
         self._type = knowledge_type
         self._loader = loader
 
     def _load(self) -> List[Document]:
-        """Load html document from loader"""
+        """Load html document from loader."""
         if self._loader:
             documents = self._loader.load()
         else:
+            if not self._path:
+                raise ValueError("file path is required")
             with open(self._path, "rb") as f:
                 raw_text = f.read()
                 result = chardet.detect(raw_text)
@@ -49,10 +53,9 @@ class HTMLKnowledge(Knowledge):
         return [Document.langchain2doc(lc_document) for lc_document in documents]
 
     def _postprocess(self, documents: List[Document]):
-        i = 0
-        for d in documents:
-            import markdown
+        import markdown
 
+        for i, d in enumerate(documents):
             content = markdown.markdown(d.content)
             from bs4 import BeautifulSoup
 
@@ -61,11 +64,11 @@ class HTMLKnowledge(Knowledge):
                 tag.extract()
             documents[i].content = soup.get_text()
             documents[i].content = documents[i].content.replace("\n", " ")
-            i += 1
         return documents
 
     @classmethod
     def support_chunk_strategy(cls):
+        """Return support chunk strategy."""
         return [
             ChunkStrategy.CHUNK_BY_SIZE,
             ChunkStrategy.CHUNK_BY_SEPARATOR,
@@ -73,12 +76,15 @@ class HTMLKnowledge(Knowledge):
 
     @classmethod
     def default_chunk_strategy(cls) -> ChunkStrategy:
+        """Return default chunk strategy."""
         return ChunkStrategy.CHUNK_BY_SIZE
 
     @classmethod
     def type(cls) -> KnowledgeType:
+        """Return knowledge type."""
         return KnowledgeType.DOCUMENT
 
     @classmethod
     def document_type(cls) -> DocumentType:
+        """Return document type."""
         return DocumentType.HTML
