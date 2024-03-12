@@ -143,6 +143,24 @@ class EmbeddedModelRegistry(ModelRegistry):
         exist_ins = [ins for ins in instances if ins.host == host and ins.port == port]
         return instances, exist_ins
 
+    def send_message_to_kafka(self, message: dict):
+        import json
+        import os
+
+        from kafka import KafkaProducer
+
+        KAFKA_SERVER_ADDRESS = os.getenv("KAFKA_SERVER_ADDRESS", None)
+        KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", None)
+
+        if KAFKA_SERVER_ADDRESS is None or KAFKA_TOPIC is None:
+            print("Kafka server address or topic is not configured")
+        else:
+            message = json.dumps(message)
+            producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER_ADDRESS)
+            producer.send(KAFKA_TOPIC, message.encode("utf-8"))
+            producer.flush()
+            producer.close()
+
     def _heartbeat_checker(self):
         while True:
             for instances in self.registry.values():
@@ -153,6 +171,17 @@ class EmbeddedModelRegistry(ModelRegistry):
                         > timedelta(seconds=self.heartbeat_timeout_secs)
                     ):
                         instance.healthy = False
+                        _, worker_type = instance.model_name.split("@")
+                        if worker_type == "llm" or worker_type == "text2vec":
+                            data = [
+                                {
+                                    "model_name": instance.model_name,
+                                    "healthy": instance.healthy,
+                                    "event": "_heartbeat_checker",
+                                }
+                            ]
+                            self.send_message_to_kafka(data)
+
             time.sleep(self.heartbeat_interval_secs)
 
     async def register_instance(self, instance: ModelInstance) -> bool:
@@ -175,6 +204,17 @@ class EmbeddedModelRegistry(ModelRegistry):
             instance.healthy = True
             instance.last_heartbeat = datetime.now()
             instances.append(instance)
+
+        _, worker_type = instance.model_name.split("@")
+        if worker_type == "llm" or worker_type == "text2vec":
+            data = [
+                {
+                    "model_name": instance.model_name,
+                    "healthy": instance.healthy,
+                    "event": "register_instance",
+                }
+            ]
+            self.send_message_to_kafka(data)
         return True
 
     async def deregister_instance(self, instance: ModelInstance) -> bool:
@@ -185,6 +225,17 @@ class EmbeddedModelRegistry(ModelRegistry):
         if exist_ins:
             ins = exist_ins[0]
             ins.healthy = False
+
+            _, worker_type = instance.model_name.split("@")
+            if worker_type == "llm" or worker_type == "text2vec":
+                data = [
+                    {
+                        "model_name": ins.model_name,
+                        "healthy": ins.healthy,
+                        "event": "deregister_instance",
+                    }
+                ]
+                self.send_message_to_kafka(data)
         return True
 
     async def get_all_instances(

@@ -622,6 +622,7 @@ def default_requires():
         "zhipuai",
         "dashscope",
         "chardet",
+        "kafka-python"
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["knowledge"]
