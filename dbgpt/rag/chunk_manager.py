@@ -1,3 +1,5 @@
+"""Module for ChunkManager."""
+
 from enum import Enum
 from typing import Any, List, Optional
 
@@ -9,7 +11,7 @@ from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge
 
 
 class SplitterType(Enum):
-    """splitter type"""
+    """The type of splitter."""
 
     LANGCHAIN = "langchain"
     LLAMA_INDEX = "llama-index"
@@ -17,7 +19,7 @@ class SplitterType(Enum):
 
 
 class ChunkParameters(BaseModel):
-    """ChunkParameters"""
+    """The parameters for chunking."""
 
     chunk_strategy: str = Field(
         default=None,
@@ -52,15 +54,16 @@ class ChunkParameters(BaseModel):
 
 
 class ChunkManager:
-    """ChunkManager"""
+    """Manager for chunks."""
 
     def __init__(
         self,
-        knowledge: Knowledge = None,
+        knowledge: Knowledge,
         chunk_parameter: Optional[ChunkParameters] = None,
         extractor: Optional[Extractor] = None,
     ):
-        """
+        """Create a new ChunkManager with the given knowledge.
+
         Args:
             knowledge: (Knowledge) Knowledge datasource.
             chunk_parameter: (Optional[ChunkParameter]) Chunk parameter.
@@ -72,10 +75,11 @@ class ChunkManager:
         self._chunk_parameters = chunk_parameter or ChunkParameters()
         self._chunk_strategy = (
             chunk_parameter.chunk_strategy
-            or self._knowledge.default_chunk_strategy().name
+            if chunk_parameter and chunk_parameter.chunk_strategy
+            else self._knowledge.default_chunk_strategy().name
         )
-        self._text_splitter = chunk_parameter.text_splitter
-        self._splitter_type = chunk_parameter.splitter_type
+        self._text_splitter = self._chunk_parameters.text_splitter
+        self._splitter_type = self._chunk_parameters.splitter_type
 
     def split(self, documents) -> List[Chunk]:
         """Split a document into chunks."""
@@ -92,18 +96,18 @@ class ChunkManager:
     def split_with_summary(
         self, document: Any, chunk_strategy: ChunkStrategy
     ) -> List[Chunk]:
-        """Split a document into chunks and summary"""
-
+        """Split a document into chunks and summary."""
         raise NotImplementedError
 
     @property
     def chunk_parameters(self) -> ChunkParameters:
+        """Get chunk parameters."""
         return self._chunk_parameters
 
     def set_text_splitter(
         self,
         text_splitter,
-        splitter_type: Optional[SplitterType] = SplitterType.LANGCHAIN,
+        splitter_type: SplitterType = SplitterType.LANGCHAIN,
     ) -> None:
         """Add text splitter."""
         self._text_splitter = text_splitter
@@ -112,7 +116,7 @@ class ChunkManager:
     def get_text_splitter(
         self,
     ) -> Any:
-        """get text splitter."""
+        """Return text splitter."""
         return self._select_text_splitter()
 
     def _select_text_splitter(
@@ -121,7 +125,7 @@ class ChunkManager:
         """Select text splitter by chunk strategy."""
         if self._text_splitter:
             return self._text_splitter
-        if not self._chunk_strategy or "Automatic" == self._chunk_strategy:
+        if not self._chunk_strategy or self._chunk_strategy == "Automatic":
             self._chunk_strategy = self._knowledge.default_chunk_strategy().name
         if self._chunk_strategy not in [
             support_chunk_strategy.name
@@ -131,7 +135,8 @@ class ChunkManager:
             if self._knowledge.document_type():
                 current_type = self._knowledge.document_type().value
             raise ValueError(
-                f"{current_type} knowledge not supported chunk strategy {self._chunk_strategy} "
+                f"{current_type} knowledge not supported chunk strategy "
+                f"{self._chunk_strategy} "
             )
         strategy = ChunkStrategy[self._chunk_strategy]
         return strategy.match(

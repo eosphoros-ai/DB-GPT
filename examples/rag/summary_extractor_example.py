@@ -1,10 +1,3 @@
-import asyncio
-
-from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt.rag.chunk_manager import ChunkParameters
-from dbgpt.rag.knowledge.factory import KnowledgeFactory
-from dbgpt.serve.rag.assembler.summary import SummaryAssembler
-
 """Summary extractor example.
     pre-requirements:
         1. install openai python sdk
@@ -16,7 +9,7 @@ from dbgpt.serve.rag.assembler.summary import SummaryAssembler
             export OPENAI_API_KEY={your_openai_key}
             export OPENAI_API_BASE={your_openai_base}
         ```
-        or 
+        or
         ```
             import os
             os.environ["OPENAI_API_KEY"] = {your_openai_key}
@@ -26,6 +19,14 @@ from dbgpt.serve.rag.assembler.summary import SummaryAssembler
         ..code-block:: shell
             python examples/rag/summary_extractor_example.py
 """
+
+
+import asyncio
+
+from dbgpt.model.proxy import OpenAILLMClient
+from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt.rag.knowledge import KnowledgeFactory
+from dbgpt.serve.rag.assembler.summary import SummaryAssembler
 
 
 async def main():

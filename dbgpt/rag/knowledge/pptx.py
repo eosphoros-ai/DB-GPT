@@ -1,3 +1,4 @@
+"""PPTX Knowledge."""
 from typing import Any, List, Optional
 
 from dbgpt.rag.chunk import Document
@@ -10,17 +11,18 @@ from dbgpt.rag.knowledge.base import (
 
 
 class PPTXKnowledge(Knowledge):
-    """PPTX Knowledge"""
+    """PPTX Knowledge."""
 
     def __init__(
         self,
         file_path: Optional[str] = None,
         knowledge_type: KnowledgeType = KnowledgeType.DOCUMENT,
-        loader: Optional = None,
+        loader: Optional[Any] = None,
         language: Optional[str] = "zh",
         **kwargs: Any,
     ) -> None:
-        """Initialize with PDF Knowledge arguments.
+        """Create PPTX knowledge with PDF Knowledge arguments.
+
         Args:
             file_path:(Optional[str]) file path
             knowledge_type:(KnowledgeType) knowledge type
@@ -32,7 +34,7 @@ class PPTXKnowledge(Knowledge):
         self._language = language
 
     def _load(self) -> List[Document]:
-        """Load pdf document from loader"""
+        """Load pdf document from loader."""
         if self._loader:
             documents = self._loader.load()
         else:
@@ -53,6 +55,11 @@ class PPTXKnowledge(Knowledge):
 
     @classmethod
     def support_chunk_strategy(cls) -> List[ChunkStrategy]:
+        """Return support chunk strategy.
+
+        Returns:
+            List[ChunkStrategy]: support chunk strategy
+        """
         return [
             ChunkStrategy.CHUNK_BY_SIZE,
             ChunkStrategy.CHUNK_BY_PAGE,
@@ -61,12 +68,27 @@ class PPTXKnowledge(Knowledge):
 
     @classmethod
     def default_chunk_strategy(cls) -> ChunkStrategy:
+        """Return default chunk strategy.
+
+        Returns:
+            ChunkStrategy: default chunk strategy
+        """
         return ChunkStrategy.CHUNK_BY_SIZE
 
     @classmethod
     def type(cls) -> KnowledgeType:
+        """Knowledge type of PPTX.
+
+        Returns:
+            KnowledgeType: knowledge type
+        """
         return KnowledgeType.DOCUMENT
 
     @classmethod
     def document_type(cls) -> DocumentType:
+        """Document type of PPTX.
+
+        Returns:
+            DocumentType: document type
+        """
         return DocumentType.PPTX

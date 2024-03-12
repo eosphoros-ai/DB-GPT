@@ -1,3 +1,4 @@
+"""Docx Knowledge."""
 from typing import Any, List, Optional
 
 import docx
@@ -12,7 +13,7 @@ from dbgpt.rag.knowledge.base import (
 
 
 class DocxKnowledge(Knowledge):
-    """Docx Knowledge"""
+    """Docx Knowledge."""
 
     def __init__(
         self,
@@ -22,12 +23,13 @@ class DocxKnowledge(Knowledge):
         loader: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize with Knowledge arguments.
+        """Create Docx Knowledge with Knowledge arguments.
+
         Args:
-            file_path:(Optional[str]) file path
-            knowledge_type:(KnowledgeType) knowledge type
-            encoding:(Optional[str]) csv encoding
-            loader:(Optional[Any]) loader
+            file_path(str,  optional): file path
+            knowledge_type(KnowledgeType, optional): knowledge type
+            encoding(str, optional): csv encoding
+            loader(Any, optional): loader
         """
         self._path = file_path
         self._type = knowledge_type
@@ -35,7 +37,7 @@ class DocxKnowledge(Knowledge):
         self._encoding = encoding
 
     def _load(self) -> List[Document]:
-        """Load docx document from loader"""
+        """Load docx document from loader."""
         if self._loader:
             documents = self._loader.load()
         else:
@@ -54,6 +56,7 @@ class DocxKnowledge(Knowledge):
 
     @classmethod
     def support_chunk_strategy(cls) -> List[ChunkStrategy]:
+        """Return support chunk strategy."""
         return [
             ChunkStrategy.CHUNK_BY_SIZE,
             ChunkStrategy.CHUNK_BY_PARAGRAPH,
@@ -62,12 +65,15 @@ class DocxKnowledge(Knowledge):
 
     @classmethod
     def default_chunk_strategy(cls) -> ChunkStrategy:
+        """Return default chunk strategy."""
         return ChunkStrategy.CHUNK_BY_SIZE
 
     @classmethod
     def type(cls) -> KnowledgeType:
+        """Return knowledge type."""
         return KnowledgeType.DOCUMENT
 
     @classmethod
     def document_type(cls) -> DocumentType:
+        """Return document type."""
         return DocumentType.DOCX

@@ -1,3 +1,5 @@
+"""DBSummaryClient class."""
+
 import logging
 import traceback
 
@@ -12,26 +14,31 @@ CFG = Config()
 
 
 class DBSummaryClient:
-    """DB Summary client, provide db_summary_embedding(put db profile and table profile summary into vector store)
-    , get_similar_tables method(get user query related tables info)
+    """The client for DBSummary.
+
+    DB Summary client, provide db_summary_embedding(put db profile and table profile
+    summary into vector store), get_similar_tables method(get user query related tables
+    info)
+
     Args:
-        system_app (SystemApp): Main System Application class that manages the lifecycle and registration of components..
+        system_app (SystemApp): Main System Application class that manages the
+            lifecycle and registration of components..
     """
 
     def __init__(self, system_app: SystemApp):
+        """Create a new DBSummaryClient."""
         self.system_app = system_app
         from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 
-        embedding_factory = self.system_app.get_component(
-            "embedding_factory", EmbeddingFactory
+        embedding_factory: EmbeddingFactory = self.system_app.get_component(
+            "embedding_factory", component_type=EmbeddingFactory
         )
         self.embeddings = embedding_factory.create(
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
 
     def db_summary_embedding(self, dbname, db_type):
-        """put db profile and table profile summary into vector store"""
-
+        """Put db profile and table profile summary into vector store."""
         db_summary_client = RdbmsSummary(dbname, db_type)
 
         self.init_db_profile(db_summary_client, dbname)
@@ -39,8 +46,7 @@ class DBSummaryClient:
         logger.info("db summary embedding success")
 
     def get_db_summary(self, dbname, query, topk):
-        """get user query related tables info"""
-
+        """Get user query related tables info."""
         from dbgpt.storage.vector_store.base import VectorStoreConfig
         from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
@@ -60,7 +66,7 @@ class DBSummaryClient:
         return ans
 
     def init_db_summary(self):
-        """init db summary"""
+        """Initialize db summary profile."""
         db_mange = CFG.LOCAL_DB_MANAGE
         dbs = db_mange.get_db_list()
         for item in dbs:
@@ -69,11 +75,13 @@ class DBSummaryClient:
             except Exception as e:
                 message = traceback.format_exc()
                 logger.warn(
-                    f'{item["db_name"]}, {item["db_type"]} summary error!{str(e)}, detail: {message}'
+                    f'{item["db_name"]}, {item["db_type"]} summary error!{str(e)}, '
+                    f"detail: {message}"
                 )
 
     def init_db_profile(self, db_summary_client, dbname):
-        """db profile initialization
+        """Initialize db summary profile.
+
         Args:
         db_summary_client(DBSummaryClient): DB Summary Client
         dbname(str): dbname

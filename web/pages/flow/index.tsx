@@ -9,8 +9,6 @@ import Link from 'next/link';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type FormFields = Pick<IFlow, 'label' | 'name'>;
-
 function Flow() {
   const { t } = useTranslation();
 

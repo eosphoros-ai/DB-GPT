@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import sqlparse
 from sqlalchemy import MetaData, text
@@ -145,7 +145,7 @@ class ClickhouseConnect(RDBMSDatabase):
             for name, column_type, _, _, comment in fields[0]
         ]
 
-    def get_fields(self, table_name):
+    def get_fields(self, table_name) -> List[Tuple]:
         """Get column fields about specified table."""
         session = self.client
 

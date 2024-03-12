@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, List, Optional, Tuple
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
@@ -85,7 +85,7 @@ class PostgreSQLDatabase(RDBMSDatabase):
             print("postgresql get users error: ", e)
             return []
 
-    def get_fields(self, table_name):
+    def get_fields(self, table_name) -> List[Tuple]:
         """Get column fields about specified table."""
         session = self._db_sessions()
         cursor = session.execute(

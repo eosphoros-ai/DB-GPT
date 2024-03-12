@@ -3,11 +3,15 @@
 This module contains the classes and functions to build AWEL DAGs from serialized data.
 """
 
+from ..util.parameter_util import (  # noqa: F401
+    BaseDynamicOptions,
+    FunctionDynamicOptions,
+    OptionValue,
+)
 from .base import (  # noqa: F401
     IOField,
     OperatorCategory,
     OperatorType,
-    OptionValue,
     Parameter,
     ResourceCategory,
     ResourceMetadata,
@@ -29,4 +33,6 @@ __ALL__ = [
     "ResourceType",
     "OperatorType",
     "IOField",
+    "BaseDynamicOptions",
+    "FunctionDynamicOptions",
 ]

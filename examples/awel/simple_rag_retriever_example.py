@@ -1,26 +1,8 @@
-import asyncio
-import os
-from typing import Dict, List
-
-from pydantic import BaseModel, Field
-
-from dbgpt._private.config import Config
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, MODEL_PATH, PILOT_PATH
-from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
-from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt.rag.chunk import Chunk
-from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
-from dbgpt.rag.operators.embedding import EmbeddingRetrieverOperator
-from dbgpt.rag.operators.rerank import RerankOperator
-from dbgpt.rag.operators.rewrite import QueryRewriteOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
-
 """AWEL: Simple rag embedding operator example
 
     pre-requirements:
         1. install openai python sdk
-        
+
         ```
             pip install openai
         ```
@@ -31,8 +13,8 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
         ```
         3. make sure you have vector store.
         if there are no data in vector store, please run examples/awel/simple_rag_embedding_example.py
-          
-        
+
+
     ensure your embedding model in DB-GPT/models/.
 
     Examples:
@@ -43,6 +25,25 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
                 "query": "what is awel talk about?"
             }'
 """
+
+import os
+from typing import Dict, List
+
+from pydantic import BaseModel, Field
+
+from dbgpt._private.config import Config
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, PILOT_PATH
+from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
+from dbgpt.model.proxy import OpenAILLMClient
+from dbgpt.rag.chunk import Chunk
+from dbgpt.rag.embedding import DefaultEmbeddingFactory
+from dbgpt.rag.operators import (
+    EmbeddingRetrieverOperator,
+    QueryRewriteOperator,
+    RerankOperator,
+)
+from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
+from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 CFG = Config()
 

@@ -20,13 +20,21 @@ T = TypeVar("T")
 
 
 class _EMPTY_DATA_TYPE:
+    """A special type to represent empty data."""
+
+    def __init__(self, name: str = "EMPTY_DATA"):
+        self.name = name
+
     def __bool__(self):
         return False
 
+    def __str__(self):
+        return f"EmptyData({self.name})"
 
-EMPTY_DATA = _EMPTY_DATA_TYPE()
-SKIP_DATA = _EMPTY_DATA_TYPE()
-PLACEHOLDER_DATA = _EMPTY_DATA_TYPE()
+
+EMPTY_DATA = _EMPTY_DATA_TYPE("EMPTY_DATA")
+SKIP_DATA = _EMPTY_DATA_TYPE("SKIP_DATA")
+PLACEHOLDER_DATA = _EMPTY_DATA_TYPE("PLACEHOLDER_DATA")
 
 
 def is_empty_data(data: Any):
@@ -37,7 +45,7 @@ def is_empty_data(data: Any):
 
 
 MapFunc = Union[Callable[[IN], OUT], Callable[[IN], Awaitable[OUT]]]
-ReduceFunc = Union[Callable[[IN], OUT], Callable[[IN], Awaitable[OUT]]]
+ReduceFunc = Union[Callable[[IN, IN], OUT], Callable[[IN, IN], Awaitable[OUT]]]
 StreamFunc = Callable[[IN], Awaitable[AsyncIterator[OUT]]]
 UnStreamFunc = Callable[[AsyncIterator[IN]], OUT]
 TransformFunc = Callable[[AsyncIterator[IN]], Awaitable[AsyncIterator[OUT]]]
@@ -341,7 +349,7 @@ class InputContext(ABC):
         """
 
     @abstractmethod
-    async def reduce(self, reduce_func: Callable[[Any], Any]) -> "InputContext":
+    async def reduce(self, reduce_func: ReduceFunc) -> "InputContext":
         """Apply a reducing function to the inputs.
 
         Args:

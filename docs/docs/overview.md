@@ -3,14 +3,13 @@ sidebar_position: 0
 ---
 
 # Overview
-DB-GPT is an **open-source framework for large language models(LLMs) in the databases fields**. It's purpose is to build infrastructure for the domain of large language models, making it easier and more convenient to develop applications around databases by developing various technical capabilities such as:
 
--  **SMMF(Service-oriented Multi-model Management Framework)**
--  **Text2SQL Fine-tuning**
--  **RAG(Retrieval Augmented Generation) Framework and Optimization**
--  **Data-Driven Agents Framework Collaboration**
+🤖 **DB-GPT is an open source AI native data app development framework with AWEL(Agentic Workflow Expression Language) and agents**. 
 
-In the Data 3.0 era, enterprises/developers can build their own exclusive applications with less code based on LLMs and databases.
+The purpose is to build infrastructure in the field of large models, through the development of multiple technical capabilities such as multi-model management (SMMF), Text2SQL effect optimization, RAG framework and optimization, Multi-Agents framework collaboration, AWEL (agent workflow orchestration), etc. Which makes large model applications with data simpler and more convenient.
+
+
+🚀 **In the Data 3.0 era, based on models and databases, enterprises and developers can build their own bespoke applications with less code.**
 
 <p align="left">
   <img src={'/img/dbgpt.png'} width="680px" />
@@ -47,12 +46,16 @@ In the Data 3.0 era, enterprises/developers can build their own exclusive applic
 | terminology          | Description                                                   |
 |----------------------|---------------------------------------------------------------|
 | <center> `DB-GPT`       </center>| DataBase Generative Pre-trained Transformer, an open source framework around databases and large language models |
+|<center> `Data App` </center> | an intelligent Data application built on DB-GPT. |
 | <center> `Text2SQL/NL2SQL`  </center>  | Text to SQL uses large language model capabilities to generate SQL statements based on natural language, or provide explanations based on SQL statements |
 | <center>`KBQA`   </center>  | Knowledge-Based Q&A system |
 | <center>`GBI`            </center>  | Generative Business Intelligence, based on large language models and data analysis, provides business intelligence analysis and decision-making through dialogue |
 | <center>`LLMOps`   </center>  | A large language model operation framework that provides a standard end-to-end workflow for training, tuning, deploying, and monitoring LLM to accelerate application deployment of generated AI models |
 |<center> `Embedding`  </center>   | Methods to convert text, audio, video and other materials into vectors |
 |<center> `RAG`   </center>| Retrieval Augmented Generation |
+|<center> `AWEL` </center> | Agentic Workflow Expression Language, intelligent Workflow Expression Language 
+|<center> `AWEL Flow` </center> | workflow orchestration using the intelligent workflow Expression Language 
+|<center> `SMMF` </center> | a service-oriented multi-model management framework. 
 
 ## Use Cases
 

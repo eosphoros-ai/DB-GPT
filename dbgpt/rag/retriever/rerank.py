@@ -1,15 +1,19 @@
-from abc import ABC
-from typing import List, Optional
+"""Rerank module for RAG retriever."""
+
+from abc import ABC, abstractmethod
+from typing import Callable, List, Optional
 
 from dbgpt.rag.chunk import Chunk
 
+RANK_FUNC = Callable[[List[Chunk]], List[Chunk]]
+
 
 class Ranker(ABC):
-    """Base Ranker"""
+    """Base Ranker."""
 
-    def __init__(self, topk: int, rank_fn: Optional[callable] = None) -> None:
-        """
-        abstract base ranker
+    def __init__(self, topk: int, rank_fn: Optional[RANK_FUNC] = None) -> None:
+        """Create abstract base ranker.
+
         Args:
             topk: int
             rank_fn: Optional[callable]
@@ -17,19 +21,23 @@ class Ranker(ABC):
         self.topk = topk
         self.rank_fn = rank_fn
 
+    @abstractmethod
     def rank(self, candidates_with_scores: List) -> List[Chunk]:
-        """rank algorithm implementation return topk documents by candidates similarity score
+        """Return top k chunks after ranker.
+
+        Rank algorithm implementation return topk documents by candidates
+        similarity score
+
         Args:
             candidates_with_scores: List[Tuple]
             topk: int
+
         Return:
             List[Document]
         """
 
-        pass
-
     def _filter(self, candidates_with_scores: List) -> List[Chunk]:
-        """filter duplicate candidates documents"""
+        """Filter duplicate candidates documents."""
         candidates_with_scores = sorted(
             candidates_with_scores, key=lambda x: x.score, reverse=True
         )
@@ -43,18 +51,22 @@ class Ranker(ABC):
 
 
 class DefaultRanker(Ranker):
-    """Default Ranker"""
+    """Default Ranker."""
 
-    def __init__(self, topk: int, rank_fn: Optional[callable] = None):
+    def __init__(self, topk: int, rank_fn: Optional[RANK_FUNC] = None):
+        """Create Default Ranker with topk and rank_fn."""
         super().__init__(topk, rank_fn)
 
     def rank(self, candidates_with_scores: List[Chunk]) -> List[Chunk]:
-        """Default rank algorithm implementation
-        return topk documents by candidates similarity score
+        """Return top k chunks after ranker.
+
+        Return top k documents by candidates similarity score
+
         Args:
             candidates_with_scores: List[Tuple]
+
         Return:
-            List[Document]
+            List[Chunk]: List of top k documents
         """
         candidates_with_scores = self._filter(candidates_with_scores)
         if self.rank_fn is not None:
@@ -67,14 +79,21 @@ class DefaultRanker(Ranker):
 
 
 class RRFRanker(Ranker):
-    """RRF(Reciprocal Rank Fusion) Ranker"""
+    """RRF(Reciprocal Rank Fusion) Ranker."""
 
-    def __init__(self, topk: int, rank_fn: Optional[callable] = None):
+    def __init__(self, topk: int, rank_fn: Optional[RANK_FUNC] = None):
+        """RRF rank algorithm implementation."""
         super().__init__(topk, rank_fn)
 
     def rank(self, candidates_with_scores: List[Chunk]) -> List[Chunk]:
-        """RRF rank algorithm implementation
-        This code implements an algorithm called Reciprocal Rank Fusion (RRF), is a method for combining multiple result sets with different relevance indicators into a single result set. RRF requires no tuning, and the different relevance indicators do not have to be related to each other to achieve high-quality results.
+        """RRF rank algorithm implementation.
+
+        This code implements an algorithm called Reciprocal Rank Fusion (RRF), is a
+        method for combining multiple result sets with different relevance indicators
+        into a single result set. RRF requires no tuning, and the different relevance
+        indicators do not have to be related to each other to achieve high-quality
+        results.
+
         RRF uses the following formula to determine the score for ranking each document:
         score = 0.0
         for q in queries:

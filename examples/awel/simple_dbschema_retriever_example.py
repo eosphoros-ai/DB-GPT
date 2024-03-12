@@ -1,19 +1,3 @@
-import os
-from typing import Dict, List
-
-from pydantic import BaseModel, Field
-
-from dbgpt._private.config import Config
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, MODEL_PATH, PILOT_PATH
-from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
-from dbgpt.rag.chunk import Chunk
-from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
-from dbgpt.rag.operators.db_schema import DBSchemaRetrieverOperator
-from dbgpt.serve.rag.operators.db_schema import DBSchemaAssemblerOperator
-from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
-from dbgpt.storage.vector_store.connector import VectorStoreConnector
-
 """AWEL: Simple rag db schema embedding operator example
 
     if you not set vector_store_connector, it will return all tables schema in database.
@@ -38,6 +22,21 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
             --data '{"query": "what is user name?"}'
 """
 
+import os
+from typing import Dict, List
+
+from pydantic import BaseModel, Field
+
+from dbgpt._private.config import Config
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, PILOT_PATH
+from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
+from dbgpt.rag.chunk import Chunk
+from dbgpt.rag.embedding import DefaultEmbeddingFactory
+from dbgpt.rag.operators import DBSchemaRetrieverOperator
+from dbgpt.serve.rag.operators.db_schema import DBSchemaAssemblerOperator
+from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
+from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 CFG = Config()
 

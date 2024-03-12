@@ -13,6 +13,7 @@ from dbgpt.core import (
 )
 from dbgpt.core.awel import JoinOperator, MapOperator
 from dbgpt.core.awel.flow import (
+    FunctionDynamicOptions,
     IOField,
     OperatorCategory,
     OperatorType,
@@ -27,6 +28,15 @@ from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.function_utils import rearrange_args_by_type
+
+
+def _load_space_name() -> List[OptionValue]:
+    return [
+        OptionValue(label=space.name, name=space.name, value=space.name)
+        for space in knowledge_space_service.get_knowledge_space(
+            KnowledgeSpaceRequest()
+        )
+    ]
 
 
 class SpaceRetrieverOperator(MapOperator[IN, OUT]):
@@ -51,12 +61,7 @@ class SpaceRetrieverOperator(MapOperator[IN, OUT]):
                 "Space Name",
                 "space_name",
                 str,
-                options=[
-                    OptionValue(label=space.name, name=space.name, value=space.name)
-                    for space in knowledge_space_service.get_knowledge_space(
-                        KnowledgeSpaceRequest()
-                    )
-                ],
+                options=FunctionDynamicOptions(func=_load_space_name),
                 optional=False,
                 default=None,
                 description="space name.",
