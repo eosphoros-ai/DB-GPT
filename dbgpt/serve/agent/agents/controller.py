@@ -323,9 +323,10 @@ class MultiAgents(BaseComponent, ABC):
             if is_complete:
                 return await self.memory.one_chat_competions_v2(conv_id)
             else:
-                raise ValueError(
-                    "The conversation has not been completed yet, so we cannot directly obtain information."
-                )
+                pass
+                # raise ValueError(
+                #     "The conversation has not been completed yet, so we cannot directly obtain information."
+                # )
         else:
             raise ValueError("No conversation record found!")
 
