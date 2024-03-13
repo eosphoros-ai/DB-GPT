@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Dict, List, Optional
 
-from dbgpt.agent.agents.agent import Agent, AgentGenerateContext
+from dbgpt.agent.agents.agent_new import Agent, AgentGenerateContext
 from dbgpt.agent.agents.agents_manage import agent_manage
 from dbgpt.agent.agents.base_agent_new import ConversableAgent
 from dbgpt.agent.agents.llm.llm import LLMConfig
@@ -191,6 +191,7 @@ class AwelAgentOperator(
             agent_context=input_value.agent_context,
             resource_loader=input_value.resource_loader,
             llm_client=input_value.llm_client,
+            round_index=agent.consecutive_auto_reply_counter,
         )
 
     async def get_agent(
@@ -208,11 +209,19 @@ class AwelAgentOperator(
                 llm_config = LLMConfig(llm_client=input_value.llm_client)
             else:
                 llm_config = LLMConfig(llm_client=self.llm_client)
+        else:
+            if not llm_config.llm_client:
+                if input_value.llm_client:
+                    llm_config.llm_client = input_value.llm_client
+                else:
+                    llm_config.llm_client = self.llm_client
+
         kwargs = {}
         if self.awel_agent.role_name:
             kwargs["name"] = self.awel_agent.role_name
         if self.awel_agent.fixed_subgoal:
             kwargs["fixed_subgoal"] = self.awel_agent.fixed_subgoal
+
         agent = (
             await agent_cls(**kwargs)
             .bind(input_value.memory)
@@ -222,6 +231,7 @@ class AwelAgentOperator(
             .bind(input_value.resource_loader)
             .build()
         )
+
         return agent
 
 
