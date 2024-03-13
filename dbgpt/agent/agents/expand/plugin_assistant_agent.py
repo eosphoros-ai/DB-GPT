@@ -54,8 +54,8 @@ class PluginAssistantAgent(ConversableAgent):
             if item.type == ResourceType.Plugin:
                 item_list.append(item.value)
         self.plugin_generator = await plugin_loader_client.a_load_plugin(
-                    item_list, self.plugin_generator
-                )
+            item_list, self.plugin_generator
+        )
 
     def prepare_act_param(self) -> Optional[Dict]:
         return {"plugin_generator": self.plugin_generator}
