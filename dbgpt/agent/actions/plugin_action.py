@@ -83,10 +83,10 @@ class PluginAction(Action[PluginInput]):
             if not resource_plugin_client:
                 raise ValueError("No implementation of the use of plug-in resources！")
             response_success = True
-            status = Status.TODO.value
+            status = Status.RUNNING.value
+            tool_result = ""
             err_msg = None
             try:
-                status = Status.RUNNING.value
                 tool_result = await resource_plugin_client.a_execute_command(
                     param.tool_name, param.args, plugin_generator
                 )
