@@ -4,6 +4,12 @@ import dataclasses
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from dbgpt.agent.resource.resource_loader import ResourceLoader
+from dbgpt.core import LLMClient
+from dbgpt.util.annotations import PublicAPI
+
+from ..memory.gpts_memory import GptsMemory
+
 
 class Agent(ABC):
     async def a_send(
@@ -72,6 +78,8 @@ class Agent(ABC):
     async def a_act(
         self,
         message: Optional[str],
+        sender: Optional[Agent] = None,
+        reviewer: Optional[Agent] = None,
         **kwargs,
     ) -> Union[str, Dict, None]:
         """
@@ -101,3 +109,42 @@ class Agent(ABC):
         Returns:
 
         """
+
+
+@dataclasses.dataclass
+class AgentContext:
+    conv_id: str
+    gpts_app_name: str = None
+    language: str = None
+    max_chat_round: Optional[int] = 100
+    max_retry_round: Optional[int] = 10
+    max_new_tokens: Optional[int] = 1024
+    temperature: Optional[float] = 0.5
+    allow_format_str_template: Optional[bool] = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        return dataclasses.asdict(self)
+
+
+@dataclasses.dataclass
+@PublicAPI(stability="beta")
+class AgentGenerateContext:
+    """A class to represent the input of a Agent."""
+
+    message: Optional[Dict]
+    sender: Agent
+    reviewer: Agent
+    silent: Optional[bool] = False
+
+    rely_messages: List[Dict] = dataclasses.field(default_factory=list)
+    final: Optional[bool] = True
+
+    memory: Optional[GptsMemory] = None
+    agent_context: Optional[AgentContext] = None
+    resource_loader: Optional[ResourceLoader] = None
+    llm_client: Optional[LLMClient] = None
+
+    round_index: int = None
+
+    def to_dict(self) -> Dict:
+        return dataclasses.asdict(self)
