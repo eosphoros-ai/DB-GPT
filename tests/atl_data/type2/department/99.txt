@@ -1,0 +1,1 @@
+{'parent_org': 'PSO', 'shortname': 'CPA', 'fullname': 'Corporate public affairs', 'chinesename': '企业公共事务部'}

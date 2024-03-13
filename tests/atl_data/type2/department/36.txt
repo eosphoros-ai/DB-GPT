@@ -1,0 +1,1 @@
+{'parent_org': 'MRD', 'shortname': 'ADT', 'fullname': 'Assembly Development Team', 'chinesename': '组装开发部'}

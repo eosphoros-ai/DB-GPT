@@ -1,0 +1,1 @@
+{'parent_org': 'SRC', 'shortname': 'NPP', 'fullname': 'Non-production Procurement', 'chinesename': '间接物料采购部'}

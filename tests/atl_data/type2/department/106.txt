@@ -1,0 +1,1 @@
+{'parent_org': 'HR', 'shortname': 'TA', 'fullname': 'Talent Acquisition', 'chinesename': '人才招聘与调配部'}

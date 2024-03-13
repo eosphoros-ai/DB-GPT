@@ -1,0 +1,1 @@
+{'parent_org': 'SD', 'shortname': 'EHS Tech', 'fullname': 'Environment,Health and Safety Technology(Group)', 'chinesename': 'EHS技术组(集团)'}

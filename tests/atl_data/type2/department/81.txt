@@ -1,0 +1,1 @@
+{'parent_org': 'QA', 'shortname': 'SQM', 'fullname': 'Supplier Quality Management', 'chinesename': '供应商质量管理部'}

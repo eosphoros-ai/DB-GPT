@@ -1,0 +1,1 @@
+{'parent_org': 'SLS', 'shortname': 'NCT', 'fullname': 'Non Consumer Team', 'chinesename': '非消费类'}

@@ -1,0 +1,102 @@
+version: '3.10'
+
+services:
+  controller:
+    image: eosphorosai/dbgpt:latest
+    command: dbgpt start controller
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+  api-server:
+    image: eosphorosai/dbgpt:latest
+    command: dbgpt start apiserver --controller_addr http://controller:8000
+    restart: unless-stopped
+    depends_on:
+      - controller
+    networks:
+      - dbgptnet
+    ports:
+      - 8100:8100/tcp
+  llm-worker:
+    image: eosphorosai/dbgpt:latest
+    command: dbgpt start worker --model_name vicuna-13b-v1.5 --model_path /app/models/vicuna-13b-v1.5 --port 8001 --controller_addr http://controller:8000
+    environment:
+      - DBGPT_LOG_LEVEL=DEBUG
+    depends_on:
+      - controller
+    volumes:
+      - /data:/data
+      # Please modify it to your own model directory
+      - /data/models:/app/models
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+  embedding-worker:
+    image: eosphorosai/dbgpt:latest
+    command: dbgpt start worker --model_name text2vec --worker_type text2vec --model_path /app/models/text2vec-large-chinese --port 8002 --controller_addr http://controller:8000
+    environment:
+      - DBGPT_LOG_LEVEL=DEBUG
+    depends_on:
+      - controller
+    volumes:
+      - /data:/data
+      # Please modify it to your own model directory
+      - /data/models:/app/models
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+  webserver:
+    image: eosphorosai/dbgpt:latest
+    command: dbgpt start webserver --light --remote_embedding
+    environment:
+      - DBGPT_LOG_LEVEL=DEBUG
+      - LOCAL_DB_PATH=data/default_sqlite.db
+      - LOCAL_DB_TYPE=sqlite
+      - ALLOWLISTED_PLUGINS=db_dashboard
+      - LLM_MODEL=vicuna-13b-v1.5
+      - MODEL_SERVER=http://controller:8000
+    depends_on:
+      - controller
+      - llm-worker
+      - embedding-worker
+    volumes:
+      - /data:/data
+      # Please modify it to your own model directory
+      - /data/models:/app/models
+      - dbgpt-data:/app/pilot/data
+      - dbgpt-message:/app/pilot/message
+    # env_file:
+    #   - .env.template
+    ports:
+      - 5000:5000/tcp
+    # webserver may be failed, it must wait all sqls in /docker-entrypoint-initdb.d execute finish.
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+volumes:
+  dbgpt-myql-db:
+  dbgpt-data:
+  dbgpt-message:
+networks:
+  dbgptnet:
+    driver: bridge
+    name: dbgptnet

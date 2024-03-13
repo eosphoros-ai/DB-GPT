@@ -1,0 +1,1 @@
+{'parent_org': 'ME', 'shortname': 'ME-EP', 'fullname': 'Electrode Production', 'chinesename': '极片制造工程部'}

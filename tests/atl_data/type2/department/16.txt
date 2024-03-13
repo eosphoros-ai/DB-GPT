@@ -1,0 +1,1 @@
+{'parent_org': 'CPD', 'shortname': 'CAP', 'fullname': 'Competitive Account Portfolio', 'chinesename': 'C客户项目群'}

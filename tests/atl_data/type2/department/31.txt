@@ -1,0 +1,1 @@
+{'parent_org': 'RI', 'shortname': 'ACE', 'fullname': 'Advanced Chemistry Exploration', 'chinesename': '先进化学体系探索部'}

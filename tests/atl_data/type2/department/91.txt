@@ -1,0 +1,1 @@
+{'parent_org': 'IDT', 'shortname': 'BP-MU', 'fullname': 'Business Partner-MU', 'chinesename': '制造解决方案部'}

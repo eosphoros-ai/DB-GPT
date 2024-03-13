@@ -1,0 +1,58 @@
+version: '3.10'
+
+services:
+  db:
+    image: mysql/mysql-server
+    environment:
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'aa123456'
+    ports:
+      - 3306:3306
+    volumes:
+      - dbgpt-myql-db:/var/lib/mysql
+      - ./docker/examples/my.cnf:/etc/my.cnf
+      - ./docker/examples/sqls:/docker-entrypoint-initdb.d
+      - ./assets/schema/knowledge_management.sql:/docker-entrypoint-initdb.d/knowledge_management.sql
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+  webserver:
+    image: eosphorosai/dbgpt:latest
+    command: python3 dbgpt/app/dbgpt_server.py
+    environment:
+      - LOCAL_DB_HOST=db
+      - LOCAL_DB_PASSWORD=aa123456
+      - ALLOWLISTED_PLUGINS=db_dashboard
+      - LLM_MODEL=vicuna-13b-v1.5
+    depends_on:
+      - db
+    volumes:
+      - /data:/data
+      # Please modify it to your own model directory
+      - /data/models:/app/models
+      - dbgpt-data:/app/pilot/data
+      - dbgpt-message:/app/pilot/message
+    env_file:
+      - .env.template
+    ports:
+      - 5000:5000/tcp
+    # webserver may be failed, it must wait all sqls in /docker-entrypoint-initdb.d execute finish.
+    restart: unless-stopped
+    networks:
+      - dbgptnet
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+volumes:
+  dbgpt-myql-db:
+  dbgpt-data:
+  dbgpt-message:
+networks:
+  dbgptnet:
+    driver: bridge
+    name: dbgptnet

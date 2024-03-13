@@ -1,0 +1,1 @@
+{'parent_org': 'MRD', 'shortname': 'AMD', 'fullname': 'Advanced Manufacturing Development', 'chinesename': '先进制造部'}

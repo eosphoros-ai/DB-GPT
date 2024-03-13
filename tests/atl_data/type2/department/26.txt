@@ -1,0 +1,1 @@
+{'parent_org': 'RI', 'shortname': 'CT', 'fullname': 'Cathode', 'chinesename': '正极材料研发部'}

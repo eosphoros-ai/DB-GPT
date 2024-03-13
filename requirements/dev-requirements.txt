@@ -1,0 +1,16 @@
+# Testing and dev dependencies
+pytest
+pytest-cov
+asynctest
+pytest-asyncio
+pytest-benchmark
+pytest-cov
+pytest-integration
+pytest-mock
+pytest-recording
+pytesseract==0.3.10
+aioresponses
+# for git hooks
+pre-commit
+# Type checking
+mypy==1.7.0

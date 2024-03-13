@@ -1,0 +1,105 @@
+{
+  "difficulty": "High",
+  "user_input": "请列出在T127财年中表现最差(D级绩效)且工龄超过10年的所有员工的姓名和部门名称，如果在职，同时列出他们的直属上司姓名。",
+  "sql": "SELECT ei.姓名, ei.一级机构, ei.直属上司姓名 FROM public.a_sap_employee_information_chinese AS ei JOIN public.a_sap_performance_ai AS pa ON ei.人员工号 = pa.人员工号  WHERE pa.绩效 = 'D' AND pa.编制年度 = 'T127' AND ei.雇佣状态 = '在职' AND (EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM ei.开始参加工作日期)) > 10;"
+}
+{
+  "difficulty": "High",
+  "user_input": "基于当前的招聘计划，查询在T127财年第二季度（Q2）拥有最多岗位空缺的一级机构和对应的空缺数量，并列出该机构目前所有员工的平均工龄。",
+  "sql": "SELECT srp.一级机构, SUM(srp.月度可申请空缺数量) AS 空缺数量, AVG(EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM eii.开始参加工作日期)) AS 平均工龄 FROM public.a_sap_staffing_recruitment_plan_chinese AS srp JOIN public.a_sap_employee_information_chinese AS eii ON srp.一级机构 = eii.一级机构 WHERE srp.编制年度 = 'T127' AND srp.编制月度 IN (7, 8, 9) GROUP BY srp.一级机构 ORDER BY 空缺数量 DESC LIMIT 1;"
+}
+{
+  "difficulty": "High",
+  "user_input": "找出在上一个财年（T127）绩效为A且学历为'大学本科'的员工，并列出他们的姓名、学历、雇佣状态和人员工号。",
+  "sql": "SELECT eie.姓名, eee.学历, eie.雇佣状态, eie.人员工号 FROM public.a_sap_employee_education_experience_chinese AS eee JOIN public.a_sap_performance_ai AS pai ON eee.人员工号 = pai.人员工号 JOIN public.a_sap_employee_information_chinese AS eie ON eee.人员工号 = eie.人员工号 WHERE pai.绩效 = 'A' AND pai.编制年度 = 'T127' AND eee.学历 = '大学本科';"
+}
+{
+  "difficulty": "High",
+  "user_input": "请统计当前所有在职员工的最高学历分布情况，要求显示学历名称及对应的在职员工数量，按员工数量降序排序。",
+  "sql": "SELECT eee.学历, COUNT(eie.人员工号) AS 在职员工数量 FROM public.a_sap_employee_education_experience_chinese AS eee JOIN public.a_sap_employee_information_chinese AS eie ON eee.人员工号 = eie.人员工号 WHERE eie.雇佣状态 = '在职' GROUP BY eee.学历 ORDER BY 在职员工数量 DESC;"
+}
+{
+  "difficulty": "High",
+  "user_input": "查找当前在职员工中，哪个二级机构拥有最多经理级别的员工，列出这个二级机构的名称和员工数量。",
+  "sql": "SELECT eii.二级机构, COUNT(eii.人员工号) AS 员工数量 FROM public.a_sap_employee_information_chinese AS eii where eii.二级机构 is not null and eii.雇佣状态 = '在职' AND eii.职务名称 IN ('主任工程师', '经理1', '主任工程师1', '主任', '资深主任工程师', '经理2', '主任工程师2', '资深经理') GROUP BY eii.二级机构 ORDER BY 员工数量 DESC LIMIT 1;"
+}
+{
+  "difficulty": "High",
+  "user_input": "在最新的财年中，哪个一级机构的职位空缺率最高，且至少有2个以上的空缺数？（职位空缺率 = 有效编制空缺数 / 年度编制数量）",
+  "sql": "SELECT \"一级机构\", (SUM(\"有效编制空缺\")::FLOAT / NULLIF(SUM(\"年度编制数量\"), 0)) AS 空缺率 FROM public.a_sap_staffing_recruitment_plan_chinese WHERE \"编制年度\" = 'T128' GROUP BY \"一级机构\" HAVING SUM(\"有效编制空缺\") > 2 ORDER BY 空缺率 DESC LIMIT 1;"
+}
+{
+  "difficulty": "High",
+  "user_input": "请找出目前所有在职员工中，拥有研究生学历，目前属于经理级别，并在上个季度至少管理过5名下属的员工名单。",
+  "sql": "WITH StaffList AS (SELECT a.\"人员工号\", a.\"姓名\", a.\"一级机构\", b.\"职务类型\" FROM public.a_sap_employee_information_chinese a JOIN public.a_sap_positions_responsibilities_risks_chinese b ON a.\"一级机构\" = b.\"一级机构\" WHERE a.\"雇佣状态\" = '在职' AND b.\"职务类型\" = 'm-管理类'), EduList AS (SELECT a.\"人员工号\" FROM public.a_sap_employee_education_experience_chinese a JOIN public.a_sap_employee_information_chinese b ON a.\"人员工号\" = b.\"人员工号\" WHERE a.\"学历\" = '研究生'), ReportList AS (SELECT \"人员工号\", COUNT(*) AS SubCount FROM public.a_sap_reporting_relationship_chinese WHERE \"开始日期\" <= CURRENT_DATE AND (\"结束日期\" IS NULL OR \"结束日期\" >= CURRENT_DATE) GROUP BY \"人员工号\" HAVING COUNT(*) >= 5) SELECT a.\"姓名\" FROM StaffList a JOIN EduList b ON a.\"人员工号\" = b.\"人员工号\" JOIN ReportList c ON a.\"人员工号\" = c.\"人员工号\";"
+}
+{
+  "difficulty": "High",
+  "user_input": "计算当前在职员工平均工龄，并对比上一财年此时的平均工龄是否有所增长？（工龄 = 当前时间 - 开始参加工作日期）",
+  "sql": "WITH CurrentAvgAge AS (SELECT AVG(EXTRACT(YEAR FROM AGE(CURRENT_DATE, \"开始参加工作日期\"))) AS AvgAge FROM public.a_sap_employee_information_chinese WHERE \"雇佣状态\" = '在职'), LastYearAvgAge AS (SELECT AVG(EXTRACT(YEAR FROM AGE(CURRENT_DATE - INTERVAL '1 year', \"开始参加工作日期\"))) AS AvgAge FROM public.a_sap_employee_information_chinese WHERE \"雇佣状态\" = '在职') SELECT CASE WHEN CurrentAvgAge.AvgAge > LastYearAvgAge.AvgAge THEN '增长' ELSE '未增长' END AS 是否增长, CurrentAvgAge.AvgAge AS 当前平均工龄, LastYearAvgAge.AvgAge AS 上一财年平均工龄 FROM CurrentAvgAge, LastYearAvgAge;"
+}
+{
+  "difficulty": "High",
+  "user_input": "在上一季度中，哪个一级机构下的所有二级机构平均招聘关闭数最多？（考虑只有发布过招聘的二级机构）",
+  "sql": "WITH PrevQuarter AS (SELECT DATE_TRUNC('quarter', CURRENT_DATE) - INTERVAL '1 day' AS EndDate), OrgRecruitment AS (SELECT \"一级机构\", \"二级机构\", SUM(\"关闭数\") AS TotalClosed FROM public.a_sap_staffing_recruitment_plan_chinese WHERE \"编制月度\" BETWEEN EXTRACT(MONTH FROM (SELECT EndDate FROM PrevQuarter) - INTERVAL '2 month') AND EXTRACT(MONTH FROM (SELECT EndDate FROM PrevQuarter)) GROUP BY \"一级机构\", \"二级机构\" HAVING SUM(\"关闭数\") > 0) SELECT a.\"一级机构\", AVG(a.TotalClosed) AS AvgClosed FROM OrgRecruitment a GROUP BY a.\"一级机构\" ORDER BY AvgClosed DESC LIMIT 1;"
+}
+{
+  "difficulty": "High",
+  "user_input": "根据员工基础信息表中员工的入职日期，计算各一级机构的平均工龄，并列出平均工龄超过5年的一级机构名称及其平均工龄。",
+  "sql": "SELECT a_sap_employee_information_chinese.一级机构, AVG(DATE_PART('year', CURRENT_DATE) - DATE_PART('year', a_sap_employee_information_chinese.入职日期)) AS 平均工龄 FROM a_sap_employee_information_chinese GROUP BY a_sap_employee_information_chinese.一级机构 HAVING AVG(DATE_PART('year', CURRENT_DATE) - DATE_PART('year', a_sap_employee_information_chinese.入职日期)) > 5;",
+  "thoughts": "这个查询需要对员工基础信息表中的入职日期字段进行操作，计算出每个员工的工龄，然后对一级机构进行分组并求平均工龄。最后使用HAVING子句筛选出平均工龄超过5年的一级机构。工龄的计算是通过当前年份减去入职年份来实现。"
+}
+{
+  "difficulty": "High",
+  "user_input": "找出当前在职的员工中持有'硕士'学历但未在技术类职务工作的员工姓名和职务名称，并且统计这样的员工数量。",
+  "sql": "SELECT a_sap_employee_information_chinese.姓名, a_sap_employee_information_chinese.职务名称 FROM a_sap_employee_information_chinese JOIN a_sap_employee_education_experience_chinese ON a_sap_employee_information_chinese.人员工号 = a_sap_employee_education_experience_chinese.人员工号 WHERE a_sap_employee_information_chinese.雇佣状态 = '在职' AND a_sap_employee_education_experience_chinese.学历 = '硕士' AND a_sap_employee_information_chinese.职务名称 NOT LIKE '%技术%';",
+  "thoughts": "此查询结合了员工基础信息表和员工教育信息表。需要根据雇佣状态确定在职员工，再查看教育信息表中员工的学历是否为硕士，并且确保他们的职务名称不包含'技术'这个词。这里使用了联表查询、条件筛选和模式匹配。"
+}
+{
+  "difficulty": "High",
+  "user_input": "对于每个一级机构，找出财年T128中，实际在职人数与年度编制数量的差额，并列出差额最高的三个一级机构。",
+  "sql": "SELECT a_sap_staffing_recruitment_plan_chinese.一级机构, (a_sap_staffing_recruitment_plan_chinese.年度编制数量 - a_sap_staffing_recruitment_plan_chinese.拟在职人数) AS 编制差额 FROM a_sap_staffing_recruitment_plan_chinese WHERE a_sap_staffing_recruitment_plan_chinese.编制年度 = 'T128' GROUP BY a_sap_staffing_recruitment_plan_chinese.一级机构 ORDER BY 编制差额 DESC LIMIT 3;",
+  "thoughts": "此查询需要从招聘编制使用情况表中筛选出财年T128对应的记录，然后分组计算每个一级机构的年度编制数量和拟在职人数之间的差额。最后对结果按差额降序排列并取前三名。"
+}
+{
+  "difficulty": "High",
+  "user_input": "找出那些有多于1个直属上司的员工，并列出他们的姓名、职务名称以及直属上司的姓名和职务。",
+  "sql": "SELECT a_sap_employee_information_chinese.姓名, a_sap_employee_information_chinese.职务名称, json_agg(json_build_object('上司姓名', a_sap_reporting_relationship_chinese.主管1姓名, '上司职务', a_sap_reporting_relationship_chinese.主管1职务)) AS 直属上司信息 FROM a_sap_employee_information_chinese JOIN a_sap_reporting_relationship_chinese ON a_sap_employee_information_chinese.人员工号 = a_sap_reporting_relationship_chinese.人员工号 WHERE a_sap_reporting_relationship_chinese.主管1姓名 IS NOT NULL AND a_sap_reporting_relationship_chinese.主管2姓名 IS NOT NULL GROUP BY a_sap_employee_information_chinese.人员工号 HAVING COUNT(*) > 1;",
+  "thoughts": "在这个查询中，需要联接员工基础信息表和员工汇报关系表，找出同时有多于1个直属上司的员工。这里使用了JOIN来联接两个表，然后利用WHERE条件来筛选有两个及以上直属上司的记录。结果集采用了JSON函数构造返回的数据。"
+}
+{
+  "difficulty": "High",
+  "user_input": "统计每个一级机构在最近一个完整的季度中工程师层级在职员工的平均工龄，并找出平均工龄最高的部门。",
+  "sql": "WITH RecentQuarterData AS (SELECT 一级机构, AVG(DATE_PART('year', CURRENT_DATE) - DATE_PART('year', a_sap_employee_information_chinese.开始参加工作日期)) AS 平均工龄 FROM a_sap_employee_information_chinese JOIN a_sap_performance_ai ON a_sap_employee_information_chinese.人员工号 = a_sap_performance_ai.人员工号 WHERE a_sap_performance_ai.编制年度 = (SELECT MAX(编制年度) FROM a_sap_performance_ai) AND a_sap_employee_information_chinese.职级范围 = 'JG7-10' AND a_sap_employee_information_chinese.雇佣状态 = '在职' GROUP BY 一级机构) SELECT 一级机构, MAX(平均工龄) FROM RecentQuarterData;",
+  "thoughts": "这个查询涉及对两个不同表的联接、子查询以及聚合函数的使用。首先需要确定考察季度，其次只考虑特定职级范围的在职员工。在求出每个一级机构的平均工龄后，查询需要找出平均工龄最高的部门。使用WITH子句创建了一个临时的结果集RecentQuarterData来简化查询。"
+}
+{
+  "difficulty": "High",
+  "user_input": "请列出在过去的财年中（T127），在所有一级机构中，每个机构哪个二级机构的平均员工工龄最高，并且需要过滤掉员工雇佣状态为'离职'的数据。",
+  "sql": "SELECT e.一级机构, e.二级机构, AVG(DATE_PART('year', CURRENT_DATE) - DATE_PART('year', e.开始参加工作日期)) as average_seniority FROM public.a_sap_employee_information_chinese e WHERE e.一级机构 IN (SELECT DISTINCT s.一级机构 FROM public.a_sap_staffing_recruitment_plan_chinese s WHERE s.编制年度 = 'T127') AND e.雇佣状态 = '在职' GROUP BY e.一级机构, e.二级机构 ORDER BY average_seniority DESC LIMIT 1;",
+  "thoughts": "此查询涉及到跨表查询和日期函数的使用，需要联合员工基础信息表和招聘编制使用情况表来获得在财年T127中每个一级机构中平均员工工龄最高的二级机构。使用聚合函数AVG计算平均工龄，需要注意过滤掉离职员工的数据。"
+}
+{
+  "difficulty": "High",
+  "user_input": "在当前年份（2023年）中，哪个一级机构的员工平均绩效得分最低？请列出该机构的名称及其平均绩效得分，并且请考虑到绩效得分'A'到'D'依次递减。",
+  "sql": "SELECT p.一级机构, AVG(CASE p.绩效 WHEN 'A' THEN 1 WHEN 'B+' THEN 2 WHEN 'B' THEN 3 WHEN 'B-' THEN 4 WHEN 'C' THEN 5 WHEN 'D' THEN 6 END) as average_score FROM public.a_sap_performance_ai p WHERE p.编制年度 = 'T128' GROUP BY p.一级机构 ORDER BY average_score DESC LIMIT 1;",
+  "thoughts": "此查询需要利用条件CASE语句将每个绩效评分转换为数值，以便进行平均得分计算。查询针对当前财年（T128，对应2023年）中所有一级机构的平均绩效得分，并且只选择平均得分最低的机构。"
+}
+{
+  "difficulty": "High",
+  "user_input": "哪些员工在财年T127期间具有至少两种不同类型的教育背景，并且目前还在职？",
+  "sql": "SELECT e.人员工号, e.姓名 FROM public.a_sap_employee_information_chinese e JOIN public.a_sap_employee_education_experience_chinese edu ON e.人员工号 = edu.人员工号 WHERE e.雇佣状态 = '在职' AND e.入职日期 <='2022-12-31' AND edu.开始日期 <= '2022-12-31' GROUP BY e.人员工号, e.姓名 HAVING COUNT(DISTINCT edu.教育类型) >= 2;",
+  "thoughts": "该查询需要联合员工基础信息表和员工教育信息表，选取在财年T127期间（即2022年）入职并在职的员工，并且计算每个员工教育类型的数量。通过HAVING子句过滤出至少具有两种不同教育类型的员工。"
+}
+{
+  "difficulty": "High",
+  "user_input": "在上一财年（T127）中，有哪些一级机构的招聘开放职位（open数）数量大于它们的年度编制数量？列出这些机构及其对应的差值。",
+  "sql": "SELECT s.一级机构, (s.open数 - s.年度编制数量) as difference FROM public.a_sap_staffing_recruitment_plan_chinese s WHERE s.编制年度 = 'T127' AND s.open数 > s.年度编制数量;",
+  "thoughts": "查询需要访问招聘编制使用情况表，筛选上一财年（T127，即2022年）的数据，并计算每个一级机构的open数与年度编制数量的差值，只显示open数大于年度编制数量的机构。"
+}
+{
+  "difficulty": "High",
+  "user_input": "哪个一级机构在第三季度（T127-Q3）的招聘关闭数（关闭数）最多，并且该机构的哪个二级机构对应的关闭数最多？",
+  "sql": "WITH department_close_count AS (SELECT s.一级机构, SUM(s.关闭数) as total_close FROM public.a_sap_staffing_recruitment_plan_chinese s WHERE s.编制年度 = 'T127' AND s.编制月度 IN (10,11,12) GROUP BY s.一级机构), subdepartment_close_count AS (SELECT s.一级机构, s.二级机构, SUM(s.关闭数) as sub_total_close FROM public.a_sap_staffing_recruitment_plan_chinese s WHERE s.编制年度 = 'T127' AND s.编制月度 IN (10,11,12) GROUP BY s.一级机构, s.二级机构) SELECT d.一级机构, sd.二级机构, sd.sub_total_close FROM department_close_count d JOIN subdepartment_close_count sd ON d.一级机构 = sd.一级机构 WHERE sd.sub_total_close = (SELECT MAX(sub_total_close) FROM subdepartment_close_count WHERE 一级机构 = d.一级机构) ORDER BY total_close DESC LIMIT 1;",
+  "thoughts": "这个查询首先定义了两个公共表表达式（CTE），分别用于统计每个一级机构的总关闭数以及每个二级机构的关闭数。然后将这两个CTE进行了联接，以得到每个一级机构中关闭数最多的二级机构的数据，最后只选择第三季度（10, 11, 12月）关闭数最多的一级机构及其对应的二级机构。"
+}

@@ -1,0 +1,1 @@
+{'parent_org': 'SRC', 'shortname': 'DMP', 'fullname': 'Direct Material Procurement', 'chinesename': '直接生产物料采购部'}

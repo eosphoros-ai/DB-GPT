@@ -1,0 +1,10 @@
+{
+  "title": "Report",
+  "name": "report",
+  "introduce": "",
+  "layout": "TODO",
+  "supported_chart_type":[ "Table", "LineChart",  "BarChart", "PieChart", "IndicatorValue"],
+  "key_metrics":[],
+  "trends": []
+}
+

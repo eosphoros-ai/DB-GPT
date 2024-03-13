@@ -1,0 +1,1 @@
+{'parent_org': 'LOG', 'shortname': 'LOG-ND', 'fullname': 'Logistics-ND', 'chinesename': '宁德物流部'}

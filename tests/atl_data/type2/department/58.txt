@@ -1,0 +1,1 @@
+{'parent_org': 'PTO', 'shortname': 'PTO-Lab', 'fullname': 'Prototype Laboratory', 'chinesename': '样品制造部-电芯测试部'}

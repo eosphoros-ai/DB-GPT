@@ -1,0 +1,1 @@
+{'parent_org': 'IDT', 'shortname': 'AI', 'fullname': 'Industrial Artificial Intelligence', 'chinesename': '工业智能部'}

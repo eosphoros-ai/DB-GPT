@@ -1,0 +1,1 @@
+{'parent_org': 'FNC', 'shortname': 'OMO', 'fullname': 'Operation management office', 'chinesename': '经营管理部'}

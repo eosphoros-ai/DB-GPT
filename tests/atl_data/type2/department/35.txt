@@ -1,0 +1,1 @@
+{'parent_org': 'MRD', 'shortname': 'EET', 'fullname': 'Electrode Engineering Team', 'chinesename': '极片工程部'}

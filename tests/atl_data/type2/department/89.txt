@@ -1,0 +1,1 @@
+{'parent_org': 'IDT', 'shortname': 'BP-RD', 'fullname': 'Business Partner-RD', 'chinesename': '研发解决方案部'}

@@ -1,0 +1,5 @@
+models/
+plugins/
+pilot/data
+pilot/message
+logs/

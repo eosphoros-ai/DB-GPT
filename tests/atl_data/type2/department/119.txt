@@ -1,0 +1,1 @@
+{'parent_org': 'SD', 'shortname': 'CSR&EHS Sys', 'fullname': 'Corporate Social Responsibility & EHS System(Group)', 'chinesename': '企业社会责任&EHS体系组(集团)'}

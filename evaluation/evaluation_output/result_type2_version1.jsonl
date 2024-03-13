@@ -1,0 +1,1760 @@
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "员工的性别比例是多少?",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_pie_chart",
+  "thoughts": "为了得到员工性别比例，我们需要对a_sap_employee_information_chinese表中的性别列进行计数，然后将每个性别的数量除以总员工数来计算比例。我们可以使用COUNT函数来计数，并且使用GROUP BY语句对性别进行分组。然后，我们可以使用子查询来得到总员工数，从而计算比例。",
+  "sql": "SELECT 性别, COUNT(性别) AS 性别数量, (COUNT(性别) * 100.0 / (SELECT COUNT(*) FROM a_sap_employee_information_chinese)) AS 性别比例 FROM a_sap_employee_information_chinese GROUP BY 性别",
+  "ai_sql_result": "  [{ 性别  null,  性别数量  0,  性别比例  0.0, { 性别   女 ,  性别数量  24997,  性别比例  28.8322683338, { 性别   男 ,  性别数量  61700,  性别比例  71.1665782371 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪个部门下员工最多?",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'部门':'通常来说都是指一级机构';",
+    "{'shortname': 'PRD', 'fullname': 'Production Department', 'chinesename': '生产部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要找出哪个部门下员工最多，我们需要对员工表按照一级机构名称进行分组，并计算每个部门的员工数量。然后我们可以通过排序和限制结果数量来找到员工数最多的部门。",
+  "sql": "SELECT 一级机构名称, COUNT(*) AS 员工数量 FROM a_sap_employee_information_chinese GROUP BY 一级机构名称 ORDER BY 员工数量 DESC LIMIT 1",
+  "ai_sql_result": "  [{ 一级机构名称   PRD ,  员工数量  15121 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "当前公司有哪些职务的员工?",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要查询当前公司有哪些职务的员工，我们可以从a_sap_employee_information_chinese表中选出不同的职务名称，使用DISTINCT关键字来确保职务名称不重复。",
+  "sql": "SELECT DISTINCT 职务名称 FROM a_sap_employee_information_chinese LIMIT 50;",
+  "ai_sql_result": "  [{ 职务名称   高级副总裁 , { 职务名称  null, { 职务名称   组长 , { 职务名称   Head of Department , { 职务名称   Senior Executive , { 职务名称   Engineer , { 职务名称   Technician , { 职务名称   一级组长 , { 职务名称   经理 , { 职务名称   First Level Operator , { 职务名称   总监 , { 职务名称   Senior Supervisor 1 , { 职务名称   Director , { 职务名称   二级作业员 , { 职务名称   二级助理 , { 职务名称   Assistant Manager , { 职务名称   二级资深技术员 , { 职务名称   董事长 , { 职务名称   Line Leader , { 职务名称   专员 , { 职务名称   四级检验资深技术员 , { 职务名称   一级文员 , { 职务名称   First-level operator , { 职务名称   荣誉董事长 , { 职务名称   二级组长 , { 职务名称   执行副总裁 , { 职务名称   三级生产技术员 , { 职务名称   一级作业员 , { 职务名称   资深主任工程师 , { 职务名称   资深经理 , { 职务名称   Sr Specialist , { 职务名称   四级生产资深技术员 , { 职务名称   实习（测试） , { 职务名称   三级技术员 , { 职务名称   二级预备文员 , { 职务名称   Sr Engineer , { 职务名称   分析师 , { 职务名称   副总裁,COO , { 职务名称   工程师 , { 职务名称   二级资深组长 , { 职务名称   资深总监 , { 职务名称   一级技术员 , { 职务名称   三级资深组长 , { 职务名称   Manager , { 职务名称   资深工程师2 , { 职务名称   资深会计师 , { 职务名称   三级资深助理 , { 职务名称   副总裁 , { 职务名称   资深主管2 , { 职务名称   预备组长  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪个岗位的人员流动（离职和入职）最频繁?",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "'雇佣状态':[\"在职\", \"离职\"];",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}",
+    "{'parent_org': 'HR', 'shortname': 'TA', 'fullname': 'Talent Acquisition', 'chinesename': '人才招聘与调配部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要找出人员流动最频繁的岗位，我们需要统计每个岗位的离职和入职次数。我们可以通过计算 'a_sap_employee_information_chinese' 表中每个职位对应的在职和离职人数来得知。然后我们将这些数目加起来得到总的人员流动次数，并按照这个总数降序排列，选择最上面的几个职位。由于表结构中没有直接提供离职日期，我们将使用 '雇佣状态' 来区分在职和离职员工。",
+  "sql": "SELECT 职位, COUNT(*) AS 流动次数 FROM a_sap_employee_information_chinese GROUP BY 职位 ORDER BY 流动次数 DESC LIMIT 50",
+  "ai_sql_result": "  [{ 职位   二级生产技术员 ,  流动次数  15601, { 职位   三级生产技术员 ,  流动次数  14869, { 职位   一级生产技术员 ,  流动次数  7911, { 职位   一级生产资深技术员 ,  流动次数  7283, { 职位   一级生产操作员 ,  流动次数  5136, { 职位   二级生产操作员 ,  流动次数  3319, { 职位   三级检验技术员 ,  流动次数  1903, { 职位   二级生产资深技术员 ,  流动次数  1846, { 职位   三级生产操作员 ,  流动次数  1347, { 职位   二级作业员 ,  流动次数  1331, { 职位   二级资深组长 ,  流动次数  1008, { 职位   一级检验资深技术员 ,  流动次数  1008, { 职位   储备三级技术工人 ,  流动次数  970, { 职位   一级资深组长 ,  流动次数  893, { 职位   Operator ,  流动次数  858, { 职位   三级作业员 ,  流动次数  730, { 职位   二级检验技术员 ,  流动次数  585, { 职位   三级保安员 ,  流动次数  578, { 职位   设备工程师 ,  流动次数  562, { 职位   二级保安员 ,  流动次数  525, { 职位   三级技术员 ,  流动次数  503, { 职位   一级资深技术员 ,  流动次数  443, { 职位   制造主管 ,  流动次数  422, { 职位   制造一级资深技术员 ,  流动次数  418, { 职位   制造工程师 ,  流动次数  417, { 职位   制造三级技术员 ,  流动次数  384, { 职位   二级技术员 ,  流动次数  358, { 职位   二级资深技术员 ,  流动次数  352, { 职位   研发工程师 ,  流动次数  315, { 职位   一级作业员 ,  流动次数  294, { 职位   一级检验技术员 ,  流动次数  274, { 职位   电芯测试三级技术员 ,  流动次数  266, { 职位   实习 ,  流动次数  247, { 职位   制造二级资深技术员 ,  流动次数  245, { 职位   CJR ,  流动次数  242, { 职位   资深工程师1 ,  流动次数  220, { 职位   二级仓库物料员 ,  流动次数  217, { 职位   一级资深保安员 ,  流动次数  217, { 职位   初级生产技术员 ,  流动次数  213, { 职位   一级保安员 ,  流动次数  211, { 职位   三级生产资深技术员 ,  流动次数  199, { 职位   制造资深工程师 ,  流动次数  196, { 职位   PRJ项目工程师 ,  流动次数  193, { 职位   产品开发工程师 ,  流动次数  186, { 职位   一级技术员 ,  流动次数  177, { 职位   工程师 ,  流动次数  162, { 职位   三级资深组长 ,  流动次数  137, { 职位   一级仓库物料员 ,  流动次数  137, { 职位   品质工程师 ,  流动次数  135, { 职位   三级仓库物料员 ,  流动次数  130 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "持有本科学历的员工有多少人?",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PE21', 'fullname': 'xTW Assembly Process Engineering-21', 'chinesename': 'xTW后工序工艺工程部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出持有大学本科学历的员工数量，我们需要查询a_sap_employee_education_experience_chinese表，并计数学历为'大学本科'的不同人员工号的数量。",
+  "sql": "SELECT COUNT(DISTINCT 人员工号) FROM a_sap_employee_education_experience_chinese WHERE 学历 = '大学本科';",
+  "ai_sql_result": "6412 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪位员工的下属最多?",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-ME','fullname': 'Manufacturing Unit Plus Assembly Maintenance Engineering', 'chinesename': '智能制造特区后工序设备部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}"
+  ],
+  "display_type": "Table",
+  "thoughts": "由于提供的表结构信息中没有直接关于员工下属数量的字段，我们无法直接查询哪位员工的下属最多。通常，这样的信息可能会通过员工的直接下属或者整个下属树来计算，但这需要有关联的数据结构，例如员工与下属的映射关系。在当前的表结构中，我们可以看到有多个管理层级的姓名和职位，但没有提供足够的信息来确定哪位员工的下属最多。因此，我们无法生成SQL查询来回答这个问题。",
+  "sql": "",
+  "ai_sql_result": "由于提供的表结构信息中没有直接关于员工下属数量的字段，我们无法直接查询哪位员工的下属最多。通常，这样的信息可能会通过员工的直接下属或者整个下属树来计算，但这需要有关联的数据结构，例如员工与下属的映射关系。在当前的表结构中，我们可以看到有多个管理层级的姓名和职位，但没有提供足够的信息来确定哪位员工的下属最多。因此，我们无法生成SQL查询来回答这个问题。"
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪位员工在公司呆的时间最久?",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'雇佣状态':[\"在职\", \"离职\"];",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'FE', 'fullname': 'Facility Engineering', 'chinesename': '厂房工程部'}"
+  ],
+  "display_type": "Table",
+  "thoughts": "为了找出在公司工作时间最长的员工，我们需要查询员工的入职日期，并按照入职日期升序排列，然后选择最上面的一条记录。由于用户没有指定数据行数，我们将查询限制为最多50个结果，但实际上我们只需要一位员工的信息，所以我们可以使用LIMIT 1来只获取一条记录。",
+  "sql": "SELECT 人员工号, 姓名, 入职日期 FROM a_sap_employee_information_chinese ORDER BY 入职日期 ASC LIMIT 1",
+  "ai_sql_result": "  [{ 人员工号  1,  姓名   曾毓群 ,  入职日期   2000-02-10T00:00:00  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "公司今年第二季度的有效编制空缺数量是多少？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "\"季度Q(1~4)对应规则\":\"Q1-4,5,6月份,Q2-7,8,9月份,Q3-10,11,12月份,Q4-1,2,3月份\";",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'QMC', 'shortname': 'FQC/OQC-PTO','fullname': 'Final Quality Control/Outgoing Quality Control-Prototype', 'chinesename': '最终/出货质量控制-制样组'}",
+    "{'parent_org': 'QMC', 'shortname': 'IPQC-PTO', 'fullname': 'In Process Quality Control-Prototype','chinesename': '制程质量控制-制样组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到今年第二季度的有效编制空缺数量，我们需要查询a_sap_staffing_recruitment_plan_chinese表，并筛选出当前年度和第二季度对应的月份（7, 8, 9月）。由于用户没有提供当前年份，我们可以假设是查询本年度的数据，即当前日期所在的年份。然后，我们可以对筛选出的数据按照季度编制空缺数量进行求和，以得到第二季度的总有效编制空缺数量。",
+  "sql": "SELECT SUM(有效编制空缺) AS 第二季度有效编制空缺总数 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = EXTRACT(YEAR FROM CURRENT_DATE) AND 编制月度 IN (7, 8, 9) LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "公司有多少位具有博士学历的员工？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}",
+    "{'parent_org': 'SLS', 'shortname': 'BO/CS', 'fullname': 'Back office/Customer Service', 'chinesename': '销售支持/客服'}"
+  ],
+  "display_type": "Table",
+  "thoughts": "为了找出具有博士学历的员工数量，我们需要在a_sap_employee_education_experience_chinese表中统计学历为'博士'的不同人员工号的数量。",
+  "sql": "SELECT COUNT(DISTINCT 人员工号) FROM a_sap_employee_education_experience_chinese WHERE 学历 = '博士';",
+  "ai_sql_result": "22 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "公司员工中，哪位的在职时间最长？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出在职时间最长的员工，我们需要查询员工信息表，并按照入职日期升序排列，然后选择最顶端的一条记录。由于在职时间最长意味着入职日期最早，我们将使用ORDER BY子句对入职日期进行排序，并使用LIMIT 1来获取单条记录。",
+  "sql": "SELECT 人员工号, 姓名, 入职日期 FROM a_sap_employee_information_chinese ORDER BY 入职日期 ASC LIMIT 1",
+  "ai_sql_result": "  [{ 人员工号  1,  姓名   曾毓群 ,  入职日期   2000-02-10T00:00:00  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "目前哪个职位的员工数量最多？",
+  "table_info": [
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出员工数量最多的职位，我们需要对表a_sap_positions_responsibilities_risks_chinese中的'职位'列进行分组，并计算每个职位的'现职人数'总和。然后，我们将按照'现职人数'降序排序，并限制结果只显示最上面的一条记录，这样就能得到员工数量最多的职位。",
+  "sql": "SELECT 职位, SUM(现职人数) AS 总人数 FROM a_sap_positions_responsibilities_risks_chinese GROUP BY 职位 ORDER BY 总人数 DESC LIMIT 1",
+  "ai_sql_result": "  [{ 职位   三级生产技术员 ,  总人数  6904 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪个部门的有效编制空缺数量最多？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "'部门':'通常来说都是指一级机构';",
+    "{'shortname': 'MRD', 'fullname': 'Manufacturing Research & Development', 'chinesename': '制造研发部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出有效编制空缺数量最多的部门，我们需要从a_sap_staffing_recruitment_plan_chinese表中选出每个一级机构的有效编制空缺数量，并按照这个数量降序排列，然后选择排在最前面的部门。",
+  "sql": "SELECT 一级机构, SUM(有效编制空缺) AS 总有效编制空缺数量 FROM a_sap_staffing_recruitment_plan_chinese GROUP BY 一级机构 ORDER BY 总有效编制空缺数量 DESC LIMIT 1",
+  "ai_sql_result": "  [{ 一级机构   MU-W ,  总有效编制空缺数量  32632 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪个部门的部门负责人在岗时间最长？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}",
+    "{'parent_org': 'HR', 'shortname': 'O&TD', 'fullname': 'Organization&Talent Development', 'chinesename': '组织与人才发展部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出在岗时间最长的部门负责人，我们需要从员工信息表中查询出所有部门负责人的入职日期，并按照部门分组，然后找出每个部门中入职日期最早的记录。最后，我们将这些记录按照入职日期升序排列，取出在岗时间最长的部门负责人。",
+  "sql": "SELECT 一级机构名称, MIN(入职日期) AS 最早入职日期 FROM a_sap_employee_information_chinese WHERE 部门负责人 = '是' GROUP BY 一级机构名称 ORDER BY 最早入职日期 ASC LIMIT 1",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪个员工的直属上司在职时间最短？",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "Table",
+  "thoughts": "为了找出哪个员工的直属上司在职时间最短，我们需要计算每个员工直属上司的在职时间。在给定的表结构中，我们可以使用主管1姓名、主管1职位、主管1职务来识别直属上司，然后比较他们的入司日期与当前日期之间的差异。我们将使用 PostgreSQL 的 DATEDIFF 函数来计算日期差异，并通过 ORDER BY 语句来找出在职时间最短的上司。由于表结构中没有直属上司的入司日期，所以我们无法生成一个有效的 SQL 查询来回答这个问题。",
+  "sql": "提供的表结构信息不足以生成 sql 查询。",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "公司的员工中有多少位具有海外背景的员工（即学历信息中的国家不是中国）？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "{'parent_org': 'HR', 'shortname': 'OM', 'fullname': 'Oversea Management', 'chinesename': '海外管理部'}",
+    "{'parent_org': 'ES', 'shortname': 'ES-DG', 'fullname': 'Employee Service-DG', 'chinesename': '东莞雇员服务部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出具有海外背景的员工数量，我们需要从a_sap_employee_education_experience_chinese表中筛选出学历信息中国家不是中国的记录。使用COUNT函数来计算符合条件的不同员工的数量。注意，我们需要使用DISTINCT来确保员工不被重复计算。",
+  "sql": "SELECT COUNT(DISTINCT 人员工号) FROM a_sap_employee_education_experience_chinese WHERE 国家 != '中国' LIMIT 50;",
+  "ai_sql_result": "84 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "公司全职员工中,哪个岗位的员工平均工龄最大？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出全职员工中哪个岗位的员工平均工龄最大，我们可以使用a_sap_employee_information_chinese表。首先，我们需要过滤出全职员工，即员工工作性质文本字段为'全职-计算'的员工。然后，我们需要计算每个员工的工龄，即当前日期减去员工的开始参加工作日期。接下来，我们将按照职位分组，计算每个职位的员工平均工龄。最后，我们将选择平均工龄最大的职位。我们将查询结果限制为最多50个结果。",
+  "sql": "SELECT 职位, AVG(AGE(NOW(), 开始参加工作日期)) AS 平均工龄 FROM a_sap_employee_information_chinese WHERE 员工工作性质文本 = '全职-计算' GROUP BY 职位 ORDER BY 平均工龄 DESC LIMIT 50",
+  "ai_sql_result": "  [{ 职位   TC资深主管 ,  平均工龄  null, { 职位   结构主任工程师 ,  平均工龄  null, { 职位   保洁管理一级资深助理 ,  平均工龄  null, { 职位   技管二级资深技术员 ,  平均工龄  null, { 职位   采购系统三级资深助理 ,  平均工龄  null, { 职位   人才发展三级资深助理 ,  平均工龄  null, { 职位   PACK一级检验资深技术员 ,  平均工龄  null, { 职位   二级检验技术员 ,  平均工龄  null, { 职位   二级机构负责人(COE) ,  平均工龄  null, { 职位   三级机构负责人(RP-SSL) ,  平均工龄  null, { 职位   应付资深主管会计师 ,  平均工龄  null, { 职位   极片开发工程师 ,  平均工龄  null, { 职位   PTO PE工程师 ,  平均工龄  null, { 职位   FQC&amp;OQC三级资深组长 ,  平均工龄  null, { 职位   工艺数字化开发工程师 ,  平均工龄  null, { 职位   实习 ,  平均工龄  null, { 职位   程序电气资深工程师 ,  平均工龄  null, { 职位   三级机构负责人(MU Plus-ASSY-PRD) ,  平均工龄  null, { 职位   MSA一级资深技术员 ,  平均工龄  null, { 职位   三级资深助理 ,  平均工龄  null, { 职位   IQC cell二级检验技术员 ,  平均工龄  null, { 职位   测试项目管理Leader(ESS) ,  平均工龄  null, { 职位   电芯测试一级技术员 ,  平均工龄  null, { 职位   三级机构负责人(H&amp;H) ,  平均工龄  null, { 职位   三级机构负责人(VVO) ,  平均工龄  null, { 职位   BMS安全资深工程师 ,  平均工龄  null, { 职位   三级机构负责人(EET) ,  平均工龄  null, { 职位   材料分析资深工程师 ,  平均工龄  null, { 职位   三级机构负责人(ME-Separator) ,  平均工龄  null, { 职位   生产测试三级资深技术员 ,  平均工龄  null, { 职位   市场专员 ,  平均工龄  null, { 职位   二级机构负责人(IDT-PTL) ,  平均工龄  null, { 职位   IQC Pack一级资深组长 ,  平均工龄  null, { 职位   制造三级技术员 ,  平均工龄  null, { 职位   三级技术员 ,  平均工龄  null, { 职位   SQE四级资深技术员 ,  平均工龄  null, { 职位   二级机构负责人(CDG) ,  平均工龄  null, { 职位   PACK制程质量工程师 ,  平均工龄  null, { 职位   助理 ,  平均工龄  null, { 职位   FAE三级资深技术员 ,  平均工龄  null, { 职位   逆变电源硬件工程师 ,  平均工龄  null, { 职位   PACK二级检验技术员 ,  平均工龄  null, { 职位   逆变电源硬件资深工程师 ,  平均工龄  null, { 职位   BMS系统主任工程师 ,  平均工龄  null, { 职位   材料分析二级资深技术员 ,  平均工龄  null, { 职位   三级机构负责人(ENG-PTO-PDE) ,  平均工龄  null, { 职位   消防技术资深工程师 ,  平均工龄  null, { 职位   美国储能销售经理 ,  平均工龄  null, { 职位   材料分析二级技术员 ,  平均工龄  null, { 职位   外联资深专员 ,  平均工龄  null "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请列出公司各个职级范围的空缺职位数量？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-ASSY-Digi-Lean','fullname': 'Manufacturing Unit PlusAssembly Digital Lean', 'chinesename': '智能制造特区后工序Digi-Lean组'}",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}"
+  ],
+  "display_type": "response_bar_chart",
+  "thoughts": "要列出公司各个职级范围的空缺职位数量，我们需要从a_sap_staffing_recruitment_plan_chinese表中获取'职级范围'和'有效编制空缺'这两个字段的数据。我们将对'职级范围'进行分组，并对每个组内的'有效编制空缺'进行求和，以得到每个职级范围的空缺职位总数。",
+  "sql": "SELECT 职级范围, SUM(有效编制空缺) AS 空缺职位数量 FROM a_sap_staffing_recruitment_plan_chinese GROUP BY 职级范围 ORDER BY 职级范围 LIMIT 50;",
+  "ai_sql_result": "  [{ 职级范围   JG11-13 ,  空缺职位数量  5774, { 职级范围   JG1-3 ,  空缺职位数量  94657, { 职级范围   JG14-20 ,  空缺职位数量  4, { 职级范围   JG4-6 ,  空缺职位数量  74755, { 职级范围   JG7-10 ,  空缺职位数量  61439 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问公司当前招聘编制使用情况与编制数量各是多少？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'shortname': 'IDT', 'fullname': 'Information Digital Technology',  'chinesename': '信息数字化技术部'}",
+    "{'parent_org': 'SRC', 'shortname': 'PCO', 'fullname': 'Procurement Control Office', 'chinesename': '采购控制&管理办公室'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要查询公司当前招聘编制使用情况与编制数量，我们可以从a_sap_staffing_recruitment_plan_chinese表中查询最新的招聘编制使用情况（有效编制空缺、年度可申请空缺数量、季度可申请空缺数量、月度可申请空缺数量）以及招聘编制数量（年度编制数量、季度编制数量、月度编制数量）。我们需要按照最新的创建日期来筛选数据，以确保提供的是当前的情况。",
+  "sql": "SELECT 编制年度, SUM(有效编制空缺) AS 当前有效编制空缺总数, SUM(年度可申请空缺数量) AS 年度可申请空缺总数, SUM(季度可申请空缺数量) AS 季度可申请空缺总数, SUM(月度可申请空缺数量) AS 月度可申请空缺总数, SUM(年度编制数量) AS 年度编制总数, SUM(季度编制数量) AS 季度编制总数, SUM(月度编制数量) AS 月度编制总数 FROM a_sap_staffing_recruitment_plan_chinese WHERE 创建日期 IN (SELECT MAX(创建日期) FROM a_sap_staffing_recruitment_plan_chinese) GROUP BY 编制年度 LIMIT 50",
+  "ai_sql_result": "  [{ 编制年度   T128 ,  当前有效编制空缺总数  11517,  年度可申请空缺总数  -22250,  季度可申请空缺总数  -24073,  月度可申请空缺总数  -24232,  年度编制总数  15008,  季度编制总数  13185,  月度编制总数  13026 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问工号为137109的员工的姓名和入职日期是什么？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PE21', 'fullname': 'xTW Assembly Process Engineering-21', 'chinesename': 'xTW后工序工艺工程部-21'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了获取工号为137109的员工的姓名和入职日期，我们需要从a_sap_employee_information_chinese表中查询人员工号为137109的相关记录。",
+  "sql": "SELECT 姓名, 入职日期 FROM a_sap_employee_information_chinese WHERE 人员工号 = '137109';",
+  "ai_sql_result": "  [{ 姓名   李安榜 ,  入职日期   2022-01-12T00:00:00  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问算法工程师的职务和现职人数是什么？",
+  "table_info": [
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "'职员包括':'工程师|工程师1|资深工程师|工程师2|资深工程师1|资深工程师2';",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-ME','fullname': 'Manufacturing Unit Plus Assembly Maintenance Engineering', 'chinesename': '智能制造特区后工序设备部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-EP-ME','fullname': 'Manufacturing Unit Plus Electrode ProductionMaintenance Engineering','chinesename': '智能制造特区前工序设备部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到算法工程师的职务和现职人数，我们需要在表a_sap_positions_responsibilities_risks_chinese中查询与'算法工程师'相关的职务和现职人数字段。我们可以使用LIKE操作符匹配岗位名称中包含'算法工程师'的记录。",
+  "sql": "SELECT 职务, 现职人数 FROM a_sap_positions_responsibilities_risks_chinese WHERE 岗位名称 LIKE '%算法工程师%' LIMIT 50",
+  "ai_sql_result": "  [{ 职务   工程师 ,  现职人数  0, { 职务   工程师 ,  现职人数  14 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问公司在T126的Q3的编制使用情况如何？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "'员工子组[含义:字段]':['普工'：'A1', '技术员'：'A2','工程师'：'A3','中层管理层'：'A4','高层管理层'：'A5','挂职人员|CJR':'残疾人','外聘顾问'：'顾问','实习员工'：'实习'];",
+    "{'parent_org': 'QMC', 'shortname': 'IPQC-PTO', 'fullname': 'In Process Quality Control-Prototype','chinesename': '制程质量控制-制样组'}",
+    "{'parent_org': 'QMC', 'shortname': 'FQC/OQC-PTO','fullname': 'Final Quality Control/Outgoing Quality Control-Prototype', 'chinesename': '最终/出货质量控制-制样组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "根据公司财年对应规则，T126对应2021年。Q3通常指第三财季，我们需要查询2021年第三财季的编制使用情况。根据表结构定义，我们可以从a_sap_staffing_recruitment_plan_chinese表中获取相关信息，包括年度编制数量、季度编制数量、季度可申请空缺数量、有效编制空缺等字段。我们将编制年度设置为2021，编制月度设置为Q3，以获取第三财季的数据。",
+  "sql": "SELECT 编制年度, 编制月度, 员工子组, 有效编制空缺, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = '2021' AND 编制月度 = 'Q3' LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问工号为137109员工的汇报关系是如何的？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-ME','fullname': 'Manufacturing Unit Plus Assembly Maintenance Engineering', 'chinesename': '智能制造特区后工序设备部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要找出工号为137109的员工的汇报关系，我们需要查询该员工的直属上司工号和直属上司姓名。这可以通过查询a_sap_employee_information_chinese表来实现。",
+  "sql": "SELECT 直属上司工号, 直属上司姓名 FROM a_sap_employee_information_chinese WHERE 人员工号 = '137109' LIMIT 1;",
+  "ai_sql_result": "  [{ 直属上司工号  143332,  直属上司姓名   李春风  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问公司各个一级机构的编制使用情况和现职人数分别是多少？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)",
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'parent_org': 'PRD', 'shortname': 'PRD-MC&TC', 'fullname': 'Management Center & Training Center', 'chinesename': '公共业务组'}",
+    "{'parent_org': 'IDT', 'shortname': 'IDT-MO', 'fullname': 'IDT-Management Office', 'chinesename': 'IDT管理办公室'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了得到公司各个一级机构的编制使用情况和现职人数，我们需要从a_sap_staffing_recruitment_plan_chinese表中获取一级机构、年度编制数量、月度可申请空缺数量等相关信息，并从a_sap_positions_responsibilities_risks_chinese表中获取一级机构和现职人数信息。我们可以通过一级机构来关联这两个表，以汇总每个一级机构的编制使用情况和现职人数。查询结果将限制为最多50个结果。",
+  "sql": "SELECT a.一级机构, SUM(a.年度编制数量) AS 编制总数, SUM(a.月度可申请空缺数量) AS 编制使用数, SUM(b.现职人数) AS 现职人数 FROM a_sap_staffing_recruitment_plan_chinese a JOIN a_sap_positions_responsibilities_risks_chinese b ON a.一级机构 = b.一级机构 GROUP BY a.一级机构 LIMIT 50",
+  "ai_sql_result": "  [{ 一级机构   APD ,  编制总数  144624,  编制使用数  6348,  现职人数  7581, { 一级机构   ATLI ,  编制总数  2706,  编制使用数  0,  现职人数  189, { 一级机构   CL ,  编制总数  214424,  编制使用数  8330,  现职人数  8208, { 一级机构   CPD ,  编制总数  391902,  编制使用数  8526,  现职人数  15738, { 一级机构   CPP ,  编制总数  1456,  编制使用数  0,  现职人数  560, { 一级机构   ES ,  编制总数  94072,  编制使用数  2816,  现职人数  10656, { 一级机构   FE ,  编制总数  167580,  编制使用数  6916,  现职人数  8880, { 一级机构   FNC ,  编制总数  59520,  编制使用数  2542,  现职人数  5936, { 一级机构   HR ,  编制总数  384256,  编制使用数  -241740,  现职人数  12816, { 一级机构   IDT ,  编制总数  179251,  编制使用数  3792,  现职人数  9600, { 一级机构   IE ,  编制总数  179860,  编制使用数  12665,  现职人数  8322, { 一级机构   IP ,  编制总数  4560,  编制使用数  96,  现职人数  1624, { 一级机构   LA ,  编制总数  2544,  编制使用数  48,  现职人数  936, { 一级机构   LOG ,  编制总数  194439,  编制使用数  1269,  现职人数  20888, { 一级机构   ME ,  编制总数  1380730,  编制使用数  -1926093,  现职人数  70561, { 一级机构   MRD ,  编制总数  607590,  编制使用数  16641,  现职人数  18688, { 一级机构   MU Plus ,  编制总数  91319,  编制使用数  -571340,  现职人数  50490, { 一级机构   MU-SSL ,  编制总数  2490336,  编制使用数  -2764080,  现职人数  202852, { 一级机构   PA ,  编制总数  30,  编制使用数  -12,  现职人数  168, { 一级机构   PMC ,  编制总数  29480,  编制使用数  -15360,  现职人数  3363, { 一级机构   PMD ,  编制总数  4556,  编制使用数  -102,  现职人数  1508, { 一级机构   PRD ,  编制总数  665112,  编制使用数  -16399288,  现职人数  402087, { 一级机构   PRJ ,  编制总数  1154599,  编制使用数  -11222,  现职人数  19779, { 一级机构   PSO ,  编制总数  3864,  编制使用数  126,  现职人数  1008, { 一级机构   PTO ,  编制总数  492525,  编制使用数  11790,  现职人数  37679, { 一级机构   QA ,  编制总数  4428281,  编制使用数  267068,  现职人数  996721, { 一级机构   RD ,  编制总数  681863,  编制使用数  179197,  现职人数  11136, { 一级机构   RI ,  编制总数  165624,  编制使用数  4824,  现职人数  9362, { 一级机构   SD ,  编制总数  192918,  编制使用数  14141,  现职人数  8436, { 一级机构   SEC ,  编制总数  98640,  编制使用数  2484,  现职人数  20440, { 一级机构   SLS ,  编制总数  10752,  编制使用数  -7000,  现职人数  1660, { 一级机构   SRC ,  编制总数  130032,  编制使用数  30324,  现职人数  5544, { 一级机构   TPM ,  编制总数  53539,  编制使用数  74,  现职人数  5985, { 一级机构   xTW ,  编制总数  1859810,  编制使用数  -3864610,  现职人数  50908 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问公司各个部门的编制使用情况和现职人数分别是多少？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "'部门':'通常来说都是指一级机构';",
+    "{'shortname': 'IDT', 'fullname': 'Information Digital Technology',  'chinesename': '信息数字化技术部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了回答这个问题，我们需要从两个表中获取数据：'a_sap_staffing_recruitment_plan_chinese'表提供了部门的编制情况，包括年度编制数量和有效编制空缺等；'a_sap_employee_information_chinese'表提供了雇员信息，包括部门和雇佣状态。我们可以通过一级机构来表示部门，并对在职员工进行计数。我们将使用SQL的JOIN操作来关联这两个表，并且按照一级机构进行分组统计编制数量和在职人数。",
+  "sql": "SELECT p.一级机构, SUM(p.年度编制数量) AS 编制数量, COUNT(e.人员工号) AS 现职人数 FROM a_sap_staffing_recruitment_plan_chinese p LEFT JOIN a_sap_employee_information_chinese e ON p.一级机构 = e.一级机构名称 AND e.雇佣状态 = 'Active' GROUP BY p.一级机构 LIMIT 50",
+  "ai_sql_result": "  [{ 一级机构   TVL ,  编制数量  2173,  现职人数  0, { 一级机构   PRD ,  编制数量  4494,  现职人数  0, { 一级机构   HR ,  编制数量  1216,  现职人数  0, { 一级机构   IDT ,  编制数量  2269,  现职人数  0, { 一级机构   SEC ,  编制数量  5480,  现职人数  0, { 一级机构   OS ,  编制数量  2552,  现职人数  0, { 一级机构   ESS-SPP ,  编制数量  506,  现职人数  0, { 一级机构   BE ,  编制数量  78,  现职人数  0, { 一级机构   CPD ,  编制数量  3999,  现职人数  0, { 一级机构   IP ,  编制数量  380,  现职人数  0, { 一级机构   MU-E ,  编制数量  24535,  现职人数  0, { 一级机构   SRC ,  编制数量  1548,  现职人数  0, { 一级机构   ENG ,  编制数量  6743,  现职人数  0, { 一级机构  null,  编制数量  3616,  现职人数  0, { 一级机构   MU Plus ,  编制数量  1723,  现职人数  0, { 一级机构   PSCM ,  编制数量  477,  现职人数  0, { 一级机构   PSO ,  编制数量  276,  现职人数  0, { 一级机构   PMD ,  编制数量  268,  现职人数  0, { 一级机构   MRD ,  编制数量  4710,  现职人数  0, { 一级机构   PMC ,  编制数量  737,  现职人数  0, { 一级机构   FE ,  编制数量  2205,  现职人数  0, { 一级机构   BOCS ,  编制数量  299,  现职人数  0, { 一级机构   TPM ,  编制数量  1447,  现职人数  0, { 一级机构   MEV-SPP ,  编制数量  723,  现职人数  0, { 一级机构   MU ,  编制数量  4954,  现职人数  0, { 一级机构   MU-M ,  编制数量  32526,  现职人数  0, { 一级机构   CL ,  编制数量  2188,  现职人数  0, { 一级机构   SLS ,  编制数量  192,  现职人数  0, { 一级机构   QA ,  编制数量  24739,  现职人数  0, { 一级机构   SCM ,  编制数量  469,  现职人数  0, { 一级机构   SLS&amp;MKT ,  编制数量  631,  现职人数  0, { 一级机构   LOG ,  编制数量  4137,  现职人数  0, { 一级机构   APD ,  编制数量  2096,  现职人数  0, { 一级机构   ATLI ,  编制数量  33,  现职人数  0, { 一级机构   ME ,  编制数量  8170,  现职人数  0, { 一级机构   PPD-SPP ,  编制数量  410,  现职人数  0, { 一级机构   FNC ,  编制数量  960,  现职人数  0, { 一级机构   SD ,  编制数量  2442,  现职人数  0, { 一级机构   GMO ,  编制数量  662,  现职人数  0, { 一级机构   MKT ,  编制数量  44,  现职人数  0, { 一级机构   RI ,  编制数量  2472,  现职人数  0, { 一级机构   EPA&amp;IT ,  编制数量  328,  现职人数  0, { 一级机构   IE ,  编制数量  2116,  现职人数  0, { 一级机构   MU-SSL ,  编制数量  17294,  现职人数  0, { 一级机构   PA ,  编制数量  10,  现职人数  0, { 一级机构   CRD ,  编制数量  819,  现职人数  0, { 一级机构   xTW ,  编制数量  5195,  现职人数  0, { 一级机构   MU-W ,  编制数量  32775,  现职人数  0, { 一级机构   LA ,  编制数量  159,  现职人数  0, { 一级机构   ES ,  编制数量  2138,  现职人数  0 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问公司中性别和学历分布的交叉情况如何？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'IE', 'shortname': 'NPI', 'fullname': 'New Product Introduction', 'chinesename': '新产品导入组'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_heatmap",
+  "thoughts": "要查找性别和学历的交叉分布情况，我们需要从员工信息表中获取性别数据，从教育经历表中获取学历数据，并对这两者进行交叉统计分析。由于一个员工可能有多条教育经历记录，我们需要对员工的最高学历进行分析。这通常需要对员工的学历进行分组并选择每个员工的最高学历，但由于给定的表结构信息中没有提供可以判断学历高低的字段，我们将简化处理，统计所有的教育经历记录。我们可以通过对人员工号和学历进行分组，然后计数每个分组内的性别分布来实现这一点。",
+  "sql": "SELECT a_sap_employee_information_chinese.性别, a_sap_employee_education_experience_chinese.学历, COUNT(*) FROM a_sap_employee_information_chinese JOIN a_sap_employee_education_experience_chinese ON a_sap_employee_information_chinese.人员工号 = a_sap_employee_education_experience_chinese.人员工号 GROUP BY a_sap_employee_information_chinese.性别, a_sap_employee_education_experience_chinese.学历 LIMIT 50",
+  "ai_sql_result": "  [{ 性别   女 ,  学历   中专 ,  count  1564, { 性别   女 ,  学历   初中及以下 ,  count  13725, { 性别   女 ,  学历   博士 ,  count  4, { 性别   女 ,  学历   大学专科 ,  count  1519, { 性别   女 ,  学历   大学本科 ,  count  1495, { 性别   女 ,  学历   硕士 ,  count  47, { 性别   女 ,  学历   高中 ,  count  2882, { 性别   男 ,  学历   中专 ,  count  4214, { 性别   男 ,  学历   初中及以下 ,  count  25625, { 性别   男 ,  学历   博士 ,  count  18, { 性别   男 ,  学历   大学专科 ,  count  5070, { 性别   男 ,  学历   大学本科 ,  count  4917, { 性别   男 ,  学历   硕士 ,  count  120, { 性别   男 ,  学历   高中 ,  count  6303 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "当前有多少员工具备硕士学历？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'shortname': 'MRD', 'fullname': 'Manufacturing Research & Development', 'chinesename': '制造研发部'}",
+    "{'parent_org': 'MU Plus', 'shortname': 'MU Plus Operation', 'fullname': 'Manufacturing Unit Plus Operation', 'chinesename': '智能制造特区运营部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出具备硕士学历的员工数量，我们可以对a_sap_employee_education_experience_chinese表进行查询，使用COUNT函数来计数学历为'硕士'的记录数。",
+  "sql": "SELECT COUNT(*) FROM a_sap_employee_education_experience_chinese WHERE 学历 = '硕士';",
+  "ai_sql_result": "167 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "最常见的教育类型是什么？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'QMC', 'shortname': 'FQC/OQC-PTO','fullname': 'Final Quality Control/Outgoing Quality Control-Prototype', 'chinesename': '最终/出货质量控制-制样组'}",
+    "{'parent_org': 'QMC', 'shortname': 'IPQC-PTO', 'fullname': 'In Process Quality Control-Prototype','chinesename': '制程质量控制-制样组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出最常见的教育类型，我们可以对a_sap_employee_education_experience_chinese表中的教育类型列进行计数，并按照数量进行降序排序，然后选择排在最顶端的教育类型。",
+  "sql": "SELECT 教育类型, COUNT(*) AS 数量 FROM a_sap_employee_education_experience_chinese GROUP BY 教育类型 ORDER BY 数量 DESC LIMIT 1",
+  "ai_sql_result": "  [{ 教育类型   统招 ,  数量  65281 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪些岗位的人员流动率最高？返回 TOP 5",
+  "table_info": [
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "Table",
+  "thoughts": "由于提供的表结构信息中没有直接关于人员流动率的数据，例如员工的入职和离职记录，我们无法直接计算出各个岗位的人员流动率。通常，人员流动率是通过比较一段时间内离职员工数与在职员工数的比例来得出的。没有这些数据，我们无法生成相应的SQL查询来回答这个问题。",
+  "sql": "",
+  "ai_sql_result": "由于提供的表结构信息中没有直接关于人员流动率的数据，例如员工的入职和离职记录，我们无法直接计算出各个岗位的人员流动率。通常，人员流动率是通过比较一段时间内离职员工数与在职员工数的比例来得出的。没有这些数据，我们无法生成相应的SQL查询来回答这个问题。"
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "从哪个学校毕业的员工最多？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}",
+    "{'parent_org': 'ES', 'shortname': 'ES-DG', 'fullname': 'Employee Service-DG', 'chinesename': '东莞雇员服务部'}"
+  ],
+  "display_type": "response_bar_chart",
+  "thoughts": "为了找出毕业员工最多的学校，我们需要对表a_sap_employee_education_experience_chinese中的'院校_培训机构'字段进行分组统计，并计算每个学校的毕业员工数量。然后，我们可以按照毕业员工数量降序排列，并限制结果为最多50个。",
+  "sql": "SELECT 院校_培训机构, COUNT(*) AS 员工数量 FROM a_sap_employee_education_experience_chinese GROUP BY 院校_培训机构 ORDER BY 员工数量 DESC LIMIT 50",
+  "ai_sql_result": "  [{ 院校_培训机构   无 ,  员工数量  316, { 院校_培训机构   福州大学 ,  员工数量  176, { 院校_培训机构   中南大学 ,  员工数量  163, { 院校_培训机构   高山一中 ,  员工数量  158, { 院校_培训机构   酒后一中 ,  员工数量  153, { 院校_培训机构   高山二中 ,  员工数量  143, { 院校_培训机构   高山三中 ,  员工数量  134, { 院校_培训机构   平等一中 ,  员工数量  121, { 院校_培训机构   国家开放大学 ,  员工数量  117, { 院校_培训机构   实验中学 ,  员工数量  117, { 院校_培训机构   白元一中 ,  员工数量  104, { 院校_培训机构   南坞一中 ,  员工数量  98, { 院校_培训机构   鸦岭二中 ,  员工数量  93, { 院校_培训机构   武汉理工大学 ,  员工数量  89, { 院校_培训机构   福建工程学院 ,  员工数量  88, { 院校_培训机构   平等三中 ,  员工数量  84, { 院校_培训机构   望田一中 ,  员工数量  83, { 院校_培训机构   中央广播电视大学 ,  员工数量  79, { 院校_培训机构   郑州大学 ,  员工数量  76, { 院校_培训机构   哈尔滨工业大学 ,  员工数量  75, { 院校_培训机构   华侨大学 ,  员工数量  73, { 院校_培训机构   大营三中 ,  员工数量  71, { 院校_培训机构   福建农林大学 ,  员工数量  70, { 院校_培训机构   集美大学 ,  员工数量  70, { 院校_培训机构   宁德师范学院 ,  员工数量  69, { 院校_培训机构   董王庄初级中学 ,  员工数量  63, { 院校_培训机构   南昌大学 ,  员工数量  63, { 院校_培训机构   福建师范大学 ,  员工数量  63, { 院校_培训机构   城关中学 ,  员工数量  61, { 院校_培训机构   重庆大学 ,  员工数量  60, { 院校_培训机构   河南科技大学 ,  员工数量  59, { 院校_培训机构   范湖一中 ,  员工数量  57, { 院校_培训机构   江西理工大学 ,  员工数量  56, { 院校_培训机构   合肥工业大学 ,  员工数量  56, { 院校_培训机构   河南理工大学 ,  员工数量  56, { 院校_培训机构   伊川县第二高级中学 ,  员工数量  56, { 院校_培训机构   四川大学 ,  员工数量  55, { 院校_培训机构   城关一中 ,  员工数量  55, { 院校_培训机构   河南工业职业技术学院 ,  员工数量  55, { 院校_培训机构   漯河职业技术学院 ,  员工数量  54, { 院校_培训机构   洛阳理工学院 ,  员工数量  53, { 院校_培训机构   华中科技大学 ,  员工数量  52, { 院校_培训机构   武汉科技大学 ,  员工数量  50, { 院校_培训机构   福建信息职业技术学院 ,  员工数量  50, { 院校_培训机构   鸦岭三中 ,  员工数量  50, { 院校_培训机构   厦门大学 ,  员工数量  50, { 院校_培训机构   电子科技大学 ,  员工数量  50, { 院校_培训机构   盐镇一中 ,  员工数量  49, { 院校_培训机构   南昌航空大学 ,  员工数量  48, { 院校_培训机构   生机中学 ,  员工数量  48 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪些职位的岗位职责最多？",
+  "table_info": [
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'parent_org': 'QMC', 'shortname': 'FQC/OQC-PTO','fullname': 'Final Quality Control/Outgoing Quality Control-Prototype', 'chinesename': '最终/出货质量控制-制样组'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出哪些职位的岗位职责最多，我们可以对a_sap_positions_responsibilities_risks_chinese表中的岗位职责字段进行计数，然后按照职位进行分组，最后按照职责数量进行降序排序。由于用户没有指定具体的数据行数，我们将查询限制为最多50个结果。",
+  "sql": "SELECT 职位, COUNT(岗位职责) AS 职责数量 FROM a_sap_positions_responsibilities_risks_chinese GROUP BY 职位 ORDER BY 职责数量 DESC LIMIT 50",
+  "ai_sql_result": "  [{ 职位   设备工程师 ,  职责数量  130, { 职位   制造主管 ,  职责数量  56, { 职位   设备资深工程师 ,  职责数量  40, { 职位   PE工程师 ,  职责数量  35, { 职位   制造资深主管 ,  职责数量  30, { 职位   二级生产资深技术员 ,  职责数量  23, { 职位   一级生产资深技术员 ,  职责数量  22, { 职位   一级生产技术员 ,  职责数量  21, { 职位   二级生产技术员 ,  职责数量  21, { 职位   三级生产资深技术员 ,  职责数量  21, { 职位   PRJ二级资深技术员 ,  职责数量  21, { 职位   设备资深工程师leader ,  职责数量  21, { 职位   三级生产技术员 ,  职责数量  21, { 职位   PRJ一级资深技术员 ,  职责数量  20, { 职位   PRJ三级技术员 ,  职责数量  19, { 职位   二级资深技术员 ,  职责数量  19, { 职位   PRJ项目资深工程师 ,  职责数量  18, { 职位   制造三级资深技术员 ,  职责数量  16, { 职位   制造三级技术员 ,  职责数量  16, { 职位   制造二级资深技术员 ,  职责数量  16, { 职位   制造资深工程师 ,  职责数量  16, { 职位   制造一级技术员 ,  职责数量  16, { 职位   制造工程师 ,  职责数量  16, { 职位   制造二级技术员 ,  职责数量  16, { 职位   制造一级资深技术员 ,  职责数量  16, { 职位   PRJ三级资深技术员 ,  职责数量  15, { 职位   二级技术员 ,  职责数量  15, { 职位   PE资深工程师 ,  职责数量  13, { 职位   三级技术员 ,  职责数量  12, { 职位   一级资深技术员 ,  职责数量  12, { 职位   产品开发工程师 ,  职责数量  12, { 职位   设备及工艺改善资深工程师 ,  职责数量  11, { 职位   产品开发资深工程师 ,  职责数量  11, { 职位   设备开发资深工程师 ,  职责数量  10, { 职位   物控专员 ,  职责数量  10, { 职位   客户项目经理 ,  职责数量  10, { 职位   设备及工艺改善工程师 ,  职责数量  10, { 职位   IE资源规划资深工程师 ,  职责数量  10, { 职位   一级技术员 ,  职责数量  9, { 职位   IE资源规划工程师 ,  职责数量  9, { 职位   PRJ经理 ,  职责数量  8, { 职位   PRJ项目工程师 ,  职责数量  8, { 职位   客户资深专员 ,  职责数量  8, { 职位   解决方案工程师 ,  职责数量  8, { 职位   厂房运维资深工程师 ,  职责数量  8, { 职位   品类采购资深专员 ,  职责数量  8, { 职位   助理产品开发工程师 ,  职责数量  8, { 职位   客户专员 ,  职责数量  8, { 职位   制造改善资深工程师 ,  职责数量  7, { 职位   产品研发一级资深技术员 ,  职责数量  7 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "查找到现在为止，公司一共有多少名员工？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-ME','fullname': 'Manufacturing Unit Plus Assembly Maintenance Engineering', 'chinesename': '智能制造特区后工序设备部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出公司当前的员工总数，我们可以对a_sap_employee_information_chinese表进行计数查询。我们将使用COUNT函数来计算表中的总行数，这将给出员工总数。",
+  "sql": "SELECT COUNT(*) FROM a_sap_employee_information_chinese;",
+  "ai_sql_result": "86698 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "查找公司中男性员工的数量？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'parent_org': 'ES', 'shortname': 'ES-DG', 'fullname': 'Employee Service-DG', 'chinesename': '东莞雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到公司中男性员工的数量，我们需要对a_sap_employee_information_chinese表执行一个计数操作（COUNT），并在查询中添加性别为男性的条件。",
+  "sql": "SELECT COUNT(*) AS 男性员工数量 FROM a_sap_employee_information_chinese WHERE 性别 = '男'",
+  "ai_sql_result": "  [{ 男性员工数量  61700 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "查找公司中拥有硕士学历的员工数量？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'shortname': 'MRD', 'fullname': 'Manufacturing Research & Development', 'chinesename': '制造研发部'}",
+    "{'parent_org': 'MU Plus', 'shortname': 'MU Plus Operation', 'fullname': 'Manufacturing Unit Plus Operation', 'chinesename': '智能制造特区运营部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出公司中拥有硕士学历的员工数量，我们需要在a_sap_employee_education_experience_chinese表中对学历字段进行筛选，选择学历为'硕士'的记录，然后对人员工号进行计数。由于只需要知道数量，所以我们可以使用COUNT函数，并且不需要限制结果数量，因为最终只会得到一个总数。",
+  "sql": "SELECT COUNT(DISTINCT 人员工号) FROM a_sap_employee_education_experience_chinese WHERE 学历 = '硕士';",
+  "ai_sql_result": "167 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "查询哪个职位的在职人数最多？",
+  "table_info": [
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出在职人数最多的职位，我们需要从表a_sap_positions_responsibilities_risks_chinese中选择职位和现职人数列，然后按照现职人数降序排序，并限制结果为最多50条记录。但是，由于用户的问题是询问哪个职位在职人数最多，因此我们只需要返回在职人数最多的那个职位，所以可以使用LIMIT 1来得到最顶端的记录。",
+  "sql": "SELECT 职位, MAX(现职人数) FROM a_sap_positions_responsibilities_risks_chinese GROUP BY 职位 ORDER BY MAX(现职人数) DESC LIMIT 1",
+  "ai_sql_result": "  [{ 职位   三级检验技术员 ,  max  743 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪个岗位的人员拥有的专业类型最多？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}"
+  ],
+  "display_type": "Table",
+  "thoughts": "由于给出的表结构信息中没有提供关于员工岗位的直接信息，我们无法通过提供的表结构'a_sap_employee_education_experience_chinese'来确定哪个岗位的人员拥有最多的专业类型。我们需要员工岗位信息的表结构才能回答这个问题。",
+  "sql": "",
+  "ai_sql_result": "由于给出的表结构信息中没有提供关于员工岗位的直接信息，我们无法通过提供的表结构'a_sap_employee_education_experience_chinese'来确定哪个岗位的人员拥有最多的专业类型。我们需要员工岗位信息的表结构才能回答这个问题。"
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪位在职员工的直属下属数量最多？",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-ME','fullname': 'Manufacturing Unit Plus Assembly Maintenance Engineering', 'chinesename': '智能制造特区后工序设备部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出在职员工的直属下属数量，我们需要对表a_sap_reporting_relationship_chinese进行查询，统计每位员工作为主管的次数。我们将根据主管1姓名、主管2姓名、经理1姓名、经理2姓名、经理3姓名、经理4姓名、总监1姓名、总监2姓名、总监3姓名、总监4姓名和一级机构负责人姓名来确定下属数量，因为这些列代表了员工的直属下属。然后，我们将对这些列进行计数，并按计数降序排列，限制结果为前50名，以找出直属下属数量最多的员工。",
+  "sql": "SELECT 姓名, COUNT(*) AS 下属数量 FROM a_sap_reporting_relationship_chinese WHERE 结束日期 IS NULL OR 结束日期 > CURRENT_DATE GROUP BY 姓名 ORDER BY 下属数量 DESC LIMIT 50",
+  "ai_sql_result": "  [{ 姓名   刘涛 ,  下属数量  14, { 姓名   刘伟 ,  下属数量  14, { 姓名   李伟 ,  下属数量  14, { 姓名   李强 ,  下属数量  13, { 姓名   王辉 ,  下属数量  13, { 姓名   李丹 ,  下属数量  10, { 姓名   张敏 ,  下属数量  10, { 姓名   王斌 ,  下属数量  10, { 姓名   张涛 ,  下属数量  9, { 姓名   李辉 ,  下属数量  9, { 姓名   张艳 ,  下属数量  9, { 姓名   杨杰 ,  下属数量  9, { 姓名   李敏 ,  下属数量  9, { 姓名   刘杰 ,  下属数量  9, { 姓名   张磊 ,  下属数量  8, { 姓名   李静 ,  下属数量  8, { 姓名   陈辉 ,  下属数量  8, { 姓名   刘洋 ,  下属数量  8, { 姓名   王伟 ,  下属数量  8, { 姓名   张辉 ,  下属数量  8, { 姓名   张静 ,  下属数量  8, { 姓名   张超 ,  下属数量  7, { 姓名   李亮 ,  下属数量  7, { 姓名   李浩 ,  下属数量  7, { 姓名   陈龙 ,  下属数量  7, { 姓名   张平 ,  下属数量  7, { 姓名   王丹 ,  下属数量  7, { 姓名   王鹏 ,  下属数量  7, { 姓名   李杰 ,  下属数量  7, { 姓名   李刚 ,  下属数量  6, { 姓名   张浩 ,  下属数量  6, { 姓名   王丽 ,  下属数量  6, { 姓名   王杰 ,  下属数量  6, { 姓名   李丹丹 ,  下属数量  6, { 姓名   王鑫 ,  下属数量  6, { 姓名   赵鹏 ,  下属数量  6, { 姓名   李斌 ,  下属数量  6, { 姓名   王凯 ,  下属数量  6, { 姓名   王强 ,  下属数量  6, { 姓名   陈建 ,  下属数量  6, { 姓名   刘军 ,  下属数量  6, { 姓名   李涛 ,  下属数量  6, { 姓名   杨帆 ,  下属数量  6, { 姓名   王勇 ,  下属数量  6, { 姓名   陈浩 ,  下属数量  6, { 姓名   王浩 ,  下属数量  6, { 姓名   张伟 ,  下属数量  6, { 姓名   刘飞 ,  下属数量  6, { 姓名   陈超 ,  下属数量  6, { 姓名   李阳 ,  下属数量  6 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "今年的有效编制空缺数是多少？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'shortname': 'IDT', 'fullname': 'Information Digital Technology',  'chinesename': '信息数字化技术部'}",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-EP-Digi-Lean','fullname': 'Manufacturing Unit  Plus Electrode Production Digital Lean','chinesename': '智能制造特区前工序Digi-Lean组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要查询今年的有效编制空缺数，首先需要确定当前年份，然后在表a_sap_staffing_recruitment_plan_chinese中，按照编制年度筛选出今年的数据，并对有效编制空缺进行求和。",
+  "sql": "SELECT SUM(有效编制空缺) FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = EXTRACT(YEAR FROM CURRENT_DATE)",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪些一级机构的有效编制空缺数超过10个？列出这些机构及其空缺数。",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PRD21', 'fullname': 'xTW Assembly Production Department-21', 'chinesename': 'xTW后工序生产部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到有效编制空缺数超过10的一级机构及其空缺数，我们需要从表a_sap_staffing_recruitment_plan_chinese中筛选出'有效编制空缺'大于10的记录，并且将这些记录按照'一级机构'进行分组，然后计算每个一级机构的有效编制空缺数总和。最后，我们将这些一级机构及其对应的空缺数列出来。",
+  "sql": "SELECT 一级机构, SUM(有效编制空缺) AS 空缺数 FROM a_sap_staffing_recruitment_plan_chinese WHERE 有效编制空缺 > 10 GROUP BY 一级机构 HAVING SUM(有效编制空缺) > 10 LIMIT 50",
+  "ai_sql_result": "  [{ 一级机构   TVL ,  空缺数  1755, { 一级机构   PRD ,  空缺数  4489, { 一级机构   HR ,  空缺数  1108, { 一级机构   IDT ,  空缺数  2173, { 一级机构   SEC ,  空缺数  5387, { 一级机构   OS ,  空缺数  2347, { 一级机构   ESS-SPP ,  空缺数  352, { 一级机构   BE ,  空缺数  54, { 一级机构   CPD ,  空缺数  3421, { 一级机构   IP ,  空缺数  272, { 一级机构   MU-E ,  空缺数  23830, { 一级机构   SRC ,  空缺数  1374, { 一级机构   ENG ,  空缺数  6559, { 一级机构  null,  空缺数  3554, { 一级机构   MU Plus ,  空缺数  1660, { 一级机构   PSO ,  空缺数  195, { 一级机构   PSCM ,  空缺数  419, { 一级机构   PMD ,  空缺数  176, { 一级机构   MRD ,  空缺数  4388, { 一级机构   PMC ,  空缺数  520, { 一级机构   FE ,  空缺数  1939, { 一级机构   TPM ,  空缺数  1327, { 一级机构   BOCS ,  空缺数  253, { 一级机构   MEV-SPP ,  空缺数  542, { 一级机构   MU ,  空缺数  4858, { 一级机构   MU-M ,  空缺数  32496, { 一级机构   CL ,  空缺数  2072, { 一级机构   SLS ,  空缺数  189, { 一级机构   QA ,  空缺数  23422, { 一级机构   SCM ,  空缺数  321, { 一级机构   SLS&amp;MKT ,  空缺数  621, { 一级机构   LOG ,  空缺数  3987, { 一级机构   APD ,  空缺数  1934, { 一级机构   ATLI ,  空缺数  33, { 一级机构   ME ,  空缺数  5753, { 一级机构   PPD-SPP ,  空缺数  213, { 一级机构   FNC ,  空缺数  750, { 一级机构   SD ,  空缺数  2232, { 一级机构   GMO ,  空缺数  638, { 一级机构   RI ,  空缺数  2072, { 一级机构   EPA&amp;IT ,  空缺数  328, { 一级机构   IE ,  空缺数  1861, { 一级机构   MU-SSL ,  空缺数  17192, { 一级机构   CRD ,  空缺数  732, { 一级机构   xTW ,  空缺数  5089, { 一级机构   MU-W ,  空缺数  32632, { 一级机构   ES ,  空缺数  2055, { 一级机构   MFG ,  空缺数  810, { 一级机构   PTO ,  空缺数  10266, { 一级机构   PRJ ,  空缺数  5900 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "列出当前在职员工的平均工龄。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'职员包括':'工程师|工程师1|资深工程师|工程师2|资深工程师1|资深工程师2';",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'parent_org': 'ES', 'shortname': 'ES-DG', 'fullname': 'Employee Service-DG', 'chinesename': '东莞雇员服务部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要计算在职员工的平均工龄，我们需要筛选出在职员工，然后计算他们从开始参加工作日期到当前日期的平均时间长度。在职员工可以通过'雇佣状态'字段来筛选，而工龄可以通过计算当前日期减去'开始参加工作日期'字段的值来得出。最后，我们将使用AVG函数来计算平均值。",
+  "sql": "SELECT AVG(EXTRACT(YEAR FROM AGE(CURRENT_DATE, 开始参加工作日期))) AS 平均工龄 FROM a_sap_employee_information_chinese WHERE 雇佣状态 = '在职'",
+  "ai_sql_result": "  [{ 平均工龄  10.1081537812 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "统计每个一级机构下，直属上司姓名为'张三'的员工所在的二级机构及员工数。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'parent_org': 'PAP', 'shortname': 'PAP3', 'fullname': 'PAP3', 'chinesename': 'PAP3组'}",
+    "{'parent_org': 'PRJ-DG', 'shortname': 'PRJ-DG3', 'fullname': 'EP&SSE&CIP&DO2 Team','chinesename': 'EP&SSE&国内2组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了统计每个一级机构下直属上司姓名为'张三'的员工所在的二级机构及员工数，我们需要从a_sap_reporting_relationship_chinese表中筛选出直属上司姓名为'张三'的记录，然后按照一级机构和二级机构进行分组，最后计算每个组中的员工数目。",
+  "sql": "SELECT 一级机构, 二级机构, COUNT(人员工号) AS 员工数 FROM a_sap_reporting_relationship_chinese WHERE 直属上司姓名 = '张三' GROUP BY 一级机构, 二级机构 LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪个一级机构下的在职员工人数最多？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-ME','fullname': 'Manufacturing Unit Plus Assembly Maintenance Engineering', 'chinesename': '智能制造特区后工序设备部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出哪个一级机构下的在职员工人数最多，我们需要对a_sap_employee_information_chinese表进行查询，统计每个一级机构的在职员工数量，并按数量降序排列。在职员工可以通过雇佣状态字段来判断，然后我们将结果限制为最多50个结果。",
+  "sql": "SELECT 一级机构名称, COUNT(*) AS 在职员工人数 FROM a_sap_employee_information_chinese WHERE 雇佣状态 = '在职' GROUP BY 一级机构名称 ORDER BY 在职员工人数 DESC LIMIT 50",
+  "ai_sql_result": "  [{ 一级机构名称   PRD ,  在职员工人数  10259, { 一级机构名称   QA ,  在职员工人数  3009, { 一级机构名称   MU-SSL ,  在职员工人数  2450, { 一级机构名称   ME ,  在职员工人数  1715, { 一级机构名称   xTW ,  在职员工人数  1690, { 一级机构名称   MFG ,  在职员工人数  1424, { 一级机构名称   MU Plus ,  在职员工人数  1037, { 一级机构名称   PTO ,  在职员工人数  966, { 一级机构名称   ENG ,  在职员工人数  408, { 一级机构名称   PRJ ,  在职员工人数  383, { 一级机构名称   LOG ,  在职员工人数  364, { 一级机构名称   SEC ,  在职员工人数  363, { 一级机构名称   OPS ,  在职员工人数  332, { 一级机构名称   RD ,  在职员工人数  302, { 一级机构名称   MRD ,  在职员工人数  294, { 一级机构名称   SD ,  在职员工人数  290, { 一级机构名称   PMC ,  在职员工人数  272, { 一级机构名称   CPD ,  在职员工人数  255, { 一级机构名称   IDT ,  在职员工人数  187, { 一级机构名称   FE ,  在职员工人数  166, { 一级机构名称   ES ,  在职员工人数  166, { 一级机构名称   IE ,  在职员工人数  154, { 一级机构名称   RI ,  在职员工人数  149, { 一级机构名称   CL ,  在职员工人数  140, { 一级机构名称   TVL ,  在职员工人数  135, { 一级机构名称   APD ,  在职员工人数  128, { 一级机构名称   CJR ,  在职员工人数  125, { 一级机构名称   TPM ,  在职员工人数  99, { 一级机构名称   HR ,  在职员工人数  93, { 一级机构名称   PSCM ,  在职员工人数  80, { 一级机构名称   SLS ,  在职员工人数  78, { 一级机构名称   FNC ,  在职员工人数  74, { 一级机构名称   SRC ,  在职员工人数  65, { 一级机构名称   ATLI ,  在职员工人数  53, { 一级机构名称   MEV-SPP ,  在职员工人数  46, { 一级机构名称   ESS-SPP ,  在职员工人数  45, { 一级机构名称   PSO ,  在职员工人数  31, { 一级机构名称   IP ,  在职员工人数  28, { 一级机构名称   PMD ,  在职员工人数  23, { 一级机构名称   BOCS ,  在职员工人数  21, { 一级机构名称  null,  在职员工人数  21, { 一级机构名称   PPD-SPP ,  在职员工人数  21, { 一级机构名称   LA ,  在职员工人数  14, { 一级机构名称   CPP ,  在职员工人数  9, { 一级机构名称   MKT ,  在职员工人数  9, { 一级机构名称   3S ,  在职员工人数  8, { 一级机构名称   EPA&amp;IT ,  在职员工人数  5, { 一级机构名称   CATL-SCM ,  在职员工人数  5, { 一级机构名称   NVT-NVT ,  在职员工人数  4, { 一级机构名称   PLM ,  在职员工人数  3 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪个职级范围的有效编制空缺数最多，以及该职级范围各一级机构下的空缺数分布情况是怎样的？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-ASSY-Digi-Lean','fullname': 'Manufacturing Unit PlusAssembly Digital Lean', 'chinesename': '智能制造特区后工序Digi-Lean组'}",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-EP-Digi-Lean','fullname': 'Manufacturing Unit  Plus Electrode Production Digital Lean','chinesename': '智能制造特区前工序Digi-Lean组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出有效编制空缺数最多的职级范围，我们需要对表a_sap_staffing_recruitment_plan_chinese中的'有效编制空缺'字段进行求和，并按照'职级范围'分组，然后排序找出空缺数最多的职级。接着，对于该职级范围，我们需要再次查询，根据'一级机构'分组，以查看各一级机构下的空缺数分布情况。",
+  "sql": "WITH RankedVacancies AS (\n  SELECT\n    职级范围,\n    SUM(有效编制空缺) AS 总空缺数\n  FROM\n    a_sap_staffing_recruitment_plan_chinese\n  GROUP BY\n    职级范围\n  ORDER BY\n    总空缺数 DESC\n  LIMIT 1\n)\nSELECT\n  r.职级范围,\n  a.一级机构,\n  SUM(a.有效编制空缺) AS 机构空缺数\nFROM\n  a_sap_staffing_recruitment_plan_chinese a\nJOIN\n  RankedVacancies r ON a.职级范围 = r.职级范围\nGROUP BY\n  r.职级范围,\n  a.一级机构\nORDER BY\n  机构空缺数 DESC\nLIMIT 50;",
+  "ai_sql_result": "  [{ 职级范围   JG1-3 ,  一级机构   MU-M ,  机构空缺数  20611, { 职级范围   JG1-3 ,  一级机构   MU-W ,  机构空缺数  18103, { 职级范围   JG1-3 ,  一级机构   MU-E ,  机构空缺数  14008, { 职级范围   JG1-3 ,  一级机构   QA ,  机构空缺数  12864, { 职级范围   JG1-3 ,  一级机构   MU-SSL ,  机构空缺数  9109, { 职级范围   JG1-3 ,  一级机构   PTO ,  机构空缺数  5438, { 职级范围   JG1-3 ,  一级机构   SEC ,  机构空缺数  2594, { 职级范围   JG1-3 ,  一级机构   LOG ,  机构空缺数  2560, { 职级范围   JG1-3 ,  一级机构   xTW ,  机构空缺数  1500, { 职级范围   JG1-3 ,  一级机构   OS ,  机构空缺数  1370, { 职级范围   JG1-3 ,  一级机构   ENG ,  机构空缺数  1230, { 职级范围   JG1-3 ,  一级机构   SD ,  机构空缺数  881, { 职级范围   JG1-3 ,  一级机构   CL ,  机构空缺数  822, { 职级范围   JG1-3 ,  一级机构  null,  机构空缺数  723, { 职级范围   JG1-3 ,  一级机构   MU Plus ,  机构空缺数  650, { 职级范围   JG1-3 ,  一级机构   APD ,  机构空缺数  275, { 职级范围   JG1-3 ,  一级机构   ES ,  机构空缺数  243, { 职级范围   JG1-3 ,  一级机构   PRJ ,  机构空缺数  243, { 职级范围   JG1-3 ,  一级机构   TVL ,  机构空缺数  236, { 职级范围   JG1-3 ,  一级机构   MFG ,  机构空缺数  224, { 职级范围   JG1-3 ,  一级机构   GMO ,  机构空缺数  214, { 职级范围   JG1-3 ,  一级机构   RI ,  机构空缺数  155, { 职级范围   JG1-3 ,  一级机构   MRD ,  机构空缺数  136, { 职级范围   JG1-3 ,  一级机构   CPD ,  机构空缺数  121, { 职级范围   JG1-3 ,  一级机构   MU ,  机构空缺数  105, { 职级范围   JG1-3 ,  一级机构   RD ,  机构空缺数  71, { 职级范围   JG1-3 ,  一级机构   FE ,  机构空缺数  54, { 职级范围   JG1-3 ,  一级机构   PMC ,  机构空缺数  37, { 职级范围   JG1-3 ,  一级机构   PMD ,  机构空缺数  23, { 职级范围   JG1-3 ,  一级机构   ESS-SPP ,  机构空缺数  20, { 职级范围   JG1-3 ,  一级机构   IE ,  机构空缺数  16, { 职级范围   JG1-3 ,  一级机构   PPD-SPP ,  机构空缺数  14, { 职级范围   JG1-3 ,  一级机构   SCM ,  机构空缺数  6, { 职级范围   JG1-3 ,  一级机构   HR ,  机构空缺数  1, { 职级范围   JG1-3 ,  一级机构   ME ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   SLS&amp;MKT ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   FNC ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   PRD ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   BE ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   EPA&amp;IT ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   PSO ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   TPM ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   SRC ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   MEV-SPP ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   LA ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   MKT ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   SLS ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   CPP ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   PSCM ,  机构空缺数  0, { 职级范围   JG1-3 ,  一级机构   PA ,  机构空缺数  0 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "统计当前全部员工的平均入职年限。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'parent_org': 'ES', 'shortname': 'ES-DG', 'fullname': 'Employee Service-DG', 'chinesename': '东莞雇员服务部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了计算员工的平均入职年限，我们需要使用当前日期和员工的入职日期来计算每个员工的入职年限，然后对这些年限求平均值。在SQL查询中，我们可以使用CURRENT_DATE来获取当前日期，然后用它减去入职日期（入职日期字段为'入职日期'），得到每个员工的入职天数。然后将天数除以365来换算成年，最后使用AVG函数来计算平均值。由于结果是一个单一的数值，我们不需要限制结果的数量。",
+  "sql": "SELECT AVG(CURRENT_DATE - 入职日期)/365 AS 平均入职年限 FROM a_sap_employee_information_chinese",
+  "ai_sql_result": "  [{ 平均入职年限  4.5012149541 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "查询员工中持有硕士及以上学位员工的数量占比。",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-ASSY-Digi-Lean','fullname': 'Manufacturing Unit PlusAssembly Digital Lean', 'chinesename': '智能制造特区后工序Digi-Lean组'}",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-EP-Digi-Lean','fullname': 'Manufacturing Unit  Plus Electrode Production Digital Lean','chinesename': '智能制造特区前工序Digi-Lean组'}"
+  ],
+  "display_type": "response_donut_chart",
+  "thoughts": "为了计算持有硕士及以上学位的员工数量占比，我们首先需要统计持有硕士、博士学位的员工数量，然后统计总的员工数量，最后计算占比。由于提供的表结构信息中只包含了员工的教育经历，而没有直接提供员工总数的信息，所以我们可以通过对员工工号进行去重计数来得到总的员工数量，然后计算硕士及以上学历的员工数量占总员工数量的比例。",
+  "sql": "SELECT (SELECT COUNT(DISTINCT 人员工号) FROM a_sap_employee_education_experience_chinese WHERE 学历 IN ('硕士', '博士'))::decimal / (SELECT COUNT(DISTINCT 人员工号) FROM a_sap_employee_education_experience_chinese) AS 硕士及以上学位员工占比",
+  "ai_sql_result": "  [{ 硕士及以上学位员工占比  0.0027998756 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "计算当前年度的总编制数量是多少？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'QMC', 'shortname': 'FQC/OQC-PTO','fullname': 'Final Quality Control/Outgoing Quality Control-Prototype', 'chinesename': '最终/出货质量控制-制样组'}",
+    "{'parent_org': 'QMC', 'shortname': 'IPQC-PTO', 'fullname': 'In Process Quality Control-Prototype','chinesename': '制程质量控制-制样组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了计算当前年度的总编制数量，我们需要从表a_sap_staffing_recruitment_plan_chinese中选择当前年度的数据，并对年度编制数量这一列进行求和。SQL查询将包括对编制年度的筛选，确保只计算当前年度的数据。然而，由于用户没有提供当前年度是哪一年，我们可以假设是查询时的系统当前年份。我们将使用PostgreSQL的EXTRACT函数来获取系统当前年份，并据此进行筛选。",
+  "sql": "SELECT SUM(年度编制数量) AS 总编制数量 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = EXTRACT(YEAR FROM CURRENT_DATE)",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "找出所有具有管理角色（即是否管理机构为'是'）的员工名单和他们管理的二级机构和三级机构的数量。",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'parent_org': 'PRD', 'shortname': 'PRD-MC&TC', 'fullname': 'Management Center & Training Center', 'chinesename': '公共业务组'}",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-DG', 'fullname': '', 'chinesename': '来料质量管控-DG组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到具有管理角色的员工以及他们管理的二级机构和三级机构的数量，我们可以从a_sap_reporting_relationship_chinese表中选择姓名和是否管理机构为'是'的记录。然后，我们可以对二级机构和三级机构进行分组并计数，以得到每个具有管理角色的员工管理的机构数量。",
+  "sql": "SELECT 姓名, COUNT(DISTINCT 二级机构) AS 二级机构数量, COUNT(DISTINCT 三级机构) AS 三级机构数量 FROM a_sap_reporting_relationship_chinese WHERE 是否管理机构 = '是' GROUP BY 姓名 LIMIT 50",
+  "ai_sql_result": "  [{ 姓名   ??? ,  二级机构数量  1,  三级机构数量  0, { 姓名   Adesh Khandelwal ,  二级机构数量  1,  三级机构数量  0, { 姓名   Bhupender Kumar Virmani ,  二级机构数量  1,  三级机构数量  0, { 姓名   Gladys Tey Siu Li ,  二级机构数量  1,  三级机构数量  0, { 姓名   YE HUA ,  二级机构数量  1,  三级机构数量  0, { 姓名   丁娟 ,  二级机构数量  1,  三级机构数量  0, { 姓名   万仁俊 ,  二级机构数量  1,  三级机构数量  0, { 姓名   中山正雄 ,  二级机构数量  1,  三级机构数量  0, { 姓名   丰炳梅 ,  二级机构数量  1,  三级机构数量  1, { 姓名   乐志清 ,  二级机构数量  1,  三级机构数量  0, { 姓名   于水 ,  二级机构数量  0,  三级机构数量  0, { 姓名   任继平 ,  二级机构数量  1,  三级机构数量  1, { 姓名   伍先帆 ,  二级机构数量  0,  三级机构数量  0, { 姓名   但传英 ,  二级机构数量  1,  三级机构数量  0, { 姓名   何希 ,  二级机构数量  1,  三级机构数量  1, { 姓名   何永萍 ,  二级机构数量  1,  三级机构数量  0, { 姓名   何金铧 ,  二级机构数量  1,  三级机构数量  1, { 姓名   余建山 ,  二级机构数量  1,  三级机构数量  0, { 姓名   余红明 ,  二级机构数量  1,  三级机构数量  1, { 姓名   余细莲 ,  二级机构数量  1,  三级机构数量  0, { 姓名   傅佳 ,  二级机构数量  1,  三级机构数量  0, { 姓名   冯岳丽 ,  二级机构数量  1,  三级机构数量  0, { 姓名   冯林林 ,  二级机构数量  1,  三级机构数量  1, { 姓名   冯沙 ,  二级机构数量  1,  三级机构数量  0, { 姓名   冼祖锋 ,  二级机构数量  1,  三级机构数量  1, { 姓名   刘亚辉 ,  二级机构数量  1,  三级机构数量  1, { 姓名   刘从海 ,  二级机构数量  1,  三级机构数量  1, { 姓名   刘优 ,  二级机构数量  0,  三级机构数量  0, { 姓名   刘伟 ,  二级机构数量  1,  三级机构数量  1, { 姓名   刘伯平 ,  二级机构数量  1,  三级机构数量  1, { 姓名   刘凯 ,  二级机构数量  1,  三级机构数量  1, { 姓名   刘增春 ,  二级机构数量  1,  三级机构数量  1, { 姓名   刘小建 ,  二级机构数量  1,  三级机构数量  0, { 姓名   刘平华 ,  二级机构数量  1,  三级机构数量  0, { 姓名   刘文芳 ,  二级机构数量  1,  三级机构数量  0, { 姓名   刘杰 ,  二级机构数量  1,  三级机构数量  0, { 姓名   刘炜 ,  二级机构数量  1,  三级机构数量  1, { 姓名   刘胜 ,  二级机构数量  0,  三级机构数量  0, { 姓名   刘莹 ,  二级机构数量  1,  三级机构数量  1, { 姓名   刘邦志 ,  二级机构数量  0,  三级机构数量  0, { 姓名   卢春晓 ,  二级机构数量  1,  三级机构数量  1, { 姓名   叶勇 ,  二级机构数量  1,  三级机构数量  1, { 姓名   叶宇 ,  二级机构数量  0,  三级机构数量  0, { 姓名   叶辉 ,  二级机构数量  1,  三级机构数量  1, { 姓名   向玉芳 ,  二级机构数量  1,  三级机构数量  1, { 姓名   吕天德 ,  二级机构数量  1,  三级机构数量  0, { 姓名   吴书锋 ,  二级机构数量  1,  三级机构数量  0, { 姓名   吴华 ,  二级机构数量  1,  三级机构数量  1, { 姓名   周兴恩 ,  二级机构数量  1,  三级机构数量  0, { 姓名   周皇凯 ,  二级机构数量  1,  三级机构数量  1 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "当前年度各一级机构的编制使用情况是怎样的？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'部门':'通常来说都是指一级机构';",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'FNC', 'shortname': 'RC', 'fullname': 'Reporting center', 'chinesename': '报告中心'}",
+    "{'parent_org': 'SRC', 'shortname': 'PCO', 'fullname': 'Procurement Control Office', 'chinesename': '采购控制&管理办公室'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了获取当前年度各一级机构的编制使用情况，我们需要从a_sap_staffing_recruitment_plan_chinese表中查询编制年度、一级机构、年度编制数量、有效编制空缺等相关信息。我们将按照一级机构分组，并计算每个一级机构的编制使用情况（即年度编制数量减去有效编制空缺的数量），以及编制使用率（即（年度编制数量 - 有效编制空缺）/ 年度编制数量）。由于用户没有指定具体的年度，我们可以假设当前年度是查询时的系统年度。",
+  "sql": "SELECT 一级机构, 编制年度, SUM(年度编制数量) AS 年度编制总数, SUM(有效编制空缺) AS 有效编制空缺总数, (SUM(年度编制数量) - SUM(有效编制空缺)) AS 已使用编制数, ROUND((SUM(年度编制数量) - SUM(有效编制空缺))::numeric / NULLIF(SUM(年度编制数量), 0), 2) AS 编制使用率 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = EXTRACT(YEAR FROM CURRENT_DATE) GROUP BY 一级机构, 编制年度 ORDER BY 一级机构 LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "公司中具有硕士学历及以上且目前在职的员工有多少？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'shortname': 'MRD', 'fullname': 'Manufacturing Research & Development', 'chinesename': '制造研发部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-ME','fullname': 'Manufacturing Unit Plus Assembly Maintenance Engineering', 'chinesename': '智能制造特区后工序设备部'}"
+  ],
+  "display_type": "Table",
+  "thoughts": "为了找出具有硕士学历及以上且目前在职的员工数量，我们需要使用两张表：'a_sap_employee_information_chinese'来过滤出目前在职的员工，使用'雇佣状态'字段来确定员工是否在职；'a_sap_employee_education_experience_chinese'来确定员工的最高学历。这里我们假设'雇佣状态'字段中有一个值可以表示员工目前在职，如'在职'，并且'学历'字段中的值可以直接用来判断是否为硕士及以上学历。我们可以通过连接这两张表，然后对结果进行计数来得到所需的员工数量。",
+  "sql": "SELECT COUNT(DISTINCT e.人员工号) FROM a_sap_employee_information_chinese e INNER JOIN a_sap_employee_education_experience_chinese ed ON e.人员工号 = ed.人员工号 WHERE e.雇佣状态 = '在职' AND ed.学历 IN ('硕士', '博士') LIMIT 50",
+  "ai_sql_result": "57 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "对于每个职位，当前有多少员工从事，并且他们的平均入职时长是多少（只计算在职员工）？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要得到每个职位的在职员工数量和平均入职时长，我们需要对a_sap_employee_information_chinese表进行查询，并对职位进行分组。计算在职员工数量，我们可以简单地计数每个组中的行数。对于平均入职时长，我们需要计算每个员工的入职日期到当前日期的时间差，并对这些时间差求平均值。我们只关心在职员工，因此需要在查询中加入雇佣状态为'在职'的条件。",
+  "sql": "SELECT 职位, COUNT(*) AS 员工数量, AVG(EXTRACT(EPOCH FROM (CURRENT_DATE - 入职日期)) / (60 * 60 * 24 * 365)) AS 平均入职时长 FROM a_sap_employee_information_chinese WHERE 雇佣状态 = '在职' GROUP BY 职位 LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问有哪些员工的学历是硕士及以上？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'shortname': 'MRD', 'fullname': 'Manufacturing Research & Development', 'chinesename': '制造研发部'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要找出学历为硕士或以上的员工，我们可以在a_sap_employee_education_experience_chinese表中查询学历字段等于'硕士'或'博士'的记录。根据背景知识，这两个值代表硕士及以上学历。",
+  "sql": "SELECT 人员工号, 姓名, 学历 FROM a_sap_employee_education_experience_chinese WHERE 学历 IN ('硕士', '博士') LIMIT 50",
+  "ai_sql_result": "  [{ 人员工号  1708,  姓名   吴振豪 ,  学历   硕士 , { 人员工号  1334,  姓名   胡丹 ,  学历   硕士 , { 人员工号  42,  姓名   金正铎 ,  学历   博士 , { 人员工号  89,  姓名   陈杰 ,  学历   硕士 , { 人员工号  479,  姓名   陈轩 ,  学历   硕士 , { 人员工号  1811,  姓名   丁爱军 ,  学历   硕士 , { 人员工号  1780,  姓名   闫瑞晶 ,  学历   硕士 , { 人员工号  11,  姓名   黄世雄 ,  学历   博士 , { 人员工号  1116,  姓名   李孟元 ,  学历   博士 , { 人员工号  1304,  姓名   左允文 ,  学历   硕士 , { 人员工号  1845,  姓名   李行璐 ,  学历   硕士 , { 人员工号  393,  姓名   胡元器 ,  学历   硕士 , { 人员工号  1783,  姓名   吴美兰 ,  学历   硕士 , { 人员工号  1632,  姓名   许二超 ,  学历   硕士 , { 人员工号  2078,  姓名   田边顺志 ,  学历   硕士 , { 人员工号  1192,  姓名   范文正 ,  学历   硕士 , { 人员工号  255,  姓名   张柏清 ,  学历   博士 , { 人员工号  719,  姓名   余芳 ,  学历   硕士 , { 人员工号  1650,  姓名   王耐清 ,  学历   硕士 , { 人员工号  751,  姓名   王凤英 ,  学历   硕士 , { 人员工号  1588,  姓名   王睿哲 ,  学历   硕士 , { 人员工号  1660,  姓名   王卫东 ,  学历   博士 , { 人员工号  362,  姓名   中山正雄 ,  学历   硕士 , { 人员工号  487,  姓名   高标 ,  学历   硕士 , { 人员工号  1445,  姓名   褚春波 ,  学历   硕士 , { 人员工号  907,  姓名   高木豪? ,  学历   硕士 , { 人员工号  1047,  姓名   王丹丹 ,  学历   硕士 , { 人员工号  368,  姓名   张志超 ,  学历   硕士 , { 人员工号  20832,  姓名   黄永辉 ,  学历   博士 , { 人员工号  2056,  姓名   孙心伟 ,  学历   硕士 , { 人员工号  354,  姓名   王涛 ,  学历   硕士 , { 人员工号  1422,  姓名   张丽 ,  学历   硕士 , { 人员工号  1842,  姓名   张庆 ,  学历   硕士 , { 人员工号  1342,  姓名   王志红 ,  学历   硕士 , { 人员工号  763,  姓名   康振华 ,  学历   硕士 , { 人员工号  735,  姓名   李俊 ,  学历   硕士 , { 人员工号  729,  姓名   李素丽 ,  学历   博士 , { 人员工号  2123,  姓名   韩龙伸 ,  学历   硕士 , { 人员工号  142,  姓名   方双柱 ,  学历   硕士 , { 人员工号  1447,  姓名   王兆翔 ,  学历   博士 , { 人员工号  100,  姓名   陈益荣 ,  学历   硕士 , { 人员工号  489,  姓名   华斌 ,  学历   博士 , { 人员工号  66,  姓名   王丽娜 ,  学历   硕士 , { 人员工号  1313,  姓名   许国成 ,  学历   硕士 , { 人员工号  1331,  姓名   蔡瑞峰 ,  学历   硕士 , { 人员工号  1072,  姓名   刘祥哲 ,  学历   硕士 , { 人员工号  1849,  姓名   李翠丽 ,  学历   硕士 , { 人员工号  1638,  姓名   叶士特 ,  学历   硕士 , { 人员工号  378,  姓名   张毓捷 ,  学历   博士 , { 人员工号  2080,  姓名   周佳 ,  学历   硕士  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问今年每个月的编制空缺数量和实际在职人数有什么变化？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "\"季度Q(1~4)对应规则\":\"Q1-4,5,6月份,Q2-7,8,9月份,Q3-10,11,12月份,Q4-1,2,3月份\";",
+    "{'shortname': 'IDT', 'fullname': 'Information Digital Technology',  'chinesename': '信息数字化技术部'}",
+    "{'parent_org': 'PRJ-NDSAP2', 'shortname': 'MIX&SFC&others', 'fullname': 'MIX &SFC& 国内others&日系 Team','chinesename': 'MIX &SFC&others组'}"
+  ],
+  "display_type": "response_line_chart",
+  "thoughts": "为了回答您的问题，我们需要查询表a_sap_staffing_recruitment_plan_chinese以获取每个月的编制空缺数量，同时查询表a_sap_employee_information_chinese来获取实际在职人数。我们将比较这两个数值来观察变化。由于您询问的是今年的数据，我们会在查询中加入对编制年度的过滤，以确保只获取当前年份的数据。我们将使用编制月度来对结果进行分组，并限制结果数量为最多50个。",
+  "sql": "SELECT p.编制月度, SUM(p.有效编制空缺) AS 编制空缺数量, COUNT(e.人员工号) AS 实际在职人数 FROM a_sap_staffing_recruitment_plan_chinese p LEFT JOIN a_sap_employee_information_chinese e ON p.一级机构 = e.一级机构名称 WHERE p.编制年度 = EXTRACT(YEAR FROM CURRENT_DATE) GROUP BY p.编制月度 ORDER BY p.编制月度 LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问每个一级机构内部的各个岗位平均入职年限是多少年，且按照从高到低排序？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PRD21', 'fullname': 'xTW Assembly Production Department-21', 'chinesename': 'xTW后工序生产部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了计算每个一级机构内部各个岗位的平均入职年限，我们需要从a_sap_employee_information_chinese表中获取每个员工的一级机构名称、职位以及入职日期。然后，我们需要计算每个员工的入职年限，这可以通过将当前日期减去员工的入职日期来实现。接着，我们需要按照一级机构和职位对这些数据进行分组，并计算每组的平均入职年限。最后，我们需要按照平均入职年限从高到低进行排序。我们将结果限制为最多50个。",
+  "sql": "SELECT 一级机构名称, 职位, AVG(EXTRACT(YEAR FROM AGE(CURRENT_DATE, 入职日期))) AS 平均入职年限 FROM a_sap_employee_information_chinese GROUP BY 一级机构名称, 职位 ORDER BY 平均入职年限 DESC LIMIT 50",
+  "ai_sql_result": "  [{ 一级机构名称  null,  职位   总裁兼首席执行官 ,  平均入职年限  24.0, { 一级机构名称   ES ,  职位   经理2 ,  平均入职年限  23.0, { 一级机构名称   SLS&amp;MKT ,  职位   商务资深专员 ,  平均入职年限  23.0, { 一级机构名称   PTO ,  职位   二级机构负责人(PTO-Lab) ,  平均入职年限  23.0, { 一级机构名称   QA ,  职位   制造品质管控QC主管 ,  平均入职年限  22.0, { 一级机构名称   PRJ ,  职位   二级机构负责人(PRJ-DG) ,  平均入职年限  22.0, { 一级机构名称   PTO ,  职位   二级机构负责人(PTO-PRD) ,  平均入职年限  22.0, { 一级机构名称   CL ,  职位   二级机构负责人(DG-Lab) ,  平均入职年限  22.0, { 一级机构名称   ME ,  职位   制造资深经理 ,  平均入职年限  22.0, { 一级机构名称   SLS ,  职位   二级机构负责人(AP2) ,  平均入职年限  21.0, { 一级机构名称   FE ,  职位   资深主管2 ,  平均入职年限  21.0, { 一级机构名称   FNC ,  职位   财务专员 ,  平均入职年限  21.0, { 一级机构名称   FE ,  职位   经理2 ,  平均入职年限  21.0, { 一级机构名称   SLS ,  职位   二级机构负责人(PPD) ,  平均入职年限  21.0, { 一级机构名称   LOG ,  职位   二级机构负责人(LOG-DG) ,  平均入职年限  21.0, { 一级机构名称   SD ,  职位   二级机构负责人(EHS-DG) ,  平均入职年限  20.0, { 一级机构名称  null,  职位   总裁直属(APDMRD) ,  平均入职年限  20.0, { 一级机构名称   PMC ,  职位   三级机构负责人(PC-SSL) ,  平均入职年限  20.0, { 一级机构名称   SRC ,  职位   NVT采购资深经理 ,  平均入职年限  20.0, { 一级机构名称   IDT ,  职位   二级机构负责人(BP-MU) ,  平均入职年限  20.0, { 一级机构名称   PSO ,  职位   二级机构负责人(CCT) ,  平均入职年限  20.0, { 一级机构名称   OS ,  职位   资深主管2 ,  平均入职年限  20.0, { 一级机构名称   PSO ,  职位   CCT经理 ,  平均入职年限  20.0, { 一级机构名称   SLS ,  职位   资深客服代表1 ,  平均入职年限  20.0, { 一级机构名称   TPM ,  职位   二级机构负责人(Cleaner&amp;PT TPM) ,  平均入职年限  19.0, { 一级机构名称   CPD ,  职位   二级机构负责人(CMO) ,  平均入职年限  19.0, { 一级机构名称   FE ,  职位   二级组长 ,  平均入职年限  19.0, { 一级机构名称   APD ,  职位   资深主任工程师 ,  平均入职年限  19.0, { 一级机构名称  null,  职位   NVT总裁,GM ,  平均入职年限  19.0, { 一级机构名称  null,  职位   总裁直属(CPPLAIP) ,  平均入职年限  19.0, { 一级机构名称   ES ,  职位   行政经理 ,  平均入职年限  19.0, { 一级机构名称  null,  职位   技术副总裁助理 ,  平均入职年限  19.0, { 一级机构名称   PTO ,  职位   生产计划主管 ,  平均入职年限  19.0, { 一级机构名称   MU Plus ,  职位   三级机构负责人(MU Plus-ASSY-PRD) ,  平均入职年限  19.0, { 一级机构名称   FNC ,  职位   总账资深会计师 ,  平均入职年限  19.0, { 一级机构名称   ES ,  职位   司机队长 ,  平均入职年限  19.0, { 一级机构名称   PRD ,  职位   二级机构负责人(PRD-W) ,  平均入职年限  19.0, { 一级机构名称   SD ,  职位   三级机构负责人(Site-R&amp;PTO) ,  平均入职年限  19.0, { 一级机构名称   MU-SSL ,  职位   三级机构负责人(SSL-PRD-ASSY1) ,  平均入职年限  18.0, { 一级机构名称   LOG ,  职位   物流资深主管 ,  平均入职年限  18.0, { 一级机构名称   IT ,  职位   主任工程师2 ,  平均入职年限  18.0, { 一级机构名称  null,  职位   总裁直属(FNC) ,  平均入职年限  18.0, { 一级机构名称   FNC ,  职位   二级机构负责人(COE) ,  平均入职年限  18.0, { 一级机构名称   APD ,  职位   综合运营管理三级资深技术员 ,  平均入职年限  18.0, { 一级机构名称   ES ,  职位   二级机构负责人(ES-DG) ,  平均入职年限  18.0, { 一级机构名称   EHS ,  职位   助理工程师 ,  平均入职年限  17.25, { 一级机构名称   CPD ,  职位   三级机构负责人(SAP3) ,  平均入职年限  17.0, { 一级机构名称   CPD ,  职位   经理1 ,  平均入职年限  17.0, { 一级机构名称   FNC ,  职位   资深经理 ,  平均入职年限  17.0, { 一级机构名称   FE ,  职位   厂房系统三级资深技术员 ,  平均入职年限  17.0 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问今年（假设是T128年）Q4季度，我公司有多少编制空缺需要填补？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "\"季度Q(1~4)对应规则\":\"Q1-4,5,6月份,Q2-7,8,9月份,Q3-10,11,12月份,Q4-1,2,3月份\";",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PRD22', 'fullname': 'xTW Assembly Production Department-22', 'chinesename': 'xTW后工序生产部-22'}",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-BCU', 'fullname': 'Incoming Quality Contral-Battery Component Unit','chinesename': '来料质量管控-BCU组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "根据提供的信息，T128年对应到2023年，而Q4季度对应到2023年的1, 2, 3月份。要查询2023年Q4季度的编制空缺数，我们需要在表a_sap_staffing_recruitment_plan_chinese中筛选编制年度为2023年且编制月度为1, 2或3的记录，然后将这些记录的有效编制空缺数相加得到总的编制空缺数。",
+  "sql": "SELECT SUM(有效编制空缺) AS 编制空缺总数 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = '2023' AND 编制月度 IN ('1', '2', '3')",
+  "ai_sql_result": "  [{ 编制空缺总数  null "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请列出目前我公司管理层（假设为职务名称包含'经理'或'总监'）中，拥有硕士及以上学历的员工列表。",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)",
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-BCU', 'fullname': 'Incoming Quality Contral-Battery Component Unit','chinesename': '来料质量管控-BCU组'}",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-DG', 'fullname': '', 'chinesename': '来料质量管控-DG组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出公司管理层中拥有硕士及以上学历的员工列表，我们需要先从a_sap_reporting_relationship_chinese表中筛选出职务名称包含'经理'或'总监'的员工，然后从a_sap_employee_education_experience_chinese表中筛选出拥有硕士及以上学历的员工。最后，我们需要将这两部分信息通过人员工号关联起来，以得到最终的列表。由于学历字段中'硕士'和'博士'代表硕士及以上学历，我们将在查询中使用这两个条件。我们将结果限制为最多50条。",
+  "sql": "SELECT DISTINCT r.姓名, r.职务名称, e.学历 FROM a_sap_reporting_relationship_chinese r JOIN a_sap_employee_education_experience_chinese e ON r.人员工号 = e.人员工号 WHERE (r.职务名称 LIKE '%经理%' OR r.职务名称 LIKE '%总监%') AND e.学历 IN ('硕士', '博士') LIMIT 50",
+  "ai_sql_result": "  [{ 姓名   中山正雄 ,  职务名称   经理 ,  学历   硕士 , { 姓名   时田浩司 ,  职务名称   资深经理 ,  学历   博士 , { 姓名   李登道 ,  职务名称   经理 ,  学历   硕士 , { 姓名   洪斌 ,  职务名称   经理 ,  学历   硕士 , { 姓名   王丽娜 ,  职务名称   资深经理 ,  学历   硕士 , { 姓名   王涛 ,  职务名称   经理 ,  学历   硕士 , { 姓名   简欣怡 ,  职务名称   资深经理 ,  学历   硕士 , { 姓名   胡乔舒 ,  职务名称   资深经理 ,  学历   博士 , { 姓名   赖然 ,  职务名称   经理 ,  学历   博士 , { 姓名   金正铎 ,  职务名称   资深总监 ,  学历   博士 , { 姓名   高木豪? ,  职务名称   经理 ,  学历   硕士  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "我们需要查看所有一级机构下，每个职位的岗位对公司的风险点有哪些，该如何查询？",
+  "table_info": [
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-BCU', 'fullname': 'Incoming Quality Contral-Battery Component Unit','chinesename': '来料质量管控-BCU组'}",
+    "{'parent_org': 'ES', 'shortname': 'ES-DG', 'fullname': 'Employee Service-DG', 'chinesename': '东莞雇员服务部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "根据您的需求，我们可以从a_sap_positions_responsibilities_risks_chinese表中查询出每个一级机构下的职位以及对应的岗位风险点。我们将使用一级机构和职位作为分组依据，并列出每个职位的岗位风险点。查询结果将被限制为最多50条记录。",
+  "sql": "SELECT 一级机构, 职位, 岗位风险点 FROM a_sap_positions_responsibilities_risks_chinese GROUP BY 一级机构, 职位, 岗位风险点 ORDER BY 一级机构, 职位 LIMIT 50;",
+  "ai_sql_result": "  [{ 一级机构   APD ,  职位   APD综合管理专员 ,  岗位风险点   本岗位负责跟进各个项目的运作情况和系统建设，若取消或出错，会导致项目问题处理不及时，影响交付 , { 一级机构   APD ,  职位   APD综合管理资深主管 ,  岗位风险点   本岗位负责跟进各个项目的运作情况和系统建设，若取消或出错，会导致项目问题处理不及时，影响交付 , { 一级机构   APD ,  职位   一级机构负责人(APD) ,  岗位风险点   本岗位涉及产品线中产品需求和技术开发方向的判断，如果取消或出错，将导致产品线失去竞争力。 , { 一级机构   APD ,  职位   三级机构负责人(AEI) ,  岗位风险点  null, { 一级机构   APD ,  职位   三级机构负责人(AET) ,  岗位风险点   可替代性低，需要理解锂电池技术原理，和相关材料开发的专业知识，洞察极片制造的技术发展趋势，需要跨学科的技术整合能力，和极强的执行力。 , { 一级机构   APD ,  职位   三级机构负责人(AHI) ,  岗位风险点  null, { 一级机构   APD ,  职位   三级机构负责人(CET) ,  岗位风险点   可替代性低，需要理解锂电池技术原理，和相关材料开发的专业知识，洞察极片制造的技术发展趋势，需要跨学科的技术整合能力，和极强的执行力。 , { 一级机构   APD ,  职位   三级机构负责人(PIT) ,  岗位风险点   本岗位对公司化学体系技术路线识别和技术布局有至关重要的作用，如果出错将导致公司技术失去竞争力 , { 一级机构   APD ,  职位   三级机构负责人(SET) ,  岗位风险点   \\ 1.隔膜在电芯中起到隔离传导的功能，与电池安全可靠性密切相关。2.对隔膜功能的深入理解，可以开发出高安全隔膜，使得公司的隔膜技术在行业里保持领先地位\\  , { 一级机构   APD ,  职位   二级机构负责人(AIT) ,  岗位风险点   作为先进产品的结构设计&amp;开发负责人，深入洞察市场需求和工业技术发展，把控产品形态和结构的开发方向准确性，带领团队交付富有竞争力的产品和工艺路线，确保产品形态和结构的全球持续领先 , { 一级机构   APD ,  职位   产品研发一级技术员 ,  岗位风险点  null, { 一级机构   APD ,  职位   产品研发一级资深技术员 ,  岗位风险点  null, { 一级机构   APD ,  职位   产品研发三级技术员 ,  岗位风险点  null, { 一级机构   APD ,  职位   产品研发三级资深技术员 ,  岗位风险点  null, { 一级机构   APD ,  职位   产品研发二级技术员 ,  岗位风险点  null, { 一级机构   APD ,  职位   产品研发二级资深技术员 ,  岗位风险点  null, { 一级机构   APD ,  职位   产品结构工程师 ,  岗位风险点  null, { 一级机构   APD ,  职位   产品结构资深工程师 ,  岗位风险点  null, { 一级机构   APD ,  职位   化学体系研发主任工程师 ,  岗位风险点   \\ 1. 本岗位需要对锂电性能机理有深刻理解，协助公司规划锂电技术方向，对战略方向规划意义重大2. 本岗位可由APD内部其他平台团队同职级接替\\  , { 一级机构   APD ,  职位   化学体系研发工程师 ,  岗位风险点   本岗位涉及现有研究和平台开发工作的顺利进展和人才梯队建设，如果取消或出错，将会导致人才梯队建设不充分，研究工作延迟完成 , { 一级机构   APD ,  职位   化学体系研发资深主任工程师 ,  岗位风险点   \\ 1. 本岗位需要对锂电性能机理有深刻理解，协助公司规划锂电技术方向，对战略方向规划意义重大2. 本岗位可由APD内部其他平台团队同职级接替\\  , { 一级机构   APD ,  职位   化学体系研发资深工程师 ,  岗位风险点   本岗位涉及现有研究和平台开发工作的顺利进展和人才梯队建设，如果取消或出错，将会导致人才梯队建设不充分，研究工作延迟完成 , { 一级机构   APD ,  职位   实习 ,  岗位风险点  null, { 一级机构   APD ,  职位   极片研发工程师 ,  岗位风险点   可替代性低，需要理解锂电池技术原理，和相关材料开发的专业知识，洞察极片制造的技术发展趋势，需要跨学科的技术整合能力，和极强的执行力。 , { 一级机构   APD ,  职位   极片研发资深工程师 ,  岗位风险点   可替代性低，需要理解锂电池技术原理，和相关材料开发的专业知识，洞察极片制造的技术发展趋势，需要跨学科的技术整合能力，和极强的执行力。 , { 一级机构   APD ,  职位   综合运营管理三级资深技术员 ,  岗位风险点  null, { 一级机构   APD ,  职位   隔膜研发主任工程师 ,  岗位风险点   \\ 1.隔膜在电芯中起到隔离传导的功能，与电池安全可靠性密切相关，需要对FMEAMSADOE等工程方法、可靠性验证方案要求有深刻的理解。2.对隔膜功能的深入理解，可以开发出高安全隔膜，使得公司的隔膜技术在行业里保持领先地位\\  , { 一级机构   APD ,  职位   隔膜研发工程师 ,  岗位风险点   可替代性低，需要理解锂电池技术原理，和相关材料开发的专业知识，洞察隔膜制造的技术发展趋势，需要跨学科的技术整合能力，和极强的执行力。 , { 一级机构   APD ,  职位   隔膜研发资深工程师 ,  岗位风险点   可替代性低，需要理解锂电池技术原理，和相关材料开发的专业知识，洞察隔膜研发的技术发展趋势，需要跨学科的技术整合能力，和极强的执行力。 , { 一级机构   ATLI ,  职位   ATLI总经理 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   IE Leader ,  岗位风险点  null, { 一级机构   ATLI ,  职位   IE工程师 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   IT服务工程师 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   IT系统工程师 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   KPI运营计划管理主管 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   KPI运营计划管理资深主管 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   PE-CIP工程师 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   PE-CIP资深工程师 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   PE-TPM工程师 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   PE-TPM资深工程师 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   PE工程师 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   PE资深工程师 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   PLC电气工程师 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   TC主管 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   一级机构负责人(ATLI-FE) ,  岗位风险点  null, { 一级机构   ATLI ,  职位   一级机构负责人(GMO) ,  岗位风险点  null, { 一级机构   ATLI ,  职位   一级资深组长 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   三级生产资深技术员 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   三级资深组长 ,  岗位风险点  null, { 一级机构   ATLI ,  职位   二级机构负责人(ATLI-SRC) ,  岗位风险点  null "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "今年是T127，7月份，请问最近一个季度中，各一级机构的招聘编制使用率是如何？需要考虑有效编制空缺和拟在职人数。",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}",
+    "{'parent_org': 'CL', 'shortname': 'MTS', 'fullname': 'Multi Technology Simulation', 'chinesename': '仿真部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要计算最近一个季度中各一级机构的招聘编制使用率，我们需要知道每个一级机构在该季度的有效编制空缺数、拟在职人数以及季度编制数量。有效编制空缺数和拟在职人数可以直接从表a_sap_staffing_recruitment_plan_chinese中获取，季度编制数量也在同一表中。由于T127对应的是2022年，7月份属于第三季度，我们需要查询2022年第三季度的数据。招聘编制使用率可以通过(拟在职人数 / (有效编制空缺数 + 拟在职人数))来计算。我们将这些数据按一级机构分组，然后计算每个一级机构的使用率。",
+  "sql": "SELECT 一级机构, SUM(拟在职人数) AS 拟在职人数总和, SUM(有效编制空缺) AS 有效编制空缺总和, SUM(季度编制数量) AS 季度编制数量总和, (SUM(拟在职人数)::FLOAT / (SUM(有效编制空缺) + SUM(拟在职人数))::FLOAT) AS 招聘编制使用率 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = '2022' AND 编制月度 IN ('07', '08', '09') GROUP BY 一级机构 ORDER BY 招聘编制使用率 DESC LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请列出目前所有员工的姓名和对应的职位。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-EP-Digi-Lean','fullname': 'Manufacturing Unit  Plus Electrode Production Digital Lean','chinesename': '智能制造特区前工序Digi-Lean组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要列出所有员工的姓名和对应职位，我们可以从a_sap_employee_information_chinese表中查询'姓名'和'职位'这两个字段。由于用户没有指定特别的条件，我们将查询所有员工的信息，但限制结果数量最多为50条。",
+  "sql": "SELECT 姓名, 职位 FROM a_sap_employee_information_chinese LIMIT 50;",
+  "ai_sql_result": "  [{ 姓名   刘增春 ,  职位   三级机构负责人(ME-Slitting) , { 姓名   李秋丽 ,  职位   应收资深主管会计师 , { 姓名   冯元勇 ,  职位   主任工程师2 , { 姓名   谢建 ,  职位   三级机构负责人(Mini Cell) , { 姓名   李志标 ,  职位   二级保安员 , { 姓名   刘建国 ,  职位   三级生产技术员 , { 姓名   曹立功 ,  职位   三级技术员 , { 姓名   陈海清 ,  职位   一级资深组长 , { 姓名   陈冉 ,  职位   制造一级资深技术员 , { 姓名   邓爱莲 ,  职位   三级生产技术员 , { 姓名   董云丽 ,  职位   二级保安员 , { 姓名   邹金花 ,  职位   一级生产资深技术员 , { 姓名   甘云南 ,  职位   一级生产资深技术员 , { 姓名   王磊 ,  职位   一级资深组长 , { 姓名   赵南 ,  职位   二级保安员 , { 姓名   雷林荣 ,  职位   二级生产资深技术员 , { 姓名   朱世杰 ,  职位   一级生产资深技术员 , { 姓名   陈积富 ,  职位   二级资深组长 , { 姓名   阮华建 ,  职位   二级技术员 , { 姓名   李敬飞 ,  职位   制造工程师 , { 姓名   喻昌军 ,  职位   三级生产技术员 , { 姓名   来海燕 ,  职位   一级生产资深技术员 , { 姓名   易成 ,  职位   三级生产技术员 , { 姓名   李松林 ,  职位   SD一级资深安全员 , { 姓名   刘朝阳 ,  职位   一级生产资深技术员 , { 姓名   罗申泉 ,  职位   制造一级资深技术员 , { 姓名   权大帅 ,  职位   一级生产资深技术员 , { 姓名   谷运龙 ,  职位   暖通工程师 , { 姓名   陈艳秋 ,  职位   助理工程师 , { 姓名   余泽顺 ,  职位   司机1 , { 姓名   王萌 ,  职位   初级检验技术员 , { 姓名   郑雨辰 ,  职位   三级生产技术员 , { 姓名   黄兴良 ,  职位   PRJ三级资深技术员 , { 姓名   宋书涛 ,  职位   研发工程师 , { 姓名   王雪 ,  职位   三级生产技术员 , { 姓名   李琼 ,  职位   二级检验技术员 , { 姓名   刘学照 ,  职位   三级生产技术员 , { 姓名   谢先惠 ,  职位   IP工程师 , { 姓名   刘松 ,  职位   二级生产技术员 , { 姓名   孟亚运 ,  职位   研发拉线一级资深技术员 , { 姓名   何飞 ,  职位   二级作业员 , { 姓名   楚秀娟 ,  职位   一级生产资深技术员 , { 姓名   彭昌 ,  职位   三级作业员 , { 姓名   李腾元 ,  职位   一级生产资深技术员 , { 姓名   董文 ,  职位   三级作业员 , { 姓名   尹平 ,  职位   三级作业员 , { 姓名   戴建文 ,  职位   三级生产资深技术员 , { 姓名   吴亚妮 ,  职位   二级资深组长 , { 姓名   何虎 ,  职位   一级生产资深技术员 , { 姓名   彭荣飘 ,  职位   三级生产技术员  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "我们想知道当前有多少个职位是空缺的，即有效编制空缺大于0的职位。",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'RI', 'shortname': '00:01Lab', 'fullname': '00:01 Laboratory', 'chinesename': '零点零壹实验室'}",
+    "{'parent_org': 'PRD', 'shortname': 'PRD-ND1', 'fullname': 'Production Department-ND1', 'chinesename': 'ND生产1部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到当前有效编制空缺大于0的职位数量，我们需要对表a_sap_staffing_recruitment_plan_chinese进行查询，统计有效编制空缺字段大于0的记录数。",
+  "sql": "SELECT COUNT(*) FROM a_sap_staffing_recruitment_plan_chinese WHERE 有效编制空缺 > 0;",
+  "ai_sql_result": "2895 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "我们需要找出在职状态为'在职'且最高学历为'博士'的员工名单。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'LOG-DG', 'shortname': 'LOG-DG-WH', 'fullname': 'Warehouse of Dongguan Logistics Department','chinesename': '东莞物流部仓储组'}",
+    "{'parent_org': 'SLS', 'shortname': 'BO/CS', 'fullname': 'Back office/Customer Service', 'chinesename': '销售支持/客服'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出在职状态为'在职'且最高学历为'博士'的员工名单，我们需要连接两个表：a_sap_employee_information_chinese 和 a_sap_employee_education_experience_chinese。我们将首先从a_sap_employee_information_chinese表中筛选出在职状态为'在职'的员工，然后与a_sap_employee_education_experience_chinese表连接，以便筛选出那些最高学历为'博士'的员工。我们将使用INNER JOIN来连接这两张表，并使用GROUP BY和MAX函数来确定每位员工的最高学历。最后，我们将结果限制为最多50条记录。",
+  "sql": "SELECT e.姓名, e.人员工号 FROM a_sap_employee_information_chinese e INNER JOIN a_sap_employee_education_experience_chinese ed ON e.人员工号 = ed.人员工号 WHERE e.雇佣状态 = '在职' AND ed.学历 = '博士' GROUP BY e.姓名, e.人员工号 LIMIT 50",
+  "ai_sql_result": "  [{ 姓名   金正铎 ,  人员工号  42, { 姓名   张柏清 ,  人员工号  255, { 姓名   时田浩司 ,  人员工号  683, { 姓名   王卫东 ,  人员工号  1660, { 姓名   于敬学 ,  人员工号  68620, { 姓名   胡乔舒 ,  人员工号  100208, { 姓名   赖然 ,  人员工号  115915 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "目前公司拥有的员工总数，以及其中在职和离职的员工人数分别是多少？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'雇佣状态':[\"在职\", \"离职\"];",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_pie_chart",
+  "thoughts": "为了得到员工总数以及在职和离职员工的人数，我们可以对a_sap_employee_information_chinese表中的'雇佣状态'字段进行计数，同时按照'在职'和'离职'状态进行分组统计。",
+  "sql": "SELECT 雇佣状态, COUNT(*) AS 人数 FROM a_sap_employee_information_chinese GROUP BY 雇佣状态;",
+  "ai_sql_result": "  [{ 雇佣状态   在职 ,  人数  28009, { 雇佣状态  null,  人数  1, { 雇佣状态   退休 ,  人数  2, { 雇佣状态   离职 ,  人数  58686 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "公司今年T127,5月的编制空缺情况如何？请列出本月的有效编制空缺数以及月度可申请空缺数量。",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-BCU', 'fullname': 'Incoming Quality Contral-Battery Component Unit','chinesename': '来料质量管控-BCU组'}",
+    "{'shortname': 'PTO', 'fullname': 'Prototype Department', 'chinesename': '样品制造部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "根据用户提供的信息，T127对应的是2022年。用户想要了解2022年5月的编制空缺情况，包括有效编制空缺数和月度可申请空缺数量。我们可以从表a_sap_staffing_recruitment_plan_chinese中查询编制年度为2022，编制月度为5的相关记录。",
+  "sql": "SELECT 有效编制空缺, 月度可申请空缺数量 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = '2022' AND 编制月度 = '5' LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "分析员工教育水平及部门分布情况。每个部门的平均学历水平是什么？请返回部门和平均学历水平。",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "'部门':'通常来说都是指一级机构';",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}"
+  ],
+  "display_type": "Table",
+  "thoughts": "为了分析每个部门的平均学历水平，我们需要从员工信息表中获取部门名称，然后根据员工工号关联教育经历表，以获取每个员工的学历。之后我们可以对每个部门的员工学历进行分组并计算平均学历水平。但是，由于学历是非数值型数据，我们无法直接计算平均值。在这种情况下，我们可能需要将学历转换为可以计算平均值的数值等级，但表结构定义中并没有提供足够的信息来进行这种转换。因此，我们无法生成一个准确的SQL查询来计算每个部门的平均学历水平。我们可以提供每个部门的学历分布情况，但这不是问题所要求的。",
+  "sql": "提供的表结构信息不足以生成 sql 查询。",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "目前公司总共有多少空缺职位？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了回答目前公司总共有多少空缺职位，我们需要从a_sap_staffing_recruitment_plan_chinese表中计算所有记录的空缺数的总和。有效编制空缺字段似乎是指示每个记录中空缺职位数量的字段，因此我们将对这个字段进行求和。",
+  "sql": "SELECT SUM(有效编制空缺) AS 总空缺职位数 FROM a_sap_staffing_recruitment_plan_chinese;",
+  "ai_sql_result": "  [{ 总空缺职位数  236629 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "当前具有硕士及以上学历的员工总数是多少？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'shortname': 'MRD', 'fullname': 'Manufacturing Research & Development', 'chinesename': '制造研发部'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了获取具有硕士及以上学历的员工总数，我们需要在a_sap_employee_education_experience_chinese表中统计学历字段为'硕士'或'博士'的不同人员工号的数量。",
+  "sql": "SELECT COUNT(DISTINCT 人员工号) FROM a_sap_employee_education_experience_chinese WHERE 学历 IN ('硕士', '博士')",
+  "ai_sql_result": "189 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "公司哪个一级机构的管理岗位空缺率最高，并列出该机构的管理岗位空缺数和总编制数？",
+  "table_info": [
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)",
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'IDT', 'shortname': 'IDT-MO', 'fullname': 'IDT-Management Office', 'chinesename': 'IDT管理办公室'}",
+    "{'parent_org': 'PRD', 'shortname': 'PRD-MC&TC', 'fullname': 'Management Center & Training Center', 'chinesename': '公共业务组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到空缺率最高的一级机构的管理岗位，我们需要计算每个一级机构的管理岗位空缺数与总编制数的比例。首先，我们需要从a_sap_staffing_recruitment_plan_chinese表中获取每个一级机构的管理岗位的空缺数和总编制数。然后，我们将计算每个机构的空缺率，并找出空缺率最高的机构。最后，我们将列出该机构的管理岗位空缺数和总编制数。",
+  "sql": "SELECT 一级机构, SUM(有效编制空缺) AS 管理岗位空缺数, SUM(年度编制数量) AS 总编制数, SUM(有效编制空缺)::FLOAT/SUM(年度编制数量) AS 空缺率 FROM a_sap_staffing_recruitment_plan_chinese WHERE 员工子组 = '管理' GROUP BY 一级机构 ORDER BY 空缺率 DESC LIMIT 1",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "我们想知道目前公司总共有多少雇员处于正式雇佣状态。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'雇佣状态':[\"在职\", \"离职\"];",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'shortname': 'ES', 'fullname': 'Employee Service', 'chinesename': '雇员服务部'}",
+    "{'parent_org': 'HR', 'shortname': 'TR', 'fullname': 'Total Rewards', 'chinesename': '薪酬与激励部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了得到目前处于正式雇佣状态的雇员总数，我们需要对a_sap_employee_information_chinese表中的'雇佣状态'列进行统计，筛选出状态为'在职'的雇员，并计算这些雇员的数量。",
+  "sql": "SELECT COUNT(*) FROM a_sap_employee_information_chinese WHERE 雇佣状态 = '在职';",
+  "ai_sql_result": "28009 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问2023年Q3有多少有效编制空缺？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "\"季度Q(1~4)对应规则\":\"Q1-4,5,6月份,Q2-7,8,9月份,Q3-10,11,12月份,Q4-1,2,3月份\";",
+    "{'parent_org': 'PRJ-DG', 'shortname': 'PRJ-DG3', 'fullname': 'EP&SSE&CIP&DO2 Team','chinesename': 'EP&SSE&国内2组'}",
+    "{'parent_org': 'SLS', 'shortname': 'AP3', 'fullname': 'Asia Pacific3', 'chinesename': '亚太区3'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出2023年Q3的有效编制空缺，我们需要先确定Q3对应的月份。根据背景知识，Q3对应的月份是10, 11, 12。然后，我们可以在a_sap_staffing_recruitment_plan_chinese表中查询编制年度为2023，编制月度为10, 11, 或 12的记录，并对这些记录的有效编制空缺进行求和。",
+  "sql": "SELECT SUM(有效编制空缺) AS 有效编制空缺总数 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = '2023' AND 编制月度 IN ('10', '11', '12')",
+  "ai_sql_result": "  [{ 有效编制空缺总数  null "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "在所有教育信息中，有多少人持有大学本科学历，并且在2021年以前入职的？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PRD21', 'fullname': 'xTW Assembly Production Department-21', 'chinesename': 'xTW后工序生产部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到持有大学本科学历并且在2021年以前入职的人数，我们需要从a_sap_employee_education_experience_chinese表中筛选出学历为'大学本科'的记录，然后关联a_sap_employee_information_chinese表，以确保这些人的入职日期早于2021年。我们可以使用COUNT函数来计算满足这些条件的人数。",
+  "sql": "SELECT COUNT(DISTINCT e.人员工号) FROM a_sap_employee_education_experience_chinese e INNER JOIN a_sap_employee_information_chinese i ON e.人员工号 = i.人员工号 WHERE e.学历 = '大学本科' AND i.入职日期 < '2021-01-01'",
+  "ai_sql_result": "4817 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "目前在职的员工中，有多少人属于技术员或资深技术员职务？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-ASSY-Digi-Lean','fullname': 'Manufacturing Unit PlusAssembly Digital Lean', 'chinesename': '智能制造特区后工序Digi-Lean组'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-EP-ME', 'fullname': 'xTW Electrode Maintenance Engineering', 'chinesename': 'xTW前工序设备技术部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要找出目前在职的员工中属于技术员或资深技术员职务的人数，我们需要查看a_sap_employee_information_chinese表中的职务名称字段，并计算其中职务名称为'技术员'或'资深技术员'的员工数量。同时，我们需要确保这些员工的雇佣状态是'在职'。由于用户没有要求具体的员工信息，我们只需要返回人数即可。",
+  "sql": "SELECT COUNT(*) FROM a_sap_employee_information_chinese WHERE 雇佣状态 = '在职' AND (职务名称 = '技术员' OR 职务名称 = '资深技术员')",
+  "ai_sql_result": "0 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "哪个一级机构在T128年度内增加了最多的特批编制数量？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-EP-Digi-Lean','fullname': 'Manufacturing Unit  Plus Electrode Production Digital Lean','chinesename': '智能制造特区前工序Digi-Lean组'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-EP-PRD','fullname': 'Manufacturing Unit Plus Electrode Production Department', 'chinesename': '智能制造特区前工序生产部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到在T128年度内增加了最多特批编制数量的一级机构，我们需要查询a_sap_staffing_recruitment_plan_chinese表，筛选出编制年度为T128的记录，并且对每个一级机构进行分组，然后计算每个分组的特批编制数量总和。最后，我们将选择特批编制数量总和最大的一级机构。",
+  "sql": "SELECT 一级机构, SUM(特批编制数量) AS total_special_approval FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = 'T128' GROUP BY 一级机构 ORDER BY total_special_approval DESC LIMIT 1",
+  "ai_sql_result": "  [{ 一级机构   MU Plus ,  total_special_approval  0 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请列出持有本科学历或以上且目前担任总监职务的员工姓名及职务名称。",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'总监包括':'总工|首席专家|资深总监';",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-BCU', 'fullname': 'Incoming Quality Contral-Battery Component Unit','chinesename': '来料质量管控-BCU组'}",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-ASSY-Digi-Lean','fullname': 'Manufacturing Unit PlusAssembly Digital Lean', 'chinesename': '智能制造特区后工序Digi-Lean组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "由于提供的表结构信息中没有包含员工的学历信息，因此无法直接从给定的表中查询出持有本科学历或以上的员工信息。然而，可以根据提供的表结构中的职务名称来筛选出担任总监职务的员工。根据背景知识，总监职务可能包括'总工', '首席专家', '资深总监'等职务名称。我们可以使用LIKE操作符来匹配这些职务名称。但是，由于无法筛选出具有本科学历或以上的条件，所以最终的查询结果将只能提供目前担任总监职务的员工姓名及职务名称。",
+  "sql": "SELECT 姓名, 职务名称 FROM a_sap_employee_information_chinese WHERE 职务名称 LIKE '%总工%' OR 职务名称 LIKE '%首席专家%' OR 职务名称 LIKE '%资深总监%' LIMIT 50",
+  "ai_sql_result": "  [{ 姓名   王百欣 ,  职务名称   资深总监 , { 姓名   蔡开贵 ,  职务名称   资深总监 , { 姓名   胡元器 ,  职务名称   资深总监 , { 姓名   袁宝华 ,  职务名称   资深总监 , { 姓名   孙心伟 ,  职务名称   资深总监 , { 姓名   金正铎 ,  职务名称   资深总监 , { 姓名   程文强 ,  职务名称   资深总监 , { 姓名   YE HUA ,  职务名称   首席专家 , { 姓名   蒲阳 ,  职务名称   资深总监 , { 姓名   黄仁贵 ,  职务名称   资深总监 , { 姓名   袁虹云 ,  职务名称   资深总监 , { 姓名   UCHIDA TOSHIO ,  职务名称   资深总监 , { 姓名   叶哲毅 ,  职务名称   资深总监 , { 姓名   陶峰 ,  职务名称   资深总监 , { 姓名   梅灯银 ,  职务名称   资深总监 , { 姓名   LU YUHAO ,  职务名称   资深总监 , { 姓名   夏宣群 ,  职务名称   资深总监 , { 姓名   钱金森 ,  职务名称   资深总监 , { 姓名   冯达 ,  职务名称   资深总监 , { 姓名   袁虹云 ,  职务名称   资深总监 , { 姓名   王晓钰 ,  职务名称   总工 , { 姓名   杨安福 ,  职务名称   资深总监 , { 姓名   蒲阳 ,  职务名称   资深总监 , { 姓名   蒲阳 ,  职务名称   资深总监 , { 姓名   杨安福 ,  职务名称   资深总监 , { 姓名   王琦 ,  职务名称   资深总监 , { 姓名   冯铸 ,  职务名称   资深总监 , { 姓名   魏红波 ,  职务名称   资深总监 , { 姓名   王琦 ,  职务名称   资深总监 , { 姓名   冯铸 ,  职务名称   资深总监 , { 姓名   程文强 ,  职务名称   资深总监 , { 姓名   王琦 ,  职务名称   资深总监 , { 姓名   魏红波 ,  职务名称   资深总监  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "在2022年Q1，公司有多少有效编制空缺？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "\"季度Q(1~4)对应规则\":\"Q1-4,5,6月份,Q2-7,8,9月份,Q3-10,11,12月份,Q4-1,2,3月份\";",
+    "{'parent_org': 'QMC', 'shortname': 'IPQC-PTO', 'fullname': 'In Process Quality Control-Prototype','chinesename': '制程质量控制-制样组'}",
+    "{'parent_org': 'QMC', 'shortname': 'FQC/OQC-PTO','fullname': 'Final Quality Control/Outgoing Quality Control-Prototype', 'chinesename': '最终/出货质量控制-制样组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到2022年Q1的有效编制空缺数量，我们需要在表a_sap_staffing_recruitment_plan_chinese中查询编制年度为2022年，且编制月度为4, 5, 6月的记录。然后将这些记录中的有效编制空缺字段的值进行求和。",
+  "sql": "SELECT SUM(有效编制空缺) AS total_vacancies FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = '2022' AND 编制月度 IN ('4', '5', '6')",
+  "ai_sql_result": "  [{ total_vacancies  null "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请列出目前所有一级机构的名称以及下属的总监职位的人员姓名。",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)",
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "'总监包括':'总工|首席专家|资深总监';",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus Digi-Lean PMO','fullname': 'Manufacturing Unit  PlusDigital Lean Project Management Office','chinesename': 'Digi-Lean项目管理办公室'}",
+    "{'parent_org': 'SRC', 'shortname': 'PCO', 'fullname': 'Procurement Control Office', 'chinesename': '采购控制&管理办公室'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要列出所有一级机构的名称以及下属的总监职位的人员姓名，我们可以从a_sap_reporting_relationship_chinese表中查询。我们需要查找一级机构的名称，以及总监1姓名、总监2姓名、总监3姓名和总监4姓名等列。由于总监职位可能包括不同的职位名称，我们将在查询中使用LIKE操作符来匹配包含'总监'的职位名称。",
+  "sql": "SELECT DISTINCT 一级机构, 总监1姓名, 总监2姓名, 总监3姓名, 总监4姓名 FROM a_sap_reporting_relationship_chinese WHERE 总监1职位 LIKE '%总监%' OR 总监2职位 LIKE '%总监%' OR 总监3职位 LIKE '%总监%' OR 总监4职位 LIKE '%总监%' LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "截至目前，公司一级机构下有多少个不同的职务？",
+  "table_info": [
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-ASSY-Digi-Lean','fullname': 'Manufacturing Unit PlusAssembly Digital Lean', 'chinesename': '智能制造特区后工序Digi-Lean组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出一级机构下不同的职务数量，我们需要从a_sap_employee_information_chinese表中选择不同的职务名称，并且按照一级机构名称分组，然后计算每个组中职务名称的唯一数量。我们将使用COUNT(DISTINCT 职务名称)来得到每个一级机构下不同职务的数量。",
+  "sql": "SELECT 一级机构名称, COUNT(DISTINCT 职务名称) FROM a_sap_employee_information_chinese GROUP BY 一级机构名称 LIMIT 50",
+  "ai_sql_result": "  [{ 一级机构名称   3S ,  count  7, { 一级机构名称   APD ,  count  19, { 一级机构名称   ATL-FE ,  count  1, { 一级机构名称   ATL-HR ,  count  1, { 一级机构名称   ATLI ,  count  20, { 一级机构名称   ATL-LOG ,  count  1, { 一级机构名称   ATL-SRC ,  count  4, { 一级机构名称   BCM ,  count  1, { 一级机构名称   BE ,  count  4, { 一级机构名称   BOCS ,  count  6, { 一级机构名称   CATL-SCM ,  count  1, { 一级机构名称   CJR ,  count  1, { 一级机构名称   CL ,  count  30, { 一级机构名称   Corp.IE ,  count  11, { 一级机构名称   Corp.QA ,  count  6, { 一级机构名称   CPD ,  count  22, { 一级机构名称   CPP ,  count  12, { 一级机构名称   CRD ,  count  11, { 一级机构名称   EHS ,  count  18, { 一级机构名称   ENG ,  count  26, { 一级机构名称   EPA&amp;IT ,  count  17, { 一级机构名称   ES ,  count  28, { 一级机构名称   ESS-SPP ,  count  12, { 一级机构名称   FE ,  count  30, { 一级机构名称   FNC ,  count  24, { 一级机构名称   GMO ,  count  25, { 一级机构名称   HR ,  count  33, { 一级机构名称   IDT ,  count  11, { 一级机构名称   IE ,  count  12, { 一级机构名称   IP ,  count  10, { 一级机构名称   IT ,  count  4, { 一级机构名称   LA ,  count  10, { 一级机构名称   LA&amp;CS ,  count  2, { 一级机构名称   LOG ,  count  26, { 一级机构名称   MDE ,  count  3, { 一级机构名称   ME ,  count  14, { 一级机构名称   MEV-SPP ,  count  9, { 一级机构名称   MFG ,  count  21, { 一级机构名称   MKT ,  count  5, { 一级机构名称   MRD ,  count  30, { 一级机构名称   MU ,  count  35, { 一级机构名称   MU-E ,  count  25, { 一级机构名称   MU-M ,  count  25, { 一级机构名称   MU Plus ,  count  22, { 一级机构名称   MU-SSL ,  count  32, { 一级机构名称   MU-W ,  count  25, { 一级机构名称   NVT-FE ,  count  2, { 一级机构名称   NVT-NVT ,  count  5, { 一级机构名称   OPS ,  count  20, { 一级机构名称   OS ,  count  7 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请列出所有员工的姓名和对应的直属上司姓名，并按照部门分类。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-ASSY-Digi-Lean','fullname': 'Manufacturing Unit PlusAssembly Digital Lean', 'chinesename': '智能制造特区后工序Digi-Lean组'}",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus Digi-Lean PMO','fullname': 'Manufacturing Unit  PlusDigital Lean Project Management Office','chinesename': 'Digi-Lean项目管理办公室'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了获取所有员工的姓名和对应的直属上司姓名，并按照部门分类，我们可以使用a_sap_employee_information_chinese表来获取员工的姓名和直属上司的工号，然后再次使用该表根据工号获取直属上司的姓名。最后，我们可以按照一级机构名称进行分类，因为一级机构名称通常代表部门。我们将使用两次JOIN操作，首先是员工信息表自身的JOIN来获取直属上司的姓名，然后是按照一级机构名称进行分组。",
+  "sql": "SELECT e1.姓名 AS 员工姓名, e2.姓名 AS 直属上司姓名, e1.一级机构名称 AS 部门 FROM a_sap_employee_information_chinese e1 LEFT JOIN a_sap_employee_information_chinese e2 ON e1.直属上司工号 = e2.人员工号 ORDER BY e1.一级机构名称 LIMIT 50",
+  "ai_sql_result": "  [{ 员工姓名   Praveen Kumar Vashishth ,  直属上司姓名   Rajesh Singh Shekhawat ,  部门   3S , { 员工姓名   Parveen Nandi ,  直属上司姓名  null,  部门   3S , { 员工姓名   Sanjay Kumar ,  直属上司姓名   Bhupender Kumar ,  部门   3S , { 员工姓名   Amit Sharma ,  直属上司姓名   Bhupender Kumar ,  部门   3S , { 员工姓名   Feng Zhe ,  直属上司姓名  null,  部门   3S , { 员工姓名   Kapil Sharma ,  直属上司姓名  null,  部门   3S , { 员工姓名   Ravikant Singh ,  直属上司姓名  null,  部门   3S , { 员工姓名   Sachin Mudgal ,  直属上司姓名  null,  部门   3S , { 员工姓名   Krishan Kumar ,  直属上司姓名  null,  部门   3S , { 员工姓名   Neha Yadav ,  直属上司姓名   Bhupender Kumar ,  部门   3S , { 员工姓名   Amit Kumar ,  直属上司姓名   Bhupender Kumar ,  部门   3S , { 员工姓名   Ravi Ravi ,  直属上司姓名   Bhupender Kumar ,  部门   3S , { 员工姓名   Rama Prasad ,  直属上司姓名   Bhupender Kumar ,  部门   3S , { 员工姓名   Rajesh Singh Shekhawat ,  直属上司姓名   Bhupender Kumar ,  部门   3S , { 员工姓名   Sun Kai ,  直属上司姓名  null,  部门   3S , { 员工姓名   Shailendra kumar Singh ,  直属上司姓名   Bhupender Kumar ,  部门   3S , { 员工姓名   李贝贝 ,  直属上司姓名  null,  部门   APD , { 员工姓名   崔文韬 ,  直属上司姓名   朱澍荞 ,  部门   APD , { 员工姓名   陈晓 ,  直属上司姓名   屈长明 ,  部门   APD , { 员工姓名   郝胜宇 ,  直属上司姓名  null,  部门   APD , { 员工姓名   李卫利 ,  直属上司姓名   冯波 ,  部门   APD , { 员工姓名   金陈飞 ,  直属上司姓名  null,  部门   APD , { 员工姓名   方炬 ,  直属上司姓名  null,  部门   APD , { 员工姓名   汉瑞欣 ,  直属上司姓名  null,  部门   APD , { 员工姓名   黄柳军 ,  直属上司姓名   屈长明 ,  部门   APD , { 员工姓名   张晓峰 ,  直属上司姓名  null,  部门   APD , { 员工姓名   朱修养 ,  直属上司姓名   王可飞 ,  部门   APD , { 员工姓名   胡城鑫 ,  直属上司姓名  null,  部门   APD , { 员工姓名   王莹莹 ,  直属上司姓名   李娅洁 ,  部门   APD , { 员工姓名   梅云鹏 ,  直属上司姓名  null,  部门   APD , { 员工姓名   宋传涛 ,  直属上司姓名   屈长明 ,  部门   APD , { 员工姓名   徐章林 ,  直属上司姓名   屈长明 ,  部门   APD , { 员工姓名   樊晓贺 ,  直属上司姓名   魏增斌 ,  部门   APD , { 员工姓名   杨小坤 ,  直属上司姓名   冯波 ,  部门   APD , { 员工姓名   王婕 ,  直属上司姓名  null,  部门   APD , { 员工姓名   邹晓龙 ,  直属上司姓名  null,  部门   APD , { 员工姓名   吴标 ,  直属上司姓名   屈长明 ,  部门   APD , { 员工姓名   陆妍婷 ,  直属上司姓名  null,  部门   APD , { 员工姓名   刘芳 ,  直属上司姓名  null,  部门   APD , { 员工姓名   王金丽 ,  直属上司姓名   陶兴华 ,  部门   APD , { 员工姓名   张艳 ,  直属上司姓名  null,  部门   APD , { 员工姓名   黄先达 ,  直属上司姓名  null,  部门   APD , { 员工姓名   路明丽 ,  直属上司姓名  null,  部门   APD , { 员工姓名   黄矗 ,  直属上司姓名   林森 ,  部门   APD , { 员工姓名   周伟 ,  直属上司姓名   何海先 ,  部门   APD , { 员工姓名   何平 ,  直属上司姓名  null,  部门   APD , { 员工姓名   贺帅兵 ,  直属上司姓名  null,  部门   APD , { 员工姓名   林乐乐 ,  直属上司姓名   邹邦坤 ,  部门   APD , { 员工姓名   林森 ,  直属上司姓名   马武 ,  部门   APD , { 员工姓名   王营 ,  直属上司姓名   陈梅锋 ,  部门   APD  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "截至当前最新数据，HR部门中担任经理职务（含资深经理）的员工有多少人？",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}",
+    "{'parent_org': 'HR', 'shortname': 'TR', 'fullname': 'Total Rewards', 'chinesename': '薪酬与激励部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要找出HR部门中担任经理职务（含资深经理）的员工数量，我们需要在a_sap_reporting_relationship_chinese表中查找'一级机构'为'人力资源部'的记录，并且'职务名称'包含'经理'。然后我们将对这些记录进行计数。由于用户只询问了数量，我们可以使用COUNT函数来统计结果。",
+  "sql": "SELECT COUNT(*) FROM a_sap_reporting_relationship_chinese WHERE 一级机构 = '人力资源部' AND 职务名称 LIKE '%经理%' AND 结束日期 >= CURRENT_DATE",
+  "ai_sql_result": "0 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "提供一个报告，显示所有在T127年内入职的员工，他们的姓名、入职日期和部门，按入职日期升序排序。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PRD21', 'fullname': 'xTW Assembly Production Department-21', 'chinesename': 'xTW后工序生产部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "根据公司财年规则，T127对应2022年。因此，我们需要查询入职日期在2022年内的所有员工，并显示他们的姓名、入职日期和部门。我们将使用表a_sap_employee_information_chinese，选择姓名、入职日期和一级机构名称作为部门信息。查询结果将按入职日期升序排序，并限制结果数量为最多50个。",
+  "sql": "SELECT 姓名, 入职日期, 一级机构名称 FROM a_sap_employee_information_chinese WHERE 入职日期 >= '2022-01-01' AND 入职日期 <= '2022-12-31' ORDER BY 入职日期 ASC LIMIT 50",
+  "ai_sql_result": "  [{ 姓名   汤阿梅 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   余洪 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   邱茂连 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   李哲强 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   曾连 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   王曦 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈昌辉 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   黄小莺 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   王功总 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   林挺关 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   林巧清 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   林巧慧 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   冯蕊珍 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈霞 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   苏仰庚 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   黄知智 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   阮希京 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   林榕榕 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   雷祥桃 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   黄知滨 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈德弟 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   王巧斌 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   钟妹金 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   王功勋 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   唐静 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   ME , { 姓名   王小雁 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   俞明妹 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   张顺珠 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   黄须銮 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈秀玉 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈巧珍 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   胡大恩 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   QA , { 姓名   彭玮 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈岚东 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈丽芳 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   彭佬锋 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   林生邦 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   周玉林 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   林辉兴 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈长帮 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   黄先龙 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   王洪花 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   曾亲福 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈方兰 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   孙绍定 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   王功玫 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   曾章云 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈长东 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   朱绍瑞 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR , { 姓名   陈金双 ,  入职日期   2022-01-01T00:00:00 ,  一级机构名称   CJR  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请找出2022年Q2期间入职，并且是硕士学历的员工名单。",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-BCU', 'fullname': 'Incoming Quality Contral-Battery Component Unit','chinesename': '来料质量管控-BCU组'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME22', 'fullname': 'xTW Assembly Maintenance Engineering-22', 'chinesename': 'xTW后工序设备技术部-22'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到2022年Q2期间入职，并且具有硕士学历的员工名单，我们需要从a_sap_employee_information_chinese表中筛选出入职日期在2022年4月1日至2022年6月30日之间的记录，并且学历为'硕士'。这需要结合a_sap_employee_education_experience_chinese表来获取学历信息。",
+  "sql": "SELECT e.姓名 FROM a_sap_employee_information_chinese e JOIN a_sap_employee_education_experience_chinese ee ON e.人员工号 = ee.人员工号 WHERE e.入职日期 BETWEEN '2022-04-01' AND '2022-06-30' AND ee.学历 = '硕士' LIMIT 50;",
+  "ai_sql_result": "  [{ 姓名   刘洋  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "当前有多少个职位在AI二级机构下空缺，并需要招聘的人数。",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)",
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)"
+  ],
+  "extend_info": [
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "'职员包括':'工程师|工程师1|资深工程师|工程师2|资深工程师1|资深工程师2';",
+    "{'parent_org': 'IDT', 'shortname': 'AI', 'fullname': 'Industrial Artificial Intelligence', 'chinesename': '工业智能部'}",
+    "{'shortname': 'HR', 'fullname': 'Human Resources', 'chinesename': '人力资源部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出AI二级机构下空缺的职位数量及需要招聘的人数，我们可以查询a_sap_staffing_recruitment_plan_chinese表，筛选出二级机构为AI的记录，并计算有效编制空缺的总和。",
+  "sql": "SELECT COUNT(*) AS 空缺职位数, SUM(有效编制空缺) AS 需要招聘的人数 FROM a_sap_staffing_recruitment_plan_chinese WHERE 二级机构 = 'AI' AND 有效编制空缺 > 0 LIMIT 50",
+  "ai_sql_result": "  [{ 空缺职位数  0,  需要招聘的人数  null "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "统计目前公司每个一级机构下各个职务的人数分布情况。",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-ASSY-Digi-Lean','fullname': 'Manufacturing Unit PlusAssembly Digital Lean', 'chinesename': '智能制造特区后工序Digi-Lean组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了统计每个一级机构下各个职务的人数分布情况，我们需要从a_sap_reporting_relationship_chinese表中获取一级机构和职务名称，并对这两个字段进行分组统计人数。可以使用COUNT函数来统计人数，并使用GROUP BY来按一级机构和职务名称分组。",
+  "sql": "SELECT 一级机构, 职务名称, COUNT(*) AS 人数 FROM a_sap_reporting_relationship_chinese GROUP BY 一级机构, 职务名称 ORDER BY 一级机构, 职务名称 LIMIT 50",
+  "ai_sql_result": "  [{ 一级机构   APD ,  职务名称   一级资深技术员 ,  人数  10, { 一级机构   APD ,  职务名称   三级技术员 ,  人数  15, { 一级机构   APD ,  职务名称   三级资深技术员 ,  人数  3, { 一级机构   APD ,  职务名称   专员 ,  人数  1, { 一级机构   APD ,  职务名称   主任工程师 ,  人数  3, { 一级机构   APD ,  职务名称   二级资深技术员 ,  人数  9, { 一级机构   APD ,  职务名称   工程师 ,  人数  40, { 一级机构   APD ,  职务名称   总监 ,  人数  1, { 一级机构   APD ,  职务名称   经理 ,  人数  3, { 一级机构   APD ,  职务名称   资深主任工程师 ,  人数  1, { 一级机构   APD ,  职务名称   资深主管 ,  人数  1, { 一级机构   APD ,  职务名称   资深工程师 ,  人数  38, { 一级机构   APD ,  职务名称   资深经理 ,  人数  3, { 一级机构   ATLI ,  职务名称   一级资深组长 ,  人数  2, { 一级机构   ATLI ,  职务名称   三级生产资深技术员 ,  人数  3, { 一级机构   ATLI ,  职务名称   三级资深组长 ,  人数  2, { 一级机构   ATLI ,  职务名称   主管 ,  人数  4, { 一级机构   ATLI ,  职务名称   二级生产资深技术员 ,  人数  2, { 一级机构   ATLI ,  职务名称   二级资深组长 ,  人数  6, { 一级机构   ATLI ,  职务名称   工程师 ,  人数  8, { 一级机构   ATLI ,  职务名称   总监 ,  人数  1, { 一级机构   ATLI ,  职务名称   经理 ,  人数  6, { 一级机构   ATLI ,  职务名称   资深专员 ,  人数  1, { 一级机构   ATLI ,  职务名称   资深主管 ,  人数  6, { 一级机构   ATLI ,  职务名称   资深工程师 ,  人数  9, { 一级机构   ATLI ,  职务名称   资深经理 ,  人数  1, { 一级机构   ATLI ,  职务名称   顾问 ,  人数  1, { 一级机构   BOCS ,  职务名称   专员 ,  人数  1, { 一级机构   BOCS ,  职务名称   资深专员 ,  人数  1, { 一级机构   CJR ,  职务名称   CJR ,  人数  111, { 一级机构   CL ,  职务名称   一级资深技术员 ,  人数  18, { 一级机构   CL ,  职务名称   三级技术员 ,  人数  45, { 一级机构   CL ,  职务名称   三级资深技术员 ,  人数  4, { 一级机构   CL ,  职务名称   主管 ,  人数  1, { 一级机构   CL ,  职务名称   二级技术员 ,  人数  2, { 一级机构   CL ,  职务名称   二级资深技术员 ,  人数  19, { 一级机构   CL ,  职务名称   二级资深组长 ,  人数  2, { 一级机构   CL ,  职务名称   实习 ,  人数  1, { 一级机构   CL ,  职务名称   工程师 ,  人数  24, { 一级机构   CL ,  职务名称   经理 ,  人数  1, { 一级机构   CL ,  职务名称   资深专员 ,  人数  1, { 一级机构   CL ,  职务名称   资深工程师 ,  人数  19, { 一级机构   CL ,  职务名称   资深经理 ,  人数  3, { 一级机构   CPD ,  职务名称   一级资深技术员 ,  人数  10, { 一级机构   CPD ,  职务名称   三级技术员 ,  人数  7, { 一级机构   CPD ,  职务名称   三级资深技术员 ,  人数  2, { 一级机构   CPD ,  职务名称   专员 ,  人数  3, { 一级机构   CPD ,  职务名称   主任工程师 ,  人数  4, { 一级机构   CPD ,  职务名称   二级资深技术员 ,  人数  11, { 一级机构   CPD ,  职务名称   助理工程师 ,  人数  1 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "找出所有在CPD一级机构工作，且直属上司职务为'总监'级别的员工信息。",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'parent_org': 'CPD', 'shortname': 'CMO', 'fullname': 'CPD Management Office', 'chinesename': 'CPD管理办公室'}",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-BCU', 'fullname': 'Incoming Quality Contral-Battery Component Unit','chinesename': '来料质量管控-BCU组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出所有在CPD一级机构工作且直属上司职务为'总监'级别的员工信息，我们需要联合查询a_sap_reporting_relationship_chinese表和a_sap_employee_information_chinese表。我们将通过a_sap_reporting_relationship_chinese表中的一级机构字段来过滤在CPD一级机构工作的员工，并通过a_sap_employee_information_chinese表中的直属上司职务名称字段来过滤其直属上司职务为'总监'级别的员工。由于'职务名称'字段包含了员工的职务级别信息，我们可以通过这个字段来确定员工直属上司的职务是否为'总监'级别。",
+  "sql": "SELECT e.人员工号, e.姓名, e.职位, e.入职日期, e.部门负责人, e.直属上司姓名, r.一级机构\nFROM a_sap_employee_information_chinese e\nJOIN a_sap_reporting_relationship_chinese r ON e.人员工号 = r.人员工号\nWHERE r.一级机构 = 'CPD' AND e.直属上司职务名称 LIKE '%总监%'\nLIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问T127年度一共有多少有效的编制空缺？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "部门/机构查询都是按照shortname来的;",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PRD21', 'fullname': 'xTW Assembly Production Department-21', 'chinesename': 'xTW后工序生产部-21'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PRD22', 'fullname': 'xTW Assembly Production Department-22', 'chinesename': 'xTW后工序生产部-22'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "根据提供的信息，T127对应的是2022年。因此，我们需要查询a_sap_staffing_recruitment_plan_chinese表中编制年度为2022的所有记录，并对有效编制空缺进行求和以得到年度有效编制空缺总数。",
+  "sql": "SELECT SUM(有效编制空缺) AS 年度有效编制空缺总数 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = '2022'",
+  "ai_sql_result": "  [{ 年度有效编制空缺总数  null "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "目前哪些员工的学历为硕士，并且其所在的一级机构为FE？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'shortname': 'MRD', 'fullname': 'Manufacturing Research & Development', 'chinesename': '制造研发部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-EP-PRD','fullname': 'Manufacturing Unit Plus Electrode Production Department', 'chinesename': '智能制造特区前工序生产部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到学历为硕士且所在一级机构为FE的员工，我们需要联合查询员工信息表和员工教育经历表。我们可以通过学历字段筛选出学历为硕士的员工，并且通过一级机构名称字段筛选出一级机构为FE的员工。我们需要将两个表通过人员工号连接起来，并且限制结果最多50条。",
+  "sql": "SELECT DISTINCT e.人员工号, e.姓名, e.一级机构名称 FROM a_sap_employee_information_chinese e INNER JOIN a_sap_employee_education_experience_chinese ee ON e.人员工号 = ee.人员工号 WHERE ee.学历 = '硕士' AND e.一级机构名称 = 'FE' LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "当前在QA部门任职经理职务的员工有谁？",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'经理职务包括':'主任工程师|经理1|主任工程师1|主任|资深主任工程师|经理2|主任工程师2|资深经理';",
+    "{'parent_org': 'QA', 'shortname': 'QE', 'fullname': 'Quality Engineering', 'chinesename': '质量工程部'}",
+    "{'parent_org': 'QA', 'shortname': 'SQM', 'fullname': 'Supplier Quality Management', 'chinesename': '供应商质量管理部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要找到当前在QA部门任职经理职务的员工，我们需要查看a_sap_reporting_relationship_chinese表，根据'职务名称'字段筛选包含'经理'的职务，并且根据'一级机构'或者'二级机构'或者'三级机构'字段筛选出属于QA部门的员工。我们可以使用LIKE操作符来匹配职务名称中包含'经理'的记录，并且使用OR操作符来匹配三个机构字段中任意一个等于QA部门的中文名称的记录。",
+  "sql": "SELECT 姓名 FROM a_sap_reporting_relationship_chinese WHERE (一级机构 = '质量工程部' OR 二级机构 = '质量工程部' OR 三级机构 = '质量工程部' OR 一级机构 = '供应商质量管理部' OR 二级机构 = '供应商质量管理部' OR 三级机构 = '供应商质量管理部') AND 职务名称 SIMILAR TO '%(主任工程师|经理1|主任工程师1|主任|资深主任工程师|经理2|主任工程师2|资深经理)%' LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请列出目前所有一级机构下，具有本科学历且职位为技术员的员工列表。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-ME','fullname': 'Manufacturing Unit Plus Assembly Maintenance Engineering', 'chinesename': '智能制造特区后工序设备部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到具有本科学历且职位为技术员的员工列表，我们需要联合查询a_sap_employee_information_chinese表和a_sap_employee_education_experience_chinese表。我们将使用INNER JOIN来连接这两个表，基于人员工号和入职日期进行匹配。查询中将包括一级机构名称、员工的基本信息以及学历要求。由于需要列出员工的详细信息，我们将使用response_table作为展示方式。",
+  "sql": "SELECT e.人员工号, e.姓名, e.雇佣状态, e.职位, e.入职日期, e.一级机构名称 FROM a_sap_employee_information_chinese e INNER JOIN a_sap_employee_education_experience_chinese ed ON e.人员工号 = ed.人员工号 AND e.入职日期 = ed.入职日期 WHERE e.职位 = '技术员' AND ed.学历 = '本科' LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "目前AI二级机构下有多少有效编制空缺，以及这些空缺的年度编制数量是多少？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "'职员包括':'工程师|工程师1|资深工程师|工程师2|资深工程师1|资深工程师2';",
+    "'员工子组[含义:字段]':['普工'：'A1', '技术员'：'A2','工程师'：'A3','中层管理层'：'A4','高层管理层'：'A5','挂职人员|CJR':'残疾人','外聘顾问'：'顾问','实习员工'：'实习'];",
+    "{'parent_org': 'IDT', 'shortname': 'AI', 'fullname': 'Industrial Artificial Intelligence', 'chinesename': '工业智能部'}",
+    "{'parent_org': 'AIT', 'shortname': 'AEI', 'fullname': 'Architectural Economic Innovation','chinesename': '结构精益创新组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到AI二级机构下的有效编制空缺数量以及相应的年度编制数量，我们需要在a_sap_staffing_recruitment_plan_chinese表中查询二级机构为AI的记录，并且筛选出有效编制空缺（有效编制空缺）和年度编制数量（年度编制数量）。",
+  "sql": "SELECT SUM(有效编制空缺) AS 总有效编制空缺, SUM(年度编制数量) AS 总年度编制数量 FROM a_sap_staffing_recruitment_plan_chinese WHERE 二级机构 = 'AI' GROUP BY 二级机构 LIMIT 50;",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "我们需不需要增加资深技术员的编制？如果需要，现有编制空缺数与拟在职人数之间差了多少人？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'MU Plus Digi-Lean', 'shortname': 'MU Plus-EP-Digi-Lean','fullname': 'Manufacturing Unit  Plus Electrode Production Digital Lean','chinesename': '智能制造特区前工序Digi-Lean组'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}"
+  ],
+  "display_type": "Table",
+  "thoughts": "为了判断是否需要增加资深技术员的编制，我们需要查看当前资深技术员的编制空缺数以及拟在职人数。编制空缺数可以从a_sap_staffing_recruitment_plan_chinese表中的有效编制空缺字段获取，而拟在职人数可以从同一表的拟在职人数字段获取。我们需要筛选出员工子组为'资深技术员'的记录来计算这两个数值之间的差异。",
+  "sql": "SELECT (有效编制空缺 - 拟在职人数) AS 编制差异 FROM a_sap_staffing_recruitment_plan_chinese WHERE 员工子组 = '资深技术员' LIMIT 1",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请问在2023年第一季度有多少有效的编制空缺？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "\"季度Q(1~4)对应规则\":\"Q1-4,5,6月份,Q2-7,8,9月份,Q3-10,11,12月份,Q4-1,2,3月份\";",
+    "{'parent_org': 'PRJ-DG', 'shortname': 'PRJ-DG3', 'fullname': 'EP&SSE&CIP&DO2 Team','chinesename': 'EP&SSE&国内2组'}",
+    "{'parent_org': 'SLS', 'shortname': 'AP3', 'fullname': 'Asia Pacific3', 'chinesename': '亚太区3'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到2023年第一季度的有效编制空缺数量，我们需要查询表a_sap_staffing_recruitment_plan_chinese，筛选编制年度为2023年，并且编制月度为1、2、3月（根据季度对应规则，第一季度包括1、2、3月份）。然后将这些月份的有效编制空缺数量相加得到总数。",
+  "sql": "SELECT SUM(有效编制空缺) AS 总有效编制空缺 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = '2023' AND 编制月度 IN ('1', '2', '3')",
+  "ai_sql_result": "  [{ 总有效编制空缺  null "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "当前在职的员工中，有多少人的最高学历是博士？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PE21', 'fullname': 'xTW Assembly Process Engineering-21', 'chinesename': 'xTW后工序工艺工程部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出当前在职的员工中最高学历为博士的人数，我们需要从员工信息表中选出在职员工，然后与员工教育经历表连接，以确保我们统计的是最高学历为博士的员工。我们可以通过查找学历字段为'博士'的记录，并计数来完成这个任务。",
+  "sql": "SELECT COUNT(DISTINCT e.人员工号) FROM a_sap_employee_information_chinese e JOIN a_sap_employee_education_experience_chinese ed ON e.人员工号 = ed.人员工号 WHERE e.雇佣状态 = '在职' AND ed.学历 = '博士'",
+  "ai_sql_result": "7 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请列出所有一级机构中哪些部门的职务范围包含'经理'级别以上的岗位，并按照一级机构名称排序。",
+  "table_info": [
+    "Table:a_sap_positions_responsibilities_risks_chinese,columns:(集团, 一级机构, 二级机构, 三级机构, 职位, 成本类别名称, 岗位名称, 岗位属性名称, 角色定位, 岗位风险点, 岗位职责, 岗位任职资格, 绩效贡献, 经验及其他资质要求, 部门职能类型名称, 职务, 职务类型, 现职人数)",
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "'部门':'通常来说都是指一级机构';",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'parent_org': 'FNC', 'shortname': 'OMO', 'fullname': 'Operation management office', 'chinesename': '经营管理部'}",
+    "{'parent_org': 'PPD', 'shortname': 'PPT', 'fullname': 'Product Planning Team', 'chinesename': '需求管理部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找出包含'经理'级别以上岗位的一级机构部门，我们需要检查a_sap_positions_responsibilities_risks_chinese表中的职务字段。由于'职务顺序'的信息表明'经理'级别以上包括'经理'、'总监'、'副总裁'、'总裁'等职务，我们可以筛选出这些职务。然后我们将结果按照一级机构名称排序，并且限制结果集为50个。由于结果涉及到多个非数值字段，我们将采用表格形式进行展示。",
+  "sql": "SELECT DISTINCT 一级机构 FROM a_sap_positions_responsibilities_risks_chinese WHERE 职务 IN ('经理', '总监', '副总裁', '总裁') ORDER BY 一级机构 LIMIT 50",
+  "ai_sql_result": "  [{ 一级机构   APD , { 一级机构   ATLI , { 一级机构   CL , { 一级机构   CPD , { 一级机构   CPP , { 一级机构   ES , { 一级机构   FE , { 一级机构   FNC , { 一级机构   HR , { 一级机构   IDT , { 一级机构   IE , { 一级机构   IP , { 一级机构   LA , { 一级机构   LOG , { 一级机构   ME , { 一级机构   MRD , { 一级机构   MU Plus , { 一级机构   MU-SSL , { 一级机构   PA , { 一级机构   PMC , { 一级机构   PMD , { 一级机构   PRD , { 一级机构   PRJ , { 一级机构   PTO , { 一级机构   QA , { 一级机构   RI , { 一级机构   SD , { 一级机构   SEC , { 一级机构   SLS , { 一级机构   SRC , { 一级机构   TPM , { 一级机构   xTW , { 一级机构  null "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请查询当前在职的所有'二级员工'的姓名和人员编号。",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'职员包括':'工程师|工程师1|资深工程师|工程师2|资深工程师1|资深工程师2';",
+    "'经理职务包括':'主任工程师|经理1|主任工程师1|主任|资深主任工程师|经理2|主任工程师2|资深经理';",
+    "{'parent_org': 'TPM', 'shortname': 'TPM2', 'fullname': 'TPM2', 'chinesename': '项目技术部二组'}",
+    "{'parent_org': 'PRD', 'shortname': 'PRD-ND2', 'fullname': 'Production Department-ND2', 'chinesename': 'ND生产2部'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要查询当前在职的所有'二级员工'的姓名和人员编号，我们需要查看a_sap_employee_information_chinese表中的雇佣状态来确定员工是否在职，以及员工组来确定员工是否属于'二级员工'。根据背景知识，'二级员工'可能对应的是'工程师2'和'资深工程师2'。因此，我们需要在查询中过滤出雇佣状态为在职（假设在职状态用'active'表示）以及员工组为'工程师2'或'资深工程师2'的员工。由于未提供具体的雇佣状态字段，我们假设雇佣状态字段为'雇佣状态'。如果雇佣状态字段名不正确，需要根据实际数据库字段进行调整。",
+  "sql": "SELECT 姓名, 人员工号 FROM a_sap_employee_information_chinese WHERE 雇佣状态 = 'active' AND (员工组 = '工程师2' OR 员工组 = '资深工程师2') LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "对于T128财年，查询在'AD'二级机构中，编制月度为'3'月，员工子组为'技术员'的有效编制空缺数。",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)"
+  ],
+  "extend_info": [
+    "'员工子组[含义:字段]':['普工'：'A1', '技术员'：'A2','工程师'：'A3','中层管理层'：'A4','高层管理层'：'A5','挂职人员|CJR':'残疾人','外聘顾问'：'顾问','实习员工'：'实习'];",
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "{'parent_org': 'SAP', 'shortname': 'SAP3', 'fullname': 'SAP3', 'chinesename': 'SAP3组'}",
+    "{'parent_org': 'PRD-ND2', 'shortname': 'W3-ASC', 'fullname': 'W3-ASC', 'chinesename': 'W3-ASC组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "首先，根据用户提供的信息，我们知道T128财年对应的是2023年。接着，我们需要在表a_sap_staffing_recruitment_plan_chinese中查询编制年度为2023，编制月度为3，二级机构为'AD'，员工子组为'技术员'的记录。员工子组'技术员'对应的字段值是'A2'。我们将根据这些条件来构建SQL查询，并限制结果最多为50条记录。",
+  "sql": "SELECT 有效编制空缺 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = '2023' AND 编制月度 = '3' AND 二级机构 = 'AD' AND 员工子组 = 'A2' LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "请查询所有在APD部门任职'经理'级别且拥有硕士学历的员工的姓名、职务名称和入职日期。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)"
+  ],
+  "extend_info": [
+    "部门/机构查询都是按照shortname来的;",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'APD', 'shortname': 'AMO', 'fullname': 'APD Management Office', 'chinesename': 'APD管理办公室'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PRD21', 'fullname': 'xTW Assembly Production Department-21', 'chinesename': 'xTW后工序生产部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "首先，我们需要从a_sap_employee_information_chinese表中查找在APD部门任职'经理'级别的员工信息，其中'经理'级别可以通过'职务名称'字段来确定。根据背景知识，我们可以知道APD部门对应的shortname是'AMO'，因此我们需要查找一级机构名称、二级机构名称或三级机构名称为'APD管理办公室'的记录。其次，我们需要从a_sap_employee_education_experience_chinese表中查找拥有硕士学历的员工信息，其中硕士学历可以通过'学历'字段来确定。最后，我们需要将这两部分信息进行连接，以找到同时满足两个条件的员工。由于表中没有直接提供部门的shortname字段，我们只能假设'一级机构名称', '二级机构名称', '三级机构名称'中的一个会包含'APD管理办公室'这一信息。我们将使用INNER JOIN来连接两个表，并且使用LIMIT来限制结果数量。我们还需要注意只查询'雇佣状态'为在职的员工。",
+  "sql": "SELECT e.姓名, e.职务名称, e.入职日期 FROM a_sap_employee_information_chinese e INNER JOIN a_sap_employee_education_experience_chinese ed ON e.人员工号 = ed.人员工号 WHERE (e.一级机构名称 = 'APD管理办公室' OR e.二级机构名称 = 'APD管理办公室' OR e.三级机构名称 = 'APD管理办公室') AND e.职务名称 LIKE '%经理%' AND ed.学历 = '硕士' AND e.雇佣状态 = '在职' LIMIT 50",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "查询'技术员'这一员工子组中个人的最新入职日期。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "职级范围:'技术员'-'JG4-6', '工程师'-'JG7-10','经理'-'JG11-13'",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}",
+    "{'parent_org': 'FE', 'shortname': 'Tech', 'fullname': 'Technology Management', 'chinesename': '技管组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到'技术员'这一员工子组中个人的最新入职日期，我们需要从提供的表a_sap_employee_information_chinese中选择员工子组文本为'技术员'的记录，并按照入职日期降序排序，最后只取最新的日期，即第一条记录。由于用户没有指定需要获取具体的数据行数，我们将查询限制为最多50个结果。",
+  "sql": "SELECT 入职日期 FROM a_sap_employee_information_chinese WHERE 员工子组文本 = '技术员' ORDER BY 入职日期 DESC LIMIT 1",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "查找目前所有'总监'级别的员工姓名、部门和职位。",
+  "table_info": [
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "'总监包括':'总工|首席专家|资深总监';",
+    "'职务顺序,从小到大排序,':'技术员-资深技术员-职员-经理-总监-副总裁-总裁';",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-BCU', 'fullname': 'Incoming Quality Contral-Battery Component Unit','chinesename': '来料质量管控-BCU组'}",
+    "{'parent_org': 'SQM', 'shortname': 'IQC-DG', 'fullname': '', 'chinesename': '来料质量管控-DG组'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到所有'总监'级别的员工，我们可以在a_sap_reporting_relationship_chinese表中查找包含'总监'字样的职务名称，并选择员工的姓名、部门和职位。由于'总监'可能包括不同的级别和类型（如'总工', '首席专家', '资深总监'），我们需要使用模糊匹配来包含所有这些可能的职称。同时，为了确保我们只获取当前任职的员工，我们需要检查结束日期是否为空或者大于当前日期。",
+  "sql": "SELECT 姓名, 一级机构, 职位 FROM a_sap_reporting_relationship_chinese WHERE (职务名称 LIKE '%总监%' OR 职务名称 LIKE '%总工%' OR 职务名称 LIKE '%首席专家%' OR 职务名称 LIKE '%资深总监%') AND (结束日期 IS NULL OR 结束日期 > CURRENT_DATE) LIMIT 50",
+  "ai_sql_result": "  [{ 姓名   金正铎 ,  一级机构   SLS ,  职位   二级机构负责人(AP2) , { 姓名   陶兴华 ,  一级机构   APD ,  职位   一级机构负责人(APD) , { 姓名   袁宝华 ,  一级机构   SLS ,  职位   二级机构负责人(K1) , { 姓名   王百欣 ,  一级机构  null,  职位   总裁直属(FNC) , { 姓名   刘胜 ,  一级机构   PRJ ,  职位   一级机构负责人(PRJ) , { 姓名   莫明亮 ,  一级机构   CPD ,  职位   一级机构负责人(CPDPMD) , { 姓名   袁庆丰 ,  一级机构   RD ,  职位   一级机构负责人(RD) , { 姓名   马明 ,  一级机构   IE ,  职位   一级机构负责人(IE) , { 姓名   蔡开贵 ,  一级机构   ME ,  职位   一级机构负责人(ME) , { 姓名   伍先帆 ,  一级机构   MU-SSL ,  职位   一级机构负责人(MU-SSL) , { 姓名   李增 ,  一级机构   SLS ,  职位   销售(中国区)机构负责人 , { 姓名   YE HUA ,  一级机构   MRD ,  职位   先进制造首席专家 , { 姓名   官泽民 ,  一级机构   ATLI ,  职位   ATLI总经理 , { 姓名   黄仁贵 ,  一级机构   PRD ,  职位   一级机构负责人(PRD) , { 姓名   郭维淼 ,  一级机构   CPP ,  职位   一级机构负责人(CPP) , { 姓名   陶峰 ,  一级机构  null,  职位   总裁直属(PSOFE) , { 姓名   梅灯银 ,  一级机构  null,  职位   总裁直属(IDT) , { 姓名   叶宇 ,  一级机构   SLS ,  职位   一级机构负责人(SLS) , { 姓名   闪星 ,  一级机构   MU Plus ,  职位   一级机构负责人(MU Plus) , { 姓名   郑世文 ,  一级机构   SD ,  职位   一级机构负责人(SD) , { 姓名   王晓钰 ,  一级机构   IDT ,  职位   智能制造总系统工程师 , { 姓名   LU YUHAO ,  一级机构  null,  职位   总裁直属(R&amp;D) , { 姓名   钱金森 ,  一级机构   LA ,  职位   一级机构负责人(LA) , { 姓名   杨良鑫 ,  一级机构   IP ,  职位   一级机构负责人(IP) , { 姓名   杨安福 ,  一级机构  null,  职位   总裁直属(HR) , { 姓名   程文强 ,  一级机构   MRD ,  职位   总裁直属(MRD) , { 姓名   刘优 ,  一级机构   PSCM ,  职位   一级机构负责人(SCM) , { 姓名   蒲阳 ,  一级机构  null,  职位   总裁直属(MFGENG)  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "目前2023年3月份，职务为经理级别的员工中，空缺编制数量是多少？",
+  "table_info": [
+    "Table:a_sap_staffing_recruitment_plan_chinese,columns:(编制年度, 编制月度, 员工子组, 有效编制空缺, 创建日期, 年度可申请空缺数量, 季度可申请空缺数量, 月度可申请空缺数量, 年度编制数量, 季度编制数量, 月度编制数量, 特批编制数量, 拟在职人数, 有效但是没有报到空缺数, 写入日期, open数, 关闭数, 冻结数, 集团名称, 一级机构, 二级机构, 三级机构, 职级范围)",
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "{'parent_org': 'PRJ-DG', 'shortname': 'PRJ-DG3', 'fullname': 'EP&SSE&CIP&DO2 Team','chinesename': 'EP&SSE&国内2组'}",
+    "{'parent_org': 'SLS', 'shortname': 'AP3', 'fullname': 'Asia Pacific3', 'chinesename': '亚太区3'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了找到2023年3月份经理级别员工的空缺编制数量，我们需要查看a_sap_staffing_recruitment_plan_chinese表，并筛选编制年度为2023，编制月度为3，职级范围包含经理级别的记录。然后我们将计算'有效编制空缺'字段的总和。职级范围列的具体值未在表结构中提供，因此无法在SQL中精确过滤经理级别的职务。我们将假设职级范围列包含了诸如'经理'这样的关键词来进行筛选。",
+  "sql": "SELECT SUM(有效编制空缺) AS 空缺编制数量 FROM a_sap_staffing_recruitment_plan_chinese WHERE 编制年度 = '2023' AND 编制月度 = '3' AND 职级范围 LIKE '%经理%'",
+  "ai_sql_result": "  [{ 空缺编制数量  null "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "需要生成一份报告，列出所有三级机构，以及每个三级机构下拥有的职务类型总数。",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_reporting_relationship_chinese,columns:(开始日期, 结束日期, 人员工号, 姓名, 入司日期, 工作性质, 一级机构, 二级机构, 三级机构, 职位, 职务名称, 是否管理机构, 兼职信息, 主管1姓名, 主管1职位, 主管1职务, 主管2姓名, 主管2职位, 主管2职务, 经理1姓名, 经理1职位, 经理1职务, 经理2姓名, 经理2职位, 经理2职务, 经理3姓名, 经理3职位, 经理3职务, 经理4姓名, 经理4职位, 经理4职务, 总监1姓名, 总监1职位, 总监1职务, 总监2姓名, 总监2职位, 总监2职务, 总监3姓名, 总监3职位, 总监3职务, 总监4姓名, 总监4职位, 总监4职务, 一级机构负责人姓名, 一级机构负责人职位, 一级机构负责人职务)"
+  ],
+  "extend_info": [
+    "员工工作性质文本字段的值为：[\"全职-计算\",\"挂职\"];",
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "{'parent_org': 'PRJ-DG', 'shortname': 'PRJ-DG3', 'fullname': 'EP&SSE&CIP&DO2 Team','chinesename': 'EP&SSE&国内2组'}",
+    "{'parent_org': 'FNC', 'shortname': 'RC', 'fullname': 'Reporting center', 'chinesename': '报告中心'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "为了生成报告，我们需要从提供的表结构中找到包含三级机构名称和职务名称的表。在这个情况下，我们可以使用a_sap_employee_information_chinese表，因为它有三级机构名称（三级机构名称）和职务名称（职务名称）这两个字段。我们将使用GROUP BY子句来按三级机构分组，并使用COUNT函数来计算每个三级机构下的职务类型总数。最后，我们将使用ORDER BY子句来对结果进行排序。",
+  "sql": "SELECT 三级机构名称, COUNT(DISTINCT 职务名称) AS 职务类型总数 FROM a_sap_employee_information_chinese GROUP BY 三级机构名称 ORDER BY 三级机构名称 LIMIT 50",
+  "ai_sql_result": "  [{ 三级机构名称   AEI ,  职务类型总数  4, { 三级机构名称   AET ,  职务类型总数  6, { 三级机构名称   AHI ,  职务类型总数  3, { 三级机构名称   AIN ,  职务类型总数  3, { 三级机构名称   AIP ,  职务类型总数  2, { 三级机构名称   AIW ,  职务类型总数  1, { 三级机构名称   AME-A5 ,  职务类型总数  1, { 三级机构名称   AN ,  职务类型总数  8, { 三级机构名称   API ,  职务类型总数  4, { 三级机构名称   AQE ,  职务类型总数  6, { 三级机构名称   ATD ,  职务类型总数  2, { 三级机构名称   ATI ,  职务类型总数  4, { 三级机构名称   ATLI-3S-SD ,  职务类型总数  1, { 三级机构名称   ATLI-3S-SEC&amp;ES ,  职务类型总数  2, { 三级机构名称   ATLI-FAM-FE ,  职务类型总数  1, { 三级机构名称   ATLI-FAM-SEC&amp;ES ,  职务类型总数  1, { 三级机构名称   ATLI-OPS-LOG ,  职务类型总数  1, { 三级机构名称   ATLI-OPS-MC ,  职务类型总数  5, { 三级机构名称   ATLI-OPS-ME(Back) ,  职务类型总数  3, { 三级机构名称   ATLI-OPS-ME(Back） ,  职务类型总数  1, { 三级机构名称   ATLI-OPS-ME(Front) ,  职务类型总数  3, { 三级机构名称   ATLI-OPS-PE ,  职务类型总数  3, { 三级机构名称   ATLI-OPS-Planning ,  职务类型总数  4, { 三级机构名称   ATLI-OPS-PRD ,  职务类型总数  7, { 三级机构名称   ATLI-OPS-QA ,  职务类型总数  11, { 三级机构名称   ATR ,  职务类型总数  5, { 三级机构名称   BCU-PME ,  职务类型总数  5, { 三级机构名称   BCU-PRD ,  职务类型总数  12, { 三级机构名称   BE ,  职务类型总数  1, { 三级机构名称   B-End B1 ,  职务类型总数  1, { 三级机构名称   B-End B10 &amp; B7 ,  职务类型总数  3, { 三级机构名称   BM ,  职务类型总数  1, { 三级机构名称   BMS ,  职务类型总数  2, { 三级机构名称   BMS-ALG ,  职务类型总数  3, { 三级机构名称   BMS-FW ,  职务类型总数  11, { 三级机构名称   BMS-HW ,  职务类型总数  13, { 三级机构名称   BTL ,  职务类型总数  10, { 三级机构名称   BTL-MDA ,  职务类型总数  3, { 三级机构名称   CDS ,  职务类型总数  5, { 三级机构名称   Cell-EDV ,  职务类型总数  6, { 三级机构名称   Cell-ESS ,  职务类型总数  8, { 三级机构名称   Cell MC ,  职务类型总数  2, { 三级机构名称   Cell-PLT ,  职务类型总数  8, { 三级机构名称   Cell-PPD ,  职务类型总数  9, { 三级机构名称   Cell Sourcing ,  职务类型总数  3, { 三级机构名称   Center IE ,  职务类型总数  5, { 三级机构名称   CET ,  职务类型总数  10, { 三级机构名称   CF ,  职务类型总数  1, { 三级机构名称   CI ,  职务类型总数  3, { 三级机构名称   CMA ,  职务类型总数  5 "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "IDT部门的在职员工，博士学历在T128年的绩效如何？",
+  "table_info": [
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)",
+    "Table:a_sap_performance_ai,columns:(编制年度, 姓名, 人员工号, 绩效)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-ASSY-PRD','fullname': 'Manufacturing Unit Plus Assembly Production Department', 'chinesename': '智能制造特区后工序生产部'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME21', 'fullname': 'xTW Assembly Maintenance Engineering-21', 'chinesename': 'xTW后工序设备技术部-21'}"
+  ],
+  "display_type": "Table",
+  "thoughts": "要找出IDT部门的在职员工中拥有博士学历，并且查看他们在T128年的绩效情况，我们需要使用两个表：a_sap_employee_information_chinese和a_sap_performance_ai。首先，我们需要从a_sap_employee_information_chinese表中筛选出IDT部门的在职员工和他们的人员工号，并且这些员工的学历必须是博士。然后，我们使用这些人员工号去a_sap_performance_ai表中查询T128年（对应2023年）的绩效数据。由于表结构中没有直接提供学历字段，我们无法直接根据学历进行筛选，因此这个查询无法进行。",
+  "sql": "提供的表结构信息不足以生成 sql 查询。",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "罗文洲在T128是什么绩效，又是什么学历？",
+  "table_info": [
+    "Table:a_sap_employee_education_experience_chinese,columns:(人员工号, 姓名, 入职日期, 开始日期, 结束日期, 学历, 教育类型, 院校_培训机构, 国家, 证书, 第一专业)",
+    "Table:a_sap_performance_ai,columns:(编制年度, 姓名, 人员工号, 绩效)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "'学历字段值有':['硕士','高中','大学专科','博士','初中及以下','大学本科','中专'];",
+    "{'parent_org': 'ES', 'shortname': 'ES-DG', 'fullname': 'Employee Service-DG', 'chinesename': '东莞雇员服务部'}",
+    "{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-PRD21', 'fullname': 'xTW Assembly Production Department-21', 'chinesename': 'xTW后工序生产部-21'}"
+  ],
+  "display_type": "response_table",
+  "thoughts": "要查询罗文洲在T128年的绩效和学历，我们需要从两个表中查询数据：'a_sap_performance_ai'表用于查询绩效，其中T128对应的年份是2023年；'a_sap_employee_education_experience_chinese'表用于查询学历。我们将分别查询这两个表，并使用罗文洲的姓名作为筛选条件。",
+  "sql": "SELECT p.绩效, e.学历 FROM a_sap_performance_ai p JOIN a_sap_employee_education_experience_chinese e ON p.人员工号 = e.人员工号 WHERE p.姓名 = '罗文洲' AND p.编制年度 = '2023' LIMIT 1;",
+  "ai_sql_result": "  [] "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "IDT部门的工程师在T128年和T129年的绩效如何？",
+  "table_info": [
+    "Table:a_sap_performance_ai,columns:(编制年度, 姓名, 人员工号, 绩效)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "'职员包括':'工程师|工程师1|资深工程师|工程师2|资深工程师1|资深工程师2';",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-EP-PRD','fullname': 'Manufacturing Unit Plus Electrode Production Department', 'chinesename': '智能制造特区前工序生产部'}",
+    "{'parent_org': 'HR', 'shortname': 'TR', 'fullname': 'Total Rewards', 'chinesename': '薪酬与激励部'}"
+  ],
+  "display_type": "response_line_chart",
+  "thoughts": "首先，我们需要找到IDT部门的工程师的人员工号，然后根据这些工号去查询他们在T128年和T129年的绩效。我们可以先从a_sap_employee_information_chinese表中筛选出职位为工程师且一级机构名称为IDT的员工，然后利用这些工号在a_sap_performance_ai表中查询对应的绩效数据。由于绩效数据通常用于比较和趋势分析，使用折线图来展示这些数据会比较合适。",
+  "sql": "SELECT p.编制年度, p.姓名, p.人员工号, p.绩效 FROM a_sap_performance_ai p INNER JOIN a_sap_employee_information_chinese e ON p.人员工号 = e.人员工号 WHERE e.职位 SIMILAR TO '%(工程师|工程师1|资深工程师|工程师2|资深工程师1|资深工程师2)%' AND e.一级机构名称 = 'IDT' AND p.编制年度 IN ('T128', 'T129') LIMIT 50",
+  "ai_sql_result": "  [{ 编制年度   T128 ,  姓名   蔡京晶 ,  人员工号  306,  绩效   B+ , { 编制年度   T129 ,  姓名   蔡京晶 ,  人员工号  306,  绩效   B- , { 编制年度   T128 ,  姓名   杨育平 ,  人员工号  2042,  绩效   D , { 编制年度   T129 ,  姓名   杨育平 ,  人员工号  2042,  绩效   B , { 编制年度   T128 ,  姓名   黄叔达 ,  人员工号  70403,  绩效   B , { 编制年度   T129 ,  姓名   黄叔达 ,  人员工号  70403,  绩效   B- , { 编制年度   T128 ,  姓名   张浩 ,  人员工号  69871,  绩效   B- , { 编制年度   T129 ,  姓名   张浩 ,  人员工号  69871,  绩效   B- , { 编制年度   T128 ,  姓名   陈雪妹 ,  人员工号  54435,  绩效   B- , { 编制年度   T129 ,  姓名   陈雪妹 ,  人员工号  54435,  绩效   B , { 编制年度   T128 ,  姓名   赵吉森 ,  人员工号  83941,  绩效   B , { 编制年度   T129 ,  姓名   赵吉森 ,  人员工号  83941,  绩效   B- , { 编制年度   T128 ,  姓名   李乐 ,  人员工号  64018,  绩效   A , { 编制年度   T129 ,  姓名   李乐 ,  人员工号  64018,  绩效   B+ , { 编制年度   T128 ,  姓名   陈晓麟 ,  人员工号  72059,  绩效   A , { 编制年度   T129 ,  姓名   陈晓麟 ,  人员工号  72059,  绩效   B+ , { 编制年度   T128 ,  姓名   田艳阳 ,  人员工号  76046,  绩效   B- , { 编制年度   T129 ,  姓名   田艳阳 ,  人员工号  76046,  绩效   B+ , { 编制年度   T128 ,  姓名   孙君炜 ,  人员工号  66273,  绩效   A , { 编制年度   T129 ,  姓名   孙君炜 ,  人员工号  66273,  绩效   B- , { 编制年度   T128 ,  姓名   欧阳子健 ,  人员工号  75173,  绩效   C , { 编制年度   T129 ,  姓名   欧阳子健 ,  人员工号  75173,  绩效   B , { 编制年度   T128 ,  姓名   郭伟伟 ,  人员工号  88420,  绩效   B- , { 编制年度   T129 ,  姓名   郭伟伟 ,  人员工号  88420,  绩效   B- , { 编制年度   T128 ,  姓名   黄东玲 ,  人员工号  75557,  绩效   B , { 编制年度   T129 ,  姓名   黄东玲 ,  人员工号  75557,  绩效   B- , { 编制年度   T128 ,  姓名   乔新 ,  人员工号  74162,  绩效   B+ , { 编制年度   T129 ,  姓名   乔新 ,  人员工号  74162,  绩效   B , { 编制年度   T128 ,  姓名   彭民权 ,  人员工号  97307,  绩效   B , { 编制年度   T129 ,  姓名   彭民权 ,  人员工号  97307,  绩效   B- , { 编制年度   T128 ,  姓名   丁力 ,  人员工号  92089,  绩效   D , { 编制年度   T129 ,  姓名   丁力 ,  人员工号  92089,  绩效   B+ , { 编制年度   T128 ,  姓名   程炜 ,  人员工号  88758,  绩效   A , { 编制年度   T129 ,  姓名   程炜 ,  人员工号  88758,  绩效   B- , { 编制年度   T128 ,  姓名   林碧治 ,  人员工号  88102,  绩效   B , { 编制年度   T129 ,  姓名   林碧治 ,  人员工号  88102,  绩效   B- , { 编制年度   T128 ,  姓名   刘健余 ,  人员工号  82434,  绩效   B+ , { 编制年度   T129 ,  姓名   刘健余 ,  人员工号  82434,  绩效   B , { 编制年度   T128 ,  姓名   袁光华 ,  人员工号  89479,  绩效   B , { 编制年度   T129 ,  姓名   袁光华 ,  人员工号  89479,  绩效   B , { 编制年度   T128 ,  姓名   孙智超 ,  人员工号  93562,  绩效   B- , { 编制年度   T129 ,  姓名   孙智超 ,  人员工号  93562,  绩效   B , { 编制年度   T128 ,  姓名   连学勇 ,  人员工号  91766,  绩效   B- , { 编制年度   T129 ,  姓名   连学勇 ,  人员工号  91766,  绩效   B , { 编制年度   T128 ,  姓名   金秀凤 ,  人员工号  97763,  绩效   B+ , { 编制年度   T129 ,  姓名   金秀凤 ,  人员工号  97763,  绩效   B , { 编制年度   T128 ,  姓名   吴绍雄 ,  人员工号  114441,  绩效   B- , { 编制年度   T129 ,  姓名   吴绍雄 ,  人员工号  114441,  绩效   B , { 编制年度   T128 ,  姓名   许陈兵 ,  人员工号  123097,  绩效   B+ , { 编制年度   T129 ,  姓名   许陈兵 ,  人员工号  123097,  绩效   B-  "
+}
+{
+  "db_name": "hr_chinese_fk",
+  "user_input": "IDT部门的在职工程师在T128年和T129年的绩效如何？",
+  "table_info": [
+    "Table:a_sap_performance_ai,columns:(编制年度, 姓名, 人员工号, 绩效)",
+    "Table:a_sap_employee_information_chinese,columns:(人员工号, 姓名, 雇佣状态, 职位, 入职日期, 部门负责人, 人事范围, 员工组, 员工子组文本, 上班地点, 英文名, 性别, 国籍, 民族, 籍贯, 身份证地址的省_直辖市, 开始参加工作日期, 员工本人联系号码, 一级机构名称, 二级机构名称, 三级机构名称, 职务名称, 员工工作性质文本, 直属上司工号, 直属上司姓名, 集团入职日期)"
+  ],
+  "extend_info": [
+    "\"公司财年 Txxx 对应年份规则\":\"T127对应2022年，T128对应2023年,按此规律回答问题中的财年对应的年份\";",
+    "'职员包括':'工程师|工程师1|资深工程师|工程师2|资深工程师1|资深工程师2';",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-EP-PRD','fullname': 'Manufacturing Unit Plus Electrode Production Department', 'chinesename': '智能制造特区前工序生产部'}",
+    "{'parent_org': 'MU Plus Operation', 'shortname': 'MU Plus-EP-ME','fullname': 'Manufacturing Unit Plus Electrode ProductionMaintenance Engineering','chinesename': '智能制造特区前工序设备部'}"
+  ],
+  "display_type": "response_line_chart",
+  "thoughts": "首先，我们需要找出IDT部门的在职工程师名单，这可以通过查询a_sap_employee_information_chinese表来实现，筛选出'一级机构名称'为'智能制造特区前工序生产部'或'智能制造特区前工序设备部'，且'职位'符合工程师相关职称的在职员工。然后，我们需要查看这些工程师在T128年（2023年）和T129年（2024年）的绩效记录，这需要查询a_sap_performance_ai表，并将两个表通过'人员工号'关联起来。我们将结果限制为最多50条记录，并选择合适的展示方式。由于这涉及到时间序列的比较，最合适的展示方式可能是折线图。",
+  "sql": "SELECT e.姓名, e.人员工号, p.绩效, p.编制年度 FROM a_sap_employee_information_chinese e JOIN a_sap_performance_ai p ON e.人员工号 = p.人员工号 WHERE e.雇佣状态 = '在职' AND (e.一级机构名称 = '智能制造特区前工序生产部' OR e.一级机构名称 = '智能制造特区前工序设备部') AND e.职位 SIMILAR TO '%工程师%' AND p.编制年度 IN ('T128', 'T129') LIMIT 50",
+  "ai_sql_result": "  [] "
+}
