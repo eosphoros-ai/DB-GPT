@@ -14,7 +14,10 @@ class ResourceType(Enum):
     Knowledge = "knowledge"
     Internet = "internet"
     Plugin = "plugin"
-    File = "file"
+    TextFile = "text_file"
+    ExcelFile = "excel_file"
+    ImageFile = "image_file"
+    AwelFlow = "awel_flow"
 
 
 class AgentResource(BaseModel):
@@ -80,7 +83,7 @@ class ResourceClient(ABC):
         return ""
 
     async def get_resource_prompt(
-        self, resource: AgentResource, question: Optional[str] = None
+        self, conv_uid, resource: AgentResource, question: Optional[str] = None
     ) -> str:
         return resource.resource_prompt_template().format(
             data_type=self.get_data_type(resource),

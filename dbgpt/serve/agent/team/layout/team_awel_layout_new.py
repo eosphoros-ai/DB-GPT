@@ -1,12 +1,12 @@
 import json
 import logging
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, validator
 
 from dbgpt._private.config import Config
 from dbgpt.agent.actions.action import ActionOutput, T
-from dbgpt.agent.agents.agent import Agent, AgentContext, AgentGenerateContext
+from dbgpt.agent.agents.agent_new import Agent, AgentContext, AgentGenerateContext
 from dbgpt.agent.agents.base_agent_new import ConversableAgent
 from dbgpt.agent.agents.base_team import ManagerAgent
 from dbgpt.core.awel import DAG
@@ -35,6 +35,9 @@ class AwelLayoutChatNewManager(ManagerAgent):
         assert value is not None and value != "", "dag must not be empty"
         return value
 
+    async def _a_process_received_message(self, message: Optional[Dict], sender: Agent):
+        pass
+
     async def a_act(
         self,
         message: Optional[str],
@@ -60,7 +63,7 @@ class AwelLayoutChatNewManager(ManagerAgent):
                     "content": message,
                     "current_goal": message,
                 },
-                sender=self,
+                sender=sender,
                 reviewer=reviewer,
                 memory=self.memory,
                 agent_context=self.agent_context,
@@ -73,8 +76,11 @@ class AwelLayoutChatNewManager(ManagerAgent):
             last_message = final_generate_context.rely_messages[-1]
 
             last_agent = await last_node.get_agent(final_generate_context)
+            last_agent.consecutive_auto_reply_counter = (
+                final_generate_context.round_index
+            )
             await last_agent.a_send(
-                last_message, self, start_message_context.reviewer, False
+                last_message, sender, start_message_context.reviewer, False
             )
 
             return ActionOutput(
