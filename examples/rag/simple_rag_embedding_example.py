@@ -7,7 +7,7 @@
             curl --location --request POST 'http://127.0.0.1:5555/api/v1/awel/trigger/examples/rag/embedding' \
             --header 'Content-Type: application/json' \
             --data-raw '{
-              "url": "https://docs.dbgpt.site/docs/awel"
+              "url": "https://docs.dbgpt.site/docs/latest/awel/"
             }'
 """
 

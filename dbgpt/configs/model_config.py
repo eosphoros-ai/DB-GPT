@@ -167,6 +167,8 @@ EMBEDDING_MODEL_CONFIG = {
     # https://huggingface.co/BAAI/bge-large-zh
     "bge-large-zh": os.path.join(MODEL_PATH, "bge-large-zh"),
     "bge-base-zh": os.path.join(MODEL_PATH, "bge-base-zh"),
+    # https://huggingface.co/BAAI/bge-m3, beg need normalize_embeddings=True
+    "bge-m3": os.path.join(MODEL_PATH, "bge-m3"),
     "gte-large-zh": os.path.join(MODEL_PATH, "gte-large-zh"),
     "gte-base-zh": os.path.join(MODEL_PATH, "gte-base-zh"),
     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),

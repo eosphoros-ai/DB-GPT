@@ -29,7 +29,7 @@ class EmbeddingAssembler(BaseAssembler):
 
     def __init__(
         self,
-        knowledge: Knowledge = None,
+        knowledge: Knowledge,
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
         embedding_factory: Optional[EmbeddingFactory] = None,
@@ -69,7 +69,7 @@ class EmbeddingAssembler(BaseAssembler):
     @classmethod
     def load_from_knowledge(
         cls,
-        knowledge: Knowledge = None,
+        knowledge: Knowledge,
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
         embedding_factory: Optional[EmbeddingFactory] = None,
@@ -99,7 +99,11 @@ class EmbeddingAssembler(BaseAssembler):
         )
 
     def persist(self) -> List[str]:
-        """Persist chunks into vector store."""
+        """Persist chunks into vector store.
+
+        Returns:
+            List[str]: List of chunk ids.
+        """
         return self._vector_store_connector.load_document(self._chunks)
 
     def _extract_info(self, chunks) -> List[Chunk]:

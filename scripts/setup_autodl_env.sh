@@ -57,6 +57,8 @@ clean_local_data() {
     rm -rf /root/DB-GPT/pilot/message
     rm -f /root/DB-GPT/logs/*
     rm -f /root/DB-GPT/logsDbChatOutputParser.log
+    rm -rf /root/DB-GPT/pilot/meta_data/alembic/versions/*
+    rm -rf /root/DB-GPT/pilot/meta_data/*.db
 }
 
 usage() {
