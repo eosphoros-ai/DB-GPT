@@ -1,5 +1,4 @@
--- You can change `dbgpt` to your actual metadata database name in your `.env` file
--- eg. `LOCAL_DB_NAME=dbgpt`
+-- Full SQL of v0.5.1, please not modify this file(It must be same as the file in the release package)
 
 CREATE
 DATABASE IF NOT EXISTS dbgpt;

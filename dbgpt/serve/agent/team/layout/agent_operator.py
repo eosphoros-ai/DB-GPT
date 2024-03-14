@@ -256,6 +256,6 @@ class AgentDummyTrigger(Trigger):
         """Initialize a HttpTrigger."""
         super().__init__(**kwargs)
 
-    async def trigger(self) -> None:
+    async def trigger(self, **kwargs) -> None:
         """Trigger the DAG. Not used in HttpTrigger."""
-        pass
+        raise NotImplementedError("Dummy trigger does not support trigger.")

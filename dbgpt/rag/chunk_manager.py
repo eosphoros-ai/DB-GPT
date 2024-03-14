@@ -5,9 +5,10 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
 
-from dbgpt.rag.chunk import Chunk
+from dbgpt.rag.chunk import Chunk, Document
 from dbgpt.rag.extractor.base import Extractor
 from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge
+from dbgpt.rag.text_splitter import TextSplitter
 
 
 class SplitterType(Enum):
@@ -81,14 +82,14 @@ class ChunkManager:
         self._text_splitter = self._chunk_parameters.text_splitter
         self._splitter_type = self._chunk_parameters.splitter_type
 
-    def split(self, documents) -> List[Chunk]:
+    def split(self, documents: List[Document]) -> List[Chunk]:
         """Split a document into chunks."""
         text_splitter = self._select_text_splitter()
         if SplitterType.LANGCHAIN == self._splitter_type:
             documents = text_splitter.split_documents(documents)
             return [Chunk.langchain2chunk(document) for document in documents]
         elif SplitterType.LLAMA_INDEX == self._splitter_type:
-            nodes = text_splitter.split_text(documents)
+            nodes = text_splitter.split_documents(documents)
             return [Chunk.llamaindex2chunk(node) for node in nodes]
         else:
             return text_splitter.split_documents(documents)
@@ -106,7 +107,7 @@ class ChunkManager:
 
     def set_text_splitter(
         self,
-        text_splitter,
+        text_splitter: TextSplitter,
         splitter_type: SplitterType = SplitterType.LANGCHAIN,
     ) -> None:
         """Add text splitter."""
@@ -115,13 +116,13 @@ class ChunkManager:
 
     def get_text_splitter(
         self,
-    ) -> Any:
+    ) -> TextSplitter:
         """Return text splitter."""
         return self._select_text_splitter()
 
     def _select_text_splitter(
         self,
-    ):
+    ) -> TextSplitter:
         """Select text splitter by chunk strategy."""
         if self._text_splitter:
             return self._text_splitter

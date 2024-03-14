@@ -44,8 +44,10 @@ class BaseAssembler(ABC):
         with root_tracer.start_span("BaseAssembler.load_knowledge", metadata=metadata):
             self.load_knowledge(self._knowledge)
 
-    def load_knowledge(self, knowledge) -> None:
+    def load_knowledge(self, knowledge: Optional[Knowledge] = None) -> None:
         """Load knowledge Pipeline."""
+        if not knowledge:
+            raise ValueError("knowledge must be provided.")
         with root_tracer.start_span("BaseAssembler.knowledge.load"):
             documents = knowledge.load()
         with root_tracer.start_span("BaseAssembler.chunk_manager.split"):
@@ -56,8 +58,12 @@ class BaseAssembler(ABC):
         """Return a retriever."""
 
     @abstractmethod
-    def persist(self, chunks: List[Chunk]) -> None:
-        """Persist chunks."""
+    def persist(self) -> List[str]:
+        """Persist chunks.
+
+        Returns:
+            List[str]: List of persisted chunk ids.
+        """
 
     def get_chunks(self) -> List[Chunk]:
         """Return chunks."""
