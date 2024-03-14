@@ -21,7 +21,7 @@ def create_clear_path(path):
 
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
-from langchain_community.vectorstores.pgvector import PGVector
+from langchain_community.vectorstores.pgvector import PGVector, DistanceStrategy
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 
 chunk_size = 300
@@ -66,16 +66,17 @@ def write_to_pg(collection_name, glob_path):
 
 
 def query_from_pg():
-    query = '''在当前年份（2023年）中，哪个一级机构的员工平均绩效得分最低？请列出该机构的名称及其平均绩效得分，并且请考虑到绩效得分'A'到'D'依次递减。'''
-    collection_name = 'hr_chinese_fk_profile'
+    query = '''HR部门2024年1月加班情况'''
+    collection_name = 'new_department_profile'
     db = PGVector(
         connection_string=CONNECTION_STRING,
         embedding_function=embeddings_model,
-        collection_name=collection_name
+        collection_name=collection_name,
+        distance_strategy=DistanceStrategy.COSINE
     )
     corpus = []
 
-    docs_with_score = db.similarity_search_with_score(query, k=4)
+    docs_with_score = db.similarity_search_with_score(query, k=6)
     docs_with_score.sort(key=itemgetter(1), reverse=True)
     for doc, score in docs_with_score:
         print("-" * 80)
@@ -95,33 +96,40 @@ def calcuate_bm25(corpus, query):
     import jieba
     from rank_bm25 import BM25Okapi
     jieba.load_userdict("/datas/liab/DB-GPT/tests/userdict.txt")
-    tokenizerd_query = list(jieba.cut(query))
-    tokenized_corpus = [list(jieba.cut(doc)) for doc in corpus]
+    stop_words = [' ','\t','\n']
+    with open('/datas/liab/DB-GPT/tests/stopwords.txt', 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                stop_words.append(line)
+
+    tokenizerd_query = [jiebaword.upper() for jiebaword in list(jieba.cut(query))  if jiebaword not in stop_words]
+    tokenized_corpus = [[jiebaword.upper() for jiebaword in list(jieba.cut(doc)) if jiebaword not in stop_words] for doc in corpus]
+
     bm25 = BM25Okapi(tokenized_corpus)
     doc_scores = bm25.get_scores(tokenizerd_query)
     return score_normalize(doc_scores)
 
 
 def query_from_pg_bm25():
-    query = 'IDT部门的工程师在T128年的绩效如何？'
-    collection_name = 'type2_department_profile'
+    query = '''plus有多少人迟到？'''
+    collection_name = 'new_department_profile'
     db = PGVector(
         connection_string=CONNECTION_STRING,
         embedding_function=embeddings_model,
         collection_name=collection_name
     )
 
-    docs_with_score = db.similarity_search_with_score(query, k=6)
+    docs_with_score = db.similarity_search_with_score(query, k=30)
     corpus = []
     for doc, score in docs_with_score:
         corpus.append(doc.page_content)
-
     doc_scores = calcuate_bm25(corpus, query)
 
     for doc, score in zip(corpus, doc_scores):
-        if float(score) > 0:
+        if float(score) > 0.7:
             print(doc, score)
-
+            pass
 
 def delete_from_pg(del_collection_name):
     # del_collection_name = 'type2_general_profile'
@@ -138,7 +146,7 @@ def split_data_to_path():
     data_list = [('general_knowledge', 'general'),
                  ('一级机构说明', 'department'),
                  ('三级机构说明', 'department'),
-                 ('二级机构说明', 'department')]
+                 ('二级机构说明', 'department'),]
     for data_path,new_path in data_list:
         with open(f'/datas/liab/DB-GPT/tests/atl_data/type1/{data_path}.txt', 'r') as f:
             conten = f.readlines()
@@ -174,6 +182,9 @@ def qa_sample_to_dict():
 
 
 def init_delete_all_collection():
+    '''
+    re_init data
+    '''
     # split general data & qa samples
     split_data_to_path()
     collection_list = [
@@ -181,6 +192,7 @@ def init_delete_all_collection():
         ('type2_general_profile', '/datas/liab/DB-GPT/tests/atl_data/type2/general/*.txt'),
         ('type3_qasamples_profile', '/datas/liab/DB-GPT/tests/atl_data/type3/apart/*.txt'),  # QA sample对
         ('type2_department_profile', '/datas/liab/DB-GPT/tests/atl_data/type2/department/*.txt'),
+        ('new_department_profile', '/datas/liab/DB-GPT/tests/atl_data/type2/new_department/*.txt'),
     ]
     for cl in collection_list:
         delete_from_pg(cl[0])
@@ -274,21 +286,23 @@ def rrf_ranker(bm25_docs, embedding_docs, weights=[0.5, 0.5], c=60, topk=6):
 
 if __name__ == '__main__':
     # delete_from_pg()
-    init_delete_all_collection()
-    exit()
-    print('embedding')
-    embedding_docs = query_from_pg()
-
-    print('bm25')
-    bm25_docs = bm25test()
-
-    print('rrf ranker')
-    print(rrf_ranker(bm25_docs, embedding_docs))
+    # init_delete_all_collection()
+    #
+    # print('embedding')
+    # embedding_docs = query_from_pg()
+    #
+    # print('bm25')
+    # bm25_docs = bm25test()
+    #
+    # print('rrf ranker')
+    # print(rrf_ranker(bm25_docs, embedding_docs))
     # langchain_bm25()
     # split_data_to_path()
-    #
-    # query_from_pg_bm25()
+    # query_from_pg()
+    query_from_pg_bm25()
     # write_to_pg()
     # qa_sample_to_dict()
     # add_docs_to_pg()
     # get_qa_samples()
+    # write_to_pg('new_department_profile','/datas/liab/DB-GPT/tests/atl_data/type2/new_department/*.md')
+

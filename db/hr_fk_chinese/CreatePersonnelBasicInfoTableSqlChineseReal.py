@@ -175,7 +175,7 @@ SELECT     CASE
         WHEN PA0008_TRFGR IN ('F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7') 
         THEN PA0008_TRFGR 
         ELSE NULL 
-    END AS PA0008_TRFGR,{','.join(columns_list)} FROM hzuser.a_sap_personnel_basic_information_ai  WHERE PA0008_TRFGR!='C0' ORDER BY ZZJTRZ DESC 
+    END AS PA0008_TRFGR,{','.join(columns_list)} FROM (SELECT * FROM hzuser.a_sap_personnel_basic_information_ai WHERE PA0008_TRFGR  NOT IN ('C0')   UNION  SELECT * FROM hzuser.a_sap_personnel_basic_information_ai WHERE PA0008_TRFGR IS null ) aa 
     '''
 # # 连接数据库的功能初始化
 db_oracle = connectOracle()
