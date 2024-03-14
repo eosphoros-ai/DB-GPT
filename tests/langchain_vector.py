@@ -104,16 +104,19 @@ def calcuate_bm25(corpus, query):
                 stop_words.append(line)
 
     tokenizerd_query = [jiebaword.upper() for jiebaword in list(jieba.cut(query))  if jiebaword not in stop_words]
+    print('tokenizerd_query',tokenizerd_query)
     tokenized_corpus = [[jiebaword.upper() for jiebaword in list(jieba.cut(doc)) if jiebaword not in stop_words] for doc in corpus]
-
+    print('tokenized_corpus',tokenized_corpus)
     bm25 = BM25Okapi(tokenized_corpus)
     doc_scores = bm25.get_scores(tokenizerd_query)
     return score_normalize(doc_scores)
 
 
 def query_from_pg_bm25():
-    query = '''plus有多少人迟到？'''
+    query = '''ATL的经理有多少位？'''
     collection_name = 'new_department_profile'
+    collection_name = 'type2_general_profile'
+    collection_name = 'hr_chinese_fk_profile'
     db = PGVector(
         connection_string=CONNECTION_STRING,
         embedding_function=embeddings_model,
@@ -127,8 +130,8 @@ def query_from_pg_bm25():
     doc_scores = calcuate_bm25(corpus, query)
 
     for doc, score in zip(corpus, doc_scores):
+        print(doc, score)
         if float(score) > 0.7:
-            print(doc, score)
             pass
 
 def delete_from_pg(del_collection_name):
