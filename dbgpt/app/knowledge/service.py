@@ -334,23 +334,31 @@ class KnowledgeService:
         embedding_fn = embedding_factory.create(
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
-        from dbgpt.storage.vector_store.base import VectorStoreConfig
 
-        config = VectorStoreConfig(
-            name=space_name,
-            embedding_fn=embedding_fn,
-            max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
-        )
+        if CFG.VECTOR_STORE_TYPE.lower() == "pgvector":
+            from dbgpt.storage.vector_store.pgvector_store import PGVectorConfig
+            config = PGVectorConfig(name=space_name, connection_string=CFG.CONNECTION_STRING)
+        else:
+
+            from dbgpt.storage.vector_store.base import VectorStoreConfig
+
+            config = VectorStoreConfig(
+                name=space_name,
+                embedding_fn=embedding_fn,
+                max_chunks_once_load=CFG.KNOWLEDGE_MAX_CHUNKS_ONCE_LOAD,
+            )
         vector_store_connector = VectorStoreConnector(
             vector_store_type=CFG.VECTOR_STORE_TYPE,
             vector_store_config=config,
         )
+
         knowledge = KnowledgeFactory.create(
             datasource=doc.content,
             knowledge_type=KnowledgeType.get_by_value(doc.doc_type),
         )
         assembler = EmbeddingAssembler.load_from_knowledge(
             knowledge=knowledge,
+            embedding_model=CFG.EMBEDDING_MODEL,
             chunk_parameters=chunk_parameters,
             vector_store_connector=vector_store_connector,
         )

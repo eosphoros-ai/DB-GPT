@@ -9,6 +9,10 @@ from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.serve.rag.assembler.base import BaseAssembler
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
+from dbgpt._private.config import Config
+from dbgpt.component import SystemApp
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
+CFG = Config()
 
 class EmbeddingAssembler(BaseAssembler):
     """Embedding Assembler
@@ -54,7 +58,8 @@ class EmbeddingAssembler(BaseAssembler):
             embedding_factory = embedding_factory or DefaultEmbeddingFactory(
                 default_model_name=self._embedding_model
             )
-            self.embedding_fn = embedding_factory.create(self._embedding_model)
+            # self.embedding_fn = embedding_factory.create(self._embedding_model)
+            self.embedding_fn = embedding_factory.create(model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL])
         if self._vector_store_connector.vector_store_config.embedding_fn is None:
             self._vector_store_connector.vector_store_config.embedding_fn = (
                 self.embedding_fn

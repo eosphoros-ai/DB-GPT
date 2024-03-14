@@ -70,8 +70,11 @@ class ChatKnowledge(BaseChat):
             model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
         )
         from dbgpt.storage.vector_store.base import VectorStoreConfig
-
-        config = VectorStoreConfig(name=self.knowledge_space, embedding_fn=embedding_fn)
+        if CFG.VECTOR_STORE_TYPE.lower() == "pgvector":
+            from dbgpt.storage.vector_store.pgvector_store import PGVectorConfig
+            config = PGVectorConfig(name=self.knowledge_space, connection_string=CFG.CONNECTION_STRING)
+        else:
+            config = VectorStoreConfig(name=self.knowledge_space, embedding_fn=embedding_fn)
         vector_store_connector = VectorStoreConnector(
             vector_store_type=CFG.VECTOR_STORE_TYPE,
             vector_store_config=config,

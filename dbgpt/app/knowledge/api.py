@@ -234,6 +234,8 @@ def batch_document_sync(space_name: str, request: List[KnowledgeSyncRequest]):
         )
         return Result.succ({"tasks": doc_ids})
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Result.failed(code="E000X", msg=f"document sync error {e}")
 
 

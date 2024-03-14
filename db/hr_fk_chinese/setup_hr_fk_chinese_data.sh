@@ -9,5 +9,5 @@ echo "[info] a_sap_employee_education_experience_chinese set up success!"
 echo "[info] a_sap_positions_responsibilities_risks_chinese set up success!"
 /datas/liab/miniconda3/envs/dbgpt_test/bin/python3 /datas/liab/DB-GPT/db/hr_fk_chinese/CreateReportingRelationshipTableSqlChineseReal.py
 echo "[info] a_sap_reporting_relationship_chinese set up success!"
-/datas/liab/miniconda3/envs/dbgpt_test/bin/python3 /datas/liab/DB-GPT/db/hr_fk_chinese/CreatePersonnelAttendanceDetailsSqlChinese.py
-echo "[info] a_sap_employee_attendance_details_chinese set up success!"
+#/datas/liab/miniconda3/envs/dbgpt_test/bin/python3 /datas/liab/DB-GPT/db/hr_fk_chinese/CreatePersonnelAttendanceDetailsSqlChinese.py
+#echo "[info] a_sap_employee_attendance_details_chinese set up success!"
