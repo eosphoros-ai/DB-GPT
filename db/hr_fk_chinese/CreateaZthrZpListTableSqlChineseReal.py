@@ -6,11 +6,13 @@
 '''
 
 from db.ConnectGP import pythonGP
-import pandas as pd
-
 from db.ConnectOracle import connectOracle
-
-db = pythonGP(host='172.23.10.249', port='5432', dbname='hr_chinese_fk', user='postgres', password='labpassword')
+import sys
+if len(sys.argv)>1:
+    dbname = sys.argv[1]
+else:
+    dbname = 'hr_chinese_fk'
+db = pythonGP(host='172.23.10.249', port='5432', dbname=dbname, user='postgres', password='labpassword')
 
 table_name = 'a_sap_staffing_recruitment_plan_chinese'
 sql = f'''

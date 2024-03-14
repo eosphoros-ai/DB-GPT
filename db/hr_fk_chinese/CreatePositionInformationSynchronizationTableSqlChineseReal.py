@@ -4,15 +4,14 @@
 @author: Li Anbang
 @Create Date: 2024/3/11 上午9:57
 '''
-
-
 from db.ConnectGP import pythonGP
-import pandas as pd
-
 from db.ConnectOracle import connectOracle
-
-# db = pythonGP(host='172.23.10.249', port='5432', dbname='postgres', user='chatgpt', password='chatgpt')
-db = pythonGP(host='172.23.10.249', port='5432', dbname='hr_chinese_fk', user='postgres', password='labpassword')
+import sys
+if len(sys.argv)>1:
+    dbname = sys.argv[1]
+else:
+    dbname = 'hr_chinese_fk'
+db = pythonGP(host='172.23.10.249', port='5432', dbname=dbname, user='postgres', password='labpassword')
 
 table_name = 'a_sap_positions_responsibilities_risks_chinese'
 sql = f'''
