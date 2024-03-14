@@ -118,7 +118,7 @@ int2str = ['pernr', 'spvs1', 'spvs2', 'spvs3', 'mngr1', 'mngr2', 'mngr3', 'mngr4
 blob2str = ['mngr3_stext']
 
 sql = '''
-SELECT * FROM hzuser.a_sap_reporting_relationship_ai
+SELECT * FROM hzuser.a_sap_reporting_relationship_ai where ORGT1!='CJR'
     '''
 # # 连接数据库的功能初始化
 db_oracle = connectOracle()
