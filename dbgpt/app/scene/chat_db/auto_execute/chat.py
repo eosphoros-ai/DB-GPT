@@ -10,6 +10,7 @@ from dbgpt.rag.retriever.rerank import RRFRanker
 from dbgpt.util.executor_utils import blocking_func_to_async
 from dbgpt.util.tracer import root_tracer, trace
 import re
+
 CFG = Config()
 
 
@@ -98,7 +99,7 @@ class ChatWithDbAutoExecute(BaseChat):
             qa_samples += str(contents.get(qa)) + '\n\n'
             qa_tables.extend(re.findall('(a_sap\w*)', contents.get(qa)))
 
-            print('qa_tables::',re.findall('(a_sap\w*)', contents.get(qa)))
+            print('qa_tables::', re.findall('(a_sap\w*)', contents.get(qa)))
         # BM25
         with root_tracer.start_span("ChatWithDbAutoExecute.get_db_bm25"):
             bm25_tmep = await blocking_func_to_async(
@@ -148,12 +149,11 @@ class ChatWithDbAutoExecute(BaseChat):
 
         # Ensemble RRF ranker
         rrf_ranker = RRFRanker(topk=4, weights=[0.3, 0.3, 0.4])
-        rrf_ranker_scores = rrf_ranker.rank([table_infos, bm25_tmep, [table_map[table_name] for table_name in qa_tables]])
-        print('rrf_ranker_scores', rrf_ranker_scores)
-        print()
-        print()
-
+        rrf_ranker_scores = rrf_ranker.rank(
+            [table_infos, bm25_tmep, [table_map[table_name] for table_name in qa_tables]])
+        print('LLM reranker ')
         print('table_map::', table_map)
+        print()
         rerank_result = await rerank_llm(self.current_user_input, '\n'.join([rrf.content for rrf in rrf_ranker_scores]))
 
         print('rerank_result::', rerank_result)
@@ -162,17 +162,7 @@ class ChatWithDbAutoExecute(BaseChat):
             for table in rerank_result['Relate_tables']:
                 tables_rerank_info.append(table_map[table.strip('`')])
 
-        table_infos = tables_rerank_info
-
-        # type1 所有的数据都载入
-        # with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
-        #     extend_infos = await blocking_func_to_async(
-        #         self._executor,
-        #         client.get_db_summary,
-        #         'atl_general_data_1',
-        #         self.current_user_input,
-        #         2,
-        #     )
+        table_infos = '\n'.join(tables_rerank_info)
 
         with root_tracer.start_span("ChatWithDbAutoExecute.get_db_bm25"):
             bm25_general_tmep = await blocking_func_to_async(
@@ -183,41 +173,21 @@ class ChatWithDbAutoExecute(BaseChat):
                 0.3,
             )
 
-        with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
-            general_info = await blocking_func_to_async(
-                self._executor,
-                client.get_db_summary,
-                'type2_general',
-                self.current_user_input,
-                6,
-            )
-
-        rrf_ranker = RRFRanker(topk=6)
-        rrf_ranker_scores = rrf_ranker.rank([bm25_general_tmep, general_info])
-        general_info_after_rrf = [rrf.content for rrf in rrf_ranker_scores]
-
-        with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
-            department_info = await blocking_func_to_async(
-                self._executor,
-                client.get_db_summary,
-                'type2_department',
-                self.current_user_input,
-                6,
-            )
         with root_tracer.start_span("ChatWithDbAutoExecute.get_db_bm25"):
-            bm25_department_tmep = await blocking_func_to_async(
+            bm25_department_temp = await blocking_func_to_async(
                 self._executor,
                 client.get_db_bm25,
-                'type2_department',
+                'new_department',
                 self.current_user_input,
-                0.3,
+                0.7,
             )
+        if len(bm25_department_temp) > 0:
+            bm25_department_text = '如下用Markdown表格结构来说明部门机构的关系。\n'
+            bm25_department_text += '\n'.join(bm25_department_temp)
+        else:
+            bm25_department_text = ''
 
-        rrf_ranker = RRFRanker(topk=6)
-        rrf_ranker_scores = rrf_ranker.rank([bm25_department_tmep, department_info])
-        department_info_after_rrf = [rrf.content for rrf in rrf_ranker_scores]
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        extend_infos = general_info_after_rrf + department_info_after_rrf
+        extend_infos = '\n'.join(bm25_general_tmep) + bm25_department_text
         input_values = {
             "db_name": self.db_name,
             "user_input": self.current_user_input,
@@ -227,7 +197,7 @@ class ChatWithDbAutoExecute(BaseChat):
             "extend_info": extend_infos,
             "display_type": self._generate_numbered_list(),
             "qa_samples": qa_samples,
-            "current_date": current_date,
+            "current_date": datetime.now().strftime("%Y-%m-%d"),
         }
         return input_values
 
