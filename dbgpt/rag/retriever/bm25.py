@@ -21,9 +21,9 @@ def calcuate_bm25(corpus, query):
                 stop_words.append(line)
 
     tokenizerd_query = [jiebaword.upper() for jiebaword in list(jieba.cut(query))  if jiebaword not in stop_words]
-    print('tokenizerd_query',tokenizerd_query)
+    # print('tokenizerd_query',tokenizerd_query)
     tokenized_corpus = [[jiebaword.upper() for jiebaword in list(jieba.cut(doc)) if jiebaword not in stop_words] for doc in corpus]
-    print('tokenized_corpus',tokenized_corpus)
+    # print('tokenized_corpus',tokenized_corpus)
     bm25 = BM25Okapi(tokenized_corpus)
     doc_scores = bm25.get_scores(tokenizerd_query)
     return score_normalize(doc_scores)

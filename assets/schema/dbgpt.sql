@@ -1,9 +1,9 @@
--- You can change `dbgpt` to your actual metadata database name in your `.env` file
--- eg. `LOCAL_DB_NAME=dbgpt`
+-- You can change `dbgpt_muplus` to your actual metadata database name in your `.env` file
+-- eg. `LOCAL_DB_NAME=dbgpt_muplus`
 
 CREATE
-DATABASE IF NOT EXISTS dbgpt;
-use dbgpt;
+DATABASE IF NOT EXISTS dbgpt_muplus;
+use dbgpt_muplus;
 
 -- For alembic migration tool
 CREATE TABLE IF NOT EXISTS `alembic_version`
@@ -264,7 +264,7 @@ CREATE TABLE `gpts_plans` (
   UNIQUE KEY `uk_sub_task` (`conv_id`,`sub_task_num`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpt plan";
 
--- dbgpt.dbgpt_serve_flow definition
+-- dbgpt_muplus.dbgpt_serve_flow definition
 CREATE TABLE `dbgpt_serve_flow` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
   `uid` varchar(128) NOT NULL COMMENT 'Unique id',
@@ -292,7 +292,7 @@ CREATE TABLE `dbgpt_serve_flow` (
   KEY `ix_dbgpt_serve_flow_name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- dbgpt.gpts_app definition
+-- dbgpt_muplus.gpts_app definition
 CREATE TABLE `gpts_app` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
   `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
@@ -322,7 +322,7 @@ CREATE TABLE `gpts_app_collection` (
   KEY `idx_user_code` (`user_code`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpt collections";
 
--- dbgpt.gpts_app_detail definition
+-- dbgpt_muplus.gpts_app_detail definition
 CREATE TABLE `gpts_app_detail` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
   `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
