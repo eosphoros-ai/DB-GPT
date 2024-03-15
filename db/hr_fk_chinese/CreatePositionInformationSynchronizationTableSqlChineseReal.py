@@ -4,15 +4,14 @@
 @author: Li Anbang
 @Create Date: 2024/3/11 上午9:57
 '''
-
-
 from db.ConnectGP import pythonGP
-import pandas as pd
-
 from db.ConnectOracle import connectOracle
-
-# db = pythonGP(host='172.23.10.249', port='5432', dbname='postgres', user='chatgpt', password='chatgpt')
-db = pythonGP(host='172.23.10.249', port='5432', dbname='hr_chinese_fk', user='postgres', password='labpassword')
+import sys
+if len(sys.argv)>1:
+    dbname = sys.argv[1]
+else:
+    dbname = 'hr_chinese_fk'
+db = pythonGP(host='172.23.10.249', port='5432', dbname=dbname, user='postgres', password='labpassword')
 
 table_name = 'a_sap_positions_responsibilities_risks_chinese'
 sql = f'''
@@ -89,7 +88,8 @@ aa = [j for j in columns_name_dict.items()]
 for i in aa[::-1]:
     sql = sql.lower().replace(i[0],
                               i[1])
-print(sql)
+# print(sql)
+print((dbname+'-'+ table_name).center(80, '='))
 print(db.excuSql(sql))
 
 useless_col = ['etl_date', 'zrntnum', 'z0006', 'iskeyjob', 'zrnnum', 'zrfnum']
@@ -110,5 +110,5 @@ df = df.rename(columns=columns_name_dict)
 need_col = list(columns_name_dict.values())
 df = df[need_col]
 # df = df.drop(useless_col,axis=1)
-print(df)
+# print(df)
 db.insertGP(df, 'public', table_name)

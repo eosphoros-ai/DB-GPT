@@ -1,1 +1,1 @@
-一级机构的值都是缩写，是shortname，比如:['SRC','APD','CPD','FE',...,'MU Plus'];二级机构的值都是缩写，是shortname，比如:['OMO','CSR&EHS Sys','AD','LOG-HK',...,'xTW-EP-PRD'];三级机构的值都是缩写，是shortname，比如:['PAP1','BTL-MDA','SSL-ME-ASSY2','ME-Program',...,'Site-SSL'];
+复职员工的条件为：离职原因不为空，同时雇佣状态是在值的人员。
