@@ -3,6 +3,7 @@
 This runner will run the workflow in the current process.
 """
 import logging
+import traceback
 from typing import Any, Dict, List, Optional, Set, cast
 
 from dbgpt.component import SystemApp
@@ -59,8 +60,8 @@ class DefaultWorkflowRunner(WorkflowRunner):
             streaming_call=streaming_call,
             node_name_to_ids=job_manager._node_name_to_ids,
         )
-        if node.dag:
-            self._running_dag_ctx[node.dag.dag_id] = dag_ctx
+        # if node.dag:
+        #     self._running_dag_ctx[node.dag.dag_id] = dag_ctx
         logger.info(
             f"Begin run workflow from end operator, id: {node.node_id}, runner: {self}"
         )
@@ -75,8 +76,8 @@ class DefaultWorkflowRunner(WorkflowRunner):
         if not streaming_call and node.dag:
             # streaming call not work for dag end
             await node.dag._after_dag_end()
-        if node.dag:
-            del self._running_dag_ctx[node.dag.dag_id]
+        # if node.dag:
+        #     del self._running_dag_ctx[node.dag.dag_id]
         return dag_ctx
 
     async def _execute_node(
@@ -143,7 +144,11 @@ class DefaultWorkflowRunner(WorkflowRunner):
                 )
                 _skip_current_downstream_by_node_name(node, skip_nodes, skip_node_ids)
         except Exception as e:
-            logger.info(f"Run operator {node.node_id} error, error message: {str(e)}")
+            msg = traceback.format_exc()
+            logger.info(
+                f"Run operator {type(node)}({node.node_id}) error, error message: "
+                f"{msg}"
+            )
             task_ctx.set_current_state(TaskState.FAILED)
             raise e
 

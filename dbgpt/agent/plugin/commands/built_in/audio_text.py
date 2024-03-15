@@ -5,7 +5,7 @@ import requests
 
 from dbgpt._private.config import Config
 
-from ..command_mange import command
+from ..command_manage import command
 
 CFG = Config()
 

@@ -13,6 +13,7 @@ from typing import Any, TypeVar, Union
 
 from dbgpt.core import ModelOutput
 from dbgpt.core.awel import MapOperator
+from dbgpt.core.awel.flow import IOField, OperatorCategory, OperatorType, ViewMetadata
 
 T = TypeVar("T")
 ResponseTye = Union[str, bytes, ModelOutput]
@@ -25,6 +26,33 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
 
     Output parsers help structure language model responses.
     """
+
+    metadata = ViewMetadata(
+        label="Base Output Operator",
+        name="base_output_operator",
+        operator_type=OperatorType.TRANSFORM_STREAM,
+        category=OperatorCategory.OUTPUT_PARSER,
+        description="The base LLM out parse.",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "Model Output",
+                "model_output",
+                ModelOutput,
+                is_list=True,
+                description="The model output of upstream.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model Output",
+                "model_output",
+                str,
+                is_list=True,
+                description="The model output after transform to openai stream format",
+            )
+        ],
+    )
 
     def __init__(self, is_stream_out: bool = True, **kwargs):
         """Create a new output parser."""

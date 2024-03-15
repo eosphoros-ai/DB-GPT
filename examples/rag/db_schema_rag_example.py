@@ -2,7 +2,7 @@ import os
 
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
-from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
+from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.serve.rag.assembler.db_schema import DBSchemaAssembler
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector

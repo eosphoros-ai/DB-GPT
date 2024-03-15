@@ -197,10 +197,12 @@ CREATE TABLE IF NOT EXISTS `prompt_manage`
   `sys_code` varchar(255) DEFAULT NULL COMMENT 'system app ',
   `created_at` datetime DEFAULT NULL COMMENT 'create time',
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
+  `team_mode` varchar(255) NULL COMMENT 'agent team work mode',
+
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_gpts_conversations` (`conv_id`),
   KEY `idx_gpts_name` (`gpts_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COMMENT="gpt conversations";
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpt conversations";
 
 CREATE TABLE IF NOT EXISTS `gpts_instance` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
@@ -220,7 +222,7 @@ CREATE TABLE IF NOT EXISTS `gpts_instance` (
   `is_sustainable` tinyint(1) NOT NULL COMMENT 'Applications for sustainable dialogue',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_gpts` (`gpts_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COMMENT="gpts instance";
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpts instance";
 
 CREATE TABLE `gpts_messages` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
@@ -230,7 +232,7 @@ CREATE TABLE `gpts_messages` (
   `model_name` varchar(255) DEFAULT NULL COMMENT 'message generate model',
   `rounds` int(11) NOT NULL COMMENT 'dialogue turns',
   `content` text COMMENT 'Content of the speech',
-  `current_gogal` text COMMENT 'The target corresponding to the current message',
+  `current_goal` text COMMENT 'The target corresponding to the current message',
   `context` text COMMENT 'Current conversation context',
   `review_info` text COMMENT 'Current conversation review info',
   `action_report` text COMMENT 'Current conversation action report',
@@ -239,7 +241,7 @@ CREATE TABLE `gpts_messages` (
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
   PRIMARY KEY (`id`),
   KEY `idx_q_messages` (`conv_id`,`rounds`,`sender`)
-) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COMMENT="gpts message";
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpts message";
 
 
 CREATE TABLE `gpts_plans` (
@@ -260,7 +262,83 @@ CREATE TABLE `gpts_plans` (
   `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_sub_task` (`conv_id`,`sub_task_num`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COMMENT="gpt plan";
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpt plan";
+
+-- dbgpt.dbgpt_serve_flow definition
+CREATE TABLE `dbgpt_serve_flow` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
+  `uid` varchar(128) NOT NULL COMMENT 'Unique id',
+  `dag_id` varchar(128) DEFAULT NULL COMMENT 'DAG id',
+  `name` varchar(128) DEFAULT NULL COMMENT 'Flow name',
+  `flow_data` text COMMENT 'Flow data, JSON format',
+  `user_name` varchar(128) DEFAULT NULL COMMENT 'User name',
+  `sys_code` varchar(128) DEFAULT NULL COMMENT 'System code',
+  `gmt_created` datetime DEFAULT NULL COMMENT 'Record creation time',
+  `gmt_modified` datetime DEFAULT NULL COMMENT 'Record update time',
+  `flow_category` varchar(64) DEFAULT NULL COMMENT 'Flow category',
+  `description` varchar(512) DEFAULT NULL COMMENT 'Flow description',
+  `state` varchar(32) DEFAULT NULL COMMENT 'Flow state',
+  `error_message` varchar(512) NULL comment 'Error message',
+  `source` varchar(64) DEFAULT NULL COMMENT 'Flow source',
+  `source_url` varchar(512) DEFAULT NULL COMMENT 'Flow source url',
+  `version` varchar(32) DEFAULT NULL COMMENT 'Flow version',
+  `label` varchar(128) DEFAULT NULL COMMENT 'Flow label',
+  `editable` int DEFAULT NULL COMMENT 'Editable, 0: editable, 1: not editable',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_uid` (`uid`),
+  KEY `ix_dbgpt_serve_flow_sys_code` (`sys_code`),
+  KEY `ix_dbgpt_serve_flow_uid` (`uid`),
+  KEY `ix_dbgpt_serve_flow_dag_id` (`dag_id`),
+  KEY `ix_dbgpt_serve_flow_user_name` (`user_name`),
+  KEY `ix_dbgpt_serve_flow_name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- dbgpt.gpts_app definition
+CREATE TABLE `gpts_app` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
+  `app_name` varchar(255) NOT NULL COMMENT 'Current AI assistant name',
+  `app_describe` varchar(2255) NOT NULL COMMENT 'Current AI assistant describe',
+  `language` varchar(100) NOT NULL COMMENT 'gpts language',
+  `team_mode` varchar(255) NOT NULL COMMENT 'Team work mode',
+  `team_context` text COMMENT 'The execution logic and team member content that teams with different working modes rely on',
+  `user_code` varchar(255) DEFAULT NULL COMMENT 'user code',
+  `sys_code` varchar(255) DEFAULT NULL COMMENT 'system app code',
+  `created_at` datetime DEFAULT NULL COMMENT 'create time',
+  `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
+  `icon` varchar(1024) DEFAULT NULL COMMENT 'app icon, url',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_gpts_app` (`app_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `gpts_app_collection` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
+  `user_code` int(11) NOT NULL COMMENT 'user code',
+  `sys_code` varchar(255) NOT NULL COMMENT 'system app code',
+  `created_at` datetime DEFAULT NULL COMMENT 'create time',
+  `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
+  PRIMARY KEY (`id`),
+  KEY `idx_app_code` (`app_code`),
+  KEY `idx_user_code` (`user_code`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT="gpt collections";
+
+-- dbgpt.gpts_app_detail definition
+CREATE TABLE `gpts_app_detail` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
+  `app_code` varchar(255) NOT NULL COMMENT 'Current AI assistant code',
+  `app_name` varchar(255) NOT NULL COMMENT 'Current AI assistant name',
+  `agent_name` varchar(255) NOT NULL COMMENT ' Agent name',
+  `node_id` varchar(255) NOT NULL COMMENT 'Current AI assistant Agent Node id',
+  `resources` text COMMENT 'Agent bind  resource',
+  `prompt_template` text COMMENT 'Agent bind  template',
+  `llm_strategy` varchar(25) DEFAULT NULL COMMENT 'Agent use llm strategy',
+  `llm_strategy_value` text COMMENT 'Agent use llm strategy value',
+  `created_at` datetime DEFAULT NULL COMMENT 'create time',
+  `updated_at` datetime DEFAULT NULL COMMENT 'last update time',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_gpts_app_agent_node` (`app_name`,`agent_name`,`node_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE
 DATABASE IF NOT EXISTS EXAMPLE_1;

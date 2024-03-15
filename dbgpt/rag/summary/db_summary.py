@@ -1,31 +1,48 @@
-class DBSummary:
-    def __init__(self, name):
-        self.name = name
-        self.summary = None
-        self.tables = []
-        self.metadata = str
+"""Summary classes for database, table, field and index."""
+from typing import Dict, Iterable, List, Optional, Tuple
 
-    def get_summary(self):
+
+class DBSummary:
+    """Database summary class."""
+
+    def __init__(self, name: str):
+        """Create a new DBSummary."""
+        self.name = name
+        self.summary: Optional[str] = None
+        self.tables: Iterable[str] = []
+        self.metadata: Optional[str] = None
+
+    def get_summary(self) -> Optional[str]:
+        """Get the summary."""
         return self.summary
 
 
 class TableSummary:
-    def __init__(self, name):
+    """Table summary class."""
+
+    def __init__(self, name: str):
+        """Create a new TableSummary."""
         self.name = name
-        self.summary = None
-        self.fields = []
-        self.indexes = []
+        self.summary: Optional[str] = None
+        self.fields: List[Tuple] = []
+        self.indexes: List[Dict] = []
 
 
 class FieldSummary:
-    def __init__(self, name):
+    """Field summary class."""
+
+    def __init__(self, name: str):
+        """Create a new FieldSummary."""
         self.name = name
         self.summary = None
         self.data_type = None
 
 
 class IndexSummary:
-    def __init__(self, name):
+    """Index summary class."""
+
+    def __init__(self, name: str):
+        """Create a new IndexSummary."""
         self.name = name
-        self.summary = None
-        self.bind_fields = []
+        self.summary: Optional[str] = None
+        self.bind_fields: List[str] = []

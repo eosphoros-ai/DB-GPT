@@ -1,24 +1,30 @@
 """The message operator."""
+import logging
 import uuid
 from abc import ABC
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from dbgpt.core import (
+    InMemoryStorage,
     LLMClient,
     MessageStorageItem,
     ModelMessage,
     ModelMessageRoleType,
+    ModelRequest,
     ModelRequestContext,
     StorageConversation,
     StorageInterface,
 )
 from dbgpt.core.awel import BaseOperator, MapOperator
+from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
 from dbgpt.core.interface.message import (
     BaseMessage,
     _messages_to_str,
     _MultiRoundMessageMapper,
     _split_messages_by_round,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class BaseConversationOperator(BaseOperator, ABC):
@@ -96,7 +102,7 @@ class BaseConversationOperator(BaseOperator, ABC):
                 raise ValueError(f"Message role {message.role} is not supported")
 
 
-ChatHistoryLoadType = Union[ModelRequestContext, Dict[str, Any]]
+ChatHistoryLoadType = Union[ModelRequest, ModelRequestContext, Dict[str, Any]]
 
 
 class PreChatHistoryLoadOperator(
@@ -111,6 +117,50 @@ class PreChatHistoryLoadOperator(
     This operator just load the conversation and messages from storage.
     """
 
+    metadata = ViewMetadata(
+        label="Chat History Load Operator",
+        name="chat_history_load_operator",
+        category=OperatorCategory.CONVERSION,
+        description="The operator to load chat history from storage.",
+        parameters=[
+            Parameter.build_from(
+                label="Conversation Storage",
+                name="storage",
+                type=StorageInterface,
+                optional=True,
+                default=None,
+                description="The conversation storage, store the conversation items("
+                "Not include message items). If None, we will use InMemoryStorage.",
+            ),
+            Parameter.build_from(
+                label="Message Storage",
+                name="message_storage",
+                type=StorageInterface,
+                optional=True,
+                default=None,
+                description="The message storage, store the messages of one "
+                "conversation. If None, we will use InMemoryStorage.",
+            ),
+        ],
+        inputs=[
+            IOField.build_from(
+                label="Model Request",
+                name="input_value",
+                type=ModelRequest,
+                description="The model request.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                label="Stored Messages",
+                name="output_value",
+                type=BaseMessage,
+                description="The messages stored in the storage.",
+                is_list=True,
+            )
+        ],
+    )
+
     def __init__(
         self,
         storage: Optional[StorageInterface[StorageConversation, Any]] = None,
@@ -119,6 +169,17 @@ class PreChatHistoryLoadOperator(
         **kwargs,
     ):
         """Create a new PreChatHistoryLoadOperator."""
+        if not storage:
+            logger.info(
+                "Storage is not set, use the InMemoryStorage as the conversation "
+                "storage."
+            )
+            storage = InMemoryStorage()
+        if not message_storage:
+            logger.info(
+                "Message storage is not set, use the InMemoryStorage as the message "
+            )
+            message_storage = InMemoryStorage()
         super().__init__(storage=storage, message_storage=message_storage)
         MapOperator.__init__(self, **kwargs)
         self._include_system_message = include_system_message
@@ -136,6 +197,11 @@ class PreChatHistoryLoadOperator(
             raise ValueError("Model request context can't be None")
         if isinstance(input_value, dict):
             input_value = ModelRequestContext(**input_value)
+        elif isinstance(input_value, ModelRequest):
+            if not input_value.context:
+                raise ValueError("Model request context can't be None")
+            input_value = input_value.context
+        input_value = cast(ModelRequestContext, input_value)
         if not input_value.conv_uid:
             input_value.conv_uid = str(uuid.uuid4())
         if not input_value.extra:
@@ -304,9 +370,13 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
     ):
         """Create a new BufferedConversationMapperOperator."""
         # Validate the input parameters
-        if keep_start_rounds is not None and keep_start_rounds < 0:
+        if keep_start_rounds is None:
+            keep_start_rounds = 0
+        if keep_end_rounds is None:
+            keep_end_rounds = 0
+        if keep_start_rounds < 0:
             raise ValueError("keep_start_rounds must be non-negative")
-        if keep_end_rounds is not None and keep_end_rounds < 0:
+        if keep_end_rounds < 0:
             raise ValueError("keep_end_rounds must be non-negative")
 
         self._keep_start_rounds = keep_start_rounds
@@ -354,7 +424,7 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             ...     ],
             ... ]
 
-            # Test keeping only the first 2 rounds
+            >>> # Test keeping only the first 2 rounds
             >>> operator = BufferedConversationMapperOperator(keep_start_rounds=2)
             >>> assert operator._filter_round_messages(messages) == [
             ...     [
@@ -367,7 +437,7 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             ...     ],
             ... ]
 
-            # Test keeping only the last 2 rounds
+            >>> # Test keeping only the last 2 rounds
             >>> operator = BufferedConversationMapperOperator(keep_end_rounds=2)
             >>> assert operator._filter_round_messages(messages) == [
             ...     [
@@ -380,7 +450,7 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             ...     ],
             ... ]
 
-            # Test keeping the first 2 and last 1 rounds
+            >>> # Test keeping the first 2 and last 1 rounds
             >>> operator = BufferedConversationMapperOperator(
             ...     keep_start_rounds=2, keep_end_rounds=1
             ... )
@@ -399,24 +469,11 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
             ...     ],
             ... ]
 
-            # Test without specifying start or end rounds (keep all rounds)
+            >>> # Test without specifying start or end rounds (keep 0 rounds)
             >>> operator = BufferedConversationMapperOperator()
-            >>> assert operator._filter_round_messages(messages) == [
-            ...     [
-            ...         HumanMessage(content="Hi", round_index=1),
-            ...         AIMessage(content="Hello!", round_index=1),
-            ...     ],
-            ...     [
-            ...         HumanMessage(content="How are you?", round_index=2),
-            ...         AIMessage(content="I'm good, thanks!", round_index=2),
-            ...     ],
-            ...     [
-            ...         HumanMessage(content="What's new today?", round_index=3),
-            ...         AIMessage(content="Lots of things!", round_index=3),
-            ...     ],
-            ... ]
+            >>> assert operator._filter_round_messages(messages) == []
 
-            # Test end rounds is zero
+            >>> # Test end rounds is zero
             >>> operator = BufferedConversationMapperOperator(
             ...     keep_start_rounds=1, keep_end_rounds=0
             ... )
@@ -437,12 +494,7 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
 
         """
         total_rounds = len(messages_by_round)
-        if (
-            self._keep_start_rounds is not None
-            and self._keep_end_rounds is not None
-            and self._keep_start_rounds > 0
-            and self._keep_end_rounds > 0
-        ):
+        if self._keep_start_rounds > 0 and self._keep_end_rounds > 0:
             if self._keep_start_rounds + self._keep_end_rounds > total_rounds:
                 # Avoid overlapping when the sum of start and end rounds exceeds total
                 # rounds
@@ -451,12 +503,12 @@ class BufferedConversationMapperOperator(ConversationMapperOperator):
                 messages_by_round[: self._keep_start_rounds]
                 + messages_by_round[-self._keep_end_rounds :]
             )
-        elif self._keep_start_rounds is not None:
+        elif self._keep_start_rounds:
             return messages_by_round[: self._keep_start_rounds]
-        elif self._keep_end_rounds is not None:
+        elif self._keep_end_rounds:
             return messages_by_round[-self._keep_end_rounds :]
         else:
-            return messages_by_round
+            return []
 
 
 EvictionPolicyType = Callable[[List[List[BaseMessage]]], List[List[BaseMessage]]]

@@ -4,7 +4,7 @@ repos:
     hooks:
       - id: python-fmt
         name: Python Format
-        entry: make fmt
+        entry: make fmt-check
         language: system
         exclude: '^dbgpt/app/static/|^web/'
         types: [python]

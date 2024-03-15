@@ -113,6 +113,9 @@ class ModelAPIServerParameters(BaseParameters):
         default=None,
         metadata={"help": "Optional list of comma separated API keys"},
     )
+    embedding_batch_size: Optional[int] = field(
+        default=None, metadata={"help": "Embedding batch size"}
+    )
 
     log_level: Optional[str] = field(
         default=None,
@@ -160,6 +163,10 @@ class ModelWorkerParameters(BaseModelParameters):
     worker_type: Optional[str] = field(
         default=None,
         metadata={"valid_values": WorkerType.values(), "help": "Worker type"},
+    )
+    model_alias: Optional[str] = field(
+        default=None,
+        metadata={"help": "model alias"},
     )
     worker_class: Optional[str] = field(
         default=None,
@@ -549,7 +556,7 @@ class ProxyEmbeddingParameters(BaseEmbeddingModelParameters):
 
 
 _EMBEDDING_PARAMETER_CLASS_TO_NAME_CONFIG = {
-    ProxyEmbeddingParameters: "proxy_openai,proxy_azure"
+    ProxyEmbeddingParameters: "proxy_openai,proxy_azure,proxy_http_openapi",
 }
 
 EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG = {}

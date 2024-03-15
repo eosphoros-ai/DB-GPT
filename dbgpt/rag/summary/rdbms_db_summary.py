@@ -1,3 +1,5 @@
+"""Summary for rdbms database."""
+
 from typing import List
 
 from dbgpt._private.config import Config
@@ -9,21 +11,28 @@ CFG = Config()
 
 class RdbmsSummary(DBSummary):
     """Get rdbms db table summary template.
-    summary example:
-    table_name(column1(column1 comment),column2(column2 comment),column3(column3 comment) and index keys, and table comment is {table_comment})
+
+    Summary example:
+        table_name(column1(column1 comment),column2(column2 comment),
+        column3(column3 comment) and index keys, and table comment is {table_comment})
     """
 
-    def __init__(self, name, type):
+    def __init__(self, name: str, type: str):
+        """Create a new RdbmsSummary."""
         self.name = name
         self.type = type
         self.summary_template = "{table_name}({columns})"
         self.tables = {}
-        self.tables_info = []
-        self.vector_tables_info = []
+        # self.tables_info = []
+        # self.vector_tables_info = []
 
+        if not CFG.LOCAL_DB_MANAGE:
+            raise ValueError("Local db manage is not initialized.")
+        # TODO: Don't use the global variable.
         self.db = CFG.LOCAL_DB_MANAGE.get_connect(name)
 
-        self.metadata = """user info :{users}, grant info:{grant}, charset:{charset}, collation:{collation}""".format(
+        self.metadata = """user info :{users}, grant info:{grant}, charset:{charset},
+        collation:{collation}""".format(
             users=self.db.get_users(),
             grant=self.db.get_grants(),
             charset=self.db.get_charset(),
@@ -36,8 +45,10 @@ class RdbmsSummary(DBSummary):
 
     def get_table_summary(self, table_name):
         """Get table summary for table.
+
         example:
-            table_name(column1(column1 comment),column2(column2 comment),column3(column3 comment) and index keys, and table comment: {table_comment})
+            table_name(column1(column1 comment),column2(column2 comment),
+            column3(column3 comment) and index keys, and table comment: {table_comment})
         """
         return _parse_table_summary(self.db, self.summary_template, table_name)
 
@@ -74,7 +85,8 @@ def _parse_table_summary(
         table_name (str): table name
 
     Examples:
-        table_name(column1(column1 comment),column2(column2 comment),column3(column3 comment) and index keys, and table comment: {table_comment})
+        table_name(column1(column1 comment),column2(column2 comment),
+        column3(column3 comment) and index keys, and table comment: {table_comment})
     """
     columns = []
     for column in conn.get_columns(table_name):

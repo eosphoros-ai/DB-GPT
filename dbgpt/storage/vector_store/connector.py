@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, List, Optional
+from typing import Any, List, Optional
 
 from dbgpt.rag.chunk import Chunk
 from dbgpt.storage import vector_store
@@ -64,7 +64,11 @@ class VectorStoreConnector:
             - chunks: document chunks.
         Return chunk ids.
         """
-        return self.client.load_document(chunks)
+        return self.client.load_document_with_limit(
+            chunks,
+            self._vector_store_config.max_chunks_once_load,
+            self._vector_store_config.max_threads,
+        )
 
     def similar_search(self, doc: str, topk: int) -> List[Chunk]:
         """similar search in vector database.

@@ -5,31 +5,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from dbgpt.agent.agents.agent import AgentResource
-from dbgpt.serve.agent.team.base import TeamMode
-
-
-class AgentMode(Enum):
-    PLAN_EXCUTE = "plan_excute"
-
-
-@dataclass
-class DbGptsInstance:
-    gpts_name: str
-    gpts_describe: str
-    gpts_agents: list[str]
-    team_mode: TeamMode
-    resource_db: Optional[AgentResource] = None
-    resource_internet: Optional[AgentResource] = None
-    resource_knowledge: Optional[AgentResource] = None
-    gpts_models: Optional[Dict[str, List[str]]] = None
-    language: str = "en"
-    user_code: str = None
-    sys_code: str = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        return dataclasses.asdict(self)
-
 
 @dataclass
 class DbGptsMessage:

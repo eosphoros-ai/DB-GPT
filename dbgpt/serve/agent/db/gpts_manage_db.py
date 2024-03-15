@@ -28,6 +28,7 @@ class GptsInstanceEntity(Model):
         default=False,
         comment="Applications for sustainable dialogue",
     )
+
     resource_db = Column(
         Text,
         nullable=True,

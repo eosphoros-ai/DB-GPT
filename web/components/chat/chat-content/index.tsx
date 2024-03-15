@@ -19,7 +19,7 @@ interface Props {
         };
   };
   isChartChat?: boolean;
-  onLinkClick: () => void;
+  onLinkClick?: () => void;
 }
 
 type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];

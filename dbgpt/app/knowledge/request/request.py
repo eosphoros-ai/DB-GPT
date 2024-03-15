@@ -110,16 +110,6 @@ class ChunkQueryRequest(BaseModel):
     page_size: int = 20
 
 
-class KnowledgeQueryResponse:
-    """source: knowledge reference source"""
-
-    source: str
-    """score: knowledge vector query similarity score"""
-    score: float = 0.0
-    """text: raw text info"""
-    text: str
-
-
 class SpaceArgumentRequest(BaseModel):
     """argument: argument"""
 

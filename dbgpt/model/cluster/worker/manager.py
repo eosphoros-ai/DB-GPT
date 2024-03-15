@@ -6,6 +6,7 @@ import os
 import random
 import sys
 import time
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from typing import Awaitable, Callable, Iterator
@@ -216,7 +217,6 @@ class LocalWorkerManager(WorkerManager):
         )
         if not worker_params.model_name:
             worker_params.model_name = model_name
-        assert model_name == worker_params.model_name
         worker = _build_worker(worker_params)
         command_args = _dict_to_command_args(params)
         success = await self.run_blocking_func(
@@ -234,7 +234,9 @@ class LocalWorkerManager(WorkerManager):
                 f"Unsupported worker type: {worker_type}, now supported worker type: {supported_types}"
             )
         start_apply_req = WorkerApplyRequest(
-            model=model_name, apply_type=WorkerApplyType.START, worker_type=worker_type
+            model=worker_params.model_name,
+            apply_type=WorkerApplyType.START,
+            worker_type=worker_type,
         )
         out: WorkerApplyOutput = None
         try:
@@ -490,6 +492,8 @@ class LocalWorkerManager(WorkerManager):
     async def _start_all_worker(
         self, apply_req: WorkerApplyRequest
     ) -> WorkerApplyOutput:
+        from httpx import TimeoutException, TransportError
+
         # TODO avoid start twice
         start_time = time.time()
         logger.info(f"Begin start all worker, apply_req: {apply_req}")
@@ -520,9 +524,24 @@ class LocalWorkerManager(WorkerManager):
                             )
                         )
                 out.message = f"{info} start successfully"
-            except Exception as e:
+            except TimeoutException as e:
                 out.success = False
-                out.message = f"{info} start failed, {str(e)}"
+                out.message = (
+                    f"{info} start failed for network timeout, please make "
+                    f"sure your port is available, if you are using global network "
+                    f"proxy, please close it"
+                )
+            except TransportError as e:
+                out.success = False
+                out.message = (
+                    f"{info} start failed for network error, please make "
+                    f"sure your port is available, if you are using global network "
+                    "proxy, please close it"
+                )
+            except Exception:
+                err_msg = traceback.format_exc()
+                out.success = False
+                out.message = f"{info} start failed, {err_msg}"
             finally:
                 out.timecost = time.time() - _start_time
             return out
@@ -837,10 +856,13 @@ def _setup_fastapi(
             try:
                 await worker_manager.start()
             except Exception as e:
-                logger.error(f"Error starting worker manager: {e}")
-                sys.exit(1)
+                import signal
 
-        # It cannot be blocked here because the startup of worker_manager depends on the fastapi app (registered to the controller)
+                logger.error(f"Error starting worker manager: {str(e)}")
+                os.kill(os.getpid(), signal.SIGINT)
+
+        # It cannot be blocked here because the startup of worker_manager depends on
+        # the fastapi app (registered to the controller)
         asyncio.create_task(start_worker_manager())
 
     @app.on_event("shutdown")
@@ -874,6 +896,8 @@ def _parse_worker_params(
         **kwargs,
     )
     worker_params.update_from(new_worker_params)
+    if worker_params.model_alias:
+        worker_params.model_name = worker_params.model_alias
 
     # logger.info(f"Worker params: {worker_params}")
     return worker_params

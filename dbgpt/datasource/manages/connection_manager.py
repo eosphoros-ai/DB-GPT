@@ -9,6 +9,7 @@ from dbgpt.datasource.rdbms.base import RDBMSDatabase
 from dbgpt.datasource.rdbms.conn_clickhouse import ClickhouseConnect
 from dbgpt.datasource.rdbms.conn_doris import DorisConnect
 from dbgpt.datasource.rdbms.conn_duckdb import DuckDbConnect
+from dbgpt.datasource.rdbms.conn_hive import HiveConnect
 from dbgpt.datasource.rdbms.conn_mssql import MSSQLConnect
 from dbgpt.datasource.rdbms.conn_mysql import MySQLConnect
 from dbgpt.datasource.rdbms.conn_postgresql import PostgreSQLDatabase

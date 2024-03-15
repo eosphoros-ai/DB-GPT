@@ -39,12 +39,24 @@
 
 ## What is DB-GPT?
 
-DB-GPT is an open-source, data-domain large model framework. Its purpose is to build the infrastructure for the large model domain by developing a variety of technical capabilities, including multi-model management, Text2SQL performance optimization, RAG framework and optimization, and Multi-Agents framework collaboration. These capabilities aim to simplify and facilitate the construction of large model applications around databases.
+🤖 **DB-GPT is an open source AI native data app development framework with AWEL(Agentic Workflow Expression Language) and agents**. 
 
-In the Data 3.0 era, based on models and databases, enterprises and developers can build their own bespoke applications with less code.
+The purpose is to build infrastructure in the field of large models, through the development of multiple technical capabilities such as multi-model management (SMMF), Text2SQL effect optimization, RAG framework and optimization, Multi-Agents framework collaboration, AWEL (agent workflow orchestration), etc. Which makes large model applications with data simpler and more convenient.
 
-### Data Agents
-![data agents](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/ced393b4-9180-437a-90c5-b43633cda8cb)
+
+🚀 **In the Data 3.0 era, based on models and databases, enterprises and developers can build their own bespoke applications with less code.**
+
+### AI-Native Data App 
+---
+- 🔥🔥🔥 [Released V0.5.0 | Develop native data applications through workflows and agents](https://docs.dbgpt.site/docs/changelog/Released_V0.5.0)
+---
+
+![Data-awels](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/37d116fc-d9dd-4efa-b4df-9ab02b22541c)
+
+![Data-Apps](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/a7bf6d65-92d1-4f0e-aaf0-259ccdde22fd)
+
+![dashboard-images](https://github.com/eosphoros-ai/DB-GPT/assets/17919400/1849a79a-f7fd-40cf-bc9c-b117a041dd6a)
+
 
 ## Contents
 - [Introduction](#introduction)
@@ -77,6 +89,8 @@ The core capabilities include the following parts:
 ### SubModule
 - [DB-GPT-Hub](https://github.com/eosphoros-ai/DB-GPT-Hub) Text-to-SQL workflow with high performance by applying Supervised Fine-Tuning (SFT) on Large Language Models (LLMs).
 
+- [dbgpts](https://github.com/eosphoros-ai/dbgpts)  dbgpts is the official repository which contains some data apps、AWEL operators、AWEL workflow templates and agents which build upon DB-GPT.
+
 #### Text2SQL Finetune
 - support llms
   - [x] LLaMA
@@ -107,9 +121,17 @@ As of October 10, 2023, through the fine-tuning of an open-source model with 13 
 
 [**Usage Tutorial**](http://docs.dbgpt.site/docs/overview)
 - [**Install**](http://docs.dbgpt.site/docs/installation)
+  - [Docker](https://docs.dbgpt.site/docs/installation/docker)
+  - [Source Code](https://docs.dbgpt.site/docs/installation/sourcecode)
 - [**Quickstart**](http://docs.dbgpt.site/docs/quickstart)
 - [**Application**](http://docs.dbgpt.site/docs/operation_manual)
+  - [App Usage](https://docs.dbgpt.site/docs/application/app_usage)
+  - [AWEL Flow Usage](https://docs.dbgpt.site/docs/application/awel_flow_usage)
 - [**Debugging**](http://docs.dbgpt.site/docs/operation_manual/advanced_tutorial/debugging)
+- [**Advanced Usage**](https://docs.dbgpt.site/docs/application/advanced_tutorial/cli)
+  - [SMMF](https://docs.dbgpt.site/docs/application/advanced_tutorial/smmf)
+  - [Finetune](https://docs.dbgpt.site/docs/application/fine_tuning_manual/dbgpt_hub)
+  - [AWEL](https://docs.dbgpt.site/docs/latest/awel/tutorial)
 
 
 ## Features
@@ -136,6 +158,8 @@ At present, we have introduced several key features to showcase our current capa
   We offer extensive model support, including dozens of large language models (LLMs) from both open-source and API agents, such as LLaMA/LLaMA2, Baichuan, ChatGLM, Wenxin, Tongyi, Zhipu, and many more. 
 
   - News
+    - 🔥🔥🔥  [gemma-7b-it](https://huggingface.co/google/gemma-7b-it)
+    - 🔥🔥🔥  [gemma-2b-it](https://huggingface.co/google/gemma-2b-it)
     - 🔥🔥🔥  [SOLAR-10.7B](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0)
     - 🔥🔥🔥  [Mixtral-8x7B](https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1)
     - 🔥🔥🔥  [Qwen-72B-Chat](https://huggingface.co/Qwen/Qwen-72B-Chat)

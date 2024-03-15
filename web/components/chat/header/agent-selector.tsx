@@ -19,7 +19,7 @@ function AgentSelector() {
       className="w-60"
       value={agent}
       placeholder={t('Select_Plugins')}
-      options={data.map((item) => ({ label: item.gpts_describe, value: item.gpts_name }))}
+      options={data.map((item) => ({ label: item.app_name, value: item.app_code }))}
       allowClear
       onChange={(val) => {
         setAgent?.(val);

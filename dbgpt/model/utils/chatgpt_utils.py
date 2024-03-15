@@ -16,6 +16,14 @@ from typing import (
 
 from dbgpt._private.pydantic import model_to_json
 from dbgpt.core.awel import TransformStreamAbsOperator
+from dbgpt.core.awel.flow import (
+    IOField,
+    OperatorCategory,
+    OperatorType,
+    Parameter,
+    ResourceCategory,
+    ViewMetadata,
+)
 from dbgpt.core.interface.llm import ModelOutput
 from dbgpt.core.operators import BaseLLM
 
@@ -152,7 +160,34 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
 class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]):
     """Transform ModelOutput to openai stream format."""
 
-    async def transform_stream(self, input_value: AsyncIterator[ModelOutput]):
+    metadata = ViewMetadata(
+        label="OpenAI Streaming Output Operator",
+        name="openai_streaming_output_operator",
+        operator_type=OperatorType.TRANSFORM_STREAM,
+        category=OperatorCategory.OUTPUT_PARSER,
+        description="The OpenAI streaming LLM operator.",
+        parameters=[],
+        inputs=[
+            IOField.build_from(
+                "Upstream Model Output",
+                "model_output",
+                ModelOutput,
+                is_list=True,
+                description="The model output of upstream.",
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                "Model Output",
+                "model_output",
+                str,
+                is_list=True,
+                description="The model output after transform to openai stream format",
+            )
+        ],
+    )
+
+    async def transform_stream(self, model_output: AsyncIterator[ModelOutput]):
         async def model_caller() -> str:
             """Read model name from share data.
             In streaming mode, this transform_stream function will be executed
@@ -162,7 +197,7 @@ class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
                 BaseLLM.SHARE_DATA_KEY_MODEL_NAME
             )
 
-        async for output in _to_openai_stream(input_value, None, model_caller):
+        async for output in _to_openai_stream(model_output, None, model_caller):
             yield output
 
 

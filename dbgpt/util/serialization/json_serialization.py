@@ -2,6 +2,7 @@ import json
 from abc import ABC, abstractmethod
 from typing import Dict, Type
 
+from dbgpt.core.awel.flow import ResourceCategory, register_resource
 from dbgpt.core.interface.serialization import Serializable, Serializer
 
 JSON_ENCODING = "utf-8"
@@ -17,6 +18,12 @@ class JsonSerializable(Serializable, ABC):
         return json.dumps(self.to_dict(), ensure_ascii=False).encode(JSON_ENCODING)
 
 
+@register_resource(
+    label="Json Serializer",
+    name="json_serializer",
+    category=ResourceCategory.SERIALIZER,
+    description="The serializer for serializing data with json format.",
+)
 class JsonSerializer(Serializer):
     """The serializer abstract class for serializing cache keys and values."""
 

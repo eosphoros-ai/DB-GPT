@@ -4,7 +4,6 @@ import sys
 from typing import List
 
 from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 
@@ -12,6 +11,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 
 from dbgpt._private.config import Config
+from dbgpt._version import version
 from dbgpt.app.base import (
     WebServerParameters,
     _create_model_start_listener,
@@ -21,7 +21,6 @@ from dbgpt.app.base import (
 
 # initialize_components import time cost about 0.1s
 from dbgpt.app.component_configs import initialize_components
-from dbgpt.app.openapi.base import validation_exception_handler
 from dbgpt.component import SystemApp
 from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
@@ -29,6 +28,8 @@ from dbgpt.configs.model_config import (
     LOGDIR,
     ROOT_PATH,
 )
+from dbgpt.serve.core import add_exception_handler
+from dbgpt.util.fastapi import PriorityAPIRouter
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
 from dbgpt.util.tracer import SpanType, SpanTypeRunName, initialize_tracer, root_tracer
@@ -50,9 +51,12 @@ CFG = Config()
 app = FastAPI(
     title="DBGPT OPEN API",
     description="This is dbgpt, with auto docs for the API and everything",
-    version="0.5.0",
+    version=version,
     openapi_tags=[],
 )
+# Use custom router to support priority
+app.router = PriorityAPIRouter()
+app.setup()
 
 app.mount(
     "/swagger_static",
@@ -75,17 +79,6 @@ async def custom_swagger_ui_html():
 
 system_app = SystemApp(app)
 
-origins = ["*"]
-
-# 添加跨域中间件
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
-
 
 def mount_routers(app: FastAPI):
     """Lazy import to avoid high time cost"""
@@ -96,17 +89,21 @@ def mount_routers(app: FastAPI):
         router as api_editor_route_v1,
     )
     from dbgpt.app.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
+    from dbgpt.serve.agent.app.controller import router as gpts_v1
 
     app.include_router(api_v1, prefix="/api", tags=["Chat"])
     app.include_router(api_editor_route_v1, prefix="/api", tags=["Editor"])
     app.include_router(llm_manage_api, prefix="/api", tags=["LLM Manage"])
     app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
+    app.include_router(gpts_v1, prefix="/api", tags=["GptsApp"])
 
     app.include_router(knowledge_router, tags=["Knowledge"])
 
 
 def mount_static_files(app: FastAPI):
-    from dbgpt.agent.plugin.commands.built_in.disply_type import static_message_img_path
+    from dbgpt.agent.plugin.commands.built_in.display_type import (
+        static_message_img_path,
+    )
 
     os.makedirs(static_message_img_path, exist_ok=True)
     app.mount(
@@ -120,7 +117,7 @@ def mount_static_files(app: FastAPI):
     app.mount("/", StaticFiles(directory=static_file_path, html=True), name="static")
 
 
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
+add_exception_handler(app)
 
 
 def _get_webserver_params(args: List[str] = None):
@@ -211,8 +208,17 @@ def run_uvicorn(param: WebServerParameters):
     import uvicorn
 
     setup_http_service_logging()
+
+    # https://github.com/encode/starlette/issues/617
+    cors_app = CORSMiddleware(
+        app=app,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
     uvicorn.run(
-        app,
+        cors_app,
         host=param.host,
         port=param.port,
         log_level=logging_str_to_uvicorn_level(param.log_level),

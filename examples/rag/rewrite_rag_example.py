@@ -1,10 +1,5 @@
-import asyncio
-import os
-
-from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt.rag.retriever.rewrite import QueryRewrite
-
 """Query rewrite example.
+
     pre-requirements:
         1. install openai python sdk
         ```
@@ -15,7 +10,7 @@ from dbgpt.rag.retriever.rewrite import QueryRewrite
             export OPENAI_API_KEY={your_openai_key}
             export OPENAI_API_BASE={your_openai_base}
         ```
-        or 
+        or
         ```
             import os
             os.environ["OPENAI_API_KEY"] = {your_openai_key}
@@ -25,6 +20,11 @@ from dbgpt.rag.retriever.rewrite import QueryRewrite
         ..code-block:: shell
             python examples/rag/rewrite_rag_example.py
 """
+
+import asyncio
+
+from dbgpt.model.proxy import OpenAILLMClient
+from dbgpt.rag.retriever import QueryRewrite
 
 
 async def main():

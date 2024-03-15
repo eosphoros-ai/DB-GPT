@@ -20,6 +20,7 @@
 """
 
 import pytest
+
 from dbgpt.datasource.rdbms.conn_starrocks import StarRocksConnect
 
 

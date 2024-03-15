@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union, cast
 
-from dbgpt.model.parameter import BaseEmbeddingModelParameters
+from dbgpt.model.parameter import BaseEmbeddingModelParameters, ProxyEmbeddingParameters
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
 from dbgpt.util.tracer import SpanType, SpanTypeRunName, root_tracer
 
 if TYPE_CHECKING:
-    from langchain.embeddings.base import Embeddings
+    from langchain.embeddings.base import Embeddings as LangChainEmbeddings
+
+    from dbgpt.rag.embedding import Embeddings
 
 
 class EmbeddingLoader:
@@ -17,7 +19,7 @@ class EmbeddingLoader:
 
     def load(
         self, model_name: str, param: BaseEmbeddingModelParameters
-    ) -> "Embeddings":
+    ) -> "Union[LangChainEmbeddings, Embeddings]":
         metadata = {
             "model_name": model_name,
             "run_service": SpanTypeRunName.EMBEDDING_MODEL.value,
@@ -32,6 +34,18 @@ class EmbeddingLoader:
                 from langchain.embeddings import OpenAIEmbeddings
 
                 return OpenAIEmbeddings(**param.build_kwargs())
+            elif model_name in ["proxy_http_openapi"]:
+                from dbgpt.rag.embedding import OpenAPIEmbeddings
+
+                proxy_param = cast(ProxyEmbeddingParameters, param)
+                openapi_param = {}
+                if proxy_param.proxy_server_url:
+                    openapi_param["api_url"] = proxy_param.proxy_server_url
+                if proxy_param.proxy_api_key:
+                    openapi_param["api_key"] = proxy_param.proxy_api_key
+                if proxy_param.proxy_backend:
+                    openapi_param["model_name"] = proxy_param.proxy_backend
+                return OpenAPIEmbeddings(**openapi_param)
             else:
                 from langchain.embeddings import HuggingFaceEmbeddings
 

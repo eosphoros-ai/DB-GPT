@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios';
-import { ApiResponse, FailedTuple, SuccessTuple } from '../';
+import { ApiResponse, FailedTuple, SuccessTuple, ResponseType } from '../';
 import { notification } from 'antd';
 
 /**
@@ -28,10 +28,17 @@ export const apiInterceptors = <T = any, D = any>(promise: Promise<ApiResponse<T
       }
       return [null, data.data, data, response];
     })
-    .catch<FailedTuple>((err: Error | AxiosError) => {
+    .catch<FailedTuple<T, D>>((err: Error | AxiosError<T, D>) => {
+      let errMessage = err.message;
+      if (err instanceof AxiosError) {
+        try {
+          const { err_msg } = JSON.parse(err.request.response) as ResponseType<null>;
+          err_msg && (errMessage = err_msg);
+        } catch (e) {}
+      }
       notification.error({
         message: `Request error`,
-        description: err.message,
+        description: errMessage,
       });
       return [err, null, null, null];
     });

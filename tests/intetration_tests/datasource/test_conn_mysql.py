@@ -19,6 +19,7 @@
 """
 
 import pytest
+
 from dbgpt.datasource.rdbms.conn_mysql import MySQLConnect
 
 _create_table_sql = """

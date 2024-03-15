@@ -1,3 +1,4 @@
+"""Base Extractor Base class."""
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -6,14 +7,18 @@ from dbgpt.rag.chunk import Chunk
 
 
 class Extractor(ABC):
-    """Extractor Base class, it's apply for Summary Extractor, Keyword Extractor, Triplets Extractor, Question Extractor, etc."""
+    """Base Extractor Base class.
+
+    It's apply for Summary Extractor, Keyword Extractor, Triplets Extractor, Question
+    Extractor, etc.
+    """
 
     def __init__(self, llm_client: LLMClient) -> None:
         """Initialize the Extractor."""
         self._llm_client = llm_client
 
     def extract(self, chunks: List[Chunk]) -> str:
-        """Extracts chunks.
+        """Return extracted metadata from chunks.
 
         Args:
             chunks (List[Chunk]): extract metadata from chunks
@@ -30,7 +35,7 @@ class Extractor(ABC):
 
     @abstractmethod
     def _extract(self, chunks: List[Chunk]) -> str:
-        """Extracts chunks.
+        """Return extracted metadata from chunks.
 
         Args:
             chunks (List[Chunk]): extract metadata from chunks
