@@ -307,7 +307,8 @@ class DefaultModelWorker(ModelWorker):
         print(
             f"llm_adapter: {str(self.llm_adapter)}\n\nmodel prompt: \n\n{str_prompt}\n\n{stream_type}stream output:\n"
         )
-
+        with open('/datas/liab/hr_dev_dbgpt/dbgpt/str_prompt.txt','w') as f:
+            f.write(str_prompt)
         generate_stream_func_str_name = "{}.{}".format(
             generate_stream_func.__module__, generate_stream_func.__name__
         )

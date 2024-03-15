@@ -149,8 +149,7 @@ class ChatWithDbAutoExecute(BaseChat):
 
         # Ensemble RRF ranker
         rrf_ranker = RRFRanker(topk=4, weights=[0.3, 0.3, 0.4])
-        rrf_ranker_scores = rrf_ranker.rank(
-            [table_infos, bm25_tmep, [table_map[table_name] for table_name in qa_tables if table_name in table_map.keys()]])
+        rrf_ranker_scores = rrf_ranker.rank([table_infos, bm25_tmep, [table_map[table_name] for table_name in qa_tables]])
         print('LLM reranker ')
         print('table_map::', table_map)
         print()
@@ -162,7 +161,7 @@ class ChatWithDbAutoExecute(BaseChat):
             for table in rerank_result['Relate_tables']:
                 tables_rerank_info.append(table_map[table.strip('`')])
 
-        table_infos = '\n'.join(tables_rerank_info)
+        table_infos = '\n\n'.join(tables_rerank_info)
 
         with root_tracer.start_span("ChatWithDbAutoExecute.get_db_bm25"):
             bm25_general_tmep = await blocking_func_to_async(
@@ -182,12 +181,12 @@ class ChatWithDbAutoExecute(BaseChat):
                 0.7,
             )
         if len(bm25_department_temp) > 0:
-            bm25_department_text = '如下用Markdown表格结构来说明部门机构的关系。\n'
+            bm25_department_text = '\n\t如下用Markdown表格结构来说明部门机构的关系。\n'
             bm25_department_text += '\n'.join(bm25_department_temp)
         else:
             bm25_department_text = ''
 
-        extend_infos = '\n'.join(bm25_general_tmep) + bm25_department_text
+        extend_infos = '\n\t'.join(bm25_general_tmep) + bm25_department_text
         input_values = {
             "db_name": self.db_name,
             "user_input": self.current_user_input,

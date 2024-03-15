@@ -386,6 +386,11 @@ def core_requires():
         "httpx",
         "jinja2",
         "fastapi==0.98.0",
+        "jieba",
+        "openai",
+        "psycopg2",
+        "pgvector",
+        "rank_bm25",
         "uvicorn",
         "shortuuid",
         # change from fixed version 2.0.22 to variable version, because other
