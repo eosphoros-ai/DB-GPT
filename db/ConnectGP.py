@@ -9,11 +9,13 @@ import traceback
 import psycopg2
 import time
 import pandas as pd
+
 gp_host = '172.23.10.250'
 gp_port = '5432'
 gp_database = 'hr'
 gp_user = 'chatgpt'
 gp_password = 'chatgpt'
+
 
 def calProcessLeadTime(func):
     import time
@@ -28,8 +30,10 @@ def calProcessLeadTime(func):
 
     return wrapper
 
+
 from sqlalchemy import create_engine
 from datetime import date, timedelta, datetime, time
+
 
 class pythonGP(object):
     '''
@@ -59,7 +63,8 @@ class pythonGP(object):
         self.password = password  # self.configureGP()
 
     def configureGP(self):
-        self.connGP = psycopg2.connect(host=self.host, port=self.port, dbname=self.dbname, user=self.user, password=self.password)
+        self.connGP = psycopg2.connect(host=self.host, port=self.port, dbname=self.dbname, user=self.user,
+                                       password=self.password)
         self.connGP.autocommit = True
         self.curGP = self.connGP.cursor()
 
@@ -73,12 +78,10 @@ class pythonGP(object):
         return result
 
     @calProcessLeadTime
-    def queryIterGP(self, sql,**kwargs):
+    def queryIterGP(self, sql, **kwargs):
         self.configureGP()
-        result = pd.read_sql(sql=sql, con=self.connGP,**kwargs)
+        result = pd.read_sql(sql=sql, con=self.connGP, **kwargs)
         return result
-
-
 
     def excuSql(self, sql):
         self.configureGP()
@@ -94,7 +97,8 @@ class pythonGP(object):
         :param table_name: 表名
         :return: True
         """
-        self.conn_GP = create_engine("postgresql+psycopg2://{}:{}@{}:{}/{}".format(self.user, self.password, self.host, self.port, self.dbname))
+        self.conn_GP = create_engine(
+            "postgresql+psycopg2://{}:{}@{}:{}/{}".format(self.user, self.password, self.host, self.port, self.dbname))
         # conn_GP = create_engine("postgresql+psycopg2://{}:{}@{}:{}/{}".format(gp_user, gp_password, gp_host, gp_port, gp_database))
 
         try:
@@ -111,6 +115,7 @@ class pythonGP(object):
             print('插入失败'.center(40, '*'))
 
             return False
+
     @calProcessLeadTime
     def insertIterGP(self, df, schema, table_name):
         """
@@ -119,7 +124,8 @@ class pythonGP(object):
         :param table_name: 表名
         :return: True
         """
-        self.conn_GP = create_engine("postgresql+psycopg2://{}:{}@{}:{}/{}".format(self.user, self.password, self.host, self.port, self.dbname))
+        self.conn_GP = create_engine(
+            "postgresql+psycopg2://{}:{}@{}:{}/{}".format(self.user, self.password, self.host, self.port, self.dbname))
         # conn_GP = create_engine("postgresql+psycopg2://{}:{}@{}:{}/{}".format(gp_user, gp_password, gp_host, gp_port, gp_database))
 
         try:
@@ -155,9 +161,7 @@ class pythonGP(object):
         self.connGP.close()
 
 
-
 if __name__ == '__main__':
     pass
     db = pythonGP(host='172.19.135.72', port='5432', dbname='postgres', user='chatgpt', password='chatgpt')
     # print(db.queryGP('select * from  dm.lims_ask_static_info limit 100'))
-

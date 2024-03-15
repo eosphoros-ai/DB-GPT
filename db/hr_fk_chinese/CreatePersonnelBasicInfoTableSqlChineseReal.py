@@ -5,12 +5,13 @@
 @Create Date: 2024/3/11 上午9:03
 '''
 from db.ConnectGP import pythonGP
-import pandas as pd
-import json
-
 from db.ConnectOracle import connectOracle
-
-db = pythonGP(host='172.23.10.249', port='5432', dbname='hr_chinese_fk', user='postgres', password='labpassword')
+import sys
+if len(sys.argv)>1:
+    dbname = sys.argv[1]
+else:
+    dbname = 'hr_chinese_fk'
+db = pythonGP(host='172.23.10.249', port='5432', dbname=dbname, user='postgres', password='labpassword')
 
 table_name = 'a_sap_employee_information_chinese'
 sql = f'''

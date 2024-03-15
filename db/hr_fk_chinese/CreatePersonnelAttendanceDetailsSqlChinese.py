@@ -5,12 +5,13 @@
 @Create Date: 2024/3/11 上午11:00
 '''
 from db.ConnectGP import pythonGP
-import pandas as pd
-from datetime import datetime
 from db.ConnectOracle import connectOracle
-
-# db = pythonGP(host='172.19.135.72', port='5432', dbname='postgres', user='chatgpt', password='chatgpt')
-db = pythonGP(host='172.23.10.249', port='5432', dbname='hr_chinese_fk', user='postgres', password='labpassword')
+import sys
+if len(sys.argv)>1:
+    dbname = sys.argv[1]
+else:
+    dbname = 'hr_chinese_fk'
+db = pythonGP(host='172.23.10.249', port='5432', dbname=dbname, user='postgres', password='labpassword')
 
 table_name = 'a_sap_employee_attendance_details_chinese'
 
@@ -117,9 +118,6 @@ while days < 90:
     sql = f'''
     SELECT * FROM hzuser.A_SAP_PERSONNEL_ATTENDANCE_DETAILS_AI aspada  WHERE  to_char(ZDATE,'YYYY-MM-DD')='{yesterday_str}'
     '''
-
-
-
 
     # # 连接数据库的功能初始化
     db_oracle = connectOracle()
