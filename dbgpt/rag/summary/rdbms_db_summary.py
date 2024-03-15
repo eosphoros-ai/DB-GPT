@@ -99,7 +99,7 @@ def _parse_table_summary(
     index_keys = []
     for index_key in conn.get_indexes(table_name):
         key_str = ", ".join(index_key["column_names"])
-        index_keys.append(f"{index_key['name']}(`{key_str}`) ")
+        index_keys.append(f"{index_key['name']}(`{key_str}`) ")  # noqa
     table_str = summary_template.format(table_name=table_name, columns=column_str)
     if len(index_keys) > 0:
         index_key_str = ", ".join(index_keys)
