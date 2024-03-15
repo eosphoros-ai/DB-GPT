@@ -1,10 +1,8 @@
-import dataclasses
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List, Optional, Type, Union
+from typing import Optional, Type
 
 from dbgpt.model.adapter.base import LLMModelAdapter, register_model_adapter
-from dbgpt.model.adapter.template import ConversationAdapter, ConversationAdapterFactory
 from dbgpt.model.base import ModelType
 from dbgpt.model.parameter import ProxyModelParameters
 from dbgpt.model.proxy.base import ProxyLLMClient
@@ -228,6 +226,32 @@ class BaichuanProxyLLMModelAdapter(ProxyLLMModelAdapter):
         return baichuan_generate_stream
 
 
+class YiProxyLLMModelAdapter(ProxyLLMModelAdapter):
+    """Yi proxy LLM model adapter.
+
+    See Also: `Yi Documentation <https://platform.lingyiwanwu.com/docs/>`_
+    """
+
+    def support_async(self) -> bool:
+        return True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path in ["yi_proxyllm"]
+
+    def get_llm_client_class(
+        self, params: ProxyModelParameters
+    ) -> Type[ProxyLLMClient]:
+        """Get llm client class"""
+        from dbgpt.model.proxy.llms.yi import YiLLMClient
+
+        return YiLLMClient
+
+    def get_async_generate_stream_function(self, model, model_path: str):
+        from dbgpt.model.proxy.llms.yi import yi_generate_stream
+
+        return yi_generate_stream
+
+
 register_model_adapter(OpenAIProxyLLMModelAdapter)
 register_model_adapter(TongyiProxyLLMModelAdapter)
 register_model_adapter(ZhipuProxyLLMModelAdapter)
@@ -236,3 +260,4 @@ register_model_adapter(GeminiProxyLLMModelAdapter)
 register_model_adapter(SparkProxyLLMModelAdapter)
 register_model_adapter(BardProxyLLMModelAdapter)
 register_model_adapter(BaichuanProxyLLMModelAdapter)
+register_model_adapter(YiProxyLLMModelAdapter)

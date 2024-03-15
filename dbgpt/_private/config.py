@@ -106,6 +106,17 @@ class Config(metaclass=Singleton):
                 "GEMINI_MODEL_VERSION", "gemini-pro"
             )
 
+        # Yi proxy
+        self.yi_proxy_api_key = os.getenv("YI_API_KEY")
+        if self.yi_proxy_api_key:
+            os.environ["yi_proxyllm_proxy_api_key"] = self.yi_proxy_api_key
+            os.environ["yi_proxyllm_proxyllm_backend"] = os.getenv(
+                "YI_MODEL_VERSION", "yi-34b-chat-0205"
+            )
+            os.environ["yi_proxyllm_proxy_api_base"] = os.getenv(
+                "YI_API_BASE", "https://api.lingyiwanwu.com/v1"
+            )
+
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 
         self.elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")

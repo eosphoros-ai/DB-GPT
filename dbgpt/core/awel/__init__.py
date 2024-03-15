@@ -180,7 +180,7 @@ def setup_dev_environment(
             except Exception as e:
                 logger.warning(
                     f"Visualize DAG {str(dag)} failed: {e}, if your system has no "
-                    f"graphviz, you can install it by `pip install graphviz` or "
+                    f"graphviz, you can install it by `pip install graphviz` or "  # noqa
                     f"`sudo apt install graphviz`"
                 )
         for trigger in dag.trigger_nodes:
