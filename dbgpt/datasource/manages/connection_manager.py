@@ -150,3 +150,8 @@ class ConnectManager:
             raise ValueError("Add db connect info error!" + str(e))
 
         return True
+
+    def get_db_config(self, db_name):
+        db_config = self.storage.get_db_config(db_name)
+
+        return db_config;
