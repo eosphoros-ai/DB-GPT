@@ -33,7 +33,7 @@ async def _to_async_iterator(iter_data: IterDataType, task_id: str) -> AsyncIter
         yield iter_data
 
 
-class IteratorTrigger(Trigger):
+class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
     """Trigger for iterator data.
 
     Trigger the dag with iterator data.
@@ -46,6 +46,7 @@ class IteratorTrigger(Trigger):
         data: IterDataType,
         parallel_num: int = 1,
         streaming_call: bool = False,
+        show_progress: bool = True,
         **kwargs
     ):
         """Create a IteratorTrigger.
@@ -60,6 +61,7 @@ class IteratorTrigger(Trigger):
         self._iter_data = data
         self._parallel_num = parallel_num
         self._streaming_call = streaming_call
+        self._show_progress = show_progress
         super().__init__(**kwargs)
 
     async def trigger(
@@ -132,17 +134,27 @@ class IteratorTrigger(Trigger):
         async def call_stream(call_data: Any):
             async for out in await end_node.call_stream(call_data):
                 yield out
+            await dag._after_dag_end()
 
-        async def run_node(call_data: Any):
+        async def run_node(call_data: Any) -> Tuple[Any, Any]:
             async with semaphore:
                 if streaming_call:
                     task_output = call_stream(call_data)
                 else:
                     task_output = await end_node.call(call_data)
+                    await dag._after_dag_end()
                 return call_data, task_output
 
         tasks = []
+
+        if self._show_progress:
+            from tqdm.asyncio import tqdm_asyncio
+
+            async_module = tqdm_asyncio
+        else:
+            async_module = asyncio  # type: ignore
+
         async for data in _to_async_iterator(self._iter_data, task_id):
             tasks.append(run_node(data))
-        results = await asyncio.gather(*tasks)
+        results: List[Tuple[Any, Any]] = await async_module.gather(*tasks)
         return results

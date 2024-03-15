@@ -1,5 +1,3 @@
-import pytest
-
 from dbgpt.util.memory_utils import _get_object_bytes
 
 from ..base import StorageItem

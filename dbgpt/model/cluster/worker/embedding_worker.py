@@ -20,14 +20,8 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingsModelWorker(ModelWorker):
     def __init__(self) -> None:
-        try:
-            from langchain.embeddings import HuggingFaceEmbeddings
-            from langchain.embeddings.base import Embeddings
-        except ImportError as exc:
-            raise ImportError(
-                "Could not import langchain.embeddings.HuggingFaceEmbeddings python package. "
-                "Please install it with `pip install langchain`."
-            ) from exc
+        from dbgpt.rag.embedding import Embeddings, HuggingFaceEmbeddings
+
         self._embeddings_impl: Embeddings = None
         self._model_params = None
         self.model_name = None

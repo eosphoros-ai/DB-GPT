@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import Any, Dict, Generic, Iterator, List, Optional, TypeVar, Union
 
 from sqlalchemy.orm.session import Session
 
@@ -44,6 +44,7 @@ class BaseDao(Generic[T, REQ, RES]):
         self,
         db_manager: Optional[DatabaseManager] = None,
     ) -> None:
+        """Create a BaseDao instance."""
         self._db_manager = db_manager or db
 
     def get_raw_session(self) -> Session:
@@ -52,9 +53,7 @@ class BaseDao(Generic[T, REQ, RES]):
         Your should commit or rollback the session manually.
         We suggest you use :meth:`session` instead.
 
-
         Example:
-
             .. code-block:: python
 
                 user = User(name="Edward Snowden")
@@ -63,13 +62,14 @@ class BaseDao(Generic[T, REQ, RES]):
                 session.commit()
                 session.close()
         """
-        return self._db_manager._session()
+        return self._db_manager._session()  # type: ignore
 
     @contextmanager
-    def session(self, commit: Optional[bool] = True) -> Session:
+    def session(self, commit: Optional[bool] = True) -> Iterator[Session]:
         """Provide a transactional scope around a series of operations.
 
-        If raise an exception, the session will be roll back automatically, otherwise it will be committed.
+        If raise an exception, the session will be roll back automatically, otherwise
+        it will be committed.
 
         Example:
             .. code-block:: python
@@ -78,7 +78,8 @@ class BaseDao(Generic[T, REQ, RES]):
                     session.query(User).filter(User.name == "Edward Snowden").first()
 
         Args:
-            commit (Optional[bool], optional): Whether to commit the session. Defaults to True.
+            commit (Optional[bool], optional): Whether to commit the session. Defaults
+                to True.
 
         Returns:
             Session: A session object.
@@ -147,7 +148,8 @@ class BaseDao(Generic[T, REQ, RES]):
             session.add(entry)
             req = self.to_request(entry)
             session.commit()
-            return self.get_one(req)
+            res = self.get_one(req)
+            return res  # type: ignore
 
     def update(self, query_request: QUERY_SPEC, update_request: REQ) -> RES:
         """Update an entity object.
@@ -163,11 +165,14 @@ class BaseDao(Generic[T, REQ, RES]):
             entry = query.first()
             if entry is None:
                 raise Exception("Invalid request")
-            for key, value in update_request.dict().items():
+            for key, value in update_request.dict().items():  # type: ignore
                 if value is not None:
                     setattr(entry, key, value)
             session.merge(entry)
-            return self.get_one(self.to_request(entry))
+            res = self.get_one(self.to_request(entry))
+            if not res:
+                raise Exception("Update failed")
+            return res
 
     def delete(self, query_request: QUERY_SPEC) -> None:
         """Delete an entity object.
@@ -179,7 +184,8 @@ class BaseDao(Generic[T, REQ, RES]):
             result_list = self._get_entity_list(session, query_request)
             if len(result_list) != 1:
                 raise ValueError(
-                    f"Delete request should return one result, but got {len(result_list)}"
+                    f"Delete request should return one result, but got "
+                    f"{len(result_list)}"
                 )
             session.delete(result_list[0])
 
@@ -241,11 +247,11 @@ class BaseDao(Generic[T, REQ, RES]):
             query = self._create_query_object(session, query_request)
             total_count = query.count()
             items = query.offset((page - 1) * page_size).limit(page_size)
-            items = [self.to_response(item) for item in items]
+            res_items = [self.to_response(item) for item in items]
             total_pages = (total_count + page_size - 1) // page_size
 
             return PaginationResult(
-                items=items,
+                items=res_items,
                 total_count=total_count,
                 total_pages=total_pages,
                 page=page,
@@ -273,4 +279,4 @@ class BaseDao(Generic[T, REQ, RES]):
                 if isinstance(value, (list, tuple, dict, set)):
                     continue
                 query = query.filter(getattr(model_cls, key) == value)
-        return query
+        return query  # type: ignore

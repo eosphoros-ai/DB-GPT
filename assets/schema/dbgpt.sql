@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS `chat_history`
     `id`        int                                     NOT NULL AUTO_INCREMENT COMMENT 'autoincrement id',
     `conv_uid`  varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Conversation record unique id',
     `chat_mode` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Conversation scene mode',
-    `summary`   varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Conversation record summary',
+    `summary`   longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Conversation record summary',
     `user_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'interlocutor',
     `messages`  text COLLATE utf8mb4_unicode_ci COMMENT 'Conversation details',
     `message_ids` text COLLATE utf8mb4_unicode_ci COMMENT 'Message id list, split by comma',

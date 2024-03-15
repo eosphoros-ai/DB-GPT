@@ -1,14 +1,13 @@
+"""Weaviate vector store."""
 import logging
 import os
 from typing import List
 
-from langchain.schema import Document
-from pydantic import Field
-
 from dbgpt._private.config import Config
-from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
+from dbgpt._private.pydantic import Field
 from dbgpt.rag.chunk import Chunk
-from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+
+from .base import VectorStoreBase, VectorStoreConfig
 
 logger = logging.getLogger(__name__)
 CFG = Config()
@@ -16,6 +15,11 @@ CFG = Config()
 
 class WeaviateVectorConfig(VectorStoreConfig):
     """Weaviate vector store config."""
+
+    class Config:
+        """Config for BaseModel."""
+
+        arbitrary_types_allowed = True
 
     weaviate_url: str = Field(
         default=os.getenv("WEAVIATE_URL", None),
@@ -28,7 +32,7 @@ class WeaviateVectorConfig(VectorStoreConfig):
 
 
 class WeaviateStore(VectorStoreBase):
-    """Weaviate database"""
+    """Weaviate database."""
 
     def __init__(self, vector_store_config: WeaviateVectorConfig) -> None:
         """Initialize with Weaviate client."""
@@ -49,8 +53,8 @@ class WeaviateStore(VectorStoreBase):
 
         self.vector_store_client = weaviate.Client(self.weaviate_url)
 
-    def similar_search(self, text: str, topk: int) -> None:
-        """Perform similar search in Weaviate"""
+    def similar_search(self, text: str, topk: int) -> List[Chunk]:
+        """Perform similar search in Weaviate."""
         logger.info("Weaviate similar search")
         # nearText = {
         #     "concepts": [text],
@@ -68,15 +72,16 @@ class WeaviateStore(VectorStoreBase):
         docs = []
         for r in res:
             docs.append(
-                Document(
-                    page_content=r["page_content"],
+                Chunk(
+                    content=r["page_content"],
                     metadata={"metadata": r["metadata"]},
                 )
             )
         return docs
 
     def vector_name_exists(self) -> bool:
-        """Check if a vector name exists for a given class in Weaviate.
+        """Whether the vector name exists in Weaviate.
+
         Returns:
             bool: True if the vector name exists, False otherwise.
         """
@@ -85,14 +90,15 @@ class WeaviateStore(VectorStoreBase):
                 return True
             return False
         except Exception as e:
-            logger.error("vector_name_exists error", e.message)
+            logger.error(f"vector_name_exists error, {str(e)}")
             return False
 
     def _default_schema(self) -> None:
-        """
-        Create the schema for Weaviate with a Document class containing metadata and text properties.
-        """
+        """Create default schema in Weaviate.
 
+        Create the schema for Weaviate with a Document class containing metadata and
+        text properties.
+        """
         schema = {
             "classes": [
                 {
@@ -137,7 +143,7 @@ class WeaviateStore(VectorStoreBase):
         self.vector_store_client.schema.create(schema)
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
-        """Load documents into Weaviate"""
+        """Load document to Weaviate."""
         logger.info("Weaviate load document")
         texts = [doc.content for doc in chunks]
         metadatas = [doc.metadata for doc in chunks]
@@ -157,3 +163,5 @@ class WeaviateStore(VectorStoreBase):
                     data_object=properties, class_name=self.vector_name
                 )
             self.vector_store_client.batch.flush()
+        # TODO: return ids
+        return []

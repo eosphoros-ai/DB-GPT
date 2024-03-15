@@ -10,7 +10,7 @@ from dbgpt.util.tracer import SpanType, SpanTypeRunName, root_tracer
 if TYPE_CHECKING:
     from langchain.embeddings.base import Embeddings as LangChainEmbeddings
 
-    from dbgpt.rag.embedding import Embeddings
+    from dbgpt.rag.embedding import Embeddings, HuggingFaceEmbeddings
 
 
 class EmbeddingLoader:
@@ -47,7 +47,7 @@ class EmbeddingLoader:
                     openapi_param["model_name"] = proxy_param.proxy_backend
                 return OpenAPIEmbeddings(**openapi_param)
             else:
-                from langchain.embeddings import HuggingFaceEmbeddings
+                from dbgpt.rag.embedding import HuggingFaceEmbeddings
 
                 kwargs = param.build_kwargs(model_name=param.model_path)
                 return HuggingFaceEmbeddings(**kwargs)

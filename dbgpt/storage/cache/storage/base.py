@@ -1,3 +1,4 @@
+"""Base cache storage class."""
 import logging
 from abc import ABC, abstractmethod
 from collections import OrderedDict
@@ -22,8 +23,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class StorageItem:
-    """
-    A class representing a storage item.
+    """A class representing a storage item.
 
     This class encapsulates data related to a storage item, such as its length,
     the hash of the key, and the data for both the key and value.
@@ -44,6 +44,7 @@ class StorageItem:
     def build_from(
         key_hash: bytes, key_data: bytes, value_data: bytes
     ) -> "StorageItem":
+        """Build a StorageItem from the provided key and value data."""
         length = (
             32
             + _get_object_bytes(key_hash)
@@ -56,6 +57,7 @@ class StorageItem:
 
     @staticmethod
     def build_from_kv(key: CacheKey[K], value: CacheValue[V]) -> "StorageItem":
+        """Build a StorageItem from the provided key and value."""
         key_hash = key.get_hash_bytes()
         key_data = key.serialize()
         value_data = value.serialize()
@@ -105,6 +107,8 @@ class StorageItem:
 
 
 class CacheStorage(ABC):
+    """Base class for cache storage."""
+
     @abstractmethod
     def check_config(
         self,
@@ -122,6 +126,7 @@ class CacheStorage(ABC):
         """
 
     def support_async(self) -> bool:
+        """Check whether the storage support async operation."""
         return False
 
     @abstractmethod
@@ -135,7 +140,8 @@ class CacheStorage(ABC):
             cache_config (Optional[CacheConfig]): Cache config
 
         Returns:
-            Optional[StorageItem]: The storage item retrieved according to key. If cache key not exist, return None.
+            Optional[StorageItem]: The storage item retrieved according to key. If
+                cache key not exist, return None.
         """
 
     async def aget(
@@ -148,7 +154,8 @@ class CacheStorage(ABC):
             cache_config (Optional[CacheConfig]): Cache config
 
         Returns:
-            Optional[StorageItem]: The storage item  of bytes retrieved according to key. If cache key not exist, return None.
+            Optional[StorageItem]: The storage item  of bytes retrieved according to
+                key. If cache key not exist, return None.
         """
         raise NotImplementedError
 
@@ -184,8 +191,11 @@ class CacheStorage(ABC):
 
 
 class MemoryCacheStorage(CacheStorage):
+    """A simple in-memory cache storage implementation."""
+
     def __init__(self, max_memory_mb: int = 256):
-        self.cache = OrderedDict()
+        """Create a new instance of MemoryCacheStorage."""
+        self.cache: OrderedDict = OrderedDict()
         self.max_memory = max_memory_mb * 1024 * 1024
         self.current_memory_usage = 0
 
@@ -194,6 +204,7 @@ class MemoryCacheStorage(CacheStorage):
         cache_config: Optional[CacheConfig] = None,
         raise_error: Optional[bool] = True,
     ) -> bool:
+        """Check whether the CacheConfig is legal."""
         if (
             cache_config
             and cache_config.retrieval_policy != RetrievalPolicy.EXACT_MATCH
@@ -208,10 +219,11 @@ class MemoryCacheStorage(CacheStorage):
     def get(
         self, key: CacheKey[K], cache_config: Optional[CacheConfig] = None
     ) -> Optional[StorageItem]:
+        """Retrieve a storage item from the cache using the provided key."""
         self.check_config(cache_config, raise_error=True)
         # Exact match retrieval
         key_hash = hash(key)
-        item: StorageItem = self.cache.get(key_hash)
+        item: Optional[StorageItem] = self.cache.get(key_hash)
         logger.debug(f"MemoryCacheStorage get key {key}, hash {key_hash}, item: {item}")
 
         if not item:
@@ -226,6 +238,7 @@ class MemoryCacheStorage(CacheStorage):
         value: CacheValue[V],
         cache_config: Optional[CacheConfig] = None,
     ) -> None:
+        """Set a value in the cache for the provided key."""
         key_hash = hash(key)
         item = StorageItem.build_from_kv(key, value)
         # Calculate memory size of the new entry
@@ -242,6 +255,7 @@ class MemoryCacheStorage(CacheStorage):
     def exists(
         self, key: CacheKey[K], cache_config: Optional[CacheConfig] = None
     ) -> bool:
+        """Check if the key exists in the cache."""
         return self.get(key, cache_config) is not None
 
     def _apply_cache_policy(self, cache_config: Optional[CacheConfig] = None):
