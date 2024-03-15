@@ -5,7 +5,7 @@
 # @File    : ConnectGP.py
 # @Software: PyCharm
 import traceback
-
+from datetime import datetime
 import psycopg2
 import time
 import pandas as pd
@@ -25,7 +25,7 @@ def calProcessLeadTime(func):
         result = func(*args, **kwargs)
         end_time = time.time()
         spend_time = end_time - start_time
-        print('\033[35m [INFO] 运行时间：%.4f !\033[0m' % spend_time)
+        print('\033[35m [INFO] Cost Time：%.4f !,Current Time: %s\033[0m' % ( spend_time, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         return result
 
     return wrapper

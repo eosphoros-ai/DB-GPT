@@ -88,7 +88,8 @@ aa = [j for j in columns_name_dict.items()]
 for i in aa[::-1]:
     sql = sql.lower().replace(i[0],
                               i[1])
-print(sql)
+# print(sql)
+print((dbname+'-'+ table_name).center(80, '='))
 print(db.excuSql(sql))
 
 useless_col = ['etl_date', 'zrntnum', 'z0006', 'iskeyjob', 'zrnnum', 'zrfnum']
@@ -109,5 +110,5 @@ df = df.rename(columns=columns_name_dict)
 need_col = list(columns_name_dict.values())
 df = df[need_col]
 # df = df.drop(useless_col,axis=1)
-print(df)
+# print(df)
 db.insertGP(df, 'public', table_name)

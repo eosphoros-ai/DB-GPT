@@ -8,7 +8,8 @@
 from db.ConnectGP import pythonGP
 from db.ConnectOracle import connectOracle
 import sys
-if len(sys.argv)>1:
+
+if len(sys.argv) > 1:
     dbname = sys.argv[1]
 else:
     dbname = 'hr_chinese_fk'
@@ -60,29 +61,29 @@ GRANT ALL PRIVILEGES ON SCHEMA public TO chatgpt;
 
 columns_name_dict = {
 
-    'zyear':'编制年度',
-    'zbzyf':'编制月度',
-    'persk':'员工子组',
-    "zsnum":'有效编制空缺',
-    "zczrq":'创建日期' ,
-    "vacyqty":'年度可申请空缺数量' ,
-    "vacqqty":'季度可申请空缺数量' ,
-    "vacmqty":'月度可申请空缺数量' ,
-    "l_vacyqty":'年度编制数量' ,
-    'l_vacqqty':'季度编制数量' ,
-    'l_vacmqty':'月度编制数量' ,
-    "spec_count":'特批编制数量',
-    "pa_count":'拟在职人数',
-    "vac_count":'有效但是没有报到空缺数',
-    "zxrda":'写入日期',
-    'zopen':'open数',
-    'zclosed':'关闭数',
-    "zfreeze":'冻结数',
-    "orgt0":'集团名称',
-    "orgt1":'一级机构',
-    "orgt2":'二级机构',
-    "orgt3":'三级机构',
-    'ztrfgr':'职级范围',
+    'zyear': '编制年度',
+    'zbzyf': '编制月度',
+    'persk': '员工子组',
+    "zsnum": '有效编制空缺',
+    "zczrq": '创建日期',
+    "vacyqty": '年度可申请空缺数量',
+    "vacqqty": '季度可申请空缺数量',
+    "vacmqty": '月度可申请空缺数量',
+    "l_vacyqty": '年度编制数量',
+    'l_vacqqty': '季度编制数量',
+    'l_vacmqty': '月度编制数量',
+    "spec_count": '特批编制数量',
+    "pa_count": '拟在职人数',
+    "vac_count": '有效但是没有报到空缺数',
+    "zxrda": '写入日期',
+    'zopen': 'open数',
+    'zclosed': '关闭数',
+    "zfreeze": '冻结数',
+    "orgt0": '集团名称',
+    "orgt1": '一级机构',
+    "orgt2": '二级机构',
+    "orgt3": '三级机构',
+    'ztrfgr': '职级范围',
 
 }
 
@@ -91,14 +92,13 @@ ZEFSDT,ZSTYP,ZBZJG,ZZPLB,ZCZRQ,ZCZSJ,UNAME,ORGEH,L_VACYQTY,L_VACQQTY,L_VACMQTY,V
 
 '''
 for i in columns_name_dict.items():
-    sql = sql.replace(i[0],i[1])
+    sql = sql.replace(i[0], i[1])
 
-print(sql)
-
+# print(sql)
+print((dbname+'-'+ table_name).center(80, '='))
 print(db.excuSql(sql))
 
-useless_col = ['mandt','ztrfgr']
-
+useless_col = ['mandt', 'ztrfgr']
 
 sql = '''
 SELECT * FROM hzuser.a_sap_et_zthr_zp_list_ai
@@ -111,18 +111,13 @@ df[blob2str] = df[blob2str].astype(str)
 
 new_columns = [i.lower() for i in df.columns.tolist()]
 df.columns = new_columns
-print(df)
+# print(df)
 df = df.rename(columns=columns_name_dict)
-
 
 need_col = list(columns_name_dict.values())
 df = df[need_col]
 
-
-
-
-fix_colms = ['年度可申请空缺数量','季度可申请空缺数量','月度可申请空缺数量']
-df[fix_colms] = df[fix_colms].applymap(lambda x:str(x).replace('*',''))
+fix_colms = ['年度可申请空缺数量', '季度可申请空缺数量', '月度可申请空缺数量']
+df[fix_colms] = df[fix_colms].applymap(lambda x: str(x).replace('*', ''))
 # df.to_csv('zthr_zp_list.csv',encoding='GBK',index=False)
 db.insertGP(df, 'public', table_name)
-

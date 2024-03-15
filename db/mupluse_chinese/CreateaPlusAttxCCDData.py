@@ -75,15 +75,16 @@ columns_name_dict = {
 
 }
 
-print(sql)
-print(db.excuSql(sql))
+# print(sql)
+print((dbname+'-'+ table_name).center(80, '='))
+# print(db.excuSql(sql))
 
 from datetime import datetime, timedelta
 
 # 获取现在的时间
 now = datetime.now()
 days = 1
-while days < 90:
+while days < 2:
     # 获取前一天的时间
     yesterday = now - timedelta(days=days)
     print(days,yesterday)
@@ -101,7 +102,7 @@ while days < 90:
 
     new_columns = [i.upper() for i in df.columns.tolist()]
     df.columns = new_columns
-    print(df)
+    print(df.shape)
     df = df.rename(columns=columns_name_dict)
 
     need_col = list(columns_name_dict.values())

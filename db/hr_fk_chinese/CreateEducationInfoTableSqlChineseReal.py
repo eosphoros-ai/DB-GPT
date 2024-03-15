@@ -54,7 +54,8 @@ columns_name_dict = {'pernr': '人员工号', 'slabs_stext': '证书', 'ename': 
 
 for i in columns_name_dict.items():
     sql = sql.replace(i[0], i[1])
-print(sql)
+# print(sql)
+print((dbname+'-'+ table_name).center(80, '='))
 print(db.excuSql(sql))
 
 useless_col = []

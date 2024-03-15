@@ -15,4 +15,8 @@ export LD_LIBRARY_PATH=/datas/liab/DB-GPT/instantclient_21_11
 /datas/liab/miniconda3/envs/dbgpt_test/bin/python3 /datas/liab/DB-GPT/db/hr_fk_chinese/CreateReportingRelationshipTableSqlChineseReal.py hr_chinese_dev
 /datas/liab/miniconda3/envs/dbgpt_test/bin/python3 /datas/liab/DB-GPT/db/hr_fk_chinese/CreatePersonnelAttendanceDetailsSqlChinese.py hr_chinese_dev
 
+# muplus_chinese
+/datas/liab/miniconda3/envs/dbgpt_test/bin/python3 /datas/liab/DB-GPT/db/hr_fk_chinese/CreateaPlusAttxCCDData.py muplus_chinese
+
+
 

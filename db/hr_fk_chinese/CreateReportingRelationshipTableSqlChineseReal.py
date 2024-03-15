@@ -25,9 +25,6 @@ create table public.{table_name}(
 姓名  varchar(60) null,
 入司日期  date null,
 工作性质  varchar(40) null,
-一级机构  varchar(40) null,
-二级机构  varchar(40) null,
-三级机构  varchar(40) null,
 是否管理机构  varchar(40) null,
 主管1姓名  varchar(40) null,
 主管1职位  varchar(100) null,
@@ -76,10 +73,6 @@ COMMENT ON COLUMN public.{table_name}.开始日期 IS '汇报关系开始的时�
 COMMENT ON COLUMN public.{table_name}.结束日期 IS '汇报关系结束的时间';
 COMMENT ON COLUMN public.{table_name}.人员工号 IS '该表主键，每个员工的唯一id值。';
 COMMENT ON COLUMN public.{table_name}.工作性质 IS '值为：["全职-计算","挂职","兼职-不计算","劳务外包"]';
-
-COMMENT ON COLUMN public.{table_name}.一级机构 IS '也称为部门，值一般为英文字母组成，例如：["IDT","APD","HR","QA","FE"]等';
-COMMENT ON COLUMN public.{table_name}.二级机构 IS '也称为组，是部门下分组，例如：["AI","AD","CPA","TA"]等等';
-COMMENT ON COLUMN public.{table_name}.三级机构 IS '也称为组，是二级机构下面的更细分的小组，例如：["EMC","IPQC","PH","EP-M"]等等';
 COMMENT ON COLUMN public.{table_name}.是否管理机构 IS '该员工是否是部门（一级机构），小组（二级机构，三级机构）负责人。值为：["是","否"]';
 
 grant select,insert, update, delete on table public.{table_name} to chatgpt;
@@ -97,7 +90,7 @@ columns_name_dict = {
     'drct3_stext': '总监3职位,', 'drct3_stltx': '总监3职务,', 'drct4_name': '总监4姓名,', 'drct4_stext': '总监4职位,', 'drct4_stltx': '总监4职务,', 'drct5_name': '总监5姓名,', 'drct5_stext': '总监5职位,',
     'drct5_stltx': '总监5职务,', 'frpsr_name': '一级机构负责人姓名', 'frpsr_stext': '一级机构负责人职位,', 'frpsr_stltx': '一级机构负责人职务', }
 
-columns_name_dict_new = {'begda': '开始日期', 'endda': '结束日期', 'pernr': '人员工号', 'ename': '姓名', 'startda': '入司日期', 'zgzxz': '工作性质', 'orgt1': '一级机构', 'orgt2': '二级机构', 'orgt3': '三级机构', 'zifgljg': '是否管理机构',
+columns_name_dict_new = {'begda': '开始日期', 'endda': '结束日期', 'pernr': '人员工号', 'ename': '姓名', 'startda': '入司日期', 'zgzxz': '工作性质',  'zifgljg': '是否管理机构',
                          'spvs1_name': '主管1姓名', 'spvs1_stext': '主管1职位', 'spvs1_stltx': '主管1职务', 'spvs2_name': '主管2姓名', 'spvs2_stext': '主管2职位', 'spvs2_stltx': '主管2职务', 'mngr1_name': '经理1姓名',
                          'mngr1_stext': '经理1职位', 'mngr1_stltx': '经理1职务', 'mngr2_name': '经理2姓名', 'mngr2_stext': '经理2职位', 'mngr2_stltx': '经理2职务', 'mngr3_name': '经理3姓名', 'mngr3_stext': '经理3职位',
                          'mngr3_stltx': '经理3职务', 'mngr4_name': '经理4姓名', 'mngr4_stext': '经理4职位', 'mngr4_stltx': '经理4职务', 'drct1_name': '总监1姓名', 'drct1_stext': '总监1职位', 'drct1_stltx': '总监1职务',
@@ -108,8 +101,8 @@ aa = [j for j in columns_name_dict_new.items()]
 for i in aa[::-1]:
     sql = sql.lower().replace(i[0], i[1])
 
-print(sql)
-
+# print(sql)
+print((dbname+'-'+ table_name).center(80, '='))
 print(db.excuSql(sql))
 
 useless_col = ['orgt0', 'etl_date', 'orgh0', 'plans_t']

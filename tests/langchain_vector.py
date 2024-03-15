@@ -289,7 +289,7 @@ def rrf_ranker(bm25_docs, embedding_docs, weights=[0.5, 0.5], c=60, topk=6):
 
 if __name__ == '__main__':
     # delete_from_pg()
-    # init_delete_all_collection()
+    init_delete_all_collection()
     #
     # print('embedding')
     # embedding_docs = query_from_pg()
@@ -302,7 +302,7 @@ if __name__ == '__main__':
     # langchain_bm25()
     # split_data_to_path()
     # query_from_pg()
-    query_from_pg_bm25()
+    # query_from_pg_bm25()
     # write_to_pg()
     # qa_sample_to_dict()
     # add_docs_to_pg()
