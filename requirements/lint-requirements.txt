@@ -12,3 +12,4 @@ pyupgrade==3.1.0
 types-requests
 types-beautifulsoup4
 types-Markdown
+types-tqdm

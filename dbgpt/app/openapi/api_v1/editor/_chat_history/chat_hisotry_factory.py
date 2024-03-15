@@ -1,13 +1,16 @@
+"""Module for chat history factory.
+
+It will remove in the future, just support db store type now.
+"""
 import logging
 from typing import Type
 
 from dbgpt._private.config import Config
-from dbgpt.storage.chat_history.base import BaseChatHistoryMemory
 
-from .base import MemoryStoreType
+from .base import BaseChatHistoryMemory, MemoryStoreType
 
 # Import first for auto create table
-from .store_type.meta_db_history import DbHistoryMemory
+from .meta_db_history import DbHistoryMemory
 
 # TODO remove global variable
 CFG = Config()
@@ -20,13 +23,6 @@ class ChatHistory:
         self.mem_store_class_map = {}
 
         # Just support db store type after v0.4.6
-        # from .store_type.duckdb_history import DuckdbHistoryMemory
-        # from .store_type.file_history import FileHistoryMemory
-        # from .store_type.mem_history import MemHistoryMemory
-        # self.mem_store_class_map[DuckdbHistoryMemory.store_type] = DuckdbHistoryMemory
-        # self.mem_store_class_map[FileHistoryMemory.store_type] = FileHistoryMemory
-        # self.mem_store_class_map[MemHistoryMemory.store_type] = MemHistoryMemory
-
         self.mem_store_class_map[DbHistoryMemory.store_type] = DbHistoryMemory
 
     def get_store_instance(self, chat_session_id: str) -> BaseChatHistoryMemory:
@@ -53,24 +49,26 @@ class ChatHistory:
         Raises:
             ValueError: Invalid store type
         """
-        from .store_type.duckdb_history import DuckdbHistoryMemory
-        from .store_type.file_history import FileHistoryMemory
-        from .store_type.mem_history import MemHistoryMemory
-
-        if store_type == MemHistoryMemory.store_type:
+        if store_type == "memory":
             logger.error(
                 "Not support memory store type, just support db store type now"
             )
             raise ValueError(f"Invalid store type: {store_type}")
 
-        if store_type == FileHistoryMemory.store_type:
+        if store_type == "file":
             logger.error("Not support file store type, just support db store type now")
             raise ValueError(f"Invalid store type: {store_type}")
-        if store_type == DuckdbHistoryMemory.store_type:
-            link1 = "https://docs.dbgpt.site/docs/faq/install#q6-how-to-migrate-meta-table-chat_history-and-connect_config-from-duckdb-to-sqlitel"
-            link2 = "https://docs.dbgpt.site/docs/faq/install#q7-how-to-migrate-meta-table-chat_history-and-connect_config-from-duckdb-to-mysql"
+        if store_type == "duckdb":
+            link1 = (
+                "https://docs.dbgpt.site/docs/latest/faq/install#q6-how-to-migrate-meta"
+                "-table-chat_history-and-connect_config-from-duckdb-to-sqlite"
+            )
+            link2 = (
+                "https://docs.dbgpt.site/docs/latest/faq/install/#q7-how-to-migrate-"
+                "meta-table-chat_history-and-connect_config-from-duckdb-to-mysql"
+            )
             logger.error(
-                "Not support duckdb store type after v0.4.6, just support db store type now, "
-                f"you can migrate your message according to {link1} or {link2}"
+                "Not support duckdb store type after v0.4.6, just support db store "
+                f"type now, you can migrate your message according to {link1} or {link2}"
             )
             raise ValueError(f"Invalid store type: {store_type}")

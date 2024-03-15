@@ -1,5 +1,6 @@
+"""Operators for processing model outputs with caching support."""
 import logging
-from typing import AsyncIterator, Dict, List, Union
+from typing import AsyncIterator, Dict, List, Optional, Union, cast
 
 from dbgpt.core import ModelOutput, ModelRequest
 from dbgpt.core.awel import (
@@ -10,7 +11,9 @@ from dbgpt.core.awel import (
     StreamifyAbsOperator,
     TransformStreamAbsOperator,
 )
-from dbgpt.storage.cache import CacheManager, LLMCacheClient, LLMCacheKey, LLMCacheValue
+
+from .llm_cache import LLMCacheClient, LLMCacheKey, LLMCacheValue
+from .manager import CacheManager
 
 logger = logging.getLogger(__name__)
 
@@ -26,15 +29,17 @@ class CachedModelStreamOperator(StreamifyAbsOperator[ModelRequest, ModelOutput])
         **kwargs: Additional keyword arguments.
 
     Methods:
-        streamify: Processes a stream of inputs with cache support, yielding model outputs.
+        streamify: Processes a stream of inputs with cache support, yielding model
+            outputs.
     """
 
     def __init__(self, cache_manager: CacheManager, **kwargs) -> None:
+        """Create a new instance of CachedModelStreamOperator."""
         super().__init__(**kwargs)
         self._cache_manager = cache_manager
         self._client = LLMCacheClient(cache_manager)
 
-    async def streamify(self, input_value: ModelRequest) -> AsyncIterator[ModelOutput]:
+    async def streamify(self, input_value: ModelRequest):
         """Process inputs as a stream with cache support and yield model outputs.
 
         Args:
@@ -45,10 +50,13 @@ class CachedModelStreamOperator(StreamifyAbsOperator[ModelRequest, ModelOutput])
         """
         cache_dict = _parse_cache_key_dict(input_value)
         llm_cache_key: LLMCacheKey = self._client.new_key(**cache_dict)
-        llm_cache_value: LLMCacheValue = await self._client.get(llm_cache_key)
+        llm_cache_value = await self._client.get(llm_cache_key)
         logger.info(f"llm_cache_value: {llm_cache_value}")
-        for out in llm_cache_value.get_value().output:
-            yield out
+        if not llm_cache_value:
+            raise ValueError(f"Cache value not found for key: {llm_cache_key}")
+        outputs = cast(List[ModelOutput], llm_cache_value.get_value().output)
+        for out in outputs:
+            yield cast(ModelOutput, out)
 
 
 class CachedModelOperator(MapOperator[ModelRequest, ModelOutput]):
@@ -63,6 +71,7 @@ class CachedModelOperator(MapOperator[ModelRequest, ModelOutput]):
     """
 
     def __init__(self, cache_manager: CacheManager, **kwargs) -> None:
+        """Create a new instance of CachedModelOperator."""
         super().__init__(**kwargs)
         self._cache_manager = cache_manager
         self._client = LLMCacheClient(cache_manager)
@@ -78,14 +87,18 @@ class CachedModelOperator(MapOperator[ModelRequest, ModelOutput]):
         """
         cache_dict = _parse_cache_key_dict(input_value)
         llm_cache_key: LLMCacheKey = self._client.new_key(**cache_dict)
-        llm_cache_value: LLMCacheValue = await self._client.get(llm_cache_key)
+        llm_cache_value = await self._client.get(llm_cache_key)
+        if not llm_cache_value:
+            raise ValueError(f"Cache value not found for key: {llm_cache_key}")
         logger.info(f"llm_cache_value: {llm_cache_value}")
-        return llm_cache_value.get_value().output
+        return cast(ModelOutput, llm_cache_value.get_value().output)
 
 
 class ModelCacheBranchOperator(BranchOperator[ModelRequest, Dict]):
-    """
-    A branch operator that decides whether to use cached data or to process data using the model.
+    """Branch operator for model processing with cache support.
+
+    A branch operator that decides whether to use cached data or to process data using
+    the model.
 
     Args:
         cache_manager (CacheManager): The cache manager for managing cache operations.
@@ -101,6 +114,7 @@ class ModelCacheBranchOperator(BranchOperator[ModelRequest, Dict]):
         cache_task_name: str,
         **kwargs,
     ):
+        """Create a new instance of ModelCacheBranchOperator."""
         super().__init__(branches=None, **kwargs)
         self._cache_manager = cache_manager
         self._client = LLMCacheClient(cache_manager)
@@ -110,10 +124,13 @@ class ModelCacheBranchOperator(BranchOperator[ModelRequest, Dict]):
     async def branches(
         self,
     ) -> Dict[BranchFunc[ModelRequest], Union[BaseOperator, str]]:
-        """Defines branch logic based on cache availability.
+        """Branch logic based on cache availability.
+
+        Defines branch logic based on cache availability.
 
         Returns:
-            Dict[BranchFunc[Dict], Union[BaseOperator, str]]: A dictionary mapping branch functions to task names.
+            Dict[BranchFunc[Dict], Union[BaseOperator, str]]: A dictionary mapping
+                branch functions to task names.
         """
 
         async def check_cache_true(input_value: ModelRequest) -> bool:
@@ -124,12 +141,13 @@ class ModelCacheBranchOperator(BranchOperator[ModelRequest, Dict]):
             cache_key: LLMCacheKey = self._client.new_key(**cache_dict)
             cache_value = await self._client.get(cache_key)
             logger.debug(
-                f"cache_key: {cache_key}, hash key: {hash(cache_key)}, cache_value: {cache_value}"
+                f"cache_key: {cache_key}, hash key: {hash(cache_key)}, cache_value: "
+                f"{cache_value}"
             )
             await self.current_dag_context.save_to_share_data(
                 _LLM_MODEL_INPUT_VALUE_KEY, cache_key, overwrite=True
             )
-            return True if cache_value else False
+            return bool(cache_value)
 
         async def check_cache_false(input_value: ModelRequest):
             # Inverse of check_cache_true
@@ -152,22 +170,25 @@ class ModelStreamSaveCacheOperator(
     """
 
     def __init__(self, cache_manager: CacheManager, **kwargs):
+        """Create a new instance of ModelStreamSaveCacheOperator."""
         self._cache_manager = cache_manager
         self._client = LLMCacheClient(cache_manager)
         super().__init__(**kwargs)
 
-    async def transform_stream(
-        self, input_value: AsyncIterator[ModelOutput]
-    ) -> AsyncIterator[ModelOutput]:
-        """Transforms the input stream by saving the outputs to cache.
+    async def transform_stream(self, input_value: AsyncIterator[ModelOutput]):
+        """Save the stream of model outputs to cache.
+
+        Transforms the input stream by saving the outputs to cache.
 
         Args:
-            input_value (AsyncIterator[ModelOutput]): An asynchronous iterator of model outputs.
+            input_value (AsyncIterator[ModelOutput]): An asynchronous iterator of model
+                outputs.
 
         Returns:
-            AsyncIterator[ModelOutput]: The same input iterator, but the outputs are saved to cache.
+            AsyncIterator[ModelOutput]: The same input iterator, but the outputs are
+                saved to cache.
         """
-        llm_cache_key: LLMCacheKey = None
+        llm_cache_key: Optional[LLMCacheKey] = None
         outputs = []
         async for out in input_value:
             if not llm_cache_key:
@@ -190,12 +211,13 @@ class ModelSaveCacheOperator(MapOperator[ModelOutput, ModelOutput]):
     """
 
     def __init__(self, cache_manager: CacheManager, **kwargs):
+        """Create a new instance of ModelSaveCacheOperator."""
         self._cache_manager = cache_manager
         self._client = LLMCacheClient(cache_manager)
         super().__init__(**kwargs)
 
     async def map(self, input_value: ModelOutput) -> ModelOutput:
-        """Saves a single model output to cache and returns it.
+        """Save model output to cache.
 
         Args:
             input_value (ModelOutput): The output from the model to be cached.
@@ -213,7 +235,7 @@ class ModelSaveCacheOperator(MapOperator[ModelOutput, ModelOutput]):
 
 
 def _parse_cache_key_dict(input_value: ModelRequest) -> Dict:
-    """Parses and extracts relevant fields from input to form a cache key dictionary.
+    """Parse and extract relevant fields from input to form a cache key dictionary.
 
     Args:
         input_value (Dict): The input dictionary containing model and prompt parameters.

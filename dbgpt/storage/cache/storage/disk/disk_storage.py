@@ -1,3 +1,7 @@
+"""Disk storage for cache.
+
+Implement the cache storage using rocksdb.
+"""
 import logging
 from typing import Optional
 
@@ -11,14 +15,14 @@ from dbgpt.core.interface.cache import (
     RetrievalPolicy,
     V,
 )
-from dbgpt.storage.cache.storage.base import CacheStorage, StorageItem
+
+from ..base import CacheStorage, StorageItem
 
 logger = logging.getLogger(__name__)
 
 
-def db_options(
-    mem_table_buffer_mb: Optional[int] = 256, background_threads: Optional[int] = 2
-):
+def db_options(mem_table_buffer_mb: int = 256, background_threads: int = 2):
+    """Create rocksdb options."""
     opt = Options()
     # create table
     opt.create_if_missing(True)
@@ -42,9 +46,10 @@ def db_options(
 
 
 class DiskCacheStorage(CacheStorage):
-    def __init__(
-        self, persist_dir: str, mem_table_buffer_mb: Optional[int] = 256
-    ) -> None:
+    """Disk cache storage using rocksdb."""
+
+    def __init__(self, persist_dir: str, mem_table_buffer_mb: int = 256) -> None:
+        """Create a new instance of DiskCacheStorage."""
         super().__init__()
         self.db: Rdict = Rdict(
             persist_dir, db_options(mem_table_buffer_mb=mem_table_buffer_mb)
@@ -55,6 +60,7 @@ class DiskCacheStorage(CacheStorage):
         cache_config: Optional[CacheConfig] = None,
         raise_error: Optional[bool] = True,
     ) -> bool:
+        """Check whether the CacheConfig is legal."""
         if (
             cache_config
             and cache_config.retrieval_policy != RetrievalPolicy.EXACT_MATCH
@@ -69,6 +75,7 @@ class DiskCacheStorage(CacheStorage):
     def get(
         self, key: CacheKey[K], cache_config: Optional[CacheConfig] = None
     ) -> Optional[StorageItem]:
+        """Retrieve a storage item from the cache using the provided key."""
         self.check_config(cache_config, raise_error=True)
 
         # Exact match retrieval
@@ -86,6 +93,7 @@ class DiskCacheStorage(CacheStorage):
         value: CacheValue[V],
         cache_config: Optional[CacheConfig] = None,
     ) -> None:
+        """Set a value in the cache for the provided key."""
         item = StorageItem.build_from_kv(key, value)
         key_hash = item.key_hash
         self.db[key_hash] = item.serialize()

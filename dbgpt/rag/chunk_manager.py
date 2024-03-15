@@ -3,8 +3,7 @@
 from enum import Enum
 from typing import Any, List, Optional
 
-from pydantic import BaseModel, Field
-
+from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.rag.chunk import Chunk, Document
 from dbgpt.rag.extractor.base import Extractor
 from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge

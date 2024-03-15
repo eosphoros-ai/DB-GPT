@@ -1,24 +1,31 @@
+"""Cache manager."""
+
 import logging
 from abc import ABC, abstractmethod
 from concurrent.futures import Executor
-from typing import Optional, Type
+from typing import Optional, Type, cast
 
 from dbgpt.component import BaseComponent, ComponentType, SystemApp
 from dbgpt.core import CacheConfig, CacheKey, CacheValue, Serializable, Serializer
 from dbgpt.core.interface.cache import K, V
-from dbgpt.storage.cache.storage.base import CacheStorage
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
+
+from .storage.base import CacheStorage
 
 logger = logging.getLogger(__name__)
 
 
 class CacheManager(BaseComponent, ABC):
+    """The cache manager interface."""
+
     name = ComponentType.MODEL_CACHE_MANAGER
 
     def __init__(self, system_app: SystemApp | None = None):
+        """Create cache manager."""
         super().__init__(system_app)
 
     def init_app(self, system_app: SystemApp):
+        """Initialize cache manager."""
         self.system_app = system_app
 
     @abstractmethod
@@ -28,7 +35,7 @@ class CacheManager(BaseComponent, ABC):
         value: CacheValue[V],
         cache_config: Optional[CacheConfig] = None,
     ):
-        """Set cache"""
+        """Set cache with key."""
 
     @abstractmethod
     async def get(
@@ -36,27 +43,30 @@ class CacheManager(BaseComponent, ABC):
         key: CacheKey[K],
         cls: Type[Serializable],
         cache_config: Optional[CacheConfig] = None,
-    ) -> CacheValue[V]:
-        """Get cache with key"""
+    ) -> Optional[CacheValue[V]]:
+        """Retrieve cache with key."""
 
     @property
     @abstractmethod
     def serializer(self) -> Serializer:
-        """Get cache serializer"""
+        """Return serializer to serialize/deserialize cache value."""
 
 
 class LocalCacheManager(CacheManager):
+    """Local cache manager."""
+
     def __init__(
         self, system_app: SystemApp, serializer: Serializer, storage: CacheStorage
     ) -> None:
+        """Create local cache manager."""
         super().__init__(system_app)
         self._serializer = serializer
         self._storage = storage
 
     @property
     def executor(self) -> Executor:
-        """Return executor to submit task"""
-        self._executor = self.system_app.get_component(
+        """Return executor."""
+        return self.system_app.get_component(  # type: ignore
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
 
@@ -66,6 +76,7 @@ class LocalCacheManager(CacheManager):
         value: CacheValue[V],
         cache_config: Optional[CacheConfig] = None,
     ):
+        """Set cache with key."""
         if self._storage.support_async():
             await self._storage.aset(key, value, cache_config)
         else:
@@ -78,7 +89,8 @@ class LocalCacheManager(CacheManager):
         key: CacheKey[K],
         cls: Type[Serializable],
         cache_config: Optional[CacheConfig] = None,
-    ) -> CacheValue[V]:
+    ) -> Optional[CacheValue[V]]:
+        """Retrieve cache with key."""
         if self._storage.support_async():
             item_bytes = await self._storage.aget(key, cache_config)
         else:
@@ -87,30 +99,42 @@ class LocalCacheManager(CacheManager):
             )
         if not item_bytes:
             return None
-        return self._serializer.deserialize(item_bytes.value_data, cls)
+        return cast(
+            CacheValue[V], self._serializer.deserialize(item_bytes.value_data, cls)
+        )
 
     @property
     def serializer(self) -> Serializer:
+        """Return serializer to serialize/deserialize cache value."""
         return self._serializer
 
 
 def initialize_cache(
     system_app: SystemApp, storage_type: str, max_memory_mb: int, persist_dir: str
 ):
-    from dbgpt.storage.cache.storage.base import MemoryCacheStorage
+    """Initialize cache manager.
+
+    Args:
+        system_app (SystemApp): The system app.
+        storage_type (str): The storage type.
+        max_memory_mb (int): The max memory in MB.
+        persist_dir (str): The persist directory.
+    """
     from dbgpt.util.serialization.json_serialization import JsonSerializer
 
-    cache_storage = None
+    from .storage.base import MemoryCacheStorage
+
     if storage_type == "disk":
         try:
-            from dbgpt.storage.cache.storage.disk.disk_storage import DiskCacheStorage
+            from .storage.disk.disk_storage import DiskCacheStorage
 
-            cache_storage = DiskCacheStorage(
+            cache_storage: CacheStorage = DiskCacheStorage(
                 persist_dir, mem_table_buffer_mb=max_memory_mb
             )
         except ImportError as e:
             logger.warn(
-                f"Can't import DiskCacheStorage, use MemoryCacheStorage, import error message: {str(e)}"
+                f"Can't import DiskCacheStorage, use MemoryCacheStorage, import error "
+                f"message: {str(e)}"
             )
             cache_storage = MemoryCacheStorage(max_memory_mb=max_memory_mb)
     else:
