@@ -277,7 +277,7 @@ class InputOperator(BaseOperator, Generic[OUT]):
         return task_output
 
 
-class TriggerOperator(InputOperator, Generic[OUT]):
+class TriggerOperator(InputOperator[OUT], Generic[OUT]):
     """Operator node that triggers the DAG to run."""
 
     def __init__(self, **kwargs) -> None:

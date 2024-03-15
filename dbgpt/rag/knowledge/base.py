@@ -154,7 +154,7 @@ class Knowledge(ABC):
         self._type = knowledge_type
         self._data_loader = data_loader
 
-    def load(self):
+    def load(self) -> List[Document]:
         """Load knowledge from data_loader."""
         documents = self._load()
         return self._postprocess(documents)
@@ -174,7 +174,7 @@ class Knowledge(ABC):
         return docs
 
     @abstractmethod
-    def _load(self):
+    def _load(self) -> List[Document]:
         """Preprocess knowledge from data_loader."""
 
     @classmethod

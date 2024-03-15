@@ -55,6 +55,7 @@ from .trigger.http_trigger import (
     CommonLLMHttpResponseBody,
     HttpTrigger,
 )
+from .trigger.iterator_trigger import IteratorTrigger
 
 _request_http_trigger_available = False
 try:
@@ -100,6 +101,7 @@ __all__ = [
     "TransformStreamAbsOperator",
     "Trigger",
     "HttpTrigger",
+    "IteratorTrigger",
     "CommonLLMHTTPRequestContext",
     "CommonLLMHttpResponseBody",
     "CommonLLMHttpRequestBody",

@@ -129,7 +129,11 @@ class DBSchemaAssembler(BaseAssembler):
         return self._chunks
 
     def persist(self) -> List[str]:
-        """Persist chunks into vector store."""
+        """Persist chunks into vector store.
+
+        Returns:
+            List[str]: List of chunk ids.
+        """
         return self._vector_store_connector.load_document(self._chunks)
 
     def _extract_info(self, chunks) -> List[Chunk]:

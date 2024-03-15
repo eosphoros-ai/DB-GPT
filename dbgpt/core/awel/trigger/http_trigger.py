@@ -397,9 +397,9 @@ class HttpTrigger(Trigger):
         self._end_node: Optional[BaseOperator] = None
         self._register_to_app = register_to_app
 
-    async def trigger(self) -> None:
+    async def trigger(self, **kwargs) -> Any:
         """Trigger the DAG. Not used in HttpTrigger."""
-        pass
+        raise NotImplementedError("HttpTrigger does not support trigger directly")
 
     def register_to_app(self) -> bool:
         """Register the trigger to a FastAPI app.

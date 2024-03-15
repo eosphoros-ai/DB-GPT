@@ -27,14 +27,15 @@ class PluginHubLoadClient(ResourcePluginClient):
         self, value: str, plugin_generator: Optional[PluginPromptGenerator] = None
     ) -> PluginPromptGenerator:
         logger.info(f"PluginHubLoadClient load plugin:{value}")
-        plugins_prompt_generator = PluginPromptGenerator()
-        plugins_prompt_generator.command_registry = CFG.command_registry
+        if plugin_generator is None:
+            plugin_generator = PluginPromptGenerator()
+            plugin_generator.command_registry = CFG.command_registry
 
         agent_module = CFG.SYSTEM_APP.get_component(
             ComponentType.PLUGIN_HUB, ModulePlugin
         )
-        plugins_prompt_generator = agent_module.load_select_plugin(
-            plugins_prompt_generator, json.dumps(value)
+        plugin_generator = agent_module.load_select_plugin(
+            plugin_generator, json.dumps(value)
         )
 
-        return plugins_prompt_generator
+        return plugin_generator

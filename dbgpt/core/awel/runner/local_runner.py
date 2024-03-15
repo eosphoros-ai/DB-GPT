@@ -60,8 +60,8 @@ class DefaultWorkflowRunner(WorkflowRunner):
             streaming_call=streaming_call,
             node_name_to_ids=job_manager._node_name_to_ids,
         )
-        if node.dag:
-            self._running_dag_ctx[node.dag.dag_id] = dag_ctx
+        # if node.dag:
+        #     self._running_dag_ctx[node.dag.dag_id] = dag_ctx
         logger.info(
             f"Begin run workflow from end operator, id: {node.node_id}, runner: {self}"
         )
@@ -76,8 +76,8 @@ class DefaultWorkflowRunner(WorkflowRunner):
         if not streaming_call and node.dag:
             # streaming call not work for dag end
             await node.dag._after_dag_end()
-        if node.dag:
-            del self._running_dag_ctx[node.dag.dag_id]
+        # if node.dag:
+        #     del self._running_dag_ctx[node.dag.dag_id]
         return dag_ctx
 
     async def _execute_node(
