@@ -25,11 +25,11 @@ def test_md_header_text_splitter() -> None:
     output = markdown_splitter.split_text(markdown_document)
     expected_output = [
         Chunk(
-            content="{'Header 1': 'dbgpt', 'Header 2': 'description'}, my name is dbgpt",
+            content='"dbgpt-description": my name is dbgpt',
             metadata={"Header 1": "dbgpt", "Header 2": "description"},
         ),
         Chunk(
-            content="{'Header 1': 'dbgpt', 'Header 2': 'content'}, my name is aries",
+            content='"dbgpt-content": my name is aries',
             metadata={"Header 1": "dbgpt", "Header 2": "content"},
         ),
     ]

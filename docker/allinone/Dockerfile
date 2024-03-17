@@ -2,6 +2,7 @@ ARG BASE_IMAGE="eosphorosai/dbgpt:latest"
 
 FROM ${BASE_IMAGE}
 
+RUN pip install dashscope
 RUN apt-get update && apt-get install -y wget gnupg lsb-release net-tools
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 467B942D3A79BD29
@@ -9,7 +10,7 @@ RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 467B942D3A79BD29
 RUN wget https://dev.mysql.com/get/mysql-apt-config_0.8.17-1_all.deb
 RUN dpkg -i mysql-apt-config_0.8.17-1_all.deb
 
-RUN apt-get update && apt-get install -y mysql-server && apt-get clean
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B7B3B788A8D3785C && apt-get update && apt-get install -y mysql-server && apt-get clean
 
 # Remote access
 RUN sed -i 's/bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/g' /etc/mysql/mysql.conf.d/mysqld.cnf \

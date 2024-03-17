@@ -515,7 +515,8 @@ class MarkdownHeaderTextSplitter(TextSplitter):
                 aggregated_chunks[-1]["content"] += "  \n" + line["content"]
             else:
                 # Otherwise, append the current line to the aggregated list
-                line["content"] = f"{line['metadata']}, " + line["content"]
+                subtitles = "-".join((list(line["metadata"].values())))
+                line["content"] = f'"{subtitles}": ' + line["content"]
                 aggregated_chunks.append(line)
 
         return [
@@ -557,16 +558,28 @@ class MarkdownHeaderTextSplitter(TextSplitter):
         # header_stack: List[Dict[str, Union[int, str]]] = []
         header_stack: List[HeaderType] = []
         initial_metadata: Dict[str, str] = {}
+        # Determine whether a line is within a markdown code block.
+        in_code_block = False
         for line in lines:
             stripped_line = line.strip()
+            # A code frame starts with "```"
+            with_code_frame = stripped_line.startswith("```") and (
+                stripped_line != "```"
+            )
+            if (not in_code_block) and with_code_frame:
+                in_code_block = True
             # Check each line against each of the header types (e.g., #, ##)
             for sep, name in self.headers_to_split_on:
                 # Check if line starts with a header that we intend to split on
-                if stripped_line.startswith(sep) and (
-                    # Header with no text OR header is followed by space
-                    # Both are valid conditions that sep is being used a header
-                    len(stripped_line) == len(sep)
-                    or stripped_line[len(sep)] == " "
+                if (
+                    (not in_code_block)
+                    and stripped_line.startswith(sep)
+                    and (
+                        # Header with no text OR header is followed by space
+                        # Both are valid conditions that sep is being used a header
+                        len(stripped_line) == len(sep)
+                        or stripped_line[len(sep)] == " "
+                    )
                 ):
                     # Ensure we are tracking the header as metadata
                     if name is not None:
@@ -619,6 +632,10 @@ class MarkdownHeaderTextSplitter(TextSplitter):
                         }
                     )
                     current_content.clear()
+
+            # Code block ends
+            if in_code_block and stripped_line == "```":
+                in_code_block = False
 
             current_metadata = initial_metadata.copy()
         if current_content:

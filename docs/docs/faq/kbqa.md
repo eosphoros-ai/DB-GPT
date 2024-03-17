@@ -18,8 +18,29 @@ git lfs clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
 
 Update .env file and set VECTOR_STORE_TYPE.
 
-DB-GPT currently support Chroma(Default), Milvus(>2.1), Weaviate vector database.
-If you want to change vector db, Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma (now only support Chroma and Milvus(>2.1), if you set Milvus, please set MILVUS_URL and MILVUS_PORT)
+DB-GPT currently support Chroma(Default), Milvus(>2.1), Weaviate, OceanBase vector database.
+If you want to change vector db, Update your .env, set your vector store type, VECTOR_STORE_TYPE=Chroma (now only support Chroma and Milvus(>2.1), if you set Milvus, please set MILVUS_URL and MILVUS_PORT).
+
+If you want to use OceanBase, please first start a docker container via the following command:
+```shell
+docker run -p 2881:2881 --name obvec -d oceanbase/oceanbase-ce:vector
+```
+Then set the following variables in the .env file:
+```shell
+VECTOR_STORE_TYPE=OceanBase
+OB_HOST=127.0.0.1
+OB_PORT=2881
+OB_USER=root@test
+OB_DATABASE=test
+## Optional
+# OB_PASSWORD=
+## Optional: SQL statements executed by OceanBase is recorded in the log file specified by {OB_SQL_DBG_LOG_PATH}.
+# OB_SQL_DBG_LOG_PATH={your-sql-dbg-log-dir}/sql.log
+## Optional: If {OB_ENABLE_NORMALIZE_VECTOR} is set, the vector stored in OceanBase is normalized.
+# OB_ENABLE_NORMALIZE_VECTOR=True
+## Optional: If {OB_ENABLE_INDEX} is set, OceanBase will automatically create a vector index table.
+# OB_ENABLE_INDEX=True
+```
 If you want to support more vector db, you can integrate yourself.[how to integrate](https://db-gpt.readthedocs.io/en/latest/modules/vector.html)
 ```commandline
 #*******************************************************************#

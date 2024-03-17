@@ -147,6 +147,50 @@ msgid ""
 "connection string."
 msgstr "向量存储的连接字符串，如果未设置，将使用默认的连接字符串。"
 
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:542
+msgid "OceanBase Vector Store"
+msgstr "OceanBase 向量存储"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:548
+msgid "OceanBase Host"
+msgstr "OceanBase 主机地址"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:552
+msgid "oceanbase host"
+msgstr "oceanbase 主机地址"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:558
+msgid "OceanBase Port"
+msgstr "OceanBase 端口"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:562
+msgid "oceanbase port"
+msgstr "oceanbase 端口"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:568
+msgid "OceanBase User"
+msgstr "OceanBase 用户名"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:572
+msgid "user to login"
+msgstr "登录用户名"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:578
+msgid "OceanBase Password"
+msgstr "OceanBase 密码"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:582
+msgid "password to login"
+msgstr "登录密码"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:588
+msgid "OceanBase Database"
+msgstr "OceanBase 数据库名"
+
+#: ../dbgpt/storage/vector_store/oceanbase_store.py:592
+msgid "database for vector tables"
+msgstr "存放向量表的数据库名"
+
 #: ../dbgpt/storage/vector_store/base.py:19
 msgid "Collection Name"
 msgstr "集合名称"
