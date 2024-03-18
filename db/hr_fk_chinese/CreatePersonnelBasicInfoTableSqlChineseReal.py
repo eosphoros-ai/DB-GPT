@@ -5,12 +5,13 @@
 @Create Date: 2024/3/11 上午9:03
 '''
 from db.ConnectGP import pythonGP
-import pandas as pd
-import json
-
 from db.ConnectOracle import connectOracle
-
-db = pythonGP(host='172.23.10.249', port='5432', dbname='hr_chinese_fk', user='postgres', password='labpassword')
+import sys
+if len(sys.argv)>1:
+    dbname = sys.argv[1]
+else:
+    dbname = 'hr_chinese_fk'
+db = pythonGP(host='172.23.10.249', port='5432', dbname=dbname, user='postgres', password='labpassword')
 
 table_name = 'a_sap_employee_information_chinese'
 sql = f'''
@@ -31,6 +32,7 @@ create table public.{table_name}(
 人事范围            text    null,
 员工组             text    null, 
 员工子组文本          text    null,
+员工子组            text    null,
 上班地点            text    null,
 英文名                text    null,     
 性别                text    null,
@@ -64,6 +66,7 @@ COMMENT ON COLUMN public.{table_name}.员工组 IS '值为：["劳务外包","�
 COMMENT ON COLUMN public.{table_name}.离职类型 IS '值为：["退休","主动辞职","被动辞职","辞退"]';
 COMMENT ON COLUMN public.{table_name}.离职原因 IS '值包括：["离职-不计离职率","集团内互转","解除劳动关系"..]等等';
 COMMENT ON COLUMN public.{table_name}.员工子组文本 IS '值为：["顾问","实习","二级员工","五级员工","一级员工","三级员工","CJR","四级员工"]';
+COMMENT ON COLUMN public.{table_name}.员工子组 IS '值为：["B1","B3","A2","A5","A1","A3","B3","A4"]';
 COMMENT ON COLUMN public.{table_name}.上班地点 IS '值为：["SSL","SZ(深圳)","WX(无锡)","XM","IN","BM","HK","SG","MNO","ND","SSL-P"]';
 COMMENT ON COLUMN public.{table_name}.一级机构 IS '也称为部门，值一般为英文字母组成，例如：["IDT","APD","HR","QA","FE"]等';
 COMMENT ON COLUMN public.{table_name}.二级机构 IS '也称为组，是部门下分组，例如：["AI","AD","CPA","TA"]等等';
@@ -91,6 +94,7 @@ rename_dict = {
     "T501T_PTEXT": 't501t_ptext',
     "T503T_PTEXT": 't503t_ptext',
     "T542T_ATX": 't542t_atx',
+    'PERSK': '员工子组',
     "PA0002_RUFNM": 'rufnm',
     "PA0002_GESCH": 'gesch',
     "T005T_NATIO": 't005t_natio',
@@ -119,9 +123,6 @@ rename_dict = {
     "ZJSDAT": 'zjsdat',
 }
 
-'''
-PA0001_PERNR,PA0001_BTRTL,PA0001_ENAME,PA0008_TRFGR,T529U_TEXT,T502T_FTEXT,PLANS_TEXT,PA0000_RZDTM,PA0001_PERSON_NAME,T529T_ZLZLX,T530T_ZLZYY,PA0000_LZDTM,T500P_NAME1,T501T_PTEXT,T503T_PTEXT,T542T_ATX,PA0002_RUFNM,PA0002_GESCH,T005T_NATIO,T505S_LTEXT,PA0002_ZJIGU,PA0006_ZXADD,PA0022_STEXT,PA0022_BYDTM,PA0022_INSTI,PA0022_ZZHYE,PA0041_DAT01,PA0105_USRID,ORG_TEXT_L1,ORG_TEXT_L2,ORG_TEXT_L3,HRP1000_SHORT,PA9001_ZGSLX,PA9001_GSTXT,OPATHN,STLTX,ZBUSTX,ZGZXZ_TXT,ZZSSJ_NUM,ZZSSJ_NAME,ZZJTRZ,ZJSDAT
-'''
 #  最终选用字段。
 columns_name_dict_new = {
     'pernr': '人员工号',
@@ -143,6 +144,7 @@ columns_name_dict_new = {
     't500p_name1': '人事范围',
     't501t_ptext': '员工组',
     't503t_ptext': '员工子组文本',
+    'persk': '员工子组',
     'zjigu': '籍贯',
     'zxadd': '身份证地址的省_直辖市',
     'dat01': '开始参加工作日期',
@@ -158,9 +160,8 @@ columns_name_dict_new = {
     'zjsdat': '最近一次晋升日期'
 }
 
-for i in columns_name_dict_new.items():
-    sql = sql.replace(i[0], i[1])
-print(sql)
+# print(sql)
+print((dbname+'-'+ table_name).center(80, '='))
 print(db.excuSql(sql))
 
 useless_col = []
@@ -189,6 +190,5 @@ df = df.rename(columns=columns_name_dict_new)
 need_col = list(columns_name_dict_new.values())
 
 df = df[need_col]
-print('data inserting ')
 # df.to_csv('personnel_basic_info.csv',encoding='GBK',index=False)
 db.insertGP(df, 'public', table_name)

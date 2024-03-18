@@ -23,7 +23,7 @@ function ChartView({ data, type, sql }: { data: Datum[]; type: BackEndChartType;
   const SqlItem = {
     key: 'sql',
     label: 'SQL',
-    children: <CodePreview language="sql" code={format(sql ?? '', { language: 'mysql' }) as string} />,
+    children: <CodePreview language="sql" code={format(sql ?? '', { language: 'postgresql' }) as string} />,
   };
   const DataItem = {
     key: 'data',
