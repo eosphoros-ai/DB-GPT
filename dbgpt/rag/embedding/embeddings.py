@@ -1,13 +1,13 @@
 """Embedding implementations."""
 
-import asyncio
-from abc import ABC, abstractmethod
+
 from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
 
 from dbgpt._private.pydantic import BaseModel, Extra, Field
+from dbgpt.core import Embeddings
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -20,34 +20,6 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
     "Represent this question for searching relevant passages: "
 )
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
-
-
-class Embeddings(ABC):
-    """Interface for embedding models.
-
-    Refer to `Langchain Embeddings <https://github.com/langchain-ai/langchain/tree/
-    master/libs/langchain/langchain/embeddings>`_.
-    """
-
-    @abstractmethod
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed search docs."""
-
-    @abstractmethod
-    def embed_query(self, text: str) -> List[float]:
-        """Embed query text."""
-
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Asynchronous Embed search docs."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self.embed_documents, texts
-        )
-
-    async def aembed_query(self, text: str) -> List[float]:
-        """Asynchronous Embed query text."""
-        return await asyncio.get_running_loop().run_in_executor(
-            None, self.embed_query, text
-        )
 
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):

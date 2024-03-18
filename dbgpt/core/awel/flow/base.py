@@ -655,7 +655,7 @@ class BaseMetadata(BaseResource):
             view_param_key = view_param.name
             if view_param_key not in current_parameters:
                 raise FlowParameterMetadataException(
-                    f"Parameter {view_param_key} not found in the metadata."
+                    f"Parameter {view_param_key} not in the metadata."
                 )
             runnable_parameters.update(
                 current_parameters[view_param_key].to_runnable_parameter(

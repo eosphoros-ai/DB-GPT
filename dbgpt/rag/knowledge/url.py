@@ -26,7 +26,7 @@ class URLKnowledge(Knowledge):
             encoding(str, optional): csv encoding
             loader(Any, optional): loader
         """
-        self._path = url
+        self._path = url or None
         self._type = knowledge_type
         self._loader = loader
         self._encoding = encoding
@@ -39,8 +39,12 @@ class URLKnowledge(Knowledge):
         else:
             from langchain.document_loaders import WebBaseLoader
 
-            web_reader = WebBaseLoader(web_path=self._path)
-            documents = web_reader.load()
+            if self._path is not None:
+                web_reader = WebBaseLoader(web_path=self._path)
+                documents = web_reader.load()
+            else:
+                # Handle the case where self._path is None
+                raise ValueError("web_path cannot be None")
         return [Document.langchain2doc(lc_document) for lc_document in documents]
 
     @classmethod

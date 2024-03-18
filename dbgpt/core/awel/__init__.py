@@ -55,6 +55,7 @@ from .trigger.http_trigger import (
     CommonLLMHttpResponseBody,
     HttpTrigger,
 )
+from .trigger.iterator_trigger import IteratorTrigger
 
 _request_http_trigger_available = False
 try:
@@ -100,6 +101,7 @@ __all__ = [
     "TransformStreamAbsOperator",
     "Trigger",
     "HttpTrigger",
+    "IteratorTrigger",
     "CommonLLMHTTPRequestContext",
     "CommonLLMHttpResponseBody",
     "CommonLLMHttpRequestBody",
@@ -178,7 +180,7 @@ def setup_dev_environment(
             except Exception as e:
                 logger.warning(
                     f"Visualize DAG {str(dag)} failed: {e}, if your system has no "
-                    f"graphviz, you can install it by `pip install graphviz` or "
+                    f"graphviz, you can install it by `pip install graphviz` or "  # noqa
                     f"`sudo apt install graphviz`"
                 )
         for trigger in dag.trigger_nodes:

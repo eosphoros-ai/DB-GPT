@@ -35,7 +35,9 @@ class AutoPlanChatManager(ManagerAgent):
 
         if now_plan.rely and len(now_plan.rely) > 0:
             rely_tasks_list = now_plan.rely.split(",")
-            rely_tasks = self.memory.plans_memory.get_by_conv_id_and_num(conv_id, [])
+            rely_tasks = self.memory.plans_memory.get_by_conv_id_and_num(
+                conv_id, rely_tasks_list
+            )
             if rely_tasks:
                 rely_prompt = "Read the result data of the dependent steps in the above historical message to complete the current goal:"
                 for rely_task in rely_tasks:

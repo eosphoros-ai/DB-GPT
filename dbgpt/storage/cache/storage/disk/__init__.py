@@ -1,0 +1,1 @@
+"""Disk cache storage implementation."""

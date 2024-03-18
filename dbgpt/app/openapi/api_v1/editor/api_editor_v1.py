@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from typing import List
+from typing import Dict, List
 
 from fastapi import APIRouter, Body, Depends
 
@@ -23,9 +23,9 @@ from dbgpt.app.openapi.editor_view_model import (
 )
 from dbgpt.app.scene import ChatFactory
 from dbgpt.app.scene.chat_dashboard.data_loader import DashboardDataLoader
-from dbgpt.core.interface.message import OnceConversation
 from dbgpt.serve.conversation.serve import Serve as ConversationServe
-from dbgpt.storage.chat_history.chat_hisotry_factory import ChatHistory
+
+from ._chat_history.chat_hisotry_factory import ChatHistory
 
 router = APIRouter()
 CFG = Config()
@@ -201,7 +201,7 @@ async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body())
 
     chat_history_fac = ChatHistory()
     history_mem = chat_history_fac.get_store_instance(chart_edit_context.con_uid)
-    history_messages: List[OnceConversation] = history_mem.get_messages()
+    history_messages: List[Dict] = history_mem.get_messages()
     if history_messages:
         dashboard_data_loader: DashboardDataLoader = DashboardDataLoader()
         db_conn = CFG.LOCAL_DB_MANAGE.get_connect(chart_edit_context.db_name)

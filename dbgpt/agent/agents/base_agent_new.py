@@ -8,8 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
 from dbgpt.agent.actions.action import Action, ActionOutput
-from dbgpt.agent.agents.agent import AgentContext
-from dbgpt.agent.agents.agent_new import Agent
+from dbgpt.agent.agents.agent_new import Agent, AgentContext
 from dbgpt.agent.agents.llm.llm import LLMConfig, LLMStrategyType
 from dbgpt.agent.agents.llm.llm_client import AIWrapper
 from dbgpt.agent.agents.role import Role
@@ -31,7 +30,7 @@ class ConversableAgent(Role, Agent):
     llm_config: Optional[LLMConfig] = None
     memory: GptsMemory = Field(default_factory=GptsMemory)
     resource_loader: Optional[ResourceLoader] = None
-    max_retry_count: int = 10
+    max_retry_count: int = 3
     consecutive_auto_reply_counter: int = 0
     llm_client: Optional[AIWrapper] = None
     oai_system_message: List[Dict] = Field(default_factory=list)
@@ -178,54 +177,75 @@ class ConversableAgent(Role, Agent):
         logger.info(
             f"generate agent reply!sender={sender}, rely_messages_len={rely_messages}"
         )
-
-        reply_message = self._init_reply_message(recive_message=recive_message)
-        await self._system_message_assembly(
-            recive_message["content"], reply_message.get("context", None)
-        )
-
-        fail_reason = None
-        current_retry_counter = 0
-        is_sucess = True
-        while current_retry_counter < self.max_retry_count:
-            if current_retry_counter > 0:
-                retry_message = self._init_reply_message(recive_message=recive_message)
-                retry_message["content"] = fail_reason
-                # The current message is a self-optimized message that needs to be recorded.
-                # It is temporarily set to be initiated by the originating end to facilitate the organization of historical memory context.
-                await sender.a_send(retry_message, self, reviewer, request_reply=False)
-
-            # 1.Think about how to do things
-            llm_reply, model_name = await self.a_thinking(
-                self._load_thinking_messages(recive_message, sender, rely_messages)
+        try:
+            reply_message = self._init_reply_message(recive_message=recive_message)
+            await self._system_message_assembly(
+                recive_message["content"], reply_message.get("context", None)
             )
-            reply_message["model_name"] = model_name
-            reply_message["content"] = llm_reply
 
-            # 2.Review whether what is being done is legal
-            approve, comments = await self.a_review(llm_reply, self)
-            reply_message["review_info"] = {"approve": approve, "comments": comments}
+            fail_reason = None
+            current_retry_counter = 0
+            is_sucess = True
+            while current_retry_counter < self.max_retry_count:
+                if current_retry_counter > 0:
+                    retry_message = self._init_reply_message(
+                        recive_message=recive_message
+                    )
+                    retry_message["content"] = fail_reason
+                    retry_message["current_goal"] = recive_message.get(
+                        "current_goal", None
+                    )
+                    # The current message is a self-optimized message that needs to be recorded.
+                    # It is temporarily set to be initiated by the originating end to facilitate the organization of historical memory context.
+                    await sender.a_send(
+                        retry_message, self, reviewer, request_reply=False
+                    )
 
-            # 3.Act based on the results of your thinking
-            act_extent_param = self.prepare_act_param()
-            act_out: ActionOutput = await self.a_act(
-                message=llm_reply,
-                **act_extent_param,
-            )
-            reply_message["action_report"] = act_out.dict()
+                # 1.Think about how to do things
+                llm_reply, model_name = await self.a_thinking(
+                    self._load_thinking_messages(recive_message, sender, rely_messages)
+                )
+                reply_message["model_name"] = model_name
+                reply_message["content"] = llm_reply
 
-            # 4.Reply information verification
-            check_paas, reason = await self.a_verify(reply_message, sender, reviewer)
-            is_sucess = check_paas
-            # 5.Optimize wrong answers myself
-            if not check_paas:
-                current_retry_counter += 1
-                # Send error messages and issue new problem-solving instructions
-                await self.a_send(reply_message, sender, reviewer, request_reply=False)
-                fail_reason = reason
-            else:
-                break
-        return is_sucess, reply_message
+                # 2.Review whether what is being done is legal
+                approve, comments = await self.a_review(llm_reply, self)
+                reply_message["review_info"] = {
+                    "approve": approve,
+                    "comments": comments,
+                }
+
+                # 3.Act based on the results of your thinking
+                act_extent_param = self.prepare_act_param()
+                act_out: ActionOutput = await self.a_act(
+                    message=llm_reply,
+                    sender=sender,
+                    reviewer=reviewer,
+                    **act_extent_param,
+                )
+                reply_message["action_report"] = act_out.dict()
+
+                # 4.Reply information verification
+                check_paas, reason = await self.a_verify(
+                    reply_message, sender, reviewer
+                )
+                is_sucess = check_paas
+                # 5.Optimize wrong answers myself
+                if not check_paas:
+                    current_retry_counter += 1
+                    # Send error messages and issue new problem-solving instructions
+                    if current_retry_counter < self.max_retry_count:
+                        await self.a_send(
+                            reply_message, sender, reviewer, request_reply=False
+                        )
+                    fail_reason = reason
+                else:
+                    break
+            return is_sucess, reply_message
+
+        except Exception as e:
+            logger.exception("Generate reply exception!")
+            return False, {"content": str(e)}
 
     async def a_thinking(
         self, messages: Optional[List[Dict]], prompt: Optional[str] = None
@@ -265,7 +285,13 @@ class ConversableAgent(Role, Agent):
     ) -> Tuple[bool, Any]:
         return True, None
 
-    async def a_act(self, message: Optional[str], **kwargs) -> Optional[ActionOutput]:
+    async def a_act(
+        self,
+        message: Optional[str],
+        sender: Optional[ConversableAgent] = None,
+        reviewer: Optional[ConversableAgent] = None,
+        **kwargs,
+    ) -> Optional[ActionOutput]:
         last_out = None
         for action in self.actions:
             # Select the resources required by acton
@@ -335,6 +361,7 @@ class ConversableAgent(Role, Agent):
     #######################################################################
 
     def _init_actions(self, actions: List[Action] = None):
+        self.actions = []
         for idx, action in enumerate(actions):
             if not isinstance(action, Action):
                 self.actions.append(action())
@@ -426,7 +453,9 @@ class ConversableAgent(Role, Agent):
             for item in self.resources:
                 resource_client = self.resource_loader.get_resesource_api(item.type)
                 resource_prompt_list.append(
-                    await resource_client.get_resource_prompt(item, qustion)
+                    await resource_client.get_resource_prompt(
+                        self.agent_context.conv_id, item, qustion
+                    )
                 )
             if context is None:
                 context = {}
@@ -525,7 +554,11 @@ class ConversableAgent(Role, Agent):
             content = item.content
             if item.action_report:
                 action_out = ActionOutput.from_dict(json.loads(item.action_report))
-                if action_out is not None and action_out.content is not None:
+                if (
+                    action_out is not None
+                    and action_out.is_exe_success
+                    and action_out.content is not None
+                ):
                     content = action_out.content
             oai_messages.append(
                 {

@@ -95,7 +95,7 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
             <Form.Item name="db_user" label="Username" className="mb-3" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
-            <Form.Item name="db_pwd" label="Password" className="mb-3" rules={[{ required: true }]}>
+            <Form.Item name="db_pwd" label="Password" className="mb-3" rules={[{ required: false }]}>
               <Input type="password" />
             </Form.Item>
             <Form.Item name="db_host" label="Host" className="mb-3" rules={[{ required: true }]}>

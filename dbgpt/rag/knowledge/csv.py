@@ -63,7 +63,7 @@ class CSVKnowledge(Knowledge):
                         )
                     except KeyError:
                         raise ValueError(
-                            f"Source column '{self._source_column}' not found in CSV "
+                            f"Source column '{self._source_column}' not in CSV "
                             f"file."
                         )
                     metadata = {"source": source, "row": i}

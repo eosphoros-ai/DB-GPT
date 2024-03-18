@@ -529,7 +529,7 @@ class DAGContext:
             raise ValueError("task_name can't be None")
         node_id = self._node_name_to_ids.get(task_name)
         if not node_id:
-            raise ValueError(f"Task name {task_name} not exists in DAG")
+            raise ValueError(f"Task name {task_name} not in DAG")
         task_output = self._task_outputs.get(node_id)
         if not task_output:
             raise ValueError(f"Task output for task {task_name} not exists")
@@ -845,9 +845,7 @@ def _visualize_dag(
                 # Check if the edge has been added
                 if (str(node), str(downstream_node)) not in added_edges:
                     dot.edge(str(node), str(downstream_node))
-                    mermaid_str += (
-                        f"    {node.graph_str} --> {downstream_node.graph_str};\n"
-                    )
+                    mermaid_str += f"    {node.graph_str} --> {downstream_node.graph_str};\n"  # noqa
                     added_edges.add((str(node), str(downstream_node)))
                 add_edges(downstream_node)
 

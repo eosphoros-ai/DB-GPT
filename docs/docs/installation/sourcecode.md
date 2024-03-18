@@ -74,6 +74,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Qwen', value: 'qwen'},
     {label: 'ChatGLM', value: 'chatglm'},
     {label: 'WenXin', value: 'erniebot'},
+    {label: 'Yi', value: 'yi'},
   ]}>
   <TabItem value="openai" label="open ai">
   Install dependencies
@@ -182,6 +183,33 @@ LLM_MODEL=wenxin_proxyllm
 WEN_XIN_MODEL_VERSION={version} # ERNIE-Bot or ERNIE-Bot-turbo
 WEN_XIN_API_KEY={your-wenxin-sk}
 WEN_XIN_API_SECRET={your-wenxin-sct}
+```
+  </TabItem>
+  <TabItem value="yi" label="Yi">
+  Install dependencies
+
+Yi's API is compatible with OpenAI's API, so you can use the same dependencies as OpenAI's API.
+
+```python
+pip install  -e ".[openai]"
+```
+
+Download embedding model
+
+```shell
+cd DB-GPT
+mkdir models and cd models
+git clone https://huggingface.co/GanymedeNil/text2vec-large-chinese
+```
+
+Configure the proxy and modify LLM_MODEL, YI_API_BASE and YI_API_KEY in the `.env`file
+
+```shell
+# .env
+LLM_MODEL=yi_proxyllm
+YI_MODEL_VERSION=yi-34b-chat-0205
+YI_API_BASE=https://api.lingyiwanwu.com/v1
+YI_API_KEY={your-yi-api-key}
 ```
   </TabItem>
 </Tabs>

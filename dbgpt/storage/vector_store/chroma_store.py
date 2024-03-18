@@ -1,14 +1,18 @@
+"""Chroma vector store."""
 import logging
 import os
 from typing import Any, List
 
 from chromadb import PersistentClient
 from chromadb.config import Settings
-from pydantic import Field
 
+from dbgpt._private.pydantic import Field
 from dbgpt.configs.model_config import PILOT_PATH
+
+# TODO: Recycle dependency on rag and storage
 from dbgpt.rag.chunk import Chunk
-from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+
+from .base import VectorStoreBase, VectorStoreConfig
 
 logger = logging.getLogger(__name__)
 
@@ -16,20 +20,28 @@ logger = logging.getLogger(__name__)
 class ChromaVectorConfig(VectorStoreConfig):
     """Chroma vector store config."""
 
+    class Config:
+        """Config for BaseModel."""
+
+        arbitrary_types_allowed = True
+
     persist_path: str = Field(
         default=os.getenv("CHROMA_PERSIST_PATH", None),
-        description="The password of vector store, if not set, will use the default password.",
+        description="The password of vector store, if not set, will use the default "
+        "password.",
     )
     collection_metadata: dict = Field(
         default=None,
-        description="the index metadata of vector store, if not set, will use the default metadata.",
+        description="the index metadata of vector store, if not set, will use the "
+        "default metadata.",
     )
 
 
 class ChromaStore(VectorStoreBase):
-    """chroma database"""
+    """Chroma vector store."""
 
     def __init__(self, vector_store_config: ChromaVectorConfig) -> None:
+        """Create a ChromaStore instance."""
         from langchain.vectorstores import Chroma
 
         chroma_vector_config = vector_store_config.dict()
@@ -59,6 +71,7 @@ class ChromaStore(VectorStoreBase):
         )
 
     def similar_search(self, text, topk, **kwargs: Any) -> List[Chunk]:
+        """Search similar documents."""
         logger.info("ChromaStore similar search")
         lc_documents = self.vector_store_client.similarity_search(text, topk, **kwargs)
         return [
@@ -67,14 +80,16 @@ class ChromaStore(VectorStoreBase):
         ]
 
     def similar_search_with_scores(self, text, topk, score_threshold) -> List[Chunk]:
-        """
+        """Search similar documents with scores.
+
         Chroma similar_search_with_score.
         Return docs and relevance scores in the range [0, 1].
         Args:
             text(str): query text
             topk(int): return docs nums. Defaults to 4.
-            score_threshold(float): score_threshold: Optional, a floating point value between 0 to 1 to
-                    filter the resulting set of retrieved docs,0 is dissimilar, 1 is most similar.
+            score_threshold(float): score_threshold: Optional, a floating point value
+                between 0 to 1 to filter the resulting set of retrieved docs,0 is
+                dissimilar, 1 is most similar.
         """
         logger.info("ChromaStore similar search with scores")
         docs_and_scores = (
@@ -87,8 +102,8 @@ class ChromaStore(VectorStoreBase):
             for doc, score in docs_and_scores
         ]
 
-    def vector_name_exists(self):
-        """is vector store name exist."""
+    def vector_name_exists(self) -> bool:
+        """Whether vector name exists."""
         logger.info(f"Check persist_dir: {self.persist_dir}")
         if not os.path.exists(self.persist_dir):
             return False
@@ -98,6 +113,7 @@ class ChromaStore(VectorStoreBase):
         return len(files) > 0
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
+        """Load document to vector store."""
         logger.info("ChromaStore load document")
         texts = [chunk.content for chunk in chunks]
         metadatas = [chunk.metadata for chunk in chunks]
@@ -105,14 +121,16 @@ class ChromaStore(VectorStoreBase):
         self.vector_store_client.add_texts(texts=texts, metadatas=metadatas, ids=ids)
         return ids
 
-    def delete_vector_name(self, vector_name):
+    def delete_vector_name(self, vector_name: str):
+        """Delete vector name."""
         logger.info(f"chroma vector_name:{vector_name} begin delete...")
         self.vector_store_client.delete_collection()
         self._clean_persist_folder()
         return True
 
     def delete_by_ids(self, ids):
-        logger.info(f"begin delete chroma ids...")
+        """Delete vector by ids."""
+        logger.info(f"begin delete chroma ids: {ids}")
         ids = ids.split(",")
         if len(ids) > 0:
             collection = self.vector_store_client._collection
