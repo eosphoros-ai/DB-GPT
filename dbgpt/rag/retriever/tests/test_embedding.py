@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 
 

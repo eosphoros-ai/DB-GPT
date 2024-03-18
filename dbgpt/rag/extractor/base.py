@@ -2,8 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from dbgpt.core import LLMClient
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk, LLMClient
 
 
 class Extractor(ABC):

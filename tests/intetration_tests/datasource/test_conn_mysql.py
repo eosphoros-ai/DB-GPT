@@ -20,7 +20,7 @@
 
 import pytest
 
-from dbgpt.datasource.rdbms.conn_mysql import MySQLConnect
+from dbgpt.datasource.rdbms.conn_mysql import MySQLConnector
 
 _create_table_sql = """
             CREATE TABLE IF NOT EXISTS `test` (
@@ -31,7 +31,7 @@ _create_table_sql = """
 
 @pytest.fixture
 def db():
-    conn = MySQLConnect.from_uri_db(
+    conn = MySQLConnector.from_uri_db(
         "localhost",
         3307,
         "root",
@@ -89,4 +89,4 @@ def test_get_users(db):
 
 
 def test_get_database_lists(db):
-    assert db.get_database_list() == ["test"]
+    assert db.get_database_names() == ["test"]

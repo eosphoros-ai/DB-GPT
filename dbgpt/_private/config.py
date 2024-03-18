@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
     from dbgpt.component import SystemApp
+    from dbgpt.datasource.manages import ConnectorManager
 
 
 class Config(metaclass=Singleton):
@@ -185,8 +186,6 @@ class Config(metaclass=Singleton):
             os.getenv("NATIVE_SQL_CAN_RUN_WRITE", "True").lower() == "true"
         )
 
-        self.LOCAL_DB_MANAGE = None
-
         ###dbgpt meta info database connection configuration
         self.LOCAL_DB_HOST = os.getenv("LOCAL_DB_HOST")
         self.LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", "data/default_sqlite.db")
@@ -287,3 +286,11 @@ class Config(metaclass=Singleton):
         self.MODEL_CACHE_STORAGE_DISK_DIR: Optional[str] = os.getenv(
             "MODEL_CACHE_STORAGE_DISK_DIR"
         )
+
+    @property
+    def local_db_manager(self) -> "ConnectorManager":
+        from dbgpt.datasource.manages import ConnectorManager
+
+        if not self.SYSTEM_APP:
+            raise ValueError("SYSTEM_APP is not set")
+        return ConnectorManager.get_instance(self.SYSTEM_APP)

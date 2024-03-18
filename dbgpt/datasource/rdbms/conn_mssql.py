@@ -1,17 +1,13 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-from typing import Any, Iterable, Optional
+"""MSSQL connector."""
+from typing import Iterable
 
-from sqlalchemy import MetaData, Table, create_engine, inspect, select, text
+from sqlalchemy import text
 
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
+from .base import RDBMSConnector
 
 
-class MSSQLConnect(RDBMSDatabase):
-    """Connect MSSQL Database fetch MetaData
-    Args:
-    Usage:
-    """
+class MSSQLConnector(RDBMSConnector):
+    """MSSQL connector."""
 
     db_type: str = "mssql"
     db_dialect: str = "mssql"
@@ -20,8 +16,10 @@ class MSSQLConnect(RDBMSDatabase):
     default_db = ["master", "model", "msdb", "tempdb", "modeldb", "resource", "sys"]
 
     def table_simple_info(self) -> Iterable[str]:
-        _tables_sql = f"""
-                SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'
+        """Get table simple info."""
+        _tables_sql = """
+                SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE
+                TABLE_TYPE='BASE TABLE'
             """
         cursor = self.session.execute(text(_tables_sql))
         tables_results = cursor.fetchall()
@@ -29,7 +27,8 @@ class MSSQLConnect(RDBMSDatabase):
         for row in tables_results:
             table_name = row[0]
             _sql = f"""
-                SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='{table_name}'
+                SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE
+                 TABLE_NAME='{table_name}'
             """
             cursor_colums = self.session.execute(text(_sql))
             colum_results = cursor_colums.fetchall()

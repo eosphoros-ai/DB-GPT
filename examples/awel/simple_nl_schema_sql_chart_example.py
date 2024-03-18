@@ -7,8 +7,8 @@ from pydantic import BaseModel, Field
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelRequest
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
+from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.model.proxy import OpenAILLMClient
 from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
 from dbgpt.rag.operators.schema_linking import SchemaLinkingOperator
@@ -66,7 +66,7 @@ def _create_vector_connector():
 
 def _create_temporary_connection():
     """Create a temporary database connection for testing."""
-    connect = SQLiteTempConnect.create_temporary_db()
+    connect = SQLiteTempConnector.create_temporary_db()
     connect.create_temp_tables(
         {
             "user": {
@@ -181,10 +181,10 @@ class SqlGenOperator(MapOperator[Any, Any]):
 class SqlExecOperator(MapOperator[Any, Any]):
     """The Sql Execution Operator."""
 
-    def __init__(self, connection: Optional[RDBMSDatabase] = None, **kwargs):
+    def __init__(self, connection: Optional[RDBMSConnector] = None, **kwargs):
         """
         Args:
-            connection (Optional[RDBMSDatabase]): RDBMSDatabase connection
+            connection (Optional[RDBMSConnector]): RDBMSConnector connection
         """
         super().__init__(**kwargs)
         self._connection = connection
@@ -207,7 +207,7 @@ class ChartDrawOperator(MapOperator[Any, Any]):
     def __init__(self, **kwargs):
         """
         Args:
-        connection (RDBMSDatabase): The connection.
+        connection (RDBMSConnector): The connection.
         """
         super().__init__(**kwargs)
 

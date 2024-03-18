@@ -7,8 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.core import Embeddings
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk, Embeddings
 
 logger = logging.getLogger(__name__)
 

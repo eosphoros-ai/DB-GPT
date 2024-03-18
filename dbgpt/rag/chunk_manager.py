@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
-from dbgpt.rag.chunk import Chunk, Document
+from dbgpt.core import Chunk, Document
 from dbgpt.rag.extractor.base import Extractor
 from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge
 from dbgpt.rag.text_splitter import TextSplitter

@@ -1,8 +1,8 @@
 """The Rerank Operator."""
 from typing import Any, List, Optional
 
+from dbgpt.core import Chunk
 from dbgpt.core.awel import MapOperator
-from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.retriever.rerank import RANK_FUNC, DefaultRanker
 
 

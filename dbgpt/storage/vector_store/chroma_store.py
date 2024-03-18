@@ -10,7 +10,7 @@ from dbgpt._private.pydantic import Field
 from dbgpt.configs.model_config import PILOT_PATH
 
 # TODO: Recycle dependency on rag and storage
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 
 from .base import VectorStoreBase, VectorStoreConfig
 

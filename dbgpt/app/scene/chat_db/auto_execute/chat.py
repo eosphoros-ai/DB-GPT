@@ -37,7 +37,7 @@ class ChatWithDbAutoExecute(BaseChat):
         with root_tracer.start_span(
             "ChatWithDbAutoExecute.get_connect", metadata={"db_name": self.db_name}
         ):
-            self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
+            self.database = CFG.local_db_manager.get_connector(self.db_name)
 
         self.top_k: int = 50
         self.api_call = ApiCall(display_registry=CFG.command_display)

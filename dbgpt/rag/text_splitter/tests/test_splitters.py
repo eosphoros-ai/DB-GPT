@@ -1,4 +1,4 @@
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 from dbgpt.rag.text_splitter.text_splitter import (
     CharacterTextSplitter,
     MarkdownHeaderTextSplitter,

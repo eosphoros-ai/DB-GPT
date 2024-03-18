@@ -23,6 +23,7 @@ def initialize_components(
     from dbgpt.app.initialization.embedding_component import _initialize_embedding_model
     from dbgpt.app.initialization.scheduler import DefaultScheduler
     from dbgpt.app.initialization.serve_initialization import register_serve_apps
+    from dbgpt.datasource.manages.connector_manager import ConnectorManager
     from dbgpt.model.cluster.controller.controller import controller
 
     # Register global default executor factory first
@@ -31,6 +32,7 @@ def initialize_components(
     )
     system_app.register(DefaultScheduler)
     system_app.register_instance(controller)
+    system_app.register(ConnectorManager)
 
     from dbgpt.serve.agent.hub.controller import module_plugin
 

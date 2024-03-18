@@ -1,13 +1,10 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
+"""MySQL connector."""
+
+from .base import RDBMSConnector
 
 
-class MySQLConnect(RDBMSDatabase):
-    """Connect MySQL Database fetch MetaData
-    Args:
-    Usage:
-    """
+class MySQLConnector(RDBMSConnector):
+    """MySQL connector."""
 
     db_type: str = "mysql"
     db_dialect: str = "mysql"

@@ -3,8 +3,7 @@
 from typing import List, Optional
 
 from dbgpt._private.llm_metadata import LLMMetadata
-from dbgpt.core import LLMClient, ModelMessageRoleType, ModelRequest
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk, LLMClient, ModelMessageRoleType, ModelRequest
 from dbgpt.rag.extractor.base import Extractor
 from dbgpt.util import utils
 from dbgpt.util.chat_util import run_async_tasks

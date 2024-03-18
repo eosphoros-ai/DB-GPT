@@ -7,7 +7,7 @@ from typing import Any, Optional
 
 from dbgpt.core import LLMClient
 from dbgpt.core.awel import MapOperator
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
+from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.rag.schemalinker.schema_linking import SchemaLinking
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
@@ -17,7 +17,7 @@ class SchemaLinkingOperator(MapOperator[Any, Any]):
 
     def __init__(
         self,
-        connection: RDBMSDatabase,
+        connection: RDBMSConnector,
         model_name: str,
         llm: LLMClient,
         top_k: int = 5,
@@ -27,7 +27,7 @@ class SchemaLinkingOperator(MapOperator[Any, Any]):
         """Create the schema linking operator.
 
         Args:
-            connection (RDBMSDatabase): The connection.
+            connection (RDBMSConnector): The connection.
             llm (Optional[LLMClient]): base llm
         """
         super().__init__(**kwargs)

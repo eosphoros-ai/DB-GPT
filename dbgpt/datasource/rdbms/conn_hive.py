@@ -1,14 +1,13 @@
-from typing import Any, Optional
+"""Hive Connector."""
+from typing import Any, Optional, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
+from .base import RDBMSConnector
 
 
-class HiveConnect(RDBMSDatabase):
-    """db type"""
+class HiveConnector(RDBMSConnector):
+    """Hive connector."""
 
     db_type: str = "hive"
     """db driver"""
@@ -26,28 +25,26 @@ class HiveConnect(RDBMSDatabase):
         db_name: str,
         engine_args: Optional[dict] = None,
         **kwargs: Any,
-    ) -> RDBMSDatabase:
-        """Construct a SQLAlchemy engine from uri database.
-        Args:
-            host (str): database host.
-            port (int): database port.
-            user (str): database user.
-            pwd (str): database password.
-            db_name (str): database name.
-            engine_args (Optional[dict]):other engine_args.
-        """
+    ) -> "HiveConnector":
+        """Create a new HiveConnector from host, port, user, pwd, db_name."""
         db_url: str = f"{cls.driver}://{host}:{str(port)}/{db_name}"
         if user and pwd:
-            db_url: str = f"{cls.driver}://{quote(user)}:{urlquote(pwd)}@{host}:{str(port)}/{db_name}"
-        return cls.from_uri(db_url, engine_args, **kwargs)
+            db_url = (
+                f"{cls.driver}://{quote(user)}:{urlquote(pwd)}@{host}:{str(port)}/"
+                f"{db_name}"
+            )
+        return cast(HiveConnector, cls.from_uri(db_url, engine_args, **kwargs))
 
     def table_simple_info(self):
+        """Get table simple info."""
         return []
 
     def get_users(self):
+        """Get users."""
         return []
 
     def get_grants(self):
+        """Get grants."""
         return []
 
     def get_collation(self):
@@ -55,4 +52,5 @@ class HiveConnect(RDBMSDatabase):
         return "UTF-8"
 
     def get_charset(self):
+        """Get character_set of current database."""
         return "UTF-8"

@@ -29,7 +29,7 @@ class ChatWithDbQA(BaseChat):
         super().__init__(chat_param=chat_param)
 
         if self.db_name:
-            self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
+            self.database = CFG.local_db_manager.get_connector(self.db_name)
             self.tables = self.database.get_table_names()
 
         self.top_k = (
