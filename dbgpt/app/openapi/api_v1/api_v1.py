@@ -207,10 +207,10 @@ async def dialogue_scenes():
     new_modes: List[ChatScene] = [
         ChatScene.ChatWithDbExecute,
         ChatScene.ChatWithDbQA,
-        ChatScene.ChatExcel,
-        ChatScene.ChatKnowledge,
+        # ChatScene.ChatExcel,
+        # ChatScene.ChatKnowledge,
         ChatScene.ChatDashboard,
-        ChatScene.ChatAgent,
+        # ChatScene.ChatAgent,
     ]
     for scene in new_modes:
         scene_vo = ChatSceneVo(

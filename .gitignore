@@ -2,7 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+start_up.sh
+str_prompt.txt`
 # C extensions
 *.so
 message/
