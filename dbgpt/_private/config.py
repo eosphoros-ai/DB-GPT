@@ -286,6 +286,8 @@ class Config(metaclass=Singleton):
         self.MODEL_CACHE_STORAGE_DISK_DIR: Optional[str] = os.getenv(
             "MODEL_CACHE_STORAGE_DISK_DIR"
         )
+        # global dbgpt api key
+        self.API_KEYS = os.getenv("API_KEYS", None)
 
     @property
     def local_db_manager(self) -> "ConnectorManager":

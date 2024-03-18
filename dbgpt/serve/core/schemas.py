@@ -69,11 +69,11 @@ async def validation_exception_handler(
 
 async def http_exception_handler(request: Request, exc: HTTPException):
     res = Result.failed(
-        msg=exc.detail,
-        err_code="E0002",
+        msg=str(exc.detail),
+        err_code=str(exc.status_code),
     )
     logger.error(f"http_exception_handler catch HTTPException: {res}")
-    return JSONResponse(status_code=400, content=res.dict())
+    return JSONResponse(status_code=exc.status_code, content=res.dict())
 
 
 async def common_exception_handler(request: Request, exc: Exception) -> JSONResponse:

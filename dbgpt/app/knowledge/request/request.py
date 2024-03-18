@@ -17,6 +17,8 @@ class KnowledgeQueryRequest(BaseModel):
 class KnowledgeSpaceRequest(BaseModel):
     """name: knowledge space name"""
 
+    """vector_type: vector type"""
+    id: int = None
     name: str = None
     """vector_type: vector type"""
     vector_type: str = None
@@ -36,9 +38,6 @@ class KnowledgeDocumentRequest(BaseModel):
     content: str = None
     """content: content"""
     source: str = None
-
-    """text_chunk_size: text_chunk_size"""
-    # text_chunk_size: int
 
 
 class DocumentQueryRequest(BaseModel):
@@ -80,18 +79,18 @@ class DocumentSyncRequest(BaseModel):
     chunk_overlap: Optional[int] = None
 
 
-class KnowledgeSyncRequest(BaseModel):
-    """Sync request"""
-
-    """doc_ids: doc ids"""
-    doc_id: int
-
-    """model_name: model name"""
-    model_name: Optional[str] = None
-
-    """chunk_parameters: chunk parameters 
-    """
-    chunk_parameters: ChunkParameters
+# class KnowledgeSyncRequest(BaseModel):
+#     """Sync request"""
+#
+#     """doc_ids: doc ids"""
+#     doc_id: int
+#
+#     """model_name: model name"""
+#     model_name: Optional[str] = None
+#
+#     """chunk_parameters: chunk parameters
+#     """
+#     chunk_parameters: ChunkParameters
 
 
 class ChunkQueryRequest(BaseModel):
