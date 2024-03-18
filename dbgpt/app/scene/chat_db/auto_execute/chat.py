@@ -150,7 +150,6 @@ class ChatWithDbAutoExecute(BaseChat):
         # Ensemble RRF ranker
         rrf_ranker = RRFRanker(topk=4, weights=[0.3, 0.3, 0.4])
         rrf_ranker_scores = rrf_ranker.rank([table_infos, bm25_tmep, [table_map[table_name] for table_name in qa_tables if table_name in table_map.keys()]])
-
         print('LLM reranker ')
         print('table_map::', table_map)
         print()

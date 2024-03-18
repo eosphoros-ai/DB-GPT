@@ -96,16 +96,17 @@ def calcuate_bm25(corpus, query):
     import jieba
     from rank_bm25 import BM25Okapi
     jieba.load_userdict("/datas/liab/DB-GPT/tests/userdict.txt")
-    stop_words = [' ','\t','\n']
+    stop_words = [' ', '\t', '\n']
     with open('/datas/liab/DB-GPT/tests/stopwords.txt', 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if line:
                 stop_words.append(line)
 
-    tokenizerd_query = [jiebaword.upper() for jiebaword in list(jieba.cut(query))  if jiebaword not in stop_words]
+    tokenizerd_query = [jiebaword.upper() for jiebaword in list(jieba.cut(query)) if jiebaword not in stop_words]
     # print('tokenizerd_query',tokenizerd_query)
-    tokenized_corpus = [[jiebaword.upper() for jiebaword in list(jieba.cut(doc)) if jiebaword not in stop_words] for doc in corpus]
+    tokenized_corpus = [[jiebaword.upper() for jiebaword in list(jieba.cut(doc)) if jiebaword not in stop_words] for doc
+                        in corpus]
     # print('tokenized_corpus',tokenized_corpus)
     bm25 = BM25Okapi(tokenized_corpus)
     doc_scores = bm25.get_scores(tokenizerd_query)
@@ -134,6 +135,7 @@ def query_from_pg_bm25():
         if float(score) > 0.7:
             pass
 
+
 def delete_from_pg(del_collection_name):
     # del_collection_name = 'type2_general_profile'
     db = PGVector(
@@ -146,11 +148,12 @@ def delete_from_pg(del_collection_name):
 
 
 def split_data_to_path():
-    data_list = [('general_knowledge', 'general'),
-                 ('一级机构说明', 'department'),
-                 ('三级机构说明', 'department'),
-                 ('二级机构说明', 'department'),]
-    for data_path,new_path in data_list:
+    data_list = [
+        ('general_knowledge', 'general'),
+        ('一级机构说明', 'department'),
+        ('三级机构说明', 'department'),
+        ('二级机构说明', 'department'), ]
+    for data_path, new_path in data_list:
         with open(f'/datas/liab/DB-GPT/tests/atl_data/type1/{data_path}.txt', 'r') as f:
             conten = f.readlines()
         print(conten)
@@ -308,4 +311,3 @@ if __name__ == '__main__':
     # add_docs_to_pg()
     # get_qa_samples()
     # write_to_pg('new_department_profile','/datas/liab/DB-GPT/tests/atl_data/type2/new_department/*.md')
-

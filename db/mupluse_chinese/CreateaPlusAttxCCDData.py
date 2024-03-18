@@ -4,7 +4,8 @@
 @author: Li Anbang
 @Create Date: 2024/3/11 上午9:51
 '''
-
+import pandas as pd
+import numpy as np
 from db.ConnectGP import pythonGP
 import sys
 
@@ -34,7 +35,7 @@ ng信息 text NULL,
 铝偏角2 numeric NULL,
 阴极长度 numeric NULL,
 阳极长度 numeric NULL,
-中心距 text NULL,
+中心距 numeric NULL,
 工号 int NULL,
 班次 text NULL,
 成品编码 text NULL,
@@ -44,6 +45,8 @@ ng信息 text NULL,
 COMMENT ON TABLE public.{table_name} IS 'PLUS绕胶机CCD数据';
 
 COMMENT ON COLUMN public.{table_name}.检测结果 IS '值为：["OK","NG"]';
+COMMENT ON COLUMN public.{table_name}.成品编码 IS '也成为电芯model，由6位数字组成，如:["325486","436590","573375"...]';
+COMMENT ON COLUMN public.{table_name}.设备名称 IS '绕胶CCD的设备名称，由8位数字和字母组成，一般以"ATTX"开头，如:["ATTX005T"...]';
 
 
 grant select,insert, update, delete on table public.{table_name} to chatgpt;
@@ -76,7 +79,7 @@ columns_name_dict = {
 }
 
 # print(sql)
-print((dbname+'-'+ table_name).center(80, '='))
+print((dbname + '-' + table_name).center(80, '='))
 # print(db.excuSql(sql))
 
 from datetime import datetime, timedelta
@@ -87,11 +90,14 @@ days = 1
 while days < 2:
     # 获取前一天的时间
     yesterday = now - timedelta(days=days)
-    print(days,yesterday)
-    days+=1
+    print(days, yesterday)
+    days += 1
 
     # 获取前一天的年月日
     yesterday_str = yesterday.strftime("%Y-%m-%d")
+    str2float = ['CELLLENGTH', 'CELLWIDTH', 'ALTABDISTANCE', 'ALANGLE', 'NITABDISTANCE', 'NIANGLE', 'ALTABDISTANCE2',
+                 'ALANGLE2', 'CALENGTH', 'ANLENGTH', 'CENTERDISTANCE']
+    str2int = ['JOBID', 'TRAYCODE']
 
     sql = f'''
     SELECT * FROM public.plus_attxccddata_table WHERE  to_char(datetime,'YYYY-MM-DD')='{yesterday_str}'
@@ -103,6 +109,12 @@ while days < 2:
     new_columns = [i.upper() for i in df.columns.tolist()]
     df.columns = new_columns
     print(df.shape)
+    df[str2float+str2int] = df[str2float+str2int].replace('',np.nan)
+    df[str2float+str2int] = df[str2float+str2int].apply(pd.to_numeric,errors='coerce')
+    df[str2float+str2int] = df[str2float+str2int].apply(lambda col:col.fillna(0))
+
+    df[str2float] = df[str2float].astype(float)
+    df[str2int] = df[str2int].astype(int)
     df = df.rename(columns=columns_name_dict)
 
     need_col = list(columns_name_dict.values())

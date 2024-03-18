@@ -1,2 +1,1 @@
-# dev_muplus
-python dbgpt/app/dbgpt_server.py --port 50003
+python dbgpt/app/dbgpt_server.py --port 50001
