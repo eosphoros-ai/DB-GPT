@@ -22,7 +22,7 @@ from dbgpt.core.interface.message import (
 from dbgpt.serve.conversation.serve import Serve as ConversationServe
 
 if TYPE_CHECKING:
-    from dbgpt.datasource.base import BaseConnect
+    from dbgpt.datasource.base import BaseConnector
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class EditorService(BaseComponent):
         return None
 
     def sql_editor_submit_and_save(
-        self, sql_edit_context: ChatSqlEditContext, connection: BaseConnect
+        self, sql_edit_context: ChatSqlEditContext, connection: BaseConnector
     ):
         storage_conv: StorageConversation = self.get_storage_conv(
             sql_edit_context.conv_uid
@@ -169,7 +169,7 @@ class EditorService(BaseComponent):
                         filter(lambda x: x["chart_name"] == chart_title, charts)
                     )[0]
 
-                    conn = cfg.LOCAL_DB_MANAGE.get_connect(db_name)
+                    conn = cfg.local_db_manager.get_connector(db_name)
                     detail: ChartDetail = ChartDetail(
                         chart_uid=find_chart["chart_uid"],
                         chart_type=find_chart["chart_type"],

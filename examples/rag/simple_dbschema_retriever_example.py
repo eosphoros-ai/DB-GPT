@@ -29,9 +29,9 @@ from pydantic import BaseModel, Field
 
 from dbgpt._private.config import Config
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, PILOT_PATH
+from dbgpt.core import Chunk
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
-from dbgpt.rag.chunk import Chunk
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.operators import DBSchemaRetrieverOperator
 from dbgpt.serve.rag.operators.db_schema import DBSchemaAssemblerOperator
@@ -57,7 +57,7 @@ def _create_vector_connector():
 
 def _create_temporary_connection():
     """Create a temporary database connection for testing."""
-    connect = SQLiteTempConnect.create_temporary_db()
+    connect = SQLiteTempConnector.create_temporary_db()
     connect.create_temp_tables(
         {
             "user": {

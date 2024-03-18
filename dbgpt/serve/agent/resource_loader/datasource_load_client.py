@@ -22,7 +22,7 @@ class DatasourceLoadClient(ResourceDbClient):
         ).create()
 
     def get_data_type(self, resource: AgentResource) -> str:
-        conn = CFG.LOCAL_DB_MANAGE.get_connect(resource.value)
+        conn = CFG.local_db_manager.get_connector(resource.value)
         return conn.db_type
 
     async def a_get_schema_link(self, db: str, question: Optional[str] = None) -> str:
@@ -44,7 +44,7 @@ class DatasourceLoadClient(ResourceDbClient):
         except Exception as e:
             print("db summary find error!" + str(e))
         if not table_infos:
-            conn = CFG.LOCAL_DB_MANAGE.get_connect(db)
+            conn = CFG.local_db_manager.get_connector(db)
             table_infos = await blocking_func_to_async(
                 self._executor, conn.table_simple_info
             )
@@ -52,13 +52,13 @@ class DatasourceLoadClient(ResourceDbClient):
         return table_infos
 
     async def a_query_to_df(self, db: str, sql: str):
-        conn = CFG.LOCAL_DB_MANAGE.get_connect(db)
+        conn = CFG.local_db_manager.get_connector(db)
         return conn.run_to_df(sql)
 
     async def a_query(self, db: str, sql: str):
-        conn = CFG.LOCAL_DB_MANAGE.get_connect(db)
+        conn = CFG.local_db_manager.get_connector(db)
         return conn.query_ex(sql)
 
     async def a_run_sql(self, db: str, sql: str):
-        conn = CFG.LOCAL_DB_MANAGE.get_connect(db)
+        conn = CFG.local_db_manager.get_connector(db)
         return conn.run(sql)

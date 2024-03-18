@@ -2,7 +2,7 @@
 from functools import reduce
 from typing import List, Optional, cast
 
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite

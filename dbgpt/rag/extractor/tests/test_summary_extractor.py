@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock
 
 from dbgpt._private.llm_metadata import LLMMetadata
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 from dbgpt.rag.extractor.summary import SummaryExtractor
 
 

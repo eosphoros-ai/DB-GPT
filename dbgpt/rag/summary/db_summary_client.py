@@ -67,7 +67,7 @@ class DBSummaryClient:
 
     def init_db_summary(self):
         """Initialize db summary profile."""
-        db_mange = CFG.LOCAL_DB_MANAGE
+        db_mange = CFG.local_db_manager
         dbs = db_mange.get_db_list()
         for item in dbs:
             try:

@@ -1,17 +1,22 @@
-from dbgpt._private.pydantic import BaseModel
+"""Configuration for database connection."""
+from dbgpt._private.pydantic import BaseModel, Field
 
 
 class DBConfig(BaseModel):
-    db_type: str
-    db_name: str
-    file_path: str = ""
-    db_host: str = ""
-    db_port: int = 0
-    db_user: str = ""
-    db_pwd: str = ""
-    comment: str = ""
+    """Database connection configuration."""
+
+    db_type: str = Field(..., description="Database type, e.g. sqlite, mysql, etc.")
+    db_name: str = Field(..., description="Database name.")
+    file_path: str = Field("", description="File path for file-based database.")
+    db_host: str = Field("", description="Database host.")
+    db_port: int = Field(0, description="Database port.")
+    db_user: str = Field("", description="Database user.")
+    db_pwd: str = Field("", description="Database password.")
+    comment: str = Field("", description="Comment for the database.")
 
 
 class DbTypeInfo(BaseModel):
-    db_type: str
-    is_file_db: bool = False
+    """Database type information."""
+
+    db_type: str = Field(..., description="Database type.")
+    is_file_db: bool = Field(False, description="Whether the database is file-based.")

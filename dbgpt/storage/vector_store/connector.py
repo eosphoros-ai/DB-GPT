@@ -3,7 +3,7 @@
 import os
 from typing import Any, Dict, List, Optional, Type, cast
 
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 from dbgpt.storage import vector_store
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 

@@ -7,8 +7,7 @@ import os
 from typing import Any, Iterable, List, Optional
 
 from dbgpt._private.pydantic import Field
-from dbgpt.core import Embeddings
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk, Embeddings
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 from dbgpt.util import string_utils
 

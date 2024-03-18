@@ -67,7 +67,7 @@ def __new_conversation(chat_mode, user_name: str, sys_code: str) -> Conversation
 
 
 def get_db_list():
-    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+    dbs = CFG.local_db_manager.get_db_list()
     db_params = []
     for item in dbs:
         params: dict = {}
@@ -85,7 +85,7 @@ def plugins_select_info():
 
 
 def get_db_list_info():
-    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+    dbs = CFG.local_db_manager.get_db_list()
     params: dict = {}
     for item in dbs:
         comment = item["comment"]
@@ -147,22 +147,22 @@ def get_executor() -> Executor:
 
 @router.get("/v1/chat/db/list", response_model=Result[DBConfig])
 async def db_connect_list():
-    return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list())
+    return Result.succ(CFG.local_db_manager.get_db_list())
 
 
 @router.post("/v1/chat/db/add", response_model=Result[bool])
 async def db_connect_add(db_config: DBConfig = Body()):
-    return Result.succ(CFG.LOCAL_DB_MANAGE.add_db(db_config))
+    return Result.succ(CFG.local_db_manager.add_db(db_config))
 
 
 @router.post("/v1/chat/db/edit", response_model=Result[bool])
 async def db_connect_edit(db_config: DBConfig = Body()):
-    return Result.succ(CFG.LOCAL_DB_MANAGE.edit_db(db_config))
+    return Result.succ(CFG.local_db_manager.edit_db(db_config))
 
 
 @router.post("/v1/chat/db/delete", response_model=Result[bool])
 async def db_connect_delete(db_name: str = None):
-    return Result.succ(CFG.LOCAL_DB_MANAGE.delete_db(db_name))
+    return Result.succ(CFG.local_db_manager.delete_db(db_name))
 
 
 async def async_db_summary_embedding(db_name, db_type):
@@ -174,7 +174,7 @@ async def async_db_summary_embedding(db_name, db_type):
 async def test_connect(db_config: DBConfig = Body()):
     try:
         # TODO Change the synchronous call to the asynchronous call
-        CFG.LOCAL_DB_MANAGE.test_connect(db_config)
+        CFG.local_db_manager.test_connect(db_config)
         return Result.succ(True)
     except Exception as e:
         return Result.failed(code="E1001", msg=str(e))
@@ -189,7 +189,7 @@ async def db_summary(db_name: str, db_type: str):
 
 @router.get("/v1/chat/db/support/type", response_model=Result[DbTypeInfo])
 async def db_support_types():
-    support_types = CFG.LOCAL_DB_MANAGE.get_all_completed_types()
+    support_types = CFG.local_db_manager.get_all_completed_types()
     db_type_infos = []
     for type in support_types:
         db_type_infos.append(

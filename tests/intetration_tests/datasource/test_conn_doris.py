@@ -4,10 +4,10 @@
 
 import pytest
 
-from dbgpt.datasource.rdbms.conn_doris import DorisConnect
+from dbgpt.datasource.rdbms.conn_doris import DorisConnector
 
 
 @pytest.fixture
 def db():
-    conn = DorisConnect.from_uri_db("localhost", 9030, "root", "", "test")
+    conn = DorisConnector.from_uri_db("localhost", 9030, "root", "", "test")
     yield conn

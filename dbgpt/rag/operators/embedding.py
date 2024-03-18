@@ -3,8 +3,8 @@
 from functools import reduce
 from typing import List, Optional, Union
 
+from dbgpt.core import Chunk
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
-from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.rag.retriever.rerank import Ranker
 from dbgpt.rag.retriever.rewrite import QueryRewrite

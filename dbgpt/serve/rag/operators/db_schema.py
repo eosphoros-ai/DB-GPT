@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from dbgpt.core.awel.task.base import IN
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
+from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.serve.rag.assembler.db_schema import DBSchemaAssembler
 from dbgpt.serve.rag.operators.base import AssemblerOperator
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
@@ -10,14 +10,14 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 class DBSchemaAssemblerOperator(AssemblerOperator[Any, Any]):
     """The DBSchema Assembler Operator.
     Args:
-        connection (RDBMSDatabase): The connection.
+        connection (RDBMSConnector): The connection.
         chunk_parameters (Optional[ChunkParameters], optional): The chunk parameters. Defaults to None.
         vector_store_connector (VectorStoreConnector, optional): The vector store connector. Defaults to None.
     """
 
     def __init__(
         self,
-        connection: RDBMSDatabase = None,
+        connection: RDBMSConnector = None,
         vector_store_connector: Optional[VectorStoreConnector] = None,
         **kwargs
     ):

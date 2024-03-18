@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Callable, List, Optional
 
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 
 RANK_FUNC = Callable[[List[Chunk]], List[Chunk]]
 

@@ -70,15 +70,8 @@ def server_init(param: "WebServerParameters", system_app: SystemApp):
 
 
 def _create_model_start_listener(system_app: SystemApp):
-    from dbgpt.datasource.manages.connection_manager import ConnectManager
-
-    cfg = Config()
-
     def startup_event(wh):
-        # init connect manage
         print("begin run _add_app_startup_event")
-        conn_manage = ConnectManager(system_app)
-        cfg.LOCAL_DB_MANAGE = conn_manage
         async_db_summary(system_app)
 
     return startup_event

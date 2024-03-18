@@ -6,14 +6,14 @@ import tempfile
 
 import pytest
 
-from dbgpt.datasource.rdbms.conn_duckdb import DuckDbConnect
+from dbgpt.datasource.rdbms.conn_duckdb import DuckDbConnector
 
 
 @pytest.fixture
 def db():
     temp_db_file = tempfile.NamedTemporaryFile(delete=False)
     temp_db_file.close()
-    conn = DuckDbConnect.from_file_path(temp_db_file.name + "duckdb.db")
+    conn = DuckDbConnector.from_file_path(temp_db_file.name + "duckdb.db")
     yield conn
 
 

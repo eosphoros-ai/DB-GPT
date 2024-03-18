@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
+"""SQLite connector."""
 import logging
 import os
 import tempfile
@@ -8,16 +6,13 @@ from typing import Any, Iterable, List, Optional, Tuple
 
 from sqlalchemy import create_engine, text
 
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
+from .base import RDBMSConnector
 
 logger = logging.getLogger(__name__)
 
 
-class SQLiteConnect(RDBMSDatabase):
-    """Connect SQLite Database fetch MetaData
-    Args:
-    Usage:
-    """
+class SQLiteConnector(RDBMSConnector):
+    """SQLite connector."""
 
     db_type: str = "sqlite"
     db_dialect: str = "sqlite"
@@ -25,8 +20,8 @@ class SQLiteConnect(RDBMSDatabase):
     @classmethod
     def from_file_path(
         cls, file_path: str, engine_args: Optional[dict] = None, **kwargs: Any
-    ) -> RDBMSDatabase:
-        """Construct a SQLAlchemy engine from URI."""
+    ) -> "SQLiteConnector":
+        """Create a new SQLiteConnector from file path."""
         _engine_args = engine_args or {}
         _engine_args["connect_args"] = {"check_same_thread": False}
         # _engine_args["echo"] = True
@@ -52,7 +47,8 @@ class SQLiteConnect(RDBMSDatabase):
         """Get table show create table about specified table."""
         cursor = self.session.execute(
             text(
-                f"SELECT sql FROM sqlite_master WHERE type='table' AND name='{table_name}'"
+                "SELECT sql FROM sqlite_master WHERE type='table' "
+                f"AND name='{table_name}'"
             )
         )
         ans = cursor.fetchall()
@@ -62,7 +58,7 @@ class SQLiteConnect(RDBMSDatabase):
         """Get column fields about specified table."""
         cursor = self.session.execute(text(f"PRAGMA table_info('{table_name}')"))
         fields = cursor.fetchall()
-        print(fields)
+        logger.info(fields)
         return [(field[1], field[2], field[3], field[4], field[5]) for field in fields]
 
     def get_simple_fields(self, table_name):
@@ -70,9 +66,11 @@ class SQLiteConnect(RDBMSDatabase):
         return self.get_fields(table_name)
 
     def get_users(self):
+        """Get user info."""
         return []
 
     def get_grants(self):
+        """Get grants."""
         return []
 
     def get_collation(self):
@@ -80,12 +78,11 @@ class SQLiteConnect(RDBMSDatabase):
         return "UTF-8"
 
     def get_charset(self):
+        """Get character_set of current database."""
         return "UTF-8"
 
-    def get_database_list(self):
-        return []
-
     def get_database_names(self):
+        """Get database names."""
         return []
 
     def _sync_tables_from_db(self) -> Iterable[str]:
@@ -95,25 +92,27 @@ class SQLiteConnect(RDBMSDatabase):
         view_results = self.session.execute(
             text("SELECT name FROM sqlite_master WHERE type='view'")
         )
-        table_results = set(row[0] for row in table_results)
-        view_results = set(row[0] for row in view_results)
+        table_results = set(row[0] for row in table_results)  # noqa
+        view_results = set(row[0] for row in view_results)  # noqa
         self._all_tables = table_results.union(view_results)
         self._metadata.reflect(bind=self._engine)
         return self._all_tables
 
     def _write(self, write_sql):
-        print(f"Write[{write_sql}]")
+        logger.info(f"Write[{write_sql}]")
         session = self.session
         result = session.execute(text(write_sql))
         session.commit()
-        # TODO  Subsequent optimization of dynamically specified database submission loss target problem
-        print(f"SQL[{write_sql}], result:{result.rowcount}")
+        # TODO  Subsequent optimization of dynamically specified database submission
+        #  loss target problem
+        logger.info(f"SQL[{write_sql}], result:{result.rowcount}")
         return result.rowcount
 
     def get_table_comments(self, db_name=None):
+        """Get table comments."""
         cursor = self.session.execute(
             text(
-                f"""
+                """
                 SELECT name, sql FROM sqlite_master WHERE type='table'
                 """
             )
@@ -124,7 +123,8 @@ class SQLiteConnect(RDBMSDatabase):
         ]
 
     def table_simple_info(self) -> Iterable[str]:
-        _tables_sql = f"""
+        """Get table simple info."""
+        _tables_sql = """
                 SELECT name FROM sqlite_master WHERE type='table'
             """
         cursor = self.session.execute(text(_tables_sql))
@@ -146,10 +146,14 @@ class SQLiteConnect(RDBMSDatabase):
         return results
 
 
-class SQLiteTempConnect(SQLiteConnect):
-    """A temporary SQLite database connection. The database file will be deleted when the connection is closed."""
+class SQLiteTempConnector(SQLiteConnector):
+    """A temporary SQLite database connection.
+
+    The database file will be deleted when the connection is closed.
+    """
 
     def __init__(self, engine, temp_file_path, *args, **kwargs):
+        """Construct a temporary SQLite database connection."""
         super().__init__(engine, *args, **kwargs)
         self.temp_file_path = temp_file_path
         self._is_closed = False
@@ -157,7 +161,7 @@ class SQLiteTempConnect(SQLiteConnect):
     @classmethod
     def create_temporary_db(
         cls, engine_args: Optional[dict] = None, **kwargs: Any
-    ) -> "SQLiteTempConnect":
+    ) -> "SQLiteTempConnector":
         """Create a temporary SQLite database with a temporary file.
 
         Examples:
@@ -175,7 +179,7 @@ class SQLiteTempConnect(SQLiteConnect):
             engine_args (Optional[dict]): SQLAlchemy engine arguments.
 
         Returns:
-            SQLiteTempConnect: A SQLiteTempConnect instance.
+            SQLiteTempConnector: A SQLiteTempConnect instance.
         """
         _engine_args = engine_args or {}
         _engine_args["connect_args"] = {"check_same_thread": False}
@@ -219,7 +223,7 @@ class SQLiteTempConnect(SQLiteConnect):
                         ],
                     },
                 }
-                with SQLiteTempConnect.create_temporary_db() as db:
+                with SQLiteTempConnector.create_temporary_db() as db:
                     db.create_temp_tables(tables_info)
                     field_names, result = db.query_ex(db.session, "select * from test")
                     assert field_names == ["id", "name", "age"]
@@ -248,14 +252,18 @@ class SQLiteTempConnect(SQLiteConnect):
         self._sync_tables_from_db()
 
     def __enter__(self):
+        """Return the connection when entering the context manager."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """Close the connection when exiting the context manager."""
         self.close()
 
     def __del__(self):
+        """Close the connection when the object is deleted."""
         self.close()
 
     @classmethod
     def is_normal_type(cls) -> bool:
+        """Return whether the connector is a normal type."""
         return False

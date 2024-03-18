@@ -33,9 +33,9 @@ from pydantic import BaseModel, Field
 
 from dbgpt._private.config import Config
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, PILOT_PATH
+from dbgpt.core import Chunk
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator
 from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.operators import (
     EmbeddingRetrieverOperator,

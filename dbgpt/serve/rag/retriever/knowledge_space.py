@@ -3,7 +3,7 @@ from typing import List, Optional
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
