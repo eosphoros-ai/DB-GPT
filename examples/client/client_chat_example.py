@@ -55,6 +55,7 @@ Client: Simple Chat example
 
 
 async def main():
+
     # initialize client
     DBGPT_API_KEY = "dbgpt"
     client = Client(api_key=DBGPT_API_KEY)

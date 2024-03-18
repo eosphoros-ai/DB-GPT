@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from fastapi import File, UploadFile
@@ -58,6 +59,15 @@ class ChatCompletionRequestBody(BaseModel):
     enable_vis: str = Field(
         default=True, description="response content whether to output vis label"
     )
+
+
+class ChatMode(Enum):
+    """Chat mode"""
+
+    CHAT_NORMAL = "chat_normal"
+    CHAT_APP = "chat_app"
+    CHAT_AWEL_FLOW = "chat_flow"
+    CHAT_KNOWLEDGE = "chat_knowledge"
 
 
 class SpaceModel(BaseModel):

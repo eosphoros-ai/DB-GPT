@@ -21,8 +21,8 @@ from dbgpt.configs.model_config import (
     EMBEDDING_MODEL_CONFIG,
     KNOWLEDGE_UPLOAD_ROOT_PATH,
 )
+from dbgpt.core import Chunk
 from dbgpt.core.awel.dag.dag_manager import DAGManager
-from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding import EmbeddingFactory
 from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeFactory, KnowledgeType

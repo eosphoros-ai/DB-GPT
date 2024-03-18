@@ -26,7 +26,7 @@ from dbgpt.app.openapi.api_v1.api_v1 import (
     stream_generator,
 )
 from dbgpt.app.scene import BaseChat, ChatScene
-from dbgpt.client.schemas import ChatCompletionRequestBody
+from dbgpt.client.schemas import ChatCompletionRequestBody, ChatMode
 from dbgpt.component import logger
 from dbgpt.core.awel import CommonLLMHttpRequestBody, CommonLLMHTTPRequestContext
 from dbgpt.model.cluster.apiserver.api import APISettings
@@ -94,7 +94,7 @@ async def chat_completions(
     check_chat_request(request)
     if request.conv_uid is None:
         request.conv_uid = str(uuid.uuid4())
-    if request.chat_mode == "chat_app":
+    if request.chat_mode == ChatMode.CHAT_APP.value:
         if request.stream is False:
             raise HTTPException(
                 status_code=400,
@@ -114,27 +114,14 @@ async def chat_completions(
             headers=headers,
             media_type="text/event-stream",
         )
-    elif request.chat_mode == ChatScene.ChatFlow.value():
-        # flow_ctx = CommonLLMHTTPRequestContext(
-        #     conv_uid=request.conv_uid,
-        #     chat_mode=request.chat_mode,
-        #     user_name=request.user_name,
-        #     sys_code=request.sys_code,
-        # )
-        # flow_req = CommonLLMHttpRequestBody(
-        #     model=request.model,
-        #     messages=request.chat_param,
-        #     stream=True,
-        #     context=flow_ctx,
-        # )
+    elif request.chat_mode == ChatMode.CHAT_AWEL_FLOW.value:
         return StreamingResponse(
             chat_flow_stream_wrapper(request),
             headers=headers,
             media_type="text/event-stream",
         )
     elif (
-        request.chat_mode is None
-        or request.chat_mode == ChatScene.ChatKnowledge.value()
+        request.chat_mode is None or request.chat_mode == ChatMode.CHAT_KNOWLEDGE.value
     ):
         with root_tracer.start_span(
             "get_chat_instance", span_type=SpanType.CHAT, metadata=request.dict()

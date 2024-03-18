@@ -69,12 +69,13 @@ from dbgpt.client.knowledge import list_space
 
 async def main():
 
+    # initialize client
     DBGPT_API_KEY = "dbgpt"
     client = Client(api_key=DBGPT_API_KEY)
 
     # list all spaces
     res = await list_space(client)
-    print(res)
+    print(res.json())
 
     # get space
     # res = await get_space(client, space_id='5')
