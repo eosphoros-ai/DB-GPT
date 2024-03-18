@@ -207,10 +207,10 @@ async def dialogue_scenes():
     new_modes: List[ChatScene] = [
         ChatScene.ChatWithDbExecute,
         ChatScene.ChatWithDbQA,
-        ChatScene.ChatExcel,
-        ChatScene.ChatKnowledge,
+        # ChatScene.ChatExcel,
+        # ChatScene.ChatKnowledge,
         ChatScene.ChatDashboard,
-        ChatScene.ChatAgent,
+        # ChatScene.ChatAgent,
     ]
     for scene in new_modes:
         scene_vo = ChatSceneVo(
@@ -420,6 +420,7 @@ async def model_supports(worker_manager: WorkerManager = Depends(get_worker_mana
 
 
 async def no_stream_generator(chat):
+    print('no_stream_generator,-------------')
     with root_tracer.start_span("no_stream_generator"):
         msg = await chat.nostream_call()
         yield f"data: {msg}\n\n"
@@ -441,7 +442,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
     """
     span = root_tracer.start_span("stream_generator")
     msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
-
+    print(msg,'api_v1,py    445')
     stream_id = f"chatcmpl-{str(uuid.uuid1())}"
     previous_response = ""
     async for chunk in chat.stream_call():

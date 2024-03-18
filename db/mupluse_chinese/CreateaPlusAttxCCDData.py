@@ -24,21 +24,21 @@ CREATE TABLE public.{table_name}(
 条码 text NULL,
 检测结果 text NULL,
 ng信息 text NULL,     
-电芯长度 text NULL,
-电芯宽度 text NULL,
-铝边距 text NULL,
-铝偏角 text NULL,
-镍边距 text NULL,
-镍偏角 text NULL,
-铝边距2 text NULL,
-铝偏角2 text NULL,
-阴极长度 text NULL,
-阳极长度 text NULL,
+电芯长度 numeric NULL,
+电芯宽度 numeric NULL,
+铝边距 numeric NULL,
+铝偏角 numeric NULL,
+镍边距 numeric NULL,
+镍偏角 numeric NULL,
+铝边距2 numeric NULL,
+铝偏角2 numeric NULL,
+阴极长度 numeric NULL,
+阳极长度 numeric NULL,
 中心距 text NULL,
-工号 text NULL,
+工号 int NULL,
 班次 text NULL,
 成品编码 text NULL,
-料盘编码 text NULL
+料盘编码 int NULL
 );
 
 COMMENT ON TABLE public.{table_name} IS 'PLUS绕胶机CCD数据';
