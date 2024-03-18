@@ -1,3 +1,4 @@
+"""Knowledge API client."""
 import json
 
 from dbgpt.client.client import Client
@@ -6,6 +7,7 @@ from dbgpt.client.schemas import DocumentModel, SpaceModel, SyncModel
 
 async def create_space(client: Client, app_model: SpaceModel):
     """Create a new space.
+
     Args:
         client (Client): The dbgpt client.
         app_model (SpaceModel): The app model.
@@ -15,6 +17,7 @@ async def create_space(client: Client, app_model: SpaceModel):
 
 async def update_space(client: Client, app_model: SpaceModel):
     """Update a document.
+
     Args:
         client (Client): The dbgpt client.
         app_model (SpaceModel): The app model.
@@ -24,6 +27,7 @@ async def update_space(client: Client, app_model: SpaceModel):
 
 async def delete_space(client: Client, space_id: str):
     """Delete a space.
+
     Args:
         client (Client): The dbgpt client.
         app_id (str): The app id.
@@ -33,6 +37,7 @@ async def delete_space(client: Client, space_id: str):
 
 async def get_space(client: Client, space_id: str):
     """Get a document.
+
     Args:
         client (Client): The dbgpt client.
         app_id (str): The app id.
@@ -42,6 +47,7 @@ async def get_space(client: Client, space_id: str):
 
 async def list_space(client: Client):
     """List apps.
+
     Args:
         client (Client): The dbgpt client.
     """
@@ -50,6 +56,7 @@ async def list_space(client: Client):
 
 async def create_document(client: Client, doc_model: DocumentModel):
     """Create a new space.
+
     Args:
         client (Client): The dbgpt client.
         doc_model (SpaceModel): The document model.
@@ -59,6 +66,7 @@ async def create_document(client: Client, doc_model: DocumentModel):
 
 async def delete_document(client: Client, document_id: str):
     """Delete a document.
+
     Args:
         client (Client): The dbgpt client.
         app_id (str): The app id.
@@ -68,6 +76,7 @@ async def delete_document(client: Client, document_id: str):
 
 async def get_document(client: Client, document_id: str):
     """Get a document.
+
     Args:
         client (Client): The dbgpt client.
         app_id (str): The app id.
@@ -77,6 +86,7 @@ async def get_document(client: Client, document_id: str):
 
 async def list_document(client: Client):
     """List documents.
+
     Args:
         client (Client): The dbgpt client.
     """
@@ -84,7 +94,8 @@ async def list_document(client: Client):
 
 
 async def sync_document(client: Client, sync_model: SyncModel):
-    """sync document.
+    """Sync document.
+
     Args:
         client (Client): The dbgpt client.
     """

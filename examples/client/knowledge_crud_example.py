@@ -68,7 +68,6 @@ from dbgpt.client.knowledge import list_space
 
 
 async def main():
-
     # initialize client
     DBGPT_API_KEY = "dbgpt"
     client = Client(api_key=DBGPT_API_KEY)

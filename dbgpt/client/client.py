@@ -1,3 +1,4 @@
+"""This module contains the client for the DB-GPT API."""
 import json
 from typing import Any, AsyncGenerator, List, Optional, Union
 from urllib.parse import urlparse
@@ -16,7 +17,8 @@ class ClientException(Exception):
     """ClientException is raised when an error occurs in the client."""
 
     def __init__(self, status=None, reason=None, http_resp=None):
-        """
+        """Initialize the ClientException.
+
         Args:
             status: Optional[int], the HTTP status code.
             reason: Optional[str], the reason for the exception.
@@ -35,7 +37,7 @@ class ClientException(Exception):
             self.headers = None
 
     def __str__(self):
-        """Custom error messages for exception"""
+        """Return the error message."""
         error_message = "({0})\n" "Reason: {1}\n".format(self.status, self.reason)
         if self.headers:
             error_message += "HTTP response headers: {0}\n".format(self.headers)
@@ -46,19 +48,28 @@ class ClientException(Exception):
         return error_message
 
 
-class Client(object):
+"""Client API."""
+
+
+class Client:
+    """The client for the DB-GPT API."""
+
     def __init__(
         self,
-        api_base: Optional[str] = "http://localhost:5000",
+        api_base: str = "http://localhost:5000",
         api_key: Optional[str] = None,
-        version: Optional[str] = "v2",
+        version: str = "v2",
         timeout: Optional[httpx._types.TimeoutTypes] = 120,
     ):
-        """
+        """Create the client.
+
         Args:
-            api_base: Optional[str], a full URL for the DB-GPT API. Defaults to the http://localhost:5000.
-            api_key: Optional[str], The dbgpt api key to use for authentication. Defaults to None.
-            timeout: Optional[httpx._types.TimeoutTypes]: The timeout to use. Defaults to None.
+            api_base: Optional[str], a full URL for the DB-GPT API.
+                Defaults to the `http://localhost:5000`.
+            api_key: Optional[str], The dbgpt api key to use for authentication.
+                Defaults to None.
+            timeout: Optional[httpx._types.TimeoutTypes]: The timeout to use.
+                Defaults to None.
             In most cases, pass in a float number to specify the timeout in seconds.
         Returns:
             None
@@ -75,7 +86,7 @@ class Client(object):
             client = Client(api_base=DBGPT_API_BASE, api_key=DBGPT_API_KEY)
             client.chat(model="chatgpt_proxyllm", messages="Hello?")
         """
-        if is_valid_url(api_base):
+        if api_base and is_valid_url(api_base):
             self._api_url = api_base.rstrip("/")
         else:
             raise ValueError(f"api url {api_base} does not exist or is not accessible.")
@@ -105,18 +116,24 @@ class Client(object):
     ) -> ChatCompletionResponse:
         """
         Chat Completion.
+
         Args:
             model: str, The model name.
             messages: Union[str, List[str]], The user input messages.
-            temperature: Optional[float], What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
-            max_new_tokens: Optional[int], The maximum number of tokens that can be generated in the chat completion.
+            temperature: Optional[float], What sampling temperature to use,between 0
+                and 2. Higher values like 0.8 will make the output more random,
+                while lower values like 0.2 will make it more focused and deterministic.
+            max_new_tokens: Optional[int].The maximum number of tokens that can be
+                generated in the chat completion.
             chat_mode: Optional[str], The chat mode.
             chat_param: Optional[str], The chat param of chat mode.
             conv_uid: Optional[str], The conversation id of the model inference.
             user_name: Optional[str], The user name of the model inference.
             sys_code: Optional[str], The system code of the model inference.
             span_id: Optional[str], The span id of the model inference.
-            incremental: bool, Used to control whether the content is returned incrementally or in full each time. If this parameter is not provided, the default is full return.
+            incremental: bool, Used to control whether the content is returned
+                incrementally or in full each time. If this parameter is not provided,
+                the default is full return.
             enable_vis: bool, Response content whether to output vis label.
         Returns:
             ChatCompletionResponse: The chat completion response.
@@ -173,18 +190,24 @@ class Client(object):
     ) -> AsyncGenerator[ChatCompletionStreamResponse, None]:
         """
         Chat Stream Completion.
+
         Args:
             model: str, The model name.
             messages: Union[str, List[str]], The user input messages.
-            temperature: Optional[float], What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
-            max_new_tokens: Optional[int], The maximum number of tokens that can be generated in the chat completion.
+            temperature: Optional[float], What sampling temperature to use, between 0
+            and 2.Higher values like 0.8 will make the output more random, while lower
+                values like 0.2 will make it more focused and deterministic.
+            max_new_tokens: Optional[int], The maximum number of tokens that can be
+            generated in the chat completion.
             chat_mode: Optional[str], The chat mode.
             chat_param: Optional[str], The chat param of chat mode.
             conv_uid: Optional[str], The conversation id of the model inference.
             user_name: Optional[str], The user name of the model inference.
             sys_code: Optional[str], The system code of the model inference.
             span_id: Optional[str], The span id of the model inference.
-            incremental: bool, Used to control whether the content is returned incrementally or in full each time. If this parameter is not provided, the default is full return.
+            incremental: bool, Used to control whether the content is returned
+                incrementally or in full each time. If this parameter is not provided,
+                the default is full return.
             enable_vis: bool, Response content whether to output vis label.
         Returns:
             ChatCompletionStreamResponse: The chat completion response.
@@ -240,11 +263,12 @@ class Client(object):
                     error = await response.aread()
                     yield json.loads(error)
                 except Exception as e:
+
                     yield f"data:[SERVER_ERROR]{str(e)}\n\n"
 
     async def get(self, path: str, *args):
-        """
-        Get method.
+        """Get method.
+
         Args:
             path: str, The path to get.
             args: Any, The arguments to pass to the get method.
@@ -256,11 +280,12 @@ class Client(object):
             )
             return response
         finally:
+
             await self._http_client.aclose()
 
     async def post(self, path: str, args):
-        """
-        Post method.
+        """Post method.
+
         Args:
             path: str, The path to post.
             args: Any, The arguments to pass to the post
@@ -274,8 +299,8 @@ class Client(object):
             await self._http_client.aclose()
 
     async def post_param(self, path: str, args):
-        """
-        Post method.
+        """Post method.
+
         Args:
             path: str, The path to post.
             args: Any, The arguments to pass to the post
@@ -289,8 +314,8 @@ class Client(object):
             await self._http_client.aclose()
 
     async def patch(self, path: str, *args):
-        """
-        Patch method.
+        """Patch method.
+
         Args:
             path: str, The path to patch.
             args: Any, The arguments to pass to the patch.
@@ -298,8 +323,8 @@ class Client(object):
         return self._http_client.patch(self._api_url + CLIENT_SERVE_PATH + path, *args)
 
     async def put(self, path: str, args):
-        """
-        Put method.
+        """Put method.
+
         Args:
             path: str, The path to put.
             args: Any, The arguments to pass to the put.
@@ -312,8 +337,8 @@ class Client(object):
             await self._http_client.aclose()
 
     async def delete(self, path: str, *args):
-        """
-        Delete method.
+        """Delete method.
+
         Args:
             path: str, The path to delete.
             args: Any, The arguments to pass to the delete.
@@ -326,8 +351,8 @@ class Client(object):
             await self._http_client.aclose()
 
     async def head(self, path: str, *args):
-        """
-        Head method.
+        """Head method.
+
         Args:
             path: str, The path to head.
             args: Any, The arguments to pass to the head
@@ -336,8 +361,8 @@ class Client(object):
 
 
 def is_valid_url(api_url: Any) -> bool:
-    """
-    Check if the given URL is valid.
+    """Check if the given URL is valid.
+
     Args:
         api_url: Any, The URL to check.
     Returns:

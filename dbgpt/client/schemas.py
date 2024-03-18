@@ -1,12 +1,15 @@
+"""this module contains the schemas for the dbgpt client."""
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 from fastapi import File, UploadFile
 from pydantic import BaseModel, Field
 
 from dbgpt.agent.resource.resource_api import AgentResource
 from dbgpt.rag.chunk_manager import ChunkParameters
+
+"""Chat completion request body"""
 
 
 class ChatCompletionRequestBody(BaseModel):
@@ -54,15 +57,20 @@ class ChatCompletionRequestBody(BaseModel):
     )
     incremental: bool = Field(
         default=True,
-        description="Used to control whether the content is returned incrementally or in full each time. If this parameter is not provided, the default is full return.",
+        description="Used to control whether the content is returned incrementally "
+        "or in full each time. "
+        "If this parameter is not provided, the default is full return.",
     )
     enable_vis: str = Field(
         default=True, description="response content whether to output vis label"
     )
 
 
+"""Chat completion response"""
+
+
 class ChatMode(Enum):
-    """Chat mode"""
+    """Chat mode."""
 
     CHAT_NORMAL = "chat_normal"
     CHAT_APP = "chat_app"
@@ -70,34 +78,30 @@ class ChatMode(Enum):
     CHAT_KNOWLEDGE = "chat_knowledge"
 
 
-class SpaceModel(BaseModel):
-    """name: knowledge space name"""
-
-    """vector_type: vector type"""
-    id: int = Field(None, description="The space id")
-    name: str = Field(None, description="The space name")
-    """vector_type: vector type"""
-    vector_type: str = Field(None, description="The vector type")
-    """desc: description"""
-    desc: str = Field(None, description="The description")
-    """owner: owner"""
-    owner: str = Field(None, description="The owner")
+"""Agent model"""
 
 
 class AppDetailModel(BaseModel):
-    app_code: Optional[str] = Field(None, title="app code")
-    app_name: Optional[str] = Field(None, title="app name")
-    agent_name: Optional[str] = Field(None, title="agent name")
-    node_id: Optional[str] = Field(None, title="node id")
-    resources: Optional[list[AgentResource]] = Field(None, title="resources")
-    prompt_template: Optional[str] = Field(None, title="prompt template")
-    llm_strategy: Optional[str] = Field(None, title="llm strategy")
-    llm_strategy_value: Optional[str] = Field(None, title="llm strategy value")
+    """App detail model."""
+
+    app_code: Optional[str] = Field(None, description="app code")
+    app_name: Optional[str] = Field(None, description="app name")
+    agent_name: Optional[str] = Field(None, description="agent name")
+    node_id: Optional[str] = Field(None, description="node id")
+    resources: Optional[list[AgentResource]] = Field(None, description="resources")
+    prompt_template: Optional[str] = Field(None, description="prompt template")
+    llm_strategy: Optional[str] = Field(None, description="llm strategy")
+    llm_strategy_value: Optional[str] = Field(None, description="llm strategy value")
     created_at: datetime = datetime.now()
     updated_at: datetime = datetime.now()
 
 
+"""Awel team model"""
+
+
 class AwelTeamModel(BaseModel):
+    """Awel team model."""
+
     dag_id: str = Field(
         ...,
         description="The unique id of dag",
@@ -148,6 +152,8 @@ class AwelTeamModel(BaseModel):
 
 
 class AppModel(BaseModel):
+    """App model."""
+
     app_code: Optional[str] = Field(None, title="app code")
     app_name: Optional[str] = Field(None, title="app name")
     app_describe: Optional[str] = Field(None, title="app describe")
@@ -166,6 +172,8 @@ class AppModel(BaseModel):
 
 
 class SpaceModel(BaseModel):
+    """Space model."""
+
     name: str = Field(
         default=None,
         description="knowledge space name",
@@ -185,6 +193,8 @@ class SpaceModel(BaseModel):
 
 
 class DocumentModel(BaseModel):
+    """Document model."""
+
     id: int = Field(None, description="The doc id")
     doc_name: str = Field(None, description="doc name")
     """doc_type: document type"""
@@ -200,7 +210,7 @@ class DocumentModel(BaseModel):
 
 
 class SyncModel(BaseModel):
-    """Sync model"""
+    """Sync model."""
 
     """doc_id: doc id"""
     doc_id: str = Field(None, description="The doc id")
@@ -211,6 +221,6 @@ class SyncModel(BaseModel):
     """model_name: model name"""
     model_name: Optional[str] = Field(None, description="model name")
 
-    """chunk_parameters: chunk parameters 
+    """chunk_parameters: chunk parameters
     """
     chunk_parameters: ChunkParameters = Field(None, description="chunk parameters")
