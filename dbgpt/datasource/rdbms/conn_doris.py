@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
@@ -67,6 +67,26 @@ class DorisConnect(RDBMSDatabase):
     def get_users(self):
         """Get user info."""
         return []
+
+    def get_columns(self, table_name: str) -> List[Dict]:
+        """Get columns.
+        Args:
+            table_name (str): str
+        Returns:
+            columns: List[Dict], which contains name: str, type: str, default_expression: str, is_in_primary_key: bool, comment: str
+            eg:[{'name': 'id', 'type': 'UInt64', 'default_expression': '', 'is_in_primary_key': True, 'comment': 'id'}, ...]
+        """
+        fields = self.get_fields(table_name)
+        return [
+            {
+                "name": field[0],
+                "type": field[1],
+                "default": field[2],
+                "nullable": field[3],
+                "comment": field[4],
+            }
+            for field in fields
+        ]
 
     def get_fields(self, table_name) -> List[Tuple]:
         """Get column fields about specified table."""
