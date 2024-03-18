@@ -291,6 +291,7 @@ async def document_summary(request: DocumentSummaryRequest):
         }
         from starlette.responses import StreamingResponse
 
+        print('-------api,,chat.prompt_template.stream_out')
         if not chat.prompt_template.stream_out:
             return StreamingResponse(
                 no_stream_generator(chat),

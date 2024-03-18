@@ -382,13 +382,7 @@ class BaseChat(ABC):
                 prompt_define_response,
             )
 
-            view_message_tmp = view_message.split('data')[-1].replace('&quot;: [{&quot;count&quot;: ', '').replace(
-                '&quot;: [{&quot;count&quot;: ', '').replace(
-                '}]', '').replace(
-                '/', '').replace(
-                '>', '').replace(
-                '"', '').replace(
-                '}', '')
+            view_message_tmp = view_message.split('data')[-1].replace('&quot;', '')
             self.save_dict.update({'ai_sql_result': view_message_tmp})
             view_message = view_message.replace("\n", "\\n")
             from pprint import pprint
@@ -480,6 +474,8 @@ class BaseChat(ABC):
     def current_ai_response(self) -> str:
         for message in self.current_message.messages[-1:]:
             if message.type == "view":
+                with open('message_content.txt','w') as f:
+                    f.write(message.content)
                 return message.content
         return None
 
