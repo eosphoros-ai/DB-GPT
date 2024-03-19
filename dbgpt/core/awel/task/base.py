@@ -33,6 +33,19 @@ class _EMPTY_DATA_TYPE:
     def __str__(self):
         return f"EmptyData({self.name})"
 
+    def is_same(self, obj: Any) -> bool:
+        """Check if the object is the same as the current object.
+
+        Args:
+            obj (Any): The object to compare with.
+
+        Returns:
+            bool: True if the object is the same as the current object, False otherwise.
+        """
+        if not isinstance(obj, _EMPTY_DATA_TYPE):
+            return False
+        return self == obj
+
 
 EMPTY_DATA = _EMPTY_DATA_TYPE("EMPTY_DATA")
 SKIP_DATA = _EMPTY_DATA_TYPE("SKIP_DATA")
