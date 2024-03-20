@@ -45,8 +45,12 @@ import TabItem from '@theme/TabItem';
 from dbgpt.client.client import Client
 
 DBGPT_API_KEY = "dbgpt"
-client = Client(api_key=DBGPT_API_KEY)
-response = client.chat_stream(messages="Hello", model="chatgpt_proxyllm")
+
+async for data in client.chat_stream(
+    model="chatgpt_proxyllm",
+    messages="hello",
+):
+    print(data)
 ```
  </TabItem>
 </Tabs>
@@ -104,7 +108,7 @@ from dbgpt.client.client import Client
 
 DBGPT_API_KEY = "dbgpt"
 client = Client(api_key=DBGPT_API_KEY)
-response = client.chat(messages="Hello", model="chatgpt_proxyllm")
+response = await client.chat(model="chatgpt_proxyllm" ,messages="hello")
 ```
  </TabItem>
 </Tabs>

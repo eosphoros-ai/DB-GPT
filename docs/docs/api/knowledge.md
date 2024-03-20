@@ -47,7 +47,13 @@ DBGPT_API_KEY = "dbgpt"
 SPACE_NAME="{YOUR_SPACE_NAME}"
 
 client = Client(api_key=DBGPT_API_KEY)
-response = client.chat_stream(messages="Hello", model="chatgpt_proxyllm", chat_mode="chat_knowledge", chat_param=SPACE_NAME)
+
+async for data in client.chat_stream(
+        messages="Introduce AWEL", 
+        model="chatgpt_proxyllm", 
+        chat_mode="chat_knowledge", 
+        chat_param=SPACE_NAME):
+            print(data)
 ```
  </TabItem>
 </Tabs>
