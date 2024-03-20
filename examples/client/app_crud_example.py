@@ -27,7 +27,7 @@ async def main():
     DBGPT_API_KEY = "dbgpt"
     client = Client(api_key=DBGPT_API_KEY)
     res = await list_app(client)
-    print(res.json())
+    print(res)
 
 
 if __name__ == "__main__":

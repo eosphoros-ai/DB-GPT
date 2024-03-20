@@ -38,7 +38,7 @@ class KnowledgeSpaceDao(BaseDao):
         session.commit()
         space_id = knowledge_space.id
         session.close()
-        return space_id
+        return self.to_response(knowledge_space)
 
     def get_knowledge_space(self, query: KnowledgeSpaceEntity):
         """Get knowledge space by query"""
@@ -81,11 +81,21 @@ class KnowledgeSpaceDao(BaseDao):
 
     def update_knowledge_space(self, space: KnowledgeSpaceEntity):
         """Update knowledge space"""
+
         session = self.get_raw_session()
-        session.merge(space)
+        request = SpaceServeRequest(id=space.id)
+        update_request = self.to_request(space)
+        query = self._create_query_object(session, request)
+        entry = query.first()
+        if entry is None:
+            raise Exception("Invalid request")
+        for key, value in update_request.dict().items():  # type: ignore
+            if value is not None:
+                setattr(entry, key, value)
+        session.merge(entry)
         session.commit()
         session.close()
-        return True
+        return self.to_response(space)
 
     def delete_knowledge_space(self, space: KnowledgeSpaceEntity):
         """Delete knowledge space"""
@@ -127,6 +137,7 @@ class KnowledgeSpaceDao(BaseDao):
             vector_type=entity.vector_type,
             desc=entity.desc,
             owner=entity.owner,
+            context=entity.context,
         )
 
     def to_response(self, entity: KnowledgeSpaceEntity) -> SpaceServeResponse:

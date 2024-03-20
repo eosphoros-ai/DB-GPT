@@ -145,9 +145,7 @@ class Service(BaseService[KnowledgeSpaceEntity, SpaceServeRequest, SpaceServeRes
                 status_code=400,
                 detail=f"no space name named {request.name}",
             )
-        space = spaces[0]
-        query_request = {"id": space.id}
-        update_obj = self._dao.update(query_request, update_request=request)
+        update_obj = self._dao.update_knowledge_space(self._dao.from_request(request))
         return update_obj
 
     async def create_document(

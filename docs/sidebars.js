@@ -358,6 +358,39 @@ const sidebars = {
 
     {
       type: "category",
+      label: "API Reference",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        {
+          type: 'doc',
+          id: 'api/introduction'
+        },
+        {
+          type: 'doc',
+          id: 'api/chat'
+        },
+        {
+          type: 'doc',
+          id: 'api/app'
+        },
+        {
+          type: 'doc',
+          id: 'api/flow'
+        },
+        {
+          type: 'doc',
+          id: 'api/knowledge'
+        },
+      ],
+      link: {
+        type: 'generated-index',
+        slug: "api",
+      },
+    },
+
+    {
+      type: "category",
       label: "Modules",
       collapsed: true,
       items: [

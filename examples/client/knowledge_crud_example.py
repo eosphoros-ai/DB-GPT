@@ -1,7 +1,8 @@
 import asyncio
 
 from dbgpt.client.client import Client
-from dbgpt.client.knowledge import list_space
+from dbgpt.client.knowledge import create_space
+from dbgpt.client.schemas import SpaceModel
 
 """Client: Simple Knowledge CRUD example
 
@@ -72,9 +73,20 @@ async def main():
     DBGPT_API_KEY = "dbgpt"
     client = Client(api_key=DBGPT_API_KEY)
 
+    res = await create_space(
+        client,
+        SpaceModel(
+            name="test_space_1",
+            vector_type="Chroma",
+            desc="for client space desc",
+            owner="dbgpt",
+        ),
+    )
+    print(res)
+
     # list all spaces
-    res = await list_space(client)
-    print(res.json())
+    # res = await list_space(client)
+    # print(res)
 
     # get space
     # res = await get_space(client, space_id='5')
@@ -86,7 +98,8 @@ async def main():
     # res = await update_space(client, SpaceModel(name="test_space", vector_type="Chroma", desc="for client space333", owner="dbgpt"))
 
     # delete space
-    # res = await delete_space(client, space_id='37')
+    # res = await delete_space(client, space_id='31')
+    # print(res)
 
     # list all documents
     # res = await list_document(client)
@@ -102,7 +115,7 @@ async def main():
     #                                                   , doc_file=('your_file_name', open('{your_file_path}', 'rb'))))
 
     # sync document
-    # res = await sync_document(client, sync_model=SyncModel(doc_id="153", space_id="40", model_name="text2vec", chunk_parameters=ChunkParameters(chunk_strategy="Automatic")))
+    # res = await sync_document(client, sync_model=SyncModel(doc_id="157", space_id="49", model_name="text2vec", chunk_parameters=ChunkParameters(chunk_strategy="Automatic")))
 
 
 if __name__ == "__main__":

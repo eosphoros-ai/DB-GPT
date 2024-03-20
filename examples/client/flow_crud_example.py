@@ -1,6 +1,5 @@
 import asyncio
 
-from dbgpt.client.app import list_app
 from dbgpt.client.client import Client
 from dbgpt.client.flow import list_flow
 
@@ -40,7 +39,7 @@ async def main():
     DBGPT_API_KEY = "dbgpt"
     client = Client(api_key=DBGPT_API_KEY)
     res = await list_flow(client)
-    print(res.json())
+    print(res)
 
 
 if __name__ == "__main__":

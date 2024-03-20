@@ -21,7 +21,7 @@ class ChatCompletionRequestBody(BaseModel):
     messages: Union[str, List[str]] = Field(
         ..., description="User input messages", examples=["Hello", "How are you?"]
     )
-    stream: bool = Field(default=False, description="Whether return stream")
+    stream: bool = Field(default=True, description="Whether return stream")
 
     temperature: Optional[float] = Field(
         default=None,
@@ -174,6 +174,10 @@ class AppModel(BaseModel):
 class SpaceModel(BaseModel):
     """Space model."""
 
+    id: str = Field(
+        default=None,
+        description="space id",
+    )
     name: str = Field(
         default=None,
         description="knowledge space name",
@@ -189,6 +193,10 @@ class SpaceModel(BaseModel):
     owner: str = Field(
         default=None,
         description="space owner",
+    )
+    context: Optional[str] = Field(
+        default=None,
+        description="space argument context",
     )
 
 

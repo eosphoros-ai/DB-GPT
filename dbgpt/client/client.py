@@ -24,17 +24,11 @@ class ClientException(Exception):
             reason: Optional[str], the reason for the exception.
             http_resp: Optional[httpx.Response], the HTTP response object.
         """
-        reason = json.loads(reason)
-        if http_resp:
-            self.status = http_resp.status_code
-            self.reason = http_resp.content
-            self.body = http_resp.content
-            self.headers = None
-        else:
-            self.status = status
-            self.reason = reason
-            self.body = None
-            self.headers = None
+        self.status = status
+        self.reason = reason
+        self.http_resp = http_resp
+        self.headers = http_resp.headers if http_resp else None
+        self.body = http_resp.text if http_resp else None
 
     def __str__(self):
         """Return the error message."""

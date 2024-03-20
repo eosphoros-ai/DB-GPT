@@ -15,11 +15,17 @@ class SpaceServeRequest(BaseModel):
     id: Optional[int] = Field(None, description="The space id")
     name: str = Field(None, description="The space name")
     """vector_type: vector type"""
-    vector_type: str = Field(None, description="The vector type")
+    vector_type: str = Field("Chroma", description="The vector type")
     """desc: description"""
-    desc: str = Field(None, description="The description")
+    desc: Optional[str] = Field(None, description="The description")
     """owner: owner"""
-    owner: str = Field(None, description="The owner")
+    owner: Optional[str] = Field(None, description="The owner")
+    """context: argument context"""
+    context: Optional[str] = Field(None, description="The context")
+    """gmt_created: created time"""
+    gmt_created: Optional[str] = Field(None, description="The created time")
+    """gmt_modified: modified time"""
+    gmt_modified: Optional[str] = Field(None, description="The modified time")
 
 
 class DocumentServeRequest(BaseModel):

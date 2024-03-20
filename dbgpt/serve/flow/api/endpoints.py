@@ -147,8 +147,8 @@ async def delete(uid: str, service: Service = Depends(get_service)) -> Result[No
     Returns:
         Result[None]: The response
     """
-    service.delete(uid)
-    return Result.succ(None)
+    inst = service.delete(uid)
+    return Result.succ(inst)
 
 
 @router.get("/flows/{uid}")

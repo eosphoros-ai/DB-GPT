@@ -72,7 +72,6 @@ async def check_api_key(
 @router.post("/v2/chat/completions", dependencies=[Depends(check_api_key)])
 async def chat_completions(
     request: ChatCompletionRequestBody = Body(),
-    flow_service: FlowService = Depends(get_chat_flow),
 ):
     """Chat V2 completions
     Args:
@@ -121,7 +120,9 @@ async def chat_completions(
             media_type="text/event-stream",
         )
     elif (
-        request.chat_mode is None or request.chat_mode == ChatMode.CHAT_KNOWLEDGE.value
+        request.chat_mode is None
+        or request.chat_mode == ChatMode.CHAT_NORMAL.value
+        or request.chat_mode == ChatMode.CHAT_KNOWLEDGE.value
     ):
         with root_tracer.start_span(
             "get_chat_instance", span_type=SpanType.CHAT, metadata=request.dict()
