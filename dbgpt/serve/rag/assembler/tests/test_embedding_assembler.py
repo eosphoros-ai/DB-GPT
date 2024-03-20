@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.rag.chunk_manager import ChunkParameters, SplitterType
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import Knowledge
@@ -14,7 +14,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 @pytest.fixture
 def mock_db_connection():
     """Create a temporary database connection for testing."""
-    connect = SQLiteTempConnect.create_temporary_db()
+    connect = SQLiteTempConnector.create_temporary_db()
     connect.create_temp_tables(
         {
             "user": {

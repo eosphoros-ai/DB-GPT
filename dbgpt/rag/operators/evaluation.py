@@ -2,11 +2,10 @@
 import asyncio
 from typing import Any, List, Optional
 
+from dbgpt.core import Chunk
 from dbgpt.core.awel import JoinOperator
 from dbgpt.core.interface.evaluation import EvaluationMetric, EvaluationResult
 from dbgpt.core.interface.llm import LLMClient
-
-from ..chunk import Chunk
 
 
 class RetrieverEvaluatorOperator(JoinOperator[List[EvaluationResult]]):

@@ -4,7 +4,7 @@ from typing import Any, List
 
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import Field
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 
 logger = logging.getLogger(__name__)

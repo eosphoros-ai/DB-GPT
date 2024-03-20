@@ -76,7 +76,7 @@ class SimpleTaskOutput(TaskOutput[T], Generic[T]):
     @property
     def output(self) -> T:
         """Return the output data."""
-        if self._data == EMPTY_DATA:
+        if EMPTY_DATA.is_same(self._data):
             raise ValueError("No output data for current task output")
         return cast(T, self._data)
 
@@ -188,7 +188,7 @@ class SimpleStreamTaskOutput(TaskOutput[T], Generic[T]):
         Raises:
             ValueError: If the output data is empty.
         """
-        if self._data == EMPTY_DATA:
+        if EMPTY_DATA.is_same(self._data):
             raise ValueError("No output data for current task output")
         return cast(AsyncIterator[T], self._data)
 

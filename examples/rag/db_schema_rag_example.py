@@ -1,7 +1,7 @@
 import os
 
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnect
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.serve.rag.assembler.db_schema import DBSchemaAssembler
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
@@ -22,7 +22,7 @@ from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 def _create_temporary_connection():
     """Create a temporary database connection for testing."""
-    connect = SQLiteTempConnect.create_temporary_db()
+    connect = SQLiteTempConnector.create_temporary_db()
     connect.create_temp_tables(
         {
             "user": {

@@ -1,8 +1,7 @@
 import os
 from typing import Any, List, Optional
 
-from dbgpt.core import LLMClient
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk, LLMClient
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.extractor.base import Extractor
 from dbgpt.rag.knowledge.base import Knowledge

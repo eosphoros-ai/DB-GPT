@@ -1,15 +1,13 @@
+"""DuckDB connector."""
 from typing import Any, Iterable, Optional
 
 from sqlalchemy import create_engine, text
 
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
+from .base import RDBMSConnector
 
 
-class DuckDbConnect(RDBMSDatabase):
-    """Connect Duckdb Database fetch MetaData
-    Args:
-    Usage:
-    """
+class DuckDbConnector(RDBMSConnector):
+    """DuckDB connector."""
 
     db_type: str = "duckdb"
     db_dialect: str = "duckdb"
@@ -17,21 +15,24 @@ class DuckDbConnect(RDBMSDatabase):
     @classmethod
     def from_file_path(
         cls, file_path: str, engine_args: Optional[dict] = None, **kwargs: Any
-    ) -> RDBMSDatabase:
+    ) -> RDBMSConnector:
         """Construct a SQLAlchemy engine from URI."""
         _engine_args = engine_args or {}
         return cls(create_engine("duckdb:///" + file_path, **_engine_args), **kwargs)
 
     def get_users(self):
+        """Get users."""
         cursor = self.session.execute(
             text(
-                f"SELECT * FROM sqlite_master WHERE type = 'table' AND name = 'duckdb_sys_users';"
+                "SELECT * FROM sqlite_master WHERE type = 'table' AND "
+                "name = 'duckdb_sys_users';"
             )
         )
         users = cursor.fetchall()
         return [(user[0], user[1]) for user in users]
 
     def get_grants(self):
+        """Get grants."""
         return []
 
     def get_collation(self):
@@ -39,12 +40,14 @@ class DuckDbConnect(RDBMSDatabase):
         return "UTF-8"
 
     def get_charset(self):
+        """Get character_set of current database."""
         return "UTF-8"
 
-    def get_table_comments(self, db_name):
+    def get_table_comments(self, db_name: str):
+        """Get table comments."""
         cursor = self.session.execute(
             text(
-                f"""
+                """
                 SELECT name, sql FROM sqlite_master WHERE type='table'
                 """
             )
@@ -55,7 +58,8 @@ class DuckDbConnect(RDBMSDatabase):
         ]
 
     def table_simple_info(self) -> Iterable[str]:
-        _tables_sql = f"""
+        """Get table simple info."""
+        _tables_sql = """
                 SELECT name FROM sqlite_master WHERE type='table'
             """
         cursor = self.session.execute(text(_tables_sql))

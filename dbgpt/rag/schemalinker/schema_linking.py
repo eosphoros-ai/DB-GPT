@@ -3,9 +3,14 @@
 from functools import reduce
 from typing import List, Optional, cast
 
-from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelRequest
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import (
+    Chunk,
+    LLMClient,
+    ModelMessage,
+    ModelMessageRoleType,
+    ModelRequest,
+)
+from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.rag.schemalinker.base_linker import BaseSchemaLinker
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
@@ -37,7 +42,7 @@ class SchemaLinking(BaseSchemaLinker):
 
     def __init__(
         self,
-        connection: RDBMSDatabase,
+        connection: RDBMSConnector,
         model_name: str,
         llm: LLMClient,
         top_k: int = 5,
@@ -47,7 +52,7 @@ class SchemaLinking(BaseSchemaLinker):
         """Create the schema linking instance.
 
         Args:
-           connection (Optional[RDBMSDatabase]): RDBMSDatabase connection.
+           connection (Optional[RDBMSConnector]): RDBMSConnector connection.
            llm (Optional[LLMClient]): base llm
         """
         super().__init__(**kwargs)

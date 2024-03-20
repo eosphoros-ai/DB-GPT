@@ -1,10 +1,11 @@
 import unittest
+from typing import List
 from unittest.mock import Mock, patch
 
 from dbgpt.rag.summary.rdbms_db_summary import RdbmsSummary
 
 
-class MockRDBMSDatabase(object):
+class MockRDBMSConnector(object):
     def get_users(self):
         return "user1, user2"
 
@@ -35,15 +36,12 @@ class MockRDBMSDatabase(object):
 class TestRdbmsSummary(unittest.TestCase):
     def setUp(self):
         self.mock_local_db_manage = Mock()
-        self.mock_local_db_manage.get_connect.return_value = MockRDBMSDatabase()
-        self.patcher = patch(
-            "dbgpt.rag.summary.rdbms_db_summary.CFG.LOCAL_DB_MANAGE",
-            new=self.mock_local_db_manage,
-        )
-        self.patcher.start()
+        self.mock_local_db_manage.get_connector.return_value = MockRDBMSConnector()
 
     def test_rdbms_summary_initialization(self):
-        rdbms_summary = RdbmsSummary(name="test_db", type="test_type")
+        rdbms_summary = RdbmsSummary(
+            name="test_db", type="test_type", manager=self.mock_local_db_manage
+        )
         self.assertEqual(rdbms_summary.name, "test_db")
         self.assertEqual(rdbms_summary.type, "test_type")
         self.assertTrue("user info :user1, user2" in rdbms_summary.metadata)
@@ -52,7 +50,9 @@ class TestRdbmsSummary(unittest.TestCase):
         self.assertTrue("collation:utf8_general_ci" in rdbms_summary.metadata)
 
     def test_table_summaries(self):
-        rdbms_summary = RdbmsSummary(name="test_db", type="test_type")
+        rdbms_summary = RdbmsSummary(
+            name="test_db", type="test_type", manager=self.mock_local_db_manage
+        )
         summaries = rdbms_summary.table_summaries()
         self.assertTrue(
             "table1(column1 (first column), column2), and index keys: index1(`column1`) , and table comment: table1 comment"

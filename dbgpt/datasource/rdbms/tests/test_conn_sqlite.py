@@ -6,14 +6,14 @@ import tempfile
 
 import pytest
 
-from dbgpt.datasource.rdbms.conn_sqlite import SQLiteConnect
+from dbgpt.datasource.rdbms.conn_sqlite import SQLiteConnector
 
 
 @pytest.fixture
 def db():
     temp_db_file = tempfile.NamedTemporaryFile(delete=False)
     temp_db_file.close()
-    conn = SQLiteConnect.from_file_path(temp_db_file.name)
+    conn = SQLiteConnector.from_file_path(temp_db_file.name)
     yield conn
     try:
         # TODO: Failed on windows
@@ -43,7 +43,7 @@ def test_run_sql(db):
 
 
 def test_run_no_throw(db):
-    assert db.run_no_throw("this is a error sql").startswith("Error:")
+    assert db.run_no_throw("this is a error sql") == []
 
 
 def test_get_indexes(db):
@@ -122,10 +122,6 @@ def test_get_table_comments(db):
     ]
 
 
-def test_get_database_list(db):
-    db.get_database_list() == []
-
-
 def test_get_database_names(db):
     db.get_database_names() == []
 
@@ -134,11 +130,11 @@ def test_db_dir_exist_dir():
     with tempfile.TemporaryDirectory() as temp_dir:
         new_dir = os.path.join(temp_dir, "new_dir")
         file_path = os.path.join(new_dir, "sqlite.db")
-        db = SQLiteConnect.from_file_path(file_path)
+        db = SQLiteConnector.from_file_path(file_path)
         assert os.path.exists(new_dir) == True
         assert list(db.get_table_names()) == []
     with tempfile.TemporaryDirectory() as existing_dir:
         file_path = os.path.join(existing_dir, "sqlite.db")
-        db = SQLiteConnect.from_file_path(file_path)
+        db = SQLiteConnector.from_file_path(file_path)
         assert os.path.exists(existing_dir) == True
         assert list(db.get_table_names()) == []

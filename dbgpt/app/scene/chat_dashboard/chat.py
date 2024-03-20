@@ -38,7 +38,7 @@ class ChatDashboard(BaseChat):
         self.db_name = self.db_name
         self.report_name = chat_param.get("report_name", "report")
 
-        self.database = CFG.LOCAL_DB_MANAGE.get_connect(self.db_name)
+        self.database = CFG.local_db_manager.get_connector(self.db_name)
 
         self.top_k: int = 5
         self.dashboard_template = self.__load_dashboard_template(self.report_name)

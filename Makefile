@@ -48,9 +48,7 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/blackdoc examples
 	# TODO: Use flake8 to enforce Python style guide.
 	# https://flake8.pycqa.org/en/latest/
-	$(VENV_BIN)/flake8 dbgpt/core/
-	$(VENV_BIN)/flake8 dbgpt/rag/
-	$(VENV_BIN)/flake8 dbgpt/storage/
+	$(VENV_BIN)/flake8 dbgpt/core/ dbgpt/rag/ dbgpt/storage/ dbgpt/datasource/
 	# TODO: More package checks with flake8.
 
 .PHONY: fmt-check
@@ -59,9 +57,7 @@ fmt-check: setup ## Check Python code formatting and style without making change
 	$(VENV_BIN)/isort --check-only --extend-skip="examples/notebook" examples
 	$(VENV_BIN)/black --check --extend-exclude="examples/notebook" .
 	$(VENV_BIN)/blackdoc --check dbgpt examples
-	$(VENV_BIN)/flake8 dbgpt/core/
-	$(VENV_BIN)/flake8 dbgpt/rag/
-	$(VENV_BIN)/flake8 dbgpt/storage/
+	$(VENV_BIN)/flake8 dbgpt/core/ dbgpt/rag/ dbgpt/storage/ dbgpt/datasource/
 
 .PHONY: pre-commit
 pre-commit: fmt-check test test-doc mypy ## Run formatting and unit tests before committing
@@ -77,7 +73,7 @@ test-doc: $(VENV)/.testenv ## Run doctests
 .PHONY: mypy
 mypy: $(VENV)/.testenv ## Run mypy checks
 	# https://github.com/python/mypy
-	$(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/rag/
+	$(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/rag/ dbgpt/datasource/
 	# rag depends on core and storage, so we not need to check it again.
 	# $(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/storage/
 	# $(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/core/

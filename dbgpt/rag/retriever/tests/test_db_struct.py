@@ -1,10 +1,10 @@
 from typing import List
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 import dbgpt
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 

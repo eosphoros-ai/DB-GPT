@@ -1,13 +1,24 @@
-from typing import Any, Optional
+"""Spark Connector."""
+import logging
+from typing import TYPE_CHECKING, Any, Optional
 
-from dbgpt.datasource.base import BaseConnect
+from .base import BaseConnector
+
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
+
+logger = logging.getLogger(__name__)
 
 
-class SparkConnect(BaseConnect):
-    """
-    Spark Connect supports operating on a variety of data sources through the DataFrame interface.
-    A DataFrame can be operated on using relational transformations and can also be used to create a temporary view.
-    Registering a DataFrame as a temporary view allows you to run SQL queries over its data.
+class SparkConnector(BaseConnector):
+    """Spark Connector.
+
+    Spark Connect supports operating on a variety of data sources through the DataFrame
+    interface.
+    A DataFrame can be operated on using relational transformations and can also be
+    used to create a temporary view.Registering a DataFrame as a temporary view allows
+    you to run SQL queries over its data.
+
     Datasource now support parquet, jdbc, orc, libsvm, csv, text, json.
     """
 
@@ -21,12 +32,15 @@ class SparkConnect(BaseConnect):
     def __init__(
         self,
         file_path: str,
-        spark_session: Optional = None,
-        engine_args: Optional[dict] = None,
+        spark_session: Optional["SparkSession"] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the Spark DataFrame from Datasource path
-        return: Spark DataFrame
+        """Create a Spark Connector.
+
+        Args:
+            file_path: file path
+            spark_session: spark session
+            kwargs: other args
         """
         from pyspark.sql import SparkSession
 
@@ -40,15 +54,21 @@ class SparkConnect(BaseConnect):
     @classmethod
     def from_file_path(
         cls, file_path: str, engine_args: Optional[dict] = None, **kwargs: Any
-    ):
+    ) -> "SparkConnector":
+        """Create a new SparkConnector from file path."""
         try:
-            return cls(file_path=file_path, engine_args=engine_args)
+            return cls(file_path=file_path, engine_args=engine_args, **kwargs)
 
         except Exception as e:
-            print("load spark datasource error" + str(e))
+            logger.error("load spark datasource error" + str(e))
+            raise e
 
     def create_df(self, path):
-        """Create a Spark DataFrame from Datasource path(now support parquet, jdbc, orc, libsvm, csv, text, json.).
+        """Create a Spark DataFrame.
+
+        Create a Spark DataFrame from Datasource path(now support parquet, jdbc,
+        orc, libsvm, csv, text, json.).
+
         return: Spark DataFrame
         reference:https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html
         """
@@ -59,8 +79,9 @@ class SparkConnect(BaseConnect):
             path, format=extension, inferSchema="true", header="true"
         )
 
-    def run(self, sql):
-        print(f"spark sql to run is {sql}")
+    def run(self, sql: str, fetch: str = "all"):
+        """Execute sql command."""
+        logger.info(f"spark sql to run is {sql}")
         self.df.createOrReplaceTempView(self.table_name)
         df = self.spark_session.sql(sql)
         first_row = df.first()
@@ -69,7 +90,8 @@ class SparkConnect(BaseConnect):
             rows.append(row)
         return rows
 
-    def query_ex(self, sql):
+    def query_ex(self, sql: str):
+        """Execute sql command."""
         rows = self.run(sql)
         field_names = rows[0]
         return field_names, rows
@@ -80,40 +102,31 @@ class SparkConnect(BaseConnect):
 
     def get_show_create_table(self, table_name):
         """Get table show create table about specified table."""
-
         return "ans"
 
-    def get_fields(self):
-        """Get column meta about dataframe."""
+    def get_fields(self, table_name: str):
+        """Get column meta about dataframe.
+
+        TODO: Support table_name.
+        """
         return ",".join([f"({name}: {dtype})" for name, dtype in self.df.dtypes])
-
-    def get_users(self):
-        return []
-
-    def get_grants(self):
-        return []
 
     def get_collation(self):
         """Get collation."""
         return "UTF-8"
 
-    def get_charset(self):
-        return "UTF-8"
-
-    def get_db_list(self):
-        return ["default"]
-
     def get_db_names(self):
+        """Get database names."""
         return ["default"]
-
-    def get_database_list(self):
-        return []
 
     def get_database_names(self):
+        """Get database names."""
         return []
 
     def table_simple_info(self):
+        """Get table simple info."""
         return f"{self.table_name}{self.get_fields()}"
 
     def get_table_comments(self, db_name):
+        """Get table comments."""
         return ""

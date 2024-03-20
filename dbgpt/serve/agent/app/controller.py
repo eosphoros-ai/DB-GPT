@@ -148,7 +148,7 @@ async def app_resources(
         results = []
         match type:
             case ResourceType.DB.value:
-                dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+                dbs = CFG.local_db_manager.get_db_list()
                 results = [db["db_name"] for db in dbs]
                 if name:
                     results = [r for r in results if name in r]

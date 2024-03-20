@@ -47,7 +47,7 @@ async def get_editor_tables(
     db_name: str, page_index: int, page_size: int, search_str: str = ""
 ):
     logger.info(f"get_editor_tables:{db_name},{page_index},{page_size},{search_str}")
-    db_conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+    db_conn = CFG.local_db_manager.get_connector(db_name)
     tables = db_conn.get_table_names()
     db_node: DataNode = DataNode(title=db_name, key=db_name, type="db")
     for table in tables:
@@ -95,7 +95,7 @@ async def editor_sql_run(run_param: dict = Body()):
     sql = run_param["sql"]
     if not db_name and not sql:
         return Result.failed(msg="SQL run param error！")
-    conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+    conn = CFG.local_db_manager.get_connector(db_name)
 
     try:
         start_time = time.time() * 1000
@@ -125,7 +125,7 @@ async def sql_editor_submit(
 ):
     logger.info(f"sql_editor_submit:{sql_edit_context.__dict__}")
 
-    conn = CFG.LOCAL_DB_MANAGE.get_connect(sql_edit_context.db_name)
+    conn = CFG.local_db_manager.get_connector(sql_edit_context.db_name)
     try:
         editor_service.sql_editor_submit_and_save(sql_edit_context, conn)
         return Result.succ(None)
@@ -168,7 +168,7 @@ async def editor_chart_run(run_param: dict = Body()):
         return Result.failed("SQL run param error！")
     try:
         dashboard_data_loader: DashboardDataLoader = DashboardDataLoader()
-        db_conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+        db_conn = CFG.local_db_manager.get_connector(db_name)
         colunms, sql_result = db_conn.query_ex(sql)
         field_names, chart_values = dashboard_data_loader.get_chart_values_by_data(
             colunms, sql_result, sql
@@ -204,7 +204,7 @@ async def chart_editor_submit(chart_edit_context: ChatChartEditContext = Body())
     history_messages: List[Dict] = history_mem.get_messages()
     if history_messages:
         dashboard_data_loader: DashboardDataLoader = DashboardDataLoader()
-        db_conn = CFG.LOCAL_DB_MANAGE.get_connect(chart_edit_context.db_name)
+        db_conn = CFG.local_db_manager.get_connector(chart_edit_context.db_name)
 
         edit_round = max(history_messages, key=lambda x: x["chat_order"])
         if edit_round:

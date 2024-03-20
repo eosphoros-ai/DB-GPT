@@ -21,12 +21,12 @@
 
 import pytest
 
-from dbgpt.datasource.rdbms.conn_starrocks import StarRocksConnect
+from dbgpt.datasource.rdbms.conn_starrocks import StarRocksConnector
 
 
 @pytest.fixture
 def db():
-    conn = StarRocksConnect.from_uri_db("localhost", 9030, "root", "", "test")
+    conn = StarRocksConnector.from_uri_db("localhost", 9030, "root", "", "test")
     yield conn
 
 

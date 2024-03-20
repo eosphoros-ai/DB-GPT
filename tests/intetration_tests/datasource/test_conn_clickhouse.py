@@ -20,12 +20,12 @@ from typing import Dict, List
 
 import pytest
 
-from dbgpt.datasource.rdbms.conn_clickhouse import ClickhouseConnect
+from dbgpt.datasource.rdbms.conn_clickhouse import ClickhouseConnector
 
 
 @pytest.fixture
 def db():
-    conn = ClickhouseConnect.from_uri_db("localhost", 8123, "default", "", "default")
+    conn = ClickhouseConnector.from_uri_db("localhost", 8123, "default", "", "default")
     yield conn
 
 

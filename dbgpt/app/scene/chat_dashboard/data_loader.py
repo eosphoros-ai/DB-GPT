@@ -57,5 +57,5 @@ class DashboardDataLoader:
 
     def get_chart_values_by_db(self, db_name: str, chart_sql: str):
         logger.info(f"get_chart_values_by_db:{db_name},{chart_sql}")
-        db_conn = CFG.LOCAL_DB_MANAGE.get_connect(db_name)
+        db_conn = CFG.local_db_manager.get_connector(db_name)
         return self.get_chart_values_by_conn(db_conn, chart_sql)

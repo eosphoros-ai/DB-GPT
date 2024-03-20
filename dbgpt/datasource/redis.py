@@ -1,8 +1,10 @@
-#!/usr/bin/env python3
-# -*- coding:utf-8 -*-
+"""RedisConnector.
+
+TODO: Implement RedisConnector.
+"""
 
 
 class RedisConnector:
-    """RedisConnector"""
+    """RedisConnector."""
 
     pass

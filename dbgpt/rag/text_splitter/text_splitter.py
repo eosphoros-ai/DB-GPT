@@ -5,7 +5,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Iterable, List, Optional, TypedDict, Union, cast
 
-from dbgpt.rag.chunk import Chunk, Document
+from dbgpt.core import Chunk, Document
 
 logger = logging.getLogger(__name__)
 

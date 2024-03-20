@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List
 
-from dbgpt.rag.chunk import Chunk
+from dbgpt.core import Chunk
 
 
 class RetrieverStrategy(str, Enum):

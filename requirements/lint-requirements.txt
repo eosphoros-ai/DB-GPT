@@ -13,3 +13,4 @@ types-requests
 types-beautifulsoup4
 types-Markdown
 types-tqdm
+pandas-stubs

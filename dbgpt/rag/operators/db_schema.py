@@ -3,7 +3,7 @@
 from typing import Any, Optional
 
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
+from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.rag.retriever.db_schema import DBSchemaRetriever
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
@@ -12,7 +12,7 @@ class DBSchemaRetrieverOperator(RetrieverOperator[Any, Any]):
     """The DBSchema Retriever Operator.
 
     Args:
-        connection (RDBMSDatabase): The connection.
+        connection (RDBMSConnector): The connection.
         top_k (int, optional): The top k. Defaults to 4.
         vector_store_connector (VectorStoreConnector, optional): The vector store
         connector. Defaults to None.
@@ -22,7 +22,7 @@ class DBSchemaRetrieverOperator(RetrieverOperator[Any, Any]):
         self,
         vector_store_connector: VectorStoreConnector,
         top_k: int = 4,
-        connection: Optional[RDBMSDatabase] = None,
+        connection: Optional[RDBMSConnector] = None,
         **kwargs
     ):
         """Create a new DBSchemaRetrieverOperator."""
