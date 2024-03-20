@@ -62,6 +62,7 @@ def _parse_embedding_params(
     model_path: Optional[str] = None,
     command_args: List[str] = None,
     param_cls: Optional[Type] = EmbeddingModelParameters,
+    **kwargs,
 ):
     model_args = EnvArgumentParser()
     env_prefix = EnvArgumentParser.get_env_prefix(model_name)
@@ -71,6 +72,7 @@ def _parse_embedding_params(
         command_args=command_args,
         model_name=model_name,
         model_path=model_path,
+        **kwargs,
     )
     if not model_params.device:
         model_params.device = get_device()
