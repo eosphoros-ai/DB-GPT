@@ -27,14 +27,14 @@ import TabItem from '@theme/TabItem';
 <TabItem value="curl">
 
 ```shell
- DBGPT_API_KEY="dbgpt"
- FLOW_ID="{YOUR_FLOW_ID}"
+DBGPT_API_KEY=dbgpt
+FLOW_ID={YOUR_FLOW_ID}
 
- curl -X POST "http://localhost:5000/api/v2/chat/completions" \
+curl -X POST "http://localhost:5000/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \
-    -d "{\"messages\":\"Hello\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_flow\", \"chat_param\": "$FLOW_ID"}"
+    -d "{\"messages\":\"Hello\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_flow\", \"chat_param\": \"$FLOW_ID\"}"
 
 ```
  </TabItem>
@@ -86,27 +86,27 @@ DELETE /api/v2/serve/awel/flows
 ```
 
 <Tabs
-  defaultValue="curl_update_knowledge"
+  defaultValue="curl_update_flow"
   groupId="chat1"
   values={[
-    {label: 'Curl', value: 'curl_update_knowledge'},
-    {label: 'Python', value: 'python_update_knowledge'},
+    {label: 'Curl', value: 'curl_update_flow'},
+    {label: 'Python', value: 'python_update_flow'},
   ]
 }>
 
-<TabItem value="curl_update_knowledge">
+<TabItem value="curl_update_flow">
 
 ```shell
- DBGPT_API_KEY="dbgpt"
- FLOW_ID="{YOUR_FLOW_ID}"
+DBGPT_API_KEY=dbgpt
+FLOW_ID={YOUR_FLOW_ID}
  
- curl -X DELETE "http://localhost:5000/api/v2/serve/knowledge/spaces/$FLOW_ID" \
+ curl -X DELETE "http://localhost:5000/api/v2/serve/awel/flows/$FLOW_ID" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
 
 ```
  </TabItem>
 
-<TabItem value="python_update_knowledge">
+<TabItem value="python_update_flow">
 
 
 ```python
@@ -140,26 +140,26 @@ Return <a href="#the-flow-object">Flow Object</a>
 GET /api/v2/serve/awel/flows/{flow_id}
 ```
 <Tabs
-  defaultValue="curl_get_knowledge"
+  defaultValue="curl_get_flow"
   groupId="chat1"
   values={[
-    {label: 'Curl', value: 'curl_get_knowledge'},
-    {label: 'Python', value: 'python_get_knowledge'},
+    {label: 'Curl', value: 'curl_get_flow'},
+    {label: 'Python', value: 'python_get_flow'},
   ]
 }>
 
-<TabItem value="curl_get_knowledge">
+<TabItem value="curl_get_flow">
 
 ```shell
- DBGPT_API_KEY="dbgpt"
- FLOW_ID="{YOUR_FLOW_ID}"
+DBGPT_API_KEY=dbgpt
+FLOW_ID={YOUR_FLOW_ID}
 
- curl --location --request GET 'http://localhost:5000/api/v2/serve/awel/flows/$FLOW_ID' \
-  --header 'Authorization: Bearer $DBGPT_API_KEY'
+curl -X GET "http://localhost:5000/api/v2/serve/awel/flows/$FLOW_ID" -H "Authorization: Bearer $DBGPT_API_KEY"
+
 ```
  </TabItem>
 
-<TabItem value="python_get_knowledge">
+<TabItem value="python_get_flow">
 
 
 ```python
@@ -195,25 +195,25 @@ GET /api/v2/serve/awel/flows
 
 
 <Tabs
-  defaultValue="curl_list_knowledge"
+  defaultValue="curl_list_flow"
   groupId="chat1"
   values={[
-    {label: 'Curl', value: 'curl_list_knowledge'},
-    {label: 'Python', value: 'python_list_knowledge'},
+    {label: 'Curl', value: 'curl_list_flow'},
+    {label: 'Python', value: 'python_list_flow'},
   ]
 }>
 
-<TabItem value="curl_list_knowledge">
+<TabItem value="curl_list_flow">
 
 ```shell
- DBGPT_API_KEY="dbgpt"
+DBGPT_API_KEY=dbgpt
 
- curl -X GET "http://localhost:5000/api/v2/serve/awel/flows" \
-    -H "Authorization: Bearer $DBGPT_API_KEY" \
+curl -X GET "http://localhost:5000/api/v2/serve/awel/flows" -H "Authorization: Bearer $DBGPT_API_KEY"
+
 ```
  </TabItem>
 
-<TabItem value="python_list_knowledge">
+<TabItem value="python_list_flow">
 
 
 ```python

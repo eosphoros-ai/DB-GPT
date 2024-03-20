@@ -27,20 +27,14 @@ import TabItem from '@theme/TabItem';
 <TabItem value="curl">
 
 ```shell
- DBGPT_API_KEY="dbgpt"
- SPACE_NAME="{YOUR_SPACE_NAME}"
+DBGPT_API_KEY=dbgpt
+SPACE_NAME={YOUR_SPACE_NAME}
 
- curl --location --request POST 'http://127.0.0.1:5000/api/v2/chat/completions' \
---header 'Authorization: Bearer $DBGPT_API_KEY' \
---header 'Content-Type: application/json' \
---data-raw '{
-  
-  "model": "chatgpt_proxyllm",
-  "messages": "introduce awel",
-  "chat_mode":"chat_knowledge",
-  "chat_param":$SPACE_NAME
-}'
-
+curl -X POST "http://localhost:5000/api/v2/chat/completions" \
+    -H "Authorization: Bearer $DBGPT_API_KEY" \
+    -H "accept: application/json" \
+    -H "Content-Type: application/json" \
+    -d "{\"messages\":\"Hello\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_knowledge\", \"chat_param\": \"$SPACE_NAME\"}"
 ```
  </TabItem>
 
@@ -490,8 +484,8 @@ DELETE /api/v2/serve/knowledge/spaces
 <TabItem value="curl_update_knowledge">
 
 ```shell
- DBGPT_API_KEY="dbgpt"
- SPACE_ID="{YOUR_SPACE_ID}"
+ DBGPT_API_KEY=dbgpt
+ SPACE_ID={YOUR_SPACE_ID}
 
  curl -X DELETE "http://localhost:5000/api/v2/serve/knowledge/spaces/$SPACE_ID" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
@@ -546,11 +540,9 @@ GET /api/v2/serve/knowledge/spaces/{space_id}
 <TabItem value="curl_get_knowledge">
 
 ```shell
- DBGPT_API_KEY="dbgpt"
- SPACE_ID="{YOUR_SPACE_ID}"
-
- curl --location --request GET 'http://localhost:5000/api/v2/serve/knowledge/spaces/$SPACE_ID' \
-  --header 'Authorization: Bearer $DBGPT_API_KEY'
+DBGPT_API_KEY=dbgpt
+SPACE_ID={YOUR_SPACE_ID}
+curl -X GET "http://localhost:5000/api/v2/serve/knowledge/spaces/$SPACE_ID" -H "Authorization: Bearer $DBGPT_API_KEY"
 ```
  </TabItem>
 
@@ -600,10 +592,9 @@ GET /api/v2/serve/knowledge/spaces
 <TabItem value="curl_list_knowledge">
 
 ```shell
- DBGPT_API_KEY="dbgpt"
+ DBGPT_API_KEY=dbgpt
 
-curl --location --request GET 'http://localhost:5000/api/v2/serve/knowledge/spaces' \
---header 'Authorization: Bearer dbgpt'
+curl -X GET 'http://localhost:5000/api/v2/serve/knowledge/spaces' -H "Authorization: Bearer $DBGPT_API_KEY"
 ```
  </TabItem>
 

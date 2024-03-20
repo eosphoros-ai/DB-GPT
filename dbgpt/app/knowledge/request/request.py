@@ -79,20 +79,6 @@ class DocumentSyncRequest(BaseModel):
     chunk_overlap: Optional[int] = None
 
 
-# class KnowledgeSyncRequest(BaseModel):
-#     """Sync request"""
-#
-#     """doc_ids: doc ids"""
-#     doc_id: int
-#
-#     """model_name: model name"""
-#     model_name: Optional[str] = None
-#
-#     """chunk_parameters: chunk parameters
-#     """
-#     chunk_parameters: ChunkParameters
-
-
 class ChunkQueryRequest(BaseModel):
     """id: id"""
 

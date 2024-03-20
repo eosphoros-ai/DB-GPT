@@ -27,14 +27,14 @@ import TabItem from '@theme/TabItem';
 <TabItem value="curl">
 
 ```shell
- DBGPT_API_KEY="dbgpt"
- APP_ID="{YOUR_APP_ID}"
+ DBGPT_API_KEY=dbgpt
+ APP_ID={YOUR_APP_ID}
 
  curl -X POST "http://localhost:5000/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \
-    -d "{\"messages\":\"Hello\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_app\", \"chat_param\": "$APP_ID"}"
+    -d "{\"messages\":\"Hello\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_app\", \"chat_param\": \"$APP_ID\"}"
 
 ```
  </TabItem>
@@ -65,6 +65,43 @@ data: [DONE]
 GET /api/v2/serve/apps/{app_id}
 ```
 
+<Tabs
+  defaultValue="curl_get_app"
+  groupId="chat1"
+  values={[
+    {label: 'Curl', value: 'curl_get_app'},
+    {label: 'Python', value: 'python_get_app'},
+  ]
+}>
+
+<TabItem value="curl_get_app">
+
+```shell
+DBGPT_API_KEY=dbgpt
+APP_ID={YOUR_APP_ID}
+curl -X GET "http://localhost:5000/api/v2/serve/apps/$APP_ID" -H "Authorization: Bearer $DBGPT_API_KEY"
+```
+ </TabItem>
+
+<TabItem value="python_get_app">
+
+
+```python
+from dbgpt.client.client import Client
+from dbgpt.client.app import get_app
+
+DBGPT_API_KEY = "dbgpt"
+app_id = "{your_app_id}"
+
+client = Client(api_key=DBGPT_API_KEY)
+res = await get_app(client=client, app_id=app_id)
+
+```
+
+ </TabItem>
+</Tabs>
+
+
 #### Query Parameters
 ________
 <b>app_id</b> <font color="gray"> string </font> <font color="red"> Required </font>
@@ -80,6 +117,41 @@ Return <a href="#the-app-object">App Object</a>
 ```python
 GET /api/v2/serve/apps
 ```
+<Tabs
+  defaultValue="curl_list_app"
+  groupId="chat1"
+  values={[
+    {label: 'Curl', value: 'curl_list_app'},
+    {label: 'Python', value: 'python_list_app'},
+  ]
+}>
+
+<TabItem value="curl_list_app">
+
+```shell
+DBGPT_API_KEY=dbgpt
+
+curl -X GET 'http://localhost:5000/api/v2/serve/apps' -H "Authorization: Bearer $DBGPT_API_KEY"
+```
+ </TabItem>
+
+<TabItem value="python_list_app">
+
+
+```python
+from dbgpt.client.client import Client
+from dbgpt.client.app import list_app
+
+DBGPT_API_KEY = "dbgpt"
+app_id = "{your_app_id}"
+
+client = Client(api_key=DBGPT_API_KEY)
+res = await list_app(client=client)
+
+```
+
+ </TabItem>
+</Tabs>
 
 #### Response body
 Return <a href="#the-app-object">App Object</a> List
