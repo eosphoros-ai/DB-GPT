@@ -1,7 +1,6 @@
 import { LinkOutlined, ReadOutlined, SyncOutlined } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import { Table, Image, Tag, Tabs, TabsProps, Popover } from 'antd';
-import { format } from 'sql-formatter';
 import { Reference } from '@/types/chat';
 import { AutoChart, BackEndChartType, getChartType } from '@/components/chart';
 import { CodePreview } from './code-preview';
@@ -15,6 +14,7 @@ import VisChart from './vis-chart';
 import VisDashboard from './vis-dashboard';
 import VisPlugin from './vis-plugin';
 import VisCode from './vis-code';
+import { formatSql } from '@/utils';
 
 type MarkdownComponent = Parameters<typeof ReactMarkdown>['0']['components'];
 
@@ -228,7 +228,7 @@ const extraComponents: MarkdownComponent = {
     const SqlItem = {
       key: 'sql',
       label: 'SQL',
-      children: <CodePreview code={format(data?.sql, { language: 'mysql' }) as string} language={'sql'} />,
+      children: <CodePreview code={formatSql(data?.sql, 'mysql')} language="sql" />,
     };
     const DataItem = {
       key: 'data',
