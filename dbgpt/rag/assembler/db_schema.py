@@ -2,7 +2,7 @@
 from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, Embeddings
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.datasource.base import BaseConnector
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 from ..assembler.base import BaseAssembler
@@ -35,7 +35,7 @@ class DBSchemaAssembler(BaseAssembler):
 
     def __init__(
         self,
-        connector: RDBMSConnector,
+        connector: BaseConnector,
         vector_store_connector: VectorStoreConnector,
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
@@ -45,7 +45,7 @@ class DBSchemaAssembler(BaseAssembler):
         """Initialize with Embedding Assembler arguments.
 
         Args:
-            connector: (RDBMSConnector) RDBMSConnector connection.
+            connector: (BaseConnector) BaseConnector connection.
             vector_store_connector: (VectorStoreConnector) VectorStoreConnector to use.
             chunk_manager: (Optional[ChunkManager]) ChunkManager to use for chunking.
             embedding_model: (Optional[str]) Embedding model to use.
@@ -76,7 +76,7 @@ class DBSchemaAssembler(BaseAssembler):
     @classmethod
     def load_from_connection(
         cls,
-        connector: RDBMSConnector,
+        connector: BaseConnector,
         vector_store_connector: VectorStoreConnector,
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
@@ -85,7 +85,7 @@ class DBSchemaAssembler(BaseAssembler):
         """Load document embedding into vector store from path.
 
         Args:
-            connector: (RDBMSConnector) RDBMSDatabase connection.
+            connector: (BaseConnector) BaseConnector connection.
             vector_store_connector: (VectorStoreConnector) VectorStoreConnector to use.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
                 chunking.

@@ -3,14 +3,14 @@
 from typing import Any, List
 
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.datasource.base import BaseConnector
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 
 
 class DatasourceRetrieverOperator(RetrieverOperator[Any, List[str]]):
     """The Datasource Retriever Operator."""
 
-    def __init__(self, connector: RDBMSConnector, **kwargs):
+    def __init__(self, connector: BaseConnector, **kwargs):
         """Create a new DatasourceRetrieverOperator."""
         super().__init__(**kwargs)
         self._connector = connector

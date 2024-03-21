@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from dbgpt.core import Chunk
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.datasource.base import BaseConnector
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 from ..assembler.db_schema import DBSchemaAssembler
@@ -16,7 +16,7 @@ class DBSchemaRetrieverOperator(RetrieverOperator[str, List[Chunk]]):
     """The DBSchema Retriever Operator.
 
     Args:
-        connector (RDBMSConnector): The connection.
+        connector (BaseConnector): The connection.
         top_k (int, optional): The top k. Defaults to 4.
         vector_store_connector (VectorStoreConnector, optional): The vector store
         connector. Defaults to None.
@@ -26,7 +26,7 @@ class DBSchemaRetrieverOperator(RetrieverOperator[str, List[Chunk]]):
         self,
         vector_store_connector: VectorStoreConnector,
         top_k: int = 4,
-        connector: Optional[RDBMSConnector] = None,
+        connector: Optional[BaseConnector] = None,
         **kwargs
     ):
         """Create a new DBSchemaRetrieverOperator."""
@@ -46,19 +46,19 @@ class DBSchemaRetrieverOperator(RetrieverOperator[str, List[Chunk]]):
         return self._retriever.retrieve(query)
 
 
-class DBSchemaAssemblerOperator(AssemblerOperator[RDBMSConnector, List[Chunk]]):
+class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
     """The DBSchema Assembler Operator."""
 
     def __init__(
         self,
-        connector: RDBMSConnector,
+        connector: BaseConnector,
         vector_store_connector: VectorStoreConnector,
         **kwargs
     ):
         """Create a new DBSchemaAssemblerOperator.
 
         Args:
-            connector (RDBMSConnector): The connection.
+            connector (BaseConnector): The connection.
             vector_store_connector (VectorStoreConnector): The vector store connector.
         """
         self._vector_store_connector = vector_store_connector

@@ -6,6 +6,14 @@ Now, let us create a python file `first_rag_with_awel.py`.
 
 In this example, we will load your knowledge from a URL and store it in a vector store.
 
+### Install Dependencies
+
+First, you need to install the `dbgpt` library.
+
+```bash
+pip install "dbgpt[rag]>=0.5.2"
+````
+
 ### Prepare Embedding Model
 
 To store the knowledge in a vector store, we need an embedding model, DB-GPT supports 
@@ -86,13 +94,13 @@ vector_connector = VectorStoreConnector.from_default(
 with DAG("load_knowledge_dag") as knowledge_dag:
     # Load knowledge from URL
     knowledge_task = KnowledgeOperator(knowledge_type=KnowledgeType.URL.name)
-    embedding_task = EmbeddingAssemblerOperator(
+    assembler_task = EmbeddingAssemblerOperator(
         vector_store_connector=vector_connector,
         chunk_parameters=ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
     )
-    knowledge_task >> embedding_task
+    knowledge_task >> assembler_task
 
-chunks = asyncio.run(embedding_task.call("https://docs.dbgpt.site/docs/latest/awel/"))
+chunks = asyncio.run(assembler_task.call("https://docs.dbgpt.site/docs/latest/awel/"))
 print(f"Chunk length: {len(chunks)}")
 ```
 
@@ -129,6 +137,14 @@ To build a RAG program, we need a LLM, here are some of the LLMs that DB-GPT sup
     {label: 'API Server(cluster)', value: 'model_service'},
   ]}>
   <TabItem value="openai">
+
+First, you should install the `openai` library. 
+
+```bash
+pip install openai
+```
+Then set your API key in the environment `OPENAI_API_KEY`.
+
 ```python
 from dbgpt.model.proxy import OpenAILLMClient
 
@@ -139,6 +155,12 @@ llm_client = OpenAILLMClient()
   <TabItem value="yi_proxy">
 
 You should have a YI account and get the API key from the YI official website.
+
+First, you should install the `openai` library.
+
+```bash
+pip install openai
+```
 
 Then set your API key in the environment variable `YI_API_KEY`.
 
@@ -157,6 +179,12 @@ If you have deployed [DB-GPT cluster](/docs/installation/model_service/cluster) 
 
 The API is compatible with the OpenAI API, so you can use the OpenAILLMClient to 
 connect to the API server.
+
+First you should install the `openai` library.
+```bash
+pip install openai
+```
+
 ```python
 from dbgpt.model.proxy import OpenAILLMClient
 
@@ -257,13 +285,13 @@ vector_connector = VectorStoreConnector.from_default(
 with DAG("load_knowledge_dag") as knowledge_dag:
     # Load knowledge from URL
     knowledge_task = KnowledgeOperator(knowledge_type=KnowledgeType.URL.name)
-    embedding_task = EmbeddingAssemblerOperator(
+    assembler_task = EmbeddingAssemblerOperator(
         vector_store_connector=vector_connector,
         chunk_parameters=ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
     )
-    knowledge_task >> embedding_task
+    knowledge_task >> assembler_task
 
-chunks = asyncio.run(embedding_task.call("https://docs.dbgpt.site/docs/latest/awel/"))
+chunks = asyncio.run(assembler_task.call("https://docs.dbgpt.site/docs/latest/awel/"))
 print(f"Chunk length: {len(chunks)}\n")
 
 

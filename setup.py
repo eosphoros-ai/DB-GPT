@@ -397,7 +397,6 @@ def core_requires():
         # TODO: pympler has not been updated for a long time and needs to
         #  find a new toolkit.
         "pympler",
-        "sqlparse==0.4.4",
         "duckdb==0.8.1",
         "duckdb-engine",
         # lightweight python library for scheduling jobs
@@ -418,7 +417,6 @@ def core_requires():
         "pandas==2.0.3",
         "auto-gpt-plugin-template",
         "gTTS==2.3.1",
-        "langchain>=0.0.286",
         "pymysql",
         "jsonschema",
         # TODO move transformers to default
@@ -442,6 +440,7 @@ def knowledge_requires():
     pip install "dbgpt[rag]"
     """
     setup_spec.extras["rag"] = setup_spec.extras["vstore"] + [
+        "langchain>=0.0.286",
         "spacy==3.5.3",
         "chromadb==0.4.10",
         "markdown",
@@ -558,6 +557,7 @@ def all_datasource_requires():
     """
 
     setup_spec.extras["datasource"] = [
+        "sqlparse==0.4.4",
         "pymssql",
         "pymysql",
         "pyspark",

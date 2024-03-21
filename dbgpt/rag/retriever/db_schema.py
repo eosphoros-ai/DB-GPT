@@ -3,7 +3,7 @@ from functools import reduce
 from typing import List, Optional, cast
 
 from dbgpt.core import Chunk
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.datasource.base import BaseConnector
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.rag.retriever.rerank import DefaultRanker, Ranker
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
@@ -18,7 +18,7 @@ class DBSchemaRetriever(BaseRetriever):
         self,
         vector_store_connector: VectorStoreConnector,
         top_k: int = 4,
-        connector: Optional[RDBMSConnector] = None,
+        connector: Optional[BaseConnector] = None,
         query_rewrite: bool = False,
         rerank: Optional[Ranker] = None,
         **kwargs
@@ -28,7 +28,7 @@ class DBSchemaRetriever(BaseRetriever):
         Args:
             vector_store_connector (VectorStoreConnector): vector store connector
             top_k (int): top k
-            connector (Optional[RDBMSConnector]): RDBMSConnector.
+            connector (Optional[BaseConnector]): RDBMSConnector.
             query_rewrite (bool): query rewrite
             rerank (Ranker): rerank
 

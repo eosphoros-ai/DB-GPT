@@ -10,7 +10,7 @@ from dbgpt.core import (
     ModelMessageRoleType,
     ModelRequest,
 )
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.datasource.base import BaseConnector
 from dbgpt.rag.schemalinker.base_linker import BaseSchemaLinker
 from dbgpt.rag.summary.rdbms_db_summary import _parse_db_summary
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
@@ -42,7 +42,7 @@ class SchemaLinking(BaseSchemaLinker):
 
     def __init__(
         self,
-        connector: RDBMSConnector,
+        connector: BaseConnector,
         model_name: str,
         llm: LLMClient,
         top_k: int = 5,
@@ -52,7 +52,7 @@ class SchemaLinking(BaseSchemaLinker):
         """Create the schema linking instance.
 
         Args:
-           connection (Optional[RDBMSConnector]): RDBMSConnector connection.
+           connection (Optional[BaseConnector]): BaseConnector connection.
            llm (Optional[LLMClient]): base llm
         """
         super().__init__(**kwargs)
