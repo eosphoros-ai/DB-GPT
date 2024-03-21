@@ -247,7 +247,7 @@ class Client:
             if response.status_code == 200:
                 async for line in response.aiter_lines():
                     try:
-                        if line == "data: [DONE]\n":
+                        if line.strip() == "data: [DONE]":
                             break
                         if line.startswith("data:"):
                             json_data = json.loads(line[len("data: ") :])

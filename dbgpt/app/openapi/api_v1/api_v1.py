@@ -439,9 +439,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
         _type_: streaming responses
     """
     span = root_tracer.start_span("stream_generator")
-    msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
 
-    stream_id = f"chatcmpl-{str(uuid.uuid1())}"
     previous_response = ""
     async for chunk in chat.stream_call():
         if chunk:
@@ -453,7 +451,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
                     delta=DeltaMessage(role="assistant", content=incremental_output),
                 )
                 chunk = ChatCompletionStreamResponse(
-                    id=stream_id, choices=[choice_data], model=model_name
+                    id=chat.chat_session_id, choices=[choice_data], model=model_name
                 )
                 yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
             else:
