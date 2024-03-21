@@ -10,8 +10,8 @@ from dbgpt.core.schema.api import ChatCompletionResponse, ChatCompletionStreamRe
 
 from .schema import ChatCompletionRequestBody
 
-CLIENT_API_PATH = "/api"
-CLIENT_SERVE_PATH = "/serve"
+CLIENT_API_PATH = "api"
+CLIENT_SERVE_PATH = "serve"
 
 
 class ClientException(Exception):
@@ -274,7 +274,7 @@ class Client:
         """
         try:
             response = await self._http_client.get(
-                self._api_url + CLIENT_SERVE_PATH + path,
+                f"{self._api_url}/{CLIENT_SERVE_PATH}{path}",
                 *args,
             )
             return response
@@ -290,7 +290,7 @@ class Client:
         """
         try:
             return await self._http_client.post(
-                self._api_url + CLIENT_SERVE_PATH + path,
+                f"{self._api_url}/{CLIENT_SERVE_PATH}{path}",
                 json=args,
             )
         finally:
@@ -305,7 +305,7 @@ class Client:
         """
         try:
             return await self._http_client.post(
-                self._api_url + CLIENT_SERVE_PATH + path,
+                f"{self._api_url}/{CLIENT_SERVE_PATH}{path}",
                 params=args,
             )
         finally:
@@ -318,7 +318,9 @@ class Client:
             path: str, The path to patch.
             args: Any, The arguments to pass to the patch.
         """
-        return self._http_client.patch(self._api_url + CLIENT_SERVE_PATH + path, *args)
+        return self._http_client.patch(
+            f"{self._api_url}/{CLIENT_SERVE_PATH}{path}", *args
+        )
 
     async def put(self, path: str, args):
         """Put method.
@@ -329,7 +331,7 @@ class Client:
         """
         try:
             return await self._http_client.put(
-                self._api_url + CLIENT_SERVE_PATH + path, json=args
+                f"{self._api_url}/{CLIENT_SERVE_PATH}{path}", json=args
             )
         finally:
             await self._http_client.aclose()
@@ -343,7 +345,7 @@ class Client:
         """
         try:
             return await self._http_client.delete(
-                self._api_url + CLIENT_SERVE_PATH + path, *args
+                f"{self._api_url}/{CLIENT_SERVE_PATH}{path}", *args
             )
         finally:
             await self._http_client.aclose()
