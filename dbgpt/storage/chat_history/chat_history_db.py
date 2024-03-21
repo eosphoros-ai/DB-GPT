@@ -12,6 +12,9 @@ class ChatHistoryEntity(Model):
     id = Column(
         Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
     )
+    logic_delete = Column(
+        Integer,  nullable=False,default=0, comment="logic_delete flag"
+    )
     conv_uid = Column(
         String(255),
         # Change from False to True, the alembic migration will fail, so we use UniqueConstraint to replace it
@@ -23,10 +26,10 @@ class ChatHistoryEntity(Model):
     summary = Column(String(255), nullable=False, comment="Conversation record summary")
     user_name = Column(String(255), nullable=True, comment="interlocutor")
     messages = Column(
-        Text(length=2**31 - 1), nullable=True, comment="Conversation details"
+        Text(length=2 ** 31 - 1), nullable=True, comment="Conversation details"
     )
     message_ids = Column(
-        Text(length=2**31 - 1), nullable=True, comment="Message ids, split by comma"
+        Text(length=2 ** 31 - 1), nullable=True, comment="Message ids, split by comma"
     )
     sys_code = Column(String(128), index=True, nullable=True, comment="System code")
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
@@ -52,9 +55,11 @@ class ChatHistoryMessageEntity(Model):
         comment="Conversation record unique id",
     )
     index = Column(Integer, nullable=False, comment="Message index")
+    logic_delete = Column(Integer, nullable=False, default=0, comment="logic_delete flag")
+
     round_index = Column(Integer, nullable=False, comment="Message round index")
     message_detail = Column(
-        Text(length=2**31 - 1), nullable=True, comment="Message details, json format"
+        Text(length=2 ** 31 - 1), nullable=True, comment="Message details, json format"
     )
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
     gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")
@@ -62,7 +67,7 @@ class ChatHistoryMessageEntity(Model):
 
 class ChatHistoryDao(BaseDao):
     def list_last_20(
-        self, user_name: Optional[str] = None, sys_code: Optional[str] = None
+            self, user_name: Optional[str] = None, sys_code: Optional[str] = None
     ):
         session = self.get_raw_session()
         chat_history = session.query(ChatHistoryEntity)

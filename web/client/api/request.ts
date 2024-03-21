@@ -64,20 +64,20 @@ export const postDbTestConnect = (data: PostDbParams) => {
 };
 
 /** Chat Page */
-export const getDialogueList = () => {
-  return GET<null, DialogueListResponse>('/api/v1/chat/dialogue/list');
+export const getDialogueList = (user_id:string) => {
+  return GET<null, DialogueListResponse>(`/api/v1/chat/dialogue/list?user_name=${user_id}`);
 };
 export const getUsableModels = () => {
   return GET<null, Array<string>>('/api/v1/model/types');
 };
-export const postChatModeParamsList = (chatMode: string) => {
-  return POST<null, IDB[]>(`/api/v1/chat/mode/params/list?chat_mode=${chatMode}`);
+export const postChatModeParamsList = (chatMode: string, user_id:string) => {
+  return POST<null, IDB[]>(`/api/v1/chat/mode/params/list?chat_mode=${chatMode}&user_id=${user_id}`);
 };
 export const postChatModeParamsInfoList = (chatMode: string) => {
   return POST<null, Record<string, string>>(`/api/v1/chat/mode/params/info?chat_mode=${chatMode}`);
 };
-export const getChatHistory = (convId: string) => {
-  return GET<null, ChatHistoryResponse>(`/api/v1/chat/dialogue/messages/history?con_uid=${convId}`);
+export const getChatHistory = (convId: string, user_id: string) => {
+  return GET<null, ChatHistoryResponse>(`/api/v1/chat/dialogue/messages/history?con_uid=${convId}&user_id=${user_id}`);
 };
 export const postChatModeParamsFileLoad = ({
   convUid,
@@ -105,8 +105,8 @@ export const postChatModeParamsFileLoad = ({
 };
 
 /** Menu */
-export const delDialogue = (conv_uid: string) => {
-  return POST(`/api/v1/chat/dialogue/delete?con_uid=${conv_uid}`);
+export const delDialogue = (conv_uid: string, user_id:string) => {
+  return POST(`/api/v1/chat/dialogue/delete?con_uid=${conv_uid}&user_id=${user_id}`);
 };
 
 /** Editor */

@@ -102,10 +102,12 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
             chat_mode=request.chat_mode,
             user_name=request.user_name,
             sys_code=request.sys_code,
+            logic_delete=request.logic_delete,
             conv_storage=conv_storage,
             message_storage=message_storage,
             load_message=load_message,
         )
+        print('storage_conv',storage_conv.__dict__)
         return storage_conv
 
     def update(self, request: ServeRequest) -> ServerResponse:
@@ -144,7 +146,9 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         Args:
             request (ServeRequest): The request
         """
+        print('request',request.__dict__)
         conv: StorageConversation = self.create_storage_conv(request)
+        print('conv',conv.__dict__)
         conv.delete()
 
     def get_list(self, request: ServeRequest) -> List[ServerResponse]:

@@ -28,6 +28,7 @@ export type SceneResponse = {
 export type NewDialogueParam = {
   chat_mode: string;
   model?: string;
+  user_id:string;
 };
 
 export type ChatHistoryResponse = IChatDialogueMessageSchema[];
@@ -36,6 +37,7 @@ export type IChatDialogueSchema = {
   conv_uid: string;
   user_input: string;
   user_name: string;
+  user_id: string;
   chat_mode:
     | 'chat_with_db_execute'
     | 'chat_excel'

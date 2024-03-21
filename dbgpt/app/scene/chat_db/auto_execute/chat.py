@@ -66,7 +66,7 @@ class ChatWithDbAutoExecute(BaseChat):
         self.top_k: int = 50
         self.api_call = ApiCall(display_registry=CFG.command_dispaly)
 
-    @trace()
+    @trace('generate_input_values')
     async def generate_input_values(self) -> Dict:
         """
         generate input values

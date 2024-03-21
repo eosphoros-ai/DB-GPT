@@ -95,7 +95,18 @@ class SQLAlchemyStorage(StorageInterface[T, BaseModel]):
             )
             model_instance = query.with_session(session).first()
             if model_instance:
+
                 session.delete(model_instance)
+    def logic_delete(self, resource_id: ResourceIdentifier) -> None:
+        with self.session() as session:
+            query = self.adapter.get_query_for_identifier(
+                self._model_class, resource_id, session=session
+            )
+            model_instance = query.with_session(session).first()
+            if model_instance:
+                model_instance.logic_delete = 1
+                # 在SQLAlchemy中，修改完实例的属性之后，可以直接调用session.commit()应用更改
+                session.commit()
 
     def query(self, spec: QuerySpec, cls: Type[T]) -> List[T]:
         """Query data from the storage.

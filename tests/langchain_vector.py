@@ -66,7 +66,7 @@ def write_to_pg(collection_name, glob_path):
 
 
 def query_from_pg():
-    query = '''HR部门2024年1月加班情况'''
+    query = '''CPD的二级部门分别在职有多少人？ 请用柱状图展示'''
     collection_name = 'new_department_profile'
     db = PGVector(
         connection_string=CONNECTION_STRING,
@@ -104,20 +104,20 @@ def calcuate_bm25(corpus, query):
                 stop_words.append(line)
 
     tokenizerd_query = [jiebaword.upper() for jiebaword in list(jieba.cut(query)) if jiebaword not in stop_words]
-    # print('tokenizerd_query',tokenizerd_query)
+    print('tokenizerd_query',tokenizerd_query)
     tokenized_corpus = [[jiebaword.upper() for jiebaword in list(jieba.cut(doc)) if jiebaword not in stop_words] for doc
                         in corpus]
-    # print('tokenized_corpus',tokenized_corpus)
+    print('tokenized_corpus',tokenized_corpus)
     bm25 = BM25Okapi(tokenized_corpus)
     doc_scores = bm25.get_scores(tokenizerd_query)
     return score_normalize(doc_scores)
 
 
 def query_from_pg_bm25():
-    query = '''ATL的经理有多少位？'''
+    query = '''CPD的二级部门分别在职有多少人？ 请用柱状图展示'''
     collection_name = 'new_department_profile'
-    collection_name = 'type2_general_profile'
-    collection_name = 'hr_chinese_fk_profile'
+    # collection_name = 'type2_general_profile'
+    # collection_name = 'hr_chinese_fk_profile'
     db = PGVector(
         connection_string=CONNECTION_STRING,
         embedding_function=embeddings_model,
@@ -198,7 +198,7 @@ def init_delete_all_collection():
         ('type2_general_profile', '/datas/liab/DB-GPT/tests/atl_data/type2/general/*.txt'),
         ('type3_qasamples_profile', '/datas/liab/DB-GPT/tests/atl_data/type3/apart/*.txt'),  # QA sample对
         ('type2_department_profile', '/datas/liab/DB-GPT/tests/atl_data/type2/department/*.txt'),
-        ('new_department_profile', '/datas/liab/DB-GPT/tests/atl_data/type2/new_department/*.txt'),
+        ('new_department_profile', '/datas/liab/DB-GPT/tests/atl_data/type2/new_department/*.md'),
     ]
     for cl in collection_list:
         delete_from_pg(cl[0])
@@ -292,8 +292,8 @@ def rrf_ranker(bm25_docs, embedding_docs, weights=[0.5, 0.5], c=60, topk=6):
 
 if __name__ == '__main__':
     # delete_from_pg()
-    init_delete_all_collection()
-    #
+    # init_delete_all_collection()
+    query_from_pg_bm25()
     # print('embedding')
     # embedding_docs = query_from_pg()
     #

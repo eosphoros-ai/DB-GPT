@@ -9,6 +9,7 @@ import aiofiles
 from fastapi import APIRouter, Body, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
 
+from db.ConnectMongdb import MyMongdb
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.knowledge.service import KnowledgeService
@@ -66,14 +67,18 @@ def __new_conversation(chat_mode, user_name: str, sys_code: str) -> Conversation
     )
 
 
-def get_db_list():
+def get_db_list(user_id=None):
     dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
     db_params = []
     for item in dbs:
         params: dict = {}
-        params.update({"param": item["db_name"]})
-        params.update({"type": item["db_type"]})
-        db_params.append(params)
+        my = MyMongdb()
+        if my.check_user_dbgpt_db_permission(department=item["db_name"], user_id=user_id) or \
+                my.check_manage_dbgpt_db_permission(department=item["db_name"], user_id=user_id):
+            params.update({"param": item["db_name"]})
+            params.update({"type": item["db_type"]})
+            db_params.append(params)
+
     return db_params
 
 
@@ -163,8 +168,8 @@ async def db_connect_edit(db_config: DBConfig = Body()):
 @router.post("/v1/chat/db/delete", response_model=Result[bool])
 async def db_connect_delete(db_name: str = None):
     db_summary_client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
-    db_summary_client.delete_db_profile(db_name+'_profile')
-    print('delete_%s_profile'%db_name)
+    db_summary_client.delete_db_profile(db_name + '_profile')
+    print('delete_%s_profile' % db_name)
     return Result.succ(CFG.LOCAL_DB_MANAGE.delete_db(db_name))
 
 
@@ -225,13 +230,14 @@ async def dialogue_scenes():
 
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
-async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
+async def params_list(chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None):
+    print("/v1/chat/mode/params/list", chat_mode, user_id)
     if ChatScene.ChatWithDbQA.value() == chat_mode:
-        return Result.succ(get_db_list())
+        return Result.succ(get_db_list(user_id=user_id))
     elif ChatScene.ChatWithDbExecute.value() == chat_mode:
-        return Result.succ(get_db_list())
+        return Result.succ(get_db_list(user_id=user_id))
     elif ChatScene.ChatDashboard.value() == chat_mode:
-        return Result.succ(get_db_list())
+        return Result.succ(get_db_list(user_id=user_id))
     elif ChatScene.ChatExecution.value() == chat_mode:
         return Result.succ(plugins_select_info())
     elif ChatScene.ChatKnowledge.value() == chat_mode:
@@ -244,12 +250,12 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
 
 @router.post("/v1/chat/mode/params/file/load")
 async def params_load(
-    conv_uid: str,
-    chat_mode: str,
-    model_name: str,
-    user_name: Optional[str] = None,
-    sys_code: Optional[str] = None,
-    doc_file: UploadFile = File(...),
+        conv_uid: str,
+        chat_mode: str,
+        model_name: str,
+        user_name: Optional[str] = None,
+        sys_code: Optional[str] = None,
+        doc_file: UploadFile = File(...),
 ):
     print(f"params_load: {conv_uid},{chat_mode},{model_name}")
     try:
@@ -293,7 +299,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         dialogue.chat_mode = ChatScene.ChatNormal.value()
     if not dialogue.conv_uid:
         conv_vo = __new_conversation(
-            dialogue.chat_mode, dialogue.user_name, dialogue.sys_code
+            dialogue.chat_mode, dialogue.user_id, dialogue.sys_code
         )
         dialogue.conv_uid = conv_vo.conv_uid
 
@@ -302,6 +308,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
 
     chat_param = {
         "chat_session_id": dialogue.conv_uid,
+        "user_id": dialogue.user_id,
         "user_name": dialogue.user_name,
         "sys_code": dialogue.sys_code,
         "current_user_input": dialogue.user_input,
@@ -319,7 +326,6 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
 
 @router.post("/v1/chat/prepare")
 async def chat_prepare(dialogue: ConversationVo = Body()):
-    # dialogue.model_name = CFG.LLM_MODEL
     logger.info(f"chat_prepare:{dialogue}")
     ## check conv_uid
     chat: BaseChat = await get_chat_instance(dialogue)
@@ -331,11 +337,12 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
 
 @router.post("/v1/chat/completions")
 async def chat_completions(
-    dialogue: ConversationVo = Body(),
-    flow_service: FlowService = Depends(get_chat_flow),
+        dialogue: ConversationVo = Body(),
+        flow_service: FlowService = Depends(get_chat_flow),
 ):
+
     print(
-        f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
+        f"chat_completions:{dialogue}"
     )
     headers = {
         "Content-Type": "text/event-stream",
@@ -343,6 +350,15 @@ async def chat_completions(
         "Connection": "keep-alive",
         "Transfer-Encoding": "chunked",
     }
+    my = MyMongdb()
+    if not (my.check_user_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)
+            or my.check_manage_dbgpt_db_permission( department=dialogue.select_param, user_id=dialogue.user_id)):
+        return StreamingResponse(
+                no_stream_generator_string('you dont have permission to use db.'),
+                headers=headers,
+                media_type="text/event-stream",
+            )
+
     if dialogue.chat_mode == ChatScene.ChatAgent.value():
         return StreamingResponse(
             multi_agents.app_agent_chat(
@@ -374,10 +390,13 @@ async def chat_completions(
             media_type="text/event-stream",
         )
     else:
+
+
         with root_tracer.start_span(
-            "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
+                "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
         ):
             chat: BaseChat = await get_chat_instance(dialogue)
+
 
         if not chat.prompt_template.stream_out:
             return StreamingResponse(
@@ -425,6 +444,12 @@ async def no_stream_generator(chat):
         msg = await chat.nostream_call()
         yield f"data: {msg}\n\n"
 
+async def no_stream_generator_string(msg):
+    print('no_stream_generator,-------------')
+    with root_tracer.start_span("no_stream_generator"):
+
+        yield f"data: {msg}\n\n"
+
 
 async def stream_generator(chat, incremental: bool, model_name: str):
     """Generate streaming responses
@@ -442,14 +467,14 @@ async def stream_generator(chat, incremental: bool, model_name: str):
     """
     span = root_tracer.start_span("stream_generator")
     msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
-    print(msg,'api_v1,py    445')
+    print(msg, 'api_v1,py    445')
     stream_id = f"chatcmpl-{str(uuid.uuid1())}"
     previous_response = ""
     async for chunk in chat.stream_call():
         if chunk:
             msg = chunk.replace("\ufffd", "")
             if incremental:
-                incremental_output = msg[len(previous_response) :]
+                incremental_output = msg[len(previous_response):]
                 choice_data = ChatCompletionResponseStreamChoice(
                     index=0,
                     delta=DeltaMessage(role="assistant", content=incremental_output),

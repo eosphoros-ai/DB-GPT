@@ -5,12 +5,12 @@ import useChat from './use-chat';
 import { apiInterceptors, getChatHistory } from '@/client/api';
 
 const useSummary = () => {
-  const { history, setHistory, chatId, model, docId } = useContext(ChatContext);
+  const { history, setHistory, chatId, model, docId ,userId} = useContext(ChatContext);
   const chat = useChat({ queryAgentURL: '/knowledge/document/summary' });
 
   const summary = useCallback(
     async (curDocId?: number) => {
-      const [, res] = await apiInterceptors(getChatHistory(chatId));
+      const [, res] = await apiInterceptors(getChatHistory(chatId,userId));
       const tempHistory: ChatHistoryResponse = [
         ...res!,
         { role: 'human', context: '', model_name: model, order: 0, time_stamp: 0 },

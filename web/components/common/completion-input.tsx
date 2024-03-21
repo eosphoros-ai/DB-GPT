@@ -7,7 +7,6 @@ import DocList from '../chat/doc-list';
 import { IDocument } from '@/types/knowledge';
 import { ChatContext } from '@/app/chat-context';
 import { apiInterceptors, getDocumentList } from '@/client/api';
-
 type TextAreaProps = Omit<Parameters<typeof Input.TextArea>[0], 'value' | 'onPressEnter' | 'onChange' | 'onSubmit'>;
 
 interface Props {
@@ -17,7 +16,10 @@ interface Props {
 }
 
 function CompletionInput({ children, loading, onSubmit, handleFinish, ...props }: PropsWithChildren<Props & TextAreaProps>) {
-  const { dbParam, scene } = useContext(ChatContext);
+  const { dbParam, scene ,userId} = useContext(ChatContext);
+
+  console.log('CompletionInput',userId);
+
 
   const [userInput, setUserInput] = useState('');
   const showUpload = useMemo(() => scene === 'chat_knowledge', [scene]);

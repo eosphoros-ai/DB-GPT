@@ -44,6 +44,7 @@ class ConversationVo(BaseModel):
     user
     """
     user_name: str = None
+    user_id: str = None
     """ 
     the scene of chat 
     """

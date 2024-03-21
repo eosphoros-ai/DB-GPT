@@ -1,7 +1,8 @@
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { message } from 'antd';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo,useContext } from 'react';
 import i18n from '@/app/i18n';
+import { ChatContext } from '@/app/chat-context';
 
 type Props = {
   queryAgentURL?: string;
@@ -16,12 +17,14 @@ type ChatParams = {
   onDone?: () => void;
   onError?: (content: string, error?: Error) => void;
 };
-
 const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
   const ctrl = useMemo(() => new AbortController(), []);
-
+  const { userId } = useContext(ChatContext);
+  console.log(userId,'123')
   const chat = useCallback(
-    async ({ data, chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
+    async ({ data,  chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
+      console.log('use-chat',userId)
+
       if (!data?.user_input && !data?.doc_id) {
         message.warning(i18n.t('no_context_tip'));
         return;
@@ -30,13 +33,17 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
       const parmas = {
         ...data,
         conv_uid: chatId,
+        user_id:userId,
       };
-
+      console.log('parmas',parmas)
       if (!parmas.conv_uid) {
         message.error('conv_uid 不存在，请刷新后重试');
         return;
       }
-
+      // if (!parmas.user_id) {
+      //   message.error('user_id 不存在，请刷新后重试');
+      //   return;
+      // }
       try {
         await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}`, {
           method: 'POST',
@@ -79,7 +86,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
         onError?.('Sorry, We meet some error, please try agin later.', err as Error);
       }
     },
-    [queryAgentURL],
+    [queryAgentURL,userId],
   );
 
   useEffect(() => {

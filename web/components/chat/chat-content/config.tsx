@@ -228,7 +228,7 @@ const extraComponents: MarkdownComponent = {
     const SqlItem = {
       key: 'sql',
       label: 'SQL',
-      children: <CodePreview code={format(data?.sql, { language: 'postgresql' }) as string} language={'postgresql'} />,
+      children: <CodePreview code={format(data?.sql, { language: 'postgresql' }) as string} language={'sql'} />,
     };
     const DataItem = {
       key: 'data',

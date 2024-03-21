@@ -15,7 +15,7 @@ import { getInitMessage } from '@/utils';
 
 const ChatContainer = () => {
   const searchParams = useSearchParams();
-  const { scene, chatId, model, agent, setModel, history, setHistory } = useContext(ChatContext);
+  const { scene, chatId, model, agent, setModel, history, setHistory ,userId} = useContext(ChatContext);
   const chat = useChat({});
   const initMessage = (searchParams && searchParams.get('initMessage')) ?? '';
 
@@ -24,7 +24,7 @@ const ChatContainer = () => {
 
   const getHistory = async () => {
     setLoading(true);
-    const [, res] = await apiInterceptors(getChatHistory(chatId));
+    const [, res] = await apiInterceptors(getChatHistory(chatId,userId));
     setHistory(res ?? []);
     setLoading(false);
   };

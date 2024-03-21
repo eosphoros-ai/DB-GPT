@@ -21,7 +21,7 @@ drop table if exists   public.{table_name};
 CREATE TABLE public.{table_name}(
 设备名称 text NULL,     
 设备坐标 text NULL, 
-时间 date NULL, 
+时间 timestamp NULL, 
 条码 text NULL,
 检测结果 text NULL,
 ng信息 text NULL,     
@@ -80,14 +80,14 @@ columns_name_dict = {
 
 # print(sql)
 print((dbname + '-' + table_name).center(80, '='))
-# print(db.excuSql(sql))
+print(db.excuSql(sql))
 
 from datetime import datetime, timedelta
 
 # 获取现在的时间
 now = datetime.now()
 days = 1
-while days < 2:
+while days < 90:
     # 获取前一天的时间
     yesterday = now - timedelta(days=days)
     print(days, yesterday)
@@ -109,15 +109,16 @@ while days < 2:
     new_columns = [i.upper() for i in df.columns.tolist()]
     df.columns = new_columns
     print(df.shape)
-    df[str2float+str2int] = df[str2float+str2int].replace('',np.nan)
-    df[str2float+str2int] = df[str2float+str2int].apply(pd.to_numeric,errors='coerce')
-    df[str2float+str2int] = df[str2float+str2int].apply(lambda col:col.fillna(0))
-
+    # df['DATETIME'] = df['DATETIME'].astype('')
+    df[str2float + str2int] = df[str2float + str2int].replace('', np.nan)
+    df[str2float + str2int] = df[str2float + str2int].apply(pd.to_numeric, errors='coerce')
+    df[str2float + str2int] = df[str2float + str2int].apply(lambda col: col.fillna(0))
     df[str2float] = df[str2float].astype(float)
     df[str2int] = df[str2int].astype(int)
     df = df.rename(columns=columns_name_dict)
 
     need_col = list(columns_name_dict.values())
     df = df[need_col]
+    print(df.head())
 
     db.insertGP(df, 'public', table_name)

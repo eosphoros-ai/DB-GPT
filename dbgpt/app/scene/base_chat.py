@@ -40,10 +40,20 @@ def _build_conversation(
         if len(chat_mode.param_types()) > 0:
             param_type = chat_mode.param_types()[0]
         param_value = chat_param["select_param"]
+    print('chat_param["chat_session_id"]', chat_param["chat_session_id"])
+    print('chat_mode.value()', chat_mode.value())
+    print('chat_param.get("user_id")', chat_param.get("user_id"))
+    print('chat_param.get("sys_code")', chat_param.get("sys_code"))
+    print('model_name', model_name)
+    print('param_type', param_type)
+    print('param_value', param_value)
+    print('conv_serve.conv_storage', conv_serve.conv_storage)
+    print('conv_serve.message_storage', conv_serve.message_storage)
+
     return StorageConversation(
         chat_param["chat_session_id"],
         chat_mode=chat_mode.value(),
-        user_name=chat_param.get("user_name"),
+        user_name=chat_param.get("user_id"),
         sys_code=chat_param.get("sys_code"),
         model_name=model_name,
         param_type=param_type,
@@ -236,7 +246,7 @@ class BaseChat(ABC):
         )
         req_ctx = ModelRequestContext(
             stream=self.prompt_template.stream_out,
-            user_name=self._chat_param.get("user_name"),
+            user_name=self._chat_param.get("user_id"),
             sys_code=self._chat_param.get("sys_code"),
             chat_mode=self.chat_mode.value(),
             span_id=root_tracer.get_current_span_id(),
@@ -302,7 +312,10 @@ class BaseChat(ABC):
                 view_msg = self.stream_plugin_call(msg)
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
+
             self.current_message.add_ai_message(msg)
+            print('mes=g', msg)
+            print()
             view_msg = self.stream_call_reinforce_fn(view_msg)
             self.current_message.add_view_message(view_msg)
             span.end()
@@ -329,7 +342,17 @@ class BaseChat(ABC):
         try:
             with root_tracer.start_span("BaseChat.invoke_worker_manager.generate"):
                 model_output = await self.call_llm_operator(payload)
+                '''
+                model_output = ModelOutput(
+                text='{\n    "thoughts": "用户只是打了个招呼，并没有提出具体的问题或请求。因此，不需要执行任何SQL查询，只需礼貌地回应用户的问候。",\n    "sql": "",\n    "display_type": ""\n}',
+                error_code=0,
+                model_context=None,
+                finish_reason="success",
+                usage=None,
+                metrics=None,
+                )'''
 
+            print('model_output', model_output)
             ### output parse
             ai_response_text = (
                 self.prompt_template.output_parser.parse_model_nostream_resp(
@@ -474,7 +497,7 @@ class BaseChat(ABC):
     def current_ai_response(self) -> str:
         for message in self.current_message.messages[-1:]:
             if message.type == "view":
-                with open('message_content.txt','w') as f:
+                with open('message_content.txt', 'w') as f:
                     f.write(message.content)
                 return message.content
         return None

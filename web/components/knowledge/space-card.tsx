@@ -48,7 +48,7 @@ export default function SpaceCard(props: IProps) {
       }),
     );
     if (data?.conv_uid) {
-      router.push(`/chat?scene=chat_knowledge&id=${data?.conv_uid}&db_param=${space.name}`);
+      router.push(`/chat?scene=chat_knowledge&id=${data?.conv_uid}&db_param=${space.name}&userid=${data?.user_id}`);
     }
   };
 

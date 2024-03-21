@@ -8,7 +8,6 @@ import { Tag } from 'antd';
 import { renderModelIcon } from '../header/model-selector';
 import { ChatContext } from '@/app/chat-context';
 import markdownComponents from './config';
-
 interface Props {
   content: Omit<IChatDialogueMessageSchema, 'context'> & {
     context:
@@ -58,7 +57,9 @@ function formatMarkdownVal(val: string) {
 }
 
 function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithChildren<Props>) {
-  const { scene } = useContext(ChatContext);
+  const { scene ,userId} = useContext(ChatContext);
+
+  console.log('chatcontent',userId);
 
   const { context, model_name, role } = content;
   const isRobot = role === 'view';

@@ -260,7 +260,10 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
         Raises:
             StorageError: If the data already exists in the storage or data is None
         """
+        from pprint import pprint
         for d in data:
+            print('save data ')
+            pprint(d.__dict__)
             self.save(d)
 
     def save_or_update_list(self, data: List[T]) -> None:
@@ -319,6 +322,13 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
             resource_id (ID): The resource identifier of the data
         """
 
+    def logic_delete(self, resource_id: ID) -> None:
+        """Delete the data from the storage.
+
+        Args:
+            resource_id (ID): The resource identifier of the data
+        """
+
     def delete_list(self, resource_id: List[ID]) -> None:
         """Delete the data from the storage.
 
@@ -328,6 +338,15 @@ class StorageInterface(Generic[T, TDataRepresentation], ABC):
         for r in resource_id:
             self.delete(r)
 
+    def logic_delete_list(self, resource_id: List[ID]) -> None:
+        """Delete the data from the storage.
+
+        Args:
+            resource_id (ID): The resource identifier of the data
+        """
+        print('logic delete list')
+        for r in resource_id:
+            self.logic_delete(r)
     @abstractmethod
     def query(self, spec: QuerySpec, cls: Type[T]) -> List[T]:
         """Query data from the storage.
@@ -421,6 +440,7 @@ class InMemoryStorage(StorageInterface[T, T]):
         Args:
             data (T): The data to save
         """
+        print('inmamory storyage 123123-------')
         if not data:
             raise StorageError("Data cannot be None")
         if not data.serializer:
@@ -453,6 +473,11 @@ class InMemoryStorage(StorageInterface[T, T]):
 
     def delete(self, resource_id: ID) -> None:
         """Delete the data from the storage."""
+        if resource_id.str_identifier in self._data:
+            del self._data[resource_id.str_identifier]
+    def logic_delete(self, resource_id: ID) -> None:
+        """Delete the data from the storage."""
+        print('logic_deletelogic_deletelogic_deletelogic_delete',self._data)
         if resource_id.str_identifier in self._data:
             del self._data[resource_id.str_identifier]
 

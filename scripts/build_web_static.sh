@@ -20,8 +20,8 @@ else
   echo "Do not find .env"
 fi
 
-npm install
-npm run build
+#npm install
+#npm run build
 
 rm -rf ../dbgpt/app/static/*
 
