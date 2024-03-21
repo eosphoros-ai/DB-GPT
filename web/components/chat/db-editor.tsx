@@ -60,18 +60,20 @@ function DbEditorContent({ editorValue, chartData, tableData, handleChange }: IP
 
   return (
     <div className="flex flex-1 h-full gap-4">
-      <div className="h-full flex-1 flex overflow-hidden bg-white rounded">
+      <div className="flex-1 flex overflow-hidden bg-white rounded">
         <MonacoEditor value={editorValue?.sql || ''} language="mysql" onChange={handleChange} thoughts={editorValue?.thoughts || ''} />
       </div>
       <div className="flex-1 h-full overflow-y-auto bg-white rounded">
         {tableData?.values?.length > 0 ? (
           <Table
             rowKey={tableData?.columns?.[0]}
-            columns={(tableData?.columns as any[]).map<ColumnType<any>>((item) => ({
-              key: item,
-              dataIndex: item,
-              label: item,
-            }))}
+            columns={(tableData?.columns as any[]).map<ColumnType<any>>((item) => {
+              return {
+                dataIndex: item,
+                title: item,
+                key: item,
+              };
+            })}
             dataSource={tableData?.values}
           />
         ) : (
@@ -95,7 +97,7 @@ function DbEditor() {
   const [newEditorValue, setNewEditorValue] = React.useState<EditorValueProps>();
   const [tableData, setTableData] = React.useState<{ columns: string[]; values: any }>();
   const [currentTabIndex, setCurrentTabIndex] = React.useState<string>();
-  const [isMenuExpand, setIsMenuExpand] = useState<boolean>(true);
+  const [isMenuExpand, setIsMenuExpand] = useState<boolean>(false);
 
   const searchParams = useSearchParams();
   const id = searchParams?.get('id');
@@ -419,29 +421,27 @@ function DbEditor() {
   return (
     <div className="flex flex-col w-full h-full">
       <Header />
-      <div className="relative flex flex-1 overflow-auto">
+      <div className="relative flex flex-1">
         <div className={`w-80 ml-4 ${isMenuExpand && 'hidden'}`}>
-          <div className="flex items-center py-3">
-            <Select
-              size="small"
-              className="w-60"
-              value={currentRound}
-              options={rounds?.data?.map((item: RoundProps) => {
-                return {
-                  label: item.round_name,
-                  value: item.round,
-                };
-              })}
-              onChange={(e) => {
-                setCurrentRound(e);
-              }}
-            />
-          </div>
+          <Select
+            size="middle"
+            className="w-80 py-3"
+            value={currentRound}
+            options={rounds?.data?.map((item: RoundProps) => {
+              return {
+                label: item.round_name,
+                value: item.round,
+              };
+            })}
+            onChange={(e) => {
+              setCurrentRound(e);
+            }}
+          />
           <Search style={{ marginBottom: 8 }} placeholder="Search" onChange={onChange} />
 
           {treeData && treeData.length > 0 && (
             <Tree
-              className="h-[795px] overflow-y-auto flex-1"
+              className="h-[782px] overflow-y-auto flex-1"
               onExpand={(newExpandedKeys: React.Key[]) => {
                 setExpandedKeys(newExpandedKeys);
                 setAutoExpandParent(false);
