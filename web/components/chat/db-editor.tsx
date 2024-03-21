@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useRequest } from 'ahooks';
 import { Button, Select, Table, Tooltip } from 'antd';
 import { Input, Tree, Empty, Tabs } from 'antd';
@@ -9,8 +9,11 @@ import { useSearchParams } from 'next/navigation';
 import { OnChange } from '@monaco-editor/react';
 import Header from './header';
 import Chart from '../chart';
-import { CaretRightOutlined, SaveFilled } from '@ant-design/icons';
+import { CaretRightOutlined, MenuFoldOutlined, MenuUnfoldOutlined, SaveFilled } from '@ant-design/icons';
 import { ColumnType } from 'antd/es/table';
+import Database from '../icons/database';
+import TableIcon from '../icons/table';
+import Field from '../icons/field';
 
 const { Search } = Input;
 
@@ -92,6 +95,7 @@ function DbEditor() {
   const [newEditorValue, setNewEditorValue] = React.useState<EditorValueProps>();
   const [tableData, setTableData] = React.useState<{ columns: string[]; values: any }>();
   const [currentTabIndex, setCurrentTabIndex] = React.useState<string>();
+  const [isMenuExpand, setIsMenuExpand] = useState<boolean>(true);
 
   const searchParams = useSearchParams();
   const id = searchParams?.get('id');
@@ -274,24 +278,37 @@ function DbEditor() {
         const index = strTitle.indexOf(searchValue);
         const beforeStr = strTitle.substring(0, index);
         const afterStr = strTitle.slice(index + searchValue.length);
+        const renderIcon = (type: string) => {
+          switch (type) {
+            case 'db':
+              return <Database />;
+            case 'table':
+              return <TableIcon />;
+            default:
+              return <Field />;
+          }
+        };
         const showTitle =
           index > -1 ? (
             <Tooltip title={(item?.comment || item?.title) + (item?.can_null === 'YES' ? '(can null)' : `(can't null)`)}>
-              <span>
+              <div className="flex items-center">
+                {renderIcon(item.type)}&nbsp;&nbsp;&nbsp;
                 {beforeStr}
                 <span className="text-[#1677ff]">{searchValue}</span>
-                {afterStr}
-                {item?.type && <div>{`[${item?.type}]`}</div>}
-              </span>
+                {afterStr}&nbsp;
+                {item?.type && <div className="text-gray-400">{item?.type}</div>}
+              </div>
             </Tooltip>
           ) : (
             <Tooltip title={(item?.comment || item?.title) + (item?.can_null === 'YES' ? '(can null)' : `(can't null)`)}>
-              <span>
-                {strTitle}
-                {item?.type && <div>{`[${item?.type}]`}</div>}
-              </span>
+              <div className="flex items-center">
+                {renderIcon(item.type)}&nbsp;&nbsp;&nbsp;
+                {strTitle}&nbsp;
+                {item?.type && <div className="text-gray-400">{item?.type}</div>}
+              </div>
             </Tooltip>
           );
+
         if (item.children) {
           const itemKey = parentKey ? String(parentKey) + '_' + item.key : item.key;
           return { title: strTitle, showTitle, key: itemKey, children: loop(item.children, itemKey) };
@@ -318,6 +335,7 @@ function DbEditor() {
       for (let i = 0; i < data.length; i++) {
         const node = data[i];
         const { key, title } = node;
+
         res.push({ key, title: title as string, parentKey });
         if (node.children) {
           generateList(node.children, key);
@@ -402,10 +420,11 @@ function DbEditor() {
     <div className="flex flex-col w-full h-full">
       <Header />
       <div className="relative flex flex-1 overflow-auto">
-        <div className="w-80 h-full overflow-y-auto">
+        <div className={`w-80 ml-4 ${isMenuExpand && 'hidden'}`}>
           <div className="flex items-center py-3">
             <Select
               size="small"
+              className="w-60"
               value={currentRound}
               options={rounds?.data?.map((item: RoundProps) => {
                 return {
@@ -419,8 +438,10 @@ function DbEditor() {
             />
           </div>
           <Search style={{ marginBottom: 8 }} placeholder="Search" onChange={onChange} />
+
           {treeData && treeData.length > 0 && (
             <Tree
+              className="h-[795px] overflow-y-auto flex-1"
               onExpand={(newExpandedKeys: React.Key[]) => {
                 setExpandedKeys(newExpandedKeys);
                 setAutoExpandParent(false);
@@ -434,9 +455,24 @@ function DbEditor() {
             />
           )}
         </div>
+        {!isMenuExpand ? (
+          <MenuFoldOutlined
+            onClick={() => {
+              setIsMenuExpand(!isMenuExpand);
+            }}
+            className="w-4 cursor-pointer"
+          />
+        ) : (
+          <MenuUnfoldOutlined
+            onClick={() => {
+              setIsMenuExpand(!isMenuExpand);
+            }}
+            className="w-4 cursor-pointer"
+          />
+        )}
+        {/* operations */}
         <div className="flex flex-col flex-1 max-w-full overflow-hidden p-4">
-          {/* operations */}
-          <div className="mb-4">
+          <div className="mb-4 bg-white pl-4 pt-2 pb-2">
             <Button
               className="mr-2"
               type="primary"
@@ -453,6 +489,7 @@ function DbEditor() {
               Run
             </Button>
             <Button
+              type="primary"
               loading={submitLoading || submitChartLoading}
               icon={<SaveFilled />}
               onClick={async () => {
