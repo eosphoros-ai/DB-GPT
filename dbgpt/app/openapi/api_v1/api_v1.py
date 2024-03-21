@@ -439,6 +439,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
         _type_: streaming responses
     """
     span = root_tracer.start_span("stream_generator")
+    msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
 
     previous_response = ""
     async for chunk in chat.stream_call():
