@@ -1,8 +1,9 @@
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api.js';
 import Editor, { OnChange, loader } from '@monaco-editor/react';
 import classNames from 'classnames';
-import { useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { format } from 'sql-formatter';
+import { ChatContext } from '@/app/chat-context';
 
 loader.config({ monaco });
 
@@ -16,6 +17,8 @@ interface MonacoEditorProps {
 
 export default function MonacoEditor({ className, value, language = 'mysql', onChange, thoughts }: MonacoEditorProps) {
   // merge value and thoughts
+  const { mode } = useContext(ChatContext);
+
   const editorValue = useMemo(() => {
     if (language !== 'mysql') {
       return value;
@@ -32,11 +35,8 @@ export default function MonacoEditor({ className, value, language = 'mysql', onC
       value={editorValue}
       language={language}
       onChange={onChange}
-      theme="vs-dark"
+      theme={mode === 'dark' ? 'vs-dark' : 'light'}
       options={{
-        minimap: {
-          enabled: false,
-        },
         wordWrap: 'on',
       }}
     />
