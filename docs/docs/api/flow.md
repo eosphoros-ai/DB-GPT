@@ -49,11 +49,12 @@ FLOW_ID="{YOUR_FLOW_ID}"
 
 client = Client(api_key=DBGPT_API_KEY)
 async for data in client.chat_stream(
-        messages="Introduce AWEL", 
-        model="chatgpt_proxyllm", 
-        chat_mode="chat_flow", 
-        chat_param=FLOW_ID):
-            print(data)
+    messages="Introduce AWEL", 
+    model="chatgpt_proxyllm", 
+    chat_mode="chat_flow", 
+    chat_param=FLOW_ID
+):
+    print(data)
 ```
  </TabItem>
 </Tabs>

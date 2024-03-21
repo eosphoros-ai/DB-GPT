@@ -1,9 +1,10 @@
 """App Client API."""
 from typing import List
 
-from dbgpt.client import Client, ClientException
-from dbgpt.client.schemas import AppModel
-from dbgpt.serve.core import Result
+from dbgpt.core.schema.api import Result
+
+from .client import Client, ClientException
+from .schema import AppModel
 
 
 async def get_app(client: Client, app_id: str) -> AppModel:

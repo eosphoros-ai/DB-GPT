@@ -2,9 +2,10 @@
 import json
 from typing import List
 
-from dbgpt.client import Client, ClientException
-from dbgpt.client.schemas import DocumentModel, SpaceModel, SyncModel
-from dbgpt.serve.core import Result
+from dbgpt.core.schema.api import Result
+
+from .client import Client, ClientException
+from .schema import DocumentModel, SpaceModel, SyncModel
 
 
 async def create_space(client: Client, space_model: SpaceModel) -> SpaceModel:

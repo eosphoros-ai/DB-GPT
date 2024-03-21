@@ -1,9 +1,10 @@
 """this module contains the flow client functions."""
 from typing import List
 
-from dbgpt.client import Client, ClientException
 from dbgpt.core.awel.flow.flow_factory import FlowPanel
-from dbgpt.serve.core import Result
+from dbgpt.core.schema.api import Result
+
+from .client import Client, ClientException
 
 
 async def create_flow(client: Client, flow: FlowPanel) -> FlowPanel:

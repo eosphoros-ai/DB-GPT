@@ -4,8 +4,8 @@ from enum import Enum
 from typing import List, Optional, Union
 
 from fastapi import File, UploadFile
-from pydantic import BaseModel, Field
 
+from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.agent.resource.resource_api import AgentResource
 from dbgpt.rag.chunk_manager import ChunkParameters
 

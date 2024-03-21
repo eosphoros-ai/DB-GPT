@@ -45,6 +45,7 @@ import TabItem from '@theme/TabItem';
 from dbgpt.client import Client
 
 DBGPT_API_KEY = "dbgpt"
+client = Client(api_key=DBGPT_API_KEY)
 
 async for data in client.chat_stream(
     model="chatgpt_proxyllm",

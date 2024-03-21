@@ -13,11 +13,8 @@ from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.openapi.api_view_model import (
-    ChatCompletionResponseStreamChoice,
-    ChatCompletionStreamResponse,
     ChatSceneVo,
     ConversationVo,
-    DeltaMessage,
     MessageVo,
     Result,
 )
@@ -25,6 +22,11 @@ from dbgpt.app.scene import BaseChat, ChatFactory, ChatScene
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 from dbgpt.core.awel import CommonLLMHttpRequestBody, CommonLLMHTTPRequestContext
+from dbgpt.core.schema.api import (
+    ChatCompletionResponseStreamChoice,
+    ChatCompletionStreamResponse,
+    DeltaMessage,
+)
 from dbgpt.datasource.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt.model.base import FlatSupportedModel
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory

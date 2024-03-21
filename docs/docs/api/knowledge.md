@@ -49,11 +49,12 @@ SPACE_NAME="{YOUR_SPACE_NAME}"
 client = Client(api_key=DBGPT_API_KEY)
 
 async for data in client.chat_stream(
-        messages="Introduce AWEL", 
-        model="chatgpt_proxyllm", 
-        chat_mode="chat_knowledge", 
-        chat_param=SPACE_NAME):
-            print(data)
+    messages="Introduce AWEL", 
+    model="chatgpt_proxyllm", 
+    chat_mode="chat_knowledge", 
+    chat_param=SPACE_NAME
+):
+    print(data)
 ```
  </TabItem>
 </Tabs>
@@ -343,21 +344,20 @@ POST /api/v2/serve/knowledge/spaces
 
 <TabItem value="python_knowledge">
 
-
 ```python
 from dbgpt.client import Client
 from dbgpt.client.knowledge import create_space
-from dbgpt.client.schemas import SpaceModel
+from dbgpt.client.schema import SpaceModel
 
 DBGPT_API_KEY = "dbgpt"
 
 client = Client(api_key=DBGPT_API_KEY)
-res = await create_space(client,SpaceModel(
-  name="test_space", 
-  vector_type="Chroma", 
-  desc="for client space", 
-  owner="dbgpt"))
-
+res = await create_space(client, SpaceModel(
+    name="test_space",
+    vector_type="Chroma",
+    desc="for client space",
+    owner="dbgpt"
+))
 ```
 
  </TabItem>
@@ -420,20 +420,20 @@ PUT /api/v2/serve/knowledge/spaces
 
 <TabItem value="python_update_knowledge">
 
-
 ```python
 from dbgpt.client import Client
 from dbgpt.client.knowledge import update_space
-from dbgpt.client.schemas import SpaceModel
+from dbgpt.client.schema import SpaceModel
 
 DBGPT_API_KEY = "dbgpt"
 
 client = Client(api_key=DBGPT_API_KEY)
 res = await update_space(client, SpaceModel(
-  name="test_space", 
-  vector_type="Chroma", 
-  desc="for client space update", 
-  owner="dbgpt"))
+    name="test_space",
+    vector_type="Chroma",
+    desc="for client space update",
+    owner="dbgpt"
+))
 
 ```
 

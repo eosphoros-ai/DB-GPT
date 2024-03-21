@@ -5,10 +5,10 @@ from typing import Any, AsyncGenerator, List, Optional, Union
 from urllib.parse import urlparse
 
 import httpx
-from fastchat.protocol.api_protocol import ChatCompletionResponse
 
-from dbgpt.app.openapi.api_view_model import ChatCompletionStreamResponse
-from dbgpt.client.schemas import ChatCompletionRequestBody
+from dbgpt.core.schema.api import ChatCompletionResponse, ChatCompletionStreamResponse
+
+from .schema import ChatCompletionRequestBody
 
 CLIENT_API_PATH = "/api"
 CLIENT_SERVE_PATH = "/serve"
@@ -256,14 +256,14 @@ class Client:
                             )
                             yield chat_completion_response
                     except Exception as e:
-                        yield f"data:[SERVER_ERROR]{str(e)}\n\n"
+                        raise e
 
             else:
                 try:
                     error = await response.aread()
                     yield json.loads(error)
                 except Exception as e:
-                    yield f"data:[SERVER_ERROR]{str(e)}\n\n"
+                    raise e
 
     async def get(self, path: str, *args):
         """Get method.

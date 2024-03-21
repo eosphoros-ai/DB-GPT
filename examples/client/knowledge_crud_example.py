@@ -66,7 +66,7 @@ import asyncio
 
 from dbgpt.client import Client
 from dbgpt.client.knowledge import create_space
-from dbgpt.client.schemas import SpaceModel
+from dbgpt.client.schema import SpaceModel
 
 
 async def main():

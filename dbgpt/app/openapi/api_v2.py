@@ -6,15 +6,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from fastchat.protocol.api_protocol import (
-    ChatCompletionResponse,
-    ChatCompletionResponseChoice,
-    ChatCompletionResponseStreamChoice,
-    ChatCompletionStreamResponse,
-    ChatMessage,
-    DeltaMessage,
-    UsageInfo,
-)
 from starlette.responses import StreamingResponse
 
 from dbgpt.app.openapi.api_v1.api_v1 import (
@@ -26,9 +17,18 @@ from dbgpt.app.openapi.api_v1.api_v1 import (
     stream_generator,
 )
 from dbgpt.app.scene import BaseChat, ChatScene
-from dbgpt.client.schemas import ChatCompletionRequestBody, ChatMode
+from dbgpt.client.schema import ChatCompletionRequestBody, ChatMode
 from dbgpt.component import logger
 from dbgpt.core.awel import CommonLLMHttpRequestBody, CommonLLMHTTPRequestContext
+from dbgpt.core.schema.api import (
+    ChatCompletionResponse,
+    ChatCompletionResponseChoice,
+    ChatCompletionResponseStreamChoice,
+    ChatCompletionStreamResponse,
+    ChatMessage,
+    DeltaMessage,
+    UsageInfo,
+)
 from dbgpt.model.cluster.apiserver.api import APISettings
 from dbgpt.serve.agent.agents.controller import multi_agents
 from dbgpt.serve.flow.api.endpoints import get_service
