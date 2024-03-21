@@ -42,7 +42,7 @@ import TabItem from '@theme/TabItem';
 <TabItem value="python">
 
 ```python
-from dbgpt.client.client import Client
+from dbgpt.client import Client
 
 DBGPT_API_KEY = "dbgpt"
 
@@ -104,7 +104,7 @@ data: [DONE]
 <TabItem value="python">
 
 ```python
-from dbgpt.client.client import Client
+from dbgpt.client import Client
 
 DBGPT_API_KEY = "dbgpt"
 client = Client(api_key=DBGPT_API_KEY)

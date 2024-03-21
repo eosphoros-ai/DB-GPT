@@ -1,13 +1,8 @@
-import asyncio
+"""Client: Simple Chat example.
 
-from dbgpt.client.client import Client
+This example demonstrates how to use the dbgpt client to chat with the chatgpt model.
 
-"""
-Client: Simple Chat example
-
-    This example demonstrates how to use the dbgpt client to chat with the chatgpt model.
-    
-    Example:
+Example:
     .. code-block:: python
 
         DBGPT_API_KEY = "dbgpt"
@@ -52,6 +47,10 @@ Client: Simple Chat example
         ):
             print(data.dict())
 """
+
+import asyncio
+
+from dbgpt.client import Client
 
 
 async def main():

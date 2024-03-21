@@ -41,7 +41,7 @@ curl -X POST "http://localhost:5000/api/v2/chat/completions" \
 <TabItem value="python">
 
 ```python
-from dbgpt.client.client import Client
+from dbgpt.client import Client
 
 DBGPT_API_KEY = "dbgpt"
 SPACE_NAME="{YOUR_SPACE_NAME}"
@@ -345,7 +345,7 @@ POST /api/v2/serve/knowledge/spaces
 
 
 ```python
-from dbgpt.client.client import Client
+from dbgpt.client import Client
 from dbgpt.client.knowledge import create_space
 from dbgpt.client.schemas import SpaceModel
 
@@ -422,7 +422,7 @@ PUT /api/v2/serve/knowledge/spaces
 
 
 ```python
-from dbgpt.client.client import Client
+from dbgpt.client import Client
 from dbgpt.client.knowledge import update_space
 from dbgpt.client.schemas import SpaceModel
 
@@ -504,7 +504,7 @@ DELETE /api/v2/serve/knowledge/spaces
 
 
 ```python
-from dbgpt.client.client import Client
+from dbgpt.client import Client
 from dbgpt.client.knowledge import delete_space
 
 DBGPT_API_KEY = "dbgpt"
@@ -556,7 +556,7 @@ curl -X GET "http://localhost:5000/api/v2/serve/knowledge/spaces/$SPACE_ID" -H "
 
 
 ```python
-from dbgpt.client.client import Client
+from dbgpt.client import Client
 from dbgpt.client.knowledge import get_space
 
 DBGPT_API_KEY = "dbgpt"
@@ -608,7 +608,7 @@ curl -X GET 'http://localhost:5000/api/v2/serve/knowledge/spaces' -H "Authorizat
 
 
 ```python
-from dbgpt.client.client import Client
+from dbgpt.client import Client
 from dbgpt.client.knowledge import list_space
 
 DBGPT_API_KEY = "dbgpt"

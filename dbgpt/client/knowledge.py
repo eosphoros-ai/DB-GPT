@@ -2,7 +2,7 @@
 import json
 from typing import List
 
-from dbgpt.client.client import Client, ClientException
+from dbgpt.client import Client, ClientException
 from dbgpt.client.schemas import DocumentModel, SpaceModel, SyncModel
 from dbgpt.serve.core import Result
 

@@ -1,7 +1,7 @@
 """App Client API."""
 from typing import List
 
-from dbgpt.client.client import Client, ClientException
+from dbgpt.client import Client, ClientException
 from dbgpt.client.schemas import AppModel
 from dbgpt.serve.core import Result
 

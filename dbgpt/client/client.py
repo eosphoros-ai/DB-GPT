@@ -1,5 +1,6 @@
 """This module contains the client for the DB-GPT API."""
 import json
+import os
 from typing import Any, AsyncGenerator, List, Optional, Union
 from urllib.parse import urlparse
 
@@ -50,7 +51,7 @@ class Client:
 
     def __init__(
         self,
-        api_base: str = "http://localhost:5000",
+        api_base: Optional[str] = None,
         api_key: Optional[str] = None,
         version: str = "v2",
         timeout: Optional[httpx._types.TimeoutTypes] = 120,
@@ -59,7 +60,7 @@ class Client:
 
         Args:
             api_base: Optional[str], a full URL for the DB-GPT API.
-                Defaults to the `http://localhost:5000`.
+                Defaults to the `http://localhost:5000/api/v2`.
             api_key: Optional[str], The dbgpt api key to use for authentication.
                 Defaults to None.
             timeout: Optional[httpx._types.TimeoutTypes]: The timeout to use.
@@ -73,20 +74,25 @@ class Client:
         --------
         .. code-block:: python
 
-            from dbgpt.client.client import Client
+            from dbgpt.client import Client
 
-            DBGPT_API_BASE = "http://localhost:5000"
+            DBGPT_API_BASE = "http://localhost:5000/api/v2"
             DBGPT_API_KEY = "dbgpt"
             client = Client(api_base=DBGPT_API_BASE, api_key=DBGPT_API_KEY)
             client.chat(model="chatgpt_proxyllm", messages="Hello?")
         """
+        if not api_base:
+            api_base = os.getenv(
+                "DBGPT_API_BASE", f"http://localhost:5000/{CLIENT_API_PATH}/{version}"
+            )
+        if not api_key:
+            api_key = os.getenv("DBGPT_API_KEY")
         if api_base and is_valid_url(api_base):
-            self._api_url = api_base.rstrip("/")
+            self._api_url = api_base
         else:
             raise ValueError(f"api url {api_base} does not exist or is not accessible.")
         self._api_key = api_key
         self._version = version
-        self._api_url = api_base + CLIENT_API_PATH + "/" + version
         self._timeout = timeout
         headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
         self._http_client = httpx.AsyncClient(
@@ -135,9 +141,9 @@ class Client:
         --------
         .. code-block:: python
 
-            from dbgpt.client.client import Client
+            from dbgpt.client import Client
 
-            DBGPT_API_BASE = "http://localhost:5000"
+            DBGPT_API_BASE = "http://localhost:5000/api/v2"
             DBGPT_API_KEY = "dbgpt"
             client = Client(api_base=DBGPT_API_BASE, api_key=DBGPT_API_KEY)
             res = await client.chat(model="chatgpt_proxyllm", messages="Hello?")
@@ -210,9 +216,9 @@ class Client:
         --------
         .. code-block:: python
 
-            from dbgpt.client.client import Client
+            from dbgpt.client import Client
 
-            DBGPT_API_BASE = "http://localhost:5000"
+            DBGPT_API_BASE = "http://localhost:5000/api/v2"
             DBGPT_API_KEY = "dbgpt"
             client = Client(api_base=DBGPT_API_BASE, api_key=DBGPT_API_KEY)
             res = await client.chat_stream(model="chatgpt_proxyllm", messages="Hello?")
@@ -257,7 +263,6 @@ class Client:
                     error = await response.aread()
                     yield json.loads(error)
                 except Exception as e:
-
                     yield f"data:[SERVER_ERROR]{str(e)}\n\n"
 
     async def get(self, path: str, *args):
@@ -274,7 +279,6 @@ class Client:
             )
             return response
         finally:
-
             await self._http_client.aclose()
 
     async def post(self, path: str, args):

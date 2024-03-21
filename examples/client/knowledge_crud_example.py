@@ -1,13 +1,9 @@
-import asyncio
+"""Client: Simple Knowledge CRUD example.
 
-from dbgpt.client.client import Client
-from dbgpt.client.knowledge import create_space
-from dbgpt.client.schemas import SpaceModel
+This example demonstrates how to use the dbgpt client to create, get, update, and
+delete knowledge spaces and documents.
 
-"""Client: Simple Knowledge CRUD example
-
-    This example demonstrates how to use the dbgpt client to create, get, update, and delete knowledge spaces and documents.
-    Example:
+Example:
     .. code-block:: python
 
         DBGPT_API_KEY = "dbgpt"
@@ -66,6 +62,11 @@ from dbgpt.client.schemas import SpaceModel
         # 10. Delete a document
         res = await delete_document(client, "150")
 """
+import asyncio
+
+from dbgpt.client import Client
+from dbgpt.client.knowledge import create_space
+from dbgpt.client.schemas import SpaceModel
 
 
 async def main():
