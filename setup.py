@@ -559,16 +559,17 @@ def all_datasource_requires():
     """
     pip install "dbgpt[datasource]"
     """
-
     setup_spec.extras["datasource"] = [
         # "sqlparse==0.4.4",
-        "pymssql",
         "pymysql",
-        "pyspark",
         "psycopg2",
         # for doris
         # mysqlclient 2.2.x have pkg-config issue on 3.10+
         "mysqlclient==2.1.0",
+    ]
+    setup_spec.extras["datasource_all"] = setup_spec.extras["datasource"] + [
+        "pyspark",
+        "pymssql",
         "pydoris>=1.0.2,<2.0.0",
         "clickhouse-connect",
         "pyhive",
