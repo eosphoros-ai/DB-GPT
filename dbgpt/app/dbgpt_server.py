@@ -222,6 +222,8 @@ def run_uvicorn(param: WebServerParameters):
         host=param.host,
         port=param.port,
         log_level=logging_str_to_uvicorn_level(param.log_level),
+        # ssl_keyfile="/datas/liab/DB-GPT/key.pem",
+        # ssl_certfile="/datas/liab/DB-GPT/cert.pem",
     )
 
 
