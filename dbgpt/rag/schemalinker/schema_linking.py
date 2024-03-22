@@ -42,7 +42,7 @@ class SchemaLinking(BaseSchemaLinker):
 
     def __init__(
         self,
-        connection: RDBMSConnector,
+        connector: RDBMSConnector,
         model_name: str,
         llm: LLMClient,
         top_k: int = 5,
@@ -57,14 +57,14 @@ class SchemaLinking(BaseSchemaLinker):
         """
         super().__init__(**kwargs)
         self._top_k = top_k
-        self._connection = connection
+        self._connector = connector
         self._llm = llm
         self._model_name = model_name
         self._vector_store_connector = vector_store_connector
 
     def _schema_linking(self, query: str) -> List:
         """Get all db schema info."""
-        table_summaries = _parse_db_summary(self._connection)
+        table_summaries = _parse_db_summary(self._connector)
         chunks = [Chunk(content=table_summary) for table_summary in table_summaries]
         chunks_content = [chunk.content for chunk in chunks]
         return chunks_content

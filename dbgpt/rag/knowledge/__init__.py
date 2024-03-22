@@ -2,6 +2,7 @@
 
 from .base import ChunkStrategy, Knowledge, KnowledgeType  # noqa: F401
 from .csv import CSVKnowledge  # noqa: F401
+from .datasource import DatasourceKnowledge  # noqa: F401
 from .docx import DocxKnowledge  # noqa: F401
 from .factory import KnowledgeFactory  # noqa: F401
 from .html import HTMLKnowledge  # noqa: F401
@@ -18,6 +19,7 @@ __ALL__ = [
     "KnowledgeType",
     "ChunkStrategy",
     "CSVKnowledge",
+    "DatasourceKnowledge",
     "DocxKnowledge",
     "HTMLKnowledge",
     "MarkdownKnowledge",

@@ -25,6 +25,7 @@ class DocumentType(Enum):
     DOCX = "docx"
     TXT = "txt"
     HTML = "html"
+    DATASOURCE = "datasource"
 
 
 class KnowledgeType(Enum):

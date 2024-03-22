@@ -27,6 +27,8 @@ from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import Chunk
 from dbgpt.model import DefaultLLMClient
+from dbgpt.rag.assembler.embedding import EmbeddingAssembler
+from dbgpt.rag.assembler.summary import SummaryAssembler
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import ChunkStrategy, KnowledgeType
@@ -36,8 +38,6 @@ from dbgpt.rag.text_splitter.text_splitter import (
     SpacyTextSplitter,
 )
 from dbgpt.serve.rag.api.schemas import KnowledgeSyncRequest
-from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
-from dbgpt.serve.rag.assembler.summary import SummaryAssembler
 from dbgpt.serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
 from dbgpt.serve.rag.service.service import Service, SyncStatus
 from dbgpt.storage.vector_store.base import VectorStoreConfig
@@ -347,6 +347,7 @@ class KnowledgeService:
         assembler = EmbeddingAssembler.load_from_knowledge(
             knowledge=knowledge,
             chunk_parameters=chunk_parameters,
+            embeddings=embedding_fn,
             vector_store_connector=vector_store_connector,
         )
         chunk_docs = assembler.get_chunks()

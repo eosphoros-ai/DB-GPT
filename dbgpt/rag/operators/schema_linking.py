@@ -17,7 +17,7 @@ class SchemaLinkingOperator(MapOperator[Any, Any]):
 
     def __init__(
         self,
-        connection: RDBMSConnector,
+        connector: RDBMSConnector,
         model_name: str,
         llm: LLMClient,
         top_k: int = 5,
@@ -34,7 +34,7 @@ class SchemaLinkingOperator(MapOperator[Any, Any]):
 
         self._schema_linking = SchemaLinking(
             top_k=top_k,
-            connection=connection,
+            connector=connector,
             llm=llm,
             model_name=model_name,
             vector_store_connector=vector_store_connector,

@@ -1,3 +1,4 @@
+"""Base Assembler Operator."""
 from abc import abstractmethod
 
 from dbgpt.core.awel import MapOperator
@@ -20,4 +21,4 @@ class AssemblerOperator(MapOperator[IN, OUT]):
 
     @abstractmethod
     def assemble(self, input_value: IN) -> OUT:
-        """assemble knowledge for input value."""
+        """Assemble knowledge for input value."""

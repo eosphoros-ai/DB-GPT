@@ -1,12 +1,12 @@
 """The Rerank Operator."""
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from dbgpt.core import Chunk
 from dbgpt.core.awel import MapOperator
 from dbgpt.rag.retriever.rerank import RANK_FUNC, DefaultRanker
 
 
-class RerankOperator(MapOperator[Any, Any]):
+class RerankOperator(MapOperator[List[Chunk], List[Chunk]]):
     """The Rewrite Operator."""
 
     def __init__(
