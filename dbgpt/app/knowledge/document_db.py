@@ -1,9 +1,11 @@
 from datetime import datetime
-from typing import List
+from typing import Any, Dict, List, Union
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, func
 
 from dbgpt._private.config import Config
+from dbgpt.serve.conversation.api.schemas import ServeRequest
+from dbgpt.serve.rag.api.schemas import DocumentServeRequest, DocumentServeResponse
 from dbgpt.storage.metadata import BaseDao, Model
 
 CFG = Config()
@@ -218,3 +220,70 @@ class KnowledgeDocumentDao(BaseDao):
         knowledge_documents.delete()
         session.commit()
         session.close()
+
+    def from_request(
+        self, request: Union[ServeRequest, Dict[str, Any]]
+    ) -> KnowledgeDocumentEntity:
+        """Convert the request to an entity
+
+        Args:
+            request (Union[ServeRequest, Dict[str, Any]]): The request
+
+        Returns:
+            T: The entity
+        """
+        request_dict = (
+            request.dict() if isinstance(request, DocumentServeRequest) else request
+        )
+        entity = KnowledgeDocumentEntity(**request_dict)
+        return entity
+
+    def to_request(self, entity: KnowledgeDocumentEntity) -> DocumentServeResponse:
+        """Convert the entity to a request
+
+        Args:
+            entity (T): The entity
+
+        Returns:
+            REQ: The request
+        """
+        return DocumentServeResponse(
+            id=entity.id,
+            doc_name=entity.doc_name,
+            doc_type=entity.doc_type,
+            space=entity.space,
+            chunk_size=entity.chunk_size,
+            status=entity.status,
+            last_sync=entity.last_sync,
+            content=entity.content,
+            result=entity.result,
+            vector_ids=entity.vector_ids,
+            summary=entity.summary,
+            gmt_created=entity.gmt_created,
+            gmt_modified=entity.gmt_modified,
+        )
+
+    def to_response(self, entity: KnowledgeDocumentEntity) -> DocumentServeResponse:
+        """Convert the entity to a response
+
+        Args:
+            entity (T): The entity
+
+        Returns:
+            REQ: The request
+        """
+        return DocumentServeResponse(
+            id=entity.id,
+            doc_name=entity.doc_name,
+            doc_type=entity.doc_type,
+            space=entity.space,
+            chunk_size=entity.chunk_size,
+            status=entity.status,
+            last_sync=entity.last_sync,
+            content=entity.content,
+            result=entity.result,
+            vector_ids=entity.vector_ids,
+            summary=entity.summary,
+            gmt_created=entity.gmt_created,
+            gmt_modified=entity.gmt_modified,
+        )

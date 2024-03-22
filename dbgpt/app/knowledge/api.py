@@ -4,7 +4,7 @@ import shutil
 import tempfile
 from typing import List
 
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import (
@@ -16,7 +16,6 @@ from dbgpt.app.knowledge.request.request import (
     KnowledgeDocumentRequest,
     KnowledgeQueryRequest,
     KnowledgeSpaceRequest,
-    KnowledgeSyncRequest,
     SpaceArgumentRequest,
 )
 from dbgpt.app.knowledge.request.response import KnowledgeQueryResponse
@@ -31,6 +30,8 @@ from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import ChunkStrategy
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 from dbgpt.rag.retriever.embedding import EmbeddingRetriever
+from dbgpt.serve.rag.api.schemas import KnowledgeSyncRequest
+from dbgpt.serve.rag.service.service import Service
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.tracer import SpanType, root_tracer
@@ -42,6 +43,11 @@ router = APIRouter()
 
 
 knowledge_space_service = KnowledgeService()
+
+
+def get_rag_service() -> Service:
+    """Get Rag Service."""
+    return Service.get_instance(CFG.SYSTEM_APP)
 
 
 @router.post("/knowledge/space/add")
@@ -226,12 +232,20 @@ def document_sync(space_name: str, request: DocumentSyncRequest):
 
 
 @router.post("/knowledge/{space_name}/document/sync_batch")
-def batch_document_sync(space_name: str, request: List[KnowledgeSyncRequest]):
+def batch_document_sync(
+    space_name: str,
+    request: List[KnowledgeSyncRequest],
+    service: Service = Depends(get_rag_service),
+):
     logger.info(f"Received params: {space_name}, {request}")
     try:
-        doc_ids = knowledge_space_service.batch_document_sync(
-            space_name=space_name, sync_requests=request
-        )
+        space = service.get({"name": space_name})
+        for sync_request in request:
+            sync_request.space_id = space.id
+        doc_ids = service.sync_document(requests=request)
+        # doc_ids = service.sync_document(
+        #     space_name=space_name, sync_requests=request
+        # )
         return Result.succ({"tasks": doc_ids})
     except Exception as e:
         return Result.failed(code="E000X", msg=f"document sync error {e}")

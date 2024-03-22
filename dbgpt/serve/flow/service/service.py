@@ -485,9 +485,7 @@ async def _chat_with_dag_task(
             if OpenAIStreamingOutputOperator and isinstance(
                 task, OpenAIStreamingOutputOperator
             ):
-                from fastchat.protocol.openai_api_protocol import (
-                    ChatCompletionResponseStreamChoice,
-                )
+                from dbgpt.core.schema.api import ChatCompletionResponseStreamChoice
 
                 previous_text = ""
                 async for output in await task.call_stream(request):

@@ -16,14 +16,7 @@ from typing import (
 
 from dbgpt._private.pydantic import model_to_json
 from dbgpt.core.awel import TransformStreamAbsOperator
-from dbgpt.core.awel.flow import (
-    IOField,
-    OperatorCategory,
-    OperatorType,
-    Parameter,
-    ResourceCategory,
-    ViewMetadata,
-)
+from dbgpt.core.awel.flow import IOField, OperatorCategory, OperatorType, ViewMetadata
 from dbgpt.core.interface.llm import ModelOutput
 from dbgpt.core.operators import BaseLLM
 
@@ -217,7 +210,8 @@ async def _to_openai_stream(
     import json
 
     import shortuuid
-    from fastchat.protocol.openai_api_protocol import (
+
+    from dbgpt.core.schema.api import (
         ChatCompletionResponseStreamChoice,
         ChatCompletionStreamResponse,
         DeltaMessage,

@@ -13,7 +13,6 @@ from .config import (
     SERVE_APP_NAME,
     SERVE_APP_NAME_HUMP,
     SERVE_CONFIG_KEY_PREFIX,
-    ServeConfig,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,13 +26,11 @@ class Serve(BaseServe):
     def __init__(
         self,
         system_app: SystemApp,
-        api_prefix: Optional[List[str]] = None,
+        api_prefix: Optional[str] = f"/api/v2/serve/knowledge",
         api_tags: Optional[List[str]] = None,
         db_url_or_db: Union[str, URL, DatabaseManager] = None,
         try_create_tables: Optional[bool] = False,
     ):
-        if api_prefix is None:
-            api_prefix = [f"/api/v1/serve/awel", "/api/v2/serve/awel"]
         if api_tags is None:
             api_tags = [SERVE_APP_NAME_HUMP]
         super().__init__(
@@ -45,10 +42,9 @@ class Serve(BaseServe):
         if self._app_has_initiated:
             return
         self._system_app = system_app
-        for prefix in self._api_prefix:
-            self._system_app.app.include_router(
-                router, prefix=prefix, tags=self._api_tags
-            )
+        self._system_app.app.include_router(
+            router, prefix=self._api_prefix, tags=self._api_tags
+        )
         init_endpoints(self._system_app)
         self._app_has_initiated = True
 
@@ -58,7 +54,7 @@ class Serve(BaseServe):
         You can do some initialization here. You can't get other components here because they may be not initialized yet
         """
         # import your own module here to ensure the module is loaded before the application starts
-        from .models.models import ServeEntity
+        from .models.models import KnowledgeSpaceEntity
 
     def before_start(self):
         """Called before the start of the application."""

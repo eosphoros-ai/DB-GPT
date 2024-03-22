@@ -1,7 +1,6 @@
 import json
 import logging
 from datetime import datetime
-from enum import Enum
 from typing import List
 
 from dbgpt._private.config import Config
@@ -17,7 +16,6 @@ from dbgpt.app.knowledge.request.request import (
     DocumentSyncRequest,
     KnowledgeDocumentRequest,
     KnowledgeSpaceRequest,
-    KnowledgeSyncRequest,
     SpaceArgumentRequest,
 )
 from dbgpt.app.knowledge.request.response import (
@@ -25,7 +23,6 @@ from dbgpt.app.knowledge.request.response import (
     DocumentQueryResponse,
     SpaceQueryResponse,
 )
-from dbgpt.app.knowledge.space_db import KnowledgeSpaceDao, KnowledgeSpaceEntity
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG
 from dbgpt.core import Chunk
@@ -38,8 +35,11 @@ from dbgpt.rag.text_splitter.text_splitter import (
     RecursiveCharacterTextSplitter,
     SpacyTextSplitter,
 )
+from dbgpt.serve.rag.api.schemas import KnowledgeSyncRequest
 from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
 from dbgpt.serve.rag.assembler.summary import SummaryAssembler
+from dbgpt.serve.rag.models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
+from dbgpt.serve.rag.service.service import Service, SyncStatus
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
@@ -51,13 +51,6 @@ document_chunk_dao = DocumentChunkDao()
 
 logger = logging.getLogger(__name__)
 CFG = Config()
-
-
-class SyncStatus(Enum):
-    TODO = "TODO"
-    FAILED = "FAILED"
-    RUNNING = "RUNNING"
-    FINISHED = "FINISHED"
 
 
 # default summary max iteration call with llm.
@@ -88,8 +81,8 @@ class KnowledgeService:
         spaces = knowledge_space_dao.get_knowledge_space(query)
         if len(spaces) > 0:
             raise Exception(f"space name:{request.name} have already named")
-        knowledge_space_dao.create_knowledge_space(request)
-        return True
+        space_id = knowledge_space_dao.create_knowledge_space(request)
+        return space_id
 
     def create_knowledge_document(self, space, request: KnowledgeDocumentRequest):
         """create knowledge document
@@ -199,7 +192,9 @@ class KnowledgeService:
         return res
 
     def batch_document_sync(
-        self, space_name, sync_requests: List[KnowledgeSyncRequest]
+        self,
+        space_name,
+        sync_requests: List[KnowledgeSyncRequest],
     ) -> List[int]:
         """batch sync knowledge document chunk into vector store
         Args:

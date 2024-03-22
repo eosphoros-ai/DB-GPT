@@ -13,11 +13,8 @@ from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.knowledge.service import KnowledgeService
 from dbgpt.app.openapi.api_view_model import (
-    ChatCompletionResponseStreamChoice,
-    ChatCompletionStreamResponse,
     ChatSceneVo,
     ConversationVo,
-    DeltaMessage,
     MessageVo,
     Result,
 )
@@ -25,6 +22,11 @@ from dbgpt.app.scene import BaseChat, ChatFactory, ChatScene
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
 from dbgpt.core.awel import CommonLLMHttpRequestBody, CommonLLMHTTPRequestContext
+from dbgpt.core.schema.api import (
+    ChatCompletionResponseStreamChoice,
+    ChatCompletionStreamResponse,
+    DeltaMessage,
+)
 from dbgpt.datasource.db_conn_info import DBConfig, DbTypeInfo
 from dbgpt.model.base import FlatSupportedModel
 from dbgpt.model.cluster import BaseModelController, WorkerManager, WorkerManagerFactory
@@ -439,7 +441,6 @@ async def stream_generator(chat, incremental: bool, model_name: str):
     span = root_tracer.start_span("stream_generator")
     msg = "[LLM_ERROR]: llm server has no output, maybe your prompt template is wrong."
 
-    stream_id = f"chatcmpl-{str(uuid.uuid1())}"
     previous_response = ""
     async for chunk in chat.stream_call():
         if chunk:
@@ -451,7 +452,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
                     delta=DeltaMessage(role="assistant", content=incremental_output),
                 )
                 chunk = ChatCompletionStreamResponse(
-                    id=stream_id, choices=[choice_data], model=model_name
+                    id=chat.chat_session_id, choices=[choice_data], model=model_name
                 )
                 yield f"data: {chunk.json(exclude_unset=True, ensure_ascii=False)}\n\n"
             else:
