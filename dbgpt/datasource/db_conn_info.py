@@ -10,6 +10,7 @@ class DBConfig(BaseModel):
     db_user: str = ""
     db_pwd: str = ""
     comment: str = ""
+    user_id: str = ""
 
 
 class DbTypeInfo(BaseModel):

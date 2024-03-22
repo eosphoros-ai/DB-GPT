@@ -68,13 +68,14 @@ def __new_conversation(chat_mode, user_name: str, sys_code: str) -> Conversation
 
 
 def get_db_list(user_id=None):
-    dbs = CFG.LOCAL_DB_MANAGE.get_db_list()
+    dbs = CFG.LOCAL_DB_MANAGE.get_db_list(user_id=user_id)
     db_params = []
     for item in dbs:
         params: dict = {}
         my = MyMongdb()
         if my.check_user_dbgpt_db_permission(department=item["db_name"], user_id=user_id) or \
                 my.check_manage_dbgpt_db_permission(department=item["db_name"], user_id=user_id):
+
             params.update({"param": item["db_name"]})
             params.update({"type": item["db_type"]})
             db_params.append(params)
@@ -151,12 +152,15 @@ def get_executor() -> Executor:
 
 
 @router.get("/v1/chat/db/list", response_model=Result[DBConfig])
-async def db_connect_list():
-    return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list())
+async def db_connect_list(user_id: str = None):
+    return Result.succ(CFG.LOCAL_DB_MANAGE.get_db_list(user_id))
 
 
 @router.post("/v1/chat/db/add", response_model=Result[bool])
 async def db_connect_add(db_config: DBConfig = Body()):
+    my = MyMongdb()
+    my.registDBGPTDB(address=db_config.db_name, name=db_config.db_name, intro=db_config.comment, mode='add',
+                     user_id=db_config.user_id)
     return Result.succ(CFG.LOCAL_DB_MANAGE.add_db(db_config))
 
 
@@ -169,6 +173,8 @@ async def db_connect_edit(db_config: DBConfig = Body()):
 async def db_connect_delete(db_name: str = None):
     db_summary_client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
     db_summary_client.delete_db_profile(db_name + '_profile')
+    my = MyMongdb()
+    my.registDBGPTDB(address=db_name, name=db_name, mode='remove')
     print('delete_%s_profile' % db_name)
     return Result.succ(CFG.LOCAL_DB_MANAGE.delete_db(db_name))
 
@@ -340,7 +346,6 @@ async def chat_completions(
         dialogue: ConversationVo = Body(),
         flow_service: FlowService = Depends(get_chat_flow),
 ):
-
     print(
         f"chat_completions:{dialogue}"
     )
@@ -352,12 +357,12 @@ async def chat_completions(
     }
     my = MyMongdb()
     if not (my.check_user_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)
-            or my.check_manage_dbgpt_db_permission( department=dialogue.select_param, user_id=dialogue.user_id)):
+            or my.check_manage_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)):
         return StreamingResponse(
-                no_stream_generator_string('you dont have permission to use db.'),
-                headers=headers,
-                media_type="text/event-stream",
-            )
+            no_stream_generator_string('you dont have permission to use db.'),
+            headers=headers,
+            media_type="text/event-stream",
+        )
 
     if dialogue.chat_mode == ChatScene.ChatAgent.value():
         return StreamingResponse(
@@ -391,12 +396,10 @@ async def chat_completions(
         )
     else:
 
-
         with root_tracer.start_span(
                 "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
         ):
             chat: BaseChat = await get_chat_instance(dialogue)
-
 
         if not chat.prompt_template.stream_out:
             return StreamingResponse(
@@ -444,10 +447,10 @@ async def no_stream_generator(chat):
         msg = await chat.nostream_call()
         yield f"data: {msg}\n\n"
 
+
 async def no_stream_generator_string(msg):
     print('no_stream_generator,-------------')
     with root_tracer.start_span("no_stream_generator"):
-
         yield f"data: {msg}\n\n"
 
 

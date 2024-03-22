@@ -11,7 +11,6 @@ function DBSelector() {
   const { scene, dbParam, setDbParam ,userId} = useContext(ChatContext);
 
   const [dbs, setDbs] = useState<IDB[]>([]);
-  console.log('db-selector',userId);
   useAsyncEffect(async () => {
     const [, res] = await apiInterceptors(postChatModeParamsList(scene as string,userId as string));
     setDbs(res ?? []);

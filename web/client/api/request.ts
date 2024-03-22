@@ -44,8 +44,8 @@ export const newDialogue = (data: NewDialogueParam) => {
 };
 
 /** Database Page */
-export const getDbList = () => {
-  return GET<null, DbListResponse>('/api/v1/chat/db/list');
+export const getDbList = (user_id:string) => {
+  return GET<null, DbListResponse>(`/api/v1/chat/db/list?user_id=${user_id}`);
 };
 export const getDbSupportType = () => {
   return GET<null, DbSupportTypeResponse>('/api/v1/chat/db/support/type');

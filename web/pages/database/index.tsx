@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo,useContext, useState } from 'react';
 import { useAsyncEffect } from 'ahooks';
 import { Badge, Button, Card, Drawer, Empty, Modal, message } from 'antd';
 import FormDialog from '@/components/database/form-dialog';
@@ -9,6 +9,8 @@ import MuiLoading from '@/components/common/loading';
 import { dbMapper } from '@/utils';
 import GPTCard from '@/components/common/gpt-card';
 import { useTranslation } from 'react-i18next';
+import { ChatContext } from '@/app/chat-context';
+import { useRouter } from 'next/router';
 
 type DBItem = DbListResponse[0];
 
@@ -17,6 +19,11 @@ export function isFileDb(dbTypeList: DBOption[], dbType: DBType) {
 }
 
 function Database() {
+  const router  = useRouter();
+  const { userId } = useContext(ChatContext) || localStorage.getItem('userId')|| router.query.userId || router.query.userid||'';
+  console.log('database index ',userId,router.query.userId , router.query.userid)
+
+  
   const { t } = useTranslation();
 
   const [dbList, setDbList] = useState<DbListResponse>([]);
@@ -30,9 +37,10 @@ function Database() {
     setDbSupportList(data ?? []);
   };
 
+
   const refreshDbList = async () => {
     setLoading(true);
-    const [, data] = await apiInterceptors(getDbList());
+    const [, data] = await apiInterceptors(getDbList(userId));
     setDbList(data ?? []);
     setLoading(false);
   };

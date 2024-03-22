@@ -20,10 +20,8 @@ type ChatParams = {
 const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
   const ctrl = useMemo(() => new AbortController(), []);
   const { userId } = useContext(ChatContext);
-  console.log(userId,'123')
   const chat = useCallback(
     async ({ data,  chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
-      console.log('use-chat',userId)
 
       if (!data?.user_input && !data?.doc_id) {
         message.warning(i18n.t('no_context_tip'));

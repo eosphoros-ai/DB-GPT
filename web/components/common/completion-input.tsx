@@ -18,9 +18,6 @@ interface Props {
 function CompletionInput({ children, loading, onSubmit, handleFinish, ...props }: PropsWithChildren<Props & TextAreaProps>) {
   const { dbParam, scene ,userId} = useContext(ChatContext);
 
-  console.log('CompletionInput',userId);
-
-
   const [userInput, setUserInput] = useState('');
   const showUpload = useMemo(() => scene === 'chat_knowledge', [scene]);
   const [documents, setDocuments] = useState<IDocument[]>([]);

@@ -4,6 +4,8 @@ import { useRequest } from 'ahooks';
 import { ChatHistoryResponse, DialogueListResponse, IChatDialogueSchema } from '@/types/chat';
 import { useSearchParams } from 'next/navigation';
 import { STORAGE_THEME_KEY } from '@/utils';
+import { useRouter } from 'next/router';
+
 
 type ThemeMode = 'dark' | 'light';
 
@@ -70,6 +72,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   const scene = searchParams?.get('scene') ?? '';
   const db_param = searchParams?.get('db_param') ?? '';
   const userId = searchParams?.get('userId') ?? searchParams?.get('userid') ?? '';
+  const router = useRouter();
 
   const [isContract, setIsContract] = useState(false);
   const [model, setModel] = useState<string>('');
@@ -86,8 +89,6 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     refresh: refreshDialogList,
   } = useRequest(
     async () => {
-      console.log('chat context.tsx  89 ',userId);
-
       const [, res] = await apiInterceptors(getDialogueList(userId));
       return res ?? [];
     },
@@ -97,7 +98,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     },
   );
 
-    console.log('dialogueList',dialogueList);
+
 
   useEffect(() => {
     if (dialogueList.length && scene === 'chat_agent') {
@@ -125,12 +126,14 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   }, [userId]); // queryDialogueList will be called again when userId changes
 
   const currentDialogue = useMemo(() => dialogueList.find((item: any) => item.conv_uid === chatId), [chatId, dialogueList]);
+
+
   const contextValue = {
     isContract,
     isMenuExpand,
     scene,
     chatId,
-    userId,
+    userId : router.query.userId || router.query.userid,
     modelList,
     model,
     dbParam: dbParam || db_param,
@@ -154,5 +157,4 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
 
   return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>;
 };
-console.log('ChatContext',ChatContext)
 export { ChatContext, ChatContextProvider };

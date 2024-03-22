@@ -10,8 +10,8 @@ function Chat() {
   const {
     query: { id, scene },
   } = useRouter();
-  const { isContract, setIsContract, setIsMenuExpand , userId} = useContext(ChatContext);
-  console.log('Chat',userId);
+  const { isContract, setIsContract, setIsMenuExpand } = useContext(ChatContext);
+
 
   useEffect(() => {
     // 仅初始化执行，防止dashboard页面无法切换状态

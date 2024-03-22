@@ -94,8 +94,8 @@ class ConnectManager:
             print(f"{db_info.db_name} Test connect Failure!{str(e)}")
             raise ValueError(f"{db_info.db_name} Test connect Failure!{str(e)}")
 
-    def get_db_list(self):
-        return self.storage.get_db_list()
+    def get_db_list(self,user_id=None):
+        return self.storage.get_db_list(user_id=user_id)
 
     def get_db_names(self):
         return self.storage.get_by_name()

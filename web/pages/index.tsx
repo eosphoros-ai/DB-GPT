@@ -1,7 +1,8 @@
 import { useRequest } from 'ahooks';
 import { useContext, useState ,useEffect} from 'react';
 import { Divider, Spin, Tag } from 'antd';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
+
 import Image from 'next/image';
 import { NextPage } from 'next';
 import { apiInterceptors, newDialogue, postScenes } from '@/client/api';
@@ -17,11 +18,25 @@ import classNames from 'classnames';
 
 const Home: NextPage = () => {
   const router = useRouter();
-  const { model, setModel, userId} = useContext(ChatContext);
+  const { model, setModel, userId , setUserId } = useContext(ChatContext);
+
+  useEffect(() => {
+    if (router.isReady) {
+      const userIdFromQuery = router.query.userId || router.query.userid;
+
+      if (userIdFromQuery && typeof window !== 'undefined') {
+        localStorage.setItem('userId', userIdFromQuery);
+        // 如果您有一个setUserId方法在您的ChatContext中，您可以在这里设置它
+        if (setUserId) {
+          setUserId(userIdFromQuery);
+        }
+
+      }
+      console.log('page Index', userId, localStorage.getItem('userId'));
+    }
+  }, [router.isReady, router.query.userId, router.query.userid, setUserId]);
+
   const { t } = useTranslation();
-
-
-  console.log('useRouter','model', model,userId)
 
 
 

@@ -124,7 +124,7 @@ class DuckdbConnectConfig:
             return row_dict
         return None
 
-    def get_db_list(self):
+    def get_db_list(self,user_id=None):
         if os.path.isfile(duckdb_path):
             cursor = duckdb.connect(duckdb_path).cursor()
             cursor.execute("SELECT *  FROM connect_config ")

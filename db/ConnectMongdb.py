@@ -519,10 +519,12 @@ class MyMongdb():
         self.condition = self.dbgpt_db.find_one({'_id': ObjectId(self.chatId), 'userId': ObjectId(
             self.userId)}) if self.userId else self.collection.find_one({'_id': ObjectId(self.chatId)})
 
-    def registDBGPTDB(self, address='hr_chinese_fk', name='hr_chinese_fk', intro="这个是质量数据分析", mode='add'):
+    def registDBGPTDB(self, address='hr_chinese_fk', name='hr_chinese_fk', intro="这个是质量数据分析", mode='add', **kwargs):
         db = self.client[self.mongo_database]
         self.dbgpt_db = db[self.dbgpt_db_collection_name]
-
+        regist_dict = {}
+        for key, value in kwargs.items():
+            regist_dict[key] = value
         if mode == 'remove' or mode == 'delete' :
             self.dbgpt_db.delete_one({'address': address})
             return f"{address} App already {mode} !!"
@@ -544,10 +546,8 @@ class MyMongdb():
             'intro': intro,
             'mobileVisible': True,
             'address': address,
-            'admin': [''],
+            'admin': [kwargs.get('user_id')] if kwargs.get('user_id') else [''],
         }
-
-        regist = deepcopy(regist_dict)
 
         if not self.dbgpt_db.find_one({'address': address}):
             self.dbgpt_db.insert_one(regist_dict)
@@ -562,7 +562,7 @@ class MyMongdb():
         self.dbgpt_db = db[self.dbgpt_db_collection_name]
         result = self.dbgpt_db.find_one({'name': department, 'share.sharedUser': user_id})
         self.users_collection = db[self.users_collection_name]
-        result2 = self.users_collection.find_one({'_id': ObjectId(user_id), 'dataAuth': 'y'})
+        result2 = self.users_collection.find_one({'_id': ObjectId(user_id), 'dbGptAdmin': 'y'})
         return True if result or result2 else False
 
     def check_manage_dbgpt_db_permission(self, department, user_id):
@@ -570,7 +570,7 @@ class MyMongdb():
         self.dbgpt_db = db[self.dbgpt_db_collection_name]
         result = self.dbgpt_db.find_one({'name': department, 'admin': user_id})
         self.users_collection = db[self.users_collection_name]
-        result2 = self.users_collection.find_one({'_id': ObjectId(user_id), 'dataAuth': 'y'})
+        result2 = self.users_collection.find_one({'_id': ObjectId(user_id), 'dbGptAdmin': 'y'})
         return True if result or result2 else False
 
 
