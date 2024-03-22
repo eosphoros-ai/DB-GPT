@@ -99,7 +99,7 @@ package: clean-dist ## Package the project for distribution
 	IS_DEV_MODE=false python setup.py sdist bdist_wheel
 
 .PHONY: upload
-upload: package ## Upload the package to PyPI
+upload: ## Upload the package to PyPI
 	# upload to testpypi: twine upload --repository testpypi dist/*
 	twine upload dist/*
 
