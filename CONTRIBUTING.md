@@ -1,5 +1,11 @@
+# Contribution 
 
-To contribute to this GitHub project, you can follow these steps:
+First of all, thank you for considering contributing to this project. 
+It's people like you that make it a reality for the community. There are many ways to contribute, and we appreciate all of them.
+
+This guide will help you get started with contributing to this project.
+
+## Fork The Repository
 
 1. Fork the repository you want to contribute to by clicking the "Fork" button on the project page.
 
@@ -8,71 +14,107 @@ To contribute to this GitHub project, you can follow these steps:
 ```
 git clone https://github.com/<YOUR-GITHUB-USERNAME>/DB-GPT
 ```
+Please replace `<YOUR-GITHUB-USERNAME>` with your GitHub username.
 
-3. Install the project requirements
+
+## Create A New Development Environment
+
+1. Create a new virtual environment using the following command:
 ```
+# Make sure python >= 3.10
+conda create -n dbgpt_env python=3.10
+conda activate dbgpt_env
+```
+
+2. Change to the project directory using the following command:
+```
+cd DB-GPT
+```
+
+3. Install the project from the local source using the following command:
+```
+# it will take some minutes
 pip install -e ".[default]"
 ```
 
-4. Install pre-commit hooks
+4. Install development requirements
+```
+pip install -r requirements/dev-requirements.txt
+pip install -r requirements/lint-requirements.txt
+```
+
+5. Install pre-commit hooks
 ```
 pre-commit install
 ```
 
-5. Create a new branch for your changes using the following command:
+6. Install `make` command
+The `make` command has been installed by default on most Unix-based systems. If you not 
+have it, you can install it by searching on the internet.
+
+## New Branch And Make Changes
+
+1. Create a new branch for your changes using the following command:
 ```
-git checkout -b "branch-name"
+git checkout -b <branch-name>
 ```
+Please replace `<branch-name>` with a descriptive name for your branch.
 
-6. Make your changes to the code or documentation.
+2. Make your changes to the code or documentation.
 
-- Example: Improve User Interface or Add Documentation.
+3. Add tests for your changes if necessary.
 
-7. Format the code using the following command:
+4. Format your code using the following command:
 ```
 make fmt
 ```
 
-8. Add the changes to the staging area using the following command:
+5. Run the tests using the following command:
 ```
-git add .
-```
-
-9. Make sure the tests pass and your code lints using the following command:
-```
-make pre-commit
+make test
 ```
 
-10. Commit the changes with a meaningful commit message using the following command:
+6. Check types using the following command:
+```
+make mypy
+```
+
+7. Check lint using the following command:
+```
+make fmt-check
+```
+
+8. If all checks pass, you can add and commit your changes using the following commands:
+```
+git add xxxx
+```
+make sure to replace `xxxx` with the files you want to commit.
+
+then commit your changes using the following command:
 ```
 git commit -m "your commit message"
 ```
-11. Push the changes to your forked repository using the following command:
+Please replace `your commit message` with a meaningful commit message.
+
+It will take some time to get used to the process, but it's worth it. And it will run 
+all git hooks and checks before you commit. If it fails, you need to fix the issues 
+then re-commit it.
+
+9. Push the changes to your forked repository using the following command:
 ```
-git push origin branch-name
+git push origin <branch-name>
 ```
-12. Go to the GitHub website and navigate to your forked repository.
 
-13. Click the "New pull request" button.
+## Create A Pull Request
 
-14. Select the branch you just pushed to and the branch you want to merge into on the original repository.
+1. Go to the GitHub website and navigate to your forked repository.
 
-15. Add a description of your changes and click the "Create pull request" button.
+2. Click the "New pull request" button.
 
-16. Wait for the project maintainer to review your changes and provide feedback.
+3. Select the branch you just pushed to and the branch you want to merge into on the original repository.
+Write necessary information about your changes and click "Create pull request".
 
-17. Make any necessary changes based on feedback and repeat steps 5-12 until your changes are accepted and merged into the main project.
+4. Wait for the project maintainer to review your changes and provide feedback.
 
-18. Once your changes are merged, you can update your forked repository and local copy of the repository with the following commands:
-
-```
-git fetch upstream
-git checkout master
-git merge upstream/master
-```
-Finally, delete the branch you created with the following command:
-```
-git branch -d branch-name
-```
 That's it you made it 🐣⭐⭐
 

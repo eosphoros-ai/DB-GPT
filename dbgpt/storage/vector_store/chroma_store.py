@@ -27,8 +27,7 @@ class ChromaVectorConfig(VectorStoreConfig):
 
     persist_path: str = Field(
         default=os.getenv("CHROMA_PERSIST_PATH", None),
-        description="The password of vector store, if not set, will use the default "
-        "password.",
+        description="the persist path of vector store.",
     )
     collection_metadata: dict = Field(
         default=None,

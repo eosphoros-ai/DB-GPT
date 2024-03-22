@@ -17,12 +17,11 @@ from typing import Dict, List
 from pydantic import BaseModel, Field
 
 from dbgpt._private.config import Config
-from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, MODEL_PATH, PILOT_PATH
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, PILOT_PATH
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.knowledge import KnowledgeType
-from dbgpt.rag.operators import KnowledgeOperator
-from dbgpt.serve.rag.operators.embedding import EmbeddingAssemblerOperator
+from dbgpt.rag.operators import EmbeddingAssemblerOperator, KnowledgeOperator
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 

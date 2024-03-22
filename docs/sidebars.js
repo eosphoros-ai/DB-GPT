@@ -68,6 +68,10 @@ const sidebars = {
               type: "doc",
               id: "awel/cookbook/multi_round_chat_withllm"
             },
+            {
+              type:"doc",
+              id: "awel/cookbook/first_rag_with_awel"
+            }
           ],
           link: {
             type: 'generated-index',

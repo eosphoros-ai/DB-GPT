@@ -3,11 +3,11 @@ from unittest.mock import MagicMock
 import pytest
 
 from dbgpt.datasource.rdbms.conn_sqlite import SQLiteTempConnector
+from dbgpt.rag.assembler.embedding import EmbeddingAssembler
 from dbgpt.rag.chunk_manager import ChunkParameters, SplitterType
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.rag.text_splitter.text_splitter import CharacterTextSplitter
-from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 
@@ -69,7 +69,7 @@ def test_load_knowledge(
     assembler = EmbeddingAssembler(
         knowledge=mock_knowledge,
         chunk_parameters=mock_chunk_parameters,
-        embedding_factory=mock_embedding_factory,
+        embeddings=mock_embedding_factory.create(),
         vector_store_connector=mock_vector_store_connector,
     )
     assembler.load_knowledge(knowledge=mock_knowledge)

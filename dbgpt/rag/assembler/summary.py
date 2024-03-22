@@ -1,16 +1,19 @@
+"""Summary Assembler."""
 import os
 from typing import Any, List, Optional
 
 from dbgpt.core import Chunk, LLMClient
-from dbgpt.rag.chunk_manager import ChunkParameters
-from dbgpt.rag.extractor.base import Extractor
-from dbgpt.rag.knowledge.base import Knowledge
-from dbgpt.rag.retriever.base import BaseRetriever
-from dbgpt.serve.rag.assembler.base import BaseAssembler
+
+from ..assembler.base import BaseAssembler
+from ..chunk_manager import ChunkParameters
+from ..extractor.base import Extractor
+from ..knowledge.base import Knowledge
+from ..retriever.base import BaseRetriever
 
 
 class SummaryAssembler(BaseAssembler):
-    """Summary Assembler
+    """Summary Assembler.
+
     Example:
        .. code-block:: python
 
@@ -40,6 +43,7 @@ class SummaryAssembler(BaseAssembler):
         **kwargs: Any,
     ) -> None:
         """Initialize with Embedding Assembler arguments.
+
         Args:
             knowledge: (Knowledge) Knowledge datasource.
             chunk_manager: (Optional[ChunkManager]) ChunkManager to use for chunking.
@@ -51,13 +55,24 @@ class SummaryAssembler(BaseAssembler):
         if knowledge is None:
             raise ValueError("knowledge datasource must be provided.")
 
-        self._model_name = model_name or os.getenv("LLM_MODEL")
-        self._llm_client = llm_client
-        from dbgpt.rag.extractor.summary import SummaryExtractor
+        model_name = model_name or os.getenv("LLM_MODEL")
 
-        self._extractor = extractor or SummaryExtractor(
-            llm_client=self._llm_client, model_name=self._model_name, language=language
-        )
+        if not extractor:
+            from ..extractor.summary import SummaryExtractor
+
+            if not llm_client:
+                raise ValueError("llm_client must be provided.")
+            if not model_name:
+                raise ValueError("model_name must be provided.")
+            extractor = SummaryExtractor(
+                llm_client=llm_client,
+                model_name=model_name,
+                language=language,
+            )
+        if not extractor:
+            raise ValueError("extractor must be provided.")
+
+        self._extractor: Extractor = extractor
         super().__init__(
             knowledge=knowledge,
             chunk_parameters=chunk_parameters,
@@ -77,9 +92,11 @@ class SummaryAssembler(BaseAssembler):
         **kwargs: Any,
     ) -> "SummaryAssembler":
         """Load document embedding into vector store from path.
+
         Args:
             knowledge: (Knowledge) Knowledge datasource.
-            chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for chunking.
+            chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for
+                chunking.
             model_name: (Optional[str]) llm model to use.
             llm_client: (Optional[LLMClient]) LLMClient to use.
             extractor: (Optional[Extractor]) Extractor to use for summarization.
@@ -107,6 +124,8 @@ class SummaryAssembler(BaseAssembler):
 
     def _extract_info(self, chunks) -> List[Chunk]:
         """Extract info from chunks."""
+        return []
 
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a retriever."""
+        raise NotImplementedError

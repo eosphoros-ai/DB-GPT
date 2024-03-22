@@ -26,8 +26,7 @@ testenv: $(VENV)/.testenv
 
 $(VENV)/.testenv: $(VENV)/bin/activate
 	# $(VENV_BIN)/pip install -e ".[framework]"
-	# $(VENV_BIN)/pip install -e ".[knowledge]"
-	# the openai optional dependency is include framework and knowledge dependencies
+	# the openai optional dependency is include framework and rag dependencies
 	$(VENV_BIN)/pip install -e ".[openai]"
 	touch $(VENV)/.testenv
 
@@ -100,7 +99,7 @@ package: clean-dist ## Package the project for distribution
 	IS_DEV_MODE=false python setup.py sdist bdist_wheel
 
 .PHONY: upload
-upload: package ## Upload the package to PyPI
+upload: ## Upload the package to PyPI
 	# upload to testpypi: twine upload --repository testpypi dist/*
 	twine upload dist/*
 

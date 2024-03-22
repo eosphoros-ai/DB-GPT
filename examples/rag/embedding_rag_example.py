@@ -2,10 +2,10 @@ import asyncio
 import os
 
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH, ROOT_PATH
-from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt.rag import ChunkParameters
+from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.embedding import DefaultEmbeddingFactory
 from dbgpt.rag.knowledge import KnowledgeFactory
-from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 

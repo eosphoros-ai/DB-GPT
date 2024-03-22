@@ -4,9 +4,9 @@ from typing import Any, Optional
 
 from dbgpt.core import LLMClient
 from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
+from dbgpt.rag.assembler.summary import SummaryAssembler
 from dbgpt.rag.knowledge.base import Knowledge
-from dbgpt.serve.rag.assembler.summary import SummaryAssembler
-from dbgpt.serve.rag.operators.base import AssemblerOperator
+from dbgpt.rag.operators.assembler import AssemblerOperator
 
 
 class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, cast
 from urllib.parse import quote
 from urllib.parse import quote_plus as urlquote
 
-import regex as re
 import sqlalchemy
 import sqlparse
 from sqlalchemy import MetaData, Table, create_engine, inspect, select, text

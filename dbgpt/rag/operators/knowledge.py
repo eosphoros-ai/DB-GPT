@@ -1,6 +1,6 @@
 """Knowledge Operator."""
 
-from typing import Any, Optional
+from typing import Optional
 
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import (
@@ -14,7 +14,7 @@ from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
 
 
-class KnowledgeOperator(MapOperator[Any, Any]):
+class KnowledgeOperator(MapOperator[str, Knowledge]):
     """Knowledge Factory Operator."""
 
     metadata = ViewMetadata(
@@ -26,7 +26,7 @@ class KnowledgeOperator(MapOperator[Any, Any]):
             IOField.build_from(
                 "knowledge datasource",
                 "knowledge datasource",
-                dict,
+                str,
                 "knowledge datasource",
             )
         ],
@@ -85,7 +85,7 @@ class KnowledgeOperator(MapOperator[Any, Any]):
         self._datasource = datasource
         self._knowledge_type = KnowledgeType.get_by_value(knowledge_type)
 
-    async def map(self, datasource: Any) -> Knowledge:
+    async def map(self, datasource: str) -> Knowledge:
         """Create knowledge from datasource."""
         if self._datasource:
             datasource = self._datasource

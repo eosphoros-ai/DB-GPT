@@ -5,10 +5,15 @@ from typing import List, Optional, Union
 
 from dbgpt.core import Chunk
 from dbgpt.core.interface.operators.retriever import RetrieverOperator
-from dbgpt.rag.retriever.embedding import EmbeddingRetriever
-from dbgpt.rag.retriever.rerank import Ranker
-from dbgpt.rag.retriever.rewrite import QueryRewrite
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
+
+from ..assembler.embedding import EmbeddingAssembler
+from ..chunk_manager import ChunkParameters
+from ..knowledge import Knowledge
+from ..retriever.embedding import EmbeddingRetriever
+from ..retriever.rerank import Ranker
+from ..retriever.rewrite import QueryRewrite
+from .assembler import AssemblerOperator
 
 
 class EmbeddingRetrieverOperator(RetrieverOperator[Union[str, List[str]], List[Chunk]]):
@@ -43,3 +48,36 @@ class EmbeddingRetrieverOperator(RetrieverOperator[Union[str, List[str]], List[C
                 for q in query
             ]
             return reduce(lambda x, y: x + y, candidates)
+
+
+class EmbeddingAssemblerOperator(AssemblerOperator[Knowledge, List[Chunk]]):
+    """The Embedding Assembler Operator."""
+
+    def __init__(
+        self,
+        vector_store_connector: VectorStoreConnector,
+        chunk_parameters: Optional[ChunkParameters] = ChunkParameters(
+            chunk_strategy="CHUNK_BY_SIZE"
+        ),
+        **kwargs
+    ):
+        """Create a new EmbeddingAssemblerOperator.
+
+        Args:
+            vector_store_connector (VectorStoreConnector): The vector store connector.
+            chunk_parameters (Optional[ChunkParameters], optional): The chunk
+                parameters. Defaults to ChunkParameters(chunk_strategy="CHUNK_BY_SIZE").
+        """
+        self._chunk_parameters = chunk_parameters
+        self._vector_store_connector = vector_store_connector
+        super().__init__(**kwargs)
+
+    def assemble(self, knowledge: Knowledge) -> List[Chunk]:
+        """Assemble knowledge for input value."""
+        assembler = EmbeddingAssembler.load_from_knowledge(
+            knowledge=knowledge,
+            chunk_parameters=self._chunk_parameters,
+            vector_store_connector=self._vector_store_connector,
+        )
+        assembler.persist()
+        return assembler.get_chunks()
