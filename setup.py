@@ -403,6 +403,8 @@ def core_requires():
         "duckdb-engine",
         # lightweight python library for scheduling jobs
         "schedule",
+        # For datasource subpackage
+        "sqlparse==0.4.4",
     ]
     # TODO: remove fschat from simple_framework
     if BUILD_FROM_SOURCE:
@@ -559,7 +561,7 @@ def all_datasource_requires():
     """
 
     setup_spec.extras["datasource"] = [
-        "sqlparse==0.4.4",
+        # "sqlparse==0.4.4",
         "pymssql",
         "pymysql",
         "pyspark",
