@@ -34,4 +34,10 @@ API_KEYS - The list of API keys that are allowed to access the API. Each of the 
 API_KEYS=dbgpt
 ```
 
+## Installation
+If you use Python, you should install the official DB-GPT Client package from PyPI:
+
+```bash
+pip install "dbgpt[client]>=0.5.2"
+```
 

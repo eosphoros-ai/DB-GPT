@@ -18,7 +18,7 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
 IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
 # If you modify the version, please modify the version in the following files:
 # dbgpt/_version.py
-DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.1")
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.2")
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
@@ -370,8 +370,13 @@ def core_requires():
         # For AWEL type checking
         "typeguard",
     ]
+    # For DB-GPT python client SDK
+    setup_spec.extras["client"] = setup_spec.extras["core"] + [
+        "httpx",
+        "fastapi==0.98.0",
+    ]
     # Simple command line dependencies
-    setup_spec.extras["cli"] = setup_spec.extras["core"] + [
+    setup_spec.extras["cli"] = setup_spec.extras["client"] + [
         "prettytable",
         "click",
         "psutil==5.9.4",
@@ -382,10 +387,7 @@ def core_requires():
     # we core unit test.
     # The dependency "framework" is too large for now.
     setup_spec.extras["simple_framework"] = setup_spec.extras["cli"] + [
-        "pydantic<2,>=1",
-        "httpx",
         "jinja2",
-        "fastapi==0.98.0",
         "uvicorn",
         "shortuuid",
         # change from fixed version 2.0.22 to variable version, because other
@@ -675,6 +677,8 @@ else:
             "dbgpt._private.*",
             "dbgpt.cli",
             "dbgpt.cli.*",
+            "dbgpt.client",
+            "dbgpt.client.*",
             "dbgpt.configs",
             "dbgpt.configs.*",
             "dbgpt.core",

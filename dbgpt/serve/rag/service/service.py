@@ -23,6 +23,7 @@ from dbgpt.configs.model_config import (
 )
 from dbgpt.core import Chunk
 from dbgpt.core.awel.dag.dag_manager import DAGManager
+from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.chunk_manager import ChunkParameters
 from dbgpt.rag.embedding import EmbeddingFactory
 from dbgpt.rag.knowledge import ChunkStrategy, KnowledgeFactory, KnowledgeType
@@ -43,7 +44,6 @@ from ..api.schemas import (
     SpaceServeRequest,
     SpaceServeResponse,
 )
-from ..assembler.embedding import EmbeddingAssembler
 from ..config import SERVE_CONFIG_KEY_PREFIX, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..models.models import KnowledgeSpaceDao, KnowledgeSpaceEntity
 
