@@ -58,7 +58,7 @@ function formatMarkdownVal(val: string) {
 }
 
 function ChatContent({ children, content, isChartChat, onLinkClick }: PropsWithChildren<Props>) {
-  const { scene } = useContext(ChatContext);
+  const { scene ,userId} = useContext(ChatContext);
 
   const { context, model_name, role } = content;
   const isRobot = role === 'view';

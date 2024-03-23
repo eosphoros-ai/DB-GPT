@@ -1,9 +1,11 @@
-import { createContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useEffect, useMemo, useState ,useContext} from 'react';
 import { apiInterceptors, getDialogueList, getUsableModels } from '@/client/api';
 import { useRequest } from 'ahooks';
 import { ChatHistoryResponse, DialogueListResponse, IChatDialogueSchema } from '@/types/chat';
 import { useSearchParams } from 'next/navigation';
 import { STORAGE_THEME_KEY } from '@/utils';
+import { useRouter } from 'next/router';
+
 
 type ThemeMode = 'dark' | 'light';
 
@@ -13,6 +15,7 @@ interface IChatContext {
   isMenuExpand?: boolean;
   scene: IChatDialogueSchema['chat_mode'] | (string & {});
   chatId: string;
+  userId: string;
   model: string;
   dbParam?: string;
   modelList: Array<string>;
@@ -43,6 +46,7 @@ const ChatContext = createContext<IChatContext>({
   mode: 'light',
   scene: '',
   chatId: '',
+  userId: '',
   modelList: [],
   model: '',
   dbParam: undefined,
@@ -67,6 +71,8 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   const chatId = searchParams?.get('id') ?? '';
   const scene = searchParams?.get('scene') ?? '';
   const db_param = searchParams?.get('db_param') ?? '';
+  const userId = searchParams?.get('userId') ?? searchParams?.get('userid') ?? '';
+  const router = useRouter();
 
   const [isContract, setIsContract] = useState(false);
   const [model, setModel] = useState<string>('');
@@ -83,13 +89,16 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     refresh: refreshDialogList,
   } = useRequest(
     async () => {
-      const [, res] = await apiInterceptors(getDialogueList());
+      const [, res] = await apiInterceptors(getDialogueList(userId));
       return res ?? [];
     },
     {
       manual: true,
+      refreshDeps: [userId], // Add userId to refreshDeps array
     },
   );
+
+
 
   useEffect(() => {
     if (dialogueList.length && scene === 'chat_agent') {
@@ -111,12 +120,20 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     setModel(modelList[0]);
   }, [modelList, modelList?.length]);
 
+  useEffect(() => {
+    // Add userId to the dependency array so queryDialogueList runs when userId changes
+    queryDialogueList();
+  }, [userId]); // queryDialogueList will be called again when userId changes
+
   const currentDialogue = useMemo(() => dialogueList.find((item: any) => item.conv_uid === chatId), [chatId, dialogueList]);
+
+
   const contextValue = {
     isContract,
     isMenuExpand,
     scene,
     chatId,
+    userId : router.query.userId || router.query.userid,
     modelList,
     model,
     dbParam: dbParam || db_param,
@@ -137,7 +154,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
     docId,
     setDocId,
   };
+
   return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>;
 };
-
 export { ChatContext, ChatContextProvider };

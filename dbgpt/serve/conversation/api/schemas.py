@@ -34,6 +34,13 @@ class ServeRequest(BaseModel):
             "zhangsan",
         ],
     )
+    logic_delete: Optional[int] = Field(
+        default=0,
+        description=" logic delete",
+        examples=[
+            0,
+        ],
+    )
     sys_code: Optional[str] = Field(
         default=None,
         description="The system code.",

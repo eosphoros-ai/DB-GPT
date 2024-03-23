@@ -12,6 +12,7 @@ function Chat() {
   } = useRouter();
   const { isContract, setIsContract, setIsMenuExpand } = useContext(ChatContext);
 
+
   useEffect(() => {
     // 仅初始化执行，防止dashboard页面无法切换状态
     setIsMenuExpand(scene !== 'chat_dashboard');

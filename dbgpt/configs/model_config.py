@@ -39,7 +39,9 @@ LLM_MODEL_CONFIG = {
     "vicuna-13b": os.path.join(MODEL_PATH, "vicuna-13b"),
     "vicuna-7b": os.path.join(MODEL_PATH, "vicuna-7b"),
     # (Llama2 based) see https://huggingface.co/lmsys/vicuna-13b-v1.5
-    "vicuna-13b-v1.5": os.path.join(MODEL_PATH, "vicuna-13b-v1.5"),
+    # "vicuna-13b-v1.5": os.path.join(MODEL_PATH, "vicuna-13b-v1.5"),
+    "vicuna-13b-v1.5": '/datas/liab/llm_model/vicuna-13b-v1.5-16k',
+    # "vicuna-13b-v1.5": os.path.join(MODEL_PATH, "vicuna-13b-v1.5"),
     "vicuna-7b-v1.5": os.path.join(MODEL_PATH, "vicuna-7b-v1.5"),
     "codegen2-1b": os.path.join(MODEL_PATH, "codegen2-1B"),
     "codet5p-2b": os.path.join(MODEL_PATH, "codet5p-2b"),
@@ -72,7 +74,8 @@ LLM_MODEL_CONFIG = {
     # please rename "fireballoon/baichuan-vicuna-chinese-7b" to "baichuan-7b"
     "baichuan-7b": os.path.join(MODEL_PATH, "baichuan-7b"),
     "baichuan2-7b": os.path.join(MODEL_PATH, "Baichuan2-7B-Chat"),
-    "baichuan2-13b": os.path.join(MODEL_PATH, "Baichuan2-13B-Chat"),
+    # "baichuan2-13b": os.path.join(MODEL_PATH, "Baichuan2-13B-Chat"),
+    "baichuan2-13b": '/datas/liab/llm_model/Baichuan2-13B-Chat',
     # https://huggingface.co/Qwen/Qwen-7B-Chat
     "qwen-7b-chat": os.path.join(MODEL_PATH, "Qwen-7B-Chat"),
     # https://huggingface.co/Qwen/Qwen-7B-Chat-Int8
@@ -90,7 +93,8 @@ LLM_MODEL_CONFIG = {
     # https://huggingface.co/Qwen/Qwen-72B-Chat-Int8
     "qwen-72b-chat-int8": os.path.join(MODEL_PATH, "Qwen-72B-Chat-Int8"),
     # https://huggingface.co/Qwen/Qwen-72B-Chat-Int4
-    "qwen-72b-chat-int4": os.path.join(MODEL_PATH, "Qwen-72B-Chat-Int4"),
+    "qwen-72b-chat-int4": '/datas/liab/llm_model/Qwen-72B-Chat-int4',
+    # "qwen-72b-chat-int4": os.path.join(MODEL_PATH, "Qwen-72B-Chat-Int4"),
     # https://huggingface.co/Qwen/Qwen-1_8B-Chat
     "qwen-1.8b-chat": os.path.join(MODEL_PATH, "Qwen-1_8B-Chat"),
     # https://huggingface.co/Qwen/Qwen-1_8B-Chat-Int8
@@ -156,9 +160,28 @@ LLM_MODEL_CONFIG = {
     "gemma-2b-it": os.path.join(MODEL_PATH, "gemma-2b-it"),
 }
 
+# EMBEDDING_MODEL_CONFIG = {
+#     "text2vec": os.path.join(MODEL_PATH, "text2vec-large-chinese"),
+#     "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
+#     # https://huggingface.co/moka-ai/m3e-large
+#     "m3e-base": os.path.join(MODEL_PATH, "m3e-base"),
+#     # https://huggingface.co/moka-ai/m3e-base
+#     "m3e-large": os.path.join(MODEL_PATH, "m3e-large"),
+#     # https://huggingface.co/BAAI/bge-large-en
+#     "bge-large-en": os.path.join(MODEL_PATH, "bge-large-en"),
+#     "bge-base-en": os.path.join(MODEL_PATH, "bge-base-en"),
+#     # https://huggingface.co/BAAI/bge-large-zh
+#     "bge-large-zh": os.path.join(MODEL_PATH, "bge-large-zh"),
+#     "bge-base-zh": os.path.join(MODEL_PATH, "bge-base-zh"),
+#     "sentence-transforms": os.path.join(MODEL_PATH, "all-MiniLM-L6-v2"),
+#     "proxy_openai": "proxy_openai",
+#     "proxy_azure": "proxy_azure",
+# }
+
 EMBEDDING_MODEL_CONFIG = {
-    "text2vec": os.path.join(MODEL_PATH, "text2vec-large-chinese"),
-    "text2vec-base": os.path.join(MODEL_PATH, "text2vec-base-chinese"),
+    "text2vec": '/datas/liab/embeddings_model/text2vec-large-chinese',
+    "bge-reranker-large": '/datas/liab/rerank_model/bge-reranker-large',
+    "stella-large-zh-v3-1792d": '/datas/liab/embeddings_model/stella-large-zh-v3-1792d',
     # https://huggingface.co/moka-ai/m3e-large
     "m3e-base": os.path.join(MODEL_PATH, "m3e-base"),
     # https://huggingface.co/moka-ai/m3e-base

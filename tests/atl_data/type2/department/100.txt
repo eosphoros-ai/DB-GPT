@@ -1,0 +1,1 @@
+{'parent_org': 'FNC', 'shortname': 'FSSC', 'fullname': 'Financial Shared Service Center', 'chinesename': '账务共享中心'}

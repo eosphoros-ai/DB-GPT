@@ -1,0 +1,1 @@
+{'parent_org': 'SRC', 'shortname': 'ATLI-SRC', 'fullname': 'ATLI-Sourcing', 'chinesename': 'ATLI-资材部'}

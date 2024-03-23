@@ -1,0 +1,1 @@
+{'parent_org': 'CPP', 'shortname': 'ATG', 'fullname': 'Advanced Technology Investment', 'chinesename': '先进技术投资组'}

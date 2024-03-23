@@ -9,6 +9,7 @@ import aiofiles
 from fastapi import APIRouter, Body, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
 
+from db.ConnectMongdb import MyMongdb
 from dbgpt._private.config import Config
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
 from dbgpt.app.knowledge.service import KnowledgeService
@@ -68,14 +69,19 @@ def __new_conversation(chat_mode, user_name: str, sys_code: str) -> Conversation
     )
 
 
-def get_db_list():
-    dbs = CFG.local_db_manager.get_db_list()
+def get_db_list(user_id=None):
+    dbs = CFG.local_db_manager.get_db_list(user_id=user_id)
     db_params = []
     for item in dbs:
         params: dict = {}
-        params.update({"param": item["db_name"]})
-        params.update({"type": item["db_type"]})
-        db_params.append(params)
+        my = MyMongdb()
+        if my.check_user_dbgpt_db_permission(department=item["db_name"], user_id=user_id) or \
+                my.check_manage_dbgpt_db_permission(department=item["db_name"], user_id=user_id):
+
+            params.update({"param": item["db_name"]})
+            params.update({"type": item["db_type"]})
+            db_params.append(params)
+
     return db_params
 
 
@@ -148,12 +154,15 @@ def get_executor() -> Executor:
 
 
 @router.get("/v1/chat/db/list", response_model=Result[DBConfig])
-async def db_connect_list():
-    return Result.succ(CFG.local_db_manager.get_db_list())
+async def db_connect_list(user_id: str = None):
+    return Result.succ(CFG.local_db_manager.get_db_list(user_id))
 
 
 @router.post("/v1/chat/db/add", response_model=Result[bool])
 async def db_connect_add(db_config: DBConfig = Body()):
+    my = MyMongdb()
+    my.registDBGPTDB(address=db_config.db_name, name=db_config.db_name, intro=db_config.comment, mode='add',
+                     user_id=db_config.user_id)
     return Result.succ(CFG.local_db_manager.add_db(db_config))
 
 
@@ -164,6 +173,11 @@ async def db_connect_edit(db_config: DBConfig = Body()):
 
 @router.post("/v1/chat/db/delete", response_model=Result[bool])
 async def db_connect_delete(db_name: str = None):
+    db_summary_client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
+    db_summary_client.delete_db_profile(db_name + '_profile')
+    my = MyMongdb()
+    my.registDBGPTDB(address=db_name, name=db_name, mode='remove')
+    print('delete_%s_profile' % db_name)
     return Result.succ(CFG.local_db_manager.delete_db(db_name))
 
 
@@ -206,10 +220,10 @@ async def dialogue_scenes():
     new_modes: List[ChatScene] = [
         ChatScene.ChatWithDbExecute,
         ChatScene.ChatWithDbQA,
-        ChatScene.ChatExcel,
-        ChatScene.ChatKnowledge,
+        # ChatScene.ChatExcel,
+        # ChatScene.ChatKnowledge,
         ChatScene.ChatDashboard,
-        ChatScene.ChatAgent,
+        # ChatScene.ChatAgent,
     ]
     for scene in new_modes:
         scene_vo = ChatSceneVo(
@@ -224,13 +238,14 @@ async def dialogue_scenes():
 
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
-async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
+async def params_list(chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None):
+    print("/v1/chat/mode/params/list", chat_mode, user_id)
     if ChatScene.ChatWithDbQA.value() == chat_mode:
-        return Result.succ(get_db_list())
+        return Result.succ(get_db_list(user_id=user_id))
     elif ChatScene.ChatWithDbExecute.value() == chat_mode:
-        return Result.succ(get_db_list())
+        return Result.succ(get_db_list(user_id=user_id))
     elif ChatScene.ChatDashboard.value() == chat_mode:
-        return Result.succ(get_db_list())
+        return Result.succ(get_db_list(user_id=user_id))
     elif ChatScene.ChatExecution.value() == chat_mode:
         return Result.succ(plugins_select_info())
     elif ChatScene.ChatKnowledge.value() == chat_mode:
@@ -243,12 +258,12 @@ async def params_list(chat_mode: str = ChatScene.ChatNormal.value()):
 
 @router.post("/v1/chat/mode/params/file/load")
 async def params_load(
-    conv_uid: str,
-    chat_mode: str,
-    model_name: str,
-    user_name: Optional[str] = None,
-    sys_code: Optional[str] = None,
-    doc_file: UploadFile = File(...),
+        conv_uid: str,
+        chat_mode: str,
+        model_name: str,
+        user_name: Optional[str] = None,
+        sys_code: Optional[str] = None,
+        doc_file: UploadFile = File(...),
 ):
     print(f"params_load: {conv_uid},{chat_mode},{model_name}")
     try:
@@ -292,7 +307,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         dialogue.chat_mode = ChatScene.ChatNormal.value()
     if not dialogue.conv_uid:
         conv_vo = __new_conversation(
-            dialogue.chat_mode, dialogue.user_name, dialogue.sys_code
+            dialogue.chat_mode, dialogue.user_id, dialogue.sys_code
         )
         dialogue.conv_uid = conv_vo.conv_uid
 
@@ -301,6 +316,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
 
     chat_param = {
         "chat_session_id": dialogue.conv_uid,
+        "user_id": dialogue.user_id,
         "user_name": dialogue.user_name,
         "sys_code": dialogue.sys_code,
         "current_user_input": dialogue.user_input,
@@ -342,6 +358,15 @@ async def chat_completions(
         "Connection": "keep-alive",
         "Transfer-Encoding": "chunked",
     }
+    my = MyMongdb()
+    if not (my.check_user_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)
+            or my.check_manage_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)):
+        return StreamingResponse(
+            no_stream_generator_string('you dont have permission to use db.'),
+            headers=headers,
+            media_type="text/event-stream",
+        )
+
     if dialogue.chat_mode == ChatScene.ChatAgent.value():
         return StreamingResponse(
             multi_agents.app_agent_chat(

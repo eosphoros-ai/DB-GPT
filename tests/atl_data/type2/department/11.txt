@@ -1,0 +1,1 @@
+{'parent_org': 'CPD', 'shortname': 'CDC', 'fullname': 'Cell Design Center', 'chinesename': '产品设计中心'}

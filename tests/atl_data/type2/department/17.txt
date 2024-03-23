@@ -1,0 +1,1 @@
+{'parent_org': 'CPD', 'shortname': 'PAP', 'fullname': 'PAP - PLT and NPI Development', 'chinesename': 'A客户项目部'}

@@ -1,0 +1,1 @@
+{'parent_org': 'APD', 'shortname': 'AIT', 'fullname': 'Architecture Initiative Technology', 'chinesename': '产品结构创新部'}

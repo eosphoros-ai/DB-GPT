@@ -60,7 +60,7 @@ function SideBar() {
     useContext(ChatContext);
   const { pathname, replace } = useRouter();
   const { t, i18n } = useTranslation();
-
+  const [userId, setUserId] = useState("");
   const [logo, setLogo] = useState<string>('/LOGO_1.png');
 
   const routes = useMemo(() => {
@@ -71,12 +71,12 @@ function SideBar() {
         path: '/app',
         icon: <AppstoreOutlined />,
       },
-      {
-        key: 'flow',
-        name: t('awel_flow'),
-        icon: <ForkOutlined />,
-        path: '/flow',
-      },
+      // {
+      //   key: 'flow',
+      //   name: t('awel_flow'),
+      //   icon: <ForkOutlined />,
+      //   path: '/flow',
+      // },
       {
         key: 'models',
         name: t('model_manage'),
@@ -87,7 +87,7 @@ function SideBar() {
         key: 'database',
         name: t('Database'),
         icon: <ConsoleSqlOutlined />,
-        path: '/database',
+        path: `/database?userId=${userId}`,
       },
       {
         key: 'knowledge',
@@ -95,12 +95,12 @@ function SideBar() {
         icon: <PartitionOutlined />,
         path: '/knowledge',
       },
-      {
-        key: 'agent',
-        name: t('Plugins'),
-        path: '/agent',
-        icon: <BuildOutlined />,
-      },
+      // {
+      //   key: 'agent',
+      //   name: t('Plugins'),
+      //   path: '/agent',
+      //   icon: <BuildOutlined />,
+      // },
       {
         key: 'prompt',
         name: t('Prompt'),
@@ -109,7 +109,7 @@ function SideBar() {
       },
     ];
     return items;
-  }, [i18n.language]);
+  }, [i18n.language,userId]);
 
   const handleToggleMenu = () => {
     setIsMenuExpand(!isMenuExpand);
@@ -188,7 +188,7 @@ function SideBar() {
         onOk() {
           return new Promise<void>(async (resolve, reject) => {
             try {
-              const [err] = await apiInterceptors(delDialogue(dialogue.conv_uid));
+              const [err] = await apiInterceptors(delDialogue(dialogue.conv_uid, userId));
               if (err) {
                 reject();
                 return;
@@ -204,7 +204,7 @@ function SideBar() {
         },
       });
     },
-    [refreshDialogList],
+    [refreshDialogList,userId],
   );
 
   const handleClickChatItem = (item: IChatDialogueSchema) => {
@@ -214,12 +214,13 @@ function SideBar() {
   };
 
   const copyLink = useCallback((item: IChatDialogueSchema) => {
-    const success = copy(`${location.origin}/chat?scene=${item.chat_mode}&id=${item.conv_uid}`);
+    const success = copy(`${location.origin}/chat?scene=${item.chat_mode}&id=${item.conv_uid}&userid=${item.user_id}`);
     message[success ? 'success' : 'error'](success ? 'Copy success' : 'Copy failed');
   }, []);
 
   useEffect(() => {
     queryDialogueList();
+    setUserId(localStorage.getItem('userId') || "");
   }, []);
 
   useEffect(() => {
@@ -228,12 +229,13 @@ function SideBar() {
 
   if (!isMenuExpand) {
     return (
+
       <div className="flex flex-col justify-between h-screen bg-white dark:bg-[#232734] animate-fade animate-duration-300">
-        <Link href="/" className="px-2 py-3">
+        <Link href={`/?userId=${userId}`} className="px-2 py-3">
           <Image src="/LOGO_SMALL.png" alt="DB-GPT" width={63} height={46} className="w-[63px] h-[46px]" />
         </Link>
         <div>
-          <Link href="/" className="flex items-center justify-center my-4 mx-auto w-12 h-12 bg-theme-primary rounded-full text-white">
+          <Link href={`/?userId=${userId}`} className="flex items-center justify-center my-4 mx-auto w-12 h-12 bg-theme-primary rounded-full text-white">
             <PlusOutlined className="text-lg" />
           </Link>
         </div>
@@ -243,9 +245,9 @@ function SideBar() {
             const active = item.conv_uid === chatId && item.chat_mode === scene;
 
             return (
-              <Tooltip key={item.conv_uid} title={item.user_name || item.user_input} placement="right">
+              <Tooltip key={item.conv_uid} title={item.user_input || item.user_name } placement="right">
                 <Link
-                  href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`}
+                  href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}&userid=${item.user_name}`}
                   className={smallMenuItemStyle(active)}
                   onClick={() => {
                     handleClickChatItem(item);
@@ -285,10 +287,10 @@ function SideBar() {
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-[#232734]">
       {/* LOGO */}
-      <Link href="/" className="p-2">
+      <Link href={`/?userId=${userId}`} className="p-2">
         <Image src={logo} alt="DB-GPT" width={239} height={60} className="w-full h-full" />
       </Link>
-      <Link href="/" className="flex items-center justify-center mb-4 mx-4 h-11 bg-theme-primary rounded text-white">
+      <Link href={`/?userId=${userId}`}  className="flex items-center justify-center mb-4 mx-4 h-11 bg-theme-primary rounded text-white">
         <PlusOutlined className="mr-2" />
         <span>{t('new_chat')}</span>
       </Link>
@@ -300,14 +302,14 @@ function SideBar() {
           return (
             <Link
               key={item.conv_uid}
-              href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}`}
+              href={`/chat?scene=${item.chat_mode}&id=${item.conv_uid}&userid=${item.user_name}`}
               className={`group/item ${menuItemStyle(active)}`}
               onClick={() => {
                 handleClickChatItem(item);
               }}
             >
               <MessageOutlined className="text-base" />
-              <div className="flex-1 line-clamp-1 mx-2 text-sm">{item.user_name || item.user_input}</div>
+              <div className="flex-1 line-clamp-1 mx-2 text-sm">{item.user_input || item.user_name}</div>
               <div
                 className="group-hover/item:opacity-100 cursor-pointer opacity-0 mr-1"
                 onClick={(e) => {

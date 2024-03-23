@@ -1,0 +1,1 @@
+{'parent_org': 'IDT', 'shortname': 'AD', 'fullname': 'Application Development', 'chinesename': '技术开发部'}

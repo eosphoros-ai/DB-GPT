@@ -130,6 +130,8 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             ai_response = ai_response.replace("\*", "*")
             ai_response = ai_response.replace("\t", "")
 
+            ai_response = ai_response.replace("提供的表结构信息不足以生成 sql 查询。", "select '提供的表结构信息不足以生成 sql 查询。' as error")
+
             # ai_response = ai_response.strip().replace("\\n", " ").replace("\n", " ")
             print("un_stream ai response:", ai_response)
             return ai_response

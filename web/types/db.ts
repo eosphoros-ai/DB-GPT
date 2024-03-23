@@ -27,6 +27,7 @@ export type IChatDbSchema = {
   db_pwd: string;
   db_type: DBType;
   db_user: string;
+  user_id:string;
 };
 
 export type DbListResponse = IChatDbSchema[];

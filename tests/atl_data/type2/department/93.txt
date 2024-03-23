@@ -1,0 +1,1 @@
+{'parent_org': 'IDT', 'shortname': 'DP', 'fullname': 'Data Platform', 'chinesename': '数据平台部'}

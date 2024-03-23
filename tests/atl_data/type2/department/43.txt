@@ -1,0 +1,1 @@
+{'parent_org': 'PRJ', 'shortname': 'MIC', 'fullname': 'Manufacture Improvement Center', 'chinesename': '制造改善部'}

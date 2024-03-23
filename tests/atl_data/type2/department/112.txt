@@ -1,0 +1,1 @@
+{'parent_org': 'FE', 'shortname': 'Tech', 'fullname': 'Technology Management', 'chinesename': '技管组'}

@@ -1,0 +1,1 @@
+{'parent_org': 'RI', 'shortname': 'AN', 'fullname': 'Anode', 'chinesename': '负极材料研发部'}

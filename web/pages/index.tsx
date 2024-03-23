@@ -1,7 +1,8 @@
 import { useRequest } from 'ahooks';
-import { useContext, useState } from 'react';
+import { useContext, useState ,useEffect} from 'react';
 import { Divider, Spin, Tag } from 'antd';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
+
 import Image from 'next/image';
 import { NextPage } from 'next';
 import { apiInterceptors, newDialogue, postScenes } from '@/client/api';
@@ -17,8 +18,27 @@ import classNames from 'classnames';
 
 const Home: NextPage = () => {
   const router = useRouter();
-  const { model, setModel } = useContext(ChatContext);
+  const { model, setModel, userId , setUserId } = useContext(ChatContext);
+
+  useEffect(() => {
+    if (router.isReady) {
+      const userIdFromQuery = router.query.userId || router.query.userid;
+
+      if (userIdFromQuery && typeof window !== 'undefined') {
+        localStorage.setItem('userId', userIdFromQuery);
+        // 如果您有一个setUserId方法在您的ChatContext中，您可以在这里设置它
+        if (setUserId) {
+          setUserId(userIdFromQuery);
+        }
+
+      }
+      console.log('page Index', userId, localStorage.getItem('userId'));
+    }
+  }, [router.isReady, router.query.userId, router.query.userid, setUserId]);
+
   const { t } = useTranslation();
+
+
 
   const [loading, setLoading] = useState(false);
   const [chatSceneLoading, setChatSceneLoading] = useState<boolean>(false);
@@ -32,19 +52,20 @@ const Home: NextPage = () => {
 
   const submit = async (message: string) => {
     setLoading(true);
-    const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_normal' }));
+    const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_normal' , user_id:userId}));
     if (res) {
       localStorage.setItem(STORAGE_INIT_MESSAGE_KET, JSON.stringify({ id: res.conv_uid, message }));
-      router.push(`/chat/?scene=chat_normal&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
+      router.push(`/chat/?scene=chat_normal&userid=${userId}&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
     }
+    console.log('proxy_llm send');
     setLoading(false);
   };
 
   const handleNewChat = async (scene: SceneResponse) => {
     if (scene.show_disable) return;
-    const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_normal' }));
+    const [, res] = await apiInterceptors(newDialogue({ chat_mode: 'chat_normal' , user_id:userId}));
     if (res) {
-      router.push(`/chat?scene=${scene.chat_scene}&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
+      router.push(`/chat?scene=${scene.chat_scene}&userid=${userId}&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
     }
   };
 

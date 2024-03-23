@@ -1,5 +1,6 @@
 import json
 import logging
+import traceback
 import xml.etree.ElementTree as ET
 from typing import Dict, NamedTuple
 
@@ -63,9 +64,13 @@ class DbChatOutputParser(BaseOutputParser):
                 return SqlAction("", clean_str, "")
 
     def parse_view_response(self, speak, data, prompt_response) -> str:
-        param = {}
+        print(CFG)
+        param = { }
         api_call_element = ET.Element("chart-view")
         err_msg = None
+        print('parse_view_response..', speak, data, prompt_response)
+        print('data..', data, )
+        print('prompt_response..', prompt_response)
         try:
             if not prompt_response.sql or len(prompt_response.sql) <= 0:
                 return f"""{speak}"""
@@ -78,6 +83,7 @@ class DbChatOutputParser(BaseOutputParser):
             )
             view_json_str = json.dumps(param, default=serialize, ensure_ascii=False)
         except Exception as e:
+            traceback.print_exc()
             logger.error("parse_view_response error!" + str(e))
             err_param = {}
             err_param["sql"] = f"{prompt_response.sql}"
@@ -90,6 +96,10 @@ class DbChatOutputParser(BaseOutputParser):
         # api_call_element.text = view_json_str
         api_call_element.set("content", view_json_str)
         result = ET.tostring(api_call_element, encoding="utf-8")
+        with open('result.txt', 'wb') as f:
+            f.write(result)
+
+        print('err_msg',err_msg)
         if err_msg:
             return f"""{speak} \\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result.decode("utf-8")}"""
         else:

@@ -146,14 +146,15 @@ async def dialogue_new(
     "/delete",
     dependencies=[Depends(check_api_key)],
 )
-async def delete(con_uid: str, service: Service = Depends(get_service)):
+async def delete(con_uid: str, user_id: str = None, service: Service = Depends(get_service)):
     """Delete a Conversation entity
 
     Args:
         con_uid (str): The conversation UID
         service (Service): The service
     """
-    service.delete(ServeRequest(conv_uid=con_uid))
+    service.delete(ServeRequest(conv_uid=con_uid, user_name=user_id))
+    print('deletedeletedelete')
     return Result.succ(None)
 
 
@@ -163,10 +164,10 @@ async def delete(con_uid: str, service: Service = Depends(get_service)):
     dependencies=[Depends(check_api_key)],
 )
 async def query_page(
-    request: ServeRequest,
-    page: Optional[int] = Query(default=1, description="current page"),
-    page_size: Optional[int] = Query(default=10, description="page size"),
-    service: Service = Depends(get_service),
+        request: ServeRequest,
+        page: Optional[int] = Query(default=1, description="current page"),
+        page_size: Optional[int] = Query(default=10, description="page size"),
+        service: Service = Depends(get_service),
 ) -> Result[PaginationResult[ServerResponse]]:
     """Query Conversation entities
 
@@ -198,6 +199,7 @@ async def list_latest_conv(
     request = ServeRequest(
         user_name=user_name or user_id,
         sys_code=sys_code,
+        logic_delete=0,
     )
     return Result.succ(service.get_list_by_page(request, page, page_size).items)
 
@@ -207,9 +209,9 @@ async def list_latest_conv(
     response_model=Result[List[MessageVo]],
     dependencies=[Depends(check_api_key)],
 )
-async def get_history_messages(con_uid: str, service: Service = Depends(get_service)):
+async def get_history_messages(con_uid: str,user_id: str, service: Service = Depends(get_service)):
     """Get the history messages of a conversation"""
-    return Result.succ(service.get_history_messages(ServeRequest(conv_uid=con_uid)))
+    return Result.succ(service.get_history_messages(ServeRequest(conv_uid=con_uid,user_name=user_id)))
 
 
 def init_endpoints(system_app: SystemApp) -> None:

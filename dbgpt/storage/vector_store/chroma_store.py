@@ -142,3 +142,18 @@ class ChromaStore(VectorStoreBase):
             for name in dirs:
                 os.rmdir(os.path.join(root, name))
         os.rmdir(self.persist_dir)
+
+if __name__ == '__main__':
+    print('1111')
+    from dbgpt.rag.embedding.embedding_factory import DefaultEmbeddingFactory
+    vector_config = ChromaVectorConfig(
+        persist_path='/datas/liab/DB-GPT/pilot/data',
+        name='atl_general',
+        embedding_fn=DefaultEmbeddingFactory(
+            default_model_name='text2vec',
+        ).create()
+    )
+    print(2322)
+    chroma_db = ChromaStore(vector_config)
+    print(chroma_db.vector_name_exists())
+    pass

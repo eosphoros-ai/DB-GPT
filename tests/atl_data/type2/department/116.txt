@@ -1,0 +1,1 @@
+{'parent_org': 'SD', 'shortname': 'BCM', 'fullname': 'Business Continuity Management(Group)', 'chinesename': 'BCM管理组(集团)'}

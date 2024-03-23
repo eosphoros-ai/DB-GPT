@@ -1,0 +1,1 @@
+{'parent_org': 'PRJ', 'shortname': 'PRJ-NDSAP1', 'fullname': 'PRJ-ND Strategic Account Portfolio1', 'chinesename': 'PRJ-ND S客户项目1部'}

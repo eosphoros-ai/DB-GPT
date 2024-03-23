@@ -81,7 +81,8 @@ class DBStorageConversationItemAdapter(
         if session is None:
             raise Exception("session is None")
         return session.query(ChatHistoryEntity).filter(
-            ChatHistoryEntity.conv_uid == resource_id.conv_uid
+            ChatHistoryEntity.conv_uid == resource_id.conv_uid,
+            ChatHistoryEntity.user_name == resource_id.user_name,
         )
 
 
@@ -97,6 +98,7 @@ class DBMessageStorageItemAdapter(
         return ChatHistoryMessageEntity(
             conv_uid=item.conv_uid,
             index=item.index,
+            logic_delete=item.logic_delete,
             round_index=round_index,
             message_detail=message_detail,
         )

@@ -1,0 +1,1 @@
+{'parent_org': 'MU', 'shortname': 'MU Plus Digi-Lean', 'fullname': 'Manufacturing Unit Plus Digi Lean', 'chinesename': '智能制造特区Digi-Lean部'}

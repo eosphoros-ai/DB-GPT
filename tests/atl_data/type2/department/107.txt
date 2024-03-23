@@ -1,0 +1,1 @@
+{'parent_org': 'HR', 'shortname': 'O&TD', 'fullname': 'Organization&Talent Development', 'chinesename': '组织与人才发展部'}

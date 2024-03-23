@@ -190,6 +190,35 @@ class PostgreSQLConnector(RDBMSConnector):
             ) sub
             GROUP BY table_name;
             """
+        _sql = '''
+        select
+            'Table:'||relname || ',table_comment:' || (obj_description(pg_class.oid, 'pg_class'))  as table_name ,
+            'Columns:'||string_agg(attname || case
+                when col_description(pg_class.oid,
+                attnum) is not null then ':【' || col_description(pg_class.oid,
+                attnum) || '】'
+                else ''
+            end ,
+            ',')  as column_descriptions
+        from
+            pg_class
+        join 
+          pg_namespace on
+            pg_namespace.oid = pg_class.relnamespace
+        join 
+          pg_attribute on
+            pg_attribute.attrelid = pg_class.oid
+            and pg_attribute.attnum > 0
+            and not pg_attribute.attisdropped
+        where
+            pg_class.relkind = 'r'
+            and pg_namespace.nspname not in ('pg_catalog', 'information_schema', 'pg_toast')
+        group by
+            table_name,
+            pg_class.oid
+        order by
+            table_name;
+        '''
         cursor = self.session.execute(text(_sql))
         results = cursor.fetchall()
         return results
@@ -212,14 +241,13 @@ class PostgreSQLConnector(RDBMSConnector):
         fields = cursor.fetchall()
         return [(field[0], field[1], field[2], field[3], field[4]) for field in fields]
 
-    def get_indexes(self, table_name):
-        """Get table indexes about specified table."""
-        session = self._db_sessions()
-        cursor = session.execute(
-            text(
-                f"SELECT indexname, indexdef FROM pg_indexes WHERE "
-                f"tablename = '{table_name}'"
-            )
-        )
-        indexes = cursor.fetchall()
-        return [(index[0], index[1]) for index in indexes]
+    # def get_indexes(self, table_name):
+    #     """Get table indexes about specified table."""
+    #     session = self._db_sessions()
+    #     cursor = session.execute(
+    #         text(
+    #             f"SELECT indexname, indexdef FROM pg_indexes WHERE tablename = '{table_name}'"
+    #         )
+    #     )
+    #     indexes = cursor.fetchall()
+    #     return [(index[0], index[1]) for index in indexes]

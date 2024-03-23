@@ -169,7 +169,7 @@ class OpenAILLMClient(ProxyLLMClient):
         # Apply openai kwargs
         for k, v in self._openai_kwargs.items():
             payload[k] = v
-        if request.temperature:
+        if request.temperature == 0 or request.temperature is not None:
             payload["temperature"] = request.temperature
         if request.max_new_tokens:
             payload["max_tokens"] = request.max_new_tokens
@@ -218,6 +218,7 @@ class OpenAILLMClient(ProxyLLMClient):
     async def generate_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
     ) -> ModelOutput:
+        print('generate_v1,', payload)
         chat_completion = await self.client.chat.completions.create(
             messages=messages, **payload
         )

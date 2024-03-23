@@ -1,5 +1,5 @@
 import json
-
+from datetime import datetime
 from dbgpt._private.config import Config
 from dbgpt.app.scene import AppScenePromptTemplateAdapter, ChatScene
 from dbgpt.app.scene.chat_db.auto_execute.out_parser import DbChatOutputParser
@@ -33,6 +33,13 @@ Constraint:
     
 User Question:
     {user_input}
+
+Current Date:
+    {current_date}    
+
+background knowledge:
+    {extend_info}
+    
 Please think step by step and respond according to the following JSON format:
     {response}
 Ensure the response is correct json and can be parsed by Python json.loads.
@@ -40,9 +47,11 @@ Ensure the response is correct json and can be parsed by Python json.loads.
 """
 
 _DEFAULT_TEMPLATE_ZH = """
-请根据用户选择的数据库和该库的部分可用表结构定义来回答用户问题.
+你是资深DBA, 请根据用户选择的数据库和该库的部分可用表结构定义来回答用户问题.
+
 数据库名:
     {db_name}
+    
 表结构定义:
     {table_info}
 
@@ -50,13 +59,25 @@ _DEFAULT_TEMPLATE_ZH = """
     1. 请根据用户问题理解用户意图，使用给出表结构定义创建一个语法正确的 {dialect} sql，如果不需要sql，则直接回答用户问题。
     2. 除非用户在问题中指定了他希望获得的具体数据行数，否则始终将查询限制为最多 {top_k} 个结果。
     3. 只能使用表结构信息中提供的表来生成 sql，如果无法根据提供的表结构中生成 sql ，请说：“提供的表结构信息不足以生成 sql 查询。” 禁止随意捏造信息。
-    4. 请注意生成SQL时不要弄错表和列的关系
-    5. 请检查SQL的正确性，并保证正确的情况下优化查询性能
-    6.请从如下给出的展示方式种选择最优的一种用以进行数据渲染，将类型名称放入返回要求格式的name参数值种，如果找不到最合适的则使用'Table'作为展示方式，可用数据展示方式如下: {display_type}
+    4. 请注意生成SQL时千万不要弄错表和列的关系，弄错了我会惩罚你。
+    5. 请检查SQL的正确性，并保证正确的情况下优化查询性能。
+    6. 请从如下给出的展示方式种选择最优的一种用以进行数据渲染，将类型名称放入返回要求格式的name参数值种，如果找不到最合适的则使用'Table'作为展示方式，可用数据展示方式如下: {display_type}。
+    
 用户问题:
     {user_input}
+    
+当前日期：
+    {current_date}
+
+背景知识：
+    {extend_info}
+    
 请一步步思考并按照以下JSON格式回复：
-      {response}
+    {response}
+      
+这里有几个例子可以作为参考：
+    {qa_samples}
+    
 确保返回正确的json并且可以被Python json.loads方法解析.
 
 """
@@ -70,8 +91,8 @@ PROMPT_SCENE_DEFINE = (
 )
 
 RESPONSE_FORMAT_SIMPLE = {
-    "thoughts": "thoughts summary to say to user",
-    "sql": "SQL Query to run",
+    "thoughts": "一步步的思考步骤写出来并告诉用户，其中要说明你要使用哪个列和列所属表，并作出判断告诉用户这些列是属于哪些表，并复查一遍表和列的对应关系是否正确",
+    "sql": "一步一步思考生成解答问题的正确的sql",
     "display_type": "Data display method",
 }
 
@@ -81,7 +102,7 @@ PROMPT_NEED_STREAM_OUT = False
 # Temperature is a configuration hyperparameter that controls the randomness of language model output.
 # A high temperature produces more unpredictable and creative results, while a low temperature produces more common and conservative output.
 # For example, if you adjust the temperature to 0.5, the model will usually generate text that is more predictable and less creative than if you set the temperature to 1.0.
-PROMPT_TEMPERATURE = 0.5
+PROMPT_TEMPERATURE = 0
 
 prompt = ChatPromptTemplate(
     messages=[

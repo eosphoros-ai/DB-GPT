@@ -1,0 +1,1 @@
+{'parent_org': 'RI', 'shortname': 'RCM', 'fullname': 'Research cooperation Management', 'chinesename': '研发管理部'}

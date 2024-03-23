@@ -45,6 +45,9 @@ class RdbmsSummary(DBSummary):
             collation=self.db.get_collation(),
         )
         tables = self.db.get_table_names()
+        print('self.metadata',self.metadata)
+        print('tables',tables)
+
         self.table_info_summaries = [
             self.get_table_summary(table_name) for table_name in tables
         ]
@@ -64,7 +67,7 @@ class RdbmsSummary(DBSummary):
 
 
 def _parse_db_summary(
-    conn: BaseConnector, summary_template: str = "{table_name}({columns})"
+    conn: RDBMSDatabase, summary_template: str = "Table:`{table_name}`({table_comment}),Columns:[{columns}]"
 ) -> List[str]:
     """Get db summary for database.
 
@@ -91,29 +94,32 @@ def _parse_table_summary(
         table_name (str): table name
 
     Examples:
-        table_name(column1(column1 comment),column2(column2 comment),
-        column3(column3 comment) and index keys, and table comment: {table_comment})
+        table_name(column1(column1 comment),column2(column2 comment),column3(column3 comment) and index keys, and table comment: {table_comment})
+    Atl Examples:
+        Table:`table_name`(table_comment),Columns:[`column1` '(column1 comment)', `column2` '(column2 comment)',`column3` 'column3 comment'] and index keys.
+
     """
     columns = []
     for column in conn.get_columns(table_name):
         if column.get("comment"):
-            columns.append(f"{column['name']} ({column.get('comment')})")
+            columns.append(f"`{column['name']}` '{column.get('comment')}'")
         else:
-            columns.append(f"{column['name']}")
+            columns.append(f"`{column['name']}`")
 
     column_str = ", ".join(columns)
     index_keys = []
+
+    try:
+        table_comment = conn.get_table_comment(table_name)
+    except Exception:
+        table_comment = dict(text=None)
+
     for index_key in conn.get_indexes(table_name):
         key_str = ", ".join(index_key["column_names"])
-        index_keys.append(f"{index_key['name']}(`{key_str}`) ")  # noqa
-    table_str = summary_template.format(table_name=table_name, columns=column_str)
+        index_keys.append(f"{index_key['name']}(`{key_str}`) ")
+    table_str = summary_template.format(table_name=table_name, table_comment=table_comment.get('text'), columns=column_str)
     if len(index_keys) > 0:
         index_key_str = ", ".join(index_keys)
         table_str += f", and index keys: {index_key_str}"
-    try:
-        comment = conn.get_table_comment(table_name)
-    except Exception:
-        comment = dict(text=None)
-    if comment.get("text"):
-        table_str += f", and table comment: {comment.get('text')}"
+
     return table_str

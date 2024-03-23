@@ -796,7 +796,7 @@ class OnceConversation:
 class ConversationIdentifier(ResourceIdentifier):
     """Conversation identifier."""
 
-    def __init__(self, conv_uid: str, identifier_type: str = "conversation"):
+    def __init__(self, conv_uid: str, user_name: str=None, identifier_type: str = "conversation"):
         """Create a conversation identifier.
 
         Args:
@@ -804,6 +804,7 @@ class ConversationIdentifier(ResourceIdentifier):
             identifier_type (str): The identifier type
         """
         self.conv_uid = conv_uid
+        self.user_name = user_name
         self.identifier_type = identifier_type
 
     @property
@@ -870,24 +871,28 @@ class MessageStorageItem(StorageItem):
         """Return the identifier."""
         return self._id
 
-    def __init__(self, conv_uid: str, index: int, message_detail: Dict):
+    def __init__(self, conv_uid: str, index: int, message_detail: Dict,logic_delete: int = 0):
         """Create a message storage item.
 
         Args:
             conv_uid (str): The conversation uid
             index (int): The message index
             message_detail (Dict): The message detail
+            logic_delete (int): The message detail
         """
         self.conv_uid = conv_uid
         self.index = index
         self.message_detail = message_detail
         self._id = MessageIdentifier(conv_uid, index)
+        self.logic_delete = logic_delete
+
 
     def to_dict(self) -> Dict:
         """Convert to dict."""
         return {
             "conv_uid": self.conv_uid,
             "index": self.index,
+            "logic_delete": self.logic_delete,
             "message_detail": self.message_detail,
         }
 
@@ -962,6 +967,7 @@ class StorageConversation(OnceConversation, StorageItem):
         conv_uid: str,
         chat_mode: str = "chat_normal",
         user_name: Optional[str] = None,
+        logic_delete: int = 0,
         sys_code: Optional[str] = None,
         message_ids: Optional[List[str]] = None,
         summary: Optional[str] = None,
@@ -974,6 +980,7 @@ class StorageConversation(OnceConversation, StorageItem):
         """Create a conversation."""
         super().__init__(chat_mode, user_name, sys_code, summary, **kwargs)
         self.conv_uid = conv_uid
+        self.logic_delete = logic_delete
         self._message_ids = message_ids
         # Record the message index last time saved to the storage,
         # next time save messages which index is _has_stored_message_index + 1
@@ -983,7 +990,7 @@ class StorageConversation(OnceConversation, StorageItem):
         # Whether to load the message from the storage
         self._load_message = load_message
         self.save_message_independent = save_message_independent
-        self._id = ConversationIdentifier(conv_uid)
+        self._id = ConversationIdentifier(conv_uid,user_name=user_name)
         if conv_storage is None:
             conv_storage = InMemoryStorage()
         if message_storage is None:
@@ -1019,6 +1026,7 @@ class StorageConversation(OnceConversation, StorageItem):
         """Save the conversation to the storage."""
         # Save messages first
         message_list = self._get_message_items()
+        print('save to storage',message_list)
         self._message_ids = [
             message.identifier.str_identifier for message in message_list
         ]
@@ -1108,6 +1116,7 @@ class StorageConversation(OnceConversation, StorageItem):
         self.from_conversation(
             StorageConversation(
                 self.conv_uid,
+                user_name=self.user_name,
                 save_message_independent=self.save_message_independent,
                 conv_storage=self.conv_storage,
                 message_storage=self.message_storage,
@@ -1155,7 +1164,7 @@ def _conversation_from_dict(once: dict) -> OnceConversation:
     conversation.param_type = once.get("param_type", "")
     conversation.param_value = once.get("param_value", "")
     conversation.model_name = once.get("model_name", "proxyllm")
-    print(once.get("messages"))
+    print('message::::::',once.get("messages"))
     conversation.messages = _messages_from_dict(once.get("messages", []))
     return conversation
 

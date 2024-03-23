@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import json
 import logging
 import traceback
 from abc import ABC, abstractmethod
@@ -39,10 +40,20 @@ def _build_conversation(
         if len(chat_mode.param_types()) > 0:
             param_type = chat_mode.param_types()[0]
         param_value = chat_param["select_param"]
+    print('chat_param["chat_session_id"]', chat_param["chat_session_id"])
+    print('chat_mode.value()', chat_mode.value())
+    print('chat_param.get("user_id")', chat_param.get("user_id"))
+    print('chat_param.get("sys_code")', chat_param.get("sys_code"))
+    print('model_name', model_name)
+    print('param_type', param_type)
+    print('param_value', param_value)
+    print('conv_serve.conv_storage', conv_serve.conv_storage)
+    print('conv_serve.message_storage', conv_serve.message_storage)
+
     return StorageConversation(
         chat_param["chat_session_id"],
         chat_mode=chat_mode.value(),
-        user_name=chat_param.get("user_name"),
+        user_name=chat_param.get("user_id"),
         sys_code=chat_param.get("sys_code"),
         model_name=model_name,
         param_type=param_type,
@@ -95,11 +106,12 @@ class BaseChat(ABC):
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         self.model_cache_enable = chat_param.get("model_cache_enable", False)
-
+        self.save_dict = {}
         ### load prompt template
         # self.prompt_template: PromptTemplate = CFG.prompt_templates[
         #     self.chat_mode.value()
         # ]
+        print('basechat init ', self.chat_mode.value(), self.llm_model, CFG.PROXYLLM_BACKEND)
         self.prompt_template: AppScenePromptTemplateAdapter = (
             CFG.prompt_template_registry.get_prompt_template(
                 self.chat_mode.value(),
@@ -214,6 +226,7 @@ class BaseChat(ABC):
 
     async def _build_model_request(self) -> ModelRequest:
         input_values = await self.generate_input_values()
+        self.save_dict.update(input_values)
         # Load history
         self.history_messages = self.current_message.get_history_message()
         self.current_message.start_new_round()
@@ -233,7 +246,7 @@ class BaseChat(ABC):
         )
         req_ctx = ModelRequestContext(
             stream=self.prompt_template.stream_out,
-            user_name=self._chat_param.get("user_name"),
+            user_name=self._chat_param.get("user_id"),
             sys_code=self._chat_param.get("sys_code"),
             chat_mode=self.chat_mode.value(),
             span_id=root_tracer.get_current_span_id(),
@@ -299,7 +312,10 @@ class BaseChat(ABC):
                 view_msg = self.stream_plugin_call(msg)
                 view_msg = view_msg.replace("\n", "\\n")
                 yield view_msg
+
             self.current_message.add_ai_message(msg)
+            print('mes=g', msg)
+            print()
             view_msg = self.stream_call_reinforce_fn(view_msg)
             self.current_message.add_view_message(view_msg)
             span.end()
@@ -320,7 +336,7 @@ class BaseChat(ABC):
         span = root_tracer.start_span(
             "BaseChat.nostream_call", metadata=payload.to_dict()
         )
-        logger.info(f"Request: \n{payload}")
+        logger.info(f"Request1: \n{payload}")
         ai_response_text = ""
         payload.span_id = span.span_id
         try:
@@ -333,13 +349,20 @@ class BaseChat(ABC):
                     model_output, self.prompt_template.sep
                 )
             )
-            ### model result deal
+            try:
+                self.save_dict.update(eval(ai_response_text.strip('```').strip('json')))
+            except:
+                pass
+
             self.current_message.add_ai_message(ai_response_text)
             prompt_define_response = (
                 self.prompt_template.output_parser.parse_prompt_response(
                     ai_response_text
                 )
             )
+            # print('### model result deal',prompt_define_response)
+
+            print('### model result deal123')
             metadata = {
                 "model_output": model_output.to_dict(),
                 "ai_response_text": ai_response_text,
@@ -347,18 +370,23 @@ class BaseChat(ABC):
                     prompt_define_response
                 ),
             }
+            print('BaseChat.do_action123')
             with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
-                ###  run
+                print('###  run')
                 result = await blocking_func_to_async(
                     self._executor, self.do_action, prompt_define_response
                 )
 
-            ### llm speaker
             speak_to_user = self.get_llm_speak(prompt_define_response)
+            # print('### llm speaker',speak_to_user)
 
             # view_message = self.prompt_template.output_parser.parse_view_response(
             #     speak_to_user, result
             # )
+            print('blocking_func_to_async', )
+            print('speak_to_user', speak_to_user)
+            print('result', result)
+            print('prompt_define_response', prompt_define_response)
             view_message = await blocking_func_to_async(
                 self._executor,
                 self.prompt_template.output_parser.parse_view_response,
@@ -367,7 +395,11 @@ class BaseChat(ABC):
                 prompt_define_response,
             )
 
+            view_message_tmp = view_message.split('data')[-1].replace('&quot;', '')
+            self.save_dict.update({'ai_sql_result': view_message_tmp})
             view_message = view_message.replace("\n", "\\n")
+            from pprint import pprint
+            print('view_message', )
             self.current_message.add_view_message(view_message)
             self.message_adjust()
 
@@ -383,11 +415,18 @@ class BaseChat(ABC):
         await blocking_func_to_async(
             self._executor, self.current_message.end_current_round
         )
+        with open('/datas/liab/DB-GPT/evaluation/evaluation_output/result_type3_version4.jsonl', 'a') as f:
+            json.dump(
+                self.save_dict,
+                f,
+                ensure_ascii=False
+            )
+            f.write('\n')
         return self.current_ai_response()
 
     async def get_llm_response(self):
         payload = await self._build_model_request()
-        logger.info(f"Request: \n{payload}")
+        logger.info(f"Request2: \n{payload}")
         ai_response_text = ""
         prompt_define_response = None
         try:
@@ -448,6 +487,8 @@ class BaseChat(ABC):
     def current_ai_response(self) -> str:
         for message in self.current_message.messages[-1:]:
             if message.type == "view":
+                with open('message_content.txt', 'w') as f:
+                    f.write(message.content)
                 return message.content
         return None
 

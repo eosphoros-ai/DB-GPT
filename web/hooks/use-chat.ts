@@ -1,7 +1,8 @@
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { message } from 'antd';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo,useContext } from 'react';
 import i18n from '@/app/i18n';
+import { ChatContext } from '@/app/chat-context';
 
 type Props = {
   queryAgentURL?: string;
@@ -16,12 +17,12 @@ type ChatParams = {
   onDone?: () => void;
   onError?: (content: string, error?: Error) => void;
 };
-
 const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
   const ctrl = useMemo(() => new AbortController(), []);
-
+  const { userId } = useContext(ChatContext);
   const chat = useCallback(
-    async ({ data, chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
+    async ({ data,  chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
+
       if (!data?.user_input && !data?.doc_id) {
         message.warning(i18n.t('no_context_tip'));
         return;
@@ -30,6 +31,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
       const parmas = {
         ...data,
         conv_uid: chatId,
+        user_id:userId,
       };
 
       if (!parmas.conv_uid) {
@@ -79,7 +81,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
         onError?.('Sorry, We meet some error, please try agin later.', err as Error);
       }
     },
-    [queryAgentURL],
+    [queryAgentURL,userId],
   );
 
   useEffect(() => {

@@ -6,6 +6,12 @@ from typing import Any, Dict, List, Optional, Type, cast
 from dbgpt.core import Chunk
 from dbgpt.storage import vector_store
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+import os
+from typing import Any, Callable, List, Optional
+
+from dbgpt.rag.chunk import Chunk
+from dbgpt.storage import vector_store
+from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 
 connector: Dict[str, Type] = {}
 
@@ -13,21 +19,21 @@ connector: Dict[str, Type] = {}
 class VectorStoreConnector:
     """The connector for vector store.
 
-    VectorStoreConnector, can connect different vector db provided load document api_v1
-    and similar search api_v1.
+     VectorStoreConnector, can connect different vector db provided load document api_v1
+     and similar search api_v1.
 
-    1.load_document:knowledge document source into vector store.(Chroma, Milvus,
-    Weaviate).
-    2.similar_search: similarity search from vector_store.
-    3.similar_search_with_scores: similarity search with similarity score from
-    vector_store
+     1.load_document:knowledge document source into vector store.(Chroma, Milvus,
+     Weaviate).
+     2.similar_search: similarity search from vector_store.
+     3.similar_search_with_scores: similarity search with similarity score from
+     vector_store
 
-    code example:
-    >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
+     code example:
+     >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
-    >>> vector_store_config = VectorStoreConfig
-    >>> vector_store_connector = VectorStoreConnector(vector_store_type="Chroma")
-    """
+     >>> vector_store_config = VectorStoreConfig
+     >>> vector_store_connector = VectorStoreConnector(vector_store_type="Chroma")
+     """
 
     def __init__(
         self,
@@ -58,7 +64,7 @@ class VectorStoreConnector:
         embedding_fn: Optional[Any] = None,
         vector_store_config: Optional[VectorStoreConfig] = None,
     ) -> "VectorStoreConnector":
-        """Initialize default vector store connector."""
+        """initialize default vector store connector."""
         vector_store_type = vector_store_type or os.getenv(
             "VECTOR_STORE_TYPE", "Chroma"
         )
@@ -70,7 +76,7 @@ class VectorStoreConnector:
         return cls(real_vector_store_type, vector_store_config)
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
-        """Load document in vector database.
+        """load document in vector database.
 
         Args:
             - chunks: document chunks.
@@ -155,3 +161,10 @@ class VectorStoreConnector:
             if issubclass(getattr(vector_store, cls), VectorStoreBase):
                 _k, _v = cls, getattr(vector_store, cls)
                 connector.update({_k: _v})
+if __name__ == '__main__':
+    from dbgpt.storage.vector_store.pgvector_store import PGVectorConfig
+    vector_store_config = PGVectorConfig(connection_string='postgresql+psycopg2://fastgpt:1234@172.23.10.249:8100/newfastgpt',
+                                         name='hr_en_profile')
+    vector_store_connector = VectorStoreConnector(vector_store_type='PGVector',vector_store_config=vector_store_config)
+    print(vector_store_connector)
+    print(vector_store_connector.vector_name_exists())

@@ -1,25 +1,23 @@
-"""Base class for all connectors."""
-from abc import ABC, abstractmethod
-from typing import Dict, Iterable, List, Optional, Tuple
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+
+"""We need to design a base class.  That other connector can Write with this"""
+from abc import ABC
+from typing import Any, Dict, Iterable, List, Optional
 
 
-class BaseConnector(ABC):
-    """Base class for all connectors."""
-
-    db_type: str = "__abstract__db_type__"
-    driver: str = ""
-
+class BaseConnect(ABC):
     def get_table_names(self) -> Iterable[str]:
-        """Get all table names."""
-        raise NotImplementedError("Current connector does not support get_table_names")
+        """Get all table names"""
+        pass
 
     def get_table_info(self, table_names: Optional[List[str]] = None) -> str:
-        r"""Get table info about specified table.
+        """Get table info about specified table.
 
         Returns:
-            str: Table information joined by "\n\n"
+            str: Table information joined by '\n\n'
         """
-        raise NotImplementedError("Current connector does not support get_table_info")
+        pass
 
     def get_index_info(self, table_names: Optional[List[str]] = None) -> str:
         """Get index info about specified table.
@@ -27,7 +25,7 @@ class BaseConnector(ABC):
         Args:
              table_names (Optional[List[str]]): table names
         """
-        raise NotImplementedError("Current connector does not support get_index_info")
+        pass
 
     def get_example_data(self, table: str, count: int = 3):
         """Get example data about specified table.
@@ -38,179 +36,104 @@ class BaseConnector(ABC):
             table (str): table name
             count (int): example data count
         """
-        raise NotImplementedError("Current connector does not support get_example_data")
+        pass
 
-    def get_database_names(self) -> List[str]:
-        """Return database names.
-
-        Examples:
-            .. code-block:: python
-
-                print(conn.get_database_names())
-                # ['db1', 'db2']
+    def get_database_list(self) -> List[str]:
+        """Get database list.
 
         Returns:
             List[str]: database list
         """
-        raise NotImplementedError(
-            "Current connector does not support get_database_names"
-        )
+        pass
 
-    def get_table_comments(self, db_name: str) -> List[Tuple[str, str]]:
+    def get_database_names(self):
+        """Get database names."""
+        pass
+
+    def get_table_comments(self, db_name: str):
         """Get table comments.
 
         Args:
             db_name (str): database name
-
-        Returns:
-            List[Tuple[str, str]]: Table comments, first element is table name, second
-                element is comment
         """
-        raise NotImplementedError(
-            "Current connector does not support get_table_comments"
-        )
+        pass
 
     def get_table_comment(self, table_name: str) -> Dict:
-        """Return table comment with table name.
-
+        """Get table comment.
         Args:
             table_name (str): table name
-
         Returns:
             comment: Dict, which contains text: Optional[str], eg:["text": "comment"]
         """
-        raise NotImplementedError(
-            "Current connector does not support get_table_comment"
-        )
+        pass
 
     def get_columns(self, table_name: str) -> List[Dict]:
-        """Return columns with table name.
-
+        """Get columns.
         Args:
             table_name (str): table name
-
         Returns:
-            List[Dict]: columns of table, which contains name: str, type: str,
-                default_expression: str, is_in_primary_key: bool, comment: str
-                eg: [{'name': 'id', 'type': 'int', 'default_expression': '',
-                'is_in_primary_key': True, 'comment': 'id'}, ...]
+            columns: List[Dict], which contains name: str, type: str, default_expression: str, is_in_primary_key: bool, comment: str
+            eg:[{'name': 'id', 'type': 'int', 'default_expression': '', 'is_in_primary_key': True, 'comment': 'id'}, ...]
         """
-        raise NotImplementedError("Current connector does not support get_columns")
+        pass
 
-    def get_column_comments(self, db_name: str, table_name: str):
-        """Return column comments with db name and table name.
+    def get_column_comments(self, db_name, table_name):
+        """Get column comments.
 
         Args:
-            db_name (str): database name
             table_name (_type_): _description_
         """
-        raise NotImplementedError(
-            "Current connector does not support get_column_comments"
-        )
+        pass
 
-    @abstractmethod
     def run(self, command: str, fetch: str = "all") -> List:
         """Execute sql command.
 
         Args:
             command (str): sql command
             fetch (str): fetch type
-
-        Returns:
-            List: result list
         """
+        pass
 
     def run_to_df(self, command: str, fetch: str = "all"):
-        """Execute sql command and return result as dataframe.
+        """Execute sql command and return dataframe."""
+        pass
 
-        Args:
-            command (str): sql command
-            fetch (str): fetch type
-
-        Returns:
-            DataFrame: result dataframe
-        """
-        raise NotImplementedError("Current connector does not support run_to_df")
-
-    def get_users(self) -> List[Tuple[str, str]]:
-        """Return user information.
-
-        Returns:
-            List[Tuple[str, str]]: user list, which contains username and host
-        """
+    def get_users(self):
+        """Get user info."""
         return []
 
-    def get_grants(self) -> List[Tuple]:
-        """Return grant information.
-
-        Examples:
-            .. code-block:: python
-
-                print(conn.get_grants())
-                # [(('GRANT SELECT, INSERT, UPDATE, DROP ROLE ON *.* TO `root`@`%`
-                # WITH GRANT OPTION',)]
-
-        Returns:
-            List[Tuple]: grant list, which contains grant information
-        """
+    def get_grants(self):
+        """Get grant info."""
         return []
 
-    def get_collation(self) -> Optional[str]:
-        """Return collation.
-
-        Returns:
-            Optional[str]: collation
-        """
+    def get_collation(self):
+        """Get collation."""
         return None
 
     def get_charset(self) -> str:
         """Get character_set of current database."""
         return "utf-8"
 
-    def get_fields(self, table_name: str) -> List[Tuple]:
-        """Get column fields about specified table.
+    def get_fields(self, table_name):
+        """Get column fields about specified table."""
+        pass
 
-        Args:
-            table_name (str): table name
-
-        Returns:
-            List[Tuple]: column fields, which contains column name, column type,
-                column default, is nullable, column comment
-        """
-        raise NotImplementedError("Current connector does not support get_fields")
-
-    def get_simple_fields(self, table_name: str) -> List[Tuple]:
-        """Return simple fields about specified table.
-
-        Args:
-            table_name (str): table name
-
-        Returns:
-            List[Tuple]: simple fields, which contains column name, column type,
-                is nullable, column key, default value, extra.
-        """
+    def get_simple_fields(self, table_name):
+        """Get column fields about specified table."""
         return self.get_fields(table_name)
 
-    def get_show_create_table(self, table_name: str) -> str:
-        """Return show create table about specified table.
-
-        Returns:
-            str: show create table
-        """
-        raise NotImplementedError(
-            "Current connector does not support get_show_create_table"
-        )
+    def get_show_create_table(self, table_name):
+        """Get the creation table sql about specified table."""
+        pass
 
     def get_indexes(self, table_name: str) -> List[Dict]:
-        """Return indexes about specified table.
-
+        """Get table indexes about specified table.
         Args:
             table_name (str): table name
-
         Returns:
-            List[Dict], eg:[{'name': 'idx_key', 'column_names': ['id']}]
+            indexes: List[Dict], eg:[{'name': 'idx_key', 'column_names': ['id']}]
         """
-        raise NotImplementedError("Current connector does not support get_indexes")
+        pass
 
     @classmethod
     def is_normal_type(cls) -> bool:

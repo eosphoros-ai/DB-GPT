@@ -1,11 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Button, Form, Input, InputNumber, Modal, Select, message } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState ,useContext} from 'react';
 import { apiInterceptors, postDbAdd, postDbEdit, postDbTestConnect } from '@/client/api';
 import { DBOption, DBType, DbListResponse, PostDbParams } from '@/types/db';
 import { isFileDb } from '@/pages/database';
 import { useTranslation } from 'react-i18next';
-
+import { ChatContext } from '@/app/chat-context';
 type DBItem = DbListResponse[0];
 
 interface Props {
@@ -23,6 +23,9 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
   const { t } = useTranslation();
   const [form] = Form.useForm<DBItem>();
   const dbType = Form.useWatch('db_type', form);
+  const { userId } = useContext(ChatContext);
+
+
 
   const fileDb = useMemo(() => isFileDb(dbTypeList, dbType), [dbTypeList, dbType]);
 
@@ -46,14 +49,17 @@ function FormDialog({ open, choiceDBType, dbTypeList, editValue, dbNames, onClos
 
   const onFinish = async (val: DBItem) => {
     const { db_host, db_path, db_port, ...params } = val;
+
     if (!editValue && dbNames.some((item) => item === params.db_name)) {
       message.error('The database already exists!');
       return;
     }
+
     const data: PostDbParams = {
       db_host: fileDb ? undefined : db_host,
       db_port: fileDb ? undefined : db_port,
       file_path: fileDb ? db_path : undefined,
+      user_id: userId,
       ...params,
     };
     setLoading(true);

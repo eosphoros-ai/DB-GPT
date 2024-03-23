@@ -1,0 +1,1 @@
+{'parent_org': 'PRD', 'shortname': 'PRD-MC&TC', 'fullname': 'Management Center & Training Center', 'chinesename': '公共业务组'}

@@ -1,0 +1,1 @@
+{'parent_org': 'IDT', 'shortname': 'CS', 'fullname': 'Client Service', 'chinesename': '桌面服务部'}

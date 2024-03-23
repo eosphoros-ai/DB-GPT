@@ -1,0 +1,1 @@
+{'parent_org': 'ME', 'shortname': 'ME-TC', 'fullname': 'ME Technical Center', 'chinesename': 'ME技术中心'}

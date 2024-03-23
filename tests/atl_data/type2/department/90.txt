@@ -1,0 +1,1 @@
+{'parent_org': 'IDT', 'shortname': 'BP-SCM', 'fullname': 'Business Partner-SCM', 'chinesename': '供应链解决方案部'}

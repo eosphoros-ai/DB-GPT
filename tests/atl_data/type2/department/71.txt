@@ -1,0 +1,1 @@
+{'parent_org': 'IE', 'shortname': 'RP', 'fullname': 'Resources Planning', 'chinesename': '资源规划组'}

@@ -1,0 +1,1 @@
+{'parent_org': 'xTW', 'shortname': 'xTW-ASSY-ME22', 'fullname': 'xTW Assembly Maintenance Engineering-22', 'chinesename': 'xTW后工序设备技术部-22'}

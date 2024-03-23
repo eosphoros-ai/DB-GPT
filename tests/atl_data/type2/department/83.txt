@@ -1,0 +1,1 @@
+{'parent_org': 'QA', 'shortname': 'QMC', 'fullname': 'Quality Management Center', 'chinesename': '质量管理中心'}

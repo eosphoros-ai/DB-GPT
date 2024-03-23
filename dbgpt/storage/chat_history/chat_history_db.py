@@ -4,7 +4,7 @@ from typing import Optional
 
 from sqlalchemy import Column, DateTime, Index, Integer, String, Text, UniqueConstraint
 
-from ..metadata import BaseDao, Model
+from dbgpt.storage.metadata import BaseDao, Model
 
 
 class ChatHistoryEntity(Model):
@@ -15,10 +15,12 @@ class ChatHistoryEntity(Model):
     id = Column(
         Integer, primary_key=True, autoincrement=True, comment="autoincrement id"
     )
+    logic_delete = Column(
+        Integer,  nullable=False,default=0, comment="logic_delete flag"
+    )
     conv_uid = Column(
         String(255),
-        # Change from False to True, the alembic migration will fail, so we use
-        # UniqueConstraint to replace it
+        # Change from False to True, the alembic migration will fail, so we use UniqueConstraint to replace it
         unique=False,
         nullable=False,
         comment="Conversation record unique id",
@@ -60,9 +62,11 @@ class ChatHistoryMessageEntity(Model):
         comment="Conversation record unique id",
     )
     index = Column(Integer, nullable=False, comment="Message index")
+    logic_delete = Column(Integer, nullable=False, default=0, comment="logic_delete flag")
+
     round_index = Column(Integer, nullable=False, comment="Message round index")
     message_detail = Column(
-        Text(length=2**31 - 1), nullable=True, comment="Message details, json format"
+        Text(length=2 ** 31 - 1), nullable=True, comment="Message details, json format"
     )
     gmt_created = Column(DateTime, default=datetime.now, comment="Record creation time")
     gmt_modified = Column(DateTime, default=datetime.now, comment="Record update time")

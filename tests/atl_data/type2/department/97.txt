@@ -1,0 +1,1 @@
+{'parent_org': 'PSO', 'shortname': 'STE', 'fullname': 'Strategy To Execution', 'chinesename': '战略执行组'}

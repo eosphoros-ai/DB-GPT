@@ -1,0 +1,1 @@
+{'parent_org': 'IDT', 'shortname': 'IS', 'fullname': 'Infrastructure Service', 'chinesename': '基础设施服务部'}

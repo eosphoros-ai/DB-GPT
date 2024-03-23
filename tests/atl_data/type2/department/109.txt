@@ -1,0 +1,1 @@
+{'parent_org': 'HR', 'shortname': 'OM', 'fullname': 'Oversea Management', 'chinesename': '海外管理部'}

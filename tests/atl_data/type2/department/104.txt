@@ -1,0 +1,1 @@
+{'parent_org': 'FNC', 'shortname': 'ATLS-FNC', 'fullname': 'ATL Singapore-FNC', 'chinesename': '新加坡财务部'}
