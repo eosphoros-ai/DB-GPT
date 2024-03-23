@@ -40,15 +40,6 @@ def _build_conversation(
         if len(chat_mode.param_types()) > 0:
             param_type = chat_mode.param_types()[0]
         param_value = chat_param["select_param"]
-    print('chat_param["chat_session_id"]', chat_param["chat_session_id"])
-    print('chat_mode.value()', chat_mode.value())
-    print('chat_param.get("user_id")', chat_param.get("user_id"))
-    print('chat_param.get("sys_code")', chat_param.get("sys_code"))
-    print('model_name', model_name)
-    print('param_type', param_type)
-    print('param_value', param_value)
-    print('conv_serve.conv_storage', conv_serve.conv_storage)
-    print('conv_serve.message_storage', conv_serve.message_storage)
 
     return StorageConversation(
         chat_param["chat_session_id"],

@@ -61,7 +61,7 @@ class KnowledgeDocumentDao(BaseDao):
             page_size: The number of documents to return per page.
         """
         session = self.get_raw_session()
-        print(f"current session:{session}")
+        print(f"current session1:{session}")
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(
@@ -102,7 +102,7 @@ class KnowledgeDocumentDao(BaseDao):
             A list of KnowledgeDocumentEntity objects.
         """
         session = self.get_raw_session()
-        print(f"current session:{session}")
+        print(f"current session2:{session}")
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         knowledge_documents = knowledge_documents.filter(
             KnowledgeDocumentEntity.id.in_(ids)
@@ -113,7 +113,7 @@ class KnowledgeDocumentDao(BaseDao):
 
     def get_documents(self, query):
         session = self.get_raw_session()
-        print(f"current session:{session}")
+        print(f"current session3:{session}")
         knowledge_documents = session.query(KnowledgeDocumentEntity)
         if query.id is not None:
             knowledge_documents = knowledge_documents.filter(

@@ -5,6 +5,7 @@ from typing import Optional
 
 from sqlalchemy import Column, Index, Integer, String, Text, UniqueConstraint, text
 
+from db.ConnectMongdb import MyMongdb
 from dbgpt.storage.metadata import BaseDao, Model
 
 logger = logging.getLogger(__name__)
@@ -195,7 +196,7 @@ class ConnectConfigDao(BaseDao):
             row_dict[field] = row_1[i]
         return row_dict
 
-    def get_db_list(self):
+    def get_db_list(self,user_id=None):
         """Get db list."""
         session = self.get_raw_session()
         result = session.execute(text("SELECT *  FROM connect_config"))
@@ -206,7 +207,12 @@ class ConnectConfigDao(BaseDao):
             row_dict = {}
             for i, field in enumerate(fields):
                 row_dict[field] = row[i]
-            data.append(row_dict)
+            my = MyMongdb()
+            if user_id:
+                if my.check_user_dbgpt_db_permission(department=row_dict["db_name"], user_id=user_id) or \
+                        my.check_manage_dbgpt_db_permission(department=row_dict["db_name"], user_id=user_id):
+                    print(row_dict['db_name'], user_id)
+                    data.append(row_dict)
         return data
 
     def delete_db(self, db_name):

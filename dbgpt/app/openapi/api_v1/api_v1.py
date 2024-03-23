@@ -239,7 +239,6 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
 async def params_list(chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None):
-    print("/v1/chat/mode/params/list", chat_mode, user_id)
     if ChatScene.ChatWithDbQA.value() == chat_mode:
         return Result.succ(get_db_list(user_id=user_id))
     elif ChatScene.ChatWithDbExecute.value() == chat_mode:

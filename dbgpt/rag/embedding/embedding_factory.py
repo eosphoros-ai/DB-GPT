@@ -221,3 +221,4 @@ class WrappedEmbeddingFactory(EmbeddingFactory):
         if embedding_cls:
             raise NotImplementedError
         return self._model
+

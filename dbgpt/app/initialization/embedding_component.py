@@ -22,9 +22,11 @@ def _initialize_embedding_model(
 ):
     if param.remote_embedding:
         logger.info("Register remote RemoteEmbeddingFactory")
+        print("Register remote RemoteEmbeddingFactory")
         system_app.register(RemoteEmbeddingFactory, model_name=embedding_model_name)
     else:
         logger.info(f"Register local LocalEmbeddingFactory")
+        print(f"Register local LocalEmbeddingFactory")
         system_app.register(
             LocalEmbeddingFactory,
             default_model_name=embedding_model_name,

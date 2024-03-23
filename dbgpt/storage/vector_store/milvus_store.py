@@ -264,7 +264,7 @@ class MilvusStore(VectorStoreBase):
         insert_dict: Any = {self.text_field: list(texts)}
         try:
             import numpy as np  # noqa: F401
-
+            print("""Add text data into Milvus.""")
             text_vector = self.embedding.embed_documents(list(texts))
             insert_dict[self.vector_field] = text_vector
         except NotImplementedError:

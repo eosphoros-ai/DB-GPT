@@ -21,7 +21,7 @@ drop table if exists public.{table_name};
 
 create table public.{table_name}(
 
-人员工号 integer PRIMARY KEY,     
+人员工号 integer null,     
 姓名  text null , 
 开始日期  date null, 
 结束日期  date null,
@@ -30,12 +30,13 @@ create table public.{table_name}(
 院校_培训机构  text null,
 国家  text null,
 证书  text null,
-第一专业  text null,
-CONSTRAINT fk_education_basic_info
-  FOREIGN KEY(人员工号) 
-  REFERENCES a_sap_employee_information_chinese(人员工号)
-  ON UPDATE CASCADE 
-  ON DELETE CASCADE
+第一专业  text null
+--,
+-- CONSTRAINT fk_education_basic_info
+-- FOREIGN KEY(人员工号) 
+-- REFERENCES a_sap_employee_information_chinese(人员工号)
+-- ON UPDATE CASCADE 
+-- ON DELETE CASCADE
 );
 
 COMMENT ON TABLE public.{table_name} IS '公司所有员工受教育经历的数据表。';
@@ -62,7 +63,7 @@ useless_col = []
 msk_col = ['pernr', 'ename']
 
 sql = '''
-SELECT * FROM hzuser.a_sap_employee_education_information_ai
+SELECT * FROM hzuser.a_sap_employee_education_information_ai 
     '''
 # # 连接数据库的功能初始化
 db_oracle = connectOracle()
@@ -73,7 +74,7 @@ df.columns = new_columns
 # df[msk_col] = df[msk_col].applymap(lambda x:getDictValues(name_id_msk_json,x))
 
 df = df.rename(columns=columns_name_dict)
-df.drop_duplicates(subset=['人员工号'], inplace=True)
+# df.drop_duplicates(subset=['人员工号'], inplace=True)
 
 need_col = list(columns_name_dict.values())
 

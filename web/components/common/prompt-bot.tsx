@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState,useContext } from 'react';
 import { List, FloatButton, Popover, Tooltip, Form, message, Select, ConfigProvider } from 'antd';
 import { useRequest } from 'ahooks';
 import { sendSpacePostRequest } from '@/utils/request';
 import { useTranslation } from 'react-i18next';
+import { ChatContext } from '@/app/chat-context';
 
 type SelectTableProps = {
   data: any;
@@ -53,13 +54,18 @@ const PromptBot: React.FC<PromptBotProps> = ({ submit }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState('common');
+  const { userId } = useContext(ChatContext);
 
   const { data, loading } = useRequest(
     () => {
       const body = {
         prompt_type: current,
       };
-      return sendSpacePostRequest('/prompt/list', body);
+          // 当prompt_type不等于'common'时，添加user_name字段
+    if (current !== 'common') {
+      body.user_name = userId;
+    }
+    return sendSpacePostRequest('/prompt/list', body);
     },
     {
       refreshDeps: [current],

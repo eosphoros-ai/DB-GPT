@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Ref } from 'react';
+import { useState, useEffect, useRef, Ref ,useContext} from 'react';
 import type { ColumnsType } from 'antd/es/table';
 import type { FormInstance, MenuProps } from 'antd';
 import { Menu, Table, Button, Tooltip, Modal } from 'antd';
@@ -10,6 +10,7 @@ import { addPrompt, apiInterceptors, getPromptList, postScenes, updatePrompt } f
 import { IPrompt } from '@/types/prompt';
 import PromptForm from '@/components/prompt/prompt-form';
 import { TFunction } from 'i18next';
+import { ChatContext } from '@/app/chat-context';
 
 const getItems = (t: TFunction) => [
   {
@@ -79,7 +80,7 @@ const Prompt = () => {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [scenes, setScenes] = useState<Array<Record<string, string>>>();
   const formRef = useRef<FormType>();
-
+  const { userId } = useContext(ChatContext);
   const getPrompts = async () => {
     setLoading(true);
     const body = {
@@ -88,7 +89,9 @@ const Prompt = () => {
       pageSize: 1000,
       hideOnSinglePage: true,
       showQuickJumper: true,
+      user_name:userId,
     };
+
     const [_, data] = await apiInterceptors(getPromptList(body));
     setPromptList(data!);
     setLoading(false);
@@ -101,9 +104,9 @@ const Prompt = () => {
 
   const onFinish = async (newPrompt: IPrompt) => {
     if (prompt) {
-      await apiInterceptors(updatePrompt({ ...newPrompt, prompt_type: promptType }));
+      await apiInterceptors(updatePrompt({ ...newPrompt, prompt_type: promptType ,user_name:userId}));
     } else {
-      await apiInterceptors(addPrompt({ ...newPrompt, prompt_type: promptType }));
+      await apiInterceptors(addPrompt({ ...newPrompt, prompt_type: promptType ,user_name:userId}));
     }
     getPrompts();
     handleClose();

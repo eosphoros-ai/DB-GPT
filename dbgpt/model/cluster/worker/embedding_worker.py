@@ -97,4 +97,5 @@ class EmbeddingsModelWorker(ModelWorker):
         model = params.get("model")
         logger.info(f"Receive embeddings request, model: {model}")
         input: List[str] = params["input"]
+        print('self._embeddings_impl.__dict__',self._embeddings_impl,self._embeddings_impl.__dict__,'params workder ',params)
         return self._embeddings_impl.embed_documents(input)

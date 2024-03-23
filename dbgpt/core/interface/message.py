@@ -1026,7 +1026,6 @@ class StorageConversation(OnceConversation, StorageItem):
         """Save the conversation to the storage."""
         # Save messages first
         message_list = self._get_message_items()
-        print('save to storage',message_list)
         self._message_ids = [
             message.identifier.str_identifier for message in message_list
         ]

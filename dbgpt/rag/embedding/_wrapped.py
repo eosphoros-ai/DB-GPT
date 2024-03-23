@@ -17,6 +17,7 @@ class WrappedEmbeddings(Embeddings):
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Embed search docs."""
+        print('rag embedding search docs')
         return self._embeddings.embed_documents(texts)
 
     def embed_query(self, text: str) -> List[float]:

@@ -28,6 +28,7 @@ class EmbeddingLoader:
             "params": _get_dict_from_obj(param),
             "sys_infos": _get_dict_from_obj(get_system_info()),
         }
+        print('load,',metadata)
         with root_tracer.start_span(
             "EmbeddingLoader.load", span_type=SpanType.RUN, metadata=metadata
         ):
@@ -49,6 +50,7 @@ class EmbeddingLoader:
                     openapi_param["api_key"] = proxy_param.proxy_api_key
                 if proxy_param.proxy_backend:
                     openapi_param["model_name"] = proxy_param.proxy_backend
+                print('embeddings_loader', openapi_param)
                 return OpenAPIEmbeddings(**openapi_param)
             else:
                 from dbgpt.rag.embedding import HuggingFaceEmbeddings

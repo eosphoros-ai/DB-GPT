@@ -89,7 +89,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             List of embeddings, one for each text.
         """
         import sentence_transformers
-
+        print('rag embedding embed_documents ')
         texts = list(map(lambda x: x.replace("\n", " "), texts))
         if self.multi_process:
             pool = self.client.start_multi_process_pool()
@@ -174,6 +174,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        print('Compute doc embeddings using a HuggingFace instruct model.')
         instruction_pairs = [[self.embed_instruction, text] for text in texts]
         embeddings = self.client.encode(instruction_pairs, **self.encode_kwargs)
         return embeddings.tolist()
@@ -260,6 +261,7 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         Returns:
             List of embeddings, one for each text.
         """
+        print('Compute doc embeddings using a HuggingFace instruct model.222')
         texts = [t.replace("\n", " ") for t in texts]
         embeddings = self.client.encode(texts, **self.encode_kwargs)
         return embeddings.tolist()
@@ -326,6 +328,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
                 texts = ["Hello, world!", "How are you?"]
                 hf_embeddings.embed_documents(texts)
         """
+        print('embedding  requets 22 ',)
         response = requests.post(
             self._api_url,
             headers=self._headers,
@@ -362,6 +365,17 @@ def _handle_request_result(res: requests.Response) -> List[List[float]]:
     """
     res.raise_for_status()
     resp = res.json()
+    if isinstance(resp,list):
+        resp_json = {}
+        resp_json['data'] = []
+
+        for index , vec_list in enumerate(resp):
+            data_temp = {}
+            data_temp['index'] = index
+            data_temp['embedding'] = vec_list
+            data_temp['object'] = 'embedding'
+            resp_json['data'].append(data_temp)
+        resp = resp_json
     if "data" not in resp:
         raise RuntimeError(resp["detail"])
     embeddings = resp["data"]
@@ -414,6 +428,7 @@ class JinaEmbeddings(BaseModel, Embeddings):
                 corresponds to a single input text.
         """
         # Call Jina AI Embedding API
+        print('# Call Jina AI Embedding API')
         resp = self.session.post(  # type: ignore
             self.api_url, json={"input": texts, "model": self.model_name}
         )
@@ -470,6 +485,9 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
             --worker_type text2vec \
             --port 8003 \
             --controller_addr http://127.0.0.1:8000
+
+            ATL
+            dbgpt start worker --model_name stella-large-zh-v3-1792d --model_path /datas/liab/embeddings_model/stella-large-zh-v3-1792d --worker_type text2vec  --port 8888 --controller_addr http://172.23.52.25:8003
 
         3. Deploy API Server with following command:
         .. code-block:: bash

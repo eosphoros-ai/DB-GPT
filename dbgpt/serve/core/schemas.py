@@ -44,7 +44,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 async def common_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Common exception handler"""
-
+    print('Common exception handler')
     if ExceptionGroup and isinstance(exc, ExceptionGroup):
         err_strs = []
         for e in exc.exceptions:
@@ -62,6 +62,7 @@ async def common_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 def add_exception_handler(app: "FastAPI"):
     """Add exception handler"""
+    print('Add exception handler')
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(Exception, common_exception_handler)

@@ -67,7 +67,7 @@ class RdbmsSummary(DBSummary):
 
 
 def _parse_db_summary(
-    conn: RDBMSDatabase, summary_template: str = "Table:`{table_name}`({table_comment}),Columns:[{columns}]"
+    conn: BaseConnector, summary_template: str = "Table:`{table_name}`({table_comment}),Columns:[{columns}]"
 ) -> List[str]:
     """Get db summary for database.
 

@@ -1,8 +1,8 @@
 """Rerank module for RAG retriever."""
 
 from abc import ABC, abstractmethod
+from operator import itemgetter
 from typing import Callable, List, Optional
-
 from dbgpt.core import Chunk
 
 RANK_FUNC = Callable[[List[Chunk]], List[Chunk]]

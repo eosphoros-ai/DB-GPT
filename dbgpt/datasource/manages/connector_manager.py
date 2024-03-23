@@ -162,9 +162,9 @@ class ConnectorManager(BaseComponent):
             logger.error(f"{db_info.db_name} Test connect Failure!{str(e)}")
             raise ValueError(f"{db_info.db_name} Test connect Failure!{str(e)}")
 
-    def get_db_list(self):
+    def get_db_list(self,user_id=None):
         """Get db list."""
-        return self.storage.get_db_list()
+        return self.storage.get_db_list(user_id=user_id)
 
     def delete_db(self, db_name: str):
         """Delete db connect info."""

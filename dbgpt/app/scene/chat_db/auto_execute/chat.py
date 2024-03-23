@@ -80,6 +80,7 @@ class ChatWithDbAutoExecute(BaseChat):
 
         with open('/datas/liab/DB-GPT/tests/atl_data/type3/qa_samples.json', 'r') as f:
             contents = json.load(f)
+        print('load qa sample')
         with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
             qas_info = await blocking_func_to_async(
                 self._executor,

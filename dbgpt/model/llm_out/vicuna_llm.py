@@ -76,6 +76,7 @@ class VicunaEmbeddingLLM(BaseModel, Embeddings):
             List of embeddings. one for each text.
         """
         results = []
+        print('llm out ')
         for text in texts:
             response = self.embed_query(text)
             results.append(response)

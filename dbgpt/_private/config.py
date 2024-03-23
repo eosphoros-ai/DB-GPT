@@ -222,6 +222,8 @@ class Config(metaclass=Singleton):
 
         ### Vector Store Configuration
         self.VECTOR_STORE_TYPE = os.getenv("VECTOR_STORE_TYPE", "Chroma")
+        self.CONNECTION_STRING = os.getenv("CONNECTION_STRING",
+                                           "postgresql+psycopg2://fastgpt:1234@172.23.10.249:8100/test")
         self.MILVUS_URL = os.getenv("MILVUS_URL", "127.0.0.1")
         self.MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
         self.MILVUS_USERNAME = os.getenv("MILVUS_USERNAME", None)
