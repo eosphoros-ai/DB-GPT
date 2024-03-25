@@ -39,6 +39,7 @@ function DBSelector() {
       onChange={(val) => {
         setDbParam(val);
       }}
+      dropdownMatchSelectWidth={false}  // 这会使下拉菜单的宽度根据内容调整
     >
       {dbOpts.map((item) => (
         <Select.Option key={item.name}>

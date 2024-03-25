@@ -80,14 +80,14 @@ columns_name_dict = {
 
 # print(sql)
 print((dbname + '-' + table_name).center(80, '='))
-print(db.excuSql(sql))
+# print(db.excuSql(sql))
 
 from datetime import datetime, timedelta
 
 # 获取现在的时间
 now = datetime.now()
 days = 1
-while days < 90:
+while days < 2:
     # 获取前一天的时间
     yesterday = now - timedelta(days=days)
     print(days, yesterday)
