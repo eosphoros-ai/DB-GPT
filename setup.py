@@ -18,7 +18,7 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
 IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
 # If you modify the version, please modify the version in the following files:
 # dbgpt/_version.py
-DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.1")
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.2")
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
@@ -370,8 +370,13 @@ def core_requires():
         # For AWEL type checking
         "typeguard",
     ]
+    # For DB-GPT python client SDK
+    setup_spec.extras["client"] = setup_spec.extras["core"] + [
+        "httpx",
+        "fastapi==0.98.0",
+    ]
     # Simple command line dependencies
-    setup_spec.extras["cli"] = setup_spec.extras["core"] + [
+    setup_spec.extras["cli"] = setup_spec.extras["client"] + [
         "prettytable",
         "click",
         "psutil==5.9.4",
@@ -382,26 +387,23 @@ def core_requires():
     # we core unit test.
     # The dependency "framework" is too large for now.
     setup_spec.extras["simple_framework"] = setup_spec.extras["cli"] + [
-        "pydantic<2,>=1",
-        "httpx",
         "jinja2",
-        "fastapi==0.98.0",
         "uvicorn",
         "shortuuid",
-        # change from fixed version 2.0.22 to variable version, because other
-        # dependencies are >=1.4, such as pydoris is <2
-        "SQLAlchemy>=1.4,<3",
+        # 2.0.29 not support duckdb now
+        "SQLAlchemy>=2.0.25,<2.0.29",
         # for cache
         "msgpack",
         # for cache
         # TODO: pympler has not been updated for a long time and needs to
         #  find a new toolkit.
         "pympler",
-        "sqlparse==0.4.4",
-        "duckdb==0.8.1",
+        "duckdb",
         "duckdb-engine",
         # lightweight python library for scheduling jobs
         "schedule",
+        # For datasource subpackage
+        "sqlparse==0.4.4",
     ]
     # TODO: remove fschat from simple_framework
     if BUILD_FROM_SOURCE:
@@ -418,7 +420,6 @@ def core_requires():
         "pandas==2.0.3",
         "auto-gpt-plugin-template",
         "gTTS==2.3.1",
-        "langchain>=0.0.286",
         "pymysql",
         "jsonschema",
         # TODO move transformers to default
@@ -439,9 +440,10 @@ def core_requires():
 
 def knowledge_requires():
     """
-    pip install "dbgpt[knowledge]"
+    pip install "dbgpt[rag]"
     """
-    setup_spec.extras["knowledge"] = [
+    setup_spec.extras["rag"] = setup_spec.extras["vstore"] + [
+        "langchain>=0.0.286",
         "spacy==3.5.3",
         "chromadb==0.4.10",
         "markdown",
@@ -547,8 +549,7 @@ def all_vector_store_requires():
     pip install "dbgpt[vstore]"
     """
     setup_spec.extras["vstore"] = [
-        "grpcio==1.47.5",  # maybe delete it
-        "pymilvus==2.2.1",
+        "pymilvus",
         "weaviate-client",
     ]
 
@@ -557,15 +558,18 @@ def all_datasource_requires():
     """
     pip install "dbgpt[datasource]"
     """
-
     setup_spec.extras["datasource"] = [
-        "pymssql",
+        # "sqlparse==0.4.4",
         "pymysql",
-        "pyspark",
         "psycopg2",
         # for doris
         # mysqlclient 2.2.x have pkg-config issue on 3.10+
         "mysqlclient==2.1.0",
+    ]
+    setup_spec.extras["datasource_all"] = setup_spec.extras["datasource"] + [
+        "pyspark",
+        "pymssql",
+        # pydoris is too old, we should find a new package to replace it.
         "pydoris>=1.0.2,<2.0.0",
         "clickhouse-connect",
         "pyhive",
@@ -586,7 +590,7 @@ def openai_requires():
         setup_spec.extras["openai"].append("openai")
 
     setup_spec.extras["openai"] += setup_spec.extras["framework"]
-    setup_spec.extras["openai"] += setup_spec.extras["knowledge"]
+    setup_spec.extras["openai"] += setup_spec.extras["rag"]
 
 
 def gpt4all_requires():
@@ -624,7 +628,8 @@ def default_requires():
         "chardet",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
-    setup_spec.extras["default"] += setup_spec.extras["knowledge"]
+    setup_spec.extras["default"] += setup_spec.extras["rag"]
+    setup_spec.extras["default"] += setup_spec.extras["datasource"]
     setup_spec.extras["default"] += setup_spec.extras["torch"]
     setup_spec.extras["default"] += setup_spec.extras["quantization"]
     setup_spec.extras["default"] += setup_spec.extras["cache"]
@@ -645,12 +650,12 @@ def init_install_requires():
 
 core_requires()
 torch_requires()
-knowledge_requires()
 llama_cpp_requires()
 quantization_requires()
 
 all_vector_store_requires()
 all_datasource_requires()
+knowledge_requires()
 openai_requires()
 gpt4all_requires()
 vllm_requires()
@@ -675,12 +680,14 @@ else:
             "dbgpt._private.*",
             "dbgpt.cli",
             "dbgpt.cli.*",
+            "dbgpt.client",
+            "dbgpt.client.*",
             "dbgpt.configs",
             "dbgpt.configs.*",
             "dbgpt.core",
             "dbgpt.core.*",
-            "dbgpt.util",
-            "dbgpt.util.*",
+            "dbgpt.datasource",
+            "dbgpt.datasource.*",
             "dbgpt.model",
             "dbgpt.model.proxy",
             "dbgpt.model.proxy.*",
@@ -688,6 +695,13 @@ else:
             "dbgpt.model.operators.*",
             "dbgpt.model.utils",
             "dbgpt.model.utils.*",
+            "dbgpt.model.adapter",
+            "dbgpt.rag",
+            "dbgpt.rag.*",
+            "dbgpt.storage",
+            "dbgpt.storage.*",
+            "dbgpt.util",
+            "dbgpt.util.*",
         ],
     )
 

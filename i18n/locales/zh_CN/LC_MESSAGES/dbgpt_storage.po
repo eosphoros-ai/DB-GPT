@@ -1,0 +1,208 @@
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-23 11:22+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:21
+#, fuzzy
+msgid "Chroma Vector Store"
+msgstr "Chroma 向量存储。"
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:24
+msgid "Chroma vector store."
+msgstr "Chroma 向量存储。"
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:28
+#: ../dbgpt/storage/vector_store/weaviate_store.py:34
+msgid "Persist Path"
+msgstr ""
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:31
+#: ../dbgpt/storage/vector_store/weaviate_store.py:37
+msgid "the persist path of vector store."
+msgstr "向量存储的持久化路径。"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:24
+msgid "Milvus Vector Store"
+msgstr "Milvus 向量存储"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:30
+msgid "Uri"
+msgstr "URI"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:34
+msgid "The uri of milvus store, if not set, will use the default uri."
+msgstr "Milvus 存储的 URI，如果未设置，将使用默认的 URI。"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:40
+msgid "Port"
+msgstr "端口"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:44
+msgid "The port of milvus store, if not set, will use the default port."
+msgstr "Milvus 存储的端口，如果未设置，将使用默认端口。"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:50
+msgid "Alias"
+msgstr "别名"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:54
+msgid "The alias of milvus store, if not set, will use the default alias."
+msgstr "Milvus 存储的别名，如果未设置，将使用默认别名。"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:60
+msgid "Primary Field"
+msgstr "主字段"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:64
+msgid ""
+"The primary field of milvus store, if not set, will use the default primary "
+"field."
+msgstr "Milvus 存储的主字段，如果未设置，将使用默认的主字段。"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:71
+msgid "Text Field"
+msgstr "文本字段"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:75
+msgid ""
+"The text field of milvus store, if not set, will use the default text field."
+msgstr "Milvus 存储的文本字段，如果未设置，将使用默认的文本字段。"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:82
+msgid "Embedding Field"
+msgstr "嵌入字段"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:86
+msgid ""
+"The embedding field of milvus store, if not set, will use the default "
+"embedding field."
+msgstr "Milvus 存储的嵌入字段，如果未设置，将使用默认的嵌入字段。"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:93
+msgid "Milvus vector store."
+msgstr "Milvus 向量存储。"
+
+#: ../dbgpt/storage/vector_store/connector.py:30
+msgid "Vector Store Connector"
+msgstr "向量存储连接器"
+
+#: ../dbgpt/storage/vector_store/connector.py:35
+msgid "Vector Store Type"
+msgstr "向量存储类型"
+
+#: ../dbgpt/storage/vector_store/connector.py:38
+msgid "The type of vector store."
+msgstr "向量存储的类型。"
+
+#: ../dbgpt/storage/vector_store/connector.py:42
+msgid "Vector Store Implementation"
+msgstr "向量存储实现"
+
+#: ../dbgpt/storage/vector_store/connector.py:45
+msgid "The vector store implementation."
+msgstr "向量存储的实现。"
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:17
+msgid "Weaviate Vector Store"
+msgstr "Weaviate 向量存储"
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:20
+msgid "Weaviate vector store."
+msgstr "Weaviate 向量存储。"
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:24
+msgid "Weaviate URL"
+msgstr "Weaviate URL"
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:28
+msgid "weaviate url address, if not set, will use the default url."
+msgstr "Weaviate 的 URL 地址，如果未设置，将使用默认的 URL。"
+
+#: ../dbgpt/storage/vector_store/pgvector_store.py:19
+msgid "PG Vector Store"
+msgstr "PG 向量存储"
+
+#: ../dbgpt/storage/vector_store/pgvector_store.py:25
+msgid "Connection String"
+msgstr "连接字符串"
+
+#: ../dbgpt/storage/vector_store/pgvector_store.py:29
+msgid ""
+"The connection string of vector store, if not set, will use the default "
+"connection string."
+msgstr "向量存储的连接字符串，如果未设置，将使用默认的连接字符串。"
+
+#: ../dbgpt/storage/vector_store/base.py:19
+msgid "Collection Name"
+msgstr "集合名称"
+
+#: ../dbgpt/storage/vector_store/base.py:23
+msgid "The name of vector store, if not set, will use the default name."
+msgstr "向量存储的名称，如果未设置，将使用默认名称。"
+
+#: ../dbgpt/storage/vector_store/base.py:29
+msgid "User"
+msgstr "用户"
+
+#: ../dbgpt/storage/vector_store/base.py:33
+msgid "The user of vector store, if not set, will use the default user."
+msgstr "向量存储的用户，如果未设置，将使用默认用户。"
+
+#: ../dbgpt/storage/vector_store/base.py:39
+msgid "Password"
+msgstr "密码"
+
+#: ../dbgpt/storage/vector_store/base.py:43
+msgid ""
+"The password of vector store, if not set, will use the default password."
+msgstr "向量存储的密码，如果未设置，将使用默认密码。"
+
+#: ../dbgpt/storage/vector_store/base.py:50
+msgid "Embedding Function"
+msgstr "嵌入函数"
+
+#: ../dbgpt/storage/vector_store/base.py:54
+msgid ""
+"The embedding function of vector store, if not set, will use the default "
+"embedding function."
+msgstr "向量存储的嵌入函数，如果未设置，将使用默认的嵌入函数。"
+
+#: ../dbgpt/storage/vector_store/base.py:61
+msgid "Max Chunks Once Load"
+msgstr "一次加载的最大块数"
+
+#: ../dbgpt/storage/vector_store/base.py:65
+msgid ""
+"The max number of chunks to load at once. If your document is large, you can "
+"set this value to a larger number to speed up the loading process. Default "
+"is 10."
+msgstr ""
+"一次加载的最大块数。如果您的文档很大，可以将此值设置为较大的数字，以加快加载"
+"过程。默认值为 10。"
+
+#: ../dbgpt/storage/vector_store/base.py:73
+msgid "Max Threads"
+msgstr "最大线程数"
+
+#: ../dbgpt/storage/vector_store/base.py:77
+msgid ""
+"The max number of threads to use. Default is 1. If you set this bigger than "
+"1, please make sure your vector store is thread-safe."
+msgstr ""
+"要使用的最大线程数。默认值为 1。如果您将此值设置为大于 1，请确保您的向量存储"
+"是线程安全的。"

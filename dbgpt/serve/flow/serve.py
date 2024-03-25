@@ -27,11 +27,13 @@ class Serve(BaseServe):
     def __init__(
         self,
         system_app: SystemApp,
-        api_prefix: Optional[str] = f"/api/v1/serve/awel",
+        api_prefix: Optional[List[str]] = None,
         api_tags: Optional[List[str]] = None,
         db_url_or_db: Union[str, URL, DatabaseManager] = None,
         try_create_tables: Optional[bool] = False,
     ):
+        if api_prefix is None:
+            api_prefix = [f"/api/v1/serve/awel", "/api/v2/serve/awel"]
         if api_tags is None:
             api_tags = [SERVE_APP_NAME_HUMP]
         super().__init__(
@@ -43,9 +45,10 @@ class Serve(BaseServe):
         if self._app_has_initiated:
             return
         self._system_app = system_app
-        self._system_app.app.include_router(
-            router, prefix=self._api_prefix, tags=self._api_tags
-        )
+        for prefix in self._api_prefix:
+            self._system_app.app.include_router(
+                router, prefix=prefix, tags=self._api_tags
+            )
         init_endpoints(self._system_app)
         self._app_has_initiated = True
 

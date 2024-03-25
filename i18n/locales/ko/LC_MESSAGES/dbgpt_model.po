@@ -1,0 +1,151 @@
+# Korean translations for PACKAGE package
+# PACKAGE 패키지에 대한 한국어 번역문.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-23 16:45+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../dbgpt/model/cluster/client.py:20
+msgid "Default LLM Client"
+msgstr "기본 LLM 클라이언트"
+
+#: ../dbgpt/model/cluster/client.py:23
+msgid "Default LLM client(Connect to your DB-GPT model serving)"
+msgstr "기본 LLM 클라이언트(DB-GPT 모델 서빙에 연결)"
+
+#: ../dbgpt/model/cluster/client.py:26 ../dbgpt/model/cluster/client.py:127
+msgid "Auto Convert Message"
+msgstr "메시지 자동 변환"
+
+#: ../dbgpt/model/cluster/client.py:32 ../dbgpt/model/cluster/client.py:133
+msgid ""
+"Whether to auto convert the messages that are not supported by the LLM to a "
+"compatible format"
+msgstr ""
+"LLM에서 지원하지 않는 메시지를 호환되는 형식으로 자동 변환할지 여부"
+
+#: ../dbgpt/model/cluster/client.py:113
+msgid "Remote LLM Client"
+msgstr "원격 LLM 클라이언트"
+
+#: ../dbgpt/model/cluster/client.py:116
+msgid "Remote LLM client(Connect to the remote DB-GPT model serving)"
+msgstr "원격 LLM 클라이언트(원격 DB-GPT 모델 서빙에 연결)"
+
+#: ../dbgpt/model/cluster/client.py:119
+msgid "Controller Address"
+msgstr "컨트롤러 주소"
+
+#: ../dbgpt/model/cluster/client.py:123
+msgid "http://127.0.0.1:8000"
+msgstr "http://127.0.0.1:8000"
+
+#: ../dbgpt/model/cluster/client.py:124
+msgid "Model controller address"
+msgstr "모델 컨트롤러 주소"
+
+#: ../dbgpt/model/proxy/llms/chatgpt.py:48
+msgid "OpenAI LLM Client"
+msgstr "OpenAI LLM 클라이언트"
+
+#: ../dbgpt/model/proxy/llms/chatgpt.py:53
+msgid "OpenAI API Key"
+msgstr "OpenAI API 키"
+
+#: ../dbgpt/model/proxy/llms/chatgpt.py:59
+msgid ""
+"OpenAI API Key, not required if you have set OPENAI_API_KEY environment "
+"variable."
+msgstr ""
+"OpenAI API 키, OPENAI_API_KEY 환경 변수를 설정한 경우 필요하지 않습니다."
+
+#: ../dbgpt/model/proxy/llms/chatgpt.py:64
+msgid "OpenAI API Base"
+msgstr "OpenAI API 기본"
+
+#: ../dbgpt/model/proxy/llms/chatgpt.py:70
+msgid ""
+"OpenAI API Base, not required if you have set OPENAI_API_BASE environment "
+"variable."
+msgstr ""
+"OpenAI API 기본, OPENAI_API_BASE 환경 변수를 설정한 경우 필요하지 않습니다."
+
+#: ../dbgpt/model/operators/llm_operator.py:66
+msgid "LLM Operator"
+msgstr "LLM 연산자"
+
+#: ../dbgpt/model/operators/llm_operator.py:69
+msgid "The LLM operator."
+msgstr "LLM 연산자."
+
+#: ../dbgpt/model/operators/llm_operator.py:72
+#: ../dbgpt/model/operators/llm_operator.py:120
+msgid "LLM Client"
+msgstr "LLM 클라이언트"
+
+#: ../dbgpt/model/operators/llm_operator.py:77
+#: ../dbgpt/model/operators/llm_operator.py:125
+msgid "The LLM Client."
+msgstr "LLM 클라이언트."
+
+#: ../dbgpt/model/operators/llm_operator.py:82
+#: ../dbgpt/model/operators/llm_operator.py:130
+msgid "Model Request"
+msgstr "모델 요청"
+
+#: ../dbgpt/model/operators/llm_operator.py:85
+#: ../dbgpt/model/operators/llm_operator.py:133
+msgid "The model request."
+msgstr "모델 요청."
+
+#: ../dbgpt/model/operators/llm_operator.py:90
+#: ../dbgpt/model/operators/llm_operator.py:138
+#: ../dbgpt/model/utils/chatgpt_utils.py:175
+msgid "Model Output"
+msgstr "모델 출력"
+
+#: ../dbgpt/model/operators/llm_operator.py:93
+#: ../dbgpt/model/operators/llm_operator.py:141
+msgid "The model output."
+msgstr "모델 출력."
+
+#: ../dbgpt/model/operators/llm_operator.py:113
+msgid "Streaming LLM Operator"
+msgstr "스트리밍 LLM 연산자"
+
+#: ../dbgpt/model/operators/llm_operator.py:117
+msgid "The streaming LLM operator."
+msgstr "스트리밍 LLM 연산자."
+
+#: ../dbgpt/model/utils/chatgpt_utils.py:158
+msgid "OpenAI Streaming Output Operator"
+msgstr "OpenAI 스트리밍 출력 연산자"
+
+#: ../dbgpt/model/utils/chatgpt_utils.py:162
+msgid "The OpenAI streaming LLM operator."
+msgstr "OpenAI 스트리밍 LLM 연산자."
+
+#: ../dbgpt/model/utils/chatgpt_utils.py:166
+msgid "Upstream Model Output"
+msgstr "상류 모델 출력"
+
+#: ../dbgpt/model/utils/chatgpt_utils.py:170
+msgid "The model output of upstream."
+msgstr "상류의 모델 출력."
+
+#: ../dbgpt/model/utils/chatgpt_utils.py:180
+msgid "The model output after transform to openai stream format"
+msgstr "OpenAI 스트림 형식으로 변환된 모델 출력"

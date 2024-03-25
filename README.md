@@ -184,7 +184,6 @@ At present, we have introduced several key features to showcase our current capa
 
 ## Contribution
 
-- Please run `black .` before submitting the code.
 - To check detailed guidelines for new contributions, please refer [how to contribute](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md)
 
 ### Contributors Wall

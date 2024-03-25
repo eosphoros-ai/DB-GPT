@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Iterable, List, Optional, TypedDict, Union, cast
 
 from dbgpt.core import Chunk, Document
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +202,22 @@ class TextSplitter(ABC):
         return result, "output_1"
 
 
+@register_resource(
+    _("Character Text Splitter"),
+    "character_text_splitter",
+    category=ResourceCategory.RAG,
+    parameters=[
+        Parameter.build_from(
+            _("Separator"),
+            "separator",
+            str,
+            description=_("Separator to split the text."),
+            optional=True,
+            default="\n\n",
+        ),
+    ],
+    description="Split text by characters.",
+)
 class CharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters.
 
@@ -229,6 +247,23 @@ class CharacterTextSplitter(TextSplitter):
         return self._merge_splits(splits, separator, **kwargs)
 
 
+@register_resource(
+    _("Recursive Character Text Splitter"),
+    "recursive_character_text_splitter",
+    category=ResourceCategory.RAG,
+    parameters=[
+        # TODO: Support list of separators
+        # Parameter.build_from(
+        #     "Separators",
+        #     "separators",
+        #     List[str],
+        #     description="List of separators to split the text.",
+        #     optional=True,
+        #     default=["###", "\n", " ", ""],
+        # ),
+    ],
+    description=_("Split text by characters recursively."),
+)
 class RecursiveCharacterTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at characters.
 
@@ -291,6 +326,22 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         return final_chunks
 
 
+@register_resource(
+    _("Spacy Text Splitter"),
+    "spacy_text_splitter",
+    category=ResourceCategory.RAG,
+    parameters=[
+        Parameter.build_from(
+            _("Pipeline"),
+            "pipeline",
+            str,
+            description=_("Spacy pipeline to use for tokenization."),
+            optional=True,
+            default="zh_core_web_sm",
+        ),
+    ],
+    description=_("Split text by sentences using Spacy."),
+)
 class SpacyTextSplitter(TextSplitter):
     """Implementation of splitting text that looks at sentences using Spacy.
 
@@ -338,6 +389,46 @@ class LineType(TypedDict):
     content: str
 
 
+@register_resource(
+    _("Markdown Header Text Splitter"),
+    "markdown_header_text_splitter",
+    category=ResourceCategory.RAG,
+    parameters=[
+        Parameter.build_from(
+            _("Return Each Line"),
+            "return_each_line",
+            bool,
+            description=_("Return each line with associated headers."),
+            optional=True,
+            default=False,
+        ),
+        Parameter.build_from(
+            _("Chunk Size"),
+            "chunk_size",
+            int,
+            description=_("Size of each chunk."),
+            optional=True,
+            default=4000,
+        ),
+        Parameter.build_from(
+            _("Chunk Overlap"),
+            "chunk_overlap",
+            int,
+            description=_("Overlap between chunks."),
+            optional=True,
+            default=200,
+        ),
+        Parameter.build_from(
+            _("Separator"),
+            "separator",
+            str,
+            description=_("Separator to split the text."),
+            optional=True,
+            default="\n",
+        ),
+    ],
+    description=_("Split markdown text by headers."),
+)
 class MarkdownHeaderTextSplitter(TextSplitter):
     """Implementation of splitting markdown files based on specified headers.
 
@@ -704,6 +795,22 @@ class ParagraphTextSplitter(CharacterTextSplitter):
         return paragraphs
 
 
+@register_resource(
+    _("Separator Text Splitter"),
+    "separator_text_splitter",
+    category=ResourceCategory.RAG,
+    parameters=[
+        Parameter.build_from(
+            _("Separator"),
+            "separator",
+            str,
+            description=_("Separator to split the text."),
+            optional=True,
+            default="\\n",
+        ),
+    ],
+    description=_("Split text by separator."),
+)
 class SeparatorTextSplitter(CharacterTextSplitter):
     """The SeparatorTextSplitter class."""
 
@@ -731,6 +838,22 @@ class SeparatorTextSplitter(CharacterTextSplitter):
         return list(filter(None, text.split(separator)))
 
 
+@register_resource(
+    _("Page Text Splitter"),
+    "page_text_splitter",
+    category=ResourceCategory.RAG,
+    parameters=[
+        Parameter.build_from(
+            _("Separator"),
+            "separator",
+            str,
+            description=_("Separator to split the text."),
+            optional=True,
+            default="\n\n",
+        ),
+    ],
+    description=_("Split text by page."),
+)
 class PageTextSplitter(TextSplitter):
     """The PageTextSplitter class."""
 

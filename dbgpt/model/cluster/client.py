@@ -13,22 +13,25 @@ from dbgpt.core.interface.llm import (
 )
 from dbgpt.model.cluster.manager_base import WorkerManager
 from dbgpt.model.parameter import WorkerType
+from dbgpt.util.i18n_utils import _
 
 
 @register_resource(
-    label="Default LLM Client",
+    label=_("Default LLM Client"),
     name="default_llm_client",
     category=ResourceCategory.LLM_CLIENT,
-    description="Default LLM client(Connect to your DB-GPT model serving)",
+    description=_("Default LLM client(Connect to your DB-GPT model serving)"),
     parameters=[
         Parameter.build_from(
-            "Auto Convert Message",
+            _("Auto Convert Message"),
             name="auto_convert_message",
             type=bool,
             optional=True,
             default=False,
-            description="Whether to auto convert the messages that are not supported "
-            "by the LLM to a compatible format",
+            description=_(
+                "Whether to auto convert the messages that are not supported "
+                "by the LLM to a compatible format"
+            ),
         )
     ],
 )
@@ -107,27 +110,29 @@ class DefaultLLMClient(LLMClient):
 
 
 @register_resource(
-    label="Remote LLM Client",
+    label=_("Remote LLM Client"),
     name="remote_llm_client",
     category=ResourceCategory.LLM_CLIENT,
-    description="Remote LLM client(Connect to the remote DB-GPT model serving)",
+    description=_("Remote LLM client(Connect to the remote DB-GPT model serving)"),
     parameters=[
         Parameter.build_from(
-            "Controller Address",
+            _("Controller Address"),
             name="controller_address",
             type=str,
             optional=True,
-            default="http://127.0.0.1:8000",
-            description="Model controller address",
+            default=_("http://127.0.0.1:8000"),
+            description=_("Model controller address"),
         ),
         Parameter.build_from(
-            "Auto Convert Message",
+            _("Auto Convert Message"),
             name="auto_convert_message",
             type=bool,
             optional=True,
             default=False,
-            description="Whether to auto convert the messages that are not supported "
-            "by the LLM to a compatible format",
+            description=_(
+                "Whether to auto convert the messages that are not supported "
+                "by the LLM to a compatible format"
+            ),
         ),
     ],
 )

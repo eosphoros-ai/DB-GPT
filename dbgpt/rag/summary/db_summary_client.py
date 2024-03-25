@@ -97,10 +97,10 @@ class DBSummaryClient:
             vector_store_config=vector_store_config,
         )
         if not vector_connector.vector_name_exists():
-            from dbgpt.serve.rag.assembler.db_schema import DBSchemaAssembler
+            from dbgpt.rag.assembler.db_schema import DBSchemaAssembler
 
             db_assembler = DBSchemaAssembler.load_from_connection(
-                connection=db_summary_client.db, vector_store_connector=vector_connector
+                connector=db_summary_client.db, vector_store_connector=vector_connector
             )
             if len(db_assembler.get_chunks()) > 0:
                 db_assembler.persist()

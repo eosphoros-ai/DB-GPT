@@ -2,6 +2,8 @@
 from typing import List, Optional
 
 from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelRequest
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.util.i18n_utils import _
 
 REWRITE_PROMPT_TEMPLATE_EN = """
 Based on the given context {context}, Generate {nums} search queries related to:
@@ -18,6 +20,34 @@ REWRITE_PROMPT_TEMPLATE_ZH = """请根据上下文{context}, 将原问题优化�
 """
 
 
+@register_resource(
+    _("Query Rewrite"),
+    "query_rewrite",
+    category=ResourceCategory.RAG,
+    description=_("Query rewrite."),
+    parameters=[
+        Parameter.build_from(
+            _("Model Name"),
+            "model_name",
+            str,
+            description=_("The LLM model name."),
+        ),
+        Parameter.build_from(
+            _("LLM Client"),
+            "llm_client",
+            LLMClient,
+            description=_("The llm client."),
+        ),
+        Parameter.build_from(
+            _("Language"),
+            "language",
+            str,
+            description=_("The language of the query rewrite prompt."),
+            optional=True,
+            default="en",
+        ),
+    ],
+)
 class QueryRewrite:
     """Query rewrite.
 

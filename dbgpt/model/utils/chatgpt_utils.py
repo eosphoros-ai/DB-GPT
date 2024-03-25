@@ -16,16 +16,10 @@ from typing import (
 
 from dbgpt._private.pydantic import model_to_json
 from dbgpt.core.awel import TransformStreamAbsOperator
-from dbgpt.core.awel.flow import (
-    IOField,
-    OperatorCategory,
-    OperatorType,
-    Parameter,
-    ResourceCategory,
-    ViewMetadata,
-)
+from dbgpt.core.awel.flow import IOField, OperatorCategory, OperatorType, ViewMetadata
 from dbgpt.core.interface.llm import ModelOutput
 from dbgpt.core.operators import BaseLLM
+from dbgpt.util.i18n_utils import _
 
 if TYPE_CHECKING:
     import httpx
@@ -161,28 +155,30 @@ class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
     """Transform ModelOutput to openai stream format."""
 
     metadata = ViewMetadata(
-        label="OpenAI Streaming Output Operator",
+        label=_("OpenAI Streaming Output Operator"),
         name="openai_streaming_output_operator",
         operator_type=OperatorType.TRANSFORM_STREAM,
         category=OperatorCategory.OUTPUT_PARSER,
-        description="The OpenAI streaming LLM operator.",
+        description=_("The OpenAI streaming LLM operator."),
         parameters=[],
         inputs=[
             IOField.build_from(
-                "Upstream Model Output",
+                _("Upstream Model Output"),
                 "model_output",
                 ModelOutput,
                 is_list=True,
-                description="The model output of upstream.",
+                description=_("The model output of upstream."),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Model Output",
+                _("Model Output"),
                 "model_output",
                 str,
                 is_list=True,
-                description="The model output after transform to openai stream format",
+                description=_(
+                    "The model output after transform to openai stream format"
+                ),
             )
         ],
     )
@@ -217,7 +213,8 @@ async def _to_openai_stream(
     import json
 
     import shortuuid
-    from fastchat.protocol.openai_api_protocol import (
+
+    from dbgpt.core.schema.api import (
         ChatCompletionResponseStreamChoice,
         ChatCompletionStreamResponse,
         DeltaMessage,

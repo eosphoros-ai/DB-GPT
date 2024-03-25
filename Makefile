@@ -26,8 +26,7 @@ testenv: $(VENV)/.testenv
 
 $(VENV)/.testenv: $(VENV)/bin/activate
 	# $(VENV_BIN)/pip install -e ".[framework]"
-	# $(VENV_BIN)/pip install -e ".[knowledge]"
-	# the openai optional dependency is include framework and knowledge dependencies
+	# the openai optional dependency is include framework and rag dependencies
 	$(VENV_BIN)/pip install -e ".[openai]"
 	touch $(VENV)/.testenv
 
@@ -48,7 +47,7 @@ fmt: setup ## Format Python code
 	$(VENV_BIN)/blackdoc examples
 	# TODO: Use flake8 to enforce Python style guide.
 	# https://flake8.pycqa.org/en/latest/
-	$(VENV_BIN)/flake8 dbgpt/core/ dbgpt/rag/ dbgpt/storage/ dbgpt/datasource/
+	$(VENV_BIN)/flake8 dbgpt/core/ dbgpt/rag/ dbgpt/storage/ dbgpt/datasource/ dbgpt/client/
 	# TODO: More package checks with flake8.
 
 .PHONY: fmt-check
@@ -57,7 +56,7 @@ fmt-check: setup ## Check Python code formatting and style without making change
 	$(VENV_BIN)/isort --check-only --extend-skip="examples/notebook" examples
 	$(VENV_BIN)/black --check --extend-exclude="examples/notebook" .
 	$(VENV_BIN)/blackdoc --check dbgpt examples
-	$(VENV_BIN)/flake8 dbgpt/core/ dbgpt/rag/ dbgpt/storage/ dbgpt/datasource/
+	$(VENV_BIN)/flake8 dbgpt/core/ dbgpt/rag/ dbgpt/storage/ dbgpt/datasource/ dbgpt/client/
 
 .PHONY: pre-commit
 pre-commit: fmt-check test test-doc mypy ## Run formatting and unit tests before committing
@@ -73,7 +72,7 @@ test-doc: $(VENV)/.testenv ## Run doctests
 .PHONY: mypy
 mypy: $(VENV)/.testenv ## Run mypy checks
 	# https://github.com/python/mypy
-	$(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/rag/ dbgpt/datasource/
+	$(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/rag/ dbgpt/datasource/ dbgpt/client/
 	# rag depends on core and storage, so we not need to check it again.
 	# $(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/storage/
 	# $(VENV_BIN)/mypy --config-file .mypy.ini dbgpt/core/
@@ -100,7 +99,7 @@ package: clean-dist ## Package the project for distribution
 	IS_DEV_MODE=false python setup.py sdist bdist_wheel
 
 .PHONY: upload
-upload: package ## Upload the package to PyPI
+upload: ## Upload the package to PyPI
 	# upload to testpypi: twine upload --repository testpypi dist/*
 	twine upload dist/*
 

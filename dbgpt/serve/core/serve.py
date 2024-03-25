@@ -18,7 +18,7 @@ class BaseServe(BaseComponent, ABC):
     def __init__(
         self,
         system_app: SystemApp,
-        api_prefix: str,
+        api_prefix: str | List[str],
         api_tags: List[str],
         db_url_or_db: Union[str, URL, DatabaseManager] = None,
         try_create_tables: Optional[bool] = False,

@@ -120,7 +120,7 @@ class ChatHistoryPromptComposerOperator(MapOperator[ChatComposerInput, ModelRequ
     ) -> ModelRequest:
         return ModelRequest.build_request(messages=messages, **model_dict)
 
-    async def after_dag_end(self):
+    async def after_dag_end(self, event_loop_task_id: int):
         """Execute after dag end."""
         # Should call after_dag_end() of sub dag
-        await self._sub_compose_dag._after_dag_end()
+        await self._sub_compose_dag._after_dag_end(event_loop_task_id)

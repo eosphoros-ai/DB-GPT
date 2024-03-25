@@ -4,6 +4,7 @@ import classNames from 'classnames';
 import { useContext, useMemo } from 'react';
 import { format } from 'sql-formatter';
 import { ChatContext } from '@/app/chat-context';
+import { formatSql } from '@/utils';
 
 loader.config({ monaco });
 
@@ -24,9 +25,9 @@ export default function MonacoEditor({ className, value, language = 'mysql', onC
       return value;
     }
     if (thoughts && thoughts.length > 0) {
-      return format(`-- ${thoughts} \n${value}`);
+      return formatSql(`-- ${thoughts} \n${value}`);
     }
-    return format(value);
+    return formatSql(value);
   }, [value, thoughts]);
 
   return (

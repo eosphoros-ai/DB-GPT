@@ -65,7 +65,7 @@ from dbgpt.model.operators import (
     OpenAIStreamingOutputOperator,
     StreamingLLMOperator,
 )
-from dbgpt.serve.conversation.operator import ServePreChatHistoryLoadOperator
+from dbgpt.serve.conversation.operators import ServePreChatHistoryLoadOperator
 
 logger = logging.getLogger(__name__)
 

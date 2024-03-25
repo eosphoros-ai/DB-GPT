@@ -2,6 +2,7 @@
 
 This runner will run the workflow in the current process.
 """
+import asyncio
 import logging
 import traceback
 from typing import Any, Dict, List, Optional, Set, cast
@@ -24,6 +25,18 @@ class DefaultWorkflowRunner(WorkflowRunner):
     def __init__(self):
         """Init the default workflow runner."""
         self._running_dag_ctx: Dict[str, DAGContext] = {}
+        self._task_log_index_map: Dict[str, int] = {}
+        self._lock = asyncio.Lock()
+
+    async def _log_task(self, task_id: str) -> int:
+        async with self._lock:
+            if task_id not in self._task_log_index_map:
+                self._task_log_index_map[task_id] = 0
+            self._task_log_index_map[task_id] += 1
+            logger.debug(
+                f"Task {task_id} log index {self._task_log_index_map[task_id]}"
+            )
+            return self._task_log_index_map[task_id]
 
     async def execute_workflow(
         self,
@@ -50,11 +63,14 @@ class DefaultWorkflowRunner(WorkflowRunner):
             # Create DAG context
             node_outputs: Dict[str, TaskContext] = {}
             share_data: Dict[str, Any] = {}
+            event_loop_task_id = id(asyncio.current_task())
         else:
             # Share node output with exist dag context
             node_outputs = exist_dag_ctx._node_to_outputs
             share_data = exist_dag_ctx._share_data
+            event_loop_task_id = exist_dag_ctx._event_loop_task_id
         dag_ctx = DAGContext(
+            event_loop_task_id=event_loop_task_id,
             node_to_outputs=node_outputs,
             share_data=share_data,
             streaming_call=streaming_call,
@@ -69,13 +85,17 @@ class DefaultWorkflowRunner(WorkflowRunner):
         skip_node_ids: Set[str] = set()
         system_app: Optional[SystemApp] = DAGVar.get_current_system_app()
 
+        if node.dag:
+            # Save dag context
+            await node.dag._save_dag_ctx(dag_ctx)
         await job_manager.before_dag_run()
         await self._execute_node(
             job_manager, node, dag_ctx, node_outputs, skip_node_ids, system_app
         )
-        if not streaming_call and node.dag:
+        if not streaming_call and node.dag and exist_dag_ctx is None:
             # streaming call not work for dag end
-            await node.dag._after_dag_end()
+            # if exist_dag_ctx is not None, it means current dag is a sub dag
+            await node.dag._after_dag_end(dag_ctx._event_loop_task_id)
         # if node.dag:
         #     del self._running_dag_ctx[node.dag.dag_id]
         return dag_ctx
@@ -94,6 +114,8 @@ class DefaultWorkflowRunner(WorkflowRunner):
             return
 
         # Run all upstream nodes
+        # TODO: run in parallel, there are some code to be changed:
+        #  dag_ctx.set_current_task_context(task_ctx)
         for upstream_node in node.upstream:
             if isinstance(upstream_node, BaseOperator):
                 await self._execute_node(
@@ -109,8 +131,10 @@ class DefaultWorkflowRunner(WorkflowRunner):
             node_outputs[upstream_node.node_id] for upstream_node in node.upstream
         ]
         input_ctx = DefaultInputContext(inputs)
+        # Log task, get log index(plus 1 every time)
+        log_index = await self._log_task(node.node_id)
         task_ctx: DefaultTaskContext = DefaultTaskContext(
-            node.node_id, TaskState.INIT, task_output=None
+            node.node_id, TaskState.INIT, task_output=None, log_index=log_index
         )
         current_call_data = job_manager.get_call_data_by_id(node.node_id)
         if current_call_data:
@@ -133,7 +157,7 @@ class DefaultWorkflowRunner(WorkflowRunner):
             if system_app is not None and node.system_app is None:
                 node.set_system_app(system_app)
 
-            await node._run(dag_ctx)
+            await node._run(dag_ctx, task_ctx.log_id)
             node_outputs[node.node_id] = dag_ctx.current_task_context
             task_ctx.set_current_state(TaskState.SUCCESS)
 
