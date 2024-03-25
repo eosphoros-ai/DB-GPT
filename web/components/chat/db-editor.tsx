@@ -516,7 +516,7 @@ function DbEditor() {
                   key: i + '',
                   label: item?.title,
                   children: (
-                    <div className="flex flex-col h-full">
+                    <div className="flex flex-col h-[702px]">
                       <DbEditorContent
                         editorValue={item}
                         handleChange={(value) => {
