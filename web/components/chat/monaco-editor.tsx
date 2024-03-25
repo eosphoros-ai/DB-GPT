@@ -1,11 +1,11 @@
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api.js';
+import * as monaco from 'monaco-editor';
 import Editor, { OnChange, loader } from '@monaco-editor/react';
 import classNames from 'classnames';
 import { useContext, useMemo } from 'react';
 import { format } from 'sql-formatter';
 import { ChatContext } from '@/app/chat-context';
 
-// loader.config({ monaco });
+loader.config({ monaco });
 
 interface MonacoEditorProps {
   className?: string;
