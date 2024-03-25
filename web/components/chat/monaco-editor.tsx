@@ -5,7 +5,7 @@ import { useContext, useMemo } from 'react';
 import { format } from 'sql-formatter';
 import { ChatContext } from '@/app/chat-context';
 
-loader.config({ monaco });
+// loader.config({ monaco });
 
 interface MonacoEditorProps {
   className?: string;
