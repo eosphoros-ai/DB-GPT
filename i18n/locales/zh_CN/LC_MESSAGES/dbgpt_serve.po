@@ -1,0 +1,134 @@
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-24 11:24+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:47
+msgid "Knowledge Space Operator"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:50
+msgid "knowledge space retriever operator."
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:51
+msgid "Query"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:51
+msgid "user query"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:54
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:57
+msgid "related chunk content"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:62
+msgid "Space Name"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:68
+msgid "space name."
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:143
+msgid "Knowledge Space Prompt Builder Operator"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:145
+msgid "Build messages from prompt template and chat history."
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:150
+msgid "Chat Prompt Template"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:153
+msgid "The chat prompt template."
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:156
+msgid "History Key"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:161
+msgid "The key of history in prompt dict."
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:164
+msgid "String History"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:169
+msgid "Whether to convert the history to string."
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:174
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:178
+msgid "user input"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:181
+msgid "space related context"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:185
+msgid "context of knowledge space."
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:188
+msgid "History"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:192
+msgid "The history."
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:197
+msgid "Formatted Messages"
+msgstr ""
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:201
+msgid "The formatted messages."
+msgstr ""
+
+#: ../dbgpt/serve/conversation/operators.py:87
+msgid "Default Chat History Load Operator"
+msgstr "默认聊天历史加载算子"
+
+#: ../dbgpt/serve/conversation/operators.py:91
+msgid ""
+"Load chat history from the storage of the serve component.It is the default "
+"storage of DB-GPT"
+msgstr "从 serve 组件的存储中加载聊天记录，这是 DB-GPT 的默认存储"
+
+#: ../dbgpt/serve/conversation/operators.py:97
+msgid "Model Request"
+msgstr "模型请求"
+
+#: ../dbgpt/serve/conversation/operators.py:100
+msgid "The model request."
+msgstr "这是模型请求。"
+
+#: ../dbgpt/serve/conversation/operators.py:105
+msgid "Stored Messages"
+msgstr ""
+
+#: ../dbgpt/serve/conversation/operators.py:108
+msgid "The messages stored in the storage."
+msgstr ""

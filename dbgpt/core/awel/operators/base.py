@@ -2,6 +2,7 @@
 import asyncio
 import functools
 from abc import ABC, ABCMeta, abstractmethod
+from contextvars import ContextVar
 from types import FunctionType
 from typing import (
     Any,
@@ -29,6 +30,9 @@ from ..task.base import EMPTY_DATA, OUT, T, TaskOutput
 F = TypeVar("F", bound=FunctionType)
 
 CALL_DATA = Union[Dict[str, Any], Any]
+CURRENT_DAG_CONTEXT: ContextVar[Optional[DAGContext]] = ContextVar(
+    "current_dag_context", default=None
+)
 
 
 class WorkflowRunner(ABC, Generic[T]):
@@ -150,9 +154,10 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     @property
     def current_dag_context(self) -> DAGContext:
         """Return the current DAG context."""
-        if not self._dag_ctx:
+        ctx = CURRENT_DAG_CONTEXT.get()
+        if not ctx:
             raise ValueError("DAGContext is not set")
-        return self._dag_ctx
+        return ctx
 
     @property
     def dev_mode(self) -> bool:
@@ -166,10 +171,12 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         """
         return default_runner is None
 
-    async def _run(self, dag_ctx: DAGContext) -> TaskOutput[OUT]:
+    async def _run(self, dag_ctx: DAGContext, task_log_id: str) -> TaskOutput[OUT]:
         if not self.node_id:
             raise ValueError(f"The DAG Node ID can't be empty, current node {self}")
-        self._dag_ctx = dag_ctx
+        if not task_log_id:
+            raise ValueError(f"The task log ID can't be empty, current node {self}")
+        CURRENT_DAG_CONTEXT.set(dag_ctx)
         return await self._do_run(dag_ctx)
 
     @abstractmethod
@@ -292,6 +299,11 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
         if not self._executor:
             raise ValueError("Executor is not set")
         return await blocking_func_to_async(self._executor, func, *args, **kwargs)
+
+    @property
+    def current_event_loop_task_id(self) -> int:
+        """Get the current event loop task id."""
+        return id(asyncio.current_task())
 
 
 def initialize_runner(runner: WorkflowRunner):

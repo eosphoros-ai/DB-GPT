@@ -5,12 +5,14 @@ from typing import Any, List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core import Chunk, Document
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.rag.extractor.base import Extractor
 from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge
 from dbgpt.rag.text_splitter import TextSplitter
+from dbgpt.util.i18n_utils import _
 
 
-class SplitterType(Enum):
+class SplitterType(str, Enum):
     """The type of splitter."""
 
     LANGCHAIN = "langchain"
@@ -18,6 +20,71 @@ class SplitterType(Enum):
     USER_DEFINE = "user_define"
 
 
+@register_resource(
+    _("Chunk Parameters"),
+    "chunk_parameters",
+    category=ResourceCategory.RAG,
+    parameters=[
+        Parameter.build_from(
+            _("Chunk Strategy"),
+            "chunk_strategy",
+            str,
+            description=_("chunk strategy"),
+            optional=True,
+            default=None,
+        ),
+        Parameter.build_from(
+            _("Text Splitter"),
+            "text_splitter",
+            TextSplitter,
+            description=_(
+                "Text splitter, if not set, will use the default text splitter."
+            ),
+            optional=True,
+            default=None,
+        ),
+        Parameter.build_from(
+            _("Splitter Type"),
+            "splitter_type",
+            str,
+            description=_("Splitter type"),
+            optional=True,
+            default=SplitterType.USER_DEFINE.value,
+        ),
+        Parameter.build_from(
+            _("Chunk Size"),
+            "chunk_size",
+            int,
+            description=_("Chunk size"),
+            optional=True,
+            default=512,
+        ),
+        Parameter.build_from(
+            _("Chunk Overlap"),
+            "chunk_overlap",
+            int,
+            description="Chunk overlap",
+            optional=True,
+            default=50,
+        ),
+        Parameter.build_from(
+            _("Separator"),
+            "separator",
+            str,
+            description=_("Chunk separator"),
+            optional=True,
+            default="\n",
+        ),
+        Parameter.build_from(
+            _("Enable Merge"),
+            "enable_merge",
+            bool,
+            description=_("Enable chunk merge by chunk_size."),
+            optional=True,
+            default=False,
+        ),
+    ],
+)
 class ChunkParameters(BaseModel):
     """The parameters for chunking."""
 

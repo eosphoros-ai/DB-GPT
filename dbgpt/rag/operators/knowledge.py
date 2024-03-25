@@ -1,7 +1,8 @@
 """Knowledge Operator."""
 
-from typing import Optional
+from typing import List, Optional
 
+from dbgpt.core import Chunk
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import (
     IOField,
@@ -12,44 +13,47 @@ from dbgpt.core.awel.flow import (
 )
 from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType
 from dbgpt.rag.knowledge.factory import KnowledgeFactory
+from dbgpt.util.i18n_utils import _
 
 
 class KnowledgeOperator(MapOperator[str, Knowledge]):
     """Knowledge Factory Operator."""
 
     metadata = ViewMetadata(
-        label="Knowledge Factory Operator",
+        label=_("Knowledge Operator"),
         name="knowledge_operator",
         category=OperatorCategory.RAG,
-        description="The knowledge operator.",
+        description=_(
+            _("The knowledge operator, which can create knowledge from datasource.")
+        ),
         inputs=[
             IOField.build_from(
-                "knowledge datasource",
+                _("knowledge datasource"),
                 "knowledge datasource",
                 str,
-                "knowledge datasource",
+                _("knowledge datasource, which can be a document, url, or text."),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Knowledge",
+                _("Knowledge"),
                 "Knowledge",
                 Knowledge,
-                description="Knowledge",
+                description=_("Knowledge object."),
             )
         ],
         parameters=[
             Parameter.build_from(
-                label="datasource",
+                label=_("Default datasource"),
                 name="datasource",
                 type=str,
                 optional=True,
-                default="DOCUMENT",
-                description="datasource",
+                default=None,
+                description=_("Default datasource."),
             ),
             Parameter.build_from(
-                label="knowledge_type",
-                name="knowledge type",
+                label=_("Knowledge type"),
+                name="knowledge_type",
                 type=str,
                 optional=True,
                 options=[
@@ -64,7 +68,7 @@ class KnowledgeOperator(MapOperator[str, Knowledge]):
                     ),
                 ],
                 default=KnowledgeType.DOCUMENT.name,
-                description="knowledge type",
+                description=_("Knowledge type."),
             ),
         ],
         documentation_url="https://github.com/openai/openai-python",
@@ -92,3 +96,50 @@ class KnowledgeOperator(MapOperator[str, Knowledge]):
         return await self.blocking_func_to_async(
             KnowledgeFactory.create, datasource, self._knowledge_type
         )
+
+
+class ChunksToStringOperator(MapOperator[List[Chunk], str]):
+    """The Chunks To String Operator."""
+
+    metadata = ViewMetadata(
+        label=_("Chunks To String Operator"),
+        name="chunks_to_string_operator",
+        description=_("Convert chunks to string."),
+        category=OperatorCategory.RAG,
+        parameters=[
+            Parameter.build_from(
+                _("Separator"),
+                "separator",
+                str,
+                description=_("The separator between chunks."),
+                optional=True,
+                default="\n",
+            )
+        ],
+        inputs=[
+            IOField.build_from(
+                _("Chunks"),
+                "chunks",
+                Chunk,
+                description=_("The input chunks."),
+                is_list=True,
+            )
+        ],
+        outputs=[
+            IOField.build_from(
+                _("String"),
+                "string",
+                str,
+                description=_("The output string."),
+            )
+        ],
+    )
+
+    def __init__(self, separator: str = "\n", **kwargs):
+        """Create a new ChunksToStringOperator."""
+        self._separator = separator
+        super().__init__(**kwargs)
+
+    async def map(self, chunks: List[Chunk]) -> str:
+        """Map the chunks to string."""
+        return self._separator.join([chunk.content for chunk in chunks])

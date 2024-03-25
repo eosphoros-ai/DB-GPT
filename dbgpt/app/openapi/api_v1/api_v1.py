@@ -21,7 +21,7 @@ from dbgpt.app.openapi.api_view_model import (
 from dbgpt.app.scene import BaseChat, ChatFactory, ChatScene
 from dbgpt.component import ComponentType
 from dbgpt.configs.model_config import KNOWLEDGE_UPLOAD_ROOT_PATH
-from dbgpt.core.awel import CommonLLMHttpRequestBody, CommonLLMHTTPRequestContext
+from dbgpt.core.awel import CommonLLMHttpRequestBody
 from dbgpt.core.schema.api import (
     ChatCompletionResponseStreamChoice,
     ChatCompletionStreamResponse,
@@ -355,17 +355,21 @@ async def chat_completions(
             media_type="text/event-stream",
         )
     elif dialogue.chat_mode == ChatScene.ChatFlow.value():
-        flow_ctx = CommonLLMHTTPRequestContext(
-            conv_uid=dialogue.conv_uid,
-            chat_mode=dialogue.chat_mode,
-            user_name=dialogue.user_name,
-            sys_code=dialogue.sys_code,
-        )
         flow_req = CommonLLMHttpRequestBody(
             model=dialogue.model_name,
             messages=dialogue.user_input,
             stream=True,
-            context=flow_ctx,
+            # context=flow_ctx,
+            # temperature=
+            # max_new_tokens=
+            # enable_vis=
+            conv_uid=dialogue.conv_uid,
+            span_id=root_tracer.get_current_span_id(),
+            chat_mode=dialogue.chat_mode,
+            chat_param=dialogue.select_param,
+            user_name=dialogue.user_name,
+            sys_code=dialogue.sys_code,
+            incremental=dialogue.incremental,
         )
         return StreamingResponse(
             flow_service.chat_flow(dialogue.select_param, flow_req),

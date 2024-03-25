@@ -32,6 +32,7 @@ from dbgpt.core.interface.llm import (
 )
 from dbgpt.core.interface.message import ModelMessage
 from dbgpt.util.function_utils import rearrange_args_by_type
+from dbgpt.util.i18n_utils import _
 
 RequestInput = Union[
     ModelRequest,
@@ -47,41 +48,75 @@ class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest]):
     """Build the model request from the input value."""
 
     metadata = ViewMetadata(
-        label="Build Model Request",
+        label=_("Build Model Request"),
         name="request_builder_operator",
         category=OperatorCategory.COMMON,
-        description="Build the model request from the http request body.",
+        description=_("Build the model request from the http request body."),
         parameters=[
             Parameter.build_from(
-                "Default Model Name",
+                _("Default Model Name"),
                 "model",
                 str,
                 optional=True,
                 default=None,
-                description="The model name of the model request.",
+                description=_("The model name of the model request."),
+            ),
+            Parameter.build_from(
+                _("Temperature"),
+                "temperature",
+                float,
+                optional=True,
+                default=None,
+                description=_("The temperature of the model request."),
+            ),
+            Parameter.build_from(
+                _("Max New Tokens"),
+                "max_new_tokens",
+                int,
+                optional=True,
+                default=None,
+                description=_("The max new tokens of the model request."),
+            ),
+            Parameter.build_from(
+                _("Context Length"),
+                "context_len",
+                int,
+                optional=True,
+                default=None,
+                description=_("The context length of the model request."),
             ),
         ],
         inputs=[
             IOField.build_from(
-                "Request Body",
+                _("Request Body"),
                 "input_value",
                 CommonLLMHttpRequestBody,
-                description="The input value of the operator.",
+                description=_("The input value of the operator."),
             ),
         ],
         outputs=[
             IOField.build_from(
-                "Model Request",
+                _("Model Request"),
                 "output_value",
                 ModelRequest,
-                description="The output value of the operator.",
+                description=_("The output value of the operator."),
             ),
         ],
     )
 
-    def __init__(self, model: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_new_tokens: Optional[int] = None,
+        context_len: Optional[int] = None,
+        **kwargs,
+    ):
         """Create a new request builder operator."""
         self._model = model
+        self._temperature = temperature
+        self._max_new_tokens = max_new_tokens
+        self._context_len = context_len
         super().__init__(**kwargs)
 
     async def map(self, input_value: RequestInput) -> ModelRequest:
@@ -124,7 +159,16 @@ class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest]):
             stream = req_dict["stream"]
             del req_dict["stream"]
         if "context" not in req_dict:
-            req_dict["context"] = ModelRequestContext(stream=stream)
+            req_dict["context"] = ModelRequestContext(
+                stream=stream,
+                user_name=req_dict.get("user_name"),
+                sys_code=req_dict.get("sys_code"),
+                conv_uid=req_dict.get("conv_uid"),
+                span_id=req_dict.get("span_id"),
+                chat_mode=req_dict.get("chat_mode"),
+                chat_param=req_dict.get("chat_param"),
+                extra=req_dict.get("extra"),
+            )
         else:
             context_dict = req_dict["context"]
             if not isinstance(context_dict, dict):
@@ -132,39 +176,48 @@ class RequestBuilderOperator(MapOperator[RequestInput, ModelRequest]):
             if has_stream:
                 context_dict["stream"] = stream
             req_dict["context"] = ModelRequestContext(**context_dict)
-        return ModelRequest(**req_dict)
+        # Just keep fields in ModelRequest
+        all_field_names = {f.name for f in dataclasses.fields(ModelRequest)}
+        filter_req_dict = {k: v for k, v in req_dict.items() if k in all_field_names}
+        if "temperature" not in filter_req_dict:
+            filter_req_dict["temperature"] = self._temperature
+        if "max_new_tokens" not in filter_req_dict:
+            filter_req_dict["max_new_tokens"] = self._max_new_tokens
+        if "context_len" not in filter_req_dict:
+            filter_req_dict["context_len"] = self._context_len
+        return ModelRequest(**filter_req_dict)
 
 
 class MergedRequestBuilderOperator(JoinOperator[ModelRequest]):
     """Build the model request from the input value."""
 
     metadata = ViewMetadata(
-        label="Merge Model Request Messages",
+        label=_("Merge Model Request Messages"),
         name="merged_request_builder_operator",
         category=OperatorCategory.COMMON,
-        description="Merge the model request from the input value.",
+        description=_("Merge the model request from the input value."),
         parameters=[],
         inputs=[
             IOField.build_from(
-                "Model Request",
+                _("Model Request"),
                 "model_request",
                 ModelRequest,
-                description="The model request of upstream.",
+                description=_("The model request of upstream."),
             ),
             IOField.build_from(
-                "Model messages",
+                _("Model messages"),
                 "messages",
                 ModelMessage,
-                description="The model messages of upstream.",
+                description=_("The model messages of upstream."),
                 is_list=True,
             ),
         ],
         outputs=[
             IOField.build_from(
-                "Model Request",
+                _("Model Request"),
                 "output_value",
                 ModelRequest,
-                description="The output value of the operator.",
+                description=_("The output value of the operator."),
             ),
         ],
     )
@@ -282,49 +335,49 @@ class LLMBranchOperator(BranchOperator[ModelRequest, ModelRequest]):
     """
 
     metadata = ViewMetadata(
-        label="LLM Branch Operator",
+        label=_("LLM Branch Operator"),
         name="llm_branch_operator",
         category=OperatorCategory.LLM,
         operator_type=OperatorType.BRANCH,
-        description="Branch the workflow based on the stream flag of the request.",
+        description=_("Branch the workflow based on the stream flag of the request."),
         parameters=[
             Parameter.build_from(
-                "Streaming Task Name",
+                _("Streaming Task Name"),
                 "stream_task_name",
                 str,
                 optional=True,
                 default="streaming_llm_task",
-                description="The name of the streaming task.",
+                description=_("The name of the streaming task."),
             ),
             Parameter.build_from(
-                "Non-Streaming Task Name",
+                _("Non-Streaming Task Name"),
                 "no_stream_task_name",
                 str,
                 optional=True,
                 default="llm_task",
-                description="The name of the non-streaming task.",
+                description=_("The name of the non-streaming task."),
             ),
         ],
         inputs=[
             IOField.build_from(
-                "Model Request",
+                _("Model Request"),
                 "input_value",
                 ModelRequest,
-                description="The input value of the operator.",
+                description=_("The input value of the operator."),
             ),
         ],
         outputs=[
             IOField.build_from(
-                "Streaming Model Request",
+                _("Streaming Model Request"),
                 "streaming_request",
                 ModelRequest,
-                description="The streaming request, to streaming Operator.",
+                description=_("The streaming request, to streaming Operator."),
             ),
             IOField.build_from(
-                "Non-Streaming Model Request",
+                _("Non-Streaming Model Request"),
                 "no_streaming_request",
                 ModelRequest,
-                description="The non-streaming request, to non-streaming Operator.",
+                description=_("The non-streaming request, to non-streaming Operator."),
             ),
         ],
     )
@@ -374,25 +427,25 @@ class ModelOutput2CommonResponseOperator(
     """Map the model output to the common response body."""
 
     metadata = ViewMetadata(
-        label="Map Model Output to Common Response Body",
+        label=_("Map Model Output to Common Response Body"),
         name="model_output_2_common_response_body_operator",
         category=OperatorCategory.COMMON,
-        description="Map the model output to the common response body.",
+        description=_("Map the model output to the common response body."),
         parameters=[],
         inputs=[
             IOField.build_from(
-                "Model Output",
+                _("Model Output"),
                 "input_value",
                 ModelOutput,
-                description="The input value of the operator.",
+                description=_("The input value of the operator."),
             ),
         ],
         outputs=[
             IOField.build_from(
-                "Common Response Body",
+                _("Common Response Body"),
                 "output_value",
                 CommonLLMHttpResponseBody,
-                description="The output value of the operator.",
+                description=_("The output value of the operator."),
             ),
         ],
     )
@@ -418,28 +471,30 @@ class CommonStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
     """
 
     metadata = ViewMetadata(
-        label="Common Streaming Output Operator",
+        label=_("Common Streaming Output Operator"),
         name="common_streaming_output_operator",
         operator_type=OperatorType.TRANSFORM_STREAM,
         category=OperatorCategory.OUTPUT_PARSER,
-        description="The common streaming LLM operator, for chat flow.",
+        description=_("The common streaming LLM operator, for chat flow."),
         parameters=[],
         inputs=[
             IOField.build_from(
-                "Upstream Model Output",
+                _("Upstream Model Output"),
                 "output_iter",
                 ModelOutput,
                 is_list=True,
-                description="The model output of upstream.",
+                description=_("The model output of upstream."),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Model Output",
+                _("Model Output"),
                 "model_output",
                 str,
                 is_list=True,
-                description="The model output after transform to common stream format",
+                description=_(
+                    "The model output after transform to common stream format"
+                ),
             )
         ],
     )
@@ -463,25 +518,25 @@ class StringOutput2ModelOutputOperator(MapOperator[str, ModelOutput]):
     """Map String to ModelOutput."""
 
     metadata = ViewMetadata(
-        label="Map String to ModelOutput",
+        label=_("Map String to ModelOutput"),
         name="string_2_model_output_operator",
         category=OperatorCategory.COMMON,
-        description="Map String to ModelOutput.",
+        description=_("Map String to ModelOutput."),
         parameters=[],
         inputs=[
             IOField.build_from(
-                "String",
+                _("String"),
                 "input_value",
                 str,
-                description="The input value of the operator.",
+                description=_("The input value of the operator."),
             ),
         ],
         outputs=[
             IOField.build_from(
-                "Model Output",
+                _("Model Output"),
                 "input_value",
                 ModelOutput,
-                description="The input value of the operator.",
+                description=_("The input value of the operator."),
             ),
         ],
     )

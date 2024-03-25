@@ -2,16 +2,39 @@
 import logging
 from typing import Any, List
 
-from dbgpt._private.config import Config
 from dbgpt._private.pydantic import Field
 from dbgpt.core import Chunk
-from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.storage.vector_store.base import (
+    _COMMON_PARAMETERS,
+    VectorStoreBase,
+    VectorStoreConfig,
+)
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
-CFG = Config()
 
-
+@register_resource(
+    _("PG Vector Store"),
+    "pg_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    parameters=[
+        *_COMMON_PARAMETERS,
+        Parameter.build_from(
+            _("Connection String"),
+            "connection_string",
+            str,
+            description=_(
+                "The connection string of vector store, if not set, will use "
+                "the default connection string."
+            ),
+            optional=True,
+            default=None,
+        ),
+    ],
+    description="PG vector store.",
+)
 class PGVectorConfig(VectorStoreConfig):
     """PG vector store config."""
 

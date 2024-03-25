@@ -105,7 +105,7 @@ const CanvasNode: React.FC<CanvasNodeProps> = ({ data }) => {
             <DeleteOutlined className="h-full text-lg cursor-pointer" onClick={deleteNode} />
           </IconWrapper>
           <IconWrapper className="mt-2">
-            <Tooltip title={node.description} placement="right">
+            <Tooltip title={<><p className="font-bold">{node.label}</p><p>{node.description}</p></>} placement="right">
               <InfoCircleOutlined className="h-full text-lg cursor-pointer" />
             </Tooltip>
           </IconWrapper>

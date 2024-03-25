@@ -166,7 +166,9 @@ _RESOURCE_CATEGORY_DETAIL = {
     "common": _CategoryDetail("Common", "The common resource"),
     "prompt": _CategoryDetail("Prompt", "The prompt resource"),
     "agent": _CategoryDetail("Agent", "The agent resource"),
+    "embeddings": _CategoryDetail("Embeddings", "The embeddings resource"),
     "rag": _CategoryDetail("RAG", "The  resource"),
+    "vector_store": _CategoryDetail("Vector Store", "The vector store resource"),
 }
 
 
@@ -180,7 +182,9 @@ class ResourceCategory(str, Enum):
     COMMON = "common"
     PROMPT = "prompt"
     AGENT = "agent"
+    EMBEDDINGS = "embeddings"
     RAG = "rag"
+    VECTOR_STORE = "vector_store"
 
     def label(self) -> str:
         """Get the label of the category."""
@@ -433,6 +437,16 @@ class Parameter(TypeMetadata, Serializable):
         else:
             dict_value["options"] = [value.to_dict() for value in self.options]
         return dict_value
+
+    def get_dict_options(self) -> Optional[List[Dict]]:
+        """Get the options of the parameter."""
+        if not self.options:
+            return None
+        elif isinstance(self.options, BaseDynamicOptions):
+            values = self.options.option_values()
+            return [value.to_dict() for value in values]
+        else:
+            return [value.to_dict() for value in self.options]
 
     def to_runnable_parameter(
         self,
@@ -769,7 +783,6 @@ def register_resource(
             **kwargs,
         )
         _register_resource(cls, resource_metadata)
-
         # Attach the metadata to the class
         cls._resource_metadata = resource_metadata
         return cls

@@ -1,0 +1,545 @@
+# Korean translations for PACKAGE package
+# PACKAGE 패키지에 대한 한국어 번역문.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-23 11:22+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../dbgpt/rag/operators/embedding.py:25
+msgid "Embedding Retriever Operator"
+msgstr "임베딩 검색 연산자"
+
+#: ../dbgpt/rag/operators/embedding.py:27
+msgid "Retrieve candidates from vector store."
+msgstr "벡터 저장소에서 후보자를 검색합니다."
+
+#: ../dbgpt/rag/operators/embedding.py:31
+#: ../dbgpt/rag/operators/embedding.py:130
+msgid "Vector Store Connector"
+msgstr "벡터 저장소 커넥터"
+
+#: ../dbgpt/rag/operators/embedding.py:34
+#: ../dbgpt/rag/operators/embedding.py:133
+msgid "The vector store connector."
+msgstr "벡터 저장소 커넥터입니다."
+
+#: ../dbgpt/rag/operators/embedding.py:37
+msgid "Top K"
+msgstr "상위 K"
+
+#: ../dbgpt/rag/operators/embedding.py:40
+msgid "The number of candidates."
+msgstr "후보자의 수."
+
+#: ../dbgpt/rag/operators/embedding.py:43
+msgid "Score Threshold"
+msgstr "점수 임계값"
+
+#: ../dbgpt/rag/operators/embedding.py:47
+msgid ""
+"The score threshold, if score of candidate is less than it, it will be "
+"filtered."
+msgstr ""
+"점수 임계값, 후보자의 점수가 이 값보다 낮으면 필터링됩니다."
+
+#: ../dbgpt/rag/operators/embedding.py:54 ../dbgpt/rag/retriever/rewrite.py:24
+msgid "Query Rewrite"
+msgstr "쿼리 재작성"
+
+#: ../dbgpt/rag/operators/embedding.py:57
+msgid "The query rewrite resource."
+msgstr "쿼리 재작성 리소스입니다."
+
+#: ../dbgpt/rag/operators/embedding.py:62
+msgid "Rerank"
+msgstr "재순위"
+
+#: ../dbgpt/rag/operators/embedding.py:65
+msgid "The rerank."
+msgstr "재순위입니다."
+
+#: ../dbgpt/rag/operators/embedding.py:72
+msgid "Query"
+msgstr "쿼리"
+
+#: ../dbgpt/rag/operators/embedding.py:75
+msgid "The query to retrieve."
+msgstr "검색할 쿼리입니다."
+
+#: ../dbgpt/rag/operators/embedding.py:80
+msgid "Candidates"
+msgstr "후보자"
+
+#: ../dbgpt/rag/operators/embedding.py:83
+msgid "The retrieved candidates."
+msgstr "검색된 후보자입니다."
+
+#: ../dbgpt/rag/operators/embedding.py:124
+msgid "Embedding Assembler Operator"
+msgstr "임베딩 조립 연산자"
+
+#: ../dbgpt/rag/operators/embedding.py:126
+msgid "Load knowledge and assemble embedding chunks to vector store."
+msgstr "지식을 로드하고 임베딩 청크를 벡터 저장소에 조립합니다."
+
+#: ../dbgpt/rag/operators/embedding.py:136 ../dbgpt/rag/chunk_manager.py:24
+msgid "Chunk Parameters"
+msgstr "청크 매개변수"
+
+#: ../dbgpt/rag/operators/embedding.py:139
+msgid "The chunk parameters."
+msgstr "청크 매개변수입니다."
+
+#: ../dbgpt/rag/operators/embedding.py:146 ../dbgpt/rag/operators/summary.py:23
+#: ../dbgpt/rag/operators/knowledge.py:39
+msgid "Knowledge"
+msgstr "지식"
+
+#: ../dbgpt/rag/operators/embedding.py:149
+msgid "The knowledge to be loaded."
+msgstr "로드할 지식입니다."
+
+#: ../dbgpt/rag/operators/embedding.py:154
+#: ../dbgpt/rag/operators/knowledge.py:121
+msgid "Chunks"
+msgstr "청크"
+
+#: ../dbgpt/rag/operators/embedding.py:158
+msgid "The assembled chunks, it has been persisted to vector store."
+msgstr "조립된 청크, 벡터 저장소에 지속됩니다."
+
+#: ../dbgpt/rag/operators/summary.py:17
+msgid "Summary Operator"
+msgstr "요약 연산자"
+
+#: ../dbgpt/rag/operators/summary.py:20
+msgid "The summary assembler operator."
+msgstr "요약 조립 연산자입니다."
+
+#: ../dbgpt/rag/operators/summary.py:23
+msgid "Knowledge datasource"
+msgstr "지식 데이터원"
+
+#: ../dbgpt/rag/operators/summary.py:28
+msgid "Document summary"
+msgstr "문서 요약"
+
+#: ../dbgpt/rag/operators/summary.py:36 ../dbgpt/rag/operators/rewrite.py:36
+#: ../dbgpt/rag/retriever/rewrite.py:36
+msgid "LLM Client"
+msgstr "LLM 클라이언트"
+
+#: ../dbgpt/rag/operators/summary.py:41 ../dbgpt/rag/operators/rewrite.py:39
+msgid "The LLM Client."
+msgstr "LLM 클라이언트입니다."
+
+#: ../dbgpt/rag/operators/summary.py:44 ../dbgpt/rag/operators/rewrite.py:42
+msgid "Model name"
+msgstr "모델 이름"
+
+#: ../dbgpt/rag/operators/summary.py:49
+msgid "LLM model name"
+msgstr "LLM 모델 이름"
+
+#: ../dbgpt/rag/operators/summary.py:52 ../dbgpt/rag/operators/summary.py:57
+#: ../dbgpt/rag/operators/summary.py:65
+msgid "prompt language"
+msgstr "프롬프트 언어"
+
+#: ../dbgpt/rag/operators/summary.py:60
+msgid "Max iteration with LLM"
+msgstr "LLM과의 최대 반복 횟수"
+
+#: ../dbgpt/rag/operators/summary.py:68
+msgid "Concurrency limit with LLM"
+msgstr "LLM과의 동시성 제한"
+
+#: ../dbgpt/rag/operators/summary.py:73
+msgid "The concurrency limit with llm"
+msgstr "LLM과의 동시성 제한입니다."
+
+#: ../dbgpt/rag/operators/rewrite.py:16
+msgid "Query Rewrite Operator"
+msgstr "쿼리 재작성 연산자"
+
+#: ../dbgpt/rag/operators/rewrite.py:19
+msgid "Query rewrite operator."
+msgstr "쿼리 재작성 연산자."
+
+#: ../dbgpt/rag/operators/rewrite.py:22
+msgid "Query context"
+msgstr "쿼리 컨텍스트"
+
+#: ../dbgpt/rag/operators/rewrite.py:22
+msgid "query context"
+msgstr "쿼리 컨텍스트"
+
+#: ../dbgpt/rag/operators/rewrite.py:27 ../dbgpt/rag/operators/rewrite.py:31
+msgid "Rewritten queries"
+msgstr "재작성된 쿼리"
+
+#: ../dbgpt/rag/operators/rewrite.py:47
+msgid "LLM model name."
+msgstr "LLM 모델 이름."
+
+#: ../dbgpt/rag/operators/rewrite.py:50
+msgid "Prompt language"
+msgstr "프롬프트 언어"
+
+#: ../dbgpt/rag/operators/rewrite.py:55
+msgid "Prompt language."
+msgstr "프롬프트 언어."
+
+#: ../dbgpt/rag/operators/rewrite.py:58
+msgid "Number of results"
+msgstr "결과 수"
+
+#: ../dbgpt/rag/operators/rewrite.py:63
+msgid "rewrite query number."
+msgstr "쿼리 재작성 번호."
+
+#: ../dbgpt/rag/operators/knowledge.py:23
+msgid "Knowledge Operator"
+msgstr "지식 연산자"
+
+#: ../dbgpt/rag/operators/knowledge.py:27
+msgid "The knowledge operator, which can create knowledge from datasource."
+msgstr "데이터 소스에서 지식을 생성할 수 있는 지식 연산자."
+
+#: ../dbgpt/rag/operators/knowledge.py:31
+msgid "knowledge datasource"
+msgstr "지식 데이터 소스"
+
+#: ../dbgpt/rag/operators/knowledge.py:34
+msgid "knowledge datasource, which can be a document, url, or text."
+msgstr "문서, URL 또는 텍스트일 수 있는 지식 데이터 소스."
+
+#: ../dbgpt/rag/operators/knowledge.py:42
+msgid "Knowledge object."
+msgstr "지식 객체."
+
+#: ../dbgpt/rag/operators/knowledge.py:47
+msgid "Default datasource"
+msgstr "기본 데이터 소스"
+
+#: ../dbgpt/rag/operators/knowledge.py:52
+msgid "Default datasource."
+msgstr "기본 데이터 소스."
+
+#: ../dbgpt/rag/operators/knowledge.py:55
+msgid "Knowledge type"
+msgstr "지식 유형"
+
+#: ../dbgpt/rag/operators/knowledge.py:71
+msgid "Knowledge type."
+msgstr "지식 유형."
+
+#: ../dbgpt/rag/operators/knowledge.py:105
+msgid "Chunks To String Operator"
+msgstr "청크를 문자열로 변환하는 연산자"
+
+#: ../dbgpt/rag/operators/knowledge.py:107
+msgid "Convert chunks to string."
+msgstr "청크를 문자열로 변환합니다."
+
+#: ../dbgpt/rag/operators/knowledge.py:111 ../dbgpt/rag/chunk_manager.py:71
+#: ../dbgpt/rag/text_splitter/text_splitter.py:211
+#: ../dbgpt/rag/text_splitter/text_splitter.py:422
+#: ../dbgpt/rag/text_splitter/text_splitter.py:804
+msgid "Separator"
+msgstr "구분자"
+
+#: ../dbgpt/rag/operators/knowledge.py:114
+msgid "The separator between chunks."
+msgstr "청크 사이의 구분자."
+
+#: ../dbgpt/rag/operators/knowledge.py:124
+msgid "The input chunks."
+msgstr "입력 청크."
+
+#: ../dbgpt/rag/operators/knowledge.py:130
+msgid "String"
+msgstr "문자열"
+
+#: ../dbgpt/rag/operators/knowledge.py:133
+msgid "The output string."
+msgstr "출력 문자열."
+
+#: ../dbgpt/rag/embedding/embedding_factory.py:230
+msgid "Default Embeddings"
+msgstr "기본 임베딩"
+
+#: ../dbgpt/rag/embedding/embedding_factory.py:234
+msgid "Default embeddings(using default embedding model of current system)"
+msgstr "기본 임베딩(현재 시스템의 기본 임베딩 모델 사용)"
+
+#: ../dbgpt/rag/embedding/embeddings.py:28
+msgid "HuggingFace Embeddings"
+msgstr "HuggingFace 임베딩"
+
+#: ../dbgpt/rag/embedding/embeddings.py:31
+msgid "HuggingFace sentence_transformers embedding models."
+msgstr "HuggingFace sentence_transformers 임베딩 모델."
+
+#: ../dbgpt/rag/embedding/embeddings.py:34
+#: ../dbgpt/rag/embedding/embeddings.py:141
+#: ../dbgpt/rag/embedding/embeddings.py:348
+#: ../dbgpt/rag/embedding/embeddings.py:461
+#: ../dbgpt/rag/embedding/embeddings.py:553
+#: ../dbgpt/rag/retriever/rewrite.py:30
+msgid "Model Name"
+msgstr "모델 이름"
+
+#: ../dbgpt/rag/embedding/embeddings.py:39
+#: ../dbgpt/rag/embedding/embeddings.py:146
+msgid "Model name to use."
+msgstr "사용할 모델 이름."
+
+#: ../dbgpt/rag/embedding/embeddings.py:135
+msgid "HuggingFace Instructor Embeddings"
+msgstr "HuggingFace Instructor 임베딩"
+
+#: ../dbgpt/rag/embedding/embeddings.py:138
+msgid "HuggingFace Instructor embeddings."
+msgstr "HuggingFace Instructor 임베딩."
+
+#: ../dbgpt/rag/embedding/embeddings.py:149
+msgid "Embed Instruction"
+msgstr "임베딩 지시"
+
+#: ../dbgpt/rag/embedding/embeddings.py:154
+msgid "Instruction to use for embedding documents."
+msgstr "문서를 임베딩하는 데 사용할 지시사항."
+
+#: ../dbgpt/rag/embedding/embeddings.py:157
+msgid "Query Instruction"
+msgstr "쿼리 지시"
+
+#: ../dbgpt/rag/embedding/embeddings.py:162
+msgid "Instruction to use for embedding query."
+msgstr "쿼리를 임베딩하는 데 사용할 지시사항."
+
+#: ../dbgpt/rag/embedding/embeddings.py:336
+msgid "HuggingFace Inference API Embeddings"
+msgstr "허깅페이스 추론 API 임베딩"
+
+#: ../dbgpt/rag/embedding/embeddings.py:339
+msgid "HuggingFace Inference API embeddings."
+msgstr "허깅페이스 추론 API 임베딩."
+
+#: ../dbgpt/rag/embedding/embeddings.py:342
+#: ../dbgpt/rag/embedding/embeddings.py:455
+#: ../dbgpt/rag/embedding/embeddings.py:545
+msgid "API Key"
+msgstr "API 키"
+
+#: ../dbgpt/rag/embedding/embeddings.py:345
+msgid "Your API key for the HuggingFace Inference API."
+msgstr "허깅페이스 추론 API를 위한 API 키."
+
+#: ../dbgpt/rag/embedding/embeddings.py:353
+#: ../dbgpt/rag/embedding/embeddings.py:466
+#: ../dbgpt/rag/embedding/embeddings.py:558
+msgid "The name of the model to use for text embeddings."
+msgstr "텍스트 임베딩에 사용할 모델의 이름."
+
+#: ../dbgpt/rag/embedding/embeddings.py:449
+msgid "Jina AI Embeddings"
+msgstr "지나 AI 임베딩"
+
+#: ../dbgpt/rag/embedding/embeddings.py:452
+msgid "Jina AI embeddings."
+msgstr "지나 AI 임베딩."
+
+#: ../dbgpt/rag/embedding/embeddings.py:458
+msgid "Your API key for the Jina AI API."
+msgstr "지나 AI API를 위한 API 키."
+
+#: ../dbgpt/rag/embedding/embeddings.py:531
+msgid "OpenAPI Embeddings"
+msgstr "OpenAPI 임베딩"
+
+#: ../dbgpt/rag/embedding/embeddings.py:534
+msgid "OpenAPI embeddings."
+msgstr "OpenAPI 임베딩."
+
+#: ../dbgpt/rag/embedding/embeddings.py:537
+msgid "API URL"
+msgstr "API URL"
+
+#: ../dbgpt/rag/embedding/embeddings.py:542
+msgid "The URL of the embeddings API."
+msgstr "임베딩 API의 URL."
+
+#: ../dbgpt/rag/embedding/embeddings.py:550
+msgid "Your API key for the Open API."
+msgstr "Open API를 위한 API 키."
+
+#: ../dbgpt/rag/embedding/embeddings.py:561
+msgid "Timeout"
+msgstr "타임아웃"
+
+#: ../dbgpt/rag/embedding/embeddings.py:566
+msgid "The timeout for the request in seconds."
+msgstr "요청의 타임아웃(초)입니다."
+
+#: ../dbgpt/rag/chunk_manager.py:29
+msgid "Chunk Strategy"
+msgstr "청크 전략"
+
+#: ../dbgpt/rag/chunk_manager.py:32
+msgid "chunk strategy"
+msgstr "청크 전략"
+
+#: ../dbgpt/rag/chunk_manager.py:37
+msgid "Text Splitter"
+msgstr "텍스트 분할기"
+
+#: ../dbgpt/rag/chunk_manager.py:41
+msgid "Text splitter, if not set, will use the default text splitter."
+msgstr "텍스트 분할기, 설정되지 않으면 기본 텍스트 분할기를 사용합니다."
+
+#: ../dbgpt/rag/chunk_manager.py:47
+msgid "Splitter Type"
+msgstr "분할기 유형"
+
+#: ../dbgpt/rag/chunk_manager.py:50
+msgid "Splitter type"
+msgstr "분할기 유형"
+
+#: ../dbgpt/rag/chunk_manager.py:55
+#: ../dbgpt/rag/text_splitter/text_splitter.py:406
+msgid "Chunk Size"
+msgstr "청크 크기"
+
+#: ../dbgpt/rag/chunk_manager.py:58
+msgid "Chunk size"
+msgstr "청크 크기"
+
+#: ../dbgpt/rag/chunk_manager.py:63
+msgid "Chunk Overlap"
+msgstr "청크 중첩"
+
+#: ../dbgpt/rag/chunk_manager.py:74
+msgid "Chunk separator"
+msgstr "청크 구분자"
+
+#: ../dbgpt/rag/chunk_manager.py:79
+msgid "Enable Merge"
+msgstr "병합 활성화"
+
+#: ../dbgpt/rag/chunk_manager.py:82
+msgid "Enable chunk merge by chunk_size."
+msgstr "청크 크기에 따른 청크 병합 활성화."
+
+#: ../dbgpt/rag/retriever/rerank.py:56
+msgid "Default Ranker"
+msgstr "기본 랭커"
+
+#: ../dbgpt/rag/retriever/rerank.py:59
+msgid "Default ranker(Rank by score)."
+msgstr "기본 랭커(점수순으로 랭크)."
+
+#: ../dbgpt/rag/retriever/rerank.py:62
+msgid "Top k"
+msgstr "상위 k"
+
+#: ../dbgpt/rag/retriever/rerank.py:65
+msgid "The number of top k documents."
+msgstr "상위 k개 문서의 수."
+
+#: ../dbgpt/rag/retriever/rewrite.py:27
+msgid "Query rewrite."
+msgstr "쿼리 재작성."
+
+#: ../dbgpt/rag/retriever/rewrite.py:33
+msgid "The LLM model name."
+msgstr "LLM 모델 이름."
+
+#: ../dbgpt/rag/retriever/rewrite.py:39
+msgid "The llm client."
+msgstr "LLM 클라이언트."
+
+#: ../dbgpt/rag/retriever/rewrite.py:42
+msgid "Language"
+msgstr "언어"
+
+#: ../dbgpt/rag/retriever/rewrite.py:45
+msgid "The language of the query rewrite prompt."
+msgstr "쿼리 재작성 프롬프트의 언어."
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:206
+msgid "Character Text Splitter"
+msgstr "문자 텍스트 분할기"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:214
+#: ../dbgpt/rag/text_splitter/text_splitter.py:425
+#: ../dbgpt/rag/text_splitter/text_splitter.py:807
+#: ../dbgpt/rag/text_splitter/text_splitter.py:850
+msgid "Separator to split the text."
+msgstr "텍스트를 분할하는 구분자."
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:251
+msgid "Recursive Character Text Splitter"
+msgstr "재귀적 문자 텍스트 분할기"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:265
+msgid "Split text by characters recursively."
+msgstr "문자별로 텍스트를 재귀적으로 분할합니다."
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:330
+msgid "Spacy Text Splitter"
+msgstr "Spacy 텍스트 분할기"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:338
+msgid "Spacy pipeline to use for tokenization."
+msgstr "토큰화에 사용할 Spacy 파이프라인."
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:343
+msgid "Split text by sentences using Spacy."
+msgstr "Spacy를 사용하여 문장별로 텍스트를 분할합니다."
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:393
+msgid "Markdown Header Text Splitter"
+msgstr "마크다운 헤더 텍스트 분할기"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:401
+msgid "Return each line with associated headers."
+msgstr "각 행에 해당 헤더를 반환합니다."
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:409
+msgid "Size of each chunk."
+msgstr "각 청크의 크기."
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:430
+msgid "Split markdown text by headers."
+msgstr "헤더별로 마크다운 텍스트를 분할합니다."
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:799
+msgid "Separator Text Splitter"
+msgstr "구분자 텍스트 분할기"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:812
+msgid "Split text by separator."
+msgstr "구분자로 텍스트를 분할합니다."
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:842
+msgid "Page Text Splitter"
+msgstr "페이지 텍스트 분할기"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:855
+msgid "Split text by page."
+msgstr "페이지별로 텍스트를 분할합니다."
