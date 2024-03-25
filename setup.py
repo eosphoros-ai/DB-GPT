@@ -623,6 +623,7 @@ def default_requires():
         "accelerate>=0.20.3",
         "protobuf==3.20.3",
         "zhipuai",
+        "jieba",
         "dashscope",
         "chardet",
     ]
