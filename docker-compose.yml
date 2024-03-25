@@ -13,7 +13,7 @@ services:
       - dbgpt-myql-db:/var/lib/mysql
       - ./docker/examples/my.cnf:/etc/my.cnf
       - ./docker/examples/sqls:/docker-entrypoint-initdb.d
-      - ./assets/schema/knowledge_management.sql:/docker-entrypoint-initdb.d/knowledge_management.sql
+      - ./assets/schema/dbgpt.sql:/docker-entrypoint-initdb.d/dbgpt.sql
     restart: unless-stopped
     networks:
       - dbgptnet

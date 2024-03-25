@@ -6,6 +6,47 @@ processing before submitting code. This not only helps keep our codebase's
 internationalization up to date but also ensures a consistent experience for all users, 
 regardless of their language.
 
+## Installation
+
+Before you start, make sure you have the necessary tools installed:
+- make
+- gettext
+
+Here are some ways to install `gettext`:
+
+### Ubuntu/Debian And Derivatives
+
+```bash
+sudo apt update
+sudo apt install gettext
+````
+
+### Fedora/CentOS/RHEL
+
+- Fedora:
+    ```bash
+    sudo dnf install gettext
+    ```
+- CentOS/RHEL:
+    ```bash
+    # CentOS/RHEL 7 And Older
+    sudo yum install gettext
+    # CentOS/RHEL 8 And Newer
+    sudo dnf install gettext
+    ```
+
+### Arch Linux
+
+```bash
+sudo pacman -Sy gettext
+```
+
+### MacOS
+
+```bash
+brew install gettext
+```
+
 ## Before You Submit
 
 Please follow these steps to update and verify the project's internationalization files:

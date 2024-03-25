@@ -3,6 +3,56 @@
 为确保我们的项目在全球范围内保持高可用性和易于维护，每位开发者在提交代码之前都需要遵循以下国际化（i18n）
 处理步骤。这不仅有助于保持我们代码库的国际化最新，也确保了所有用户不论使用何种语言都能获得一致的体验。
 
+## 安装
+
+### 对于Debian/Ubuntu及其衍生系统
+
+打开终端，然后运行以下命令来安装gettext：
+
+```bash
+sudo apt update
+sudo apt install gettext
+```
+
+### 对于Fedora、CentOS/RHEL
+
+如果你使用的是Fedora、CentOS或RHEL系统，可以使用下面的命令安装gettext：
+
+- 对于Fedora：
+  ```bash
+  sudo dnf install gettext
+  ```
+
+- 对于CentOS/RHEL：
+  ```bash
+  # CentOS/RHEL 7 和一些旧版本
+  sudo yum install gettext
+  # CentOS/RHEL 8 及更高版本
+  sudo dnf install gettext
+  ```
+
+### 对于Arch Linux
+
+在Arch Linux及其衍生系统上，使用pacman包管理器安装gettext：
+
+```bash
+sudo pacman -Sy gettext
+```
+
+### 对于MacOS
+
+如果你使用的是MacOS，可以通过Homebrew来安装gettext：
+
+```bash
+brew install gettext
+```
+
+### 安装完成后
+
+安装完成后，你可以通过在终端运行`xgettext --version`来检查`xgettext`是否成功安装。
+
+如果你依然遇到问题，可能需要检查你的PATH环境变量设置，确保gettext的安装目录已被添加到PATH中，或者尝试重新打开一个新的终端会话。
+
 ## 在提交前
 
 请按照以下步骤更新和验证项目的国际化文件：
