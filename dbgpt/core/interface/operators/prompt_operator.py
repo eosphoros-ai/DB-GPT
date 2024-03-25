@@ -32,38 +32,39 @@ from dbgpt.core.interface.prompt import (
     SystemPromptTemplate,
 )
 from dbgpt.util.function_utils import rearrange_args_by_type
+from dbgpt.util.i18n_utils import _
 
 
 @register_resource(
-    label="Common Chat Prompt Template",
+    label=_("Common Chat Prompt Template"),
     name="common_chat_prompt_template",
     category=ResourceCategory.PROMPT,
-    description="The operator to build the prompt with static prompt.",
+    description=_("The operator to build the prompt with static prompt."),
     parameters=[
         Parameter.build_from(
-            label="System Message",
+            label=_("System Message"),
             name="system_message",
             type=str,
             optional=True,
             default="You are a helpful AI Assistant.",
-            description="The system message.",
+            description=_("The system message."),
         ),
         Parameter.build_from(
-            label="Message placeholder",
+            label=_("Message placeholder"),
             name="message_placeholder",
             type=str,
             optional=True,
             default="chat_history",
-            description="The chat history message placeholder.",
+            description=_("The chat history message placeholder."),
         ),
         Parameter.build_from(
-            label="Human Message",
+            label=_("Human Message"),
             name="human_message",
             type=str,
             optional=True,
             default="{user_input}",
             placeholder="{user_input}",
-            description="The human message.",
+            description=_("The human message."),
         ),
     ],
 )
@@ -140,7 +141,7 @@ class BasePromptBuilderOperator(BaseConversationOperator, ABC):
         storage_conv.start_new_round()
         storage_conv.add_user_message(lass_user_message)
 
-    async def after_dag_end(self):
+    async def after_dag_end(self, event_loop_task_id: int):
         """Execute after the DAG finished."""
         # Save the storage conversation to storage after the whole DAG finished
         storage_conv: Optional[
@@ -251,33 +252,33 @@ class PromptBuilderOperator(
     """
 
     metadata = ViewMetadata(
-        label="Prompt Builder Operator",
+        label=_("Prompt Builder Operator"),
         name="prompt_builder_operator",
-        description="Build messages from prompt template.",
+        description=_("Build messages from prompt template."),
         category=OperatorCategory.COMMON,
         parameters=[
             Parameter.build_from(
-                "Chat Prompt Template",
+                _("Chat Prompt Template"),
                 "prompt",
                 ChatPromptTemplate,
-                description="The chat prompt template.",
+                description=_("The chat prompt template."),
             ),
         ],
         inputs=[
             IOField.build_from(
-                "Prompt Input Dict",
+                _("Prompt Input Dict"),
                 "prompt_input_dict",
                 dict,
-                description="The prompt dict.",
+                description=_("The prompt dict."),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Formatted Messages",
+                _("Formatted Messages"),
                 "formatted_messages",
                 ModelMessage,
                 is_list=True,
-                description="The formatted messages.",
+                description=_("The formatted messages."),
             )
         ],
     )
@@ -337,57 +338,57 @@ class HistoryPromptBuilderOperator(
     """
 
     metadata = ViewMetadata(
-        label="History Prompt Builder Operator",
+        label=_("History Prompt Builder Operator"),
         name="history_prompt_builder_operator",
-        description="Build messages from prompt template and chat history.",
+        description=_("Build messages from prompt template and chat history."),
         operator_type=OperatorType.JOIN,
         category=OperatorCategory.CONVERSION,
         parameters=[
             Parameter.build_from(
-                "Chat Prompt Template",
+                _("Chat Prompt Template"),
                 "prompt",
                 ChatPromptTemplate,
-                description="The chat prompt template.",
+                description=_("The chat prompt template."),
             ),
             Parameter.build_from(
-                "History Key",
+                _("History Key"),
                 "history_key",
                 str,
                 optional=True,
                 default="chat_history",
-                description="The key of history in prompt dict.",
+                description=_("The key of history in prompt dict."),
             ),
             Parameter.build_from(
-                "String History",
+                _("String History"),
                 "str_history",
                 bool,
                 optional=True,
                 default=False,
-                description="Whether to convert the history to string.",
+                description=_("Whether to convert the history to string."),
             ),
         ],
         inputs=[
             IOField.build_from(
-                "History",
+                _("History"),
                 "history",
                 BaseMessage,
                 is_list=True,
-                description="The history.",
+                description=_("The history."),
             ),
             IOField.build_from(
-                "Prompt Input Dict",
+                _("Prompt Input Dict"),
                 "prompt_input_dict",
                 dict,
-                description="The prompt dict.",
+                description=_("The prompt dict."),
             ),
         ],
         outputs=[
             IOField.build_from(
-                "Formatted Messages",
+                _("Formatted Messages"),
                 "formatted_messages",
                 ModelMessage,
                 is_list=True,
-                description="The formatted messages.",
+                description=_("The formatted messages."),
             )
         ],
     )

@@ -4,12 +4,50 @@ import os
 from typing import Any, Dict, List, Optional, Type, cast
 
 from dbgpt.core import Chunk
+from dbgpt.core.awel.flow import (
+    FunctionDynamicOptions,
+    OptionValue,
+    Parameter,
+    ResourceCategory,
+    register_resource,
+)
 from dbgpt.storage import vector_store
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+from dbgpt.util.i18n_utils import _
 
 connector: Dict[str, Type] = {}
 
 
+def _load_vector_options() -> List[OptionValue]:
+    return [
+        OptionValue(label=cls, name=cls, value=cls)
+        for cls in vector_store.__all__
+        if issubclass(getattr(vector_store, cls), VectorStoreBase)
+    ]
+
+
+@register_resource(
+    _("Vector Store Connector"),
+    "vector_store_connector",
+    category=ResourceCategory.VECTOR_STORE,
+    parameters=[
+        Parameter.build_from(
+            _("Vector Store Type"),
+            "vector_store_type",
+            str,
+            description=_("The type of vector store."),
+            options=FunctionDynamicOptions(func=_load_vector_options),
+        ),
+        Parameter.build_from(
+            _("Vector Store Implementation"),
+            "vector_store_config",
+            VectorStoreConfig,
+            description=_("The vector store implementation."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class VectorStoreConnector:
     """The connector for vector store.
 

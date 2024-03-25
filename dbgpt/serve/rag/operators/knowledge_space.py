@@ -28,6 +28,7 @@ from dbgpt.rag.retriever.embedding import EmbeddingRetriever
 from dbgpt.storage.vector_store.base import VectorStoreConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 from dbgpt.util.function_utils import rearrange_args_by_type
+from dbgpt.util.i18n_utils import _
 
 
 def _load_space_name() -> List[OptionValue]:
@@ -43,28 +44,28 @@ class SpaceRetrieverOperator(MapOperator[IN, OUT]):
     """knowledge space retriever operator."""
 
     metadata = ViewMetadata(
-        label="Knowledge Space Operator",
+        label=_("Knowledge Space Operator"),
         name="space_operator",
         category=OperatorCategory.RAG,
-        description="knowledge space retriever operator.",
-        inputs=[IOField.build_from("query", "query", str, "user query")],
+        description=_("knowledge space retriever operator."),
+        inputs=[IOField.build_from(_("Query"), "query", str, _("user query"))],
         outputs=[
             IOField.build_from(
-                "related chunk content",
+                _("related chunk content"),
                 "related chunk content",
                 List,
-                description="related chunk content",
+                description=_("related chunk content"),
             )
         ],
         parameters=[
             Parameter.build_from(
-                "Space Name",
+                _("Space Name"),
                 "space_name",
                 str,
                 options=FunctionDynamicOptions(func=_load_space_name),
                 optional=False,
                 default=None,
-                description="space name.",
+                description=_("space name."),
             )
         ],
         documentation_url="https://github.com/openai/openai-python",
@@ -139,65 +140,65 @@ class KnowledgeSpacePromptBuilderOperator(
     """
 
     metadata = ViewMetadata(
-        label="Knowledge Space Prompt Builder Operator",
+        label=_("Knowledge Space Prompt Builder Operator"),
         name="knowledge_space_prompt_builder_operator",
-        description="Build messages from prompt template and chat history.",
+        description=_("Build messages from prompt template and chat history."),
         operator_type=OperatorType.JOIN,
         category=OperatorCategory.CONVERSION,
         parameters=[
             Parameter.build_from(
-                "Chat Prompt Template",
+                _("Chat Prompt Template"),
                 "prompt",
                 ChatPromptTemplate,
-                description="The chat prompt template.",
+                description=_("The chat prompt template."),
             ),
             Parameter.build_from(
-                "History Key",
+                _("History Key"),
                 "history_key",
                 str,
                 optional=True,
                 default="chat_history",
-                description="The key of history in prompt dict.",
+                description=_("The key of history in prompt dict."),
             ),
             Parameter.build_from(
-                "String History",
+                _("String History"),
                 "str_history",
                 bool,
                 optional=True,
                 default=False,
-                description="Whether to convert the history to string.",
+                description=_("Whether to convert the history to string."),
             ),
         ],
         inputs=[
             IOField.build_from(
-                "user input",
+                _("user input"),
                 "user_input",
                 str,
                 is_list=False,
-                description="user input",
+                description=_("user input"),
             ),
             IOField.build_from(
-                "space related context",
+                _("space related context"),
                 "related_context",
                 List,
                 is_list=False,
-                description="context of knowledge space.",
+                description=_("context of knowledge space."),
             ),
             IOField.build_from(
-                "History",
+                _("History"),
                 "history",
                 BaseMessage,
                 is_list=True,
-                description="The history.",
+                description=_("The history."),
             ),
         ],
         outputs=[
             IOField.build_from(
-                "Formatted Messages",
+                _("Formatted Messages"),
                 "formatted_messages",
                 ModelMessage,
                 is_list=True,
-                description="The formatted messages.",
+                description=_("The formatted messages."),
             )
         ],
     )

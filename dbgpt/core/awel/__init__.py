@@ -51,7 +51,6 @@ from .task.task_impl import (
 from .trigger.base import Trigger
 from .trigger.http_trigger import (
     CommonLLMHttpRequestBody,
-    CommonLLMHTTPRequestContext,
     CommonLLMHttpResponseBody,
     HttpTrigger,
 )
@@ -102,7 +101,6 @@ __all__ = [
     "Trigger",
     "HttpTrigger",
     "IteratorTrigger",
-    "CommonLLMHTTPRequestContext",
     "CommonLLMHttpResponseBody",
     "CommonLLMHttpRequestBody",
     "setup_dev_environment",

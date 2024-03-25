@@ -14,6 +14,8 @@ DATA_DIR = os.path.join(PILOT_PATH, "data")
 PLUGINS_DIR = os.path.join(ROOT_PATH, "plugins")
 MODEL_DISK_CACHE_DIR = os.path.join(DATA_DIR, "model_cache")
 _DAG_DEFINITION_DIR = os.path.join(ROOT_PATH, "examples/awel")
+# Global language setting
+LOCALES_DIR = os.path.join(ROOT_PATH, "i18n/locales")
 
 current_directory = os.getcwd()
 

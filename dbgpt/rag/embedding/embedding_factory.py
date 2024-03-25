@@ -3,10 +3,13 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Type
+from typing import Any, List, Optional, Type
 
 from dbgpt.component import BaseComponent, SystemApp
 from dbgpt.core import Embeddings
+from dbgpt.core.awel import DAGVar
+from dbgpt.core.awel.flow import ResourceCategory, register_resource
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
@@ -221,3 +224,45 @@ class WrappedEmbeddingFactory(EmbeddingFactory):
         if embedding_cls:
             raise NotImplementedError
         return self._model
+
+
+@register_resource(
+    label=_("Default Embeddings"),
+    name="default_embeddings",
+    category=ResourceCategory.EMBEDDINGS,
+    description=_(
+        "Default embeddings(using default embedding model of current system)"
+    ),
+)
+class DefaultEmbeddings(Embeddings):
+    """The default embeddings."""
+
+    def __init__(self, embedding_factory: Optional[EmbeddingFactory] = None) -> None:
+        """Create a new DefaultEmbeddings."""
+        self._embedding_factory = embedding_factory
+
+    @property
+    def embeddings(self) -> Embeddings:
+        """Get the embeddings."""
+        if not self._embedding_factory:
+            system_app = DAGVar.get_current_system_app()
+            if not system_app:
+                raise ValueError("System app is not initialized")
+            self._embedding_factory = EmbeddingFactory.get_instance(system_app)
+        return self._embedding_factory.create()
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Embed search docs."""
+        return self.embeddings.embed_documents(texts)
+
+    def embed_query(self, text: str) -> List[float]:
+        """Embed query text."""
+        return self.embeddings.embed_query(text)
+
+    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronous Embed search docs."""
+        return await self.embeddings.aembed_documents(texts)
+
+    async def aembed_query(self, text: str) -> List[float]:
+        """Asynchronous Embed query text."""
+        return await self.embeddings.aembed_query(text)

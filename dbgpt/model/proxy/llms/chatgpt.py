@@ -17,6 +17,7 @@ from dbgpt.model.parameter import ProxyModelParameters
 from dbgpt.model.proxy.base import ProxyLLMClient
 from dbgpt.model.proxy.llms.proxy_model import ProxyModel
 from dbgpt.model.utils.chatgpt_utils import OpenAIParameters
+from dbgpt.util.i18n_utils import _
 
 if TYPE_CHECKING:
     from httpx._types import ProxiesTypes
@@ -44,27 +45,31 @@ async def chatgpt_generate_stream(
 
 
 @register_resource(
-    label="OpenAI LLM Client",
+    label=_("OpenAI LLM Client"),
     name="openai_llm_client",
     category=ResourceCategory.LLM_CLIENT,
     parameters=[
         Parameter.build_from(
-            label="OpenAI API Key",
+            label=_("OpenAI API Key"),
             name="apk_key",
             type=str,
             optional=True,
             default=None,
-            description="OpenAI API Key, not required if you have set OPENAI_API_KEY "
-            "environment variable.",
+            description=_(
+                "OpenAI API Key, not required if you have set OPENAI_API_KEY "
+                "environment variable."
+            ),
         ),
         Parameter.build_from(
-            label="OpenAI API Base",
+            label=_("OpenAI API Base"),
             name="api_base",
             type=str,
             optional=True,
             default=None,
-            description="OpenAI API Base, not required if you have set OPENAI_API_BASE "
-            "environment variable.",
+            description=_(
+                "OpenAI API Base, not required if you have set OPENAI_API_BASE "
+                "environment variable."
+            ),
         ),
     ],
     documentation_url="https://github.com/openai/openai-python",

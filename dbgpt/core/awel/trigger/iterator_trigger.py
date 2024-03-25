@@ -134,7 +134,7 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
         async def call_stream(call_data: Any):
             async for out in await end_node.call_stream(call_data):
                 yield out
-            await dag._after_dag_end()
+            await dag._after_dag_end(end_node.current_event_loop_task_id)
 
         async def run_node(call_data: Any) -> Tuple[Any, Any]:
             async with semaphore:
@@ -142,7 +142,8 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
                     task_output = call_stream(call_data)
                 else:
                     task_output = await end_node.call(call_data)
-                    await dag._after_dag_end()
+                    # No streaming call, not need call dag._after_dag_end(), it will be
+                    # called in workflow runner
                 return call_data, task_output
 
         tasks = []

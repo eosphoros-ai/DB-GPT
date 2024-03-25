@@ -141,6 +141,9 @@ class ModelRequestContext:
     chat_mode: Optional[str] = None
     """The chat mode of the model inference."""
 
+    chat_param: Optional[str] = None
+    """The chat param of chat mode"""
+
     extra: Optional[Dict[str, Any]] = field(default_factory=dict)
     """The extra information of the model inference."""
 

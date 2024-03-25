@@ -116,3 +116,25 @@ async def test_input_source_data():
         trigger_task >> number_task >> task
     stream_results = await trigger_task.trigger()
     await _check_stream_results(stream_results, 4)
+
+
+@pytest.mark.asyncio
+async def test_parallel_safe():
+    with DAG("test_parallel_safe"):
+        trigger_task = IteratorTrigger(data=InputSource.from_iterable([0, 1, 2, 3]))
+        task = MapOperator(lambda x: x * x)
+        trigger_task >> task
+    results = await trigger_task.trigger(parallel_num=3)
+    assert len(results) == 4
+    assert results == [(0, 0), (1, 1), (2, 4), (3, 9)]
+
+    with DAG("test_input_source_data_stream"):
+        trigger_task = IteratorTrigger(
+            data=InputSource.from_iterable([0, 1, 2, 3]),
+            streaming_call=True,
+        )
+        number_task = NumberProducerOperator()
+        task = MyStreamingOperator()
+        trigger_task >> number_task >> task
+    stream_results = await trigger_task.trigger(parallel_num=3)
+    await _check_stream_results(stream_results, 4)

@@ -8,8 +8,79 @@ from typing import List, Optional
 
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core import Chunk, Embeddings
+from dbgpt.core.awel.flow import Parameter
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
+
+
+_COMMON_PARAMETERS = [
+    Parameter.build_from(
+        _("Collection Name"),
+        "name",
+        str,
+        description=_(
+            "The name of vector store, if not set, will use the default " "name."
+        ),
+        optional=True,
+        default="dbgpt_collection",
+    ),
+    Parameter.build_from(
+        _("User"),
+        "user",
+        str,
+        description=_(
+            "The user of vector store, if not set, will use the default " "user."
+        ),
+        optional=True,
+        default=None,
+    ),
+    Parameter.build_from(
+        _("Password"),
+        "password",
+        str,
+        description=_(
+            "The password of vector store, if not set, will use the "
+            "default password."
+        ),
+        optional=True,
+        default=None,
+    ),
+    Parameter.build_from(
+        _("Embedding Function"),
+        "embedding_fn",
+        Embeddings,
+        description=_(
+            "The embedding function of vector store, if not set, will use "
+            "the default embedding function."
+        ),
+        optional=True,
+        default=None,
+    ),
+    Parameter.build_from(
+        _("Max Chunks Once Load"),
+        "max_chunks_once_load",
+        int,
+        description=_(
+            "The max number of chunks to load at once. If your document is "
+            "large, you can set this value to a larger number to speed up the loading "
+            "process. Default is 10."
+        ),
+        optional=True,
+        default=10,
+    ),
+    Parameter.build_from(
+        _("Max Threads"),
+        "max_threads",
+        int,
+        description=_(
+            "The max number of threads to use. Default is 1. If you set "
+            "this bigger than 1, please make sure your vector store is thread-safe."
+        ),
+        optional=True,
+        default=1,
+    ),
+]
 
 
 class VectorStoreConfig(BaseModel):

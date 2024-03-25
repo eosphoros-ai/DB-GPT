@@ -7,24 +7,25 @@ from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetad
 from dbgpt.rag.assembler.summary import SummaryAssembler
 from dbgpt.rag.knowledge.base import Knowledge
 from dbgpt.rag.operators.assembler import AssemblerOperator
+from dbgpt.util.i18n_utils import _
 
 
 class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):
     """The summary assembler operator."""
 
     metadata = ViewMetadata(
-        label="Summary Operator",
+        label=_("Summary Operator"),
         name="summary_assembler_operator",
         category=OperatorCategory.RAG,
-        description="The summary assembler operator.",
+        description=_("The summary assembler operator."),
         inputs=[
             IOField.build_from(
-                "Knowledge", "knowledge", Knowledge, "knowledge datasource"
+                _("Knowledge"), "knowledge", Knowledge, _("Knowledge datasource")
             )
         ],
         outputs=[
             IOField.build_from(
-                "document summary",
+                _("Document summary"),
                 "summary",
                 str,
                 description="document summary",
@@ -32,44 +33,44 @@ class SummaryAssemblerOperator(AssemblerOperator[Any, Any]):
         ],
         parameters=[
             Parameter.build_from(
-                "LLM Client",
+                _("LLM Client"),
                 "llm_client",
                 LLMClient,
                 optional=True,
                 default=None,
-                description="The LLM Client.",
+                description=_("The LLM Client."),
             ),
             Parameter.build_from(
-                label="model name",
+                label=_("Model name"),
                 name="model_name",
                 type=str,
                 optional=True,
                 default="gpt-3.5-turbo",
-                description="llm model name",
+                description=_("LLM model name"),
             ),
             Parameter.build_from(
-                label="prompt language",
+                label=_("prompt language"),
                 name="language",
                 type=str,
                 optional=True,
                 default="en",
-                description="prompt language",
+                description=_("prompt language"),
             ),
             Parameter.build_from(
-                label="max_iteration_with_llm",
+                label=_("Max iteration with LLM"),
                 name="max_iteration_with_llm",
                 type=int,
                 optional=True,
                 default=5,
-                description="prompt language",
+                description=_("prompt language"),
             ),
             Parameter.build_from(
-                label="concurrency_limit_with_llm",
+                label=_("Concurrency limit with LLM"),
                 name="concurrency_limit_with_llm",
                 type=int,
                 optional=True,
                 default=3,
-                description="The concurrency limit with llm",
+                description=_("The concurrency limit with llm"),
             ),
         ],
         documentation_url="https://github.com/openai/openai-python",

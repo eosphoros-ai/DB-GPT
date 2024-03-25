@@ -8,15 +8,32 @@ from chromadb.config import Settings
 
 from dbgpt._private.pydantic import Field
 from dbgpt.configs.model_config import PILOT_PATH
-
-# TODO: Recycle dependency on rag and storage
 from dbgpt.core import Chunk
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.util.i18n_utils import _
 
-from .base import VectorStoreBase, VectorStoreConfig
+from .base import _COMMON_PARAMETERS, VectorStoreBase, VectorStoreConfig
 
 logger = logging.getLogger(__name__)
 
 
+@register_resource(
+    _("Chroma Vector Store"),
+    "chroma_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    description=_("Chroma vector store."),
+    parameters=[
+        *_COMMON_PARAMETERS,
+        Parameter.build_from(
+            _("Persist Path"),
+            "persist_path",
+            str,
+            description=_("the persist path of vector store."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class ChromaVectorConfig(VectorStoreConfig):
     """Chroma vector store config."""
 
@@ -43,7 +60,7 @@ class ChromaStore(VectorStoreBase):
         """Create a ChromaStore instance."""
         from langchain.vectorstores import Chroma
 
-        chroma_vector_config = vector_store_config.dict()
+        chroma_vector_config = vector_store_config.dict(exclude_none=True)
         chroma_path = chroma_vector_config.get(
             "persist_path", os.path.join(PILOT_PATH, "data")
         )

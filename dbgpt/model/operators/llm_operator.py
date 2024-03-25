@@ -10,10 +10,10 @@ from dbgpt.core.awel.flow import (
     OperatorCategory,
     OperatorType,
     Parameter,
-    ResourceCategory,
     ViewMetadata,
 )
 from dbgpt.core.operators import BaseLLM, BaseLLMOperator, BaseStreamingLLMOperator
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
@@ -63,31 +63,34 @@ class LLMOperator(MixinLLMOperator, BaseLLMOperator):
     """
 
     metadata = ViewMetadata(
-        label="LLM Operator",
+        label=_("LLM Operator"),
         name="llm_operator",
         category=OperatorCategory.LLM,
-        description="The LLM operator.",
+        description=_("The LLM operator."),
         parameters=[
             Parameter.build_from(
-                "LLM Client",
+                _("LLM Client"),
                 "llm_client",
                 LLMClient,
                 optional=True,
                 default=None,
-                description="The LLM Client.",
+                description=_("The LLM Client."),
             ),
         ],
         inputs=[
             IOField.build_from(
-                "Model Request", "model_request", ModelRequest, "The model request."
+                _("Model Request"),
+                "model_request",
+                ModelRequest,
+                _("The model request."),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Model Output",
+                _("Model Output"),
                 "model_output",
                 ModelOutput,
-                description="The model output.",
+                description=_("The model output."),
             )
         ],
     )
@@ -107,32 +110,35 @@ class StreamingLLMOperator(MixinLLMOperator, BaseStreamingLLMOperator):
     """
 
     metadata = ViewMetadata(
-        label="Streaming LLM Operator",
+        label=_("Streaming LLM Operator"),
         name="streaming_llm_operator",
         operator_type=OperatorType.STREAMIFY,
         category=OperatorCategory.LLM,
-        description="The streaming LLM operator.",
+        description=_("The streaming LLM operator."),
         parameters=[
             Parameter.build_from(
-                "LLM Client",
+                _("LLM Client"),
                 "llm_client",
                 LLMClient,
                 optional=True,
                 default=None,
-                description="The LLM Client.",
+                description=_("The LLM Client."),
             ),
         ],
         inputs=[
             IOField.build_from(
-                "Model Request", "model_request", ModelRequest, "The model request."
+                _("Model Request"),
+                "model_request",
+                ModelRequest,
+                _("The model request."),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Model Output",
+                _("Model Output"),
                 "model_output",
                 ModelOutput,
-                description="The model output.",
+                description=_("The model output."),
                 is_list=True,
             )
         ],

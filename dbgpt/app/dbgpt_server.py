@@ -22,14 +22,10 @@ from dbgpt.app.base import (
 # initialize_components import time cost about 0.1s
 from dbgpt.app.component_configs import initialize_components
 from dbgpt.component import SystemApp
-from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
-    LLM_MODEL_CONFIG,
-    LOGDIR,
-    ROOT_PATH,
-)
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, LLM_MODEL_CONFIG, LOGDIR
 from dbgpt.serve.core import add_exception_handler
 from dbgpt.util.fastapi import PriorityAPIRouter
+from dbgpt.util.i18n_utils import _, set_default_language
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
 from dbgpt.util.tracer import SpanType, SpanTypeRunName, initialize_tracer, root_tracer
@@ -47,10 +43,12 @@ sys.path.append(ROOT_PATH)
 static_file_path = os.path.join(ROOT_PATH, "dbgpt", "app/static")
 
 CFG = Config()
+set_default_language(CFG.LANGUAGE)
+
 
 app = FastAPI(
-    title="DBGPT OPEN API",
-    description="This is dbgpt, with auto docs for the API and everything",
+    title=_("DB-GPT Open API"),
+    description=_("DB-GPT Open API"),
     version=version,
     openapi_tags=[],
 )
@@ -64,18 +62,6 @@ app.mount(
     name="swagger_static",
 )
 
-
-@app.get("/doc", include_in_schema=False)
-async def custom_swagger_ui_html():
-    return get_swagger_ui_html(
-        openapi_url=app.openapi_url,
-        title="Custom Swagger UI",
-        swagger_js_url="/swagger_static/swagger-ui-bundle.js",
-        swagger_css_url="/swagger_static/swagger-ui.css",
-    )
-
-
-# applications.get_swagger_ui_html = swagger_monkey_patch
 
 system_app = SystemApp(app)
 

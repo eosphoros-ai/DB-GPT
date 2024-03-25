@@ -14,7 +14,12 @@ from dbgpt.core.awel import (
     CommonLLMHttpResponseBody,
 )
 from dbgpt.core.awel.dag.dag_manager import DAGManager
-from dbgpt.core.awel.flow.flow_factory import FlowCategory, FlowFactory, State
+from dbgpt.core.awel.flow.flow_factory import (
+    FlowCategory,
+    FlowFactory,
+    State,
+    fill_flow_panel,
+)
 from dbgpt.core.awel.trigger.http_trigger import CommonLLMHttpTrigger
 from dbgpt.core.interface.llm import ModelOutput
 from dbgpt.serve.core import BaseService
@@ -298,7 +303,10 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         # TODO: implement your own logic here
         # Build the query request from the request
         query_request = request
-        return self.dao.get_one(query_request)
+        flow = self.dao.get_one(query_request)
+        if flow:
+            fill_flow_panel(flow)
+        return flow
 
     def delete(self, uid: str) -> Optional[ServerResponse]:
         """Delete a Flow entity
@@ -411,7 +419,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         end_node = cast(BaseOperator, leaf_nodes[0])
         async for output in _chat_with_dag_task(end_node, request, incremental):
             yield output
-        await dag._after_dag_end()
+        await dag._after_dag_end(end_node.current_event_loop_task_id)
 
     def _parse_flow_category(self, dag: DAG) -> FlowCategory:
         """Parse the flow category

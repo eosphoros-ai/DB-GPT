@@ -19,7 +19,7 @@ from dbgpt.app.openapi.api_v1.api_v1 import (
 from dbgpt.app.scene import BaseChat, ChatScene
 from dbgpt.client.schema import ChatCompletionRequestBody, ChatMode
 from dbgpt.component import logger
-from dbgpt.core.awel import CommonLLMHttpRequestBody, CommonLLMHTTPRequestContext
+from dbgpt.core.awel import CommonLLMHttpRequestBody
 from dbgpt.core.schema.api import (
     ChatCompletionResponse,
     ChatCompletionResponseChoice,
@@ -253,18 +253,7 @@ async def chat_flow_stream_wrapper(
         token (APIToken): token
     """
     flow_service = get_chat_flow()
-    flow_ctx = CommonLLMHTTPRequestContext(
-        conv_uid=request.conv_uid,
-        chat_mode=request.chat_mode,
-        user_name=request.user_name,
-        sys_code=request.sys_code,
-    )
-    flow_req = CommonLLMHttpRequestBody(
-        model=request.model,
-        messages=request.chat_param,
-        stream=True,
-        context=flow_ctx,
-    )
+    flow_req = CommonLLMHttpRequestBody(**request.dict())
     async for output in flow_service.chat_flow(request.chat_param, flow_req):
         if output.startswith("data: [DONE]"):
             yield output
