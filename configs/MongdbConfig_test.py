@@ -19,3 +19,4 @@ atl_custome_app = 'dataapps'
 organizations_collection_name = 'organizations'
 users_collection_name = 'users'
 dbgpt_db_collection = 'dbgpt_db'
+print('mongodb test config')

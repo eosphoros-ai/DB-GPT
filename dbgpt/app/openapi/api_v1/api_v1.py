@@ -161,9 +161,20 @@ async def db_connect_list(user_id: str = None):
 @router.post("/v1/chat/db/add", response_model=Result[bool])
 async def db_connect_add(db_config: DBConfig = Body()):
     my = MyMongdb()
-    my.registDBGPTDB(address=db_config.db_name, name=db_config.db_name, intro=db_config.comment, mode='add',
+    if my.dbExists(db_config.db_name):
+        msg = '这个数据库已经存在，请更换名称！或联系 liab 开通权限。'
+        return Result.failed(code="E000X", msg=msg)
+    else:
+        my.registDBGPTDB(address=db_config.db_name, name=db_config.db_name, intro=db_config.comment, mode='add',
                      user_id=db_config.user_id)
     return Result.succ(CFG.local_db_manager.add_db(db_config))
+@router.get("/v1/chat/db/check_admin", response_model=Result[bool])
+async def db_check_admin(user_id: str=None):
+    my = MyMongdb()
+    if my.checkDbgptAdmin(user_id):
+        return Result.failed(code="E000X", msg='no permission')
+    else:
+        return Result.succ(data='have permission')
 
 
 @router.post("/v1/chat/db/edit", response_model=Result[bool])

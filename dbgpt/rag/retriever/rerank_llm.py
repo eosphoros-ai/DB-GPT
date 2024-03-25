@@ -37,6 +37,8 @@ RESPONSE_FORMAT_SIMPLE_ZH = {
 RESPONSE_FORMAT_SIMPLE_EN = {
     "Relate_tables": "Tables name: think it step by step needed for the query",
 }
+
+
 class QueryRerank:
     """
     query reinforce, include query rewrite, query correct
@@ -73,7 +75,16 @@ class QueryRerank:
         """
         from dbgpt.util.chat_util import run_async_tasks
         temperature = 0
-        prompt = self._prompt_template.format(original_query=origin_query, restriever_info=restriever_info,response=json.dumps(RESPONSE_FORMAT_SIMPLE_EN if self._language == "en" else RESPONSE_FORMAT_SIMPLE_ZH,ensure_ascii=False, indent=4))
+        prompt = self._prompt_template.format(
+            original_query=origin_query,
+            restriever_info=restriever_info,
+            response=json.dumps(
+                RESPONSE_FORMAT_SIMPLE_EN if self._language == "en" else RESPONSE_FORMAT_SIMPLE_ZH,
+                ensure_ascii=False,
+                indent=4))
+
+        print('origin_query',origin_query)
+        print('restriever_info',restriever_info)
         messages = [ModelMessage(role=ModelMessageRoleType.SYSTEM, content=prompt)]
         request = ModelRequest(model=self._model_name, messages=messages, temperature=temperature)
         pprint(request)

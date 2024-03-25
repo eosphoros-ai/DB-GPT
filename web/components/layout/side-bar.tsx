@@ -1,5 +1,5 @@
 import { ChatContext } from '@/app/chat-context';
-import { apiInterceptors, delDialogue } from '@/client/api';
+import { apiInterceptors, delDialogue,checkDbAdmin } from '@/client/api';
 import { STORAGE_LANG_KEY, STORAGE_THEME_KEY } from '@/utils';
 import { DarkSvg, SunnySvg, ModelSvg } from '@/components/icons';
 import { IChatDialogueSchema } from '@/types/chat';
@@ -58,10 +58,43 @@ function smallMenuItemStyle(active?: boolean) {
 function SideBar() {
   const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand, setAgent, mode, setMode } =
     useContext(ChatContext);
-  const { pathname, replace } = useRouter();
+    const [isAdmin, setIsAdmin] = useState(false); // 新增状态来标识用户是否为管理员
+     const { pathname, replace } = useRouter();
   const { t, i18n } = useTranslation();
   const [userId, setUserId] = useState("");
   const [logo, setLogo] = useState<string>('/LOGO_1.png');
+
+
+
+  const checkIsAdmin = async (userId) => {
+    try {
+      const [,,_, response]  = await apiInterceptors(checkDbAdmin( userId));
+      console.log('response',response)
+      const data = await response.data;
+      return data.success; // 假设返回的数据有一个isAdmin字段
+    } catch (error) {
+      console.error('Failed to check admin status:', error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const fetchUserAdminStatus = async () => {
+      const userIdFromStorage = localStorage.getItem('userId') || "";
+      setUserId(userIdFromStorage);
+      const isAdminStatus = await checkIsAdmin(userIdFromStorage);
+      setIsAdmin(isAdminStatus);
+    };
+
+    fetchUserAdminStatus();
+  }, []);
+
+
+
+
+
+
+
 
   const routes = useMemo(() => {
     const items: RouteItem[] = [
@@ -83,18 +116,18 @@ function SideBar() {
       //   path: '/models',
       //   icon: <Icon component={ModelSvg} />,
       // },
-      {
-        key: 'database',
-        name: t('Database'),
-        icon: <ConsoleSqlOutlined />,
-        path: `/database?userId=${userId}`,
-      },
-      {
-        key: 'knowledge',
-        name: t('Knowledge_Space'),
-        icon: <PartitionOutlined />,
-        path: `/knowledge?userId=${userId}`,
-      },
+      // {
+      //   key: 'database',
+      //   name: t('Database'),
+      //   icon: <ConsoleSqlOutlined />,
+      //   path: `/database?userId=${userId}`,
+      // },
+      // {
+      //   key: 'knowledge',
+      //   name: t('Knowledge_Space'),
+      //   icon: <PartitionOutlined />,
+      //   path: `/knowledge?userId=${userId}`,
+      // },
       // {
       //   key: 'agent',
       //   name: t('Plugins'),
@@ -108,8 +141,23 @@ function SideBar() {
         path: `/prompt?userId=${userId}`,
       },
     ];
+    
+    if (isAdmin) { // 仅当用户是管理员时，添加以下路由
+      items.push({
+        key: 'database',
+        name: t('Database'),
+        icon: <ConsoleSqlOutlined />,
+        path: `/database?userId=${userId}`,
+      });
+      items.push({
+        key: 'knowledge',
+        name: t('Knowledge_Space'),
+        icon: <PartitionOutlined />,
+        path: `/knowledge?userId=${userId}`,
+      });
+    }
     return items;
-  }, [i18n.language,userId]);
+  }, [i18n.language,userId,isAdmin]);
 
   const handleToggleMenu = () => {
     setIsMenuExpand(!isMenuExpand);

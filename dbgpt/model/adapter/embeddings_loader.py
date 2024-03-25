@@ -28,7 +28,6 @@ class EmbeddingLoader:
             "params": _get_dict_from_obj(param),
             "sys_infos": _get_dict_from_obj(get_system_info()),
         }
-        print('load,',metadata)
         with root_tracer.start_span(
             "EmbeddingLoader.load", span_type=SpanType.RUN, metadata=metadata
         ):

@@ -47,6 +47,9 @@ export const newDialogue = (data: NewDialogueParam) => {
 export const getDbList = (user_id:string) => {
   return GET<null, DbListResponse>(`/api/v1/chat/db/list?user_id=${user_id}`);
 };
+export const checkDbAdmin = (user_id:string) => {
+  return GET<null, DbListResponse>(`/api/v1/chat/db/check_admin?user_id=${user_id}`);
+};
 export const getDbSupportType = () => {
   return GET<null, DbSupportTypeResponse>('/api/v1/chat/db/support/type');
 };

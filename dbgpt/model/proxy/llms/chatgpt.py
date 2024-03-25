@@ -218,7 +218,6 @@ class OpenAILLMClient(ProxyLLMClient):
     async def generate_v1(
         self, messages: List[Dict[str, Any]], payload: Dict[str, Any]
     ) -> ModelOutput:
-        print('generate_v1,', payload)
         chat_completion = await self.client.chat.completions.create(
             messages=messages, **payload
         )

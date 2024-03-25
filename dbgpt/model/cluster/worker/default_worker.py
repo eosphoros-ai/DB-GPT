@@ -305,7 +305,7 @@ class DefaultModelWorker(ModelWorker):
         if not str_prompt:
             str_prompt = params.get("string_prompt")
         print(
-            f"llm_adapter: {str(self.llm_adapter)}\n\nmodel prompt: \n\n{str_prompt}\n\n{stream_type}stream output:\n"
+            f"model prompt: \n\n{str_prompt}\n\n{stream_type}stream output:\n"
         )
         with open('str_prompt.txt','w') as f:
             f.write(str_prompt)

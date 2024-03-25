@@ -29,8 +29,10 @@ if get_local_ip() == '172.23.52.25' or get_local_ip() == '172.23.52.26':
     mode = 'dev'
 else:
     mode = 'prd'
+mode = 'prd'
 
 if mode == 'dev':
+
     from configs.MongdbConfig_test import ip, username, password, authSource, mongo_collection, mongo_database, \
         chat_history_number, memory_collection, dataanalysisprompt, atl_custome_app, organizations_collection_name, \
         users_collection_name, dbgpt_db_collection
@@ -38,7 +40,6 @@ else:
     from configs.MongdbConfig import ip, username, password, authSource, mongo_collection, mongo_database, \
         chat_history_number, memory_collection, dataanalysisprompt, atl_custome_app, organizations_collection_name, \
         users_collection_name, dbgpt_db_collection
-
 # from utils.Tools import calLeadTimeByColor
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -221,6 +222,22 @@ class MyMongdb():
                     }
         prompt_exists = self.memory_collection.find_one(find_one)
         return prompt_exists
+
+    def dbExists(self, db_name):
+        db = self.client[self.mongo_database]
+        find_one = {
+            'name': db_name,
+                    }
+        prompt_exists = db[self.dbgpt_db_collection_name].find_one(find_one)
+        return prompt_exists
+    def checkDbgptAdmin(self, user_id):
+        db = self.client[self.mongo_database]
+        find_one = {
+            'id':ObjectId(user_id),
+            'dbgptAuth': 'y',
+                    }
+        admin_exists = db[self.users_collection_name].find_one(find_one)
+        return admin_exists
 
     def insertPromptMemory(self, prompt, answer, data_source, department):
         init_dict = {'data_id': ObjectId(self.dataId),
@@ -406,6 +423,93 @@ class MyMongdb():
         else:
             return {'message': 'ng'}
 
+    def updateDatabaseRight(self, address, list_temp=[], who='user', mode='add'):
+        db = self.client[self.mongo_database]
+        self.atl_custome_app_collection = db[self.dbgpt_db_collection_name]
+        if who == 'department' and mode == 'add':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$addToSet': {
+                                                                 'share.sharedDepartment': {'$each': list_temp}}},
+                                                             upsert=True)
+        if who == 'user' and mode == 'add':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$addToSet': {'share.sharedUser': {'$each': list_temp}}},
+                                                             upsert=True)
+
+        if who == 'department' and mode == 'remove':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$pullAll': {'share.sharedDepartment': list_temp}})
+        if who == 'user' and mode == 'remove':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$pullAll': {'share.sharedUser': list_temp}})
+        if who == 'department' and mode == 'clearAll':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$set': {'share.sharedDepartment': []}})
+        if who == 'user' and mode == 'clearAll':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$set': {'share.sharedUser': []}})
+
+        # 检查操作是否被确认
+        print("Acknowledged:", res.acknowledged)
+
+        # 检查匹配的文档数量
+        print("Matched Count:", res.matched_count)
+
+        # 检查被修改的文档数量
+        print("Modified Count:", res.modified_count)
+
+        # 检查是否有upsert操作，并得到插入文档的_id
+        print("Upserted ID:", res.upserted_id)
+
+        if res.acknowledged:
+            return {'message': 'ok', 'modify_count': res.modified_count}
+        else:
+            return {'message': 'ng'}
+
+    def updateDataBaseRight(self, address, list_temp=[], who='user', mode='add'):
+        db = self.client[self.mongo_database]
+        self.atl_custome_app_collection = db[self.dbgpt_db_collection_name]
+        print(self.atl_custome_app_collection)
+        if who == 'department' and mode == 'add':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$addToSet': {
+                                                                 'share.sharedDepartment': {'$each': list_temp}}},
+                                                             upsert=True)
+        if who == 'user' and mode == 'add':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$addToSet': {'share.sharedUser': {'$each': list_temp}}},
+                                                             upsert=True)
+
+        if who == 'department' and mode == 'remove':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$pullAll': {'share.sharedDepartment': list_temp}})
+        if who == 'user' and mode == 'remove':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$pullAll': {'share.sharedUser': list_temp}})
+        if who == 'department' and mode == 'clearAll':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$set': {'share.sharedDepartment': []}})
+        if who == 'user' and mode == 'clearAll':
+            res = self.atl_custome_app_collection.update_one({'address': address},
+                                                             {'$set': {'share.sharedUser': []}})
+
+        # 检查操作是否被确认
+        print("Acknowledged:", res.acknowledged)
+
+        # 检查匹配的文档数量
+        print("Matched Count:", res.matched_count)
+
+        # 检查被修改的文档数量
+        print("Modified Count:", res.modified_count)
+
+        # 检查是否有upsert操作，并得到插入文档的_id
+        print("Upserted ID:", res.upserted_id)
+
+        if res.acknowledged:
+            return {'message': 'ok', 'modify_count': res.modified_count}
+        else:
+            return {'message': 'ng'}
+
     def init_shared(self):
         db = self.client[self.mongo_database]
         self.users_collection = db[self.users_collection_name]
@@ -414,13 +518,11 @@ class MyMongdb():
     def userIdGetId(self, ids=[]):
         db = self.client[self.mongo_database]
         self.users_collection = db[self.users_collection_name]
-
         def append_zero(i_temp):
             i_temp = str(i_temp)
             if len(i_temp) < 8:
                 i_temp = '0' * (8 - len(i_temp)) + i_temp
             return i_temp
-
         in_list = [append_zero(i) for i in ids]
         return self.users_collection.find({'username': {'$in': in_list}})
 
@@ -519,18 +621,19 @@ class MyMongdb():
         self.condition = self.dbgpt_db.find_one({'_id': ObjectId(self.chatId), 'userId': ObjectId(
             self.userId)}) if self.userId else self.collection.find_one({'_id': ObjectId(self.chatId)})
 
-    def registDBGPTDB(self, address='hr_chinese_fk', name='hr_chinese_fk', intro="这个是质量数据分析", mode='add', **kwargs):
+    def registDBGPTDB(self, address='hr_chinese_fk', name='hr_chinese_fk', intro="这个是质量数据分析", mode='add',
+                      **kwargs):
         db = self.client[self.mongo_database]
         self.dbgpt_db = db[self.dbgpt_db_collection_name]
         regist_dict = {}
         for key, value in kwargs.items():
             regist_dict[key] = value
-        if mode == 'remove' or mode == 'delete' :
+        if mode == 'remove' or mode == 'delete':
             self.dbgpt_db.delete_one({'address': address})
             return f"{address} App already {mode} !!"
         regist_dict = {
             'name': name,
-            'user_id':self.userId,
+            'user_id': self.userId,
             'avatar': '/icon/logo.png',
             'share': {
                 'isShare': False,
@@ -555,7 +658,6 @@ class MyMongdb():
         else:
             print('db already exists, please change db name ')
             return False
-
 
     def check_user_dbgpt_db_permission(self, department, user_id):
         db = self.client[self.mongo_database]
@@ -587,6 +689,7 @@ if __name__ == '__main__':
     def createdbgpt_db():
         my = MyMongdb()
         my.registDBGPTDB()
+
 
     def check_user_right():
         my = MyMongdb()

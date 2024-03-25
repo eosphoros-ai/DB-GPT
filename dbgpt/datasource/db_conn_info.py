@@ -12,6 +12,7 @@ class DBConfig(BaseModel):
     db_port: int = Field(0, description="Database port.")
     db_user: str = Field("", description="Database user.")
     db_pwd: str = Field("", description="Database password.")
+    user_id: str = Field("", description="Database password.")
     comment: str = Field("", description="Comment for the database.")
 
 
