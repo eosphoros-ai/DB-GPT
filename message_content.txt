@@ -1,1 +1,1 @@
-用户只是打了一个问候语，并没有提出具体的问题或请求。因此，不需要进行SQL查询，也不需要选择数据展示方式。
+为了找出HR部门的在职员工数量，我需要使用a_sap_employee_information_chinese表中的'一级机构'列来筛选属于HR部门的员工，并使用'雇佣状态'列来确定这些员工是否在职。我将使用'一级机构'列的值'HR'来筛选HR部门的员工，并且使用'雇佣状态'列的值'在职'来确定员工是否在职。然后，我将使用COUNT函数来计算满足这些条件的员工数量。我已经复查了表和列的对应关系，它们是正确的。\n<chart-view content="{&quot;type&quot;: &quot;response_table&quot;, &quot;sql&quot;: &quot;SELECT COUNT(*) FROM a_sap_employee_information_chinese WHERE 一级机构 = 'HR' AND 雇佣状态 = '在职'&quot;, &quot;data&quot;: [{&quot;count&quot;: 93}]}" />

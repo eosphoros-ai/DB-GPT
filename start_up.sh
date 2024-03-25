@@ -1,4 +1,4 @@
-python dbgpt/app/dbgpt_server.py --port 50001  --remote_embedding
+python dbgpt/app/dbgpt_server.py --port 5000  --remote_embedding
 
 #  dbgpt start controller --port 8008
 # dbgpt start worker --model_name stella-large-zh-v3-1792d --model_path /datas/liab/embeddings_model/stella-large-zh-v3-1792d --worker_type text2vec  --port 8888 --controller_addr http://172.23.52.25:8008
