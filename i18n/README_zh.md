@@ -5,6 +5,12 @@
 
 ## 安装
 
+开始之前，确保已经安装了必要的工具：
+- make
+- gettext
+
+下面是安装`gettext`的一些方法：
+
 ### 对于Debian/Ubuntu及其衍生系统
 
 打开终端，然后运行以下命令来安装gettext：
