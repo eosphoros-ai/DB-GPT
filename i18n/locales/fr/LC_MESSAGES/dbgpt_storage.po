@@ -1,0 +1,208 @@
+# French translations for PACKAGE package
+# Traductions françaises du paquet PACKAGE.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 11:24+0800\n"
+"PO-Revision-Date: 2024-03-23 11:22+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:21
+msgid "Chroma Vector Store"
+msgstr "Magasin de vecteurs chromatiques"
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:24
+msgid "Chroma vector store."
+msgstr "Magasin de vecteurs chromatiques."
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:28
+#: ../dbgpt/storage/vector_store/weaviate_store.py:34
+msgid "Persist Path"
+msgstr "Chemin de persistance"
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:31
+#: ../dbgpt/storage/vector_store/weaviate_store.py:37
+msgid "the persist path of vector store."
+msgstr "le chemin de persistance du magasin de vecteurs."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:24
+msgid "Milvus Vector Store"
+msgstr "Magasin de vecteurs Milvus"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:30
+msgid "Uri"
+msgstr "Uri"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:34
+msgid "The uri of milvus store, if not set, will use the default uri."
+msgstr "L'URI du magasin Milvus, s'il n'est pas défini, utilisera l'URI par défaut."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:40
+msgid "Port"
+msgstr "Port"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:44
+msgid "The port of milvus store, if not set, will use the default port."
+msgstr "Le port du magasin Milvus, s'il n'est pas défini, utilisera le port par défaut."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:50
+msgid "Alias"
+msgstr "Alias"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:54
+msgid "The alias of milvus store, if not set, will use the default alias."
+msgstr "L'alias du magasin Milvus, s'il n'est pas défini, utilisera l'alias par défaut."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:60
+msgid "Primary Field"
+msgstr "Champ primaire"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:64
+msgid ""
+"The primary field of milvus store, if not set, will use the default primary "
+"field."
+msgstr ""
+"Le champ primaire du magasin Milvus, s'il n'est pas défini, utilisera le champ primaire par défaut."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:71
+msgid "Text Field"
+msgstr "Champ de texte"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:75
+msgid ""
+"The text field of milvus store, if not set, will use the default text field."
+msgstr ""
+"Le champ de texte du magasin Milvus, s'il n'est pas défini, utilisera le champ de texte par défaut."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:82
+msgid "Embedding Field"
+msgstr "Champ d'incorporation"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:86
+msgid ""
+"The embedding field of milvus store, if not set, will use the default "
+"embedding field."
+msgstr ""
+"Le champ d'incorporation du magasin Milvus, s'il n'est pas défini, utilisera le champ d'incorporation par défaut."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:93
+msgid "Milvus vector store."
+msgstr "Magasin de vecteurs Milvus."
+
+#: ../dbgpt/storage/vector_store/connector.py:30
+msgid "Vector Store Connector"
+msgstr "Connecteur de magasin de vecteurs"
+
+#: ../dbgpt/storage/vector_store/connector.py:35
+msgid "Vector Store Type"
+msgstr "Type de magasin de vecteurs"
+
+#: ../dbgpt/storage/vector_store/connector.py:38
+msgid "The type of vector store."
+msgstr "Le type de magasin de vecteurs."
+
+#: ../dbgpt/storage/vector_store/connector.py:42
+msgid "Vector Store Implementation"
+msgstr "Implémentation du magasin de vecteurs"
+
+#: ../dbgpt/storage/vector_store/connector.py:45
+msgid "The vector store implementation."
+msgstr "L'implémentation du magasin de vecteurs."
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:17
+msgid "Weaviate Vector Store"
+msgstr "Magasin de vecteurs Weaviate"
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:20
+msgid "Weaviate vector store."
+msgstr "Magasin de vecteurs Weaviate."
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:24
+msgid "Weaviate URL"
+msgstr "URL Weaviate"
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:28
+msgid "weaviate url address, if not set, will use the default url."
+msgstr "adresse URL Weaviate, si non définie, utilisera l'URL par défaut."
+
+#: ../dbgpt/storage/vector_store/pgvector_store.py:19
+msgid "PG Vector Store"
+msgstr "Magasin de vecteurs PG"
+
+#: ../dbgpt/storage/vector_store/pgvector_store.py:25
+msgid "Connection String"
+msgstr "Chaîne de connexion"
+
+#: ../dbgpt/storage/vector_store/pgvector_store.py:29
+msgid ""
+"The connection string of vector store, if not set, will use the default "
+"connection string."
+msgstr ""
+"La chaîne de connexion du magasin de vecteurs, si elle n'est pas définie, utilisera la chaîne de connexion par défaut."
+
+#: ../dbgpt/storage/vector_store/base.py:19
+msgid "Collection Name"
+msgstr "Nom de la collection"
+
+#: ../dbgpt/storage/vector_store/base.py:23
+msgid "The name of vector store, if not set, will use the default name."
+msgstr "Le nom du magasin de vecteurs, s'il n'est pas défini, utilisera le nom par défaut."
+
+#: ../dbgpt/storage/vector_store/base.py:29
+msgid "User"
+msgstr "Utilisateur"
+
+#: ../dbgpt/storage/vector_store/base.py:33
+msgid "The user of vector store, if not set, will use the default user."
+msgstr "L'utilisateur du magasin de vecteurs, s'il n'est pas défini, utilisera l'utilisateur par défaut."
+
+#: ../dbgpt/storage/vector_store/base.py:39
+msgid "Password"
+msgstr "Mot de passe"
+
+#: ../dbgpt/storage/vector_store/base.py:43
+msgid ""
+"The password of vector store, if not set, will use the default password."
+msgstr "Le mot de passe du magasin de vecteurs, s'il n'est pas défini, utilisera le mot de passe par défaut."
+
+#: ../dbgpt/storage/vector_store/base.py:50
+msgid "Embedding Function"
+msgstr "Fonction d'incorporation"
+
+#: ../dbgpt/storage/vector_store/base.py:54
+msgid ""
+"The embedding function of vector store, if not set, will use the default "
+"embedding function."
+msgstr "La fonction d'incorporation du magasin de vecteurs, si elle n'est pas définie, utilisera la fonction d'incorporation par défaut."
+
+#: ../dbgpt/storage/vector_store/base.py:61
+msgid "Max Chunks Once Load"
+msgstr "Nombre maximal de morceaux chargés à la fois"
+
+#: ../dbgpt/storage/vector_store/base.py:65
+msgid ""
+"The max number of chunks to load at once. If your document is large, you can "
+"set this value to a larger number to speed up the loading process. Default "
+"is 10."
+msgstr "Le nombre maximal de morceaux à charger à la fois. Si votre document est volumineux, vous pouvez définir cette valeur sur un nombre plus élevé pour accélérer le processus de chargement. Par défaut, il est de 10."
+
+#: ../dbgpt/storage/vector_store/base.py:73
+msgid "Max Threads"
+msgstr "Nombre maximal de threads"
+
+#: ../dbgpt/storage/vector_store/base.py:77
+msgid ""
+"The max number of threads to use. Default is 1. If you set this bigger than "
+"1, please make sure your vector store is thread-safe."
+msgstr "Le nombre maximal de threads à utiliser. Par défaut, il est de 1. Si vous le définissez sur une valeur supérieure à 1, veuillez vous assurer que votre magasin de vecteurs est sûr pour les threads."

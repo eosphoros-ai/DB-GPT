@@ -5,6 +5,8 @@ from dbgpt.component import SystemApp
 def register_serve_apps(system_app: SystemApp, cfg: Config):
     """Register serve apps"""
     system_app.config.set("dbgpt.app.global.language", cfg.LANGUAGE)
+    if cfg.API_KEYS:
+        system_app.config.set("dbgpt.app.global.api_keys", cfg.API_KEYS)
 
     # ################################ Prompt Serve Register Begin ######################################
     from dbgpt.serve.prompt.serve import (
@@ -42,4 +44,12 @@ def register_serve_apps(system_app: SystemApp, cfg: Config):
 
     # Register serve app
     system_app.register(FlowServe)
+
+    from dbgpt.serve.rag.serve import (
+        SERVE_CONFIG_KEY_PREFIX as RAG_SERVE_CONFIG_KEY_PREFIX,
+    )
+    from dbgpt.serve.rag.serve import Serve as RagServe
+
+    # Register serve app
+    system_app.register(RagServe)
     # ################################ AWEL Flow Serve Register End ########################################

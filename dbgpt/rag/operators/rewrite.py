@@ -6,58 +6,61 @@ from dbgpt.core import LLMClient
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import IOField, OperatorCategory, Parameter, ViewMetadata
 from dbgpt.rag.retriever.rewrite import QueryRewrite
+from dbgpt.util.i18n_utils import _
 
 
 class QueryRewriteOperator(MapOperator[dict, Any]):
     """The Rewrite Operator."""
 
     metadata = ViewMetadata(
-        label="Query Rewrite Operator",
+        label=_("Query Rewrite Operator"),
         name="query_rewrite_operator",
         category=OperatorCategory.RAG,
-        description="query rewrite operator.",
+        description=_("Query rewrite operator."),
         inputs=[
-            IOField.build_from("query_context", "query_context", dict, "query context")
+            IOField.build_from(
+                _("Query context"), "query_context", dict, _("query context")
+            )
         ],
         outputs=[
             IOField.build_from(
-                "rewritten queries",
+                _("Rewritten queries"),
                 "queries",
                 str,
                 is_list=True,
-                description="rewritten queries",
+                description=_("Rewritten queries"),
             )
         ],
         parameters=[
             Parameter.build_from(
-                "LLM Client",
+                _("LLM Client"),
                 "llm_client",
                 LLMClient,
-                description="The LLM Client.",
+                description=_("The LLM Client."),
             ),
             Parameter.build_from(
-                label="model name",
+                label=_("Model name"),
                 name="model_name",
                 type=str,
                 optional=True,
                 default="gpt-3.5-turbo",
-                description="llm model name",
+                description=_("LLM model name."),
             ),
             Parameter.build_from(
-                label="prompt language",
+                label=_("Prompt language"),
                 name="language",
                 type=str,
                 optional=True,
                 default="en",
-                description="prompt language",
+                description=_("Prompt language."),
             ),
             Parameter.build_from(
-                label="nums",
+                label=_("Number of results"),
                 name="nums",
                 type=int,
                 optional=True,
                 default=5,
-                description="rewrite query nums",
+                description=_("rewrite query number."),
             ),
         ],
         documentation_url="https://github.com/openai/openai-python",

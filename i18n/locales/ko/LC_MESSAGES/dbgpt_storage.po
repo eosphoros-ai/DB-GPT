@@ -1,0 +1,208 @@
+# Korean translations for PACKAGE package
+# PACKAGE 패키지에 대한 한국어 번역문.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 11:24+0800\n"
+"PO-Revision-Date: 2024-03-23 11:22+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:21
+msgid "Chroma Vector Store"
+msgstr "크로마 벡터 저장소"
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:24
+msgid "Chroma vector store."
+msgstr "크로마 벡터 저장소."
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:28
+#: ../dbgpt/storage/vector_store/weaviate_store.py:34
+msgid "Persist Path"
+msgstr "지속 경로"
+
+#: ../dbgpt/storage/vector_store/chroma_store.py:31
+#: ../dbgpt/storage/vector_store/weaviate_store.py:37
+msgid "the persist path of vector store."
+msgstr "벡터 저장소의 지속 경로."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:24
+msgid "Milvus Vector Store"
+msgstr "Milvus 벡터 저장소"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:30
+msgid "Uri"
+msgstr "URI"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:34
+msgid "The uri of milvus store, if not set, will use the default uri."
+msgstr "Milvus 저장소의 URI입니다. 설정되지 않으면 기본 URI를 사용합니다."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:40
+msgid "Port"
+msgstr "포트"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:44
+msgid "The port of milvus store, if not set, will use the default port."
+msgstr "Milvus 저장소의 포트입니다. 설정되지 않으면 기본 포트를 사용합니다."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:50
+msgid "Alias"
+msgstr "별칭"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:54
+msgid "The alias of milvus store, if not set, will use the default alias."
+msgstr "Milvus 저장소의 별칭입니다. 설정되지 않으면 기본 별칭을 사용합니다."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:60
+msgid "Primary Field"
+msgstr "기본 필드"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:64
+msgid ""
+"The primary field of milvus store, if not set, will use the default primary "
+"field."
+msgstr ""
+"Milvus 저장소의 기본 필드입니다. 설정되지 않으면 기본 기본 필드를 사용합니다."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:71
+msgid "Text Field"
+msgstr "텍스트 필드"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:75
+msgid ""
+"The text field of milvus store, if not set, will use the default text field."
+msgstr ""
+"Milvus 저장소의 텍스트 필드입니다. 설정되지 않으면 기본 텍스트 필드를 사용합니다."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:82
+msgid "Embedding Field"
+msgstr "임베딩 필드"
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:86
+msgid ""
+"The embedding field of milvus store, if not set, will use the default "
+"embedding field."
+msgstr ""
+"Milvus 저장소의 임베딩 필드입니다. 설정되지 않으면 기본 임베딩 필드를 사용합니다."
+
+#: ../dbgpt/storage/vector_store/milvus_store.py:93
+msgid "Milvus vector store."
+msgstr "Milvus 벡터 저장소."
+
+#: ../dbgpt/storage/vector_store/connector.py:30
+msgid "Vector Store Connector"
+msgstr "벡터 저장소 커넥터"
+
+#: ../dbgpt/storage/vector_store/connector.py:35
+msgid "Vector Store Type"
+msgstr "벡터 저장소 유형"
+
+#: ../dbgpt/storage/vector_store/connector.py:38
+msgid "The type of vector store."
+msgstr "벡터 저장소의 유형입니다."
+
+#: ../dbgpt/storage/vector_store/connector.py:42
+msgid "Vector Store Implementation"
+msgstr "벡터 저장소 구현"
+
+#: ../dbgpt/storage/vector_store/connector.py:45
+msgid "The vector store implementation."
+msgstr "벡터 저장소의 구현입니다."
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:17
+msgid "Weaviate Vector Store"
+msgstr "Weaviate 벡터 저장소"
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:20
+msgid "Weaviate vector store."
+msgstr "Weaviate 벡터 저장소."
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:24
+msgid "Weaviate URL"
+msgstr "Weaviate URL"
+
+#: ../dbgpt/storage/vector_store/weaviate_store.py:28
+msgid "weaviate url address, if not set, will use the default url."
+msgstr "Weaviate URL 주소입니다. 설정되지 않으면 기본 URL을 사용합니다."
+
+#: ../dbgpt/storage/vector_store/pgvector_store.py:19
+msgid "PG Vector Store"
+msgstr "PG 벡터 저장소"
+
+#: ../dbgpt/storage/vector_store/pgvector_store.py:25
+msgid "Connection String"
+msgstr "연결 문자열"
+
+#: ../dbgpt/storage/vector_store/pgvector_store.py:29
+msgid ""
+"The connection string of vector store, if not set, will use the default "
+"connection string."
+msgstr ""
+"벡터 저장소의 연결 문자열입니다. 설정되지 않으면 기본 연결 문자열을 사용합니다."
+
+#: ../dbgpt/storage/vector_store/base.py:19
+msgid "Collection Name"
+msgstr "컬렉션 이름"
+
+#: ../dbgpt/storage/vector_store/base.py:23
+msgid "The name of vector store, if not set, will use the default name."
+msgstr "벡터 저장소의 이름입니다. 설정되지 않으면 기본 이름을 사용합니다."
+
+#: ../dbgpt/storage/vector_store/base.py:29
+msgid "User"
+msgstr "사용자"
+
+#: ../dbgpt/storage/vector_store/base.py:33
+msgid "The user of vector store, if not set, will use the default user."
+msgstr "벡터 저장소의 사용자입니다. 설정되지 않으면 기본 사용자를 사용합니다."
+
+#: ../dbgpt/storage/vector_store/base.py:39
+msgid "Password"
+msgstr "암호"
+
+#: ../dbgpt/storage/vector_store/base.py:43
+msgid ""
+"The password of vector store, if not set, will use the default password."
+msgstr "벡터 저장소의 암호를 설정하지 않으면 기본 암호를 사용합니다."
+
+#: ../dbgpt/storage/vector_store/base.py:50
+msgid "Embedding Function"
+msgstr "임베딩 함수"
+
+#: ../dbgpt/storage/vector_store/base.py:54
+msgid ""
+"The embedding function of vector store, if not set, will use the default "
+"embedding function."
+msgstr "벡터 저장소의 임베딩 함수를 설정하지 않으면 기본 임베딩 함수를 사용합니다."
+
+#: ../dbgpt/storage/vector_store/base.py:61
+msgid "Max Chunks Once Load"
+msgstr "한 번에 로드할 최대 청크 수"
+
+#: ../dbgpt/storage/vector_store/base.py:65
+msgid ""
+"The max number of chunks to load at once. If your document is large, you can "
+"set this value to a larger number to speed up the loading process. Default "
+"is 10."
+msgstr "한 번에 로드할 청크 수의 최대값입니다. 문서가 크다면 로딩 프로세스를 가속화하기 위해 이 값을 더 큰 수로 설정할 수 있습니다. 기본값은 10입니다."
+
+#: ../dbgpt/storage/vector_store/base.py:73
+msgid "Max Threads"
+msgstr "최대 스레드 수"
+
+#: ../dbgpt/storage/vector_store/base.py:77
+msgid ""
+"The max number of threads to use. Default is 1. If you set this bigger than "
+"1, please make sure your vector store is thread-safe."
+msgstr "사용할 최대 스레드 수입니다. 기본값은 1입니다. 이 값을 1보다 크게 설정하면 벡터 저장소가 스레드 안전한지 확인해주세요."

@@ -8,6 +8,8 @@ import requests
 
 from dbgpt._private.pydantic import BaseModel, Extra, Field
 from dbgpt.core import Embeddings
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.util.i18n_utils import _
 
 DEFAULT_MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
 DEFAULT_INSTRUCT_MODEL = "hkunlp/instructor-large"
@@ -22,6 +24,23 @@ DEFAULT_QUERY_BGE_INSTRUCTION_EN = (
 DEFAULT_QUERY_BGE_INSTRUCTION_ZH = "为这个句子生成表示以用于检索相关文章："
 
 
+@register_resource(
+    _("HuggingFace Embeddings"),
+    "huggingface_embeddings",
+    category=ResourceCategory.EMBEDDINGS,
+    description=_("HuggingFace sentence_transformers embedding models."),
+    parameters=[
+        Parameter.build_from(
+            _("Model Name"),
+            "model_name",
+            str,
+            optional=True,
+            default=DEFAULT_MODEL_NAME,
+            description=_("Model name to use."),
+        ),
+        # TODO, support more parameters
+    ],
+)
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
 
@@ -112,6 +131,38 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         return self.embed_documents([text])[0]
 
 
+@register_resource(
+    _("HuggingFace Instructor Embeddings"),
+    "huggingface_instructor_embeddings",
+    category=ResourceCategory.EMBEDDINGS,
+    description=_("HuggingFace Instructor embeddings."),
+    parameters=[
+        Parameter.build_from(
+            _("Model Name"),
+            "model_name",
+            str,
+            optional=True,
+            default=DEFAULT_INSTRUCT_MODEL,
+            description=_("Model name to use."),
+        ),
+        Parameter.build_from(
+            _("Embed Instruction"),
+            "embed_instruction",
+            str,
+            optional=True,
+            default=DEFAULT_EMBED_INSTRUCTION,
+            description=_("Instruction to use for embedding documents."),
+        ),
+        Parameter.build_from(
+            _("Query Instruction"),
+            "query_instruction",
+            str,
+            optional=True,
+            default=DEFAULT_QUERY_INSTRUCTION,
+            description=_("Instruction to use for embedding query."),
+        ),
+    ],
+)
 class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
     """Wrapper around sentence_transformers embedding models.
 
@@ -192,6 +243,7 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         return embedding.tolist()
 
 
+# TODO: Support AWEL flow
 class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
     """HuggingFace BGE sentence_transformers embedding models.
 
@@ -280,6 +332,28 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         return embedding.tolist()
 
 
+@register_resource(
+    _("HuggingFace Inference API Embeddings"),
+    "huggingface_inference_api_embeddings",
+    category=ResourceCategory.EMBEDDINGS,
+    description=_("HuggingFace Inference API embeddings."),
+    parameters=[
+        Parameter.build_from(
+            _("API Key"),
+            "api_key",
+            str,
+            description=_("Your API key for the HuggingFace Inference API."),
+        ),
+        Parameter.build_from(
+            _("Model Name"),
+            "model_name",
+            str,
+            optional=True,
+            default="sentence-transformers/all-MiniLM-L6-v2",
+            description=_("The name of the model to use for text embeddings."),
+        ),
+    ],
+)
 class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
     """Embed texts using the HuggingFace API.
 
@@ -371,6 +445,28 @@ def _handle_request_result(res: requests.Response) -> List[List[float]]:
     return [result["embedding"] for result in sorted_embeddings]
 
 
+@register_resource(
+    _("Jina AI Embeddings"),
+    "jina_embeddings",
+    category=ResourceCategory.EMBEDDINGS,
+    description=_("Jina AI embeddings."),
+    parameters=[
+        Parameter.build_from(
+            _("API Key"),
+            "api_key",
+            str,
+            description=_("Your API key for the Jina AI API."),
+        ),
+        Parameter.build_from(
+            _("Model Name"),
+            "model_name",
+            str,
+            optional=True,
+            default="jina-embeddings-v2-base-en",
+            description=_("The name of the model to use for text embeddings."),
+        ),
+    ],
+)
 class JinaEmbeddings(BaseModel, Embeddings):
     """Jina AI embeddings.
 
@@ -431,6 +527,46 @@ class JinaEmbeddings(BaseModel, Embeddings):
         return self.embed_documents([text])[0]
 
 
+@register_resource(
+    _("OpenAPI Embeddings"),
+    "openapi_embeddings",
+    category=ResourceCategory.EMBEDDINGS,
+    description=_("OpenAPI embeddings."),
+    parameters=[
+        Parameter.build_from(
+            _("API URL"),
+            "api_url",
+            str,
+            optional=True,
+            default="http://localhost:8100/api/v1/embeddings",
+            description=_("The URL of the embeddings API."),
+        ),
+        Parameter.build_from(
+            _("API Key"),
+            "api_key",
+            str,
+            optional=True,
+            default=None,
+            description=_("Your API key for the Open API."),
+        ),
+        Parameter.build_from(
+            _("Model Name"),
+            "model_name",
+            str,
+            optional=True,
+            default="text2vec",
+            description=_("The name of the model to use for text embeddings."),
+        ),
+        Parameter.build_from(
+            _("Timeout"),
+            "timeout",
+            int,
+            optional=True,
+            default=60,
+            description=_("The timeout for the request in seconds."),
+        ),
+    ],
+)
 class OpenAPIEmbeddings(BaseModel, Embeddings):
     """The OpenAPI embeddings.
 

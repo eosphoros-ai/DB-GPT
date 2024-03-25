@@ -117,7 +117,7 @@ class SQLResultOperator(JoinOperator[Dict]):
 with DAG("simple_sdk_llm_sql_example") as dag:
     db_connection = _create_temporary_connection()
     input_task = InputOperator(input_source=SimpleCallDataInputSource())
-    retriever_task = DatasourceRetrieverOperator(connection=db_connection)
+    retriever_task = DatasourceRetrieverOperator(connector=db_connection)
     # Merge the input data and the table structure information.
     prompt_input_task = JoinOperator(combine_function=_join_func)
     prompt_task = PromptBuilderOperator(_sql_prompt())
@@ -125,7 +125,7 @@ with DAG("simple_sdk_llm_sql_example") as dag:
     llm_task = BaseLLMOperator(OpenAILLMClient())
     out_parse_task = SQLOutputParser()
     sql_parse_task = MapOperator(map_function=lambda x: x["sql"])
-    db_query_task = DatasourceOperator(connection=db_connection)
+    db_query_task = DatasourceOperator(connector=db_connection)
     sql_result_task = SQLResultOperator()
     input_task >> prompt_input_task
     input_task >> retriever_task >> prompt_input_task

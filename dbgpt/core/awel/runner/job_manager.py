@@ -78,11 +78,11 @@ class JobManager(DAGLifecycle):
             tasks.append(node.before_dag_run())
         await asyncio.gather(*tasks)
 
-    async def after_dag_end(self):
+    async def after_dag_end(self, event_loop_task_id: int):
         """Execute the callback after DAG end."""
         tasks = []
         for node in self._all_nodes:
-            tasks.append(node.after_dag_end())
+            tasks.append(node.after_dag_end(event_loop_task_id))
         await asyncio.gather(*tasks)
 
 

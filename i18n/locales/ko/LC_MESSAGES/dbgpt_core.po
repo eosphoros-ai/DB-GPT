@@ -1,0 +1,764 @@
+# Korean translations for PACKAGE package
+# PACKAGE 패키지에 대한 한국어 번역문.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-23 16:45+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:39
+msgid "Common Chat Prompt Template"
+msgstr "일반 채팅 프롬프트 템플릿"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:42
+msgid "The operator to build the prompt with static prompt."
+msgstr "정적 프롬프트로 프롬프트를 구축하는 연산자입니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:45
+msgid "System Message"
+msgstr "시스템 메시지"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:50
+msgid "The system message."
+msgstr "시스템 메시지입니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:53
+msgid "Message placeholder"
+msgstr "메시지 자리 표시자"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:58
+msgid "The chat history message placeholder."
+msgstr "채팅 기록 메시지 자리 표시자입니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:61
+msgid "Human Message"
+msgstr "인간 메시지"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:67
+msgid "The human message."
+msgstr "인간 메시지입니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:255
+msgid "Prompt Builder Operator"
+msgstr "프롬프트 빌더 연산자"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:257
+msgid "Build messages from prompt template."
+msgstr "프롬프트 템플릿에서 메시지를 작성합니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:261
+#: ../dbgpt/core/interface/operators/prompt_operator.py:348
+msgid "Chat Prompt Template"
+msgstr "채팅 프롬프트 템플릿"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:264
+#: ../dbgpt/core/interface/operators/prompt_operator.py:351
+msgid "The chat prompt template."
+msgstr "채팅 프롬프트 템플릿입니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:269
+#: ../dbgpt/core/interface/operators/prompt_operator.py:379
+msgid "Prompt Input Dict"
+msgstr "프롬프트 입력 사전"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:272
+#: ../dbgpt/core/interface/operators/prompt_operator.py:382
+msgid "The prompt dict."
+msgstr "프롬프트 사전입니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:277
+#: ../dbgpt/core/interface/operators/prompt_operator.py:387
+msgid "Formatted Messages"
+msgstr "서식이 있는 메시지"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:281
+#: ../dbgpt/core/interface/operators/prompt_operator.py:391
+msgid "The formatted messages."
+msgstr "서식이 있는 메시지입니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:341
+msgid "History Prompt Builder Operator"
+msgstr "기록 프롬프트 빌더 연산자"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:343
+msgid "Build messages from prompt template and chat history."
+msgstr "프롬프트 템플릿과 채팅 기록에서 메시지를 작성합니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:354
+#: ../dbgpt/core/operators/flow/composer_operator.py:65
+msgid "History Key"
+msgstr "기록 키"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:359
+msgid "The key of history in prompt dict."
+msgstr "프롬프트 사전에서의 기록 키입니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:362
+msgid "String History"
+msgstr "문자열 기록"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:367
+msgid "Whether to convert the history to string."
+msgstr "기록을 문자열로 변환할지 여부입니다."
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:372
+msgid "History"
+msgstr "기록"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:376
+msgid "The history."
+msgstr "기록입니다."
+
+#: ../dbgpt/core/interface/operators/message_operator.py:122
+msgid "Chat History Load Operator"
+msgstr "채팅 기록 로드 연산자"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:125
+msgid "The operator to load chat history from storage."
+msgstr "저장소에서 채팅 기록을 로드하는 연산자입니다."
+
+#: ../dbgpt/core/interface/operators/message_operator.py:128
+#: ../dbgpt/core/operators/flow/composer_operator.py:92
+msgid "Conversation Storage"
+msgstr "대화 저장소"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:134
+msgid ""
+"The conversation storage, store the conversation items(Not include message "
+"items). If None, we will use InMemoryStorage."
+msgstr ""
+"대화 저장소, 대화 항목을 저장합니다(메시지 항목은 포함되지 않음). None인 경우 InMemoryStorage를 사용합니다."
+
+#: ../dbgpt/core/interface/operators/message_operator.py:139
+#: ../dbgpt/core/operators/flow/composer_operator.py:100
+msgid "Message Storage"
+msgstr "메시지 저장소"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:145
+msgid ""
+"The message storage, store the messages of one conversation. If None, we "
+"will use InMemoryStorage."
+msgstr ""
+"메시지 저장소, 한 대화의 메시지를 저장합니다. None인 경우 InMemoryStorage를 사용합니다."
+
+#: ../dbgpt/core/interface/operators/message_operator.py:152
+#: ../dbgpt/core/interface/operators/llm_operator.py:99
+#: ../dbgpt/core/interface/operators/llm_operator.py:202
+#: ../dbgpt/core/interface/operators/llm_operator.py:217
+#: ../dbgpt/core/interface/operators/llm_operator.py:363
+#: ../dbgpt/core/operators/flow/composer_operator.py:118
+msgid "Model Request"
+msgstr ""
+
+#: ../dbgpt/core/interface/operators/message_operator.py:163
+msgid "The messages stored in the storage."
+msgstr "저장된 메시지."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:51
+msgid "Build Model Request"
+msgstr "모델 요청 빌드"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:54
+msgid "Build the model request from the http request body."
+msgstr "HTTP 요청 본문에서 모델 요청을 빌드합니다."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:57
+msgid "Default Model Name"
+msgstr "기본 모델 이름"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:62
+msgid "The model name of the model request."
+msgstr "모델 요청의 모델 이름."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:65
+msgid "Temperature"
+msgstr "온도"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:70
+msgid "The temperature of the model request."
+msgstr "모델 요청의 온도."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:73
+msgid "Max New Tokens"
+msgstr "최대 새 토큰"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:78
+msgid "The max new tokens of the model request."
+msgstr "모델 요청의 최대 새 토큰."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:81
+msgid "Context Length"
+msgstr "컨텍스트 길이"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:86
+msgid "The context length of the model request."
+msgstr "모델 요청의 컨텍스트 길이."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:91
+#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:40
+#: ../dbgpt/core/awel/trigger/http_trigger.py:735
+#: ../dbgpt/core/awel/trigger/http_trigger.py:794
+#: ../dbgpt/core/awel/trigger/http_trigger.py:855
+#: ../dbgpt/core/awel/trigger/http_trigger.py:986
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1043
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1092
+msgid "Request Body"
+msgstr "요청 본문"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:94
+#: ../dbgpt/core/interface/operators/llm_operator.py:366
+#: ../dbgpt/core/interface/operators/llm_operator.py:440
+#: ../dbgpt/core/interface/operators/llm_operator.py:531
+#: ../dbgpt/core/interface/operators/llm_operator.py:539
+msgid "The input value of the operator."
+msgstr "연산자의 입력 값."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:102
+#: ../dbgpt/core/interface/operators/llm_operator.py:220
+#: ../dbgpt/core/interface/operators/llm_operator.py:448
+msgid "The output value of the operator."
+msgstr "연산자의 출력 값."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:195
+msgid "Merge Model Request Messages"
+msgstr "모델 요청 메시지 병합"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:198
+msgid "Merge the model request from the input value."
+msgstr "입력 값에서 모델 요청을 병합합니다."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:205
+msgid "The model request of upstream."
+msgstr "상위 스트림의 모델 요청."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:208
+msgid "Model messages"
+msgstr "모델 메시지"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:211
+msgid "The model messages of upstream."
+msgstr "상위 스트림의 모델 메시지."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:338
+msgid "LLM Branch Operator"
+msgstr "LLM 분기 연산자"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:342
+msgid "Branch the workflow based on the stream flag of the request."
+msgstr "요청의 스트림 플래그에 따라 워크플로를 분기합니다."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:345
+msgid "Streaming Task Name"
+msgstr "스트리밍 작업 이름"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:350
+msgid "The name of the streaming task."
+msgstr "스트리밍 작업의 이름."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:353
+msgid "Non-Streaming Task Name"
+msgstr "비스트리밍 작업 이름"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:358
+msgid "The name of the non-streaming task."
+msgstr "비스트리밍 작업의 이름."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:371
+msgid "Streaming Model Request"
+msgstr "스트리밍 모델 요청"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:374
+msgid "The streaming request, to streaming Operator."
+msgstr "스트리밍 요청, 스트리밍 연산자로."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:377
+msgid "Non-Streaming Model Request"
+msgstr "비스트리밍 모델 요청"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:433
+msgid "Map the model output to the common response body."
+msgstr "모델 출력을 공통 응답 본문으로 매핑합니다."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:437
+#: ../dbgpt/core/interface/operators/llm_operator.py:491
+#: ../dbgpt/core/interface/operators/llm_operator.py:536
+#: ../dbgpt/core/interface/output_parser.py:40
+#: ../dbgpt/core/interface/output_parser.py:49
+msgid "Model Output"
+msgstr "모델 출력"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:445
+msgid "Common Response Body"
+msgstr "공통 응답 본문"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:474
+msgid "Common Streaming Output Operator"
+msgstr "공통 스트리밍 출력 연산자"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:478
+msgid "The common streaming LLM operator, for chat flow."
+msgstr "채팅 흐름을 위한 공통 스트리밍 LLM 연산자입니다."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:482
+msgid "Upstream Model Output"
+msgstr "상류 모델 출력"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:486
+#: ../dbgpt/core/interface/output_parser.py:44
+msgid "The model output of upstream."
+msgstr "상류의 모델 출력입니다."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:496
+msgid "The model output after transform to common stream format"
+msgstr "공통 스트림 형식으로 변환된 모델 출력입니다."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:521
+msgid "Map String to ModelOutput"
+msgstr "문자열을 모델 출력으로 매핑합니다."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:524
+msgid "Map String to ModelOutput."
+msgstr "문자열을 모델 출력으로 매핑합니다."
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:528
+msgid "String"
+msgstr "문자열"
+
+#: ../dbgpt/core/interface/output_parser.py:32
+msgid "Base Output Operator"
+msgstr "기본 출력 연산자"
+
+#: ../dbgpt/core/interface/output_parser.py:36
+msgid "The base LLM out parse."
+msgstr "기본 LLM 출력 구문 분석입니다."
+
+#: ../dbgpt/core/interface/output_parser.py:53
+msgid "The model output after parsing."
+msgstr "구문 분석 후의 모델 출력입니다."
+
+#: ../dbgpt/core/interface/storage.py:390
+msgid "Memory Storage"
+msgstr "메모리 저장소"
+
+#: ../dbgpt/core/interface/storage.py:393
+msgid "Save your data in memory."
+msgstr "데이터를 메모리에 저장합니다."
+
+#: ../dbgpt/core/interface/storage.py:396
+msgid "Serializer"
+msgstr "직렬화기"
+
+#: ../dbgpt/core/interface/storage.py:402
+msgid ""
+"The serializer for serializing the data. If not set, the default JSON "
+"serializer will be used."
+msgstr ""
+"데이터를 직렬화하는 직렬화기입니다. 설정되지 않으면 기본 JSON 직렬화기가 사용됩니다."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:42
+msgid "Conversation Composer Operator"
+msgstr "대화 작성기 연산자"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:46
+msgid ""
+"A composer operator for conversation.\n"
+"Including chat history handling, prompt composing, etc. Output is "
+"ModelRequest."
+msgstr ""
+"대화를 위한 작곡 연산자입니다.\n"
+"채팅 기록 처리, 프롬프트 작성 등을 포함합니다. 출력은 ModelRequest입니다."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:51
+msgid "Prompt Template"
+msgstr "프롬프트 템플릿"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:54
+msgid "The prompt template for the conversation."
+msgstr "대화를 위한 프롬프트 템플릿입니다."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:57
+#: ../dbgpt/core/operators/flow/composer_operator.py:216
+msgid "Human Message Key"
+msgstr "인간 메시지 키"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:62
+#: ../dbgpt/core/operators/flow/composer_operator.py:221
+msgid "The key for human message in the prompt format dict."
+msgstr "프롬프트 형식 사전에서 인간 메시지를 위한 키입니다."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:71
+msgid ""
+"The chat history key, with chat history message pass to prompt template."
+msgstr ""
+"채팅 기록 키, 채팅 기록 메시지가 프롬프트 템플릿으로 전달됩니다."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:76
+msgid "Keep Start Rounds"
+msgstr "시작 라운드 유지"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:81
+msgid "The start rounds to keep in the chat history."
+msgstr "채팅 기록에 유지할 시작 라운드입니다."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:84
+msgid "Keep End Rounds"
+msgstr "종료 라운드 유지"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:89
+msgid "The end rounds to keep in the chat history."
+msgstr "채팅 기록에 유지할 종료 라운드입니다."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:97
+msgid "The conversation storage(Not include message detail)."
+msgstr "대화 저장소(메시지 세부 정보 미포함)."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:105
+msgid "The message storage."
+msgstr "메시지 저장소."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:110
+#: ../dbgpt/core/operators/flow/composer_operator.py:226
+#: ../dbgpt/core/awel/trigger/http_trigger.py:200
+msgid "Common LLM Http Request Body"
+msgstr "공통 LLM HTTP 요청 본문"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:113
+#: ../dbgpt/core/operators/flow/composer_operator.py:229
+msgid "The common LLM http request body."
+msgstr "공통 LLM HTTP 요청 본문입니다."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:121
+msgid "The model request with chat history prompt."
+msgstr "채팅 기록 프롬프트를 포함한 모델 요청."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:207
+msgid "Prompt Format Dict Builder Operator"
+msgstr "프롬프트 형식 사전 빌더 연산자"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:211
+msgid ""
+"A operator to build prompt format dict from common LLM http request body."
+msgstr ""
+"일반 LLM http 요청 본문에서 프롬프트 형식 사전을 작성하는 연산자."
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:234
+msgid "Prompt Format Dict"
+msgstr "프롬프트 형식 사전"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:237
+msgid "The prompt format dict."
+msgstr "프롬프트 형식 사전."
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:14
+msgid "Merge String to Dict Operator"
+msgstr "문자열을 사전으로 병합하는 연산자"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:18
+msgid ""
+"Merge two strings to a dict, the fist string which is the value from first "
+"upstream is the value of the key `first_key`, the second string which is the "
+"value from second upstream is the value of the key `second_key`."
+msgstr ""
+"두 개의 문자열을 사전으로 병합하며, 첫 번째 문자열은 첫 번째 상류에서 가져온 값으로 `first_key`의 값이 되고, 두 번째 문자열은 두 번째 상류에서 가져온 값으로 `second_key`의 값이 됩니다."
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:24
+msgid "First Key"
+msgstr "첫 번째 키"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:29
+msgid "The key for the first string, default is `user_input`."
+msgstr "첫 번째 문자열의 키, 기본값은 `user_input`입니다."
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:32
+msgid "Second Key"
+msgstr "두 번째 키"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:37
+msgid "The key for the second string, default is `context`."
+msgstr "두 번째 문자열의 키, 기본값은 `context`입니다."
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:42
+msgid "First String"
+msgstr "첫 번째 문자열"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:45
+msgid "The first string from first upstream."
+msgstr "첫 번째 상류에서 가져온 첫 번째 문자열."
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:48
+msgid "Second String"
+msgstr "두 번째 문자열"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:51
+msgid "The second string from second upstream."
+msgstr "두 번째 상류에서 가져온 두 번째 문자열."
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:56
+msgid "Output"
+msgstr "출력"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:60
+msgid "The merged dict. example: {'user_input': 'first', 'context': 'second'}."
+msgstr "병합된 사전. 예: {'user_input': 'first', 'context': 'second'}."
+
+#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:29
+msgid "Request Http Trigger"
+msgstr "HTTP 요청 트리거"
+
+#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:34
+msgid ""
+"Trigger your workflow by http request, and parse the request body as a "
+"starlette Request"
+msgstr ""
+"HTTP 요청으로 워크플로우를 트리거하고, 요청 본문을 starlette 요청으로 구문 분석합니다."
+
+#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:44
+msgid "The request body of the API endpoint, parse as a starlette Request"
+msgstr "API 엔드포인트의 요청 본문, starlette 요청으로 구문 분석합니다."
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:108
+msgid "Dict Http Body"
+msgstr "사전 HTTP 본문"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:112
+msgid "Parse the request body as a dict or response body as a dict"
+msgstr "요청 본문을 사전으로 구문 분석하거나 응답 본문을 사전으로 구문 분석합니다."
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:138
+msgid "String Http Body"
+msgstr "문자열 HTTP 본문"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:142
+msgid "Parse the request body as a string or response body as string"
+msgstr "요청 본문을 문자열로 구문 분석하거나 응답 본문을 문자열로 구문 분석합니다."
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:168
+msgid "Request Http Body"
+msgstr "HTTP 요청 본문"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:172
+msgid "Parse the request body as a starlette Request"
+msgstr "요청 본문을 starlette 요청으로 구문 분석합니다."
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:204
+msgid "Parse the request body as a common LLM http body"
+msgstr "요청 본문을 일반 LLM http 본문으로 구문 분석합니다."
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:264
+msgid "Common LLM Http Response Body"
+msgstr "일반 LLM HTTP 응답 본문"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:268
+msgid "Parse the response body as a common LLM http body"
+msgstr "응답 본문을 일반 LLM http 본문으로 구문 분석합니다."
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:654
+msgid "API Endpoint"
+msgstr "API 엔드포인트"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:654
+msgid "The API endpoint"
+msgstr "API 엔드포인트"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:657
+#: ../dbgpt/core/awel/trigger/http_trigger.py:669
+msgid "Http Methods"
+msgstr "HTTP 메서드"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:662
+#: ../dbgpt/core/awel/trigger/http_trigger.py:674
+msgid "The methods of the API endpoint"
+msgstr "API 엔드포인트의 메서드"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:664
+#: ../dbgpt/core/awel/trigger/http_trigger.py:678
+msgid "HTTP Method PUT"
+msgstr "HTTP 메소드 PUT"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:665
+#: ../dbgpt/core/awel/trigger/http_trigger.py:679
+msgid "HTTP Method POST"
+msgstr "HTTP 메소드 POST"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:676
+msgid "HTTP Method GET"
+msgstr "HTTP 메소드 GET"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:677
+msgid "HTTP Method DELETE"
+msgstr "HTTP 메소드 DELETE"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:683
+msgid "Streaming Response"
+msgstr "스트리밍 응답"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:688
+msgid "Whether the response is streaming"
+msgstr "응답이 스트리밍인지 여부"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:691
+msgid "Http Response Body"
+msgstr "HTTP 응답 본문"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:696
+#: ../dbgpt/core/awel/trigger/http_trigger.py:946
+#: ../dbgpt/core/awel/trigger/http_trigger.py:997
+msgid "The response body of the API endpoint"
+msgstr "API 엔드포인트의 응답 본문"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:700
+msgid "Response Media Type"
+msgstr "응답 미디어 타입"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:705
+msgid "The response media type"
+msgstr "응답 미디어 타입"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:708
+msgid "Http Status Code"
+msgstr "HTTP 상태 코드"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:713
+msgid "The http status code"
+msgstr "HTTP 상태 코드"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:724
+msgid "Dict Http Trigger"
+msgstr "사전 HTTP 트리거"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:729
+msgid ""
+"Trigger your workflow by http request, and parse the request body as a dict"
+msgstr ""
+"HTTP 요청으로 워크플로우를 트리거하고, 요청 본문을 사전으로 구문 분석합니다"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:738
+#: ../dbgpt/core/awel/trigger/http_trigger.py:989
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1046
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1095
+msgid "The request body of the API endpoint"
+msgstr "API 엔드포인트의 요청 본문"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:783
+msgid "String Http Trigger"
+msgstr "문자열 HTTP 트리거"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:788
+msgid ""
+"Trigger your workflow by http request, and parse the request body as a string"
+msgstr ""
+"HTTP 요청으로 워크플로우를 트리거하고, 요청 본문을 문자열로 구문 분석합니다"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:798
+msgid "The request body of the API endpoint, parse as a json string"
+msgstr "API 엔드포인트의 요청 본문을 JSON 문자열로 구문 분석합니다"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:844
+msgid "Common LLM Http Trigger"
+msgstr "일반 LLM HTTP 트리거"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:849
+msgid ""
+"Trigger your workflow by http request, and parse the request body as a "
+"common LLM http body"
+msgstr ""
+"HTTP 요청으로 워크플로우를 트리거하고, 요청 본문을 일반 LLM HTTP 본문으로 구문 분석합니다"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:859
+msgid "The request body of the API endpoint, parse as a common LLM http body"
+msgstr "API 엔드포인트의 요청 본문을 일반 LLM HTTP 본문으로 구문 분석합니다"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:903
+msgid "Example Http Response"
+msgstr "예시 HTTP 응답"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:907
+msgid "Example Http Request"
+msgstr "예시 HTTP 요청"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:929
+#: ../dbgpt/core/awel/trigger/http_trigger.py:949
+msgid "Example Http Hello Operator"
+msgstr "예시 HTTP Hello Operator"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:935
+msgid "Http Request Body"
+msgstr "HTTP 요청 본문"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:938
+msgid "The request body of the API endpoint(Dict[str, Any])"
+msgstr "API 엔드포인트의 요청 본문(사전[str, Any])"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:943
+#: ../dbgpt/core/awel/trigger/http_trigger.py:994
+msgid "Response Body"
+msgstr "응답 본문"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:969
+msgid "Request Body To Dict Operator"
+msgstr "요청 본문을 사전으로 변환하는 연산자"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:974
+msgid "Prefix Key"
+msgstr "접두사 키"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:980
+msgid "The prefix key of the dict, link 'message' or 'extra.info'"
+msgstr "사전의 접두사 키, 'message' 또는 'extra.info'와 연결"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1028
+msgid "User Input Parsed Operator"
+msgstr "사용자 입력 파싱된 연산자"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1033
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1082
+msgid "Key"
+msgstr "키"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1038
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1087
+msgid "The key of the dict, link 'user_input'"
+msgstr "사전의 키, 'user_input'에 연결된"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1051
+msgid "User Input Dict"
+msgstr "사용자 입력 사전"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1054
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1103
+msgid "The user input dict of the API endpoint"
+msgstr "API 엔드포인트의 사용자 입력 사전"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1058
+msgid ""
+"User input parsed operator, parse the user input from request body and "
+"return as a dict"
+msgstr ""
+"사용자 입력 파싱된 연산자, 요청 본문에서 사용자 입력을 파싱하고 사전으로 반환"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1077
+msgid "Request Body Parsed To String Operator"
+msgstr "요청 본문 파싱된 문자열 연산자"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1100
+msgid "User Input String"
+msgstr "사용자 입력 문자열"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1107
+msgid ""
+"User input parsed operator, parse the user input from request body and "
+"return as a string"
+msgstr ""
+"사용자 입력 파싱된 연산자, 요청 본문에서 사용자 입력을 파싱하고 문자열로 반환"

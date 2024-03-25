@@ -377,6 +377,7 @@ class DefaultTaskContext(TaskContext, Generic[T]):
         task_id: str,
         task_state: TaskState,
         task_output: Optional[TaskOutput[T]] = None,
+        log_index: int = 0,
     ) -> None:
         """Create a DefaultTaskContext.
 
@@ -385,6 +386,7 @@ class DefaultTaskContext(TaskContext, Generic[T]):
             task_state (TaskState): The task state.
             task_output (Optional[TaskOutput[T]], optional): The task output. Defaults
                 to None.
+            log_index (int, optional): The log index. Defaults to 0.
         """
         super().__init__()
         self._task_id = task_id
@@ -392,11 +394,17 @@ class DefaultTaskContext(TaskContext, Generic[T]):
         self._output: Optional[TaskOutput[T]] = task_output
         self._task_input: Optional[InputContext] = None
         self._metadata: Dict[str, Any] = {}
+        self._log_index = log_index
 
     @property
     def task_id(self) -> str:
         """Return the task id."""
         return self._task_id
+
+    @property
+    def log_id(self) -> str:
+        """Return the log id."""
+        return f"{self._task_id}_{self._log_index}"
 
     @property
     def task_input(self) -> InputContext:
@@ -445,7 +453,9 @@ class DefaultTaskContext(TaskContext, Generic[T]):
         if not self._output:
             raise ValueError("No output for current task context")
         new_output = self._output.new_output()
-        return DefaultTaskContext(self._task_id, self._task_state, new_output)
+        return DefaultTaskContext(
+            self._task_id, self._task_state, new_output, self._log_index
+        )
 
     @property
     def metadata(self) -> Dict[str, Any]:

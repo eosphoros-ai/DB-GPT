@@ -1,0 +1,137 @@
+# Russian translations for PACKAGE package
+# Английские переводы для пакета PACKAGE.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-24 11:24+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:47
+msgid "Knowledge Space Operator"
+msgstr "Оператор пространства знаний"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:50
+msgid "knowledge space retriever operator."
+msgstr "Оператор извлечения пространства знаний."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:51
+msgid "Query"
+msgstr "Запрос"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:51
+msgid "user query"
+msgstr "запрос пользователя"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:54
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:57
+msgid "related chunk content"
+msgstr "связанное содержимое части"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:62
+msgid "Space Name"
+msgstr "Название пространства"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:68
+msgid "space name."
+msgstr "название пространства."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:143
+msgid "Knowledge Space Prompt Builder Operator"
+msgstr "Оператор построения запроса пространства знаний"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:145
+msgid "Build messages from prompt template and chat history."
+msgstr "Создание сообщений из шаблона запроса и истории чата."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:150
+msgid "Chat Prompt Template"
+msgstr "Шаблон чата"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:153
+msgid "The chat prompt template."
+msgstr "Шаблон запроса чата."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:156
+msgid "History Key"
+msgstr "Ключ истории"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:161
+msgid "The key of history in prompt dict."
+msgstr "Ключ истории в словаре запроса."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:164
+msgid "String History"
+msgstr "Строковая история"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:169
+msgid "Whether to convert the history to string."
+msgstr "Преобразовывать ли историю в строку."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:174
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:178
+msgid "user input"
+msgstr "ввод пользователя"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:181
+msgid "space related context"
+msgstr "связанный контекст пространства"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:185
+msgid "context of knowledge space."
+msgstr "контекст пространства знаний."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:188
+msgid "History"
+msgstr "История"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:192
+msgid "The history."
+msgstr "История."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:197
+msgid "Formatted Messages"
+msgstr "Отформатированные сообщения"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:201
+msgid "The formatted messages."
+msgstr "Отформатированные сообщения."
+
+#: ../dbgpt/serve/conversation/operators.py:87
+msgid "Default Chat History Load Operator"
+msgstr "Оператор загрузки истории чата по умолчанию"
+
+#: ../dbgpt/serve/conversation/operators.py:91
+msgid ""
+"Load chat history from the storage of the serve component.It is the default "
+"storage of DB-GPT"
+msgstr ""
+"Загрузить историю чата из хранилища компонента serve. Это хранилище по умолчанию для DB-GPT"
+
+#: ../dbgpt/serve/conversation/operators.py:97
+msgid "Model Request"
+msgstr "Запрос модели"
+
+#: ../dbgpt/serve/conversation/operators.py:100
+msgid "The model request."
+msgstr "Запрос модели."
+
+#: ../dbgpt/serve/conversation/operators.py:105
+msgid "Stored Messages"
+msgstr "Сохраненные сообщения"
+
+#: ../dbgpt/serve/conversation/operators.py:108
+msgid "The messages stored in the storage."
+msgstr "Сообщения, сохраненные в хранилище."

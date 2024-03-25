@@ -1,7 +1,7 @@
 from functools import cache
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from dbgpt.component import SystemApp
@@ -44,6 +44,7 @@ def _parse_api_keys(api_keys: str) -> List[str]:
 
 async def check_api_key(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
+    request: Request = None,
     service: Service = Depends(get_service),
 ) -> Optional[str]:
     """Check the api key
@@ -62,6 +63,9 @@ async def check_api_key(
         assert res.status_code == 200
 
     """
+    if request.url.path.startswith(f"/api/v1"):
+        return None
+
     if service.config.api_keys:
         api_keys = _parse_api_keys(service.config.api_keys)
         if auth is None or (token := auth.credentials) not in api_keys:

@@ -31,9 +31,8 @@ from typing import Dict
 from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.core.awel import DAG, HttpTrigger, MapOperator
 from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt.rag.knowledge.base import KnowledgeType
-from dbgpt.rag.operators.knowledge import KnowledgeOperator
-from dbgpt.rag.operators.summary import SummaryAssemblerOperator
+from dbgpt.rag.knowledge import KnowledgeType
+from dbgpt.rag.operators import KnowledgeOperator, SummaryAssemblerOperator
 
 
 class TriggerReqBody(BaseModel):

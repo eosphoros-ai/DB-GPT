@@ -1,12 +1,13 @@
 """Common operators of AWEL."""
 import asyncio
 import logging
-from typing import Awaitable, Callable, Dict, Generic, List, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, Generic, List, Optional, Union
 
 from ..dag.base import DAGContext
 from ..task.base import (
     IN,
     OUT,
+    SKIP_DATA,
     InputContext,
     InputSource,
     JoinFunc,
@@ -275,6 +276,11 @@ class InputOperator(BaseOperator, Generic[OUT]):
         task_output = await self._input_source.read(curr_task_ctx)
         curr_task_ctx.set_task_output(task_output)
         return task_output
+
+    @classmethod
+    def dummy_input(cls, dummy_data: Any = SKIP_DATA, **kwargs) -> "InputOperator[OUT]":
+        """Create a dummy InputOperator with a given input value."""
+        return cls(input_source=InputSource.from_data(dummy_data), **kwargs)
 
 
 class TriggerOperator(InputOperator[OUT], Generic[OUT]):

@@ -1,6 +1,10 @@
 """Module for embedding related classes and functions."""
 
-from .embedding_factory import DefaultEmbeddingFactory, EmbeddingFactory  # noqa: F401
+from .embedding_factory import (  # noqa: F401
+    DefaultEmbeddingFactory,
+    EmbeddingFactory,
+    WrappedEmbeddingFactory,
+)
 from .embeddings import (  # noqa: F401
     Embeddings,
     HuggingFaceBgeEmbeddings,
@@ -21,4 +25,5 @@ __ALL__ = [
     "OpenAPIEmbeddings",
     "DefaultEmbeddingFactory",
     "EmbeddingFactory",
+    "WrappedEmbeddingFactory",
 ]

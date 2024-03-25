@@ -7,6 +7,8 @@ from typing import List, Optional, Type, Union
 
 from starlette.requests import Request
 
+from dbgpt.util.i18n_utils import _
+
 from ..flow import IOField, OperatorCategory, OperatorType, ViewMetadata
 from .http_trigger import (
     _PARAMETER_ENDPOINT,
@@ -24,20 +26,24 @@ class RequestHttpTrigger(HttpTrigger):
     """Request http trigger for AWEL."""
 
     metadata = ViewMetadata(
-        label="Request Http Trigger",
+        label=_("Request Http Trigger"),
         name="request_http_trigger",
         category=OperatorCategory.TRIGGER,
         operator_type=OperatorType.INPUT,
-        description="Trigger your workflow by http request, and parse the request body"
-        " as a starlette Request",
+        description=_(
+            "Trigger your workflow by http request, and parse the request body"
+            " as a starlette Request"
+        ),
         inputs=[],
         outputs=[
             IOField.build_from(
-                "Request Body",
+                _("Request Body"),
                 "request_body",
                 Request,
-                description="The request body of the API endpoint, parse as a starlette"
-                " Request",
+                description=_(
+                    "The request body of the API endpoint, parse as a starlette"
+                    " Request"
+                ),
             ),
         ],
         parameters=[

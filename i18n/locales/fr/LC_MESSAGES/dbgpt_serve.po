@@ -1,0 +1,136 @@
+# French translations for PACKAGE package
+# Traductions françaises du paquet PACKAGE.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-24 11:24+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:47
+msgid "Knowledge Space Operator"
+msgstr "Opérateur d'espace de connaissance"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:50
+msgid "knowledge space retriever operator."
+msgstr "Opérateur de récupération d'espace de connaissance."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:51
+msgid "Query"
+msgstr "Requête"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:51
+msgid "user query"
+msgstr "requête utilisateur"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:54
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:57
+msgid "related chunk content"
+msgstr "contenu de fragment associé"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:62
+msgid "Space Name"
+msgstr "Nom de l'espace"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:68
+msgid "space name."
+msgstr "nom de l'espace."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:143
+msgid "Knowledge Space Prompt Builder Operator"
+msgstr "Opérateur de construction de prompts d'espace de connaissance"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:145
+msgid "Build messages from prompt template and chat history."
+msgstr "Construire des messages à partir du modèle de prompt et de l'historique de chat."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:150
+msgid "Chat Prompt Template"
+msgstr "Modèle de prompt de chat"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:153
+msgid "The chat prompt template."
+msgstr "Le modèle de prompt de chat."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:156
+msgid "History Key"
+msgstr "Clé de l'historique"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:161
+msgid "The key of history in prompt dict."
+msgstr "La clé de l'historique dans le dictionnaire de prompt."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:164
+msgid "String History"
+msgstr "Historique en chaîne"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:169
+msgid "Whether to convert the history to string."
+msgstr "Indique si l'historique doit être converti en chaîne."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:174
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:178
+msgid "user input"
+msgstr "entrée utilisateur"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:181
+msgid "space related context"
+msgstr "contexte lié à l'espace"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:185
+msgid "context of knowledge space."
+msgstr "contexte de l'espace de connaissance."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:188
+msgid "History"
+msgstr "Historique"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:192
+msgid "The history."
+msgstr "L'historique."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:197
+msgid "Formatted Messages"
+msgstr "Messages formatés"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:201
+msgid "The formatted messages."
+msgstr "Les messages formatés."
+
+#: ../dbgpt/serve/conversation/operators.py:87
+msgid "Default Chat History Load Operator"
+msgstr "Opérateur de chargement d'historique de chat par défaut"
+
+#: ../dbgpt/serve/conversation/operators.py:91
+msgid ""
+"Load chat history from the storage of the serve component.It is the default "
+"storage of DB-GPT"
+msgstr ""
+"Charger l'historique de chat à partir du stockage du composant serve. C'est le stockage par défaut de DB-GPT"
+
+#: ../dbgpt/serve/conversation/operators.py:97
+msgid "Model Request"
+msgstr "Demande de modèle"
+
+#: ../dbgpt/serve/conversation/operators.py:100
+msgid "The model request."
+msgstr "La demande de modèle."
+
+#: ../dbgpt/serve/conversation/operators.py:105
+msgid "Stored Messages"
+msgstr "Messages stockés"
+
+#: ../dbgpt/serve/conversation/operators.py:108
+msgid "The messages stored in the storage."
+msgstr "Les messages stockés dans le stockage."

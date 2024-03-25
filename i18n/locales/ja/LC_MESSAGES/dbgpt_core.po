@@ -1,0 +1,803 @@
+# Japanese translations for PACKAGE package
+# PACKAGE パッケージに対する英訳.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-23 16:45+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:39
+msgid "Common Chat Prompt Template"
+msgstr "一般的チャットプロンプトテンプレート"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:42
+msgid "The operator to build the prompt with static prompt."
+msgstr "静的プロンプトでプロンプトを構築するためのオペレータ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:45
+msgid "System Message"
+msgstr "システムメッセージ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:50
+msgid "The system message."
+msgstr "システムメッセージ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:53
+msgid "Message placeholder"
+msgstr "メッセージプレースホルダ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:58
+msgid "The chat history message placeholder."
+msgstr "チャット履歴メッセージプレースホルダ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:61
+msgid "Human Message"
+msgstr "ヒューマンメッセージ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:67
+msgid "The human message."
+msgstr "ヒューマンメッセージ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:255
+msgid "Prompt Builder Operator"
+msgstr "プロンプトビルダーオペレータ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:257
+msgid "Build messages from prompt template."
+msgstr "プロンプトテンプレートからメッセージを構築します"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:261
+#: ../dbgpt/core/interface/operators/prompt_operator.py:348
+msgid "Chat Prompt Template"
+msgstr "チャットプロンプトテンプレート"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:264
+#: ../dbgpt/core/interface/operators/prompt_operator.py:351
+msgid "The chat prompt template."
+msgstr "チャットプロンプトテンプレート"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:269
+#: ../dbgpt/core/interface/operators/prompt_operator.py:379
+msgid "Prompt Input Dict"
+msgstr "プロンプト入力辞書"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:272
+#: ../dbgpt/core/interface/operators/prompt_operator.py:382
+msgid "The prompt dict."
+msgstr "プロンプト辞書"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:277
+#: ../dbgpt/core/interface/operators/prompt_operator.py:387
+msgid "Formatted Messages"
+msgstr "フォーマットされたメッセージ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:281
+#: ../dbgpt/core/interface/operators/prompt_operator.py:391
+msgid "The formatted messages."
+msgstr "フォーマットされたメッセージ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:341
+msgid "History Prompt Builder Operator"
+msgstr "履歴プロンプトビルダーオペレータ"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:343
+msgid "Build messages from prompt template and chat history."
+msgstr "プロンプトテンプレートとチャット履歴からメッセージを構築します"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:354
+#: ../dbgpt/core/operators/flow/composer_operator.py:65
+msgid "History Key"
+msgstr "履歴キー"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:359
+msgid "The key of history in prompt dict."
+msgstr "プロンプト辞書内の履歴のキー"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:362
+msgid "String History"
+msgstr "文字列履歴"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:367
+msgid "Whether to convert the history to string."
+msgstr "履歴を文字列に変換するかどうか"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:372
+msgid "History"
+msgstr "履歴"
+
+#: ../dbgpt/core/interface/operators/prompt_operator.py:376
+msgid "The history."
+msgstr "履歴"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:122
+#, fuzzy
+msgid "Chat History Load Operator"
+msgstr "履歴プロンプトビルダーオペレータ"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:125
+#, fuzzy
+msgid "The operator to load chat history from storage."
+msgstr "チャット履歴プロンプトを含むモデルリクエスト。"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:128
+#: ../dbgpt/core/operators/flow/composer_operator.py:92
+msgid "Conversation Storage"
+msgstr "会話ストレージ"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:134
+msgid ""
+"The conversation storage, store the conversation items(Not include message "
+"items). If None, we will use InMemoryStorage."
+msgstr ""
+
+#: ../dbgpt/core/interface/operators/message_operator.py:139
+#: ../dbgpt/core/operators/flow/composer_operator.py:100
+msgid "Message Storage"
+msgstr "メッセージストレージ"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:145
+msgid ""
+"The message storage, store the messages of one conversation. If None, we "
+"will use InMemoryStorage."
+msgstr ""
+
+#: ../dbgpt/core/interface/operators/message_operator.py:152
+#: ../dbgpt/core/interface/operators/llm_operator.py:99
+#: ../dbgpt/core/interface/operators/llm_operator.py:202
+#: ../dbgpt/core/interface/operators/llm_operator.py:217
+#: ../dbgpt/core/interface/operators/llm_operator.py:363
+#: ../dbgpt/core/operators/flow/composer_operator.py:118
+msgid "Model Request"
+msgstr "モデルリクエスト"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:155
+#, fuzzy
+msgid "The model request."
+msgstr "上流のモデルリクエスト。"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:160
+#, fuzzy
+msgid "Stored Messages"
+msgstr "フォーマットされたメッセージ"
+
+#: ../dbgpt/core/interface/operators/message_operator.py:163
+#, fuzzy
+msgid "The messages stored in the storage."
+msgstr "メッセージストレージ。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:51
+msgid "Build Model Request"
+msgstr "モデルリクエストの構築"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:54
+msgid "Build the model request from the http request body."
+msgstr "HTTPリクエストボディからモデルリクエストを構築します"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:57
+msgid "Default Model Name"
+msgstr "デフォルトモデル名"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:62
+msgid "The model name of the model request."
+msgstr "モデルリクエストのモデル名"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:65
+msgid "Temperature"
+msgstr ""
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:70
+#, fuzzy
+msgid "The temperature of the model request."
+msgstr "モデルリクエストのモデル名"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:73
+msgid "Max New Tokens"
+msgstr ""
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:78
+#, fuzzy
+msgid "The max new tokens of the model request."
+msgstr "モデルリクエストのモデル名"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:81
+msgid "Context Length"
+msgstr ""
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:86
+#, fuzzy
+msgid "The context length of the model request."
+msgstr "モデルリクエストのモデル名"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:91
+#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:40
+#: ../dbgpt/core/awel/trigger/http_trigger.py:735
+#: ../dbgpt/core/awel/trigger/http_trigger.py:794
+#: ../dbgpt/core/awel/trigger/http_trigger.py:855
+#: ../dbgpt/core/awel/trigger/http_trigger.py:986
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1043
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1092
+msgid "Request Body"
+msgstr "リクエストボディ"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:94
+#: ../dbgpt/core/interface/operators/llm_operator.py:366
+#: ../dbgpt/core/interface/operators/llm_operator.py:440
+#: ../dbgpt/core/interface/operators/llm_operator.py:531
+#: ../dbgpt/core/interface/operators/llm_operator.py:539
+msgid "The input value of the operator."
+msgstr "オペレータの入力値"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:102
+#: ../dbgpt/core/interface/operators/llm_operator.py:220
+#: ../dbgpt/core/interface/operators/llm_operator.py:448
+msgid "The output value of the operator."
+msgstr "オペレーターの出力値。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:195
+msgid "Merge Model Request Messages"
+msgstr "モデルリクエストメッセージをマージ"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:198
+msgid "Merge the model request from the input value."
+msgstr "入力値からのモデルリクエストをマージします。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:205
+msgid "The model request of upstream."
+msgstr "上流のモデルリクエスト。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:208
+msgid "Model messages"
+msgstr "モデルメッセージ"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:211
+msgid "The model messages of upstream."
+msgstr "上流のモデルメッセージ。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:338
+msgid "LLM Branch Operator"
+msgstr "LLM ブランチオペレーター"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:342
+msgid "Branch the workflow based on the stream flag of the request."
+msgstr "リクエストのストリームフラグに基づいてワークフローをブランチします。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:345
+msgid "Streaming Task Name"
+msgstr "ストリーミングタスク名"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:350
+msgid "The name of the streaming task."
+msgstr "ストリーミングタスクの名前。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:353
+msgid "Non-Streaming Task Name"
+msgstr "非ストリーミングタスク名"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:358
+msgid "The name of the non-streaming task."
+msgstr "非ストリーミングタスクの名前。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:371
+msgid "Streaming Model Request"
+msgstr "ストリーミングモデルリクエスト"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:374
+msgid "The streaming request, to streaming Operator."
+msgstr "ストリーミングオペレーターへのストリーミングリクエスト。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:377
+msgid "Non-Streaming Model Request"
+msgstr "非ストリーミングモデルリクエスト"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:380
+msgid "The non-streaming request, to non-streaming Operator."
+msgstr "非ストリーミングオペレーターへの非ストリーミングリクエスト。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:430
+msgid "Map Model Output to Common Response Body"
+msgstr "モデル出力を共通レスポンスボディにマップ"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:433
+msgid "Map the model output to the common response body."
+msgstr "モデル出力を共通レスポンスボディにマップします。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:437
+#: ../dbgpt/core/interface/operators/llm_operator.py:491
+#: ../dbgpt/core/interface/operators/llm_operator.py:536
+#: ../dbgpt/core/interface/output_parser.py:40
+#: ../dbgpt/core/interface/output_parser.py:49
+msgid "Model Output"
+msgstr "モデル出力"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:445
+msgid "Common Response Body"
+msgstr "共通レスポンスボディ"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:474
+msgid "Common Streaming Output Operator"
+msgstr "共通ストリーミング出力オペレーター"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:478
+msgid "The common streaming LLM operator, for chat flow."
+msgstr "チャットフロー用の共通ストリーミングLLMオペレーター。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:482
+msgid "Upstream Model Output"
+msgstr "上流モデル出力"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:486
+#: ../dbgpt/core/interface/output_parser.py:44
+msgid "The model output of upstream."
+msgstr "上流のモデル出力。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:496
+msgid "The model output after transform to common stream format"
+msgstr "共通ストリーム形式に変換したモデル出力"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:521
+msgid "Map String to ModelOutput"
+msgstr "文字列をモデル出力にマップ"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:524
+msgid "Map String to ModelOutput."
+msgstr "文字列をモデル出力にマップします。"
+
+#: ../dbgpt/core/interface/operators/llm_operator.py:528
+msgid "String"
+msgstr "文字列"
+
+#: ../dbgpt/core/interface/output_parser.py:32
+#, fuzzy
+msgid "Base Output Operator"
+msgstr "共通ストリーミング出力オペレーター"
+
+#: ../dbgpt/core/interface/output_parser.py:36
+msgid "The base LLM out parse."
+msgstr ""
+
+#: ../dbgpt/core/interface/output_parser.py:53
+#, fuzzy
+msgid "The model output after parsing."
+msgstr "上流のモデル出力。"
+
+#: ../dbgpt/core/interface/storage.py:390
+#, fuzzy
+msgid "Memory Storage"
+msgstr "メッセージストレージ"
+
+#: ../dbgpt/core/interface/storage.py:393
+msgid "Save your data in memory."
+msgstr ""
+
+#: ../dbgpt/core/interface/storage.py:396
+msgid "Serializer"
+msgstr ""
+
+#: ../dbgpt/core/interface/storage.py:402
+msgid ""
+"The serializer for serializing the data. If not set, the default JSON "
+"serializer will be used."
+msgstr ""
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:42
+msgid "Conversation Composer Operator"
+msgstr "会話コンポーザーオペレーター"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:46
+msgid ""
+"A composer operator for conversation.\n"
+"Including chat history handling, prompt composing, etc. Output is "
+"ModelRequest."
+msgstr ""
+"会話用のコンポーザーオペレーター。\n"
+"チャット履歴の処理、プロンプトの作成などを含みます。出力はモデルリクエスト。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:51
+msgid "Prompt Template"
+msgstr "プロンプトテンプレート"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:54
+msgid "The prompt template for the conversation."
+msgstr "会話用のプロンプトテンプレート。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:57
+#: ../dbgpt/core/operators/flow/composer_operator.py:216
+msgid "Human Message Key"
+msgstr "ヒューマンメッセージキー"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:62
+#: ../dbgpt/core/operators/flow/composer_operator.py:221
+msgid "The key for human message in the prompt format dict."
+msgstr "プロンプト形式の辞書内のヒューマンメッセージのキー。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:71
+msgid ""
+"The chat history key, with chat history message pass to prompt template."
+msgstr ""
+"チャット履歴キー、チャット履歴メッセージがプロンプトテンプレートに渡されま"
+"す。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:76
+msgid "Keep Start Rounds"
+msgstr "開始ラウンドを保持"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:81
+msgid "The start rounds to keep in the chat history."
+msgstr "チャット履歴に保持する開始ラウンド。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:84
+msgid "Keep End Rounds"
+msgstr "終了ラウンドを保持"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:89
+msgid "The end rounds to keep in the chat history."
+msgstr "チャット履歴に保持する終了ラウンド。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:97
+msgid "The conversation storage(Not include message detail)."
+msgstr "会話ストレージ（メッセージの詳細は含まれません）。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:105
+msgid "The message storage."
+msgstr "メッセージストレージ。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:110
+#: ../dbgpt/core/operators/flow/composer_operator.py:226
+#: ../dbgpt/core/awel/trigger/http_trigger.py:200
+msgid "Common LLM Http Request Body"
+msgstr "共通LLM HTTPリクエストボディ"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:113
+#: ../dbgpt/core/operators/flow/composer_operator.py:229
+msgid "The common LLM http request body."
+msgstr "共通LLM HTTPリクエストボディ。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:121
+msgid "The model request with chat history prompt."
+msgstr "チャット履歴プロンプトを含むモデルリクエスト。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:207
+msgid "Prompt Format Dict Builder Operator"
+msgstr "プロンプト形式辞書ビルダーオペレーター"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:211
+msgid ""
+"A operator to build prompt format dict from common LLM http request body."
+msgstr ""
+"共通LLM HTTPリクエストボディからプロンプト形式辞書を構築するオペレーター。"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:234
+msgid "Prompt Format Dict"
+msgstr "プロンプト形式辞書"
+
+#: ../dbgpt/core/operators/flow/composer_operator.py:237
+msgid "The prompt format dict."
+msgstr "プロンプト形式辞書。"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:14
+msgid "Merge String to Dict Operator"
+msgstr "文字列を辞書にマージするオペレーター"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:18
+msgid ""
+"Merge two strings to a dict, the fist string which is the value from first "
+"upstream is the value of the key `first_key`, the second string which is the "
+"value from second upstream is the value of the key `second_key`."
+msgstr ""
+"2つの文字列を辞書にマージします。最初のアップストリームからの値である最初の文"
+"字列は `first_key` の値であり、2番目のアップストリームからの値である2番目の文"
+"字列は `second_key` の値です。"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:24
+msgid "First Key"
+msgstr "最初のキー"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:29
+msgid "The key for the first string, default is `user_input`."
+msgstr "最初の文字列のキー、デフォルトは `user_input`。"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:32
+msgid "Second Key"
+msgstr "2番目のキー"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:37
+msgid "The key for the second string, default is `context`."
+msgstr "2番目の文字列のキー、デフォルトは `context`。"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:42
+msgid "First String"
+msgstr "最初の文字列"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:45
+msgid "The first string from first upstream."
+msgstr "最初のアップストリームからの最初の文字列。"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:48
+msgid "Second String"
+msgstr "2番目の文字列"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:51
+msgid "The second string from second upstream."
+msgstr "2番目のアップストリームからの2番目の文字列。"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:56
+msgid "Output"
+msgstr "出力"
+
+#: ../dbgpt/core/operators/flow/dict_operator.py:60
+msgid "The merged dict. example: {'user_input': 'first', 'context': 'second'}."
+msgstr "マージされた辞書。例：{'user_input': 'first', 'context': 'second'}。"
+
+#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:29
+msgid "Request Http Trigger"
+msgstr "HTTPリクエストトリガー"
+
+#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:34
+msgid ""
+"Trigger your workflow by http request, and parse the request body as a "
+"starlette Request"
+msgstr ""
+"HTTPリクエストによってワークフローをトリガーし、リクエストボディをstarletteリ"
+"クエストとして解析します。"
+
+#: ../dbgpt/core/awel/trigger/ext_http_trigger.py:44
+msgid "The request body of the API endpoint, parse as a starlette Request"
+msgstr ""
+"API エンドポイントのリクエストボディを starlette リクエストとして解析します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:108
+msgid "Dict Http Body"
+msgstr "辞書型 HTTP ボディ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:112
+msgid "Parse the request body as a dict or response body as a dict"
+msgstr ""
+"リクエストボディを辞書型として解析するか、レスポンスボディを辞書型として解析"
+"します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:138
+msgid "String Http Body"
+msgstr "文字列型 HTTP ボディ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:142
+msgid "Parse the request body as a string or response body as string"
+msgstr ""
+"リクエストボディを文字列型として解析するか、レスポンスボディを文字列型として"
+"解析します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:168
+msgid "Request Http Body"
+msgstr "リクエスト HTTP ボディ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:172
+msgid "Parse the request body as a starlette Request"
+msgstr "リクエストボディを starlette リクエストとして解析します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:204
+msgid "Parse the request body as a common LLM http body"
+msgstr "リクエストボディを一般的な LLM HTTP ボディとして解析します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:264
+msgid "Common LLM Http Response Body"
+msgstr "一般的な LLM HTTP レスポンスボディ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:268
+msgid "Parse the response body as a common LLM http body"
+msgstr "レスポンスボディを一般的な LLM HTTP ボディとして解析します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:654
+msgid "API Endpoint"
+msgstr "API エンドポイント"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:654
+msgid "The API endpoint"
+msgstr "API エンドポイント"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:657
+#: ../dbgpt/core/awel/trigger/http_trigger.py:669
+msgid "Http Methods"
+msgstr "HTTP メソッド"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:662
+#: ../dbgpt/core/awel/trigger/http_trigger.py:674
+msgid "The methods of the API endpoint"
+msgstr "API エンドポイントのメソッド"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:664
+#: ../dbgpt/core/awel/trigger/http_trigger.py:678
+msgid "HTTP Method PUT"
+msgstr "HTTP メソッド PUT"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:665
+#: ../dbgpt/core/awel/trigger/http_trigger.py:679
+msgid "HTTP Method POST"
+msgstr "HTTP メソッド POST"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:676
+msgid "HTTP Method GET"
+msgstr "HTTP メソッド GET"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:677
+msgid "HTTP Method DELETE"
+msgstr "HTTP メソッド DELETE"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:683
+msgid "Streaming Response"
+msgstr "ストリーミングレスポンス"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:688
+msgid "Whether the response is streaming"
+msgstr "レスポンスがストリーミングかどうか"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:691
+msgid "Http Response Body"
+msgstr "HTTP レスポンスボディ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:696
+#: ../dbgpt/core/awel/trigger/http_trigger.py:946
+#: ../dbgpt/core/awel/trigger/http_trigger.py:997
+msgid "The response body of the API endpoint"
+msgstr "API エンドポイントのレスポンスボディ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:700
+msgid "Response Media Type"
+msgstr "レスポンスメディアタイプ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:705
+msgid "The response media type"
+msgstr "レスポンスメディアタイプ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:708
+msgid "Http Status Code"
+msgstr "HTTP ステータスコード"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:713
+msgid "The http status code"
+msgstr "HTTP ステータスコード"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:724
+msgid "Dict Http Trigger"
+msgstr "辞書型 HTTP トリガー"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:729
+msgid ""
+"Trigger your workflow by http request, and parse the request body as a dict"
+msgstr ""
+"HTTP リクエストによってワークフローをトリガーし、リクエストボディを辞書型とし"
+"て解析します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:738
+#: ../dbgpt/core/awel/trigger/http_trigger.py:989
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1046
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1095
+msgid "The request body of the API endpoint"
+msgstr "API エンドポイントのリクエストボディ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:783
+msgid "String Http Trigger"
+msgstr "文字列型 HTTP トリガー"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:788
+msgid ""
+"Trigger your workflow by http request, and parse the request body as a string"
+msgstr ""
+"HTTP リクエストによってワークフローをトリガーし、リクエストボディを文字列型と"
+"して解析します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:798
+msgid "The request body of the API endpoint, parse as a json string"
+msgstr "API エンドポイントのリクエストボディを JSON 文字列として解析します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:844
+msgid "Common LLM Http Trigger"
+msgstr "共通 LLM HTTP トリガー"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:849
+msgid ""
+"Trigger your workflow by http request, and parse the request body as a "
+"common LLM http body"
+msgstr ""
+"HTTP リクエストによってワークフローをトリガーし、リクエストボディを共通の "
+"LLM HTTP ボディとして解析します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:859
+msgid "The request body of the API endpoint, parse as a common LLM http body"
+msgstr ""
+"API エンドポイントのリクエストボディを共通の LLM HTTP ボディとして解析します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:903
+msgid "Example Http Response"
+msgstr "HTTP レスポンスの例"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:907
+msgid "Example Http Request"
+msgstr "HTTP リクエストの例"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:929
+#: ../dbgpt/core/awel/trigger/http_trigger.py:949
+msgid "Example Http Hello Operator"
+msgstr "HTTP ハロー演算子の例"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:935
+msgid "Http Request Body"
+msgstr "HTTP リクエストボディ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:938
+msgid "The request body of the API endpoint(Dict[str, Any])"
+msgstr "API エンドポイントのリクエストボディ（Dict[str, Any））"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:943
+#: ../dbgpt/core/awel/trigger/http_trigger.py:994
+msgid "Response Body"
+msgstr "レスポンスボディ"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:969
+msgid "Request Body To Dict Operator"
+msgstr "リクエストボディを辞書に変換する演算子"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:974
+msgid "Prefix Key"
+msgstr "プレフィックスキー"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:980
+msgid "The prefix key of the dict, link 'message' or 'extra.info'"
+msgstr "辞書のプレフィックスキー、'message' または 'extra.info' にリンクします"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1028
+msgid "User Input Parsed Operator"
+msgstr "ユーザー入力解析演算子"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1033
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1082
+msgid "Key"
+msgstr "キー"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1038
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1087
+msgid "The key of the dict, link 'user_input'"
+msgstr "辞書のキー、'user_input' にリンクします"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1051
+msgid "User Input Dict"
+msgstr "ユーザー入力辞書"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1054
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1103
+msgid "The user input dict of the API endpoint"
+msgstr "API エンドポイントのユーザー入力辞書"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1058
+msgid ""
+"User input parsed operator, parse the user input from request body and "
+"return as a dict"
+msgstr ""
+"ユーザー入力解析演算子、リクエストボディからユーザー入力を解析し、辞書として"
+"返します"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1077
+msgid "Request Body Parsed To String Operator"
+msgstr "リクエストボディを文字列に解析する演算子"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1100
+msgid "User Input String"
+msgstr "ユーザー入力文字列"
+
+#: ../dbgpt/core/awel/trigger/http_trigger.py:1107
+msgid ""
+"User input parsed operator, parse the user input from request body and "
+"return as a string"
+msgstr ""
+"ユーザー入力解析演算子、リクエストボディからユーザー入力を解析し、文字列とし"
+"て返します"

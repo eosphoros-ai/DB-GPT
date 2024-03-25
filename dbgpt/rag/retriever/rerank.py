@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from typing import Callable, List, Optional
 
 from dbgpt.core import Chunk
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.util.i18n_utils import _
 
 RANK_FUNC = Callable[[List[Chunk]], List[Chunk]]
 
@@ -50,6 +52,28 @@ class Ranker(ABC):
         return new_candidates
 
 
+@register_resource(
+    _("Default Ranker"),
+    "default_ranker",
+    category=ResourceCategory.RAG,
+    description=_("Default ranker(Rank by score)."),
+    parameters=[
+        Parameter.build_from(
+            _("Top k"),
+            "topk",
+            int,
+            description=_("The number of top k documents."),
+        ),
+        # Parameter.build_from(
+        #     _("Rank Function"),
+        #     "rank_fn",
+        #     RANK_FUNC,
+        #     description=_("The rank function."),
+        #     optional=True,
+        #     default=None,
+        # ),
+    ],
+)
 class DefaultRanker(Ranker):
     """Default Ranker."""
 

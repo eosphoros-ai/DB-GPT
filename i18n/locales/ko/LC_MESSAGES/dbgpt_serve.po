@@ -1,0 +1,136 @@
+# Korean translations for PACKAGE package
+# PACKAGE 패키지에 대한 한국어 번역문.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-24 11:24+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:47
+msgid "Knowledge Space Operator"
+msgstr "지식 공간 연산자"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:50
+msgid "knowledge space retriever operator."
+msgstr "지식 공간 검색 연산자."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:51
+msgid "Query"
+msgstr "질의"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:51
+msgid "user query"
+msgstr "사용자 질의"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:54
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:57
+msgid "related chunk content"
+msgstr "관련 청크 내용"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:62
+msgid "Space Name"
+msgstr "공간 이름"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:68
+msgid "space name."
+msgstr "공간 이름."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:143
+msgid "Knowledge Space Prompt Builder Operator"
+msgstr "지식 공간 프롬프트 빌더 연산자"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:145
+msgid "Build messages from prompt template and chat history."
+msgstr "프롬프트 템플릿과 채팅 기록에서 메시지를 작성합니다."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:150
+msgid "Chat Prompt Template"
+msgstr "채팅 프롬프트 템플릿"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:153
+msgid "The chat prompt template."
+msgstr "채팅 프롬프트 템플릿."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:156
+msgid "History Key"
+msgstr "기록 키"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:161
+msgid "The key of history in prompt dict."
+msgstr "프롬프트 사전에서의 기록 키."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:164
+msgid "String History"
+msgstr "문자열 기록"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:169
+msgid "Whether to convert the history to string."
+msgstr "기록을 문자열로 변환할지 여부."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:174
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:178
+msgid "user input"
+msgstr "사용자 입력"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:181
+msgid "space related context"
+msgstr "공간 관련 컨텍스트"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:185
+msgid "context of knowledge space."
+msgstr "지식 공간의 컨텍스트."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:188
+msgid "History"
+msgstr "기록"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:192
+msgid "The history."
+msgstr "기록."
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:197
+msgid "Formatted Messages"
+msgstr "서식이 있는 메시지"
+
+#: ../dbgpt/serve/rag/operators/knowledge_space.py:201
+msgid "The formatted messages."
+msgstr "서식이 있는 메시지."
+
+#: ../dbgpt/serve/conversation/operators.py:87
+msgid "Default Chat History Load Operator"
+msgstr "기본 채팅 기록 로드 연산자"
+
+#: ../dbgpt/serve/conversation/operators.py:91
+msgid ""
+"Load chat history from the storage of the serve component.It is the default "
+"storage of DB-GPT"
+msgstr ""
+"서버 구성 요소의 저장소에서 채팅 기록을 로드합니다. 이는 DB-GPT의 기본 저장소입니다."
+
+#: ../dbgpt/serve/conversation/operators.py:97
+msgid "Model Request"
+msgstr "모델 요청"
+
+#: ../dbgpt/serve/conversation/operators.py:100
+msgid "The model request."
+msgstr "모델 요청."
+
+#: ../dbgpt/serve/conversation/operators.py:105
+msgid "Stored Messages"
+msgstr "저장된 메시지"
+
+#: ../dbgpt/serve/conversation/operators.py:108
+msgid "The messages stored in the storage."
+msgstr "저장소에 저장된 메시지."

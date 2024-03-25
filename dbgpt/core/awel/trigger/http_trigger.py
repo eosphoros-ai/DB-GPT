@@ -16,6 +16,7 @@ from typing import (
 )
 
 from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt.util.i18n_utils import _
 
 from ..dag.base import DAG
 from ..flow import (
@@ -38,6 +39,8 @@ from .base import Trigger
 if TYPE_CHECKING:
     from fastapi import APIRouter, FastAPI
     from starlette.requests import Request
+
+    from dbgpt.core.interface.llm import ModelRequestContext
 
     RequestBody = Union[Type[Request], Type[BaseModel], Type[Dict[str, Any]], Type[str]]
     CommonRequestType = Union[Request, BaseModel, Dict[str, Any], str, None]
@@ -104,11 +107,11 @@ class BaseHttpBody(BaseModel):
 
 
 @register_resource(
-    label="Dict Http Body",
+    label=_("Dict Http Body"),
     name="dict_http_body",
     category=ResourceCategory.HTTP_BODY,
     resource_type=ResourceType.CLASS,
-    description="Parse the request body as a dict or response body as a dict",
+    description=_("Parse the request body as a dict or response body as a dict"),
 )
 class DictHttpBody(BaseHttpBody):
     """Dict http body."""
@@ -134,11 +137,11 @@ class DictHttpBody(BaseHttpBody):
 
 
 @register_resource(
-    label="String Http Body",
+    label=_("String Http Body"),
     name="string_http_body",
     category=ResourceCategory.HTTP_BODY,
     resource_type=ResourceType.CLASS,
-    description="Parse the request body as a string or response body as string",
+    description=_("Parse the request body as a string or response body as string"),
 )
 class StringHttpBody(BaseHttpBody):
     """String http body."""
@@ -164,11 +167,11 @@ class StringHttpBody(BaseHttpBody):
 
 
 @register_resource(
-    label="Request Http Body",
+    label=_("Request Http Body"),
     name="request_http_body",
     category=ResourceCategory.HTTP_BODY,
     resource_type=ResourceType.CLASS,
-    description="Parse the request body as a starlette Request",
+    description=_("Parse the request body as a starlette Request"),
 )
 class RequestHttpBody(BaseHttpBody):
     """Http trigger body."""
@@ -195,37 +198,12 @@ class RequestHttpBody(BaseHttpBody):
         return self._default_body
 
 
-class CommonLLMHTTPRequestContext(BaseModel):
-    """Common LLM http request context."""
-
-    conv_uid: Optional[str] = Field(
-        default=None, description="The conversation id of the model inference"
-    )
-    span_id: Optional[str] = Field(
-        default=None, description="The span id of the model inference"
-    )
-    chat_mode: Optional[str] = Field(
-        default="chat_awel_flow",
-        description="The chat mode",
-        examples=["chat_awel_flow", "chat_normal"],
-    )
-    user_name: Optional[str] = Field(
-        default=None, description="The user name of the model inference"
-    )
-    sys_code: Optional[str] = Field(
-        default=None, description="The system code of the model inference"
-    )
-    extra: Optional[Dict[str, Any]] = Field(
-        default=None, description="The extra info of the model inference"
-    )
-
-
 @register_resource(
-    label="Common LLM Http Request Body",
+    label=_("Common LLM Http Request Body"),
     name="common_llm_http_request_body",
     category=ResourceCategory.HTTP_BODY,
     resource_type=ResourceType.CLASS,
-    description="Parse the request body as a common LLM http body",
+    description=_("Parse the request body as a common LLM http body"),
 )
 class CommonLLMHttpRequestBody(BaseHttpBody):
     """Common LLM http request body."""
@@ -249,18 +227,63 @@ class CommonLLMHttpRequestBody(BaseHttpBody):
         description="The maximum number of tokens that can be generated in the chat "
         "completion.",
     )
-    context: CommonLLMHTTPRequestContext = Field(
-        default_factory=CommonLLMHTTPRequestContext,
-        description="The context of the model inference",
+    conv_uid: Optional[str] = Field(
+        default=None, description="The conversation id of the model inference"
     )
+    span_id: Optional[str] = Field(
+        default=None, description="The span id of the model inference"
+    )
+    chat_mode: Optional[str] = Field(
+        default="chat_normal",
+        description="The chat mode",
+        examples=["chat_awel_flow", "chat_normal"],
+    )
+    chat_param: Optional[str] = Field(
+        default=None,
+        description="The chat param of chat mode",
+    )
+    user_name: Optional[str] = Field(
+        default=None, description="The user name of the model inference"
+    )
+    sys_code: Optional[str] = Field(
+        default=None, description="The system code of the model inference"
+    )
+    incremental: bool = Field(
+        default=True,
+        description="Used to control whether the content is returned incrementally "
+        "or in full each time. "
+        "If this parameter is not provided, the default is full return.",
+    )
+    enable_vis: str = Field(
+        default=True, description="response content whether to output vis label"
+    )
+    extra: Optional[Dict[str, Any]] = Field(
+        default=None, description="The extra info of the model inference"
+    )
+
+    @property
+    def context(self) -> "ModelRequestContext":
+        """Get the model request context."""
+        from dbgpt.core.interface.llm import ModelRequestContext
+
+        return ModelRequestContext(
+            stream=self.stream,
+            user_name=self.user_name,
+            sys_code=self.sys_code,
+            conv_uid=self.conv_uid,
+            span_id=self.span_id,
+            chat_mode=self.chat_mode,
+            chat_param=self.chat_param,
+            extra=self.extra,
+        )
 
 
 @register_resource(
-    label="Common LLM Http Response Body",
+    label=_("Common LLM Http Response Body"),
     name="common_llm_http_response_body",
     category=ResourceCategory.HTTP_BODY,
     resource_type=ResourceType.CLASS,
-    description="Parse the response body as a common LLM http body",
+    description=_("Parse the response body as a common LLM http body"),
 )
 class CommonLLMHttpResponseBody(BaseHttpBody):
     """Common LLM http response body."""
@@ -635,8 +658,12 @@ async def _trigger_dag(
                 "Transfer-Encoding": "chunked",
             }
         generator = await end_node.call_stream(call_data=body)
+
+        async def _after_dag_end():
+            await dag._after_dag_end(end_node.current_event_loop_task_id)
+
         background_tasks = BackgroundTasks()
-        background_tasks.add_task(dag._after_dag_end)
+        background_tasks.add_task(_after_dag_end)
         return StreamingResponse(
             generator,
             headers=headers,
@@ -646,66 +673,66 @@ async def _trigger_dag(
 
 
 _PARAMETER_ENDPOINT = Parameter.build_from(
-    "API Endpoint", "endpoint", str, description="The API endpoint"
+    _("API Endpoint"), "endpoint", str, description=_("The API endpoint")
 )
 _PARAMETER_METHODS_POST_PUT = Parameter.build_from(
-    "Http Methods",
+    _("Http Methods"),
     "methods",
     str,
     optional=True,
     default="POST",
-    description="The methods of the API endpoint",
+    description=_("The methods of the API endpoint"),
     options=[
-        OptionValue(label="HTTP Method PUT", name="http_put", value="PUT"),
-        OptionValue(label="HTTP Method POST", name="http_post", value="POST"),
+        OptionValue(label=_("HTTP Method PUT"), name="http_put", value="PUT"),
+        OptionValue(label=_("HTTP Method POST"), name="http_post", value="POST"),
     ],
 )
 _PARAMETER_METHODS_ALL = Parameter.build_from(
-    "Http Methods",
+    _("Http Methods"),
     "methods",
     str,
     optional=True,
     default="GET",
-    description="The methods of the API endpoint",
+    description=_("The methods of the API endpoint"),
     options=[
-        OptionValue(label="HTTP Method GET", name="http_get", value="GET"),
-        OptionValue(label="HTTP Method DELETE", name="http_delete", value="DELETE"),
-        OptionValue(label="HTTP Method PUT", name="http_put", value="PUT"),
-        OptionValue(label="HTTP Method POST", name="http_post", value="POST"),
+        OptionValue(label=_("HTTP Method GET"), name="http_get", value="GET"),
+        OptionValue(label=_("HTTP Method DELETE"), name="http_delete", value="DELETE"),
+        OptionValue(label=_("HTTP Method PUT"), name="http_put", value="PUT"),
+        OptionValue(label=_("HTTP Method POST"), name="http_post", value="POST"),
     ],
 )
 _PARAMETER_STREAMING_RESPONSE = Parameter.build_from(
-    "Streaming Response",
+    _("Streaming Response"),
     "streaming_response",
     bool,
     optional=True,
     default=False,
-    description="Whether the response is streaming",
+    description=_("Whether the response is streaming"),
 )
 _PARAMETER_RESPONSE_BODY = Parameter.build_from(
-    "Http Response Body",
+    _("Http Response Body"),
     "http_response_body",
     BaseHttpBody,
     optional=True,
     default=None,
-    description="The response body of the API endpoint",
+    description=_("The response body of the API endpoint"),
     resource_type=ResourceType.CLASS,
 )
 _PARAMETER_MEDIA_TYPE = Parameter.build_from(
-    "Response Media Type",
+    _("Response Media Type"),
     "response_media_type",
     str,
     optional=True,
     default=None,
-    description="The response media type",
+    description=_("The response media type"),
 )
 _PARAMETER_STATUS_CODE = Parameter.build_from(
-    "Http Status Code",
+    _("Http Status Code"),
     "status_code",
     int,
     optional=True,
     default=200,
-    description="The http status code",
+    description=_("The http status code"),
 )
 
 
@@ -716,19 +743,21 @@ class DictHttpTrigger(HttpTrigger):
     """
 
     metadata = ViewMetadata(
-        label="Dict Http Trigger",
+        label=_("Dict Http Trigger"),
         name="dict_http_trigger",
         category=OperatorCategory.TRIGGER,
         operator_type=OperatorType.INPUT,
-        description="Trigger your workflow by http request, and parse the request body"
-        " as a dict",
+        description=_(
+            "Trigger your workflow by http request, and parse the request body"
+            " as a dict"
+        ),
         inputs=[],
         outputs=[
             IOField.build_from(
-                "Request Body",
+                _("Request Body"),
                 "request_body",
                 dict,
-                description="The request body of the API endpoint",
+                description=_("The request body of the API endpoint"),
             ),
         ],
         parameters=[
@@ -773,20 +802,23 @@ class StringHttpTrigger(HttpTrigger):
     """String http trigger for AWEL."""
 
     metadata = ViewMetadata(
-        label="String Http Trigger",
+        label=_("String Http Trigger"),
         name="string_http_trigger",
         category=OperatorCategory.TRIGGER,
         operator_type=OperatorType.INPUT,
-        description="Trigger your workflow by http request, and parse the request body"
-        " as a string",
+        description=_(
+            "Trigger your workflow by http request, and parse the request body"
+            " as a string"
+        ),
         inputs=[],
         outputs=[
             IOField.build_from(
-                "Request Body",
+                _("Request Body"),
                 "request_body",
                 str,
-                description="The request body of the API endpoint, parse as a json "
-                "string",
+                description=_(
+                    "The request body of the API endpoint, parse as a json " "string"
+                ),
             ),
         ],
         parameters=[
@@ -831,20 +863,24 @@ class CommonLLMHttpTrigger(HttpTrigger):
     """Common LLM http trigger for AWEL."""
 
     metadata = ViewMetadata(
-        label="Common LLM Http Trigger",
+        label=_("Common LLM Http Trigger"),
         name="common_llm_http_trigger",
         category=OperatorCategory.TRIGGER,
         operator_type=OperatorType.INPUT,
-        description="Trigger your workflow by http request, and parse the request body "
-        "as a common LLM http body",
+        description=_(
+            "Trigger your workflow by http request, and parse the request body "
+            "as a common LLM http body"
+        ),
         inputs=[],
         outputs=[
             IOField.build_from(
-                "Request Body",
+                _("Request Body"),
                 "request_body",
                 CommonLLMHttpRequestBody,
-                description="The request body of the API endpoint, parse as a common "
-                "LLM http body",
+                description=_(
+                    "The request body of the API endpoint, parse as a common "
+                    "LLM http body"
+                ),
             ),
         ],
         parameters=[
@@ -886,11 +922,11 @@ class CommonLLMHttpTrigger(HttpTrigger):
 
 
 @register_resource(
-    label="Example Http Response",
+    label=_("Example Http Response"),
     name="example_http_response",
     category=ResourceCategory.HTTP_BODY,
     resource_type=ResourceType.CLASS,
-    description="Example Http Request",
+    description=_("Example Http Request"),
 )
 class ExampleHttpResponse(BaseHttpBody):
     """Example Http Response.
@@ -912,27 +948,27 @@ class ExampleHttpHelloOperator(MapOperator[dict, ExampleHttpResponse]):
     """
 
     metadata = ViewMetadata(
-        label="Example Http Hello Operator",
+        label=_("Example Http Hello Operator"),
         name="example_http_hello_operator",
         category=OperatorCategory.COMMON,
         parameters=[],
         inputs=[
             IOField.build_from(
-                "Http Request Body",
+                _("Http Request Body"),
                 "request_body",
                 dict,
-                description="The request body of the API endpoint(Dict[str, Any])",
+                description=_("The request body of the API endpoint(Dict[str, Any])"),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Response Body",
+                _("Response Body"),
                 "response_body",
                 ExampleHttpResponse,
-                description="The response body of the API endpoint",
+                description=_("The response body of the API endpoint"),
             )
         ],
-        description="Example Http Hello Operator",
+        description=_("Example Http Hello Operator"),
     )
 
     def __int__(self, **kwargs):
@@ -952,33 +988,35 @@ class RequestBodyToDictOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, 
     """Request body to dict operator."""
 
     metadata = ViewMetadata(
-        label="Request Body To Dict Operator",
+        label=_("Request Body To Dict Operator"),
         name="request_body_to_dict_operator",
         category=OperatorCategory.COMMON,
         parameters=[
             Parameter.build_from(
-                "Prefix Key",
+                _("Prefix Key"),
                 "prefix_key",
                 str,
                 optional=True,
                 default=None,
-                description="The prefix key of the dict, link 'context.extra'",
+                description=_(
+                    "The prefix key of the dict, link 'message' or 'extra.info'"
+                ),
             )
         ],
         inputs=[
             IOField.build_from(
-                "Request Body",
+                _("Request Body"),
                 "request_body",
                 CommonLLMHttpRequestBody,
-                description="The request body of the API endpoint",
+                description=_("The request body of the API endpoint"),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Response Body",
+                _("Response Body"),
                 "response_body",
                 dict,
-                description="The response body of the API endpoint",
+                description=_("The response body of the API endpoint"),
             )
         ],
         description="Request body to dict operator",
@@ -1009,36 +1047,39 @@ class UserInputParsedOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, An
     """User input parsed operator."""
 
     metadata = ViewMetadata(
-        label="User Input Parsed Operator",
+        label=_("User Input Parsed Operator"),
         name="user_input_parsed_operator",
         category=OperatorCategory.COMMON,
         parameters=[
             Parameter.build_from(
-                "Key",
+                _("Key"),
                 "key",
                 str,
                 optional=True,
                 default="user_input",
-                description="The key of the dict, link 'user_input'",
+                description=_("The key of the dict, link 'user_input'"),
             )
         ],
         inputs=[
             IOField.build_from(
-                "Request Body",
+                _("Request Body"),
                 "request_body",
                 CommonLLMHttpRequestBody,
-                description="The request body of the API endpoint",
+                description=_("The request body of the API endpoint"),
             )
         ],
         outputs=[
             IOField.build_from(
-                "User Input Dict",
+                _("User Input Dict"),
                 "user_input_dict",
                 dict,
-                description="The user input dict of the API endpoint",
+                description=_("The user input dict of the API endpoint"),
             )
         ],
-        description="User input parsed operator",
+        description=_(
+            "User input parsed operator, parse the user input from request body"
+            " and return as a dict"
+        ),
     )
 
     def __init__(self, key: str = "user_input", **kwargs):
@@ -1055,36 +1096,39 @@ class RequestedParsedOperator(MapOperator[CommonLLMHttpRequestBody, str]):
     """User input parsed operator."""
 
     metadata = ViewMetadata(
-        label="Request Body Parsed To String Operator",
+        label=_("Request Body Parsed To String Operator"),
         name="request_body_to_str__parsed_operator",
         category=OperatorCategory.COMMON,
         parameters=[
             Parameter.build_from(
-                "Key",
+                _("Key"),
                 "key",
                 str,
                 optional=True,
                 default="messages",
-                description="The key of the dict, link 'user_input'",
+                description=_("The key of the dict, link 'user_input'"),
             )
         ],
         inputs=[
             IOField.build_from(
-                "Request Body",
+                _("Request Body"),
                 "request_body",
                 CommonLLMHttpRequestBody,
-                description="The request body of the API endpoint",
+                description=_("The request body of the API endpoint"),
             )
         ],
         outputs=[
             IOField.build_from(
-                "User Input String",
+                _("User Input String"),
                 "user_input_str",
                 str,
-                description="The user input dict of the API endpoint",
+                description=_("The user input dict of the API endpoint"),
             )
         ],
-        description="User input parsed operator",
+        description=_(
+            "User input parsed operator, parse the user input from request body and "
+            "return as a string"
+        ),
     )
 
     def __init__(self, key: str = "user_input", **kwargs):

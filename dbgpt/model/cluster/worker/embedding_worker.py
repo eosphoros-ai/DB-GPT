@@ -1,10 +1,12 @@
 import logging
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Type
 
-from dbgpt.configs.model_config import get_device
 from dbgpt.core import ModelMetadata
+from dbgpt.model.adapter.embeddings_loader import (
+    EmbeddingLoader,
+    _parse_embedding_params,
+)
 from dbgpt.model.adapter.loader import _get_model_real_path
-from dbgpt.model.cluster.embedding.loader import EmbeddingLoader
 from dbgpt.model.cluster.worker_base import ModelWorker
 from dbgpt.model.parameter import (
     EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
@@ -13,14 +15,13 @@ from dbgpt.model.parameter import (
     WorkerType,
 )
 from dbgpt.util.model_utils import _clear_model_cache
-from dbgpt.util.parameter_utils import EnvArgumentParser
 
 logger = logging.getLogger(__name__)
 
 
 class EmbeddingsModelWorker(ModelWorker):
     def __init__(self) -> None:
-        from dbgpt.rag.embedding import Embeddings, HuggingFaceEmbeddings
+        from dbgpt.rag.embedding import Embeddings
 
         self._embeddings_impl: Embeddings = None
         self._model_params = None
@@ -97,26 +98,3 @@ class EmbeddingsModelWorker(ModelWorker):
         logger.info(f"Receive embeddings request, model: {model}")
         input: List[str] = params["input"]
         return self._embeddings_impl.embed_documents(input)
-
-
-def _parse_embedding_params(
-    model_name: str,
-    model_path: str,
-    command_args: List[str] = None,
-    param_cls: Optional[Type] = EmbeddingModelParameters,
-):
-    model_args = EnvArgumentParser()
-    env_prefix = EnvArgumentParser.get_env_prefix(model_name)
-    model_params: BaseEmbeddingModelParameters = model_args.parse_args_into_dataclass(
-        param_cls,
-        env_prefixes=[env_prefix],
-        command_args=command_args,
-        model_name=model_name,
-        model_path=model_path,
-    )
-    if not model_params.device:
-        model_params.device = get_device()
-        logger.info(
-            f"[EmbeddingsModelWorker] Parameters of device is None, use {model_params.device}"
-        )
-    return model_params
