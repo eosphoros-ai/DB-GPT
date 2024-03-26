@@ -182,6 +182,7 @@ EMBEDDING_MODEL_CONFIG = {
     "text2vec": '/datas/liab/embeddings_model/text2vec-large-chinese',
     "bge-reranker-large": '/datas/liab/rerank_model/bge-reranker-large',
     "stella-large-zh-v3-1792d": '/datas/liab/embeddings_model/stella-large-zh-v3-1792d',
+    "stella-mrl-large-zh-v3.5-1792d": '/datas/liab/embeddings_model/stella-mrl-large-zh-v3.5-1792d',
     # https://huggingface.co/moka-ai/m3e-large
     "m3e-base": os.path.join(MODEL_PATH, "m3e-base"),
     # https://huggingface.co/moka-ai/m3e-base

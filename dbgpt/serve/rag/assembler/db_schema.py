@@ -1,7 +1,7 @@
 import os
 from typing import Any, List, Optional
 
-from dbgpt.datasource.rdbms.base import RDBMSDatabase
+from dbgpt.datasource.rdbms.base import RDBMSConnector
 from dbgpt.rag.chunk import Chunk
 from dbgpt.rag.chunk_manager import ChunkManager, ChunkParameters
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
@@ -35,7 +35,7 @@ class DBSchemaAssembler(BaseAssembler):
 
     def __init__(
         self,
-        connection: RDBMSDatabase = None,
+        connection: RDBMSConnector = None,
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
         embedding_factory: Optional[EmbeddingFactory] = None,
@@ -44,7 +44,7 @@ class DBSchemaAssembler(BaseAssembler):
     ) -> None:
         """Initialize with Embedding Assembler arguments.
         Args:
-            connection: (RDBMSDatabase) RDBMSDatabase connection.
+            connection: (RDBMSConnector) RDBMSConnector connection.
             knowledge: (Knowledge) Knowledge datasource.
             chunk_manager: (Optional[ChunkManager]) ChunkManager to use for chunking.
             embedding_model: (Optional[str]) Embedding model to use.
@@ -76,7 +76,7 @@ class DBSchemaAssembler(BaseAssembler):
     @classmethod
     def load_from_connection(
         cls,
-        connection: RDBMSDatabase = None,
+        connection: RDBMSConnector = None,
         knowledge: Optional[Knowledge] = None,
         chunk_parameters: Optional[ChunkParameters] = None,
         embedding_model: Optional[str] = None,
@@ -85,7 +85,7 @@ class DBSchemaAssembler(BaseAssembler):
     ) -> "DBSchemaAssembler":
         """Load document embedding into vector store from path.
         Args:
-            connection: (RDBMSDatabase) RDBMSDatabase connection.
+            connection: (RDBMSConnector) RDBMSConnector connection.
             knowledge: (Knowledge) Knowledge datasource.
             chunk_parameters: (Optional[ChunkParameters]) ChunkManager to use for chunking.
             embedding_model: (Optional[str]) Embedding model to use.

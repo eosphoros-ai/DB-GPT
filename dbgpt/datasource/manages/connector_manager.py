@@ -217,6 +217,7 @@ class ConnectorManager(BaseComponent):
             executor = self.system_app.get_component(
                 ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
             ).create()  # type: ignore
+            print('connector manager go embedding')
             executor.submit(
                 self.db_summary_client.db_summary_embedding,
                 db_info.db_name,

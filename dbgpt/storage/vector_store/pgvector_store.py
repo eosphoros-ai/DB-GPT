@@ -82,7 +82,7 @@ class PGVectorStore(VectorStoreBase):
                 # 执行查询，并传入参数
                 result = connection.execute(sql_query)
                 num_docs = list(result)[0][0]
-
+                print('num_docs',num_docs)
             if num_docs > 0:
                 return True
             else:

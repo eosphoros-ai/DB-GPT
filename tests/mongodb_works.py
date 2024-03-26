@@ -24,6 +24,30 @@ def setDatabaseManagerRightUserOrDepart(department, ids=[], mode='add'):
     content_list.extend(_user_ids)
     print(my.updateDatabaseRight(department, content_list, mode=mode))
 
+
 if __name__ == '__main__':
-    # setDatabaseManagerRightUserOrDepart('muplus_chinese', ids=['00137109','00123102','00168653','170036'],mode='add')
-    setDatabaseManagerRightUserOrDepart('hr_chinese_dev', ids=['00137109','00007726'],mode='add')
+    setDatabaseManagerRightUserOrDepart('muplus_chinese', ids=[
+        '00137109',
+        '00123102',  # huyingcong
+        '00168653',  # kimi
+        '170036'  # xuhang
+    ], mode='add')
+
+    setDatabaseManagerRightUserOrDepart('hr_chinese_dev', ids=[
+        '00137109',
+        '00007726' # huangwei
+    ], mode='add')
+
+    setDatabaseManagerRightUserOrDepart('hr_chinese_fk', ids=[
+        '00137109',
+        '00108029',  # liaoruizhen
+        '00073267',  # jiangling
+        '00128870',  # huanglichun
+        '00072472',  # linqin
+        '00100317',  # chenmeiling
+        '00071608',  # lijiamei
+        '00144652',  # liuensong
+        '00143332',  # liuchunfeng
+        '00100495'  # andy
+        '00168653'  # kimi
+    ], mode='add')

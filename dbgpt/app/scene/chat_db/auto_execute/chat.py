@@ -111,10 +111,6 @@ class ChatWithDbAutoExecute(BaseChat):
                 0.001,
             )
 
-        for i in bm25_tmep:
-            print('bm25_tmep:::', i.split(',')[0])
-        print()
-
         # embedding similarity
         try:
             with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
@@ -144,14 +140,14 @@ class ChatWithDbAutoExecute(BaseChat):
         for i in all_table_infos:
             if i[0]:
                 table_map[i[0].strip().strip('Table').strip(':').split(',')[0].strip()] = i[0] + i[1]
-                # table_map[i.strip().strip('Table:').split('(')[0].strip()] = 'Table:' + i + ',columns:(' + i[1] + ')'
             else:
                 pass
 
         # Ensemble RRF ranker
         rrf_ranker = RRFRanker(topk=4, weights=[0.3, 0.3, 0.4])
+        print(' ',[table_map[table_name] for table_name in qa_tables if table_name in table_map.keys()])
         rrf_ranker_scores = rrf_ranker.rank([table_infos, bm25_tmep, [table_map[table_name] for table_name in qa_tables if table_name in table_map.keys()]])
-        print('LLM reranker ')
+        print('LLM reranker',table_infos,'table_infos',bm25_tmep,"bm25_tmep",rrf_ranker_scores)
         print('table_map::', table_map)
         print()
         rerank_result = await rerank_llm(self.current_user_input, '\n'.join([rrf.content for rrf in rrf_ranker_scores]))
@@ -160,8 +156,8 @@ class ChatWithDbAutoExecute(BaseChat):
         tables_rerank_info = []
         if table_map:
             for table in rerank_result['Relate_tables']:
-                tables_rerank_info.append(table_map[table.strip('`')])
-
+                if table_map.get(table.strip('`')):
+                    tables_rerank_info.append(table_map.get(table.strip('`')))
         table_infos = '\n\n'.join(tables_rerank_info)
 
         with root_tracer.start_span("ChatWithDbAutoExecute.get_db_bm25"):

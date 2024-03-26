@@ -49,7 +49,7 @@ class DBSummaryClient:
         """put db profile and table profile summary into vector store"""
 
         db_summary_client = RdbmsSummary(dbname, db_type)
-        print('db_summary_client', dbname, db_type, db_summary_client)
+        print('db_summary_clientdb_summary_embedding', dbname, db_type, db_summary_client)
         self.init_db_profile(db_summary_client, dbname)
 
         logger.info("db summary embedding success")
@@ -132,28 +132,33 @@ class DBSummaryClient:
         vector_store_name = dbname + "_profile"
         from dbgpt.storage.vector_store.base import VectorStoreConfig
         from dbgpt.storage.vector_store.connector import VectorStoreConnector
-
+        print('CFG.VECTOR_STORE_TYPE',CFG.VECTOR_STORE_TYPE)
         if CFG.VECTOR_STORE_TYPE == 'PGVector':
             from dbgpt.storage.vector_store.pgvector_store import PGVectorConfig
             vector_store_config = PGVectorConfig(connection_string=CFG.CONNECTION_STRING, name=vector_store_name)
         else:
             vector_store_config = VectorStoreConfig(name=vector_store_name)
+        print('vector_store_config',vector_store_config)
 
         vector_connector = VectorStoreConnector.from_default(
             CFG.VECTOR_STORE_TYPE,
             self.embeddings,
             vector_store_config=vector_store_config,
         )
+        print('vector_connector.vector_name_exists',vector_connector.vector_name_exists())
         if not vector_connector.vector_name_exists():
-
+            print('not vector_connector.vector_name_exists()')
             from dbgpt.serve.rag.assembler.db_schema import DBSchemaAssembler
-
+            print('db_summary_client.db, vector_store_connector=vector_connector',db_summary_client.db, vector_connector)
             db_assembler = DBSchemaAssembler.load_from_connection(
                 connection=db_summary_client.db, vector_store_connector=vector_connector
             )
+            print("db_assembler.get_chunks()", db_assembler.get_chunks())
             if len(db_assembler.get_chunks()) > 0:
                 db_assembler.persist()
+                print("db_assembler.persist()")
         else:
+            print(f"Vector store name {vector_store_name} exist")
             logger.info(f"Vector store name {vector_store_name} exist")
         logger.info("initialize db summary profile success...")
 

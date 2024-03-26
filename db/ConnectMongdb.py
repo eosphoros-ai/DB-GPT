@@ -25,22 +25,9 @@ def get_local_ip():
         pass
 
 
-if get_local_ip() == '172.23.52.25' or get_local_ip() == '172.23.52.26':
-    mode = 'dev'
-else:
-    mode = 'prd'
-mode = 'prd'
-
-if mode == 'dev':
-
-    from configs.MongdbConfig_test import ip, username, password, authSource, mongo_collection, mongo_database, \
-        chat_history_number, memory_collection, dataanalysisprompt, atl_custome_app, organizations_collection_name, \
-        users_collection_name, dbgpt_db_collection
-else:
-    from configs.MongdbConfig import ip, username, password, authSource, mongo_collection, mongo_database, \
-        chat_history_number, memory_collection, dataanalysisprompt, atl_custome_app, organizations_collection_name, \
-        users_collection_name, dbgpt_db_collection
-# from utils.Tools import calLeadTimeByColor
+from configs.MongdbConfig import ip, username, password, authSource, mongo_collection, mongo_database, \
+    chat_history_number, memory_collection, dataanalysisprompt, atl_custome_app, organizations_collection_name, \
+    users_collection_name, dbgpt_db_collection
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pymongo import MongoClient, ASCENDING
@@ -233,10 +220,11 @@ class MyMongdb():
     def checkDbgptAdmin(self, user_id):
         db = self.client[self.mongo_database]
         find_one = {
-            'id':ObjectId(user_id),
+            '_id': ObjectId(user_id),
             'dbgptAuth': 'y',
                     }
         admin_exists = db[self.users_collection_name].find_one(find_one)
+        print('admin_exists',admin_exists)
         return admin_exists
 
     def insertPromptMemory(self, prompt, answer, data_source, department):

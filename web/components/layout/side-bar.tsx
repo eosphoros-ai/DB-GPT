@@ -56,20 +56,23 @@ function smallMenuItemStyle(active?: boolean) {
 }
 
 function SideBar() {
+  const router  = useRouter();
+  console.log( 1111, router.query.userId , router.query.userid, '')
+  const query_userId = router.query.userId || router.query.userid
+
   const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand, setAgent, mode, setMode } =
     useContext(ChatContext);
-    const [isAdmin, setIsAdmin] = useState(false); // 新增状态来标识用户是否为管理员
-     const { pathname, replace } = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false); // 新增状态来标识用户是否为管理员
+  const { pathname, replace } = useRouter();
   const { t, i18n } = useTranslation();
   const [userId, setUserId] = useState("");
   const [logo, setLogo] = useState<string>('/LOGO_1.png');
 
 
-
-  const checkIsAdmin = async (userId) => {
+  const checkIsAdmin = async (query_userId) => {
     try {
-      const [,,_, response]  = await apiInterceptors(checkDbAdmin( userId));
-      console.log('response',response)
+      const [,,_, response]  = await apiInterceptors(checkDbAdmin( query_userId),"*");
+      console.log('response',query_userId,response)
       const data = await response.data;
       return data.success; // 假设返回的数据有一个isAdmin字段
     } catch (error) {
@@ -78,17 +81,27 @@ function SideBar() {
     }
   };
 
+
   useEffect(() => {
-    const fetchUserAdminStatus = async () => {
-      const userIdFromStorage = localStorage.getItem('userId') || "";
-      setUserId(userIdFromStorage);
-      const isAdminStatus = await checkIsAdmin(userIdFromStorage);
-      setIsAdmin(isAdminStatus);
-    };
+    // Extract userId from the router query
+    const query_userId = router.query.userId || router.query.userid;
 
-    fetchUserAdminStatus();
-  }, []);
-
+    if (query_userId) {
+      setUserId(query_userId);
+      
+      // Fetches additional user-specific data, e.g., isAdmin status
+      const fetchUserAdminStatus = async () => {
+        const isAdminStatus = await checkIsAdmin(query_userId);
+        console.log(isAdminStatus,'isAdminStatus')
+        setIsAdmin(isAdminStatus);
+      };
+      
+      fetchUserAdminStatus();
+    } else {
+      // The userId is not available yet, you can handle it accordingly
+      // e.g., show a loading indicator or message
+    }
+  }, [router.query, setUserId, setIsAdmin]); // Dependencies array includes router.query
 
 
 

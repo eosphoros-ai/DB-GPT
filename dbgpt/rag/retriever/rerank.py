@@ -117,7 +117,7 @@ class RRFRanker(Ranker):
         # Sort documents by their RRF scores in descending order
         sorted_documents = sorted(rrf_score_dic.items(), key=itemgetter(1), reverse=True)
         data = [score for text, score in sorted_documents[:self.topk]]
-        average = sum(data) / len(data)
+        # average = sum(data) / len(data)
         result = []
         for sorted_doc in sorted_documents[:self.topk]:
             text, score = sorted_doc

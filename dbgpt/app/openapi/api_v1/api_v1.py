@@ -171,8 +171,12 @@ async def db_connect_add(db_config: DBConfig = Body()):
 @router.get("/v1/chat/db/check_admin", response_model=Result[bool])
 async def db_check_admin(user_id: str=None):
     my = MyMongdb()
-    if my.checkDbgptAdmin(user_id):
-        return Result.failed(code="E000X", msg='no permission')
+    print('/v1/chat/db/check_admin',user_id)
+    if user_id is None or user_id == '':
+        return Result.failed(code='E0178',msg='no permission')
+
+    if not my.checkDbgptAdmin(user_id):
+        return Result.failed(code='E0178',msg='no permission')
     else:
         return Result.succ(data='have permission')
 
@@ -250,6 +254,7 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
 async def params_list(chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None):
+
     if ChatScene.ChatWithDbQA.value() == chat_mode:
         return Result.succ(get_db_list(user_id=user_id))
     elif ChatScene.ChatWithDbExecute.value() == chat_mode:

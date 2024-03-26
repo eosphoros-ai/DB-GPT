@@ -29,9 +29,10 @@ chunk_overlap = 30
 collection_name = 'atl_general_data_1_profile'
 
 # embeddings_model = DefaultEmbeddingFactory().create(model_name='/datas/liab/embeddings_model/text2vec-large-chinese')
-embeddings_model = DefaultEmbeddingFactory().create(model_name='/datas/liab/embeddings_model/stella-large-zh-v3-1792d')
+embeddings_model = DefaultEmbeddingFactory().create(model_name='stella-mrl-large-zh-v3.5-1792d')
 CONNECTION_STRING = 'postgresql+psycopg2://fastgpt:1234@172.23.10.249:8100/newfastgpt'
 
+print(12)
 
 def add_docs_to_pg():
     store = PGVector(
@@ -292,8 +293,8 @@ def rrf_ranker(bm25_docs, embedding_docs, weights=[0.5, 0.5], c=60, topk=6):
 
 if __name__ == '__main__':
     # delete_from_pg()
-    # init_delete_all_collection()
-    query_from_pg_bm25()
+    init_delete_all_collection()
+    # query_from_pg_bm25()
     # print('embedding')
     # embedding_docs = query_from_pg()
     #
