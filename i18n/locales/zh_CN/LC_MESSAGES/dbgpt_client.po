@@ -1,0 +1,58 @@
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-27 03:21+0800\n"
+"PO-Revision-Date: 2024-03-27 03:21+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../dbgpt/client/_cli.py:29
+msgid "The name of the flow"
+msgstr "流的名称"
+
+#: ../dbgpt/client/_cli.py:36
+msgid "The uid of the flow"
+msgstr "流的唯一标识符"
+
+#: ../dbgpt/client/_cli.py:54
+msgid "The messages of the flow"
+msgstr "流的消息内容"
+
+#: ../dbgpt/client/_cli.py:61
+msgid "The model of the flow"
+msgstr "流的模型"
+
+#: ../dbgpt/client/_cli.py:70
+msgid "Whether to stream the flow, default is False"
+msgstr "是否对流进行流式处理，默认为 False"
+
+#: ../dbgpt/client/_cli.py:78
+msgid "The temperature of the flow"
+msgstr "流的温度"
+
+#: ../dbgpt/client/_cli.py:85
+msgid "The max new tokens of the flow"
+msgstr "流的最大新标记数"
+
+#: ../dbgpt/client/_cli.py:92
+msgid "The conversation id of the flow"
+msgstr "流的对话 ID"
+
+#: ../dbgpt/client/_cli.py:100
+msgid "The json data of the flow"
+msgstr "流的 JSON 数据"
+
+#: ../dbgpt/client/_cli.py:108
+msgid "The extra json data of the flow"
+msgstr "流的额外 JSON 数据"

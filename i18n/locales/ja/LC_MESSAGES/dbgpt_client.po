@@ -1,0 +1,59 @@
+# Japanese translations for PACKAGE package
+# PACKAGE パッケージに対する英訳.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-27 03:21+0800\n"
+"PO-Revision-Date: 2024-03-27 03:21+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../dbgpt/client/_cli.py:29
+msgid "The name of the flow"
+msgstr "フローの名前"
+
+#: ../dbgpt/client/_cli.py:36
+msgid "The uid of the flow"
+msgstr "フローのUID"
+
+#: ../dbgpt/client/_cli.py:54
+msgid "The messages of the flow"
+msgstr "フローのメッセージ"
+
+#: ../dbgpt/client/_cli.py:61
+msgid "The model of the flow"
+msgstr "フローのモデル"
+
+#: ../dbgpt/client/_cli.py:70
+msgid "Whether to stream the flow, default is False"
+msgstr "フローをストリーミングするかどうか、デフォルトはFalse"
+
+#: ../dbgpt/client/_cli.py:78
+msgid "The temperature of the flow"
+msgstr "フローの温度"
+
+#: ../dbgpt/client/_cli.py:85
+msgid "The max new tokens of the flow"
+msgstr "フローの最大新トークン数"
+
+#: ../dbgpt/client/_cli.py:92
+msgid "The conversation id of the flow"
+msgstr "フローの会話ID"
+
+#: ../dbgpt/client/_cli.py:100
+msgid "The json data of the flow"
+msgstr "フローのJSONデータ"
+
+#: ../dbgpt/client/_cli.py:108
+msgid "The extra json data of the flow"
+msgstr "フローの追加のJSONデータ"

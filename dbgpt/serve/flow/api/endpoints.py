@@ -180,6 +180,8 @@ async def query_page(
     sys_code: Optional[str] = Query(default=None, description="system code"),
     page: int = Query(default=1, description="current page"),
     page_size: int = Query(default=20, description="page size"),
+    name: Optional[str] = Query(default=None, description="flow name"),
+    uid: Optional[str] = Query(default=None, description="flow uid"),
     service: Service = Depends(get_service),
 ) -> Result[PaginationResult[ServerResponse]]:
     """Query Flow entities
@@ -189,13 +191,17 @@ async def query_page(
         sys_code (Optional[str]): The system code
         page (int): The page number
         page_size (int): The page size
+        name (Optional[str]): The flow name
+        uid (Optional[str]): The flow uid
         service (Service): The service
     Returns:
         ServerResponse: The response
     """
     return Result.succ(
         service.get_list_by_page(
-            {"user_name": user_name, "sys_code": sys_code}, page, page_size
+            {"user_name": user_name, "sys_code": sys_code, "name": name, "uid": uid},
+            page,
+            page_size,
         )
     )
 

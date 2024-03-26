@@ -132,9 +132,11 @@ class IteratorTrigger(Trigger[List[Tuple[Any, Any]]]):
         task_id = self.node_id
 
         async def call_stream(call_data: Any):
-            async for out in await end_node.call_stream(call_data):
-                yield out
-            await dag._after_dag_end(end_node.current_event_loop_task_id)
+            try:
+                async for out in await end_node.call_stream(call_data):
+                    yield out
+            finally:
+                await dag._after_dag_end(end_node.current_event_loop_task_id)
 
         async def run_node(call_data: Any) -> Tuple[Any, Any]:
             async with semaphore:
