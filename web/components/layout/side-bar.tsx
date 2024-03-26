@@ -57,7 +57,6 @@ function smallMenuItemStyle(active?: boolean) {
 
 function SideBar() {
   const router  = useRouter();
-  console.log( 1111, router.query.userId , router.query.userid, '')
   const query_userId = router.query.userId || router.query.userid
 
   const { chatId, scene, isMenuExpand, dialogueList, queryDialogueList, refreshDialogList, setIsMenuExpand, setAgent, mode, setMode } =
@@ -72,7 +71,6 @@ function SideBar() {
   const checkIsAdmin = async (query_userId) => {
     try {
       const [,,_, response]  = await apiInterceptors(checkDbAdmin( query_userId),"*");
-      console.log('response',query_userId,response)
       const data = await response.data;
       return data.success; // 假设返回的数据有一个isAdmin字段
     } catch (error) {
@@ -92,7 +90,6 @@ function SideBar() {
       // Fetches additional user-specific data, e.g., isAdmin status
       const fetchUserAdminStatus = async () => {
         const isAdminStatus = await checkIsAdmin(query_userId);
-        console.log(isAdminStatus,'isAdminStatus')
         setIsAdmin(isAdminStatus);
       };
       

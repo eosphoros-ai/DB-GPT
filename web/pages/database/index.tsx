@@ -21,8 +21,6 @@ export function isFileDb(dbTypeList: DBOption[], dbType: DBType) {
 function Database() {
   const router  = useRouter();
   const { userId } = useContext(ChatContext) || localStorage.getItem('userId')|| router.query.userId || router.query.userid||'';
-  console.log('database index ',userId,router.query.userId , router.query.userid)
-
   
   const { t } = useTranslation();
 

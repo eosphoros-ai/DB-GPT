@@ -4,6 +4,7 @@
 from typing import Any, Dict, List, Optional
 
 import aiohttp
+import numpy as np
 import requests
 
 from dbgpt._private.pydantic import BaseModel, Extra, Field
@@ -97,6 +98,8 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
         else:
             embeddings = self.client.encode(texts, **self.encode_kwargs)
+            print(5)
+        embeddings = embeddings / np.linalg.norm(embeddings)
 
         return embeddings.tolist()
 
@@ -177,6 +180,9 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         print('Compute doc embeddings using a HuggingFace instruct model.')
         instruction_pairs = [[self.embed_instruction, text] for text in texts]
         embeddings = self.client.encode(instruction_pairs, **self.encode_kwargs)
+        print(6)
+        embeddings = embeddings / np.linalg.norm(embeddings)
+
         return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
@@ -190,6 +196,9 @@ class HuggingFaceInstructEmbeddings(BaseModel, Embeddings):
         """
         instruction_pair = [self.query_instruction, text]
         embedding = self.client.encode([instruction_pair], **self.encode_kwargs)[0]
+        print(2)
+        embedding = embedding / np.linalg.norm(embedding)
+
         return embedding.tolist()
 
 
@@ -263,7 +272,10 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         """
         print('Compute doc embeddings using a HuggingFace instruct model.222')
         texts = [t.replace("\n", " ") for t in texts]
+        print(1)
         embeddings = self.client.encode(texts, **self.encode_kwargs)
+        embeddings = embeddings / np.linalg.norm(embeddings)
+
         return embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
@@ -279,6 +291,9 @@ class HuggingFaceBgeEmbeddings(BaseModel, Embeddings):
         embedding = self.client.encode(
             self.query_instruction + text, **self.encode_kwargs
         )
+        print(3)
+        embedding = embedding / np.linalg.norm(embedding)
+
         return embedding.tolist()
 
 
@@ -520,7 +535,7 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
         default="text2vec", description="The name of the model to use."
     )
     timeout: int = Field(
-        default=60, description="The timeout for the request in seconds."
+        default=600, description="The timeout for the request in seconds."
     )
 
     session: Optional[requests.Session] = None

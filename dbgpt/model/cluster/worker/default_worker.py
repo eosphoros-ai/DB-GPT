@@ -182,6 +182,7 @@ class DefaultModelWorker(ModelWorker):
             span.end()
         except Exception as e:
             output = self._handle_exception(e)
+            print('output', output)
             yield output
             span.end(metadata={"error": output.to_dict()})
 
@@ -246,6 +247,7 @@ class DefaultModelWorker(ModelWorker):
             async for output in generate_stream_func(
                 self.model, self.tokenizer, params, get_device(), context_len
             ):
+
                 (
                     model_output,
                     incremental_output,

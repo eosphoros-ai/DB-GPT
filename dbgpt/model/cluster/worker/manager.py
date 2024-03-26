@@ -361,6 +361,7 @@ class LocalWorkerManager(WorkerManager):
         with root_tracer.start_span(
             "WorkerManager.generate", params.get("span_id")
         ) as span:
+            print('generate123123')
             params["span_id"] = span.span_id
             try:
                 worker_run_data = await self._get_model(params)

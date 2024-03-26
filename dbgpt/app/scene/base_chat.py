@@ -406,13 +406,15 @@ class BaseChat(ABC):
         await blocking_func_to_async(
             self._executor, self.current_message.end_current_round
         )
-        with open('/datas/liab/DB-GPT/evaluation/evaluation_output/result_type3_version4.jsonl', 'a') as f:
-            json.dump(
-                self.save_dict,
-                f,
-                ensure_ascii=False
-            )
-            f.write('\n')
+        try:
+            with open('/datas/liab/DB-GPT/evaluation/evaluation_output/result_type3_version4.jsonl', 'a') as f:
+                json.dump(
+                    self.save_dict,
+                    f,
+                    ensure_ascii=False
+                )
+                f.write('\n')
+        except:pass
         return self.current_ai_response()
 
     async def get_llm_response(self):

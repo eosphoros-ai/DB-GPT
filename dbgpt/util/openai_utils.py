@@ -67,7 +67,7 @@ async def chat_completion_stream(
     chat_data: Dict[str, Any],
     client: Optional[httpx.AsyncClient] = None,
     headers: Dict[str, Any] = {},
-    timeout: int = 60,
+    timeout: int = 600,
     caller: Optional[MessageCaller] = None,
 ) -> Iterator[str]:
     if client:

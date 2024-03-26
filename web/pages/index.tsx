@@ -32,7 +32,6 @@ const Home: NextPage = () => {
         }
 
       }
-      console.log('page Index', userId, localStorage.getItem('userId'));
     }
   }, [router.isReady, router.query.userId, router.query.userid, setUserId]);
 
@@ -57,7 +56,6 @@ const Home: NextPage = () => {
       localStorage.setItem(STORAGE_INIT_MESSAGE_KET, JSON.stringify({ id: res.conv_uid, message }));
       router.push(`/chat/?scene=chat_normal&userid=${userId}&id=${res.conv_uid}${model ? `&model=${model}` : ''}`);
     }
-    console.log('proxy_llm send');
     setLoading(false);
   };
 
