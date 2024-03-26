@@ -146,6 +146,7 @@ vocabulary_map = {
         "AWEL": "AWEL",
         "RAG": "RAG",
         "DB-GPT": "DB-GPT",
+        "AWEL flow": "AWEL 工作流",
     },
     "default": {
         "Transformer": "Transformer",
@@ -157,6 +158,7 @@ vocabulary_map = {
         "AWEL": "AWEL",
         "RAG": "RAG",
         "DB-GPT": "DB-GPT",
+        "AWEL flow": "AWEL flow",
     },
 }
 

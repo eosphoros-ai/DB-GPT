@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-27 03:21+0800\n"
+"POT-Creation-Date: 2024-03-27 03:37+0800\n"
 "PO-Revision-Date: 2024-03-27 03:21+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -20,41 +20,55 @@ msgstr ""
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: ../dbgpt/client/_cli.py:29
-msgid "The name of the flow"
+#, fuzzy
+msgid "The name of the AWEL flow"
 msgstr "Имя потока"
 
 #: ../dbgpt/client/_cli.py:36
-msgid "The uid of the flow"
+#, fuzzy
+msgid "The uid of the AWEL flow"
 msgstr "UID потока"
 
 #: ../dbgpt/client/_cli.py:54
-msgid "The messages of the flow"
+#, fuzzy
+msgid "The messages to run AWEL flow"
 msgstr "Сообщения потока"
 
 #: ../dbgpt/client/_cli.py:61
-msgid "The model of the flow"
+#, fuzzy
+msgid "The model name of AWEL flow"
 msgstr "Модель потока"
 
 #: ../dbgpt/client/_cli.py:70
-msgid "Whether to stream the flow, default is False"
-msgstr "Потоковая передача, по умолчанию False"
+msgid "Whether use stream mode to run AWEL flow"
+msgstr ""
 
 #: ../dbgpt/client/_cli.py:78
-msgid "The temperature of the flow"
+#, fuzzy
+msgid "The temperature to run AWEL flow"
 msgstr "Температура потока"
 
 #: ../dbgpt/client/_cli.py:85
-msgid "The max new tokens of the flow"
+#, fuzzy
+msgid "The max new tokens to run AWEL flow"
 msgstr "Максимальное количество новых токенов потока"
 
 #: ../dbgpt/client/_cli.py:92
-msgid "The conversation id of the flow"
+#, fuzzy
+msgid "The conversation id of the AWEL flow"
 msgstr "Идентификатор беседы потока"
 
 #: ../dbgpt/client/_cli.py:100
-msgid "The json data of the flow"
-msgstr "JSON-данные потока"
+msgid "The json data to run AWEL flow, if set, will overwrite other options"
+msgstr ""
 
 #: ../dbgpt/client/_cli.py:108
-msgid "The extra json data of the flow"
+#, fuzzy
+msgid "The extra json data to run AWEL flow."
 msgstr "Дополнительные JSON-данные потока"
+
+#~ msgid "Whether to stream the flow, default is False"
+#~ msgstr "Потоковая передача, по умолчанию False"
+
+#~ msgid "The json data of the flow"
+#~ msgstr "JSON-данные потока"

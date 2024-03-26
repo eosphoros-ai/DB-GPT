@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-27 03:21+0800\n"
+"POT-Creation-Date: 2024-03-27 03:37+0800\n"
 "PO-Revision-Date: 2024-03-27 03:21+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -18,41 +18,41 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../dbgpt/client/_cli.py:29
-msgid "The name of the flow"
-msgstr "流的名称"
+msgid "The name of the AWEL flow"
+msgstr "AWEL 工作流的名称"
 
 #: ../dbgpt/client/_cli.py:36
-msgid "The uid of the flow"
-msgstr "流的唯一标识符"
+msgid "The uid of the AWEL flow"
+msgstr "AWEL 工作流的 UID"
 
 #: ../dbgpt/client/_cli.py:54
-msgid "The messages of the flow"
-msgstr "流的消息内容"
+msgid "The messages to run AWEL flow"
+msgstr "运行 AWEL 工作流的消息"
 
 #: ../dbgpt/client/_cli.py:61
-msgid "The model of the flow"
-msgstr "流的模型"
+msgid "The model name of AWEL flow"
+msgstr "AWEL 工作流的模型名称"
 
 #: ../dbgpt/client/_cli.py:70
-msgid "Whether to stream the flow, default is False"
-msgstr "是否对流进行流式处理，默认为 False"
+msgid "Whether use stream mode to run AWEL flow"
+msgstr "是否使用流模式运行 AWEL 工作流"
 
 #: ../dbgpt/client/_cli.py:78
-msgid "The temperature of the flow"
-msgstr "流的温度"
+msgid "The temperature to run AWEL flow"
+msgstr "运行 AWEL 工作流的温度"
 
 #: ../dbgpt/client/_cli.py:85
-msgid "The max new tokens of the flow"
-msgstr "流的最大新标记数"
+msgid "The max new tokens to run AWEL flow"
+msgstr "运行 AWEL 工作流的最大新标记数"
 
 #: ../dbgpt/client/_cli.py:92
-msgid "The conversation id of the flow"
-msgstr "流的对话 ID"
+msgid "The conversation id of the AWEL flow"
+msgstr "AWEL 工作流的对话 ID"
 
 #: ../dbgpt/client/_cli.py:100
-msgid "The json data of the flow"
-msgstr "流的 JSON 数据"
+msgid "The json data to run AWEL flow, if set, will overwrite other options"
+msgstr "用于运行 AWEL 工作流的 JSON 数据，如果设置，将覆盖其他选项"
 
 #: ../dbgpt/client/_cli.py:108
-msgid "The extra json data of the flow"
-msgstr "流的额外 JSON 数据"
+msgid "The extra json data to run AWEL flow."
+msgstr "用于运行 AWEL 工作流的额外 JSON 数据"

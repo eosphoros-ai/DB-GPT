@@ -26,14 +26,14 @@ def add_base_flow_options(func):
         type=str,
         default=None,
         required=False,
-        help=_("The name of the flow"),
+        help=_("The name of the AWEL flow"),
     )
     @click.option(
         "--uid",
         type=str,
         default=None,
         required=False,
-        help=_("The uid of the flow"),
+        help=_("The uid of the AWEL flow"),
     )
     @functools.wraps(func)
     def _wrapper(*args, **kwargs):
@@ -51,14 +51,14 @@ def add_chat_options(func):
         type=str,
         default=None,
         required=False,
-        help=_("The messages of the flow"),
+        help=_("The messages to run AWEL flow"),
     )
     @click.option(
         "--model",
         type=str,
         default=None,
         required=False,
-        help=_("The model of the flow"),
+        help=_("The model name of AWEL flow"),
     )
     @click.option(
         "-s",
@@ -67,7 +67,7 @@ def add_chat_options(func):
         default=False,
         required=False,
         is_flag=True,
-        help=_("Whether to stream the flow, default is False"),
+        help=_("Whether use stream mode to run AWEL flow"),
     )
     @click.option(
         "-t",
@@ -75,21 +75,21 @@ def add_chat_options(func):
         type=float,
         default=None,
         required=False,
-        help=_("The temperature of the flow"),
+        help=_("The temperature to run AWEL flow"),
     )
     @click.option(
         "--max_new_tokens",
         type=int,
         default=None,
         required=False,
-        help=_("The max new tokens of the flow"),
+        help=_("The max new tokens to run AWEL flow"),
     )
     @click.option(
         "--conv_uid",
         type=str,
         default=None,
         required=False,
-        help=_("The conversation id of the flow"),
+        help=_("The conversation id of the AWEL flow"),
     )
     @click.option(
         "-d",
@@ -97,7 +97,7 @@ def add_chat_options(func):
         type=str,
         default=None,
         required=False,
-        help=_("The json data of the flow"),
+        help=_("The json data to run AWEL flow, if set, will overwrite other options"),
     )
     @click.option(
         "-e",
@@ -105,7 +105,7 @@ def add_chat_options(func):
         type=str,
         default=None,
         required=False,
-        help=_("The extra json data of the flow"),
+        help=_("The extra json data to run AWEL flow."),
     )
     @functools.wraps(func)
     def _wrapper(*args, **kwargs):

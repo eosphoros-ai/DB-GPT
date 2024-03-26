@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-27 03:21+0800\n"
+"POT-Creation-Date: 2024-03-27 03:37+0800\n"
 "PO-Revision-Date: 2024-03-27 03:21+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -19,41 +19,55 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 
 #: ../dbgpt/client/_cli.py:29
-msgid "The name of the flow"
+#, fuzzy
+msgid "The name of the AWEL flow"
 msgstr "플로우의 이름"
 
 #: ../dbgpt/client/_cli.py:36
-msgid "The uid of the flow"
+#, fuzzy
+msgid "The uid of the AWEL flow"
 msgstr "플로우의 UID"
 
 #: ../dbgpt/client/_cli.py:54
-msgid "The messages of the flow"
+#, fuzzy
+msgid "The messages to run AWEL flow"
 msgstr "플로우의 메시지"
 
 #: ../dbgpt/client/_cli.py:61
-msgid "The model of the flow"
+#, fuzzy
+msgid "The model name of AWEL flow"
 msgstr "플로우의 모델"
 
 #: ../dbgpt/client/_cli.py:70
-msgid "Whether to stream the flow, default is False"
-msgstr "플로우를 스트리밍할지 여부, 기본값은 False"
+msgid "Whether use stream mode to run AWEL flow"
+msgstr ""
 
 #: ../dbgpt/client/_cli.py:78
-msgid "The temperature of the flow"
+#, fuzzy
+msgid "The temperature to run AWEL flow"
 msgstr "플로우의 온도"
 
 #: ../dbgpt/client/_cli.py:85
-msgid "The max new tokens of the flow"
+#, fuzzy
+msgid "The max new tokens to run AWEL flow"
 msgstr "플로우의 최대 새 토큰"
 
 #: ../dbgpt/client/_cli.py:92
-msgid "The conversation id of the flow"
+#, fuzzy
+msgid "The conversation id of the AWEL flow"
 msgstr "플로우의 대화 ID"
 
 #: ../dbgpt/client/_cli.py:100
-msgid "The json data of the flow"
-msgstr "플로우의 JSON 데이터"
+msgid "The json data to run AWEL flow, if set, will overwrite other options"
+msgstr ""
 
 #: ../dbgpt/client/_cli.py:108
-msgid "The extra json data of the flow"
+#, fuzzy
+msgid "The extra json data to run AWEL flow."
 msgstr "플로우의 추가 JSON 데이터"
+
+#~ msgid "Whether to stream the flow, default is False"
+#~ msgstr "플로우를 스트리밍할지 여부, 기본값은 False"
+
+#~ msgid "The json data of the flow"
+#~ msgstr "플로우의 JSON 데이터"
