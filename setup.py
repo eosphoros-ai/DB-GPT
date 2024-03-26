@@ -561,7 +561,6 @@ def all_datasource_requires():
     setup_spec.extras["datasource"] = [
         # "sqlparse==0.4.4",
         "pymysql",
-        "psycopg2",
         # for doris
         # mysqlclient 2.2.x have pkg-config issue on 3.10+
         "mysqlclient==2.1.0",
@@ -569,6 +568,9 @@ def all_datasource_requires():
     setup_spec.extras["datasource_all"] = setup_spec.extras["datasource"] + [
         "pyspark",
         "pymssql",
+        # install psycopg2-binary when you are in a virtual environment
+        # pip install psycopg2-binary
+        "psycopg2",
         # pydoris is too old, we should find a new package to replace it.
         "pydoris>=1.0.2,<2.0.0",
         "clickhouse-connect",
