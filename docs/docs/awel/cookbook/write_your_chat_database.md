@@ -31,7 +31,7 @@ In this guide, we mainly focus on step 1, 2, and 3.
 First, you need to install the `dbgpt` library.
 
 ```bash
-pip install "dbgpt[rag]>=0.5.2"
+pip install "dbgpt[rag]>=0.5.3rc0" -U
 ````
 
 ## Build Knowledge Base
