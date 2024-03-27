@@ -1,5 +1,3 @@
-from dbgpt.core.awel.task.base import OUTfrom dbgpt.core.awel.task.base import IN
-
 # Write Your Own `Chat Data` With `AWEL`
 
 In this guide, we will show you how to write your own `Chat Data` with `AWEL`, just 
