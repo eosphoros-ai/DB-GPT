@@ -376,6 +376,7 @@ class BaseChat(ABC):
             # )
             print('blocking_func_to_async', )
             print('speak_to_user', speak_to_user)
+            print('result', result)
             print('prompt_define_response', prompt_define_response)
             view_message = await blocking_func_to_async(
                 self._executor,
