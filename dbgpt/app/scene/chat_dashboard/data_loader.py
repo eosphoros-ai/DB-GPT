@@ -44,14 +44,18 @@ class DashboardDataLoader:
                     logger.info("More than 2 non-numeric column:" + field_name)
                 else:
                     for data in datas:
-                        value_item = ValueItem(
-                            name=data[0],
-                            type=field_name,
-                            value=data[field_names.index(field_name)],
-                        )
-                        values.append(value_item)
+                        print('data',data)
+                        if data[0] is not None:
+                            value_item = ValueItem(
+                                name=data[0],
+                                type=field_name,
+                                value=data[field_names.index(field_name)],
+                            )
+                            values.append(value_item)
             return field_names, values
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             logger.debug("Prepare Chart Data Failed!" + str(e))
             raise ValueError("Prepare Chart Data Failed!")
 

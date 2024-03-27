@@ -66,7 +66,7 @@ function MyPlugins() {
       const formData = new FormData();
       formData.append('doc_file', file as any);
       messageApi.open({ content: `Uploading ${file.name}`, type: 'loading', duration: 0 });
-      const [err] = await apiInterceptors(postAgentUpload(undefined, formData, { timeout: 60000 }));
+      const [err] = await apiInterceptors(postAgentUpload(undefined, formData, { timeout: 600000 }));
       if (err) return;
       message.success('success');
       refresh();

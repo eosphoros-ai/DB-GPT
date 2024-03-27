@@ -224,7 +224,7 @@ class MyMongdb():
             'dbgptAuth': 'y',
                     }
         admin_exists = db[self.users_collection_name].find_one(find_one)
-        print('admin_exists',admin_exists)
+        #print('admin_exists',admin_exists)
         return admin_exists
 
     def insertPromptMemory(self, prompt, answer, data_source, department):

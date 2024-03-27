@@ -406,10 +406,12 @@ async def create_chat_completion(
 
     # TODO check token length
     if request.stream:
+        print('request.stream')
         generator = api_server.chat_completion_stream_generator(
             request.model, params, request.n
         )
         return StreamingResponse(generator, media_type="text/event-stream")
+    print('request.stream2222')
     return await api_server.chat_completion_generate(request.model, params, request.n)
 
 

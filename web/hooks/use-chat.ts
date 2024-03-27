@@ -77,6 +77,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
           },
         });
       } catch (err) {
+        console.log(err);
         ctrl.abort();
         onError?.('Sorry, We meet some error, please try agin later.', err as Error);
       }

@@ -361,14 +361,17 @@ class DefaultModelWorker(ModelWorker):
         print(incremental_output, end="", flush=True)
 
         metrics = _new_metrics_from_model_output(last_metrics, is_first_generate, usage)
-        model_output = ModelOutput(
-            text=output,
-            error_code=error_code,
-            model_context=model_context,
-            finish_reason=finish_reason,
-            usage=usage,
-            metrics=metrics,
-        )
+        try:
+            model_output = ModelOutput(
+                text=output,
+                error_code=error_code,
+                model_context=model_context,
+                finish_reason=finish_reason,
+                usage=usage,
+                metrics=metrics,
+            )
+        except :
+            traceback.print_exc()
         return model_output, incremental_output, output, metrics
 
     def _handle_exception(self, e):

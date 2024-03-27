@@ -28,6 +28,7 @@ class ChatDashboardOutputParser(BaseOutputParser):
         if not isinstance(response, list):
             response = [response]
         for item in response:
+            print("item:", item)
             chart_items.append(
                 ChartItem(
                     item["sql"].replace("\\", " "),

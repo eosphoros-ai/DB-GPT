@@ -49,8 +49,6 @@ knowledge_service = KnowledgeService()
 
 model_semaphore = None
 global_counter = 0
-
-
 async def no_stream_generator_string(msg):
     print('no_stream_generator,-------------')
     with root_tracer.start_span("no_stream_generator"):
@@ -83,6 +81,7 @@ def get_db_list(user_id=None):
         my = MyMongdb()
         if my.check_user_dbgpt_db_permission(department=item["db_name"], user_id=user_id) or \
                 my.check_manage_dbgpt_db_permission(department=item["db_name"], user_id=user_id):
+
             params.update({"param": item["db_name"]})
             params.update({"type": item["db_type"]})
             db_params.append(params)
@@ -171,19 +170,17 @@ async def db_connect_add(db_config: DBConfig = Body()):
         return Result.failed(code="E000X", msg=msg)
     else:
         my.registDBGPTDB(address=db_config.db_name, name=db_config.db_name, intro=db_config.comment, mode='add',
-                         user_id=db_config.user_id)
+                     user_id=db_config.user_id)
     return Result.succ(CFG.local_db_manager.add_db(db_config))
-
-
 @router.get("/v1/chat/db/check_admin", response_model=Result[bool])
-async def db_check_admin(user_id: str = None):
+async def db_check_admin(user_id: str=None):
     my = MyMongdb()
-    print('/v1/chat/db/check_admin', user_id)
+    print('/v1/chat/db/check_admin',user_id)
     if user_id is None or user_id == '':
-        return Result.failed(code='E0178', msg='no permission')
+        return Result.failed(code='E0178',msg='no permission')
 
     if not my.checkDbgptAdmin(user_id):
-        return Result.failed(code='E0178', msg='no permission')
+        return Result.failed(code='E0178',msg='no permission')
     else:
         return Result.succ(data='have permission')
 
@@ -261,6 +258,7 @@ async def dialogue_scenes():
 
 @router.post("/v1/chat/mode/params/list", response_model=Result[dict])
 async def params_list(chat_mode: str = ChatScene.ChatNormal.value(), user_id: str = None):
+
     if ChatScene.ChatWithDbQA.value() == chat_mode:
         return Result.succ(get_db_list(user_id=user_id))
     elif ChatScene.ChatWithDbExecute.value() == chat_mode:
@@ -364,11 +362,11 @@ async def chat_prepare(dialogue: ConversationVo = Body()):
     resp = await chat.prepare()
     return Result.succ(resp)
 
-
+import time
 @router.post("/v1/chat/completions")
 async def chat_completions(
-        dialogue: ConversationVo = Body(),
-        flow_service: FlowService = Depends(get_chat_flow),
+    dialogue: ConversationVo = Body(),
+    flow_service: FlowService = Depends(get_chat_flow),
 ):
     print(
         f"chat_completions:{dialogue.chat_mode},{dialogue.select_param},{dialogue.model_name}"
@@ -420,7 +418,7 @@ async def chat_completions(
         )
     else:
         with root_tracer.start_span(
-                "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
+            "get_chat_instance", span_type=SpanType.CHAT, metadata=dialogue.dict()
         ):
             chat: BaseChat = await get_chat_instance(dialogue)
 
@@ -492,7 +490,7 @@ async def stream_generator(chat, incremental: bool, model_name: str):
         if chunk:
             msg = chunk.replace("\ufffd", "")
             if incremental:
-                incremental_output = msg[len(previous_response):]
+                incremental_output = msg[len(previous_response) :]
                 choice_data = ChatCompletionResponseStreamChoice(
                     index=0,
                     delta=DeltaMessage(role="assistant", content=incremental_output),
