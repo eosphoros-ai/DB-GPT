@@ -37,9 +37,7 @@ async def main():
     DBGPT_API_KEY = "dbgpt"
     client = Client(api_key=DBGPT_API_KEY)
     res = await list_flow(client)
-    res = await list_flow(client)
     print(res)
-    await client.aclose()
 
 
 if __name__ == "__main__":
