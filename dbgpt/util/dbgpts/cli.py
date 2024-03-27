@@ -115,9 +115,9 @@ def list_installed_apps():
 @click.command(name="list")
 def list_repos():
     """List all repos"""
-    from .repo import list_repos
+    from .repo import _print_repos
 
-    print("\n".join(list_repos()))
+    _print_repos()
 
 
 @click.command(name="add")

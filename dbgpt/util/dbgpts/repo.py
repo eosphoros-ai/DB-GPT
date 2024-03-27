@@ -65,6 +65,20 @@ def _list_repos_details() -> List[Tuple[str, str]]:
     return results
 
 
+def _print_repos():
+    """Print all repos"""
+    repos = _list_repos_details()
+    repos.sort(key=lambda x: (x[0], x[1]))
+    table = Table(title=_("Repos"))
+    table.add_column(_("Repository"), justify="right", style="cyan", no_wrap=True)
+    table.add_column(_("Path"), justify="right", style="green")
+    for repo, full_path in repos:
+        if full_path.startswith(str(Path.home())):
+            full_path = full_path.replace(str(Path.home()), "~")
+        table.add_row(repo, full_path)
+    cl.print(table)
+
+
 def _install_default_repos_if_no_repos():
     """Install the default repos if no repos exist."""
     has_repos = False
