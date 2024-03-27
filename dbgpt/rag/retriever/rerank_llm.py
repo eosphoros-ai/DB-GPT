@@ -83,8 +83,6 @@ class QueryRerank:
                 ensure_ascii=False,
                 indent=4))
 
-        print('origin_query',origin_query)
-        print('restriever_info',restriever_info)
         messages = [ModelMessage(role=ModelMessageRoleType.SYSTEM, content=prompt)]
         request = ModelRequest(model=self._model_name, messages=messages, temperature=temperature)
         pprint(request)

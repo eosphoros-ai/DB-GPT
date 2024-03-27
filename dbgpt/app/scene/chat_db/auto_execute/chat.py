@@ -15,16 +15,24 @@ CFG = Config()
 
 
 async def rerank_llm(query, restriever_info, language='zh'):
-    import os
-    api_key = '3d4c01e9d3264c8aa8e6469411beadff'
-    api_base = 'https://gpt001-6.openai.azure.com/'
-    api_type = 'azure'
-    api_version = '2024-02-15-preview'
-    os.environ["OPENAI_API_BASE"] = api_base
-    os.environ["OPENAI_API_VERSION"] = api_version
-    os.environ["OPENAI_API_KEY"] = api_key
-    os.environ["OPENAI_API_TYPE"] = api_type
-    llm_client = OpenAILLMClient(temperature=0)
+    # import os
+    # api_key = '3d4c01e9d3264c8aa8e6469411beadff'
+    # api_base = 'https://gpt001-6.openai.azure.com/'
+    # api_type = 'azure'
+    # api_version = '2024-02-15-preview'
+    # os.environ["OPENAI_API_BASE"] = api_base
+    # os.environ["OPENAI_API_VERSION"] = api_version
+    # os.environ["OPENAI_API_KEY"] = api_key
+    # os.environ["OPENAI_API_TYPE"] = api_type
+    llm_client = OpenAILLMClient(
+        temperature=0,
+        model_name=CFG.PROXYLLM_BACKEND,
+        api_base=CFG.proxy_api_base,
+        api_type=CFG.proxy_api_type,
+        api_version=CFG.proxy_api_version,
+        api_key=CFG.proxy_api_key,
+        timeout=240,
+    )
     reinforce = QueryRerank(
         llm_client=llm_client,
         model_name="gpt-4-0314",

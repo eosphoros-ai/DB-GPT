@@ -309,8 +309,6 @@ class DefaultModelWorker(ModelWorker):
         print(
             f"model prompt: \n\n{str_prompt}\n\n{stream_type}stream output:\n"
         )
-        with open('str_prompt.txt','w') as f:
-            f.write(str_prompt)
         generate_stream_func_str_name = "{}.{}".format(
             generate_stream_func.__module__, generate_stream_func.__name__
         )

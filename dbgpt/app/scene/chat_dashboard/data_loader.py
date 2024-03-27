@@ -44,7 +44,6 @@ class DashboardDataLoader:
                     logger.info("More than 2 non-numeric column:" + field_name)
                 else:
                     for data in datas:
-                        print('data',data)
                         if data[0] is not None:
                             value_item = ValueItem(
                                 name=data[0],

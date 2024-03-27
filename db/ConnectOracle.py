@@ -75,7 +75,7 @@ if __name__ == '__main__':
     # # 连接数据库的功能初始化
     db_oracle = connectOracle()
     data = db_oracle.queryOracle(sql)
-    print(data)
+    # print(data)
 
     sql = '''
 SELECT 
