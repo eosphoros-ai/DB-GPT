@@ -28,13 +28,13 @@ import TabItem from '@theme/TabItem';
 
 ```shell
 DBGPT_API_KEY=dbgpt
-DATASOURCE_ID={YOUR_DATASOURCE_ID}
+DB_NAME="{your_db_name}"
 
 curl -X POST "http://localhost:5000/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     -H "accept: application/json" \
     -H "Content-Type: application/json" \
-    -d "{\"messages\":\"show space datas limit 5\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_datasource\", \"chat_param\": \"$DATASOURCE_ID\"}"
+    -d "{\"messages\":\"show space datas limit 5\",\"model\":\"chatgpt_proxyllm\", \"chat_mode\": \"chat_datasource\", \"chat_param\": \"$DB_NAME\"}"
 
 ```
  </TabItem>
@@ -45,7 +45,7 @@ curl -X POST "http://localhost:5000/api/v2/chat/completions" \
 from dbgpt.client import Client
 
 DBGPT_API_KEY = "dbgpt"
-DB_NAME="dbgpt"
+DB_NAME="{your_db_name}"
 
 client = Client(api_key=DBGPT_API_KEY)
 res = client.chat(
