@@ -1,13 +1,14 @@
 import functools
-import logging
 import os
 import shutil
 import subprocess
 from pathlib import Path
 from typing import List, Tuple
 
-import click
+from rich.table import Table
 
+from ..console import CliLogger
+from ..i18n_utils import _
 from .base import (
     DBGPTS_METADATA_FILE,
     DBGPTS_REPO_HOME,
@@ -17,9 +18,9 @@ from .base import (
     INSTALL_METADATA_FILE,
     _print_path,
 )
+from .loader import _load_package_from_path
 
-logger = logging.getLogger("dbgpt_cli")
-
+cl = CliLogger()
 
 _DEFAULT_REPO = "eosphoros/dbgpts"
 
@@ -45,9 +46,10 @@ def list_repos() -> List[str]:
 def _get_repo_path(repo: str) -> Path:
     repo_arr = repo.split("/")
     if len(repo_arr) != 2:
-        raise ValueError(
+        cl.error(
             f"Invalid repo name '{repo}', repo name must split by '/', "
-            f"eg.(eosphoros/dbgpts)."
+            f"eg.(eosphoros/dbgpts).",
+            exit_code=1,
         )
     return Path(DBGPTS_REPO_HOME) / repo_arr[0] / repo_arr[1]
 
@@ -63,6 +65,35 @@ def _list_repos_details() -> List[Tuple[str, str]]:
     return results
 
 
+def _print_repos():
+    """Print all repos"""
+    repos = _list_repos_details()
+    repos.sort(key=lambda x: (x[0], x[1]))
+    table = Table(title=_("Repos"))
+    table.add_column(_("Repository"), justify="right", style="cyan", no_wrap=True)
+    table.add_column(_("Path"), justify="right", style="green")
+    for repo, full_path in repos:
+        if full_path.startswith(str(Path.home())):
+            full_path = full_path.replace(str(Path.home()), "~")
+        table.add_row(repo, full_path)
+    cl.print(table)
+
+
+def _install_default_repos_if_no_repos():
+    """Install the default repos if no repos exist."""
+    has_repos = False
+    for repo, full_path in _list_repos_details():
+        if os.path.exists(full_path):
+            has_repos = True
+            break
+    if not has_repos:
+        repo_url = DEFAULT_REPO_MAP[_DEFAULT_REPO]
+        cl.info(
+            f"No repos found, installing default repos {_DEFAULT_REPO} from {repo_url}"
+        )
+        add_repo(_DEFAULT_REPO, repo_url)
+
+
 def add_repo(repo: str, repo_url: str, branch: str | None = None):
     """Add a new repo
 
@@ -73,13 +104,14 @@ def add_repo(repo: str, repo_url: str, branch: str | None = None):
     """
     exist_repos = list_repos()
     if repo in exist_repos and repo_url not in DEFAULT_REPO_MAP.values():
-        raise ValueError(f"The repo '{repo}' already exists.")
+        cl.error(f"The repo '{repo}' already exists.", exit_code=1)
     repo_arr = repo.split("/")
 
     if len(repo_arr) != 2:
-        raise ValueError(
+        cl.error(
             f"Invalid repo name '{repo}', repo name must split by '/', "
-            f"eg.(eosphoros/dbgpts)."
+            "eg.(eosphoros/dbgpts).",
+            exit_code=1,
         )
     repo_name = repo_arr[1]
     repo_group_dir = os.path.join(DBGPTS_REPO_HOME, repo_arr[0])
@@ -99,12 +131,12 @@ def remove_repo(repo: str):
     """
     repo_path = _get_repo_path(repo)
     if not os.path.exists(repo_path):
-        raise ValueError(f"The repo '{repo}' does not exist.")
+        cl.error(f"The repo '{repo}' does not exist.", exit_code=1)
     if os.path.islink(repo_path):
         os.unlink(repo_path)
     else:
         shutil.rmtree(repo_path)
-    logger.info(f"Repo '{repo}' removed successfully.")
+    cl.info(f"Repo '{repo}' removed successfully.")
 
 
 def clone_repo(
@@ -132,11 +164,11 @@ def clone_repo(
 
     subprocess.run(clone_command, check=True)
     if branch:
-        click.echo(
+        cl.info(
             f"Repo '{repo}' cloned from {repo_url} with branch '{branch}' successfully."
         )
     else:
-        click.echo(f"Repo '{repo}' cloned from {repo_url} successfully.")
+        cl.info(f"Repo '{repo}' cloned from {repo_url} successfully.")
 
 
 def update_repo(repo: str):
@@ -145,20 +177,20 @@ def update_repo(repo: str):
     Args:
         repo (str): The name of the repo
     """
-    print(f"Updating repo '{repo}'...")
+    cl.info(f"Updating repo '{repo}'...")
     repo_path = os.path.join(DBGPTS_REPO_HOME, repo)
     if not os.path.exists(repo_path):
         if repo in DEFAULT_REPO_MAP:
             add_repo(repo, DEFAULT_REPO_MAP[repo])
             if not os.path.exists(repo_path):
-                raise ValueError(f"The repo '{repo}' does not exist.")
+                cl.error(f"The repo '{repo}' does not exist.", exit_code=1)
         else:
-            raise ValueError(f"The repo '{repo}' does not exist.")
+            cl.error(f"The repo '{repo}' does not exist.", exit_code=1)
     os.chdir(repo_path)
     if not os.path.exists(".git"):
-        logger.info(f"Repo '{repo}' is not a git repository.")
+        cl.info(f"Repo '{repo}' is not a git repository.")
         return
-    logger.info(f"Updating repo '{repo}'...")
+    cl.info(f"Updating repo '{repo}'...")
     subprocess.run(["git", "pull"], check=False)
 
 
@@ -176,8 +208,7 @@ def install(
     """
     repo_info = check_with_retry(name, repo, with_update=with_update, is_first=True)
     if not repo_info:
-        click.echo(f"The specified dbgpt '{name}' does not exist.", err=True)
-        return
+        cl.error(f"The specified dbgpt '{name}' does not exist.", exit_code=1)
     repo, dbgpt_path = repo_info
     _copy_and_install(repo, name, dbgpt_path)
 
@@ -190,38 +221,34 @@ def uninstall(name: str):
     """
     install_path = INSTALL_DIR / name
     if not install_path.exists():
-        click.echo(
-            f"The dbgpt '{name}' has not been installed yet.",
-            err=True,
-        )
-        return
+        cl.error(f"The dbgpt '{name}' has not been installed yet.", exit_code=1)
     os.chdir(install_path)
     subprocess.run(["pip", "uninstall", name, "-y"], check=True)
     shutil.rmtree(install_path)
-    logger.info(f"dbgpt '{name}' uninstalled successfully.")
+    cl.info(f"Uninstalling dbgpt '{name}'...")
 
 
 def _copy_and_install(repo: str, name: str, package_path: Path):
     if not package_path.exists():
-        raise ValueError(
-            f"The specified dbgpt '{name}' does not exist in the {repo} tap."
+        cl.error(
+            f"The specified dbgpt '{name}' does not exist in the {repo} tap.",
+            exit_code=1,
         )
     install_path = INSTALL_DIR / name
     if install_path.exists():
-        click.echo(
+        cl.error(
             f"The dbgpt '{name}' has already been installed"
             f"({_print_path(install_path)}).",
-            err=True,
+            exit_code=1,
         )
-        return
     try:
         shutil.copytree(package_path, install_path)
-        logger.info(f"Installing dbgpts '{name}' from {repo}...")
+        cl.info(f"Installing dbgpts '{name}' from {repo}...")
         os.chdir(install_path)
         subprocess.run(["poetry", "install"], check=True)
         _write_install_metadata(name, repo, install_path)
-        click.echo(f"Installed dbgpts at {_print_path(install_path)}.")
-        click.echo(f"dbgpts '{name}' installed successfully.")
+        cl.success(f"Installed dbgpts at {_print_path(install_path)}.")
+        cl.success(f"dbgpts '{name}' installed successfully.")
     except Exception as e:
         if install_path.exists():
             shutil.rmtree(install_path)
@@ -257,10 +284,9 @@ def check_with_retry(
     """
     repos = _list_repos_details()
     if spec_repo:
-        repos = list(filter(lambda x: x[0] == repo, repos))
+        repos = list(filter(lambda x: x[0] == spec_repo, repos))
         if not repos:
-            logger.error(f"The specified repo '{spec_repo}' does not exist.")
-            return
+            cl.error(f"The specified repo '{spec_repo}' does not exist.", exit_code=1)
     if is_first and with_update:
         for repo in repos:
             update_repo(repo[0])
@@ -288,11 +314,17 @@ def list_repo_apps(repo: str | None = None, with_update: bool = True):
     if repo:
         repos = list(filter(lambda x: x[0] == repo, repos))
         if not repos:
-            logger.error(f"The specified repo '{repo}' does not exist.")
-            return
+            cl.error(f"The specified repo '{repo}' does not exist.", exit_code=1)
     if with_update:
         for repo in repos:
             update_repo(repo[0])
+    table = Table(title=_("dbgpts In All Repos"))
+
+    table.add_column(_("Repository"), justify="right", style="cyan", no_wrap=True)
+    table.add_column(_("Type"), style="magenta")
+    table.add_column(_("Name"), justify="right", style="green")
+
+    data = []
     for repo in repos:
         repo_path = Path(repo[1])
         for package in DEFAULT_PACKAGES:
@@ -304,4 +336,28 @@ def list_repo_apps(repo: str | None = None, with_update: bool = True):
                     and dbgpt_path.is_dir()
                     and dbgpt_metadata_path.exists()
                 ):
-                    click.echo(f"{app}({repo[0]}/{package}/{app})")
+                    data.append((repo[0], package, app))
+    # Sort by repo name, package name, and app name
+    data.sort(key=lambda x: (x[0], x[1], x[2]))
+    for repo, package, app in data:
+        table.add_row(repo, package, app)
+    cl.print(table)
+
+
+def list_installed_apps():
+    """List all installed dbgpts"""
+    packages = _load_package_from_path(INSTALL_DIR)
+    table = Table(title=_("Installed dbgpts"))
+
+    table.add_column(_("Name"), justify="right", style="cyan", no_wrap=True)
+    table.add_column(_("Type"), style="blue")
+    table.add_column(_("Repository"), style="magenta")
+    table.add_column(_("Path"), justify="right", style="green")
+
+    packages.sort(key=lambda x: (x.package, x.package_type, x.repo))
+    for package in packages:
+        str_path = package.root
+        if str_path.startswith(str(Path.home())):
+            str_path = str_path.replace(str(Path.home()), "~")
+        table.add_row(package.package, package.package_type, package.repo, str_path)
+    cl.print(table)

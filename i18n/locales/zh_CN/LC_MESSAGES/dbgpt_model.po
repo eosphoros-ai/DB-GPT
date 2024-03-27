@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"POT-Creation-Date: 2024-03-26 05:29+0800\n"
 "PO-Revision-Date: 2024-03-23 16:45+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -18,69 +18,66 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../dbgpt/model/cluster/client.py:20
-#, fuzzy
 msgid "Default LLM Client"
-msgstr "这是 LLM 客户端。"
+msgstr "默认 LLM 客户端"
 
 #: ../dbgpt/model/cluster/client.py:23
 msgid "Default LLM client(Connect to your DB-GPT model serving)"
-msgstr ""
+msgstr "默认 LLM 客户端（连接到您的 DB-GPT 模型服务）"
 
 #: ../dbgpt/model/cluster/client.py:26 ../dbgpt/model/cluster/client.py:127
 msgid "Auto Convert Message"
-msgstr ""
+msgstr "自动转换消息"
 
 #: ../dbgpt/model/cluster/client.py:32 ../dbgpt/model/cluster/client.py:133
 msgid ""
 "Whether to auto convert the messages that are not supported by the LLM to a "
 "compatible format"
-msgstr ""
+msgstr "是否将 LLM 不支持的消息自动转换为兼容格式"
 
 #: ../dbgpt/model/cluster/client.py:113
-#, fuzzy
 msgid "Remote LLM Client"
-msgstr "这是 LLM 客户端。"
+msgstr "远程 LLM 客户端"
 
 #: ../dbgpt/model/cluster/client.py:116
 msgid "Remote LLM client(Connect to the remote DB-GPT model serving)"
-msgstr ""
+msgstr "远程 LLM 客户端（连接到远程 DB-GPT 模型服务）"
 
 #: ../dbgpt/model/cluster/client.py:119
 msgid "Controller Address"
-msgstr ""
+msgstr "控制器地址"
 
 #: ../dbgpt/model/cluster/client.py:123
 msgid "http://127.0.0.1:8000"
-msgstr ""
+msgstr "http://127.0.0.1:8000"
 
 #: ../dbgpt/model/cluster/client.py:124
 msgid "Model controller address"
-msgstr ""
+msgstr "模型控制器地址"
 
 #: ../dbgpt/model/proxy/llms/chatgpt.py:48
-#, fuzzy
 msgid "OpenAI LLM Client"
-msgstr "这是 LLM 客户端。"
+msgstr "OpenAI LLM 客户端"
 
 #: ../dbgpt/model/proxy/llms/chatgpt.py:53
 msgid "OpenAI API Key"
-msgstr ""
+msgstr "OpenAI API 密钥"
 
 #: ../dbgpt/model/proxy/llms/chatgpt.py:59
 msgid ""
 "OpenAI API Key, not required if you have set OPENAI_API_KEY environment "
 "variable."
-msgstr ""
+msgstr "OpenAI API 密钥，如果您已设置 OPENAI_API_KEY 环境变量，则不需要。"
 
 #: ../dbgpt/model/proxy/llms/chatgpt.py:64
 msgid "OpenAI API Base"
-msgstr ""
+msgstr "OpenAI API 基础"
 
 #: ../dbgpt/model/proxy/llms/chatgpt.py:70
 msgid ""
 "OpenAI API Base, not required if you have set OPENAI_API_BASE environment "
 "variable."
-msgstr ""
+msgstr "OpenAI API 基础，如果您已设置 OPENAI_API_BASE 环境变量，则不需要。"
 
 #: ../dbgpt/model/operators/llm_operator.py:66
 msgid "LLM Operator"
@@ -88,7 +85,7 @@ msgstr "LLM 算子"
 
 #: ../dbgpt/model/operators/llm_operator.py:69
 msgid "The LLM operator."
-msgstr "这个是 LLM 算子。"
+msgstr "这是 LLM 算子。"
 
 #: ../dbgpt/model/operators/llm_operator.py:72
 #: ../dbgpt/model/operators/llm_operator.py:120
@@ -127,28 +124,24 @@ msgstr "流式 LLM 算子"
 
 #: ../dbgpt/model/operators/llm_operator.py:117
 msgid "The streaming LLM operator."
-msgstr "这是流式 LLM 算子。"
+msgstr "流式 LLM 算子。"
 
 #: ../dbgpt/model/utils/chatgpt_utils.py:158
-#, fuzzy
 msgid "OpenAI Streaming Output Operator"
-msgstr "流式 LLM 算子"
+msgstr "OpenAI 流式输出算子"
 
 #: ../dbgpt/model/utils/chatgpt_utils.py:162
-#, fuzzy
 msgid "The OpenAI streaming LLM operator."
-msgstr "这是流式 LLM 算子。"
+msgstr "OpenAI 流式 LLM 算子。"
 
 #: ../dbgpt/model/utils/chatgpt_utils.py:166
-#, fuzzy
 msgid "Upstream Model Output"
-msgstr "模型输出"
+msgstr "上游模型输出"
 
 #: ../dbgpt/model/utils/chatgpt_utils.py:170
-#, fuzzy
 msgid "The model output of upstream."
-msgstr "这是模型的输出。"
+msgstr "上游模型的输出。"
 
 #: ../dbgpt/model/utils/chatgpt_utils.py:180
-msgid "The model output after transform to openai stream format"
-msgstr ""
+msgid "The model output after transformed to openai stream format."
+msgstr "转换为 OpenAI 流格式后的模型输出。"

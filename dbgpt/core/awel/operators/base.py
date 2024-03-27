@@ -127,6 +127,8 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
     """
 
     streaming_operator: bool = False
+    incremental_output: bool = False
+    output_format: Optional[str] = None
 
     def __init__(
         self,
@@ -147,6 +149,10 @@ class BaseOperator(DAGNode, ABC, Generic[OUT], metaclass=BaseOperatorMeta):
             from dbgpt.core.awel import DefaultWorkflowRunner
 
             runner = DefaultWorkflowRunner()
+        if "incremental_output" in kwargs:
+            self.incremental_output = bool(kwargs["incremental_output"])
+        if "output_format" in kwargs:
+            self.output_format = kwargs["output_format"]
 
         self._runner: WorkflowRunner = runner
         self._dag_ctx: Optional[DAGContext] = None

@@ -382,6 +382,7 @@ def core_requires():
         "psutil==5.9.4",
         "colorama==0.4.6",
         "tomlkit",
+        "rich",
     ]
     # Just use by DB-GPT internal, we should find the smallest dependency set for run
     # we core unit test.
@@ -561,16 +562,17 @@ def all_datasource_requires():
     setup_spec.extras["datasource"] = [
         # "sqlparse==0.4.4",
         "pymysql",
-        # for doris
-        # mysqlclient 2.2.x have pkg-config issue on 3.10+
-        "mysqlclient==2.1.0",
     ]
+    # If you want to install psycopg2 and mysqlclient in ubuntu, you should install
+    # libpq-dev and libmysqlclient-dev first.
     setup_spec.extras["datasource_all"] = setup_spec.extras["datasource"] + [
         "pyspark",
         "pymssql",
         # install psycopg2-binary when you are in a virtual environment
         # pip install psycopg2-binary
         "psycopg2",
+        # mysqlclient 2.2.x have pkg-config issue on 3.10+
+        "mysqlclient==2.1.0",
         # pydoris is too old, we should find a new package to replace it.
         "pydoris>=1.0.2,<2.0.0",
         "clickhouse-connect",

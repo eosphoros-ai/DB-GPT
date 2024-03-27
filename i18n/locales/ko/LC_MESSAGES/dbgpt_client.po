@@ -1,0 +1,78 @@
+# Korean translations for PACKAGE package
+# PACKAGE 패키지에 대한 한국어 번역문.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-27 09:43+0800\n"
+"PO-Revision-Date: 2024-03-27 03:21+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../dbgpt/client/_cli.py:30
+#, fuzzy
+msgid "The name of the AWEL flow"
+msgstr "플로우의 이름"
+
+#: ../dbgpt/client/_cli.py:37
+#, fuzzy
+msgid "The uid of the AWEL flow"
+msgstr "플로우의 UID"
+
+#: ../dbgpt/client/_cli.py:55
+#, fuzzy
+msgid "The messages to run AWEL flow"
+msgstr "플로우의 메시지"
+
+#: ../dbgpt/client/_cli.py:62
+#, fuzzy
+msgid "The model name of AWEL flow"
+msgstr "플로우의 모델"
+
+#: ../dbgpt/client/_cli.py:71
+msgid "Whether use stream mode to run AWEL flow"
+msgstr ""
+
+#: ../dbgpt/client/_cli.py:79
+#, fuzzy
+msgid "The temperature to run AWEL flow"
+msgstr "플로우의 온도"
+
+#: ../dbgpt/client/_cli.py:86
+#, fuzzy
+msgid "The max new tokens to run AWEL flow"
+msgstr "플로우의 최대 새 토큰"
+
+#: ../dbgpt/client/_cli.py:93
+#, fuzzy
+msgid "The conversation id of the AWEL flow"
+msgstr "플로우의 대화 ID"
+
+#: ../dbgpt/client/_cli.py:101
+msgid "The json data to run AWEL flow, if set, will overwrite other options"
+msgstr ""
+
+#: ../dbgpt/client/_cli.py:109
+#, fuzzy
+msgid "The extra json data to run AWEL flow."
+msgstr "플로우의 추가 JSON 데이터"
+
+#: ../dbgpt/client/_cli.py:118
+#, fuzzy
+msgid "Whether use interactive mode to run AWEL flow"
+msgstr "플로우의 온도"
+
+#~ msgid "Whether to stream the flow, default is False"
+#~ msgstr "플로우를 스트리밍할지 여부, 기본값은 False"
+
+#~ msgid "The json data of the flow"
+#~ msgstr "플로우의 JSON 데이터"

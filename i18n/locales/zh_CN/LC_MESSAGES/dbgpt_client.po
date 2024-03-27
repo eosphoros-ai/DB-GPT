@@ -1,0 +1,62 @@
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-27 09:43+0800\n"
+"PO-Revision-Date: 2024-03-27 03:21+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../dbgpt/client/_cli.py:30
+msgid "The name of the AWEL flow"
+msgstr "AWEL 工作流的名称"
+
+#: ../dbgpt/client/_cli.py:37
+msgid "The uid of the AWEL flow"
+msgstr "AWEL 工作流的 UID"
+
+#: ../dbgpt/client/_cli.py:55
+msgid "The messages to run AWEL flow"
+msgstr "运行 AWEL 工作流的消息"
+
+#: ../dbgpt/client/_cli.py:62
+msgid "The model name of AWEL flow"
+msgstr "AWEL 工作流的模型名称"
+
+#: ../dbgpt/client/_cli.py:71
+msgid "Whether use stream mode to run AWEL flow"
+msgstr "是否使用流模式运行 AWEL 工作流"
+
+#: ../dbgpt/client/_cli.py:79
+msgid "The temperature to run AWEL flow"
+msgstr "运行 AWEL 工作流的温度"
+
+#: ../dbgpt/client/_cli.py:86
+msgid "The max new tokens to run AWEL flow"
+msgstr "运行 AWEL 工作流的最大新标记数"
+
+#: ../dbgpt/client/_cli.py:93
+msgid "The conversation id of the AWEL flow"
+msgstr "AWEL 工作流的对话 ID"
+
+#: ../dbgpt/client/_cli.py:101
+msgid "The json data to run AWEL flow, if set, will overwrite other options"
+msgstr "用于运行 AWEL 工作流的 JSON 数据，如果设置，将覆盖其他选项"
+
+#: ../dbgpt/client/_cli.py:109
+msgid "The extra json data to run AWEL flow."
+msgstr "用于运行 AWEL 工作流的额外 JSON 数据"
+
+#: ../dbgpt/client/_cli.py:118
+msgid "Whether use interactive mode to run AWEL flow"
+msgstr "是否使用交互模式运行 AWEL 工作流"
