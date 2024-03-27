@@ -231,6 +231,7 @@ async def _chat(client: Client, interactive: bool, json_data: Dict[str, Any]):
             cl.info("Chat started")
             cl.debug(f"JSON data: {json.dumps(json_data, ensure_ascii=False)}")
             res = await client.chat(**json_data)
+            cl.print("Bot: ")
             if res.choices:
                 text = res.choices[0].message.content
                 cl.markdown(text)
