@@ -68,7 +68,7 @@ class DbChatOutputParser(BaseOutputParser):
         param = { }
         api_call_element = ET.Element("chart-view")
         err_msg = None
-        print('parse_view_response..', speak, data, prompt_response)
+        print('parse_view_response..', speak)
         print('data..', data, )
         print('prompt_response..', prompt_response)
         try:

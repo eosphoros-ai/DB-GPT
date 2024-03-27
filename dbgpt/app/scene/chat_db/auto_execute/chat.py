@@ -67,7 +67,7 @@ class ChatWithDbAutoExecute(BaseChat):
                 f"{ChatScene.ChatWithDbExecute.value} mode should chose db!"
             )
         with root_tracer.start_span(
-            "ChatWithDbAutoExecute.get_connect", metadata={"db_name": self.db_name}
+                "ChatWithDbAutoExecute.get_connect", metadata={"db_name": self.db_name}
         ):
             self.database = CFG.local_db_manager.get_connector(self.db_name)
 
@@ -120,20 +120,14 @@ class ChatWithDbAutoExecute(BaseChat):
             )
 
         # embedding similarity
-        try:
-            with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
-                table_infos = await blocking_func_to_async(
-                    self._executor,
-                    client.get_db_summary,
-                    self.db_name,
-                    self.current_user_input,
-                    5,
-                )
-
-        except Exception as e:
-            import traceback
-            print(traceback.print_exc())
-            print("db summary find error!1" + str(e))
+        with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
+            table_infos = await blocking_func_to_async(
+                self._executor,
+                client.get_db_summary,
+                self.db_name,
+                self.current_user_input,
+                5,
+            )
 
         for i in table_infos:
             print('table_infos:::', i.split(',')[0])
@@ -153,9 +147,10 @@ class ChatWithDbAutoExecute(BaseChat):
 
         # Ensemble RRF ranker
         rrf_ranker = RRFRanker(topk=4, weights=[0.3, 0.3, 0.4])
-        print(' ',[table_map[table_name] for table_name in qa_tables if table_name in table_map.keys()])
-        rrf_ranker_scores = rrf_ranker.rank([table_infos, bm25_tmep, [table_map[table_name] for table_name in qa_tables if table_name in table_map.keys()]])
-        print('LLM reranker',table_infos,'table_infos',bm25_tmep,"bm25_tmep",rrf_ranker_scores)
+        rrf_ranker_scores = rrf_ranker.rank([table_infos, bm25_tmep,
+                                             [table_map[table_name] for table_name in qa_tables if
+                                              table_name in table_map.keys()]])
+        print('LLM reranker', table_infos, 'table_infos', bm25_tmep, "bm25_tmep", rrf_ranker_scores)
         print('table_map::', table_map)
         print()
         rerank_result = await rerank_llm(self.current_user_input, '\n'.join([rrf.content for rrf in rrf_ranker_scores]))
@@ -198,7 +193,7 @@ class ChatWithDbAutoExecute(BaseChat):
         else:
             bm25_department_text = ''
 
-        extend_infos = '\n\t'.join(bm25_general_temp) +'\n\t'.join(bm25_general_temp2) + bm25_department_text
+        extend_infos = '\n\t'.join(bm25_general_temp) + '\n\t'.join(bm25_general_temp2) + bm25_department_text
         input_values = {
             "db_name": self.db_name,
             "user_input": self.current_user_input,

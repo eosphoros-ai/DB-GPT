@@ -22,6 +22,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
   const { userId } = useContext(ChatContext);
   const chat = useCallback(
     async ({ data,  chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
+      console.log('use-chat',userId)
 
       if (!data?.user_input && !data?.doc_id) {
         message.warning(i18n.t('no_context_tip'));
@@ -33,12 +34,15 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
         conv_uid: chatId,
         user_id:userId,
       };
-
+      console.log('parmas',parmas)
       if (!parmas.conv_uid) {
         message.error('conv_uid 不存在，请刷新后重试');
         return;
       }
-
+      // if (!parmas.user_id) {
+      //   message.error('user_id 不存在，请刷新后重试');
+      //   return;
+      // }
       try {
         await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}`, {
           method: 'POST',
@@ -77,7 +81,6 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
           },
         });
       } catch (err) {
-        console.log(err);
         ctrl.abort();
         onError?.('Sorry, We meet some error, please try agin later.', err as Error);
       }

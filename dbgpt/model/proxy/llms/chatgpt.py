@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.metadata as metadata
 import logging
+import traceback
 from concurrent.futures import Executor
 from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional, Union
 
@@ -193,7 +194,7 @@ class OpenAILLMClient(ProxyLLMClient):
                 return await self.generate_v1(messages, payload)
         except Exception as e:
             return ModelOutput(
-                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {e}",
+                text=f"**LLMServer Generate Error, Please CheckErrorInfo.**: {traceback.print_exc()}",
                 error_code=1,
             )
 

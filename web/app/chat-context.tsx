@@ -72,6 +72,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
   const scene = searchParams?.get('scene') ?? '';
   const db_param = searchParams?.get('db_param') ?? '';
   const userId = searchParams?.get('userId') ?? searchParams?.get('userid') ?? '';
+  console.log('UserID',userId)
   const router = useRouter();
 
   const [isContract, setIsContract] = useState(false);

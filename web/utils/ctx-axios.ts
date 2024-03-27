@@ -4,7 +4,7 @@ const api = axios.create({
   baseURL: process.env.API_BASE_URL,
 });
 
-api.defaults.timeout = 10000000;
+api.defaults.timeout = 10000;
 
 api.interceptors.response.use(
   response => response.data,
