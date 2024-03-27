@@ -72,6 +72,7 @@ class ChatMode(Enum):
     CHAT_APP = "chat_app"
     CHAT_AWEL_FLOW = "chat_flow"
     CHAT_KNOWLEDGE = "chat_knowledge"
+    CHAT_DATA = "chat_data"
 
 
 class AwelTeamModel(BaseModel):
@@ -278,3 +279,17 @@ class SyncModel(BaseModel):
     """chunk_parameters: chunk parameters
     """
     chunk_parameters: ChunkParameters = Field(None, description="chunk parameters")
+
+
+class DatasourceModel(BaseModel):
+    """Datasource model."""
+
+    id: Optional[int] = Field(None, description="The datasource id")
+    db_type: str = Field(..., description="Database type, e.g. sqlite, mysql, etc.")
+    db_name: str = Field(..., description="Database name.")
+    db_path: str = Field("", description="File path for file-based database.")
+    db_host: str = Field("", description="Database host.")
+    db_port: int = Field(0, description="Database port.")
+    db_user: str = Field("", description="Database user.")
+    db_pwd: str = Field("", description="Database password.")
+    comment: str = Field("", description="Comment for the database.")
