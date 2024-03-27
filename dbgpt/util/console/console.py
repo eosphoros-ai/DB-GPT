@@ -6,6 +6,7 @@ from typing import Any
 
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.prompt import Prompt
 from rich.theme import Theme
 
 
@@ -65,3 +66,6 @@ class CliLogger:
     def markdown(self, msg: str, **kwargs):
         md = Markdown(msg)
         self.console.print(md, **kwargs)
+
+    def ask(self, msg: str, **kwargs):
+        return Prompt.ask(msg, **kwargs)

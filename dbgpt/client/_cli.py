@@ -3,6 +3,7 @@
 import functools
 import json
 import time
+import uuid
 from typing import Any, Dict
 
 import click
@@ -107,6 +108,15 @@ def add_chat_options(func):
         required=False,
         help=_("The extra json data to run AWEL flow."),
     )
+    @click.option(
+        "-i",
+        "--interactive",
+        type=bool,
+        default=False,
+        required=False,
+        is_flag=True,
+        help=_("Whether use interactive mode to run AWEL flow"),
+    )
     @functools.wraps(func)
     def _wrapper(*args, **kwargs):
         return func(*args, **kwargs)
@@ -117,7 +127,7 @@ def add_chat_options(func):
 @click.command(name="flow")
 @add_base_flow_options
 @add_chat_options
-def run_flow(name: str, uid: str, data: str, **kwargs):
+def run_flow(name: str, uid: str, data: str, interactive: bool, **kwargs):
     """Run a AWEL flow."""
     client = Client()
 
@@ -134,9 +144,9 @@ def run_flow(name: str, uid: str, data: str, **kwargs):
     json_data["chat_mode"] = "chat_flow"
     stream = "stream" in json_data and str(json_data["stream"]).lower() in ["true", "1"]
     if stream:
-        loop.run_until_complete(_chat_stream(client, json_data))
+        loop.run_until_complete(_chat_stream(client, interactive, json_data))
     else:
-        loop.run_until_complete(_chat(client, json_data))
+        loop.run_until_complete(_chat(client, interactive, json_data))
 
 
 def _parse_json_data(data: str, **kwargs):
@@ -160,36 +170,77 @@ def _parse_json_data(data: str, **kwargs):
     return json_data
 
 
-async def _chat_stream(client: Client, json_data: Dict[str, Any]):
-    start_time = time.time()
-    try:
-        cl.info("Chat stream started")
-        cl.info(f"JSON data: {json.dumps(json_data, ensure_ascii=False)}")
-        full_text = ""
-        async for out in client.chat_stream(**json_data):
-            if out.choices:
-                text = out.choices[0].delta.content
-                if text:
-                    full_text += text
-                    cl.print(text, end="")
-        end_time = time.time()
-        time_cost = round(end_time - start_time, 2)
+async def _chat_stream(client: Client, interactive: bool, json_data: Dict[str, Any]):
+    user_input = json_data.get("messages", "")
+    if "conv_uid" not in json_data and interactive:
+        json_data["conv_uid"] = str(uuid.uuid4())
+    first_message = True
+    while True:
+        try:
+            if interactive and not user_input:
+                cl.print("Type 'exit' or 'quit' to exit.")
+                while not user_input:
+                    user_input = cl.ask("You")
+            if user_input.lower() in ["exit", "quit", "q"]:
+                break
+            start_time = time.time()
+            json_data["messages"] = user_input
+            if first_message:
+                cl.info("You: " + user_input)
+            cl.info("Chat stream started")
+            cl.debug(f"JSON data: {json.dumps(json_data, ensure_ascii=False)}")
+            full_text = ""
+            cl.print("Bot: ")
+            async for out in client.chat_stream(**json_data):
+                if out.choices:
+                    text = out.choices[0].delta.content
+                    if text:
+                        full_text += text
+                        cl.print(text, end="")
+            end_time = time.time()
+            time_cost = round(end_time - start_time, 2)
+            cl.success(f"\n:tada: Chat stream finished, timecost: {time_cost} s")
+        except Exception as e:
+            cl.error(f"Chat stream failed: {e}", exit_code=1)
+        finally:
+            first_message = False
+            if interactive:
+                user_input = ""
+            else:
+                break
 
-        cl.success(f"\n:tada: Chat stream finished, timecost: {time_cost} s")
-    except Exception as e:
-        cl.error(f"Chat stream failed: {e}", exit_code=1)
 
+async def _chat(client: Client, interactive: bool, json_data: Dict[str, Any]):
+    user_input = json_data.get("messages", "")
+    if "conv_uid" not in json_data and interactive:
+        json_data["conv_uid"] = str(uuid.uuid4())
+    first_message = True
+    while True:
+        try:
+            if interactive and not user_input:
+                cl.print("Type 'exit' or 'quit' to exit.")
+                while not user_input:
+                    user_input = cl.ask("You")
+            if user_input.lower() in ["exit", "quit", "q"]:
+                break
+            start_time = time.time()
+            json_data["messages"] = user_input
+            if first_message:
+                cl.info("You: " + user_input)
 
-async def _chat(client: Client, json_data: Dict[str, Any]):
-    start_time = time.time()
-    try:
-        cl.info("Chat started")
-        cl.info(f"JSON data: {json.dumps(json_data, ensure_ascii=False)}")
-        res = await client.chat(**json_data)
-        if res.choices:
-            text = res.choices[0].message.content
-            cl.markdown(text)
-        time_cost = round(time.time() - start_time, 2)
-        cl.success(f"\n:tada: Chat stream finished, timecost: {time_cost} s")
-    except Exception as e:
-        cl.error(f"Chat failed: {e}", exit_code=1)
+            cl.info("Chat started")
+            cl.debug(f"JSON data: {json.dumps(json_data, ensure_ascii=False)}")
+            res = await client.chat(**json_data)
+            if res.choices:
+                text = res.choices[0].message.content
+                cl.markdown(text)
+            time_cost = round(time.time() - start_time, 2)
+            cl.success(f"\n:tada: Chat stream finished, timecost: {time_cost} s")
+        except Exception as e:
+            cl.error(f"Chat failed: {e}", exit_code=1)
+        finally:
+            first_message = False
+            if interactive:
+                user_input = ""
+            else:
+                break
