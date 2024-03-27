@@ -376,7 +376,6 @@ class BaseChat(ABC):
             # )
             print('blocking_func_to_async', )
             print('speak_to_user', speak_to_user)
-            print('result', result)
             print('prompt_define_response', prompt_define_response)
             view_message = await blocking_func_to_async(
                 self._executor,
@@ -406,16 +405,6 @@ class BaseChat(ABC):
         await blocking_func_to_async(
             self._executor, self.current_message.end_current_round
         )
-        try:
-            with open('/datas/liab/DB-GPT/evaluation/evaluation_output/result_type3_version4.jsonl', 'a') as f:
-                json.dump(
-                    self.save_dict,
-                    f,
-                    ensure_ascii=False
-                )
-                f.write('\n')
-        except:pass
-        return self.current_ai_response()
 
     async def get_llm_response(self):
         payload = await self._build_model_request()
@@ -480,8 +469,6 @@ class BaseChat(ABC):
     def current_ai_response(self) -> str:
         for message in self.current_message.messages[-1:]:
             if message.type == "view":
-                with open('message_content.txt', 'w') as f:
-                    f.write(message.content)
                 return message.content
         return None
 

@@ -96,10 +96,7 @@ class DbChatOutputParser(BaseOutputParser):
         # api_call_element.text = view_json_str
         api_call_element.set("content", view_json_str)
         result = ET.tostring(api_call_element, encoding="utf-8")
-        with open('result.txt', 'wb') as f:
-            f.write(result)
 
-        print('err_msg',err_msg)
         if err_msg:
             return f"""{speak} \\n <span style=\"color:red\">ERROR!</span>{err_msg} \n {result.decode("utf-8")}"""
         else:
