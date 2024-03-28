@@ -389,6 +389,9 @@ const sidebars = {
         {
           type: 'doc',
           id: 'api/knowledge'
+        },{
+          type: 'doc',
+          id: 'api/datasource'
         },
       ],
       link: {

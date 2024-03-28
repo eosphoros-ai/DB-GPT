@@ -45,6 +45,8 @@ def register_serve_apps(system_app: SystemApp, cfg: Config):
     # Register serve app
     system_app.register(FlowServe)
 
+    # ################################ Rag Serve Register Begin ######################################
+
     from dbgpt.serve.rag.serve import (
         SERVE_CONFIG_KEY_PREFIX as RAG_SERVE_CONFIG_KEY_PREFIX,
     )
@@ -52,4 +54,14 @@ def register_serve_apps(system_app: SystemApp, cfg: Config):
 
     # Register serve app
     system_app.register(RagServe)
+
+    # ################################ Datasource Serve Register Begin ######################################
+
+    from dbgpt.serve.datasource.serve import (
+        SERVE_CONFIG_KEY_PREFIX as DATASOURCE_SERVE_CONFIG_KEY_PREFIX,
+    )
+    from dbgpt.serve.datasource.serve import Serve as DatasourceServe
+
+    # Register serve app
+    system_app.register(DatasourceServe)
     # ################################ AWEL Flow Serve Register End ########################################

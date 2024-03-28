@@ -127,6 +127,7 @@ async def chat_completions(
         request.chat_mode is None
         or request.chat_mode == ChatMode.CHAT_NORMAL.value
         or request.chat_mode == ChatMode.CHAT_KNOWLEDGE.value
+        or request.chat_mode == ChatMode.CHAT_DATA.value
     ):
         with root_tracer.start_span(
             "get_chat_instance", span_type=SpanType.CHAT, metadata=request.dict()
@@ -146,7 +147,7 @@ async def chat_completions(
             status_code=400,
             detail={
                 "error": {
-                    "message": "chat mode now only support chat_normal, chat_app, chat_flow, chat_knowledge",
+                    "message": "chat mode now only support chat_normal, chat_app, chat_flow, chat_knowledge, chat_data",
                     "type": "invalid_request_error",
                     "param": None,
                     "code": "invalid_chat_mode",
@@ -169,7 +170,8 @@ async def get_chat_instance(dialogue: ChatCompletionRequestBody = Body()) -> Bas
             dialogue.chat_mode, dialogue.user_name, dialogue.sys_code
         )
         dialogue.conv_uid = conv_vo.conv_uid
-
+    if dialogue.chat_mode == "chat_data":
+        dialogue.chat_mode = ChatScene.ChatWithDbExecute.value()
     if not ChatScene.is_valid_mode(dialogue.chat_mode):
         raise StopAsyncIteration(f"Unsupported Chat Mode,{dialogue.chat_mode}!")
 
@@ -201,7 +203,7 @@ async def no_stream_wrapper(
     """
     with root_tracer.start_span("no_stream_generator"):
         response = await chat.nostream_call()
-        msg = response.replace("\ufffd", "")
+        msg = response.replace("\ufffd", "").replace("&quot;", '"')
         choice_data = ChatCompletionResponseChoice(
             index=0,
             message=ChatMessage(role="assistant", content=msg),
