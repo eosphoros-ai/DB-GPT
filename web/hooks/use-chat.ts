@@ -1,7 +1,8 @@
 import { EventStreamContentType, fetchEventSource } from '@microsoft/fetch-event-source';
 import { message } from 'antd';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useContext, useEffect, useMemo } from 'react';
 import i18n from '@/app/i18n';
+import { ChatContext } from '@/app/chat-context';
 
 type Props = {
   queryAgentURL?: string;
@@ -19,6 +20,7 @@ type ChatParams = {
 
 const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
   const ctrl = useMemo(() => new AbortController(), []);
+  const { scene } = useContext(ChatContext);
 
   const chat = useCallback(
     async ({ data, chatId, onMessage, onClose, onDone, onError }: ChatParams) => {
@@ -61,16 +63,25 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
           onmessage: (event) => {
             let message = event.data;
             try {
-              message = JSON.parse(message).vis;
+              if (scene === 'chat_agent') {
+                message = JSON.parse(message).vis;
+              } else {
+                message = JSON.parse(message);
+              }
             } catch (e) {
               message.replaceAll('\\n', '\n');
             }
-            if (message === '[DONE]') {
-              onDone?.();
-            } else if (message?.startsWith('[ERROR]')) {
-              onError?.(message?.replace('[ERROR]', ''));
+            if (typeof message === 'string') {
+              if (message === '[DONE]') {
+                onDone?.();
+              } else if (message?.startsWith('[ERROR]')) {
+                onError?.(message?.replace('[ERROR]', ''));
+              } else {
+                onMessage?.(message);
+              }
             } else {
               onMessage?.(message);
+              onDone?.();
             }
           },
         });

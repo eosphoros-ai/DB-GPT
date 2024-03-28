@@ -33,7 +33,7 @@ const ChatContainer = () => {
     const contextTemp = list[list.length - 1]?.context;
     if (contextTemp) {
       try {
-        const contextObj = JSON.parse(contextTemp);
+        const contextObj = typeof contextTemp === 'string' ? JSON.parse(contextTemp) : contextTemp;
         setChartsData(contextObj?.template_name === 'report' ? contextObj?.charts : undefined);
       } catch (e) {
         setChartsData(undefined);
