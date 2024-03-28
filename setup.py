@@ -18,7 +18,7 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
 IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
 # If you modify the version, please modify the version in the following files:
 # dbgpt/_version.py
-DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.2")
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.3")
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
@@ -382,6 +382,7 @@ def core_requires():
         "psutil==5.9.4",
         "colorama==0.4.6",
         "tomlkit",
+        "rich",
     ]
     # Just use by DB-GPT internal, we should find the smallest dependency set for run
     # we core unit test.
@@ -564,10 +565,18 @@ def all_datasource_requires():
         # for doris
         # mysqlclient 2.2.x have pkg-config issue on 3.10+
         "mysqlclient==2.1.0",
+
     ]
+    # If you want to install psycopg2 and mysqlclient in ubuntu, you should install
+    # libpq-dev and libmysqlclient-dev first.
     setup_spec.extras["datasource_all"] = setup_spec.extras["datasource"] + [
         "pyspark",
         "pymssql",
+        # install psycopg2-binary when you are in a virtual environment
+        # pip install psycopg2-binary
+        "psycopg2",
+        # mysqlclient 2.2.x have pkg-config issue on 3.10+
+        "mysqlclient==2.1.0",
         # pydoris is too old, we should find a new package to replace it.
         "psycopg2",
         "pydoris>=1.0.2,<2.0.0",

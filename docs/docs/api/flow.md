@@ -1,6 +1,6 @@
 # Flow
 
-Get started with the App API
+Get started with the Flow API
 
 # Chat Flow
 
@@ -76,8 +76,9 @@ Return <a href="#the-flow-object">Flow Object</a>
 
 
 ### Update Flow
-
+```python
 PUT /api/v2/serve/awel/flows
+```
 
 #### Request body
 Request <a href="#the-flow-object">Flow Object</a>
@@ -170,7 +171,7 @@ curl -X GET "http://localhost:5000/api/v2/serve/awel/flows/$FLOW_ID" -H "Authori
 
 ```python
 from dbgpt.client import Client
-from dbgpt.client.knowledge import get_flow
+from dbgpt.client.flow import get_flow
 
 DBGPT_API_KEY = "dbgpt"
 flow_id = "{your_flow_id}"

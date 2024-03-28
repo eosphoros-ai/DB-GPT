@@ -10,14 +10,18 @@ SUBPACKAGES = agent app cli client configs core datasource model rag serve stora
 # Default: English (en)
 LANGUAGES = zh_CN ja ko fr ru
 
+# Command line arguments for language and module, use LANGUAGES and SUBPACKAGES as default if not specified
+LANGUAGE ?= $(LANGUAGES)
+MODULE ?= $(SUBPACKAGES)
+
 .PHONY: help pot po mo clean
 
 all: pot po mo
 
-# Generate POT files for each existing subpackage
+# Generate POT files for the specified or existing subpackage
 pot:
 	@echo "Generating POT files for subpackages..."
-	@$(foreach pkg,$(SUBPACKAGES),\
+	@$(foreach pkg,$(MODULE),\
 		if [ -d $(SRC_DIR)/$(pkg) ]; then \
 			echo "Processing $(pkg) package..."; \
 			mkdir -p $(LOCALEDIR)/pot; \
@@ -27,10 +31,10 @@ pot:
 		fi; \
 	)
 
-# Update or create new .po files for each language
+# Update or create new .po files for the specified language and module
 po: pot
-	@for lang in $(LANGUAGES); do \
-		for pkg in $(SUBPACKAGES); do \
+	@for lang in $(LANGUAGE); do \
+		for pkg in $(MODULE); do \
 			if [ -f $(LOCALEDIR)/pot/$(DOMAIN)_$$pkg.pot ]; then \
 				mkdir -p $(LOCALEDIR)/$$lang/LC_MESSAGES; \
 				if [ -f $(LOCALEDIR)/$$lang/LC_MESSAGES/$(DOMAIN)_$$pkg.po ]; then \
@@ -46,11 +50,10 @@ po: pot
 		done \
 	done
 
-
-# Compile .po files to .mo files
+# Compile .po files to .mo files for the specified language and module
 mo:
-	@for lang in $(LANGUAGES); do \
-		for pkg in $(SUBPACKAGES); do \
+	@for lang in $(LANGUAGE); do \
+		for pkg in $(MODULE); do \
 			if [ -f $(LOCALEDIR)/$$lang/LC_MESSAGES/$(DOMAIN)_$$pkg.po ]; then \
 				echo "Compiling $$lang MO file for $$pkg..."; \
 				msgfmt -o $(LOCALEDIR)/$$lang/LC_MESSAGES/$(DOMAIN)_$$pkg.mo $(LOCALEDIR)/$$lang/LC_MESSAGES/$(DOMAIN)_$$pkg.po; \
@@ -80,3 +83,4 @@ help:
 	@echo "3. Translate the strings in .po files using a PO file editor."
 	@echo "4. Run 'make mo' to compile the translated .po files into .mo files."
 	@echo "5. Run 'make clean' to clean up if necessary."
+	@echo "Use 'LANGUAGE=<lang> MODULE=<module>' to specify a language and a module."

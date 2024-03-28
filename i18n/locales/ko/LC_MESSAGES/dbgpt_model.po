@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"POT-Creation-Date: 2024-03-26 05:55+0800\n"
 "PO-Revision-Date: 2024-03-23 16:45+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -34,8 +34,7 @@ msgstr "메시지 자동 변환"
 msgid ""
 "Whether to auto convert the messages that are not supported by the LLM to a "
 "compatible format"
-msgstr ""
-"LLM에서 지원하지 않는 메시지를 호환되는 형식으로 자동 변환할지 여부"
+msgstr "LLM에서 지원하지 않는 메시지를 호환되는 형식으로 자동 변환할지 여부"
 
 #: ../dbgpt/model/cluster/client.py:113
 msgid "Remote LLM Client"
@@ -117,11 +116,6 @@ msgstr "모델 요청."
 msgid "Model Output"
 msgstr "모델 출력"
 
-#: ../dbgpt/model/operators/llm_operator.py:93
-#: ../dbgpt/model/operators/llm_operator.py:141
-msgid "The model output."
-msgstr "모델 출력."
-
 #: ../dbgpt/model/operators/llm_operator.py:113
 msgid "Streaming LLM Operator"
 msgstr "스트리밍 LLM 연산자"
@@ -147,5 +141,5 @@ msgid "The model output of upstream."
 msgstr "상류의 모델 출력."
 
 #: ../dbgpt/model/utils/chatgpt_utils.py:180
-msgid "The model output after transform to openai stream format"
+msgid "The model output after transformed to openai stream format."
 msgstr "OpenAI 스트림 형식으로 변환된 모델 출력"

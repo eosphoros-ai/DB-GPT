@@ -161,6 +161,7 @@ class ModelOutput:
     error_code: int
     """The error code of the model inference. If the model inference is successful,
     the error code is 0."""
+    incremental: bool = False
     model_context: Optional[Dict] = None
     finish_reason: Optional[str] = None
     usage: Optional[Dict[str, Any]] = None
@@ -170,6 +171,11 @@ class ModelOutput:
     def to_dict(self) -> Dict:
         """Convert the model output to dict."""
         return asdict(self)
+
+    @property
+    def success(self) -> bool:
+        """Check if the model inference is successful."""
+        return self.error_code == 0
 
 
 _ModelMessageType = Union[List[ModelMessage], List[Dict[str, Any]]]

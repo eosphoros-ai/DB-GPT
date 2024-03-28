@@ -1,6 +1,4 @@
-"""Translate the po file content to Chinese using GPT-4.
-
-"""
+"""Translate the po file content to Chinese using LLM."""
 from typing import List, Dict, Any
 import asyncio
 import os
@@ -148,6 +146,7 @@ vocabulary_map = {
         "AWEL": "AWEL",
         "RAG": "RAG",
         "DB-GPT": "DB-GPT",
+        "AWEL flow": "AWEL 工作流",
     },
     "default": {
         "Transformer": "Transformer",
@@ -159,6 +158,7 @@ vocabulary_map = {
         "AWEL": "AWEL",
         "RAG": "RAG",
         "DB-GPT": "DB-GPT",
+        "AWEL flow": "AWEL flow",
     },
 }
 
@@ -383,8 +383,11 @@ async def run_translate_po_dag(
         "parallel_num": parallel_num,
         "model_name": model_name,
     }
-    result = await task.call({"file_path": full_path, "ext_dict": ext_dict})
-    return result
+    try:
+        result = await task.call({"file_path": full_path, "ext_dict": ext_dict})
+        return result
+    except Exception as e:
+        print(f"Error in {module_name}: {e}")
 
 
 if __name__ == "__main__":
@@ -413,34 +416,51 @@ if __name__ == "__main__":
     }
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--modules", type=str, default=",".join(all_modules))
-    parser.add_argument("--lang", type=str, default="zh_CN")
+    parser.add_argument(
+        "--modules",
+        type=str,
+        default=",".join(all_modules),
+        help="Modules to translate, 'all' for all modules, split by ','.",
+    )
+    parser.add_argument(
+        "--lang",
+        type=str,
+        default="zh_CN",
+        help="Language to translate, 'all' for all languages, split by ','.",
+    )
     parser.add_argument("--max_new_token", type=int, default=1024)
     parser.add_argument("--parallel_num", type=int, default=10)
     parser.add_argument("--model_name", type=str, default="gpt-3.5-turbo")
 
     args = parser.parse_args()
     print(f"args: {args}")
+
     # model_name = "gpt-3.5-turbo"
     # model_name = "gpt-4"
     model_name = args.model_name
     # modules = ["app", "core", "model", "rag", "serve", "storage", "util"]
-    modules = args.modules.strip().split(",")
+    modules = all_modules if args.modules == "all" else args.modules.strip().split(",")
     max_new_token = args.max_new_token
     parallel_num = args.parallel_num
-    lang = args.lang
-    if lang not in lang_map:
-        raise ValueError(f"Language {lang} not supported.")
-    lang_desc = lang_map[lang]
-    for module in modules:
-        asyncio.run(
-            run_translate_po_dag(
-                save_translated_po_file_task,
-                lang,
-                lang_desc,
-                module,
-                max_new_token,
-                parallel_num,
-                model_name,
+    langs = lang_map.keys() if args.lang == "all" else args.lang.strip().split(",")
+
+    for lang in langs:
+        if lang not in lang_map:
+            raise ValueError(
+                f"Language {lang} not supported, now only support {','.join(lang_map.keys())}."
             )
-        )
+
+    for lang in langs:
+        lang_desc = lang_map[lang]
+        for module in modules:
+            asyncio.run(
+                run_translate_po_dag(
+                    save_translated_po_file_task,
+                    lang,
+                    lang_desc,
+                    module,
+                    max_new_token,
+                    parallel_num,
+                    model_name,
+                )
+            )
