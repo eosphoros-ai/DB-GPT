@@ -140,6 +140,10 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
 
     model_name = param.model_name or CFG.LLM_MODEL
     param.model_name = model_name
+    param.port = param.port or CFG.WEB_SERVER_PORT
+    if not param.port:
+        param.port = 5000
+
     print(param)
 
     embedding_model_name = CFG.EMBEDDING_MODEL
