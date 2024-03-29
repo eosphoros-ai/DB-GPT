@@ -152,6 +152,7 @@
   海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。当前已支持如下模型: 
 
   - 新增支持模型
+    - 🔥🔥🔥  [Starling-LM-7B-beta](https://huggingface.co/Nexusflow/Starling-LM-7B-beta)
     - 🔥🔥🔥  [gemma-7b-it](https://huggingface.co/google/gemma-7b-it)
     - 🔥🔥🔥  [gemma-2b-it](https://huggingface.co/google/gemma-2b-it)
     - 🔥🔥🔥  [SOLAR-10.7B](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0)
@@ -161,6 +162,7 @@
   - [更多开源模型](https://www.yuque.com/eosphoros/dbgpt-docs/iqaaqwriwhp6zslc#qQktR)
 
   - 支持在线代理模型 
+    - [x] [零一万物.Yi](https://platform.lingyiwanwu.com/docs)
     - [x] [OpenAI·ChatGPT](https://api.openai.com/)
     - [x] [百川·Baichuan](https://platform.baichuan-ai.com/)
     - [x] [阿里·通义](https://www.aliyun.com/product/dashscope)
