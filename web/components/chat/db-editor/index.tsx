@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { useRequest } from 'ahooks';
 import { Button, Select, Table, Tooltip } from 'antd';
-import { Input, Tree, Empty, Tabs } from 'antd';
+import { Input, Tree, Tabs } from 'antd';
 import type { DataNode } from 'antd/es/tree';
-import MonacoEditor from './monaco-editor';
+import MonacoEditor from '../monaco-editor';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import { useSearchParams } from 'next/navigation';
 import { OnChange } from '@monaco-editor/react';
-import Header from './header';
-import Chart from '../chart';
-import { CaretRightOutlined, MenuFoldOutlined, MenuUnfoldOutlined, SaveFilled } from '@ant-design/icons';
+import Header from '../header';
+import Chart from '../../chart';
+import { CaretRightOutlined, LeftOutlined, RightOutlined, SaveFilled } from '@ant-design/icons';
 import { ColumnType } from 'antd/es/table';
-import Database from '../icons/database';
-import TableIcon from '../icons/table';
-import Field from '../icons/field';
+import Database from '../../icons/database';
+import TableIcon from '../../icons/table';
+import Field from '../../icons/field';
+import classNames from 'classnames';
+import MyEmpty from '../../common/MyEmpty';
 
 const { Search } = Input;
 
@@ -52,18 +54,18 @@ function DbEditorContent({ editorValue, chartData, tableData, handleChange }: IP
     if (!chartData) return null;
 
     return (
-      <div className="flex-1 overflow-auto p-3" style={{ flexShrink: 0, overflow: 'hidden' }}>
+      <div className="flex-1 overflow-auto p-2" style={{ flexShrink: 0, overflow: 'hidden' }}>
         <Chart chartsData={[chartData]} />
       </div>
     );
   }, [chartData]);
 
   return (
-    <div className="flex flex-1 h-full gap-4">
-      <div className="flex-1 flex overflow-hidden bg-white rounded">
+    <div className="flex flex-1 h-full gap-2">
+      <div className="flex-1 flex overflow-hidden rounded">
         <MonacoEditor value={editorValue?.sql || ''} language="mysql" onChange={handleChange} thoughts={editorValue?.thoughts || ''} />
       </div>
-      <div className="flex-1 h-full overflow-y-auto bg-white rounded">
+      <div className="flex-1 h-full overflow-y-auto bg-white dark:bg-theme-dark-container rounded">
         {tableData?.values?.length > 0 ? (
           <Table
             rowKey={tableData?.columns?.[0]}
@@ -78,7 +80,7 @@ function DbEditorContent({ editorValue, chartData, tableData, handleChange }: IP
           />
         ) : (
           <div className="h-full flex justify-center items-center">
-            <Empty />
+            <MyEmpty />
           </div>
         )}
         {chartWrapper}
@@ -419,62 +421,68 @@ function DbEditor() {
   }
 
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className="flex flex-col w-full h-full overflow-hidden">
       <Header />
-      <div className="relative flex flex-1">
-        <div className={`w-80 ml-4 ${isMenuExpand && 'hidden'}`}>
-          <Select
-            size="middle"
-            className="w-80 py-3"
-            value={currentRound}
-            options={rounds?.data?.map((item: RoundProps) => {
-              return {
-                label: item.round_name,
-                value: item.round,
-              };
+      <div className="relative flex flex-1 p-4 pt-0 overflow-hidden">
+        {/* Database Tree Node */}
+        <div className="group relative mr-4 overflow-hidden">
+          <div
+            className={classNames('h-full relative transition-[width] overflow-hidden', {
+              'w-0': isMenuExpand,
+              'w-64': !isMenuExpand,
             })}
-            onChange={(e) => {
-              setCurrentRound(e);
-            }}
-          />
-          <Search style={{ marginBottom: 8 }} placeholder="Search" onChange={onChange} />
-
-          {treeData && treeData.length > 0 && (
-            <Tree
-              className="h-[782px] overflow-y-auto flex-1"
-              onExpand={(newExpandedKeys: React.Key[]) => {
-                setExpandedKeys(newExpandedKeys);
-                setAutoExpandParent(false);
+          >
+            <div className="relative w-64 h-full overflow-hidden flex flex-col rounded bg-white dark:bg-theme-dark-container p-4">
+              <Select
+                size="middle"
+                className="w-full mb-2"
+                value={currentRound}
+                options={rounds?.data?.map((item: RoundProps) => {
+                  return {
+                    label: item.round_name,
+                    value: item.round,
+                  };
+                })}
+                onChange={(e) => {
+                  setCurrentRound(e);
+                }}
+              />
+              <Search className="mb-2" placeholder="Search" onChange={onChange} />
+              {treeData && treeData.length > 0 && (
+                <div className="flex-1 overflow-y-auto">
+                  <Tree
+                    onExpand={(newExpandedKeys: React.Key[]) => {
+                      setExpandedKeys(newExpandedKeys);
+                      setAutoExpandParent(false);
+                    }}
+                    expandedKeys={expandedKeys}
+                    autoExpandParent={autoExpandParent}
+                    treeData={treeData}
+                    fieldNames={{
+                      title: 'showTitle',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="absolute right-0 top-0 translate-x-full h-full flex items-center justify-center opacity-0 hover:opacity-100 group-hover:opacity-100">
+            <div
+              className="bg-white w-4 h-10 flex items-center justify-center dark:bg-theme-dark-container rounded-tr rounded-br z-10 text-xs cursor-pointer"
+              onClick={() => {
+                setIsMenuExpand(!isMenuExpand);
               }}
-              expandedKeys={expandedKeys}
-              autoExpandParent={autoExpandParent}
-              treeData={treeData}
-              fieldNames={{
-                title: 'showTitle',
-              }}
-            />
-          )}
+            >
+              {!isMenuExpand ? <LeftOutlined /> : <RightOutlined />}
+            </div>
+          </div>
         </div>
-        {!isMenuExpand ? (
-          <MenuFoldOutlined
-            onClick={() => {
-              setIsMenuExpand(!isMenuExpand);
-            }}
-            className="w-4 cursor-pointer"
-          />
-        ) : (
-          <MenuUnfoldOutlined
-            onClick={() => {
-              setIsMenuExpand(!isMenuExpand);
-            }}
-            className="w-4 cursor-pointer"
-          />
-        )}
-        {/* operations */}
-        <div className="flex flex-col flex-1 max-w-full overflow-hidden p-4">
-          <div className="mb-4 bg-white pl-4 pt-2 pb-2">
+        <div className="flex flex-col flex-1 max-w-full overflow-hidden">
+          {/* Actions */}
+          <div className="mb-2 bg-white dark:bg-theme-dark-container p-2">
             <Button
-              className="mr-2"
+              className="mr-2 text-xs rounded-none"
+              size="small"
               type="primary"
               icon={<CaretRightOutlined />}
               loading={runLoading || runChartsLoading}
@@ -489,7 +497,9 @@ function DbEditor() {
               Run
             </Button>
             <Button
+              className="text-xs rounded-none"
               type="primary"
+              size="small"
               loading={submitLoading || submitChartLoading}
               icon={<SaveFilled />}
               onClick={async () => {
@@ -503,6 +513,7 @@ function DbEditor() {
               Save
             </Button>
           </div>
+          {/* Panel */}
           {Array.isArray(editorValue) ? (
             <div className="h-full">
               <Tabs

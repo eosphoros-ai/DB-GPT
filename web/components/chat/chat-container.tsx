@@ -9,9 +9,9 @@ import Header from './header';
 import Chart from '../chart';
 import classNames from 'classnames';
 import MuiLoading from '../common/loading';
-import { Empty } from 'antd';
 import { useSearchParams } from 'next/navigation';
 import { getInitMessage } from '@/utils';
+import MyEmpty from '../common/MyEmpty';
 
 const ChatContainer = () => {
   const searchParams = useSearchParams();
@@ -117,13 +117,7 @@ const ChatContainer = () => {
             <Chart chartsData={chartsData} />
           </div>
         )}
-        {!chartsData?.length && scene === 'chat_dashboard' && (
-          <Empty
-            image="/empty.png"
-            imageStyle={{ width: 320, height: 320, margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}
-            className="w-full xl:w-3/4 h-3/5 xl:h-full pt-0 md:pt-10"
-          />
-        )}
+        {!chartsData?.length && scene === 'chat_dashboard' && <MyEmpty className="w-full xl:w-3/4 h-3/5 xl:h-full" />}
         {/** chat panel */}
         <div
           className={classNames('flex flex-1 flex-col overflow-hidden', {
