@@ -114,3 +114,11 @@ class ChatCompletionResponse(BaseModel):
         ..., description="Chat completion response choices"
     )
     usage: UsageInfo = Field(..., description="Usage info")
+
+
+class ErrorResponse(BaseModel):
+    """Error response entity."""
+
+    object: str = Field("error", description="Object type")
+    message: str = Field(..., description="Error message")
+    code: int = Field(..., description="Error code")

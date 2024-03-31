@@ -372,7 +372,7 @@ async def chat_completions(
             incremental=dialogue.incremental,
         )
         return StreamingResponse(
-            flow_service.chat_flow(dialogue.select_param, flow_req),
+            flow_service.chat_stream_flow_str(dialogue.select_param, flow_req),
             headers=headers,
             media_type="text/event-stream",
         )

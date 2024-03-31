@@ -41,6 +41,7 @@ class BasePackage(BaseModel):
     )
     root: str = Field(..., description="The root of the package")
     repo: str = Field(..., description="The repository of the package")
+    package: str = Field(..., description="The package name(like name in pypi)")
 
     @classmethod
     def build_from(cls, values: Dict[str, Any], ext_dict: Dict[str, Any]):
@@ -131,6 +132,7 @@ class InstalledPackage(BaseModel):
     name: str = Field(..., description="The name of the package")
     repo: str = Field(..., description="The repository of the package")
     root: str = Field(..., description="The root of the package")
+    package: str = Field(..., description="The package name(like name in pypi)")
 
 
 def _get_classes_from_module(module):
@@ -160,6 +162,7 @@ def _parse_package_metadata(package: InstalledPackage) -> BasePackage:
             ext_metadata[key] = value
     pkg_dict["root"] = package.root
     pkg_dict["repo"] = package.repo
+    pkg_dict["package"] = package.package
     if pkg_dict["package_type"] == "flow":
         return FlowPackage.build_from(pkg_dict, ext_metadata)
     elif pkg_dict["package_type"] == "operator":
@@ -186,7 +189,9 @@ def _load_installed_package(path: str) -> List[InstalledPackage]:
                 name = metadata["name"]
                 repo = metadata["repo"]
                 packages.append(
-                    InstalledPackage(name=name, repo=repo, root=str(full_path))
+                    InstalledPackage(
+                        name=name, repo=repo, root=str(full_path), package=package
+                    )
                 )
     return packages
 

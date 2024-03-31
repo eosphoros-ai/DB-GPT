@@ -1,10 +1,14 @@
 """DB Model for connect_config."""
 
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional, Union
 
 from sqlalchemy import Column, Index, Integer, String, Text, UniqueConstraint, text
 
+from dbgpt.serve.datasource.api.schemas import (
+    DatasourceServeRequest,
+    DatasourceServeResponse,
+)
 from dbgpt.storage.metadata import BaseDao, Model
 
 logger = logging.getLogger(__name__)
@@ -218,3 +222,62 @@ class ConnectConfigDao(BaseDao):
         session.commit()
         session.close()
         return True
+
+    def from_request(
+        self, request: Union[DatasourceServeRequest, Dict[str, Any]]
+    ) -> ConnectConfigEntity:
+        """Convert the request to an entity.
+
+        Args:
+            request (Union[ServeRequest, Dict[str, Any]]): The request
+
+        Returns:
+            T: The entity
+        """
+        request_dict = (
+            request.dict() if isinstance(request, DatasourceServeRequest) else request
+        )
+        entity = ConnectConfigEntity(**request_dict)
+        return entity
+
+    def to_request(self, entity: ConnectConfigEntity) -> DatasourceServeRequest:
+        """Convert the entity to a request.
+
+        Args:
+            entity (T): The entity
+
+        Returns:
+            REQ: The request
+        """
+        return DatasourceServeRequest(
+            id=entity.id,
+            db_type=entity.db_type,
+            db_name=entity.db_name,
+            db_path=entity.db_path,
+            db_host=entity.db_host,
+            db_port=entity.db_port,
+            db_user=entity.db_user,
+            db_pwd=entity.db_pwd,
+            comment=entity.comment,
+        )
+
+    def to_response(self, entity: ConnectConfigEntity) -> DatasourceServeResponse:
+        """Convert the entity to a response.
+
+        Args:
+            entity (T): The entity
+
+        Returns:
+            REQ: The request
+        """
+        return DatasourceServeResponse(
+            id=entity.id,
+            db_type=entity.db_type,
+            db_name=entity.db_name,
+            db_path=entity.db_path,
+            db_host=entity.db_host,
+            db_port=entity.db_port,
+            db_user=entity.db_user,
+            db_pwd=entity.db_pwd,
+            comment=entity.comment,
+        )

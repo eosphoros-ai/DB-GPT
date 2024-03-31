@@ -470,6 +470,8 @@ class CommonStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
     Transform model output to the string output to show in DB-GPT chat flow page.
     """
 
+    output_format = "SSE"
+
     metadata = ViewMetadata(
         label=_("Common Streaming Output Operator"),
         name="common_streaming_output_operator",
@@ -510,8 +512,8 @@ class CommonStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
                 yield f"data:{error_msg}"
                 return
             decoded_unicode = model_output.text.replace("\ufffd", "")
-            msg = decoded_unicode.replace("\n", "\\n")
-            yield f"data:{msg}\n\n"
+            # msg = decoded_unicode.replace("\n", "\\n")
+            yield f"data:{decoded_unicode}\n\n"
 
 
 class StringOutput2ModelOutputOperator(MapOperator[str, ModelOutput]):

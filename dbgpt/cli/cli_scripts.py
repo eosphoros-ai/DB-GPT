@@ -60,19 +60,26 @@ def db():
 
 @click.group()
 def new():
-    """New a template"""
+    """New a template."""
     pass
 
 
 @click.group()
 def app():
-    """Manage your apps(dbgpts)"""
+    """Manage your apps(dbgpts)."""
     pass
 
 
 @click.group()
 def repo():
-    """The repository to install the dbgpts from"""
+    """The repository to install the dbgpts from."""
+    pass
+
+
+@click.group()
+def run():
+    """Run your dbgpts."""
+    pass
 
 
 stop_all_func_list = []
@@ -92,6 +99,7 @@ cli.add_command(db)
 cli.add_command(new)
 cli.add_command(app)
 cli.add_command(repo)
+cli.add_command(run)
 add_command_alias(stop_all, name="all", parent_group=stop)
 
 try:
@@ -162,8 +170,13 @@ except ImportError as e:
 try:
     from dbgpt.util.dbgpts.cli import add_repo
     from dbgpt.util.dbgpts.cli import install as app_install
-    from dbgpt.util.dbgpts.cli import list_all_apps as app_list
-    from dbgpt.util.dbgpts.cli import list_repos, new_dbgpts, remove_repo
+    from dbgpt.util.dbgpts.cli import list_all_apps as app_list_remote
+    from dbgpt.util.dbgpts.cli import (
+        list_installed_apps,
+        list_repos,
+        new_dbgpts,
+        remove_repo,
+    )
     from dbgpt.util.dbgpts.cli import uninstall as app_uninstall
     from dbgpt.util.dbgpts.cli import update_repo
 
@@ -173,11 +186,19 @@ try:
     add_command_alias(update_repo, name="update", parent_group=repo)
     add_command_alias(app_install, name="install", parent_group=app)
     add_command_alias(app_uninstall, name="uninstall", parent_group=app)
-    add_command_alias(app_list, name="list-remote", parent_group=app)
+    add_command_alias(app_list_remote, name="list-remote", parent_group=app)
+    add_command_alias(list_installed_apps, name="list", parent_group=app)
     add_command_alias(new_dbgpts, name="app", parent_group=new)
 
 except ImportError as e:
     logging.warning(f"Integrating dbgpt dbgpts command line tool failed: {e}")
+
+try:
+    from dbgpt.client._cli import run_flow
+
+    add_command_alias(run_flow, name="flow", parent_group=run)
+except ImportError as e:
+    logging.warning(f"Integrating dbgpt client command line tool failed: {e}")
 
 
 def main():

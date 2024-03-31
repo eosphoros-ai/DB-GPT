@@ -154,6 +154,9 @@ def _build_openai_client(init_params: OpenAIParameters) -> Tuple[str, ClientType
 class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]):
     """Transform ModelOutput to openai stream format."""
 
+    incremental_output = True
+    output_format = "SSE"
+
     metadata = ViewMetadata(
         label=_("OpenAI Streaming Output Operator"),
         name="openai_streaming_output_operator",
@@ -177,7 +180,7 @@ class OpenAIStreamingOutputOperator(TransformStreamAbsOperator[ModelOutput, str]
                 str,
                 is_list=True,
                 description=_(
-                    "The model output after transform to openai stream format"
+                    "The model output after transformed to openai stream format."
                 ),
             )
         ],
