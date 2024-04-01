@@ -381,7 +381,7 @@ async def chat_completions(
     }
     my = MyMongdb()
     if not (my.check_user_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)
-            or my.check_manage_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)):
+            or my.check_manage_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)) and dialogue.chat_mode!='chat_agent':
         return StreamingResponse(
             no_stream_generator_string('you dont have permission to use db.'),
             headers=headers,

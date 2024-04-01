@@ -1,7 +1,9 @@
 import json
 import os
 import uuid
+from datetime import datetime
 from typing import Dict, List
+from rich import print
 
 from dbgpt._private.config import Config
 from dbgpt.app.scene import BaseChat, ChatScene
@@ -11,7 +13,7 @@ from dbgpt.app.scene.chat_dashboard.data_preparation.report_schma import (
     ReportData,
 )
 from dbgpt.util.executor_utils import blocking_func_to_async
-from dbgpt.util.tracer import trace
+from dbgpt.util.tracer import trace, root_tracer
 
 CFG = Config()
 
@@ -72,11 +74,72 @@ class ChatDashboard(BaseChat):
         except Exception as e:
             print("db summary find error!" + str(e))
 
+        with root_tracer.start_span("ChatWithDbAutoExecute.get_db_bm25"):
+            bm25_general_temp = await blocking_func_to_async(
+                self._executor,
+                client.get_db_bm25,
+                'type2_general',
+                self.current_user_input,
+                0.3,
+            )
+        with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
+            bm25_general_temp2 = await blocking_func_to_async(
+                self._executor,
+                client.get_db_summary,
+                'type2_general',
+                self.current_user_input,
+                3,
+            )
+        with root_tracer.start_span("ChatWithDbAutoExecute.get_db_bm25"):
+            bm25_department_temp = await blocking_func_to_async(
+                self._executor,
+                client.get_db_bm25,
+                'new_department',
+                self.current_user_input,
+                0.8,
+            )
+        if len(bm25_department_temp) > 0:
+            bm25_department_text = '\n\t如下用Markdown表格结构来说明部门机构的关系。\n'
+            bm25_department_text += '\n'.join(bm25_department_temp)
+        else:
+            bm25_department_text = ''
+
+
+        with open('/datas/liab/DB-GPT/tests/atl_data/type3/qa_samples.json', 'r') as f:
+            contents = json.load(f)
+        print('load qa sample')
+        with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):
+            qas_info = await blocking_func_to_async(
+                self._executor,
+                client.get_db_summary,
+                'type3_qasamples',
+                self.current_user_input,
+                9,
+            )
+
+        qa_samples = ''
+
+        for ii, qa in enumerate(qas_info):
+            qa_samples += '\ttitle %s：' % (ii + 1)
+            qa_samples += qa + '\n'
+            qa_samples += '\tsql%s：' % (ii + 1)
+            qa_samples += str(contents.get(qa)) + '\n\n'
+
+
+        extend_infos = '\n\t'.join(bm25_general_temp) + '\n\t'.join(bm25_general_temp2) + bm25_department_text
+        print('self.current_user_input', self.current_user_input)
+        print('self.database.dialect', self.database.dialect)
+        print('self.database.table_simple_info', self.database.table_simple_info())
+        print('self.dashboard_template', self.dashboard_template["supported_chart_type"])
+        print('extend_infos', extend_infos)
         input_values = {
+            "current_date": datetime.now().strftime("%Y-%m-%d"),
             "input": self.current_user_input,
+            "extend_infos": extend_infos,
             "dialect": self.database.dialect,
             "table_info": self.database.table_simple_info(),
-            "supported_chat_type": self.dashboard_template["supported_chart_type"]
+            "supported_chat_type": self.dashboard_template["supported_chart_type"],
+            'examples': qa_samples
             # "table_info": client.get_similar_tables(dbname=self.db_name, query=self.current_user_input, topk=self.top_k)
         }
 

@@ -108,12 +108,12 @@ function SideBar() {
 
   const routes = useMemo(() => {
     const items: RouteItem[] = [
-      // {
-      //   key: 'app',
-      //   name: t('App'),
-      //   path: '/app',
-      //   icon: <AppstoreOutlined />,
-      // },
+      {
+        key: 'app',
+        name: t('App'),
+        path: '/app',
+        icon: <AppstoreOutlined />,
+      },
       // {
       //   key: 'flow',
       //   name: t('awel_flow'),
