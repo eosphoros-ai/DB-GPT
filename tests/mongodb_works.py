@@ -22,6 +22,7 @@ def setDatabaseManagerRightUserOrDepart(department, ids=[], mode='add'):
     user_ids = my.userIdGetId(_ids)
     content_list = [str(c['_id']) for c in user_ids]
     content_list.extend(_user_ids)
+    print(_user_ids)
     print(my.updateDatabaseRight(department, content_list, mode=mode))
 
 
@@ -29,6 +30,7 @@ if __name__ == '__main__':
     setDatabaseManagerRightUserOrDepart('muplus_chinese', ids=[
         '00137109',
         '00123102',  # huyingcong
+        '00151867',  # gore
         '00168653',  # kimi
         '170036'  # xuhang
     ], mode='add')
@@ -48,6 +50,8 @@ if __name__ == '__main__':
         '00071608',  # lijiamei
         '00144652',  # liuensong
         '00143332',  # liuchunfeng
-        '00100495'  # andy
-        '00168653'  # kimi
+        '00100495',  # andy
+        '00168653',  # kimi
+        '00151867',  # gore
+        '00175765',  # fengling
     ], mode='add')

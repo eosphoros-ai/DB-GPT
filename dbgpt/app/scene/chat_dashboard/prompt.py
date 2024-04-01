@@ -17,15 +17,23 @@ _DEFAULT_TEMPLATE_zh = """
 {table_info}
 提供专业的数据分析，支持用户实现目标：
 {input}
+以下是目标的背景信息：
+{extend_infos}
 
 根据用户目标提供至少 4 个、最多 8 个维度的分析.
 分析的输出数据不能超过4列，并且不要使用SQL中pay_status等列进行数据过滤。
 根据分析数据的特征，从下面提供的图表中选择最合适的一个进行数据显示，图表类型：
 {supported_chat_type}
+当前日期：{current_date}
+
+
 
 注意分析结果输出内容的长度，不要超过4000个令牌
 
 给出正确的 {dialect} 分析 SQL
+以下是示例：
+{examples}
+
 1.不使用未提供的值，例如“已支付”
 2.所有查询的值都必须具有别名，例如select count（） as count from table
 3.如果表结构定义使用 {dialect} 的关键字作为字段名称，则需要使用转义字符，例如从表中选择“count”
@@ -39,6 +47,9 @@ According to the following table structure definition:
 {table_info}
 Provide professional data analysis to support users' goals:
 {input}
+The following is relevant infomation about the goals.
+{extend_infos}
+Current Date:{current_date}
 
 Provide at least 4 and at most 8 dimensions of analysis according to user goals.
 The output data of the analysis cannot exceed 4 columns, and do not use columns such as pay_status in the SQL where condition for data filtering.
@@ -48,6 +59,9 @@ According to the characteristics of the analyzed data, choose the most suitable 
 Pay attention to the length of the output content of the analysis result, do not exceed 4000 tokens
 
 Give the correct {dialect} analysis SQL
+Few-shots:
+{examples}
+
 1.Do not use unprovided values such as 'paid'
 2.All queried values must have aliases, such as select count(*) as count from table
 3.If the table structure definition uses the keywords of {dialect} as field names, you need to use escape characters, such as select `count` from table
@@ -55,6 +69,8 @@ Give the correct {dialect} analysis SQL
 {response}
 The important thing is: Please make sure to only return the json string, do not add any other content (for direct processing by the program), and the json can be parsed by Python json.loads
 """
+
+
 
 RESPONSE_FORMAT = [
     {

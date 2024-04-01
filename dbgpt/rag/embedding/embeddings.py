@@ -1,6 +1,5 @@
 """Embedding implementations."""
 
-
 from typing import Any, Dict, List, Optional
 
 import aiohttp
@@ -96,12 +95,32 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
             pool = self.client.start_multi_process_pool()
             embeddings = self.client.encode_multi_process(texts, pool)
             sentence_transformers.SentenceTransformer.stop_multi_process_pool(pool)
+            # return embeddings.tolist()
         else:
             embeddings = self.client.encode(texts, **self.encode_kwargs)
             print(5)
-        embeddings = embeddings / np.linalg.norm(embeddings)
+            print(embeddings)
+            print(type(embeddings), len(embeddings))
+            # result_list = []
+            # for embedding in embeddings:
+            #     result_list.append(embedding / np.linalg.norm(embedding))
+            embeddings = np.array([embedding / np.linalg.norm(embedding) for embedding in embeddings])
+            # print(55)
+            # print(embeddings)
+            # print(type(embeddings), len(embeddings))
 
         return embeddings.tolist()
+        # embeddings = embeddings / np.linalg.norm(embeddings)
+        # result_list = []
+        # # norms = np.linalg.norm(embeddings, axis=1)
+        # # norms = norms.reshape(-1,1)
+        # # normalized_embeddings = embeddings / norms
+        # # print(type(normalized_embeddings.tolist()))
+        # # print(1111, normalized_embeddings.tolist())
+        # for embedding in embeddings:
+        #     result_list.append(embedding / np.linalg.norm(embedding))
+        # return result_list
+        # return normalized_embeddings.tolist()
 
     def embed_query(self, text: str) -> List[float]:
         """Compute query embeddings using a HuggingFace transformer model.
@@ -343,7 +362,7 @@ class HuggingFaceInferenceAPIEmbeddings(BaseModel, Embeddings):
                 texts = ["Hello, world!", "How are you?"]
                 hf_embeddings.embed_documents(texts)
         """
-        print('embedding  requets 22 ',)
+        print('embedding  requets 22 ', )
         response = requests.post(
             self._api_url,
             headers=self._headers,
@@ -380,11 +399,11 @@ def _handle_request_result(res: requests.Response) -> List[List[float]]:
     """
     res.raise_for_status()
     resp = res.json()
-    if isinstance(resp,list):
+    if isinstance(resp, list):
         resp_json = {}
         resp_json['data'] = []
 
-        for index , vec_list in enumerate(resp):
+        for index, vec_list in enumerate(resp):
             data_temp = {}
             data_temp['index'] = index
             data_temp['embedding'] = vec_list
@@ -599,10 +618,10 @@ class OpenAPIEmbeddings(BaseModel, Embeddings):
         """
         headers = {"Authorization": f"Bearer {self.api_key}"}
         async with aiohttp.ClientSession(
-            headers=headers, timeout=aiohttp.ClientTimeout(total=self.timeout)
+                headers=headers, timeout=aiohttp.ClientTimeout(total=self.timeout)
         ) as session:
             async with session.post(
-                self.api_url, json={"input": texts, "model": self.model_name}
+                    self.api_url, json={"input": texts, "model": self.model_name}
             ) as resp:
                 resp.raise_for_status()
                 data = await resp.json()

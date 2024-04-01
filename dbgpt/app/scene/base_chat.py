@@ -346,6 +346,10 @@ class BaseChat(ABC):
                 pass
 
             self.current_message.add_ai_message(ai_response_text)
+            print('### model result deal',ai_response_text)
+            print(                self.prompt_template.output_parser.parse_prompt_response(
+                    ai_response_text
+                ))
             prompt_define_response = (
                 self.prompt_template.output_parser.parse_prompt_response(
                     ai_response_text

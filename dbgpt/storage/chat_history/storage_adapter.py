@@ -107,6 +107,7 @@ class DBMessageStorageItemAdapter(
         self, model: ChatHistoryMessageEntity
     ) -> MessageStorageItem:
         """Convert from storage format."""
+        print('model.message_detail',model.message_detail)
         message_detail = (
             json.loads(model.message_detail)  # type: ignore
             if model.message_detail

@@ -512,6 +512,7 @@ class MyMongdb():
                 i_temp = '0' * (8 - len(i_temp)) + i_temp
             return i_temp
         in_list = [append_zero(i) for i in ids]
+        print(in_list)
         return self.users_collection.find({'username': {'$in': in_list}})
 
     def get_init_class_messages(self):
