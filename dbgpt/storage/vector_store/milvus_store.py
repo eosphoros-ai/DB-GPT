@@ -175,9 +175,6 @@ class MilvusStore(VectorStoreBase):
             hex_str = bytes_str.hex()
             self.collection_name = hex_str
 
-        if not vector_store_config.embedding_fn:
-            raise ValueError("embedding is required for MilvusStore")
-
         self.embedding: Embeddings = vector_store_config.embedding_fn
         self.fields: List = []
         self.alias = milvus_vector_config.get("alias") or "default"
