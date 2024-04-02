@@ -480,15 +480,13 @@ def quantization_requires():
         latest_version = get_latest_version(
             "bitsandbytes",
             "https://jllllll.github.io/bitsandbytes-windows-webui",
-            "0.41.1"
+            "0.41.1",
         )
         whl_url = f"https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-{latest_version}-py3-none-win_amd64.whl"
-        local_pkg_path = cache_package(
-            whl_url, "bitsandbytes", True
-        )
-        setup_spec.extras['bitsandbytes'] = [f"bitsandbytes @ {local_pkg_path}"]
+        local_pkg_path = cache_package(whl_url, "bitsandbytes", True)
+        setup_spec.extras["bitsandbytes"] = [f"bitsandbytes @ {local_pkg_path}"]
     else:
-        setup_spec.extras['bitsandbytes'] = ["bitsandbytes"]
+        setup_spec.extras["bitsandbytes"] = ["bitsandbytes"]
 
     if os_type != OSType.DARWIN:
         # Since transformers 4.35.0, the GPT-Q/AWQ model can be loaded using AutoModelForCausalLM.
@@ -497,7 +495,7 @@ def quantization_requires():
         # 2. CUDA Toolkit 11.8 and later.
         quantization_pkgs.extend(["autoawq", _build_autoawq_requires(), "optimum"])
 
-    setup_spec.extras['quantization'] = ["cpm_kernels"] + quantization_pkgs
+    setup_spec.extras["quantization"] = ["cpm_kernels"] + quantization_pkgs
 
 
 def all_vector_store_requires():
