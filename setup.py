@@ -469,80 +469,33 @@ def _build_autoawq_requires() -> Optional[str]:
     os_type, _ = get_cpu_avx_support()
     if os_type == OSType.DARWIN:
         return None
-    auto_gptq_version = get_latest_version(
-        "auto-gptq", "https://huggingface.github.io/autogptq-index/whl/cu118/", "0.5.1"
-    )
-    # eg. 0.5.1+cu118
-    auto_gptq_version = auto_gptq_version.split("+")[0]
-
-    def pkg_file_func(pkg_name, pkg_version, cuda_version, py_version, os_type):
-        pkg_name = pkg_name.replace("-", "_")
-        if os_type == OSType.DARWIN:
-            return None
-        os_pkg_name = (
-            "manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
-            if os_type == OSType.LINUX
-            else "win_amd64.whl"
-        )
-        return f"{pkg_name}-{pkg_version}+{cuda_version}-{py_version}-{py_version}-{os_pkg_name}"
-
-    auto_gptq_url = _build_wheels(
-        "auto-gptq",
-        auto_gptq_version,
-        base_url_func=lambda v, x, y: f"https://huggingface.github.io/autogptq-index/whl/{x}/auto-gptq",
-        pkg_file_func=pkg_file_func,
-        supported_cuda_versions=["11.8"],
-    )
-    if auto_gptq_url:
-        print(f"Install auto-gptq from {auto_gptq_url}")
-        return f"auto-gptq @ {auto_gptq_url}"
-    else:
-        "auto-gptq"
+    return "auto-gptq"
 
 
 def quantization_requires():
-    pkgs = []
     os_type, _ = get_cpu_avx_support()
-    if os_type != OSType.WINDOWS:
-        pkgs = ["bitsandbytes"]
-    else:
+    quantization_pkgs = []
+    if os_type == OSType.WINDOWS:
+        # For Windows, fetch a specific bitsandbytes WHL package
         latest_version = get_latest_version(
             "bitsandbytes",
             "https://jllllll.github.io/bitsandbytes-windows-webui",
             "0.41.1",
         )
-        extra_index_url = f"https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-{latest_version}-py3-none-win_amd64.whl"
-        local_pkg = cache_package(
-            extra_index_url, "bitsandbytes", os_type == OSType.WINDOWS
-        )
-        pkgs = [f"bitsandbytes @ {local_pkg}"]
-        print(pkgs)
-    # For chatglm2-6b-int4
-    pkgs += ["cpm_kernels"]
+        whl_url = f"https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-{latest_version}-py3-none-win_amd64.whl"
+        local_pkg_path = cache_package(whl_url, "bitsandbytes", True)
+        setup_spec.extras["bitsandbytes"] = [f"bitsandbytes @ {local_pkg_path}"]
+    else:
+        setup_spec.extras["bitsandbytes"] = ["bitsandbytes"]
 
     if os_type != OSType.DARWIN:
         # Since transformers 4.35.0, the GPT-Q/AWQ model can be loaded using AutoModelForCausalLM.
         # autoawq requirements:
         # 1. Compute Capability 7.5 (sm75). Turing and later architectures are supported.
         # 2. CUDA Toolkit 11.8 and later.
-        autoawq_url = _build_wheels(
-            "autoawq",
-            "0.1.7",
-            base_url_func=lambda v, x, y: f"https://github.com/casper-hansen/AutoAWQ/releases/download/v{v}",
-            supported_cuda_versions=["11.8"],
-        )
-        if autoawq_url:
-            print(f"Install autoawq from {autoawq_url}")
-            pkgs.append(f"autoawq @ {autoawq_url}")
-        else:
-            pkgs.append("autoawq")
+        quantization_pkgs.extend(["autoawq", _build_autoawq_requires(), "optimum"])
 
-        auto_gptq_pkg = _build_autoawq_requires()
-        if auto_gptq_pkg:
-            pkgs.append(auto_gptq_pkg)
-            pkgs.append("optimum")
-
-    setup_spec.extras["quantization"] = pkgs
+    setup_spec.extras["quantization"] = ["cpm_kernels"] + quantization_pkgs
 
 
 def all_vector_store_requires():
