@@ -180,6 +180,11 @@ class MilvusStore(VectorStoreBase):
         self.fields: List = []
         self.alias = milvus_vector_config.get("alias") or "default"
 
+        if self.embedding is None:
+            # Perform runtime checks on self.embedding to
+            # ensure it has been correctly set and loaded
+            raise ValueError("Embedding function is not loaded in MilvusStore")
+
         # use HNSW by default.
         self.index_params = {
             "index_type": "HNSW",
@@ -222,12 +227,6 @@ class MilvusStore(VectorStoreBase):
             alias="default",
         )
 
-    def _ensure_embedding_loaded(self):
-        # Perform runtime checks on self.embedding to
-        # ensure it has been correctly set and loaded
-        if self.embedding is None:
-            raise ValueError("Embedding function is not loaded in MilvusStore")
-
     def init_schema_and_load(self, vector_name, documents) -> List[str]:
         """Create a Milvus collection.
 
@@ -239,7 +238,6 @@ class MilvusStore(VectorStoreBase):
         Returns:
             List[str]: document ids.
         """
-        self._ensure_embedding_loaded()
         try:
             from pymilvus import (
                 Collection,
@@ -335,7 +333,6 @@ class MilvusStore(VectorStoreBase):
         timeout: Optional[int] = None,
     ) -> List[str]:
         """Add text data into Milvus."""
-        self._ensure_embedding_loaded()
         insert_dict: Any = {self.text_field: list(texts)}
         try:
             import numpy as np  # noqa: F401
@@ -364,7 +361,6 @@ class MilvusStore(VectorStoreBase):
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
         """Load document in vector database."""
-        self._ensure_embedding_loaded()
         batch_size = 500
         batched_list = [
             chunks[i : i + batch_size] for i in range(0, len(chunks), batch_size)
@@ -377,7 +373,6 @@ class MilvusStore(VectorStoreBase):
 
     def similar_search(self, text, topk) -> List[Chunk]:
         """Perform a search on a query string and return results."""
-        self._ensure_embedding_loaded()
         from pymilvus import Collection, DataType
 
         """similar_search in vector database."""
@@ -421,7 +416,6 @@ class MilvusStore(VectorStoreBase):
         Returns:
             List[Tuple[Document, float]]: Result doc and score.
         """
-        self._ensure_embedding_loaded()
         from pymilvus import Collection
 
         self.col = Collection(self.collection_name)

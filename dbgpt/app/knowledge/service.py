@@ -444,7 +444,13 @@ class KnowledgeService:
         if len(spaces) == 0:
             raise Exception(f"delete error, no space name:{space_name} in database")
         space = spaces[0]
-        config = VectorStoreConfig(name=space.name)
+        embedding_factory = CFG.SYSTEM_APP.get_component(
+            "embedding_factory", EmbeddingFactory
+        )
+        embedding_fn = embedding_factory.create(
+            model_name=EMBEDDING_MODEL_CONFIG[CFG.EMBEDDING_MODEL]
+        )
+        config = VectorStoreConfig(name=space.name, embedding_fn=embedding_fn)
         vector_store_connector = VectorStoreConnector(
             vector_store_type=CFG.VECTOR_STORE_TYPE,
             vector_store_config=config,
