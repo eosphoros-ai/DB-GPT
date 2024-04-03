@@ -175,15 +175,12 @@ class MilvusStore(VectorStoreBase):
             hex_str = bytes_str.hex()
             self.collection_name = hex_str
         if vector_store_config.embedding_fn is None:
+            # Perform runtime checks on self.embedding to
+            # ensure it has been correctly set and loaded
             raise ValueError("embedding_fn is required for MilvusStore")
         self.embedding: Embeddings = vector_store_config.embedding_fn
         self.fields: List = []
         self.alias = milvus_vector_config.get("alias") or "default"
-
-        if self.embedding is None:
-            # Perform runtime checks on self.embedding to
-            # ensure it has been correctly set and loaded
-            raise ValueError("Embedding function is not loaded in MilvusStore")
 
         # use HNSW by default.
         self.index_params = {
