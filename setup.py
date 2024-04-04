@@ -227,7 +227,7 @@ def _build_wheels(
     base_url: str = None,
     base_url_func: Callable[[str, str, str], str] = None,
     pkg_file_func: Callable[[str, str, str, str, OSType], str] = None,
-    supported_cuda_versions: List[str] = ["11.7", "11.8"],
+    supported_cuda_versions: List[str] = ["11.7", "11.8", "12.1"],
 ) -> Optional[str]:
     """
     Build the URL for the package wheel file based on the package name, version, and CUDA version.
@@ -272,49 +272,67 @@ def _build_wheels(
         return f"{base_url}/{full_pkg_file}"
 
 
-def torch_requires(
-    torch_version: str = "2.0.1",
-    torchvision_version: str = "0.15.2",
-    torchaudio_version: str = "2.0.2",
-):
+def torch_requires():
+    os_type, _ = get_cpu_avx_support()
+    cuda_version = get_cuda_version()
+
+    # Determine the default versions for CPU installations or if CUDA is not available
+    if os_type == OSType.DARWIN or not cuda_version:
+        torch_version = "2.1.2"
+        torchvision_version = "0.16.2"
+        torchaudio_version = "2.1.2"
+    else:
+        # Use default versions for older CUDA (< 11.8)
+        torch_version = "2.0.1"
+        torchvision_version = "0.15.2"
+        torchaudio_version = "2.0.2"
+
+        # Update versions for newer CUDA (>= 11.8)
+        if float(cuda_version) >= 11.8:
+            torch_version = "2.1.2"
+            torchvision_version = "0.16.2"
+            torchaudio_version = "2.1.2"
+
+    supported_versions = ["11.7", "11.8", "12.1"]
+    base_url_func = lambda v, x, y: f"https://download.pytorch.org/whl/{x}"
+
     torch_pkgs = [
         f"torch=={torch_version}",
         f"torchvision=={torchvision_version}",
         f"torchaudio=={torchaudio_version}",
     ]
     torch_cuda_pkgs = []
-    os_type, _ = get_cpu_avx_support()
+
     if os_type != OSType.DARWIN:
-        cuda_version = get_cuda_version()
-        if cuda_version:
-            supported_versions = ["11.7", "11.8"]
-            # torch_url = f"https://download.pytorch.org/whl/{cuda_version}/torch-{torch_version}+{cuda_version}-{py_version}-{py_version}-{os_pkg_name}.whl"
-            # torchvision_url = f"https://download.pytorch.org/whl/{cuda_version}/torchvision-{torchvision_version}+{cuda_version}-{py_version}-{py_version}-{os_pkg_name}.whl"
-            torch_url = _build_wheels(
-                "torch",
-                torch_version,
-                base_url_func=lambda v, x, y: f"https://download.pytorch.org/whl/{x}",
-                supported_cuda_versions=supported_versions,
-            )
-            torchvision_url = _build_wheels(
-                "torchvision",
-                torchvision_version,
-                base_url_func=lambda v, x, y: f"https://download.pytorch.org/whl/{x}",
-                supported_cuda_versions=supported_versions,
-            )
+        torch_url = _build_wheels(
+            "torch",
+            torch_version,
+            base_url_func=base_url_func,
+            supported_cuda_versions=supported_versions,
+        )
+        torchvision_url = _build_wheels(
+            "torchvision",
+            torchvision_version,
+            base_url_func=base_url_func,
+            supported_cuda_versions=supported_versions,
+        )
+        if torch_url:
             torch_url_cached = cache_package(
                 torch_url, "torch", os_type == OSType.WINDOWS
             )
+            torch_cuda_pkgs.append(f"torch @ {torch_url_cached}")
+        if torchvision_url:
             torchvision_url_cached = cache_package(
                 torchvision_url, "torchvision", os_type == OSType.WINDOWS
             )
+            torch_cuda_pkgs.append(f"torchvision @ {torchvision_url_cached}")
 
-            torch_cuda_pkgs = [
-                f"torch @ {torch_url_cached}",
-                f"torchvision @ {torchvision_url_cached}",
-                f"torchaudio=={torchaudio_version}",
-            ]
+        # Add torchaudio as it does not depend on CUDA version
+        torch_cuda_pkgs.append(f"torchaudio=={torchaudio_version}")
+    else:
+        torch_cuda_pkgs = torch_pkgs
 
+    # Assuming 'setup_spec' is a dictionary where we're adding these dependencies
     setup_spec.extras["torch"] = torch_pkgs
     setup_spec.extras["torch_cpu"] = torch_pkgs
     setup_spec.extras["torch_cuda"] = torch_cuda_pkgs
@@ -588,7 +606,11 @@ def default_requires():
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["rag"]
     setup_spec.extras["default"] += setup_spec.extras["datasource"]
-    setup_spec.extras["default"] += setup_spec.extras["torch"]
+    cuda_version = get_cuda_version()
+    if cuda_version is not None:
+        setup_spec.extras["default"] += setup_spec.extras["torch_cuda"]
+    else:
+        setup_spec.extras["default"] += setup_spec.extras["torch"]
     setup_spec.extras["default"] += setup_spec.extras["quantization"]
     setup_spec.extras["default"] += setup_spec.extras["cache"]
 
