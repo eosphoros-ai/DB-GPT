@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { useRequest } from 'ahooks';
 import { Button, Select, Table, Tooltip } from 'antd';
-import { Input, Tree, Tabs } from 'antd';
+import { Input, Tree } from 'antd';
+import Icon from '@ant-design/icons';
 import type { DataNode } from 'antd/es/tree';
-import MonacoEditor from '../monaco-editor';
+import MonacoEditor from './monaco-editor';
 import { sendGetRequest, sendSpacePostRequest } from '@/utils/request';
 import { useSearchParams } from 'next/navigation';
 import { OnChange } from '@monaco-editor/react';
-import Header from '../header';
-import Chart from '../../chart';
+import Header from './header';
+import Chart from '../chart';
 import { CaretRightOutlined, LeftOutlined, RightOutlined, SaveFilled } from '@ant-design/icons';
 import { ColumnType } from 'antd/es/table';
-import Database from '../../icons/database';
-import TableIcon from '../../icons/table';
-import Field from '../../icons/field';
+import Database from '../icons/database';
+import TableIcon from '../icons/table';
+import Field from '../icons/field';
 import classNames from 'classnames';
-import MyEmpty from '../../common/MyEmpty';
+import MyEmpty from '../common/MyEmpty';
+import SplitScreenWeight from '@/components/icons/split-screen-width';
+import SplitScreenHeight from '@/components/icons/split-screen-height';
 
 const { Search } = Input;
 
@@ -36,6 +39,7 @@ interface IProps {
   editorValue?: EditorValueProps;
   chartData?: any;
   tableData?: any;
+  layout?: 'TB' | 'LR';
   handleChange: OnChange;
 }
 
@@ -49,7 +53,7 @@ interface ITableTreeItem {
   children: Array<ITableTreeItem>;
 }
 
-function DbEditorContent({ editorValue, chartData, tableData, handleChange }: IProps) {
+function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, handleChange }: IProps) {
   const chartWrapper = React.useMemo(() => {
     if (!chartData) return null;
 
@@ -61,7 +65,12 @@ function DbEditorContent({ editorValue, chartData, tableData, handleChange }: IP
   }, [chartData]);
 
   return (
-    <div className="flex flex-1 h-full gap-2">
+    <div
+      className={classNames('flex flex-1 h-full gap-2', {
+        'flex-col': layout === 'TB',
+        'flex-row': layout === 'LR',
+      })}
+    >
       <div className="flex-1 flex overflow-hidden rounded">
         <MonacoEditor value={editorValue?.sql || ''} language="mysql" onChange={handleChange} thoughts={editorValue?.thoughts || ''} />
       </div>
@@ -98,8 +107,9 @@ function DbEditor() {
   const [editorValue, setEditorValue] = React.useState<EditorValueProps | EditorValueProps[]>();
   const [newEditorValue, setNewEditorValue] = React.useState<EditorValueProps>();
   const [tableData, setTableData] = React.useState<{ columns: string[]; values: any }>();
-  const [currentTabIndex, setCurrentTabIndex] = React.useState<string>();
+  const [currentTabIndex, setCurrentTabIndex] = React.useState<number>();
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(false);
+  const [layout, setLayout] = useState<'TB' | 'LR'>('TB');
 
   const searchParams = useSearchParams();
   const id = searchParams?.get('id');
@@ -254,7 +264,7 @@ function DbEditor() {
         try {
           if (Array.isArray(res?.data)) {
             sql = res?.data;
-            setCurrentTabIndex('0');
+            setCurrentTabIndex(0);
           } else if (typeof res?.data === 'string') {
             const d = JSON.parse(res?.data);
             sql = d;
@@ -425,7 +435,7 @@ function DbEditor() {
       <Header />
       <div className="relative flex flex-1 p-4 pt-0 overflow-hidden">
         {/* Database Tree Node */}
-        <div className="group relative mr-4 overflow-hidden">
+        <div className="group/side relative mr-4">
           <div
             className={classNames('h-full relative transition-[width] overflow-hidden', {
               'w-0': isMenuExpand,
@@ -466,9 +476,9 @@ function DbEditor() {
               )}
             </div>
           </div>
-          <div className="absolute right-0 top-0 translate-x-full h-full flex items-center justify-center opacity-0 hover:opacity-100 group-hover:opacity-100">
+          <div className="absolute right-0 top-0 translate-x-full h-full flex items-center justify-center opacity-0 hover:opacity-100 group-hover/side:opacity-100 transition-opacity">
             <div
-              className="bg-white w-4 h-10 flex items-center justify-center dark:bg-theme-dark-container rounded-tr rounded-br z-10 text-xs cursor-pointer"
+              className="bg-white w-4 h-10 flex items-center justify-center dark:bg-theme-dark-container rounded-tr rounded-br z-10 text-xs cursor-pointer shadow-[4px_0_10px_rgba(0,0,0,0.06)] text-opacity-80"
               onClick={() => {
                 setIsMenuExpand(!isMenuExpand);
               }}
@@ -479,76 +489,115 @@ function DbEditor() {
         </div>
         <div className="flex flex-col flex-1 max-w-full overflow-hidden">
           {/* Actions */}
-          <div className="mb-2 bg-white dark:bg-theme-dark-container p-2">
-            <Button
-              className="mr-2 text-xs rounded-none"
-              size="small"
-              type="primary"
-              icon={<CaretRightOutlined />}
-              loading={runLoading || runChartsLoading}
-              onClick={async () => {
-                if (scene === 'chat_dashboard') {
-                  runCharts();
-                } else {
-                  runSql();
-                }
-              }}
-            >
-              Run
-            </Button>
-            <Button
-              className="text-xs rounded-none"
-              type="primary"
-              size="small"
-              loading={submitLoading || submitChartLoading}
-              icon={<SaveFilled />}
-              onClick={async () => {
-                if (scene === 'chat_dashboard') {
-                  await submitChart();
-                } else {
-                  await submitSql();
-                }
-              }}
-            >
-              Save
-            </Button>
+          <div className="mb-2 bg-white dark:bg-theme-dark-container p-2 flex justify-between items-center">
+            <div className="flex gap-2">
+              <Button
+                className="text-xs rounded-none"
+                size="small"
+                type="primary"
+                icon={<CaretRightOutlined />}
+                loading={runLoading || runChartsLoading}
+                onClick={async () => {
+                  if (scene === 'chat_dashboard') {
+                    runCharts();
+                  } else {
+                    runSql();
+                  }
+                }}
+              >
+                Run
+              </Button>
+              <Button
+                className="text-xs rounded-none"
+                type="primary"
+                size="small"
+                loading={submitLoading || submitChartLoading}
+                icon={<SaveFilled />}
+                onClick={async () => {
+                  if (scene === 'chat_dashboard') {
+                    await submitChart();
+                  } else {
+                    await submitSql();
+                  }
+                }}
+              >
+                Save
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Icon
+                className={classNames('flex items-center justify-center w-6 h-6 text-lg rounded', {
+                  'bg-theme-primary bg-opacity-10': layout === 'TB',
+                })}
+                component={SplitScreenWeight}
+                onClick={() => {
+                  setLayout('TB');
+                }}
+              />
+              <Icon
+                className={classNames('flex items-center justify-center w-6 h-6 text-lg rounded', {
+                  'bg-theme-primary bg-opacity-10': layout === 'LR',
+                })}
+                component={SplitScreenHeight}
+                onClick={() => {
+                  setLayout('LR');
+                }}
+              />
+            </div>
           </div>
           {/* Panel */}
           {Array.isArray(editorValue) ? (
-            <div className="h-full">
-              <Tabs
-                className="h-full dark:text-white px-2"
-                activeKey={currentTabIndex}
-                onChange={(activeKey) => {
-                  setCurrentTabIndex(activeKey);
-                  setNewEditorValue(editorValue?.[Number(activeKey)]);
-                }}
-                items={editorValue?.map((item, i) => ({
-                  key: i + '',
-                  label: item?.title,
-                  children: (
-                    <div className="flex flex-col h-[702px]">
-                      <DbEditorContent
-                        editorValue={item}
-                        handleChange={(value) => {
-                          const { sql, thoughts } = resolveSqlAndThoughts(value);
-                          setNewEditorValue((old) => {
-                            return Object.assign({}, old, {
-                              sql,
-                              thoughts,
-                            });
-                          });
-                        }}
-                        tableData={tableData}
-                        chartData={chartData}
-                      />
+            <div className="flex flex-col h-full">
+              <div className="w-full whitespace-nowrap overflow-x-auto bg-white dark:bg-theme-dark-container mb-2 text-[0px]">
+                {editorValue.map((item, index) => (
+                  <Tooltip className="inline-block" key={item.title} title={item.title}>
+                    <div
+                      className={classNames(
+                        'max-w-[240px] px-3 h-10 text-ellipsis overflow-hidden whitespace-nowrap text-sm leading-10 cursor-pointer font-semibold hover:text-theme-primary transition-colors mr-2 last-of-type:mr-0',
+                        {
+                          'border-b-2 border-solid border-theme-primary text-theme-primary': currentTabIndex === index,
+                        },
+                      )}
+                      onClick={() => {
+                        setCurrentTabIndex(index);
+                      }}
+                    >
+                      {item.title}
                     </div>
-                  ),
-                }))}
-              />
+                  </Tooltip>
+                ))}
+              </div>
+              <div className="flex flex-1">
+                {editorValue.map((item, index) => (
+                  <div
+                    key={item.title}
+                    className={classNames({
+                      hidden: index !== currentTabIndex,
+                      'block flex-1': index === currentTabIndex,
+                    })}
+                  >
+                    <DbEditorContent
+                      layout={layout}
+                      editorValue={item}
+                      handleChange={(value) => {
+                        const { sql, thoughts } = resolveSqlAndThoughts(value);
+                        setNewEditorValue((old) => {
+                          return Object.assign({}, old, {
+                            sql,
+                            thoughts,
+                          });
+                        });
+                      }}
+                      tableData={tableData}
+                      chartData={chartData}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <DbEditorContent
+              layout={layout}
               editorValue={editorValue}
               handleChange={(value) => {
                 const { sql, thoughts } = resolveSqlAndThoughts(value);

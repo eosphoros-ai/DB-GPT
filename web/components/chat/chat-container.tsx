@@ -113,15 +113,15 @@ const ChatContainer = () => {
       />
       <div className="px-4 flex flex-1 flex-wrap overflow-hidden relative">
         {!!chartsData?.length && (
-          <div className="w-full pb-4 xl:w-3/4 h-3/5 xl:pr-4 xl:h-full overflow-y-auto">
+          <div className="w-full pb-4 xl:w-3/4 h-1/2 xl:pr-4 xl:h-full overflow-y-auto">
             <Chart chartsData={chartsData} />
           </div>
         )}
-        {!chartsData?.length && scene === 'chat_dashboard' && <MyEmpty className="w-full xl:w-3/4 h-3/5 xl:h-full" />}
+        {!chartsData?.length && scene === 'chat_dashboard' && <MyEmpty className="w-full xl:w-3/4 h-1/2 xl:h-full" />}
         {/** chat panel */}
         <div
           className={classNames('flex flex-1 flex-col overflow-hidden', {
-            'px-0 xl:pl-4 h-2/5 w-full xl:w-auto xl:h-full border-t xl:border-t-0 xl:border-l dark:border-gray-800': scene === 'chat_dashboard',
+            'px-0 xl:pl-4 h-1/2 w-full xl:w-auto xl:h-full border-t xl:border-t-0 xl:border-l dark:border-gray-800': scene === 'chat_dashboard',
             'h-full lg:px-8': scene !== 'chat_dashboard',
           })}
         >
