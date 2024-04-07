@@ -4,7 +4,7 @@ from pydantic import Field
 
 from dbgpt._private.config import Config
 from dbgpt.agent.agents.base_agent_new import ConversableAgent
-
+from dbgpt.agent.resource.resource_api import AgentResource
 from .plan_action import PlanAction
 
 CFG = Config()
@@ -70,11 +70,19 @@ class PlannerAgent(ConversableAgent):
         }
         return reply_message
 
+    @staticmethod
+    def get_unique_resources_codes(resource: AgentResource) -> str:
+        return resource.name + "_" + resource.type.value + "_" + resource.value
+
     def bind_agents(self, agents: List[ConversableAgent]) -> ConversableAgent:
         self.agents = agents
+        unique_resources = set()
         for agent in self.agents:
             if agent.resources and len(agent.resources) > 0:
-                self.resources.extend(agent.resources)
+                for resource in agent.resources:
+                    if self.get_unique_resources_codes(resource) not in unique_resources:
+                        unique_resources.add(self.get_unique_resources_codes(resource))
+                        self.resources.append(resource)
         return self
 
     def prepare_act_param(self) -> Optional[Dict]:
