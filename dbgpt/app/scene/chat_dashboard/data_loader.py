@@ -40,16 +40,16 @@ class DashboardDataLoader:
                     )
 
             for field_name in field_names[1:]:
-                if not field_map[field_name]:
-                    logger.info("More than 2 non-numeric column:" + field_name)
-                else:
-                    for data in datas:
-                        value_item = ValueItem(
-                            name=data[0],
-                            type=field_name,
-                            value=data[field_names.index(field_name)],
-                        )
-                        values.append(value_item)
+                # if not field_map[field_name]:
+                #     logger.info("More than 2 non-numeric column:" + field_name)
+                # else:
+                for data in datas:
+                    value_item = ValueItem(
+                        name=data[0],
+                        type=field_name,
+                        value=str(data[field_names.index(field_name)]),
+                    )
+                    values.append(value_item)
             return field_names, values
         except Exception as e:
             logger.debug("Prepare Chart Data Failed!" + str(e))
