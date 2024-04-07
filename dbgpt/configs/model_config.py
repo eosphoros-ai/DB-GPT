@@ -156,6 +156,7 @@ LLM_MODEL_CONFIG = {
     "gemma-7b-it": os.path.join(MODEL_PATH, "gemma-7b-it"),
     # https://huggingface.co/google/gemma-2b-it
     "gemma-2b-it": os.path.join(MODEL_PATH, "gemma-2b-it"),
+    "starling-lm-7b-beta": os.path.join(MODEL_PATH, "Starling-LM-7B-beta"),
 }
 
 EMBEDDING_MODEL_CONFIG = {

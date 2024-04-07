@@ -27,3 +27,5 @@ jobs:
       run: make setup
     - name: Check Python code style
       run: make fmt-check
+    - name: Check Python code type
+      run: make mypy
