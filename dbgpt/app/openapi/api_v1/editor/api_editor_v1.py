@@ -24,6 +24,7 @@ from dbgpt.app.openapi.editor_view_model import (
 from dbgpt.app.scene import ChatFactory
 from dbgpt.app.scene.chat_dashboard.data_loader import DashboardDataLoader
 from dbgpt.serve.conversation.serve import Serve as ConversationServe
+from dbgpt.util.date_utils import convert_datetime_in_row
 
 from ._chat_history.chat_hisotry_factory import ChatHistory
 
@@ -173,9 +174,8 @@ async def editor_chart_run(run_param: dict = Body()):
         field_names, chart_values = dashboard_data_loader.get_chart_values_by_data(
             colunms, sql_result, sql
         )
-
         start_time = time.time() * 1000
-        # 计算执行耗时
+        sql_result = [convert_datetime_in_row(row) for row in sql_result]
         end_time = time.time() * 1000
         sql_run_data: SqlRunData = SqlRunData(
             result_info="",

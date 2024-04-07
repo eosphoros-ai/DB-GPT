@@ -25,7 +25,7 @@ class Config(metaclass=Singleton):
 
         # Gradio language version: en, zh
         self.LANGUAGE = os.getenv("LANGUAGE", "en")
-        self.WEB_SERVER_PORT = int(os.getenv("WEB_SERVER_PORT", 7860))
+        self.WEB_SERVER_PORT = int(os.getenv("WEB_SERVER_PORT", 5000))
 
         self.debug_mode = False
         self.skip_reprompt = False
@@ -286,6 +286,8 @@ class Config(metaclass=Singleton):
         self.MODEL_CACHE_STORAGE_DISK_DIR: Optional[str] = os.getenv(
             "MODEL_CACHE_STORAGE_DISK_DIR"
         )
+        # global dbgpt api key
+        self.API_KEYS = os.getenv("API_KEYS", None)
 
     @property
     def local_db_manager(self) -> "ConnectorManager":

@@ -226,7 +226,7 @@ class EnvArgumentParser:
         **kwargs,
     ) -> Any:
         """Parse parameters from environment variables and command lines and populate them into data class"""
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(allow_abbrev=False)
         for field in fields(dataclass_type):
             env_var_value: Any = _genenv_ignoring_key_case_with_prefixes(
                 field.name, env_prefixes

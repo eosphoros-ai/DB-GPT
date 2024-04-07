@@ -193,7 +193,61 @@ class GemmaAdapter(NewHFChatModelAdapter):
         )
 
 
+class StarlingLMAdapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/Nexusflow/Starling-LM-7B-beta
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = True
+    support_system_message: bool = False
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "starling-" in lower_model_name_or_path
+            and "lm" in lower_model_name_or_path
+        )
+
+    def get_str_prompt(
+        self,
+        params: Dict,
+        messages: List[ModelMessage],
+        tokenizer: Any,
+        prompt_template: str = None,
+        convert_to_compatible_format: bool = False,
+    ) -> Optional[str]:
+        str_prompt = super().get_str_prompt(
+            params,
+            messages,
+            tokenizer,
+            prompt_template,
+            convert_to_compatible_format,
+        )
+        chat_mode = None
+        if params and "context" in params and "chat_mode" in params["context"]:
+            chat_mode = params["context"].get("chat_mode")
+        if chat_mode in [
+            "chat_dashboard",
+            "chat_with_db_execute",
+            "excel_learning",
+            "chat_excel",
+        ]:
+            # Coding conversation, use code prompt
+            # This is a temporary solution, we should use a better way to distinguish the conversation type
+            # https://huggingface.co/Nexusflow/Starling-LM-7B-beta#code-examples
+            str_prompt = str_prompt.replace("GPT4 Correct User:", "Code User:").replace(
+                "GPT4 Correct Assistant:", "Code Assistant:"
+            )
+            logger.info(
+                f"Use code prompt for chat_mode: {chat_mode}, transform 'GPT4 Correct User:' to 'Code User:' "
+                "and 'GPT4 Correct Assistant:' to 'Code Assistant:'"
+            )
+        return str_prompt
+
+
 register_model_adapter(YiAdapter)
 register_model_adapter(Mixtral8x7BAdapter)
 register_model_adapter(SOLARAdapter)
 register_model_adapter(GemmaAdapter)
+register_model_adapter(StarlingLMAdapter)

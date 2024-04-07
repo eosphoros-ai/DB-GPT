@@ -23,6 +23,7 @@ from dbgpt.core.interface.message import (
     _MultiRoundMessageMapper,
     _split_messages_by_round,
 )
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
@@ -118,44 +119,48 @@ class PreChatHistoryLoadOperator(
     """
 
     metadata = ViewMetadata(
-        label="Chat History Load Operator",
+        label=_("Chat History Load Operator"),
         name="chat_history_load_operator",
         category=OperatorCategory.CONVERSION,
-        description="The operator to load chat history from storage.",
+        description=_("The operator to load chat history from storage."),
         parameters=[
             Parameter.build_from(
-                label="Conversation Storage",
+                label=_("Conversation Storage"),
                 name="storage",
                 type=StorageInterface,
                 optional=True,
                 default=None,
-                description="The conversation storage, store the conversation items("
-                "Not include message items). If None, we will use InMemoryStorage.",
+                description=_(
+                    "The conversation storage, store the conversation items("
+                    "Not include message items). If None, we will use InMemoryStorage."
+                ),
             ),
             Parameter.build_from(
-                label="Message Storage",
+                label=_("Message Storage"),
                 name="message_storage",
                 type=StorageInterface,
                 optional=True,
                 default=None,
-                description="The message storage, store the messages of one "
-                "conversation. If None, we will use InMemoryStorage.",
+                description=_(
+                    "The message storage, store the messages of one "
+                    "conversation. If None, we will use InMemoryStorage."
+                ),
             ),
         ],
         inputs=[
             IOField.build_from(
-                label="Model Request",
+                label=_("Model Request"),
                 name="input_value",
                 type=ModelRequest,
-                description="The model request.",
+                description=_("The model request."),
             )
         ],
         outputs=[
             IOField.build_from(
-                label="Stored Messages",
+                label=_("Stored Messages"),
                 name="output_value",
                 type=BaseMessage,
-                description="The messages stored in the storage.",
+                description=_("The messages stored in the storage."),
                 is_list=True,
             )
         ],
@@ -166,16 +171,17 @@ class PreChatHistoryLoadOperator(
         storage: Optional[StorageInterface[StorageConversation, Any]] = None,
         message_storage: Optional[StorageInterface[MessageStorageItem, Any]] = None,
         include_system_message: bool = False,
+        use_in_memory_storage_if_not_set: bool = True,
         **kwargs,
     ):
         """Create a new PreChatHistoryLoadOperator."""
-        if not storage:
+        if not storage and use_in_memory_storage_if_not_set:
             logger.info(
                 "Storage is not set, use the InMemoryStorage as the conversation "
                 "storage."
             )
             storage = InMemoryStorage()
-        if not message_storage:
+        if not message_storage and use_in_memory_storage_if_not_set:
             logger.info(
                 "Message storage is not set, use the InMemoryStorage as the message "
             )
@@ -219,6 +225,8 @@ class PreChatHistoryLoadOperator(
             sys_code=input_value.sys_code,
             conv_storage=self.storage,
             message_storage=self.message_storage,
+            param_type="",
+            param_value=input_value.chat_param,
         )
 
         # Save the storage conversation to share data, for the child operators

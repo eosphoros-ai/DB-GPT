@@ -22,15 +22,17 @@
 
 
 import asyncio
+import os
 
+from dbgpt.configs.model_config import ROOT_PATH
 from dbgpt.model.proxy import OpenAILLMClient
-from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt.rag import ChunkParameters
+from dbgpt.rag.assembler import SummaryAssembler
 from dbgpt.rag.knowledge import KnowledgeFactory
-from dbgpt.serve.rag.assembler.summary import SummaryAssembler
 
 
 async def main():
-    file_path = "./docs/docs/awel.md"
+    file_path = os.path.join(ROOT_PATH, "docs/docs/awel/awel.md")
     llm_client = OpenAILLMClient()
     knowledge = KnowledgeFactory.from_file_path(file_path)
     chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")

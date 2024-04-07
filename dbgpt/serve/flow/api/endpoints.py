@@ -1,7 +1,7 @@
 from functools import cache
 from typing import List, Optional, Union
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 
 from dbgpt.component import SystemApp
@@ -9,7 +9,7 @@ from dbgpt.core.awel.flow import ResourceMetadata, ViewMetadata
 from dbgpt.serve.core import Result
 from dbgpt.util import PaginationResult
 
-from ..config import APP_NAME, SERVE_APP_NAME, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
+from ..config import APP_NAME, SERVE_SERVICE_COMPONENT_NAME, ServeConfig
 from ..service.service import Service
 from .schemas import ServeRequest, ServerResponse
 
@@ -45,6 +45,7 @@ def _parse_api_keys(api_keys: str) -> List[str]:
 
 async def check_api_key(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token),
+    request: Request = None,
     service: Service = Depends(get_service),
 ) -> Optional[str]:
     """Check the api key
@@ -63,6 +64,10 @@ async def check_api_key(
         assert res.status_code == 200
 
     """
+    if request.url.path.startswith(f"/api/v1"):
+        return None
+
+    # for api_version in serve.serve_versions():
     if service.config.api_keys:
         api_keys = _parse_api_keys(service.config.api_keys)
         if auth is None or (token := auth.credentials) not in api_keys:
@@ -142,8 +147,8 @@ async def delete(uid: str, service: Service = Depends(get_service)) -> Result[No
     Returns:
         Result[None]: The response
     """
-    service.delete(uid)
-    return Result.succ(None)
+    inst = service.delete(uid)
+    return Result.succ(inst)
 
 
 @router.get("/flows/{uid}")
@@ -175,6 +180,8 @@ async def query_page(
     sys_code: Optional[str] = Query(default=None, description="system code"),
     page: int = Query(default=1, description="current page"),
     page_size: int = Query(default=20, description="page size"),
+    name: Optional[str] = Query(default=None, description="flow name"),
+    uid: Optional[str] = Query(default=None, description="flow uid"),
     service: Service = Depends(get_service),
 ) -> Result[PaginationResult[ServerResponse]]:
     """Query Flow entities
@@ -184,13 +191,17 @@ async def query_page(
         sys_code (Optional[str]): The system code
         page (int): The page number
         page_size (int): The page size
+        name (Optional[str]): The flow name
+        uid (Optional[str]): The flow uid
         service (Service): The service
     Returns:
         ServerResponse: The response
     """
     return Result.succ(
         service.get_list_by_page(
-            {"user_name": user_name, "sys_code": sys_code}, page, page_size
+            {"user_name": user_name, "sys_code": sys_code, "name": name, "uid": uid},
+            page,
+            page_size,
         )
     )
 

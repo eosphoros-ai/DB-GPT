@@ -1,12 +1,12 @@
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
+from typing import TYPE_CHECKING
 
 from fastapi import HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from dbgpt._private.pydantic import BaseModel, Field
+from dbgpt.core.schema.api import Result
 
 if sys.version_info < (3, 11):
     try:
@@ -18,40 +18,6 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
 
 logger = logging.getLogger(__name__)
-T = TypeVar("T")
-
-
-class Result(BaseModel, Generic[T]):
-    """Common result entity class"""
-
-    success: bool = Field(
-        ..., description="Whether it is successful, True: success, False: failure"
-    )
-    err_code: str | None = Field(None, description="Error code")
-    err_msg: str | None = Field(None, description="Error message")
-    data: T | None = Field(None, description="Return data")
-
-    @staticmethod
-    def succ(data: T) -> "Result[T]":
-        """Build a successful result entity
-
-        Args:
-            data (T): Return data
-
-        Returns:
-            Result[T]: Result entity
-        """
-        return Result(success=True, err_code=None, err_msg=None, data=data)
-
-    @staticmethod
-    def failed(msg: str, err_code: Optional[str] = "E000X") -> "Result[Any]":
-        """Build a failed result entity
-
-        Args:
-            msg (str): Error message
-            err_code (Optional[str], optional): Error code. Defaults to "E000X".
-        """
-        return Result(success=False, err_code=err_code, err_msg=msg, data=None)
 
 
 async def validation_exception_handler(
@@ -69,11 +35,11 @@ async def validation_exception_handler(
 
 async def http_exception_handler(request: Request, exc: HTTPException):
     res = Result.failed(
-        msg=exc.detail,
-        err_code="E0002",
+        msg=str(exc.detail),
+        err_code=str(exc.status_code),
     )
     logger.error(f"http_exception_handler catch HTTPException: {res}")
-    return JSONResponse(status_code=400, content=res.dict())
+    return JSONResponse(status_code=exc.status_code, content=res.dict())
 
 
 async def common_exception_handler(request: Request, exc: Exception) -> JSONResponse:

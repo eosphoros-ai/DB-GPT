@@ -68,6 +68,14 @@ const sidebars = {
               type: "doc",
               id: "awel/cookbook/multi_round_chat_withllm"
             },
+            {
+              type:"doc",
+              id: "awel/cookbook/first_rag_with_awel"
+            },
+            {
+              type:"doc",
+              id: "awel/cookbook/write_your_chat_database"
+            }
           ],
           link: {
             type: 'generated-index',
@@ -353,6 +361,42 @@ const sidebars = {
       link: {
         type: 'generated-index',
         slug: "application",
+      },
+    },
+
+    {
+      type: "category",
+      label: "API Reference",
+      collapsed: false,
+      collapsible: false,
+      items: [
+        {
+          type: 'doc',
+          id: 'api/introduction'
+        },
+        {
+          type: 'doc',
+          id: 'api/chat'
+        },
+        {
+          type: 'doc',
+          id: 'api/app'
+        },
+        {
+          type: 'doc',
+          id: 'api/flow'
+        },
+        {
+          type: 'doc',
+          id: 'api/knowledge'
+        },{
+          type: 'doc',
+          id: 'api/datasource'
+        },
+      ],
+      link: {
+        type: 'generated-index',
+        slug: "api",
       },
     },
 

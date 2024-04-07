@@ -22,14 +22,10 @@ from dbgpt.app.base import (
 # initialize_components import time cost about 0.1s
 from dbgpt.app.component_configs import initialize_components
 from dbgpt.component import SystemApp
-from dbgpt.configs.model_config import (
-    EMBEDDING_MODEL_CONFIG,
-    LLM_MODEL_CONFIG,
-    LOGDIR,
-    ROOT_PATH,
-)
+from dbgpt.configs.model_config import EMBEDDING_MODEL_CONFIG, LLM_MODEL_CONFIG, LOGDIR
 from dbgpt.serve.core import add_exception_handler
 from dbgpt.util.fastapi import PriorityAPIRouter
+from dbgpt.util.i18n_utils import _, set_default_language
 from dbgpt.util.parameter_utils import _get_dict_from_obj
 from dbgpt.util.system_utils import get_system_info
 from dbgpt.util.tracer import SpanType, SpanTypeRunName, initialize_tracer, root_tracer
@@ -47,10 +43,12 @@ sys.path.append(ROOT_PATH)
 static_file_path = os.path.join(ROOT_PATH, "dbgpt", "app/static")
 
 CFG = Config()
+set_default_language(CFG.LANGUAGE)
+
 
 app = FastAPI(
-    title="DBGPT OPEN API",
-    description="This is dbgpt, with auto docs for the API and everything",
+    title=_("DB-GPT Open API"),
+    description=_("DB-GPT Open API"),
     version=version,
     openapi_tags=[],
 )
@@ -65,18 +63,6 @@ app.mount(
 )
 
 
-@app.get("/doc", include_in_schema=False)
-async def custom_swagger_ui_html():
-    return get_swagger_ui_html(
-        openapi_url=app.openapi_url,
-        title="Custom Swagger UI",
-        swagger_js_url="/swagger_static/swagger-ui-bundle.js",
-        swagger_css_url="/swagger_static/swagger-ui.css",
-    )
-
-
-# applications.get_swagger_ui_html = swagger_monkey_patch
-
 system_app = SystemApp(app)
 
 
@@ -89,13 +75,17 @@ def mount_routers(app: FastAPI):
         router as api_editor_route_v1,
     )
     from dbgpt.app.openapi.api_v1.feedback.api_fb_v1 import router as api_fb_v1
+    from dbgpt.app.openapi.api_v2 import router as api_v2
     from dbgpt.serve.agent.app.controller import router as gpts_v1
+    from dbgpt.serve.agent.app.endpoints import router as app_v2
 
     app.include_router(api_v1, prefix="/api", tags=["Chat"])
+    app.include_router(api_v2, prefix="/api", tags=["ChatV2"])
     app.include_router(api_editor_route_v1, prefix="/api", tags=["Editor"])
     app.include_router(llm_manage_api, prefix="/api", tags=["LLM Manage"])
     app.include_router(api_fb_v1, prefix="/api", tags=["FeedBack"])
     app.include_router(gpts_v1, prefix="/api", tags=["GptsApp"])
+    app.include_router(app_v2, prefix="/api", tags=["App"])
 
     app.include_router(knowledge_router, tags=["Knowledge"])
 
@@ -150,6 +140,10 @@ def initialize_app(param: WebServerParameters = None, args: List[str] = None):
 
     model_name = param.model_name or CFG.LLM_MODEL
     param.model_name = model_name
+    param.port = param.port or CFG.WEB_SERVER_PORT
+    if not param.port:
+        param.port = 5000
+
     print(param)
 
     embedding_model_name = CFG.EMBEDDING_MODEL

@@ -24,7 +24,7 @@ def mock_vector_store_connector():
 @pytest.fixture
 def dbstruct_retriever(mock_db_connection, mock_vector_store_connector):
     return DBSchemaRetriever(
-        connection=mock_db_connection,
+        connector=mock_db_connection,
         vector_store_connector=mock_vector_store_connector,
     )
 

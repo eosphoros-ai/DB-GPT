@@ -446,7 +446,8 @@ class FlowFactory:
 
         sorted_key_to_resource_nodes = list(key_to_resource_nodes.values())
         sorted_key_to_resource_nodes = sorted(
-            sorted_key_to_resource_nodes, key=lambda r: key_to_order[r.id]
+            sorted_key_to_resource_nodes,
+            key=lambda r: key_to_order[r.id] if r.id in key_to_order else r.id,
         )
 
         key_to_resource_instance: Dict[str, Any] = {}
@@ -565,18 +566,21 @@ class FlowFactory:
                     # A single task.
                     dag._append_node(task)
                     continue
-                for downstream_key, _, _ in downstream:
+
+                # This upstream has been sorted according to the order in the downstream
+                # So we just need to connect the task to the upstream.
+                for upstream_key, _, _ in upstream:
                     # Just one direction.
-                    downstream_task = key_to_tasks.get(downstream_key)
-                    if not downstream_task:
+                    upstream_task = key_to_tasks.get(upstream_key)
+                    if not upstream_task:
                         raise ValueError(
-                            f"Unable to find downstream task by key {downstream_key}."
+                            f"Unable to find upstream task by key {upstream_key}."
                         )
-                    if not downstream_task._node_id:
-                        downstream_task.set_node_id(dag._new_node_id())
-                    if downstream_task is None:
-                        raise ValueError("Unable to find downstream task.")
-                    task >> downstream_task
+                    if not upstream_task._node_id:
+                        upstream_task.set_node_id(dag._new_node_id())
+                    if upstream_task is None:
+                        raise ValueError("Unable to find upstream task.")
+                    upstream_task >> task
             return dag
 
     def pre_load_requirements(self, flow_panel: FlowPanel):
@@ -661,3 +665,60 @@ def _topological_sort(
         raise ValueError("Graph has at least one cycle")
 
     return key_to_order
+
+
+def fill_flow_panel(flow_panel: FlowPanel):
+    """Fill the flow panel with the latest metadata.
+
+    Args:
+        flow_panel (FlowPanel): The flow panel to fill.
+    """
+    for node in flow_panel.flow_data.nodes:
+        try:
+            parameters_map = {}
+            if node.data.is_operator:
+                data = cast(ViewMetadata, node.data)
+                key = data.get_operator_key()
+                operator_cls: Type[DAGNode] = _get_operator_class(key)
+                metadata = operator_cls.metadata
+                if not metadata:
+                    raise ValueError("Metadata is not set.")
+                input_parameters = {p.name: p for p in metadata.inputs}
+                output_parameters = {p.name: p for p in metadata.outputs}
+                for i in node.data.inputs:
+                    if i.name in input_parameters:
+                        new_param = input_parameters[i.name]
+                        i.label = new_param.label
+                        i.description = new_param.description
+                for i in node.data.outputs:
+                    if i.name in output_parameters:
+                        new_param = output_parameters[i.name]
+                        i.label = new_param.label
+                        i.description = new_param.description
+            else:
+                data = cast(ResourceMetadata, node.data)
+                key = data.get_origin_id()
+                metadata = _get_resource_class(key).metadata
+
+            for param in metadata.parameters:
+                parameters_map[param.name] = param
+
+            # Update the latest metadata.
+            node.data.label = metadata.label
+            node.data.description = metadata.description
+            node.data.category = metadata.category
+            node.data.tags = metadata.tags
+            node.data.icon = metadata.icon
+            node.data.documentation_url = metadata.documentation_url
+
+            for param in node.data.parameters:
+                if param.name in parameters_map:
+                    new_param = parameters_map[param.name]
+                    param.label = new_param.label
+                    param.description = new_param.description
+                    param.options = new_param.get_dict_options()  # type: ignore
+                    param.default = new_param.default
+                    param.placeholder = new_param.placeholder
+
+        except ValueError as e:
+            logger.warning(f"Unable to fill the flow panel: {e}")

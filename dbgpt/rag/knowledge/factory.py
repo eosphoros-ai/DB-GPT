@@ -156,6 +156,7 @@ class KnowledgeFactory:
         """Get all knowledge subclasses."""
         from dbgpt.rag.knowledge.base import Knowledge  # noqa: F401
         from dbgpt.rag.knowledge.csv import CSVKnowledge  # noqa: F401
+        from dbgpt.rag.knowledge.datasource import DatasourceKnowledge  # noqa: F401
         from dbgpt.rag.knowledge.docx import DocxKnowledge  # noqa: F401
         from dbgpt.rag.knowledge.html import HTMLKnowledge  # noqa: F401
         from dbgpt.rag.knowledge.markdown import MarkdownKnowledge  # noqa: F401

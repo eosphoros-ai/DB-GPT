@@ -1,0 +1,26 @@
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-24 22:53+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../dbgpt/util/serialization/json_serialization.py:23
+msgid "Json Serializer"
+msgstr ""
+
+#: ../dbgpt/util/serialization/json_serialization.py:26
+msgid "The serializer for serializing data with json format."
+msgstr ""

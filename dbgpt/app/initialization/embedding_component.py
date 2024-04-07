@@ -82,8 +82,10 @@ class LocalEmbeddingFactory(EmbeddingFactory):
         return self._model
 
     def _load_model(self) -> "Embeddings":
-        from dbgpt.model.cluster.embedding.loader import EmbeddingLoader
-        from dbgpt.model.cluster.worker.embedding_worker import _parse_embedding_params
+        from dbgpt.model.adapter.embeddings_loader import (
+            EmbeddingLoader,
+            _parse_embedding_params,
+        )
         from dbgpt.model.parameter import (
             EMBEDDING_NAME_TO_PARAMETER_CLASS_CONFIG,
             BaseEmbeddingModelParameters,

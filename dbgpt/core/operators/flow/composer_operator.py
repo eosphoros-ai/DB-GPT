@@ -29,6 +29,7 @@ from dbgpt.core.interface.operators.message_operator import (
 from dbgpt.core.interface.operators.prompt_operator import HistoryPromptBuilderOperator
 from dbgpt.core.interface.prompt import ChatPromptTemplate
 from dbgpt.core.interface.storage import StorageInterface
+from dbgpt.util.i18n_utils import _
 
 
 class ConversationComposerOperator(MapOperator[CommonLLMHttpRequestBody, ModelRequest]):
@@ -38,82 +39,86 @@ class ConversationComposerOperator(MapOperator[CommonLLMHttpRequestBody, ModelRe
     """
 
     metadata = ViewMetadata(
-        label="Conversation Composer Operator",
+        label=_("Conversation Composer Operator"),
         name="conversation_composer_operator",
         category=OperatorCategory.CONVERSION,
-        description="A composer operator for conversation.\nIncluding chat history "
-        "handling, prompt composing, etc. Output is ModelRequest.",
+        description=_(
+            "A composer operator for conversation.\nIncluding chat history "
+            "handling, prompt composing, etc. Output is ModelRequest."
+        ),
         parameters=[
             Parameter.build_from(
-                "Prompt Template",
+                _("Prompt Template"),
                 "prompt_template",
                 ChatPromptTemplate,
-                description="The prompt template for the conversation.",
+                description=_("The prompt template for the conversation."),
             ),
             Parameter.build_from(
-                "Human Message Key",
+                _("Human Message Key"),
                 "human_message_key",
                 str,
                 optional=True,
                 default="user_input",
-                description="The key for human message in the prompt format dict.",
+                description=_("The key for human message in the prompt format dict."),
             ),
             Parameter.build_from(
-                "History Key",
+                _("History Key"),
                 "history_key",
                 str,
                 optional=True,
                 default="chat_history",
-                description="The chat history key, with chat history message pass to "
-                "prompt template.",
+                description=_(
+                    "The chat history key, with chat history message pass to "
+                    "prompt template."
+                ),
             ),
             Parameter.build_from(
-                "Keep Start Rounds",
+                _("Keep Start Rounds"),
                 "keep_start_rounds",
                 int,
                 optional=True,
                 default=None,
-                description="The start rounds to keep in the chat history.",
+                description=_("The start rounds to keep in the chat history."),
             ),
             Parameter.build_from(
-                "Keep End Rounds",
+                _("Keep End Rounds"),
                 "keep_end_rounds",
                 int,
                 optional=True,
                 default=10,
-                description="The end rounds to keep in the chat history.",
+                description=_("The end rounds to keep in the chat history."),
             ),
             Parameter.build_from(
-                "Conversation Storage",
+                _("Conversation Storage"),
                 "storage",
                 StorageInterface,
                 optional=True,
                 default=None,
-                description="The conversation storage(Not include message detail).",
+                description=_("The conversation storage(Not include message detail)."),
             ),
             Parameter.build_from(
-                "Message Storage",
+                _("Message Storage"),
                 "message_storage",
                 StorageInterface,
                 optional=True,
                 default=None,
-                description="The message storage.",
+                description=_("The message storage."),
             ),
         ],
         inputs=[
             IOField.build_from(
-                "Common LLM Http Request Body",
+                _("Common LLM Http Request Body"),
                 "common_llm_http_request_body",
                 CommonLLMHttpRequestBody,
-                description="The common LLM http request body.",
+                description=_("The common LLM http request body."),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Model Request",
+                _("Model Request"),
                 "model_request",
                 ModelRequest,
-                description="The model request with chat history prompt.",
+                description=_("The model request with chat history prompt."),
             )
         ],
     )
@@ -184,10 +189,10 @@ class ConversationComposerOperator(MapOperator[CommonLLMHttpRequestBody, ModelRe
             history_prompt_build_task >> model_request_build_task
         return composer_dag
 
-    async def after_dag_end(self):
+    async def after_dag_end(self, event_loop_task_id: int):
         """Execute after dag end."""
         # Should call after_dag_end() of sub dag
-        await self._sub_compose_dag._after_dag_end()
+        await self._sub_compose_dag._after_dag_end(event_loop_task_id)
 
 
 class PromptFormatDictBuilderOperator(
@@ -199,35 +204,37 @@ class PromptFormatDictBuilderOperator(
     """
 
     metadata = ViewMetadata(
-        label="Prompt Format Dict Builder Operator",
+        label=_("Prompt Format Dict Builder Operator"),
         name="prompt_format_dict_builder_operator",
         category=OperatorCategory.CONVERSION,
-        description="A operator to build prompt format dict from common LLM http "
-        "request body.",
+        description=_(
+            "A operator to build prompt format dict from common LLM http "
+            "request body."
+        ),
         parameters=[
             Parameter.build_from(
-                "Human Message Key",
+                _("Human Message Key"),
                 "human_message_key",
                 str,
                 optional=True,
                 default="user_input",
-                description="The key for human message in the prompt format dict.",
+                description=_("The key for human message in the prompt format dict."),
             )
         ],
         inputs=[
             IOField.build_from(
-                "Common LLM Http Request Body",
+                _("Common LLM Http Request Body"),
                 "common_llm_http_request_body",
                 CommonLLMHttpRequestBody,
-                description="The common LLM http request body.",
+                description=_("The common LLM http request body."),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Prompt Format Dict",
+                _("Prompt Format Dict"),
                 "prompt_format_dict",
-                Dict[str, Any],
-                description="The prompt format dict.",
+                dict,
+                description=_("The prompt format dict."),
             )
         ],
     )
@@ -239,7 +246,7 @@ class PromptFormatDictBuilderOperator(
 
     async def map(self, input_value: CommonLLMHttpRequestBody) -> Dict[str, Any]:
         """Build prompt format dict from common LLM http request body."""
-        extra_data = input_value.context.extra if input_value.context.extra else {}
+        extra_data = input_value.extra if input_value.extra else {}
         return {
             self._human_message_key: input_value.messages,
             **extra_data,

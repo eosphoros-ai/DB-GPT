@@ -1,19 +1,21 @@
 import asyncio
 from typing import Any, Coroutine, List
 
-from dbgpt.app.scene import BaseChat, ChatFactory
-
-chat_factory = ChatFactory()
-
 
 async def llm_chat_response_nostream(chat_scene: str, **chat_param):
     """llm_chat_response_nostream"""
+    from dbgpt.app.scene import BaseChat, ChatFactory
+
+    chat_factory = ChatFactory()
     chat: BaseChat = chat_factory.get_implementation(chat_scene, **chat_param)
     res = await chat.get_llm_response()
     return res
 
 
 async def llm_chat_response(chat_scene: str, **chat_param):
+    from dbgpt.app.scene import BaseChat, ChatFactory
+
+    chat_factory = ChatFactory()
     chat: BaseChat = chat_factory.get_implementation(chat_scene, **chat_param)
     return chat.stream_call()
 

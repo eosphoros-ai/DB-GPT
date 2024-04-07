@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, List, Optional
 
 from dbgpt._private.config import Config
-from dbgpt.datasource.rdbms.base import RDBMSConnector
+from dbgpt.datasource import BaseConnector
 from dbgpt.rag.summary.db_summary import DBSummary
 
 if TYPE_CHECKING:
@@ -64,12 +64,12 @@ class RdbmsSummary(DBSummary):
 
 
 def _parse_db_summary(
-    conn: RDBMSConnector, summary_template: str = "{table_name}({columns})"
+    conn: BaseConnector, summary_template: str = "{table_name}({columns})"
 ) -> List[str]:
     """Get db summary for database.
 
     Args:
-        conn (RDBMSConnector): database connection
+        conn (BaseConnector): database connection
         summary_template (str): summary template
     """
     tables = conn.get_table_names()
@@ -81,12 +81,12 @@ def _parse_db_summary(
 
 
 def _parse_table_summary(
-    conn: RDBMSConnector, summary_template: str, table_name: str
+    conn: BaseConnector, summary_template: str, table_name: str
 ) -> str:
     """Get table summary for table.
 
     Args:
-        conn (RDBMSConnector): database connection
+        conn (BaseConnector): database connection
         summary_template (str): summary template
         table_name (str): table name
 

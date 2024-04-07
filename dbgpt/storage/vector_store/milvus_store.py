@@ -8,12 +8,90 @@ from typing import Any, Iterable, List, Optional
 
 from dbgpt._private.pydantic import Field
 from dbgpt.core import Chunk, Embeddings
-from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.storage.vector_store.base import (
+    _COMMON_PARAMETERS,
+    VectorStoreBase,
+    VectorStoreConfig,
+)
 from dbgpt.util import string_utils
+from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
 
 
+@register_resource(
+    _("Milvus Vector Store"),
+    "milvus_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    parameters=[
+        *_COMMON_PARAMETERS,
+        Parameter.build_from(
+            _("Uri"),
+            "uri",
+            str,
+            description=_(
+                "The uri of milvus store, if not set, will use the default " "uri."
+            ),
+            optional=True,
+            default="localhost",
+        ),
+        Parameter.build_from(
+            _("Port"),
+            "port",
+            str,
+            description=_(
+                "The port of milvus store, if not set, will use the default " "port."
+            ),
+            optional=True,
+            default="19530",
+        ),
+        Parameter.build_from(
+            _("Alias"),
+            "alias",
+            str,
+            description=_(
+                "The alias of milvus store, if not set, will use the default " "alias."
+            ),
+            optional=True,
+            default="default",
+        ),
+        Parameter.build_from(
+            _("Primary Field"),
+            "primary_field",
+            str,
+            description=_(
+                "The primary field of milvus store, if not set, will use the "
+                "default primary field."
+            ),
+            optional=True,
+            default="pk_id",
+        ),
+        Parameter.build_from(
+            _("Text Field"),
+            "text_field",
+            str,
+            description=_(
+                "The text field of milvus store, if not set, will use the "
+                "default text field."
+            ),
+            optional=True,
+            default="content",
+        ),
+        Parameter.build_from(
+            _("Embedding Field"),
+            "embedding_field",
+            str,
+            description=_(
+                "The embedding field of milvus store, if not set, will use the "
+                "default embedding field."
+            ),
+            optional=True,
+            default="vector",
+        ),
+    ],
+    description=_("Milvus vector store."),
+)
 class MilvusVectorConfig(VectorStoreConfig):
     """Milvus vector store config."""
 
@@ -35,15 +113,6 @@ class MilvusVectorConfig(VectorStoreConfig):
         default="default",
         description="The alias of milvus store, if not set, will use the default "
         "alias.",
-    )
-    user: str = Field(
-        default=None,
-        description="The user of milvus store, if not set, will use the default user.",
-    )
-    password: str = Field(
-        default=None,
-        description="The password of milvus store, if not set, will use the default "
-        "password.",
     )
     primary_field: str = Field(
         default="pk_id",
@@ -105,10 +174,10 @@ class MilvusStore(VectorStoreBase):
             bytes_str = self.collection_name.encode("utf-8")
             hex_str = bytes_str.hex()
             self.collection_name = hex_str
-
-        if not vector_store_config.embedding_fn:
-            raise ValueError("embedding is required for MilvusStore")
-
+        if vector_store_config.embedding_fn is None:
+            # Perform runtime checks on self.embedding to
+            # ensure it has been correctly set and loaded
+            raise ValueError("embedding_fn is required for MilvusStore")
         self.embedding: Embeddings = vector_store_config.embedding_fn
         self.fields: List = []
         self.alias = milvus_vector_config.get("alias") or "default"

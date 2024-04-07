@@ -27,10 +27,10 @@ import os
 from typing import Optional
 
 from dbgpt.configs.model_config import PILOT_PATH, ROOT_PATH
-from dbgpt.rag.chunk_manager import ChunkParameters
+from dbgpt.rag import ChunkParameters
+from dbgpt.rag.assembler import EmbeddingAssembler
 from dbgpt.rag.embedding import OpenAPIEmbeddings
 from dbgpt.rag.knowledge import KnowledgeFactory
-from dbgpt.serve.rag.assembler.embedding import EmbeddingAssembler
 from dbgpt.storage.vector_store.chroma_store import ChromaVectorConfig
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 

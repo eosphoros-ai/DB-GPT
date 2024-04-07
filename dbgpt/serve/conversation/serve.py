@@ -91,6 +91,8 @@ class Serve(BaseServe):
         from dbgpt.storage.metadata.db_storage import SQLAlchemyStorage
         from dbgpt.util.serialization.json_serialization import JsonSerializer
 
+        from .operators import DefaultServePreChatHistoryLoadOperator
+
         self._db_manager = self.create_or_get_db_manager()
 
         self._conv_storage = SQLAlchemyStorage(
