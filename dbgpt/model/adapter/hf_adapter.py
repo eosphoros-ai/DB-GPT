@@ -246,8 +246,33 @@ class StarlingLMAdapter(NewHFChatModelAdapter):
         return str_prompt
 
 
+class QwenAdapter(NewHFChatModelAdapter):
+    """
+    https://huggingface.co/Qwen/Qwen1.5-32B-Chat
+
+    TODO: There are problems with quantization.
+    """
+
+    support_4bit: bool = True
+    support_8bit: bool = False  # TODO: Support 8bit quantization
+
+    def check_transformer_version(self, current_version: str) -> None:
+        if not current_version >= "4.37.0":
+            raise ValueError(
+                "Qwen 1.5 require transformers.__version__>=4.37.0, please upgrade your transformers package."
+            )
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return (
+            lower_model_name_or_path
+            and "qwen" in lower_model_name_or_path
+            and "1.5" in lower_model_name_or_path
+        )
+
+
 register_model_adapter(YiAdapter)
 register_model_adapter(Mixtral8x7BAdapter)
 register_model_adapter(SOLARAdapter)
 register_model_adapter(GemmaAdapter)
 register_model_adapter(StarlingLMAdapter)
+register_model_adapter(QwenAdapter)
