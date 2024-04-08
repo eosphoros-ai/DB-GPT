@@ -4,7 +4,7 @@ SCRIPT_LOCATION=$0
 cd "$(dirname "$SCRIPT_LOCATION")"
 WORK_DIR=$(pwd)
 
-BASE_IMAGE_DEFAULT="nvidia/cuda:11.8.0-runtime-ubuntu22.04"
+BASE_IMAGE_DEFAULT="nvidia/cuda:12.1.0-runtime-ubuntu22.04"
 BASE_IMAGE_DEFAULT_CPU="ubuntu:22.04"
 
 BASE_IMAGE=$BASE_IMAGE_DEFAULT
@@ -21,7 +21,7 @@ BUILD_NETWORK=""
 DB_GPT_INSTALL_MODEL="default"
 
 usage () {
-    echo "USAGE: $0 [--base-image nvidia/cuda:11.8.0-runtime-ubuntu22.04] [--image-name db-gpt]"
+    echo "USAGE: $0 [--base-image nvidia/cuda:12.1.0-runtime-ubuntu22.04] [--image-name db-gpt]"
     echo "  [-b|--base-image base image name] Base image name"
     echo "  [-n|--image-name image name] Current image name, default: db-gpt"
     echo "  [-i|--pip-index-url pip index url] Pip index url, default: https://pypi.org/simple"
