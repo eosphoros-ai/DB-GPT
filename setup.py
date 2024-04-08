@@ -276,12 +276,17 @@ def _build_wheels(
     py_version = "cp" + "".join(py_version.split(".")[0:2])
     if os_type == OSType.DARWIN or not cuda_version:
         return None
-    if cuda_version <= "11.8":
-        print(f"Warnning: {pkg_name} will use {supported_cuda_versions[0]}")
-        cuda_version = supported_cuda_versions[0]
+
+    if cuda_version in supported_cuda_versions:
+        cuda_version = cuda_version
     else:
-        print(f"Warnning: {pkg_name} will use {supported_cuda_versions[-1]}")
-        cuda_version = supported_cuda_versions[-1]
+        print(
+            f"Warning: Your CUDA version {cuda_version} is not in our set supported_cuda_versions , we will use our set version."
+        )
+        if cuda_version < "12.1":
+            cuda_version = supported_cuda_versions[0]
+        else:
+            cuda_version = supported_cuda_versions[-1]
 
     cuda_version = "cu" + cuda_version.replace(".", "")
     os_pkg_name = "linux_x86_64" if os_type == OSType.LINUX else "win_amd64"
@@ -628,11 +633,7 @@ def default_requires():
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["rag"]
     setup_spec.extras["default"] += setup_spec.extras["datasource"]
-    cuda_version = get_cuda_version()
-    if cuda_version is not None:
-        setup_spec.extras["default"] += setup_spec.extras["torch_cuda"]
-    else:
-        setup_spec.extras["default"] += setup_spec.extras["torch"]
+    setup_spec.extras["default"] += setup_spec.extras["torch"]
     setup_spec.extras["default"] += setup_spec.extras["quantization"]
     setup_spec.extras["default"] += setup_spec.extras["cache"]
 
