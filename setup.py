@@ -96,7 +96,6 @@ def get_latest_version(package_name: str, index_url: str, default_version: str):
         print(result_simulate_install)
         stderr_output = result_simulate_install.stderr.decode()
         print(stderr_output)
-        # 从错误输出中提取版本信息
         match = re.search(r"from versions: (.+?)\)", stderr_output)
         if match:
             available_versions = match.group(1).split(", ")
