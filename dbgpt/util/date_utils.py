@@ -6,6 +6,7 @@ def is_datetime(value):
 
 
 def convert_datetime_in_row(row):
-    return [value.strftime('%Y-%m-%d %H:%M:%S') if is_datetime(value)
-            else value for value in row]
-
+    return [
+        value.strftime("%Y-%m-%d %H:%M:%S") if is_datetime(value) else value
+        for value in row
+    ]
