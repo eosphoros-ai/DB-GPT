@@ -363,7 +363,7 @@ class LlamaCppAdapater(BaseLLMAdaper):
             logger.warn(
                 f"Model path {model_path} is not single file, use first *gglm*.gguf model file: {model_path}"
             )
-        if not re.fullmatch(".*ggml.*\.gguf", model_path):
+        if not re.fullmatch(r".*ggml.*\.gguf", model_path):
             return False, None
         return True, model_path
 
