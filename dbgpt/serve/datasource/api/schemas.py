@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from dbgpt._private.pydantic import BaseModel, Field
 
 from ..config import SERVE_APP_NAME_HUMP
 

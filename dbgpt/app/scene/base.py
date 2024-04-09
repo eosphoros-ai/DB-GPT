@@ -70,7 +70,7 @@ class ChatScene(Enum):
     ChatFlow = Scene(
         code="chat_flow",
         name="Flow Chat",
-        describe="Have conversations with conversational Awel flow.",
+        describe="Have conversations with conversational AWEL flow.",
         param_types=["Flow Select"],
     )
 

@@ -1,5 +1,6 @@
+"""Plugin loader module."""
+
 import logging
-from pathlib import Path
 from typing import List, Optional
 
 from .generator import PluginPromptGenerator
@@ -9,12 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 class PluginLoader:
+    """Plugin Loader Class."""
+
     def load_plugins(
-        self, plugin_path: Optional[str], available_plugins: Optional[List[str]] = None
+        self, plugin_path: str, available_plugins: Optional[List[str]] = None
     ) -> PluginPromptGenerator:
-        logger.info(
-            f"load_plugin path:{plugin_path}, available:{available_plugins if available_plugins else ''}"
-        )
+        """Load plugins from plugin path."""
+        available = available_plugins if available_plugins else ""
+        logger.info(f"load_plugin path:{plugin_path}, available:{available}")
         plugins = scan_plugins(plugin_path)
 
         generator: PluginPromptGenerator = PluginPromptGenerator()

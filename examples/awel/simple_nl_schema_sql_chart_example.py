@@ -2,8 +2,8 @@ import os
 from typing import Any, Dict, Optional
 
 from pandas import DataFrame
-from pydantic import BaseModel, Field
 
+from dbgpt._private.pydantic import BaseModel, Field
 from dbgpt.configs.model_config import MODEL_PATH, PILOT_PATH
 from dbgpt.core import LLMClient, ModelMessage, ModelMessageRoleType, ModelRequest
 from dbgpt.core.awel import DAG, HttpTrigger, JoinOperator, MapOperator

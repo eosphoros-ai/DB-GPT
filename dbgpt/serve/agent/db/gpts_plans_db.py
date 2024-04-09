@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
-from dbgpt.agent.common.schema import Status
+from dbgpt.agent.core.schema import Status
 from dbgpt.storage.metadata import BaseDao, Model
 
 

@@ -1,7 +1,7 @@
 from dbgpt._private.config import Config
 from dbgpt.component import ComponentType
 from dbgpt.model.cluster import BaseModelController
-from dbgpt.serve.agent.db.gpts_app import GptsApp, GptsAppCollectionDao, GptsAppDao
+from dbgpt.serve.agent.db.gpts_app import GptsAppCollectionDao, GptsAppDao
 
 CFG = Config()
 

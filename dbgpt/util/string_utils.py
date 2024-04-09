@@ -1,4 +1,5 @@
 import re
+from typing import Dict
 
 
 def is_all_chinese(text):
@@ -34,7 +35,7 @@ def is_scientific_notation(string):
         return False
 
 
-def extract_content(long_string, s1, s2, is_include: bool = False):
+def extract_content(long_string, s1, s2, is_include: bool = False) -> Dict[int, str]:
     # extract text
     match_map = {}
     start_index = long_string.find(s1)

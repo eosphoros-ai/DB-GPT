@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+"""Client for vis protocol."""
+from typing import Dict, Type
 
 from .base import Vis
 from .tags.vis_agent_message import VisAgentMessages
@@ -10,18 +11,24 @@ from .tags.vis_plugin import VisPlugin
 
 
 class VisClient:
+    """Client for vis protocol."""
+
     def __init__(self):
+        """Client for vis protocol."""
         self._vis_tag: Dict[str, Vis] = {}
 
-    def register(self, vis_cls: Vis):
+    def register(self, vis_cls: Type[Vis]):
+        """Register the vis protocol."""
         self._vis_tag[vis_cls.vis_tag()] = vis_cls()
 
     def get(self, tag_name):
+        """Get the vis protocol by tag name."""
         if tag_name not in self._vis_tag:
             raise ValueError(f"Vis protocol tags not yet supported！[{tag_name}]")
         return self._vis_tag[tag_name]
 
     def tag_names(self):
+        """Return the tag names of the vis protocol."""
         self._vis_tag.keys()
 
 

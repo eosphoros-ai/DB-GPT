@@ -10,6 +10,7 @@ from dbgpt.util.singleton import Singleton
 if TYPE_CHECKING:
     from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
+    from dbgpt.agent.plugin import CommandRegistry
     from dbgpt.component import SystemApp
     from dbgpt.datasource.manages import ConnectorManager
 
@@ -145,7 +146,7 @@ class Config(metaclass=Singleton):
 
         self.prompt_template_registry = PromptTemplateRegistry()
         ### Related configuration of built-in commands
-        self.command_registry = []  # type: ignore
+        self.command_registry: Optional[CommandRegistry] = None
 
         disabled_command_categories = os.getenv("DISABLED_COMMAND_CATEGORIES")
         if disabled_command_categories:

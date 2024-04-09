@@ -1,38 +1,30 @@
-""" A module for generating custom prompt strings."""
+"""A module for generating custom prompt strings."""
 from typing import Any, Callable, Dict, List, Optional
 
 
 class PluginPromptGenerator:
-    """
+    """PluginPromptGenerator class.
+
     A class for generating custom prompt strings based on constraints, commands,
         resources, and performance evaluations.
     """
 
     def __init__(self) -> None:
-        """
+        """Create a new PromptGenerator object.
+
         Initialize the PromptGenerator object with empty lists of constraints,
-            commands, resources, and performance evaluations.
+        commands, resources, and performance evaluations.
         """
-        self.constraints = []
-        self.commands = []
-        self.resources = []
-        self.performance_evaluation = []
-        self.goals = []
-        self.command_registry = None
-        self.response_format = {
-            "thoughts": {
-                "text": "thought",
-                "reasoning": "reasoning",
-                "plan": "- short bulleted\n- list that conveys\n- long-term plan",
-                "criticism": "constructive self-criticism",
-                "speak": "thoughts summary to say to user",
-            },
-            "command": {"name": "command name", "args": {"arg name": "value"}},
-        }
+        from .commands.command_manage import CommandRegistry
+
+        self.constraints: List[str] = []
+        self.commands: List[Dict[str, Any]] = []
+        self.resources: List[str] = []
+        self.performance_evaluation: List[str] = []
+        self.command_registry: CommandRegistry = CommandRegistry()
 
     def add_constraint(self, constraint: str) -> None:
-        """
-        Add a constraint to the constraints list.
+        """Add a constraint to the constraints list.
 
         Args:
             constraint (str): The constraint to be added.
@@ -46,7 +38,8 @@ class PluginPromptGenerator:
         args=None,
         function: Optional[Callable] = None,
     ) -> None:
-        """
+        """Add a command to the commands.
+
         Add a command to the commands list with a label, name, and optional arguments.
 
         Args:
@@ -131,4 +124,5 @@ class PluginPromptGenerator:
             return "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
 
     def generate_commands_string(self) -> str:
+        """Return a formatted string representation of the commands list."""
         return f"{self._generate_numbered_list(self.commands, item_type='command')}"

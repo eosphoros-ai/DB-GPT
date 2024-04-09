@@ -75,8 +75,8 @@ class ChatMode(Enum):
     CHAT_DATA = "chat_data"
 
 
-class AwelTeamModel(BaseModel):
-    """Awel team model."""
+class AWELTeamModel(BaseModel):
+    """AWEL team model."""
 
     dag_id: str = Field(
         ...,
@@ -137,7 +137,7 @@ class AgentResourceType(Enum):
     TextFile = "text_file"
     ExcelFile = "excel_file"
     ImageFile = "image_file"
-    AwelFlow = "awel_flow"
+    AWELFlow = "awel_flow"
 
 
 class AgentResourceModel(BaseModel):
@@ -206,7 +206,7 @@ class AppModel(BaseModel):
     app_describe: Optional[str] = Field(None, title="app describe")
     team_mode: Optional[str] = Field(None, title="team mode")
     language: Optional[str] = Field("en", title="language")
-    team_context: Optional[Union[str, AwelTeamModel]] = Field(
+    team_context: Optional[Union[str, AWELTeamModel]] = Field(
         None, title="team context"
     )
     user_code: Optional[str] = Field(None, title="user code")

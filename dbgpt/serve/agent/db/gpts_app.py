@@ -5,11 +5,11 @@ from datetime import datetime
 from itertools import groupby
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
 from sqlalchemy import Column, DateTime, Integer, String, Text, UniqueConstraint
 
+from dbgpt._private.pydantic import BaseModel
+from dbgpt.agent.plan.awel.team_awel_layout import AWELTeamContext
 from dbgpt.agent.resource.resource_api import AgentResource
-from dbgpt.serve.agent.model import AwelTeamContext
 from dbgpt.serve.agent.team.base import TeamMode
 from dbgpt.storage.metadata import BaseDao, Model
 
@@ -60,7 +60,7 @@ class GptsAppDetail(BaseModel):
             app_name=d["app_name"],
             agent_name=d["agent_name"],
             node_id=d["node_id"],
-            resources=AgentResource.from_josn_list_str(d.get("resources", None)),
+            resources=AgentResource.from_json_list_str(d.get("resources", None)),
             prompt_template=d.get("prompt_template", None),
             llm_strategy=d.get("llm_strategy", None),
             llm_strategy_value=llm_strategy_value,
@@ -70,7 +70,7 @@ class GptsAppDetail(BaseModel):
 
     @classmethod
     def from_entity(cls, entity):
-        resources = AgentResource.from_josn_list_str(entity.resources)
+        resources = AgentResource.from_json_list_str(entity.resources)
         return cls(
             app_code=entity.app_code,
             app_name=entity.app_name,
@@ -91,7 +91,7 @@ class GptsApp(BaseModel):
     app_describe: Optional[str] = None
     team_mode: Optional[str] = None
     language: Optional[str] = None
-    team_context: Optional[Union[str, AwelTeamContext]] = None
+    team_context: Optional[Union[str, AWELTeamContext]] = None
     user_code: Optional[str] = None
     sys_code: Optional[str] = None
     is_collected: Optional[str] = None
@@ -560,26 +560,26 @@ class GptsAppDao(BaseDao):
             return True
 
 
-def _parse_team_context(team_context: Optional[Union[str, AwelTeamContext]] = None):
+def _parse_team_context(team_context: Optional[Union[str, AWELTeamContext]] = None):
     """
     parse team_context to str
     """
-    if isinstance(team_context, AwelTeamContext):
+    if isinstance(team_context, AWELTeamContext):
         return team_context.json()
     return team_context
 
 
 def _load_team_context(
     team_mode: str = None, team_context: str = None
-) -> Union[str, AwelTeamContext]:
+) -> Union[str, AWELTeamContext]:
     """
-    load team_context to str or AwelTeamContext
+    load team_context to str or AWELTeamContext
     """
     if team_mode is not None:
         match team_mode:
             case TeamMode.AWEL_LAYOUT.value:
                 try:
-                    awel_team_ctx = AwelTeamContext(**json.loads(team_context))
+                    awel_team_ctx = AWELTeamContext(**json.loads(team_context))
                     return awel_team_ctx
                 except Exception as ex:
                     logger.info(

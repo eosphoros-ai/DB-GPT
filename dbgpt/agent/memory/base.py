@@ -1,17 +1,15 @@
-from __future__ import annotations
-
+"""Base memory interface for agents."""
 import dataclasses
-from abc import ABC
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from dbgpt.agent.common.schema import Status
+from dbgpt.agent.core.schema import Status
 
 
-@dataclass
+@dataclasses.dataclass
 class GptsPlan:
-    """Gpts plan"""
+    """Gpts plan."""
 
     conv_id: str
     sub_task_num: int
@@ -21,15 +19,16 @@ class GptsPlan:
     resource_name: Optional[str] = None
     rely: Optional[str] = None
     agent_model: Optional[str] = None
-    retry_times: Optional[int] = 0
-    max_retry_times: Optional[int] = 5
+    retry_times: int = 0
+    max_retry_times: int = 5
     state: Optional[str] = Status.TODO.value
     result: Optional[str] = None
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]) -> GptsPlan:
+    def from_dict(d: Dict[str, Any]) -> "GptsPlan":
+        """Create a GptsPlan object from a dictionary."""
         return GptsPlan(
-            conv_id=d.get("conv_id"),
+            conv_id=d["conv_id"],
             sub_task_num=d["sub_task_num"],
             sub_task_content=d["sub_task_content"],
             sub_task_agent=d["sub_task_agent"],
@@ -43,12 +42,13 @@ class GptsPlan:
         )
 
     def to_dict(self) -> Dict[str, Any]:
+        """Return a dictionary representation of the GptsPlan object."""
         return dataclasses.asdict(self)
 
 
-@dataclass
+@dataclasses.dataclass
 class GptsMessage:
-    """Gpts plan"""
+    """Gpts message."""
 
     conv_id: str
     sender: str
@@ -57,16 +57,17 @@ class GptsMessage:
     role: str
     content: str
     rounds: Optional[int]
-    current_goal: str = None
+    current_goal: Optional[str] = None
     context: Optional[str] = None
     review_info: Optional[str] = None
     action_report: Optional[str] = None
     model_name: Optional[str] = None
-    created_at: datetime = datetime.utcnow
-    updated_at: datetime = datetime.utcnow
+    created_at: datetime = dataclasses.field(default_factory=datetime.utcnow)
+    updated_at: datetime = dataclasses.field(default_factory=datetime.utcnow)
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]) -> GptsMessage:
+    def from_dict(d: Dict[str, Any]) -> "GptsMessage":
+        """Create a GptsMessage object from a dictionary."""
         return GptsMessage(
             conv_id=d["conv_id"],
             sender=d["sender"],
@@ -84,152 +85,165 @@ class GptsMessage:
         )
 
     def to_dict(self) -> Dict[str, Any]:
+        """Return a dictionary representation of the GptsMessage object."""
         return dataclasses.asdict(self)
 
 
 class GptsPlansMemory(ABC):
-    def batch_save(self, plans: list[GptsPlan]):
-        """
-        batch save gpts plan
+    """Gpts plans memory interface."""
+
+    @abstractmethod
+    def batch_save(self, plans: List[GptsPlan]) -> None:
+        """Save plans in batch.
+
         Args:
             plans: panner generate plans info
-        Returns:
-            None
-        """
-        pass
 
-    def get_by_conv_id(self, conv_id: str) -> List[GptsPlan]:
         """
-        get plans by conv_id
+
+    @abstractmethod
+    def get_by_conv_id(self, conv_id: str) -> List[GptsPlan]:
+        """Get plans by conv_id.
+
         Args:
             conv_id: conversation id
+
         Returns:
-            List of planning steps
+            List[GptsPlan]: List of planning steps
         """
 
+    @abstractmethod
     def get_by_conv_id_and_num(
         self, conv_id: str, task_nums: List[int]
     ) -> List[GptsPlan]:
-        """
-        get
+        """Get plans by conv_id and task number.
+
         Args:
-            conv_id: conversation id
-            task_nums: List of sequence numbers of plans in the same conversation
+            conv_id(str): conversation id
+            task_nums(List[int]): List of sequence numbers of plans in the same
+                conversation
 
         Returns:
-            List of planning steps
-
+            List[GptsPlan]: List of planning steps
         """
 
+    @abstractmethod
     def get_todo_plans(self, conv_id: str) -> List[GptsPlan]:
-        """
-        Get unfinished planning steps
+        """Get unfinished planning steps.
+
         Args:
-            conv_id: conversation id
+            conv_id(str): Conversation id
 
         Returns:
-            List of planning steps
+            List[GptsPlan]: List of planning steps
         """
 
-    def complete_task(self, conv_id: str, task_num: int, result: str):
-        """
-        Complete designated planning step
+    @abstractmethod
+    def complete_task(self, conv_id: str, task_num: int, result: str) -> None:
+        """Set the planning step to complete.
+
         Args:
-            conv_id: conversation id
-            task_num: Planning step num
-            result: Plan step results
-
-        Returns:
-            None
+            conv_id(str): conversation id
+            task_num(int): Planning step num
+            result(str): Plan step results
         """
 
+    @abstractmethod
     def update_task(
         self,
         conv_id: str,
         task_num: int,
         state: str,
         retry_times: int,
-        agent: str = None,
-        model: str = None,
-        result: str = None,
-    ):
-        """
-        Update planning step information
+        agent: Optional[str] = None,
+        model: Optional[str] = None,
+        result: Optional[str] = None,
+    ) -> None:
+        """Update planning step information.
+
         Args:
-            conv_id: conversation id
-            task_num: Planning step num
-            state: the status to update to
-            retry_times: Latest number of retries
-            agent: Agent's name
-
-        Returns:
-
+            conv_id(str): conversation id
+            task_num(int): Planning step num
+            state(str): the status to update to
+            retry_times(int): Latest number of retries
+            agent(str): Agent's name
+            model(str): Model name
+            result(str): Plan step results
         """
 
-    def remove_by_conv_id(self, conv_id: str):
-        """
-        Delete planning
+    @abstractmethod
+    def remove_by_conv_id(self, conv_id: str) -> None:
+        """Remove plan by conversation id.
+
         Args:
-            conv_id:
-
-        Returns:
-
+            conv_id(str): conversation id
         """
 
 
 class GptsMessageMemory(ABC):
-    def append(self, message: GptsMessage):
-        """
-        Add a message
+    """Gpts message memory interface."""
+
+    @abstractmethod
+    def append(self, message: GptsMessage) -> None:
+        """Add a message.
+
         Args:
-            message:
-
-        Returns:
-
+            message(GptsMessage): Message object
         """
 
+    @abstractmethod
     def get_by_agent(self, conv_id: str, agent: str) -> Optional[List[GptsMessage]]:
-        """
-        Query information related to an agent
+        """Return all messages of the agent in the conversation.
+
         Args:
-            agent:agent's name
+            conv_id(str): Conversation id
+            agent(str): Agent's name
 
         Returns:
-            messages
+            List[GptsMessage]: List of messages
         """
 
+    @abstractmethod
     def get_between_agents(
         self,
         conv_id: str,
         agent1: str,
         agent2: str,
         current_goal: Optional[str] = None,
-    ) -> Optional[List[GptsMessage]]:
-        """
+    ) -> List[GptsMessage]:
+        """Get messages between two agents.
+
         Query information related to an agent
+
         Args:
-            agent:agent's name
+            conv_id(str): Conversation id
+            agent1(str): Agent1's name
+            agent2(str): Agent2's name
+            current_goal(str): Current goal
 
         Returns:
-            messages
+            List[GptsMessage]: List of messages
         """
 
-    def get_by_conv_id(self, conv_id: str) -> Optional[List[GptsMessage]]:
-        """
-        Query messages by conv id
+    @abstractmethod
+    def get_by_conv_id(self, conv_id: str) -> List[GptsMessage]:
+        """Return all messages in the conversation.
+
+        Query messages by conv id.
+
         Args:
-            conv_id:
-
+            conv_id(str): Conversation id
         Returns:
-
+            List[GptsMessage]: List of messages
         """
 
+    @abstractmethod
     def get_last_message(self, conv_id: str) -> Optional[GptsMessage]:
-        """
-        Query last message
+        """Return the last message in the conversation.
+
         Args:
-            conv_id:
+            conv_id(str): Conversation id
 
         Returns:
-
+            GptsMessage: The last message in the conversation
         """

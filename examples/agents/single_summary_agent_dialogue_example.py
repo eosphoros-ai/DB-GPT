@@ -15,17 +15,13 @@
 """
 
 import asyncio
-import os
 
-from dbgpt.agent.agents.agent import AgentContext
-from dbgpt.agent.agents.expand.summary_assistant_agent import SummaryAssistantAgent
-from dbgpt.agent.agents.llm.llm import LLMConfig
-from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
-from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.agent import AgentContext, GptsMemory, LLMConfig, UserProxyAgent
+from dbgpt.agent.expand.summary_assistant_agent import SummaryAssistantAgent
 
 
 async def summary_example_with_success():
-    from dbgpt.model import OpenAILLMClient
+    from dbgpt.model.proxy import OpenAILLMClient
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="summarize")
@@ -42,7 +38,7 @@ async def summary_example_with_success():
 
     user_proxy = await UserProxyAgent().bind(default_memory).bind(context).build()
 
-    await user_proxy.a_initiate_chat(
+    await user_proxy.initiate_chat(
         recipient=summarizer,
         reviewer=user_proxy,
         message="""I want to summarize advantages of Nuclear Power according to the following content.
@@ -76,11 +72,11 @@ async def summary_example_with_success():
     )
 
     ## dbgpt-vis message infos
-    print(await default_memory.one_chat_competions("summarize"))
+    print(await default_memory.one_chat_completions("summarize"))
 
 
 async def summary_example_with_faliure():
-    from dbgpt.model import OpenAILLMClient
+    from dbgpt.model.proxy import OpenAILLMClient
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="summarize")
@@ -99,7 +95,7 @@ async def summary_example_with_faliure():
 
     # Test the failure example
 
-    await user_proxy.a_initiate_chat(
+    await user_proxy.initiate_chat(
         recipient=summarizer,
         reviewer=user_proxy,
         message="""I want to summarize advantages of Nuclear Power according to the following content.
@@ -116,7 +112,7 @@ async def summary_example_with_faliure():
             """,
     )
 
-    print(await default_memory.one_chat_competions("summarize"))
+    print(await default_memory.one_chat_completions("summarize"))
 
 
 if __name__ == "__main__":

@@ -1,16 +1,20 @@
+"""Base class for vis protocol module."""
 import json
-from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Type, Union
+from typing import Any, Dict, Optional
 
 from dbgpt.util.json_utils import serialize
 
 
 class Vis:
-    def render_prompt(self):
+    """Vis protocol base class."""
+
+    def render_prompt(self) -> Optional[str]:
+        """Return the prompt for the vis protocol."""
         return None
 
-    async def generate_param(self, **kwargs) -> Optional[str]:
-        """
+    async def generate_param(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """Generate the parameters required by the vis protocol.
+
         Display corresponding content using vis protocol
         Args:
             **kwargs:
@@ -21,12 +25,13 @@ class Vis:
         return kwargs["content"]
 
     async def display(self, **kwargs) -> Optional[str]:
-        return f"```{self.vis_tag()}\n{json.dumps(await self.generate_param(**kwargs), default=serialize, ensure_ascii=False)}\n```"
+        """Display the content using the vis protocol."""
+        content = json.dumps(
+            await self.generate_param(**kwargs), default=serialize, ensure_ascii=False
+        )
+        return f"```{self.vis_tag()}\n{content}\n```"
 
     @classmethod
     def vis_tag(cls) -> str:
-        """
-        Current vis protocol module tag name
-        Returns:
-
-        """
+        """Return current vis protocol module tag name."""
+        return ""

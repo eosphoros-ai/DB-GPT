@@ -44,10 +44,7 @@ def server_init(param: "WebServerParameters", system_app: SystemApp):
     signal.signal(signal.SIGINT, signal_handler)
 
     # Loader plugins and commands
-    command_categories = [
-        "dbgpt.agent.plugin.commands.built_in.audio_text",
-        "dbgpt.agent.plugin.commands.built_in.image_gen",
-    ]
+    command_categories = []
     # exclude commands
     command_categories = [
         x for x in command_categories if x not in cfg.disabled_command_categories

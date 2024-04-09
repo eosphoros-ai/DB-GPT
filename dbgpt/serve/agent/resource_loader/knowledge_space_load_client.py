@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from dbgpt._private.config import Config
 from dbgpt.agent.resource.resource_api import AgentResource
@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class KnowledgeSpaceLoadClient(ResourceKnowledgeClient):
-    async def a_get_space_desc(self, space_name) -> str:
+    async def get_space_desc(self, space_name) -> str:
         pass
 
-    async def a_get_kn(
+    async def get_kn(
         self, space_name: str, question: Optional[str] = None
     ) -> List[Chunk]:
         kn_retriver = KnowledgeSpaceRetriever(space_name=space_name)
@@ -28,10 +28,8 @@ class KnowledgeSpaceLoadClient(ResourceKnowledgeClient):
     ):
         kn_retriver = KnowledgeSpaceRetriever(space_name=space_name)
 
-        pass
-
     async def get_data_introduce(
         self, resource: AgentResource, question: Optional[str] = None
-    ) -> str:
-        docs = await self.a_get_kn(resource.value, question)
+    ) -> Union[str, List[str]]:
+        docs = await self.get_kn(resource.value, question)
         return "\n".join([doc.content for doc in docs])

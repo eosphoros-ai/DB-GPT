@@ -4,6 +4,7 @@ if pydantic.VERSION.startswith("1."):
     PYDANTIC_VERSION = 1
     from pydantic import (
         BaseModel,
+        ConfigDict,
         Extra,
         Field,
         NonNegativeFloat,
@@ -20,6 +21,7 @@ else:
     # pydantic 2.x
     from pydantic.v1 import (
         BaseModel,
+        ConfigDict,
         Extra,
         Field,
         NonNegativeFloat,

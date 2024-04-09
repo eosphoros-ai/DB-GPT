@@ -157,7 +157,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
         try:
             if state == State.DEPLOYED:
                 # Register the DAG
-                self.dag_manager.register_dag(dag)
+                self.dag_manager.register_dag(dag, request.uid)
                 # Update state to RUNNING
                 request.state = State.RUNNING
                 request.error_message = ""
@@ -199,7 +199,7 @@ class Service(BaseService[ServeEntity, ServeRequest, ServerResponse]):
                     entity.version == "0.1.0" and entity.state == State.INITIALIZING
                 ):
                     # Register the DAG
-                    self.dag_manager.register_dag(dag)
+                    self.dag_manager.register_dag(dag, entity.uid)
                     # Update state to RUNNING
                     entity.state = State.RUNNING
                     entity.error_message = ""

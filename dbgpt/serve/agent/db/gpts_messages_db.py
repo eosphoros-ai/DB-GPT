@@ -1,18 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import (
-    Column,
-    DateTime,
-    Index,
-    Integer,
-    String,
-    Text,
-    and_,
-    desc,
-    func,
-    or_,
-)
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text, and_, desc, or_
 
 from dbgpt.storage.metadata import BaseDao, Model
 

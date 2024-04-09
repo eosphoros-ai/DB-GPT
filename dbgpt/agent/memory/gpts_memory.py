@@ -1,13 +1,11 @@
-from __future__ import annotations
-
+"""GPTs memory."""
 import json
 from collections import OrderedDict, defaultdict
 from typing import Dict, List, Optional
 
-from dbgpt.agent.actions.action import ActionOutput
-from dbgpt.util.json_utils import EnhancedJSONEncoder
 from dbgpt.vis.client import VisAgentMessages, VisAgentPlans, vis_client
 
+from ..actions.action import ActionOutput
 from .base import GptsMessage, GptsMessageMemory, GptsPlansMemory
 from .default_gpts_memory import DefaultGptsMessageMemory, DefaultGptsPlansMemory
 
@@ -15,11 +13,14 @@ NONE_GOAL_PREFIX: str = "none_goal_count_"
 
 
 class GptsMemory:
+    """GPTs memory."""
+
     def __init__(
         self,
         plans_memory: Optional[GptsPlansMemory] = None,
         message_memory: Optional[GptsMessageMemory] = None,
     ):
+        """Create a memory to store plans and messages."""
         self._plans_memory: GptsPlansMemory = (
             plans_memory if plans_memory is not None else DefaultGptsPlansMemory()
         )
@@ -28,11 +29,13 @@ class GptsMemory:
         )
 
     @property
-    def plans_memory(self):
+    def plans_memory(self) -> GptsPlansMemory:
+        """Return the plans memory."""
         return self._plans_memory
 
     @property
-    def message_memory(self):
+    def message_memory(self) -> GptsMessageMemory:
+        """Return the message memory."""
         return self._message_memory
 
     async def _message_group_vis_build(self, message_group):
@@ -86,40 +89,42 @@ class GptsMemory:
             )
         return await self._messages_to_plan_vis(plan_items)
 
-    async def one_chat_competions_v2(self, conv_id: str):
+    async def one_chat_completions_v2(self, conv_id: str):
+        """Generate a visualization of the conversation."""
         messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
-        temp_group = OrderedDict()
+        temp_group: Dict[str, List[GptsMessage]] = OrderedDict()
         none_goal_count = 1
         count: int = 0
         for message in messages:
             count = count + 1
             if count == 1:
                 continue
-            current_gogal = message.current_goal
+            current_goal = message.current_goal
 
             last_goal = next(reversed(temp_group)) if temp_group else None
             if last_goal:
                 last_goal_messages = temp_group[last_goal]
-                if current_gogal:
-                    if current_gogal == last_goal:
+                if current_goal:
+                    if current_goal == last_goal:
                         last_goal_messages.append(message)
                     else:
-                        temp_group[current_gogal] = [message]
+                        temp_group[current_goal] = [message]
                 else:
                     temp_group[f"{NONE_GOAL_PREFIX}{none_goal_count}"] = [message]
                     none_goal_count += 1
             else:
-                if current_gogal:
-                    temp_group[current_gogal] = [message]
+                if current_goal:
+                    temp_group[current_goal] = [message]
                 else:
                     temp_group[f"{NONE_GOAL_PREFIX}{none_goal_count}"] = [message]
                     none_goal_count += 1
 
         return await self._message_group_vis_build(temp_group)
 
-    async def one_chat_competions(self, conv_id: str):
+    async def one_chat_completions(self, conv_id: str):
+        """Generate a visualization of the conversation."""
         messages = self.message_memory.get_by_conv_id(conv_id=conv_id)
-        temp_group = defaultdict(list)
+        temp_group: Dict[str, List[GptsMessage]] = defaultdict(list)
         temp_messages = []
         vis_items = []
         count: int = 0
@@ -138,8 +143,8 @@ class GptsMemory:
                     vis_items.append(await self._messages_to_agents_vis(temp_messages))
                     temp_messages.clear()
 
-                last_gogal = message.current_goal
-                temp_group[last_gogal].append(message)
+                last_goal = message.current_goal
+                temp_group[last_goal].append(message)
 
         if len(temp_group) > 0:
             vis_items.append(await self._plan_vis_build(temp_group))
@@ -161,10 +166,11 @@ class GptsMemory:
             view_info = message.content
             if action_report_str and len(action_report_str) > 0:
                 action_out = ActionOutput.from_dict(json.loads(action_report_str))
-                if action_out is not None:
-                    if action_out.is_exe_success or is_last_message:
-                        view = action_out.view
-                        view_info = view if view else action_out.content
+                if action_out is not None and (
+                    action_out.is_exe_success or is_last_message
+                ):
+                    view = action_out.view
+                    view_info = view if view else action_out.content
 
             messages_view.append(
                 {
