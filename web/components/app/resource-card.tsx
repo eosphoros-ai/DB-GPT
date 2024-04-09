@@ -61,8 +61,9 @@ export default function ResourceCard(props: IProps) {
   }, [resourceType]);
 
   useEffect(() => {
-    updateResource(resourceValueOptions[0]?.label || editResource.value, 'value');
-    setResource({ ...resource, value: resourceValueOptions[0]?.label || editResource.value });
+    // fix bug ：解决应用管理页面，资源参数保存后的回显不对的问题
+    updateResource(editResource.value || resourceValueOptions[0]?.label, 'value');
+    setResource({ ...resource, value: editResource.value || resourceValueOptions[0]?.label });
   }, [resourceValueOptions]);
 
   return (
