@@ -61,7 +61,7 @@ export default function ResourceCard(props: IProps) {
   }, [resourceType]);
 
   useEffect(() => {
-    // fix bug ：解决应用管理页面，资源参数保存后的回显不对的问题
+    // fix bug ：Resolve the issue of incorrect parameter echo for resources under app editing
     updateResource(editResource.value || resourceValueOptions[0]?.label, 'value');
     setResource({ ...resource, value: editResource.value || resourceValueOptions[0]?.label });
   }, [resourceValueOptions]);
