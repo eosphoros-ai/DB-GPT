@@ -80,7 +80,7 @@ The core capabilities include the following parts:
 
 - **Fine-tuning Framework**: Model fine-tuning is an indispensable capability for any enterprise to implement in vertical and niche domains. DB-GPT provides a complete fine-tuning framework that integrates seamlessly with the DB-GPT project. In recent fine-tuning efforts, an accuracy rate based on the Spider dataset has been achieved at 82.5%.
 
-- **Data-Driven Multi-Agents Framework**: DB-GPT offers a data-driven self-evolving fine-tuning framework, aiming to continuously make decisions and execute based on data.
+- **Data-Driven Multi-Agents Framework**: DB-GPT offers a data-driven self-evolving multi-agents framework, aiming to continuously make decisions and execute based on data.
 
 - **Data Factory**: The Data Factory is mainly about cleaning and processing trustworthy knowledge and data in the era of large models.
 
