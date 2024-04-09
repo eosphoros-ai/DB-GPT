@@ -78,7 +78,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         with self.session() as session:
             entity: ChatHistoryMessageEntity = (
                 session.query(ChatHistoryMessageEntity)
-                .filter(ChatHistoryMessageEntity.conv_uid == conv_uid,ChatHistoryMessageEntity.logic_delete == 0)
+                .filter(ChatHistoryMessageEntity.conv_uid == conv_uid, ChatHistoryMessageEntity.logic_delete == 0)
                 .order_by(ChatHistoryMessageEntity.gmt_created.desc())
                 .first()
             )
@@ -102,7 +102,7 @@ class ServeDao(BaseDao[ServeEntity, ServeRequest, ServerResponse]):
         return messages
 
     def get_conv_by_page(
-        self, req: ServeRequest, page: int, page_size: int
+            self, req: ServeRequest, page: int, page_size: int
     ) -> PaginationResult[ServerResponse]:
         """Get conversation by page
 
