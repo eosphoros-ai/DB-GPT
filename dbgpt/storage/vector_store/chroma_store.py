@@ -1,7 +1,7 @@
 """Chroma vector store."""
 import logging
 import os
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from chromadb import PersistentClient
 from chromadb.config import Settings
@@ -88,13 +88,13 @@ class ChromaStore(VectorStoreBase):
         )
 
     def similar_search(
-        self, text, topk, filters: Optional[MetadataFilters] = None, **kwargs: Any
+        self, text, topk, filters: Optional[MetadataFilters] = None
     ) -> List[Chunk]:
         """Search similar documents."""
         logger.info("ChromaStore similar search")
         where_filters = self.convert_metadata_filters(filters) if filters else None
         lc_documents = self.vector_store_client.similarity_search(
-            text, topk, filter=where_filters, **kwargs
+            text, topk, filter=where_filters
         )
         return [
             Chunk(content=doc.page_content, metadata=doc.metadata)
