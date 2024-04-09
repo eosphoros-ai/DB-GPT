@@ -5,6 +5,7 @@ from pydantic import Field
 from dbgpt._private.config import Config
 from dbgpt.agent.agents.base_agent_new import ConversableAgent
 from dbgpt.agent.resource.resource_api import AgentResource
+
 from .plan_action import PlanAction
 
 CFG = Config()
@@ -80,7 +81,10 @@ class PlannerAgent(ConversableAgent):
         for agent in self.agents:
             if agent.resources and len(agent.resources) > 0:
                 for resource in agent.resources:
-                    if self.get_unique_resources_codes(resource) not in unique_resources:
+                    if (
+                        self.get_unique_resources_codes(resource)
+                        not in unique_resources
+                    ):
                         unique_resources.add(self.get_unique_resources_codes(resource))
                         self.resources.append(resource)
         return self
