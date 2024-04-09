@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from dbgpt.core import Document
 from dbgpt.rag.text_splitter.text_splitter import (
@@ -148,12 +148,14 @@ class Knowledge(ABC):
         path: Optional[str] = None,
         knowledge_type: Optional[KnowledgeType] = None,
         data_loader: Optional[Any] = None,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with Knowledge arguments."""
         self._path = path
         self._type = knowledge_type
         self._data_loader = data_loader
+        self._metadata = metadata
 
     def load(self) -> List[Document]:
         """Load knowledge from data_loader."""

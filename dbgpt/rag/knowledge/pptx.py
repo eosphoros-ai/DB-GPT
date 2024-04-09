@@ -1,5 +1,5 @@
 """PPTX Knowledge."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from dbgpt.core import Document
 from dbgpt.rag.knowledge.base import (
@@ -19,6 +19,7 @@ class PPTXKnowledge(Knowledge):
         knowledge_type: KnowledgeType = KnowledgeType.DOCUMENT,
         loader: Optional[Any] = None,
         language: Optional[str] = "zh",
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
         **kwargs: Any,
     ) -> None:
         """Create PPTX knowledge with PDF Knowledge arguments.
@@ -32,6 +33,7 @@ class PPTXKnowledge(Knowledge):
         self._type = knowledge_type
         self._loader = loader
         self._language = language
+        self._metadata = metadata
 
     def _load(self) -> List[Document]:
         """Load pdf document from loader."""
@@ -47,9 +49,10 @@ class PPTXKnowledge(Knowledge):
                 for shape in slide.shapes:
                     if hasattr(shape, "text") and shape.text:
                         content += shape.text
-                docs.append(
-                    Document(content=content, metadata={"source": slide.slide_id})
-                )
+                metadata = {"source": self._path}
+                if self._metadata:
+                    metadata.update(self._metadata)
+                docs.append(Document(content=content, metadata=metadata))
             return docs
         return [Document.langchain2doc(lc_document) for lc_document in documents]
 

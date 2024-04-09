@@ -1,5 +1,5 @@
 """PDF Knowledge."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from dbgpt.core import Document
 from dbgpt.rag.knowledge.base import (
@@ -19,6 +19,7 @@ class PDFKnowledge(Knowledge):
         knowledge_type: KnowledgeType = KnowledgeType.DOCUMENT,
         loader: Optional[Any] = None,
         language: Optional[str] = "zh",
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
         **kwargs: Any,
     ) -> None:
         """Create PDF Knowledge with Knowledge arguments.
@@ -33,6 +34,7 @@ class PDFKnowledge(Knowledge):
         self._type = knowledge_type
         self._loader = loader
         self._language = language
+        self._metadata = metadata
 
     def _load(self) -> List[Document]:
         """Load pdf document from loader."""
@@ -65,6 +67,8 @@ class PDFKnowledge(Knowledge):
                 page = "\n".join(cleaned_lines)
                 # cleaned_pages.append(page)
                 metadata = {"source": self._path, "page": page_num}
+                if self._metadata:
+                    metadata.update(self._metadata)
                 # text = "\f".join(cleaned_pages)
                 document = Document(content=page, metadata=metadata)
                 documents.append(document)

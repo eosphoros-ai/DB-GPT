@@ -1,5 +1,5 @@
 """String Knowledge."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from dbgpt.core import Document
 from dbgpt.rag.knowledge.base import ChunkStrategy, Knowledge, KnowledgeType
@@ -14,6 +14,7 @@ class StringKnowledge(Knowledge):
         knowledge_type: KnowledgeType = KnowledgeType.TEXT,
         encoding: Optional[str] = "utf-8",
         loader: Optional[Any] = None,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
         **kwargs: Any,
     ) -> None:
         """Create String knowledge parameters.
@@ -28,10 +29,13 @@ class StringKnowledge(Knowledge):
         self._type = knowledge_type
         self._loader = loader
         self._encoding = encoding
+        self._metadata = metadata
 
     def _load(self) -> List[Document]:
         """Load raw text from loader."""
         metadata = {"source": "raw text"}
+        if self._metadata:
+            metadata.update(self._metadata)
         docs = [Document(content=self._text, metadata=metadata)]
         return docs
 
