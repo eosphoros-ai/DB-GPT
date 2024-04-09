@@ -1,5 +1,5 @@
 """HTML Knowledge."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import chardet
 
@@ -20,6 +20,7 @@ class HTMLKnowledge(Knowledge):
         file_path: Optional[str] = None,
         knowledge_type: KnowledgeType = KnowledgeType.DOCUMENT,
         loader: Optional[Any] = None,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
         **kwargs: Any,
     ) -> None:
         """Create HTML Knowledge with Knowledge arguments.
@@ -29,9 +30,13 @@ class HTMLKnowledge(Knowledge):
             knowledge_type(KnowledgeType, optional): knowledge type
             loader(Any, optional): loader
         """
-        self._path = file_path
-        self._type = knowledge_type
-        self._loader = loader
+        super().__init__(
+            path=file_path,
+            knowledge_type=knowledge_type,
+            data_loader=loader,
+            metadata=metadata,
+            **kwargs,
+        )
 
     def _load(self) -> List[Document]:
         """Load html document from loader."""
@@ -48,6 +53,8 @@ class HTMLKnowledge(Knowledge):
                 else:
                     text = raw_text.decode(result["encoding"])
             metadata = {"source": self._path}
+            if self._metadata:
+                metadata.update(self._metadata)  # type: ignore
             return [Document(content=text, metadata=metadata)]
 
         return [Document.langchain2doc(lc_document) for lc_document in documents]

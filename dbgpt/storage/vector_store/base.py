@@ -233,7 +233,7 @@ class VectorStoreBase(ABC):
         """
         pass
 
-    def convert_metadata_filters(self, filters: Optional[MetadataFilters]) -> Any:
+    def convert_metadata_filters(self, filters: MetadataFilters) -> Any:
         """Convert metadata filters to vector store filters.
 
         Args:

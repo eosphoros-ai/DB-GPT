@@ -25,17 +25,20 @@ class StringKnowledge(Knowledge):
             encoding(str): encoding
             loader(Any): loader
         """
+        super().__init__(
+            knowledge_type=knowledge_type,
+            data_loader=loader,
+            metadata=metadata,
+            **kwargs,
+        )
         self._text = text
-        self._type = knowledge_type
-        self._loader = loader
         self._encoding = encoding
-        self._metadata = metadata
 
     def _load(self) -> List[Document]:
         """Load raw text from loader."""
         metadata = {"source": "raw text"}
         if self._metadata:
-            metadata.update(self._metadata)
+            metadata.update(self._metadata)  # type: ignore
         docs = [Document(content=self._text, metadata=metadata)]
         return docs
 

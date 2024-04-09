@@ -32,11 +32,14 @@ class DocxKnowledge(Knowledge):
             encoding(str, optional): csv encoding
             loader(Any, optional): loader
         """
-        self._path = file_path
-        self._type = knowledge_type
-        self._loader = loader
+        super().__init__(
+            path=file_path,
+            knowledge_type=knowledge_type,
+            data_loader=loader,
+            metadata=metadata,
+            **kwargs,
+        )
         self._encoding = encoding
-        self._metadata = metadata
 
     def _load(self) -> List[Document]:
         """Load docx document from loader."""
@@ -52,7 +55,7 @@ class DocxKnowledge(Knowledge):
                 content.append(text)
             metadata = {"source": self._path}
             if self._metadata:
-                metadata.update(self._metadata)
+                metadata.update(self._metadata)  # type: ignore
             docs.append(Document(content="\n".join(content), metadata=metadata))
             return docs
         return [Document.langchain2doc(lc_document) for lc_document in documents]

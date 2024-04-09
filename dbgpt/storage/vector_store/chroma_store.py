@@ -193,7 +193,7 @@ class ChromaStore(VectorStoreBase):
                         }
                     )
                 else:
-                    filters_list.append({filter.key: filter.value})
+                    filters_list.append({filter.key: filter.value})  # type: ignore
 
         if len(filters_list) == 1:
             return filters_list[0]

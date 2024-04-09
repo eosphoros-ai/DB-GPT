@@ -22,14 +22,14 @@ class DatasourceKnowledge(Knowledge):
         """Create Datasource Knowledge with Knowledge arguments.
 
         Args:
-            path(str,  optional): file path
+            connector(BaseConnector): connector
+            summary_template(str, optional): summary template
             knowledge_type(KnowledgeType, optional): knowledge type
-            data_loader(Any, optional): loader
+            metadata(Dict[str, Union[str, List[str]], optional): metadata
         """
         self._connector = connector
         self._summary_template = summary_template
-        self._metadata = metadata
-        super().__init__(knowledge_type=knowledge_type, **kwargs)
+        super().__init__(knowledge_type=knowledge_type, metadata=metadata, **kwargs)
 
     def _load(self) -> List[Document]:
         """Load datasource document from data_loader."""
@@ -37,7 +37,7 @@ class DatasourceKnowledge(Knowledge):
         for table_summary in _parse_db_summary(self._connector, self._summary_template):
             metadata = {"source": "database"}
             if self._metadata:
-                metadata.update(self._metadata)
+                metadata.update(self._metadata)  # type: ignore
             docs.append(Document(content=table_summary, metadata=metadata))
         return docs
 

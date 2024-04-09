@@ -29,11 +29,14 @@ class PPTXKnowledge(Knowledge):
             knowledge_type:(KnowledgeType) knowledge type
             loader:(Optional[Any]) loader
         """
-        self._path = file_path
-        self._type = knowledge_type
-        self._loader = loader
+        super().__init__(
+            path=file_path,
+            knowledge_type=knowledge_type,
+            data_loader=loader,
+            metadata=metadata,
+            **kwargs,
+        )
         self._language = language
-        self._metadata = metadata
 
     def _load(self) -> List[Document]:
         """Load pdf document from loader."""
@@ -51,7 +54,7 @@ class PPTXKnowledge(Knowledge):
                         content += shape.text
                 metadata = {"source": self._path}
                 if self._metadata:
-                    metadata.update(self._metadata)
+                    metadata.update(self._metadata)  # type: ignore
                 docs.append(Document(content=content, metadata=metadata))
             return docs
         return [Document.langchain2doc(lc_document) for lc_document in documents]

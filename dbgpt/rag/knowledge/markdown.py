@@ -30,11 +30,14 @@ class MarkdownKnowledge(Knowledge):
             encoding(str, optional): csv encoding
             loader(Any, optional): loader
         """
-        self._path = file_path
-        self._type = knowledge_type
-        self._loader = loader
+        super().__init__(
+            path=file_path,
+            knowledge_type=knowledge_type,
+            data_loader=loader,
+            metadata=metadata,
+            **kwargs,
+        )
         self._encoding = encoding
-        self._metadata = metadata
 
     def _load(self) -> List[Document]:
         """Load markdown document from loader."""
@@ -47,7 +50,7 @@ class MarkdownKnowledge(Knowledge):
                 markdown_text = f.read()
                 metadata = {"source": self._path}
                 if self._metadata:
-                    metadata.update(self._metadata)
+                    metadata.update(self._metadata)  # type: ignore
                 documents = [Document(content=markdown_text, metadata=metadata)]
                 return documents
         return [Document.langchain2doc(lc_document) for lc_document in documents]

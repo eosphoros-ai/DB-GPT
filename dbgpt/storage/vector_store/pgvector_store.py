@@ -1,6 +1,6 @@
 """Postgres vector store."""
 import logging
-from typing import Any, List
+from typing import List, Optional
 
 from dbgpt._private.pydantic import Field
 from dbgpt.core import Chunk
@@ -10,6 +10,7 @@ from dbgpt.storage.vector_store.base import (
     VectorStoreBase,
     VectorStoreConfig,
 )
+from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
 
 logger = logging.getLogger(__name__)
@@ -70,9 +71,11 @@ class PGVectorStore(VectorStoreBase):
             connection_string=self.connection_string,
         )
 
-    def similar_search(self, text: str, topk: int, **kwargs: Any) -> List[Chunk]:
+    def similar_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Perform similar search in PGVector."""
-        return self.vector_store_client.similarity_search(text, topk)
+        return self.vector_store_client.similarity_search(text, topk, filters)
 
     def vector_name_exists(self) -> bool:
         """Check if vector name exists."""

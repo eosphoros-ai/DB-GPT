@@ -30,11 +30,14 @@ class PDFKnowledge(Knowledge):
             loader(Any, optional): loader
             language(str, optional): language
         """
-        self._path = file_path
-        self._type = knowledge_type
-        self._loader = loader
+        super().__init__(
+            path=file_path,
+            knowledge_type=knowledge_type,
+            data_loader=loader,
+            metadata=metadata,
+            **kwargs,
+        )
         self._language = language
-        self._metadata = metadata
 
     def _load(self) -> List[Document]:
         """Load pdf document from loader."""
@@ -68,7 +71,7 @@ class PDFKnowledge(Knowledge):
                 # cleaned_pages.append(page)
                 metadata = {"source": self._path, "page": page_num}
                 if self._metadata:
-                    metadata.update(self._metadata)
+                    metadata.update(self._metadata)  # type: ignore
                 # text = "\f".join(cleaned_pages)
                 document = Document(content=page, metadata=metadata)
                 documents.append(document)

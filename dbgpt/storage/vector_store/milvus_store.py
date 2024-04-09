@@ -406,7 +406,7 @@ class MilvusStore(VectorStoreBase):
         self,
         text: str,
         topk: int,
-        score_threshold: int,
+        score_threshold: float,
         filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
         """Perform a search on a query string and return results with score.

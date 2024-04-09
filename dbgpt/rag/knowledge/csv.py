@@ -33,12 +33,15 @@ class CSVKnowledge(Knowledge):
             encoding(str, optional): csv encoding
             loader(Any, optional): loader
         """
-        self._path = file_path
-        self._type = knowledge_type
-        self._loader = loader
+        super().__init__(
+            path=file_path,
+            knowledge_type=knowledge_type,
+            data_loader=loader,
+            metadata=metadata,
+            **kwargs,
+        )
         self._encoding = encoding
         self._source_column = source_column
-        self._metadata = metadata
 
     def _load(self) -> List[Document]:
         """Load csv document from loader."""
@@ -70,7 +73,7 @@ class CSVKnowledge(Knowledge):
                         )
                     metadata = {"source": source, "row": i}
                     if self._metadata:
-                        metadata.update(self._metadata)
+                        metadata.update(self._metadata)  # type: ignore
                     doc = Document(content=content, metadata=metadata)
                     docs.append(doc)
 
