@@ -46,6 +46,13 @@ def _get_type_name(type_: Type[Any]) -> str:
     return type_name
 
 
+def _register_alias_types(type_: Type[Any], alias_ids: Optional[List[str]] = None):
+    if alias_ids:
+        for alias_id in alias_ids:
+            if alias_id not in _TYPE_REGISTRY:
+                _TYPE_REGISTRY[alias_id] = type_
+
+
 def _get_type_cls(type_name: str) -> Type[Any]:
     """Get the type class by the type name.
 
@@ -58,9 +65,15 @@ def _get_type_cls(type_name: str) -> Type[Any]:
     Raises:
         ValueError: If the type is not registered.
     """
-    if type_name not in _TYPE_REGISTRY:
+    from .compat import get_new_class_name
+
+    new_cls = get_new_class_name(type_name)
+    if type_name in _TYPE_REGISTRY:
+        return _TYPE_REGISTRY[type_name]
+    elif new_cls and new_cls in _TYPE_REGISTRY:
+        return _TYPE_REGISTRY[new_cls]
+    else:
         raise ValueError(f"Type {type_name} not registered.")
-    return _TYPE_REGISTRY[type_name]
 
 
 # Register the basic types.
@@ -795,6 +808,7 @@ def register_resource(
             **kwargs,
         )
         alias_ids = resource_metadata.new_alias(alias)
+        _register_alias_types(cls, alias_ids)
         _register_resource(cls, resource_metadata, alias_ids)
         # Attach the metadata to the class
         cls._resource_metadata = resource_metadata
