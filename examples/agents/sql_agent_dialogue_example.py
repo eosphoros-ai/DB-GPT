@@ -28,10 +28,13 @@ from dbgpt.agent import (
 )
 from dbgpt.agent.expand.data_scientist_agent import DataScientistAgent
 from dbgpt.agent.resource import SqliteLoadClient
+from dbgpt.util.tracer import initialize_tracer
 
 current_dir = os.getcwd()
 parent_dir = os.path.dirname(current_dir)
 test_plugin_dir = os.path.join(parent_dir, "test_files")
+
+initialize_tracer("/tmp/agent_trace.jsonl", create_system_app=True)
 
 
 async def main():

@@ -49,7 +49,9 @@ class SpanStorageContainer(SpanStorage):
         self.flush_thread = threading.Thread(
             target=self._flush_to_storages, daemon=True
         )
+        self._stop_event = threading.Event()
         self.flush_thread.start()
+        self._stop_event.clear()
 
     def append_storage(self, storage: SpanStorage):
         """Append sotrage to container
@@ -68,7 +70,7 @@ class SpanStorageContainer(SpanStorage):
                 pass  # If the signal queue is full, it's okay. The flush thread will handle it.
 
     def _flush_to_storages(self):
-        while True:
+        while not self._stop_event.is_set():
             interval = time.time() - self.last_flush_time
             if interval < self.flush_interval:
                 try:
@@ -90,12 +92,23 @@ class SpanStorageContainer(SpanStorage):
                     try:
                         storage.append_span_batch(spans_to_write)
                     except Exception as e:
-                        logger.warn(
+                        logger.warning(
                             f"Append spans to storage {str(storage)} failed: {str(e)}, span_data: {spans_to_write}"
                         )
 
-                self.executor.submit(append_and_ignore_error, s, spans_to_write)
+                try:
+                    self.executor.submit(append_and_ignore_error, s, spans_to_write)
+                except RuntimeError:
+                    append_and_ignore_error(s, spans_to_write)
             self.last_flush_time = time.time()
+
+    def before_stop(self):
+        try:
+            self.flush_signal_queue.put(True)
+            self._stop_event.set()
+            self.flush_thread.join()
+        except Exception:
+            pass
 
 
 class FileSpanStorage(SpanStorage):

@@ -31,8 +31,11 @@ from dbgpt.agent.expand.summary_assistant_agent import SummaryAssistantAgent
 from dbgpt.agent.plan import WrappedAWELLayoutManager
 from dbgpt.agent.resource import PluginFileLoadClient
 from dbgpt.configs.model_config import ROOT_PATH
+from dbgpt.util.tracer import initialize_tracer
 
 test_plugin_dir = os.path.join(ROOT_PATH, "examples/test_files/plugins")
+
+initialize_tracer("/tmp/agent_trace.jsonl", create_system_app=True)
 
 
 async def main():

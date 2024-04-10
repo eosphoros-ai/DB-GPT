@@ -223,8 +223,8 @@ def run_webserver(param: WebServerParameters = None):
     if not param:
         param = _get_webserver_params()
     initialize_tracer(
-        system_app,
         os.path.join(LOGDIR, param.tracer_file),
+        system_app=system_app,
         tracer_storage_cls=param.tracer_storage_cls,
     )
 
