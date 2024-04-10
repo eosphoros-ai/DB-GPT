@@ -13,6 +13,7 @@ from dbgpt.core.awel.flow import (
 )
 from dbgpt.storage import vector_store
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.i18n_utils import _
 
 connector: Dict[str, Type] = {}
@@ -128,23 +129,29 @@ class VectorStoreConnector:
             max_threads,
         )
 
-    def similar_search(self, doc: str, topk: int) -> List[Chunk]:
+    def similar_search(
+        self, doc: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Similar search in vector database.
 
         Args:
            - doc: query text
            - topk: topk
+           - filters: metadata filters.
         Return:
             - chunks: chunks.
         """
-        return self.client.similar_search(doc, topk)
+        return self.client.similar_search(doc, topk, filters)
 
     def similar_search_with_scores(
-        self, doc: str, topk: int, score_threshold: float
+        self,
+        doc: str,
+        topk: int,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
-        """Similar search with scores in vector database.
+        """Similar_search_with_score in vector database.
 
-        similar_search_with_score in vector database..
         Return docs and relevance scores in the range [0, 1].
 
         Args:
@@ -153,10 +160,13 @@ class VectorStoreConnector:
             score_threshold(float): score_threshold: Optional, a floating point value
                 between 0 to 1 to filter the resulting set of retrieved docs,0 is
                 dissimilar, 1 is most similar.
+            filters: metadata filters.
         Return:
-            - chunks: chunks.
+            - chunks: Return docs and relevance scores in the range [0, 1].
         """
-        return self.client.similar_search_with_scores(doc, topk, score_threshold)
+        return self.client.similar_search_with_scores(
+            doc, topk, score_threshold, filters
+        )
 
     @property
     def vector_store_config(self) -> VectorStoreConfig:

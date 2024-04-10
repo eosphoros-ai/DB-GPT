@@ -82,6 +82,12 @@ def run():
     pass
 
 
+@click.group()
+def net():
+    """Net tools."""
+    pass
+
+
 stop_all_func_list = []
 
 
@@ -100,6 +106,7 @@ cli.add_command(new)
 cli.add_command(app)
 cli.add_command(repo)
 cli.add_command(run)
+cli.add_command(net)
 add_command_alias(stop_all, name="all", parent_group=stop)
 
 try:
@@ -199,6 +206,13 @@ try:
     add_command_alias(run_flow, name="flow", parent_group=run)
 except ImportError as e:
     logging.warning(f"Integrating dbgpt client command line tool failed: {e}")
+
+try:
+    from dbgpt.util.network._cli import start_forward
+
+    add_command_alias(start_forward, name="forward", parent_group=net)
+except ImportError as e:
+    logging.warning(f"Integrating dbgpt net command line tool failed: {e}")
 
 
 def main():

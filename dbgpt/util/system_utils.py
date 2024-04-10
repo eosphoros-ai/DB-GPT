@@ -189,7 +189,7 @@ def get_cpu_info():
             match = re.search(r".*Model name:\s*(.+)", output)
             if match:
                 cpu_info = match.group(1).strip()
-            match = re.search(f".*型号名称：\s*(.+)", output)
+            match = re.search(r".*型号名称：\s*(.+)", output)
             if match:
                 cpu_info = match.group(1).strip()
         except:

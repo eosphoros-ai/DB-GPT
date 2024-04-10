@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from dbgpt.core import Document
 from dbgpt.rag.text_splitter.text_splitter import (
@@ -147,16 +147,18 @@ class Knowledge(ABC):
         self,
         path: Optional[str] = None,
         knowledge_type: Optional[KnowledgeType] = None,
-        data_loader: Optional[Any] = None,
+        loader: Optional[Any] = None,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with Knowledge arguments."""
         self._path = path
         self._type = knowledge_type
-        self._data_loader = data_loader
+        self._loader = loader
+        self._metadata = metadata
 
     def load(self) -> List[Document]:
-        """Load knowledge from data_loader."""
+        """Load knowledge from data loader."""
         documents = self._load()
         return self._postprocess(documents)
 
@@ -171,12 +173,12 @@ class Knowledge(ABC):
         return None
 
     def _postprocess(self, docs: List[Document]) -> List[Document]:
-        """Post process knowledge from data_loader."""
+        """Post process knowledge from data loader."""
         return docs
 
     @abstractmethod
     def _load(self) -> List[Document]:
-        """Preprocess knowledge from data_loader."""
+        """Preprocess knowledge from data loader."""
 
     @classmethod
     def support_chunk_strategy(cls) -> List[ChunkStrategy]:

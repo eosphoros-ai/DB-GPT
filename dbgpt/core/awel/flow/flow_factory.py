@@ -20,6 +20,7 @@ from .base import (
 from .exceptions import (
     FlowClassMetadataException,
     FlowDAGMetadataException,
+    FlowException,
     FlowMetadataException,
 )
 
@@ -720,5 +721,5 @@ def fill_flow_panel(flow_panel: FlowPanel):
                     param.default = new_param.default
                     param.placeholder = new_param.placeholder
 
-        except ValueError as e:
+        except (FlowException, ValueError) as e:
             logger.warning(f"Unable to fill the flow panel: {e}")

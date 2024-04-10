@@ -1,5 +1,5 @@
 """Docx Knowledge."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import docx
 
@@ -21,6 +21,7 @@ class DocxKnowledge(Knowledge):
         knowledge_type: Any = KnowledgeType.DOCUMENT,
         encoding: Optional[str] = "utf-8",
         loader: Optional[Any] = None,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
         **kwargs: Any,
     ) -> None:
         """Create Docx Knowledge with Knowledge arguments.
@@ -31,9 +32,13 @@ class DocxKnowledge(Knowledge):
             encoding(str, optional): csv encoding
             loader(Any, optional): loader
         """
-        self._path = file_path
-        self._type = knowledge_type
-        self._loader = loader
+        super().__init__(
+            path=file_path,
+            knowledge_type=knowledge_type,
+            data_loader=loader,
+            metadata=metadata,
+            **kwargs,
+        )
         self._encoding = encoding
 
     def _load(self) -> List[Document]:
@@ -48,9 +53,10 @@ class DocxKnowledge(Knowledge):
                 para = doc.paragraphs[i]
                 text = para.text
                 content.append(text)
-            docs.append(
-                Document(content="\n".join(content), metadata={"source": self._path})
-            )
+            metadata = {"source": self._path}
+            if self._metadata:
+                metadata.update(self._metadata)  # type: ignore
+            docs.append(Document(content="\n".join(content), metadata=metadata))
             return docs
         return [Document.langchain2doc(lc_document) for lc_document in documents]
 

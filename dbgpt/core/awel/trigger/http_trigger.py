@@ -1036,7 +1036,7 @@ class RequestBodyToDictOperator(MapOperator[CommonLLMHttpRequestBody, Dict[str, 
             keys = self._key.split(".")
             for k in keys:
                 dict_value = dict_value[k]
-            if isinstance(dict_value, dict):
+            if not isinstance(dict_value, dict):
                 raise ValueError(
                     f"Prefix key {self._key} is not a valid key of the request body"
                 )

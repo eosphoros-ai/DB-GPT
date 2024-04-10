@@ -1,7 +1,7 @@
 """Weaviate vector store."""
 import logging
 import os
-from typing import List
+from typing import List, Optional
 
 from dbgpt._private.pydantic import Field
 from dbgpt.core import Chunk
@@ -9,6 +9,7 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
 
 from .base import _COMMON_PARAMETERS, VectorStoreBase, VectorStoreConfig
+from .filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,9 @@ class WeaviateStore(VectorStoreBase):
 
         self.vector_store_client = weaviate.Client(self.weaviate_url)
 
-    def similar_search(self, text: str, topk: int) -> List[Chunk]:
+    def similar_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Perform similar search in Weaviate."""
         logger.info("Weaviate similar search")
         # nearText = {
