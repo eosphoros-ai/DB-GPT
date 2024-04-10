@@ -1,6 +1,6 @@
 """CSV Knowledge."""
 import csv
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from dbgpt.core import Document
 from dbgpt.rag.knowledge.base import (
@@ -21,6 +21,7 @@ class CSVKnowledge(Knowledge):
         source_column: Optional[str] = None,
         encoding: Optional[str] = "utf-8",
         loader: Optional[Any] = None,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
         **kwargs: Any,
     ) -> None:
         """Create CSV Knowledge with Knowledge arguments.
@@ -32,9 +33,13 @@ class CSVKnowledge(Knowledge):
             encoding(str, optional): csv encoding
             loader(Any, optional): loader
         """
-        self._path = file_path
-        self._type = knowledge_type
-        self._loader = loader
+        super().__init__(
+            path=file_path,
+            knowledge_type=knowledge_type,
+            data_loader=loader,
+            metadata=metadata,
+            **kwargs,
+        )
         self._encoding = encoding
         self._source_column = source_column
 
@@ -67,6 +72,8 @@ class CSVKnowledge(Knowledge):
                             f"file."
                         )
                     metadata = {"source": source, "row": i}
+                    if self._metadata:
+                        metadata.update(self._metadata)  # type: ignore
                     doc = Document(content=content, metadata=metadata)
                     docs.append(doc)
 

@@ -26,9 +26,9 @@ class URLKnowledge(Knowledge):
             encoding(str, optional): csv encoding
             loader(Any, optional): loader
         """
-        self._path = url or None
-        self._type = knowledge_type
-        self._loader = loader
+        super().__init__(
+            path=url, knowledge_type=knowledge_type, loader=loader, **kwargs
+        )
         self._encoding = encoding
         self._source_column = source_column
 
