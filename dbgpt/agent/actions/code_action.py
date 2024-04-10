@@ -1,38 +1,40 @@
-import json
+"""Code Action Module."""
 import logging
-from typing import List, Optional, Union
+from typing import Optional, Union
 
-from dbgpt.agent.actions.action import ActionOutput, T
-from dbgpt.agent.resource.resource_api import AgentResource, ResourceType
 from dbgpt.util.code_utils import UNKNOWN, execute_code, extract_code, infer_lang
 from dbgpt.util.utils import colored
 from dbgpt.vis.tags.vis_code import Vis, VisCode
 
-from .action import Action
+from ..resource.resource_api import AgentResource
+from .action import Action, ActionOutput
 
 logger = logging.getLogger(__name__)
 
 
 class CodeAction(Action[None]):
+    """Code Action Module."""
+
     def __init__(self):
-        self._render_protocal = VisCode()
+        """Create a code action."""
+        super().__init__()
+        self._render_protocol = VisCode()
         self._code_execution_config = {}
 
     @property
-    def resource_need(self) -> Optional[ResourceType]:
-        return None
+    def render_protocol(self) -> Optional[Vis]:
+        """Return the render protocol."""
+        return self._render_protocol
 
-    @property
-    def render_protocal(self) -> Optional[Vis]:
-        return self._render_protocal
-
-    async def a_run(
+    async def run(
         self,
         ai_message: str,
         resource: Optional[AgentResource] = None,
         rely_action_out: Optional[ActionOutput] = None,
         need_vis_render: bool = True,
+        **kwargs,
     ) -> ActionOutput:
+        """Perform the action."""
         try:
             code_blocks = extract_code(ai_message)
             if len(code_blocks) < 1:
@@ -45,14 +47,16 @@ class CodeAction(Action[None]):
             elif len(code_blocks) > 1 and code_blocks[0][0] == UNKNOWN:
                 # found code blocks, execute code and push "last_n_messages" back
                 logger.info(
-                    f"Missing available code block type, unable to execute code,{ai_message}",
+                    f"Missing available code block type, unable to execute code,"
+                    f"{ai_message}",
                 )
                 return ActionOutput(
                     is_exe_success=False,
-                    content="Missing available code block type, unable to execute code.",
+                    content="Missing available code block type, "
+                    "unable to execute code.",
                 )
             exitcode, logs = self.execute_code_blocks(code_blocks)
-            exit_success = True if exitcode == 0 else False
+            exit_success = exitcode == 0
 
             content = (
                 logs
@@ -60,12 +64,15 @@ class CodeAction(Action[None]):
                 else f"exitcode: {exitcode} (execution failed)\n {logs}"
             )
 
-            param = {}
-            param["exit_success"] = exit_success
-            param["language"] = code_blocks[0][0]
-            param["code"] = code_blocks
-            param["log"] = logs
-            view = await self.render_protocal.display(content=param)
+            param = {
+                "exit_success": exit_success,
+                "language": code_blocks[0][0],
+                "code": code_blocks,
+                "log": logs,
+            }
+            if not self.render_protocol:
+                raise NotImplementedError("The render_protocol should be implemented.")
+            view = await self.render_protocol.display(content=param)
             return ActionOutput(is_exe_success=exit_success, content=content, view=view)
         except Exception as e:
             logger.exception("Code Action Run Failed！")
@@ -83,7 +90,8 @@ class CodeAction(Action[None]):
                 lang = infer_lang(code)
             print(
                 colored(
-                    f"\n>>>>>>>> EXECUTING CODE BLOCK {i} (inferred language is {lang})...",
+                    f"\n>>>>>>>> EXECUTING CODE BLOCK {i} "
+                    f"(inferred language is {lang})...",
                     "red",
                 ),
                 flush=True,
@@ -120,8 +128,11 @@ class CodeAction(Action[None]):
 
     @property
     def use_docker(self) -> Union[bool, str, None]:
-        """Bool value of whether to use docker to execute the code,
-        or str value of the docker image name to use, or None when code execution is disabled.
+        """Whether to use docker to execute the code.
+
+        Bool value of whether to use docker to execute the code,
+        or str value of the docker image name to use, or None when code execution is
+        disabled.
         """
         return (
             None

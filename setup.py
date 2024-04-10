@@ -681,6 +681,8 @@ else:
             "dbgpt",
             "dbgpt._private",
             "dbgpt._private.*",
+            "dbgpt.agent",
+            "dbgpt.agent.*",
             "dbgpt.cli",
             "dbgpt.cli.*",
             "dbgpt.client",
@@ -705,6 +707,8 @@ else:
             "dbgpt.storage.*",
             "dbgpt.util",
             "dbgpt.util.*",
+            "dbgpt.vis",
+            "dbgpt.vis.*",
         ],
     )
 

@@ -1,3 +1,4 @@
+"""Generate text display content for the data frame."""
 import logging
 
 from pandas import DataFrame
@@ -9,11 +10,13 @@ logger = logging.getLogger(__name__)
 
 @command(
     "response_data_text",
-    "Text display, the default display method, suitable for single-line or simple content display",
+    "Text display, the default display method, suitable for single-line or "
+    "simple content display",
     '"df":"<data frame>"',
 )
 def response_data_text(df: DataFrame) -> str:
-    logger.info(f"response_data_text")
+    """Generate text display content for the data frame."""
+    logger.info("response_data_text")
     data = df.values
 
     row_size = data.shape[0]
@@ -33,5 +36,5 @@ def response_data_text(df: DataFrame) -> str:
                 value_str = f" ** {value} **"
             text_info = f" {value_str}"
     else:
-        text_info = f"##### _没有找到可用的数据_"
+        text_info = "##### No data found! #####"
     return text_info

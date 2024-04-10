@@ -1,37 +1,33 @@
+"""Chart display command implementation."""
 import logging
 import os
 import uuid
-
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
-import pandas as pd
-import seaborn as sns
-from matplotlib.font_manager import FontManager
-from pandas import DataFrame
+from typing import TYPE_CHECKING
 
 from dbgpt.configs.model_config import PILOT_PATH
 from dbgpt.util.string_utils import is_scientific_notation
 
 from ...command_manage import command
 
-matplotlib.use("Agg")
-
-
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 static_message_img_path = os.path.join(PILOT_PATH, "message/img")
 
 
-def data_pre_classification(df: DataFrame):
-    ## Data pre-classification
+def data_pre_classification(df: "DataFrame"):
+    """Return the x and y coordinates of the chart."""
+    import pandas as pd
+
+    # Data pre-classification
     columns = df.columns.tolist()
 
     number_columns = []
     non_numeric_colums = []
 
-    # 收集数据分类小于10个的列
+    # Collect columns with less than 10 unique values
     non_numeric_colums_value_map = {}
     numeric_colums_value_map = {}
     for column_name in columns:
@@ -73,6 +69,10 @@ def data_pre_classification(df: DataFrame):
 
 
 def zh_font_set():
+    """Set Chinese font."""
+    from matplotlib import pyplot as plt
+    from matplotlib.font_manager import FontManager
+
     font_names = [
         "Heiti TC",
         "Songti SC",
@@ -83,7 +83,7 @@ def zh_font_set():
         "KaiTi",
     ]
     fm = FontManager()
-    mat_fonts = set(f.name for f in fm.ttflist)
+    mat_fonts = set(f.name for f in fm.ttflist)  # noqa: C401
     can_use_fonts = []
     for font_name in font_names:
         if font_name in mat_fonts:
@@ -93,10 +93,9 @@ def zh_font_set():
 
 
 def format_axis(value, pos):
-    # 判断是否为数字
+    """Format axis."""
+    # Judge whether scientific counting is needed
     if is_scientific_notation(value):
-        # 判断是否需要进行非科学计数法格式化
-
         return "{:.2f}".format(value)
     return value
 
@@ -106,8 +105,18 @@ def format_axis(value, pos):
     "Line chart display, used to display comparative trend analysis data",
     '"df":"<data frame>"',
 )
-def response_line_chart(df: DataFrame) -> str:
-    logger.info(f"response_line_chart")
+def response_line_chart(df: "DataFrame") -> str:
+    """Response line chart."""
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as mtick
+    import pandas as pd
+    import seaborn as sns
+    from matplotlib.font_manager import FontManager
+
+    matplotlib.use("Agg")
+
+    logger.info("response_line_chart")
     if df.size <= 0:
         raise ValueError("No Data！")
     try:
@@ -123,7 +132,7 @@ def response_line_chart(df: DataFrame) -> str:
             "KaiTi",
         ]
         fm = FontManager()
-        mat_fonts = set(f.name for f in fm.ttflist)
+        mat_fonts = set(f.name for f in fm.ttflist)  # noqa: C401
         can_use_fonts = []
         for font_name in font_names:
             if font_name in mat_fonts:
@@ -132,10 +141,10 @@ def response_line_chart(df: DataFrame) -> str:
             plt.rcParams["font.sans-serif"] = can_use_fonts
 
         rc = {"font.sans-serif": can_use_fonts}
-        plt.rcParams["axes.unicode_minus"] = False  # 解决无法显示符号的问题
+        plt.rcParams["axes.unicode_minus"] = False
 
-        sns.set(font=can_use_fonts[0], font_scale=0.8)  # 解决Seaborn中文显示问题
-        sns.set_palette("Set3")  # 设置颜色主题
+        sns.set(font=can_use_fonts[0], font_scale=0.8)
+        sns.set_palette("Set3")
         sns.set_style("dark")
         sns.color_palette("hls", 10)
         sns.hls_palette(8, l=0.5, s=0.7)
@@ -143,7 +152,7 @@ def response_line_chart(df: DataFrame) -> str:
 
         fig, ax = plt.subplots(figsize=(8, 5), dpi=100)
         x, y, non_num_columns, num_colmns = data_pre_classification(df)
-        # ## 复杂折线图实现
+        # Complex line chart implementation
         if len(num_colmns) > 0:
             num_colmns.append(y)
             df_melted = pd.melt(
@@ -160,17 +169,19 @@ def response_line_chart(df: DataFrame) -> str:
             sns.lineplot(data=df, x=x, y=y, ax=ax, palette="Set2")
 
         ax.yaxis.set_major_formatter(mtick.FuncFormatter(format_axis))
-        # ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: "{:,.0f}".format(x)))
 
         chart_name = "line_" + str(uuid.uuid1()) + ".png"
         chart_path = static_message_img_path + "/" + chart_name
         plt.savefig(chart_path, dpi=100, transparent=True)
 
-        html_img = f"""<img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
+        html_img = (
+            "<img style='max-width: 100%; max-height: 70%;'  "
+            f'src="/images/{chart_name}" />'
+        )
         return html_img
     except Exception as e:
-        logging.error("Draw Line Chart Faild!" + str(e), e)
-        raise ValueError("Draw Line Chart Faild!" + str(e))
+        logging.error("Draw Line Chart failed!" + str(e))
+        raise ValueError("Draw Line Chart failed!" + str(e))
 
 
 @command(
@@ -178,8 +189,18 @@ def response_line_chart(df: DataFrame) -> str:
     "Histogram, suitable for comparative analysis of multiple target values",
     '"df":"<data frame>"',
 )
-def response_bar_chart(df: DataFrame) -> str:
-    logger.info(f"response_bar_chart")
+def response_bar_chart(df: "DataFrame") -> str:
+    """Response bar chart."""
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as mtick
+    import pandas as pd
+    import seaborn as sns
+    from matplotlib.font_manager import FontManager
+
+    matplotlib.use("Agg")
+
+    logger.info("response_bar_chart")
     if df.size <= 0:
         raise ValueError("No Data！")
 
@@ -195,7 +216,7 @@ def response_bar_chart(df: DataFrame) -> str:
         "KaiTi",
     ]
     fm = FontManager()
-    mat_fonts = set(f.name for f in fm.ttflist)
+    mat_fonts = set(f.name for f in fm.ttflist)  # noqa: C401
     can_use_fonts = []
     for font_name in font_names:
         if font_name in mat_fonts:
@@ -204,9 +225,12 @@ def response_bar_chart(df: DataFrame) -> str:
         plt.rcParams["font.sans-serif"] = can_use_fonts
 
     rc = {"font.sans-serif": can_use_fonts}
-    plt.rcParams["axes.unicode_minus"] = False  # 解决无法显示符号的问题
-    sns.set(font=can_use_fonts[0], font_scale=0.8)  # 解决Seaborn中文显示问题
-    sns.set_palette("Set3")  # 设置颜色主题
+    # Fix the problem that the symbol cannot be displayed
+    plt.rcParams["axes.unicode_minus"] = False
+    # Fix chinese display problem
+    sns.set(font=can_use_fonts[0], font_scale=0.8)
+    # Set color theme
+    sns.set_palette("Set3")
     sns.set_style("dark")
     sns.color_palette("hls", 10)
     sns.hls_palette(8, l=0.5, s=0.7)
@@ -250,14 +274,16 @@ def response_bar_chart(df: DataFrame) -> str:
     else:
         sns.barplot(data=df, x=x, y=y, hue=hue, palette="Set2", ax=ax)
 
-    # 设置 y 轴刻度格式为普通数字格式
+    # Set the y-axis scale format to normal number format
     ax.yaxis.set_major_formatter(mtick.FuncFormatter(format_axis))
-    # ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: "{:,.0f}".format(x)))
 
     chart_name = "bar_" + str(uuid.uuid1()) + ".png"
     chart_path = static_message_img_path + "/" + chart_name
     plt.savefig(chart_path, dpi=100, transparent=True)
-    html_img = f"""<img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
+    html_img = (
+        "<img style='max-width: 100%; max-height: 70%;'  "
+        f'src="/images/{chart_name}" />'
+    )
     return html_img
 
 
@@ -266,8 +292,16 @@ def response_bar_chart(df: DataFrame) -> str:
     "Pie chart, suitable for scenarios such as proportion and distribution statistics",
     '"df":"<data frame>"',
 )
-def response_pie_chart(df: DataFrame) -> str:
-    logger.info(f"response_pie_chart")
+def response_pie_chart(df: "DataFrame") -> str:
+    """Response pie chart."""
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from matplotlib.font_manager import FontManager
+
+    matplotlib.use("Agg")
+
+    logger.info("response_pie_chart")
     columns = df.columns.tolist()
     if df.size <= 0:
         raise ValueError("No Data！")
@@ -283,18 +317,18 @@ def response_pie_chart(df: DataFrame) -> str:
         "KaiTi",
     ]
     fm = FontManager()
-    mat_fonts = set(f.name for f in fm.ttflist)
+    mat_fonts = set(f.name for f in fm.ttflist)  # noqa: C401
     can_use_fonts = []
     for font_name in font_names:
         if font_name in mat_fonts:
             can_use_fonts.append(font_name)
     if len(can_use_fonts) > 0:
         plt.rcParams["font.sans-serif"] = can_use_fonts
-    plt.rcParams["axes.unicode_minus"] = False  # 解决无法显示符号的问题
+    plt.rcParams["axes.unicode_minus"] = False
 
-    sns.set_palette("Set3")  # 设置颜色主题
+    # Set the font style
+    sns.set_palette("Set3")
 
-    # fig, ax = plt.pie(df[columns[1]], labels=df[columns[0]], autopct='%1.1f%%', startangle=90)
     fig, ax = plt.subplots(figsize=(8, 5), dpi=100)
     ax = df.plot(
         kind="pie",
@@ -305,13 +339,16 @@ def response_pie_chart(df: DataFrame) -> str:
         autopct="%1.1f%%",
     )
 
-    plt.axis("equal")  # 使饼图为正圆形
+    plt.axis("equal")  # Make the pie chart a perfect circle
     # plt.title(columns[0])
 
     chart_name = "pie_" + str(uuid.uuid1()) + ".png"
     chart_path = static_message_img_path + "/" + chart_name
     plt.savefig(chart_path, bbox_inches="tight", dpi=100, transparent=True)
 
-    html_img = f"""<img style='max-width: 100%; max-height: 70%;'  src="/images/{chart_name}" />"""
+    html_img = (
+        "<img style='max-width: 100%; max-height: 70%;'  "
+        f'src="/images/{chart_name}" />'
+    )
 
     return html_img

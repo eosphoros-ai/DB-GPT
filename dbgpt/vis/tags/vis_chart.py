@@ -1,39 +1,48 @@
+"""Chart visualization protocol conversion class."""
 import json
-from typing import Optional
-
-import yaml
+from typing import Any, Dict, Optional
 
 from ..base import Vis
 
 
-def default_chart_type_promot() -> str:
-    """this function is moved from excel_analyze/chat.py,and used by subclass.
-    Returns:
+def default_chart_type_prompt() -> str:
+    """Return prompt information for the default chart type.
 
+    This function is moved from excel_analyze/chat.py,and used by subclass.
+
+    Returns:
+        str: prompt information for the default chart type.
     """
     antv_charts = [
         {"response_line_chart": "used to display comparative trend analysis data"},
         {
-            "response_pie_chart": "suitable for scenarios such as proportion and distribution statistics"
+            "response_pie_chart": "suitable for scenarios such as proportion and "
+            "distribution statistics"
         },
         {
-            "response_table": "suitable for display with many display columns or non-numeric columns"
-        },
-        # {"response_data_text":" the default display method, suitable for single-line or simple content display"},
-        {
-            "response_scatter_plot": "Suitable for exploring relationships between variables, detecting outliers, etc."
+            "response_table": "suitable for display with many display columns or "
+            "non-numeric columns"
         },
         {
-            "response_bubble_chart": "Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."
+            "response_scatter_plot": "Suitable for exploring relationships between "
+            "variables, detecting outliers, etc."
         },
         {
-            "response_donut_chart": "Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc."
+            "response_bubble_chart": "Suitable for relationships between multiple "
+            "variables, highlighting outliers or special situations, etc."
         },
         {
-            "response_area_chart": "Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc."
+            "response_donut_chart": "Suitable for hierarchical structure representation"
+            ", category proportion display and highlighting key categories, etc."
         },
         {
-            "response_heatmap": "Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."
+            "response_area_chart": "Suitable for visualization of time series data, "
+            "comparison of multiple groups of data, analysis of data change trends, "
+            "etc."
+        },
+        {
+            "response_heatmap": "Suitable for visual analysis of time series data, "
+            "large-scale data sets, distribution of classified data, etc."
         },
     ]
     return "\n".join(
@@ -44,16 +53,21 @@ def default_chart_type_promot() -> str:
 
 
 class VisChart(Vis):
-    def render_prompt(self):
-        return default_chart_type_promot()
+    """Chart visualization protocol conversion class."""
 
-    async def generate_param(self, **kwargs) -> Optional[str]:
+    def render_prompt(self) -> Optional[str]:
+        """Return the prompt for the vis protocol."""
+        return default_chart_type_prompt()
+
+    async def generate_param(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """Generate the parameters required by the vis protocol."""
         chart = kwargs.get("chart", None)
         data_df = kwargs.get("data_df", None)
 
         if not chart:
             raise ValueError(
-                f"Parameter information is missing and {self.vis_tag} protocol conversion cannot be performed."
+                f"Parameter information is missing and {self.vis_tag} protocol "
+                "conversion cannot be performed."
             )
 
         sql = chart.get("sql", None)
@@ -72,5 +86,6 @@ class VisChart(Vis):
         return param
 
     @classmethod
-    def vis_tag(cls):
+    def vis_tag(cls) -> str:
+        """Return the tag name of the vis protocol."""
         return "vis-chart"

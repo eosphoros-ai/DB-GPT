@@ -1,3 +1,5 @@
+"""Module for managing commands and command plugins."""
+
 import functools
 import importlib
 import inspect
@@ -5,10 +7,10 @@ import json
 import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from dbgpt._private.pydantic import BaseModel
-from dbgpt.agent.common.schema import Status
+from dbgpt.agent.core.schema import Status
 from dbgpt.util.json_utils import serialize
 from dbgpt.util.string_utils import extract_content, extract_content_open_ending
 
@@ -25,7 +27,8 @@ class Command:
     Attributes:
         name (str): The name of the command.
         description (str): A brief description of what the command does.
-        signature (str): The signature of the function that the command executes. Defaults to None.
+        signature (str): The signature of the function that the command executes.
+            Defaults to None.
     """
 
     def __init__(
@@ -37,6 +40,7 @@ class Command:
         enabled: bool = True,
         disabled_reason: Optional[str] = None,
     ):
+        """Create a new Command object."""
         self.name = name
         self.description = description
         self.method = method
@@ -45,16 +49,19 @@ class Command:
         self.disabled_reason = disabled_reason
 
     def __call__(self, *args, **kwargs) -> Any:
+        """Run the command."""
         if not self.enabled:
             return f"Command '{self.name}' is disabled: {self.disabled_reason}"
         return self.method(*args, **kwargs)
 
     def __str__(self) -> str:
+        """Return a string representation of the Command object."""
         return f"{self.name}: {self.description}, args: {self.signature}"
 
 
 class CommandRegistry:
-    """
+    """Command registry class.
+
     The CommandRegistry class is a manager for a collection of Command objects.
     It allows the registration, modification, and retrieval of Command objects,
     as well as the scanning and loading of command plugins from a specified
@@ -62,6 +69,7 @@ class CommandRegistry:
     """
 
     def __init__(self):
+        """Create a new CommandRegistry object."""
         self.commands = {}
 
     def _import_module(self, module_name: str) -> Any:
@@ -71,16 +79,18 @@ class CommandRegistry:
         return importlib.reload(module)
 
     def register(self, cmd: Command) -> None:
+        """Register a new Command object with the registry."""
         self.commands[cmd.name] = cmd
 
     def unregister(self, command_name: str):
+        """Unregisters a Command object from the registry."""
         if command_name in self.commands:
             del self.commands[command_name]
         else:
             raise KeyError(f"Command '{command_name}' not found in registry.")
 
     def reload_commands(self) -> None:
-        """Reloads all loaded command plugins."""
+        """Reload all loaded command plugins."""
         for cmd_name in self.commands:
             cmd = self.commands[cmd_name]
             module = self._import_module(cmd.__module__)
@@ -89,32 +99,31 @@ class CommandRegistry:
                 reloaded_module.register(self)
 
     def is_valid_command(self, name: str) -> bool:
-        if name not in self.commands:
-            return False
-        else:
-            return True
+        """Check if the specified command name is registered."""
+        return name in self.commands
 
     def get_command(self, name: str) -> Callable[..., Any]:
+        """Return the Command object with the specified name."""
         return self.commands[name]
 
     def call(self, command_name: str, **kwargs) -> Any:
+        """Run command."""
         if command_name not in self.commands:
             raise KeyError(f"Command '{command_name}' not found in registry.")
         command = self.commands[command_name]
         return command(**kwargs)
 
     def command_prompt(self) -> str:
-        """
-        Returns a string representation of all registered `Command` objects for use in a prompt
-        """
+        """Return a string representation of all registered `Command` objects."""
         commands_list = [
             f"{idx + 1}. {str(cmd)}" for idx, cmd in enumerate(self.commands.values())
         ]
         return "\n".join(commands_list)
 
     def import_commands(self, module_name: str) -> None:
-        """
-        Imports the specified Python module containing command plugins.
+        """Import module.
+
+        Import the specified Python module containing command plugins.
 
         This method imports the associated module and registers any functions or
         classes that are decorated with the `AUTO_GPT_COMMAND_IDENTIFIER` attribute
@@ -124,7 +133,6 @@ class CommandRegistry:
         Args:
             module_name (str): The name of the module to import for command plugins.
         """
-
         module = importlib.import_module(module_name)
 
         for attr_name in dir(module):
@@ -138,7 +146,7 @@ class CommandRegistry:
             elif (
                 inspect.isclass(attr) and issubclass(attr, Command) and attr != Command
             ):
-                cmd_instance = attr()
+                cmd_instance = attr()  # type: ignore
                 self.register(cmd_instance)
 
 
@@ -149,7 +157,7 @@ def command(
     enabled: bool = True,
     disabled_reason: Optional[str] = None,
 ) -> Callable[..., Any]:
-    """The command decorator is used to create Command objects from ordinary functions."""
+    """Register a function as a command."""
 
     def decorator(func: Callable[..., Any]) -> Command:
         cmd = Command(
@@ -165,30 +173,34 @@ def command(
         def wrapper(*args, **kwargs) -> Any:
             return func(*args, **kwargs)
 
-        wrapper.command = cmd
+        wrapper.command = cmd  # type: ignore
 
         setattr(wrapper, AUTO_GPT_COMMAND_IDENTIFIER, True)
 
-        return wrapper
+        return wrapper  # type: ignore
 
     return decorator
 
 
 class PluginStatus(BaseModel):
+    """A class representing the status of a plugin."""
+
     name: str
     location: List[int]
     args: dict
-    status: Status = Status.TODO.value
-    logo_url: str = None
-    api_result: str = None
-    err_msg: str = None
+    status: Union[Status, str] = Status.TODO.value
+    logo_url: Optional[str] = None
+    api_result: Optional[str] = None
+    err_msg: Optional[str] = None
     start_time = datetime.now().timestamp() * 1000
-    end_time: int = None
+    end_time: Optional[str] = None
 
     df: Any = None
 
 
 class ApiCall:
+    """A class representing an API call."""
+
     agent_prefix = "<api-call>"
     agent_end = "</api-call>"
     name_prefix = "<name>"
@@ -200,31 +212,21 @@ class ApiCall:
         display_registry: Any = None,
         backend_rendering: bool = False,
     ):
-        # self.name: str = ""
-        # self.status: Status = Status.TODO.value
-        # self.logo_url: str = None
-        # self.args = {}
-        # self.api_result: str = None
-        # self.err_msg: str = None
-
-        self.plugin_status_map = {}
+        """Create a new ApiCall object."""
+        self.plugin_status_map: Dict[str, PluginStatus] = {}
 
         self.plugin_generator = plugin_generator
         self.display_registry = display_registry
         self.start_time = datetime.now().timestamp() * 1000
-        self.backend_rendering: bool = False
+        self.backend_rendering: bool = backend_rendering
 
-    def __repr__(self):
-        return f"ApiCall(name={self.name}, status={self.status}, args={self.args})"
-
-    def __is_need_wait_plugin_call(self, api_call_context):
+    def _is_need_wait_plugin_call(self, api_call_context):
         start_agent_count = api_call_context.count(self.agent_prefix)
-        end_agent_count = api_call_context.count(self.agent_end)
 
         if start_agent_count > 0:
             return True
         else:
-            # 末尾新出字符检测
+            # Check the new character at the end
             check_len = len(self.agent_prefix)
             last_text = api_call_context[-check_len:]
             for i in range(check_len):
@@ -237,6 +239,7 @@ class ApiCall:
         return False
 
     def check_last_plugin_call_ready(self, all_context):
+        """Check if the last plugin call is ready."""
         start_agent_count = all_context.count(self.agent_prefix)
         end_agent_count = all_context.count(self.agent_end)
 
@@ -244,7 +247,7 @@ class ApiCall:
             return True
         return False
 
-    def __deal_error_md_tags(self, all_context, api_context, include_end: bool = True):
+    def _deal_error_md_tags(self, all_context, api_context, include_end: bool = True):
         error_md_tags = [
             "```",
             "```python",
@@ -253,7 +256,7 @@ class ApiCall:
             "```markdown",
             "```sql",
         ]
-        if include_end == False:
+        if not include_end:
             md_tag_end = ""
         else:
             md_tag_end = "```"
@@ -271,6 +274,7 @@ class ApiCall:
         return all_context
 
     def api_view_context(self, all_context: str, display_mode: bool = False):
+        """Return the view content."""
         call_context_map = extract_content_open_ending(
             all_context, self.agent_prefix, self.agent_end, True
         )
@@ -278,11 +282,12 @@ class ApiCall:
             api_status = self.plugin_status_map.get(api_context)
             if api_status is not None:
                 if display_mode:
-                    all_context = self.__deal_error_md_tags(all_context, api_context)
+                    all_context = self._deal_error_md_tags(all_context, api_context)
                     if Status.FAILED.value == api_status.status:
+                        err_msg = api_status.err_msg
                         all_context = all_context.replace(
                             api_context,
-                            f'\n<span style="color:red">Error:</span>{api_status.err_msg}\n'
+                            f'\n<span style="color:red">Error:</span>{err_msg}\n'
                             + self.to_view_antv_vis(api_status),
                         )
                     else:
@@ -291,7 +296,7 @@ class ApiCall:
                         )
 
                 else:
-                    all_context = self.__deal_error_md_tags(
+                    all_context = self._deal_error_md_tags(
                         all_context, api_context, False
                     )
                     all_context = all_context.replace(
@@ -303,7 +308,7 @@ class ApiCall:
                 now_time = datetime.now().timestamp() * 1000
                 cost = (now_time - self.start_time) / 1000
                 cost_str = "{:.2f}".format(cost)
-                all_context = self.__deal_error_md_tags(all_context, api_context)
+                all_context = self._deal_error_md_tags(all_context, api_context)
 
                 all_context = all_context.replace(
                     api_context,
@@ -313,7 +318,8 @@ class ApiCall:
         return all_context
 
     def update_from_context(self, all_context):
-        api_context_map = extract_content(
+        """Modify the plugin status map based on the context."""
+        api_context_map: Dict[int, str] = extract_content(
             all_context, self.agent_prefix, self.agent_end, True
         )
         for api_index, api_context in api_context_map.items():
@@ -336,7 +342,7 @@ class ApiCall:
             else:
                 api_status.location.append(api_index)
 
-    def __to_view_param_str(self, api_status):
+    def _to_view_param_str(self, api_status):
         param = {}
         if api_status.name:
             param["name"] = api_status.name
@@ -353,101 +359,105 @@ class ApiCall:
         return json.dumps(param, default=serialize, ensure_ascii=False)
 
     def to_view_text(self, api_status: PluginStatus):
+        """Return the view content."""
         api_call_element = ET.Element("dbgpt-view")
-        api_call_element.text = self.__to_view_param_str(api_status)
+        api_call_element.text = self._to_view_param_str(api_status)
         result = ET.tostring(api_call_element, encoding="utf-8")
         return result.decode("utf-8")
 
     def to_view_antv_vis(self, api_status: PluginStatus):
+        """Return the vis content."""
         if self.backend_rendering:
             html_table = api_status.df.to_html(
                 index=False, escape=False, sparsify=False
             )
             table_str = "".join(html_table.split())
             table_str = table_str.replace("\n", " ")
-            html = f""" \n<div><b>[SQL]{api_status.args["sql"]}</b></div><div class="w-full overflow-auto">{table_str}</div>\n """
+            sql = api_status.args["sql"]
+            html = (
+                f' \n<div><b>[SQL]{sql}</b></div><div class="w-full overflow-auto">'
+                f"{table_str}</div>\n "
+            )
             return html
         else:
             api_call_element = ET.Element("chart-view")
-            api_call_element.attrib["content"] = self.__to_antv_vis_param(api_status)
+            api_call_element.attrib["content"] = self._to_antv_vis_param(api_status)
             api_call_element.text = "\n"
-            # api_call_element.set("content", self.__to_antv_vis_param(api_status))
-            # api_call_element.text = self.__to_antv_vis_param(api_status)
             result = ET.tostring(api_call_element, encoding="utf-8")
             return result.decode("utf-8")
 
-            # return f'<chart-view content="{self.__to_antv_vis_param(api_status)}">'
-
-    def __to_antv_vis_param(self, api_status: PluginStatus):
+    def _to_antv_vis_param(self, api_status: PluginStatus):
         param = {}
         if api_status.name:
             param["type"] = api_status.name
         if api_status.args:
             param["sql"] = api_status.args["sql"]
-        # if api_status.err_msg:
-        #     param["err_msg"] = api_status.err_msg
 
+        data: Any = []
         if api_status.api_result:
-            param["data"] = api_status.api_result
-        else:
-            param["data"] = []
+            data = api_status.api_result
+        param["data"] = data
         return json.dumps(param, ensure_ascii=False)
 
     def run(self, llm_text):
-        if self.__is_need_wait_plugin_call(llm_text):
+        """Run the API calls."""
+        if self._is_need_wait_plugin_call(
+            llm_text
+        ) and self.check_last_plugin_call_ready(llm_text):
             # wait api call generate complete
-            if self.check_last_plugin_call_ready(llm_text):
-                self.update_from_context(llm_text)
-                for key, value in self.plugin_status_map.items():
-                    if value.status == Status.TODO.value:
-                        value.status = Status.RUNNING.value
-                        logging.info(f"插件执行:{value.name},{value.args}")
-                        try:
-                            value.api_result = execute_command(
-                                value.name, value.args, self.plugin_generator
-                            )
-                            value.status = Status.COMPLETE.value
-                        except Exception as e:
-                            value.status = Status.FAILED.value
-                            value.err_msg = str(e)
-                        value.end_time = datetime.now().timestamp() * 1000
+            self.update_from_context(llm_text)
+            for key, value in self.plugin_status_map.items():
+                if value.status == Status.TODO.value:
+                    value.status = Status.RUNNING.value
+                    logger.info(f"Plugin execution:{value.name},{value.args}")
+                    try:
+                        value.api_result = execute_command(
+                            value.name, value.args, self.plugin_generator
+                        )
+                        value.status = Status.COMPLETE.value
+                    except Exception as e:
+                        value.status = Status.FAILED.value
+                        value.err_msg = str(e)
+                    value.end_time = datetime.now().timestamp() * 1000
         return self.api_view_context(llm_text)
 
     def run_display_sql(self, llm_text, sql_run_func):
-        if self.__is_need_wait_plugin_call(llm_text):
+        """Run the API calls for displaying SQL data."""
+        if self._is_need_wait_plugin_call(
+            llm_text
+        ) and self.check_last_plugin_call_ready(llm_text):
             # wait api call generate complete
-            if self.check_last_plugin_call_ready(llm_text):
-                self.update_from_context(llm_text)
-                for key, value in self.plugin_status_map.items():
-                    if value.status == Status.TODO.value:
-                        value.status = Status.RUNNING.value
-                        logging.info(f"sql展示执行:{value.name},{value.args}")
-                        try:
-                            sql = value.args["sql"]
-                            if sql:
-                                param = {
-                                    "df": sql_run_func(sql),
-                                }
-                                value.df = param["df"]
-                                if self.display_registry.is_valid_command(value.name):
-                                    value.api_result = self.display_registry.call(
-                                        value.name, **param
-                                    )
-                                else:
-                                    value.api_result = self.display_registry.call(
-                                        "response_table", **param
-                                    )
+            self.update_from_context(llm_text)
+            for key, value in self.plugin_status_map.items():
+                if value.status == Status.TODO.value:
+                    value.status = Status.RUNNING.value
+                    logger.info(f"sql display execution:{value.name},{value.args}")
+                    try:
+                        sql = value.args["sql"]
+                        if sql:
+                            param = {
+                                "df": sql_run_func(sql),
+                            }
+                            value.df = param["df"]
+                            if self.display_registry.is_valid_command(value.name):
+                                value.api_result = self.display_registry.call(
+                                    value.name, **param
+                                )
+                            else:
+                                value.api_result = self.display_registry.call(
+                                    "response_table", **param
+                                )
 
-                            value.status = Status.COMPLETE.value
-                        except Exception as e:
-                            value.status = Status.FAILED.value
-                            value.err_msg = str(e)
-                        value.end_time = datetime.now().timestamp() * 1000
+                        value.status = Status.COMPLETE.value
+                    except Exception as e:
+                        value.status = Status.FAILED.value
+                        value.err_msg = str(e)
+                    value.end_time = datetime.now().timestamp() * 1000
         return self.api_view_context(llm_text, True)
 
     def display_sql_llmvis(self, llm_text, sql_run_func):
-        """
-        Render charts using the Antv standard protocol
+        """Render charts using the Antv standard protocol.
+
         Args:
             llm_text: LLM response text
             sql_run_func: sql run  function
@@ -456,46 +466,48 @@ class ApiCall:
            ChartView protocol text
         """
         try:
-            if self.__is_need_wait_plugin_call(llm_text):
+            if self._is_need_wait_plugin_call(
+                llm_text
+            ) and self.check_last_plugin_call_ready(llm_text):
                 # wait api call generate complete
-                if self.check_last_plugin_call_ready(llm_text):
-                    self.update_from_context(llm_text)
-                    for key, value in self.plugin_status_map.items():
-                        if value.status == Status.TODO.value:
-                            value.status = Status.RUNNING.value
-                            logging.info(f"sql展示执行:{value.name},{value.args}")
-                            try:
-                                sql = value.args["sql"]
-                                if sql is not None and len(sql) > 0:
-                                    data_df = sql_run_func(sql)
-                                    value.df = data_df
-                                    value.api_result = json.loads(
-                                        data_df.to_json(
-                                            orient="records",
-                                            date_format="iso",
-                                            date_unit="s",
-                                        )
+                self.update_from_context(llm_text)
+                for key, value in self.plugin_status_map.items():
+                    if value.status == Status.TODO.value:
+                        value.status = Status.RUNNING.value
+                        logger.info(f"SQL execution:{value.name},{value.args}")
+                        try:
+                            sql = value.args["sql"]
+                            if sql is not None and len(sql) > 0:
+                                data_df = sql_run_func(sql)
+                                value.df = data_df
+                                value.api_result = json.loads(
+                                    data_df.to_json(
+                                        orient="records",
+                                        date_format="iso",
+                                        date_unit="s",
                                     )
-                                    value.status = Status.COMPLETE.value
-                                else:
-                                    value.status = Status.FAILED.value
-                                    value.err_msg = "No executable sql！"
-
-                            except Exception as e:
-                                logging.error(f"data prepare exception！{str(e)}")
+                                )
+                                value.status = Status.COMPLETE.value
+                            else:
                                 value.status = Status.FAILED.value
-                                value.err_msg = str(e)
-                            value.end_time = datetime.now().timestamp() * 1000
+                                value.err_msg = "No executable sql！"
+
+                        except Exception as e:
+                            logger.error(f"data prepare exception！{str(e)}")
+                            value.status = Status.FAILED.value
+                            value.err_msg = str(e)
+                        value.end_time = datetime.now().timestamp() * 1000
         except Exception as e:
-            logging.error("Api parsing exception", e)
+            logger.error("Api parsing exception", e)
             raise ValueError("Api parsing exception," + str(e))
 
         return self.api_view_context(llm_text, True)
 
     def display_only_sql_vis(self, chart: dict, sql_2_df_func):
+        """Display the chart using the vis standard protocol."""
         err_msg = None
+        sql = chart.get("sql", None)
         try:
-            sql = chart.get("sql", None)
             param = {}
             df = sql_2_df_func(sql)
             if not sql or len(sql) <= 0:
@@ -512,11 +524,7 @@ class ApiCall:
             view_json_str = json.dumps(param, default=serialize, ensure_ascii=False)
         except Exception as e:
             logger.error("parse_view_response error!" + str(e))
-            err_param = {}
-            err_param["sql"] = f"{sql}"
-            err_param["type"] = "response_table"
-            # err_param["err_msg"] = str(e)
-            err_param["data"] = []
+            err_param = {"sql": f"{sql}", "type": "response_table", "data": []}
             err_msg = str(e)
             view_json_str = json.dumps(err_param, default=serialize, ensure_ascii=False)
 
@@ -528,15 +536,16 @@ class ApiCall:
             return result
 
     def display_dashboard_vis(
-        self, charts: List[dict], sql_2_df_func, title: str = None
+        self, charts: List[dict], sql_2_df_func, title: Optional[str] = None
     ):
+        """Display the dashboard using the vis standard protocol."""
         err_msg = None
         view_json_str = None
 
         chart_items = []
         try:
             if not charts or len(charts) <= 0:
-                return f"""Have no chart data!"""
+                return "Have no chart data!"
             for chart in charts:
                 param = {}
                 sql = chart.get("sql", "")
@@ -576,40 +585,3 @@ class ApiCall:
             )
         else:
             return result
-
-    @staticmethod
-    def default_chart_type_promot() -> str:
-        """this function is moved from excel_analyze/chat.py,and used by subclass.
-        Returns:
-
-        """
-        antv_charts = [
-            {"response_line_chart": "used to display comparative trend analysis data"},
-            {
-                "response_pie_chart": "suitable for scenarios such as proportion and distribution statistics"
-            },
-            {
-                "response_table": "suitable for display with many display columns or non-numeric columns"
-            },
-            # {"response_data_text":" the default display method, suitable for single-line or simple content display"},
-            {
-                "response_scatter_plot": "Suitable for exploring relationships between variables, detecting outliers, etc."
-            },
-            {
-                "response_bubble_chart": "Suitable for relationships between multiple variables, highlighting outliers or special situations, etc."
-            },
-            {
-                "response_donut_chart": "Suitable for hierarchical structure representation, category proportion display and highlighting key categories, etc."
-            },
-            {
-                "response_area_chart": "Suitable for visualization of time series data, comparison of multiple groups of data, analysis of data change trends, etc."
-            },
-            {
-                "response_heatmap": "Suitable for visual analysis of time series data, large-scale data sets, distribution of classified data, etc."
-            },
-        ]
-        return "\n".join(
-            f"{key}:{value}"
-            for dict_item in antv_charts
-            for key, value in dict_item.items()
-        )

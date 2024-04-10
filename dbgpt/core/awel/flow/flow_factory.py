@@ -17,6 +17,7 @@ from .base import (
     _get_operator_class,
     _get_resource_class,
 )
+from .compat import get_new_class_name
 from .exceptions import (
     FlowClassMetadataException,
     FlowDAGMetadataException,
@@ -607,9 +608,26 @@ class FlowFactory:
                     f"{metadata_cls}"
                 )
             except ImportError as e:
-                raise FlowClassMetadataException(
-                    f"Import {node_data.type_cls} failed: {e}"
-                )
+                raise_error = True
+                new_type_cls: Optional[str] = None
+                try:
+                    new_type_cls = get_new_class_name(node_data.type_cls)
+                    if new_type_cls:
+                        metadata_cls = import_from_string(new_type_cls)
+                        logger.info(
+                            f"Import {new_type_cls} successfully, metadata_cls is : "
+                            f"{metadata_cls}"
+                        )
+                        raise_error = False
+                except ImportError as ex:
+                    raise FlowClassMetadataException(
+                        f"Import {node_data.type_cls} with new type {new_type_cls} "
+                        f"failed: {ex}"
+                    )
+                if raise_error:
+                    raise FlowClassMetadataException(
+                        f"Import {node_data.type_cls} failed: {e}"
+                    )
 
 
 def _topological_sort(

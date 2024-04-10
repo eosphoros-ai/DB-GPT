@@ -1,13 +1,15 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
+"""Command module."""
 import json
-from typing import Dict
+from typing import Any, Dict
 
 from dbgpt._private.config import Config
 from dbgpt.agent.plugin.generator import PluginPromptGenerator
 
-from .exception_not_commands import NotCommands
+from .exceptions import (
+    CreateCommandException,
+    ExecutionCommandException,
+    NotCommandException,
+)
 
 
 def _resolve_pathlike_command_args(command_args):
@@ -25,16 +27,17 @@ def _resolve_pathlike_command_args(command_args):
 def execute_ai_response_json(
     prompt: PluginPromptGenerator,
     ai_response,
-    user_input: str = None,
+    user_input: str | None = None,
 ) -> str:
-    """
+    """Execute the command from the AI response.
+
     Args:
-        command_registry:
-        ai_response:
-        prompt:
+        prompt(PluginPromptGenerator): The prompt generator
+        ai_response: The response from the AI
+        user_input(str): The user input
 
     Returns:
-
+        str: The result of the command
     """
     from dbgpt.util.speech.say import say_text
 
@@ -69,8 +72,8 @@ def execute_command(
     command_name: str,
     arguments,
     plugin_generator: PluginPromptGenerator,
-):
-    """Execute the command and return the result
+) -> Any:
+    """Execute the command and return the result.
 
     Args:
         command_name (str): The name of the command to execute
@@ -78,6 +81,10 @@ def execute_command(
 
     Returns:
         str: The result of the command
+
+    Raises:
+        NotCommandException: If the command is not found
+        ExecutionCommandException: If an error occurs while executing the command
     """
     cmd = None
     if plugin_generator.command_registry:
@@ -88,7 +95,7 @@ def execute_command(
         try:
             return cmd(**arguments)
         except Exception as e:
-            raise ValueError(f"Error: {str(e)}")
+            raise CreateCommandException(f"Error: {str(e)}")
             # return f"Error: {str(e)}"
     # TODO: Change these to take in a file rather than pasted code, if
     # non-file is given, return instructions "Input should be a python
@@ -109,12 +116,14 @@ def execute_command(
                     print(str(arguments))
                     return command["function"](**arguments)
                 except Exception as e:
-                    return f"Error: {str(e)}"
-        raise NotCommands("非可用命令" + command_name)
+                    raise ExecutionCommandException(f"Execution error: {str(e)}")
+        raise NotCommandException("Invalid command: " + command_name)
 
 
 def get_command(response_json: Dict):
-    """Parse the response and return the command name and arguments
+    """Create a command from the response JSON.
+
+    Parse the response and return the command name and arguments
 
     Args:
         response_json (json): The response from the AI

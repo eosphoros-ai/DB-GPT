@@ -15,17 +15,13 @@
 """
 
 import asyncio
-import os
 
-from dbgpt.agent.agents.agent import AgentContext
-from dbgpt.agent.agents.expand.code_assistant_agent import CodeAssistantAgent
-from dbgpt.agent.agents.llm.llm import LLMConfig
-from dbgpt.agent.agents.user_proxy_agent import UserProxyAgent
-from dbgpt.agent.memory.gpts_memory import GptsMemory
+from dbgpt.agent import AgentContext, GptsMemory, LLMConfig, UserProxyAgent
+from dbgpt.agent.expand.code_assistant_agent import CodeAssistantAgent
 
 
 async def main():
-    from dbgpt.model import OpenAILLMClient
+    from dbgpt.model.proxy import OpenAILLMClient
 
     llm_client = OpenAILLMClient(model_alias="gpt-3.5-turbo")
     context: AgentContext = AgentContext(conv_id="test123")
@@ -41,14 +37,14 @@ async def main():
 
     user_proxy = await UserProxyAgent().bind(context).bind(default_memory).build()
 
-    await user_proxy.a_initiate_chat(
+    await user_proxy.initiate_chat(
         recipient=coder,
         reviewer=user_proxy,
         message="式计算下321 * 123等于多少",  # 用python代码的方式计算下321 * 123等于多少
         # message="download data from https://raw.githubusercontent.com/uwdata/draco/master/data/cars.csv and plot a visualization that tells us about the relationship between weight and horsepower. Save the plot to a file. Print the fields in a dataset before visualizing it.",
     )
     ## dbgpt-vis message infos
-    print(await default_memory.one_chat_competions("test123"))
+    print(await default_memory.one_chat_completions("test123"))
 
 
 if __name__ == "__main__":

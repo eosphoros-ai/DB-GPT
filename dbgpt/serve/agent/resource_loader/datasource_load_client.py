@@ -1,12 +1,12 @@
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 from dbgpt._private.config import Config
-from dbgpt.agent.resource.resource_api import AgentResource, ResourceType
+from dbgpt.agent.resource.resource_api import AgentResource
 from dbgpt.agent.resource.resource_db_api import ResourceDbClient
 from dbgpt.component import ComponentType
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
-from dbgpt.util.tracer import root_tracer, trace
+from dbgpt.util.tracer import root_tracer
 
 CFG = Config()
 
@@ -25,7 +25,9 @@ class DatasourceLoadClient(ResourceDbClient):
         conn = CFG.local_db_manager.get_connector(resource.value)
         return conn.db_type
 
-    async def a_get_schema_link(self, db: str, question: Optional[str] = None) -> str:
+    async def get_schema_link(
+        self, db: str, question: Optional[str] = None
+    ) -> Union[str, List[str]]:
         try:
             from dbgpt.rag.summary.db_summary_client import DBSummaryClient
         except ImportError:
@@ -51,14 +53,14 @@ class DatasourceLoadClient(ResourceDbClient):
 
         return table_infos
 
-    async def a_query_to_df(self, db: str, sql: str):
+    async def query_to_df(self, db: str, sql: str):
         conn = CFG.local_db_manager.get_connector(db)
         return conn.run_to_df(sql)
 
-    async def a_query(self, db: str, sql: str):
+    async def query(self, db: str, sql: str):
         conn = CFG.local_db_manager.get_connector(db)
         return conn.query_ex(sql)
 
-    async def a_run_sql(self, db: str, sql: str):
+    async def run_sql(self, db: str, sql: str):
         conn = CFG.local_db_manager.get_connector(db)
         return conn.run(sql)

@@ -1,28 +1,24 @@
-"""加载组件"""
+"""Load plugins from a directory or a zip file."""
 
 import datetime
 import glob
 import json
 import logging
 import os
-import threading
-import zipfile
 from pathlib import Path
-from typing import List
-from zipimport import zipimporter
-
-import git
-import requests
-from auto_gpt_plugin_template import AutoGPTPluginTemplate
+from typing import TYPE_CHECKING, List, Optional
 
 from dbgpt._private.config import Config
-from dbgpt.configs.model_config import PLUGINS_DIR
+
+if TYPE_CHECKING:
+    from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 logger = logging.getLogger(__name__)
 
 
 def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
-    """
+    """Load the AutoGPTPluginTemplate from a zip file.
+
     Loader zip plugin file. Native support Auto_gpt_plugin
 
     Args:
@@ -32,6 +28,8 @@ def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
     Returns:
     list[str]: The list of module names found or empty list if none were found.
     """
+    import zipfile
+
     result = []
     with zipfile.ZipFile(zip_path, "r") as zfile:
         for name in zfile.namelist():
@@ -44,8 +42,8 @@ def inspect_zip_for_modules(zip_path: str, debug: bool = False) -> list[str]:
 
 
 def write_dict_to_json_file(data: dict, file_path: str) -> None:
-    """
-    Write a dictionary to a JSON file.
+    """Write a dictionary to a JSON file.
+
     Args:
         data (dict): Dictionary to write.
         file_path (str): Path to the file.
@@ -55,8 +53,8 @@ def write_dict_to_json_file(data: dict, file_path: str) -> None:
 
 
 def create_directory_if_not_exists(directory_path: str) -> bool:
-    """
-    Create a directory if it does not exist.
+    """Create a directory if it does not exist.
+
     Args:
         directory_path (str): Path to the directory.
     Returns:
@@ -75,57 +73,21 @@ def create_directory_if_not_exists(directory_path: str) -> bool:
         return True
 
 
-def load_native_plugins(cfg: Config):
-    if not cfg.plugins_auto_load:
-        print("not auto load_native_plugins")
-        return
+def scan_plugin_file(file_path, debug: bool = False) -> List["AutoGPTPluginTemplate"]:
+    """Scan a plugin file and load the plugins."""
+    from zipimport import zipimporter
 
-    def load_from_git(cfg: Config):
-        print("async load_native_plugins")
-        branch_name = cfg.plugins_git_branch
-        native_plugin_repo = "DB-GPT-Plugins"
-        url = "https://github.com/csunny/{repo}/archive/{branch}.zip"
-        try:
-            session = requests.Session()
-            response = session.get(
-                url.format(repo=native_plugin_repo, branch=branch_name),
-                headers={"Authorization": "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"},
-            )
-
-            if response.status_code == 200:
-                plugins_path_path = Path(PLUGINS_DIR)
-                files = glob.glob(
-                    os.path.join(plugins_path_path, f"{native_plugin_repo}*")
-                )
-                for file in files:
-                    os.remove(file)
-                now = datetime.datetime.now()
-                time_str = now.strftime("%Y%m%d%H%M%S")
-                file_name = f"{plugins_path_path}/{native_plugin_repo}-{branch_name}-{time_str}.zip"
-                print(file_name)
-                with open(file_name, "wb") as f:
-                    f.write(response.content)
-                print("save file")
-                cfg.set_plugins(scan_plugins(cfg.debug_mode))
-            else:
-                print("get file failed，response code：", response.status_code)
-        except Exception as e:
-            print("load plugin from git exception!" + str(e))
-
-    t = threading.Thread(target=load_from_git, args=(cfg,))
-    t.start()
-
-
-def scan_plugin_file(file_path, debug: bool = False) -> List[AutoGPTPluginTemplate]:
     logger.info(f"__scan_plugin_file:{file_path},{debug}")
     loaded_plugins = []
     if moduleList := inspect_zip_for_modules(str(file_path), debug):
         for module in moduleList:
             plugin = Path(file_path)
-            module = Path(module)
+            module = Path(module)  # type: ignore
             logger.debug(f"Plugin: {plugin} Module: {module}")
             zipped_package = zipimporter(str(plugin))
-            zipped_module = zipped_package.load_module(str(module.parent))
+            zipped_module = zipped_package.load_module(
+                str(module.parent)  # type: ignore
+            )
             for key in dir(zipped_module):
                 if key.startswith("__"):
                     continue
@@ -142,7 +104,7 @@ def scan_plugin_file(file_path, debug: bool = False) -> List[AutoGPTPluginTempla
 
 def scan_plugins(
     plugins_file_path: str, file_name: str = "", debug: bool = False
-) -> List[AutoGPTPluginTemplate]:
+) -> List["AutoGPTPluginTemplate"]:
     """Scan the plugins directory for plugins and loads them.
 
     Args:
@@ -152,7 +114,6 @@ def scan_plugins(
     Returns:
         List[Tuple[str, Path]]: List of plugins.
     """
-
     loaded_plugins = []
     # Generic plugins
     plugins_path = Path(plugins_file_path)
@@ -198,8 +159,11 @@ def update_from_git(
     download_path: str,
     github_repo: str = "",
     branch_name: str = "main",
-    authorization: str = None,
+    authorization: Optional[str] = None,
 ):
+    """Update plugins from a git repository."""
+    import requests
+
     os.makedirs(download_path, exist_ok=True)
     if github_repo:
         if github_repo.index("github.com") <= 0:
@@ -237,14 +201,16 @@ def update_from_git(
                 f.write(response.content)
             return plugin_repo_name
         else:
-            logger.error("update plugins faild，response code：", response.status_code)
-            raise ValueError("download plugin faild!" + response.status_code)
+            logger.error(f"Update plugins failed，response code：{response.status_code}")
+            raise ValueError(f"Download plugin failed: {response.status_code}")
     except Exception as e:
         logger.error("update plugins from git exception!" + str(e))
         raise ValueError("download plugin exception!", e)
 
 
 def __fetch_from_git(local_path, git_url):
+    import git
+
     logger.info("fetch plugins from git to local path:{}", local_path)
     os.makedirs(local_path, exist_ok=True)
     repo = git.Repo(local_path)

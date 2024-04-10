@@ -1,6 +1,7 @@
+"""Protocol for the dashboard vis."""
 import json
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from ..base import Vis
 
@@ -8,12 +9,16 @@ logger = logging.getLogger(__name__)
 
 
 class VisDashboard(Vis):
-    async def generate_param(self, **kwargs) -> Optional[str]:
+    """Dashboard Vis Protocol."""
+
+    async def generate_param(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """Generate the parameters required by the vis protocol."""
         charts = kwargs.get("charts", None)
         title = kwargs.get("title", None)
         if not charts:
             raise ValueError(
-                f"Parameter information is missing and {self.vis_tag} protocol conversion cannot be performed."
+                f"Parameter information is missing and {self.vis_tag} protocol "
+                "conversion cannot be performed."
             )
 
         chart_items = []
@@ -50,5 +55,6 @@ class VisDashboard(Vis):
         return dashboard_param
 
     @classmethod
-    def vis_tag(cls):
+    def vis_tag(cls) -> str:
+        """Return the tag name of the vis protocol."""
         return "vis-dashboard"

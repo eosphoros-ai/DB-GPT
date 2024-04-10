@@ -3,8 +3,8 @@ import logging
 from fastapi import APIRouter
 
 from dbgpt._private.config import Config
-from dbgpt.agent.agents.agents_manage import agent_manage
-from dbgpt.agent.agents.llm.llm import LLMStrategyType
+from dbgpt.agent.core.agent_manage import agent_manager
+from dbgpt.agent.core.llm.llm import LLMStrategyType
 from dbgpt.agent.resource.resource_api import ResourceType
 from dbgpt.app.knowledge.api import knowledge_space_service
 from dbgpt.app.knowledge.request.request import KnowledgeSpaceRequest
@@ -63,7 +63,7 @@ async def edit(gpts_app: GptsApp):
 @router.get("/v1/agents/list")
 async def all_agents():
     try:
-        return Result.succ(agent_manage.list_agents())
+        return Result.succ(agent_manager.list_agents())
     except Exception as ex:
         return Result.failed(code="E000X", msg=f"query agents error: {ex}")
 
