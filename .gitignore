@@ -184,3 +184,5 @@ thirdparty
 # Ignore awel DAG visualization files
 /examples/**/*.gv
 /examples/**/*.gv.pdf
+/i18n/locales/**/**/*_ai_translated.po
+/i18n/locales/**/**/*~

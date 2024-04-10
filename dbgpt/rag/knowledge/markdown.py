@@ -1,5 +1,5 @@
 """Markdown Knowledge."""
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from dbgpt.core import Document
 from dbgpt.rag.knowledge.base import (
@@ -19,6 +19,7 @@ class MarkdownKnowledge(Knowledge):
         knowledge_type: KnowledgeType = KnowledgeType.DOCUMENT,
         encoding: Optional[str] = "utf-8",
         loader: Optional[Any] = None,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
         **kwargs: Any,
     ) -> None:
         """Create Markdown Knowledge with Knowledge arguments.
@@ -29,9 +30,13 @@ class MarkdownKnowledge(Knowledge):
             encoding(str, optional): csv encoding
             loader(Any, optional): loader
         """
-        self._path = file_path
-        self._type = knowledge_type
-        self._loader = loader
+        super().__init__(
+            path=file_path,
+            knowledge_type=knowledge_type,
+            data_loader=loader,
+            metadata=metadata,
+            **kwargs,
+        )
         self._encoding = encoding
 
     def _load(self) -> List[Document]:
@@ -44,6 +49,8 @@ class MarkdownKnowledge(Knowledge):
             with open(self._path, encoding=self._encoding, errors="ignore") as f:
                 markdown_text = f.read()
                 metadata = {"source": self._path}
+                if self._metadata:
+                    metadata.update(self._metadata)  # type: ignore
                 documents = [Document(content=markdown_text, metadata=metadata)]
                 return documents
         return [Document.langchain2doc(lc_document) for lc_document in documents]

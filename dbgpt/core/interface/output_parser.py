@@ -14,6 +14,7 @@ from typing import Any, TypeVar, Union
 from dbgpt.core import ModelOutput
 from dbgpt.core.awel import MapOperator
 from dbgpt.core.awel.flow import IOField, OperatorCategory, OperatorType, ViewMetadata
+from dbgpt.util.i18n_utils import _
 
 T = TypeVar("T")
 ResponseTye = Union[str, bytes, ModelOutput]
@@ -28,28 +29,28 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
     """
 
     metadata = ViewMetadata(
-        label="Base Output Operator",
+        label=_("Base Output Operator"),
         name="base_output_operator",
         operator_type=OperatorType.TRANSFORM_STREAM,
         category=OperatorCategory.OUTPUT_PARSER,
-        description="The base LLM out parse.",
+        description=_("The base LLM out parse."),
         parameters=[],
         inputs=[
             IOField.build_from(
-                "Model Output",
+                _("Model Output"),
                 "model_output",
                 ModelOutput,
                 is_list=True,
-                description="The model output of upstream.",
+                description=_("The model output of upstream."),
             )
         ],
         outputs=[
             IOField.build_from(
-                "Model Output",
+                _("Model Output"),
                 "model_output",
                 str,
                 is_list=True,
-                description="The model output after transform to openai stream format",
+                description=_("The model output after parsing."),
             )
         ],
     )
@@ -126,8 +127,8 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             ai_response = ai_response.replace("assistant:", "")
             ai_response = ai_response.replace("Assistant:", "")
             ai_response = ai_response.replace("ASSISTANT:", "")
-            ai_response = ai_response.replace("\_", "_")
-            ai_response = ai_response.replace("\*", "*")
+            ai_response = ai_response.replace("\\_", "_")
+            ai_response = ai_response.replace("\\*", "*")
             ai_response = ai_response.replace("\t", "")
 
             ai_response = ai_response.replace("提供的表结构信息不足以生成 sql 查询。", "select '提供的表结构信息不足以生成 sql 查询。' as error")
@@ -235,7 +236,7 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             .replace("\\n", " ")
             .replace("\n", " ")
             .replace("\\", " ")
-            .replace("\_", "_")
+            .replace("\\_", "_")
         )
         cleaned_output = self._illegal_json_ends(cleaned_output)
         return cleaned_output

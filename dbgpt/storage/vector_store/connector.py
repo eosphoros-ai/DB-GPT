@@ -4,6 +4,13 @@ import os
 from typing import Any, Dict, List, Optional, Type, cast
 
 from dbgpt.core import Chunk
+from dbgpt.core.awel.flow import (
+    FunctionDynamicOptions,
+    OptionValue,
+    Parameter,
+    ResourceCategory,
+    register_resource,
+)
 from dbgpt.storage import vector_store
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 import os
@@ -12,28 +19,60 @@ from typing import Any, Callable, List, Optional
 from dbgpt.rag.chunk import Chunk
 from dbgpt.storage import vector_store
 from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
+from dbgpt.storage.vector_store.filters import MetadataFilters
+from dbgpt.util.i18n_utils import _
 
 connector: Dict[str, Type] = {}
 
 
+def _load_vector_options() -> List[OptionValue]:
+    return [
+        OptionValue(label=cls, name=cls, value=cls)
+        for cls in vector_store.__all__
+        if issubclass(getattr(vector_store, cls), VectorStoreBase)
+    ]
+
+
+@register_resource(
+    _("Vector Store Connector"),
+    "vector_store_connector",
+    category=ResourceCategory.VECTOR_STORE,
+    parameters=[
+        Parameter.build_from(
+            _("Vector Store Type"),
+            "vector_store_type",
+            str,
+            description=_("The type of vector store."),
+            options=FunctionDynamicOptions(func=_load_vector_options),
+        ),
+        Parameter.build_from(
+            _("Vector Store Implementation"),
+            "vector_store_config",
+            VectorStoreConfig,
+            description=_("The vector store implementation."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class VectorStoreConnector:
     """The connector for vector store.
 
-     VectorStoreConnector, can connect different vector db provided load document api_v1
-     and similar search api_v1.
+    VectorStoreConnector, can connect different vector db provided load document api_v1
+    and similar search api_v1.
 
-     1.load_document:knowledge document source into vector store.(Chroma, Milvus,
-     Weaviate).
-     2.similar_search: similarity search from vector_store.
-     3.similar_search_with_scores: similarity search with similarity score from
-     vector_store
+    1.load_document:knowledge document source into vector store.(Chroma, Milvus,
+    Weaviate).
+    2.similar_search: similarity search from vector_store.
+    3.similar_search_with_scores: similarity search with similarity score from
+    vector_store
 
-     code example:
-     >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
+    code example:
+    >>> from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
-     >>> vector_store_config = VectorStoreConfig
-     >>> vector_store_connector = VectorStoreConnector(vector_store_type="Chroma")
-     """
+    >>> vector_store_config = VectorStoreConfig
+    >>> vector_store_connector = VectorStoreConnector(vector_store_type="Chroma")
+    """
 
     def __init__(
         self,
@@ -64,7 +103,7 @@ class VectorStoreConnector:
         embedding_fn: Optional[Any] = None,
         vector_store_config: Optional[VectorStoreConfig] = None,
     ) -> "VectorStoreConnector":
-        """initialize default vector store connector."""
+        """Initialize default vector store connector."""
         vector_store_type = vector_store_type or os.getenv(
             "VECTOR_STORE_TYPE", "Chroma"
         )
@@ -76,7 +115,7 @@ class VectorStoreConnector:
         return cls(real_vector_store_type, vector_store_config)
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:
-        """load document in vector database.
+        """Load document in vector database.
 
         Args:
             - chunks: document chunks.
@@ -96,21 +135,28 @@ class VectorStoreConnector:
             max_threads,
         )
 
-    def similar_search(self, doc: str, topk: int) -> List[Chunk]:
+    def similar_search(
+        self, doc: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Similar search in vector database.
 
         Args:
            - doc: query text
            - topk: topk
+           - filters: metadata filters.
         Return:
             - chunks: chunks.
         """
-        return self.client.similar_search(doc, topk)
+        return self.client.similar_search(doc, topk, filters)
 
     def similar_search_with_scores(
-        self, doc: str, topk: int, score_threshold: float
+        self,
+        doc: str,
+        topk: int,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
-        """Similar search with scores in vector database.
+        """Similar_search_with_score in vector database.
 
         similar_search_with_score in vector database..
         Return docs and relevance scores in the range [0, 1].
@@ -121,10 +167,13 @@ class VectorStoreConnector:
             score_threshold(float): score_threshold: Optional, a floating point value
                 between 0 to 1 to filter the resulting set of retrieved docs,0 is
                 dissimilar, 1 is most similar.
+            filters: metadata filters.
         Return:
-            - chunks: chunks.
+            - chunks: Return docs and relevance scores in the range [0, 1].
         """
-        return self.client.similar_search_with_scores(doc, topk, score_threshold)
+        return self.client.similar_search_with_scores(
+            doc, topk, score_threshold, filters
+        )
 
     @property
     def vector_store_config(self) -> VectorStoreConfig:

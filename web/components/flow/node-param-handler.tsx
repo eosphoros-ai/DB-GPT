@@ -24,6 +24,7 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
     let defaultValue = data.value !== null && data.value !== undefined ? data.value : data.default;
     switch (data.type_name) {
       case 'int':
+      case 'float':
         return (
           <div className="p-2 text-sm">
             <p>
@@ -37,8 +38,8 @@ const NodeParamHandler: React.FC<NodeParamHandlerProps> = ({ node, data, label, 
             <InputNumber
               className="w-full"
               defaultValue={defaultValue}
-              onChange={(e) => {
-                handleChange(e.target.value);
+              onChange={(value: number | null) => {
+                handleChange(value);
               }}
             />
           </div>

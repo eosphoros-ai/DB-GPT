@@ -80,7 +80,7 @@
 
 - **微调框架**:  模型微调是任何一个企业在垂直、细分领域落地不可或缺的能力，DB-GPT提供了完整的微调框架，实现与DB-GPT项目的无缝打通，在最近的微调中，基于spider的准确率已经做到了82.5%
 
-- **数据驱动的Multi-Agents框架**:  DB-GPT提供了数据驱动的自进化微调框架，目标是可以持续基于数据做决策与执行。 
+- **数据驱动的Multi-Agents框架**:  DB-GPT提供了数据驱动的自进化Multi-Agents框架，目标是可以持续基于数据做决策与执行。 
 
 - **数据工厂**: 数据工厂主要是在大模型时代，做可信知识、数据的清洗加工。 
 
@@ -152,6 +152,8 @@
   海量模型支持，包括开源、API代理等几十种大语言模型。如LLaMA/LLaMA2、Baichuan、ChatGLM、文心、通义、智谱等。当前已支持如下模型: 
 
   - 新增支持模型
+    - 🔥🔥🔥  [Qwen1.5-32B-Chat](https://huggingface.co/Qwen/Qwen1.5-32B-Chat)
+    - 🔥🔥🔥  [Starling-LM-7B-beta](https://huggingface.co/Nexusflow/Starling-LM-7B-beta)
     - 🔥🔥🔥  [gemma-7b-it](https://huggingface.co/google/gemma-7b-it)
     - 🔥🔥🔥  [gemma-2b-it](https://huggingface.co/google/gemma-2b-it)
     - 🔥🔥🔥  [SOLAR-10.7B](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0)
@@ -161,6 +163,7 @@
   - [更多开源模型](https://www.yuque.com/eosphoros/dbgpt-docs/iqaaqwriwhp6zslc#qQktR)
 
   - 支持在线代理模型 
+    - [x] [零一万物.Yi](https://platform.lingyiwanwu.com/docs)
     - [x] [OpenAI·ChatGPT](https://api.openai.com/)
     - [x] [百川·Baichuan](https://platform.baichuan-ai.com/)
     - [x] [阿里·通义](https://www.aliyun.com/product/dashscope)
@@ -199,7 +202,8 @@
 - [数据Agents](https://www.yuque.com/eosphoros/dbgpt-docs/gwz4rayfuwz78fbq)
 
 ## 贡献
-> 提交代码前请先执行 `black .`
+
+更加详细的贡献指南请参考[如何贡献](https://github.com/eosphoros-ai/DB-GPT/blob/main/CONTRIBUTING.md)。
 
 这是一个用于数据库的复杂且创新的工具, 我们的项目也在紧急的开发当中, 会陆续发布一些新的feature。如在使用当中有任何具体问题, 优先在项目下提issue, 如有需要, 请联系如下微信，我会尽力提供帮助，同时也非常欢迎大家参与到项目建设中。
 

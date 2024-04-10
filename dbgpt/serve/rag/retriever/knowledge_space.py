@@ -7,6 +7,7 @@ from dbgpt.core import Chunk
 from dbgpt.rag.embedding.embedding_factory import EmbeddingFactory
 from dbgpt.rag.retriever.base import BaseRetriever
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
+from dbgpt.storage.vector_store.filters import MetadataFilters
 from dbgpt.util.executor_utils import ExecutorFactory, blocking_func_to_async
 
 CFG = Config()
@@ -46,52 +47,81 @@ class KnowledgeSpaceRetriever(BaseRetriever):
             ComponentType.EXECUTOR_DEFAULT, ExecutorFactory
         ).create()
 
-    def _retrieve(self, query: str) -> List[Chunk]:
+    def _retrieve(
+        self, query: str, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Retrieve knowledge chunks.
+
         Args:
-            query (str): query text
+            query (str): query text.
+            filters: (Optional[MetadataFilters]) metadata filters.
+
         Return:
             List[Chunk]: list of chunks
         """
         candidates = self._vector_store_connector.similar_search(
-            doc=query, topk=self._top_k
+            doc=query, topk=self._top_k, filters=filters
         )
         return candidates
 
-    def _retrieve_with_score(self, query: str, score_threshold: float) -> List[Chunk]:
+    def _retrieve_with_score(
+        self,
+        query: str,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
+
         Args:
             query (str): query text
             score_threshold (float): score threshold
+            filters: (Optional[MetadataFilters]) metadata filters.
+
         Return:
             List[Chunk]: list of chunks with score
         """
         candidates_with_score = self._vector_store_connector.similar_search_with_scores(
-            doc=query, topk=self._top_k, score_threshold=score_threshold
+            doc=query,
+            topk=self._top_k,
+            score_threshold=score_threshold,
+            filters=filters,
         )
         return candidates_with_score
 
-    async def _aretrieve(self, query: str) -> List[Chunk]:
+    async def _aretrieve(
+        self, query: str, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Retrieve knowledge chunks.
+
         Args:
-            query (str): query text
+            query (str): query text.
+            filters: (Optional[MetadataFilters]) metadata filters.
+
         Return:
             List[Chunk]: list of chunks
         """
-        candidates = await blocking_func_to_async(self._executor, self._retrieve, query)
+        candidates = await blocking_func_to_async(
+            self._executor, self._retrieve, query, filters
+        )
         return candidates
 
     async def _aretrieve_with_score(
-        self, query: str, score_threshold: float
+        self,
+        query: str,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
+
         Args:
-            query (str): query text
-            score_threshold (float): score threshold
+            query (str): query text.
+            score_threshold (float): score threshold.
+            filters: (Optional[MetadataFilters]) metadata filters.
+
         Return:
-            List[Chunk]: list of chunks with score
+            List[Chunk]: list of chunks with score.
         """
         candidates_with_score = await blocking_func_to_async(
-            self._executor, self._retrieve_with_score, query, score_threshold
+            self._executor, self._retrieve_with_score, query, score_threshold, filters
         )
         return candidates_with_score

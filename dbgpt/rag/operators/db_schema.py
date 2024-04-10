@@ -8,6 +8,7 @@ from dbgpt.datasource.base import BaseConnector
 from dbgpt.storage.vector_store.connector import VectorStoreConnector
 
 from ..assembler.db_schema import DBSchemaAssembler
+from ..chunk_manager import ChunkParameters
 from ..retriever.db_schema import DBSchemaRetriever
 from .assembler import AssemblerOperator
 
@@ -53,6 +54,7 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
         self,
         connector: BaseConnector,
         vector_store_connector: VectorStoreConnector,
+        chunk_parameters: Optional[ChunkParameters] = None,
         **kwargs
     ):
         """Create a new DBSchemaAssemblerOperator.
@@ -60,7 +62,12 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
         Args:
             connector (BaseConnector): The connection.
             vector_store_connector (VectorStoreConnector): The vector store connector.
+            chunk_parameters (Optional[ChunkParameters], optional): The chunk
+                parameters.
         """
+        if not chunk_parameters:
+            chunk_parameters = ChunkParameters(chunk_strategy="CHUNK_BY_SIZE")
+        self._chunk_parameters = chunk_parameters
         self._vector_store_connector = vector_store_connector
         self._connector = connector
         super().__init__(**kwargs)
@@ -76,6 +83,7 @@ class DBSchemaAssemblerOperator(AssemblerOperator[BaseConnector, List[Chunk]]):
         """
         assembler = DBSchemaAssembler.load_from_connection(
             connector=self._connector,
+            chunk_parameters=self._chunk_parameters,
             vector_store_connector=self._vector_store_connector,
         )
         assembler.persist()

@@ -1,19 +1,44 @@
 """Postgres vector store."""
-from dbgpt._private.config import Config
+import logging
+from typing import List, Optional
+
 from dbgpt._private.pydantic import Field
 from dbgpt.core import Chunk
-import logging
-from typing import Any, List
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.storage.vector_store.base import (
+    _COMMON_PARAMETERS,
+    VectorStoreBase,
+    VectorStoreConfig,
+)
+from dbgpt.storage.vector_store.filters import MetadataFilters
+from dbgpt.util.i18n_utils import _
+
 from sqlalchemy import create_engine
 
-from dbgpt.rag.chunk import Chunk
-from dbgpt.storage.vector_store.base import VectorStoreBase, VectorStoreConfig
 
 logger = logging.getLogger(__name__)
 
-CFG = Config()
 
-
+@register_resource(
+    _("PG Vector Store"),
+    "pg_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    parameters=[
+        *_COMMON_PARAMETERS,
+        Parameter.build_from(
+            _("Connection String"),
+            "connection_string",
+            str,
+            description=_(
+                "The connection string of vector store, if not set, will use "
+                "the default connection string."
+            ),
+            optional=True,
+            default=None,
+        ),
+    ],
+    description="PG vector store.",
+)
 class PGVectorConfig(VectorStoreConfig):
     """PG vector store config."""
 
@@ -49,11 +74,14 @@ class PGVectorStore(VectorStoreBase):
             connection_string=self.connection_string,
         )
 
-    def similar_search(self, text, topk, **kwargs: Any) -> None:
+    def similar_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Perform similar search in PGVector."""
-        return self.vector_store_client.similarity_search(text, topk)
+        return self.vector_store_client.similarity_search(text, topk, filters)
 
-    def vector_name_exists(self):
+    def vector_name_exists(self) -> bool:
+        """Check if vector name exists."""
         try:
             from sqlalchemy.sql import text
             engine = create_engine(self.connection_string)
@@ -88,7 +116,7 @@ class PGVectorStore(VectorStoreBase):
             else:
                 return False
         except Exception as e:
-            logger.error("vector_name_exists error", e.message)
+            logger.error(f"vector_name_exists error, {str(e)}")
             return False
 
     def load_document(self, chunks: List[Chunk]) -> List[str]:

@@ -1,0 +1,554 @@
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2024 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2024.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-03-24 22:53+0800\n"
+"PO-Revision-Date: 2024-03-23 11:22+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../dbgpt/rag/operators/embedding.py:25
+msgid "Embedding Retriever Operator"
+msgstr "嵌入式检索算子"
+
+#: ../dbgpt/rag/operators/embedding.py:27
+msgid "Retrieve candidates from vector store."
+msgstr "从向量存储中检索候选项。"
+
+#: ../dbgpt/rag/operators/embedding.py:31
+#: ../dbgpt/rag/operators/embedding.py:130
+msgid "Vector Store Connector"
+msgstr "向量存储连接器"
+
+#: ../dbgpt/rag/operators/embedding.py:34
+#: ../dbgpt/rag/operators/embedding.py:133
+msgid "The vector store connector."
+msgstr "向量存储连接器。"
+
+#: ../dbgpt/rag/operators/embedding.py:37
+msgid "Top K"
+msgstr "前 K 个"
+
+#: ../dbgpt/rag/operators/embedding.py:40
+msgid "The number of candidates."
+msgstr "候选项的数量。"
+
+#: ../dbgpt/rag/operators/embedding.py:43
+msgid "Score Threshold"
+msgstr "分数阈值"
+
+#: ../dbgpt/rag/operators/embedding.py:47
+msgid ""
+"The score threshold, if score of candidate is less than it, it will be "
+"filtered."
+msgstr "分数阈值，如果候选项的分数低于此值，则会被过滤。"
+
+#: ../dbgpt/rag/operators/embedding.py:54 ../dbgpt/rag/retriever/rewrite.py:24
+msgid "Query Rewrite"
+msgstr "查询重写"
+
+#: ../dbgpt/rag/operators/embedding.py:57
+msgid "The query rewrite resource."
+msgstr "查询重写资源。"
+
+#: ../dbgpt/rag/operators/embedding.py:62
+msgid "Rerank"
+msgstr "重新排序"
+
+#: ../dbgpt/rag/operators/embedding.py:65
+msgid "The rerank."
+msgstr "重新排序。"
+
+#: ../dbgpt/rag/operators/embedding.py:72
+msgid "Query"
+msgstr "查询"
+
+#: ../dbgpt/rag/operators/embedding.py:75
+msgid "The query to retrieve."
+msgstr "要检索的查询。"
+
+#: ../dbgpt/rag/operators/embedding.py:80
+msgid "Candidates"
+msgstr "候选项"
+
+#: ../dbgpt/rag/operators/embedding.py:83
+msgid "The retrieved candidates."
+msgstr "已检索的候选项。"
+
+#: ../dbgpt/rag/operators/embedding.py:124
+msgid "Embedding Assembler Operator"
+msgstr "嵌入式装配算子"
+
+#: ../dbgpt/rag/operators/embedding.py:126
+msgid "Load knowledge and assemble embedding chunks to vector store."
+msgstr "加载知识并将嵌入式块组装到向量存储中。"
+
+#: ../dbgpt/rag/operators/embedding.py:136 ../dbgpt/rag/chunk_manager.py:24
+msgid "Chunk Parameters"
+msgstr "块参数"
+
+#: ../dbgpt/rag/operators/embedding.py:139
+msgid "The chunk parameters."
+msgstr "块参数。"
+
+#: ../dbgpt/rag/operators/embedding.py:146 ../dbgpt/rag/operators/summary.py:23
+#: ../dbgpt/rag/operators/knowledge.py:39
+msgid "Knowledge"
+msgstr "知识"
+
+#: ../dbgpt/rag/operators/embedding.py:149
+msgid "The knowledge to be loaded."
+msgstr ""
+
+#: ../dbgpt/rag/operators/embedding.py:154
+#: ../dbgpt/rag/operators/knowledge.py:121
+msgid "Chunks"
+msgstr "块"
+
+#: ../dbgpt/rag/operators/embedding.py:158
+msgid "The assembled chunks, it has been persisted to vector store."
+msgstr "已组装的块，已持久化到向量存储中。"
+
+#: ../dbgpt/rag/operators/summary.py:17
+msgid "Summary Operator"
+msgstr ""
+
+#: ../dbgpt/rag/operators/summary.py:20
+#, fuzzy
+msgid "The summary assembler operator."
+msgstr "嵌入式装配算子"
+
+#: ../dbgpt/rag/operators/summary.py:23
+#, fuzzy
+msgid "Knowledge datasource"
+msgstr "知识数据源"
+
+#: ../dbgpt/rag/operators/summary.py:28
+msgid "Document summary"
+msgstr ""
+
+#: ../dbgpt/rag/operators/summary.py:36 ../dbgpt/rag/operators/rewrite.py:36
+#: ../dbgpt/rag/retriever/rewrite.py:36
+msgid "LLM Client"
+msgstr "LLM 客户端"
+
+#: ../dbgpt/rag/operators/summary.py:41 ../dbgpt/rag/operators/rewrite.py:39
+#, fuzzy
+msgid "The LLM Client."
+msgstr "LLM 客户端"
+
+#: ../dbgpt/rag/operators/summary.py:44 ../dbgpt/rag/operators/rewrite.py:42
+#, fuzzy
+msgid "Model name"
+msgstr "模型名称"
+
+#: ../dbgpt/rag/operators/summary.py:49
+#, fuzzy
+msgid "LLM model name"
+msgstr "LLM 模型名称。"
+
+#: ../dbgpt/rag/operators/summary.py:52 ../dbgpt/rag/operators/summary.py:57
+#: ../dbgpt/rag/operators/summary.py:65
+#, fuzzy
+msgid "prompt language"
+msgstr "语言"
+
+#: ../dbgpt/rag/operators/summary.py:60
+msgid "Max iteration with LLM"
+msgstr ""
+
+#: ../dbgpt/rag/operators/summary.py:68
+msgid "Concurrency limit with LLM"
+msgstr ""
+
+#: ../dbgpt/rag/operators/summary.py:73
+msgid "The concurrency limit with llm"
+msgstr ""
+
+#: ../dbgpt/rag/operators/rewrite.py:16
+#, fuzzy
+msgid "Query Rewrite Operator"
+msgstr "查询重写"
+
+#: ../dbgpt/rag/operators/rewrite.py:19
+#, fuzzy
+msgid "Query rewrite operator."
+msgstr "查询重写。"
+
+#: ../dbgpt/rag/operators/rewrite.py:22
+#, fuzzy
+msgid "Query context"
+msgstr "查询重写"
+
+#: ../dbgpt/rag/operators/rewrite.py:22
+msgid "query context"
+msgstr ""
+
+#: ../dbgpt/rag/operators/rewrite.py:27 ../dbgpt/rag/operators/rewrite.py:31
+msgid "Rewritten queries"
+msgstr ""
+
+#: ../dbgpt/rag/operators/rewrite.py:47
+#, fuzzy
+msgid "LLM model name."
+msgstr "LLM 模型名称。"
+
+#: ../dbgpt/rag/operators/rewrite.py:50
+#, fuzzy
+msgid "Prompt language"
+msgstr "语言"
+
+#: ../dbgpt/rag/operators/rewrite.py:55
+msgid "Prompt language."
+msgstr ""
+
+#: ../dbgpt/rag/operators/rewrite.py:58
+msgid "Number of results"
+msgstr ""
+
+#: ../dbgpt/rag/operators/rewrite.py:63
+msgid "rewrite query number."
+msgstr ""
+
+#: ../dbgpt/rag/operators/knowledge.py:23
+msgid "Knowledge Operator"
+msgstr "知识算子"
+
+#: ../dbgpt/rag/operators/knowledge.py:27
+msgid "The knowledge operator, which can create knowledge from datasource."
+msgstr "知识算子，可以从数据源创建知识。"
+
+#: ../dbgpt/rag/operators/knowledge.py:31
+msgid "knowledge datasource"
+msgstr "知识数据源"
+
+#: ../dbgpt/rag/operators/knowledge.py:34
+msgid "knowledge datasource, which can be a document, url, or text."
+msgstr ""
+
+#: ../dbgpt/rag/operators/knowledge.py:42
+msgid "Knowledge object."
+msgstr "知识对象。"
+
+#: ../dbgpt/rag/operators/knowledge.py:47
+msgid "Default datasource"
+msgstr "默认数据源"
+
+#: ../dbgpt/rag/operators/knowledge.py:52
+msgid "Default datasource."
+msgstr "默认数据源。"
+
+#: ../dbgpt/rag/operators/knowledge.py:55
+msgid "Knowledge type"
+msgstr "知识类型"
+
+#: ../dbgpt/rag/operators/knowledge.py:71
+msgid "Knowledge type."
+msgstr "知识类型。"
+
+#: ../dbgpt/rag/operators/knowledge.py:105
+msgid "Chunks To String Operator"
+msgstr "块转字符串算子"
+
+#: ../dbgpt/rag/operators/knowledge.py:107
+msgid "Convert chunks to string."
+msgstr "将块转换为字符串。"
+
+#: ../dbgpt/rag/operators/knowledge.py:111 ../dbgpt/rag/chunk_manager.py:71
+#: ../dbgpt/rag/text_splitter/text_splitter.py:211
+#: ../dbgpt/rag/text_splitter/text_splitter.py:422
+#: ../dbgpt/rag/text_splitter/text_splitter.py:804
+msgid "Separator"
+msgstr "分隔符"
+
+#: ../dbgpt/rag/operators/knowledge.py:114
+msgid "The separator between chunks."
+msgstr "块之间的分隔符。"
+
+#: ../dbgpt/rag/operators/knowledge.py:124
+msgid "The input chunks."
+msgstr "输入的块。"
+
+#: ../dbgpt/rag/operators/knowledge.py:130
+msgid "String"
+msgstr "字符串"
+
+#: ../dbgpt/rag/operators/knowledge.py:133
+msgid "The output string."
+msgstr "输出的字符串。"
+
+#: ../dbgpt/rag/embedding/embedding_factory.py:230
+msgid "Default Embeddings"
+msgstr "默认嵌入式"
+
+#: ../dbgpt/rag/embedding/embedding_factory.py:234
+msgid "Default embeddings(using default embedding model of current system)"
+msgstr "默认嵌入式（使用当前系统的默认嵌入式模型）"
+
+#: ../dbgpt/rag/embedding/embeddings.py:28
+msgid "HuggingFace Embeddings"
+msgstr "HuggingFace 嵌入式"
+
+#: ../dbgpt/rag/embedding/embeddings.py:31
+msgid "HuggingFace sentence_transformers embedding models."
+msgstr "HuggingFace 句子转换嵌入式模型。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:34
+#: ../dbgpt/rag/embedding/embeddings.py:141
+#: ../dbgpt/rag/embedding/embeddings.py:348
+#: ../dbgpt/rag/embedding/embeddings.py:461
+#: ../dbgpt/rag/embedding/embeddings.py:553
+#: ../dbgpt/rag/retriever/rewrite.py:30
+msgid "Model Name"
+msgstr "模型名称"
+
+#: ../dbgpt/rag/embedding/embeddings.py:39
+#: ../dbgpt/rag/embedding/embeddings.py:146
+msgid "Model name to use."
+msgstr "要使用的模型名称。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:135
+msgid "HuggingFace Instructor Embeddings"
+msgstr "HuggingFace 指导嵌入式"
+
+#: ../dbgpt/rag/embedding/embeddings.py:138
+msgid "HuggingFace Instructor embeddings."
+msgstr "HuggingFace 指导嵌入式。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:149
+msgid "Embed Instruction"
+msgstr "嵌入指令"
+
+#: ../dbgpt/rag/embedding/embeddings.py:154
+msgid "Instruction to use for embedding documents."
+msgstr "用于嵌入文档的指令。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:157
+msgid "Query Instruction"
+msgstr "查询指令"
+
+#: ../dbgpt/rag/embedding/embeddings.py:162
+msgid "Instruction to use for embedding query."
+msgstr "用于嵌入查询的指令。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:336
+msgid "HuggingFace Inference API Embeddings"
+msgstr "HuggingFace 推理 API 嵌入式"
+
+#: ../dbgpt/rag/embedding/embeddings.py:339
+msgid "HuggingFace Inference API embeddings."
+msgstr "HuggingFace 推理 API 嵌入式。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:342
+#: ../dbgpt/rag/embedding/embeddings.py:455
+#: ../dbgpt/rag/embedding/embeddings.py:545
+msgid "API Key"
+msgstr "API 密钥"
+
+#: ../dbgpt/rag/embedding/embeddings.py:345
+msgid "Your API key for the HuggingFace Inference API."
+msgstr "您用于 HuggingFace 推理 API 的 API 密钥。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:353
+#: ../dbgpt/rag/embedding/embeddings.py:466
+#: ../dbgpt/rag/embedding/embeddings.py:558
+msgid "The name of the model to use for text embeddings."
+msgstr "用于文本嵌入的模型名称。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:449
+msgid "Jina AI Embeddings"
+msgstr "Jina AI 嵌入式"
+
+#: ../dbgpt/rag/embedding/embeddings.py:452
+msgid "Jina AI embeddings."
+msgstr "Jina AI 嵌入式。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:458
+msgid "Your API key for the Jina AI API."
+msgstr "您用于 Jina AI API 的 API 密钥。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:531
+msgid "OpenAPI Embeddings"
+msgstr "OpenAPI 嵌入式"
+
+#: ../dbgpt/rag/embedding/embeddings.py:534
+msgid "OpenAPI embeddings."
+msgstr "OpenAPI 嵌入式。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:537
+msgid "API URL"
+msgstr "API 网址"
+
+#: ../dbgpt/rag/embedding/embeddings.py:542
+msgid "The URL of the embeddings API."
+msgstr "嵌入式 API 的网址。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:550
+msgid "Your API key for the Open API."
+msgstr "您用于 Open API 的 API 密钥。"
+
+#: ../dbgpt/rag/embedding/embeddings.py:561
+msgid "Timeout"
+msgstr "超时时间"
+
+#: ../dbgpt/rag/embedding/embeddings.py:566
+msgid "The timeout for the request in seconds."
+msgstr "请求的超时时间（秒）。"
+
+#: ../dbgpt/rag/chunk_manager.py:29
+msgid "Chunk Strategy"
+msgstr "块策略"
+
+#: ../dbgpt/rag/chunk_manager.py:32
+msgid "chunk strategy"
+msgstr "块策略"
+
+#: ../dbgpt/rag/chunk_manager.py:37
+msgid "Text Splitter"
+msgstr "文本分割器"
+
+#: ../dbgpt/rag/chunk_manager.py:41
+msgid "Text splitter, if not set, will use the default text splitter."
+msgstr "文本分割器，如果未设置，将使用默认文本分割器。"
+
+#: ../dbgpt/rag/chunk_manager.py:47
+msgid "Splitter Type"
+msgstr "分割器类型"
+
+#: ../dbgpt/rag/chunk_manager.py:50
+msgid "Splitter type"
+msgstr "分割器类型"
+
+#: ../dbgpt/rag/chunk_manager.py:55
+#: ../dbgpt/rag/text_splitter/text_splitter.py:406
+msgid "Chunk Size"
+msgstr "块大小"
+
+#: ../dbgpt/rag/chunk_manager.py:58
+msgid "Chunk size"
+msgstr "块大小"
+
+#: ../dbgpt/rag/chunk_manager.py:63
+msgid "Chunk Overlap"
+msgstr "块重叠"
+
+#: ../dbgpt/rag/chunk_manager.py:74
+msgid "Chunk separator"
+msgstr "块分隔符"
+
+#: ../dbgpt/rag/chunk_manager.py:79
+msgid "Enable Merge"
+msgstr "启用合并"
+
+#: ../dbgpt/rag/chunk_manager.py:82
+msgid "Enable chunk merge by chunk_size."
+msgstr "通过块大小启用块合并。"
+
+#: ../dbgpt/rag/retriever/rerank.py:56
+msgid "Default Ranker"
+msgstr "默认排序器"
+
+#: ../dbgpt/rag/retriever/rerank.py:59
+msgid "Default ranker(Rank by score)."
+msgstr "默认排序器（按分数排序）。"
+
+#: ../dbgpt/rag/retriever/rerank.py:62
+msgid "Top k"
+msgstr "前 k 个"
+
+#: ../dbgpt/rag/retriever/rerank.py:65
+msgid "The number of top k documents."
+msgstr "前 k 个文档的数量。"
+
+#: ../dbgpt/rag/retriever/rewrite.py:27
+msgid "Query rewrite."
+msgstr "查询重写。"
+
+#: ../dbgpt/rag/retriever/rewrite.py:33
+msgid "The LLM model name."
+msgstr "LLM 模型名称。"
+
+#: ../dbgpt/rag/retriever/rewrite.py:39
+msgid "The llm client."
+msgstr "LLM 客户端。"
+
+#: ../dbgpt/rag/retriever/rewrite.py:42
+msgid "Language"
+msgstr "语言"
+
+#: ../dbgpt/rag/retriever/rewrite.py:45
+msgid "The language of the query rewrite prompt."
+msgstr "查询重写提示的语言。"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:206
+msgid "Character Text Splitter"
+msgstr "字符文本分割器"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:214
+#: ../dbgpt/rag/text_splitter/text_splitter.py:425
+#: ../dbgpt/rag/text_splitter/text_splitter.py:807
+#: ../dbgpt/rag/text_splitter/text_splitter.py:850
+msgid "Separator to split the text."
+msgstr "用于分割文本的分隔符。"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:251
+msgid "Recursive Character Text Splitter"
+msgstr "递归字符文本分割器"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:265
+msgid "Split text by characters recursively."
+msgstr "递归按字符分割文本。"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:330
+msgid "Spacy Text Splitter"
+msgstr "Spacy 文本分割器"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:338
+msgid "Spacy pipeline to use for tokenization."
+msgstr "用于标记化的 Spacy 流水线。"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:343
+msgid "Split text by sentences using Spacy."
+msgstr "使用 Spacy 按句子分割文本。"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:393
+msgid "Markdown Header Text Splitter"
+msgstr "Markdown 标题文本分割器"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:401
+msgid "Return each line with associated headers."
+msgstr "返回每行及其相关标题。"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:409
+msgid "Size of each chunk."
+msgstr "每个块的大小。"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:430
+msgid "Split markdown text by headers."
+msgstr "通过标题分割 Markdown 文本。"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:799
+msgid "Separator Text Splitter"
+msgstr "分隔符文本分割器"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:812
+msgid "Split text by separator."
+msgstr "通过分隔符分割文本。"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:842
+msgid "Page Text Splitter"
+msgstr "页面文本分割器"
+
+#: ../dbgpt/rag/text_splitter/text_splitter.py:855
+msgid "Split text by page."
+msgstr "按页面分割文本。"

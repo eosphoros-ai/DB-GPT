@@ -93,19 +93,23 @@ async def get_flow(client: Client, flow_id: str) -> FlowPanel:
         raise ClientException(f"Failed to get flow: {e}")
 
 
-async def list_flow(client: Client) -> List[FlowPanel]:
+async def list_flow(
+    client: Client, name: str | None = None, uid: str | None = None
+) -> List[FlowPanel]:
     """
     List flows.
 
     Args:
         client (Client): The dbgpt client.
+        name (str): The name of the flow.
+        uid (str): The uid of the flow.
     Returns:
         List[FlowPanel]: The list of flow panels.
     Raises:
         ClientException: If the request failed.
     """
     try:
-        res = await client.get("/awel/flows")
+        res = await client.get("/awel/flows", **{"name": name, "uid": uid})
         result: Result = res.json()
         if result["success"]:
             return [FlowPanel(**flow) for flow in result["data"]["items"]]

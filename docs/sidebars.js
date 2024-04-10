@@ -71,6 +71,10 @@ const sidebars = {
             {
               type:"doc",
               id: "awel/cookbook/first_rag_with_awel"
+            },
+            {
+              type:"doc",
+              id: "awel/cookbook/write_your_chat_database"
             }
           ],
           link: {
@@ -385,6 +389,9 @@ const sidebars = {
         {
           type: 'doc',
           id: 'api/knowledge'
+        },{
+          type: 'doc',
+          id: 'api/datasource'
         },
       ],
       link: {

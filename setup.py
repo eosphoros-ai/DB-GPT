@@ -4,6 +4,7 @@ import platform
 import re
 import shutil
 import subprocess
+import sys
 import urllib.request
 from enum import Enum
 from typing import Callable, List, Optional, Tuple
@@ -18,7 +19,7 @@ with open("README.md", mode="r", encoding="utf-8") as fh:
 IS_DEV_MODE = os.getenv("IS_DEV_MODE", "true").lower() == "true"
 # If you modify the version, please modify the version in the following files:
 # dbgpt/_version.py
-DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.2")
+DB_GPT_VERSION = os.getenv("DB_GPT_VERSION", "0.5.3")
 
 BUILD_NO_CACHE = os.getenv("BUILD_NO_CACHE", "true").lower() == "true"
 LLAMA_CPP_GPU_ACCELERATION = (
@@ -40,15 +41,22 @@ def parse_requirements(file_name: str) -> List[str]:
         ]
 
 
-def get_latest_version(package_name: str, index_url: str, default_version: str):
-    python_command = shutil.which("python")
-    if not python_command:
-        python_command = shutil.which("python3")
-        if not python_command:
-            print("Python command not found.")
-            return default_version
+def find_python():
+    python_path = sys.executable
+    print(python_path)
+    if not python_path:
+        print("Python command not found.")
+        return None
+    return python_path
 
-    command = [
+
+def get_latest_version(package_name: str, index_url: str, default_version: str):
+    python_command = find_python()
+    if not python_command:
+        print("Python command not found.")
+        return default_version
+
+    command_index_versions = [
         python_command,
         "-m",
         "pip",
@@ -59,20 +67,40 @@ def get_latest_version(package_name: str, index_url: str, default_version: str):
         index_url,
     ]
 
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode != 0:
-        print("Error executing command.")
-        print(result.stderr.decode())
-        return default_version
+    result_index_versions = subprocess.run(
+        command_index_versions, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    if result_index_versions.returncode == 0:
+        output = result_index_versions.stdout.decode()
+        lines = output.split("\n")
+        for line in lines:
+            if "Available versions:" in line:
+                available_versions = line.split(":")[1].strip()
+                latest_version = available_versions.split(",")[0].strip()
+                # Query for compatibility with the latest version of torch
+                if package_name == "torch" or "torchvision":
+                    latest_version = latest_version.split("+")[0]
+                return latest_version
+    else:
+        command_simulate_install = [
+            python_command,
+            "-m",
+            "pip",
+            "install",
+            f"{package_name}==",
+        ]
 
-    output = result.stdout.decode()
-    lines = output.split("\n")
-    for line in lines:
-        if "Available versions:" in line:
-            available_versions = line.split(":")[1].strip()
-            latest_version = available_versions.split(",")[0].strip()
+        result_simulate_install = subprocess.run(
+            command_simulate_install, stderr=subprocess.PIPE
+        )
+        print(result_simulate_install)
+        stderr_output = result_simulate_install.stderr.decode()
+        print(stderr_output)
+        match = re.search(r"from versions: (.+?)\)", stderr_output)
+        if match:
+            available_versions = match.group(1).split(", ")
+            latest_version = available_versions[-1].strip()
             return latest_version
-
     return default_version
 
 
@@ -227,7 +255,7 @@ def _build_wheels(
     base_url: str = None,
     base_url_func: Callable[[str, str, str], str] = None,
     pkg_file_func: Callable[[str, str, str, str, OSType], str] = None,
-    supported_cuda_versions: List[str] = ["11.7", "11.8"],
+    supported_cuda_versions: List[str] = ["11.8", "12.1"],
 ) -> Optional[str]:
     """
     Build the URL for the package wheel file based on the package name, version, and CUDA version.
@@ -248,11 +276,17 @@ def _build_wheels(
     py_version = "cp" + "".join(py_version.split(".")[0:2])
     if os_type == OSType.DARWIN or not cuda_version:
         return None
-    if cuda_version not in supported_cuda_versions:
+
+    if cuda_version in supported_cuda_versions:
+        cuda_version = cuda_version
+    else:
         print(
-            f"Warnning: {pkg_name} supported cuda version: {supported_cuda_versions}, replace to {supported_cuda_versions[-1]}"
+            f"Warning: Your CUDA version {cuda_version} is not in our set supported_cuda_versions , we will use our set version."
         )
-        cuda_version = supported_cuda_versions[-1]
+        if cuda_version < "12.1":
+            cuda_version = supported_cuda_versions[0]
+        else:
+            cuda_version = supported_cuda_versions[-1]
 
     cuda_version = "cu" + cuda_version.replace(".", "")
     os_pkg_name = "linux_x86_64" if os_type == OSType.LINUX else "win_amd64"
@@ -273,48 +307,49 @@ def _build_wheels(
 
 
 def torch_requires(
-    torch_version: str = "2.0.1",
-    torchvision_version: str = "0.15.2",
-    torchaudio_version: str = "2.0.2",
+    torch_version: str = "2.2.1",
+    torchvision_version: str = "0.17.1",
+    torchaudio_version: str = "2.2.1",
 ):
+    os_type, _ = get_cpu_avx_support()
     torch_pkgs = [
         f"torch=={torch_version}",
         f"torchvision=={torchvision_version}",
         f"torchaudio=={torchaudio_version}",
     ]
-    torch_cuda_pkgs = []
-    os_type, _ = get_cpu_avx_support()
+    # Initialize torch_cuda_pkgs for non-Darwin OSes;
+    # it will be the same as torch_pkgs for Darwin or when no specific CUDA handling is needed
+    torch_cuda_pkgs = torch_pkgs[:]
+
     if os_type != OSType.DARWIN:
-        cuda_version = get_cuda_version()
-        if cuda_version:
-            supported_versions = ["11.7", "11.8"]
-            # torch_url = f"https://download.pytorch.org/whl/{cuda_version}/torch-{torch_version}+{cuda_version}-{py_version}-{py_version}-{os_pkg_name}.whl"
-            # torchvision_url = f"https://download.pytorch.org/whl/{cuda_version}/torchvision-{torchvision_version}+{cuda_version}-{py_version}-{py_version}-{os_pkg_name}.whl"
-            torch_url = _build_wheels(
-                "torch",
-                torch_version,
-                base_url_func=lambda v, x, y: f"https://download.pytorch.org/whl/{x}",
-                supported_cuda_versions=supported_versions,
-            )
-            torchvision_url = _build_wheels(
-                "torchvision",
-                torchvision_version,
-                base_url_func=lambda v, x, y: f"https://download.pytorch.org/whl/{x}",
-                supported_cuda_versions=supported_versions,
-            )
+        supported_versions = ["11.8", "12.1"]
+        base_url_func = lambda v, x, y: f"https://download.pytorch.org/whl/{x}"
+        torch_url = _build_wheels(
+            "torch",
+            torch_version,
+            base_url_func=base_url_func,
+            supported_cuda_versions=supported_versions,
+        )
+        torchvision_url = _build_wheels(
+            "torchvision",
+            torchvision_version,
+            base_url_func=base_url_func,
+            supported_cuda_versions=supported_versions,
+        )
+
+        # Cache and add CUDA-dependent packages if URLs are available
+        if torch_url:
             torch_url_cached = cache_package(
                 torch_url, "torch", os_type == OSType.WINDOWS
             )
+            torch_cuda_pkgs[0] = f"torch @ {torch_url_cached}"
+        if torchvision_url:
             torchvision_url_cached = cache_package(
                 torchvision_url, "torchvision", os_type == OSType.WINDOWS
             )
+            torch_cuda_pkgs[1] = f"torchvision @ {torchvision_url_cached}"
 
-            torch_cuda_pkgs = [
-                f"torch @ {torch_url_cached}",
-                f"torchvision @ {torchvision_url_cached}",
-                f"torchaudio=={torchaudio_version}",
-            ]
-
+    # Assuming 'setup_spec' is a dictionary where we're adding these dependencies
     setup_spec.extras["torch"] = torch_pkgs
     setup_spec.extras["torch_cpu"] = torch_pkgs
     setup_spec.extras["torch_cuda"] = torch_cuda_pkgs
@@ -322,6 +357,7 @@ def torch_requires(
 
 def llama_cpp_python_cuda_requires():
     cuda_version = get_cuda_version()
+    supported_cuda_versions = ["11.8", "12.1"]
     device = "cpu"
     if not cuda_version:
         print("CUDA not support, use cpu version")
@@ -330,7 +366,10 @@ def llama_cpp_python_cuda_requires():
         print("Disable GPU acceleration")
         return
     # Supports GPU acceleration
-    device = "cu" + cuda_version.replace(".", "")
+    if cuda_version <= "11.8" and not None:
+        device = "cu" + supported_cuda_versions[0].replace(".", "")
+    else:
+        device = "cu" + supported_cuda_versions[-1].replace(".", "")
     os_type, cpu_avx = get_cpu_avx_support()
     print(f"OS: {os_type}, cpu avx: {cpu_avx}")
     supported_os = [OSType.WINDOWS, OSType.LINUX]
@@ -346,7 +385,7 @@ def llama_cpp_python_cuda_requires():
         cpu_device = "basic"
     device += cpu_device
     base_url = "https://github.com/jllllll/llama-cpp-python-cuBLAS-wheels/releases/download/textgen-webui"
-    llama_cpp_version = "0.2.10"
+    llama_cpp_version = "0.2.26"
     py_version = "cp310"
     os_pkg_name = "manylinux_2_31_x86_64" if os_type == OSType.LINUX else "win_amd64"
     extra_index_url = f"{base_url}/llama_cpp_python_cuda-{llama_cpp_version}+{device}-{py_version}-{py_version}-{os_pkg_name}.whl"
@@ -382,6 +421,7 @@ def core_requires():
         "psutil==5.9.4",
         "colorama==0.4.6",
         "tomlkit",
+        "rich",
     ]
     # Just use by DB-GPT internal, we should find the smallest dependency set for run
     # we core unit test.
@@ -390,16 +430,15 @@ def core_requires():
         "jinja2",
         "uvicorn",
         "shortuuid",
-        # change from fixed version 2.0.22 to variable version, because other
-        # dependencies are >=1.4, such as pydoris is <2
-        "SQLAlchemy>=1.4,<3",
+        # 2.0.29 not support duckdb now
+        "SQLAlchemy>=2.0.25,<2.0.29",
         # for cache
         "msgpack",
         # for cache
         # TODO: pympler has not been updated for a long time and needs to
         #  find a new toolkit.
         "pympler",
-        "duckdb==0.8.1",
+        "duckdb",
         "duckdb-engine",
         # lightweight python library for scheduling jobs
         "schedule",
@@ -469,80 +508,39 @@ def _build_autoawq_requires() -> Optional[str]:
     os_type, _ = get_cpu_avx_support()
     if os_type == OSType.DARWIN:
         return None
-    auto_gptq_version = get_latest_version(
-        "auto-gptq", "https://huggingface.github.io/autogptq-index/whl/cu118/", "0.5.1"
-    )
-    # eg. 0.5.1+cu118
-    auto_gptq_version = auto_gptq_version.split("+")[0]
-
-    def pkg_file_func(pkg_name, pkg_version, cuda_version, py_version, os_type):
-        pkg_name = pkg_name.replace("-", "_")
-        if os_type == OSType.DARWIN:
-            return None
-        os_pkg_name = (
-            "manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
-            if os_type == OSType.LINUX
-            else "win_amd64.whl"
-        )
-        return f"{pkg_name}-{pkg_version}+{cuda_version}-{py_version}-{py_version}-{os_pkg_name}"
-
-    auto_gptq_url = _build_wheels(
-        "auto-gptq",
-        auto_gptq_version,
-        base_url_func=lambda v, x, y: f"https://huggingface.github.io/autogptq-index/whl/{x}/auto-gptq",
-        pkg_file_func=pkg_file_func,
-        supported_cuda_versions=["11.8"],
-    )
-    if auto_gptq_url:
-        print(f"Install auto-gptq from {auto_gptq_url}")
-        return f"auto-gptq @ {auto_gptq_url}"
-    else:
-        "auto-gptq"
+    return "auto-gptq"
 
 
 def quantization_requires():
-    pkgs = []
     os_type, _ = get_cpu_avx_support()
-    if os_type != OSType.WINDOWS:
-        pkgs = ["bitsandbytes"]
-    else:
+    quantization_pkgs = []
+    if os_type == OSType.WINDOWS:
+        # For Windows, fetch a specific bitsandbytes WHL package
         latest_version = get_latest_version(
             "bitsandbytes",
             "https://jllllll.github.io/bitsandbytes-windows-webui",
             "0.41.1",
         )
-        extra_index_url = f"https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-{latest_version}-py3-none-win_amd64.whl"
-        local_pkg = cache_package(
-            extra_index_url, "bitsandbytes", os_type == OSType.WINDOWS
-        )
-        pkgs = [f"bitsandbytes @ {local_pkg}"]
-        print(pkgs)
-    # For chatglm2-6b-int4
-    pkgs += ["cpm_kernels"]
+        whl_url = f"https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-{latest_version}-py3-none-win_amd64.whl"
+        local_pkg_path = cache_package(whl_url, "bitsandbytes", True)
+        setup_spec.extras["bitsandbytes"] = [f"bitsandbytes @ {local_pkg_path}"]
+    else:
+        setup_spec.extras["bitsandbytes"] = ["bitsandbytes"]
 
     if os_type != OSType.DARWIN:
         # Since transformers 4.35.0, the GPT-Q/AWQ model can be loaded using AutoModelForCausalLM.
         # autoawq requirements:
         # 1. Compute Capability 7.5 (sm75). Turing and later architectures are supported.
         # 2. CUDA Toolkit 11.8 and later.
-        # autoawq_url = _build_wheels(
-        #     "autoawq",
-        #     "0.1.7",
-        #     base_url_func=lambda v, x, y: f"https://github.com/casper-hansen/AutoAWQ/releases/download/v{v}",
-        #     supported_cuda_versions=["11.8"],
-        # )
-        # if autoawq_url:
-        #     print(f"Install autoawq from {autoawq_url}")
-        #     pkgs.append(f"autoawq @ {autoawq_url}")
-        # else:
-        #     pkgs.append("autoawq")
+        cuda_version = get_cuda_version()
+        autoawq_latest_version = get_latest_version("autoawq", "", "0.2.4")
+        if cuda_version is None or cuda_version == "12.1":
+            quantization_pkgs.extend(["autoawq", _build_autoawq_requires(), "optimum"])
+        else:
+            # TODO(yyhhyy): Add autoawq install method for CUDA version 11.8
+            quantization_pkgs.extend(["autoawq", _build_autoawq_requires(), "optimum"])
 
-        auto_gptq_pkg = _build_autoawq_requires()
-        if auto_gptq_pkg:
-            pkgs.append(auto_gptq_pkg)
-            pkgs.append("optimum")
-
-    setup_spec.extras["quantization"] = pkgs
+    setup_spec.extras["quantization"] = ["cpm_kernels"] + quantization_pkgs
 
 
 def all_vector_store_requires():
@@ -559,16 +557,21 @@ def all_datasource_requires():
     """
     pip install "dbgpt[datasource]"
     """
-
     setup_spec.extras["datasource"] = [
         # "sqlparse==0.4.4",
-        "pymssql",
         "pymysql",
+    ]
+    # If you want to install psycopg2 and mysqlclient in ubuntu, you should install
+    # libpq-dev and libmysqlclient-dev first.
+    setup_spec.extras["datasource_all"] = setup_spec.extras["datasource"] + [
         "pyspark",
-        # "psycopg2",
-        # for doris
+        "pymssql",
+        # install psycopg2-binary when you are in a virtual environment
+        # pip install psycopg2-binary
+        "psycopg2",
         # mysqlclient 2.2.x have pkg-config issue on 3.10+
         "mysqlclient==2.1.0",
+        # pydoris is too old, we should find a new package to replace it.
         "pydoris>=1.0.2,<2.0.0",
         "clickhouse-connect",
         "pyhive",
@@ -623,9 +626,9 @@ def default_requires():
         "accelerate>=0.20.3",
         "protobuf==3.20.3",
         "zhipuai",
-        "jieba",
         "dashscope",
         "chardet",
+        "sentencepiece",
     ]
     setup_spec.extras["default"] += setup_spec.extras["framework"]
     setup_spec.extras["default"] += setup_spec.extras["rag"]

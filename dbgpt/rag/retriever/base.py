@@ -1,9 +1,10 @@
 """Base retriever module."""
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from dbgpt.core import Chunk
+from dbgpt.storage.vector_store.filters import MetadataFilters
 
 
 class RetrieverStrategy(str, Enum):
@@ -23,83 +24,112 @@ class RetrieverStrategy(str, Enum):
 class BaseRetriever(ABC):
     """Base retriever."""
 
-    def retrieve(self, query: str) -> List[Chunk]:
+    def retrieve(
+        self, query: str, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Retrieve knowledge chunks.
 
         Args:
-            query (str): query text
+            query (str): query text.
+            filters: (Optional[MetadataFilters]) metadata filters.
 
         Returns:
             List[Chunk]: list of chunks
         """
-        return self._retrieve(query)
+        return self._retrieve(query, filters)
 
-    async def aretrieve(self, query: str) -> List[Chunk]:
+    async def aretrieve(
+        self, query: str, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Retrieve knowledge chunks.
 
         Args:
-            query (str): async query text
+            query (str): async query text.
+            filters: (Optional[MetadataFilters]) metadata filters.
 
         Returns:
             List[Chunk]: list of chunks
         """
-        return await self._aretrieve(query)
+        return await self._aretrieve(query, filters)
 
-    def retrieve_with_scores(self, query: str, score_threshold: float) -> List[Chunk]:
+    def retrieve_with_scores(
+        self,
+        query: str,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
 
         Args:
-            query (str): query text
-            score_threshold (float): score threshold
+            query (str): query text.
+            score_threshold (float): score threshold.
+            filters: (Optional[MetadataFilters]) metadata filters.
+
 
         Returns:
             List[Chunk]: list of chunks
         """
-        return self._retrieve_with_score(query, score_threshold)
+        return self._retrieve_with_score(query, score_threshold, filters)
 
     async def aretrieve_with_scores(
-        self, query: str, score_threshold: float
+        self,
+        query: str,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
 
         Args:
             query (str): query text
             score_threshold (float): score threshold
+            filters: (Optional[MetadataFilters]) metadata filters.
 
         Returns:
             List[Chunk]: list of chunks
         """
-        return await self._aretrieve_with_score(query, score_threshold)
+        return await self._aretrieve_with_score(query, score_threshold, filters)
 
     @abstractmethod
-    def _retrieve(self, query: str) -> List[Chunk]:
+    def _retrieve(
+        self, query: str, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Retrieve knowledge chunks.
 
         Args:
             query (str): query text
+            filters: (Optional[MetadataFilters]) metadata filters.
 
         Returns:
             List[Chunk]: list of chunks
         """
 
     @abstractmethod
-    async def _aretrieve(self, query: str) -> List[Chunk]:
+    async def _aretrieve(
+        self, query: str, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Async Retrieve knowledge chunks.
 
         Args:
             query (str): query text
+            filters: (Optional[MetadataFilters]) metadata filters.
 
         Returns:
             List[Chunk]: list of chunks
         """
 
     @abstractmethod
-    def _retrieve_with_score(self, query: str, score_threshold: float) -> List[Chunk]:
+    def _retrieve_with_score(
+        self,
+        query: str,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[Chunk]:
         """Retrieve knowledge chunks with score.
 
         Args:
             query (str): query text
             score_threshold (float): score threshold
+            filters: (Optional[MetadataFilters]) metadata filters.
 
         Returns:
             List[Chunk]: list of chunks
@@ -107,13 +137,17 @@ class BaseRetriever(ABC):
 
     @abstractmethod
     async def _aretrieve_with_score(
-        self, query: str, score_threshold: float
+        self,
+        query: str,
+        score_threshold: float,
+        filters: Optional[MetadataFilters] = None,
     ) -> List[Chunk]:
         """Async Retrieve knowledge chunks with score.
 
         Args:
             query (str): query text
             score_threshold (float): score threshold
+            filters: (Optional[MetadataFilters]) metadata filters.
 
         Returns:
             List[Chunk]: list of chunks

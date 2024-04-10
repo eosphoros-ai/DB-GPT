@@ -1,11 +1,13 @@
 import functools
 import subprocess
-import sys
 from pathlib import Path
 
 import click
 
+from ..console import CliLogger
 from .base import DEFAULT_PACKAGE_TYPES
+
+cl = CliLogger()
 
 
 def check_poetry_installed():
@@ -18,13 +20,13 @@ def check_poetry_installed():
             stderr=subprocess.DEVNULL,
         )
     except (subprocess.CalledProcessError, FileNotFoundError):
-        print("Poetry is not installed. Please install Poetry to proceed.")
-        print(
-            "Visit https://python-poetry.org/docs/#installation for installation "
-            "instructions."
-        )
+        cl.error("Poetry is not installed. Please install Poetry to proceed.")
         # Exit with error
-        sys.exit(1)
+        cl.error(
+            "Visit https://python-poetry.org/docs/#installation for installation "
+            "instructions.",
+            exit_code=1,
+        )
 
 
 def add_tap_options(func):
@@ -43,15 +45,41 @@ def add_tap_options(func):
     return wrapper
 
 
+def add_add_common_options(func):
+    @click.option(
+        "-r",
+        "--repo",
+        type=str,
+        default=None,
+        required=False,
+        help="The repository to install the dbgpts from",
+    )
+    @click.option(
+        "-U",
+        "--update",
+        type=bool,
+        required=False,
+        default=False,
+        is_flag=True,
+        help="Whether to update the repo",
+    )
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 @click.command(name="install")
-@add_tap_options
+@add_add_common_options
 @click.argument("name", type=str)
-def install(repo: str | None, name: str):
+def install(repo: str | None, update: bool, name: str):
     """Install your dbgpts(operators,agents,workflows or apps)"""
-    from .repo import install
+    from .repo import _install_default_repos_if_no_repos, install
 
     check_poetry_installed()
-    install(name, repo)
+    _install_default_repos_if_no_repos()
+    install(name, repo, with_update=update)
 
 
 @click.command(name="uninstall")
@@ -63,20 +91,33 @@ def uninstall(name: str):
     uninstall(name)
 
 
-@click.command(name="list")
-def list_all_apps():
-    """List all installed dbgpts"""
-    from .repo import list_repo_apps
+@click.command(name="list-remote")
+@add_add_common_options
+def list_all_apps(
+    repo: str | None,
+    update: bool,
+):
+    """List all available dbgpts"""
+    from .repo import _install_default_repos_if_no_repos, list_repo_apps
 
-    list_repo_apps()
+    _install_default_repos_if_no_repos()
+    list_repo_apps(repo, with_update=update)
+
+
+@click.command(name="list")
+def list_installed_apps():
+    """List all installed dbgpts"""
+    from .repo import list_installed_apps
+
+    list_installed_apps()
 
 
 @click.command(name="list")
 def list_repos():
     """List all repos"""
-    from .repo import list_repos
+    from .repo import _print_repos
 
-    print("\n".join(list_repos()))
+    _print_repos()
 
 
 @click.command(name="add")

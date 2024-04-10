@@ -1,18 +1,46 @@
 """Weaviate vector store."""
 import logging
 import os
-from typing import List
+from typing import List, Optional
 
-from dbgpt._private.config import Config
 from dbgpt._private.pydantic import Field
 from dbgpt.core import Chunk
+from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
+from dbgpt.util.i18n_utils import _
 
-from .base import VectorStoreBase, VectorStoreConfig
+from .base import _COMMON_PARAMETERS, VectorStoreBase, VectorStoreConfig
+from .filters import MetadataFilters
 
 logger = logging.getLogger(__name__)
-CFG = Config()
 
 
+@register_resource(
+    _("Weaviate Vector Store"),
+    "weaviate_vector_store",
+    category=ResourceCategory.VECTOR_STORE,
+    description=_("Weaviate vector store."),
+    parameters=[
+        *_COMMON_PARAMETERS,
+        Parameter.build_from(
+            _("Weaviate URL"),
+            "weaviate_url",
+            str,
+            description=_(
+                "weaviate url address, if not set, will use the default url."
+            ),
+            optional=True,
+            default=None,
+        ),
+        Parameter.build_from(
+            _("Persist Path"),
+            "persist_path",
+            str,
+            description=_("the persist path of vector store."),
+            optional=True,
+            default=None,
+        ),
+    ],
+)
 class WeaviateVectorConfig(VectorStoreConfig):
     """Weaviate vector store config."""
 
@@ -53,7 +81,9 @@ class WeaviateStore(VectorStoreBase):
 
         self.vector_store_client = weaviate.Client(self.weaviate_url)
 
-    def similar_search(self, text: str, topk: int) -> List[Chunk]:
+    def similar_search(
+        self, text: str, topk: int, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Perform similar search in Weaviate."""
         logger.info("Weaviate similar search")
         # nearText = {
