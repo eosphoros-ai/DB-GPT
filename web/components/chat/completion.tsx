@@ -6,7 +6,7 @@ import ChatFeedback from './chat-feedback';
 import { ChatContext } from '@/app/chat-context';
 import { FeedBack, IChatDialogueMessageSchema } from '@/types/chat';
 import classNames from 'classnames';
-import { Empty, Modal, message, Tooltip } from 'antd';
+import { Modal, message, Tooltip } from 'antd';
 import { renderModelIcon } from './header/model-selector';
 import { cloneDeep } from 'lodash';
 import copy from 'copy-to-clipboard';
@@ -20,6 +20,7 @@ import { getInitMessage } from '@/utils';
 import { apiInterceptors, getChatFeedBackSelect } from '@/client/api';
 import useSummary from '@/hooks/use-summary';
 import AgentContent from './agent-content';
+import MyEmpty from '../common/MyEmpty';
 
 type Props = {
   messages: IChatDialogueMessageSchema[];
@@ -200,12 +201,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
               );
             })
           ) : (
-            <Empty
-              image="/empty.png"
-              imageStyle={{ width: 320, height: 320, margin: '0 auto', maxWidth: '100%', maxHeight: '100%' }}
-              className="flex items-center justify-center flex-col h-full w-full"
-              description="Start a conversation"
-            />
+            <MyEmpty description="Start a conversation" />
           )}
         </div>
       </div>

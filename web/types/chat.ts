@@ -15,6 +15,7 @@ export type ChartData = {
   chart_uid: string;
   column_name: Array<string>;
   values: Array<ChartValue>;
+  type?: string;
 };
 
 export type SceneResponse = {
