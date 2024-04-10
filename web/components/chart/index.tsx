@@ -45,7 +45,7 @@ function Chart({ chartsData }: Props) {
       {chartRows?.map((chartRow, index) => (
         <div key={`chart_row_${index}`} className={`${chartRow?.type !== 'IndicatorValue' ? 'flex gap-3' : ''}`}>
           {chartRow.charts.map((chart) => {
-            if (chart.chart_type === 'IndicatorValue') {
+            if (chart.chart_type === 'IndicatorValue' || chart.type === 'IndicatorValue') {
               return (
                 <div key={chart.chart_uid} className="flex flex-row gap-3">
                   {chart.values.map((item) => (
@@ -62,11 +62,11 @@ function Chart({ chartsData }: Props) {
                   ))}
                 </div>
               );
-            } else if (chart.chart_type === 'LineChart') {
+            } else if (chart.chart_type === 'LineChart' || chart.type === 'LineChart') {
               return <LineChart key={chart.chart_uid} chart={chart} />;
-            } else if (chart.chart_type === 'BarChart') {
+            } else if (chart.chart_type === 'BarChart' || chart.type === 'BarChart') {
               return <BarChart key={chart.chart_uid} chart={chart} />;
-            } else if (chart.chart_type === 'Table') {
+            } else if (chart.chart_type === 'Table' || chart.type === 'Table') {
               return <TableChart key={chart.chart_uid} chart={chart} />;
             }
           })}

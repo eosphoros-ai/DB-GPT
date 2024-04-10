@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { ChangeEvent, Key, useEffect, useMemo, useState } from 'react';
 import { useRequest } from 'ahooks';
 import { Button, Select, Table, Tooltip } from 'antd';
 import { Input, Tree } from 'antd';
@@ -22,6 +22,11 @@ import SplitScreenHeight from '@/components/icons/split-screen-height';
 
 const { Search } = Input;
 
+type ITableData = {
+  columns: string[];
+  values: (string | number)[][];
+};
+
 interface EditorValueProps {
   sql?: string;
   thoughts?: string;
@@ -38,7 +43,7 @@ interface RoundProps {
 interface IProps {
   editorValue?: EditorValueProps;
   chartData?: any;
-  tableData?: any;
+  tableData?: ITableData;
   layout?: 'TB' | 'LR';
   handleChange: OnChange;
 }
@@ -54,7 +59,7 @@ interface ITableTreeItem {
 }
 
 function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, handleChange }: IProps) {
-  const chartWrapper = React.useMemo(() => {
+  const chartWrapper = useMemo(() => {
     if (!chartData) return null;
 
     return (
@@ -64,9 +69,29 @@ function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, han
     );
   }, [chartData]);
 
+  const { columns, dataSource } = useMemo<{ columns: ColumnType<any>[]; dataSource: Record<string, string | number>[] }>(() => {
+    const { columns: cols = [], values: vals = [] } = tableData ?? {};
+    const tbCols = cols.map<ColumnType<any>>((item) => ({
+      key: item,
+      dataIndex: item,
+      title: item,
+    }));
+    const tbDatas = vals.map((row) => {
+      return row.reduce<Record<string, string | number>>((acc, item, index) => {
+        acc[cols[index]] = item;
+        return acc;
+      }, {});
+    });
+
+    return {
+      columns: tbCols,
+      dataSource: tbDatas,
+    };
+  }, [tableData]);
+
   return (
     <div
-      className={classNames('flex flex-1 h-full gap-2', {
+      className={classNames('flex w-full flex-1 h-full gap-2 overflow-hidden', {
         'flex-col': layout === 'TB',
         'flex-row': layout === 'LR',
       })}
@@ -74,19 +99,9 @@ function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, han
       <div className="flex-1 flex overflow-hidden rounded">
         <MonacoEditor value={editorValue?.sql || ''} language="mysql" onChange={handleChange} thoughts={editorValue?.thoughts || ''} />
       </div>
-      <div className="flex-1 h-full overflow-y-auto bg-white dark:bg-theme-dark-container rounded">
-        {tableData?.values?.length > 0 ? (
-          <Table
-            rowKey={tableData?.columns?.[0]}
-            columns={(tableData?.columns as any[]).map<ColumnType<any>>((item) => {
-              return {
-                dataIndex: item,
-                title: item,
-                key: item,
-              };
-            })}
-            dataSource={tableData?.values}
-          />
+      <div className="flex-1 h-full overflow-auto bg-white dark:bg-theme-dark-container rounded p-4">
+        {!!tableData?.values.length ? (
+          <Table bordered scroll={{ y: 'x: auto' }} rowKey={columns[0].key} columns={columns} dataSource={dataSource} />
         ) : (
           <div className="h-full flex justify-center items-center">
             <MyEmpty />
@@ -99,15 +114,15 @@ function DbEditorContent({ layout = 'LR', editorValue, chartData, tableData, han
 }
 
 function DbEditor() {
-  const [expandedKeys, setExpandedKeys] = React.useState<React.Key[]>([]);
-  const [searchValue, setSearchValue] = React.useState('');
-  const [currentRound, setCurrentRound] = React.useState<null | string | number>();
-  const [autoExpandParent, setAutoExpandParent] = React.useState(true);
-  const [chartData, setChartData] = React.useState();
-  const [editorValue, setEditorValue] = React.useState<EditorValueProps | EditorValueProps[]>();
-  const [newEditorValue, setNewEditorValue] = React.useState<EditorValueProps>();
-  const [tableData, setTableData] = React.useState<{ columns: string[]; values: any }>();
-  const [currentTabIndex, setCurrentTabIndex] = React.useState<number>();
+  const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
+  const [searchValue, setSearchValue] = useState('');
+  const [currentRound, setCurrentRound] = useState<null | string | number>();
+  const [autoExpandParent, setAutoExpandParent] = useState(true);
+  const [chartData, setChartData] = useState();
+  const [editorValue, setEditorValue] = useState<EditorValueProps | EditorValueProps[]>();
+  const [newEditorValue, setNewEditorValue] = useState<EditorValueProps>();
+  const [tableData, setTableData] = useState<{ columns: string[]; values: (string | number)[] }>();
+  const [currentTabIndex, setCurrentTabIndex] = useState<number>();
   const [isMenuExpand, setIsMenuExpand] = useState<boolean>(false);
   const [layout, setLayout] = useState<'TB' | 'LR'>('TB');
 
@@ -285,7 +300,7 @@ function DbEditor() {
     },
   );
 
-  const treeData = React.useMemo(() => {
+  const treeData = useMemo(() => {
     const loop = (data: Array<ITableTreeItem>, parentKey?: string | number): DataNode[] =>
       data.map((item: ITableTreeItem) => {
         const strTitle = item.title;
@@ -342,7 +357,7 @@ function DbEditor() {
     return [];
   }, [searchValue, tables]);
 
-  const dataList = React.useMemo(() => {
+  const dataList = useMemo(() => {
     let res: { key: string | number; title: string; parentKey?: string | number }[] = [];
     const generateList = (data: DataNode[], parentKey?: string | number) => {
       if (!data || data?.length <= 0) return;
@@ -362,8 +377,8 @@ function DbEditor() {
     return res;
   }, [treeData]);
 
-  const getParentKey = (key: React.Key, tree: DataNode[]): React.Key => {
-    let parentKey: React.Key;
+  const getParentKey = (key: Key, tree: DataNode[]): Key => {
+    let parentKey: Key;
     for (let i = 0; i < tree.length; i++) {
       const node = tree[i];
       if (node.children) {
@@ -377,7 +392,7 @@ function DbEditor() {
     return parentKey!;
   };
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     if (tables?.data) {
       if (!value) {
@@ -391,26 +406,26 @@ function DbEditor() {
             return null;
           })
           .filter((item, i, self) => item && self.indexOf(item) === i);
-        setExpandedKeys(newExpandedKeys as React.Key[]);
+        setExpandedKeys(newExpandedKeys as Key[]);
       }
       setSearchValue(value);
       setAutoExpandParent(true);
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentRound) {
       handleGetEditorSql(currentRound);
     }
   }, [handleGetEditorSql, currentRound]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (editorValue && scene === 'chat_dashboard' && currentTabIndex) {
       runCharts();
     }
   }, [currentTabIndex, scene, editorValue, runCharts]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (editorValue && scene !== 'chat_dashboard') {
       runSql();
     }
@@ -461,7 +476,7 @@ function DbEditor() {
               {treeData && treeData.length > 0 && (
                 <div className="flex-1 overflow-y-auto">
                   <Tree
-                    onExpand={(newExpandedKeys: React.Key[]) => {
+                    onExpand={(newExpandedKeys: Key[]) => {
                       setExpandedKeys(newExpandedKeys);
                       setAutoExpandParent(false);
                     }}
@@ -547,7 +562,7 @@ function DbEditor() {
           </div>
           {/* Panel */}
           {Array.isArray(editorValue) ? (
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full overflow-hidden">
               <div className="w-full whitespace-nowrap overflow-x-auto bg-white dark:bg-theme-dark-container mb-2 text-[0px]">
                 {editorValue.map((item, index) => (
                   <Tooltip className="inline-block" key={item.title} title={item.title}>
@@ -567,11 +582,11 @@ function DbEditor() {
                   </Tooltip>
                 ))}
               </div>
-              <div className="flex flex-1">
+              <div className="flex flex-1 overflow-hidden">
                 {editorValue.map((item, index) => (
                   <div
                     key={item.title}
-                    className={classNames({
+                    className={classNames('w-full overflow-hidden', {
                       hidden: index !== currentTabIndex,
                       'block flex-1': index === currentTabIndex,
                     })}
