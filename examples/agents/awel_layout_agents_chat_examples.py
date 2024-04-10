@@ -32,8 +32,6 @@ from dbgpt.agent.plan import WrappedAWELLayoutManager
 from dbgpt.agent.resource import PluginFileLoadClient
 from dbgpt.configs.model_config import ROOT_PATH
 
-current_dir = os.getcwd()
-parent_dir = os.path.dirname(current_dir)
 test_plugin_dir = os.path.join(ROOT_PATH, "examples/test_files/plugins")
 
 

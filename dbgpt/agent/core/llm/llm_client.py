@@ -171,7 +171,7 @@ class AIWrapper:
             model_request = _build_model_request(payload)
             model_output = await self._llm_client.generate(model_request.copy())
             parsed_output = self._output_parser.parse_model_nostream_resp(
-                model_output, "###"
+                model_output, "#########################"
             )
             return parsed_output
         except Exception as e:

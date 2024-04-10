@@ -98,10 +98,10 @@ class AgentManager:
         return result
 
 
-agent_manage = AgentManager()
+agent_manager = AgentManager()
 
-agent_manage.register_agent(CodeAssistantAgent)
-agent_manage.register_agent(DashboardAssistantAgent)
-agent_manage.register_agent(DataScientistAgent)
-agent_manage.register_agent(SummaryAssistantAgent)
-agent_manage.register_agent(PluginAssistantAgent)
+agent_manager.register_agent(CodeAssistantAgent)
+agent_manager.register_agent(DashboardAssistantAgent)
+agent_manager.register_agent(DataScientistAgent)
+agent_manager.register_agent(SummaryAssistantAgent)
+agent_manager.register_agent(PluginAssistantAgent)

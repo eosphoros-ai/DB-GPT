@@ -7,6 +7,7 @@ from .core.agent import (  # noqa: F401
     AgentGenerateContext,
     AgentMessage,
 )
+from .core.base_agent import ConversableAgent  # noqa: F401
 from .core.llm.llm import LLMConfig  # noqa: F401
 from .core.schema import PluginStorageType  # noqa: F401
 from .core.user_proxy_agent import UserProxyAgent  # noqa: F401
@@ -19,6 +20,7 @@ __ALL__ = [
     "AgentContext",
     "AgentGenerateContext",
     "AgentMessage",
+    "ConversableAgent",
     "Action",
     "ActionOutput",
     "LLMConfig",
