@@ -67,6 +67,8 @@ LLM_MODEL_CONFIG = {
     "spark_proxyllm": "spark_proxyllm",
     # https://platform.lingyiwanwu.com/docs/
     "yi_proxyllm": "yi_proxyllm",
+    # https://platform.moonshot.cn/docs/
+    "moonshot_proxyllm": "moonshot_proxyllm",
     "llama-2-7b": os.path.join(MODEL_PATH, "Llama-2-7b-chat-hf"),
     "llama-2-13b": os.path.join(MODEL_PATH, "Llama-2-13b-chat-hf"),
     "llama-2-70b": os.path.join(MODEL_PATH, "Llama-2-70b-chat-hf"),
