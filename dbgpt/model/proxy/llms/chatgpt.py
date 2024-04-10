@@ -99,6 +99,8 @@ class OpenAILLMClient(ProxyLLMClient):
             ) from exc
         self._openai_version = metadata.version("openai")
         self._openai_less_then_v1 = not self._openai_version >= "1.0.0"
+        self.check_sdk_version(self._openai_version)
+
         self._init_params = OpenAIParameters(
             api_type=api_type,
             api_base=api_base,
@@ -140,6 +142,14 @@ class OpenAILLMClient(ProxyLLMClient):
             context_length=max(model_params.max_context_size, 8192),
             full_url=model_params.proxy_server_url,
         )
+
+    def check_sdk_version(self, version: str) -> None:
+        """Check the sdk version of the client.
+
+        Raises:
+            ValueError: If check failed.
+        """
+        pass
 
     @property
     def client(self) -> ClientType:

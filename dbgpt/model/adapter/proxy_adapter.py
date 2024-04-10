@@ -252,6 +252,31 @@ class YiProxyLLMModelAdapter(ProxyLLMModelAdapter):
         return yi_generate_stream
 
 
+class MoonshotProxyLLMModelAdapter(ProxyLLMModelAdapter):
+    """Moonshot proxy LLM model adapter.
+
+    See Also: `Moonshot Documentation <https://platform.moonshot.cn/docs/>`_
+    """
+
+    def support_async(self) -> bool:
+        return True
+
+    def do_match(self, lower_model_name_or_path: Optional[str] = None):
+        return lower_model_name_or_path in ["moonshot_proxyllm"]
+
+    def get_llm_client_class(
+        self, params: ProxyModelParameters
+    ) -> Type[ProxyLLMClient]:
+        from dbgpt.model.proxy.llms.moonshot import MoonshotLLMClient
+
+        return MoonshotLLMClient
+
+    def get_async_generate_stream_function(self, model, model_path: str):
+        from dbgpt.model.proxy.llms.moonshot import moonshot_generate_stream
+
+        return moonshot_generate_stream
+
+
 register_model_adapter(OpenAIProxyLLMModelAdapter)
 register_model_adapter(TongyiProxyLLMModelAdapter)
 register_model_adapter(ZhipuProxyLLMModelAdapter)
@@ -261,3 +286,4 @@ register_model_adapter(SparkProxyLLMModelAdapter)
 register_model_adapter(BardProxyLLMModelAdapter)
 register_model_adapter(BaichuanProxyLLMModelAdapter)
 register_model_adapter(YiProxyLLMModelAdapter)
+register_model_adapter(MoonshotProxyLLMModelAdapter)

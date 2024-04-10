@@ -857,3 +857,31 @@ class LLMClient(ABC):
         if not model_metadata:
             raise ValueError(f"Model {model} not found")
         return model_metadata
+
+    def __call__(self, *args, **kwargs) -> ModelOutput:
+        """Return the model output.
+
+        Call the LLM client to generate the response for the given message.
+
+        Please do not use this method in the production environment, it is only used
+        for debugging.
+        """
+        from dbgpt.util import get_or_create_event_loop
+
+        messages = kwargs.get("messages")
+        model = kwargs.get("model")
+        if messages:
+            del kwargs["messages"]
+            model_messages = ModelMessage.from_openai_messages(messages)
+        else:
+            model_messages = [ModelMessage.build_human_message(args[0])]
+        if not model:
+            if hasattr(self, "default_model"):
+                model = getattr(self, "default_model")
+            else:
+                raise ValueError("The default model is not set")
+        if "model" in kwargs:
+            del kwargs["model"]
+        req = ModelRequest.build_request(model, model_messages, **kwargs)
+        loop = get_or_create_event_loop()
+        return loop.run_until_complete(self.generate(req))

@@ -118,6 +118,16 @@ class Config(metaclass=Singleton):
             os.environ["yi_proxyllm_proxy_api_base"] = os.getenv(
                 "YI_API_BASE", "https://api.lingyiwanwu.com/v1"
             )
+        # Moonshot proxy
+        self.moonshot_proxy_api_key = os.getenv("MOONSHOT_API_KEY")
+        if self.moonshot_proxy_api_key:
+            os.environ["moonshot_proxyllm_proxy_api_key"] = self.moonshot_proxy_api_key
+            os.environ["moonshot_proxyllm_proxyllm_backend"] = os.getenv(
+                "MOONSHOT_MODEL_VERSION", "moonshot-v1-8k"
+            )
+            os.environ["moonshot_proxyllm_api_base"] = os.getenv(
+                "MOONSHOT_API_BASE", "https://api.moonshot.cn/v1"
+            )
 
         self.proxy_server_url = os.getenv("PROXY_SERVER_URL")
 

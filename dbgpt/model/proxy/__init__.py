@@ -10,6 +10,7 @@ def __lazy_import(name):
         "WenxinLLMClient": "dbgpt.model.proxy.llms.wenxin",
         "ZhipuLLMClient": "dbgpt.model.proxy.llms.zhipu",
         "YiLLMClient": "dbgpt.model.proxy.llms.yi",
+        "MoonshotLLMClient": "dbgpt.model.proxy.llms.moonshot",
     }
 
     if name in module_path:
@@ -31,4 +32,5 @@ __all__ = [
     "WenxinLLMClient",
     "SparkLLMClient",
     "YiLLMClient",
+    "MoonshotLLMClient",
 ]
