@@ -1,5 +1,5 @@
 """Knowledge Factory to create knowledge from file path and url."""
-from typing import List, Optional, Type
+from typing import Dict, List, Optional, Type, Union
 
 from dbgpt.rag.knowledge.base import Knowledge, KnowledgeType
 from dbgpt.rag.knowledge.string import StringKnowledge
@@ -13,6 +13,7 @@ class KnowledgeFactory:
         self,
         file_path: Optional[str] = None,
         knowledge_type: Optional[KnowledgeType] = KnowledgeType.DOCUMENT,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
     ):
         """Create Knowledge Factory with file path and knowledge type.
 
@@ -22,18 +23,21 @@ class KnowledgeFactory:
         """
         self._file_path = file_path
         self._knowledge_type = knowledge_type
+        self._metadata = metadata
 
     @classmethod
     def create(
         cls,
         datasource: str = "",
         knowledge_type: KnowledgeType = KnowledgeType.DOCUMENT,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
     ):
         """Create knowledge from file path, url or text.
 
         Args:
              datasource: path of the file to convert
              knowledge_type: type of knowledge
+             metadata: Optional[Dict[str, Union[str, List[str]]]]
 
         Examples:
             .. code-block:: python
@@ -52,12 +56,16 @@ class KnowledgeFactory:
         match knowledge_type:
             case KnowledgeType.DOCUMENT:
                 return cls.from_file_path(
-                    file_path=datasource, knowledge_type=knowledge_type
+                    file_path=datasource,
+                    knowledge_type=knowledge_type,
+                    metadata=metadata,
                 )
             case KnowledgeType.URL:
                 return cls.from_url(url=datasource, knowledge_type=knowledge_type)
             case KnowledgeType.TEXT:
-                return cls.from_text(text=datasource, knowledge_type=knowledge_type)
+                return cls.from_text(
+                    text=datasource, knowledge_type=knowledge_type, metadata=metadata
+                )
             case _:
                 raise Exception(f"Unsupported knowledge type '{knowledge_type}'")
 
@@ -66,6 +74,7 @@ class KnowledgeFactory:
         cls,
         file_path: str = "",
         knowledge_type: Optional[KnowledgeType] = KnowledgeType.DOCUMENT,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
     ) -> Knowledge:
         """Create knowledge from path.
 
@@ -82,10 +91,11 @@ class KnowledgeFactory:
                     datasource="path/to/document.pdf",
                     knowledge_type=KnowledgeType.DOCUMENT,
                 )
+
         """
         factory = cls(file_path=file_path, knowledge_type=knowledge_type)
         return factory._select_document_knowledge(
-            file_path=file_path, knowledge_type=knowledge_type
+            file_path=file_path, knowledge_type=knowledge_type, metadata=metadata
         )
 
     @staticmethod
@@ -117,6 +127,7 @@ class KnowledgeFactory:
     def from_text(
         text: str = "",
         knowledge_type: KnowledgeType = KnowledgeType.TEXT,
+        metadata: Optional[Dict[str, Union[str, List[str]]]] = None,
     ) -> Knowledge:
         """Create knowledge from text.
 
@@ -127,6 +138,7 @@ class KnowledgeFactory:
         return StringKnowledge(
             text=text,
             knowledge_type=knowledge_type,
+            metadata=metadata,
         )
 
     def _select_document_knowledge(self, **kwargs):

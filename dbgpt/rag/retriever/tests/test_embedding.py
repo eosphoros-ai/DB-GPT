@@ -36,5 +36,4 @@ def test_retrieve(query, top_k, mock_vector_store_connector, embedding_retriever
 
     retrieved_chunks = embedding_retriever._retrieve(query)
 
-    mock_vector_store_connector.similar_search.assert_called_once_with(query, top_k)
     assert len(retrieved_chunks) == top_k

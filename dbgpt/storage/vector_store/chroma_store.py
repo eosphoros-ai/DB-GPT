@@ -1,7 +1,7 @@
 """Chroma vector store."""
 import logging
 import os
-from typing import Any, List
+from typing import List, Optional
 
 from chromadb import PersistentClient
 from chromadb.config import Settings
@@ -13,6 +13,7 @@ from dbgpt.core.awel.flow import Parameter, ResourceCategory, register_resource
 from dbgpt.util.i18n_utils import _
 
 from .base import _COMMON_PARAMETERS, VectorStoreBase, VectorStoreConfig
+from .filters import FilterOperator, MetadataFilters
 
 logger = logging.getLogger(__name__)
 
@@ -86,16 +87,23 @@ class ChromaStore(VectorStoreBase):
             collection_metadata=collection_metadata,
         )
 
-    def similar_search(self, text, topk, **kwargs: Any) -> List[Chunk]:
+    def similar_search(
+        self, text, topk, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Search similar documents."""
         logger.info("ChromaStore similar search")
-        lc_documents = self.vector_store_client.similarity_search(text, topk, **kwargs)
+        where_filters = self.convert_metadata_filters(filters) if filters else None
+        lc_documents = self.vector_store_client.similarity_search(
+            text, topk, filter=where_filters
+        )
         return [
             Chunk(content=doc.page_content, metadata=doc.metadata)
             for doc in lc_documents
         ]
 
-    def similar_search_with_scores(self, text, topk, score_threshold) -> List[Chunk]:
+    def similar_search_with_scores(
+        self, text, topk, score_threshold, filters: Optional[MetadataFilters] = None
+    ) -> List[Chunk]:
         """Search similar documents with scores.
 
         Chroma similar_search_with_score.
@@ -106,11 +114,16 @@ class ChromaStore(VectorStoreBase):
             score_threshold(float): score_threshold: Optional, a floating point value
                 between 0 to 1 to filter the resulting set of retrieved docs,0 is
                 dissimilar, 1 is most similar.
+            filters(MetadataFilters): metadata filters, defaults to None
         """
         logger.info("ChromaStore similar search with scores")
+        where_filters = self.convert_metadata_filters(filters) if filters else None
         docs_and_scores = (
             self.vector_store_client.similarity_search_with_relevance_scores(
-                query=text, k=topk, score_threshold=score_threshold
+                query=text,
+                k=topk,
+                score_threshold=score_threshold,
+                filter=where_filters,
             )
         )
         return [
@@ -152,10 +165,71 @@ class ChromaStore(VectorStoreBase):
             collection = self.vector_store_client._collection
             collection.delete(ids=ids)
 
+    def convert_metadata_filters(
+        self,
+        filters: MetadataFilters,
+    ) -> dict:
+        """Convert metadata filters to Chroma filters.
+
+        Args:
+            filters(MetadataFilters): metadata filters.
+        Returns:
+            dict: Chroma filters.
+        """
+        where_filters = {}
+        filters_list = []
+        condition = filters.condition
+        chroma_condition = f"${condition}"
+        if filters.filters:
+            for filter in filters.filters:
+                if filter.operator:
+                    filters_list.append(
+                        {
+                            filter.key: {
+                                _convert_chroma_filter_operator(
+                                    filter.operator
+                                ): filter.value
+                            }
+                        }
+                    )
+                else:
+                    filters_list.append({filter.key: filter.value})  # type: ignore
+
+        if len(filters_list) == 1:
+            return filters_list[0]
+        elif len(filters_list) > 1:
+            where_filters[chroma_condition] = filters_list
+        return where_filters
+
     def _clean_persist_folder(self):
+        """Clean persist folder."""
         for root, dirs, files in os.walk(self.persist_dir, topdown=False):
             for name in files:
                 os.remove(os.path.join(root, name))
             for name in dirs:
                 os.rmdir(os.path.join(root, name))
         os.rmdir(self.persist_dir)
+
+
+def _convert_chroma_filter_operator(operator: str) -> str:
+    """Convert operator to Chroma where operator.
+
+    Args:
+        operator(str): operator.
+    Returns:
+        str: Chroma where operator.
+    """
+    if operator == FilterOperator.EQ:
+        return "$eq"
+    elif operator == FilterOperator.NE:
+        return "$ne"
+    elif operator == FilterOperator.GT:
+        return "$gt"
+    elif operator == FilterOperator.LT:
+        return "$lt"
+    elif operator == FilterOperator.GTE:
+        return "$gte"
+    elif operator == FilterOperator.LTE:
+        return "$lte"
+    else:
+        raise ValueError(f"Chroma Where operator {operator} not supported")

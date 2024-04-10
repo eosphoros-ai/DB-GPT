@@ -127,8 +127,8 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             ai_response = ai_response.replace("assistant:", "")
             ai_response = ai_response.replace("Assistant:", "")
             ai_response = ai_response.replace("ASSISTANT:", "")
-            ai_response = ai_response.replace("\_", "_")
-            ai_response = ai_response.replace("\*", "*")
+            ai_response = ai_response.replace("\\_", "_")
+            ai_response = ai_response.replace("\\*", "*")
             ai_response = ai_response.replace("\t", "")
 
             # ai_response = ai_response.strip().replace("\\n", " ").replace("\n", " ")
@@ -234,7 +234,7 @@ class BaseOutputParser(MapOperator[ModelOutput, Any], ABC):
             .replace("\\n", " ")
             .replace("\n", " ")
             .replace("\\", " ")
-            .replace("\_", "_")
+            .replace("\\_", "_")
         )
         cleaned_output = self._illegal_json_ends(cleaned_output)
         return cleaned_output

@@ -108,6 +108,7 @@ class _CategoryDetail:
 
 _OPERATOR_CATEGORY_DETAIL = {
     "trigger": _CategoryDetail("Trigger", "Trigger your AWEL flow"),
+    "sender": _CategoryDetail("Sender", "Send the data to the target"),
     "llm": _CategoryDetail("LLM", "Invoke LLM model"),
     "conversion": _CategoryDetail("Conversion", "Handle the conversion"),
     "output_parser": _CategoryDetail("Output Parser", "Parse the output of LLM model"),
@@ -121,6 +122,7 @@ class OperatorCategory(str, Enum):
     """The category of the operator."""
 
     TRIGGER = "trigger"
+    SENDER = "sender"
     LLM = "llm"
     CONVERSION = "conversion"
     OUTPUT_PARSER = "output_parser"
