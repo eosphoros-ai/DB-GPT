@@ -20,7 +20,7 @@ function ChartView({ data, type, sql }: { data: Datum[]; type: BackEndChartType;
     label: 'Chart',
     children: <AutoChart data={data} chartType={getChartType(type)} />,
   };
-
+  console.log('cahrt-view')
   const SqlItem = {
     key: 'sql',
     label: 'SQL',

@@ -6,6 +6,7 @@ from typing import Dict, NamedTuple
 
 import sqlparse
 
+from db.ConnectMongdb import MyMongdb
 from dbgpt._private.config import Config
 from dbgpt.core.interface.output_parser import BaseOutputParser
 from dbgpt.util.json_utils import serialize
@@ -17,12 +18,14 @@ class SqlAction(NamedTuple):
     sql: str
     thoughts: Dict
     display: str
+    data_id: str = ''
 
     def to_dict(self) -> Dict[str, Dict]:
         return {
             "sql": self.sql,
             "thoughts": self.thoughts,
             "display": self.display,
+            "data_id": self.data_id,
         }
 
 
@@ -47,7 +50,7 @@ class DbChatOutputParser(BaseOutputParser):
         logger.info(f"clean prompt response: {clean_str}")
         # Compatible with community pure sql output model
         if self.is_sql_statement(clean_str):
-            return SqlAction(clean_str, "", "")
+            return SqlAction(clean_str, "", "",'')
         else:
             try:
                 response = json.loads(clean_str, strict=False)
@@ -58,7 +61,9 @@ class DbChatOutputParser(BaseOutputParser):
                         thoughts = response[key]
                     if key.strip() == "display_type":
                         display = response[key]
-                return SqlAction(sql, thoughts, display)
+                    if key.strip() == "data_id":
+                        data_id = response[key]
+                return SqlAction(sql, thoughts, display,data_id)
             except Exception as e:
                 logger.error(f"json load failed:{clean_str}")
                 return SqlAction("", clean_str, "")
@@ -78,6 +83,7 @@ class DbChatOutputParser(BaseOutputParser):
             df = data(prompt_response.sql)
             param["type"] = prompt_response.display
             param["sql"] = prompt_response.sql
+            param["data_id"] = prompt_response.data_id
             param["data"] = json.loads(
                 df.to_json(orient="records", date_format="iso", date_unit="s")
             )

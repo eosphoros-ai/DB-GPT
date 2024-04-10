@@ -4,8 +4,9 @@ import os
 import uuid
 from concurrent.futures import Executor
 from typing import List, Optional
-
+import io
 import aiofiles
+import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, UploadFile
 from fastapi.responses import StreamingResponse
 
@@ -242,7 +243,7 @@ async def dialogue_scenes():
     new_modes: List[ChatScene] = [
         ChatScene.ChatWithDbExecute,
         ChatScene.ChatWithDbQA,
-        # ChatScene.ChatExcel,
+        ChatScene.ChatExcel,
         # ChatScene.ChatKnowledge,
         ChatScene.ChatDashboard,
         # ChatScene.ChatAgent,
@@ -344,6 +345,7 @@ async def get_chat_instance(dialogue: ConversationVo = Body()) -> BaseChat:
         "select_param": dialogue.select_param,
         "model_name": dialogue.model_name,
     }
+
     chat: BaseChat = await blocking_func_to_async(
         get_executor(),
         CHAT_FACTORY.get_implementation,
@@ -380,7 +382,7 @@ async def chat_completions(
         "Transfer-Encoding": "chunked",
     }
     my = MyMongdb()
-    if not (my.check_user_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)
+    if dialogue.select_param!='' and not (my.check_user_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)
             or my.check_manage_dbgpt_db_permission(department=dialogue.select_param, user_id=dialogue.user_id)) and dialogue.chat_mode!='chat_agent':
         return StreamingResponse(
             no_stream_generator_string('you dont have permission to use db.'),
@@ -424,7 +426,7 @@ async def chat_completions(
         ):
             chat: BaseChat = await get_chat_instance(dialogue)
 
-        print('not chat.prompt_template.stream_out',chat.prompt_template.stream_out)
+        print('not chat.prompt_template.stream_out',chat,chat.prompt_template.stream_out)
         if not chat.prompt_template.stream_out:
             return StreamingResponse(
                 no_stream_generator(chat),
@@ -464,6 +466,50 @@ async def model_supports(worker_manager: WorkerManager = Depends(get_worker_mana
     except Exception as e:
         return Result.failed(code="E000X", msg=f"Fetch supportd models error {e}")
 
+@router.get('/v1/data/download')
+async def download(data_id: str):
+    '''
+    chat_id = b72551664effad18a78e4c6e
+    '''
+    my_mongo = MyMongdb()
+    # my_mongo.set_chatId(chat_id)
+    my_mongo.set_dataId(data_id)
+
+    df = my_mongo.getFSDataFrame()
+
+    bio = io.BytesIO()
+    excel_writer = pd.ExcelWriter(bio, engine='xlsxwriter')
+    if isinstance(df, list):
+        for i, df in enumerate(df):
+            if df.shape[0] < 1048570:
+                df.to_excel(excel_writer, sheet_name=f'df{i + 1}', index=False)
+            else:
+                for ii in range(int(df.shape[0] / 1048570) + 1):
+                    df.iloc[1048570 * ii:1048570 * (ii + 1), :].to_excel(excel_writer,
+                                                                         sheet_name=f'Sheet{i + 1}_{ii}',
+                                                                         index=False)
+    else:
+        df.to_excel(excel_writer, index=False)
+    excel_writer.close()
+    bio.seek(0)
+    logger.info('download\ndata_id:' + str(data_id))
+    my_mongo.close()
+
+    # 将 Excel 文件转换为字节流，作为响应体返回给客户端
+    return StreamingResponse(iter([bio.getvalue()]),
+                             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                             headers={"Content-Disposition": "attachment; filename=%s" % (data_id + '.xlsx')})
+
+
+@router.get('/v1/data/getdata')
+async def download(data_id: str):
+    '''
+    chat_id = b72551664effad18a78e4c6e
+    '''
+    my_mongo = MyMongdb()
+    my_mongo.set_dataId(data_id)
+    df = my_mongo.getFSDataFrame()
+    return df.to_json(orient="records", date_format="iso", date_unit="s",force_ascii=False)
 
 async def no_stream_generator(chat):
     with root_tracer.start_span("no_stream_generator"):

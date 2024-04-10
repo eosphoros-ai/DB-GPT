@@ -17,7 +17,9 @@ const ChatContainer = () => {
   const searchParams = useSearchParams();
   const { scene, chatId, model, agent, setModel, history, setHistory ,userId} = useContext(ChatContext);
   const chat = useChat({});
+  console.log('chat-container',chat)
   const initMessage = (searchParams && searchParams.get('initMessage')) ?? '';
+  console.log('searchParams',searchParams.get('select_param'))
 
   const [loading, setLoading] = useState<boolean>(false);
   const [chartsData, setChartsData] = useState<Array<ChartData>>();
@@ -72,6 +74,9 @@ const ChatContainer = () => {
         ];
         const index = tempHistory.length - 1;
         setHistory([...tempHistory]);
+        console.log('CHAT-CONTAINER',data)
+        debugger;
+        // data.select_param = 
         chat({
           data: { ...data, chat_mode: scene || 'chat_normal', model_name: model, user_input: content },
           chatId,

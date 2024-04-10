@@ -23,7 +23,7 @@ interface Props {
 
 function ChatDialog({ title, chatMode, completionApi, chatParams, model = '' }: Props) {
   const chat = useChat({ queryAgentURL: completionApi });
-
+  console.log('chat-dialog',chat)
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<IChatDialogueMessageSchema[]>([]);
   const [open, setOpen] = useState(false);
@@ -69,13 +69,13 @@ function ChatDialog({ title, chatMode, completionApi, chatParams, model = '' }: 
             resolve();
           },
         }).finally(() => {
-          setLoading(false);
+        setLoading(false);
         });
+
       });
     },
     [chat, list, data?.conv_uid],
   );
-
   return (
     <div
       className={classNames(
@@ -88,6 +88,7 @@ function ChatDialog({ title, chatMode, completionApi, chatParams, model = '' }: 
     >
       {title && <div className="p-4 border-b border-solid border-gray-100">{title}</div>}
       <div className="flex-1 overflow-y-auto px-2">
+        
         {list.map((item, index) => (
           <>{chatParams?.chat_mode === 'chat_agent' ? <AgentContent key={index} content={item} /> : <ChatContent key={index} content={item} />}</>
         ))}

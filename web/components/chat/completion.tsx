@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { downloadFile } from '@/client/api';
 import MonacoEditor from './monaco-editor';
 import ChatContent from './chat-content';
 import ChatFeedback from './chat-feedback';
 import { ChatContext } from '@/app/chat-context';
 import { FeedBack, IChatDialogueMessageSchema } from '@/types/chat';
 import classNames from 'classnames';
-import { Empty, Modal, message, Tooltip } from 'antd';
+import { Empty, Modal, message, Tooltip,Upload } from 'antd';
 import { renderModelIcon } from './header/model-selector';
 import { cloneDeep } from 'lodash';
 import copy from 'copy-to-clipboard';
@@ -15,11 +16,12 @@ import CompletionInput from '../common/completion-input';
 import { useAsyncEffect } from 'ahooks';
 import { STORAGE_INIT_MESSAGE_KET } from '@/utils';
 import { Button, IconButton } from '@mui/joy';
-import { CopyOutlined, RedoOutlined } from '@ant-design/icons';
+import { CopyOutlined, DownloadOutlined , CalculatorOutlined, RedoOutlined } from '@ant-design/icons';
 import { getInitMessage } from '@/utils';
 import { apiInterceptors, getChatFeedBackSelect } from '@/client/api';
 import useSummary from '@/hooks/use-summary';
 import AgentContent from './agent-content';
+import { useRouter } from 'next/router';
 
 type Props = {
   messages: IChatDialogueMessageSchema[];
@@ -27,10 +29,10 @@ type Props = {
 };
 
 const Completion = ({ messages, onSubmit }: Props) => {
-  const { dbParam, currentDialogue, scene, model, refreshDialogList, chatId, agent, docId } = useContext(ChatContext);
+  const { dbParam, currentDialogue, scene, model, refreshDialogList, chatId, agent, docId ,userId } = useContext(ChatContext);
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-
+  const router = useRouter();
   const flowSelectParam = (searchParams && searchParams.get('select_param')) ?? '';
   const spaceNameOriginal = (searchParams && searchParams.get('spaceNameOriginal')) ?? '';
 
@@ -52,6 +54,7 @@ const Completion = ({ messages, onSubmit }: Props) => {
       case 'chat_agent':
         return agent;
       case 'chat_excel':
+        console.log('currentDialogue',currentDialogue)
         return currentDialogue?.select_param;
       case 'chat_flow':
         return flowSelectParam;
@@ -101,6 +104,55 @@ const Completion = ({ messages, onSubmit }: Props) => {
     }
   };
 
+  const onDownloadContext = async (context: any) => {
+    const chartViewPattern = /<chart-view content="({.*?})" \/>/;
+    const match = context.match(chartViewPattern);
+  
+    if (match && match[1]) {
+      const jsonString = match[1].replace(/&quot;/g, '\"');
+      try {
+        const json = JSON.parse(jsonString);
+        const data_id =json.data_id
+        if (!data_id) {
+          alert('Error: The data ID is empty. Please Get the data Again');
+          return; // 直接返回，不再执行后续下载操作
+        }
+        let res = await downloadFile(data_id);
+        const href = window.URL.createObjectURL(res.data);
+        const downloadElement = document.createElement("a");
+        downloadElement.href = href;
+        downloadElement.target = "_blank";
+        // 下载后文件名
+        // downloadElement.download = fileName;
+        document.body.appendChild(downloadElement);
+        // 点击下载
+        downloadElement.click();
+        // 下载完成移除元素
+        document.body.removeChild(downloadElement);
+        // 释放掉blob对象
+        window.URL.revokeObjectURL(href);
+      } catch (error) {
+        console.error('Download failed:', error);
+      }
+    }
+  };
+
+  const jumpCalculationPage = async (context: any) => {
+    const chartViewPattern = /<chart-view content="({.*?})" \/>/;
+    const match = context.match(chartViewPattern);
+
+    if (match && match[1]) {
+      const jsonString = match[1].replace(/&quot;/g, '\"');
+      try {
+        const json = JSON.parse(jsonString);
+        const data_id =json.data_id;
+        router.push(`/chat/?scene=assistant&userid=${userId}&dataid=${data_id}`);
+      } catch (error) {
+        console.error('Download failed:', error);
+      }
+    }
+  };
+
   const handleRetry = async () => {
     if (isLoading || !docId) {
       return;
@@ -123,12 +175,16 @@ const Completion = ({ messages, onSubmit }: Props) => {
     let tempMessage: IChatDialogueMessageSchema[] = messages;
     if (isChartChat) {
       tempMessage = cloneDeep(messages).map((item) => {
+        
         if (item?.role === 'view' && typeof item?.context === 'string') {
           item.context = handleJson2Obj(item?.context);
         }
+        console.log('item.context',item.context)
+
         return item;
       });
     }
+    console.log('tempMessage',tempMessage);
     setShowMessages(tempMessage.filter((item) => ['view', 'human'].includes(item.role)));
   }, [isChartChat, messages]);
 
@@ -191,6 +247,29 @@ const Completion = ({ messages, onSubmit }: Props) => {
                             sx={{ borderRadius: 40 }}
                           >
                             <CopyOutlined />
+                          </Button>
+                        </Tooltip>
+
+                        <Tooltip title={t('Download')}>
+                          <Button
+                            onClick={() => onDownloadContext(content?.context)}
+                            slots={{ root: IconButton }}
+                            slotProps={{ root: { variant: 'plain', color: 'primary' } }}
+                            sx={{ borderRadius: 40 }}
+                          >
+                            <DownloadOutlined />
+                          </Button>
+                        </Tooltip>
+
+
+                        <Tooltip title={t('CalculatorOutlined')}>
+                          <Button
+                            onClick={() => jumpCalculationPage(content?.context)}
+                            slots={{ root: IconButton }}
+                            slotProps={{ root: { variant: 'plain', color: 'primary' } }}
+                            sx={{ borderRadius: 40 }}
+                          >
+                            <CalculatorOutlined />
                           </Button>
                         </Tooltip>
                       </div>

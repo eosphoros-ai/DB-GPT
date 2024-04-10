@@ -86,7 +86,7 @@ class ChatWithDbAutoExecute(BaseChat):
 
         client = DBSummaryClient(system_app=CFG.SYSTEM_APP)
 
-        with open('/datas/liab/DB-GPT/tests/atl_data/type3/qa_samples.json', 'r') as f:
+        with open('/data1/liab/DB-GPT/tests/atl_data/type3/qa_samples.json', 'r') as f:
             contents = json.load(f)
         print('load qa sample')
         with root_tracer.start_span("ChatWithDbAutoExecute.get_db_summary"):

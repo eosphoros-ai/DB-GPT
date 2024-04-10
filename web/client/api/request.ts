@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from 'axios';
+import axios,{ AxiosRequestConfig } from 'axios';
 import { DELETE, GET, POST, PUT } from '.';
 import { DbListResponse, DbSupportTypeResponse, PostDbParams, ChatFeedBackSchema } from '@/types/db';
 import { DialogueListResponse, IChatDialogueSchema, NewDialogueParam, SceneResponse, ChatHistoryResponse, FeedBack, IDB } from '@/types/chat';
@@ -41,6 +41,11 @@ export const postScenes = () => {
 };
 export const newDialogue = (data: NewDialogueParam) => {
   return POST<NewDialogueParam, IChatDialogueSchema>('/api/v1/chat/dialogue/new', data);
+};
+
+/** Download */
+export const downloadFile = (data_id:string) => {
+  return GET<null,Blob>(`/api/v1/data/download?data_id=${data_id}`,null, { responseType:'blob'});
 };
 
 /** Database Page */

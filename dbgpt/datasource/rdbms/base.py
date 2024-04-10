@@ -369,12 +369,13 @@ class RDBMSConnector(BaseConnector):
 
     def run(self, command: str, fetch: str = "all") -> List:
         """Execute a SQL command and return a string representing the results."""
-        logger.info("SQL:" + command)
+        logger.info("SQL1:" + command)
         if not command or len(command) < 0:
             return []
         parsed, ttype, sql_type, table_name = self.__sql_parse(command)
         if ttype == sqlparse.tokens.DML:
             if sql_type == "SELECT":
+                print('SELECT ')
                 return self._query(command, fetch)
             else:
                 self._write(command)
@@ -410,6 +411,7 @@ class RDBMSConnector(BaseConnector):
         result_lst = self.run(command, fetch)
         colunms = result_lst[0]
         values = result_lst[1:]
+        print('pd.DataFrame(values, columns=colunms)',pd.DataFrame(values, columns=colunms))
         return pd.DataFrame(values, columns=colunms)
 
     def run_no_throw(self, command: str, fetch: str = "all") -> List:

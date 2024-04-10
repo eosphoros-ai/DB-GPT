@@ -60,7 +60,8 @@
     "@types/react-syntax-highlighter": "^15.5.7",
     "autoprefixer": "10.4.14",
     "eslint": "8.43.0",
-    "eslint-config-next": "13.4.7"
+    "eslint-config-next": "13.4.7",
+    "typescipt": "^1.0.0"
   },
   "description": "DB-GPT WebUI",
   "main": "next.config.js",

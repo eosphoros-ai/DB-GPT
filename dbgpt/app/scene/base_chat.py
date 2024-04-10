@@ -1,11 +1,17 @@
 import asyncio
 import datetime
+import hashlib
 import json
 import logging
+import re
 import traceback
 from abc import ABC, abstractmethod
 from typing import Any, AsyncIterator, Dict
 
+import pandas as pd
+
+from db.ConnectMongdb import MyMongdb
+from db.ConnectOracle import connectOracle
 from dbgpt._private.config import Config
 from dbgpt._private.pydantic import Extra
 from dbgpt.app.scene.base import AppScenePromptTemplateAdapter, ChatScene
@@ -97,7 +103,6 @@ class BaseChat(ABC):
             ComponentType.WORKER_MANAGER_FACTORY, WorkerManagerFactory
         ).create()
         self.model_cache_enable = chat_param.get("model_cache_enable", False)
-        self.save_dict = {}
         ### load prompt template
         # self.prompt_template: PromptTemplate = CFG.prompt_templates[
         #     self.chat_mode.value()
@@ -217,7 +222,6 @@ class BaseChat(ABC):
 
     async def _build_model_request(self) -> ModelRequest:
         input_values = await self.generate_input_values()
-        self.save_dict.update(input_values)
         # Load history
         self.history_messages = self.current_message.get_history_message()
         self.current_message.start_new_round()
@@ -323,6 +327,7 @@ class BaseChat(ABC):
         )
 
     async def nostream_call(self):
+
         payload = await self._build_model_request()
         span = root_tracer.start_span(
             "BaseChat.nostream_call", metadata=payload.to_dict()
@@ -340,31 +345,44 @@ class BaseChat(ABC):
                     model_output, self.prompt_template.sep
                 )
             )
-            try:
-                self.save_dict.update(eval(ai_response_text.strip('```').strip('json')))
-            except:
-                pass
-
+            id_temp = self.chat_session_id + str(len(self.history_messages))
+            data_id = hashlib.md5(id_temp.encode()).hexdigest()[:24]
+            self.data_id = data_id
+            ai_response_text = ai_response_text.replace('"display_type"',f""""data_id": "{data_id}",\n    "display_type" """)
+            '''ai_response_text = 
+            {
+    "thoughts": "为了查询冯铃的手机号，我需要使用a_sap_employee_information_chinese表中的姓名和员工本人联系号码这两个字段。首先，我会在WHERE子句中使用姓名字段来定位到冯铃这个员工，然后选择员工本人联系号码字段来获取她的手机号。我会复查一遍表和列的对应关系是否正确，确保姓名和员工本人联系号码字段都存在于a_sap_employee_information_chinese表中。",
+    "sql": "SELECT 员工本人联系号码 FROM a_sap_employee_information_chinese WHERE 姓名 = '冯铃' LIMIT 1;",
+    "data_id": "f3f05194ac2b534d694dea93",
+    "display_type" : "response_table"
+}
+            '''
             self.current_message.add_ai_message(ai_response_text)
             print('### model result deal',ai_response_text)
-            print(                self.prompt_template.output_parser.parse_prompt_response(
+            print(self.prompt_template.output_parser.parse_prompt_response(
                     ai_response_text
                 ))
+
+
             prompt_define_response = (
                 self.prompt_template.output_parser.parse_prompt_response(
                     ai_response_text
                 )
             )
 
-            print('### model result deal123')
+            # print('### model result deal123', model_output.to_dict())
+            aa = """
+            {'text': '{\n    "thoughts": "为了查询冯铃的手机号，我需要使用a_sap_employee_information_chinese表中的姓名和员工本人联系号码这两个字段。首先，我会在WHERE子句中使用姓名字段来定位到冯铃这个员工，然后选择员工本人联系号码字段来获取她的手机号。我会再次检查表名和列名是否正确，以确保SQL语句的准确性。",\n    "sql": "SELECT 员工本人联系号码 FROM a_sap_employee_information_chinese WHERE 姓名 = \'冯铃\' LIMIT 1;",\n    "display_type": "response_table"\n}', 'error_code': 0, 'model_context': {'prompt_echo_len_char': -1, 'has_format_prompt': False, 'echo': False}, 'finish_reason': None, 'usage': None, 'metrics': {'collect_index': 150, 'start_time_ms': 1712718512879, 'end_time_ms': 1712718537099, 'current_time_ms': 1712718537099, 'first_token_time_ms': None, 'first_completion_time_ms': 1712718525114, 'first_completion_tokens': None, 'prompt_tokens': None, 'completion_tokens': None, 'total_tokens': None, 'speed_per_second': None, 'current_gpu_infos': None, 'avg_gpu_infos': None}}
+
+            """
             metadata = {
+                # "model_output":aa, # test use
                 "model_output": model_output.to_dict(),
                 "ai_response_text": ai_response_text,
                 "prompt_define_response": self._parse_prompt_define_response(
                     prompt_define_response
                 ),
             }
-            print('BaseChat.do_action123')
             with root_tracer.start_span("BaseChat.do_action", metadata=metadata):
                 print('###  run')
                 result = await blocking_func_to_async(
@@ -374,8 +392,8 @@ class BaseChat(ABC):
             speak_to_user = self.get_llm_speak(prompt_define_response)
 
             print('speak_to_user', speak_to_user)
-            print('result', result)
             print('prompt_define_response', prompt_define_response)
+
             view_message = await blocking_func_to_async(
                 self._executor,
                 self.prompt_template.output_parser.parse_view_response,
@@ -384,12 +402,19 @@ class BaseChat(ABC):
                 prompt_define_response,
             )
 
-            view_message_tmp = view_message.split('data')[-1].replace('&quot;', '')
-            self.save_dict.update({'ai_sql_result': view_message_tmp})
+            await blocking_func_to_async(
+                self._executor,
+                self.save_df_to_mongodb,
+                prompt_define_response.sql,
+            )
+
             view_message = view_message.replace("\n", "\\n")
             self.current_message.add_view_message(view_message)
             self.message_adjust()
-            print('view_message', )
+            print('view_message', view_message)
+
+
+
 
             span.end()
         except Exception as e:
@@ -402,6 +427,7 @@ class BaseChat(ABC):
         await blocking_func_to_async(
             self._executor, self.current_message.end_current_round
         )
+        print('self.current_ai_response()',self.current_ai_response())
         return self.current_ai_response()
 
     async def get_llm_response(self):
@@ -432,6 +458,17 @@ class BaseChat(ABC):
             )
         return prompt_define_response
 
+    def save_df_to_mongodb(self,  sql):
+        if sql!='':
+            my_mongo = MyMongdb(userId=self.current_message.user_name)
+            my_mongo.set_dataId(self.data_id)
+            sql = re.sub(r'LIMIT\s+50\s*;?','',sql,flags=re.I)
+            df = pd.read_sql(sql, con=self.database.session.bind)
+            my_mongo.uploadDataFrameByInfo(df, 'dbgpt', self.current_message.param_value, self.current_message.start_date,
+                                           self.current_message.start_date)
+            return 'OK'
+        else:
+            return ''
     def _blocking_stream_call(self):
         logger.warn(
             "_blocking_stream_call is only temporarily used in webserver and will be deleted soon, please use stream_call to replace it for higher performance"

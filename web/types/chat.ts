@@ -44,6 +44,7 @@ export type IChatDialogueSchema = {
     | 'chat_with_db_qa'
     | 'chat_knowledge'
     | 'chat_dashboard'
+    | 'assistant'
     | 'chat_execution'
     | 'chat_agent'
     | 'chat_flow'

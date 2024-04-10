@@ -525,17 +525,17 @@ def quantization_requires():
         # autoawq requirements:
         # 1. Compute Capability 7.5 (sm75). Turing and later architectures are supported.
         # 2. CUDA Toolkit 11.8 and later.
-        autoawq_url = _build_wheels(
-            "autoawq",
-            "0.1.7",
-            base_url_func=lambda v, x, y: f"https://github.com/casper-hansen/AutoAWQ/releases/download/v{v}",
-            supported_cuda_versions=["11.8"],
-        )
-        if autoawq_url:
-            print(f"Install autoawq from {autoawq_url}")
-            pkgs.append(f"autoawq @ {autoawq_url}")
-        else:
-            pkgs.append("autoawq")
+        # autoawq_url = _build_wheels(
+        #     "autoawq",
+        #     "0.1.7",
+        #     base_url_func=lambda v, x, y: f"https://github.com/casper-hansen/AutoAWQ/releases/download/v{v}",
+        #     supported_cuda_versions=["11.8"],
+        # )
+        # if autoawq_url:
+        #     print(f"Install autoawq from {autoawq_url}")
+        #     pkgs.append(f"autoawq @ {autoawq_url}")
+        # else:
+        #     pkgs.append("autoawq")
 
         auto_gptq_pkg = _build_autoawq_requires()
         if auto_gptq_pkg:
@@ -565,7 +565,7 @@ def all_datasource_requires():
         "pymssql",
         "pymysql",
         "pyspark",
-        "psycopg2",
+        # "psycopg2",
         # for doris
         # mysqlclient 2.2.x have pkg-config issue on 3.10+
         "mysqlclient==2.1.0",

@@ -16,14 +16,14 @@ function formatMarkdownVal(val: string) {
 
 function AgentContent({ content }: Props) {
   const { scene } = useContext(ChatContext);
-
+  console.log('content',content);
   const isView = content.role === 'view';
 
   return (
     <div
       className={classNames('relative w-full p-2 md:p-4 rounded-xl break-words', {
         'bg-white dark:bg-[#232734]': isView,
-        'lg:w-full xl:w-full pl-0': ['chat_with_db_execute', 'chat_dashboard'].includes(scene),
+        'lg:w-full xl:w-full pl-0': ['chat_with_db_execute', 'chat_dashboard', 'assistant'].includes(scene),
       })}
     >
       {isView ? (

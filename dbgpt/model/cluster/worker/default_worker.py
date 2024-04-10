@@ -176,7 +176,7 @@ class DefaultModelWorker(ModelWorker):
                 last_metrics = current_metrics
                 yield model_output
             print(
-                f"\n\nfull stream output:\n{previous_response}\n\nmodel generate_stream params:\n{params}"
+                f"\n\nfull stream output1:\n{previous_response}\n\nmodel generate_stream params:\n{params}"
             )
             model_span.end(metadata={"output": previous_response})
             span.end()

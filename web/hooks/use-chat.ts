@@ -34,15 +34,12 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
         conv_uid: chatId,
         user_id:userId,
       };
-      console.log('parmas',parmas)
+      console.log('parmas',parmas,data)
       if (!parmas.conv_uid) {
         message.error('conv_uid 不存在，请刷新后重试');
         return;
       }
-      // if (!parmas.user_id) {
-      //   message.error('user_id 不存在，请刷新后重试');
-      //   return;
-      // }
+
       try {
         await fetchEventSource(`${process.env.API_BASE_URL ?? ''}${queryAgentURL}`, {
           method: 'POST',
@@ -66,6 +63,7 @@ const useChat = ({ queryAgentURL = '/api/v1/chat/completions' }: Props) => {
           },
           onmessage: (event) => {
             let message = event.data;
+            console.log('event',event)
             try {
               message = JSON.parse(message).vis;
             } catch (e) {

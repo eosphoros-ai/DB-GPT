@@ -12,9 +12,9 @@ def score_normalize(data_list):
 def calcuate_bm25(corpus, query):
     import jieba
     from rank_bm25 import BM25Okapi
-    jieba.load_userdict("/datas/liab/DB-GPT/tests/userdict.txt")
+    jieba.load_userdict("/data1/liab/DB-GPT/tests/userdict.txt")
     stop_words = [' ','\t','\n']
-    with open('/datas/liab/DB-GPT/tests/stopwords.txt', 'r', encoding='utf-8') as f:
+    with open('/data1/liab/DB-GPT/tests/stopwords.txt', 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if line:

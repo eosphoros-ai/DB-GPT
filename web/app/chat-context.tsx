@@ -77,7 +77,7 @@ const ChatContextProvider = ({ children }: { children: React.ReactElement }) => 
 
   const [isContract, setIsContract] = useState(false);
   const [model, setModel] = useState<string>('');
-  const [isMenuExpand, setIsMenuExpand] = useState<boolean>(scene !== 'chat_dashboard');
+  const [isMenuExpand, setIsMenuExpand] = useState<boolean>((scene !== 'chat_dashboard' ));
   const [dbParam, setDbParam] = useState<string>(db_param);
   const [agent, setAgent] = useState<string>('');
   const [history, setHistory] = useState<ChatHistoryResponse>([]);

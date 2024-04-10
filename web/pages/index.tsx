@@ -79,6 +79,8 @@ const Home: NextPage = () => {
         return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulDB} />;
       case 'chat_dashboard':
         return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulDashboard} />;
+      case 'assistant':
+        return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulDashboard} />;
       case 'chat_agent':
         return <Icon className="w-10 h-10 mr-4 p-1" component={ColorfulPlugin} />;
       case 'dbgpt_chat':
