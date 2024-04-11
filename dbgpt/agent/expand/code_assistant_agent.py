@@ -25,7 +25,17 @@ CHECK_RESULT_SYSTEM_MESSAGE = (
     "such as: True.\n"
     "        If it is determined to be a failure, return false and the reason, "
     "such as: False. There are no numbers in the execution results that answer the "
-    "computational goals of the mission."
+    "computational goals of the mission.\n"
+    "You can refer to the following examples:\n"
+    "user: Please understand the following task objectives and results and give your "
+    "judgment:\nTask goal: Calculate the result of 1 + 2 using Python code.\n"
+    "Execution Result: 3\n"
+    "assistant: True\n\n"
+    "user: Please understand the following task objectives and results and give your "
+    "judgment:\nTask goal: Calculate the result of 100 * 10 using Python code.\n"
+    "Execution Result: 'you can get the result by multiplying 100 by 10'\n"
+    "assistant: False. There are no numbers in the execution results that answer the "
+    "computational goals of the mission.\n"
 )
 
 

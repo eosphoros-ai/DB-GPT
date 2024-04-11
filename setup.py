@@ -423,10 +423,18 @@ def core_requires():
         "tomlkit",
         "rich",
     ]
+    # Agent dependencies
+    setup_spec.extras["agent"] = setup_spec.extras["cli"] + [
+        "termcolor",
+        # https://github.com/eosphoros-ai/DB-GPT/issues/551
+        # TODO: remove pandas dependency
+        "pandas==2.0.3",
+    ]
+
     # Just use by DB-GPT internal, we should find the smallest dependency set for run
     # we core unit test.
     # The dependency "framework" is too large for now.
-    setup_spec.extras["simple_framework"] = setup_spec.extras["cli"] + [
+    setup_spec.extras["simple_framework"] = setup_spec.extras["agent"] + [
         "jinja2",
         "uvicorn",
         "shortuuid",
@@ -456,8 +464,6 @@ def core_requires():
     setup_spec.extras["framework"] = setup_spec.extras["simple_framework"] + [
         "coloredlogs",
         "seaborn",
-        # https://github.com/eosphoros-ai/DB-GPT/issues/551
-        "pandas==2.0.3",
         "auto-gpt-plugin-template",
         "gTTS==2.3.1",
         "pymysql",
