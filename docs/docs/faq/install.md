@@ -15,7 +15,7 @@ You can try to use gradio's [network](https://github.com/gradio-app/gradio/blob/
 import secrets
 from gradio import networking
 token=secrets.token_urlsafe(32)
-local_port=5000
+local_port=5670
 url = networking.setup_tunnel('0.0.0.0', local_port, token)
 print(f'Public url: {url}')
 time.sleep(60 * 60 * 24)

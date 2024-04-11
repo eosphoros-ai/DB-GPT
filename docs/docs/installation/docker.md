@@ -44,7 +44,7 @@ You can view the specific usage through the command `bash docker/build_all_image
 
 ```python
 docker run --ipc host --gpus all -d \
--p 5000:5000 \
+-p 5670:5670 \
 -e LOCAL_DB_TYPE=sqlite \
 -e LOCAL_DB_PATH=data/default_sqlite.db \
 -e LLM_MODEL=vicuna-13b-v1.5 \
@@ -53,7 +53,7 @@ docker run --ipc host --gpus all -d \
 --name dbgpt \
 eosphorosai/dbgpt
 ```
-Open the browser and visit [http://localhost:5000](http://localhost:5000)
+Open the browser and visit [http://localhost:5670](http://localhost:5670)
 
 - `-e LLM_MODEL=vicuna-13b-v1.5`, which means the base model uses `vicuna-13b-v1.5`. For more model usage, you can view the configuration in `/pilot/configs/model_config.LLM_MODEL_CONFIG`.
 - `-v /data/models:/app/models`, specifies the model file to be mounted. The directory `/data/models` is mounted in `/app/models` of the container. Of course, it can be replaced with other paths.
@@ -67,7 +67,7 @@ docker logs dbgpt -f
 
 ```python
 docker run --ipc host --gpus all -d -p 3306:3306 \
--p 5000:5000 \
+-p 5670:5670 \
 -e LOCAL_DB_HOST=127.0.0.1 \
 -e LOCAL_DB_PASSWORD=aa123456 \
 -e MYSQL_ROOT_PASSWORD=aa123456 \
@@ -77,7 +77,7 @@ docker run --ipc host --gpus all -d -p 3306:3306 \
 --name db-gpt-allinone \
 db-gpt-allinone
 ```
-Open the browser and visit [http://localhost:5000](http://localhost:5000)
+Open the browser and visit [http://localhost:5670](http://localhost:5670)
 
 - `-e LLM_MODEL=vicuna-13b-v1.5`, which means the base model uses `vicuna-13b-v1.5`. For more model usage, you can view the configuration in `/pilot/configs/model_config.LLM_MODEL_CONFIG`.
 - `-v /data/models:/app/models`, specifies the model file to be mounted. The directory `/data/models` is mounted in `/app/models` of the container. Of course, it can be replaced with other paths.
@@ -92,7 +92,7 @@ docker logs db-gpt-allinone -f
 PROXY_API_KEY="You api key"
 PROXY_SERVER_URL="https://api.openai.com/v1/chat/completions"
 docker run --gpus all -d -p 3306:3306 \
--p 5000:5000 \
+-p 5670:5670 \
 -e LOCAL_DB_HOST=127.0.0.1 \
 -e LOCAL_DB_PASSWORD=aa123456 \
 -e MYSQL_ROOT_PASSWORD=aa123456 \
@@ -107,6 +107,6 @@ db-gpt-allinone
 - `-e LLM_MODEL=proxyllm`, set the model to serve the third-party model service API, which can be openai or fastchat interface.
 - `-v /data/models/text2vec-large-chinese:/app/models/text2vec-large-chinese`, sets the knowledge base embedding model to `text2vec`
 
-Open the browser and visit [http://localhost:5000](http://localhost:5000)
+Open the browser and visit [http://localhost:5670](http://localhost:5670)
 
 

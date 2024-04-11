@@ -26,7 +26,7 @@ class Config(metaclass=Singleton):
 
         # Gradio language version: en, zh
         self.LANGUAGE = os.getenv("LANGUAGE", "en")
-        self.WEB_SERVER_PORT = int(os.getenv("WEB_SERVER_PORT", 5000))
+        self.WEB_SERVER_PORT = int(os.getenv("WEB_SERVER_PORT", 5670))
 
         self.debug_mode = False
         self.skip_reprompt = False

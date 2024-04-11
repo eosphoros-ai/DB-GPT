@@ -36,7 +36,7 @@ services:
     env_file:
       - .env.template
     ports:
-      - 5000:5000/tcp
+      - 5670:5670/tcp
     # webserver may be failed, it must wait all sqls in /docker-entrypoint-initdb.d execute finish.
     restart: unless-stopped
     networks:

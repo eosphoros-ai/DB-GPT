@@ -15,7 +15,7 @@ All API requests should include your API key in an Authorization HTTP header as 
 Example with the DB-GPT API curl command:
 
     ```bash
-    curl "http://localhost:5000/api/v2/chat/completions" \
+    curl "http://localhost:5670/api/v2/chat/completions" \
     -H "Authorization: Bearer $DBGPT_API_KEY" \
     ```
 Example with the DB-GPT Client Python package:
